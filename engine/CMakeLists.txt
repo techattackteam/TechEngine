@@ -6,8 +6,6 @@ find_package(Boost COMPONENTS program_options REQUIRED)
 
 add_subdirectory(lib/imgui build)
 
-set(Common_Include_Dirs "")
-
 foreach (_headerFile ${Engine_Headers})
     get_filename_component(_dir ${_headerFile} PATH)
     list(APPEND Engine_Include_Dirs ${_dir})

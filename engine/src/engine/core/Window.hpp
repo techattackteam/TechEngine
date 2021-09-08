@@ -3,6 +3,7 @@
 #include <string>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include "../renderer/Renderer.hpp"
 
 namespace Engine {
     class Window {
@@ -14,6 +15,8 @@ namespace Engine {
         bool vSync = false;
 
         GLFWwindow *handler;
+
+        Renderer renderer;
 
     public:
         Window(std::string title, uint32_t width, uint32_t height);
@@ -31,6 +34,8 @@ namespace Engine {
         GLFWwindow *getHandler();
 
         void takeContext();
+
+        Renderer &getRenderer();
     };
 }
 

@@ -6,9 +6,8 @@
 namespace Engine {
     class Panel {
     protected:
-        Window window;
-
         bool mainPanel = false;
+        std::string name;
     public:
         explicit Panel(const std::string &name = "Panel", bool mainPanel = false);
 

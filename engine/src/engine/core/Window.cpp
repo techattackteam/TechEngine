@@ -2,7 +2,7 @@
 #include "Window.hpp"
 
 namespace Engine {
-    Window::Window(std::string title, uint32_t width, uint32_t height) {
+    Window::Window(std::string title, uint32_t width, uint32_t height) : renderer(width, height) {
         this->title = title;
         this->width = width;
         this->height = height;
@@ -29,7 +29,6 @@ namespace Engine {
 
     void Window::onUpdate() {
         glfwSwapBuffers(handler);
-        glfwPollEvents();
     }
 
     void Window::setVSync(bool enabled) {
@@ -50,5 +49,9 @@ namespace Engine {
 
     void Window::takeContext() {
         glfwMakeContextCurrent(handler);
+    }
+
+    Renderer &Window::getRenderer() {
+        return renderer;
     }
 }

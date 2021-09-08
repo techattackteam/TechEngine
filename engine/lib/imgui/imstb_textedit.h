@@ -1,11 +1,11 @@
 // [DEAR IMGUI]
-// This is a slightly modified version of stb_textedit.h 1.13. 
+// This is a slightly modified version of stb_textedit.h 1.13.
 // Those changes would need to be pushed into nothings/stb:
 // - Fix in stb_textedit_discard_redo (see https://github.com/nothings/stb/issues/321)
 // Grep for [DEAR IMGUI] to find the changes.
 
 // stb_textedit.h - v1.13  - public domain - Sean Barrett
-// Development of this library was sponsored by RAD TechAttack Tools
+// Development of this library was sponsored by RAD Game Tools
 //
 // This C header file implements the guts of a multi-line text-editing
 // widget; you implement display, word-wrapping, and low-level string
@@ -19,7 +19,7 @@
 // texts, as its performance does not scale and it has limited undo).
 //
 // Non-trivial behaviors are modelled after Windows text controls.
-// 
+//
 //
 // LICENSE
 //
@@ -87,7 +87,7 @@
 //
 //      STB_TEXTEDIT_POSITIONTYPE         small int type encoding a valid cursor position
 //      STB_TEXTEDIT_UNDOSTATECOUNT       the number of undo states to allow
-//      STB_TEXTEDIT_UNDOCHARCOUNT        the number of characters to store in the undo inBuffer
+//      STB_TEXTEDIT_UNDOCHARCOUNT        the number of characters to store in the undo buffer
 //
 //   If you don't define these, they are set to permissive types and
 //   moderate sizes. The undo system does no memory allocations, so
@@ -119,7 +119,7 @@
 //     STB_TEXTEDIT_CHARTYPE             the character type
 //     STB_TEXTEDIT_POSITIONTYPE         small type that is a valid cursor position
 //     STB_TEXTEDIT_UNDOSTATECOUNT       the number of undo states to allow
-//     STB_TEXTEDIT_UNDOCHARCOUNT        the number of characters to store in the undo inBuffer
+//     STB_TEXTEDIT_UNDOCHARCOUNT        the number of characters to store in the undo buffer
 //
 // Symbols you must define for implementation mode:
 //
@@ -181,10 +181,10 @@
 // then test for their presence in e.g. STB_TEXTEDIT_K_WORDLEFT. For example,
 // my Windows implementations add an additional CONTROL bit, and an additional KEYDOWN
 // bit. Then all of the STB_TEXTEDIT_K_ values bitwise-or in the KEYDOWN bit,
-// and I pass both WM_KEYDOWN and WM_CHAR inputEvents to the "key" function in the
-// API below. The control keys will only match WM_KEYDOWN inputEvents because of the
+// and I pass both WM_KEYDOWN and WM_CHAR events to the "key" function in the
+// API below. The control keys will only match WM_KEYDOWN events because of the
 // keydown bit I add, and STB_TEXTEDIT_KEYTOTEXT only tests for the KEYDOWN
-// bit so it only decodes WM_CHAR inputEvents.
+// bit so it only decodes WM_CHAR events.
 //
 // STB_TEXTEDIT_LAYOUTROW returns information about the shape of one displayed
 // row of characters assuming they start on the i'th character--the width and
@@ -217,23 +217,23 @@
 //          call this with the mouse x,y on a mouse down; it will update the cursor
 //          and reset the selection start/end to the cursor point. the x,y must
 //          be relative to the text widget, with (0,0) being the top left.
-//     
+//
 //      drag:
 //          call this with the mouse x,y on a mouse drag/up; it will update the
 //          cursor and the selection end point
-//     
+//
 //      cut:
 //          call this to delete the current selection; returns true if there was
-//          one. you should FIRST copy the current selection to the system paste inBuffer.
+//          one. you should FIRST copy the current selection to the system paste buffer.
 //          (To copy, just copy the current selection out of the string yourself.)
-//     
+//
 //      paste:
 //          call this to paste text at the current cursor point or over the current
 //          selection if there is one.
-//     
+//
 //      key:
 //          call this for keyboard inputs sent to the textfield. you can use it
-//          for "key down" inputEvents or for "translated" key inputEvents. if you need to
+//          for "key down" events or for "translated" key events. if you need to
 //          do both (as in Win32), or distinguish Unicode characters from control
 //          inputs, set a high bit to distinguish the two; then you can define the
 //          various definitions like STB_TEXTEDIT_K_LEFT have the is-key-event bit
@@ -241,7 +241,7 @@
 //          clear. STB_TEXTEDIT_KEYTYPE defaults to int, but you can #define it to
 //          anything other type you wante before including.
 //
-//     
+//
 //   When rendering, you can read the cursor position and selection state from
 //   the STB_TexteditState.
 //
@@ -716,9 +716,11 @@ static int stb_textedit_paste_internal(STB_TEXTEDIT_STRING *str, STB_TexteditSta
       state->has_preferred_x = 0;
       return 1;
    }
-   // remove the undo since we didn't actually insert the characters
-   if (state->undostate.undo_point)
-      --state->undostate.undo_point;
+   // [DEAR IMGUI]
+   //// remove the undo since we didn't actually insert the characters
+   //if (state->undostate.undo_point)
+   //   --state->undostate.undo_point;
+   // note: paste failure will leave deleted selection, may be restored with an undo (see https://github.com/nothings/stb/issues/734 for details)
    return 0;
 }
 
@@ -764,7 +766,7 @@ retry:
          state->insert_mode = !state->insert_mode;
          break;
 #endif
-         
+
       case STB_TEXTEDIT_K_UNDO:
          stb_text_undo(str, state);
          state->has_preferred_x = 0;
@@ -779,7 +781,7 @@ retry:
          // if currently there's a selection, move cursor to start of selection
          if (STB_TEXT_HAS_SELECTION(state))
             stb_textedit_move_to_first(state);
-         else 
+         else
             if (state->cursor > 0)
                --state->cursor;
          state->has_preferred_x = 0;
@@ -828,7 +830,7 @@ retry:
 
 #ifdef STB_TEXTEDIT_MOVEWORDRIGHT
       case STB_TEXTEDIT_K_WORDRIGHT:
-         if (STB_TEXT_HAS_SELECTION(state)) 
+         if (STB_TEXT_HAS_SELECTION(state))
             stb_textedit_move_to_last(str, state);
          else {
             state->cursor = STB_TEXTEDIT_MOVEWORDRIGHT(str, state->cursor);
@@ -922,7 +924,7 @@ retry:
          }
          break;
       }
-         
+
       case STB_TEXTEDIT_K_UP:
       case STB_TEXTEDIT_K_UP | STB_TEXTEDIT_K_SHIFT:
       case STB_TEXTEDIT_K_PGUP:
@@ -1014,7 +1016,7 @@ retry:
          }
          state->has_preferred_x = 0;
          break;
-         
+
 #ifdef STB_TEXTEDIT_K_TEXTSTART2
       case STB_TEXTEDIT_K_TEXTSTART2:
 #endif
@@ -1031,7 +1033,7 @@ retry:
          state->select_start = state->select_end = 0;
          state->has_preferred_x = 0;
          break;
-        
+
 #ifdef STB_TEXTEDIT_K_TEXTSTART2
       case STB_TEXTEDIT_K_TEXTSTART2 | STB_TEXTEDIT_K_SHIFT:
 #endif
@@ -1115,7 +1117,7 @@ retry:
 //
 //      Undo processing
 //
-// @OPTIMIZE: the undo/redo inBuffer should be circular
+// @OPTIMIZE: the undo/redo buffer should be circular
 
 static void stb_textedit_flush_redo(StbUndoState *state)
 {
@@ -1144,8 +1146,8 @@ static void stb_textedit_discard_undo(StbUndoState *state)
 
 // discard the oldest entry in the redo list--it's bad if this
 // ever happens, but because undo & redo have to store the actual
-// characters in different cases, the redo character inBuffer can
-// fill up even though the undo inBuffer didn't
+// characters in different cases, the redo character buffer can
+// fill up even though the undo buffer didn't
 static void stb_textedit_discard_redo(StbUndoState *state)
 {
    int k = STB_TEXTEDIT_UNDOSTATECOUNT-1;
@@ -1154,7 +1156,7 @@ static void stb_textedit_discard_redo(StbUndoState *state)
       // if the k'th undo state has characters, clean those up
       if (state->undo_rec[k].char_storage >= 0) {
          int n = state->undo_rec[k].insert_length, i;
-         // move the remaining redo character data to the end of the inBuffer
+         // move the remaining redo character data to the end of the buffer
          state->redo_char_point += n;
          STB_TEXTEDIT_memmove(state->undo_char + state->redo_char_point, state->undo_char + state->redo_char_point-n, (size_t) ((STB_TEXTEDIT_UNDOCHARCOUNT - state->redo_char_point)*sizeof(STB_TEXTEDIT_CHARTYPE)));
          // adjust the position of all the other records to account for above memmove
@@ -1162,7 +1164,7 @@ static void stb_textedit_discard_redo(StbUndoState *state)
             if (state->undo_rec[i].char_storage >= 0)
                state->undo_rec[i].char_storage += n;
       }
-      // now move all the redo records towards the end of the inBuffer; the first one is at 'redo_point'
+      // now move all the redo records towards the end of the buffer; the first one is at 'redo_point'
       // [DEAR IMGUI]
       size_t move_size = (size_t)((STB_TEXTEDIT_UNDOSTATECOUNT - state->redo_point - 1) * sizeof(state->undo_rec[0]));
       const char* buf_begin = (char*)state->undo_rec; (void)buf_begin;
@@ -1186,14 +1188,14 @@ static StbUndoRecord *stb_text_create_undo_record(StbUndoState *state, int numch
    if (state->undo_point == STB_TEXTEDIT_UNDOSTATECOUNT)
       stb_textedit_discard_undo(state);
 
-   // if the characters to store won't possibly fit in the inBuffer, we can't undo
+   // if the characters to store won't possibly fit in the buffer, we can't undo
    if (numchars > STB_TEXTEDIT_UNDOCHARCOUNT) {
       state->undo_point = 0;
       state->undo_char_point = 0;
       return NULL;
    }
 
-   // if we don't have enough free characters in the inBuffer, we have to make room
+   // if we don't have enough free characters in the buffer, we have to make room
    while (state->undo_char_point + numchars > STB_TEXTEDIT_UNDOCHARCOUNT)
       stb_textedit_discard_undo(state);
 
@@ -1410,38 +1412,38 @@ This software is available under 2 licenses -- choose whichever you prefer.
 ------------------------------------------------------------------------------
 ALTERNATIVE A - MIT License
 Copyright (c) 2017 Sean Barrett
-Permission is hereby granted, free of charge, to any person obtaining a copy of 
-this software and associated documentation files (the "Software"), to deal in 
-the Software without restriction, including without limitation the rights to 
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies 
-of the Software, and to permit persons to whom the Software is furnished to do 
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
 so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all 
+The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ------------------------------------------------------------------------------
 ALTERNATIVE B - Public Domain (www.unlicense.org)
 This is free and unencumbered software released into the public domain.
-Anyone is free to copy, modify, publish, use, compile, sell, or distribute this 
-software, either in source code form or as a compiled binary, for any purpose, 
+Anyone is free to copy, modify, publish, use, compile, sell, or distribute this
+software, either in source code form or as a compiled binary, for any purpose,
 commercial or non-commercial, and by any means.
-In jurisdictions that recognize copyright laws, the author or authors of this 
-software dedicate any and all copyright interest in the software to the public 
-domain. We make this dedication for the benefit of the public at large and to 
-the detriment of our heirs and successors. We intend this dedication to be an 
-overt act of relinquishment in perpetuity of all present and future rights to 
+In jurisdictions that recognize copyright laws, the author or authors of this
+software dedicate any and all copyright interest in the software to the public
+domain. We make this dedication for the benefit of the public at large and to
+the detriment of our heirs and successors. We intend this dedication to be an
+overt act of relinquishment in perpetuity of all present and future rights to
 this software under copyright law.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN 
-ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ------------------------------------------------------------------------------
 */

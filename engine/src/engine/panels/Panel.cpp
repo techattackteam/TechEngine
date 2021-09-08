@@ -1,18 +1,12 @@
 #include <iostream>
 #include "Panel.hpp"
 #include "../event/events/panels/PanelCreateEvent.hpp"
-#include "../../wrapper/Wrapper.hpp"
-#include "../event/events/window/WindowCloseEvent.hpp"
 
 namespace Engine {
-    Panel::Panel(const std::string &name, bool mainPanel) : window(name, 800, 600) {
+    Panel::Panel(const std::string &name, bool mainPanel) {
         EventDispatcher::getInstance().dispatch(new PanelCreateEvent(this));
         this->mainPanel = mainPanel;
-
-        glfwSetWindowUserPointer(window.getHandler(), this);
-        glfwSetWindowCloseCallback(window.getHandler(), [](GLFWwindow *handler) {
-            Engine::dispatchEvent(new WindowCloseEvent((Panel *) (glfwGetWindowUserPointer(handler))));
-        });
+        this->name = name;
     }
 
     Panel::~Panel() {

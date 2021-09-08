@@ -8,8 +8,7 @@ namespace Engine {
             onWindowCloseEvent((WindowCloseEvent *) (event));
         });
 
-        panel2 = new ImGuiPanel("Test");
-        panel = new ImGuiPanel("Test");
+        new RendererPanel();
     }
 
     Engine::App::~App() {
@@ -21,8 +20,6 @@ namespace Engine {
             eventDispatcher.syncEventManager.execute();
             stateMachineManager.update();
             onUpdate();
-
-
             panelsManager.update();
         }
     }
@@ -32,6 +29,6 @@ namespace Engine {
         if (event->getPanel()->isMainPanel()) {
             running = false;
         }
-        panelsManager.unregisterPanel(event->getPanel());
+        panelsManager.unregisterAllPanels();
     }
 }

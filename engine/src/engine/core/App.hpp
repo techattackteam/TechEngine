@@ -15,10 +15,6 @@ namespace Engine {
         bool running = true;
 
         unsigned int vertexArray, vertexBuffer, indexBuffer;
-
-        ImGuiPanel *panel;
-        ImGuiPanel *panel2;
-
     public:
         EventDispatcher eventDispatcher{};
         StateMachineManager stateMachineManager{};
