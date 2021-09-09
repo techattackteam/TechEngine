@@ -14,3 +14,5 @@
 
 
 #include "engine/panels/ImGuiPanel.hpp"
+
+#include "engine/scene/GameObject.hpp"

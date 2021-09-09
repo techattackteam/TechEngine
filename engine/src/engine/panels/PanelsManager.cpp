@@ -49,6 +49,7 @@ namespace Engine {
         ImGuiIO &io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+        io.ConfigViewportsNoAutoMerge = true;
 
         ImGui::StyleColorsDark();
 
@@ -61,5 +62,4 @@ namespace Engine {
         ImGui_ImplGlfw_InitForOpenGL(window.getHandler(), true);
         ImGui_ImplOpenGL3_Init("#version 410");
     }
-
 }
