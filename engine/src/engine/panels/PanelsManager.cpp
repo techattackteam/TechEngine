@@ -1,11 +1,21 @@
 #include <iostream>
 #include "PanelsManager.hpp"
 #include "RendererPanel.hpp"
+#include "InspectorPanel.hpp"
+
 
 namespace Engine {
     PanelsManager::PanelsManager() {
         EventDispatcher::getInstance().subscribe(PanelCreateEvent::eventType, [this](Event *event) {
             registerPanel((PanelCreateEvent *) event);
+        });
+
+        EventDispatcher::getInstance().subscribe(GameObjectCreateEvent::eventType, [this](Event *event) {
+            registerInspectorPanel((GameObjectCreateEvent *) event);
+        });
+
+        EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](Event *event) {
+
         });
     }
 
@@ -20,12 +30,21 @@ namespace Engine {
         rendererPanel->onUpdate();
     }
 
+
+    void PanelsManager::registerInspectorPanel(GameObjectCreateEvent *event) {
+        registerPanel(new InspectorPanel(event->getGameObject()));
+    }
+
     void PanelsManager::registerPanel(PanelCreateEvent *event) {
-        if (event->getPanel()->isMainPanel()) {
-            rendererPanel = (RendererPanel *) event->getPanel();
-            initImGui(((RendererPanel *) event->getPanel())->getWindow());
+        registerPanel(event->getPanel());
+    }
+
+    void PanelsManager::registerPanel(Panel *panel) {
+        if (panel->isMainPanel()) {
+            rendererPanel = (RendererPanel *) panel;
+            initImGui(((RendererPanel *) panel)->getWindow());
         } else {
-            imguiPanels.emplace_back((ImGuiPanel *) event->getPanel());
+            imguiPanels.emplace_back((ImGuiPanel *) panel);
         }
     }
 

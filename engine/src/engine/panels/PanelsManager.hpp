@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../event/events/gameObjects/GameObjectCreateEvent.hpp"
+#include "../event/events/gameObjects/GameObjectDestroyEvent.hpp"
 #include "Panel.hpp"
 #include "../../../lib/imgui/imgui.h"
 #include "../../../lib/imgui/imgui_impl_opengl3.h"
@@ -27,6 +29,9 @@ namespace Engine {
     private:
         static void initImGui(Window &window);
 
+        void registerInspectorPanel(GameObjectCreateEvent *event);
+
+        void registerPanel(Panel *panel);
     };
 }
 
