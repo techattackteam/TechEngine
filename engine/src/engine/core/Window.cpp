@@ -2,7 +2,7 @@
 #include "Window.hpp"
 
 namespace Engine {
-    Window::Window(std::string title, uint32_t width, uint32_t height) : renderer(width, height) {
+    Window::Window(std::string title, uint32_t width, uint32_t height) {
         this->title = title;
         this->width = width;
         this->height = height;
@@ -19,6 +19,8 @@ namespace Engine {
         glEnable(GL_CULL_FACE);
         glDepthMask(GL_TRUE);
         glCullFace(GL_BACK);
+
+        renderer.init(width, height);
     }
 
 
@@ -29,6 +31,7 @@ namespace Engine {
 
     void Window::onUpdate() {
         glfwSwapBuffers(handler);
+        glfwPollEvents();
     }
 
     void Window::setVSync(bool enabled) {

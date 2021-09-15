@@ -1,19 +1,27 @@
 #pragma once
+
+#include "VertexArray.hpp"
+#include "ShadersManager.hpp"
+
 namespace Engine {
     class Renderer {
     private:
+        uint32_t id = 1;
         float width, height;
 
+        VertexArray vertexArray;
+        VertexBuffer vertexBuffer;
+        ShadersManager shadersManager;
     public:
-        Renderer(float width, float height);
+        Renderer() = default;
 
-        void pollEvents();
+        void init(float width, float height);
 
-        void ImGuiPipeline();
+        void ImGuiPipeline() const;
 
         void renderPipeline();
 
-        void beginImGuiFrame();
+        static void beginImGuiFrame();
     };
 }
 
