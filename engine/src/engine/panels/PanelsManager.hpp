@@ -14,8 +14,9 @@ namespace Engine {
     class PanelsManager {
     private:
         std::vector<ImGuiPanel *> imguiPanels;
-        RendererPanel *rendererPanel;
     public:
+        RendererPanel *rendererPanel;
+
         PanelsManager();
 
         void update();

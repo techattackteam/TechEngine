@@ -1,9 +1,8 @@
 #include "GLFW.hpp"
 #include "Renderer.hpp"
-#include "../../../lib/imgui/imgui.h"
-#include "../../../lib/imgui/imgui_impl_opengl3.h"
-#include "../../../lib/imgui/imgui_impl_glfw.h"
 #include "../scene/Scene.hpp"
+#include "ErrorCatcher.hpp"
+
 
 namespace Engine {
     void Renderer::init(float width, float height) {
@@ -12,16 +11,31 @@ namespace Engine {
         vertexArray.init(id);
         vertexBuffer.init(id, 10000000 * sizeof(Vertex));
         vertexArray.addNewBuffer(vertexBuffer);
-        shadersManager = ShadersManager();
+        shadersManager.init();
+
     }
 
     void Renderer::renderPipeline() {
+        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
         shadersManager.changeActiveShader("geometry");
-        shadersManager.getActiveShader()->setUniformMatrix4f("projection", Scene::getInstance().mainCamera->getProjectionMatrix());
-        shadersManager.getActiveShader()->setUniformMatrix4f("view", Scene::getInstance().mainCamera->getViewMatrix());
+        //shadersManager.getActiveShader()->setUniformMatrix4f("projection", Scene::getInstance().mainCamera->getProjectionMatrix());
+        //shadersManager.getActiveShader()->setUniformMatrix4f("view", Scene::getInstance().mainCamera->getViewMatrix());
+        vertexBuffer.bind();
+        vertexArray.bind();
+
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
-            shadersManager.getActiveShader()->setUniformMatrix4f("model", gameObject->getModelMatrix());
+            if (gameObject->hasComponent<MeshComponent>()) {
+                //shadersManager.getActiveShader()->setUniformMatrix4f("model", gameObject->getModelMatrix());
+                auto *meshComponent = gameObject->getComponent<MeshComponent>();
+                flushMeshData(meshComponent);
+                GlCall(glDrawArrays(GL_TRIANGLES, 0, meshComponent->getVertices().size()));
+            }
         }
+    }
+
+    void Renderer::flushMeshData(MeshComponent *meshComponent) {
+        vertexBuffer.addData(meshComponent->getVertices().data(), meshComponent->getVertices().size() * sizeof(Vertex), 0);
     }
 
     void Renderer::beginImGuiFrame() {
@@ -45,6 +59,5 @@ namespace Engine {
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
     }
-
 
 }

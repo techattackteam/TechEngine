@@ -28,7 +28,7 @@ namespace Engine {
         delete (event->getGameObject());
     }
 
-    void Scene::onUpdate() {
+    void Scene::update() {
         for (auto element: gameObjects) {
             element->update();
         }

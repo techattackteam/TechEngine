@@ -6,6 +6,7 @@
 #include "../../../lib/imgui/imgui.h"
 #include "../../../lib/imgui/imgui_impl_opengl3.h"
 #include "../../../lib/imgui/imgui_impl_glfw.h"
+#include <glm/glm.hpp>
 
 namespace Engine {
     class GameObject {
@@ -14,21 +15,37 @@ namespace Engine {
     public:
         bool showInfoPanel = false;
 
-        GameObject(bool showInfoPanel = true);
+        explicit GameObject(bool showInfoPanel = true);
 
         template<typename C>
-        void addComponent();
+        void addComponent() {
+            if (!components.contains(C::getName())) {
+                C *component = new C();
+                components[C::getName()] = component;
+            }
+        }
 
-        template<typename C, typename A>
-        void addComponent(A args...);
-
-        void removeComponent(ComponentName &name);
+        template<typename C, typename... A>
+        void addComponent(A ...args) {
+            if (!components.contains(C::getName())) {
+                C *component = new C(args...);
+                components[C::getName()] = component;
+            }
+        }
 
         template<typename C>
-        bool hasComponent();
+        void removeComponent() {
+        }
 
         template<typename C>
-        bool getComponent();
+        bool hasComponent() {
+            return components.contains(C::getName());
+        }
+
+        template<class C>
+        C *getComponent() {
+            return (C *) components[C::getName()];
+        }
 
         //void enableComponent(Component &component);
 

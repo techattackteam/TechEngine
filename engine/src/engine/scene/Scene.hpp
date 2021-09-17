@@ -3,8 +3,8 @@
 #include <list>
 #include "../event/events/gameObjects/GameObjectCreateEvent.hpp"
 #include "../event/events/gameObjects/GameObjectDestroyEvent.hpp"
-#include "GameObject.hpp"
 #include "../components/CameraComponent.hpp"
+#include "GameObject.hpp"
 
 namespace Engine {
     class Scene {
@@ -13,7 +13,7 @@ namespace Engine {
 
         Scene();
 
-        void onUpdate();
+        void update();
 
         CameraComponent *mainCamera;
 

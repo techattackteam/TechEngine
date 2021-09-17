@@ -6,6 +6,7 @@
 #include "../panels/PanelsManager.hpp"
 #include "../panels/ImGuiPanel.hpp"
 #include "../panels/RendererPanel.hpp"
+#include "../scene/Scene.hpp"
 
 #pragma once
 
@@ -16,9 +17,10 @@ namespace Engine {
 
         unsigned int vertexArray, vertexBuffer, indexBuffer;
     public:
-        EventDispatcher eventDispatcher{};
-        StateMachineManager stateMachineManager{};
-        PanelsManager panelsManager{};
+        EventDispatcher eventDispatcher;
+        StateMachineManager stateMachineManager;
+        PanelsManager panelsManager;
+        Scene scene;
 
         App();
 

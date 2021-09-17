@@ -14,9 +14,14 @@ namespace Engine {
     public:
         explicit Component(ComponentName name);
 
+        virtual ~Component();
+
         virtual void getInfo() = 0;
 
-        ComponentName &getName();
+        ComponentName &getName() {
+            return name;
+        };
+
     };
 }
 

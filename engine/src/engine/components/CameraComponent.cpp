@@ -1,5 +1,7 @@
 #include <glm/ext/matrix_clip_space.hpp>
+#include <glm/ext/matrix_transform.hpp>
 #include "CameraComponent.hpp"
+#include "TransformComponent.hpp"
 
 
 namespace Engine {
@@ -18,7 +20,7 @@ namespace Engine {
     }
 
     void CameraComponent::updateViewMatrix() {
-
+        glm::lookAt(((TransformComponent *) gameObject->getComponent<TransformComponent>())->getPosition(), glm::vec3(0, 1, 0), glm::vec3(0, 0, 0));
     }
 
     glm::mat4 Engine::CameraComponent::getViewMatrix() {

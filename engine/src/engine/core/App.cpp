@@ -20,7 +20,9 @@ namespace Engine {
             eventDispatcher.syncEventManager.execute();
             stateMachineManager.update();
             onUpdate();
+            scene.update();
             panelsManager.update();
+
         }
     }
 

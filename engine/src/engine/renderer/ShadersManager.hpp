@@ -19,6 +19,8 @@ public:
     Shader *getActiveShader();
 
     void unBindShader();
+
+    void init();
 };
 
 

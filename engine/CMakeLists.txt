@@ -19,3 +19,7 @@ include_directories(${Boost_INCLUDE_DIR})
 link_libraries(${Boost_LIBRARIES} -lboost_serialization)
 add_library(engine SHARED ${Engine_Sources} ${Engine_Headers})
 target_link_libraries(engine -lglut -lglfw -lGLEW -lGL -lGLU imgui glm::glm)
+
+add_custom_target(copy_shaders ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/engine/res/ ${CMAKE_CURRENT_BINARY_DIR}/res)

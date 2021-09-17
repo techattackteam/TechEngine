@@ -36,6 +36,9 @@ namespace Engine {
 
         bool isMainCamera();
 
+        static ComponentName getName() {
+            return "Camera";
+        }
     };
 }
 

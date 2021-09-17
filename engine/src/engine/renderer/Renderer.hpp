@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../components/MeshComponent.hpp"
 #include "VertexArray.hpp"
 #include "ShadersManager.hpp"
 
@@ -9,9 +10,6 @@ namespace Engine {
         uint32_t id = 1;
         float width, height;
 
-        VertexArray vertexArray;
-        VertexBuffer vertexBuffer;
-        ShadersManager shadersManager;
     public:
         Renderer() = default;
 
@@ -21,7 +19,13 @@ namespace Engine {
 
         void renderPipeline();
 
+        void flushMeshData(MeshComponent *meshComponent);
+
         static void beginImGuiFrame();
+
+        ShadersManager shadersManager;
+        VertexArray vertexArray;
+        VertexBuffer vertexBuffer;
     };
 }
 

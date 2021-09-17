@@ -3,6 +3,7 @@
 #include "states/StateB.hpp"
 #include "world/World.hpp"
 #include "GameObjectTest.hpp"
+#include "QuadMeshTest.hpp"
 
 #include <Engine.hpp>
 #include <memory>
@@ -13,6 +14,7 @@ TechAttack::TechAttack() {
     World world = World();
     world.test();
     new GameObjectTest();
+    new QuadMeshTest();
 }
 
 void TechAttack::onUpdate() {

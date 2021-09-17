@@ -16,3 +16,4 @@
 #include "engine/panels/ImGuiPanel.hpp"
 
 #include "engine/scene/GameObject.hpp"
+#include "engine/components/MeshComponent.hpp"

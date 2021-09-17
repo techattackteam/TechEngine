@@ -12,6 +12,14 @@ namespace Engine {
         return scale * transform;
     }
 
+    glm::vec3 TransformComponent::getPosition() {
+        return position;
+    }
+
+    void TransformComponent::setPosition(glm::vec3 vec1) {
+        position = vec1;
+    }
+
     void TransformComponent::getInfo() {
         if (ImGui::CollapsingHeader(name.c_str())) {
             ImGui::Text("   Position:");

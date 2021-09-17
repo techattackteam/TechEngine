@@ -4,11 +4,16 @@
 #include "GLFW.hpp"
 
 #pragma once
+
 struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
     glm::vec2 textCoords;
     glm::vec4 color;
+
+    inline Vertex(glm::vec3 position, glm::vec3 normal, glm::vec4 color) : position(position), normal(normal), textCoords(0, 0), color(color) {
+
+    };
 };
 
 class VertexBuffer {

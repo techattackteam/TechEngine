@@ -17,6 +17,14 @@ namespace Engine {
         glm::mat4 getModelMatrix();
 
         void getInfo() override;
+
+        glm::vec3 getPosition();
+
+        void setPosition(glm::vec3 vec1);
+
+        static ComponentName getName() {
+            return "Transform";
+        }
     };
 }
 
