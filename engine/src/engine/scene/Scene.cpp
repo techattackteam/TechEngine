@@ -30,7 +30,7 @@ namespace Engine {
 
     void Scene::update() {
         for (auto element: gameObjects) {
-            element->update();
+            element->fixUpdate(); //FOR NOW
         }
     }
 

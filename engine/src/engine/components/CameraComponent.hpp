@@ -10,8 +10,8 @@ namespace Engine {
 
         GameObject *gameObject;
 
-        glm::mat4 viewMatrix;
-        glm::mat4 projectionMatrix;
+        glm::mat4 viewMatrix = glm::mat4(1.0f);
+        glm::mat4 projectionMatrix = glm::mat4(1.0f);
 
         float fov;
         float nearPlane;
@@ -23,6 +23,8 @@ namespace Engine {
         explicit CameraComponent(GameObject *gameObject);
 
         CameraComponent(GameObject *gameObject, bool mainCamera);
+
+        void update() override;
 
         void updateProjectionMatrix();
 
@@ -39,6 +41,8 @@ namespace Engine {
         static ComponentName getName() {
             return "Camera";
         }
+
+
     };
 }
 

@@ -17,11 +17,13 @@ namespace Engine {
 
         void getInfo() override;
 
+        void createCube();
+
         static ComponentName getName() {
             return "Mesh";
+
         }
 
-        void createCube();
     };
 }
 

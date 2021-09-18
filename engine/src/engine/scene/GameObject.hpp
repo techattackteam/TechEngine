@@ -12,14 +12,16 @@ namespace Engine {
     class GameObject {
     private:
         std::unordered_map<ComponentName, Component *> components;
+
+        std::string name;
     public:
         bool showInfoPanel = false;
 
-        explicit GameObject(bool showInfoPanel = true);
+        explicit GameObject(std::string name, bool showInfoPanel = true);
 
         template<typename C>
         void addComponent() {
-            if (!components.contains(C::getName())) {
+            if (!hasComponent<C>()) {
                 C *component = new C();
                 components[C::getName()] = component;
             }
@@ -27,7 +29,7 @@ namespace Engine {
 
         template<typename C, typename... A>
         void addComponent(A ...args) {
-            if (!components.contains(C::getName())) {
+            if (!hasComponent<C>()) {
                 C *component = new C(args...);
                 components[C::getName()] = component;
             }
@@ -51,9 +53,13 @@ namespace Engine {
 
         //void disableComponent(Component &component);
 
+        virtual void fixUpdate();
+
         virtual void update();
 
         glm::mat4 getModelMatrix();
+
+        std::string getName();
 
         void showInfo();
 

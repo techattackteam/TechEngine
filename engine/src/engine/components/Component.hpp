@@ -16,11 +16,14 @@ namespace Engine {
 
         virtual ~Component();
 
+        virtual void update();
+
         virtual void getInfo() = 0;
 
         ComponentName &getName() {
             return name;
         };
+
 
     };
 }

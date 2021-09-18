@@ -24,15 +24,19 @@ namespace Engine {
 
     void MeshComponent::createCube() {
         glm::vec3 position = glm::vec3(0, 0, 0);
-        glm::vec4 color = glm::vec4(1, 1, 1, 1);
+        glm::vec4 color = glm::vec4(0, 1, 1, 1);
         glm::vec3 normal = glm::vec3(1, 1, 1);
         glm::vec3 v1 = glm::vec3(0.5f, 0.5f, 0.0f);
         glm::vec3 v2 = glm::vec3(0.5f, -0.5f, 0.0f);
         glm::vec3 v3 = glm::vec3(-0.5f, 0.5f, 0.0f);
+        glm::vec3 v4 = glm::vec3(-0.5f, -0.5f, 0.0f);
         //glm::vec3 normal = getVerticesNormals(v1, v2, v3);
         createVertex(position, v3, normal, color);
         createVertex(position, v2, normal, color);
         createVertex(position, v1, normal, color);
 
+        createVertex(position, v4, normal, color);
+        createVertex(position, v3, normal, color);
+        createVertex(position, v2, normal, color);
     }
 }

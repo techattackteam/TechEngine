@@ -1,7 +1,7 @@
 #include "InspectorPanel.hpp"
 
 namespace Engine {
-    InspectorPanel::InspectorPanel(GameObject *gameObject) : ImGuiPanel("Inspector") {
+    InspectorPanel::InspectorPanel(GameObject *gameObject) : ImGuiPanel("Inspector: " + gameObject->getName()) {
         this->gameObject = gameObject;
     }
 

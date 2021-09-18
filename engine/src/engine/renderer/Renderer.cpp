@@ -19,14 +19,14 @@ namespace Engine {
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         shadersManager.changeActiveShader("geometry");
-        //shadersManager.getActiveShader()->setUniformMatrix4f("projection", Scene::getInstance().mainCamera->getProjectionMatrix());
-        //shadersManager.getActiveShader()->setUniformMatrix4f("view", Scene::getInstance().mainCamera->getViewMatrix());
+        shadersManager.getActiveShader()->setUniformMatrix4f("projection", Scene::getInstance().mainCamera->getProjectionMatrix());
+        shadersManager.getActiveShader()->setUniformMatrix4f("view", Scene::getInstance().mainCamera->getViewMatrix());
         vertexBuffer.bind();
         vertexArray.bind();
 
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
             if (gameObject->hasComponent<MeshComponent>()) {
-                //shadersManager.getActiveShader()->setUniformMatrix4f("model", gameObject->getModelMatrix());
+                shadersManager.getActiveShader()->setUniformMatrix4f("model", gameObject->getModelMatrix());
                 auto *meshComponent = gameObject->getComponent<MeshComponent>();
                 flushMeshData(meshComponent);
                 GlCall(glDrawArrays(GL_TRIANGLES, 0, meshComponent->getVertices().size()));

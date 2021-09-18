@@ -15,10 +15,10 @@ namespace Engine {
         if (glewInit() != GLEW_OK) {
             std::cout << "Error!" << std::endl;
         }
-        glEnable(GL_DEPTH_TEST);
+/*        glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
         glDepthMask(GL_TRUE);
-        glCullFace(GL_BACK);
+        glCullFace(GL_BACK);*/
 
         renderer.init(width, height);
     }
