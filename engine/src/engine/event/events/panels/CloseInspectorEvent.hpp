@@ -4,20 +4,20 @@
 #include "../../../scene/GameObject.hpp"
 
 namespace Engine {
-    class GameObjectCreateEvent : public Event {
+    class CloseInspectorEvent : public Event {
     private:
         GameObject *gameObject;
     public:
+        inline static EventType eventType = EventType("CloseInspectorEvent", SYNC);
 
-        inline static EventType eventType = EventType("GameObjectCreateEvent", SYNC);
-
-        explicit GameObjectCreateEvent(GameObject *gameObject) : Event(eventType) {
+        explicit CloseInspectorEvent(GameObject *gameObject) : Event(eventType) {
             this->gameObject = gameObject;
-        }
+        };
 
         GameObject *getGameObject() {
             return gameObject;
-        }
+        };
+
     };
 }
 

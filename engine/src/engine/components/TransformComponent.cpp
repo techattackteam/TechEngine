@@ -3,15 +3,14 @@
 #include "../../../lib/imgui/imgui_internal.h"
 
 namespace Engine {
-    TransformComponent::TransformComponent(const std::string &gameObjectName)
-            : position(glm::vec3(0, 0, 0)), rotation(glm::vec3(0, 0, 0)), scale(glm::vec3(1, 1, 1)), Component("Transform") {
-        this->gameObjectName = gameObjectName;
+    TransformComponent::TransformComponent()
+            : position(glm::vec3(0, 0, 0)), rotation(glm::vec3(0, 0, 0)), scale(glm::vec3(1, 1, 1)), model(glm::mat4(1.0f)), Component("Transform") {
     }
 
     glm::mat4 TransformComponent::getModelMatrix() {
-        glm::mat4 transform = glm::translate(glm::mat4(1), position);
+        glm::mat4 transform = glm::translate(model, position);
         //rotation;
-        glm::mat4 scale = glm::scale(glm::mat4(1), this->scale);
+        glm::mat4 scale = glm::scale(model, this->scale);
         return scale * transform;
     }
 

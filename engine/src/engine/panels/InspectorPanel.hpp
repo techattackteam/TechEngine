@@ -1,16 +1,18 @@
 #pragma once
 
-#include "ImGuiPanel.hpp"
+#include "CustomPanel.hpp"
 #include "../scene/GameObject.hpp"
 
 namespace Engine {
-    class InspectorPanel : public ImGuiPanel {
+    class InspectorPanel : public Panel {
     private:
         GameObject *gameObject;
     public:
         explicit InspectorPanel(GameObject *gameObject);
 
         void onUpdate() override;
+
+        GameObject *getGameObject();
 
     };
 }

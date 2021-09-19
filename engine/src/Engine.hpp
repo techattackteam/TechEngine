@@ -13,7 +13,7 @@
 #include "engine/stateMachine/StateMachine.hpp"
 
 
-#include "engine/panels/ImGuiPanel.hpp"
+#include "engine/panels/CustomPanel.hpp"
 
 #include "engine/scene/GameObject.hpp"
 #include "engine/components/MeshComponent.hpp"

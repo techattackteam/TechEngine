@@ -9,10 +9,13 @@ namespace Engine {
         inline static EventType eventType = EventType("SMDeleteEvent", ASYNC);
         StateMachine *stateMachine;
 
-        SMDeleteEvent(StateMachine *stateMachine);
+        explicit SMDeleteEvent(StateMachine *stateMachine) : Engine::Event(eventType) {
+            this->stateMachine = stateMachine;
+        }
 
-        ~SMDeleteEvent() override;
+        ~SMDeleteEvent() override = default;
     };
+
 }
 
 

@@ -9,9 +9,11 @@ namespace Engine {
         inline static EventType eventType = EventType("SMRegisterEvent", ASYNC);
         StateMachine *stateMachine;
 
-        explicit SMRegisterEvent(StateMachine *stateMachine);
+        explicit SMRegisterEvent(StateMachine *stateMachine) : Engine::Event(eventType) {
+            this->stateMachine = stateMachine;
+        }
 
-        ~SMRegisterEvent() override;
+        ~SMRegisterEvent() override = default;
     };
 }
 

@@ -10,9 +10,13 @@ namespace Engine {
     public:
         static inline EventType eventType = EventType("GameObjectDestroyEvent", SYNC);
 
-        GameObjectDestroyEvent(GameObject *gameObject);
+        explicit GameObjectDestroyEvent(GameObject *gameObject) : Event(eventType) {
+            this->gameObject = gameObject;
+        }
 
-        GameObject* getGameObject();
+        GameObject *getGameObject() {
+            return gameObject;
+        }
     };
 }
 

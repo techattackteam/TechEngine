@@ -4,7 +4,7 @@
 #include "../stateMachine/StateMachineManager.hpp"
 #include "../event/events/window/WindowCloseEvent.hpp"
 #include "../panels/PanelsManager.hpp"
-#include "../panels/ImGuiPanel.hpp"
+#include "../panels/CustomPanel.hpp"
 #include "../panels/RendererPanel.hpp"
 #include "../scene/Scene.hpp"
 

@@ -12,10 +12,9 @@ namespace Engine {
         glm::vec3 position;
         glm::vec3 rotation;
         glm::vec3 scale;
+        glm::mat4 model;
 
-        std::string gameObjectName;
-
-        TransformComponent(const std::string &gameObjectName);
+        TransformComponent();
 
         glm::mat4 getModelMatrix();
 
@@ -29,9 +28,7 @@ namespace Engine {
             return "Transform";
         }
 
-        void DrawDrag();
-
-        void drawDrag(const std::string &name, glm::vec3 &value);
+        static void drawDrag(const std::string &name, glm::vec3 &value);
     };
 }
 

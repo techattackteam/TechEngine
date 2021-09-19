@@ -7,14 +7,14 @@
 #include "Panel.hpp"
 
 namespace Engine {
-    class ImGuiPanel : public Panel {
+    class CustomPanel : public Panel {
     private:
 
     public:
 
-        explicit ImGuiPanel(const std::string &name);
+        explicit CustomPanel(const std::string &name);
 
-        ~ImGuiPanel() override;
+        ~CustomPanel() override;
 
         virtual void onUpdate() = 0;
     };

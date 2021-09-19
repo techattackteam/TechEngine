@@ -9,8 +9,9 @@ namespace Engine {
     public:
         inline static EventType eventType = EventType("InputEvent", SYNC);
 
-        InputEvent();
+        InputEvent() : Event(eventType) {
 
+        }
     };
 }
 

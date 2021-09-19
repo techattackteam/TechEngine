@@ -7,8 +7,6 @@ namespace Engine {
         eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event *event) {
             onWindowCloseEvent((WindowCloseEvent *) (event));
         });
-
-        new RendererPanel();
     }
 
     Engine::App::~App() {
@@ -22,7 +20,6 @@ namespace Engine {
             onUpdate();
             scene.update();
             panelsManager.update();
-
         }
     }
 

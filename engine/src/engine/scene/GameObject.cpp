@@ -8,7 +8,7 @@
 namespace Engine {
     GameObject::GameObject(std::string name, bool showInfoPanel) : name(std::move(name)) {
         this->showInfoPanel = showInfoPanel;
-        addComponent<TransformComponent>(name);
+        addComponent<TransformComponent>();
         EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
     }
 

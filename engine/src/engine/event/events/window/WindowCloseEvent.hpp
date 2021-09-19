@@ -11,11 +11,15 @@ namespace Engine {
 
         inline static EventType eventType = EventType("WindowCloseEvent", SYNC);
 
-        WindowCloseEvent(Panel *window);
+        explicit WindowCloseEvent(Panel *window) : Event(eventType) {
+            panel = window;
+        };
 
         ~WindowCloseEvent() override = default;
 
-        Panel *getPanel();
+        Panel *getPanel() {
+            return panel;
+        }
 
     };
 }

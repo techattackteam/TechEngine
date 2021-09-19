@@ -4,6 +4,7 @@
 #include "world/World.hpp"
 #include "GameObjectTest.hpp"
 #include "QuadMeshTest.hpp"
+#include "NewObjectPanel.hpp"
 
 #include <Engine.hpp>
 #include <memory>
@@ -14,7 +15,8 @@ TechAttack::TechAttack() {
     World world = World();
     world.test();
     new GameObjectTest();
-    new QuadMeshTest();
+    new QuadMeshTest(-1);
+    new NewObjectPanel();
 }
 
 void TechAttack::onUpdate() {
