@@ -29,7 +29,7 @@ namespace Engine {
     }
 
     void CameraComponent::updateViewMatrix() {
-        viewMatrix = glm::lookAt(gameObject->getComponent<TransformComponent>()->getPosition(), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+        viewMatrix = glm::inverse(gameObject->getComponent<TransformComponent>()->getModelMatrix());
     }
 
     glm::mat4 Engine::CameraComponent::getViewMatrix() {

@@ -8,7 +8,7 @@
 // Sean Barrett 2014
 //
 // Useful for e.g. packing rectangular textures into an atlas.
-// Does not do rotation.
+// Does not do orientation.
 //
 // Not necessarily the awesomest packing method, but better than
 // the totally naive one in stb_truetype (which is primarily what
