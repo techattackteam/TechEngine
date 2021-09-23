@@ -10,7 +10,11 @@ namespace Engine {
         glfwSetWindowCloseCallback(window.getHandler(), [](GLFWwindow *handler) {
             Engine::dispatchEvent(new WindowCloseEvent((Panel *) (glfwGetWindowUserPointer(handler))));
         });
+        glfwSetKeyCallback(window.getHandler(), [](GLFWwindow *handler, int key, int scancode, int action, int mods) {
+            Window::windowKeyInput(key, action);
+        });
     }
+
 
     void RendererPanel::onUpdate() {
         window.getRenderer().renderPipeline();

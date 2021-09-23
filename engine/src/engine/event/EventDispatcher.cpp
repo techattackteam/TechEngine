@@ -9,7 +9,7 @@ namespace Engine {
         if (eventType.getTiming() == EventTiming::SYNC) {
             syncEventManager.subscribe(eventType.getName(), callback);
         } else if (eventType.getTiming() == EventTiming::ASYNC) {
-            asyncEventManager.subscribe(eventType.getName(), callback);
+            syncEventManager.subscribe(eventType.getName(), callback); //TODO: Fix async events
         }
     }
 
@@ -27,7 +27,7 @@ namespace Engine {
                 syncEventManager.dispatch(event);
                 break;
             case EventTiming::ASYNC:
-                asyncEventManager.dispatch(event);
+                syncEventManager.dispatch(event);
                 break;
         }
     }

@@ -1,5 +1,9 @@
 #include <iostream>
 #include "Window.hpp"
+#include "../event/EventDispatcher.hpp"
+#include "../event/events/input/KeyPressedEvent.hpp"
+#include "../event/events/input/KeyReleasedEvent.hpp"
+#include "../event/events/input/KeyHoldEvent.hpp"
 
 namespace Engine {
     Window::Window(std::string title, uint32_t width, uint32_t height) {
@@ -50,11 +54,25 @@ namespace Engine {
         return title;
     }
 
-    void Window::takeContext() {
-        glfwMakeContextCurrent(handler);
+    void Window::windowKeyInput(int key, int action) {
+        switch (action) {
+            case GLFW_PRESS: {
+                EventDispatcher::getInstance().dispatch(new KeyPressedEvent(Key(Key::getKeyCode(key))));
+                break;
+            }
+            case GLFW_RELEASE: {
+                EventDispatcher::getInstance().dispatch(new KeyReleasedEvent(Key(Key::getKeyCode(key))));
+                break;
+            }
+            case GLFW_REPEAT: {
+                EventDispatcher::getInstance().dispatch(new KeyHoldEvent(Key(Key::getKeyCode(key))));
+            }
+        }
     }
 
     Renderer &Window::getRenderer() {
         return renderer;
     }
+
+
 }

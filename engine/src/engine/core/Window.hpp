@@ -33,7 +33,7 @@ namespace Engine {
 
         GLFWwindow *getHandler();
 
-        void takeContext();
+        static void windowKeyInput(int key, int action);
 
         Renderer &getRenderer();
     };

@@ -5,11 +5,14 @@
 
 class TechAttack : public Engine::App {
 public:
-    Engine::StateMachine stateMachine {};
+    Engine::StateMachine stateMachine{};
 
     TechAttack();
 
     void onUpdate();
+
+
+    void keyPressedEvent(Engine::Event *event);
 };
 
 

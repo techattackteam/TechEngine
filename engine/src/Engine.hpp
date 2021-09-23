@@ -6,7 +6,9 @@
 #include "engine/core/App.hpp"
 
 
-#include "engine/event/events/input/InputEvent.hpp"
+#include "engine/event/events/input/KeyPressedEvent.hpp"
+#include "engine/event/events/input/KeyReleasedEvent.hpp"
+#include "engine/event/events/input/KeyHoldEvent.hpp"
 
 
 #include "engine/stateMachine/State.hpp"
