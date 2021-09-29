@@ -7,7 +7,7 @@ class QuadMeshTest : Engine::GameObject {
 public:
     QuadMeshTest(int name);
 
-    std::string createaName(int name);
+    std::string createName(int name);
 };
 
 

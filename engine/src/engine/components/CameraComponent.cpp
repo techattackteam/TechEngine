@@ -8,15 +8,13 @@ namespace Engine {
     CameraComponent::CameraComponent(GameObject *gameObject) : Component("Camera") {
         this->gameObject = gameObject;
         mainCamera = false;
-
-        updateProjectionMatrix();
-        updateViewMatrix();
+        update();
     }
 
     CameraComponent::CameraComponent(GameObject *gameObject, bool mainCamera) : Component("Camera") {
         this->gameObject = gameObject;
         this->mainCamera = mainCamera;
-
+        update();
     }
 
     void CameraComponent::update() {

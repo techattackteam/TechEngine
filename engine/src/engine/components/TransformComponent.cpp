@@ -1,5 +1,4 @@
 #include "TransformComponent.hpp"
-#include <cmath>
 #include <iostream>
 
 namespace Engine {
@@ -34,7 +33,6 @@ namespace Engine {
         model[3][3] = 1;
         this->scale = scale;
     }
-
 
     glm::vec3 TransformComponent::getPosition() const {
         return position;

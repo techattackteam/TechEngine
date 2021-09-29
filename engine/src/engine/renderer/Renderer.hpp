@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../components/MeshComponent.hpp"
+#include "../components/MeshRendererComponent.hpp"
 #include "VertexArray.hpp"
 #include "ShadersManager.hpp"
 
@@ -19,7 +19,7 @@ namespace Engine {
 
         void renderPipeline();
 
-        void flushMeshData(MeshComponent *meshComponent);
+        void flushMeshData(MeshRendererComponent *meshComponent);
 
         static void beginImGuiFrame();
 

@@ -37,7 +37,7 @@ namespace Engine {
     std::vector<float> Scene::getVertices() {
         std::vector<float> buffer;
         for (GameObject *gameObject: gameObjects) {
-            //if (gameObject->hasComponent<MeshComponent>()) {
+            //if (gameObject->hasComponent<MeshRendererComponent>()) {
 
             //}
         }

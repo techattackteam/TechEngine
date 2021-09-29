@@ -17,7 +17,7 @@ namespace Engine {
 
     void Renderer::renderPipeline() {
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         shadersManager.changeActiveShader("geometry");
         shadersManager.getActiveShader()->setUniformMatrix4f("projection", Scene::getInstance().mainCamera->getProjectionMatrix());
         shadersManager.getActiveShader()->setUniformMatrix4f("view", Scene::getInstance().mainCamera->getViewMatrix());
@@ -25,17 +25,17 @@ namespace Engine {
         vertexArray.bind();
 
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
-            if (gameObject->hasComponent<MeshComponent>()) {
+            if (gameObject->hasComponent<MeshRendererComponent>()) {
                 shadersManager.getActiveShader()->setUniformMatrix4f("model", gameObject->getModelMatrix());
-                auto *meshComponent = gameObject->getComponent<MeshComponent>();
+                auto *meshComponent = gameObject->getComponent<MeshRendererComponent>();
                 flushMeshData(meshComponent);
-                GlCall(glDrawArrays(GL_TRIANGLES, 0, meshComponent->getVertices().size()));
+                GlCall(glDrawArrays(GL_TRIANGLES, 0, meshComponent->getMesh().getVertices().size()));
             }
         }
     }
 
-    void Renderer::flushMeshData(MeshComponent *meshComponent) {
-        vertexBuffer.addData(meshComponent->getVertices().data(), meshComponent->getVertices().size() * sizeof(Vertex), 0);
+    void Renderer::flushMeshData(MeshRendererComponent *meshComponent) {
+        vertexBuffer.addData(meshComponent->getMesh().getVertices().data(), meshComponent->getMesh().getVertices().size() * sizeof(Vertex), 0);
     }
 
     void Renderer::beginImGuiFrame() {

@@ -18,4 +18,7 @@
 #include "engine/panels/CustomPanel.hpp"
 
 #include "engine/scene/GameObject.hpp"
-#include "engine/components/MeshComponent.hpp"
+#include "engine/components/MeshRendererComponent.hpp"
+
+#include "engine/mesh/Mesh.hpp"
+#include "engine/mesh/CubeMesh.hpp"
