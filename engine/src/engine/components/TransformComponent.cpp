@@ -6,13 +6,13 @@ namespace Engine {
             : position(glm::vec3(0, 0, 0)), orientation(glm::vec3(0, 0, 0)), scale(glm::vec3(1, 1, 1)), model(glm::mat4(1.0f)), Component("Transform") {
     }
 
-    glm::mat4 TransformComponent::getModelMatrix() const {
+    glm::mat4 TransformComponent::getModelMatrix() {
+        model = glm::translate(glm::mat4(1), position) * glm::toMat4(glm::quat(glm::radians(orientation))) * glm::scale(glm::mat4(1), scale);
         return model;
     }
 
     void TransformComponent::translate(glm::vec3 vector) {
         position += vector;
-        model = glm::translate(model, vector);
     }
 
     void TransformComponent::translateTo(glm::vec3 position) {
@@ -20,18 +20,29 @@ namespace Engine {
         this->position = position;
     }
 
+    /*Rotate using Euler angles in Degrees*/
     void TransformComponent::rotate(glm::vec3 rotation) {
         glm::vec3 newRotation = rotation - this->orientation;
-        model *= glm::toMat4(glm::quat(glm::radians(newRotation)));
+        //model *= glm::toMat4(glm::quat(glm::radians(newRotation)));
         this->orientation = rotation;
     }
 
+    /*Rotate using Quaternions in Degrees*/
+    void TransformComponent::rotate(glm::quat quaternion) {
+        rotate(glm::degrees(glm::eulerAngles(quaternion)));
+    }
+
     void TransformComponent::setScale(glm::vec3 scale) {
-        model[0][0] = scale[0];
+        /*model[0][0] = scale[0];
         model[1][1] = scale[1];
         model[2][2] = scale[2];
-        model[3][3] = 1;
+        model[3][3] = 1;*/
         this->scale = scale;
+    }
+
+    void TransformComponent::lookAt(glm::vec3 lookPosition) {
+        glm::mat4 lootAtMatrix = glm::lookAt(position, lookPosition, glm::vec3(0, 1, 0));
+        rotate(glm::toQuat(lootAtMatrix));
     }
 
     glm::vec3 TransformComponent::getPosition() const {
@@ -78,10 +89,10 @@ namespace Engine {
                 translateTo(newPosition);
             }
 
-            glm::vec3 newRotation = orientation;
-            drawDrag("Rotation", newRotation);
-            if (newRotation != orientation) {
-                rotate(newRotation);
+            glm::vec3 newOrientation = orientation;
+            drawDrag("Rotation", newOrientation);
+            if (newOrientation != orientation) {
+                rotate(newOrientation);
             }
 
             glm::vec3 newScale = scale;

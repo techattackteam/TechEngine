@@ -20,7 +20,7 @@ namespace Engine {
 
         TransformComponent();
 
-        glm::mat4 getModelMatrix() const;
+        glm::mat4 getModelMatrix();
 
         void getInfo() override;
 
@@ -42,6 +42,10 @@ namespace Engine {
         void rotate(glm::vec3 rotation);
 
         void setScale(glm::vec3 vector);
+
+        void rotate(glm::quat quaternion);
+
+        void lookAt(glm::vec3 position);
     };
 }
 
