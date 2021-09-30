@@ -22,8 +22,6 @@ namespace Engine {
 
     /*Rotate using Euler angles in Degrees*/
     void TransformComponent::rotate(glm::vec3 rotation) {
-        glm::vec3 newRotation = rotation - this->orientation;
-        //model *= glm::toMat4(glm::quat(glm::radians(newRotation)));
         this->orientation = rotation;
     }
 
@@ -33,10 +31,6 @@ namespace Engine {
     }
 
     void TransformComponent::setScale(glm::vec3 scale) {
-        /*model[0][0] = scale[0];
-        model[1][1] = scale[1];
-        model[2][2] = scale[2];
-        model[3][3] = 1;*/
         this->scale = scale;
     }
 

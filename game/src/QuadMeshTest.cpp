@@ -11,5 +11,4 @@ std::string QuadMeshTest::createName(int name) {
     std::ostringstream oss;
     oss << "QuadMesh " << name;
     return oss.str();
-
 }

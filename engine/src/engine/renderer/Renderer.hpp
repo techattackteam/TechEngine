@@ -8,12 +8,12 @@ namespace Engine {
     class Renderer {
     private:
         uint32_t id = 1;
-        float width, height;
+        int width, height;
 
     public:
         Renderer() = default;
 
-        void init(float width, float height);
+        void init(int width, int height);
 
         void ImGuiPipeline() const;
 

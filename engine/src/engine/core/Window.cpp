@@ -6,14 +6,14 @@
 #include "../event/events/input/KeyHoldEvent.hpp"
 
 namespace Engine {
-    Window::Window(std::string title, uint32_t width, uint32_t height) {
+    Window::Window(std::string title, int width, int height) {
         this->title = title;
         this->width = width;
         this->height = height;
 
         glfwInit();
 
-        handler = glfwCreateWindow((int) width, (int) height, title.c_str(), nullptr, nullptr);
+        handler = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
         glfwMakeContextCurrent(handler);
 
         if (glewInit() != GLEW_OK) {

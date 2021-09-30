@@ -13,7 +13,7 @@ namespace Engine {
         glm::mat4 viewMatrix = glm::mat4(1.0f);
         glm::mat4 projectionMatrix = glm::mat4(1.0f);
 
-        float fov;
+        float fov = 90;
         float nearPlane;
         float farPlane;
 
@@ -41,8 +41,6 @@ namespace Engine {
         static ComponentName getName() {
             return "Camera";
         }
-
-
     };
 }
 

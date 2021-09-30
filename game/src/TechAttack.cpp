@@ -1,7 +1,7 @@
 #include "TechAttack.hpp"
 #include "states/StateA.hpp"
 #include "states/StateB.hpp"
-#include "GameObjectTest.hpp"
+#include "Camera.hpp"
 #include "QuadMeshTest.hpp"
 #include "NewObjectPanel.hpp"
 
@@ -11,7 +11,7 @@
 TechAttack::TechAttack() {
     stateMachine.createState(StateA::stateName, std::make_shared<StateA>());
     stateMachine.createState(StateB::stateName, std::make_shared<StateB>());
-    new GameObjectTest();
+    new Camera();
     new QuadMeshTest(-1);
     new NewObjectPanel();
 

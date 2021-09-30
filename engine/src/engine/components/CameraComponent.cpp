@@ -23,15 +23,13 @@ namespace Engine {
     }
 
     void CameraComponent::updateProjectionMatrix() {
-        projectionMatrix = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+        projectionMatrix = glm::perspective(glm::radians(fov), 16.0f / 9.0f, 0.1f, 50.0f);
     }
 
     void CameraComponent::updateViewMatrix() {
+        //TEMP FIX
+        gameObject->getComponent<TransformComponent>()->setScale(glm::vec3(1, 1, 1));
         glm::mat4 model = gameObject->getComponent<TransformComponent>()->getModelMatrix();
-        model[0][0] = 1;
-        model[1][1] = 1;
-        model[2][2] = 1;
-        model[3][3] = 1;
         viewMatrix = glm::inverse(model);
     }
 
@@ -45,7 +43,18 @@ namespace Engine {
 
     void CameraComponent::getInfo() {
         if (ImGui::CollapsingHeader(name.c_str())) {
+            ImGui::PushID(name.c_str());
+            ImGui::PushMultiItemsWidths(1, ImGui::CalcItemWidth());
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
 
+            ImGui::Text(" Fov ");
+            ImGui::SameLine();
+            ImGui::DragFloat("##FOV", &fov, 0.1f, 45.0f, 120.0f, "%.2f");
+            ImGui::NewLine();
+            ImGui::PopItemWidth();
+            ImGui::PopItemWidth();
+            ImGui::PopStyleVar();
+            ImGui::PopID();
         }
 
     }

@@ -9,8 +9,8 @@ namespace Engine {
     class Window {
     private:
         std::string title;
-        uint32_t width;
-        uint32_t height;
+        int width;
+        int height;
 
         bool vSync = false;
 
@@ -19,7 +19,7 @@ namespace Engine {
         Renderer renderer;
 
     public:
-        Window(std::string title, uint32_t width, uint32_t height);
+        Window(std::string title, int width, int height);
 
         ~Window();
 

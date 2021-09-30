@@ -5,7 +5,7 @@
 
 
 namespace Engine {
-    void Renderer::init(float width, float height) {
+    void Renderer::init(int width, int height) {
         this->width = width;
         this->height = height;
         vertexArray.init(id);
@@ -48,8 +48,8 @@ namespace Engine {
         // Rendering
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        glViewport(0, 0, width, height);
-        glClear(GL_COLOR_BUFFER_BIT);
+        //glViewport(0, 0, width, height);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 

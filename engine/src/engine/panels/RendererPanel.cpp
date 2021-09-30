@@ -3,7 +3,7 @@
 #include "../event/events/window/WindowCloseEvent.hpp"
 
 namespace Engine {
-    RendererPanel::RendererPanel() : window("Main", 800, 600), Panel("Game", true) {
+    RendererPanel::RendererPanel() : window("Main", 1280, 720), Panel("Game", true) {
         this->mainPanel = true;
 
         glfwSetWindowUserPointer(window.getHandler(), this);
