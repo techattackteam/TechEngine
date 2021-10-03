@@ -7,7 +7,7 @@ namespace Engine {
     }
 
     glm::mat4 TransformComponent::getModelMatrix() {
-        model = glm::translate(glm::mat4(1), position) * glm::toMat4(glm::quat(glm::radians(orientation))) * glm::scale(glm::mat4(1), scale);
+        model = glm::toMat4(glm::quat(glm::radians(orientation))) * glm::scale(glm::mat4(1), scale) * glm::translate(glm::mat4(1), position);
         return model;
     }
 
