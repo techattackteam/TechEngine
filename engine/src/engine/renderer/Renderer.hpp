@@ -10,7 +10,11 @@ namespace Engine {
         uint32_t id = 1;
         int width, height;
 
+        ShadersManager shadersManager;
+        VertexArray vertexArray;
+        VertexBuffer vertexBuffer;
     public:
+
         Renderer() = default;
 
         void init(int width, int height);
