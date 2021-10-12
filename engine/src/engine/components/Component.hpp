@@ -5,16 +5,18 @@
 #include "../../../lib/imgui/imgui_impl_opengl3.h"
 #include "../../../lib/imgui/imgui_impl_glfw.h"
 
+using ComponentName = std::string;
 namespace Engine {
-    using ComponentName = std::string;
 
     class Component {
     protected:
         ComponentName name;
     public:
-        explicit Component(ComponentName name);
+        Component(ComponentName name);
 
         virtual ~Component();
+
+        virtual void fixedUpdate();
 
         virtual void update();
 
@@ -23,8 +25,6 @@ namespace Engine {
         ComponentName &getName() {
             return name;
         };
-
-
     };
 }
 

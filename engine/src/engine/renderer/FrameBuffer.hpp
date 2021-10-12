@@ -7,9 +7,10 @@ class FrameBuffer {
 private:
     uint32_t id;
 
-    uint32_t depthMap;
 public:
-    explicit FrameBuffer(uint32_t id);
+    uint32_t depthMap;
+
+    FrameBuffer() = default;
 
     ~FrameBuffer();
 
@@ -22,6 +23,8 @@ public:
     void clear();
 
     void bindShadowMapTexture();
+
+    void init(uint32_t i);
 };
 
 

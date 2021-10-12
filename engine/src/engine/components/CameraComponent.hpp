@@ -2,6 +2,7 @@
 
 #include "Component.hpp"
 #include "../scene/GameObject.hpp"
+#include "TransformComponent.hpp"
 #include <glm/glm.hpp>
 
 namespace Engine {
@@ -24,7 +25,7 @@ namespace Engine {
 
         CameraComponent(GameObject *gameObject, bool mainCamera);
 
-        void update() override;
+        void fixedUpdate() override;
 
         void updateProjectionMatrix();
 
@@ -37,6 +38,8 @@ namespace Engine {
         void getInfo() override;
 
         bool isMainCamera();
+
+        TransformComponent &getTransform();
 
         static ComponentName getName() {
             return "Camera";

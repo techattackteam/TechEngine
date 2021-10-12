@@ -3,6 +3,8 @@
 #include "../components/MeshRendererComponent.hpp"
 #include "VertexArray.hpp"
 #include "ShadersManager.hpp"
+#include "FrameBuffer.hpp"
+#include "../components/DirectionalLightComponent.hpp"
 
 namespace Engine {
     class Renderer {
@@ -13,6 +15,10 @@ namespace Engine {
         ShadersManager shadersManager;
         VertexArray vertexArray;
         VertexBuffer vertexBuffer;
+        FrameBuffer shadowMapBuffer;
+
+        //TEMP FOR JUST ONE LIGHT
+        DirectionalLightComponent *light;
     public:
 
         Renderer() = default;
@@ -27,9 +33,15 @@ namespace Engine {
 
         static void beginImGuiFrame();
 
-        ShadersManager shadersManager;
-        VertexArray vertexArray;
-        VertexBuffer vertexBuffer;
+    private:
+        void lightPass();
+
+        void geometryPass();
+
+        void renderPass();
+
+
+        void renderQuad();
     };
 }
 

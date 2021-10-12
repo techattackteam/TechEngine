@@ -7,6 +7,8 @@ namespace Engine {
         eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event *event) {
             onWindowCloseEvent((WindowCloseEvent *) (event));
         });
+
+        timer.init();
     }
 
     Engine::App::~App() {
@@ -14,9 +16,21 @@ namespace Engine {
     }
 
     void App::run() {
+        float deltaTick = 1.0f / 20.0f;
+        float accumulator = 0;
         while (running) {
-            eventDispatcher.syncEventManager.execute();
+            float deltaFrame = timer.getDeltaTime();
+            accumulator += deltaFrame;
             stateMachineManager.update();
+            while (accumulator >= deltaTick) {
+                eventDispatcher.syncEventManager.execute();
+                scene.fixedUpdate();
+                onFixedUpdate();
+                timer.updateTicks();
+                accumulator -= deltaTick;
+            }
+            float alpha = accumulator / deltaTick;
+
             onUpdate();
             scene.update();
             panelsManager.update();

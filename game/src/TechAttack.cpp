@@ -4,6 +4,7 @@
 #include "Camera.hpp"
 #include "QuadMeshTest.hpp"
 #include "NewObjectPanel.hpp"
+#include "Light.hpp"
 
 #include <Engine.hpp>
 #include <memory>
@@ -14,6 +15,7 @@ TechAttack::TechAttack() {
     new Camera();
     new QuadMeshTest(-1);
     new NewObjectPanel();
+    new Light();
 
     Engine::subscribeEvent(Engine::KeyHoldEvent::eventType, [this](Engine::Event *event) {
         keyPressedEvent(event);
@@ -26,6 +28,10 @@ void TechAttack::keyPressedEvent(Engine::Event *event) {
 
 void TechAttack::onUpdate() {
     stateMachine.changeStates(StateB::stateName);
+}
+
+void TechAttack::onFixedUpdate() {
+
 }
 
 Engine::App *Engine::createApp() {

@@ -15,11 +15,15 @@ namespace Engine {
 
         void update();
 
+        void fixedUpdate();
+
         CameraComponent *mainCamera;
 
         static Scene &getInstance();
 
         std::list<GameObject *> getGameObjects();
+
+        bool hasMainCamera();
 
     private:
         std::list<GameObject *> gameObjects;
@@ -27,9 +31,6 @@ namespace Engine {
         void onGOCreate(GameObjectCreateEvent *event);
 
         void onGODestroy(GameObjectDestroyEvent *event);
-
-        std::vector<float> getVertices();
-
     };
 }
 

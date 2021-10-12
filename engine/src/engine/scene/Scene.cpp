@@ -30,18 +30,14 @@ namespace Engine {
 
     void Scene::update() {
         for (auto element: gameObjects) {
-            element->fixUpdate(); //FOR NOW
+            element->update();
         }
     }
 
-    std::vector<float> Scene::getVertices() {
-        std::vector<float> buffer;
-        for (GameObject *gameObject: gameObjects) {
-            //if (gameObject->hasComponent<MeshRendererComponent>()) {
-
-            //}
+    void Scene::fixedUpdate() {
+        for (auto element: gameObjects) {
+            element->fixUpdate();
         }
-        return buffer;
     }
 
     Scene &Scene::getInstance() {
@@ -50,5 +46,9 @@ namespace Engine {
 
     std::list<GameObject *> Scene::getGameObjects() {
         return gameObjects;
+    }
+
+    bool Scene::hasMainCamera() {
+        return mainCamera != nullptr;
     }
 }

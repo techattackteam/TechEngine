@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <string>
@@ -6,9 +7,12 @@
 #include "../../../lib/imgui/imgui.h"
 #include "../../../lib/imgui/imgui_impl_opengl3.h"
 #include "../../../lib/imgui/imgui_impl_glfw.h"
+#include "../components/TransformComponent.hpp"
 #include <glm/glm.hpp>
 
 namespace Engine {
+    using ComponentName = std::string;
+
     class GameObject {
     private:
         std::unordered_map<ComponentName, Component *> components;
@@ -63,7 +67,7 @@ namespace Engine {
 
         void showInfo();
 
-
+        Engine::TransformComponent &getTransform();
     };
 }
 

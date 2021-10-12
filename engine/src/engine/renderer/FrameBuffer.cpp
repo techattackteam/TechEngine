@@ -1,10 +1,11 @@
 #include "FrameBuffer.hpp"
 #include "ErrorCatcher.hpp"
 
-FrameBuffer::FrameBuffer(uint32_t id) {
+void FrameBuffer::init(uint32_t id) {
     this->id = id;
     GlCall(glGenFramebuffers(1, &this->id));
 }
+
 
 FrameBuffer::~FrameBuffer() {
     GlCall(glDeleteFramebuffers(1, &this->id));
@@ -43,5 +44,4 @@ void FrameBuffer::bindShadowMapTexture() {
     GlCall(glActiveTexture(GL_TEXTURE0));
     GlCall(glBindTexture(GL_TEXTURE_2D, depthMap));
 }
-
 

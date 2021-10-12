@@ -7,6 +7,7 @@
 #include "../panels/CustomPanel.hpp"
 #include "../panels/RendererPanel.hpp"
 #include "../scene/Scene.hpp"
+#include "Timer.hpp"
 
 #pragma once
 
@@ -21,6 +22,7 @@ namespace Engine {
         StateMachineManager stateMachineManager;
         PanelsManager panelsManager;
         Scene scene;
+        Timer timer;
 
         App();
 
@@ -29,6 +31,8 @@ namespace Engine {
         void run();
 
         virtual void onUpdate() = 0;
+
+        virtual void onFixedUpdate() = 0;
 
     private:
 

@@ -13,6 +13,8 @@ public:
 
 
     void keyPressedEvent(Engine::Event *event);
+
+    void onFixedUpdate();
 };
 
 

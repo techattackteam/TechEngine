@@ -12,7 +12,6 @@
 namespace Engine {
     class TransformComponent : public Component {
     public:
-
         glm::vec3 position;
         glm::vec3 orientation;
         glm::vec3 scale;

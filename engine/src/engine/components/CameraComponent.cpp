@@ -1,6 +1,5 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
-#include <iostream>
 #include "CameraComponent.hpp"
 #include "TransformComponent.hpp"
 
@@ -14,10 +13,10 @@ namespace Engine {
     CameraComponent::CameraComponent(GameObject *gameObject, bool mainCamera) : Component("Camera") {
         this->gameObject = gameObject;
         this->mainCamera = mainCamera;
-        update();
+        fixedUpdate();
     }
 
-    void CameraComponent::update() {
+    void CameraComponent::fixedUpdate() {
         updateViewMatrix();
         updateProjectionMatrix();
     }
@@ -61,6 +60,10 @@ namespace Engine {
 
     bool CameraComponent::isMainCamera() {
         return mainCamera;
+    }
+
+    TransformComponent &CameraComponent::getTransform() {
+        gameObject->getComponent<TransformComponent>();
     }
 
 

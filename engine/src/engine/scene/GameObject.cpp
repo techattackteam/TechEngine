@@ -3,7 +3,6 @@
 #include <utility>
 #include "../event/events/gameObjects/GameObjectCreateEvent.hpp"
 #include "../event/EventDispatcher.hpp"
-#include "../components/TransformComponent.hpp"
 
 namespace Engine {
     GameObject::GameObject(std::string name, bool showInfoPanel) : name(std::move(name)) {
@@ -14,12 +13,14 @@ namespace Engine {
 
     void GameObject::fixUpdate() {
         for (auto element: components) {
-            element.second->update();
+            element.second->fixedUpdate();
         }
     }
 
     void GameObject::update() {
-
+        for (auto element: components) {
+            element.second->update();
+        }
     }
 
     void GameObject::showInfo() {
@@ -34,5 +35,9 @@ namespace Engine {
 
     std::string GameObject::getName() {
         return name;
+    }
+
+    TransformComponent &GameObject::getTransform() {
+        return *getComponent<TransformComponent>();
     }
 }
