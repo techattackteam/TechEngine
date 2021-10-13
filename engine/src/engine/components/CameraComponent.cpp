@@ -4,14 +4,12 @@
 #include "TransformComponent.hpp"
 
 namespace Engine {
-    CameraComponent::CameraComponent(GameObject *gameObject) : Component("Camera") {
-        this->gameObject = gameObject;
+    CameraComponent::CameraComponent(GameObject *gameObject) : Component(gameObject, "Camera") {
         mainCamera = false;
         update();
     }
 
-    CameraComponent::CameraComponent(GameObject *gameObject, bool mainCamera) : Component("Camera") {
-        this->gameObject = gameObject;
+    CameraComponent::CameraComponent(GameObject *gameObject, bool mainCamera) : Component(gameObject, "Camera") {
         this->mainCamera = mainCamera;
         fixedUpdate();
     }
@@ -61,10 +59,5 @@ namespace Engine {
     bool CameraComponent::isMainCamera() {
         return mainCamera;
     }
-
-    TransformComponent &CameraComponent::getTransform() {
-        gameObject->getComponent<TransformComponent>();
-    }
-
 
 }

@@ -3,11 +3,12 @@
 #include <utility>
 #include "../event/events/gameObjects/GameObjectCreateEvent.hpp"
 #include "../event/EventDispatcher.hpp"
+#include "../components/TransformComponent.hpp"
 
 namespace Engine {
     GameObject::GameObject(std::string name, bool showInfoPanel) : name(std::move(name)) {
         this->showInfoPanel = showInfoPanel;
-        addComponent<TransformComponent>();
+        addComponent<TransformComponent>(this);
         EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
     }
 
@@ -40,4 +41,5 @@ namespace Engine {
     TransformComponent &GameObject::getTransform() {
         return *getComponent<TransformComponent>();
     }
+
 }

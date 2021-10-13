@@ -3,7 +3,7 @@
 #include <utility>
 
 namespace Engine {
-    Component::Component(ComponentName name) : name(std::move(name)) {
+    Component::Component(GameObject *gameObject, ComponentName name) : gameObject(gameObject), name(std::move(name)) {
 
     }
 
@@ -17,6 +17,10 @@ namespace Engine {
 
     void Component::update() {
 
+    }
+
+    TransformComponent &Component::getTransform() {
+        return gameObject->getTransform();
     }
 
 }

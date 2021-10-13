@@ -8,9 +8,6 @@
 namespace Engine {
     class CameraComponent : public Component {
     private:
-
-        GameObject *gameObject;
-
         glm::mat4 viewMatrix = glm::mat4(1.0f);
         glm::mat4 projectionMatrix = glm::mat4(1.0f);
 
@@ -38,8 +35,6 @@ namespace Engine {
         void getInfo() override;
 
         bool isMainCamera();
-
-        TransformComponent &getTransform();
 
         static ComponentName getName() {
             return "Camera";

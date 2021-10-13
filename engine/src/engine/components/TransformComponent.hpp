@@ -17,7 +17,7 @@ namespace Engine {
         glm::vec3 scale;
         glm::mat4 model;
 
-        TransformComponent();
+        TransformComponent(GameObject *gameObject);
 
         glm::mat4 getModelMatrix();
 

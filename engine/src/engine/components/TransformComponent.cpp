@@ -2,8 +2,8 @@
 #include <iostream>
 
 namespace Engine {
-    TransformComponent::TransformComponent()
-            : position(glm::vec3(0, 0, 0)), orientation(glm::vec3(0, 0, 0)), scale(glm::vec3(1, 1, 1)), model(glm::mat4(1.0f)), Component("Transform") {
+    TransformComponent::TransformComponent(GameObject *gameObject)
+            : position(glm::vec3(0, 0, 0)), orientation(glm::vec3(0, 0, 0)), scale(glm::vec3(1, 1, 1)), model(glm::mat4(1.0f)), Component(gameObject, "Transform") {
     }
 
     glm::mat4 TransformComponent::getModelMatrix() {

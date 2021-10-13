@@ -4,12 +4,12 @@
 
 namespace Engine {
 
-    DirectionalLightComponent::DirectionalLightComponent(GameObject *gameObject) : gameObject(*gameObject), Component("DirectionalLight") {
+    DirectionalLightComponent::DirectionalLightComponent(GameObject *gameObject) : Component(gameObject, "DirectionalLight") {
 
     }
 
     void DirectionalLightComponent::fixedUpdate() {
-        viewMatrix = glm::lookAt(Scene::getInstance().mainCamera->getTransform().getPosition(), gameObject.getTransform().getOrientation(), glm::vec3(0, 0, 0));
+        viewMatrix = glm::lookAt(Scene::getInstance().mainCamera->getTransform().getPosition(), getTransform().getOrientation(), glm::vec3(0, 0, 0));
     }
 
     glm::mat4 &DirectionalLightComponent::getProjectionMatrix() {

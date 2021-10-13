@@ -4,15 +4,19 @@
 #include "../../../lib/imgui/imgui.h"
 #include "../../../lib/imgui/imgui_impl_opengl3.h"
 #include "../../../lib/imgui/imgui_impl_glfw.h"
+#include "../scene/GameObject.hpp"
 
 using ComponentName = std::string;
+
 namespace Engine {
+    class GameObject;
 
     class Component {
     protected:
         ComponentName name;
+        GameObject *gameObject;
     public:
-        Component(ComponentName name);
+        Component(GameObject *gameObject, ComponentName name);
 
         virtual ~Component();
 
@@ -25,6 +29,8 @@ namespace Engine {
         ComponentName &getName() {
             return name;
         };
+
+        TransformComponent &getTransform();
     };
 }
 

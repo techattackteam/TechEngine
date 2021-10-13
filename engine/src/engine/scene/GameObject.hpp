@@ -3,37 +3,32 @@
 
 #include <string>
 #include <unordered_map>
-#include "../components/Component.hpp"
 #include "../../../lib/imgui/imgui.h"
 #include "../../../lib/imgui/imgui_impl_opengl3.h"
 #include "../../../lib/imgui/imgui_impl_glfw.h"
-#include "../components/TransformComponent.hpp"
 #include <glm/glm.hpp>
 
 namespace Engine {
     using ComponentName = std::string;
+
+    class Component;
+
+    class TransformComponent;
 
     class GameObject {
     private:
         std::unordered_map<ComponentName, Component *> components;
 
         std::string name;
+
     public:
         bool showInfoPanel = false;
 
-        explicit GameObject(std::string name, bool showInfoPanel = true);
-
-        template<typename C>
-        void addComponent() {
-            if (!hasComponent<C>()) {
-                C *component = new C();
-                components[C::getName()] = component;
-            }
-        }
+        GameObject(std::string name, bool showInfoPanel = true);
 
         template<typename C, typename... A>
         void addComponent(A ...args) {
-            if (!hasComponent<C>()) {
+            if (!hasComponent<C>() && C::getName) {
                 C *component = new C(args...);
                 components[C::getName()] = component;
             }
@@ -53,10 +48,6 @@ namespace Engine {
             return (C *) components[C::getName()];
         }
 
-        //void enableComponent(Component &component);
-
-        //void disableComponent(Component &component);
-
         virtual void fixUpdate();
 
         virtual void update();
@@ -67,7 +58,7 @@ namespace Engine {
 
         void showInfo();
 
-        Engine::TransformComponent &getTransform();
+        TransformComponent &getTransform();
     };
 }
 

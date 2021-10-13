@@ -3,7 +3,7 @@
 #include <sstream>
 
 QuadMeshTest::QuadMeshTest(int name) : Engine::GameObject(createName(name), false) {
-    addComponent<Engine::MeshRendererComponent>(new Engine::CubeMesh());
+    addComponent<Engine::MeshRendererComponent>(this, new Engine::CubeMesh());
 
 }
 

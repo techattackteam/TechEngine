@@ -3,7 +3,7 @@
 
 namespace Engine {
 
-    MeshRendererComponent::MeshRendererComponent(Mesh *mesh) : mesh(*mesh), Component("MeshRenderer") {
+    MeshRendererComponent::MeshRendererComponent(GameObject *gameObject, Mesh *mesh) : mesh(*mesh), Component(gameObject, "MeshRenderer") {
     }
 
     void MeshRendererComponent::changeMesh(Mesh &mesh) {

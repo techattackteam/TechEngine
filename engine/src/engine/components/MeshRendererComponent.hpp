@@ -12,7 +12,7 @@ namespace Engine {
         TransformComponent *transform;
         Mesh &mesh;
     public:
-        MeshRendererComponent(Mesh *mesh);
+        MeshRendererComponent(GameObject *gameObject, Mesh *mesh);
 
         void changeMesh(Mesh &mesh);
 
