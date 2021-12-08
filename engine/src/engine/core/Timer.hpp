@@ -6,7 +6,7 @@ namespace Engine {
     class Timer {
     private:
         inline static Timer *instance;
-        std::chrono::high_resolution_clock::time_point startTime;
+        std::chrono::time_point<std::chrono::system_clock> startTime;
 
         double lastLoopTime{};
         float timeCount{};

@@ -43,12 +43,13 @@ uint32_t Shader::compileShader(uint32_t type, const std::string &source) {
     if (result == GL_FALSE) {
         int length;
         GlCall(glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &length));
-        char message[length];
+        char* message = new char[length];
         GlCall(glGetShaderInfoLog(shaderID, length, &length, message));
         std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertices " : "fragment ") << shaderName << " shader!"
                   << std::endl;
         std::cout << message << std::endl;
         GlCall(glDeleteShader(shaderID));
+        delete message;
         return -1;
     }
 

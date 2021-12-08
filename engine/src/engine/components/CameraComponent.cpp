@@ -2,6 +2,7 @@
 #include <glm/ext/matrix_transform.hpp>
 #include "CameraComponent.hpp"
 #include "TransformComponent.hpp"
+#include "imgui_internal.h"
 
 namespace Engine {
     CameraComponent::CameraComponent(GameObject *gameObject) : Component(gameObject, "Camera") {

@@ -3,7 +3,8 @@
 #include "RendererPanel.hpp"
 #include "InspectorPanel.hpp"
 #include "../event/events/panels/RegisterCustomPanel.hpp"
-
+#include <imgui_impl_opengl3.h>
+#include <imgui_impl_glfw.h>
 
 namespace Engine {
     PanelsManager::PanelsManager() {

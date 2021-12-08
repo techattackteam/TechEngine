@@ -1,10 +1,11 @@
 file(GLOB_RECURSE Engine_Sources CONFIGURE_DEPENDS "src/*.cpp")
 file(GLOB_RECURSE Engine_Headers "src/*.hpp")
 
-find_package(glm REQUIRED)
-find_package(Boost COMPONENTS program_options REQUIRED)
+find_package(GLEW REQUIRED)
+find_package(imgui CONFIG REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
 
-add_subdirectory(lib/imgui build)
 
 foreach (_headerFile ${Engine_Headers})
     get_filename_component(_dir ${_headerFile} PATH)
@@ -12,13 +13,9 @@ foreach (_headerFile ${Engine_Headers})
 endforeach ()
 list(REMOVE_DUPLICATES Engine_Include_Dirs)
 
-include_directories(${Boost_INCLUDE_DIR})
-link_directories(${Boost_LIBRARY_DIR})
-include_directories(${Boost_INCLUDE_DIR})
 
-link_libraries(${Boost_LIBRARIES} -lboost_serialization)
 add_library(engine SHARED ${Engine_Sources} ${Engine_Headers})
-target_link_libraries(engine -lglut -lglfw -lGLEW -lGL -lGLU imgui glm::glm)
+target_link_libraries(engine imgui::imgui GLEW::GLEW glfw glm::glm)
 
 add_custom_target(copy_shaders ALL
         COMMAND ${CMAKE_COMMAND} -E copy_directory
