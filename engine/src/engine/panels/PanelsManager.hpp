@@ -1,9 +1,7 @@
 #pragma once
 
 #include "Panel.hpp"
-#include "../../../lib/imgui/imgui.h"
-#include "../../../lib/imgui/imgui_impl_opengl3.h"
-#include "../../../lib/imgui/imgui_impl_glfw.h"
+#include <imgui.h>
 #include "../event/events/panels/OpenInspectorEvent.hpp"
 #include "../event/events/panels/CloseInspectorEvent.hpp"
 #include "RendererPanel.hpp"

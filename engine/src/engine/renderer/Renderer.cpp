@@ -2,6 +2,8 @@
 #include "Renderer.hpp"
 #include "../scene/Scene.hpp"
 #include "ErrorCatcher.hpp"
+#include "../../../lib/vcpkg/buildtrees/imgui/src/v1.85-b2b1e7c066.clean/backends/imgui_impl_opengl3.h"
+#include "../../../lib/vcpkg/buildtrees/imgui/src/v1.85-b2b1e7c066.clean/backends/imgui_impl_glfw.h"
 
 
 namespace Engine {
@@ -90,8 +92,8 @@ namespace Engine {
 
         ImGuiIO &io = ImGui::GetIO();
         GLFWwindow *backup_current_context = glfwGetCurrentContext();
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
+        //ImGui::UpdatePlatformWindows();
+        //ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
     }
 
