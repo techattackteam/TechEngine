@@ -1,0 +1,28 @@
+#include <string>
+#include <vector>
+
+#pragma once
+namespace Engine {
+    using StateName = std::string;
+
+    class State {
+    protected:
+        StateName stateName;
+
+        std::vector<StateName> transitions;
+
+    public:
+
+        explicit State(const StateName &stateName);
+
+        virtual ~State() = default;
+
+        virtual void enter() = 0;
+
+        virtual void leave() = 0;
+
+        StateName getStateName();
+
+        std::vector<StateName> getTransitions();
+    };
+}

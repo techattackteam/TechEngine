@@ -1,0 +1,45 @@
+#pragma once
+
+#include "Component.hpp"
+#include "../scene/GameObject.hpp"
+#include "TransformComponent.hpp"
+#include <glm/glm.hpp>
+
+namespace Engine {
+    class CameraComponent : public Component {
+    private:
+        glm::mat4 viewMatrix = glm::mat4(1.0f);
+        glm::mat4 projectionMatrix = glm::mat4(1.0f);
+
+        float fov = 90;
+        float nearPlane;
+        float farPlane;
+
+        bool mainCamera = false;
+
+    public:
+        explicit CameraComponent(GameObject *gameObject);
+
+        CameraComponent(GameObject *gameObject, bool mainCamera);
+
+        void fixedUpdate() override;
+
+        void updateProjectionMatrix();
+
+        void updateViewMatrix();
+
+        glm::mat4 getViewMatrix();
+
+        glm::mat4 getProjectionMatrix();
+
+        void getInfo() override;
+
+        bool isMainCamera();
+
+        static ComponentName getName() {
+            return "Camera";
+        }
+    };
+}
+
+
