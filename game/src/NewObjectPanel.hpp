@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Engine.hpp>
+#include <TechEngine.hpp>
 #include "QuadMeshTest.hpp"
 
 class NewObjectPanel : Engine::CustomPanel {

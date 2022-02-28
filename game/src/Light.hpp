@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/scene/GameObject.hpp>
+#include <TechEngine.hpp>
 
 class Light : public Engine::GameObject {
 public:

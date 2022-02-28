@@ -1,5 +1,5 @@
 #include "Wrapper.hpp"
-#include "../engine/event/EventDispatcher.hpp"
+#include "../event/EventDispatcher.hpp"
 
 namespace Engine {
     void dispatchEvent(Event *event) {

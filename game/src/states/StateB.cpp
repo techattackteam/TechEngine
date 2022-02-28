@@ -1,3 +1,4 @@
+#include <iostream>
 #include "StateB.hpp"
 
 StateB::StateB() : State("StateB") {
