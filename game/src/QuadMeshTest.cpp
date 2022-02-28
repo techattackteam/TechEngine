@@ -1,5 +1,4 @@
 #include "QuadMeshTest.hpp"
-#include <Engine.hpp>
 #include <sstream>
 
 QuadMeshTest::QuadMeshTest(int name) : Engine::GameObject(createName(name), false) {

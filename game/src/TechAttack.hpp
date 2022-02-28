@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Engine.hpp>
-#include <engine/core/EntryPoint.hpp>
+#include <TechEngine.hpp>
+#include <EntryPoint.hpp>
 
 class TechAttack : public Engine::App {
 public:
@@ -10,7 +10,6 @@ public:
     TechAttack();
 
     void onUpdate();
-
 
     void keyPressedEvent(Engine::Event *event);
 

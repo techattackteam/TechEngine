@@ -6,8 +6,9 @@
 #include "NewObjectPanel.hpp"
 #include "Light.hpp"
 
-#include <Engine.hpp>
+#include <TechEngine.hpp>
 #include <memory>
+#include <iostream>
 
 TechAttack::TechAttack() {
     stateMachine.createState(StateA::stateName, std::make_shared<StateA>());
@@ -17,7 +18,8 @@ TechAttack::TechAttack() {
     new NewObjectPanel();
     new Light();
 
-    Engine::subscribeEvent(Engine::KeyHoldEvent::eventType, [this](Engine::Event *event) {
+
+    Engine::EventDispatcher::getInstance().subscribe(Engine::KeyHoldEvent::eventType, [this](Engine::Event *event) {
         keyPressedEvent(event);
     });
 }
