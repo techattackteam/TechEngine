@@ -31,13 +31,13 @@ namespace Engine {
     }
 
     void EventManager::execute() {
-        for (Event *event : dispatchedEvents) {
+        for (Event *event: dispatchedEvents) {
             if (observers.count(event->getEventType().getName()) == 0) {
                 continue;
             }
             std::vector<std::function<void(Event *)>> callbacks = observers.at(event->getEventType().getName());
             if (!callbacks.empty()) {
-                for (auto &callback : callbacks) {
+                for (auto &callback: callbacks) {
                     callback(event);
                 }
             }
@@ -45,6 +45,4 @@ namespace Engine {
         }
         dispatchedEvents.clear();
     }
-
-
 }

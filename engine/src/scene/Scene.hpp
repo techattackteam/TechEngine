@@ -25,7 +25,11 @@ namespace Engine {
 
         bool hasMainCamera();
 
+        bool isLightingActive() const;
+
     private:
+        int lightsNumber = 0;
+
         std::list<GameObject *> gameObjects;
 
         void onGOCreate(GameObjectCreateEvent *event);

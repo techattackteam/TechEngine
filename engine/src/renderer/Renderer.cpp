@@ -30,17 +30,23 @@ namespace Engine {
     }
 
     void Renderer::lightPass() {
-        for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
-            if (gameObject->hasComponent<DirectionalLightComponent>()) {
-                light = gameObject->getComponent<DirectionalLightComponent>();
-                GlCall(glViewport(0, 0, 1024, 1024));
-                shadersManager.changeActiveShader("shadowMap");
-                shadowMapBuffer.bind();
-                shadowMapBuffer.clear();
-                shadersManager.getActiveShader()->setUniformMatrix4f("lightSpaceMatrix", light->getProjectionMatrix() * light->getViewMatrix());
-                renderPass();
-                shadowMapBuffer.unBind();
+        if (Scene::getInstance().isLightingActive()) {
+            shadersManager.changeActiveShader("geometry");
+            shadersManager.getActiveShader()->setUniformBool("isLightingActive", true);
+            for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
+                if (gameObject->hasComponent<DirectionalLightComponent>()) {
+                    light = gameObject->getComponent<DirectionalLightComponent>();
+                    GlCall(glViewport(0, 0, 1024, 1024));
+                    shadersManager.changeActiveShader("shadowMap");
+                    shadowMapBuffer.bind();
+                    shadowMapBuffer.clear();
+                    shadersManager.getActiveShader()->setUniformMatrix4f("lightSpaceMatrix", light->getProjectionMatrix() * light->getViewMatrix());
+                    renderPass();
+                    shadowMapBuffer.unBind();
+                }
             }
+        } else {
+            shadersManager.getActiveShader()->setUniformBool("isLightingActive", true);
         }
     }
 
