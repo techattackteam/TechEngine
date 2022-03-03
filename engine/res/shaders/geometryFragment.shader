@@ -23,7 +23,7 @@ float shadowCalculation(vec3 lightDir){
 }
 
 void main(){
-    if (isLightingActive == true){
+    if (isLightingActive){
         vec4 _lightColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
         float ambientStrength = 0.1f;

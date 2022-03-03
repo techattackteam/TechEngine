@@ -29,9 +29,9 @@ namespace Engine {
         }
     }
 
-    void Renderer::lightPass() {
+    void Renderer::shadowPass() {
+        shadersManager.changeActiveShader("geometry");
         if (Scene::getInstance().isLightingActive()) {
-            shadersManager.changeActiveShader("geometry");
             shadersManager.getActiveShader()->setUniformBool("isLightingActive", true);
             for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
                 if (gameObject->hasComponent<DirectionalLightComponent>()) {
@@ -43,10 +43,18 @@ namespace Engine {
                     shadersManager.getActiveShader()->setUniformMatrix4f("lightSpaceMatrix", light->getProjectionMatrix() * light->getViewMatrix());
                     renderPass();
                     shadowMapBuffer.unBind();
+
                 }
             }
         } else {
-            shadersManager.getActiveShader()->setUniformBool("isLightingActive", true);
+            shadersManager.getActiveShader()->setUniformBool("isLightingActive", false);
+        }
+    }
+
+    void Renderer::lightPass() {
+        if (Scene::getInstance().isLightingActive()) {
+            shadersManager.getActiveShader()->setUniformMatrix4f("lightSpaceMatrix", light->getProjectionMatrix() * light->getViewMatrix());
+            shadersManager.getActiveShader()->setUniformVec3("lightDirection", Scene::getInstance().mainCamera->getTransform().getPosition());
         }
     }
 
@@ -55,9 +63,8 @@ namespace Engine {
         shadersManager.changeActiveShader("geometry");
         shadersManager.getActiveShader()->setUniformMatrix4f("projection", Scene::getInstance().mainCamera->getProjectionMatrix());
         shadersManager.getActiveShader()->setUniformMatrix4f("view", Scene::getInstance().mainCamera->getViewMatrix());
-        shadersManager.getActiveShader()->setUniformMatrix4f("lightSpaceMatrix", light->getProjectionMatrix() * light->getViewMatrix());
-        shadersManager.getActiveShader()->setUniformVec3("lightDirection", Scene::getInstance().mainCamera->getTransform().getPosition());
         shadersManager.getActiveShader()->setUniformVec3("cameraPosition", Scene::getInstance().mainCamera->getTransform().getPosition());
+        lightPass();
         GlCall(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
         GlCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         shadowMapBuffer.bindShadowMapTexture();
@@ -72,7 +79,7 @@ namespace Engine {
         vertexBuffer.bind();
         vertexArray.bind();
 
-        lightPass();
+        shadowPass();
         geometryPass();
 
         vertexBuffer.unBind();

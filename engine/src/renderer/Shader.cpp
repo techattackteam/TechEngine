@@ -104,7 +104,7 @@ void Shader::setUniformInt(const std::string &name, int value) {
 }
 
 void Shader::setUniformBool(const std::string &name, bool value) {
-    GlCall(glUniform1i(getUniformLocation(name), value == true ? 1 : 0));
+    GlCall(glUniform1i(getUniformLocation(name), value));
 }
 
 uint32_t Shader::getUniformLocation(const std::string &name) {
