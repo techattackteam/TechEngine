@@ -23,14 +23,16 @@ namespace Engine {
 
         std::list<GameObject *> getGameObjects();
 
+        std::list<GameObject *> getLights();
+
         bool hasMainCamera();
 
         bool isLightingActive() const;
 
     private:
-        int lightsNumber = 0;
 
         std::list<GameObject *> gameObjects;
+        std::list<GameObject *> lights;
 
         void onGOCreate(GameObjectCreateEvent *event);
 

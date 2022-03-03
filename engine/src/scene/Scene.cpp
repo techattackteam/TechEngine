@@ -23,14 +23,14 @@ namespace Engine {
                 mainCamera = cameraComponent;
             }
         } else if (event->getGameObject()->hasComponent<DirectionalLightComponent>()) {
-            lightsNumber++;
+            lights.emplace_back(event->getGameObject());
         }
     }
 
     void Scene::onGODestroy(GameObjectDestroyEvent *event) {
         gameObjects.remove(event->getGameObject());
         if (event->getGameObject()->hasComponent<DirectionalLightComponent>()) {
-            lightsNumber--;
+            lights.remove(event->getGameObject());
         }
         delete (event->getGameObject());
     }
@@ -55,11 +55,17 @@ namespace Engine {
         return gameObjects;
     }
 
+    std::list<GameObject *> Scene::getLights() {
+        return lights;
+    }
+
     bool Scene::hasMainCamera() {
         return mainCamera != nullptr;
     }
 
     bool Scene::isLightingActive() const {
-        return lightsNumber != 0;
+        return lights.size() != 0;
     }
+
+
 }

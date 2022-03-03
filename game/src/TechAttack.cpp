@@ -17,6 +17,8 @@ TechAttack::TechAttack() {
     new QuadMeshTest(-1);
     new NewObjectPanel();
     new Light();
+    new Light();
+    new Light();
 
 
     Engine::EventDispatcher::getInstance().subscribe(Engine::KeyHoldEvent::eventType, [this](Engine::Event *event) {
