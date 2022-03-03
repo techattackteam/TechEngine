@@ -17,8 +17,6 @@ namespace Engine {
         VertexBuffer vertexBuffer;
         FrameBuffer shadowMapBuffer;
 
-        //TEMP FOR JUST ONE LIGHT
-        DirectionalLightComponent *light;
     public:
 
         Renderer() = default;
@@ -36,12 +34,11 @@ namespace Engine {
     private:
         void shadowPass();
 
-        void lightPass();
-
         void geometryPass();
 
-        void renderPass();
+        void renderWithLightPass();
 
+        void renderGeometryPass();
 
         void renderQuad();
     };
