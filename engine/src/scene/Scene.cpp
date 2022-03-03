@@ -1,3 +1,4 @@
+#include <iostream>
 #include "Scene.hpp"
 #include "../event/EventDispatcher.hpp"
 #include "../components/DirectionalLightComponent.hpp"

@@ -34,6 +34,8 @@ namespace Engine {
         static void beginImGuiFrame();
 
     private:
+        void shadowPass();
+
         void lightPass();
 
         void geometryPass();
