@@ -43,7 +43,7 @@ uint32_t Shader::compileShader(uint32_t type, const std::string &source) {
     if (result == GL_FALSE) {
         int length;
         GlCall(glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &length));
-        char* message = new char[length];
+        char *message = new char[length];
         GlCall(glGetShaderInfoLog(shaderID, length, &length, message));
         std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertices " : "fragment ") << shaderName << " shader!"
                   << std::endl;
@@ -101,6 +101,10 @@ void Shader::setUniformVec3(const std::string &name, glm::vec3 vector) {
 
 void Shader::setUniformInt(const std::string &name, int value) {
     GlCall(glUniform1i(getUniformLocation(name), value));
+}
+
+void Shader::setUniformBool(const std::string &name, bool value) {
+    GlCall(glUniform1i(getUniformLocation(name), value == true ? 1 : 0));
 }
 
 uint32_t Shader::getUniformLocation(const std::string &name) {

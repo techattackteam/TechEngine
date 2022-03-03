@@ -13,10 +13,14 @@ uniform mat4 lightSpaceMatrix;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+
+uniform bool isLightingActive;
 void main(){
     fragPos = vec3(model * vec4(position, 1.0f));
     vertexColor = color;
     vertexNormal = mat3(transpose(inverse(model))) * normal;
-    fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0f);
+    if (isLightingActive){
+        fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0f);
+    }
     gl_Position = projection * view * model * vec4(position, 1.0f);
 }

@@ -10,7 +10,7 @@ in vec4 fragPosLightSpace;
 uniform vec3 cameraPosition;
 uniform vec3 lightDirection;
 //uniform vec3 lightColor;
-
+uniform bool isLightingActive;
 uniform sampler2D shadowMap;
 
 float shadowCalculation(vec3 lightDir){
@@ -23,22 +23,26 @@ float shadowCalculation(vec3 lightDir){
 }
 
 void main(){
-    vec4 _lightColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    if (isLightingActive == true){
+        vec4 _lightColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
-    float ambientStrength = 0.1f;
-    vec4 ambient = ambientStrength * _lightColor;
+        float ambientStrength = 0.1f;
+        vec4 ambient = ambientStrength * _lightColor;
 
-    vec3 lightDir = normalize(lightDirection);
-    float diff = max(dot(vertexNormal, lightDir), 0.0f);
-    vec4 diffuse = diff * _lightColor;
+        vec3 lightDir = normalize(lightDirection);
+        float diff = max(dot(vertexNormal, lightDir), 0.0f);
+        vec4 diffuse = diff * _lightColor;
 
-    float specularStrength = 0.2f;
-    vec3 viewDir = normalize(cameraPosition - fragPos);
-    vec3 reflectDir = reflect(-lightDir, vertexNormal);
+        float specularStrength = 0.2f;
+        vec3 viewDir = normalize(cameraPosition - fragPos);
+        vec3 reflectDir = reflect(-lightDir, vertexNormal);
 
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-    vec4 specular = specularStrength * spec * _lightColor;
+        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+        vec4 specular = specularStrength * spec * _lightColor;
 
-    float shadow = shadowCalculation(lightDir);
-    fragColor = (ambient + (1.0 - shadow) * (diffuse + specular)) * vertexColor;
+        float shadow = shadowCalculation(lightDir);
+        fragColor = (ambient + (1.0 - shadow) * (diffuse + specular)) * vertexColor;
+    } else {
+        fragColor = vertexColor;
+    }
 }

@@ -1,5 +1,6 @@
 #include "Scene.hpp"
 #include "../event/EventDispatcher.hpp"
+#include "../components/DirectionalLightComponent.hpp"
 
 namespace Engine {
     Scene::Scene() {
@@ -20,11 +21,16 @@ namespace Engine {
             if (cameraComponent->isMainCamera()) {
                 mainCamera = cameraComponent;
             }
+        } else if (event->getGameObject()->hasComponent<DirectionalLightComponent>()) {
+            lightsNumber++;
         }
     }
 
     void Scene::onGODestroy(GameObjectDestroyEvent *event) {
         gameObjects.remove(event->getGameObject());
+        if (event->getGameObject()->hasComponent<DirectionalLightComponent>()) {
+            lightsNumber--;
+        }
         delete (event->getGameObject());
     }
 
@@ -50,5 +56,9 @@ namespace Engine {
 
     bool Scene::hasMainCamera() {
         return mainCamera != nullptr;
+    }
+
+    bool Scene::isLightingActive() const {
+        return lightsNumber != 0;
     }
 }
