@@ -1,4 +1,5 @@
 #include <glm/ext/matrix_transform.hpp>
+#include <iostream>
 #include "DirectionalLightComponent.hpp"
 #include "../scene/Scene.hpp"
 
@@ -9,7 +10,7 @@ namespace Engine {
     }
 
     void DirectionalLightComponent::fixedUpdate() {
-        viewMatrix = glm::lookAt(Scene::getInstance().mainCamera->getTransform().getPosition(), getTransform().getOrientation(), glm::vec3(0, 0, 0));
+        viewMatrix = glm::lookAt(Scene::getInstance().mainCamera->getTransform().getPosition(), getTransform().getOrientation(), glm::vec3(0, 1, 0));
     }
 
     glm::mat4 &DirectionalLightComponent::getProjectionMatrix() {

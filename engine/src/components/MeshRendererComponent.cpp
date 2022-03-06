@@ -3,15 +3,11 @@
 
 namespace Engine {
 
-    MeshRendererComponent::MeshRendererComponent(GameObject *gameObject, Mesh *mesh) : mesh(*mesh), Component(gameObject, "MeshRenderer") {
+    MeshRendererComponent::MeshRendererComponent(GameObject *gameObject, Mesh *mesh, Material *material) : mesh(*mesh), material(*material), Component(gameObject, "MeshRenderer") {
     }
 
     void MeshRendererComponent::changeMesh(Mesh &mesh) {
         this->mesh = mesh;
-    }
-
-    void MeshRendererComponent::renderMesh() {
-
     }
 
     void MeshRendererComponent::getInfo() {
@@ -22,5 +18,9 @@ namespace Engine {
 
     Mesh &MeshRendererComponent::getMesh() {
         return mesh;
+    }
+
+    Material &MeshRendererComponent::getMaterial() {
+        return material;
     }
 }

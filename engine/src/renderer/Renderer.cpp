@@ -23,17 +23,24 @@ namespace Engine {
             auto *directionLight = light->getComponent<DirectionalLightComponent>();
             shadersManager.getActiveShader()->setUniformMatrix4f("lightSpaceMatrix", directionLight->getProjectionMatrix() * directionLight->getViewMatrix());
             shadersManager.getActiveShader()->setUniformVec3("lightDirection", light->getTransform().getPosition());
-            renderGeometryPass();
+            renderGeometryPass(false);
         }
     }
 
-    void Renderer::renderGeometryPass() {
+    void Renderer::renderGeometryPass(bool shadow) {
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
             if (gameObject->hasComponent<MeshRendererComponent>()) {
                 shadersManager.getActiveShader()->setUniformMatrix4f("model", gameObject->getModelMatrix());
-                auto *meshComponent = gameObject->getComponent<MeshRendererComponent>();
-                flushMeshData(meshComponent);
-                GlCall(glDrawArrays(GL_TRIANGLES, 0, meshComponent->getMesh().getVertices().size()));
+                auto *meshRenderer = gameObject->getComponent<MeshRendererComponent>();
+                flushMeshData(meshRenderer);
+                if (!shadow) {
+                    Material &material = meshRenderer->getMaterial();
+                    shadersManager.getActiveShader()->setUniformVec3("material.ambient", material.getAmbient());
+                    shadersManager.getActiveShader()->setUniformVec3("material.diffuse", material.getDiffuse());
+                    shadersManager.getActiveShader()->setUniformVec3("material.specular", material.getSpecular());
+                    shadersManager.getActiveShader()->setUniformFloat("material.shininess", material.getShininess());
+                }
+                GlCall(glDrawArrays(GL_TRIANGLES, 0, meshRenderer->getMesh().getVertices().size()));
             }
         }
     }
@@ -49,7 +56,7 @@ namespace Engine {
                 shadowMapBuffer.bind();
                 shadowMapBuffer.clear();
                 shadersManager.getActiveShader()->setUniformMatrix4f("lightSpaceMatrix", light->getProjectionMatrix() * light->getViewMatrix());
-                renderGeometryPass();
+                renderGeometryPass(true);
                 shadowMapBuffer.unBind();
             }
         } else {
@@ -69,7 +76,7 @@ namespace Engine {
         if (Scene::getInstance().isLightingActive()) {
             renderWithLightPass();
         } else {
-            renderGeometryPass();
+            renderGeometryPass(false);
         }
     }
 
@@ -88,8 +95,9 @@ namespace Engine {
         vertexArray.unBind();
     }
 
-    void Renderer::flushMeshData(MeshRendererComponent *meshComponent) {
-        vertexBuffer.addData(meshComponent->getMesh().getVertices().data(), meshComponent->getMesh().getVertices().size() * sizeof(Vertex), 0);
+    void Renderer::flushMeshData(MeshRendererComponent *meshRenderer) {
+        vertexBuffer.addData(meshRenderer->getMesh().getVertices().data(), meshRenderer->getMesh().getVertices().size() * sizeof(Vertex), 0);
+        //shadersManager.getActiveShader()->setUniformVec4("material.color", material.getColor());
     }
 
     void Renderer::beginImGuiFrame() {
@@ -110,34 +118,4 @@ namespace Engine {
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
     }
-
-    unsigned int quadVAO = 0;
-    unsigned int quadVBO;
-
-    void Renderer::renderQuad() {
-        if (quadVAO == 0) {
-            float quadVertices[] = {
-                    // positions        // texture Coords
-                    -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-                    -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-                    1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-                    1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-            };
-            // setup plane VAO
-            glGenVertexArrays(1, &quadVAO);
-            glGenBuffers(1, &quadVBO);
-            glBindVertexArray(quadVAO);
-            glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
-        }
-        glBindVertexArray(quadVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        glBindVertexArray(0);
-    }
-
 }
