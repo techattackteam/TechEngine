@@ -43,6 +43,8 @@ public:
     void setUniformInt(const std::string &name, int value);
 
     void setUniformBool(const std::string &name, bool value);
+
+    void setUniformFloat(const std::string &name, float value);
 };
 
 

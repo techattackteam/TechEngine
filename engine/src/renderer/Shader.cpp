@@ -107,6 +107,11 @@ void Shader::setUniformBool(const std::string &name, bool value) {
     GlCall(glUniform1i(getUniformLocation(name), value));
 }
 
+
+void Shader::setUniformFloat(const std::string &name, float value) {
+    GlCall(glUniform1f(getUniformLocation(name), value));
+}
+
 uint32_t Shader::getUniformLocation(const std::string &name) {
     if (uniformLocationCache.find(name) != uniformLocationCache.end()) {
         return uniformLocationCache[name];
@@ -120,4 +125,5 @@ uint32_t Shader::getUniformLocation(const std::string &name) {
     }
     return location;
 }
+
 

@@ -27,7 +27,7 @@ namespace Engine {
 
         void renderPipeline();
 
-        void flushMeshData(MeshRendererComponent *meshComponent);
+        void flushMeshData(MeshRendererComponent *meshRenderer);
 
         static void beginImGuiFrame();
 
@@ -38,9 +38,7 @@ namespace Engine {
 
         void renderWithLightPass();
 
-        void renderGeometryPass();
-
-        void renderQuad();
+        void renderGeometryPass(bool shadow);
     };
 }
 
