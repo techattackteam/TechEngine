@@ -1,0 +1,36 @@
+#pragma once
+
+#include <glm/glm.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
+#include "Component.hpp"
+#include "../scene/GameObject.hpp"
+
+namespace TechEngine {
+    class DirectionalLightComponent : public Component {
+    private:
+        glm::vec4 color;
+
+        glm::mat4 viewMatrix = glm::mat4(1.0f);
+        glm::mat4 projectionMatrix = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f);
+
+    public:
+        DirectionalLightComponent(GameObject *gameObject);
+
+        void fixedUpdate() override;
+
+        glm::mat4 &getProjectionMatrix();
+
+        glm::mat4 &getViewMatrix();
+
+        glm::vec4 &getColor();
+
+        void getInfo() override;
+
+        static ComponentName getName() {
+            return "DirectionalLight";
+        }
+
+    };
+}
+
+

@@ -4,9 +4,8 @@
 #include "Camera.hpp"
 #include "QuadMeshTest.hpp"
 #include "NewObjectPanel.hpp"
-#include "Light.hpp"
+#include "NetworkHandler.hpp"
 
-#include <TechEngine.hpp>
 #include <memory>
 #include <iostream>
 
@@ -16,15 +15,15 @@ TechAttack::TechAttack() {
     new Camera();
     new QuadMeshTest(-1);
     new NewObjectPanel();
-    new Light();
+    new NetworkHandler();
 
-    Engine::EventDispatcher::getInstance().subscribe(Engine::KeyHoldEvent::eventType, [this](Engine::Event *event) {
+    TechEngine::subscribeEvent(TechEngine::KeyPressedEvent::eventType, [this](TechEngineCore::Event *event) {
         keyPressedEvent(event);
     });
 }
 
-void TechAttack::keyPressedEvent(Engine::Event *event) {
-    std::cout << ((Engine::KeyPressedEvent *) event)->getKey().getKeCode() << std::endl;
+void TechAttack::keyPressedEvent(TechEngineCore::Event *event) {
+    std::cout << ((TechEngine::KeyPressedEvent *) event)->getKey().getKeyName() << std::endl;
 }
 
 void TechAttack::onUpdate() {
@@ -35,7 +34,7 @@ void TechAttack::onFixedUpdate() {
 
 }
 
-Engine::App *Engine::createApp() {
+TechEngineCore::App *TechEngineCore::createApp() {
     return new TechAttack();
 }
 

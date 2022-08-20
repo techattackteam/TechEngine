@@ -3,15 +3,15 @@
 #include <TechEngine.hpp>
 #include <EntryPoint.hpp>
 
-class TechAttack : public Engine::App {
+class TechAttack : public TechEngine::App {
 public:
-    Engine::StateMachine stateMachine{};
+    TechEngineCore::StateMachine stateMachine{};
 
     TechAttack();
 
     void onUpdate();
 
-    void keyPressedEvent(Engine::Event *event);
+    void keyPressedEvent(TechEngineCore::Event *event);
 
     void onFixedUpdate();
 };

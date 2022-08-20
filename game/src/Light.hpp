@@ -2,7 +2,7 @@
 
 #include <TechEngine.hpp>
 
-class Light : public Engine::GameObject {
+class Light : public TechEngine::GameObject {
 public:
     Light();
 

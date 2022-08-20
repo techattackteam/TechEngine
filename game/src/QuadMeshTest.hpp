@@ -3,7 +3,7 @@
 #include <TechEngine.hpp>
 #include <sstream>
 
-class QuadMeshTest : public Engine::GameObject {
+class QuadMeshTest : public TechEngine::GameObject {
 public:
     QuadMeshTest(int name);
 

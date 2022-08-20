@@ -1,6 +1,6 @@
 #include "NewObjectPanel.hpp"
 
-NewObjectPanel::NewObjectPanel() : Engine::CustomPanel("Test panel") {
+NewObjectPanel::NewObjectPanel() : TechEngine::CustomPanel("Test panel") {
     counter = 0;
 }
 

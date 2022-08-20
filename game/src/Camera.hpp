@@ -2,7 +2,7 @@
 
 #include <TechEngine.hpp>
 
-class Camera : public Engine::GameObject {
+class Camera : public TechEngine::GameObject {
 public:
     Camera();
 };
