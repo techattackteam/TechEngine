@@ -1,6 +1,6 @@
 #include "Camera.hpp"
 
-Camera::Camera() : Engine::GameObject("Camera", false) {
-    addComponent<Engine::CameraComponent>(this, true);
+Camera::Camera() : TechEngine::GameObject("Camera", false) {
+    addComponent<TechEngine::CameraComponent>(this, true, TechEngine::CameraComponent::ORTHOGRAPHIC);
     getTransform().translateTo(glm::vec3(0, 0, 5));
 }

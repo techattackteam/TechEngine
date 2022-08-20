@@ -3,7 +3,7 @@
 #include <TechEngine.hpp>
 #include "QuadMeshTest.hpp"
 
-class NewObjectPanel : Engine::CustomPanel {
+class NewObjectPanel : TechEngine::CustomPanel {
 public:
     int counter = 0;
 

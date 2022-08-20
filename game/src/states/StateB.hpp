@@ -2,9 +2,9 @@
 
 #include <TechEngine.hpp>
 
-class StateB : public Engine::State {
+class StateB : public TechEngineCore::State {
 public:
-    inline static const Engine::StateName stateName = "StateB";
+    inline static const TechEngineCore::StateName stateName = "StateB";
 
     StateB();
 

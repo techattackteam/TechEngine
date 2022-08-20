@@ -1,0 +1,24 @@
+#pragma once
+
+#include "../../../../TechEngineCore/src/event/events/Event.hpp"
+#include "../../scene/GameObject.hpp"
+
+namespace TechEngine {
+    class GameObjectCreateEvent : public TechEngineCore::Event {
+    private:
+        GameObject *gameObject;
+    public:
+
+        inline static EventType eventType = EventType("GameObjectCreateEvent", SYNC);
+
+        explicit GameObjectCreateEvent(GameObject *gameObject) : Event(eventType) {
+            this->gameObject = gameObject;
+        }
+
+        GameObject *getGameObject() {
+            return gameObject;
+        }
+    };
+}
+
+
