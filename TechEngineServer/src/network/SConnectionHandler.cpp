@@ -3,12 +3,18 @@
 #include "SConnectionHandler.hpp"
 #include "SNetworkHandler.hpp"
 #include "network/packets/connection/ConnectionSuccessfulPacket.hpp"
+#include "network/packets/connection/PingPacket.hpp"
+#include "event/events/connection/DisconnectionEvent.hpp"
 
 namespace TechEngineServer {
     SConnectionHandler::SConnectionHandler(SNetworkHandler *networkHandler) : ConnectionHandler(networkHandler) {
         this->networkHandler = networkHandler;
         EventDispatcher::getInstance().subscribe(ConnectionRequestEvent::eventType, [this](Event *event) {
             handleConnectionRequest((ConnectionRequestEvent *) event);
+        });
+
+        EventDispatcher::getInstance().subscribe(PingEvent::eventType, [this](Event *event) {
+            onPingEvent((PingEvent *) event);
         });
 
         isAlive = new std::thread(&SConnectionHandler::checkAliveClients, this);
@@ -28,13 +34,12 @@ namespace TechEngineServer {
         networkHandler->getClients().insert(std::make_pair(ss.str(), client));
         networkHandler->getPacketHandler().sendPacket(new ConnectionSuccessfulPacket(client->UUID), event->getEndpoint());
         std::cout << "Connection received " << std::endl;
-        //EventDispatcher::getInstance()->dispatch(new PlayerJoinEvent(client->UUID, player));
     }
 
     void SConnectionHandler::checkAlive(const std::string &uuid, std::chrono::system_clock::time_point timeStamp) {
         Client *client = ((SNetworkHandler *) networkHandler)->getClient(uuid);
         std::chrono::duration<double> deltaTime = timeStamp - client->getLastPingTime();
-        if (deltaTime.count() > TIMEOUT_DELAY) {
+        if (deltaTime.count() > 5) {
             EventDispatcher::getInstance().dispatch(new DisconnectionEvent(uuid, client->endpoint));
         }
     }
@@ -46,10 +51,14 @@ namespace TechEngineServer {
             for (const auto &element: ((SNetworkHandler *) networkHandler)->getClients()) {
                 Client *client = element.second;
                 checkAlive(element.first, timeStamp);
-                networkHandler->getPacketHandler().queueOutboundPacket(new PingPacket((std::string) element.first), client->endpoint);
+                networkHandler->getPacketHandler().sendPacket(new PingPacket(element.first), client->endpoint);
             }
-
         } while (networkHandler->isRunning());
+    }
+
+    void SConnectionHandler::onPingEvent(PingEvent *event) {
+        Client *client = networkHandler->getClient(event->getUUID());
+        client->setLastPingTime(std::chrono::system_clock::now());
     }
 
 }

@@ -2,6 +2,8 @@
 
 #include "tegpph.hpp"
 #include "CNetworkHandler.hpp"
+#include "event/events/connection/PingEvent.hpp"
+#include "event/events/connection/ConnectionSuccessfulEvent.hpp"
 
 namespace TechEngine {
     class CConnectionHandler : public ConnectionHandler {
@@ -16,6 +18,8 @@ namespace TechEngine {
 
         void connectToServer();
 
-        //void onPingEvent(PingEvent *event);
+        void onConnectionSuccessEvent(ConnectionSuccessfulEvent *event);
+
+        void onPingEvent(PingEvent *event);
     };
 }

@@ -1,4 +1,6 @@
 #include "CNetworkHandler.hpp"
+
+#include <utility>
 #include "CSocketHandler.hpp"
 #include "CConnectionHandler.hpp"
 #include "CPacketHandler.hpp"
@@ -30,4 +32,11 @@ namespace TechEngine {
         return serverEndpoint;
     }
 
+    void CNetworkHandler::setUUID(std::string uuid) {
+        this->uuid = uuid;
+    }
+
+    const std::string &CNetworkHandler::getUUID() {
+        return uuid;
+    }
 }
