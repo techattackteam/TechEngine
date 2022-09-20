@@ -3,18 +3,18 @@
 #include "event/events/Event.hpp"
 
 namespace TechEngineCore {
-    class DisconnectionEvent : public Event {
+    class DisconnectionRequestEvent : public Event {
     private:
         std::string uuid;
         udp::endpoint endpoint;
     public:
-        inline static EventType eventType = EventType("DisconnectionEvent", ASYNC);
+        inline static EventType eventType = EventType("DisconnectionRequestEvent", ASYNC);
 
-        explicit DisconnectionEvent(const std::string &uuid, const udp::endpoint &endpoint) : Event(eventType) {
+        explicit DisconnectionRequestEvent(const std::string &uuid, const udp::endpoint &endpoint) : Event(eventType) {
 
         }
 
-        ~DisconnectionEvent() override = default;
+        ~DisconnectionRequestEvent() override = default;
 
         inline std::string getUUID() {
             return uuid;

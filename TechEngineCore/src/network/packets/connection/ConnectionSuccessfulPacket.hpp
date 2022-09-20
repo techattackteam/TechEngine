@@ -1,7 +1,7 @@
 #pragma once
 
 #include <boost/serialization/export.hpp>
-#include "../../Packet.hpp"
+#include "network/Packet.hpp"
 
 namespace TechEngineCore {
 

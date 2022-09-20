@@ -49,7 +49,6 @@ namespace TechEngineCore {
             }
             packet->bytes = bytes;
             packet->senderEndpoint = endpoint;
-            std::cout << "Packet received with " << packet->bytes << " bytes" << std::endl;
             networkHandler->getPacketHandler().storeIncomePacket(packet);
         }
     }
@@ -73,7 +72,6 @@ namespace TechEngineCore {
 
             packet->data = serializePacket(packet);
             writeToSocket(packet);
-            std::cout << "Packet sent with " << packet->bytes << " bytes" << std::endl;
             //TEMPORARY FIX
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
             delete (packet);
