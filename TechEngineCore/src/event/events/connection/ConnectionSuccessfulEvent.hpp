@@ -17,6 +17,8 @@ namespace TechEngineCore {
 
         ~ConnectionSuccessfulEvent() = default;
 
-
+        const std::string &getUUID() {
+            return uuid;
+        }
     };
 }

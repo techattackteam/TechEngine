@@ -2,11 +2,14 @@
 
 #include "tespph.hpp"
 #include "SNetworkHandler.hpp"
+#include "event/events/connection/PingEvent.hpp"
 
 namespace TechEngineServer {
     class SConnectionHandler : public ConnectionHandler {
     private:
         SNetworkHandler *networkHandler;
+
+        std::thread *isAlive;
     public:
         explicit SConnectionHandler(SNetworkHandler *networkHandler);
 
@@ -20,6 +23,6 @@ namespace TechEngineServer {
 
         void checkAliveClients();
 
-        //void onPingResponse(PingResponseEvent *event);
+        void onPingEvent(PingEvent *event);
     };
 }
