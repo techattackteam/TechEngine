@@ -6,6 +6,8 @@
 namespace TechEngineServer {
 
     class SSocketHandler : public SocketHandler {
+    private:
+        SNetworkHandler *networkHandler;
     public:
         explicit SSocketHandler(SNetworkHandler *networkHandler);
 

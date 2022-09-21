@@ -6,17 +6,17 @@
 #include "CPacketHandler.hpp"
 
 namespace TechEngine {
-    CNetworkHandler::CNetworkHandler(std::string serverIp, const short &port) : NetworkHandler(serverIp, port,
-                                                                                               new CSocketHandler(this),
-                                                                                               new CConnectionHandler(this),
-                                                                                               new CPacketHandler(this)) {
+    CNetworkHandler::CNetworkHandler(std::string serverIP, const short &serverPort, const short &port) : serverIP(serverIP), serverPort(serverPort), port(port),
+                                                                                                         NetworkHandler(new CSocketHandler(this),
+                                                                                                                        new CConnectionHandler(this),
+                                                                                                                        new CPacketHandler(this)) {
 
     }
 
     void CNetworkHandler::init() {
         std::stringstream ss;
-        ss << port;
-        serverEndpoint = ((CSocketHandler *) getSocketsHandler())->getResolver()->resolve(udp::v4(), ip, ss.str().c_str())->endpoint();
+        ss << serverPort;
+        serverEndpoint = ((CSocketHandler *) getSocketsHandler())->getResolver()->resolve(udp::v4(), serverIP, ss.str().c_str())->endpoint();
     }
 
 
@@ -38,5 +38,13 @@ namespace TechEngine {
 
     const std::string &CNetworkHandler::getUUID() {
         return uuid;
+    }
+
+    const short &CNetworkHandler::getPort() {
+        return port;
+    }
+
+    void CNetworkHandler::setPort(short port) {
+        this->port = port;
     }
 }
