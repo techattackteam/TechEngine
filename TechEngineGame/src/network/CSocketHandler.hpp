@@ -1,14 +1,17 @@
 #pragma once
 
 #include <TechEngineCore.hpp>
+#include "CNetworkHandler.hpp"
 
 namespace TechEngine {
 
     class CSocketHandler : public TechEngineCore::SocketHandler {
     private:
         udp::resolver *resolver;
+        CNetworkHandler *networkHandler;
+
     public:
-        CSocketHandler(TechEngineCore::NetworkHandler *networkHandler);
+        CSocketHandler(CNetworkHandler *networkHandler);
 
         ~CSocketHandler();
 

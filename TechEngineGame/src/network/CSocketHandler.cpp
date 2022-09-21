@@ -1,7 +1,7 @@
 #include "CSocketHandler.hpp"
 
 namespace TechEngine {
-    CSocketHandler::CSocketHandler(TechEngineCore::NetworkHandler *networkHandler) : SocketHandler(networkHandler) {
+    CSocketHandler::CSocketHandler(CNetworkHandler *networkHandler) : networkHandler(networkHandler), SocketHandler(networkHandler) {
     }
 
     CSocketHandler::~CSocketHandler() {
@@ -10,7 +10,7 @@ namespace TechEngine {
 
     void CSocketHandler::init() {
         resolver = new udp::resolver(context);
-        socket = new udp::socket(context, udp::endpoint(udp::v4(), networkHandler->getPort() + 1));
+        socket = new udp::socket(context, udp::endpoint(udp::v4(), networkHandler->getPort()));
         SocketHandler::init();
     }
 

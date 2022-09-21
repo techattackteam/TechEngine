@@ -16,8 +16,6 @@ namespace TechEngineCore {
     class NetworkHandler {
     private:
     protected:
-        std::string ip;
-        short port;
         SocketHandler *socketHandler;
         ConnectionHandler *connectionHandler;
         PacketHandler *packetHandler;
@@ -25,7 +23,7 @@ namespace TechEngineCore {
         bool running = true;
 
     public:
-        NetworkHandler(std::string &ip, const short &port, SocketHandler *socketsHandler, ConnectionHandler *connectionHandler, PacketHandler *packetHandler);
+        NetworkHandler(SocketHandler *socketsHandler, ConnectionHandler *connectionHandler, PacketHandler *packetHandler);
 
         ~NetworkHandler();
 
@@ -36,10 +34,6 @@ namespace TechEngineCore {
         PacketHandler &getPacketHandler();
 
         virtual void init() = 0;
-
-        std::string &getIP();
-
-        short getPort();
 
         bool isRunning();
 

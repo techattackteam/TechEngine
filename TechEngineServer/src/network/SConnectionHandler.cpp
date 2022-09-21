@@ -37,6 +37,7 @@ namespace TechEngineServer {
         Client *client = new Client(uuidString, event->getEndpoint());
         networkHandler->getClients().insert(std::make_pair(uuidString, client));
         networkHandler->getPacketHandler().sendPacket(new ConnectionSuccessfulPacket(client->UUID), event->getEndpoint());
+        std::cout << "New connection accepted uuid: " << uuidString << std::endl;
     }
 
     void SConnectionHandler::onDisconnectionRequest(DisconnectionRequestEvent *event) {

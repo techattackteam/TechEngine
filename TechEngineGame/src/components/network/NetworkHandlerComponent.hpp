@@ -7,7 +7,7 @@ namespace TechEngine {
     class NetworkHandlerComponent : public Component {
     private:
         CNetworkHandler networkHandler;
-
+        int port = 25565;
     public:
         explicit NetworkHandlerComponent(GameObject *gameObject);
 

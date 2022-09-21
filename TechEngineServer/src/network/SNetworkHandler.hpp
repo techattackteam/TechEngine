@@ -8,7 +8,8 @@ namespace TechEngineServer {
     class SNetworkHandler : public NetworkHandler {
     private:
         std::unordered_map<std::string, Client *> clients;
-
+        std::string ip;
+        short port;
     public:
         SNetworkHandler(std::string ip, const short &port);
 
@@ -17,6 +18,10 @@ namespace TechEngineServer {
         std::unordered_map<std::string, Client *> &getClients();
 
         Client *getClient(const std::string &uuid);
+
+        const std::string &getIP();
+
+        const short &getPort();
 
     };
 }

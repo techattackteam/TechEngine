@@ -1,13 +1,14 @@
 #include "SNetworkHandler.hpp"
+
+#include <utility>
 #include "SSocketHandler.hpp"
 #include "SPacketHandler.hpp"
 #include "SConnectionHandler.hpp"
 
 namespace TechEngineServer {
-    SNetworkHandler::SNetworkHandler(std::string ip, const short &port) : clients(), NetworkHandler(ip, port,
-                                                                                                    new SSocketHandler(this),
-                                                                                                    new SConnectionHandler(this),
-                                                                                                    new SPacketHandler(this)) {
+    SNetworkHandler::SNetworkHandler(std::string ip, const short &port) : clients(), ip(std::move(ip)), port(port), NetworkHandler(new SSocketHandler(this),
+                                                                                                                        new SConnectionHandler(this),
+                                                                                                                        new SPacketHandler(this)) {
     }
 
     void SNetworkHandler::init() {
@@ -24,4 +25,11 @@ namespace TechEngineServer {
         return clients.at(uuid);
     }
 
+    const std::string &SNetworkHandler::getIP() {
+        return ip;
+    }
+
+    const short &SNetworkHandler::getPort() {
+        return port;
+    }
 }

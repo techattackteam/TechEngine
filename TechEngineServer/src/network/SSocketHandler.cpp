@@ -1,7 +1,7 @@
 #include "SSocketHandler.hpp"
 
 namespace TechEngineServer {
-    SSocketHandler::SSocketHandler(SNetworkHandler *networkHandler) : SocketHandler(networkHandler) {
+    SSocketHandler::SSocketHandler(SNetworkHandler *networkHandler) : networkHandler(networkHandler), SocketHandler(networkHandler) {
 
     }
 

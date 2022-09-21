@@ -2,10 +2,8 @@
 
 namespace TechEngineCore {
 
-    NetworkHandler::NetworkHandler(std::string &ip, const short &port, SocketHandler *socketHandler, ConnectionHandler *connectionHandler, PacketHandler *packetHandler) {
+    NetworkHandler::NetworkHandler(SocketHandler *socketHandler, ConnectionHandler *connectionHandler, PacketHandler *packetHandler) {
         running = true;
-        this->ip = ip;
-        this->port = port;
         this->socketHandler = socketHandler;
         this->connectionHandler = connectionHandler;
         this->packetHandler = packetHandler;
@@ -28,14 +26,6 @@ namespace TechEngineCore {
 
     PacketHandler &NetworkHandler::getPacketHandler() {
         return *packetHandler;
-    }
-
-    std::string &NetworkHandler::getIP() {
-        return ip;
-    }
-
-    short NetworkHandler::getPort() {
-        return port;
     }
 
     bool NetworkHandler::isRunning() {
