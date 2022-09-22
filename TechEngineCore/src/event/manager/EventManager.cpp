@@ -32,15 +32,14 @@ namespace TechEngineCore {
 
     void EventManager::execute() {
         std::vector<Event>::size_type size = dispatchedEvents.size();
-        for (std::vector<Event>::size_type i = 0; i < size; i++) {
+        for (std::vector<Event>::size_type i = 0; i < dispatchedEvents.size(); i++) {
             Event *event = dispatchedEvents.front();
-            if (observers.count(event->getEventType().getName()) == 0) {
-                continue;
-            }
-            std::vector<std::function<void(Event *)>> callbacks = observers.at(event->getEventType().getName());
-            if (!callbacks.empty()) {
-                for (auto &callback: callbacks) {
-                    callback(event);
+            if (observers.count(event->getEventType().getName()) != 0) {
+                std::vector<std::function<void(Event *)>> callbacks = observers.at(event->getEventType().getName());
+                if (!callbacks.empty()) {
+                    for (auto &callback: callbacks) {
+                        callback(event);
+                    }
                 }
             }
             dispatchedEvents.pop();
