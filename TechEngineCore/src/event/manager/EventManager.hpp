@@ -2,6 +2,7 @@
 #include <vector>
 #include <unordered_map>
 #include <functional>
+#include <queue>
 #include "../events/Event.hpp"
 
 #pragma once
@@ -11,7 +12,7 @@ namespace TechEngineCore {
 
     class EventManager {
     protected:
-        std::vector<Event *> dispatchedEvents;
+        std::queue<Event *> dispatchedEvents;
         Observers observers;
 
     public:

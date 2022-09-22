@@ -4,7 +4,7 @@
 namespace TechEngineCore {
 
     EventManager::EventManager() {
-        dispatchedEvents = std::vector<Event *>();
+        dispatchedEvents = std::queue<Event *>();
         observers = Observers();
     }
 
@@ -27,11 +27,13 @@ namespace TechEngineCore {
     }
 
     void EventManager::dispatch(Event *event) {
-        dispatchedEvents.push_back(event);
+        dispatchedEvents.push(event);
     }
 
     void EventManager::execute() {
-        for (Event *event: dispatchedEvents) {
+        std::vector<Event>::size_type size = dispatchedEvents.size();
+        for (std::vector<Event>::size_type i = 0; i < size; i++) {
+            Event *event = dispatchedEvents.front();
             if (observers.count(event->getEventType().getName()) == 0) {
                 continue;
             }
@@ -41,8 +43,8 @@ namespace TechEngineCore {
                     callback(event);
                 }
             }
+            dispatchedEvents.pop();
             delete (event);
         }
-        dispatchedEvents.clear();
     }
 }
