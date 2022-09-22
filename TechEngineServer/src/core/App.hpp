@@ -7,6 +7,7 @@ namespace TechEngineServer {
     private:
         bool running = true;
 
+    protected:
         SNetworkHandler networkHandler;
 
     public:

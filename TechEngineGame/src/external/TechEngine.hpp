@@ -21,5 +21,3 @@
 #include "../mesh/Mesh.hpp"
 #include "../mesh/CubeMesh.hpp"
 #include "../mesh/Material.hpp"
-
-#include "../wrapper/Wrapper.hpp"

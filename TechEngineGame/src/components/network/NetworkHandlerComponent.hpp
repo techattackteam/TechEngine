@@ -15,7 +15,11 @@ namespace TechEngine {
 
         void connectionWithServer();
 
+        void sendPacket(TechEngineCore::Packet *packet);
+
         void update() override;
+
+        const std::string &getUUID();
 
         void getInfo() override;
 

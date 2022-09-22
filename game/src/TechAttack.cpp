@@ -1,37 +1,69 @@
 #include "TechAttack.hpp"
-#include "states/StateA.hpp"
-#include "states/StateB.hpp"
 #include "Camera.hpp"
-#include "QuadMeshTest.hpp"
 #include "NewObjectPanel.hpp"
-#include "NetworkHandler.hpp"
-
+#include "src/PlayerSyncPacket.hpp"
 #include <memory>
 #include <iostream>
 
 TechAttack::TechAttack() {
-    stateMachine.createState(StateA::stateName, std::make_shared<StateA>());
-    stateMachine.createState(StateB::stateName, std::make_shared<StateB>());
     new Camera();
-    new QuadMeshTest(-1);
-    new NewObjectPanel();
-    new NetworkHandler();
+    ball = new QuadMeshTest(-1);
+    networkHandler = new NetworkHandler();
+    player = new QuadMeshTest(1);
+    networkPlayer = new QuadMeshTest(2);
+    TechEngine::subscribeEvent(TechEngine::KeyHoldEvent::eventType, [this](TechEngineCore::Event *event) {
+        keyPressedEvent((TechEngine::KeyHoldEvent *) event);
+    });
 
-    TechEngine::subscribeEvent(TechEngine::KeyPressedEvent::eventType, [this](TechEngineCore::Event *event) {
-        keyPressedEvent(event);
+    TechEngine::subscribeEvent(PlayerSelectorEvent::eventType, [this](TechEngineCore::Event *event) {
+        selectPlayer((PlayerSelectorEvent *) event);
+    });
+
+    TechEngine::subscribeEvent(TestPacketEvent::eventType, [this](TechEngineCore::Event *event) {
+        testPacket((TestPacketEvent *) event);
+    });
+
+    TechEngine::subscribeEvent(PlayerSyncEvent::eventType, [this](TechEngineCore::Event *event) {
+        syncNetworkPlayer((PlayerSyncEvent *) event);
     });
 }
 
-void TechAttack::keyPressedEvent(TechEngineCore::Event *event) {
-    std::cout << ((TechEngine::KeyPressedEvent *) event)->getKey().getKeyName() << std::endl;
+void TechAttack::keyPressedEvent(TechEngine::KeyHoldEvent *event) {
+    if (event->getKey().getKeyCode() == KeyCode::W && player->getTransform().position.y <= 10) {
+        player->getTransform().position.y += 0.2;
+        networkHandler->getComponent<TechEngine::NetworkHandlerComponent>()->sendPacket(
+                new PlayerSyncPacket(networkHandler->getComponent<TechEngine::NetworkHandlerComponent>()->getUUID(), playerNumber, player->getTransform().position.y));
+    } else if (event->getKey().getKeyCode() == KeyCode::S && player->getTransform().position.y >= -10) {
+        player->getTransform().position.y -= 0.2;
+        networkHandler->getComponent<TechEngine::NetworkHandlerComponent>()->sendPacket(
+                new PlayerSyncPacket(networkHandler->getComponent<TechEngine::NetworkHandlerComponent>()->getUUID(), playerNumber, player->getTransform().position.y));
+    }
 }
 
 void TechAttack::onUpdate() {
-    stateMachine.changeStates(StateB::stateName);
 }
 
 void TechAttack::onFixedUpdate() {
 
+}
+
+void TechAttack::testPacket(TestPacketEvent *event) {
+    ball->getTransform().position.x = event->x;
+    ball->getTransform().position.y = event->y;
+}
+
+void TechAttack::selectPlayer(PlayerSelectorEvent *event) {
+    playerNumber = event->playerNumber;
+    if (event->playerNumber == 1) {
+        player->getTransform().position.x = -8;
+    } else {
+        player->getTransform().position.x = 8;
+    }
+}
+
+void TechAttack::syncNetworkPlayer(PlayerSyncEvent *event) {
+    networkPlayer->getTransform().position.y = event->y;
+    networkPlayer->getTransform().position.x = playerNumber == 1 ? 8 : -8;
 }
 
 TechEngineCore::App *TechEngineCore::createApp() {

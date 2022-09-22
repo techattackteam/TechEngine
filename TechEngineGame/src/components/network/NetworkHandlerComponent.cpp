@@ -16,8 +16,16 @@ namespace TechEngine {
         networkHandler.connectWithServer();
     }
 
+    void NetworkHandlerComponent::sendPacket(TechEngineCore::Packet *packet) {
+        networkHandler.sendPacket(packet);
+    }
+
     void NetworkHandlerComponent::update() {
         networkHandler.update();
+    }
+
+    const std::string &NetworkHandlerComponent::getUUID() {
+        return networkHandler.getUUID();
     }
 
     void NetworkHandlerComponent::getInfo() {

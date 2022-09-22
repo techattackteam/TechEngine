@@ -26,6 +26,7 @@ namespace TechEngine {
 
     void CConnectionHandler::onConnectionSuccessEvent(ConnectionSuccessfulEvent *event) {
         networkHandler->setUUID(event->getUUID());
+        std::cout << "Connected with server. My UUID: " << event->getUUID() << std::endl;
     }
 
     void CConnectionHandler::onPingEvent(PingEvent *event) {

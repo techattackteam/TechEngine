@@ -2,21 +2,33 @@
 
 #include <TechEngineServer.hpp>
 #include <EntryPoint.hpp>
+#include "src/PlayerSyncEvent.hpp"
 
 class Server : public TechEngineServer::App {
 private:
-    bool running;
+    bool startGame = false;
+    int x = 0;
+    int y = 0;
+    int direction = 1;
 
+    float player1y = 0;
+    std::string player1UUID;
+    float player2y = 0;
+    std::string player2UUID;
 public:
     Server();
 
     ~Server();
 
-    void run() override;
-
     void onUpdate() override;
 
     void onFixedUpdate() override;
 
+    void testPacketEvent();
 
+    void SyncBall();
+
+    void onPlayerJoinEvent(ConnectionSuccessfulEvent *event);
+
+    void syncPlayers(PlayerSyncEvent *event);
 };

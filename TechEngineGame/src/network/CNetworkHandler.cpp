@@ -28,6 +28,10 @@ namespace TechEngine {
         ((CConnectionHandler *) connectionHandler)->connectToServer();
     }
 
+    void CNetworkHandler::sendPacket(Packet *packet) {
+        packetHandler->sendPacket(packet, serverEndpoint);
+    }
+
     udp::endpoint CNetworkHandler::getServerEndpoint() const {
         return serverEndpoint;
     }

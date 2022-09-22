@@ -10,8 +10,9 @@ endforeach ()
 list(REMOVE_DUPLICATES Game_Include_Dirs)
 
 include_directories("../TechEngineServer/src/external")
+include_directories("../common")
 
 add_executable(Server ${Server_Sources} ${Server_Headers})
 
 target_link_directories(Server PRIVATE ${Server_Include_Dirs})
-target_link_libraries(Server TechEngineServer)
+target_link_libraries(Server TechEngineServer common)
