@@ -36,6 +36,7 @@ namespace TechEngineServer {
         std::string uuidString = boost::uuids::to_string(uuid);
         Client *client = new Client(uuidString, event->getEndpoint());
         networkHandler->getClients().insert(std::make_pair(uuidString, client));
+        EventDispatcher::getInstance().dispatch(new ConnectionSuccessfulEvent(uuidString));
         networkHandler->getPacketHandler().sendPacket(new ConnectionSuccessfulPacket(client->UUID), event->getEndpoint());
         std::cout << "New connection accepted uuid: " << uuidString << std::endl;
     }
@@ -62,7 +63,7 @@ namespace TechEngineServer {
         Client *client = ((SNetworkHandler *) networkHandler)->getClient(uuid);
         std::chrono::duration<double> deltaTime = timeStamp - client->getLastPingTime();
         if (deltaTime.count() > 5) {
-            timeoutClient(client);
+            //timeoutClient(client);
         }
     }
 

@@ -49,7 +49,10 @@ namespace TechEngineCore {
             }
             packet->bytes = bytes;
             packet->senderEndpoint = endpoint;
-            networkHandler->getPacketHandler().storeIncomePacket(packet);
+            /*Figure if this should be instantly call on packet received or be stored to be processed later*/
+            packet->onPacketReceive();
+            //networkHandler->getPacketHandler().storeIncomePacket(packet);
+
         }
     }
 

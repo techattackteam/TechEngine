@@ -16,12 +16,12 @@ namespace TechEngineServer {
         while (running) {
             float deltaFrame = timer.getDeltaTime();
             accumulator += deltaFrame;
-            //while (accumulator >= deltaTick) {
-            onFixedUpdate();
-            timer.updateTicks();
-            accumulator -= deltaTick;
-            eventDispatcher.syncEventManager.execute();
-            //}
+            while (accumulator >= deltaTick) {
+                onFixedUpdate();
+                timer.updateTicks();
+                accumulator -= deltaTick;
+                eventDispatcher.syncEventManager.execute();
+            }
             float alpha = accumulator / deltaTick;
             networkHandler.update();
             eventDispatcher.asyncEventManager.execute();

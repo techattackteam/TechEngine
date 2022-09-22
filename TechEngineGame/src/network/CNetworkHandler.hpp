@@ -28,5 +28,7 @@ namespace TechEngine {
         const short &getPort();
 
         void setPort(short port);
+
+        void sendPacket(TechEngineCore::Packet *packet);
     };
 }

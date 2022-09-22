@@ -17,7 +17,7 @@ list(REMOVE_DUPLICATES TechEngineGame_Include_Dirs)
 add_library(TechEngineGame SHARED ${TechEngineGame_Sources} ${TechEngineGame_Headers})
 
 target_include_directories(TechEngineGame PUBLIC "../TechEngineCore/src/external")
-target_include_directories(TechEngineGame PRIVATE "src")
+target_include_directories(TechEngineGame PUBLIC "src")
 target_link_libraries(TechEngineGame TechEngineCore imgui::imgui GLEW::GLEW glfw glm::glm -DENGINE_EDITOR)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")

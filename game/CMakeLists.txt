@@ -10,11 +10,12 @@ endforeach ()
 list(REMOVE_DUPLICATES Game_Include_Dirs)
 
 include_directories("../TechEngineGame/src/external")
+include_directories("../common")
 
 add_executable(Game ${Game_Sources} ${Game_Headers})
 
 target_link_directories(Game PRIVATE ${Game_Include_Dirs})
-target_link_libraries(Game TechEngineGame)
+target_link_libraries(Game TechEngineGame common)
 
 add_custom_command(TARGET Game POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:Game> $<TARGET_FILE_DIR:Game>

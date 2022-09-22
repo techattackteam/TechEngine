@@ -1,6 +1,6 @@
 #pragma once
 
-#include <TechEngineCore.hpp>
+#include "external/TechEngineCore.hpp"
 
 namespace TechEngine {
 
