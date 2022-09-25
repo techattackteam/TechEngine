@@ -32,11 +32,11 @@ void TechAttack::keyPressedEvent(TechEngine::KeyHoldEvent *event) {
     if (event->getKey().getKeyCode() == KeyCode::W && player->getTransform().position.y <= 10) {
         player->getTransform().position.y += 0.2;
         networkHandler->getComponent<TechEngine::NetworkHandlerComponent>()->sendPacket(
-                new PlayerSyncPacket(networkHandler->getComponent<TechEngine::NetworkHandlerComponent>()->getUUID(), playerNumber, player->getTransform().position.y));
+                new PlayerSyncPacket(playerNumber, player->getTransform().position.y));
     } else if (event->getKey().getKeyCode() == KeyCode::S && player->getTransform().position.y >= -10) {
         player->getTransform().position.y -= 0.2;
         networkHandler->getComponent<TechEngine::NetworkHandlerComponent>()->sendPacket(
-                new PlayerSyncPacket(networkHandler->getComponent<TechEngine::NetworkHandlerComponent>()->getUUID(), playerNumber, player->getTransform().position.y));
+                new PlayerSyncPacket(playerNumber, player->getTransform().position.y));
     }
 }
 

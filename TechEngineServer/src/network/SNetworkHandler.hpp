@@ -15,6 +15,10 @@ namespace TechEngineServer {
 
         void init() override;
 
+        void sendPacket(Packet *packet, Client *client);
+
+        void sendPacket(Packet *packet, const std::string &uuid);
+
         std::unordered_map<std::string, Client *> &getClients();
 
         Client *getClient(const std::string &uuid);

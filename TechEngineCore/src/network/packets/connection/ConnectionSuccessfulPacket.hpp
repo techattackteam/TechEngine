@@ -1,17 +1,14 @@
 #pragma once
 
-#include <boost/serialization/export.hpp>
 #include "network/Packet.hpp"
+#include "event/EventDispatcher.hpp"
+#include "event/events/connection/ConnectionSuccessfulEvent.hpp"
 
 namespace TechEngineCore {
 
     class ConnectionSuccessfulPacket : public Packet {
-    private:
-
     public:
         ConnectionSuccessfulPacket() = default;
-
-        ConnectionSuccessfulPacket(const std::string &uuid);
 
         ~ConnectionSuccessfulPacket() = default;
 
@@ -21,4 +18,4 @@ namespace TechEngineCore {
         void serialize(Archive &ar, unsigned int version);
     };
 }
-BOOST_CLASS_EXPORT_KEY(TechEngineCore::ConnectionSuccessfulPacket);
+BOOST_CLASS_EXPORT(TechEngineCore::ConnectionSuccessfulPacket)

@@ -12,5 +12,5 @@ include_directories("../TechEngineCore/src/external")
 add_library(common SHARED ${Common_Sources} ${Common_Headers})
 
 target_include_directories(common PUBLIC "../TechEngineCore/src/external")
-target_include_directories(common PRIVATE "src")
+target_include_directories(common PUBLIC "src")
 target_link_libraries(common TechEngineCore)

@@ -93,7 +93,7 @@ namespace TechEngineCore {
         std::stringstream stringStream(buffer);
         boost::archive::text_iarchive ia{stringStream};
         Packet *packet;
-        ia & packet;
+        ia >> packet;
         return packet;
     }
 

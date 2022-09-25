@@ -9,7 +9,8 @@ namespace TechEngineCore {
 
     }
 
-    void PacketHandler::sendPacket(Packet *packet, udp::endpoint endpoint) {
+    void PacketHandler::sendPacket(std::string uuid, Packet *packet, udp::endpoint endpoint) {
+        packet->uuid = uuid;
         packet->senderEndpoint = endpoint;
         outcomePackets.push(packet);
     }

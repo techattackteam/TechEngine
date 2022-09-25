@@ -28,9 +28,6 @@ namespace TechEngineCore {
 
         void write();
 
-        std::string serializePacket(Packet *packet);
-
-        Packet *deserializePacket(std::string buffer);
 
     protected:
         NetworkHandler *networkHandler;
@@ -41,6 +38,9 @@ namespace TechEngineCore {
     public:
         udp::socket *socket;
 
+        std::string serializePacket(Packet *packet);
+
+        Packet *deserializePacket(std::string buffer);
 
         virtual ~SocketHandler();
 

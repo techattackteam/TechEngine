@@ -37,13 +37,13 @@ namespace TechEngineServer {
         Client *client = new Client(uuidString, event->getEndpoint());
         networkHandler->getClients().insert(std::make_pair(uuidString, client));
         EventDispatcher::getInstance().dispatch(new ConnectionSuccessfulEvent(uuidString));
-        networkHandler->getPacketHandler().sendPacket(new ConnectionSuccessfulPacket(client->UUID), event->getEndpoint());
+        networkHandler->sendPacket(new ConnectionSuccessfulPacket(), client);
         std::cout << "New connection accepted uuid: " << uuidString << std::endl;
     }
 
     void SConnectionHandler::onDisconnectionRequest(DisconnectionRequestEvent *event) {
         Client *client = networkHandler->getClient(event->getUUID());
-        networkHandler->getPacketHandler().sendPacket(new DisconnectionSuccessfulPacket(client->UUID), client->endpoint);
+        networkHandler->sendPacket(new DisconnectionSuccessfulPacket(), client);
         networkHandler->getClients().erase(event->getUUID());
     }
 
@@ -54,7 +54,7 @@ namespace TechEngineServer {
             for (const auto &element: ((SNetworkHandler *) networkHandler)->getClients()) {
                 Client *client = element.second;
                 checkAlive(element.first, timeStamp);
-                networkHandler->getPacketHandler().sendPacket(new PingPacket(element.first), client->endpoint);
+                networkHandler->sendPacket(new PingPacket(), client);
             }
         } while (networkHandler->isRunning());
     }

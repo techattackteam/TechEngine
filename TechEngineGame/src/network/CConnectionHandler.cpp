@@ -1,6 +1,7 @@
 #include <iostream>
 #include "CConnectionHandler.hpp"
 #include "network/packets/connection/PingPacket.hpp"
+#include "network/packets/connection/ConnectionRequestPacket.hpp"
 
 namespace TechEngine {
     CConnectionHandler::CConnectionHandler(CNetworkHandler *networkHandler) : networkHandler(networkHandler), ConnectionHandler(networkHandler) {
@@ -21,7 +22,7 @@ namespace TechEngine {
     }
 
     void CConnectionHandler::requestConnection() {
-        networkHandler->getPacketHandler().sendPacket(new ConnectionRequestPacket(), networkHandler->getServerEndpoint());
+        networkHandler->sendPacket(new ConnectionRequestPacket());
     }
 
     void CConnectionHandler::onConnectionSuccessEvent(ConnectionSuccessfulEvent *event) {
@@ -30,6 +31,6 @@ namespace TechEngine {
     }
 
     void CConnectionHandler::onPingEvent(PingEvent *event) {
-        networkHandler->getPacketHandler().sendPacket(new PingPacket(networkHandler->getUUID()), networkHandler->getServerEndpoint());
+        networkHandler->sendPacket(new PingPacket());
     }
 }
