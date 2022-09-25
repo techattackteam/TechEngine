@@ -1,10 +1,10 @@
 #pragma once
 
-#include <boost/serialization/export.hpp>
-#include "../../Packet.hpp"
+#include "network/Packet.hpp"
+#include "event/events/connection/ConnectionRequestEvent.hpp"
+#include "event/EventDispatcher.hpp"
 
 namespace TechEngineCore {
-
     class ConnectionRequestPacket : public Packet {
     private:
     public:
@@ -18,4 +18,4 @@ namespace TechEngineCore {
         void serialize(Archive &ar, unsigned int version);
     };
 }
-BOOST_CLASS_EXPORT_KEY(TechEngineCore::ConnectionRequestPacket);
+BOOST_CLASS_EXPORT(TechEngineCore::ConnectionRequestPacket)

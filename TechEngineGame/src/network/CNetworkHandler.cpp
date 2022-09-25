@@ -29,11 +29,7 @@ namespace TechEngine {
     }
 
     void CNetworkHandler::sendPacket(Packet *packet) {
-        packetHandler->sendPacket(packet, serverEndpoint);
-    }
-
-    udp::endpoint CNetworkHandler::getServerEndpoint() const {
-        return serverEndpoint;
+        packetHandler->sendPacket(uuid, packet, serverEndpoint);
     }
 
     void CNetworkHandler::setUUID(std::string uuid) {

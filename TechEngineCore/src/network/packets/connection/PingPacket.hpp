@@ -1,7 +1,8 @@
 #pragma once
 
-#include <boost/serialization/export.hpp>
 #include "network/Packet.hpp"
+#include "event/EventDispatcher.hpp"
+#include "event/events/connection/PingEvent.hpp"
 
 namespace TechEngineCore {
 
@@ -9,9 +10,7 @@ namespace TechEngineCore {
     public:
         PingPacket() = default;
 
-        PingPacket(const std::string &uuid);
-
-        ~PingPacket() = default;
+        ~PingPacket() override = default;
 
         void onPacketReceive() override;
 
@@ -20,4 +19,4 @@ namespace TechEngineCore {
     };
 }
 
-BOOST_CLASS_EXPORT_KEY(TechEngineCore::PingPacket);
+BOOST_CLASS_EXPORT(TechEngineCore::PingPacket)

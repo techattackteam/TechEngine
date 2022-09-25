@@ -1,7 +1,6 @@
 #pragma once
 
 #include <TechEngineCore.hpp>
-#include "network/packets/connection/PingPacket.hpp"
 
 namespace TechEngine {
     class CNetworkHandler : public TechEngineCore::NetworkHandler {
@@ -17,6 +16,8 @@ namespace TechEngine {
 
         void init() override;
 
+        void sendPacket(TechEngineCore::Packet *packet);
+
         udp::endpoint getServerEndpoint() const;
 
         void connectWithServer();
@@ -29,6 +30,5 @@ namespace TechEngine {
 
         void setPort(short port);
 
-        void sendPacket(TechEngineCore::Packet *packet);
     };
 }

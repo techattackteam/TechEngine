@@ -15,6 +15,6 @@
 
 #include "../network/handler/NetworkHandler.hpp"
 #include "../network/Packet.hpp"
-#include "../network/packets/connection/ConnectionRequestPacket.hpp"
+//#include "../network/packets/connection/ConnectionRequestPacket.hpp"
 
 #include "../wrapper/Wrapper.hpp"

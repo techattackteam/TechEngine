@@ -19,7 +19,7 @@ namespace TechEngineCore {
 
         virtual void init();
 
-        void sendPacket(Packet *packet, udp::endpoint endpoint);
+        void sendPacket(std::string uuid, Packet *packet, udp::endpoint endpoint);
 
         bool processIncomePacket();
 

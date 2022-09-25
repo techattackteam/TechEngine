@@ -1,10 +1,7 @@
 #include "PlayerSelectorPacket.hpp"
 #include "PlayerSelectorEvent.hpp"
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/serialization/base_object.hpp>
 
-PlayerSelectorPacket::PlayerSelectorPacket(std::string uuid, int playerNumber) : playerNumber(playerNumber), Packet(uuid) {
+PlayerSelectorPacket::PlayerSelectorPacket(int playerNumber) : playerNumber(playerNumber) {
 
 }
 
@@ -17,5 +14,3 @@ void PlayerSelectorPacket::serialize(Archive &ar, unsigned int version) {
     ar & boost::serialization::base_object<TechEngineCore::Packet>(*this);
     ar & playerNumber;
 }
-
-BOOST_CLASS_EXPORT_IMPLEMENT(PlayerSelectorPacket);

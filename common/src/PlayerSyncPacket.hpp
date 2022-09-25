@@ -1,7 +1,6 @@
 #pragma once
 
 #include <TechEngineCore.hpp>
-#include <boost/serialization/export.hpp>
 
 class PlayerSyncPacket : public TechEngineCore::Packet {
 
@@ -11,15 +10,14 @@ private:
 public:
     PlayerSyncPacket() = default;
 
-    PlayerSyncPacket(std::string uuid, int playerNumber, float y);
+    PlayerSyncPacket(int playerNumber, float y);
 
     ~PlayerSyncPacket() = default;
 
-    void onPacketReceive();
+    void onPacketReceive() override;
 
     template<class Archive>
     void serialize(Archive &ar, unsigned int version);
-
 };
 
-BOOST_CLASS_EXPORT_KEY(PlayerSyncPacket);
+BOOST_CLASS_EXPORT(PlayerSyncPacket);

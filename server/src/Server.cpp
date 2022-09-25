@@ -46,23 +46,23 @@ void Server::onFixedUpdate() {
 
 void Server::SyncBall() {
     for (auto element: networkHandler.getClients()) {
-        networkHandler.getPacketHandler().sendPacket(new TestPacket(element.first, x, y), element.second->endpoint);
+        networkHandler.sendPacket(new TestPacket(x, y), element.second);
     }
 }
 
 void Server::testPacketEvent() {
     for (auto element: networkHandler.getClients()) {
-        networkHandler.getPacketHandler().sendPacket(new TestPacket(), element.second->endpoint);
+        networkHandler.sendPacket(new TestPacket(), element.second);
     }
 }
 
 void Server::onPlayerJoinEvent(ConnectionSuccessfulEvent *event) {
     if (networkHandler.getClients().size() == 1) {
-        networkHandler.getPacketHandler().sendPacket(new PlayerSelectorPacket(event->getUUID(), 1), networkHandler.getClient(event->getUUID())->endpoint);
+        networkHandler.sendPacket(new PlayerSelectorPacket(1), event->getUUID());
         player1UUID = event->getUUID();
     } else {
-        networkHandler.getPacketHandler().sendPacket(new PlayerSelectorPacket(event->getUUID(), 2), networkHandler.getClient(event->getUUID())->endpoint);
-        networkHandler.getPacketHandler().sendPacket(new PlayerSyncPacket(event->getUUID(), 1, player1y), networkHandler.getClient(event->getUUID())->endpoint);
+        networkHandler.sendPacket(new PlayerSelectorPacket(2), event->getUUID());
+        networkHandler.sendPacket(new PlayerSyncPacket(1, player1y), event->getUUID());
         player2UUID = event->getUUID();
     }
 }
@@ -70,10 +70,10 @@ void Server::onPlayerJoinEvent(ConnectionSuccessfulEvent *event) {
 void Server::syncPlayers(PlayerSyncEvent *event) {
     if (event->playerNumber == 1) {
         player1y = event->y;
-        networkHandler.getPacketHandler().sendPacket(new PlayerSyncPacket(player2UUID, 1, player1y), networkHandler.getClient(player2UUID)->endpoint);
+        networkHandler.sendPacket(new PlayerSyncPacket(1, player1y), player2UUID);
     } else {
         player2y = event->y;
-        networkHandler.getPacketHandler().sendPacket(new PlayerSyncPacket(player1UUID, 2, player2y), networkHandler.getClient(player1UUID)->endpoint);
+        networkHandler.sendPacket(new PlayerSyncPacket(2, player2y), player1UUID);
     }
 }
 
