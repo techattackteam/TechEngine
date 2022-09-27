@@ -1,8 +1,8 @@
 #pragma once
 
 #include "CustomPanel.hpp"
-#include "../events/gameObjects/GameObjectCreateEvent.hpp"
-#include "../events/gameObjects/GameObjectDestroyEvent.hpp"
+#include "event/events/gameObjects/GameObjectCreateEvent.hpp"
+#include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
 
 namespace TechEngine {
 

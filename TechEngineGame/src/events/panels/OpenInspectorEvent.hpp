@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../scene/GameObject.hpp"
+#include "scene/GameObject.hpp"
 
 namespace TechEngine {
     class OpenInspectorEvent : public TechEngineCore::Event {

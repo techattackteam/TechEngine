@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Component.hpp"
+#include "components/Component.hpp"
 #include "../scene/GameObject.hpp"
-#include "TransformComponent.hpp"
+#include "components/TransformComponent.hpp"
 #include "../events/window/WindowResizeEvent.hpp"
 #include <glm/glm.hpp>
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "Component.hpp"
+#include "components/Component.hpp"
 #include "../renderer/VertexBuffer.hpp"
 #include "../mesh/Mesh.hpp"
 #include "../mesh/Material.hpp"

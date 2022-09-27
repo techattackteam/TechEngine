@@ -19,7 +19,7 @@ namespace TechEngine {
 
     }
 
-    TransformComponent &Component::getTransform() {
+    Transform &Component::getTransform() {
         return gameObject->getTransform();
     }
 

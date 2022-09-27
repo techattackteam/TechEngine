@@ -11,7 +11,7 @@ namespace TechEngine {
 
     class Component;
 
-    class TransformComponent;
+    class Transform;
 
     class GameObject {
     private:
@@ -24,7 +24,7 @@ namespace TechEngine {
 
         GameObject(std::string name, bool showInfoPanel = true);
 
-        template<typename C, typename... A>
+        template<class C, typename... A>
         void addComponent(A ...args) {
             if (!hasComponent<C>() && C::getName) {
                 C *component = new C(args...);
@@ -34,6 +34,9 @@ namespace TechEngine {
 
         template<typename C>
         void removeComponent() {
+            if (hasComponent<C>() && C::getName) {
+                components.erase(C::getName());
+            }
         }
 
         template<typename C>
@@ -56,7 +59,7 @@ namespace TechEngine {
 
         void showInfo();
 
-        TransformComponent &getTransform();
+        Transform &getTransform();
     };
 }
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../../../TechEngineCore/src/event/events/Event.hpp"
-#include "../../scene/GameObject.hpp"
+#include "event/events/Event.hpp"
+#include "scene/GameObject.hpp"
 
 namespace TechEngine {
     class GameObjectDestroyEvent : public TechEngineCore::Event {

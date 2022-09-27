@@ -1,6 +1,5 @@
-#include <iostream>
 #include "Scene.hpp"
-#include "../components/DirectionalLightComponent.hpp"
+#include "components/DirectionalLightComponent.hpp"
 
 namespace TechEngine {
     Scene::Scene() {
@@ -15,7 +14,7 @@ namespace TechEngine {
     }
 
     void Scene::onGOCreate(GameObjectCreateEvent *event) {
-        gameObjects.emplace_back(event->getGameObject());
+        CoreScene::onGOCreate(event);
         if (event->getGameObject()->hasComponent<CameraComponent>()) {
             auto *cameraComponent = (CameraComponent *) event->getGameObject()->getComponent<CameraComponent>();
             if (cameraComponent->isMainCamera()) {
@@ -24,34 +23,17 @@ namespace TechEngine {
         } else if (event->getGameObject()->hasComponent<DirectionalLightComponent>()) {
             lights.emplace_back(event->getGameObject());
         }
+        //Hack
+        event->getGameObject()->removeComponent<Transform>();
+        event->getGameObject()->addComponent<TransformComponent>(event->getGameObject());
     }
 
     void Scene::onGODestroy(GameObjectDestroyEvent *event) {
-        gameObjects.remove(event->getGameObject());
+        CoreScene::onGODestroy(event);
         if (event->getGameObject()->hasComponent<DirectionalLightComponent>()) {
             lights.remove(event->getGameObject());
         }
         delete (event->getGameObject());
-    }
-
-    void Scene::update() {
-        for (auto element: gameObjects) {
-            element->update();
-        }
-    }
-
-    void Scene::fixedUpdate() {
-        for (auto element: gameObjects) {
-            element->fixUpdate();
-        }
-    }
-
-    Scene &Scene::getInstance() {
-        return *instance;
-    }
-
-    std::list<GameObject *> Scene::getGameObjects() {
-        return gameObjects;
     }
 
     std::list<GameObject *> Scene::getLights() {
@@ -66,5 +48,7 @@ namespace TechEngine {
         return lights.size() != 0;
     }
 
-
+    Scene &Scene::getInstance() {
+        return *instance;
+    }
 }
