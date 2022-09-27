@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Component.hpp"
+#include "components/Component.hpp"
 #include "../../network/CNetworkHandler.hpp"
 
 namespace TechEngine {

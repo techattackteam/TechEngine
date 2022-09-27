@@ -2,7 +2,7 @@
 
 #include <string>
 #include <imgui.h>
-#include "../scene/GameObject.hpp"
+#include "scene/GameObject.hpp"
 
 using ComponentName = std::string;
 
@@ -24,11 +24,11 @@ namespace TechEngine {
 
         virtual void getInfo() = 0;
 
-        ComponentName &getName() {
+        virtual ComponentName &getName() {
             return name;
         };
 
-        TransformComponent &getTransform();
+        Transform &getTransform();
     };
 }
 

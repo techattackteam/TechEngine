@@ -2,7 +2,7 @@
 
 #include <vector>
 #include "../renderer/VertexBuffer.hpp"
-#include "../components/TransformComponent.hpp"
+#include "components/TransformComponent.hpp"
 
 namespace TechEngine {
     class Mesh {

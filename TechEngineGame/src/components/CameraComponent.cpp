@@ -2,7 +2,7 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <iostream>
 #include "CameraComponent.hpp"
-#include "TransformComponent.hpp"
+#include "components/TransformComponent.hpp"
 #include "imgui_internal.h"
 #include "../event/EventDispatcher.hpp"
 #include "../core/Window.hpp"
@@ -42,8 +42,8 @@ namespace TechEngine {
     }
 
     void CameraComponent::updateViewMatrix() {
-        gameObject->getComponent<TransformComponent>()->setScale(glm::vec3(1, 1, 1));
-        glm::mat4 model = gameObject->getComponent<TransformComponent>()->getModelMatrix();
+        gameObject->getTransform().setScale(glm::vec3(1, 1, 1));
+        glm::mat4 model = gameObject->getComponent<Transform>()->getModelMatrix();
         viewMatrix = glm::inverse(model);
     }
 

@@ -3,7 +3,6 @@
 #include "NewObjectPanel.hpp"
 #include "src/PlayerSyncPacket.hpp"
 #include <memory>
-#include <iostream>
 
 TechAttack::TechAttack() {
     new Camera();

@@ -9,7 +9,7 @@
 #include "../components/CameraComponent.hpp"
 #include "../components/DirectionalLightComponent.hpp"
 #include "../components/MeshRendererComponent.hpp"
-#include "../components/TransformComponent.hpp"
+#include "components/TransformComponent.hpp"
 #include "../components/network/NetworkHandlerComponent.hpp"
 
 #include "../events/input/KeyPressedEvent.hpp"

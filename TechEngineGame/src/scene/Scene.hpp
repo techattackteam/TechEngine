@@ -1,43 +1,32 @@
 #pragma once
 
-#include <list>
-#include "../events/gameObjects/GameObjectCreateEvent.hpp"
-#include "../events/gameObjects/GameObjectDestroyEvent.hpp"
-#include "../components/CameraComponent.hpp"
-#include "GameObject.hpp"
+#include "scene/CoreScene.hpp"
+#include "components/CameraComponent.hpp"
 
 namespace TechEngine {
-    class Scene {
-    public:
+    class Scene : public CoreScene {
+    private:
         inline static Scene *instance;
+
+        std::list<GameObject *> lights;
+
+    public:
+        CameraComponent *mainCamera;
 
         Scene();
 
-        void update();
+        ~Scene() = default;
 
-        void fixedUpdate();
+        void onGOCreate(GameObjectCreateEvent *event) override;
 
-        CameraComponent *mainCamera;
-
-        static Scene &getInstance();
-
-        std::list<GameObject *> getGameObjects();
-
-        std::list<GameObject *> getLights();
-
-        bool hasMainCamera();
+        void onGODestroy(GameObjectDestroyEvent *event) override;
 
         bool isLightingActive() const;
 
-    private:
+        bool hasMainCamera();
 
-        std::list<GameObject *> gameObjects;
-        std::list<GameObject *> lights;
+        std::list<GameObject *> getLights();
 
-        void onGOCreate(GameObjectCreateEvent *event);
-
-        void onGODestroy(GameObjectDestroyEvent *event);
+        static Scene &getInstance();
     };
 }
-
-
