@@ -2,18 +2,18 @@
 
 #include "CustomPanel.hpp"
 #include "scene/GameObject.hpp"
+#include "events/OnSelectGameObjectEvent.hpp"
 
 namespace TechEngine {
     class InspectorPanel : public Panel {
     private:
-        GameObject *gameObject;
+        GameObject *gameObject = nullptr;
     public:
-        explicit InspectorPanel(GameObject *gameObject);
+        explicit InspectorPanel();
 
         void onUpdate() override;
 
-        GameObject *getGameObject();
-
+        void inspectGameObject(OnSelectGameObjectEvent *event);
     };
 }
 

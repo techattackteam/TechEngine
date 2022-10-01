@@ -1,17 +1,22 @@
 #include "InspectorPanel.hpp"
 
 namespace TechEngine {
-    InspectorPanel::InspectorPanel(GameObject *gameObject) : Panel("Inspector: " + gameObject->getName()) {
-        this->gameObject = gameObject;
+    InspectorPanel::InspectorPanel() : Panel("Inspector") {
+        TechEngineCore::EventDispatcher::getInstance().subscribe(OnSelectGameObjectEvent::eventType, [this](TechEngineCore::Event *event) {
+            inspectGameObject((OnSelectGameObjectEvent *) (event));
+        });
     }
+
 
     void InspectorPanel::onUpdate() {
         ImGui::Begin(name.c_str());
-        gameObject->showInfo();
+        if (gameObject != nullptr) {
+        }
         ImGui::End();
     }
 
-    GameObject *InspectorPanel::getGameObject() {
-        return gameObject;
+    void InspectorPanel::inspectGameObject(OnSelectGameObjectEvent *event) {
+        this->gameObject = event->getGameObject();
     }
+
 }

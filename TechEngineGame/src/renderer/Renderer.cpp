@@ -5,11 +5,11 @@
 
 
 namespace TechEngine {
-    void Renderer::init() {
+    void Renderer::init(uint32_t width, uint32_t height) {
         vertexArray.init(id);
         vertexBuffer.init(id, 10000000 * sizeof(Vertex));
         shadersManager.init();
-        frameBuffer.init(id, 0, 0);
+        frameBuffer.init(id, width, height);
         //shadowMapBuffer.init(id);
         vertexArray.addNewBuffer(vertexBuffer);
         //shadowMapBuffer.createDepthTexture(1024, 1024);

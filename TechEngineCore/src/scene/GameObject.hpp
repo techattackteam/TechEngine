@@ -61,6 +61,11 @@ namespace TechEngine {
         void showInfo();
 
         TransformComponent &getTransform();
+
+        bool operator==(const GameObject *gameObject) {
+            return name == gameObject->name;
+        }
+
     };
 }
 

@@ -18,7 +18,7 @@ namespace TechEngine {
         std::vector<CustomPanel *> customPanels;
         ImGuiContext *imguiContext;
         RendererPanel rendererPanel{};
-        //InspectorPanel inspectorPanel{};
+        InspectorPanel inspectorPanel{};
         //SettingsPanel settingsPanel{};
         SceneHierarchyPanel sceneHierarchyPanel{};
         Window &window;
@@ -44,8 +44,6 @@ namespace TechEngine {
         void beginImGuiFrame();
 
         void endImGuiFrame();
-
-        void onWindowResizeEvent(WindowResizeEvent *event);
     };
 }
 
