@@ -72,7 +72,7 @@ namespace TechEngine {
     }
 
     void Window::onWindowResizeEvent(WindowResizeEvent *event) {
-        glViewport(0, 0, event->getWidth(), event->getHeight());
+        //glViewport(0, 0, event->getWidth(), event->getHeight());
         WindowSettings::width = event->getWidth();
         WindowSettings::height = event->getHeight();
         WindowSettings::aspectRatio = (float) event->getWidth() / (float) event->getHeight();

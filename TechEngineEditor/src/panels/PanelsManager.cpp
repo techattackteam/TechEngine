@@ -21,18 +21,13 @@ namespace TechEngine {
 
     void PanelsManager::update() {
         beginImGuiFrame();
-        sceneHierarchyPanel.onUpdate();
-        /*
-        for (Panel *panel: inspectorPanels) {
-            panel->onUpdate();
-        }
-
         for (CustomPanel *panel: customPanels) {
             panel->onUpdate();
         }
-        if (rendererPanel != nullptr)
-            rendererPanel->onUpdate();
-        */
+        sceneHierarchyPanel.onUpdate();
+        inspectorPanel.onUpdate();
+        rendererPanel.onUpdate();
+
         endImGuiFrame();
     }
 
@@ -100,6 +95,7 @@ namespace TechEngine {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+        // Note: Switch this to true to enable dockspace
         static bool dockspaceOpen = true;
         static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
@@ -168,12 +164,5 @@ namespace TechEngine {
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
-    }
-
-    void PanelsManager::onWindowResizeEvent(WindowResizeEvent *event) {
-        glViewport(0, 0, event->getWidth(), event->getHeight());
-        //WindowSettings::width = event->getWidth();
-        //WindowSettings::height = event->getHeight();
-        //WindowSettings::aspectRatio = (float) event->getWidth() / (float) event->getHeight();
     }
 }

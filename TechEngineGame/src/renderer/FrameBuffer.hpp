@@ -8,8 +8,6 @@ private:
     uint32_t id;
 
 public:
-    uint32_t width;
-    uint32_t height;
     uint32_t depthMap = 0;
     uint32_t colorTexture = 0;
 
