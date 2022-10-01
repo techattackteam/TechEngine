@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CustomPanel.hpp"
-#include "../scene/GameObject.hpp"
+#include "scene/GameObject.hpp"
 
 namespace TechEngine {
     class InspectorPanel : public Panel {

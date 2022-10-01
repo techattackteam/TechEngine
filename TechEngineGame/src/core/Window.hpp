@@ -3,7 +3,6 @@
 #include <string>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include "../renderer/Renderer.hpp"
 #include "../events/window/WindowResizeEvent.hpp"
 
 namespace TechEngine {
@@ -23,8 +22,6 @@ namespace TechEngine {
 
         GLFWwindow *handler;
 
-        Renderer renderer;
-
         void onWindowResizeEvent(WindowResizeEvent *event);
 
     public:
@@ -42,7 +39,6 @@ namespace TechEngine {
 
         static void windowKeyInput(int key, int action);
 
-        Renderer &getRenderer();
 
     };
 }

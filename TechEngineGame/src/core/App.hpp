@@ -4,7 +4,7 @@
 
 #include "../event/EventDispatcher.hpp"
 #include "../stateMachine/StateMachineManager.hpp"
-#include "../panels/PanelsManager.hpp"
+//#include "../panels/PanelsManager.hpp"
 #include "../scene/Scene.hpp"
 #include "../events/window/WindowCloseEvent.hpp"
 
@@ -16,7 +16,7 @@ namespace TechEngine {
     public:
         TechEngineCore::EventDispatcher eventDispatcher;
         TechEngineCore::StateMachineManager stateMachineManager;
-        PanelsManager panelsManager;
+        //PanelsManager panelsManager;
         Scene scene;
 
         App();

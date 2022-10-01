@@ -3,7 +3,7 @@
 #include <TechEngine.hpp>
 #include <EntryPoint.hpp>
 #include "NetworkHandler.hpp"
-#include "QuadMeshTest.hpp"
+#include "../../TechEngineEditor/src/testGameObject/QuadMeshTest.hpp"
 #include "src/TestPacketEvent.hpp"
 #include "src/PlayerSelectorEvent.hpp"
 #include "src/PlayerSyncEvent.hpp"

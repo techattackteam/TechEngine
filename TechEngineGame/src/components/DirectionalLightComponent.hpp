@@ -23,13 +23,6 @@ namespace TechEngine {
         glm::mat4 &getViewMatrix();
 
         glm::vec4 &getColor();
-
-        void getInfo() override;
-
-        static ComponentName getName() {
-            return "DirectionalLight";
-        }
-
     };
 }
 

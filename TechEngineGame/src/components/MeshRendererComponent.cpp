@@ -19,12 +19,6 @@ namespace TechEngine {
         }
     }
 
-    void MeshRendererComponent::getInfo() {
-        if (ImGui::CollapsingHeader(name.c_str())) {
-
-        }
-    }
-
     Material &MeshRendererComponent::getMaterial() {
         return material;
     }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <TechEngine.hpp>
+#include "TechEngine.hpp"
 #include <sstream>
 
 class QuadMeshTest : public TechEngine::GameObject {
