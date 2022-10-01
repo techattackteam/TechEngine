@@ -22,13 +22,13 @@ namespace TechEngine {
 
         virtual void update();
 
-        virtual void getInfo() = 0;
+        //virtual void getInfo() = 0;
 
         virtual ComponentName &getName() {
             return name;
         };
 
-        Transform &getTransform();
+        TransformComponent &getTransform();
     };
 }
 

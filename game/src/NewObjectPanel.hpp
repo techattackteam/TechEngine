@@ -1,7 +1,7 @@
 #pragma once
 
 #include <TechEngine.hpp>
-#include "QuadMeshTest.hpp"
+#include "../../TechEngineEditor/src/testGameObject/QuadMeshTest.hpp"
 
 class NewObjectPanel : TechEngine::CustomPanel {
 public:

@@ -46,13 +46,7 @@ namespace TechEngine {
 
         glm::mat4 getProjectionMatrix();
 
-        void getInfo() override;
-
         bool isMainCamera();
-
-        static ComponentName getName() {
-            return "Camera";
-        }
     };
 }
 

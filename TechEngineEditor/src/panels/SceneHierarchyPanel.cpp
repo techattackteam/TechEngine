@@ -1,8 +1,8 @@
 #include <ios>
 #include "SceneHierarchyPanel.hpp"
-#include "../scene/Scene.hpp"
-#include "../events/panels/CloseInspectorEvent.hpp"
-#include "../events/panels/OpenInspectorEvent.hpp"
+#include "scene/Scene.hpp"
+#include "events/panels/CloseInspectorEvent.hpp"
+#include "events/panels/OpenInspectorEvent.hpp"
 
 namespace TechEngine {
     SceneHierarchyPanel::SceneHierarchyPanel() : Panel("SceneHierarchyPanel") {

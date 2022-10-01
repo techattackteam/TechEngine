@@ -9,26 +9,20 @@
 #include "Component.hpp"
 
 namespace TechEngine {
-    class Transform : public TechEngine::Component {
+    class TransformComponent : public TechEngine::Component {
     public:
         glm::vec3 position;
         glm::vec3 orientation;
         glm::vec3 scale;
         glm::mat4 model;
 
-        explicit Transform(TechEngine::GameObject *gameObject);
+        explicit TransformComponent(TechEngine::GameObject *gameObject);
 
         glm::mat4 getModelMatrix();
-
-        virtual void getInfo();
 
         glm::vec3 getPosition() const;
 
         glm::vec3 getOrientation() const;
-
-        static ComponentName getName() {
-            return "Transform";
-        }
 
         void translate(glm::vec3 vector);
 
@@ -41,7 +35,6 @@ namespace TechEngine {
         void rotate(glm::quat quaternion);
 
         void lookAt(glm::vec3 position);
-
     };
 }
 

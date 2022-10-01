@@ -1,5 +1,3 @@
-#include <imgui_impl_opengl3.h>
-#include <imgui_impl_glfw.h>
 #include "GLFW.hpp"
 #include "Renderer.hpp"
 #include "../scene/Scene.hpp"
@@ -11,9 +9,10 @@ namespace TechEngine {
         vertexArray.init(id);
         vertexBuffer.init(id, 10000000 * sizeof(Vertex));
         shadersManager.init();
-        shadowMapBuffer.init(id);
+        frameBuffer.init(id, 0, 0);
+        //shadowMapBuffer.init(id);
         vertexArray.addNewBuffer(vertexBuffer);
-        shadowMapBuffer.createDepthTexture(1024, 1024);
+        //shadowMapBuffer.createDepthTexture(1024, 1024);
     }
 
     void Renderer::renderWithLightPass() {
@@ -70,12 +69,14 @@ namespace TechEngine {
         shadersManager.getActiveShader()->setUniformVec3("cameraPosition", Scene::getInstance().mainCamera->getTransform().getPosition());
         GlCall(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
         GlCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-        shadowMapBuffer.bindShadowMapTexture();
+        //shadowMapBuffer.bindShadowMapTexture();
         if (Scene::getInstance().isLightingActive()) {
             renderWithLightPass();
         } else {
             renderGeometryPass(false);
         }
+
+
     }
 
     void Renderer::renderPipeline() {
@@ -86,7 +87,7 @@ namespace TechEngine {
         vertexBuffer.bind();
         vertexArray.bind();
 
-        shadowPass();
+        //shadowPass();
         geometryPass();
 
         vertexBuffer.unBind();
@@ -98,22 +99,7 @@ namespace TechEngine {
         //shadersManager.getActiveShader()->setUniformVec4("material.color", material.getColor());
     }
 
-    void Renderer::beginImGuiFrame() {
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-    }
-
-    void Renderer::ImGuiPipeline() const {
-        // Rendering
-        ImGui::Render();
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        ImGuiIO &io = ImGui::GetIO();
-        GLFWwindow *backup_current_context = glfwGetCurrentContext();
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-        glfwMakeContextCurrent(backup_current_context);
+    FrameBuffer &Renderer::getFramebuffer() {
+        return frameBuffer;
     }
 }

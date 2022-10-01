@@ -15,20 +15,18 @@ namespace TechEngine {
         VertexArray vertexArray;
         VertexBuffer vertexBuffer;
         FrameBuffer shadowMapBuffer;
-
+        FrameBuffer frameBuffer;
     public:
 
         Renderer() = default;
 
         void init();
 
-        void ImGuiPipeline() const;
-
         void renderPipeline();
 
         void flushMeshData(MeshRendererComponent *meshRenderer);
 
-        static void beginImGuiFrame();
+        FrameBuffer &getFramebuffer();
 
     private:
         void shadowPass();

@@ -28,7 +28,7 @@ namespace TechEngine {
         return networkHandler.getUUID();
     }
 
-    void NetworkHandlerComponent::getInfo() {
+/*    void NetworkHandlerComponent::getInfo() {
         if (ImGui::CollapsingHeader(name.c_str())) {
             ImGui::PushID(name.c_str());
             ImGui::PushMultiItemsWidths(1, ImGui::CalcItemWidth());
@@ -46,5 +46,5 @@ namespace TechEngine {
             ImGui::PopStyleVar();
             ImGui::PopID();
         }
-    }
+    }*/
 }

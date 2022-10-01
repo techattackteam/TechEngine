@@ -1,6 +1,8 @@
 #include <iostream>
+#include <imgui_impl_opengl3.h>
+#include <imgui_impl_glfw.h>
+#include <imgui.h>
 #include "Window.hpp"
-#include "../event/EventDispatcher.hpp"
 #include "../events/input/KeyPressedEvent.hpp"
 #include "../events/input/KeyReleasedEvent.hpp"
 #include "../events/input/KeyHoldEvent.hpp"
@@ -19,22 +21,20 @@ namespace TechEngine {
         if (glewInit() != GLEW_OK) {
             std::cout << "Error!" << std::endl;
         }
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-        glDepthMask(GL_TRUE);
-        glCullFace(GL_BACK);
+        //glEnable(GL_DEPTH_TEST);
+        //glEnable(GL_CULL_FACE);
+        //glDepthMask(GL_TRUE);
+        //glCullFace(GL_BACK);
 
         TechEngineCore::EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngineCore::Event *event) {
             onWindowResizeEvent((WindowResizeEvent *) event);
         });
 
         glViewport(0, 0, width, height);
-        renderer.init();
     }
 
     Window::~Window() {
         glfwMakeContextCurrent(handler);
-        glfwDestroyWindow(handler);
     }
 
     void Window::onUpdate() {
@@ -76,10 +76,5 @@ namespace TechEngine {
         WindowSettings::width = event->getWidth();
         WindowSettings::height = event->getHeight();
         WindowSettings::aspectRatio = (float) event->getWidth() / (float) event->getHeight();
-    }
-
-
-    Renderer &Window::getRenderer() {
-        return renderer;
     }
 }

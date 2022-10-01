@@ -24,7 +24,7 @@ namespace TechEngine {
             lights.emplace_back(event->getGameObject());
         }
         //Hack
-        event->getGameObject()->removeComponent<Transform>();
+        event->getGameObject()->removeComponent<TransformComponent>();
         event->getGameObject()->addComponent<TransformComponent>(event->getGameObject());
     }
 

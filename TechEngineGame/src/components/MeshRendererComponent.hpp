@@ -17,12 +17,6 @@ namespace TechEngine {
 
         void changeMesh(Mesh &mesh);
 
-        void getInfo() override;
-
-        static ComponentName getName() {
-            return "Mesh";
-        }
-
         Material &getMaterial();
 
         std::vector<Vertex> getVertices();

@@ -43,7 +43,7 @@ namespace TechEngine {
 
     void CameraComponent::updateViewMatrix() {
         gameObject->getTransform().setScale(glm::vec3(1, 1, 1));
-        glm::mat4 model = gameObject->getComponent<Transform>()->getModelMatrix();
+        glm::mat4 model = gameObject->getComponent<TransformComponent>()->getModelMatrix();
         viewMatrix = glm::inverse(model);
     }
 
@@ -63,7 +63,7 @@ namespace TechEngine {
         return projectionMatrix;
     }
 
-    void CameraComponent::getInfo() {
+/*    void CameraComponent::getInfo() {
         if (ImGui::CollapsingHeader(name.c_str())) {
             ImGui::PushID(name.c_str());
             ImGui::PushMultiItemsWidths(1, ImGui::CalcItemWidth());
@@ -95,7 +95,7 @@ namespace TechEngine {
         }
 
     }
-
+*/
     bool CameraComponent::isMainCamera() {
         return mainCamera;
     }

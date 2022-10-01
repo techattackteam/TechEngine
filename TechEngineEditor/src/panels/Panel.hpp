@@ -1,15 +1,16 @@
 #pragma once
 
-#include "../core/Window.hpp"
-#include "../event/EventDispatcher.hpp"
+#include "event/EventDispatcher.hpp"
 
 namespace TechEngine {
     class Panel {
     protected:
-        bool mainPanel = false;
+        //bool mainPanel = false;
         std::string name;
+        int width = 0;
+        int height = 0;
     public:
-        explicit Panel(const std::string &name = "Panel", bool mainPanel = false);
+        explicit Panel(const std::string &name = "Panel");
 
         virtual ~Panel();
 

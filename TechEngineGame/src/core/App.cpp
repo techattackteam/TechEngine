@@ -2,9 +2,9 @@
 
 namespace TechEngine {
     App::App() : TechEngineCore::App() {
-        eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](TechEngineCore::Event *event) {
+/*        eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](TechEngineCore::Event *event) {
             onWindowCloseEvent((WindowCloseEvent *) (event));
-        });
+        });*/
 
         timer.init();
     }
@@ -29,16 +29,16 @@ namespace TechEngine {
             //}
             float alpha = accumulator / deltaTick;
 
-            onUpdate();
             scene.update();
-            panelsManager.update();
+            onUpdate();
+            //panelsManager.update();
         }
     }
 
-    void App::onWindowCloseEvent(WindowCloseEvent *event) {
+/*    void App::onWindowCloseEvent(WindowCloseEvent *event) {
         if (event->getPanel()->isMainPanel()) {
             running = false;
         }
         panelsManager.unregisterAllPanels();
-    }
+    }*/
 }
