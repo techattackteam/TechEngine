@@ -1,6 +1,5 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
-#include <iostream>
 #include "CameraComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "renderer/RendererSettings.hpp"
@@ -36,7 +35,6 @@ namespace TechEngine {
         if (projectionType == PERSPECTIVE) {
             projectionMatrix = glm::perspective(glm::radians(fov), RendererSettings::aspectRatio, 0.1f, 50.0f);
         } else if (projectionType == ORTHOGRAPHIC) {
-            std::cout << RendererSettings::aspectRatio << std::endl;
             projectionMatrix = glm::ortho(-5.0f * RendererSettings::aspectRatio, 5.0f * RendererSettings::aspectRatio, -5.0f, 5.0f, 0.3f, 1000.0f);
         }
     }

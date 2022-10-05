@@ -29,8 +29,7 @@ namespace TechEngine {
             float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
             ImGui::Separator();
             bool open = ImGui::TreeNodeEx((void *) typeid(T).hash_code(), treeNodeFlags, name.c_str());
-            ImGui::PopStyleVar(
-            );
+            ImGui::PopStyleVar();
             ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
             if (ImGui::Button("+", ImVec2{lineHeight, lineHeight})) {
                 ImGui::OpenPopup("ComponentSettings");
@@ -82,7 +81,7 @@ namespace TechEngine {
                                                    bool isSelected = currentProjectionTypeString == projectionTypeStrings[i];
                                                    if (ImGui::Selectable(projectionTypeStrings[i], isSelected)) {
                                                        currentProjectionTypeString = projectionTypeStrings[i];
-                                                       //camera.SetProjectionType((SceneCamera::ProjectionType) i);
+                                                       camera->changeProjectionType((CameraComponent::ProjectionType) i);
                                                    }
 
                                                    if (isSelected)
@@ -106,21 +105,21 @@ namespace TechEngine {
                                                    camera.SetPerspectiveFarClip(perspectiveFar);
                                            }*/
 
-      /*                                     if (camera.GetProjectionType() == SceneCamera::ProjectionType::Orthographic) {
-                                               float orthoSize = camera.GetOrthographicSize();
-                                               if (ImGui::DragFloat("Size", &orthoSize))
-                                                   camera.SetOrthographicSize(orthoSize);
+                                           /*                                     if (camera.GetProjectionType() == SceneCamera::ProjectionType::Orthographic) {
+                                                                                    float orthoSize = camera.GetOrthographicSize();
+                                                                                    if (ImGui::DragFloat("Size", &orthoSize))
+                                                                                        camera.SetOrthographicSize(orthoSize);
 
-                                               float orthoNear = camera.GetOrthographicNearClip();
-                                               if (ImGui::DragFloat("Near", &orthoNear))
-                                                   camera.SetOrthographicNearClip(orthoNear);
+                                                                                    float orthoNear = camera.GetOrthographicNearClip();
+                                                                                    if (ImGui::DragFloat("Near", &orthoNear))
+                                                                                        camera.SetOrthographicNearClip(orthoNear);
 
-                                               float orthoFar = camera.GetOrthographicFarClip();
-                                               if (ImGui::DragFloat("Far", &orthoFar))
-                                                   camera.SetOrthographicFarClip(orthoFar);
+                                                                                    float orthoFar = camera.GetOrthographicFarClip();
+                                                                                    if (ImGui::DragFloat("Far", &orthoFar))
+                                                                                        camera.SetOrthographicFarClip(orthoFar);
 
-                                               ImGui::Checkbox("Fixed Aspect Ratio", &component->FixedAspectRatio);
-                                           }*/
+                                                                                    ImGui::Checkbox("Fixed Aspect Ratio", &component->FixedAspectRatio);
+                                                                                }*/
                                        }
 
         );
