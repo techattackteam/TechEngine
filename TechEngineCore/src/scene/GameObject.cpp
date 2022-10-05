@@ -40,4 +40,8 @@ namespace TechEngine {
         return *getComponent<TransformComponent>();
     }
 
+    std::unordered_map<ComponentName, Component *> *GameObject::getComponents() {
+        return &components;
+    }
+
 }

@@ -62,10 +62,11 @@ namespace TechEngine {
 
         TransformComponent &getTransform();
 
+        std::unordered_map<ComponentName, Component *> *getComponents();
+
         bool operator==(const GameObject *gameObject) {
             return name == gameObject->name;
         }
-
     };
 }
 
