@@ -14,6 +14,13 @@ namespace TechEngine {
         void onUpdate() override;
 
         void inspectGameObject(OnSelectGameObjectEvent *event);
+
+        template<typename T, typename UIFunction>
+        void drawComponent(const std::string &name, UIFunction uiFunction);
+
+        void drawComponents();
+
+        void drawVec3Control(const std::string &label, glm::vec3 &values, float resetValue = 0.0f, float columnWidth = 100.0f);
     };
 }
 

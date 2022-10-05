@@ -1,6 +1,5 @@
 #include "TechAttack.hpp"
 #include "Camera.hpp"
-#include "NewObjectPanel.hpp"
 #include "src/PlayerSyncPacket.hpp"
 #include <memory>
 

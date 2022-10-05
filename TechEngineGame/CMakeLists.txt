@@ -22,3 +22,9 @@ target_link_libraries(TechEngineGame TechEngineCore GLEW::GLEW glfw glm::glm -DE
 add_custom_target(copy_shaders ALL
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/TechEngineGame/res ${CMAKE_CURRENT_BINARY_DIR}/res)
+
+set_target_properties(TechEngineGame PROPERTIES
+        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/TechEngineGame/archive"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/TechEngineGame/libs"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/TechEngineGame/runtime"
+        )

@@ -1,10 +1,8 @@
 #pragma once
 
 #include <TechEngineCore.hpp>
-
 #include "../event/EventDispatcher.hpp"
 #include "../stateMachine/StateMachineManager.hpp"
-//#include "../panels/PanelsManager.hpp"
 #include "../scene/Scene.hpp"
 #include "../events/window/WindowCloseEvent.hpp"
 

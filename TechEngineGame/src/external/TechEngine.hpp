@@ -16,7 +16,7 @@
 #include "../events/input/KeyReleasedEvent.hpp"
 #include "../events/input/KeyHoldEvent.hpp"
 
-#include "../panels/CustomPanel.hpp"
+//#include "../panels/CustomPanel.hpp"
 
 #include "../mesh/Mesh.hpp"
 #include "../mesh/CubeMesh.hpp"

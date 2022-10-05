@@ -47,6 +47,8 @@ namespace TechEngine {
         glm::mat4 getProjectionMatrix();
 
         bool isMainCamera();
+
+        ProjectionType &getProjectionType();
     };
 }
 
