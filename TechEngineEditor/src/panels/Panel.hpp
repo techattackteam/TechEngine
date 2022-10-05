@@ -7,8 +7,6 @@ namespace TechEngine {
     protected:
         //bool mainPanel = false;
         std::string name;
-        int width = 0;
-        int height = 0;
     public:
         explicit Panel(const std::string &name = "Panel");
 

@@ -2,14 +2,14 @@
 #include "Renderer.hpp"
 #include "../scene/Scene.hpp"
 #include "ErrorCatcher.hpp"
-
+#include "RendererSettings.hpp"
 
 namespace TechEngine {
-    void Renderer::init(uint32_t width, uint32_t height) {
+    void Renderer::init() {
         vertexArray.init(id);
         vertexBuffer.init(id, 10000000 * sizeof(Vertex));
         shadersManager.init();
-        frameBuffer.init(id, width, height);
+        frameBuffer.init(id, RendererSettings::width, RendererSettings::height);
         //shadowMapBuffer.init(id);
         vertexArray.addNewBuffer(vertexBuffer);
         //shadowMapBuffer.createDepthTexture(1024, 1024);
