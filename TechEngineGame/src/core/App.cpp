@@ -2,9 +2,9 @@
 
 namespace TechEngine {
     App::App() : TechEngineCore::App() {
-/*        eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](TechEngineCore::Event *event) {
+        eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](TechEngineCore::Event *event) {
             onWindowCloseEvent((WindowCloseEvent *) (event));
-        });*/
+        });
 
         timer.init();
     }
@@ -35,10 +35,7 @@ namespace TechEngine {
         }
     }
 
-/*    void App::onWindowCloseEvent(WindowCloseEvent *event) {
-        if (event->getPanel()->isMainPanel()) {
-            running = false;
-        }
-        panelsManager.unregisterAllPanels();
-    }*/
+    void App::onWindowCloseEvent(WindowCloseEvent *event) {
+        running = false;
+    }
 }

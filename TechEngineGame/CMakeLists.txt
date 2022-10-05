@@ -28,3 +28,13 @@ set_target_properties(TechEngineGame PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/TechEngineGame/libs"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/TechEngineGame/runtime"
         )
+
+add_custom_command(TARGET TechEngineGame POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_RUNTIME_DLLS:TechEngineEditor> $<TARGET_FILE_DIR:TechEngineEditor>
+        COMMAND_EXPAND_LISTS)
+
+add_custom_command(TARGET TechEngineGame POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_FILE_DIR:Game> $<TARGET_FILE_DIR:TechEngineEditor>/runtime
+        COMMAND_EXPAND_LISTS)

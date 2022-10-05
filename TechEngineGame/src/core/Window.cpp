@@ -1,18 +1,16 @@
 #include <iostream>
-#include <imgui_impl_opengl3.h>
-#include <imgui_impl_glfw.h>
-#include <imgui.h>
 #include "Window.hpp"
 #include "../events/input/KeyPressedEvent.hpp"
 #include "../events/input/KeyReleasedEvent.hpp"
 #include "../events/input/KeyHoldEvent.hpp"
+#include "events/window/WindowCloseEvent.hpp"
 
 namespace TechEngine {
-    Window::Window(const std::string &title, int width, int height) : settings() {
-        WindowSettings::title = title;
-        WindowSettings::width = width;
-        WindowSettings::height = height;
-        WindowSettings::aspectRatio = (float) width / (float) height;
+    Window::Window(const std::string &title, int width, int height) {
+        this->title = title;
+        this->width = width;
+        this->height = height;
+        this->aspectRatio = (float) width / (float) height;
         glfwInit();
 
         handler = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
@@ -21,16 +19,24 @@ namespace TechEngine {
         if (glewInit() != GLEW_OK) {
             std::cout << "Error!" << std::endl;
         }
-        //glEnable(GL_DEPTH_TEST);
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
         //glEnable(GL_CULL_FACE);
-        //glDepthMask(GL_TRUE);
         //glCullFace(GL_BACK);
 
+        glfwSetWindowUserPointer(handler, this);
+        glfwSetWindowCloseCallback(handler, [](GLFWwindow *handler) {
+            TechEngine::dispatchEvent(new WindowCloseEvent());
+        });
+        glfwSetKeyCallback(handler, [](GLFWwindow *handler, int key, int scancode, int action, int mods) {
+            Window::windowKeyInput(key, action);
+        });
+        glfwSetFramebufferSizeCallback(handler, [](GLFWwindow *handler, int width, int height) {
+            TechEngine::dispatchEvent(new WindowResizeEvent(width, height));
+        });
         TechEngineCore::EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngineCore::Event *event) {
             onWindowResizeEvent((WindowResizeEvent *) event);
         });
-
-        glViewport(0, 0, width, height);
     }
 
     Window::~Window() {
@@ -72,9 +78,9 @@ namespace TechEngine {
     }
 
     void Window::onWindowResizeEvent(WindowResizeEvent *event) {
-        //glViewport(0, 0, event->getWidth(), event->getHeight());
-        WindowSettings::width = event->getWidth();
-        WindowSettings::height = event->getHeight();
-        WindowSettings::aspectRatio = (float) event->getWidth() / (float) event->getHeight();
+        this->width = event->getWidth();
+        this->height = event->getHeight();
+        this->aspectRatio = (float) event->getWidth() / (float) event->getHeight();
     }
+
 }

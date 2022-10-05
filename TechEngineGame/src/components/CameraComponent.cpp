@@ -3,9 +3,7 @@
 #include <iostream>
 #include "CameraComponent.hpp"
 #include "components/TransformComponent.hpp"
-#include "imgui_internal.h"
-#include "../event/EventDispatcher.hpp"
-#include "../core/Window.hpp"
+#include "renderer/RendererSettings.hpp"
 
 namespace TechEngine {
     CameraComponent::CameraComponent(GameObject *gameObject) : Component(gameObject, "Camera") {
@@ -31,13 +29,15 @@ namespace TechEngine {
 
     void CameraComponent::fixedUpdate() {
         updateViewMatrix();
+        updateProjectionMatrix();
     }
 
     void CameraComponent::updateProjectionMatrix() {
         if (projectionType == PERSPECTIVE) {
-            projectionMatrix = glm::perspective(glm::radians(fov), WindowSettings::aspectRatio, 0.1f, 50.0f);
+            projectionMatrix = glm::perspective(glm::radians(fov), RendererSettings::aspectRatio, 0.1f, 50.0f);
         } else if (projectionType == ORTHOGRAPHIC) {
-            projectionMatrix = glm::ortho(-5.0f * WindowSettings::aspectRatio, 5.0f * WindowSettings::aspectRatio, -5.0f, 5.0f, 0.3f, 1000.0f);
+            std::cout << RendererSettings::aspectRatio << std::endl;
+            projectionMatrix = glm::ortho(-5.0f * RendererSettings::aspectRatio, 5.0f * RendererSettings::aspectRatio, -5.0f, 5.0f, 0.3f, 1000.0f);
         }
     }
 
