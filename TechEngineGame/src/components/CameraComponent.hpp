@@ -48,6 +48,8 @@ namespace TechEngine {
 
         bool isMainCamera();
 
+        void setIsMainCamera(bool mainCamera);
+
         ProjectionType &getProjectionType();
     };
 }

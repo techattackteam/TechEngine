@@ -1,4 +1,7 @@
 #include "PanelsManager.hpp"
+#include "scene/Scene.hpp"
+#include "testGameObject/QuadMeshTest.hpp"
+#include "scene/SceneSerializer.hpp"
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
 
@@ -136,9 +139,11 @@ namespace TechEngine {
                 }
 
                 if (ImGui::MenuItem("Open...", "Ctrl+O")) {
+                    SceneSerializer::deserialize("project\\scenes\\Scene1.yml");
                 }
 
                 if (ImGui::MenuItem("Save", "Ctrl+S")) {
+                    SceneSerializer::serialize("project\\scenes\\Scene1.yml");
                 }
 
                 if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S")) {

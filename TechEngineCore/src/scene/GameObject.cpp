@@ -43,5 +43,4 @@ namespace TechEngine {
     std::unordered_map<ComponentName, Component *> *GameObject::getComponents() {
         return &components;
     }
-
 }

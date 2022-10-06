@@ -26,4 +26,6 @@ namespace TechEngine {
     std::vector<Vertex> MeshRendererComponent::getVertices() {
         return mesh.getVertices();
     }
+
+
 }

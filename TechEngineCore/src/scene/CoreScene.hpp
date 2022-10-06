@@ -21,6 +21,8 @@ namespace TechEngine {
 
         std::list<GameObject *> getGameObjects();
 
+        GameObject *getGameObject(std::string name);
+
     protected:
         std::list<GameObject *> gameObjects;
 
@@ -30,6 +32,7 @@ namespace TechEngine {
 
     private:
         inline static CoreScene *instance;
+
     };
 }
 

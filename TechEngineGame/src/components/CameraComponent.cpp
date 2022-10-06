@@ -98,6 +98,10 @@ namespace TechEngine {
         return mainCamera;
     }
 
+    void CameraComponent::setIsMainCamera(bool mainCamera) {
+        this->mainCamera = mainCamera;
+    }
+
     CameraComponent::ProjectionType &CameraComponent::getProjectionType() {
         return this->projectionType;
     }

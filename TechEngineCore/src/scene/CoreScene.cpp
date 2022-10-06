@@ -42,5 +42,12 @@ namespace TechEngine {
         return gameObjects;
     }
 
-
+    GameObject *CoreScene::getGameObject(std::string name) {
+        for (GameObject *gameObject: gameObjects) {
+            if (gameObject->getName() == name) {
+                return gameObject;
+            }
+        }
+        return nullptr;
+    }
 }

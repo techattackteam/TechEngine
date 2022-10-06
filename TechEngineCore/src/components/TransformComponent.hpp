@@ -18,12 +18,6 @@ namespace TechEngine {
 
         explicit TransformComponent(TechEngine::GameObject *gameObject);
 
-        glm::mat4 getModelMatrix();
-
-        glm::vec3 getPosition() const;
-
-        glm::vec3 getOrientation() const;
-
         void translate(glm::vec3 vector);
 
         void translateTo(glm::vec3 position);
@@ -35,6 +29,14 @@ namespace TechEngine {
         void rotate(glm::quat quaternion);
 
         void lookAt(glm::vec3 position);
+
+        glm::mat4 getModelMatrix();
+
+        glm::vec3 getPosition() const;
+
+        glm::vec3 getOrientation() const;
+
+        glm::vec3 getScale() const;
     };
 }
 
