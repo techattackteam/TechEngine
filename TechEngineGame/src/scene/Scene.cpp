@@ -23,9 +23,6 @@ namespace TechEngine {
         } else if (event->getGameObject()->hasComponent<DirectionalLightComponent>()) {
             lights.emplace_back(event->getGameObject());
         }
-        //Hack
-        event->getGameObject()->removeComponent<TransformComponent>();
-        event->getGameObject()->addComponent<TransformComponent>(event->getGameObject());
     }
 
     void Scene::onGODestroy(GameObjectDestroyEvent *event) {
@@ -50,5 +47,10 @@ namespace TechEngine {
 
     Scene &Scene::getInstance() {
         return *instance;
+    }
+
+    void Scene::clear() {
+
+        gameObjects.clear();
     }
 }

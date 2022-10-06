@@ -4,6 +4,7 @@ file(GLOB_RECURSE TechEngineGame_Headers "src/*.hpp")
 find_package(GLEW REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
+find_package(yaml-cpp CONFIG REQUIRED)
 
 add_definitions(-DENGINE_BUILD_DLL)
 
@@ -17,7 +18,7 @@ add_library(TechEngineGame SHARED ${TechEngineGame_Sources} ${TechEngineGame_Hea
 
 target_include_directories(TechEngineGame PUBLIC "../TechEngineCore/src/external")
 target_include_directories(TechEngineGame PUBLIC "src")
-target_link_libraries(TechEngineGame TechEngineCore GLEW::GLEW glfw glm::glm -DENGINE_EDITOR)
+target_link_libraries(TechEngineGame TechEngineCore GLEW::GLEW glfw glm::glm yaml-cpp)
 
 add_custom_target(copy_shaders ALL
         COMMAND ${CMAKE_COMMAND} -E copy_directory

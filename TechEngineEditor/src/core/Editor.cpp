@@ -1,10 +1,9 @@
 #include "Editor.hpp"
-#include "testGameObject/QuadMeshTest.hpp"
 
 namespace TechEngine {
 
     Editor::Editor() {
-        new QuadMeshTest(1);
+        new QuadMeshTest();
     }
 
     void Editor::onUpdate() {

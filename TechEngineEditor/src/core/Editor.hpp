@@ -6,6 +6,8 @@
 #include "SceneCamera.hpp"
 #include "core/Window.hpp"
 
+#include "testGameObject/QuadMeshTest.hpp"
+
 namespace TechEngine {
     class Editor : public TechEngine::App {
     private:

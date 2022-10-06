@@ -28,5 +28,7 @@ namespace TechEngine {
         std::list<GameObject *> getLights();
 
         static Scene &getInstance();
+
+        void clear();
     };
 }

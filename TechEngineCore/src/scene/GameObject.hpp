@@ -25,6 +25,10 @@ namespace TechEngine {
 
         GameObject(std::string name, bool showInfoPanel = true);
 
+        GameObject() = default;
+
+        virtual ~GameObject() = default;
+
         template<class C, typename... A>
         void addComponent(A ...args) {
             if (!hasComponent<C>()) {

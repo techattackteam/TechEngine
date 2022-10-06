@@ -1,14 +1,8 @@
 #include "QuadMeshTest.hpp"
 #include <sstream>
 
-QuadMeshTest::QuadMeshTest(int name) : TechEngine::GameObject(createName(name), false) {
+QuadMeshTest::QuadMeshTest() : TechEngine::GameObject("QuadMeshTest", false) {
     addComponent<TechEngine::MeshRendererComponent>(this, new TechEngine::CubeMesh(),
-                                                new Material(glm::vec4(1, 1, 1, 1), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), 32.0f));
+                                                    new Material(glm::vec4(1, 1, 1, 1), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), 32.0f));
 
-}
-
-std::string QuadMeshTest::createName(int name) {
-    std::ostringstream oss;
-    oss << "QuadMesh " << name;
-    return oss.str();
 }

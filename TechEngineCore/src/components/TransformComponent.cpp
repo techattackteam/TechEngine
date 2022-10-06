@@ -45,5 +45,9 @@ namespace TechEngine {
     glm::vec3 TransformComponent::getOrientation() const {
         return orientation;
     }
+
+    glm::vec3 TransformComponent::getScale() const {
+        return scale;
+    }
 }
 
