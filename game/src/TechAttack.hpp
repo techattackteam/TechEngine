@@ -3,26 +3,22 @@
 #include <TechEngine.hpp>
 #include <EntryPoint.hpp>
 #include "NetworkHandler.hpp"
-#include "../../TechEngineEditor/src/testGameObject/QuadMeshTest.hpp"
 #include "src/TestPacketEvent.hpp"
 #include "src/PlayerSelectorEvent.hpp"
 #include "src/PlayerSyncEvent.hpp"
+#include "core/Window.hpp"
 
 class TechAttack : public TechEngine::App {
 public:
     NetworkHandler *networkHandler;
-
+    TechEngine::Window window{"TechAttack", 1200, 600};
     int playerNumber;
-
-    QuadMeshTest *ball;
-    QuadMeshTest *player;
-    QuadMeshTest *networkPlayer;
 
     TechEngineCore::StateMachine stateMachine{};
 
     TechAttack();
 
-    void onUpdate();
+    void onUpdate() override;
 
     void keyPressedEvent(TechEngine::KeyHoldEvent *event);
 

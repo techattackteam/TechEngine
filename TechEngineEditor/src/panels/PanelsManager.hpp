@@ -8,6 +8,7 @@
 #include "InspectorPanel.hpp"
 #include "RendererPanel.hpp"
 #include "SettingsPanel.hpp"
+#include "ProjectBrowserPanel.hpp"
 #include "events/panels/OpenInspectorEvent.hpp"
 #include "events/panels/RegisterCustomPanel.hpp"
 #include "events/panels/CloseInspectorEvent.hpp"
@@ -20,8 +21,11 @@ namespace TechEngine {
         RendererPanel rendererPanel{};
         InspectorPanel inspectorPanel{};
         //SettingsPanel settingsPanel{};
+        ProjectBrowserPanel contentBrowser{};
         SceneHierarchyPanel sceneHierarchyPanel{};
         Window &window;
+
+        std::filesystem::path currentScenePath;
     public:
 
         PanelsManager(Window &window);
@@ -44,6 +48,10 @@ namespace TechEngine {
         void beginImGuiFrame();
 
         void endImGuiFrame();
+
+        std::string openFileWindow(const char *filter);
+
+        std::string saveFile(const char *filter);
     };
 }
 

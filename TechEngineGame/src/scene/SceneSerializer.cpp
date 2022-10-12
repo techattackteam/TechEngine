@@ -168,8 +168,8 @@ namespace TechEngine {
         try {
             data = YAML::LoadFile(filepath);
         }
-        catch (YAML::ParserException e) {
-            std::cout << "Failed to load .hazel file " << filepath << "\n     " << e.what() << std::endl;
+        catch (YAML::Exception &e) {
+            std::cout << "Failed to load .scene file " << filepath << "\n     " << e.what() << std::endl;
             return false;
         }
 

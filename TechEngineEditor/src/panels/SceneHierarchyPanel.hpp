@@ -8,13 +8,11 @@ namespace TechEngine {
 
     class SceneHierarchyPanel : public Panel {
     private:
-        GameObject* selectedGO;
+        GameObject *selectedGO;
     public:
         SceneHierarchyPanel();
 
         void onUpdate() override;
-
-        void DrawVec3Control(const std::string &label, glm::vec3 &values, float resetValue, float columnWidth);
 
         void drawEntityNode(GameObject *gameObject);
     };

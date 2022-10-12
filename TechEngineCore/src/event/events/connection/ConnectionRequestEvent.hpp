@@ -21,5 +21,4 @@ namespace TechEngineCore {
             return endpoint;
         }
     };
-
 }
