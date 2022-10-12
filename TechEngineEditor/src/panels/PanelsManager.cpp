@@ -4,6 +4,8 @@
 #include "scene/SceneSerializer.hpp"
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
+#include <filesystem>
+#include <commdlg.h>
 
 namespace TechEngine {
     PanelsManager::PanelsManager(Window &window) : window(window) {
@@ -30,7 +32,7 @@ namespace TechEngine {
         sceneHierarchyPanel.onUpdate();
         inspectorPanel.onUpdate();
         rendererPanel.onUpdate();
-
+        contentBrowser.onUpdate();
         endImGuiFrame();
     }
 
@@ -139,19 +141,38 @@ namespace TechEngine {
                 }
 
                 if (ImGui::MenuItem("Open...", "Ctrl+O")) {
-                    SceneSerializer::deserialize("project\\scenes\\Scene1.yml");
+                    std::string filepath = openFileWindow("TechEngine Scene (*.scene)\0*.scene\0");
+                    SceneSerializer::deserialize(filepath);
                 }
 
                 if (ImGui::MenuItem("Save", "Ctrl+S")) {
-                    SceneSerializer::serialize("project\\scenes\\Scene1.yml");
+                    if (currentScenePath.empty()) {
+                        std::string filepath = saveFile("TechEngine Scene (*.scene)\0*.scene\0");
+                        if (!filepath.empty()) {
+                            SceneSerializer::serialize(filepath);
+                            currentScenePath = filepath;
+                        }
+                    } else {
+                        SceneSerializer::serialize("project\\scenes\\Scene1.scene");
+                    }
                 }
 
                 if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S")) {
-
+                    std::string filepath = saveFile("TechEngine Scene (*.scene)\0*.scene\0");
+                    if (!filepath.empty()) {
+                        SceneSerializer::serialize(filepath);
+                        currentScenePath = filepath;
+                    }
                 }
 
                 if (ImGui::MenuItem("Build")) {
-
+                    system("\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars32.bat\""
+                           " && cmake --build ../../cmake-build-debug --target TechEngineScript");
+                    std::string projectDirectory = std::filesystem::current_path().string() + "/project";
+                    std::string buildDirectory = std::filesystem::current_path().string() + "/build";
+                    for (const auto &entry: std::filesystem::directory_iterator(buildDirectory))
+                        std::filesystem::remove_all(entry.path());
+                    std::filesystem::copy(projectDirectory, buildDirectory, std::filesystem::copy_options::recursive);
                 }
 
                 if (ImGui::MenuItem("Exit")) {}
@@ -173,5 +194,49 @@ namespace TechEngine {
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
+    }
+
+    std::string PanelsManager::openFileWindow(const char *filter) {
+        OPENFILENAMEA ofn;
+        CHAR szFile[260] = {0};
+        CHAR currentDir[256] = {0};
+        ZeroMemory(&ofn, sizeof(OPENFILENAME));
+        ofn.lStructSize = sizeof(OPENFILENAME);
+        //ofn.hwndOwner = glfwGetWin32Window((GLFWwindow *) window.getHandler());
+        ofn.lpstrFile = szFile;
+        ofn.nMaxFile = sizeof(szFile);
+        if (GetCurrentDirectoryA(256, currentDir))
+            ofn.lpstrInitialDir = currentDir;
+        ofn.lpstrFilter = filter;
+        ofn.nFilterIndex = 1;
+        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
+        if (GetOpenFileNameA(&ofn) == TRUE)
+            return ofn.lpstrFile;
+
+        return std::string();
+    }
+
+    std::string PanelsManager::saveFile(const char *filter) {
+        OPENFILENAMEA ofn;
+        CHAR szFile[260] = {0};
+        CHAR currentDir[256] = {0};
+        ZeroMemory(&ofn, sizeof(OPENFILENAME));
+        ofn.lStructSize = sizeof(OPENFILENAME);
+        ofn.lpstrFile = szFile;
+        ofn.nMaxFile = sizeof(szFile);
+        if (GetCurrentDirectoryA(256, currentDir))
+            ofn.lpstrInitialDir = currentDir;
+        ofn.lpstrFilter = filter;
+        ofn.nFilterIndex = 1;
+        ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
+
+        // Sets the default extension by extracting it from the filter
+        ofn.lpstrDefExt = strchr(filter, '\0') + 1;
+
+        if (GetSaveFileNameA(&ofn) == TRUE)
+            return ofn.lpstrFile;
+
+        return std::string();
     }
 }

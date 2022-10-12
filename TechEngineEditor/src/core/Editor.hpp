@@ -11,7 +11,7 @@
 namespace TechEngine {
     class Editor : public TechEngine::App {
     private:
-        Window window{"Main", 1200, 600};
+        Window window{"TechEngine", 1200, 600};
         PanelsManager panelsManager{window};
         SceneCamera sceneCamera{};
     public:
