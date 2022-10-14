@@ -5,6 +5,8 @@
 #include "../stateMachine/StateMachineManager.hpp"
 #include "../scene/Scene.hpp"
 #include "../events/window/WindowCloseEvent.hpp"
+#include "core/ScriptEngine.hpp"
+
 
 namespace TechEngine {
     class Engine_API App : public TechEngineCore::App {
@@ -12,9 +14,6 @@ namespace TechEngine {
         bool running = true;
 
     public:
-        TechEngineCore::EventDispatcher eventDispatcher;
-        TechEngineCore::StateMachineManager stateMachineManager;
-        //PanelsManager panelsManager;
         Scene scene;
 
         App();
@@ -31,8 +30,6 @@ namespace TechEngine {
 
         void onWindowCloseEvent(TechEngine::WindowCloseEvent *event);
     };
-
-    App *createApp();
 
 }
 

@@ -166,13 +166,12 @@ namespace TechEngine {
                 }
 
                 if (ImGui::MenuItem("Build")) {
-                    system("\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars32.bat\""
-                           " && cmake --build ../../cmake-build-debug --target TechEngineScript");
-                    std::string projectDirectory = std::filesystem::current_path().string() + "/project";
-                    std::string buildDirectory = std::filesystem::current_path().string() + "/build";
+                    std::string projectDirectory = std::filesystem::current_path().string() + "\\project";
+                    std::string buildDirectory = std::filesystem::current_path().string() + "\\build";
                     for (const auto &entry: std::filesystem::directory_iterator(buildDirectory))
                         std::filesystem::remove_all(entry.path());
                     std::filesystem::copy(projectDirectory, buildDirectory, std::filesystem::copy_options::recursive);
+                    compileUserScripts(projectDirectory, std::filesystem::current_path());
                 }
 
                 if (ImGui::MenuItem("Exit")) {}
@@ -238,5 +237,36 @@ namespace TechEngine {
             return ofn.lpstrFile;
 
         return std::string();
+    }
+
+    void PanelsManager::compileUserScripts(const std::filesystem::path &projectPath, const std::filesystem::path &dllTargetPath) {
+        if (m_userCustomDll) {
+            FreeLibrary(m_userCustomDll);
+            std::filesystem::remove(projectPath.string() + "\\UserScripts.dll");
+            ScriptEngine::getInstance()->deleteScripts();
+        }
+
+        std::string command = "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars32.bat\" "
+                              "&& cl /std:c++17 /D_USRDLL /D_WINDLL ";
+        std::filesystem::recursive_directory_iterator iterator = std::filesystem::recursive_directory_iterator(projectPath);
+        for (const auto &entry: iterator) {
+            if (entry.path().filename().extension() == ".cpp") {
+                command += entry.path().parent_path().string() + "\\*.cpp ";
+            }
+        }
+        try {
+
+            command += "C:\\dev\\TechEngine\\cmake-build-debug\\TechEngineEditor\\TechEngineScript.lib /link /DLL /OUT:" + projectPath.string() + "\\UserScripts.dll";
+            std::system(command.c_str());
+            std::cout << "\nCOMPILING" << std::endl;
+            std::cout << command << std::endl;
+            std::cout << "\nEnd of Compilation\n" << std::endl;
+
+
+        } catch (std::exception &e) {
+            std::cout << e.what() << std::endl;
+        }
+
+        m_userCustomDll = LoadLibraryA((projectPath.string() + "\\UserScripts.dll").c_str());
     }
 }
