@@ -14,11 +14,12 @@ add_custom_command(TARGET TechEngineEditor POST_BUILD
         ${CMAKE_SOURCE_DIR}/TechEngineGame/res ${CMAKE_BINARY_DIR}/TechEngineGame/res)
 
 add_custom_command(TARGET TechEngineEditor POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        $<TARGET_RUNTIME_DLLS:TechEngineEditor> $<TARGET_FILE_DIR:TechEngineEditor>
-        COMMAND_EXPAND_LISTS)
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:TechEngineCore>
+        $<TARGET_FILE_DIR:TechEngineEditor>)
 
 add_custom_command(TARGET TechEngineEditor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        $<TARGET_FILE_DIR:Game> $<TARGET_FILE_DIR:TechEngineEditor>/runtime
-        COMMAND_EXPAND_LISTS)
+        $<TARGET_FILE:TechEngineGame>
+        $<TARGET_FILE_DIR:TechEngineEditor>)
+

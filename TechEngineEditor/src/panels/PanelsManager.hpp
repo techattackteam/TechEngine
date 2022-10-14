@@ -26,6 +26,8 @@ namespace TechEngine {
         Window &window;
 
         std::filesystem::path currentScenePath;
+
+        HINSTANCE m_userCustomDll = nullptr;
     public:
 
         PanelsManager(Window &window);
@@ -52,6 +54,8 @@ namespace TechEngine {
         std::string openFileWindow(const char *filter);
 
         std::string saveFile(const char *filter);
+
+        void compileUserScripts(const std::filesystem::path &projectPath, const std::filesystem::path &dllTargetPath);
     };
 }
 

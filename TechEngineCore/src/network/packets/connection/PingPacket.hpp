@@ -19,4 +19,3 @@ namespace TechEngineCore {
     };
 }
 
-BOOST_CLASS_EXPORT(TechEngineCore::PingPacket)

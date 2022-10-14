@@ -7,10 +7,10 @@ namespace TechEngine {
         });
 
         timer.init();
+        ScriptEngine::getInstance()->onStart();
     }
 
     App::~App() {
-
     }
 
     void App::run() {
@@ -22,16 +22,18 @@ namespace TechEngine {
             stateMachineManager.update();
             //while (accumulator >= deltaTick) {
             eventDispatcher.syncEventManager.execute();
+            timer.updateTicks();
+            ScriptEngine::getInstance()->onFixedUpdate();
             scene.fixedUpdate();
             onFixedUpdate();
-            timer.updateTicks();
+
+
             accumulator -= deltaTick;
             //}
             float alpha = accumulator / deltaTick;
-
+            ScriptEngine::getInstance()->onUpdate();
             scene.update();
             onUpdate();
-            //panelsManager.update();
         }
     }
 
