@@ -3,6 +3,7 @@
 #include "CameraComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "renderer/RendererSettings.hpp"
+#include "event/EventDispatcher.hpp"
 
 namespace TechEngine {
     CameraComponent::CameraComponent(GameObject *gameObject) : Component(gameObject, "Camera") {

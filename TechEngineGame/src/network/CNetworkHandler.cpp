@@ -28,7 +28,7 @@ namespace TechEngine {
         ((CConnectionHandler *) connectionHandler)->connectToServer();
     }
 
-    void CNetworkHandler::sendPacket(Packet *packet) {
+    void CNetworkHandler::sendPacket(TechEngineCore::Packet *packet) {
         packetHandler->sendPacket(uuid, packet, serverEndpoint);
     }
 

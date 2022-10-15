@@ -1,6 +1,5 @@
 #pragma once
 
-#include <TechEngineCore.hpp>
 #include "scene/GameObject.hpp"
 
 namespace TechEngine {

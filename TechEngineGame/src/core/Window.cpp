@@ -4,6 +4,7 @@
 #include "../events/input/KeyReleasedEvent.hpp"
 #include "../events/input/KeyHoldEvent.hpp"
 #include "events/window/WindowCloseEvent.hpp"
+#include "wrapper/Wrapper.hpp"
 
 namespace TechEngine {
     Window::Window(const std::string &title, int width, int height) {

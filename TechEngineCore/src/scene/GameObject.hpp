@@ -1,10 +1,8 @@
 
 #pragma once
 
-#include <string>
-#include <unordered_map>
-#include <imgui.h>
 #include <glm/glm.hpp>
+#include <unordered_map>
 #include <typeinfo>
 
 namespace TechEngine {

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <TechEngineCore.hpp>
 
 namespace TechEngine {
     class WindowCloseEvent : public TechEngineCore::Event {

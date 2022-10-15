@@ -3,7 +3,7 @@
 #include "SocketHandler.hpp"
 #include "ConnectionHandler.hpp"
 #include "PacketHandler.hpp"
-#include "../../dataStructure/Queue.hpp"
+#include "dataStructure/Queue.hpp"
 
 namespace TechEngineCore {
 

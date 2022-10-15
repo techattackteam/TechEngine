@@ -1,4 +1,6 @@
 #include "QuadMeshTest.hpp"
+#include "components/MeshRendererComponent.hpp"
+#include "mesh/CubeMesh.hpp"
 #include <sstream>
 
 QuadMeshTest::QuadMeshTest() : TechEngine::GameObject("QuadMeshTest", false) {

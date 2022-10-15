@@ -1,6 +1,6 @@
 #pragma once
 
-#include <TechEngineCore.hpp>
+#include "network/handler/NetworkHandler.hpp"
 
 namespace TechEngine {
     class CNetworkHandler : public TechEngineCore::NetworkHandler {

@@ -6,7 +6,6 @@ namespace TechEngine {
 
     Script::~Script() {
 
-
     }
 
     void Script::onStart() {
@@ -24,8 +23,6 @@ namespace TechEngine {
     void Script::onClose() {
 
     }
-
-
 }
 
 

@@ -1,5 +1,6 @@
 #include "Scene.hpp"
 #include "components/DirectionalLightComponent.hpp"
+#include "event/EventDispatcher.hpp"
 
 namespace TechEngine {
     Scene::Scene() {

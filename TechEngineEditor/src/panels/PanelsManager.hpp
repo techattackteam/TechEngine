@@ -3,6 +3,7 @@
 #include <string>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <windows.h>
 #include "core/Window.hpp"
 #include "SceneHierarchyPanel.hpp"
 #include "InspectorPanel.hpp"

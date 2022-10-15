@@ -5,12 +5,12 @@
 
 namespace TechEngine {
     CConnectionHandler::CConnectionHandler(CNetworkHandler *networkHandler) : networkHandler(networkHandler), ConnectionHandler(networkHandler) {
-        EventDispatcher::getInstance().subscribe(PingEvent::eventType, [this](Event *event) {
-            onPingEvent((PingEvent *) event);
+        TechEngineCore::EventDispatcher::getInstance().subscribe(TechEngineCore::PingEvent::eventType, [this](TechEngineCore::Event *event) {
+            onPingEvent((TechEngineCore::PingEvent *) event);
         });
 
-        EventDispatcher::getInstance().subscribe(ConnectionSuccessfulEvent::eventType, [this](Event *event) {
-            onConnectionSuccessEvent((ConnectionSuccessfulEvent *) event);
+        TechEngineCore::EventDispatcher::getInstance().subscribe(TechEngineCore::ConnectionSuccessfulEvent::eventType, [this](TechEngineCore::Event *event) {
+            onConnectionSuccessEvent((TechEngineCore::ConnectionSuccessfulEvent *) event);
         });
     }
 
@@ -22,15 +22,15 @@ namespace TechEngine {
     }
 
     void CConnectionHandler::requestConnection() {
-        networkHandler->sendPacket(new ConnectionRequestPacket());
+        networkHandler->sendPacket(new TechEngineCore::ConnectionRequestPacket());
     }
 
-    void CConnectionHandler::onConnectionSuccessEvent(ConnectionSuccessfulEvent *event) {
+    void CConnectionHandler::onConnectionSuccessEvent(TechEngineCore::ConnectionSuccessfulEvent *event) {
         networkHandler->setUUID(event->getUUID());
         std::cout << "Connected with server. My UUID: " << event->getUUID() << std::endl;
     }
 
-    void CConnectionHandler::onPingEvent(PingEvent *event) {
-        networkHandler->sendPacket(new PingPacket());
+    void CConnectionHandler::onPingEvent(TechEngineCore::PingEvent *event) {
+        networkHandler->sendPacket(new TechEngineCore::PingPacket());
     }
 }

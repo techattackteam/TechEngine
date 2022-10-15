@@ -1,4 +1,5 @@
 #include "App.hpp"
+#include "core/ScriptEngine.hpp"
 
 namespace TechEngine {
     App::App() : TechEngineCore::App() {
