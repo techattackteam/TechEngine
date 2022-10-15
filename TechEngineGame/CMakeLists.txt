@@ -16,7 +16,6 @@ list(REMOVE_DUPLICATES TechEngineGame_Include_Dirs)
 
 add_library(TechEngineGame STATIC ${TechEngineGame_Sources} ${TechEngineGame_Headers})
 
-target_include_directories(TechEngineGame PUBLIC "../TechEngineCore/src/external")
 target_include_directories(TechEngineGame PUBLIC "../TechEngineScript/src")
 target_include_directories(TechEngineGame PUBLIC "src")
 target_link_libraries(TechEngineGame TechEngineCore TechEngineScript GLEW::GLEW glfw glm::glm yaml-cpp)

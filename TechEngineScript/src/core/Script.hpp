@@ -9,11 +9,11 @@ namespace TechEngine {
 
         virtual ~Script();
 
-        virtual void onStart() = 0;
+        virtual void onStart();
 
-        virtual void onFixedUpdate() = 0;
+        virtual void onFixedUpdate();
 
-        virtual void onUpdate() = 0;
+        virtual void onUpdate();
 
         virtual void onClose();
     };

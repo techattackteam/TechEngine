@@ -1,12 +1,12 @@
 #pragma once
 
-#include <TechEngine.hpp>
-#include <EntryPoint.hpp>
 #include "panels/PanelsManager.hpp"
 #include "SceneCamera.hpp"
 #include "core/Window.hpp"
 
 #include "testGameObject/QuadMeshTest.hpp"
+#include "core/App.hpp"
+#include "external/EntryPoint.hpp"
 
 namespace TechEngine {
     class Editor : public TechEngine::App {

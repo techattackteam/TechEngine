@@ -1,6 +1,6 @@
 #pragma once
 
-#include "external/TechEngineCore.hpp"
+#include "event/EventDispatcher.hpp"
 
 namespace TechEngine {
 

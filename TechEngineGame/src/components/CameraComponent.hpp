@@ -1,9 +1,9 @@
 #pragma once
 
 #include "components/Component.hpp"
-#include "../scene/GameObject.hpp"
+#include "scene/GameObject.hpp"
 #include "components/TransformComponent.hpp"
-#include "../events/window/WindowResizeEvent.hpp"
+#include "events/window/WindowResizeEvent.hpp"
 #include <glm/glm.hpp>
 
 namespace TechEngine {

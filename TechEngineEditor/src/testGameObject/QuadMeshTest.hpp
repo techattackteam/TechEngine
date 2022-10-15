@@ -1,7 +1,7 @@
 #pragma once
 
-#include "TechEngine.hpp"
 #include <sstream>
+#include "scene/GameObject.hpp"
 
 class QuadMeshTest : public TechEngine::GameObject {
 public:
