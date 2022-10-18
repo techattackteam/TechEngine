@@ -9,13 +9,8 @@ namespace TechEngine {
     }
 
     glm::mat4 TransformComponent::getModelMatrix() {
-        model = glm::translate(glm::mat4(1), position) * glm::toMat4(glm::quat(glm::radians(orientation))) * glm::scale(glm::mat4(1), scale);
-        return model;
-    }
-
-    glm::mat4 TransformComponent::getModelMatrixInterpolated() {
         model = glm::translate(glm::mat4(1), glm::mix(lastPosition, position, TechEngineCore::Timer::getInstance().getInterpolation())) *
-                glm::toMat4(glm::quat(glm::radians(orientation * TechEngineCore::Timer::getInstance().getInterpolation()))) *
+                glm::toMat4(glm::quat(glm::radians(glm::mix(lastOrientation, orientation, TechEngineCore::Timer::getInstance().getInterpolation())))) *
                 glm::scale(glm::mat4(1), scale);
         return model;
     }
@@ -26,7 +21,7 @@ namespace TechEngine {
     }
 
     void TransformComponent::translateTo(glm::vec3 position) {
-        translate(position - this->position);
+        lastPosition = position;
         this->position = position;
     }
 

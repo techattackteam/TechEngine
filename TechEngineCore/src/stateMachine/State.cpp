@@ -5,7 +5,7 @@ namespace TechEngineCore {
         this->stateName = stateName;
     }
 
-    StateName State::getStateName() {
+    StateName State::getName() {
         return stateName;
     }
 

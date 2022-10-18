@@ -35,8 +35,6 @@ namespace TechEngine {
 
         glm::mat4 getModelMatrix();
 
-        glm::mat4 getModelMatrixInterpolated();
-
         glm::vec3 getPosition() const;
 
         glm::vec3 getOrientation() const;

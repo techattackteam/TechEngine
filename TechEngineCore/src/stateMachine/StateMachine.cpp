@@ -1,23 +1,26 @@
 #include <memory>
 #include <utility>
 #include "StateMachine.hpp"
+#include "event/EventDispatcher.hpp"
+#include "event/events/stateMachineEvents/SMRegisterEvent.hpp"
+#include "event/events/stateMachineEvents/SMDeleteEvent.hpp"
 
 namespace TechEngineCore {
     StateMachine::StateMachine() {
-        states = std::unordered_map<StateName, std::shared_ptr<State>>();
-        //EventDispatcher::getInstance().dispatch(new SMRegisterEvent(this));
+        states = std::unordered_map<StateName, State *>();
+        EventDispatcher::getInstance().dispatch(new SMRegisterEvent(this));
     }
 
     StateMachine::~StateMachine() {
-        //EventDispatcher::getInstance().dispatch(new SMDeleteEvent(this));
+        EventDispatcher::getInstance().dispatch(new SMDeleteEvent(this));
     }
 
 
-    void StateMachine::createState(const StateName &name, std::shared_ptr<State> state) {
-        if (!states.contains(name)) {
-            states[name] = std::move(state);
+    void StateMachine::addState(State *state) {
+        if (!states.contains(state->getName())) {
+            states[state->getName()] = state;
             if (currentState == nullptr) {
-                currentState = states[name];
+                currentState = states[state->getName()];
             }
         }
     }
@@ -35,7 +38,7 @@ namespace TechEngineCore {
 
 
     bool StateMachine::changeStates(const StateName &name) {
-        if (hasState(name) && name != currentState->getStateName()) {
+        if (hasState(name) && name != currentState->getName()) {
             nextState = name;
             changeState = true;
             return true;
@@ -55,7 +58,7 @@ namespace TechEngineCore {
 
     bool StateMachine::addTransition(const StateName &from, const StateName &to) {
         if (states.contains(from)) {
-            std::shared_ptr<State> state = states[from];
+            State *state = states[from];
             if (std::find(state->getTransitions().begin(), state->getTransitions().end(), to) == state->getTransitions().end()) {
                 state->getTransitions().push_back(to);
                 return true;
@@ -66,7 +69,7 @@ namespace TechEngineCore {
 
     bool StateMachine::removeTransition(const StateName &from, const StateName &to) {
         if (states.contains(from)) {
-            std::shared_ptr<State> state = states[from];
+            State *state = states[from];
             auto index = std::find(state->getTransitions().begin(), state->getTransitions().end(), to);
             if (index != state->getTransitions().end()) {
                 state->getTransitions().erase(index);
@@ -76,7 +79,7 @@ namespace TechEngineCore {
         return false;
     }
 
-    std::shared_ptr<State> StateMachine::getCurrentState() {
+    State *StateMachine::getCurrentState() {
         return currentState;
     }
 
