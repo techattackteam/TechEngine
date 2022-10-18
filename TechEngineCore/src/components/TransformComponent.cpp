@@ -1,8 +1,11 @@
 #include "TransformComponent.hpp"
+#include "core/Timer.hpp"
 
 namespace TechEngine {
     TransformComponent::TransformComponent(TechEngine::GameObject *gameObject)
             : position(glm::vec3(0, 0, 0)), orientation(glm::vec3(0, 0, 0)), scale(glm::vec3(1, 1, 1)), model(glm::mat4(1.0f)), Component(gameObject, "TransformComponent") {
+        lastPosition = position;
+        lastOrientation = orientation;
     }
 
     glm::mat4 TransformComponent::getModelMatrix() {
@@ -10,7 +13,15 @@ namespace TechEngine {
         return model;
     }
 
+    glm::mat4 TransformComponent::getModelMatrixInterpolated() {
+        model = glm::translate(glm::mat4(1), glm::mix(lastPosition, position, TechEngineCore::Timer::getInstance().getInterpolation())) *
+                glm::toMat4(glm::quat(glm::radians(orientation * TechEngineCore::Timer::getInstance().getInterpolation()))) *
+                glm::scale(glm::mat4(1), scale);
+        return model;
+    }
+
     void TransformComponent::translate(glm::vec3 vector) {
+        lastPosition = position;
         position += vector;
     }
 
@@ -21,6 +32,7 @@ namespace TechEngine {
 
     /*Rotate using Euler angles in Degrees*/
     void TransformComponent::rotate(glm::vec3 rotation) {
+        lastOrientation = orientation;
         this->orientation = rotation;
     }
 

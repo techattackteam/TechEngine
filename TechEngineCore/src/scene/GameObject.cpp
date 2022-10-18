@@ -24,12 +24,12 @@ namespace TechEngine {
         }
     }
 
-    void GameObject::showInfo() {
-
+    glm::mat4 GameObject::getModelMatrix() {
+        return getTransform().getModelMatrix();
     }
 
-    glm::mat4 GameObject::getModelMatrix() {
-        return getComponent<TransformComponent>()->getModelMatrix();
+    glm::mat4 GameObject::getModelMatrixInterpolated() {
+        return getTransform().getModelMatrixInterpolated();
     }
 
     std::string GameObject::getName() {

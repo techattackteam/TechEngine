@@ -59,9 +59,9 @@ namespace TechEngine {
 
         glm::mat4 getModelMatrix();
 
-        std::string getName();
+        glm::mat4 getModelMatrixInterpolated();
 
-        void showInfo();
+        std::string getName();
 
         TransformComponent &getTransform();
 
@@ -70,6 +70,7 @@ namespace TechEngine {
         bool operator==(const GameObject *gameObject) {
             return name == gameObject->name;
         }
+
     };
 }
 
