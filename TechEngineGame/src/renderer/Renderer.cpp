@@ -10,8 +10,8 @@ namespace TechEngine {
         vertexBuffer.init(id, 10000000 * sizeof(Vertex));
         shadersManager.init();
         frameBuffer.init(id, RendererSettings::width, RendererSettings::height);
-        //shadowMapBuffer.init(id);
         vertexArray.addNewBuffer(vertexBuffer);
+        //shadowMapBuffer.init(id);
         //shadowMapBuffer.createDepthTexture(1024, 1024);
     }
 
@@ -28,7 +28,7 @@ namespace TechEngine {
     void Renderer::renderGeometryPass(bool shadow) {
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
             if (gameObject->hasComponent<MeshRendererComponent>()) {
-                shadersManager.getActiveShader()->setUniformMatrix4f("model", gameObject->getModelMatrix());
+                shadersManager.getActiveShader()->setUniformMatrix4f("model", gameObject->getModelMatrixInterpolated());
                 auto *meshRenderer = gameObject->getComponent<MeshRendererComponent>();
                 flushMeshData(meshRenderer);
                 if (!shadow) {

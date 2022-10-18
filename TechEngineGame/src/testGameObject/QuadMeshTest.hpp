@@ -5,6 +5,6 @@
 
 class QuadMeshTest : public TechEngine::GameObject {
 public:
-    QuadMeshTest();
+    QuadMeshTest(std::string name);
 
 };

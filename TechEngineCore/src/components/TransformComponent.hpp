@@ -11,6 +11,9 @@
 namespace TechEngine {
     class TransformComponent : public TechEngine::Component {
     public:
+        glm::vec3 lastPosition;
+        glm::vec3 lastOrientation;
+
         glm::vec3 position;
         glm::vec3 orientation;
         glm::vec3 scale;
@@ -32,11 +35,14 @@ namespace TechEngine {
 
         glm::mat4 getModelMatrix();
 
+        glm::mat4 getModelMatrixInterpolated();
+
         glm::vec3 getPosition() const;
 
         glm::vec3 getOrientation() const;
 
         glm::vec3 getScale() const;
+
     };
 }
 

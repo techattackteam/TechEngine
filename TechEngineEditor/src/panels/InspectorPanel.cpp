@@ -64,9 +64,18 @@ namespace TechEngine {
         ImGui::PopItemWidth();
 
         drawComponent<TransformComponent>("Transform", [this](auto &component) {
-            drawVec3Control("Translation", component->position);
-            drawVec3Control("Rotation", component->orientation);
-            drawVec3Control("Scale", component->scale, 1.0f);
+            glm::vec3 position = component->position;
+            glm::vec3 orientation = component->orientation;
+            glm::vec3 scale = component->scale;
+            drawVec3Control("Translation", position);
+            drawVec3Control("Rotation", orientation);
+            drawVec3Control("Scale", scale, 1.0f);
+            if (position != component->position)
+                component->translateTo(position);
+            if (orientation != component->orientation)
+                component->rotate(orientation);
+            if (scale != component->scale)
+                component->setScale(scale);
         });
 
         drawComponent<CameraComponent>("Camera", [](auto &component) {

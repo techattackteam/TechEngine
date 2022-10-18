@@ -20,7 +20,7 @@ namespace TechEngine {
 
             if (ImGui::BeginPopupContextWindow(0, 1, false)) {
                 if (ImGui::MenuItem("New Game Object")) {
-                    new QuadMeshTest();
+                    new QuadMeshTest("QuadMeshTest");
                 }
 
                 ImGui::EndPopup();
