@@ -21,7 +21,7 @@ namespace TechEngineCore {
 
         virtual void leave() = 0;
 
-        StateName getStateName();
+        StateName getName();
 
         std::vector<StateName> getTransitions();
     };

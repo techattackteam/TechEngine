@@ -29,7 +29,7 @@ namespace TechEngine {
     }
 
     glm::mat4 GameObject::getModelMatrixInterpolated() {
-        return getTransform().getModelMatrixInterpolated();
+        return getTransform().getModelMatrix();
     }
 
     std::string GameObject::getName() {

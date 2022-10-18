@@ -6,6 +6,7 @@
 #include <imgui_impl_glfw.h>
 #include <filesystem>
 #include <commdlg.h>
+#include <imgui_internal.h>
 
 namespace TechEngine {
     PanelsManager::PanelsManager(Window &window) : window(window) {
@@ -77,6 +78,14 @@ namespace TechEngine {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+        createDockSpace();
+        createMenuBar();
+        createToolBar();
+
+        ImGui::End();
+    }
+
+    void PanelsManager::createDockSpace() {
         // Note: Switch this to true to enable dockspace
         static bool dockspaceOpen = true;
         static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
@@ -109,40 +118,38 @@ namespace TechEngine {
             ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
             ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
         }
-        if (ImGui::BeginMenuBar()) {
-            if (ImGui::BeginMenu("File")) {
-                // Disabling fullscreen would allow the window to be moved to the front of other windows,
-                // which we can't undo at the moment without finer window depth/z control.
-                //ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen_persistant);1
-                if (ImGui::MenuItem("New", "Ctrl+N")) {
-                }
+        style.WindowMinSize.x = minWinSizeX;
+    }
 
-                if (ImGui::MenuItem("Open...", "Ctrl+O")) {
-                    std::string filepath = openFileWindow("TechEngine Scene (*.scene)\0*.scene\0");
-                    SceneSerializer::deserialize(filepath);
-                }
-
-                if (ImGui::MenuItem("Save", "Ctrl+S")) {
-                    if (currentScenePath.empty()) {
-                        std::string filepath = saveFile("TechEngine Scene (*.scene)\0*.scene\0");
-                        if (!filepath.empty()) {
-                            SceneSerializer::serialize(filepath);
-                            currentScenePath = filepath;
-                        }
-                    } else {
-                        SceneSerializer::serialize("project\\scenes\\Scene1.scene");
-                    }
-                }
-
-                if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S")) {
+    void PanelsManager::createMenuBar() {
+        ImGui::BeginMenuBar();
+        if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("New", "Ctrl+N")) {
+            }
+            if (ImGui::MenuItem("Open...", "Ctrl+O")) {
+                std::string filepath = openFileWindow("TechEngine Scene (*.scene)\0*.scene\0");
+                SceneSerializer::deserialize(filepath);
+            }
+            if (ImGui::MenuItem("Save", "Ctrl+S")) {
+                if (currentScenePath.empty()) {
                     std::string filepath = saveFile("TechEngine Scene (*.scene)\0*.scene\0");
                     if (!filepath.empty()) {
                         SceneSerializer::serialize(filepath);
                         currentScenePath = filepath;
                     }
+                } else {
+                    SceneSerializer::serialize("project\\scenes\\Scene1.scene");
                 }
-
-                if (ImGui::MenuItem("Build")) {
+            }
+            if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S")) {
+                std::string filepath = saveFile("TechEngine Scene (*.scene)\0*.scene\0");
+                if (!filepath.empty()) {
+                    SceneSerializer::serialize(filepath);
+                    currentScenePath = filepath;
+                }
+            }
+            if (ImGui::MenuItem("Compile")) {
+                if (!m_currentPlaying) {
                     std::string projectDirectory = std::filesystem::current_path().string() + "\\project";
                     std::string buildDirectory = std::filesystem::current_path().string() + "\\build";
                     for (const auto &entry: std::filesystem::directory_iterator(buildDirectory))
@@ -150,14 +157,40 @@ namespace TechEngine {
                     std::filesystem::copy(projectDirectory, buildDirectory, std::filesystem::copy_options::recursive);
                     compileUserScripts(projectDirectory, std::filesystem::current_path());
                 }
-
-                if (ImGui::MenuItem("Exit")) {}
-                ImGui::EndMenu();
             }
 
-            ImGui::EndMenuBar();
+            if (ImGui::MenuItem("Exit")) {}
+            ImGui::EndMenu();
         }
-        style.WindowMinSize.x = minWinSizeX;
+        ImGui::EndMenuBar();
+    }
+
+    void PanelsManager::createToolBar() {
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        auto &colors = ImGui::GetStyle().Colors;
+        const auto &buttonHovered = colors[ImGuiCol_ButtonHovered];
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f));
+        const auto &buttonActive = colors[ImGuiCol_ButtonActive];
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, 0.5f));
+
+        ImGui::Begin("##Toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+        float size = ImGui::GetWindowWidth() / 5;
+        ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x / 2) - (size / 2));
+        if (ImGui::Button("Play", ImVec2(size, 0))) {
+            if (!m_currentPlaying) {
+                startRunningScene();
+                m_currentPlaying = true;
+            } else {
+                stopRunningScene();
+                m_currentPlaying = false;
+            }
+        }
+
+        ImGui::PopStyleVar(2);
+        ImGui::PopStyleColor(3);
+
         ImGui::End();
     }
 
@@ -178,7 +211,6 @@ namespace TechEngine {
         CHAR currentDir[256] = {0};
         ZeroMemory(&ofn, sizeof(OPENFILENAME));
         ofn.lStructSize = sizeof(OPENFILENAME);
-        //ofn.hwndOwner = glfwGetWin32Window((GLFWwindow *) window.getHandler());
         ofn.lpstrFile = szFile;
         ofn.nMaxFile = sizeof(szFile);
         if (GetCurrentDirectoryA(256, currentDir))
@@ -219,16 +251,22 @@ namespace TechEngine {
     void PanelsManager::compileUserScripts(const std::filesystem::path &projectPath, const std::filesystem::path &dllTargetPath) {
         std::string cmakePath = projectPath.string() + "\\scripts\\cmake-build-debug";
         std::string dllPath = cmakePath + "\\UserProject.dll";
-        if (m_userCustomDll) {
-            FreeLibrary(m_userCustomDll);
-            std::filesystem::remove(dllPath);
-            ScriptEngine::getInstance()->deleteScripts();
-        }
 
         std::string command = "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars32.bat\" "
                               "&& cmake --build " + cmakePath + " --target UserProject -j 12";
 
         std::system(command.c_str());
-        m_userCustomDll = LoadLibraryA(dllPath.c_str());
     }
+
+    void PanelsManager::startRunningScene() {
+        SceneSerializer::serialize("project\\scenes\\SceneSaveTemporary.scene");
+        ScriptEngine::getInstance()->init();
+    }
+
+    void PanelsManager::stopRunningScene() {
+        ScriptEngine::getInstance()->stop();
+        SceneSerializer::deserialize("project\\scenes\\SceneSaveTemporary.scene");
+        std::filesystem::remove("project\\scenes\\SceneSaveTemporary.scene");
+    }
+
 }

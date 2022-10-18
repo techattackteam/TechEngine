@@ -11,17 +11,17 @@ namespace TechEngineCore {
 
     class StateMachine {
     private:
-        std::shared_ptr<State> currentState;
+        State *currentState;
         StateName nextState;
         bool changeState = false;
     protected:
-        std::unordered_map<StateName, std::shared_ptr<State>> states;
+        std::unordered_map<StateName, State *> states;
     public:
         StateMachine();
 
         ~StateMachine();
 
-        void createState(const StateName &name, std::shared_ptr<State> state);
+        void addState(State *state);
 
         void deleteState(const StateName &name);
 
@@ -35,7 +35,7 @@ namespace TechEngineCore {
 
         bool removeTransition(const StateName &from, const StateName &to);
 
-        std::shared_ptr<State> getCurrentState();
+        State *getCurrentState();
 
     };
 }

@@ -10,6 +10,19 @@ namespace TechEngine {
         }
     }
 
+    void ScriptEngine::init() {
+        if (!dllPath.empty()) {
+            m_userCustomDll = LoadLibraryA(dllPath.c_str());
+        }
+    }
+
+    void ScriptEngine::stop() {
+        if (m_userCustomDll) {
+            FreeLibrary(m_userCustomDll);
+            ScriptEngine::getInstance()->deleteScripts();
+        }
+    }
+
     void ScriptEngine::onStart() {
         for (Script *script: scripts) {
             script->onStart();
@@ -26,9 +39,6 @@ namespace TechEngine {
         for (Script *script: scripts) {
             script->onFixedUpdate();
         }
-    }
-
-    void ScriptEngine::onInit() {
     }
 
     ScriptEngine *ScriptEngine::getInstance() {

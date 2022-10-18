@@ -26,7 +26,7 @@ namespace TechEngine {
 
         std::filesystem::path currentScenePath;
 
-        HINSTANCE m_userCustomDll = nullptr;
+        bool m_currentPlaying = false;
     public:
 
         PanelsManager(Window &window);
@@ -44,6 +44,12 @@ namespace TechEngine {
 
         void beginImGuiFrame();
 
+        void createDockSpace();
+
+        void createMenuBar();
+
+        void createToolBar();
+
         void endImGuiFrame();
 
         std::string openFileWindow(const char *filter);
@@ -51,6 +57,10 @@ namespace TechEngine {
         std::string saveFile(const char *filter);
 
         void compileUserScripts(const std::filesystem::path &projectPath, const std::filesystem::path &dllTargetPath);
+
+        void startRunningScene();
+
+        void stopRunningScene();
     };
 }
 

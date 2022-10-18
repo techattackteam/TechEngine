@@ -3,6 +3,7 @@
 #include <list>
 #include <filesystem>
 #include "Script.hpp"
+#include <windows.h>
 
 namespace TechEngine {
     class ScriptEngine {
@@ -10,6 +11,9 @@ namespace TechEngine {
         std::list<Script *> scripts = {};
         inline static ScriptEngine *instance;
 
+        HINSTANCE m_userCustomDll = nullptr;
+
+        std::string dllPath = std::filesystem::current_path().string() + "\\project\\scripts\\\\cmake-build-debug\\UserProject.dll";
     public:
         ScriptEngine();
 
@@ -25,9 +29,10 @@ namespace TechEngine {
 
         void deleteScripts();
 
-    private:
+        void init();
 
-        void onInit();
+
+        void stop();
     };
 }
 
