@@ -1,22 +1,14 @@
 #pragma once
 
-#include <TechEngineCore.hpp>
-
-#include "../event/EventDispatcher.hpp"
-#include "../stateMachine/StateMachineManager.hpp"
-#include "../panels/PanelsManager.hpp"
-#include "../scene/Scene.hpp"
-#include "../events/window/WindowCloseEvent.hpp"
+#include "event/EventDispatcher.hpp"
+#include "stateMachine/StateMachineManager.hpp"
+#include "scene/Scene.hpp"
+#include "events/window/WindowCloseEvent.hpp"
+#include "../../TechEngineCore/src/core/App.hpp"
 
 namespace TechEngine {
     class Engine_API App : public TechEngineCore::App {
-    private:
-        bool running = true;
-
     public:
-        TechEngineCore::EventDispatcher eventDispatcher;
-        TechEngineCore::StateMachineManager stateMachineManager;
-        PanelsManager panelsManager;
         Scene scene;
 
         App();
@@ -33,8 +25,6 @@ namespace TechEngine {
 
         void onWindowCloseEvent(TechEngine::WindowCloseEvent *event);
     };
-
-    App *createApp();
 
 }
 

@@ -1,8 +1,6 @@
-#include <iostream>
 #include "EventManager.hpp"
 
 namespace TechEngineCore {
-
     EventManager::EventManager() {
         dispatchedEvents = std::queue<Event *>();
         observers = Observers();
@@ -31,7 +29,6 @@ namespace TechEngineCore {
     }
 
     void EventManager::execute() {
-        std::vector<Event>::size_type size = dispatchedEvents.size();
         for (std::vector<Event>::size_type i = 0; i < dispatchedEvents.size(); i++) {
             Event *event = dispatchedEvents.front();
             if (observers.count(event->getEventType().getName()) != 0) {

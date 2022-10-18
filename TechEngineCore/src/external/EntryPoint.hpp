@@ -1,7 +1,6 @@
-
-#include "../core/App.hpp"
-
 #pragma once
+
+#include "core/App.hpp"
 
 extern TechEngineCore::App *TechEngineCore::createApp();
 

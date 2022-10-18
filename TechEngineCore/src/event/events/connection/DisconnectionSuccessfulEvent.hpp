@@ -1,9 +1,9 @@
 #pragma once
 
 #include "event/events/Event.hpp"
-
+#include "core/Core.hpp"
 namespace TechEngineCore {
-    class DisconnectionSuccessfulEvent : public Event {
+    class Engine_API DisconnectionSuccessfulEvent : public Event {
     private:
         std::string uuid;
     public:

@@ -1,10 +1,10 @@
 #pragma once
 
-#include <TechEngineCore.hpp>
+#include "event/events/Event.hpp"
+#include "core/Core.hpp"
 
 namespace TechEngine {
-
-    class WindowResizeEvent : public TechEngineCore::Event {
+    class Engine_API WindowResizeEvent : public TechEngineCore::Event {
     private:
         int width;
         int height;

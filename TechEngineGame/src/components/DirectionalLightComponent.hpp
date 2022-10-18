@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include "components/Component.hpp"
-#include "../scene/GameObject.hpp"
+#include "scene/GameObject.hpp"
 
 namespace TechEngine {
     class DirectionalLightComponent : public Component {
@@ -23,13 +23,6 @@ namespace TechEngine {
         glm::mat4 &getViewMatrix();
 
         glm::vec4 &getColor();
-
-        void getInfo() override;
-
-        static ComponentName getName() {
-            return "DirectionalLight";
-        }
-
     };
 }
 

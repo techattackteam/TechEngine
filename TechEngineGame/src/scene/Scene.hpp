@@ -2,6 +2,7 @@
 
 #include "scene/CoreScene.hpp"
 #include "components/CameraComponent.hpp"
+#include "core/Core.hpp"
 
 namespace TechEngine {
     class Scene : public CoreScene {
@@ -28,5 +29,7 @@ namespace TechEngine {
         std::list<GameObject *> getLights();
 
         static Scene &getInstance();
+
+        void clear();
     };
 }

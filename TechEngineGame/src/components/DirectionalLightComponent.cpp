@@ -24,9 +24,4 @@ namespace TechEngine {
         return color;
     }
 
-    void DirectionalLightComponent::getInfo() {
-        if (ImGui::CollapsingHeader(name.c_str())) {
-            //Color
-        }
-    }
 }

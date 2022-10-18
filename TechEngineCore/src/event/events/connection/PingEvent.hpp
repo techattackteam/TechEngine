@@ -1,9 +1,10 @@
 #pragma once
 
 #include "event/events/Event.hpp"
+#include "core/Core.hpp"
 
 namespace TechEngineCore {
-    class PingEvent : public Event {
+    class Engine_API PingEvent : public Event {
     private:
         std::string uuid;
     public:

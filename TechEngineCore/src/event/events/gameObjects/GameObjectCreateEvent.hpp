@@ -2,9 +2,9 @@
 
 #include "event/events/Event.hpp"
 #include "scene/GameObject.hpp"
-
+#include "core/Core.hpp"
 namespace TechEngine {
-    class GameObjectCreateEvent : public TechEngineCore::Event {
+    class Engine_API GameObjectCreateEvent : public TechEngineCore::Event {
     private:
         GameObject *gameObject;
     public:

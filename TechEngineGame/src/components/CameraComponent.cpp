@@ -1,11 +1,9 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
-#include <iostream>
 #include "CameraComponent.hpp"
 #include "components/TransformComponent.hpp"
-#include "imgui_internal.h"
-#include "../event/EventDispatcher.hpp"
-#include "../core/Window.hpp"
+#include "renderer/RendererSettings.hpp"
+#include "event/EventDispatcher.hpp"
 
 namespace TechEngine {
     CameraComponent::CameraComponent(GameObject *gameObject) : Component(gameObject, "Camera") {
@@ -31,19 +29,20 @@ namespace TechEngine {
 
     void CameraComponent::fixedUpdate() {
         updateViewMatrix();
+        updateProjectionMatrix();
     }
 
     void CameraComponent::updateProjectionMatrix() {
         if (projectionType == PERSPECTIVE) {
-            projectionMatrix = glm::perspective(glm::radians(fov), WindowSettings::aspectRatio, 0.1f, 50.0f);
+            projectionMatrix = glm::perspective(glm::radians(fov), RendererSettings::aspectRatio, 0.1f, 50.0f);
         } else if (projectionType == ORTHOGRAPHIC) {
-            projectionMatrix = glm::ortho(-5.0f * WindowSettings::aspectRatio, 5.0f * WindowSettings::aspectRatio, -5.0f, 5.0f, 0.3f, 1000.0f);
+            projectionMatrix = glm::ortho(-5.0f * RendererSettings::aspectRatio, 5.0f * RendererSettings::aspectRatio, -5.0f, 5.0f, 0.3f, 1000.0f);
         }
     }
 
     void CameraComponent::updateViewMatrix() {
         gameObject->getTransform().setScale(glm::vec3(1, 1, 1));
-        glm::mat4 model = gameObject->getComponent<Transform>()->getModelMatrix();
+        glm::mat4 model = gameObject->getComponent<TransformComponent>()->getModelMatrix();
         viewMatrix = glm::inverse(model);
     }
 
@@ -63,7 +62,7 @@ namespace TechEngine {
         return projectionMatrix;
     }
 
-    void CameraComponent::getInfo() {
+/*    void CameraComponent::getInfo() {
         if (ImGui::CollapsingHeader(name.c_str())) {
             ImGui::PushID(name.c_str());
             ImGui::PushMultiItemsWidths(1, ImGui::CalcItemWidth());
@@ -95,8 +94,16 @@ namespace TechEngine {
         }
 
     }
-
+*/
     bool CameraComponent::isMainCamera() {
         return mainCamera;
+    }
+
+    void CameraComponent::setIsMainCamera(bool mainCamera) {
+        this->mainCamera = mainCamera;
+    }
+
+    CameraComponent::ProjectionType &CameraComponent::getProjectionType() {
+        return this->projectionType;
     }
 }

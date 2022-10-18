@@ -23,6 +23,10 @@ namespace TechEngineCore {
         fpsCount++;
     }
 
+    int Timer::getTicks() const {
+        return ticks;
+    }
+
     void Timer::updateTicks() {
         ticksCount++;
     }
@@ -39,9 +43,6 @@ namespace TechEngineCore {
         }
     }
 
-    int Timer::getTicks() const {
-        return ticks;
-    }
 
     double Timer::getDeltaTime() {
         double time = getTime();
@@ -61,7 +62,30 @@ namespace TechEngineCore {
         return lastLoopTime;
     }
 
+    void Timer::addAccumulator(float value) {
+        accumulator += value;
+    }
+
+    float Timer::getAccumulator() {
+        return accumulator;
+    }
+
+
     Timer &Timer::getInstance() {
         return *instance;
     }
+
+    const float Timer::getTPS() {
+        return TPS;
+    }
+
+    void Timer::updateInterpolation() {
+        interpolation = getAccumulator() / getTPS();
+    }
+
+    float Timer::getInterpolation() {
+        return interpolation;
+    }
+
+
 }

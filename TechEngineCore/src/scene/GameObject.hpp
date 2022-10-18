@@ -1,19 +1,19 @@
 
 #pragma once
 
-#include <string>
-#include <unordered_map>
-#include <imgui.h>
 #include <glm/glm.hpp>
+#include <unordered_map>
+#include <typeinfo>
+#include "core/Core.hpp"
 
 namespace TechEngine {
     using ComponentName = std::string;
 
-    class Component;
+    class Engine_API Component;
 
-    class Transform;
+    class Engine_API TransformComponent;
 
-    class GameObject {
+    class Engine_API GameObject {
     private:
         std::unordered_map<ComponentName, Component *> components;
 
@@ -22,31 +22,35 @@ namespace TechEngine {
     public:
         bool showInfoPanel = false;
 
-        GameObject(std::string name, bool showInfoPanel = true);
+        explicit GameObject(std::string name, bool showInfoPanel = true);
+
+        GameObject() = default;
+
+        virtual ~GameObject() = default;
 
         template<class C, typename... A>
         void addComponent(A ...args) {
-            if (!hasComponent<C>() && C::getName) {
+            if (!hasComponent<C>()) {
                 C *component = new C(args...);
-                components[C::getName()] = component;
+                components[typeid(C).name()] = component;
             }
         }
 
         template<typename C>
         void removeComponent() {
-            if (hasComponent<C>() && C::getName) {
-                components.erase(C::getName());
+            if (hasComponent<C>()) {
+                components.erase(typeid(C).name());
             }
         }
 
         template<typename C>
         bool hasComponent() {
-            return components.contains(C::getName());
+            return components.contains(typeid(C).name());
         }
 
         template<class C>
         C *getComponent() {
-            return (C *) components[C::getName()];
+            return (C *) components[typeid(C).name()];
         }
 
         virtual void fixUpdate();
@@ -59,7 +63,13 @@ namespace TechEngine {
 
         void showInfo();
 
-        Transform &getTransform();
+        TransformComponent &getTransform();
+
+        std::unordered_map<ComponentName, Component *> *getComponents();
+
+        bool operator==(const GameObject *gameObject) {
+            return name == gameObject->name;
+        }
     };
 }
 

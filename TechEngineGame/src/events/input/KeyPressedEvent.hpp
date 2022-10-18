@@ -2,9 +2,9 @@
 
 #include "../../../../TechEngineCore/src/event/events/Event.hpp"
 #include "../../core/Key.hpp"
-
+#include "core/Core.hpp"
 namespace TechEngine {
-class KeyPressedEvent : public TechEngineCore::Event {
+class Engine_API KeyPressedEvent : public TechEngineCore::Event {
     private:
         Key key;
     public:

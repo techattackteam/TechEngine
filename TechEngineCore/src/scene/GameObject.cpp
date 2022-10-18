@@ -3,12 +3,12 @@
 #include <utility>
 #include "event/events/gameObjects/GameObjectCreateEvent.hpp"
 #include "event/EventDispatcher.hpp"
-#include "components/Transform.hpp"
+#include "components/TransformComponent.hpp"
 
 namespace TechEngine {
     GameObject::GameObject(std::string name, bool showInfoPanel) : name(std::move(name)) {
         this->showInfoPanel = showInfoPanel;
-        addComponent<Transform>(this);
+        addComponent<TransformComponent>(this);
         TechEngineCore::EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
     }
 
@@ -25,25 +25,22 @@ namespace TechEngine {
     }
 
     void GameObject::showInfo() {
-        getTransform().getInfo();
-        for (auto element: components) {
-            if (element.first == Transform::getName()) {
-                continue;
-            }
-            element.second->getInfo();
-        }
+
     }
 
     glm::mat4 GameObject::getModelMatrix() {
-        return getComponent<Transform>()->getModelMatrix();
+        return getComponent<TransformComponent>()->getModelMatrix();
     }
 
     std::string GameObject::getName() {
         return name;
     }
 
-    Transform &GameObject::getTransform() {
-        return *getComponent<Transform>();
+    TransformComponent &GameObject::getTransform() {
+        return *getComponent<TransformComponent>();
     }
 
+    std::unordered_map<ComponentName, Component *> *GameObject::getComponents() {
+        return &components;
+    }
 }

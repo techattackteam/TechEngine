@@ -17,6 +17,17 @@ add_executable(Game ${Game_Sources} ${Game_Headers})
 target_link_directories(Game PRIVATE ${Game_Include_Dirs})
 target_link_libraries(Game TechEngineGame common)
 
+set_target_properties(Game PROPERTIES
+        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/game/archive"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/game/libs"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/game/runtime"
+        )
+
 add_custom_command(TARGET Game POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:Game> $<TARGET_FILE_DIR:Game>
+        COMMAND_EXPAND_LISTS)
+
+add_custom_command(TARGET Game POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        $<TARGET_FILE_DIR:Game> $<TARGET_FILE_DIR:TechEngineEditor>/runtime
         COMMAND_EXPAND_LISTS)

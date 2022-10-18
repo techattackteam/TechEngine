@@ -7,10 +7,14 @@
 namespace TechEngine {
 
     class SceneHierarchyPanel : public Panel {
+    private:
+        GameObject *selectedGO;
     public:
         SceneHierarchyPanel();
 
         void onUpdate() override;
+
+        void drawEntityNode(GameObject *gameObject);
     };
 }
 

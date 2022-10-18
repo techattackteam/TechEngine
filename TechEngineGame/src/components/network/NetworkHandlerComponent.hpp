@@ -20,11 +20,5 @@ namespace TechEngine {
         void update() override;
 
         const std::string &getUUID();
-
-        void getInfo() override;
-
-        static ComponentName getName() {
-            return "NetworkHandlerComponent";
-        }
     };
 }
