@@ -4,9 +4,10 @@
 #include "event/events/gameObjects/GameObjectCreateEvent.hpp"
 #include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
 #include "GameObject.hpp"
+#include "core/Core.hpp"
 
 namespace TechEngine {
-    class CoreScene {
+    class Engine_API CoreScene {
     public:
 
         CoreScene();

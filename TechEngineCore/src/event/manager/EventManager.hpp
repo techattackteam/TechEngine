@@ -3,12 +3,11 @@
 #include <unordered_map>
 #include <functional>
 #include <queue>
-#include "../events/Event.hpp"
+#include "event/events/Event.hpp"
 
 #pragma once
 namespace TechEngineCore {
-
-    using Observers = std::unordered_map<EventName, std::vector<std::function<void(Event * )>>>;
+    using Observers = std::unordered_map<EventName, std::vector<std::function<void(Event *)>>>;
 
     class EventManager {
     protected:
@@ -20,9 +19,9 @@ namespace TechEngineCore {
 
         ~EventManager();
 
-        void subscribe(EventName name, const std::function<void(Event * )> &callback);
+        void subscribe(EventName name, const std::function<void(Event *)> &callback);
 
-        void unsubscribe(EventName name, const std::function<void(Event * )> &callback);
+        void unsubscribe(EventName name, const std::function<void(Event *)> &callback);
 
         virtual void dispatch(Event *event);
 

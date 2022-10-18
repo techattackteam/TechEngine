@@ -2,10 +2,11 @@
 
 #include <boost/asio/ip/udp.hpp>
 #include "event/EventDispatcher.hpp"
+#include "core/Core.hpp"
 
 using boost::asio::ip::udp;
 namespace TechEngineCore {
-    class ConnectionRequestEvent : public Event {
+    class Engine_API ConnectionRequestEvent : public Event {
     private:
         udp::endpoint endpoint;
     public:

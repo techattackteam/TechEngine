@@ -3,10 +3,9 @@
 #include <list>
 #include <filesystem>
 #include "Script.hpp"
-#include "ScriptMacro.hpp"
 
 namespace TechEngine {
-    class Script_DLL ScriptEngine {
+    class ScriptEngine {
     private:
         std::list<Script *> scripts = {};
         inline static ScriptEngine *instance;

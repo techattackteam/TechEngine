@@ -1,7 +1,7 @@
 #include "PanelsManager.hpp"
 #include "scene/Scene.hpp"
 #include "scene/SceneSerializer.hpp"
-#include "core/ScriptEngine.hpp"
+#include "script/ScriptEngine.hpp"
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
 #include <filesystem>
@@ -9,14 +9,6 @@
 
 namespace TechEngine {
     PanelsManager::PanelsManager(Window &window) : window(window) {
-        TechEngineCore::EventDispatcher::getInstance().subscribe(OpenInspectorEvent::eventType, [this](TechEngineCore::Event *event) {
-            registerInspectorPanel((OpenInspectorEvent *) event);
-        });
-
-        TechEngineCore::EventDispatcher::getInstance().subscribe(CloseInspectorEvent::eventType, [this](TechEngineCore::Event *event) {
-            unregisterPanel((CloseInspectorEvent *) event);
-        });
-
         TechEngineCore::EventDispatcher::getInstance().subscribe(RegisterCustomPanel::eventType, [this](TechEngineCore::Event *event) {
             registerCustomPanel((RegisterCustomPanel *) event);
         });
@@ -37,24 +29,9 @@ namespace TechEngine {
     }
 
 
-    void PanelsManager::registerInspectorPanel(OpenInspectorEvent *event) {
-        if (event->getGameObject()->showInfoPanel) {
-            //inspectorPanels.emplace_back(new InspectorPanel(event->getGameObject()));
-        }
-    }
-
     void PanelsManager::registerCustomPanel(RegisterCustomPanel *event) {
         customPanels.emplace_back(event->getPanel());
         event->getPanel()->setupImGuiContext(imguiContext);
-    }
-
-    void PanelsManager::unregisterPanel(CloseInspectorEvent *event) {
-/*      for (InspectorPanel *panel: inspectorPanels) {
-            if (panel->getGameObject()->getName() == event->getGameObject()->getName()) {
-                unregisterPanel(panel);
-                break;
-            }
-        }*/
     }
 
     void PanelsManager::unregisterPanel(Panel *panel) {
@@ -240,30 +217,18 @@ namespace TechEngine {
     }
 
     void PanelsManager::compileUserScripts(const std::filesystem::path &projectPath, const std::filesystem::path &dllTargetPath) {
+        std::string cmakePath = projectPath.string() + "\\scripts\\cmake-build-debug";
+        std::string dllPath = cmakePath + "\\UserProject.dll";
         if (m_userCustomDll) {
             FreeLibrary(m_userCustomDll);
-            std::filesystem::remove(projectPath.string() + "\\UserScripts.dll");
+            std::filesystem::remove(dllPath);
             ScriptEngine::getInstance()->deleteScripts();
         }
 
         std::string command = "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars32.bat\" "
-                              "&& cl /std:c++17 /EHsc /D_USRDLL /D_WINDLL ";
-        std::filesystem::recursive_directory_iterator iterator = std::filesystem::recursive_directory_iterator(projectPath);
-        for (const auto &entry: iterator) {
-            if (entry.path().filename().extension() == ".cpp") {
-                command += entry.path().parent_path().string() + "\\*.cpp ";
-            }
-        }
-        try {
+                              "&& cmake --build " + cmakePath + " --target UserProject -j 12";
 
-            command += "C:\\dev\\TechEngine\\cmake-build-debug\\TechEngineEditor\\TechEngineScript.lib "
-                       "/I C:\\dev\\TechEngine\\TechEngineGame\\src /I C:\\dev\\TechEngine\\TechEngineCore\\src /I C:\\dev\\vcpkg\\installed\\x86-windows\\include\\glm "
-                       "/link /DLL /OUT:" + projectPath.string() + "\\UserScripts.dll";
-            std::system(command.c_str());
-        } catch (std::exception &e) {
-            std::cout << e.what() << std::endl;
-        }
-
-        m_userCustomDll = LoadLibraryA((projectPath.string() + "\\UserScripts.dll").c_str());
+        std::system(command.c_str());
+        m_userCustomDll = LoadLibraryA(dllPath.c_str());
     }
 }

@@ -4,15 +4,16 @@
 #include <glm/glm.hpp>
 #include <unordered_map>
 #include <typeinfo>
+#include "core/Core.hpp"
 
 namespace TechEngine {
     using ComponentName = std::string;
 
-    class Component;
+    class Engine_API Component;
 
-    class TransformComponent;
+    class Engine_API TransformComponent;
 
-    class GameObject {
+    class Engine_API GameObject {
     private:
         std::unordered_map<ComponentName, Component *> components;
 
@@ -21,7 +22,7 @@ namespace TechEngine {
     public:
         bool showInfoPanel = false;
 
-        GameObject(std::string name, bool showInfoPanel = true);
+        explicit GameObject(std::string name, bool showInfoPanel = true);
 
         GameObject() = default;
 
