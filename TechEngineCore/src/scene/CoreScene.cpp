@@ -5,13 +5,6 @@
 namespace TechEngine {
     CoreScene::CoreScene() {
         CoreScene::instance = this;
-/*        TechEngineCore::EventDispatcher::getInstance().subscribe(GameObjectCreateEvent::eventType, [this](TechEngineCore::Event *event) {
-            onGOCreate((GameObjectCreateEvent *) event);
-        });
-
-        TechEngineCore::EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngineCore::Event *event) {
-            onGODestroy((GameObjectDestroyEvent *) event);
-        });*/
     }
 
     void CoreScene::onGOCreate(GameObjectCreateEvent *event) {

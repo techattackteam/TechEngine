@@ -6,11 +6,12 @@
 #include "manager/managers/SyncEventManager.hpp"
 #include "manager/EventManager.hpp"
 #include "events/Event.hpp"
+#include "core/Core.hpp"
 
 #pragma once
 
 namespace TechEngineCore {
-    class EventDispatcher {
+    class Engine_API EventDispatcher {
     protected:
         inline static EventDispatcher *instance;
 
@@ -20,9 +21,9 @@ namespace TechEngineCore {
         SyncEventManager syncEventManager{};
         AsyncEventManager asyncEventManager{};
 
-        void subscribe(const EventType &type, const std::function<void(Event * )> &callback);
+        void subscribe(const EventType &type, const std::function<void(Event *)> &callback);
 
-        void unsubscribe(const EventType &type, const std::function<void(Event * )> &callback);
+        void unsubscribe(const EventType &type, const std::function<void(Event *)> &callback);
 
         void dispatch(Event *event);
 

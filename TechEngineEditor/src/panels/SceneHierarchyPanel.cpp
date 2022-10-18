@@ -2,7 +2,6 @@
 #include <imgui_internal.h>
 #include "SceneHierarchyPanel.hpp"
 #include "scene/Scene.hpp"
-#include "events/panels/OpenInspectorEvent.hpp"
 #include "events/OnSelectGameObjectEvent.hpp"
 #include "testGameObject/QuadMeshTest.hpp"
 

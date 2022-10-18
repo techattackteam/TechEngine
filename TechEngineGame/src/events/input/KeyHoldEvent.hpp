@@ -1,9 +1,9 @@
 #pragma once
 
 #include "core/Key.hpp"
-
+#include "core/Core.hpp"
 namespace TechEngine {
-    class KeyHoldEvent : public TechEngineCore::Event {
+    class Engine_API KeyHoldEvent : public TechEngineCore::Event {
     private:
         Key key;
     public:

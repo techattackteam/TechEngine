@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ScriptMacro.hpp"
-
 namespace TechEngine {
     class Script {
     public:

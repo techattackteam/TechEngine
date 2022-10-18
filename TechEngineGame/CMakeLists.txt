@@ -14,11 +14,11 @@ foreach (_headerFile ${TechEngineGame_Headers})
 endforeach ()
 list(REMOVE_DUPLICATES TechEngineGame_Include_Dirs)
 
-add_library(TechEngineGame STATIC ${TechEngineGame_Sources} ${TechEngineGame_Headers})
+add_library(TechEngineGame SHARED ${TechEngineGame_Sources} ${TechEngineGame_Headers})
 
 target_include_directories(TechEngineGame PUBLIC "../TechEngineScript/src")
 target_include_directories(TechEngineGame PUBLIC "src")
-target_link_libraries(TechEngineGame TechEngineCore TechEngineScript GLEW::GLEW glfw glm::glm yaml-cpp)
+target_link_libraries(TechEngineGame TechEngineCore GLEW::GLEW glfw glm::glm yaml-cpp)
 
 add_custom_target(copy_shaders ALL
         COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -29,3 +29,7 @@ set_target_properties(TechEngineGame PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/TechEngineGame/libs"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/TechEngineGame/runtime")
 
+add_custom_command(TARGET TechEngineGame POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_RUNTIME_DLLS:TechEngineGame> $<TARGET_FILE_DIR:TechEngineEditor>
+        COMMAND_EXPAND_LISTS)

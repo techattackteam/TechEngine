@@ -10,9 +10,7 @@
 #include "RendererPanel.hpp"
 #include "SettingsPanel.hpp"
 #include "ProjectBrowserPanel.hpp"
-#include "events/panels/OpenInspectorEvent.hpp"
 #include "events/panels/RegisterCustomPanel.hpp"
-#include "events/panels/CloseInspectorEvent.hpp"
 
 namespace TechEngine {
     class PanelsManager {
@@ -42,11 +40,7 @@ namespace TechEngine {
     private:
         void initImGui();
 
-        void registerInspectorPanel(TechEngine::OpenInspectorEvent *event);
-
         void registerCustomPanel(TechEngine::RegisterCustomPanel *event);
-
-        void unregisterPanel(TechEngine::CloseInspectorEvent *event);
 
         void beginImGuiFrame();
 

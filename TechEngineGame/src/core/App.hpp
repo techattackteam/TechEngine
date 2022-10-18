@@ -7,7 +7,7 @@
 #include "../../TechEngineCore/src/core/App.hpp"
 
 namespace TechEngine {
-    class App : public TechEngineCore::App {
+    class Engine_API App : public TechEngineCore::App {
     public:
         Scene scene;
 
