@@ -1,11 +1,12 @@
 #pragma once
 
-#include "tegpph.hpp"
+
+#include "network/handler/PacketHandler.hpp"
 
 namespace TechEngine {
-    class CPacketHandler : public PacketHandler {
+    class CPacketHandler : public TechEngineCore::PacketHandler {
     public:
-        CPacketHandler(NetworkHandler *networkHandler);
+        CPacketHandler(TechEngineCore::NetworkHandler *networkHandler);
     };
 }
 

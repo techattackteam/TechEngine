@@ -3,27 +3,19 @@
 #include <string>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include "../renderer/Renderer.hpp"
 #include "../events/window/WindowResizeEvent.hpp"
 
 namespace TechEngine {
-    class WindowSettings {
-    public:
-        inline static std::string title;
-        inline static int width;
-        inline static int height;
-        inline static float aspectRatio;
-    };
-
     class Window {
     private:
-        WindowSettings settings;
+        std::string title;
+        uint32_t width = 0;
+        uint32_t height = 0;
+        float aspectRatio = 0;
 
         bool vSync = false;
 
         GLFWwindow *handler;
-
-        Renderer renderer;
 
         void onWindowResizeEvent(WindowResizeEvent *event);
 
@@ -42,7 +34,6 @@ namespace TechEngine {
 
         static void windowKeyInput(int key, int action);
 
-        Renderer &getRenderer();
 
     };
 }

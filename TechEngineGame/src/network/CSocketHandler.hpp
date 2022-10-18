@@ -1,7 +1,7 @@
 #pragma once
 
-#include <TechEngineCore.hpp>
 #include "CNetworkHandler.hpp"
+#include "network/handler/SocketHandler.hpp"
 
 namespace TechEngine {
 

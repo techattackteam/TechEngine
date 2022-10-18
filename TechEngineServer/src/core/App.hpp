@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../network/SNetworkHandler.hpp"
+#include "network/SNetworkHandler.hpp"
 
 namespace TechEngineServer {
     class Engine_API App : public TechEngineCore::App {
@@ -12,9 +12,9 @@ namespace TechEngineServer {
 
     public:
 
-        App();
+        GameApp();
 
-        ~App() override;
+        ~GameApp() override;
 
         void run() override;
 

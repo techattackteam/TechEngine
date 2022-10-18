@@ -2,9 +2,10 @@
 
 #include "../Event.hpp"
 #include "../../../stateMachine/StateMachine.hpp"
+#include "core/Core.hpp"
 
 namespace TechEngineCore {
-    class SMDeleteEvent : public TechEngineCore::Event {
+    class Engine_API SMDeleteEvent : public TechEngineCore::Event {
     public:
         inline static EventType eventType = EventType("SMDeleteEvent", ASYNC);
         StateMachine *stateMachine;

@@ -5,13 +5,6 @@
 namespace TechEngine {
     CoreScene::CoreScene() {
         CoreScene::instance = this;
-/*        TechEngineCore::EventDispatcher::getInstance().subscribe(GameObjectCreateEvent::eventType, [this](TechEngineCore::Event *event) {
-            onGOCreate((GameObjectCreateEvent *) event);
-        });
-
-        TechEngineCore::EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngineCore::Event *event) {
-            onGODestroy((GameObjectDestroyEvent *) event);
-        });*/
     }
 
     void CoreScene::onGOCreate(GameObjectCreateEvent *event) {
@@ -42,5 +35,12 @@ namespace TechEngine {
         return gameObjects;
     }
 
-
+    GameObject *CoreScene::getGameObject(std::string name) {
+        for (GameObject *gameObject: gameObjects) {
+            if (gameObject->getName() == name) {
+                return gameObject;
+            }
+        }
+        return nullptr;
+    }
 }

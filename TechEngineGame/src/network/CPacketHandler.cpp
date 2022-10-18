@@ -1,4 +1,3 @@
-#include "tegpph.hpp"
 #include "CPacketHandler.hpp"
 #include "CNetworkHandler.hpp"
 

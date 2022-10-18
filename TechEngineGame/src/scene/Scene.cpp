@@ -1,5 +1,6 @@
 #include "Scene.hpp"
 #include "components/DirectionalLightComponent.hpp"
+#include "event/EventDispatcher.hpp"
 
 namespace TechEngine {
     Scene::Scene() {
@@ -23,9 +24,6 @@ namespace TechEngine {
         } else if (event->getGameObject()->hasComponent<DirectionalLightComponent>()) {
             lights.emplace_back(event->getGameObject());
         }
-        //Hack
-        event->getGameObject()->removeComponent<Transform>();
-        event->getGameObject()->addComponent<TransformComponent>(event->getGameObject());
     }
 
     void Scene::onGODestroy(GameObjectDestroyEvent *event) {
@@ -33,7 +31,7 @@ namespace TechEngine {
         if (event->getGameObject()->hasComponent<DirectionalLightComponent>()) {
             lights.remove(event->getGameObject());
         }
-        delete (event->getGameObject());
+        //delete (event->getGameObject());
     }
 
     std::list<GameObject *> Scene::getLights() {
@@ -50,5 +48,10 @@ namespace TechEngine {
 
     Scene &Scene::getInstance() {
         return *instance;
+    }
+
+    void Scene::clear() {
+
+        gameObjects.clear();
     }
 }

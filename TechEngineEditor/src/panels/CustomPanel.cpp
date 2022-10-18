@@ -1,8 +1,8 @@
 #include "CustomPanel.hpp"
-#include "../events/panels/RegisterCustomPanel.hpp"
+#include "events/panels/RegisterCustomPanel.hpp"
 
 namespace TechEngine {
-    CustomPanel::CustomPanel(const std::string &name) : Panel(name, false) {
+    CustomPanel::CustomPanel(const std::string &name) : Panel(name) {
         TechEngineCore::EventDispatcher::getInstance().dispatch(new RegisterCustomPanel(this));
     }
 

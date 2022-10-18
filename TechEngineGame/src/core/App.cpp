@@ -1,4 +1,5 @@
 #include "App.hpp"
+#include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
     App::App() : TechEngineCore::App() {
@@ -7,38 +8,37 @@ namespace TechEngine {
         });
 
         timer.init();
+        ScriptEngine::getInstance()->onStart();
     }
 
     App::~App() {
-
     }
 
     void App::run() {
-        float deltaTick = 1.0f / 20.0f;
-        float accumulator = 0;
         while (running) {
-            float deltaFrame = timer.getDeltaTime();
-            accumulator += deltaFrame;
+            timer.addAccumulator(timer.getDeltaTime());
             stateMachineManager.update();
-            //while (accumulator >= deltaTick) {
-            eventDispatcher.syncEventManager.execute();
-            scene.fixedUpdate();
-            onFixedUpdate();
-            timer.updateTicks();
-            accumulator -= deltaTick;
-            //}
-            float alpha = accumulator / deltaTick;
+            while (timer.getAccumulator() >= timer.getTPS()) {
+                timer.updateTicks();
 
-            onUpdate();
+                eventDispatcher.syncEventManager.execute();
+                ScriptEngine::getInstance()->onFixedUpdate();
+                scene.fixedUpdate();
+                onFixedUpdate();
+
+                timer.addAccumulator(-timer.getTPS());
+            }
+
+            timer.updateInterpolation();
+            ScriptEngine::getInstance()->onUpdate();
             scene.update();
-            panelsManager.update();
+            onUpdate();
+            timer.update();
+            timer.updateFPS();
         }
     }
 
     void App::onWindowCloseEvent(WindowCloseEvent *event) {
-        if (event->getPanel()->isMainPanel()) {
-            running = false;
-        }
-        panelsManager.unregisterAllPanels();
+        running = false;
     }
 }

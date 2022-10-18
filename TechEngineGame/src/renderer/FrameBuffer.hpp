@@ -3,28 +3,40 @@
 #include <cstdint>
 #include "GLFW.hpp"
 
-class FrameBuffer {
-private:
-    uint32_t id;
+namespace TechEngine {
+    class FrameBuffer {
+    private:
+        uint32_t id;
 
-public:
-    uint32_t depthMap;
+    public:
+        uint32_t depthMap = 0;
+        uint32_t colorTexture = 0;
+        uint32_t width = 0;
+        uint32_t height = 0;
 
-    FrameBuffer() = default;
+        FrameBuffer() = default;
 
-    ~FrameBuffer();
+        ~FrameBuffer();
 
-    void bind();
+        void init(uint32_t id, uint32_t width, uint32_t height);
 
-    void unBind();
+        void bind();
 
-    void createDepthTexture(uint32_t width, uint32_t height);
+        void unBind();
 
-    void clear();
+        void resize(uint32_t width, uint32_t height);
 
-    void bindShadowMapTexture();
+        uint32_t getColorAttachmentRenderer();
 
-    void init(uint32_t i);
-};
+        void createDepthTexture(uint32_t width, uint32_t height);
+
+        void clear();
+
+        void bindShadowMapTexture();
+
+        void attachColorTexture(uint32_t width, uint32_t height);
 
 
+        int32_t getID();
+    };
+}

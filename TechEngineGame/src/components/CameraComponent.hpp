@@ -1,9 +1,9 @@
 #pragma once
 
 #include "components/Component.hpp"
-#include "../scene/GameObject.hpp"
+#include "scene/GameObject.hpp"
 #include "components/TransformComponent.hpp"
-#include "../events/window/WindowResizeEvent.hpp"
+#include "events/window/WindowResizeEvent.hpp"
 #include <glm/glm.hpp>
 
 namespace TechEngine {
@@ -46,13 +46,11 @@ namespace TechEngine {
 
         glm::mat4 getProjectionMatrix();
 
-        void getInfo() override;
-
         bool isMainCamera();
 
-        static ComponentName getName() {
-            return "Camera";
-        }
+        void setIsMainCamera(bool mainCamera);
+
+        ProjectionType &getProjectionType();
     };
 }
 

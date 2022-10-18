@@ -3,10 +3,9 @@
 #include "../stateMachine/StateMachineManager.hpp"
 #include "../event/EventDispatcher.hpp"
 #include "Timer.hpp"
-#include "Core.hpp"
 
 namespace TechEngineCore {
-    class Engine_API App {
+    class App {
     protected:
         bool running = true;
 

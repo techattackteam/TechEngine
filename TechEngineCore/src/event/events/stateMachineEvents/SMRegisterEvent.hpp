@@ -2,9 +2,10 @@
 
 #include "../Event.hpp"
 #include "../../../stateMachine/StateMachine.hpp"
+#include "core/Core.hpp"
 
 namespace TechEngineCore {
-    class SMRegisterEvent : public Event {
+    class Engine_API SMRegisterEvent : public Event {
     public:
         inline static EventType eventType = EventType("SMRegisterEvent", ASYNC);
         StateMachine *stateMachine;
