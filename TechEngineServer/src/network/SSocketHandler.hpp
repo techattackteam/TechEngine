@@ -1,11 +1,10 @@
 #pragma once
 
-#include "tespph.hpp"
 #include "SNetworkHandler.hpp"
 
 namespace TechEngineServer {
 
-    class SSocketHandler : public SocketHandler {
+    class SSocketHandler : public TechEngineCore::SocketHandler {
     private:
         SNetworkHandler *networkHandler;
     public:

@@ -12,9 +12,9 @@ ShadersManager::~ShadersManager() {
 
 void ShadersManager::init() {
     shaders = std::unordered_map<std::string, Shader *>();
-    shaders["geometry"] = new Shader("geometry", "../TechEngineGame/res/shaders/geometryVertex.shader", "../TechEngineGame/res/shaders/geometryFragment.shader");;
-    shaders["shadowMap"] = new Shader("shadowMap", "../TechEngineGame/res/shaders/shadowMapVertex.shader", "../TechEngineGame/res/shaders/shadowMapFragment.shader");
-    shaders["depthDebug"] = new Shader("depthDebug", "../TechEngineGame/res/shaders/debugDepthVertex.shader", "../TechEngineGame/res/shaders/debugDepthFragment.shader");
+    shaders["geometry"] = new Shader("geometry", "../TechEngineEditor/resources/shaders/geometryVertex.shader", "../TechEngineEditor/resources/shaders/geometryFragment.shader");;
+    shaders["shadowMap"] = new Shader("shadowMap", "../TechEngineEditor/resources/shaders/shadowMapVertex.shader", "../TechEngineEditor/resources/shaders/shadowMapFragment.shader");
+    shaders["depthDebug"] = new Shader("depthDebug", "../TechEngineEditor/resources/shaders/debugDepthVertex.shader", "../TechEngineEditor/resources/shaders/debugDepthFragment.shader");
 }
 
 void ShadersManager::changeActiveShader(const std::string &name) {

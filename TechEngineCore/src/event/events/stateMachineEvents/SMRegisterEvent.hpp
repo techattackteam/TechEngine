@@ -5,7 +5,7 @@
 #include "core/Core.hpp"
 
 namespace TechEngineCore {
-    class Engine_API SMRegisterEvent : public Event {
+    class /*Engine_API*/ SMRegisterEvent : public Event {
     public:
         inline static EventType eventType = EventType("SMRegisterEvent", ASYNC);
         StateMachine *stateMachine;

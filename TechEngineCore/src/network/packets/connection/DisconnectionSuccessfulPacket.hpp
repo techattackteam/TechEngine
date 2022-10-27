@@ -18,4 +18,3 @@ namespace TechEngineCore {
         void serialize(Archive &ar, unsigned int version);
     };
 }
-BOOST_CLASS_EXPORT(TechEngineCore::DisconnectionSuccessfulPacket);

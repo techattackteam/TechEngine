@@ -8,7 +8,7 @@ void VertexArray::init(uint32_t id) {
 
 
 VertexArray::~VertexArray() {
-    GlCall(glDeleteVertexArrays(1, nullptr));
+    GlCall(glDeleteVertexArrays(1, &id));
 }
 
 void VertexArray::bind() const {

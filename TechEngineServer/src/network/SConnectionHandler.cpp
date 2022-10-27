@@ -10,16 +10,16 @@
 namespace TechEngineServer {
     SConnectionHandler::SConnectionHandler(SNetworkHandler *networkHandler) : ConnectionHandler(networkHandler) {
         this->networkHandler = networkHandler;
-        EventDispatcher::getInstance().subscribe(ConnectionRequestEvent::eventType, [this](Event *event) {
-            onConnectionRequest((ConnectionRequestEvent *) event);
+        TechEngineCore::EventDispatcher::getInstance().subscribe(TechEngineCore::ConnectionRequestEvent::eventType, [this](TechEngineCore::Event *event) {
+            onConnectionRequest((TechEngineCore::ConnectionRequestEvent *) event);
         });
 
-        EventDispatcher::getInstance().subscribe(PingEvent::eventType, [this](Event *event) {
-            onPingEvent((PingEvent *) event);
+        TechEngineCore::EventDispatcher::getInstance().subscribe(TechEngineCore::PingEvent::eventType, [this](TechEngineCore::Event *event) {
+            onPingEvent((TechEngineCore::PingEvent *) event);
         });
 
-        EventDispatcher::getInstance().subscribe(DisconnectionRequestEvent::eventType, [this](Event *event) {
-            onDisconnectionRequest((DisconnectionRequestEvent *) event);
+        TechEngineCore::EventDispatcher::getInstance().subscribe(TechEngineCore::DisconnectionRequestEvent::eventType, [this](TechEngineCore::Event *event) {
+            onDisconnectionRequest((TechEngineCore::DisconnectionRequestEvent *) event);
         });
 
         isAlive = new std::thread(&SConnectionHandler::checkAliveClients, this);
@@ -31,19 +31,19 @@ namespace TechEngineServer {
     }
 
 
-    void SConnectionHandler::onConnectionRequest(ConnectionRequestEvent *event) {
+    void SConnectionHandler::onConnectionRequest(TechEngineCore::ConnectionRequestEvent *event) {
         boost::uuids::uuid uuid = uuidGenerator();
         std::string uuidString = boost::uuids::to_string(uuid);
         Client *client = new Client(uuidString, event->getEndpoint());
         networkHandler->getClients().insert(std::make_pair(uuidString, client));
-        EventDispatcher::getInstance().dispatch(new ConnectionSuccessfulEvent(uuidString));
-        networkHandler->sendPacket(new ConnectionSuccessfulPacket(), client);
+        TechEngineCore::EventDispatcher::getInstance().dispatch(new TechEngineCore::ConnectionSuccessfulEvent(uuidString));
+        networkHandler->sendPacket(new TechEngineCore::ConnectionSuccessfulPacket(), client);
         std::cout << "New connection accepted uuid: " << uuidString << std::endl;
     }
 
-    void SConnectionHandler::onDisconnectionRequest(DisconnectionRequestEvent *event) {
+    void SConnectionHandler::onDisconnectionRequest(TechEngineCore::DisconnectionRequestEvent *event) {
         Client *client = networkHandler->getClient(event->getUUID());
-        networkHandler->sendPacket(new DisconnectionSuccessfulPacket(), client);
+        networkHandler->sendPacket(new TechEngineCore::DisconnectionSuccessfulPacket(), client);
         networkHandler->getClients().erase(event->getUUID());
     }
 
@@ -54,7 +54,7 @@ namespace TechEngineServer {
             for (const auto &element: ((SNetworkHandler *) networkHandler)->getClients()) {
                 Client *client = element.second;
                 checkAlive(element.first, timeStamp);
-                networkHandler->sendPacket(new PingPacket(), client);
+                networkHandler->sendPacket(new TechEngineCore::PingPacket(), client);
             }
         } while (networkHandler->isRunning());
     }
@@ -71,7 +71,7 @@ namespace TechEngineServer {
         networkHandler->getClients().erase(client->UUID);
     }
 
-    void SConnectionHandler::onPingEvent(PingEvent *event) {
+    void SConnectionHandler::onPingEvent(TechEngineCore::PingEvent *event) {
         Client *client = networkHandler->getClient(event->getUUID());
         client->setLastPingTime(std::chrono::system_clock::now());
     }

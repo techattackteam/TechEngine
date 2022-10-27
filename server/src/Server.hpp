@@ -3,6 +3,7 @@
 #include <TechEngineServer.hpp>
 #include <EntryPoint.hpp>
 #include "src/PlayerSyncEvent.hpp"
+#include "event/events/connection/ConnectionSuccessfulEvent.hpp"
 
 class Server : public TechEngineServer::App {
 private:
@@ -28,7 +29,7 @@ public:
 
     void SyncBall();
 
-    void onPlayerJoinEvent(ConnectionSuccessfulEvent *event);
+    void onPlayerJoinEvent(TechEngineCore::ConnectionSuccessfulEvent *event);
 
     void syncPlayers(PlayerSyncEvent *event);
 };

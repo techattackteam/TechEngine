@@ -5,11 +5,12 @@
 #include "src/PlayerSelectorPacket.hpp"
 #include "src/PlayerSyncPacket.hpp"
 #include "src/PlayerSyncEvent.hpp"
+#include "wrapper/Wrapper.hpp"
 
 
 Server::Server() {
     TechEngine::subscribeEvent(TechEngineCore::ConnectionSuccessfulEvent::eventType, [this](TechEngineCore::Event *event) {
-        onPlayerJoinEvent((ConnectionSuccessfulEvent *) event);
+        onPlayerJoinEvent((TechEngineCore::ConnectionSuccessfulEvent *) event);
     });
 
     TechEngine::subscribeEvent(TestPacketEvent::eventType, [this](TechEngineCore::Event *event) {
@@ -56,7 +57,7 @@ void Server::testPacketEvent() {
     }
 }
 
-void Server::onPlayerJoinEvent(ConnectionSuccessfulEvent *event) {
+void Server::onPlayerJoinEvent(TechEngineCore::ConnectionSuccessfulEvent *event) {
     if (networkHandler.getClients().size() == 1) {
         networkHandler.sendPacket(new PlayerSelectorPacket(1), event->getUUID());
         player1UUID = event->getUUID();

@@ -1,6 +1,7 @@
 #pragma once
 
-#include <TechEngineCore.hpp>
+#include "event/events/Event.hpp"
+
 
 class TestPacketEvent : public TechEngineCore::Event {
 public:

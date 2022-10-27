@@ -4,7 +4,7 @@
 #include "core/Core.hpp"
 
 namespace TechEngine {
-    class Engine_API KeyReleasedEvent : public TechEngineCore::Event {
+    class /*Engine_API*/ KeyReleasedEvent : public TechEngineCore::Event {
     private:
         Key key;
     public:

@@ -1,6 +1,7 @@
 #pragma once
 
-#include <TechEngine.hpp>
+
+#include "scene/GameObject.hpp"
 
 class Camera : public TechEngine::GameObject {
 public:

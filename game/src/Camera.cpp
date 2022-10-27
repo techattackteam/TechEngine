@@ -1,4 +1,5 @@
 #include "Camera.hpp"
+#include "components/CameraComponent.hpp"
 
 Camera::Camera() : TechEngine::GameObject("Camera", false) {
     addComponent<TechEngine::CameraComponent>(this, true, TechEngine::CameraComponent::ORTHOGRAPHIC);

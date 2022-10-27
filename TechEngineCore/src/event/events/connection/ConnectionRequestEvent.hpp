@@ -6,7 +6,7 @@
 
 using boost::asio::ip::udp;
 namespace TechEngineCore {
-    class Engine_API ConnectionRequestEvent : public Event {
+    class /*Engine_API*/ ConnectionRequestEvent : public Event {
     private:
         udp::endpoint endpoint;
     public:

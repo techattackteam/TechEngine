@@ -6,7 +6,7 @@
 #include "event/events/Event.hpp"
 #include "core/Core.hpp"
 namespace TechEngineCore {
-    class Engine_API ConnectionSuccessfulEvent : public Event {
+    class /*Engine_API*/ ConnectionSuccessfulEvent : public Event {
     private:
         const std::string uuid;
     public:

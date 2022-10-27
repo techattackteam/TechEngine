@@ -1,6 +1,7 @@
 #pragma once
 
-#include <TechEngine.hpp>
+
+#include "scene/GameObject.hpp"
 
 class NetworkHandler : public TechEngine::GameObject {
 public:

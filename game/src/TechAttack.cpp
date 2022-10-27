@@ -1,5 +1,6 @@
 #include "TechAttack.hpp"
 #include "Camera.hpp"
+#include "wrapper/Wrapper.hpp"
 #include <memory>
 
 TechAttack::TechAttack() {

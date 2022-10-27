@@ -1,5 +1,6 @@
 #include "PlayerSelectorPacket.hpp"
 #include "PlayerSelectorEvent.hpp"
+#include "event/EventDispatcher.hpp"
 
 PlayerSelectorPacket::PlayerSelectorPacket(int playerNumber) : playerNumber(playerNumber) {
 

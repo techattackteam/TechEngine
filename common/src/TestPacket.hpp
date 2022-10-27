@@ -1,7 +1,7 @@
 #pragma once
 
-#include <TechEngineCore.hpp>
 #include "TestPacketEvent.hpp"
+#include "network/Packet.hpp"
 
 class TestPacket : public TechEngineCore::Packet {
 private:
@@ -19,5 +19,3 @@ public:
     template<class Archive>
     void serialize(Archive &ar, unsigned int version);
 };
-
-BOOST_CLASS_EXPORT(TestPacket);
