@@ -9,7 +9,7 @@ namespace TechEngine {
     private:
         GameObject *gameObject;
     public:
-        Engine_API static inline EventType eventType = EventType("GameObjectDestroyEvent", SYNC);
+        /*Engine_API*/ static inline EventType eventType = EventType("GameObjectDestroyEvent", ASYNC);
 
         explicit GameObjectDestroyEvent(GameObject *gameObject) : Event(eventType) {
             this->gameObject = gameObject;

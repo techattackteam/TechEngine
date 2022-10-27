@@ -11,7 +11,7 @@
 #pragma once
 
 namespace TechEngineCore {
-    class Engine_API EventDispatcher {
+    class /*Engine_API*/ EventDispatcher {
     protected:
         inline static EventDispatcher *instance;
 

@@ -1,9 +1,10 @@
 #pragma once
 
 #include "network/SNetworkHandler.hpp"
+#include "../../TechEngineCore/src/core/App.hpp"
 
 namespace TechEngineServer {
-    class Engine_API App : public TechEngineCore::App {
+    class App : public TechEngineCore::App {
     private:
         bool running = true;
 
@@ -12,9 +13,9 @@ namespace TechEngineServer {
 
     public:
 
-        GameApp();
+        App();
 
-        ~GameApp() override;
+        ~App() override;
 
         void run() override;
 

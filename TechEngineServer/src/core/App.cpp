@@ -1,12 +1,12 @@
 #include "App.hpp"
 
 namespace TechEngineServer {
-    App::GameApp() : networkHandler(std::string("localhost"), 25565), TechEngineCore::App() {
+    App::App() : networkHandler(std::string("localhost"), 25565), TechEngineCore::App() {
         timer.init();
         networkHandler.init();
     }
 
-    App::~GameApp() {
+    App::~App() {
 
     }
 

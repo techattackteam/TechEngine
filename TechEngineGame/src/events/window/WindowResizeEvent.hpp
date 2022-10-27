@@ -4,7 +4,7 @@
 #include "core/Core.hpp"
 
 namespace TechEngine {
-    class Engine_API WindowResizeEvent : public TechEngineCore::Event {
+    class /*Engine_API*/ WindowResizeEvent : public TechEngineCore::Event {
     private:
         int width;
         int height;

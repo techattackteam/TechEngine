@@ -1,5 +1,6 @@
 #include "TestPacket.hpp"
 #include "TestPacketEvent.hpp"
+#include "event/EventDispatcher.hpp"
 
 TestPacket::TestPacket(int x, int y) {
     this->x = x;

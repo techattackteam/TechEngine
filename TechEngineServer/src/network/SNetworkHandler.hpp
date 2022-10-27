@@ -1,11 +1,11 @@
 #pragma once
 
-#include "tespph.hpp"
 #include "core/Client.hpp"
+#include "network/handler/NetworkHandler.hpp"
 
 namespace TechEngineServer {
 
-    class SNetworkHandler : public NetworkHandler {
+    class SNetworkHandler : public TechEngineCore::NetworkHandler {
     private:
         std::unordered_map<std::string, Client *> clients;
         std::string ip;
@@ -15,9 +15,9 @@ namespace TechEngineServer {
 
         void init() override;
 
-        void sendPacket(Packet *packet, Client *client);
+        void sendPacket(TechEngineCore::Packet *packet, Client *client);
 
-        void sendPacket(Packet *packet, const std::string &uuid);
+        void sendPacket(TechEngineCore::Packet *packet, const std::string &uuid);
 
         std::unordered_map<std::string, Client *> &getClients();
 

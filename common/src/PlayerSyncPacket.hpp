@@ -1,6 +1,7 @@
 #pragma once
 
-#include <TechEngineCore.hpp>
+
+#include "network/Packet.hpp"
 
 class PlayerSyncPacket : public TechEngineCore::Packet {
 
@@ -19,5 +20,3 @@ public:
     template<class Archive>
     void serialize(Archive &ar, unsigned int version);
 };
-
-BOOST_CLASS_EXPORT(PlayerSyncPacket);

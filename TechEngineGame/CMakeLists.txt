@@ -20,16 +20,20 @@ target_include_directories(TechEngineGame PUBLIC "../TechEngineScript/src")
 target_include_directories(TechEngineGame PUBLIC "src")
 target_link_libraries(TechEngineGame TechEngineCore GLEW::GLEW glfw glm::glm yaml-cpp)
 
-add_custom_target(copy_shaders ALL
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/TechEngineGame/res ${CMAKE_CURRENT_BINARY_DIR}/res)
-
 set_target_properties(TechEngineGame PROPERTIES
         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/TechEngineGame/archive"
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/TechEngineGame/libs"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/TechEngineGame/runtime")
 
+
+add_custom_command(TARGET TechEngineGame POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/TechEngineGame/res $<TARGET_FILE_DIR:TechEngineEditor>/resources
+        COMMAND_EXPAND_LISTS)
+
 add_custom_command(TARGET TechEngineGame POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        $<TARGET_RUNTIME_DLLS:TechEngineGame> $<TARGET_FILE_DIR:TechEngineEditor>
+        $<TARGET_RUNTIME_DLLS:TechEngineEditor>
+        $<TARGET_FILE_DIR:TechEngineEditor>
         COMMAND_EXPAND_LISTS)
+

@@ -9,11 +9,11 @@
 namespace TechEngine {
     using ComponentName = std::string;
 
-    class Engine_API Component;
+    class /*Engine_API*/ Component;
 
-    class Engine_API TransformComponent;
+    class /*Engine_API*/ TransformComponent;
 
-    class Engine_API GameObject {
+    class /*Engine_API*/ GameObject {
     private:
         std::unordered_map<ComponentName, Component *> components;
 

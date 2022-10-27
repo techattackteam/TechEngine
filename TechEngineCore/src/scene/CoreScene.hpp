@@ -7,7 +7,7 @@
 #include "core/Core.hpp"
 
 namespace TechEngine {
-    class Engine_API CoreScene {
+    class /*Engine_API*/ CoreScene {
     public:
 
         CoreScene();

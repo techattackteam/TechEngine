@@ -1,10 +1,9 @@
 #pragma once
 
-#include "tespph.hpp"
 #include "SNetworkHandler.hpp"
 
 namespace TechEngineServer {
-    class SPacketHandler : public PacketHandler {
+    class SPacketHandler : public TechEngineCore::PacketHandler {
     private:
 
     public:

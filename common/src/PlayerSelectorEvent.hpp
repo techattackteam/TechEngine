@@ -1,6 +1,7 @@
 #pragma once
 
-#include <TechEngineCore.hpp>
+
+#include "event/events/Event.hpp"
 
 class PlayerSelectorEvent : public TechEngineCore::Event {
 public:

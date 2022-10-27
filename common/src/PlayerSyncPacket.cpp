@@ -1,5 +1,6 @@
 #include "PlayerSyncPacket.hpp"
 #include "PlayerSyncEvent.hpp"
+#include "event/EventDispatcher.hpp"
 
 PlayerSyncPacket::PlayerSyncPacket(int playerNumber, float y) : playerNumber(playerNumber), y(y) {
 

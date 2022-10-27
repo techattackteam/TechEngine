@@ -1,6 +1,7 @@
 #pragma once
 
-#include <TechEngineCore.hpp>
+
+#include "event/events/Event.hpp"
 
 class PlayerSyncEvent : public TechEngineCore::Event {
 public:

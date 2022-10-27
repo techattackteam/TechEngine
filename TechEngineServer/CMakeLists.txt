@@ -13,7 +13,6 @@ add_library(TechEngineServer SHARED ${TechEngineServer_Sources} ${TechEngineServ
 
 include_directories(src)
 
-target_include_directories(TechEngineServer PUBLIC "../TechEngineCore/src/external")
 target_include_directories(TechEngineServer PUBLIC "src")
 target_link_libraries(TechEngineServer TechEngineCore)
 
