@@ -13,5 +13,35 @@ add_custom_command(TARGET TechEngineEditor POST_BUILD
         ${CMAKE_SOURCE_DIR}/TechEngineGame/res ${CMAKE_BINARY_DIR}/TechEngineGame/res)
 
 
+#Copy Engine lib for user code
+file(GLOB_RECURSE TechEngineAPI_libs "${CMAKE_BINARY_DIR}/TechEngineGame/archive/TechEngineGame.lib" "${CMAKE_BINARY_DIR}/TechEngineCore/archive/TechEngineCore.lib")
+add_custom_command(TARGET TechEngineEditor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        ${TechEngineAPI_libs} $<TARGET_FILE_DIR:TechEngineEditor>/TechEngineAPI/lib
+        COMMAND_EXPAND_LISTS)
+
+#Copy Engine includes for user code
+#For now it will include everything -> subject to change
+file(GLOB_RECURSE TechEngineAPI_include "${CMAKE_CURRENT_SOURCE_DIR}/../TechEngineGame/src")
+add_custom_command(TARGET TechEngineEditor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/../TechEngineGame/src $<TARGET_FILE_DIR:TechEngineEditor>/TechEngineAPI/include/TechEngineGame
+        COMMAND_EXPAND_LISTS)
 
 
+file(GLOB_RECURSE TechEngineAPI_include "${CMAKE_CURRENT_SOURCE_DIR}/../TechEngineCore/src")
+add_custom_command(TARGET TechEngineEditor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/../TechEngineCore/src $<TARGET_FILE_DIR:TechEngineEditor>/TechEngineAPI/include/TechEngineCore
+        COMMAND_EXPAND_LISTS)
+
+file(GLOB_RECURSE CORE_FILES "${CMAKE_BINARY_DIR}/TechEngineEditor/TechEngineAPI/include/TechEngineCore/*.cpp")
+file(GLOB_RECURSE GAME_FILES "${CMAKE_BINARY_DIR}/TechEngineEditor/TechEngineAPI/include/TechEngineGame/*.cpp")
+
+add_custom_command(TARGET TechEngineEditor
+        COMMAND ${CMAKE_COMMAND} -E rm -f ${GAME_FILES}
+        COMMAND_EXPAND_LISTS)
+
+add_custom_command(TARGET TechEngineEditor
+        COMMAND ${CMAKE_COMMAND} -E rm -f ${CORE_FILES}
+        COMMAND_EXPAND_LISTS)
