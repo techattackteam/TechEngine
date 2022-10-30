@@ -38,10 +38,15 @@ add_custom_command(TARGET TechEngineEditor POST_BUILD
 file(GLOB_RECURSE CORE_FILES "${CMAKE_BINARY_DIR}/TechEngineEditor/TechEngineAPI/include/TechEngineCore/*.cpp")
 file(GLOB_RECURSE GAME_FILES "${CMAKE_BINARY_DIR}/TechEngineEditor/TechEngineAPI/include/TechEngineGame/*.cpp")
 
-add_custom_command(TARGET TechEngineEditor
-        COMMAND ${CMAKE_COMMAND} -E rm -f ${GAME_FILES}
-        COMMAND_EXPAND_LISTS)
+if (EXISTS CORE_FILES)
+    add_custom_command(TARGET TechEngineEditor
+            COMMAND ${CMAKE_COMMAND} -E rm -f ${GAME_FILES}
+            COMMAND_EXPAND_LISTS)
+endif ()
 
-add_custom_command(TARGET TechEngineEditor
-        COMMAND ${CMAKE_COMMAND} -E rm -f ${CORE_FILES}
-        COMMAND_EXPAND_LISTS)
+if (EXISTS GAME_FILES)
+    add_custom_command(TARGET TechEngineEditor
+            COMMAND ${CMAKE_COMMAND} -E rm -f ${CORE_FILES}
+            COMMAND_EXPAND_LISTS)
+endif ()
+
