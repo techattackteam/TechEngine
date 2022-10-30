@@ -50,3 +50,8 @@ if (EXISTS GAME_FILES)
             COMMAND_EXPAND_LISTS)
 endif ()
 
+#copy engine's runtime to build directory
+add_custom_command(TARGET TechEngineEditor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        $<TARGET_FILE_DIR:TechEngineRuntime> ${CMAKE_BINARY_DIR}/TechEngineEditor/runtime
+        COMMAND_EXPAND_LISTS)
