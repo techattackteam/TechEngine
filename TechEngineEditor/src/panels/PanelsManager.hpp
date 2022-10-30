@@ -17,11 +17,11 @@ namespace TechEngine {
     private:
         std::vector<CustomPanel *> customPanels;
         ImGuiContext *imguiContext;
-        RendererPanel rendererPanel{};
-        InspectorPanel inspectorPanel{};
+        RendererPanel rendererPanel;
+        InspectorPanel inspectorPanel;
         //SettingsPanel settingsPanel{};
-        ProjectBrowserPanel contentBrowser{};
-        SceneHierarchyPanel sceneHierarchyPanel{};
+        ProjectBrowserPanel contentBrowser;
+        SceneHierarchyPanel sceneHierarchyPanel;
         Window &window;
 
         std::filesystem::path currentScenePath;

@@ -1,7 +1,7 @@
 #include "PanelsManager.hpp"
-#include "scene/Scene.hpp"
 #include "scene/SceneSerializer.hpp"
 #include "script/ScriptEngine.hpp"
+#include "event/events/appManagement/AppCloseRequestEvent.hpp"
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
 #include <filesystem>
@@ -148,18 +148,26 @@ namespace TechEngine {
                     currentScenePath = filepath;
                 }
             }
-            if (ImGui::MenuItem("Compile")) {
+            if (ImGui::MenuItem("Build")) {
                 if (!m_currentPlaying) {
-                    std::string projectDirectory = std::filesystem::current_path().string() + "\\project";
-                    std::string buildDirectory = std::filesystem::current_path().string() + "\\build";
-                    for (const auto &entry: std::filesystem::directory_iterator(buildDirectory))
-                        std::filesystem::remove_all(entry.path());
-                    std::filesystem::copy(projectDirectory, buildDirectory, std::filesystem::copy_options::recursive);
-                    compileUserScripts(projectDirectory, std::filesystem::current_path());
+                    stopRunningScene();
+                    m_currentPlaying = false;
                 }
+                std::string projectDirectory = std::filesystem::current_path().string() + "\\project";
+                std::string buildDirectory = std::filesystem::current_path().string() + "\\build";
+                for (const auto &entry: std::filesystem::directory_iterator(buildDirectory))
+                    std::filesystem::remove_all(entry.path());
+                std::filesystem::copy(projectDirectory, buildDirectory, std::filesystem::copy_options::recursive);
+                compileUserScripts(projectDirectory, std::filesystem::current_path());
             }
 
-            if (ImGui::MenuItem("Exit")) {}
+            if (ImGui::MenuItem("Export")) {
+
+            }
+
+            if (ImGui::MenuItem("Exit")) {
+                TechEngineCore::EventDispatcher::getInstance().dispatch(new AppCloseRequestEvent());
+            }
             ImGui::EndMenu();
         }
         ImGui::EndMenuBar();
@@ -178,7 +186,7 @@ namespace TechEngine {
         ImGui::Begin("##Toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
         float size = ImGui::GetWindowWidth() / 5;
         ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x / 2) - (size / 2));
-        if (ImGui::Button("Play", ImVec2(size, 0))) {
+        if (ImGui::Button(m_currentPlaying == true ? "Stop" : "Play", ImVec2(size, 0))) {
             if (!m_currentPlaying) {
                 startRunningScene();
                 m_currentPlaying = true;
