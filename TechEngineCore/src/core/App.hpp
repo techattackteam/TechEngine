@@ -25,7 +25,7 @@ namespace TechEngineCore {
         virtual void onFixedUpdate() = 0;
 
     private:
-
+        void onAppCloseRequestEvent();
     };
 
     App *createApp();
