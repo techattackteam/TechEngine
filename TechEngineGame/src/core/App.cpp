@@ -11,8 +11,7 @@ namespace TechEngine {
         ScriptEngine::getInstance()->onStart();
     }
 
-    App::~App() {
-    }
+    App::~App() = default;
 
     void App::run() {
         while (running) {

@@ -13,6 +13,7 @@ namespace TechEngine {
         const std::string &currentDirectory;
         const std::string &projectDirectory;
         const std::string &buildDirectory;
+        const std::string &cmakeProjectDirectory;
         std::string &currentScenePath;
 
         bool visible = false;
@@ -21,6 +22,7 @@ namespace TechEngine {
         ExportSettingsPanel(const std::string &currentDirectory,
                             const std::string &projectDirectory,
                             const std::string &buildDirectory,
+                            const std::string &cmakeProjectDirector,
                             std::string &currentScenePath);
 
         ~ExportSettingsPanel() override;

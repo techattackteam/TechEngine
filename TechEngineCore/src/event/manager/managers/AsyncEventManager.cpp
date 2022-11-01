@@ -11,6 +11,7 @@ namespace TechEngineCore {
 
     AsyncEventManager::~AsyncEventManager() {
         running = false;
+        thread.detach();
         join();
     }
 

@@ -14,7 +14,7 @@ namespace TechEngine {
 
         CoreScene(const std::string &name = "default scene");
 
-        virtual ~CoreScene() = default;
+        virtual ~CoreScene();
 
         void update();
 
@@ -39,6 +39,8 @@ namespace TechEngine {
         const std::string &getName() const;
 
         void setName(const std::string &name);
+
+        void clear();
     };
 }
 
