@@ -9,7 +9,7 @@
 #include <imgui_internal.h>
 
 namespace TechEngine {
-    PanelsManager::PanelsManager(Window &window) : window(window), exportSettingsPanel(currentDirectory, projectDirectory, buildDirectory, currentScenePath) {
+    PanelsManager::PanelsManager(Window &window) : window(window), exportSettingsPanel(currentDirectory, projectDirectory, buildDirectory, cmakeProjectDirectory, currentScenePath) {
         TechEngineCore::EventDispatcher::getInstance().subscribe(RegisterCustomPanel::eventType, [this](TechEngineCore::Event *event) {
             registerCustomPanel((RegisterCustomPanel *) event);
         });
@@ -260,19 +260,18 @@ namespace TechEngine {
         return std::string();
     }
 
-    void PanelsManager::compileUserScripts(const std::filesystem::path &projectPath, const std::filesystem::path &dllTargetPath) {
-        std::string cmakePath = projectPath.string() + "/scripts/cmake-build-release";
-        std::string dllPath = cmakePath + "/runtime/UserProject.dll";
+    void PanelsManager::compileUserScripts(const std::filesystem::path &cmakeProjectDirectory, const std::filesystem::path &dllTargetPath) {
+        std::string dllPath = cmakeProjectDirectory.string() + "/runtime/UserProject.dll";
 
         std::string command = "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars32.bat\" "
-                              "&& cmake --build " + cmakePath + " --target UserProject -j 12";
+                              "&& cmake --build " + cmakeProjectDirectory.string() + " --target UserProject -j 12";
 
         std::system(command.c_str());
     }
 
     void PanelsManager::startRunningScene() {
         SceneSerializer::serialize(projectDirectory + "/scenes/SceneSaveTemporary.scene");
-        ScriptEngine::getInstance()->init(projectDirectory + "/scripts/cmake-build-release/runtime/UserProject.dll");
+        ScriptEngine::getInstance()->init(cmakeProjectDirectory + "/runtime/UserProject.dll");
     }
 
     void PanelsManager::stopRunningScene() {

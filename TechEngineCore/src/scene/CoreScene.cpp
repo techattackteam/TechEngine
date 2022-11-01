@@ -7,6 +7,10 @@ namespace TechEngine {
         CoreScene::instance = this;
     }
 
+    CoreScene::~CoreScene() {
+        clear();
+    }
+
     void CoreScene::onGOCreate(GameObjectCreateEvent *event) {
         gameObjects.emplace_back(event->getGameObject());
     }
@@ -50,5 +54,9 @@ namespace TechEngine {
 
     void CoreScene::setName(const std::string &name) {
         CoreScene::name = name;
+    }
+
+    void CoreScene::clear() {
+        gameObjects.clear();
     }
 }

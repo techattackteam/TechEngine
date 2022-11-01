@@ -13,14 +13,19 @@ namespace TechEngine {
     ExportSettingsPanel::ExportSettingsPanel(const std::string &currentDirectory,
                                              const std::string &projectDirectory,
                                              const std::string &buildDirectory,
+                                             const std::string &cmakeProjectDirectory,
                                              std::string &currentScenePath) :
-            currentDirectory(currentDirectory), projectDirectory(projectDirectory), buildDirectory(buildDirectory), currentScenePath(currentScenePath) {
+
+            currentDirectory(currentDirectory),
+            projectDirectory(projectDirectory),
+            buildDirectory(buildDirectory),
+            cmakeProjectDirectory(cmakeProjectDirectory),
+            currentScenePath(currentScenePath) {
 
     }
 
 
     ExportSettingsPanel::~ExportSettingsPanel() {
-
     }
 
     void ExportSettingsPanel::onUpdate() {
@@ -62,7 +67,7 @@ namespace TechEngine {
         serializeEngineSettings(TechEngineSettingsPath);
         PanelsManager::compileUserScripts(projectDirectory, std::filesystem::current_path());
         std::filesystem::copy(projectDirectory + "/scenes", buildDirectory + "/scenes", copyOptions);
-        std::filesystem::copy(projectDirectory + "/scripts/cmake-build-release/runtime/UserProject.dll", buildDirectory, copyOptions);
+        std::filesystem::copy(cmakeProjectDirectory + "/runtime/UserProject.dll", buildDirectory, copyOptions);
         std::filesystem::copy(currentDirectory + "/resources", buildDirectory + "/resources", copyOptions);
         std::filesystem::copy(currentDirectory + "/runtime", buildDirectory, copyOptions);
         std::cout << "Export completed!" << std::endl;
