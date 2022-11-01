@@ -10,7 +10,7 @@ namespace TechEngine {
         }
     }
 
-    void ScriptEngine::init() {
+    void ScriptEngine::init(const std::string &dllPath) {
         if (!dllPath.empty()) {
             m_userCustomDll = LoadLibraryA(dllPath.c_str());
         }

@@ -14,7 +14,7 @@ namespace TechEngine {
     public:
         CameraComponent *mainCamera;
 
-        Scene();
+        Scene(const std::string &name = "default scene");
 
         ~Scene() = default;
 

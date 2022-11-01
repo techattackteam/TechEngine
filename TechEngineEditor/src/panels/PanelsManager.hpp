@@ -17,12 +17,17 @@ namespace TechEngine {
     private:
         std::vector<CustomPanel *> customPanels;
         ImGuiContext *imguiContext;
-        RendererPanel rendererPanel;
+        Window &window;
+        RendererPanel rendererPanel{window.getRenderer()};
         InspectorPanel inspectorPanel;
         //SettingsPanel settingsPanel{};
         ProjectBrowserPanel contentBrowser;
         SceneHierarchyPanel sceneHierarchyPanel;
-        Window &window;
+
+        //Temporary
+        std::string currentDirectory = std::filesystem::current_path().string();
+        std::string projectDirectory = currentDirectory + "/project";
+        std::string buildDirectory = currentDirectory + "/build";
 
         std::filesystem::path currentScenePath;
 
@@ -61,6 +66,8 @@ namespace TechEngine {
         void startRunningScene();
 
         void stopRunningScene();
+
+        void serializeEngineSettings(const std::filesystem::path &exportPath);
     };
 }
 

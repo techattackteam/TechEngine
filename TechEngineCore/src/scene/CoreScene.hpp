@@ -7,10 +7,12 @@
 #include "core/Core.hpp"
 
 namespace TechEngine {
-    class /*Engine_API*/ CoreScene {
+    class CoreScene {
+    private:
+        std::string name;
     public:
 
-        CoreScene();
+        CoreScene(const std::string &name = "default scene");
 
         virtual ~CoreScene() = default;
 
@@ -33,7 +35,10 @@ namespace TechEngine {
 
     private:
         inline static CoreScene *instance;
+    public:
+        const std::string &getName() const;
 
+        void setName(const std::string &name);
     };
 }
 

@@ -13,9 +13,10 @@ namespace TechEngine {
 
         HINSTANCE m_userCustomDll = nullptr;
 
-        std::string dllPath = std::filesystem::current_path().string() + "\\project\\scripts\\\\cmake-build-debug\\UserProject.dll";
     public:
         ScriptEngine();
+
+        void init(const std::string &dllPath);
 
         void onStart();
 
@@ -28,9 +29,6 @@ namespace TechEngine {
         void registerScript(Script *pScript);
 
         void deleteScripts();
-
-        void init();
-
 
         void stop();
     };

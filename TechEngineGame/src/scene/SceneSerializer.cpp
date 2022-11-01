@@ -150,7 +150,7 @@ namespace TechEngine {
     void SceneSerializer::serialize(const std::string &filepath) {
         YAML::Emitter out;
         out << YAML::BeginMap;
-        out << YAML::Key << "Scene" << YAML::Value << "Untitled";
+        out << YAML::Key << "Scene" << YAML::Value << Scene::getInstance().getName();
         out << YAML::Key << "GameObjects" << YAML::Value << YAML::BeginSeq;
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
             SerializeGameObject(out, gameObject);

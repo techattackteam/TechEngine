@@ -5,10 +5,9 @@
 
 namespace TechEngine {
     class RendererPanel : public Panel {
-        Renderer renderer;
-
+        Renderer *renderer;
     public:
-        RendererPanel();
+        RendererPanel(Renderer &renderer);
 
         void onUpdate() override;
 
