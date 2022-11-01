@@ -11,6 +11,7 @@
 #include "SettingsPanel.hpp"
 #include "ProjectBrowserPanel.hpp"
 #include "events/panels/RegisterCustomPanel.hpp"
+#include "ExportSettingsPanel.hpp"
 
 namespace TechEngine {
     class PanelsManager {
@@ -23,13 +24,14 @@ namespace TechEngine {
         //SettingsPanel settingsPanel{};
         ProjectBrowserPanel contentBrowser;
         SceneHierarchyPanel sceneHierarchyPanel;
+        ExportSettingsPanel exportSettingsPanel;
 
         //Temporary
         std::string currentDirectory = std::filesystem::current_path().string();
         std::string projectDirectory = currentDirectory + "/project";
         std::string buildDirectory = currentDirectory + "/build";
 
-        std::filesystem::path currentScenePath;
+        std::string currentScenePath;
 
         bool m_currentPlaying = false;
     public:
@@ -41,6 +43,8 @@ namespace TechEngine {
         void unregisterPanel(Panel *panel);
 
         void unregisterAllPanels();
+
+        static void compileUserScripts(const std::filesystem::path &projectPath, const std::filesystem::path &dllTargetPath);
 
     private:
         void initImGui();
@@ -61,13 +65,9 @@ namespace TechEngine {
 
         std::string saveFile(const char *filter);
 
-        void compileUserScripts(const std::filesystem::path &projectPath, const std::filesystem::path &dllTargetPath);
-
         void startRunningScene();
 
         void stopRunningScene();
-
-        void serializeEngineSettings(const std::filesystem::path &exportPath);
     };
 }
 

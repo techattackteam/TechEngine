@@ -2,17 +2,14 @@
 #include "scene/SceneSerializer.hpp"
 #include "script/ScriptEngine.hpp"
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
-#include "renderer/RendererSettings.hpp"
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
 #include <filesystem>
 #include <commdlg.h>
 #include <imgui_internal.h>
-#include <yaml-cpp/emitter.h>
-#include <fstream>
 
 namespace TechEngine {
-    PanelsManager::PanelsManager(Window &window) : window(window) {
+    PanelsManager::PanelsManager(Window &window) : window(window), exportSettingsPanel(currentDirectory, projectDirectory, buildDirectory, currentScenePath) {
         TechEngineCore::EventDispatcher::getInstance().subscribe(RegisterCustomPanel::eventType, [this](TechEngineCore::Event *event) {
             registerCustomPanel((RegisterCustomPanel *) event);
         });
@@ -29,6 +26,7 @@ namespace TechEngine {
         inspectorPanel.onUpdate();
         rendererPanel.onUpdate();
         contentBrowser.onUpdate();
+        exportSettingsPanel.onUpdate();
         endImGuiFrame();
     }
 
@@ -165,25 +163,12 @@ namespace TechEngine {
             }
 
             if (ImGui::MenuItem("Export")) {
-                std::filesystem::remove_all(buildDirectory);
-                std::filesystem::create_directory(buildDirectory);
-                if (currentScenePath.empty()) {
-                    SceneSerializer::serialize("project/scenes/defaultScene.scene");
-                    currentScenePath = "scenes/defaultScene.scene";
+                if (exportSettingsPanel.isVisible()) {
+                    exportSettingsPanel.setVisibility(false);
+                } else {
+                    exportSettingsPanel.setVisibility(true);
                 }
-                std::filesystem::copy_options copyOptions = std::filesystem::copy_options::recursive |
-                                                            std::filesystem::copy_options::overwrite_existing;
-
-                std::string TechEngineSettingsPath = buildDirectory + "/ExportSettings.TESettings";
-                serializeEngineSettings(TechEngineSettingsPath);
-                compileUserScripts(projectDirectory, std::filesystem::current_path());
-                std::filesystem::copy(projectDirectory + "/scenes", buildDirectory + "/scenes", copyOptions);
-                std::filesystem::copy(projectDirectory + "/scripts/cmake-build-release/runtime/UserProject.dll", buildDirectory, copyOptions);
-                std::filesystem::copy(currentDirectory + "/resources", buildDirectory + "/resources", copyOptions);
-                std::filesystem::copy(currentDirectory + "/runtime", buildDirectory, copyOptions);
-                std::cout << "Export completed!" << std::endl;
             }
-
             if (ImGui::MenuItem("Exit")) {
                 TechEngineCore::EventDispatcher::getInstance().dispatch(new AppCloseRequestEvent());
             }
@@ -296,23 +281,5 @@ namespace TechEngine {
         std::filesystem::remove(projectDirectory + "/scenes/SceneSaveTemporary.scene");
     }
 
-    void PanelsManager::serializeEngineSettings(const std::filesystem::path &exportPath) {
-        YAML::Emitter out;
-        out << YAML::BeginMap;
-        out << YAML::Key << "Project Name" << "PLACEHOLDER";
 
-        out << YAML::Key << "Window settings";
-        out << YAML::BeginMap;
-        out << YAML::Key << "name" << YAML::Value << "PLACEHOLDER";
-        out << YAML::Key << "width" << YAML::Value << RendererSettings::width;
-        out << YAML::Key << "height" << YAML::Value << RendererSettings::height;
-        out << YAML::EndMap;
-
-        out << YAML::Key << "Default Scene" << YAML::Value << "defaultScene";
-        out << YAML::EndSeq;
-        out << YAML::EndMap;
-
-        std::ofstream fout(exportPath);
-        fout << out.c_str();
-    }
 }
