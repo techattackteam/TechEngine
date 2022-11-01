@@ -2,11 +2,14 @@
 #include "scene/SceneSerializer.hpp"
 #include "script/ScriptEngine.hpp"
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
+#include "renderer/RendererSettings.hpp"
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
 #include <filesystem>
 #include <commdlg.h>
 #include <imgui_internal.h>
+#include <yaml-cpp/emitter.h>
+#include <fstream>
 
 namespace TechEngine {
     PanelsManager::PanelsManager(Window &window) : window(window) {
@@ -138,7 +141,7 @@ namespace TechEngine {
                         currentScenePath = filepath;
                     }
                 } else {
-                    SceneSerializer::serialize("project\\scenes\\Scene1.scene");
+                    SceneSerializer::serialize("project/scenes/Scene1.scene");
                 }
             }
             if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S")) {
@@ -149,12 +152,12 @@ namespace TechEngine {
                 }
             }
             if (ImGui::MenuItem("Build")) {
-                if (!m_currentPlaying) {
+                if (m_currentPlaying) {
                     stopRunningScene();
                     m_currentPlaying = false;
                 }
-                std::string projectDirectory = std::filesystem::current_path().string() + "\\project";
-                std::string buildDirectory = std::filesystem::current_path().string() + "\\build";
+                std::string projectDirectory = std::filesystem::current_path().string() + "/project";
+                std::string buildDirectory = std::filesystem::current_path().string() + "/build";
                 for (const auto &entry: std::filesystem::directory_iterator(buildDirectory))
                     std::filesystem::remove_all(entry.path());
                 std::filesystem::copy(projectDirectory, buildDirectory, std::filesystem::copy_options::recursive);
@@ -162,7 +165,23 @@ namespace TechEngine {
             }
 
             if (ImGui::MenuItem("Export")) {
+                std::filesystem::remove_all(buildDirectory);
+                std::filesystem::create_directory(buildDirectory);
+                if (currentScenePath.empty()) {
+                    SceneSerializer::serialize("project/scenes/defaultScene.scene");
+                    currentScenePath = "scenes/defaultScene.scene";
+                }
+                std::filesystem::copy_options copyOptions = std::filesystem::copy_options::recursive |
+                                                            std::filesystem::copy_options::overwrite_existing;
 
+                std::string TechEngineSettingsPath = buildDirectory + "/ExportSettings.TESettings";
+                serializeEngineSettings(TechEngineSettingsPath);
+                compileUserScripts(projectDirectory, std::filesystem::current_path());
+                std::filesystem::copy(projectDirectory + "/scenes", buildDirectory + "/scenes", copyOptions);
+                std::filesystem::copy(projectDirectory + "/scripts/cmake-build-release/runtime/UserProject.dll", buildDirectory, copyOptions);
+                std::filesystem::copy(currentDirectory + "/resources", buildDirectory + "/resources", copyOptions);
+                std::filesystem::copy(currentDirectory + "/runtime", buildDirectory, copyOptions);
+                std::cout << "Export completed!" << std::endl;
             }
 
             if (ImGui::MenuItem("Exit")) {
@@ -257,8 +276,8 @@ namespace TechEngine {
     }
 
     void PanelsManager::compileUserScripts(const std::filesystem::path &projectPath, const std::filesystem::path &dllTargetPath) {
-        std::string cmakePath = projectPath.string() + "\\scripts\\cmake-build-debug";
-        std::string dllPath = cmakePath + "\\UserProject.dll";
+        std::string cmakePath = projectPath.string() + "/scripts/cmake-build-release";
+        std::string dllPath = cmakePath + "/runtime/UserProject.dll";
 
         std::string command = "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars32.bat\" "
                               "&& cmake --build " + cmakePath + " --target UserProject -j 12";
@@ -267,14 +286,33 @@ namespace TechEngine {
     }
 
     void PanelsManager::startRunningScene() {
-        SceneSerializer::serialize("project\\scenes\\SceneSaveTemporary.scene");
-        ScriptEngine::getInstance()->init();
+        SceneSerializer::serialize(projectDirectory + "/scenes/SceneSaveTemporary.scene");
+        ScriptEngine::getInstance()->init(projectDirectory + "/scripts/cmake-build-release/runtime/UserProject.dll");
     }
 
     void PanelsManager::stopRunningScene() {
         ScriptEngine::getInstance()->stop();
-        SceneSerializer::deserialize("project\\scenes\\SceneSaveTemporary.scene");
-        std::filesystem::remove("project\\scenes\\SceneSaveTemporary.scene");
+        SceneSerializer::deserialize(projectDirectory + "/scenes/SceneSaveTemporary.scene");
+        std::filesystem::remove(projectDirectory + "/scenes/SceneSaveTemporary.scene");
     }
 
+    void PanelsManager::serializeEngineSettings(const std::filesystem::path &exportPath) {
+        YAML::Emitter out;
+        out << YAML::BeginMap;
+        out << YAML::Key << "Project Name" << "PLACEHOLDER";
+
+        out << YAML::Key << "Window settings";
+        out << YAML::BeginMap;
+        out << YAML::Key << "name" << YAML::Value << "PLACEHOLDER";
+        out << YAML::Key << "width" << YAML::Value << RendererSettings::width;
+        out << YAML::Key << "height" << YAML::Value << RendererSettings::height;
+        out << YAML::EndMap;
+
+        out << YAML::Key << "Default Scene" << YAML::Value << "defaultScene";
+        out << YAML::EndSeq;
+        out << YAML::EndMap;
+
+        std::ofstream fout(exportPath);
+        fout << out.c_str();
+    }
 }

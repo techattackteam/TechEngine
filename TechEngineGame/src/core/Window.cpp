@@ -8,6 +8,14 @@
 
 namespace TechEngine {
     Window::Window(const std::string &title, int width, int height) {
+        init(title, width, height);
+    }
+
+    Window::~Window() {
+        glfwMakeContextCurrent(handler);
+    }
+
+    void Window::init(const std::string &title, int width, int height) {
         this->title = title;
         this->width = width;
         this->height = height;
@@ -38,10 +46,6 @@ namespace TechEngine {
         TechEngineCore::EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngineCore::Event *event) {
             onWindowResizeEvent((WindowResizeEvent *) event);
         });
-    }
-
-    Window::~Window() {
-        glfwMakeContextCurrent(handler);
     }
 
     void Window::onUpdate() {
@@ -84,4 +88,11 @@ namespace TechEngine {
         this->aspectRatio = (float) event->getWidth() / (float) event->getHeight();
     }
 
+    void Window::changeTitle(const std::string &name) {
+        this->title = name;
+    }
+
+    Renderer &Window::getRenderer() {
+        return renderer;
+    }
 }

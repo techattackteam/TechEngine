@@ -92,7 +92,7 @@ namespace TechEngine {
         GlCall(glBindTexture(GL_TEXTURE_2D, depthMap));
     }
 
-    int32_t FrameBuffer::getID() {
+    uint32_t FrameBuffer::getID() {
         return id;
     }
 }

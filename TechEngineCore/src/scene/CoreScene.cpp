@@ -3,7 +3,7 @@
 #include "event/EventDispatcher.hpp"
 
 namespace TechEngine {
-    CoreScene::CoreScene() {
+    CoreScene::CoreScene(const std::string &name) : name(name) {
         CoreScene::instance = this;
     }
 
@@ -42,5 +42,13 @@ namespace TechEngine {
             }
         }
         return nullptr;
+    }
+
+    const std::string &CoreScene::getName() const {
+        return name;
+    }
+
+    void CoreScene::setName(const std::string &name) {
+        CoreScene::name = name;
     }
 }

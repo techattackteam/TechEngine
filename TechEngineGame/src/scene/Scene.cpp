@@ -3,7 +3,7 @@
 #include "event/EventDispatcher.hpp"
 
 namespace TechEngine {
-    Scene::Scene() {
+    Scene::Scene(const std::string &name) : CoreScene(name) {
         Scene::instance = this;
         TechEngineCore::EventDispatcher::getInstance().subscribe(GameObjectCreateEvent::eventType, [this](TechEngineCore::Event *event) {
             onGOCreate((GameObjectCreateEvent *) event);

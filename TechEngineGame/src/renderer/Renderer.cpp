@@ -11,8 +11,6 @@ namespace TechEngine {
         shadersManager.init();
         frameBuffer.init(id, RendererSettings::width, RendererSettings::height);
         vertexArray.addNewBuffer(vertexBuffer);
-        //shadowMapBuffer.init(id);
-        //shadowMapBuffer.createDepthTexture(1024, 1024);
     }
 
     void Renderer::renderWithLightPass() {
