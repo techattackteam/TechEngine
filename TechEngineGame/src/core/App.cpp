@@ -16,11 +16,10 @@ namespace TechEngine {
     void App::run() {
         while (running) {
             timer.addAccumulator(timer.getDeltaTime());
-            stateMachineManager.update();
             while (timer.getAccumulator() >= timer.getTPS()) {
                 timer.updateTicks();
 
-                eventDispatcher.syncEventManager.execute();
+                eventDispatcher.fixedSyncEventManager.execute();
                 ScriptEngine::getInstance()->onFixedUpdate();
                 scene.fixedUpdate();
                 onFixedUpdate();
@@ -28,6 +27,8 @@ namespace TechEngine {
                 timer.addAccumulator(-timer.getTPS());
             }
 
+            stateMachineManager.update();
+            eventDispatcher.syncEventManager.execute();
             timer.updateInterpolation();
             ScriptEngine::getInstance()->onUpdate();
             scene.update();

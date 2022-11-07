@@ -4,15 +4,17 @@
 
 namespace TechEngineCore {
     AsyncEventManager::AsyncEventManager() : EventManager() {
-        thread = std::thread(&AsyncEventManager::runThread, this);
+        thread = new std::thread(&AsyncEventManager::runThread, this);
         running = true;
         canExecute = false;
     }
 
     AsyncEventManager::~AsyncEventManager() {
         running = false;
-        thread.detach();
-        join();
+        canExecute = true;
+        canExecuteCond.notify_all();
+        thread->join();
+        delete thread;
     }
 
     void AsyncEventManager::dispatch(Event *event) {
@@ -23,7 +25,7 @@ namespace TechEngineCore {
     }
 
     void AsyncEventManager::join() {
-        thread.join();
+        thread->join();
     }
 
     void AsyncEventManager::runThread() {
@@ -32,9 +34,9 @@ namespace TechEngineCore {
             while (!canExecute) {
                 canExecuteCond.wait(lock);
             }
-            execute();
+            if (!running)
+                execute();
             canExecute = false;
         }
     }
-
 }

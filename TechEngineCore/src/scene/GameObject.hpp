@@ -4,29 +4,29 @@
 #include <glm/glm.hpp>
 #include <unordered_map>
 #include <typeinfo>
-#include "core/Core.hpp"
 
 namespace TechEngine {
     using ComponentName = std::string;
 
-    class /*Engine_API*/ Component;
+    class Component;
 
-    class /*Engine_API*/ TransformComponent;
+    class TransformComponent;
 
-    class /*Engine_API*/ GameObject {
+    class GameObject {
     private:
         std::unordered_map<ComponentName, Component *> components;
 
         std::string name;
 
-    public:
-        bool showInfoPanel = false;
+        bool stackAllocated = false;
 
-        explicit GameObject(std::string name, bool showInfoPanel = true);
+    public:
+
+        explicit GameObject(std::string name);
 
         GameObject() = default;
 
-        virtual ~GameObject() = default;
+        virtual ~GameObject();
 
         template<class C, typename... A>
         void addComponent(A ...args) {
@@ -71,6 +71,17 @@ namespace TechEngine {
             return name == gameObject->name;
         }
 
+        void *operator new(size_t size) {
+            void *p = ::operator new(size);
+            ((GameObject *) p)->stackAllocated = true;
+            return p;
+        }
+
+        void operator delete(void *p) {
+            if (((GameObject *) p)->stackAllocated) {
+                ::operator delete(p);
+            }
+        }
     };
 }
 

@@ -8,12 +8,12 @@
 namespace TechEngineCore {
     class AsyncEventManager : public EventManager {
     private:
-        std::thread thread;
+        std::thread *thread;
         std::condition_variable_any canExecuteCond;
         std::recursive_mutex mutex;
 
-        bool running = false;
-        bool canExecute = false;
+        std::atomic_bool running = false;
+        std::atomic_bool canExecute = false;
 
         void join();
 

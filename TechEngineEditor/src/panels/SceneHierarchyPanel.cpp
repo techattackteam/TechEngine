@@ -42,7 +42,7 @@ namespace TechEngine {
         }
 
         if (ImGui::BeginPopupContextItem()) {
-            if (ImGui::MenuItem("Delete Entity")) {
+            if (ImGui::MenuItem("Delete GameObject")) {
                 TechEngineCore::EventDispatcher::getInstance().dispatch(new GameObjectDestroyEvent(gameObject));
             }
 

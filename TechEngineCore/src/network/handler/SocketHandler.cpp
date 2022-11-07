@@ -8,14 +8,12 @@ namespace TechEngineCore {
     }
 
     SocketHandler::~SocketHandler() {
-        receiveThread->detach();
-        sendThread->detach();
         receiveThread->join();
         sendThread->join();
         socket->close();
-        delete (receiveThread);
-        delete (sendThread);
         delete (socket);
+        delete receiveThread;
+        delete sendThread;
     }
 
     void SocketHandler::init() {

@@ -9,7 +9,7 @@
 #include "Component.hpp"
 
 namespace TechEngine {
-    class /*Engine_API*/ TransformComponent : public TechEngine::Component {
+    class TransformComponent : public TechEngine::Component {
     public:
         glm::vec3 lastPosition;
         glm::vec3 lastOrientation;
