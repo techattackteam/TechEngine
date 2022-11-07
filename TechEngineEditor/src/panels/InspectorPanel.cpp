@@ -1,11 +1,16 @@
 #include <imgui_internal.h>
 #include "InspectorPanel.hpp"
 #include "components/CameraComponent.hpp"
+#include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
 
 namespace TechEngine {
     InspectorPanel::InspectorPanel() : Panel("Inspector") {
         TechEngineCore::EventDispatcher::getInstance().subscribe(OnSelectGameObjectEvent::eventType, [this](TechEngineCore::Event *event) {
             inspectGameObject((OnSelectGameObjectEvent *) (event));
+        });
+
+        TechEngineCore::EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngineCore::Event *event) {
+            onGameObjectDestroyEvent((GameObjectDestroyEvent *) event);
         });
     }
 
@@ -203,4 +208,9 @@ namespace TechEngine {
         this->gameObject = event->getGameObject();
     }
 
+    void InspectorPanel::onGameObjectDestroyEvent(TechEngine::GameObjectDestroyEvent *event) {
+        if (event->getGameObject() == this->gameObject) {
+            this->gameObject = nullptr;
+        }
+    }
 }

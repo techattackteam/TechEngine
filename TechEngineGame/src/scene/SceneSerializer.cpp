@@ -104,12 +104,7 @@ namespace TechEngine {
 
     static void SerializeGameObject(YAML::Emitter &out, GameObject *gameObject) {
         out << YAML::BeginMap;
-        out << YAML::Key << "GameObject" << YAML::Value << gameObject->getName();
-
-        out << YAML::Key << "Name";
-        out << YAML::BeginMap;
-        out << YAML::Key << "name" << YAML::Value << gameObject->getName();
-        out << YAML::EndMap;
+        out << YAML::Key << "Name" << YAML::Value << gameObject->getName();
 
         if (gameObject->hasComponent<TransformComponent>()) {
             out << YAML::Key << "TransformComponent";
@@ -179,14 +174,11 @@ namespace TechEngine {
         std::string sceneName = data["Scene"].as<std::string>();
 
         auto node = data["GameObjects"];
-        //Should clear scene
         Scene::getInstance().clear();
         if (node) {
             for (auto gameObjectYAML: node) {
 
-                std::string name;
-                auto tagComponent = gameObjectYAML["Name"];
-                name = tagComponent["name"].as<std::string>();
+                auto name = gameObjectYAML["Name"].as<std::string>();
                 GameObject *gameObject = new GameObject(name);
 
                 auto transformComponentNode = gameObjectYAML["TransformComponent"];

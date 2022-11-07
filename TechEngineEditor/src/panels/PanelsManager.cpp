@@ -2,6 +2,7 @@
 #include "scene/SceneSerializer.hpp"
 #include "script/ScriptEngine.hpp"
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
+#include "scene/Scene.hpp"
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
 #include <filesystem>
@@ -277,6 +278,11 @@ namespace TechEngine {
     void PanelsManager::stopRunningScene() {
         ScriptEngine::getInstance()->stop();
         SceneSerializer::deserialize(projectDirectory + "/scenes/SceneSaveTemporary.scene");
+        for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
+            if (gameObject->hasComponent<CameraComponent>() && gameObject->getComponent<CameraComponent>()->isMainCamera()) {
+                Scene::getInstance().mainCamera = gameObject->getComponent<CameraComponent>();
+            }
+        }
         std::filesystem::remove(projectDirectory + "/scenes/SceneSaveTemporary.scene");
     }
 

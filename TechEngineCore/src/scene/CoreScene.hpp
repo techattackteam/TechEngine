@@ -4,7 +4,6 @@
 #include "event/events/gameObjects/GameObjectCreateEvent.hpp"
 #include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
 #include "GameObject.hpp"
-#include "core/Core.hpp"
 
 namespace TechEngine {
     class CoreScene {
@@ -22,7 +21,7 @@ namespace TechEngine {
 
         static CoreScene &getInstance();
 
-        std::list<GameObject *> getGameObjects();
+        std::list<GameObject *> &getGameObjects();
 
         GameObject *getGameObject(std::string name);
 
@@ -40,7 +39,7 @@ namespace TechEngine {
 
         void setName(const std::string &name);
 
-        void clear();
+        virtual void clear();
     };
 }
 

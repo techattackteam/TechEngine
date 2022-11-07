@@ -2,7 +2,6 @@
 
 #include "scene/CoreScene.hpp"
 #include "components/CameraComponent.hpp"
-#include "core/Core.hpp"
 
 namespace TechEngine {
     class Scene : public CoreScene {
@@ -30,6 +29,6 @@ namespace TechEngine {
 
         static Scene &getInstance();
 
-        void clear();
+        void clear() override;
     };
 }

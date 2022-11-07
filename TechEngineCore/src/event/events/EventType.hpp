@@ -5,7 +5,7 @@
 using EventName = std::string;
 
 enum EventTiming {
-    SYNC, ASYNC, LAZY_ASYNC
+    SYNC, FIXED_SYNC, ASYNC, LAZY_ASYNC
 };
 
 class EventType {

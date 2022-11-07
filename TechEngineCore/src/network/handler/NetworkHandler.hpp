@@ -20,7 +20,7 @@ namespace TechEngineCore {
         ConnectionHandler *connectionHandler;
         PacketHandler *packetHandler;
 
-        bool running = true;
+        std::atomic_bool running = true;
 
     public:
         NetworkHandler(SocketHandler *socketsHandler, ConnectionHandler *connectionHandler, PacketHandler *packetHandler);

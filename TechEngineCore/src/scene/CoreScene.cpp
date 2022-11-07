@@ -35,7 +35,7 @@ namespace TechEngine {
         return *instance;
     }
 
-    std::list<GameObject *> CoreScene::getGameObjects() {
+    std::list<GameObject *> &CoreScene::getGameObjects() {
         return gameObjects;
     }
 
@@ -57,6 +57,9 @@ namespace TechEngine {
     }
 
     void CoreScene::clear() {
+        for (int i = 0; i < gameObjects.size(); i++) {
+            //delete gameObjects.front();
+        }
         gameObjects.clear();
     }
 }

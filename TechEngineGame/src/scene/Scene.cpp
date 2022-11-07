@@ -31,7 +31,7 @@ namespace TechEngine {
         if (event->getGameObject()->hasComponent<DirectionalLightComponent>()) {
             lights.remove(event->getGameObject());
         }
-        //delete (event->getGameObject());
+        delete (event->getGameObject());
     }
 
     std::list<GameObject *> Scene::getLights() {
@@ -51,7 +51,7 @@ namespace TechEngine {
     }
 
     void Scene::clear() {
-
-        gameObjects.clear();
+        CoreScene::clear();
+        lights.clear();
     }
 }

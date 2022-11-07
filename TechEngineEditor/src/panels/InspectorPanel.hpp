@@ -3,6 +3,7 @@
 #include "CustomPanel.hpp"
 #include "scene/GameObject.hpp"
 #include "events/OnSelectGameObjectEvent.hpp"
+#include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
 
 namespace TechEngine {
     class InspectorPanel : public Panel {
@@ -21,6 +22,8 @@ namespace TechEngine {
         void drawComponents();
 
         void drawVec3Control(const std::string &label, glm::vec3 &values, float resetValue = 0.0f, float columnWidth = 100.0f);
+
+        void onGameObjectDestroyEvent(TechEngine::GameObjectDestroyEvent *pEvent);
     };
 }
 
