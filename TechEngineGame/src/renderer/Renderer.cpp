@@ -26,7 +26,7 @@ namespace TechEngine {
     void Renderer::renderGeometryPass(bool shadow) {
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
             if (gameObject->hasComponent<MeshRendererComponent>()) {
-                shadersManager.getActiveShader()->setUniformMatrix4f("model", gameObject->getModelMatrixInterpolated());
+                shadersManager.getActiveShader()->setUniformMatrix4f("model", gameObject->getModelMatrix());
                 auto *meshRenderer = gameObject->getComponent<MeshRendererComponent>();
                 flushMeshData(meshRenderer);
                 if (!shadow) {

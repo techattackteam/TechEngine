@@ -42,6 +42,11 @@ namespace TechEngine {
         }
 
         if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::MenuItem("Make Child")) {
+                GameObject *child = new QuadMeshTest(gameObject->getName() + "'s Child");
+                gameObject->addChild(child);
+            }
+
             if (ImGui::MenuItem("Delete GameObject")) {
                 TechEngineCore::EventDispatcher::getInstance().dispatch(new GameObjectDestroyEvent(gameObject));
             }

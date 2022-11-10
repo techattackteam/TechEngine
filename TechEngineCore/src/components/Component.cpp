@@ -3,7 +3,7 @@
 #include <utility>
 
 namespace TechEngine {
-    Component::Component(GameObject *gameObject, ComponentName name) : gameObject(gameObject), name(std::move(name)) {
+    Component::Component(GameObject *gameObject, std::string name) : gameObject(gameObject), name(std::move(name)) {
 
     }
 

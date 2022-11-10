@@ -4,17 +4,15 @@
 #include <imgui.h>
 #include "scene/GameObject.hpp"
 
-using ComponentName = std::string;
-
 namespace TechEngine {
     class GameObject;
 
     class Component {
     protected:
-        ComponentName name;
+        std::string name;
         GameObject *gameObject;
     public:
-        Component(GameObject *gameObject, ComponentName name);
+        Component(GameObject *gameObject, std::string name);
 
         virtual ~Component();
 
@@ -22,7 +20,7 @@ namespace TechEngine {
 
         virtual void update();
 
-        virtual ComponentName &getName() {
+        virtual std::string &getName() {
             return name;
         };
 
