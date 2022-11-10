@@ -9,9 +9,18 @@ namespace TechEngine {
     }
 
     glm::mat4 TransformComponent::getModelMatrix() {
-        model = glm::translate(glm::mat4(1), glm::mix(lastPosition, position, TechEngineCore::Timer::getInstance().getInterpolation())) *
-                glm::toMat4(glm::quat(glm::radians(glm::mix(lastOrientation, orientation, TechEngineCore::Timer::getInstance().getInterpolation())))) *
-                glm::scale(glm::mat4(1), scale);
+        if (gameObject->getParent() == nullptr) {
+            model = glm::translate(glm::mat4(1), glm::mix(lastPosition, position, TechEngineCore::Timer::getInstance().getInterpolation())) *
+                    glm::toMat4(glm::quat(glm::radians(glm::mix(lastOrientation, orientation, TechEngineCore::Timer::getInstance().getInterpolation())))) *
+                    glm::scale(glm::mat4(1), scale);
+        } else {
+            glm::vec3 position = this->position + gameObject->getParent()->getTransform().position;
+            glm::vec3 lastPosition = this->lastPosition + gameObject->getParent()->getTransform().lastPosition;
+            model = glm::translate(glm::mat4(1), glm::mix(lastPosition, position, TechEngineCore::Timer::getInstance().getInterpolation())) *
+                    glm::toMat4(glm::quat(glm::radians(glm::mix(lastOrientation, orientation, TechEngineCore::Timer::getInstance().getInterpolation())))) *
+                    glm::scale(glm::mat4(1), scale);
+
+        }
         return model;
     }
 

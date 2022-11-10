@@ -10,14 +10,15 @@ namespace TechEngine {
     GameObject::GameObject(std::string name) : name(std::move(name)) {
         addComponent<TransformComponent>(this);
         TechEngineCore::EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
-        //CoreScene::getInstance().getGameObjects().push_back(this);
-        std::cout << this->name << " is created" << std::endl;
+        tag = CoreScene::getInstance().genGOTag();
+        std::cout << this->name << " is created with tag " << tag << std::endl;
     }
 
     GameObject::~GameObject() {
+        deleteChildren();
         //TechEngineCore::EventDispatcher::getInstance().dispatch(new GameObjectDestroyEvent(this));
         CoreScene::getInstance().getGameObjects().remove(this);
-        std::cout << name << " is destroyed" << std::endl;
+        std::cout << name << " is destroyed with tag " << tag << std::endl;
     }
 
     void GameObject::fixUpdate() {
@@ -32,11 +33,28 @@ namespace TechEngine {
         }
     }
 
-    glm::mat4 GameObject::getModelMatrix() {
-        return getTransform().getModelMatrix();
+    void GameObject::makeParent(GameObject *parent) {
+        this->parent = parent;
     }
 
-    glm::mat4 GameObject::getModelMatrixInterpolated() {
+    void GameObject::addChild(GameObject *child) {
+        child->makeParent(this);
+        children.insert(std::make_pair(child->getTag(), child));
+    }
+
+    void GameObject::removeParent() {
+        removeChild(parent->getTag());
+    }
+
+    void GameObject::removeChild(const std::string &tag) {
+        if (children.contains(tag)) {
+            GameObject *child = children.at(tag);
+            child->parent = nullptr;
+            children.erase(tag);
+        }
+    }
+
+    glm::mat4 GameObject::getModelMatrix() {
         return getTransform().getModelMatrix();
     }
 
@@ -44,11 +62,31 @@ namespace TechEngine {
         return name;
     }
 
+    std::string GameObject::getTag() {
+        return tag;
+    }
+
+    GameObject *GameObject::getParent() {
+        return parent;
+    }
+
     TransformComponent &GameObject::getTransform() {
         return *getComponent<TransformComponent>();
     }
 
-    std::unordered_map<ComponentName, Component *> *GameObject::getComponents() {
-        return &components;
+    std::unordered_map<std::string, Component *> &GameObject::getComponents() {
+        return components;
     }
+
+    std::unordered_map<std::string, GameObject *> &GameObject::getChildren() {
+        return children;
+    }
+
+    void GameObject::deleteChildren() {
+        for (auto &pair: children) {
+            delete pair.second;
+        }
+    }
+
+
 }

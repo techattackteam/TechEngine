@@ -1,4 +1,5 @@
 #include <iostream>
+#include <boost/uuid/uuid_io.hpp>
 #include "CoreScene.hpp"
 #include "event/EventDispatcher.hpp"
 
@@ -29,6 +30,12 @@ namespace TechEngine {
         for (auto element: gameObjects) {
             element->fixUpdate();
         }
+    }
+
+    std::string CoreScene::genGOTag() {
+        boost::uuids::uuid uuid = goTagGenerator();
+        std::string uuidString = boost::uuids::to_string(uuid);
+        return uuidString;
     }
 
     CoreScene &CoreScene::getInstance() {

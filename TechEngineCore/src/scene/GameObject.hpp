@@ -6,18 +6,18 @@
 #include <typeinfo>
 
 namespace TechEngine {
-    using ComponentName = std::string;
-
     class Component;
 
     class TransformComponent;
 
     class GameObject {
     private:
-        std::unordered_map<ComponentName, Component *> components;
+        GameObject *parent = nullptr;
+        std::unordered_map<std::string, GameObject *> children;
+        std::unordered_map<std::string, Component *> components;
 
         std::string name;
-
+        std::string tag;
         bool stackAllocated = false;
 
     public:
@@ -57,15 +57,27 @@ namespace TechEngine {
 
         virtual void update();
 
-        glm::mat4 getModelMatrix();
+        void makeParent(GameObject *parent);
 
-        glm::mat4 getModelMatrixInterpolated();
+        void addChild(GameObject *child);
+
+        void removeParent();
+
+        void removeChild(const std::string &tag);
+
+        glm::mat4 getModelMatrix();
 
         std::string getName();
 
+        std::string getTag();
+
+        GameObject* getParent();
+
         TransformComponent &getTransform();
 
-        std::unordered_map<ComponentName, Component *> *getComponents();
+        std::unordered_map<std::string, Component *> &getComponents();
+
+        std::unordered_map<std::string, GameObject *> &getChildren();
 
         bool operator==(const GameObject *gameObject) {
             return name == gameObject->name;
@@ -82,6 +94,9 @@ namespace TechEngine {
                 ::operator delete(p);
             }
         }
+
+    private:
+        void deleteChildren();
     };
 }
 
