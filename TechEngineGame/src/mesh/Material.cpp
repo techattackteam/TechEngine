@@ -21,7 +21,7 @@ glm::vec3 &Material::getSpecular() {
     return specular;
 }
 
-float Material::getShininess() {
+float &Material::getShininess() {
     return shininess;
 }
 

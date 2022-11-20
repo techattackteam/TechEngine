@@ -23,7 +23,7 @@ public:
 
     glm::vec3 &getSpecular();
 
-    float getShininess();
+    float &getShininess();
 
 };
 

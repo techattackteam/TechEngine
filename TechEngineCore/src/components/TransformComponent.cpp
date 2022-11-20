@@ -36,7 +36,7 @@ namespace TechEngine {
 
     /*Rotate using Euler angles in Degrees*/
     void TransformComponent::rotate(glm::vec3 rotation) {
-        lastOrientation = orientation;
+        lastOrientation = rotation;
         this->orientation = rotation;
     }
 

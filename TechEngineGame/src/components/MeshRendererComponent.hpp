@@ -13,15 +13,18 @@ namespace TechEngine {
         Material &material;
 
     public:
+        MeshRendererComponent(GameObject *gameObject);
+
         MeshRendererComponent(GameObject *gameObject, Mesh *mesh, Material *material);
 
         void changeMesh(Mesh &mesh);
+
+        Mesh &getMesh();
 
         Material &getMaterial();
 
         std::vector<Vertex> getVertices();
 
-    private:
         void paintMesh();
 
     };
