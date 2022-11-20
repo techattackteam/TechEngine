@@ -56,7 +56,7 @@ namespace TechEngine {
         }
 
         if (opened) {
-            for (const auto& pair: gameObject->getChildren()) {
+            for (const auto &pair: gameObject->getChildren()) {
                 drawEntityNode(pair.second);
             }
             ImGui::TreePop();
