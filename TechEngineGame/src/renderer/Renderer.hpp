@@ -36,6 +36,8 @@ namespace TechEngine {
         void renderWithLightPass();
 
         void renderGeometryPass(bool shadow);
+
+        void renderGameObject(GameObject *gameObject, bool shadow);
     };
 }
 

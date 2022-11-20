@@ -23,21 +23,28 @@ namespace TechEngine {
         }
     }
 
+    void Renderer::renderGameObject(GameObject *gameObject, bool shadow) {
+        for (auto &pair: gameObject->getChildren()) {
+            renderGameObject(pair.second, shadow);
+        }
+        if (gameObject->hasComponent<MeshRendererComponent>()) {
+            shadersManager.getActiveShader()->setUniformMatrix4f("model", gameObject->getModelMatrix());
+            auto *meshRenderer = gameObject->getComponent<MeshRendererComponent>();
+            flushMeshData(meshRenderer);
+            if (!shadow) {
+                Material &material = meshRenderer->getMaterial();
+                shadersManager.getActiveShader()->setUniformVec3("material.ambient", material.getAmbient());
+                shadersManager.getActiveShader()->setUniformVec3("material.diffuse", material.getDiffuse());
+                shadersManager.getActiveShader()->setUniformVec3("material.specular", material.getSpecular());
+                shadersManager.getActiveShader()->setUniformFloat("material.shininess", material.getShininess());
+            }
+            GlCall(glDrawArrays(GL_TRIANGLES, 0, meshRenderer->getVertices().size()));
+        }
+    }
+
     void Renderer::renderGeometryPass(bool shadow) {
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
-            if (gameObject->hasComponent<MeshRendererComponent>()) {
-                shadersManager.getActiveShader()->setUniformMatrix4f("model", gameObject->getModelMatrix());
-                auto *meshRenderer = gameObject->getComponent<MeshRendererComponent>();
-                flushMeshData(meshRenderer);
-                if (!shadow) {
-                    Material &material = meshRenderer->getMaterial();
-                    shadersManager.getActiveShader()->setUniformVec3("material.ambient", material.getAmbient());
-                    shadersManager.getActiveShader()->setUniformVec3("material.diffuse", material.getDiffuse());
-                    shadersManager.getActiveShader()->setUniformVec3("material.specular", material.getSpecular());
-                    shadersManager.getActiveShader()->setUniformFloat("material.shininess", material.getShininess());
-                }
-                GlCall(glDrawArrays(GL_TRIANGLES, 0, meshRenderer->getVertices().size()));
-            }
+            renderGameObject(gameObject, shadow);
         }
     }
 

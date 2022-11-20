@@ -89,4 +89,8 @@ namespace TechEngine {
     void GameObject::setTag(std::string tag) {
         this->tag = tag;
     }
+
+    bool GameObject::hasParent() {
+        return parent == nullptr;
+    }
 }
