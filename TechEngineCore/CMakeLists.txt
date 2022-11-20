@@ -11,7 +11,7 @@ foreach (_headerFile ${TechEngineCore_Headers})
 endforeach ()
 list(REMOVE_DUPLICATES TechEngineCore_Include_Dirs)
 
-add_library(TechEngineCore SHARED ${TechEngineCore_Sources} ${TechEngineCore_Headers})
+add_library(TechEngineCore STATIC ${TechEngineCore_Sources} ${TechEngineCore_Headers})
 target_include_directories(TechEngineCore PUBLIC "src")
 target_link_libraries(TechEngineCore Boost::boost Boost::serialization)
 
