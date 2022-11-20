@@ -14,7 +14,7 @@ foreach (_headerFile ${TechEngineGame_Headers})
 endforeach ()
 list(REMOVE_DUPLICATES TechEngineGame_Include_Dirs)
 
-add_library(TechEngineGame SHARED ${TechEngineGame_Sources} ${TechEngineGame_Headers})
+add_library(TechEngineGame STATIC ${TechEngineGame_Sources} ${TechEngineGame_Headers})
 
 target_include_directories(TechEngineGame PUBLIC "src")
 target_link_libraries(TechEngineGame TechEngineCore GLEW::GLEW glfw glm::glm yaml-cpp)

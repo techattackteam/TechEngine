@@ -9,7 +9,7 @@ endforeach ()
 list(REMOVE_DUPLICATES Common_Include_Dirs)
 
 include_directories("../TechEngineCore/src/external")
-add_library(common SHARED ${Common_Sources} ${Common_Headers})
+add_library(common STATIC ${Common_Sources} ${Common_Headers})
 
 target_include_directories(common PUBLIC "../TechEngineCore/src/external")
 target_include_directories(common PUBLIC "src")

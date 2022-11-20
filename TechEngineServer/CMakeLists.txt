@@ -9,7 +9,7 @@ foreach (_headerFile ${TechEngineServer_Headers})
 endforeach ()
 list(REMOVE_DUPLICATES TechEngineServer_Include_Dirs)
 
-add_library(TechEngineServer SHARED ${TechEngineServer_Sources} ${TechEngineServer_Headers})
+add_library(TechEngineServer STATIC ${TechEngineServer_Sources} ${TechEngineServer_Headers})
 
 include_directories(src)
 
