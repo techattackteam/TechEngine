@@ -33,6 +33,13 @@ namespace TechEngine {
         }
     }
 
+    void CoreScene::makeChildTo(GameObject *parent, GameObject *child) {
+        if (getGameObject(child->getName()) != nullptr) {
+            gameObjects.remove(child);
+        }
+        parent->addChild(child);
+    }
+
     std::string CoreScene::genGOTag() {
         boost::uuids::uuid uuid = goTagGenerator();
         std::string uuidString = boost::uuids::to_string(uuid);

@@ -16,7 +16,6 @@ namespace TechEngine {
     protected:
         std::list<GameObject *> gameObjects;
 
-
     public:
 
         CoreScene(const std::string &name = "default scene");
@@ -44,6 +43,8 @@ namespace TechEngine {
         void setName(const std::string &name);
 
         virtual void clear();
+
+        void makeChildTo(GameObject *parent, GameObject *child);
     };
 }
 

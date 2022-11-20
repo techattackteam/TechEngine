@@ -97,6 +97,8 @@ namespace TechEngine {
 
         void setTag(std::string basicString);
 
+        bool hasParent();
+
     private:
         void deleteChildren();
     };

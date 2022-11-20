@@ -33,7 +33,8 @@ namespace TechEngine {
     void SceneHierarchyPanel::drawEntityNode(GameObject *gameObject) {
         std::string name = gameObject->getName();
 
-        ImGuiTreeNodeFlags flags = ((selectedGO == gameObject) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
+        ImGuiTreeNodeFlags flags = ((selectedGO == gameObject) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow |
+                                   (gameObject->getChildren().empty() ? ImGuiTreeNodeFlags_Leaf : 0);
         flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
         bool opened = ImGui::TreeNodeEx((void *) (uint64_t) (uint32_t) gameObject, flags, name.c_str());
         if (ImGui::IsItemClicked()) {
@@ -44,7 +45,7 @@ namespace TechEngine {
         if (ImGui::BeginPopupContextItem()) {
             if (ImGui::MenuItem("Make Child")) {
                 GameObject *child = new QuadMeshTest(gameObject->getName() + "'s Child");
-                gameObject->addChild(child);
+                CoreScene::getInstance().makeChildTo(gameObject, child);
             }
 
             if (ImGui::MenuItem("Delete GameObject")) {
@@ -55,11 +56,11 @@ namespace TechEngine {
         }
 
         if (opened) {
-            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-            bool opened = ImGui::TreeNodeEx((void *) 9817239, flags, name.c_str());
-            if (opened)
-                ImGui::TreePop();
+            for (const auto& pair: gameObject->getChildren()) {
+                drawEntityNode(pair.second);
+            }
             ImGui::TreePop();
         }
+
     }
 }
