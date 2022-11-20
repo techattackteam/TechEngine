@@ -94,7 +94,7 @@ namespace TechEngine {
         drawComponent<CameraComponent>("Camera", [](auto &component) {
                                            auto &camera = component;
 
-                                           //ImGui::Checkbox("Primary", &component->Primary);
+                                           ImGui::Checkbox("Primary", &component->mainCamera);
 
                                            const char *projectionTypeStrings[] = {"Perspective", "Orthographic"};
                                            const char *currentProjectionTypeString = projectionTypeStrings[(int) camera->getProjectionType()];

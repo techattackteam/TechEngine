@@ -11,17 +11,20 @@ namespace TechEngine {
         std::list<GameObject *> lights;
 
     public:
-        CameraComponent *mainCamera;
+
+        CameraComponent *mainCamera = nullptr;
 
         Scene(const std::string &name = "default scene");
 
         ~Scene() = default;
 
-        void onGOCreate(GameObjectCreateEvent *event) override;
+        void registerGameObject(GameObject *gameObject) override;
 
-        void onGODestroy(GameObjectDestroyEvent *event) override;
+        void unregisterGameObject(GameObject *event) override;
 
         bool isLightingActive() const;
+
+        bool findCameraComponent();
 
         bool hasMainCamera();
 
