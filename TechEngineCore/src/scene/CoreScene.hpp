@@ -16,15 +16,16 @@ namespace TechEngine {
     protected:
         std::list<GameObject *> gameObjects;
 
-        virtual void onGOCreate(GameObjectCreateEvent *event);
-
-        virtual void onGODestroy(GameObjectDestroyEvent *event);
 
     public:
 
         CoreScene(const std::string &name = "default scene");
 
         virtual ~CoreScene();
+
+        virtual void registerGameObject(GameObject *gameObject);
+
+        virtual void unregisterGameObject(GameObject *gameObject);
 
         void update();
 

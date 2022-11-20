@@ -5,41 +5,52 @@
 namespace TechEngine {
     Scene::Scene(const std::string &name) : CoreScene(name) {
         Scene::instance = this;
-        TechEngineCore::EventDispatcher::getInstance().subscribe(GameObjectCreateEvent::eventType, [this](TechEngineCore::Event *event) {
-            onGOCreate((GameObjectCreateEvent *) event);
-        });
-
-        TechEngineCore::EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngineCore::Event *event) {
-            onGODestroy((GameObjectDestroyEvent *) event);
-        });
     }
 
-    void Scene::onGOCreate(GameObjectCreateEvent *event) {
-        CoreScene::onGOCreate(event);
-        if (event->getGameObject()->hasComponent<CameraComponent>()) {
-            auto *cameraComponent = (CameraComponent *) event->getGameObject()->getComponent<CameraComponent>();
+    void Scene::registerGameObject(GameObject *gameObject) {
+        CoreScene::registerGameObject(gameObject);
+        if (gameObject->hasComponent<CameraComponent>()) {
+            auto *cameraComponent = (CameraComponent *) gameObject->getComponent<CameraComponent>();
             if (cameraComponent->isMainCamera()) {
                 mainCamera = cameraComponent;
             }
-        } else if (event->getGameObject()->hasComponent<DirectionalLightComponent>()) {
-            lights.emplace_back(event->getGameObject());
+        } else if (gameObject->hasComponent<DirectionalLightComponent>()) {
+            lights.emplace_back(gameObject);
         }
     }
 
-    void Scene::onGODestroy(GameObjectDestroyEvent *event) {
-        CoreScene::onGODestroy(event);
-        if (event->getGameObject()->hasComponent<DirectionalLightComponent>()) {
-            lights.remove(event->getGameObject());
+    void Scene::unregisterGameObject(GameObject *gameObject) {
+        gameObjects.remove(gameObject);
+        if (gameObject->hasComponent<DirectionalLightComponent>()) {
+            lights.remove(gameObject);
         }
-        delete (event->getGameObject());
     }
 
     std::list<GameObject *> Scene::getLights() {
         return lights;
     }
 
+    bool Scene::findCameraComponent() {
+        for (GameObject *gameObject: gameObjects) {
+            if (gameObject->hasComponent<CameraComponent>()) {
+                CameraComponent *cameraComponent = gameObject->getComponent<CameraComponent>();
+                if (cameraComponent->isMainCamera()) {
+                    mainCamera = cameraComponent;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     bool Scene::hasMainCamera() {
-        return mainCamera != nullptr;
+        if (mainCamera == nullptr) {
+            return findCameraComponent();
+        } else if (!mainCamera->isMainCamera()) {
+            mainCamera = nullptr;
+            return false;
+        }
+        return true;
     }
 
     bool Scene::isLightingActive() const {
@@ -54,4 +65,5 @@ namespace TechEngine {
         CoreScene::clear();
         lights.clear();
     }
+
 }

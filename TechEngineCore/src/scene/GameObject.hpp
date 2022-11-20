@@ -95,6 +95,8 @@ namespace TechEngine {
             }
         }
 
+        void setTag(std::string basicString);
+
     private:
         void deleteChildren();
     };

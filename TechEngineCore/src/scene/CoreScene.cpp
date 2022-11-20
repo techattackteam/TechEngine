@@ -12,12 +12,13 @@ namespace TechEngine {
         clear();
     }
 
-    void CoreScene::onGOCreate(GameObjectCreateEvent *event) {
-        gameObjects.emplace_back(event->getGameObject());
+    void CoreScene::registerGameObject(GameObject *gameObject) {
+        gameObjects.emplace_back(gameObject);
+        gameObject->setTag(genGOTag());
     }
 
-    void CoreScene::onGODestroy(GameObjectDestroyEvent *event) {
-        gameObjects.remove(event->getGameObject());
+    void CoreScene::unregisterGameObject(GameObject *gameObject) {
+        gameObjects.remove(gameObject);
     }
 
     void CoreScene::update() {

@@ -23,9 +23,10 @@ namespace TechEngine {
         float nearPlane;
         float farPlane;
 
-        bool mainCamera = false;
 
     public:
+        bool mainCamera = false;
+
         explicit CameraComponent(GameObject *gameObject);
 
         CameraComponent(GameObject *gameObject, bool mainCamera, ProjectionType projectionType);
