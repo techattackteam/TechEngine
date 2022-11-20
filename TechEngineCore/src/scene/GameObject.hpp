@@ -31,7 +31,7 @@ namespace TechEngine {
         template<class C, typename... A>
         void addComponent(A ...args) {
             if (!hasComponent<C>()) {
-                C *component = new C(args...);
+                C *component = new C(this, args...);
                 components[typeid(C).name()] = component;
             }
         }

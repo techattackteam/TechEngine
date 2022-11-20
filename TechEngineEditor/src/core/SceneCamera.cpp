@@ -3,6 +3,6 @@
 
 namespace TechEngine {
     SceneCamera::SceneCamera() : GameObject("SceneCamera") {
-        addComponent<CameraComponent>(this, true, CameraComponent::ORTHOGRAPHIC);
+        addComponent<CameraComponent>(true, CameraComponent::ORTHOGRAPHIC);
     }
 }

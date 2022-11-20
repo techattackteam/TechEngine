@@ -30,7 +30,7 @@ namespace TechEngine {
         const std::string currentDirectory = std::filesystem::current_path().string();
         const std::string projectDirectory = currentDirectory + "/project";
         const std::string buildDirectory = currentDirectory + "/build";
-        const std::string cmakeProjectDirectory = projectDirectory + "/scripts/cmake-build";
+        const std::string cmakeProjectDirectory = projectDirectory + "/scripts";
 
         std::string currentScenePath;
 

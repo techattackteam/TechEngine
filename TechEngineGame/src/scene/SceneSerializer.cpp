@@ -191,7 +191,7 @@ namespace TechEngine {
 
                 auto ccNode = gameObjectYAML["CameraComponent"];
                 if (ccNode) {
-                    gameObject->addComponent<CameraComponent>(gameObject);
+                    gameObject->addComponent<CameraComponent>();
                     CameraComponent *cameraComponent = gameObject->getComponent<CameraComponent>();
                     cameraComponent->changeProjectionType((CameraComponent::ProjectionType) ccNode["ProjectionType"].as<int>());
                     cameraComponent->setIsMainCamera(ccNode["MainCamera"].as<bool>());
@@ -205,7 +205,7 @@ namespace TechEngine {
                     glm::vec3 specular = meshRendererNode["Specular"].as<glm::vec3>();
                     float shininess = meshRendererNode["Shininess"].as<float>();
                     Material *material = new Material(color, ambient, diffuse, specular, shininess);
-                    gameObject->addComponent<MeshRendererComponent>(gameObject, new CubeMesh(), material);
+                    gameObject->addComponent<MeshRendererComponent>(new CubeMesh(), material);
                 }
             }
         }

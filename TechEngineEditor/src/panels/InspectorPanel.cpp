@@ -2,6 +2,7 @@
 #include "InspectorPanel.hpp"
 #include "components/CameraComponent.hpp"
 #include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
+#include "components/MeshRendererComponent.hpp"
 
 namespace TechEngine {
     InspectorPanel::InspectorPanel() : Panel("Inspector") {
@@ -20,6 +21,13 @@ namespace TechEngine {
         if (gameObject != nullptr) {
             drawComponents();
         }
+        if (ImGui::BeginPopupContextWindow("Add Component", 1, false)) {
+            if (ImGui::MenuItem("Mesh Renderer")) {
+                gameObject->addComponent<MeshRendererComponent>();
+            }
+
+            ImGui::EndPopup();
+        }
         ImGui::End();
     }
 
@@ -36,7 +44,7 @@ namespace TechEngine {
             bool open = ImGui::TreeNodeEx((void *) typeid(T).hash_code(), treeNodeFlags, "%s", name.c_str());
             ImGui::PopStyleVar();
             ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
-            if (ImGui::Button("+", ImVec2{lineHeight, lineHeight})) {
+            if (ImGui::Button("-", ImVec2{lineHeight, lineHeight})) {
                 ImGui::OpenPopup("ComponentSettings");
             }
 
@@ -135,11 +143,24 @@ namespace TechEngine {
                                                                                     ImGui::Checkbox("Fixed Aspect Ratio", &component->FixedAspectRatio);
                                                                                 }*/
                                        }
-
         );
+        drawComponent<MeshRendererComponent>("Mesh Renderer", [this](auto &component) {
+            auto &meshRenderer = component;
+            auto &mesh = meshRenderer->getMesh();
+            auto &material = meshRenderer->getMaterial();
+            //TODO: change the mesh
+            ImGuiIO &io = ImGui::GetIO();
+            ImGui::PushID("Material");
+            ImGui::ColorEdit4("Color", glm::value_ptr(material.getColor()));
+            drawVec3Control("Ambient", material.getAmbient(), 1, 100.0f, 0, 1);
+            drawVec3Control("diffuse", material.getDiffuse(), 1, 100.0f, 0, 1);
+            drawVec3Control("specular", material.getSpecular(), 1, 100.0f, 0, 1);
+            component->paintMesh();
+            ImGui::PopID();
+        });
     }
 
-    void InspectorPanel::drawVec3Control(const std::string &label, glm::vec3 &values, float resetValue, float columnWidth) {
+    void InspectorPanel::drawVec3Control(const std::string &label, glm::vec3 &values, float resetValue, float columnWidth, float min, float max) {
         ImGuiIO &io = ImGui::GetIO();
         auto boldFont = io.Fonts->Fonts[0];
 
@@ -166,7 +187,7 @@ namespace TechEngine {
         ImGui::PopStyleColor(3);
 
         ImGui::SameLine();
-        ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f");
+        ImGui::DragFloat("##X", &values.x, 0.1f, min, max, "%.2f");
         ImGui::PopItemWidth();
         ImGui::SameLine();
 
@@ -180,7 +201,7 @@ namespace TechEngine {
         ImGui::PopStyleColor(3);
 
         ImGui::SameLine();
-        ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f");
+        ImGui::DragFloat("##Y", &values.y, 0.1f, min, max, "%.2f");
         ImGui::PopItemWidth();
         ImGui::SameLine();
 
@@ -194,7 +215,7 @@ namespace TechEngine {
         ImGui::PopStyleColor(3);
 
         ImGui::SameLine();
-        ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f");
+        ImGui::DragFloat("##Z", &values.z, 0.1f, min, max, "%.2f");
         ImGui::PopItemWidth();
 
         ImGui::PopStyleVar();
