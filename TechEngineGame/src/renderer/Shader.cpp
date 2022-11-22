@@ -5,6 +5,7 @@
 #include "Shader.hpp"
 #include "GLFW.hpp"
 #include "ErrorCatcher.hpp"
+#include "core/Logger.hpp"
 
 Shader::Shader(const std::string &name, const char *vertexShaderPath, const char *fragmentShaderPath) {
     this->shaderName = name;
@@ -45,11 +46,10 @@ uint32_t Shader::compileShader(uint32_t type, const std::string &source) {
         GlCall(glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &length));
         char *message = new char[length];
         GlCall(glGetShaderInfoLog(shaderID, length, &length, message));
-        std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertices " : "fragment ") << shaderName << " shader!"
-                  << std::endl;
-        std::cout << message << std::endl;
+        TE_LOGGER_WARN("Failed to compile {0} {1} shader!", (type == GL_VERTEX_SHADER ? "vertices " : "fragment "), shaderName);
+        TE_LOGGER_WARN(message);
         GlCall(glDeleteShader(shaderID));
-        delete message;
+        delete[] message;
         return -1;
     }
 

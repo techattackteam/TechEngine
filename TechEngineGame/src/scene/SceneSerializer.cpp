@@ -6,6 +6,7 @@
 #include "Scene.hpp"
 #include "components/MeshRendererComponent.hpp"
 #include "mesh/CubeMesh.hpp"
+#include "core/Logger.hpp"
 
 #include <fstream>
 #include <filesystem>
@@ -172,6 +173,7 @@ namespace TechEngine {
             return false;
 
         std::string sceneName = data["Scene"].as<std::string>();
+        TE_LOGGER_TRACE("Deserializing scene '{0}'", sceneName);
 
         auto node = data["GameObjects"];
         Scene::getInstance().clear();
@@ -180,6 +182,8 @@ namespace TechEngine {
 
                 auto name = gameObjectYAML["Name"].as<std::string>();
                 GameObject *gameObject = new GameObject(name);
+
+                TE_LOGGER_TRACE("Deserialized entity with ID = , name = {0}", name);
 
                 auto transformComponentNode = gameObjectYAML["TransformComponent"];
                 if (transformComponentNode) {

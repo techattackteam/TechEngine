@@ -2,6 +2,7 @@ file(GLOB_RECURSE TechEngineCore_Sources CONFIGURE_DEPENDS "src/*.cpp")
 file(GLOB_RECURSE TechEngineCore_Headers "src/*.hpp")
 
 find_package(Boost COMPONENTS serialization)
+find_package(spdlog CONFIG REQUIRED)
 
 add_definitions(-DENGINE_BUILD_DLL)
 
@@ -13,7 +14,7 @@ list(REMOVE_DUPLICATES TechEngineCore_Include_Dirs)
 
 add_library(TechEngineCore STATIC ${TechEngineCore_Sources} ${TechEngineCore_Headers})
 target_include_directories(TechEngineCore PUBLIC "src")
-target_link_libraries(TechEngineCore Boost::boost Boost::serialization)
+target_link_libraries(TechEngineCore Boost::boost Boost::serialization spdlog::spdlog)
 
 set_target_properties(TechEngineCore PROPERTIES
         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/TechEngineCore/archive"
