@@ -12,7 +12,6 @@
 #include <filesystem>
 
 #include <yaml-cpp/yaml.h>
-#include <iostream>
 
 namespace YAML {
 
@@ -103,7 +102,7 @@ namespace TechEngine {
     }
 
 
-    static void SerializeGameObject(YAML::Emitter &out, GameObject *gameObject) {
+    static void serializeGameObject(YAML::Emitter &out, GameObject *gameObject) {
         out << YAML::BeginMap;
         out << YAML::Key << "Name" << YAML::Value << gameObject->getName();
 
@@ -149,7 +148,7 @@ namespace TechEngine {
         out << YAML::Key << "Scene" << YAML::Value << Scene::getInstance().getName();
         out << YAML::Key << "GameObjects" << YAML::Value << YAML::BeginSeq;
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
-            SerializeGameObject(out, gameObject);
+            serializeGameObject(out, gameObject);
         }
         out << YAML::EndSeq;
         out << YAML::EndMap;
@@ -165,7 +164,7 @@ namespace TechEngine {
             data = YAML::LoadFile(filepath);
         }
         catch (YAML::Exception &e) {
-            std::cout << "Failed to load .scene file " << filepath << "\n     " << e.what() << std::endl;
+            TE_LOGGER_CRITICAL("Failed to load .scene file {0}.\n      {1}", filepath, e.what());
             return false;
         }
 
@@ -183,7 +182,7 @@ namespace TechEngine {
                 auto name = gameObjectYAML["Name"].as<std::string>();
                 GameObject *gameObject = new GameObject(name);
 
-                TE_LOGGER_TRACE("Deserialized entity with ID = , name = {0}", name);
+                TE_LOGGER_TRACE("Deserialized entity with Tag = {0}, name = {1}", gameObject->getTag(), name);
 
                 auto transformComponentNode = gameObjectYAML["TransformComponent"];
                 if (transformComponentNode) {

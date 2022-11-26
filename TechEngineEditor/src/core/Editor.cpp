@@ -3,8 +3,6 @@
 namespace TechEngine {
 
     Editor::Editor() {
-        //new QuadMeshTest("UpdateEntity");
-        new QuadMeshTest("FixedUpdateEntity");
     }
 
     void Editor::onUpdate() {

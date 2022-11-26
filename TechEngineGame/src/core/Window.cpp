@@ -5,9 +5,10 @@
 #include "../events/input/KeyHoldEvent.hpp"
 #include "events/window/WindowCloseEvent.hpp"
 #include "wrapper/Wrapper.hpp"
+#include "event/events/appManagement/AppCloseRequestEvent.hpp"
 
 namespace TechEngine {
-    Window::Window(const std::string &title, int width, int height) {
+    Window::Window(const std::string &title, uint32_t width, uint32_t height) {
         init(title, width, height);
     }
 
@@ -15,7 +16,7 @@ namespace TechEngine {
         glfwMakeContextCurrent(handler);
     }
 
-    void Window::init(const std::string &title, int width, int height) {
+    void Window::init(const std::string &title, uint32_t width, uint32_t height) {
         this->title = title;
         this->width = width;
         this->height = height;
@@ -36,6 +37,7 @@ namespace TechEngine {
         glfwSetWindowUserPointer(handler, this);
         glfwSetWindowCloseCallback(handler, [](GLFWwindow *handler) {
             TechEngine::dispatchEvent(new WindowCloseEvent());
+            TechEngine::dispatchEvent(new AppCloseRequestEvent());
         });
         glfwSetKeyCallback(handler, [](GLFWwindow *handler, int key, int scancode, int action, int mods) {
             Window::windowKeyInput(key, action);

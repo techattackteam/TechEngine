@@ -41,10 +41,6 @@ namespace TechEngine {
 
         void update();
 
-        void unregisterPanel(Panel *panel);
-
-        void unregisterAllPanels();
-
         static void compileUserScripts(const std::filesystem::path &projectPath, const std::filesystem::path &dllTargetPath);
 
     private:
@@ -69,6 +65,18 @@ namespace TechEngine {
         void startRunningScene();
 
         void stopRunningScene();
+
+        void onCloseAppEvent();
+
+        void saveScene();
+
+        void saveSceneAs();
+
+        void openScene();
+
+        void openSceneOnStartup();
+
+        void saveEngineSettings();
     };
 }
 
