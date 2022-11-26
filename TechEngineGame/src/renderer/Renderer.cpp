@@ -1,6 +1,5 @@
 #include "GLFW.hpp"
 #include "Renderer.hpp"
-#include "../scene/Scene.hpp"
 #include "ErrorCatcher.hpp"
 #include "RendererSettings.hpp"
 
@@ -14,7 +13,7 @@ namespace TechEngine {
     }
 
     void Renderer::renderWithLightPass() {
-        for (auto *light: Scene::getInstance().getLights()) {
+        for (auto *light: scene.getLights()) {
             auto *directionLight = light->getComponent<DirectionalLightComponent>();
             shadersManager.getActiveShader()->setUniformMatrix4f("lightSpaceMatrix", directionLight->getProjectionMatrix() * directionLight->getViewMatrix());
             shadersManager.getActiveShader()->setUniformVec3("lightDirection", light->getTransform().getOrientation());
@@ -43,16 +42,16 @@ namespace TechEngine {
     }
 
     void Renderer::renderGeometryPass(bool shadow) {
-        for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
+        for (GameObject *gameObject: scene.getGameObjects()) {
             renderGameObject(gameObject, shadow);
         }
     }
 
     void Renderer::shadowPass() {
         shadersManager.changeActiveShader("geometry");
-        if (Scene::getInstance().isLightingActive()) {
+        if (scene.isLightingActive()) {
             shadersManager.getActiveShader()->setUniformBool("isLightingActive", true);
-            for (GameObject *gameObject: Scene::getInstance().getLights()) {
+            for (GameObject *gameObject: scene.getLights()) {
                 DirectionalLightComponent *light = gameObject->getComponent<DirectionalLightComponent>();
                 GlCall(glViewport(0, 0, 1024, 1024));
                 shadersManager.changeActiveShader("shadowMap");
@@ -69,13 +68,13 @@ namespace TechEngine {
 
     void Renderer::geometryPass() {
         shadersManager.changeActiveShader("geometry");
-        shadersManager.getActiveShader()->setUniformMatrix4f("projection", Scene::getInstance().mainCamera->getProjectionMatrix());
-        shadersManager.getActiveShader()->setUniformMatrix4f("view", Scene::getInstance().mainCamera->getViewMatrix());
-        shadersManager.getActiveShader()->setUniformVec3("cameraPosition", Scene::getInstance().mainCamera->getTransform().getPosition());
+        shadersManager.getActiveShader()->setUniformMatrix4f("projection", scene.mainCamera->getProjectionMatrix());
+        shadersManager.getActiveShader()->setUniformMatrix4f("view", scene.mainCamera->getViewMatrix());
+        shadersManager.getActiveShader()->setUniformVec3("cameraPosition", scene.mainCamera->getTransform().getPosition());
         GlCall(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
         GlCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         //shadowMapBuffer.bindShadowMapTexture();
-        if (Scene::getInstance().isLightingActive()) {
+        if (scene.isLightingActive()) {
             renderWithLightPass();
         } else {
             renderGeometryPass(false);
@@ -85,7 +84,7 @@ namespace TechEngine {
     }
 
     void Renderer::renderPipeline() {
-        if (!Scene::getInstance().hasMainCamera()) {
+        if (!scene.hasMainCamera()) {
             return;
         }
 

@@ -26,11 +26,11 @@ namespace TechEngine {
     public:
         Window() = default;
 
-        Window(const std::string &title, int width, int height);
+        Window(const std::string &title, uint32_t width, uint32_t height);
 
         ~Window();
 
-        void init(const std::string &title, int width, int height);
+        void init(const std::string &title, uint32_t width, uint32_t height);
 
         void onUpdate();
 

@@ -3,17 +3,31 @@
 #include "script/ScriptEngine.hpp"
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
 #include "scene/Scene.hpp"
+#include "core/Logger.hpp"
+#include "core/SceneCamera.hpp"
+#include "testGameObject/QuadMeshTest.hpp"
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
 #include <filesystem>
 #include <commdlg.h>
 #include <imgui_internal.h>
+#include <yaml-cpp/node/node.h>
+#include <yaml-cpp/node/parse.h>
+#include <yaml-cpp/exceptions.h>
+#include <yaml-cpp/emitter.h>
+#include <fstream>
 
 namespace TechEngine {
     PanelsManager::PanelsManager(Window &window) : window(window), exportSettingsPanel(currentDirectory, projectDirectory, buildDirectory, cmakeProjectDirectory, currentScenePath) {
         TechEngineCore::EventDispatcher::getInstance().subscribe(RegisterCustomPanel::eventType, [this](TechEngineCore::Event *event) {
             registerCustomPanel((RegisterCustomPanel *) event);
         });
+
+        TechEngineCore::EventDispatcher::getInstance().subscribe(AppCloseRequestEvent::eventType, [this](TechEngineCore::Event *event) {
+            onCloseAppEvent();
+        });
+
+        openSceneOnStartup();
 
         initImGui();
     }
@@ -35,24 +49,6 @@ namespace TechEngine {
     void PanelsManager::registerCustomPanel(RegisterCustomPanel *event) {
         customPanels.emplace_back(event->getPanel());
         event->getPanel()->setupImGuiContext(imguiContext);
-    }
-
-    void PanelsManager::unregisterPanel(Panel *panel) {
-/*        auto index = std::find(inspectorPanels.begin(), inspectorPanels.end(), panel);
-        if (index != inspectorPanels.end()) {
-            inspectorPanels.erase(index);
-        }
-        delete (panel);*/
-    }
-
-    void PanelsManager::unregisterAllPanels() {
-/*        for (Panel *panel: inspectorPanels) {
-            unregisterPanel(panel);
-        }
-        for (Panel *panel: customPanels) {
-            unregisterPanel(panel);
-        }
-        unregisterPanel(rendererPanel);*/
     }
 
     void PanelsManager::initImGui() {
@@ -129,26 +125,13 @@ namespace TechEngine {
             if (ImGui::MenuItem("New", "Ctrl+N")) {
             }
             if (ImGui::MenuItem("Open...", "Ctrl+O")) {
-                std::string filepath = openFileWindow("TechEngine Scene (*.scene)\0*.scene\0");
-                SceneSerializer::deserialize(filepath);
+                openScene();
             }
             if (ImGui::MenuItem("Save", "Ctrl+S")) {
-                if (currentScenePath.empty()) {
-                    std::string filepath = saveFile("TechEngine Scene (*.scene)\0*.scene\0");
-                    if (!filepath.empty()) {
-                        SceneSerializer::serialize(filepath);
-                        currentScenePath = filepath;
-                    }
-                } else {
-                    SceneSerializer::serialize("project/scenes/Scene1.scene");
-                }
+                saveScene();
             }
             if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S")) {
-                std::string filepath = saveFile("TechEngine Scene (*.scene)\0*.scene\0");
-                if (!filepath.empty()) {
-                    SceneSerializer::serialize(filepath);
-                    currentScenePath = filepath;
-                }
+                saveSceneAs();
             }
             if (ImGui::MenuItem("Build")) {
                 if (m_currentPlaying) {
@@ -288,5 +271,66 @@ namespace TechEngine {
         std::filesystem::remove(projectDirectory + "/scenes/SceneSaveTemporary.scene");
     }
 
+    void PanelsManager::onCloseAppEvent() {
+        if (currentScenePath.empty()) {
+            currentScenePath = "project/scenes/DefaultScene.scene";
+        }
+        SceneSerializer::serialize(currentScenePath);
+        saveEngineSettings();
+    }
 
+    void PanelsManager::saveScene() {
+        if (currentScenePath.empty()) {
+            std::string filepath = saveFile("TechEngine Scene (*.scene)\0*.scene\0");
+            if (!filepath.empty()) {
+                SceneSerializer::serialize(filepath);
+                currentScenePath = filepath;
+            }
+        } else {
+            SceneSerializer::serialize(currentScenePath);
+        }
+    }
+
+    void PanelsManager::saveSceneAs() {
+        std::string filepath = saveFile("TechEngine Scene (*.scene)\0*.scene\0");
+        if (!filepath.empty()) {
+            SceneSerializer::serialize(filepath);
+            currentScenePath = filepath;
+        }
+    }
+
+    void PanelsManager::saveEngineSettings() {
+        YAML::Emitter out;
+        out << YAML::BeginMap;
+        out << YAML::Key << "Scene path" << YAML::Value << currentScenePath;
+        out << YAML::EndSeq;
+        out << YAML::EndMap;
+        std::string settingsFilePath = currentDirectory + "/EngineSettings.TESettings";
+        std::ofstream fout(settingsFilePath);
+        fout << out.c_str();
+        TE_LOGGER_INFO("EngineSettings saved");
+    }
+
+    void PanelsManager::openScene() {
+        std::string filepath = openFileWindow("TechEngine Scene (*.scene)\0*.scene\0");
+        SceneSerializer::deserialize(filepath);
+    }
+
+    void PanelsManager::openSceneOnStartup() {
+        if (std::filesystem::exists(currentDirectory + "/EngineSettings.TESettings")) {
+            YAML::Node data;
+            try {
+                data = YAML::LoadFile(currentDirectory + "/EngineSettings.TESettings");
+                currentScenePath = data["Scene path"].as<std::string>();
+            }
+            catch (YAML::Exception &e) {
+                TE_LOGGER_CRITICAL("Failed to load .TESettings file {0}.\n      {1}", currentDirectory + "/EngineSettings.TESettings", e.what());
+            }
+            TE_LOGGER_INFO("EngineSettings loaded");
+            SceneSerializer::deserialize(currentScenePath);
+        } else {
+            new SceneCamera();
+            new QuadMeshTest("FixedUpdateEntity");
+        }
+    }
 }

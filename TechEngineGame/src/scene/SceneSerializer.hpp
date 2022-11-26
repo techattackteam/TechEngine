@@ -4,8 +4,6 @@
 
 namespace TechEngine {
     class SceneSerializer {
-    private:
-
     public:
         static void serialize(const std::string &filepath);
 

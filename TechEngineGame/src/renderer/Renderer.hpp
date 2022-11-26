@@ -1,10 +1,11 @@
 #pragma once
 
-#include "../components/MeshRendererComponent.hpp"
+#include "components/MeshRendererComponent.hpp"
 #include "VertexArray.hpp"
 #include "ShadersManager.hpp"
 #include "FrameBuffer.hpp"
-#include "../components/DirectionalLightComponent.hpp"
+#include "components/DirectionalLightComponent.hpp"
+#include "scene/Scene.hpp"
 
 namespace TechEngine {
     class Renderer {
@@ -16,6 +17,7 @@ namespace TechEngine {
         VertexBuffer vertexBuffer;
         FrameBuffer shadowMapBuffer;
         FrameBuffer frameBuffer;
+        Scene &scene = Scene::getInstance();
     public:
 
         Renderer() = default;
