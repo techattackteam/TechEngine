@@ -2,7 +2,7 @@
 #include "scene/SceneSerializer.hpp"
 #include "script/ScriptEngine.hpp"
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
-#include "scene/Scene.hpp"
+#include "scene/SceneHelper.hpp"
 #include "core/Logger.hpp"
 #include "core/SceneCamera.hpp"
 #include "testGameObject/QuadMeshTest.hpp"
@@ -265,7 +265,7 @@ namespace TechEngine {
         SceneSerializer::deserialize(projectDirectory + "/scenes/SceneSaveTemporary.scene");
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
             if (gameObject->hasComponent<CameraComponent>() && gameObject->getComponent<CameraComponent>()->isMainCamera()) {
-                Scene::getInstance().mainCamera = gameObject->getComponent<CameraComponent>();
+                SceneHelper::mainCamera = gameObject->getComponent<CameraComponent>();
             }
         }
         std::filesystem::remove(projectDirectory + "/scenes/SceneSaveTemporary.scene");

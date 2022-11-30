@@ -8,19 +8,19 @@
 #include <boost/uuid/uuid_generators.hpp>
 
 namespace TechEngine {
-    class CoreScene {
+    class Scene {
     private:
         std::string name;
         boost::uuids::random_generator goTagGenerator;
-        inline static CoreScene *instance;
-    protected:
+        inline static Scene *instance;
         std::list<GameObject *> gameObjects;
+        std::list<GameObject *> lights;
 
     public:
 
-        CoreScene(const std::string &name = "default scene");
+        Scene(std::string name = "default scene");
 
-        virtual ~CoreScene();
+        virtual ~Scene();
 
         virtual void registerGameObject(GameObject *gameObject);
 
@@ -32,17 +32,21 @@ namespace TechEngine {
 
         std::string genGOTag();
 
-        static CoreScene &getInstance();
+        static Scene &getInstance();
 
         std::list<GameObject *> &getGameObjects();
 
-        GameObject *getGameObject(std::string name);
+        std::list<GameObject *> &getLights();
+
+        GameObject *getGameObject(const std::string &name);
+
+        bool isLightingActive() const;
 
         const std::string &getName() const;
 
         void setName(const std::string &name);
 
-        virtual void clear();
+        void clear();
 
         void makeChildTo(GameObject *parent, GameObject *child);
     };

@@ -19,7 +19,7 @@ namespace TechEngine {
         //TODO: FIX THIS
         SceneSerializer::deserialize(std::filesystem::current_path().string() + "/scenes/" + sceneToLoadName + ".scene");
         TechEngineCore::EventDispatcher::getInstance().syncEventManager.execute();
-        Scene::getInstance().mainCamera = Scene::getInstance().getGameObject("SceneCamera")->getComponent<CameraComponent>();
+        SceneHelper::mainCamera = Scene::getInstance().getGameObject("SceneCamera")->getComponent<CameraComponent>();
         window.getRenderer().init();
         ScriptEngine::getInstance()->init(std::filesystem::current_path().string() + "/UserProject.dll");
     }

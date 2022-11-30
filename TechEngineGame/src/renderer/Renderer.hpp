@@ -4,7 +4,6 @@
 #include "VertexArray.hpp"
 #include "ShadersManager.hpp"
 #include "FrameBuffer.hpp"
-#include "components/DirectionalLightComponent.hpp"
 #include "scene/Scene.hpp"
 
 namespace TechEngine {
