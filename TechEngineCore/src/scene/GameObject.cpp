@@ -3,20 +3,20 @@
 #include <utility>
 #include "event/EventDispatcher.hpp"
 #include "components/TransformComponent.hpp"
-#include "CoreScene.hpp"
+#include "Scene.hpp"
 #include <iostream>
 
 namespace TechEngine {
     GameObject::GameObject(std::string name) : name(std::move(name)) {
         addComponent<TransformComponent>();
         TechEngineCore::EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
-        CoreScene::getInstance().registerGameObject(this);
+        Scene::getInstance().registerGameObject(this);
     }
 
     GameObject::~GameObject() {
         deleteChildren();
         TechEngineCore::EventDispatcher::getInstance().dispatch(new GameObjectDestroyEvent(this));
-        CoreScene::getInstance().unregisterGameObject(this);
+        Scene::getInstance().unregisterGameObject(this);
     }
 
     void GameObject::fixUpdate() {

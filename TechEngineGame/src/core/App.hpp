@@ -2,7 +2,7 @@
 
 #include "event/EventDispatcher.hpp"
 #include "stateMachine/StateMachineManager.hpp"
-#include "scene/Scene.hpp"
+#include "scene/SceneHelper.hpp"
 #include "events/window/WindowCloseEvent.hpp"
 #include "../../TechEngineCore/src/core/App.hpp"
 

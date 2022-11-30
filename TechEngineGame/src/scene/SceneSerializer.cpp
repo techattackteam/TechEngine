@@ -3,7 +3,7 @@
 #include "scene/GameObject.hpp"
 #include "components/CameraComponent.hpp"
 #include "components/TransformComponent.hpp"
-#include "Scene.hpp"
+#include "scene/Scene.hpp"
 #include "components/MeshRendererComponent.hpp"
 #include "mesh/CubeMesh.hpp"
 #include "core/Logger.hpp"

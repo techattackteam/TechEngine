@@ -2,6 +2,8 @@
 #include "Renderer.hpp"
 #include "ErrorCatcher.hpp"
 #include "RendererSettings.hpp"
+#include "components/DirectionalLightComponent.hpp"
+#include "scene/SceneHelper.hpp"
 
 namespace TechEngine {
     void Renderer::init() {
@@ -68,9 +70,9 @@ namespace TechEngine {
 
     void Renderer::geometryPass() {
         shadersManager.changeActiveShader("geometry");
-        shadersManager.getActiveShader()->setUniformMatrix4f("projection", scene.mainCamera->getProjectionMatrix());
-        shadersManager.getActiveShader()->setUniformMatrix4f("view", scene.mainCamera->getViewMatrix());
-        shadersManager.getActiveShader()->setUniformVec3("cameraPosition", scene.mainCamera->getTransform().getPosition());
+        shadersManager.getActiveShader()->setUniformMatrix4f("projection", SceneHelper::mainCamera->getProjectionMatrix());
+        shadersManager.getActiveShader()->setUniformMatrix4f("view", SceneHelper::mainCamera->getViewMatrix());
+        shadersManager.getActiveShader()->setUniformVec3("cameraPosition", SceneHelper::mainCamera->getTransform().getPosition());
         GlCall(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
         GlCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         //shadowMapBuffer.bindShadowMapTexture();
@@ -84,7 +86,7 @@ namespace TechEngine {
     }
 
     void Renderer::renderPipeline() {
-        if (!scene.hasMainCamera()) {
+        if (!SceneHelper::hasMainCamera()) {
             return;
         }
 
