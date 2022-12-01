@@ -4,6 +4,7 @@
 #include "event/events/gameObjects/GameObjectCreateEvent.hpp"
 #include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
 #include "GameObject.hpp"
+#include "event/events/gameObjects/RequestDeleteGameObject.hpp"
 
 #include <boost/uuid/uuid_generators.hpp>
 
@@ -49,6 +50,8 @@ namespace TechEngine {
         void clear();
 
         void makeChildTo(GameObject *parent, GameObject *child);
+
+        void onGameObjectDeleteRequest(TechEngine::RequestDeleteGameObject *event);
     };
 }
 

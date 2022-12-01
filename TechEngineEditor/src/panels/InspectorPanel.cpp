@@ -3,15 +3,20 @@
 #include "components/CameraComponent.hpp"
 #include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
 #include "components/MeshRendererComponent.hpp"
+#include "events/OnDeselectGameObjectEvent.hpp"
 
 namespace TechEngine {
     InspectorPanel::InspectorPanel() : Panel("Inspector") {
         TechEngineCore::EventDispatcher::getInstance().subscribe(OnSelectGameObjectEvent::eventType, [this](TechEngineCore::Event *event) {
-            inspectGameObject((OnSelectGameObjectEvent *) (event));
+            this->gameObject = ((OnSelectGameObjectEvent *) event)->getGameObject();
         });
 
         TechEngineCore::EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngineCore::Event *event) {
             onGameObjectDestroyEvent((GameObjectDestroyEvent *) event);
+        });
+
+        TechEngineCore::EventDispatcher::getInstance().subscribe(OnDeselectGameObjectEvent::eventType, [this](TechEngineCore::Event *event) {
+            gameObject = nullptr;
         });
     }
 
@@ -225,13 +230,10 @@ namespace TechEngine {
         ImGui::PopID();
     }
 
-    void InspectorPanel::inspectGameObject(OnSelectGameObjectEvent *event) {
-        this->gameObject = event->getGameObject();
-    }
-
     void InspectorPanel::onGameObjectDestroyEvent(TechEngine::GameObjectDestroyEvent *event) {
         if (event->getGameObject() == this->gameObject) {
             this->gameObject = nullptr;
         }
     }
+
 }

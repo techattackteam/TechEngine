@@ -14,8 +14,6 @@ namespace TechEngine {
 
         void onUpdate() override;
 
-        void inspectGameObject(OnSelectGameObjectEvent *event);
-
         template<typename T, typename UIFunction>
         void drawComponent(const std::string &name, UIFunction uiFunction);
 

@@ -99,6 +99,8 @@ namespace TechEngine {
 
         bool hasParent();
 
+        bool hasChildren();
+
     private:
         void deleteChildren();
     };

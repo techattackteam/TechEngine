@@ -4,7 +4,8 @@
 #include "scene/SceneHelper.hpp"
 #include "events/OnSelectGameObjectEvent.hpp"
 #include "testGameObject/QuadMeshTest.hpp"
-#include "core/Logger.hpp"
+#include "event/events/gameObjects/RequestDeleteGameObject.hpp"
+#include "events/OnDeselectGameObjectEvent.hpp"
 
 namespace TechEngine {
     SceneHierarchyPanel::SceneHierarchyPanel() : Panel("SceneHierarchyPanel") {
@@ -17,11 +18,7 @@ namespace TechEngine {
             for (auto element: scene.getGameObjects()) {
                 drawEntityNode(element);
             }
-            if (gameObjectToDelete != nullptr) {
-                scene.unregisterGameObject(gameObjectToDelete);
-                delete gameObjectToDelete;
-                gameObjectToDelete = nullptr;
-            }
+
             if (ImGui::BeginPopupContextWindow(0, 1, false)) {
                 if (ImGui::MenuItem("New Game Object")) {
                     new QuadMeshTest("QuadMeshTest");
@@ -46,12 +43,7 @@ namespace TechEngine {
             TechEngineCore::EventDispatcher::getInstance().dispatch(new OnSelectGameObjectEvent(gameObject));
         }
 
-        if (opened) {
-            for (const auto &pair: gameObject->getChildren()) {
-                drawEntityNode(pair.second);
-            }
-            ImGui::TreePop();
-        }
+
         if (ImGui::BeginPopupContextItem()) {
             if (ImGui::MenuItem("Make Child")) {
                 GameObject *child = new QuadMeshTest(gameObject->getName() + "'s Child");
@@ -59,10 +51,18 @@ namespace TechEngine {
             }
 
             if (ImGui::MenuItem("Delete GameObject")) {
-                gameObjectToDelete = gameObject;
+                TechEngineCore::EventDispatcher::getInstance().dispatch(new RequestDeleteGameObject(gameObject));
+                TechEngineCore::EventDispatcher::getInstance().dispatch(new OnDeselectGameObjectEvent(gameObject));
+                selectedGO = nullptr;
             }
 
             ImGui::EndPopup();
+        }
+        if (opened) {
+            for (const auto &pair: gameObject->getChildren()) {
+                drawEntityNode(pair.second);
+            }
+            ImGui::TreePop();
         }
     }
 }
