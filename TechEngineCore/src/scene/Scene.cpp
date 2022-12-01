@@ -4,10 +4,14 @@
 #include "Scene.hpp"
 #include "event/EventDispatcher.hpp"
 #include "components/DirectionalLightComponent.hpp"
+#include "event/events/gameObjects/RequestDeleteGameObject.hpp"
 
 namespace TechEngine {
     Scene::Scene(std::string name) : name(std::move(name)) {
         Scene::instance = this;
+        TechEngineCore::EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this](TechEngineCore::Event *event) {
+            onGameObjectDeleteRequest((RequestDeleteGameObject *) event);
+        });
     }
 
     Scene::~Scene() {
@@ -88,9 +92,14 @@ namespace TechEngine {
     }
 
     void Scene::clear() {
-        for (int i = 0; i < gameObjects.size(); i++) {
-            //delete gameObjects.front();
+        while (!gameObjects.empty()) {
+            delete gameObjects.front();
         }
         gameObjects.clear();
+        lights.clear();
+    }
+
+    void Scene::onGameObjectDeleteRequest(TechEngine::RequestDeleteGameObject *event) {
+        delete event->getGameObject();
     }
 }

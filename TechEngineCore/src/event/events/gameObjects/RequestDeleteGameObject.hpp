@@ -4,13 +4,13 @@
 #include "scene/GameObject.hpp"
 
 namespace TechEngine {
-    class GameObjectDestroyEvent : public TechEngineCore::Event {
+    class RequestDeleteGameObject : public TechEngineCore::Event {
     private:
         GameObject *gameObject;
     public:
-        static inline EventType eventType = EventType("GameObjectDestroyEvent", SYNC);
+        static inline EventType eventType = EventType("RequestDeleteGameObject", SYNC);
 
-        explicit GameObjectDestroyEvent(GameObject *gameObject) : Event(eventType) {
+        explicit RequestDeleteGameObject(GameObject *gameObject) : Event(eventType) {
             this->gameObject = gameObject;
         }
 

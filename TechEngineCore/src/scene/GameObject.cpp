@@ -4,6 +4,7 @@
 #include "event/EventDispatcher.hpp"
 #include "components/TransformComponent.hpp"
 #include "Scene.hpp"
+#include "event/events/gameObjects/RequestDeleteGameObject.hpp"
 #include <iostream>
 
 namespace TechEngine {
@@ -14,9 +15,13 @@ namespace TechEngine {
     }
 
     GameObject::~GameObject() {
+        if (parent == nullptr) {
+            Scene::getInstance().unregisterGameObject(this);
+        } else {
+            parent->removeChild(tag);
+        }
         deleteChildren();
         TechEngineCore::EventDispatcher::getInstance().dispatch(new GameObjectDestroyEvent(this));
-        Scene::getInstance().unregisterGameObject(this);
     }
 
     void GameObject::fixUpdate() {
@@ -81,8 +86,10 @@ namespace TechEngine {
     }
 
     void GameObject::deleteChildren() {
-        for (auto &pair: children) {
-            delete pair.second;
+        while (!children.empty()) {
+            GameObject *child = children.begin()->second;
+            children.erase(child->tag);
+            delete child;
         }
     }
 
@@ -91,6 +98,12 @@ namespace TechEngine {
     }
 
     bool GameObject::hasParent() {
-        return parent == nullptr;
+        return parent != nullptr;
     }
+
+    bool GameObject::hasChildren() {
+        return !children.empty();
+    }
+
+
 }
