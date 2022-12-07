@@ -10,8 +10,8 @@
 #include "RendererPanel.hpp"
 #include "SettingsPanel.hpp"
 #include "ProjectBrowserPanel.hpp"
-#include "events/panels/RegisterCustomPanel.hpp"
 #include "ExportSettingsPanel.hpp"
+#include "events/panels/RegisterCustomPanel.hpp"
 
 namespace TechEngine {
     class PanelsManager {

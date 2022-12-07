@@ -3,10 +3,10 @@
 #include "scene/GameObject.hpp"
 #include "components/CameraComponent.hpp"
 #include "components/TransformComponent.hpp"
-#include "scene/Scene.hpp"
 #include "components/MeshRendererComponent.hpp"
 #include "mesh/CubeMesh.hpp"
 #include "core/Logger.hpp"
+#include "SceneHelper.hpp"
 
 #include <fstream>
 #include <filesystem>
@@ -101,7 +101,6 @@ namespace TechEngine {
         return out;
     }
 
-
     static void serializeGameObject(YAML::Emitter &out, GameObject *gameObject) {
         out << YAML::BeginMap;
         out << YAML::Key << "Name" << YAML::Value << gameObject->getName();
@@ -109,12 +108,10 @@ namespace TechEngine {
         if (gameObject->hasComponent<TransformComponent>()) {
             out << YAML::Key << "TransformComponent";
             out << YAML::BeginMap;
-
             auto tc = gameObject->getComponent<TransformComponent>();
             out << YAML::Key << "Position" << YAML::Value << tc->getPosition();
             out << YAML::Key << "Orientation" << YAML::Value << tc->getOrientation();
             out << YAML::Key << "Scale" << YAML::Value << tc->getScale();
-
             out << YAML::EndMap;
         }
 
@@ -139,6 +136,15 @@ namespace TechEngine {
             out << YAML::Key << "Shininess" << YAML::Value << material.getShininess();
             out << YAML::EndMap;
         }
+
+        if (gameObject->hasChildren()) {
+            out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
+            for (auto &pair: gameObject->getChildren()) {
+                serializeGameObject(out, pair.second);
+            }
+            out << YAML::EndSeq;
+        }
+
         out << YAML::EndMap;
     }
 
@@ -149,6 +155,7 @@ namespace TechEngine {
         out << YAML::Key << "GameObjects" << YAML::Value << YAML::BeginSeq;
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
             serializeGameObject(out, gameObject);
+            TE_LOGGER_TRACE("Serialize game object with Tag = {0}, name = {1}", gameObject->getTag(), gameObject->getName());
         }
         out << YAML::EndSeq;
         out << YAML::EndMap;
@@ -156,6 +163,48 @@ namespace TechEngine {
         std::filesystem::create_directories("project/scenes");
         std::ofstream fout(filepath);
         fout << out.c_str();
+    }
+
+    static void deserializeGameObject(YAML::Node gameObjectYAML, GameObject *parent) {
+        auto name = gameObjectYAML["Name"].as<std::string>();
+        GameObject *gameObject = new GameObject(name);
+        if (parent != nullptr) {
+            Scene::getInstance().makeChildTo(parent, gameObject);
+        }
+        TE_LOGGER_TRACE("Deserialized game object with Tag = {0}, name = {1}", gameObject->getTag(), name);
+
+        auto transformComponentNode = gameObjectYAML["TransformComponent"];
+        if (transformComponentNode) {
+            auto tc = gameObject->getComponent<TransformComponent>();
+            tc->translateTo(transformComponentNode["Position"].as<glm::vec3>());
+            tc->rotate(transformComponentNode["Orientation"].as<glm::vec3>());
+            tc->setScale(transformComponentNode["Scale"].as<glm::vec3>());
+        }
+
+        auto ccNode = gameObjectYAML["CameraComponent"];
+        if (ccNode) {
+            gameObject->addComponent<CameraComponent>();
+            CameraComponent *cameraComponent = gameObject->getComponent<CameraComponent>();
+            cameraComponent->changeProjectionType((CameraComponent::ProjectionType) ccNode["ProjectionType"].as<int>());
+            cameraComponent->setIsMainCamera(ccNode["MainCamera"].as<bool>());
+        }
+
+        auto meshRendererNode = gameObjectYAML["MeshRendererComponent"];
+        if (meshRendererNode) {
+            glm::vec4 color = meshRendererNode["Color"].as<glm::vec4>();
+            glm::vec3 ambient = meshRendererNode["Ambient"].as<glm::vec3>();
+            glm::vec3 diffuse = meshRendererNode["Diffuse"].as<glm::vec3>();
+            glm::vec3 specular = meshRendererNode["Specular"].as<glm::vec3>();
+            float shininess = meshRendererNode["Shininess"].as<float>();
+            Material *material = new Material(color, ambient, diffuse, specular, shininess);
+            gameObject->addComponent<MeshRendererComponent>(new CubeMesh(), material);
+        }
+        auto childrenNode = gameObjectYAML["Children"];
+        for (auto childNodeYAML: childrenNode) {
+            if (childrenNode) {
+                deserializeGameObject(childNodeYAML, gameObject);
+            }
+        }
     }
 
     bool SceneSerializer::deserialize(const std::string &filepath) {
@@ -174,42 +223,11 @@ namespace TechEngine {
         std::string sceneName = data["Scene"].as<std::string>();
         TE_LOGGER_TRACE("Deserializing scene '{0}'", sceneName);
 
-        auto node = data["GameObjects"];
-        Scene::getInstance().clear();
+        YAML::Node node = data["GameObjects"];
+        SceneHelper::clear();
         if (node) {
-            for (auto gameObjectYAML: node) {
-
-                auto name = gameObjectYAML["Name"].as<std::string>();
-                GameObject *gameObject = new GameObject(name);
-
-                TE_LOGGER_TRACE("Deserialized entity with Tag = {0}, name = {1}", gameObject->getTag(), name);
-
-                auto transformComponentNode = gameObjectYAML["TransformComponent"];
-                if (transformComponentNode) {
-                    auto tc = gameObject->getComponent<TransformComponent>();
-                    tc->translateTo(transformComponentNode["Position"].as<glm::vec3>());
-                    tc->rotate(transformComponentNode["Orientation"].as<glm::vec3>());
-                    tc->setScale(transformComponentNode["Scale"].as<glm::vec3>());
-                }
-
-                auto ccNode = gameObjectYAML["CameraComponent"];
-                if (ccNode) {
-                    gameObject->addComponent<CameraComponent>();
-                    CameraComponent *cameraComponent = gameObject->getComponent<CameraComponent>();
-                    cameraComponent->changeProjectionType((CameraComponent::ProjectionType) ccNode["ProjectionType"].as<int>());
-                    cameraComponent->setIsMainCamera(ccNode["MainCamera"].as<bool>());
-                }
-
-                auto meshRendererNode = gameObjectYAML["MeshRendererComponent"];
-                if (meshRendererNode) {
-                    glm::vec4 color = meshRendererNode["Color"].as<glm::vec4>();
-                    glm::vec3 ambient = meshRendererNode["Ambient"].as<glm::vec3>();
-                    glm::vec3 diffuse = meshRendererNode["Diffuse"].as<glm::vec3>();
-                    glm::vec3 specular = meshRendererNode["Specular"].as<glm::vec3>();
-                    float shininess = meshRendererNode["Shininess"].as<float>();
-                    Material *material = new Material(color, ambient, diffuse, specular, shininess);
-                    gameObject->addComponent<MeshRendererComponent>(new CubeMesh(), material);
-                }
+            for (YAML::Node gameObjectYAML: node) {
+                deserializeGameObject(gameObjectYAML, nullptr);
             }
         }
 

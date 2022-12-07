@@ -24,4 +24,9 @@ namespace TechEngine {
         }
         return true;
     }
+
+    void SceneHelper::clear() {
+        mainCamera = nullptr;
+        Scene::getInstance().clear();
+    }
 }

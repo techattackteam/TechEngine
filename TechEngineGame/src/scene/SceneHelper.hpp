@@ -12,5 +12,7 @@ namespace TechEngine {
         static bool findCameraComponent();
 
         static bool hasMainCamera();
+
+        static void clear();
     };
 }
