@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <unordered_map>
 #include <typeinfo>
+#include <string>
 
 namespace TechEngine {
     class Component;
@@ -19,6 +20,9 @@ namespace TechEngine {
         std::string name;
         std::string tag;
         bool stackAllocated = false;
+
+    protected:
+        GameObject(std::string basicString, GameObject *pObject);
 
     public:
 

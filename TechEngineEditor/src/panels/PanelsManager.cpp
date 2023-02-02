@@ -246,18 +246,20 @@ namespace TechEngine {
 
     void PanelsManager::compileUserScripts(const std::filesystem::path &cmakeProjectDirectory, const std::filesystem::path &dllTargetPath) {
         std::string dllPath = cmakeProjectDirectory.string() + "/runtime/UserProject.dll";
+        if (!exists(std::filesystem::path("C:/dev/TechEngine/bin/TechEngineEditor/debug/project/scripts/build"))) {
+            std::string command = "cd C:/dev/TechEngine/bin/TechEngineEditor/debug/project/scripts &&"
+                                  " \"C:/Program Files/CMake/bin/cmake.exe\" -Bbuild -H.";
+            std::system(command.c_str());
 
-        std::string command = "C:\\Users\\Migas\\AppData\\Local\\JetBrains\\Toolbox\\apps\\CLion\\ch-0\\222.4345.21\\bin\\cmake\\win\\bin\\cmake.exe -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=C:/Users/Migas/AppData/Local/JetBrains/Toolbox/apps/CLion/ch-0/222.4345.21/bin/ninja/win/ninja.exe -G Ninja -S C:\\dev\\TechEngine\\cmake-build-debug\\TechEngineEditor\\project\\scripts -B C:\\dev\\TechEngine\\cmake-build-debug\\TechEngineEditor\\project\\scripts\\cmake-build";
+        }
+        std::string command = "\"C:/Program Files/CMake/bin/cmake.exe\""
+                              " --build C:/dev/TechEngine/bin/TechEngineEditor/debug/project/scripts/build --target UserScripts --config Debug";
         std::system(command.c_str());
-        command = "\"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvars32.bat\" && C:/Users/Migas/AppData/Local/JetBrains/Toolbox/apps/CLion/ch-0/222.4345.21/bin/cmake/win/bin/cmake.exe"
-                  " --build " + cmakeProjectDirectory.string() + " --target UserProject -j 12";
-        std::system(command.c_str());
-
     }
 
     void PanelsManager::startRunningScene() {
         SceneSerializer::serialize(projectDirectory + "/scenes/SceneSaveTemporary.scene");
-        ScriptEngine::getInstance()->init(cmakeProjectDirectory + "/runtime/UserProject.dll");
+        ScriptEngine::getInstance()->init(cmakeProjectDirectory + "/build/Debug/UserScripts.dll");
     }
 
     void PanelsManager::stopRunningScene() {

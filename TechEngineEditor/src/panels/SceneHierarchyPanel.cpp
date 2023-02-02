@@ -36,7 +36,7 @@ namespace TechEngine {
 
         ImGuiTreeNodeFlags flags = ((selectedGO == gameObject) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow |
                                    (gameObject->getChildren().empty() ? ImGuiTreeNodeFlags_Leaf : 0) |
-                                   ImGuiTreeNodeFlags_SpanAvailWidth;;
+                                   ImGuiTreeNodeFlags_SpanAvailWidth;
         bool opened = ImGui::TreeNodeEx(gameObject, flags, "%s", name.c_str());
         if (ImGui::IsItemClicked()) {
             selectedGO = gameObject;
@@ -49,7 +49,9 @@ namespace TechEngine {
                 GameObject *child = new QuadMeshTest(gameObject->getName() + "'s Child");
                 Scene::getInstance().makeChildTo(gameObject, child);
             }
-
+            if (ImGui::MenuItem("Duplicate")) {
+                new QuadMeshTest(gameObject->getName() + "'s duplicate", gameObject);
+            }
             if (ImGui::MenuItem("Delete GameObject")) {
                 TechEngineCore::EventDispatcher::getInstance().dispatch(new RequestDeleteGameObject(gameObject));
                 TechEngineCore::EventDispatcher::getInstance().dispatch(new OnDeselectGameObjectEvent(gameObject));
