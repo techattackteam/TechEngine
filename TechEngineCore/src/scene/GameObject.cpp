@@ -14,6 +14,12 @@ namespace TechEngine {
         Scene::getInstance().registerGameObject(this);
     }
 
+    GameObject::GameObject(std::string name, GameObject *pObject) : name(std::move(name)) {
+        addComponent<TransformComponent>();
+        TechEngineCore::EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
+        Scene::getInstance().registerGameObject(this);
+    }
+
     GameObject::~GameObject() {
         if (parent == nullptr) {
             Scene::getInstance().unregisterGameObject(this);
@@ -104,6 +110,5 @@ namespace TechEngine {
     bool GameObject::hasChildren() {
         return !children.empty();
     }
-
 
 }

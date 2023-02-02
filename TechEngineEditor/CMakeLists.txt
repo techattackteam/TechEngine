@@ -5,38 +5,72 @@ find_package(imgui CONFIG REQUIRED)
 
 add_executable(TechEngineEditor ${TechEngineEditor_Sources} ${TechEngineEditor_Headers})
 
+if (WIN32) # WINDOWS
+    set(TECH_ENGINE_EDITOR_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineEditor/")
+    set_target_properties(TechEngineEditor PROPERTIES
+            ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_EDITOR_OUTPUT_DIRECTORY}/debug"
+            LIBRARY_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_EDITOR_OUTPUT_DIRECTORY}/debug"
+            RUNTIME_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_EDITOR_OUTPUT_DIRECTORY}/debug"
+            )
+    set_target_properties(TechEngineEditor PROPERTIES
+            ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_EDITOR_OUTPUT_DIRECTORY}/release"
+            LIBRARY_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_EDITOR_OUTPUT_DIRECTORY}/release"
+            RUNTIME_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_EDITOR_OUTPUT_DIRECTORY}/release"
+            )
+endif ()
+
+
 target_include_directories(TechEngineEditor PRIVATE "src")
-target_link_libraries(TechEngineEditor TechEngineGame imgui::imgui)
+target_link_libraries(TechEngineEditor TechEngineClient imgui::imgui)
 
 add_custom_command(TARGET TechEngineEditor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/TechEngineGame/res ${CMAKE_BINARY_DIR}/TechEngineGame/res)
-
+        ${CMAKE_SOURCE_DIR}/TechEngineClient/res ${CMAKE_BINARY_DIR}/TechEngineClient/res)
 
 #Copy Engine lib for user code
-file(GLOB_RECURSE TechEngineAPI_libs "${CMAKE_BINARY_DIR}/TechEngineGame/archive/TechEngineGame.lib" "${CMAKE_BINARY_DIR}/TechEngineCore/archive/TechEngineCore.lib")
+file(GLOB_RECURSE TechEngineAPI_libs "${PROJECT_SOURCE_DIR}/bin/TechEngineClient/debug/TechEngineGame.lib" "${PROJECT_SOURCE_DIR}/bin/TechEngineCore/debug/TechEngineCore.lib")
 add_custom_command(TARGET TechEngineEditor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
         ${TechEngineAPI_libs} $<TARGET_FILE_DIR:TechEngineEditor>/TechEngineAPI/lib
         COMMAND_EXPAND_LISTS)
+set(MY_VARIABLE TRUE)
+
+#Copy project template
+file(GENERATE
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/CopyConfigurationData$<CONFIG>.cmake"
+        CONTENT
+        "if (NOT EXISTS \"$<TARGET_FILE_DIR:TechEngineEditor>/project\")
+                execute_process(
+                     COMMAND \"${CMAKE_COMMAND}\" -E copy_directory
+                         \"${PROJECT_SOURCE_DIR}/bin/ProjectTemplate\"
+                    \"$<TARGET_FILE_DIR:TechEngineEditor>/project\"
+                )
+            endif()"
+        )
+
+add_custom_command(
+        TARGET TechEngineEditor
+        POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -P "CopyConfigurationData$<CONFIG>.cmake"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+)
 
 #Copy Engine includes for user code
 #For now it will include everything -> subject to change
-file(GLOB_RECURSE TechEngineAPI_include "${CMAKE_CURRENT_SOURCE_DIR}/../TechEngineGame/src")
+file(GLOB_RECURSE TechEngineAPI_include "${CMAKE_CURRENT_SOURCE_DIR}/../TechEngineClient/src")
 add_custom_command(TARGET TechEngineEditor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_CURRENT_SOURCE_DIR}/../TechEngineGame/src $<TARGET_FILE_DIR:TechEngineEditor>/TechEngineAPI/include/TechEngineGame
+        ${CMAKE_CURRENT_SOURCE_DIR}/../TechEngineClient/src $<TARGET_FILE_DIR:TechEngineEditor>/TechEngineAPI/include/TechEngineGame
         COMMAND_EXPAND_LISTS)
-
 
 file(GLOB_RECURSE TechEngineAPI_include "${CMAKE_CURRENT_SOURCE_DIR}/../TechEngineCore/src")
 add_custom_command(TARGET TechEngineEditor POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        COMMAND ${CMAKE_COMMAND} -E copy
         ${CMAKE_CURRENT_SOURCE_DIR}/../TechEngineCore/src $<TARGET_FILE_DIR:TechEngineEditor>/TechEngineAPI/include/TechEngineCore
         COMMAND_EXPAND_LISTS)
 
 file(GLOB_RECURSE CORE_FILES "${CMAKE_BINARY_DIR}/TechEngineEditor/TechEngineAPI/include/TechEngineCore/*.cpp")
-file(GLOB_RECURSE GAME_FILES "${CMAKE_BINARY_DIR}/TechEngineEditor/TechEngineAPI/include/TechEngineGame/*.cpp")
+file(GLOB_RECURSE GAME_FILES "${CMAKE_BINARY_DIR}/TechEngineEditor/TechEngineAPI/include/TechEngineClient/*.cpp")
 
 if (EXISTS CORE_FILES)
     add_custom_command(TARGET TechEngineEditor

@@ -10,10 +10,13 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -D_WIN32_WINNT=0x0601 -D
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 set(BUILD_SHARED_LIBS TRUE)
 
+# RPATH correct path for libs
+set(CMAKE_INSTALL_RPATH "lib")
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+
+
 add_subdirectory(TechEngineCore)
-add_subdirectory(TechEngineGame)
+add_subdirectory(TechEngineClient)
 add_subdirectory(TechEngineServer)
 add_subdirectory(TechEngineEditor)
-add_subdirectory(common)
 add_subdirectory(TechEngineRuntime)
-add_subdirectory(server)
