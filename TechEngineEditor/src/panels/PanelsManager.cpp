@@ -139,11 +139,9 @@ namespace TechEngine {
                     stopRunningScene();
                     m_currentPlaying = false;
                 }
-                std::string projectDirectory = std::filesystem::current_path().string() + "/project";
-                std::string buildDirectory = std::filesystem::current_path().string() + "/build";
-                for (const auto &entry: std::filesystem::directory_iterator(buildDirectory))
+                for (const auto &entry: std::filesystem::directory_iterator(ProjectManager::getBuildPath()))
                     std::filesystem::remove_all(entry.path());
-                std::filesystem::copy(projectDirectory, buildDirectory, std::filesystem::copy_options::recursive);
+                std::filesystem::copy(ProjectManager::getUserProjectRootPath(), ProjectManager::getBuildPath(), std::filesystem::copy_options::recursive);
                 compileUserScripts();
             }
 
