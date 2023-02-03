@@ -23,10 +23,6 @@ const path &ProjectManager::getUserProjectScriptsPath() {
     return getInstance()->userProjectScriptsPath;
 }
 
-const path &ProjectManager::getUserProjectBuildPath() {
-    return getInstance()->userProjectBuildPath;
-}
-
 const path &ProjectManager::getUserProjectScenePath() {
     return getInstance()->userProjectScenesPath;
 }
@@ -53,4 +49,8 @@ const path &ProjectManager::getBuildResourcesPath() {
 
 const path &ProjectManager::getResourcesPath() {
     return getInstance()->resourcesPath;
+}
+
+const path &ProjectManager::getUserProjectBuildPath() {
+    return getInstance()->userProjectBuildPath;
 }
