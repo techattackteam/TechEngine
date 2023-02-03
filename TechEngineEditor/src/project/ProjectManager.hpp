@@ -18,11 +18,14 @@ private:
     path buildResourcesPath = buildPath.string() + "/resources";
 
     path userProjectRootPath = rootPath.string() + "/project";
-    path userProjectBuildPath = userProjectRootPath.string() + "/build";
     path userProjectScenesPath = userProjectRootPath.string() + "/scenes";
     path userProjectScriptsPath = userProjectRootPath.string() + "/scripts";
-    path userProjectCmakeBuildPath = userProjectScriptsPath.string() + "/build";
-    path userScriptsDLLPath = userProjectCmakeBuildPath.string() + "/Debug/UserScripts.dll";
+    path userProjectBuildPath = userProjectScriptsPath.string() + "/build";
+public:
+
+
+private:
+    path userScriptsDLLPath = userProjectBuildPath.string() + "/Debug/UserScripts.dll";
 
     path resourcesPath = rootPath.string() + "/resources";
 
@@ -41,8 +44,6 @@ public:
 
     static const path &getUserProjectScriptsPath();
 
-    static const path &getUserProjectBuildPath();
-
     static const path &getUserProjectScenePath();
 
     static const path &getUserScriptsDLLPath();
@@ -54,4 +55,6 @@ public:
     static const path &getBuildResourcesPath();
 
     static const path &getResourcesPath();
+
+    static const path &getUserProjectBuildPath();
 };

@@ -246,18 +246,17 @@ namespace TechEngine {
     }
 
     void PanelsManager::compileUserScripts() {
-        if (!exists(std::filesystem::path("C:/dev/TechEngine/bin/TechEngineEditor/debug/project/scripts/build"))) {
-            std::string command = "cd C:/dev/TechEngine/bin/TechEngineEditor/debug/project/scripts &&"
-                                  " \"C:/Program Files/CMake/bin/cmake.exe\" -Bbuild -H.";
+        if (!exists(ProjectManager::getUserProjectBuildPath())) {
+            std::string command = "cd " + ProjectManager::getUserProjectBuildPath().string() + " && \"C:/Program Files/CMake/bin/cmake.exe\" -Bbuild -H.";
             std::system(command.c_str());
-
         }
         std::string command = "\"C:/Program Files/CMake/bin/cmake.exe\""
-                              " --build C:/dev/TechEngine/bin/TechEngineEditor/debug/project/scripts/build --target clean";
+                              " --build " + ProjectManager::getUserProjectBuildPath().string() + " --target clean";
         std::system(command.c_str());
         command = "\"C:/Program Files/CMake/bin/cmake.exe\""
-                              " --build C:/dev/TechEngine/bin/TechEngineEditor/debug/project/scripts/build --target UserScripts --config Debug";
+                  " --build " + ProjectManager::getUserProjectBuildPath().string() + " --target UserScripts --config Debug";
         std::system(command.c_str());
+        TE_LOGGER_INFO(ProjectManager::getUserProjectBuildPath().string());
     }
 
     void PanelsManager::startRunningScene() {
