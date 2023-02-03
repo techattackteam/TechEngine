@@ -26,14 +26,7 @@ namespace TechEngine {
         SceneHierarchyPanel sceneHierarchyPanel;
         ExportSettingsPanel exportSettingsPanel;
 
-        //Temporary
-        const std::string currentDirectory = std::filesystem::current_path().string();
-        const std::string projectDirectory = currentDirectory + "/project";
-        const std::string buildDirectory = currentDirectory + "/build";
-        const std::string cmakeProjectDirectory = projectDirectory + "/scripts";
-
         std::string currentScenePath;
-
         bool m_currentPlaying = false;
     public:
 
@@ -41,7 +34,7 @@ namespace TechEngine {
 
         void update();
 
-        static void compileUserScripts(const std::filesystem::path &projectPath, const std::filesystem::path &dllTargetPath);
+        static void compileUserScripts();
 
     private:
         void initImGui();
