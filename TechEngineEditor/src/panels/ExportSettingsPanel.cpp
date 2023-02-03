@@ -7,23 +7,13 @@
 #include <iostream>
 #include <fstream>
 #include <imgui_internal.h>
+#include "project/ProjectManager.hpp"
 
 namespace TechEngine {
 
-    ExportSettingsPanel::ExportSettingsPanel(const std::string &currentDirectory,
-                                             const std::string &projectDirectory,
-                                             const std::string &buildDirectory,
-                                             const std::string &cmakeProjectDirectory,
-                                             std::string &currentScenePath) :
-
-            currentDirectory(currentDirectory),
-            projectDirectory(projectDirectory),
-            buildDirectory(buildDirectory),
-            cmakeProjectDirectory(cmakeProjectDirectory),
-            currentScenePath(currentScenePath) {
+    ExportSettingsPanel::ExportSettingsPanel(std::string &currentScenePath) : currentScenePath(currentScenePath), Panel("ExportSettingsPanel") {
 
     }
-
 
     ExportSettingsPanel::~ExportSettingsPanel() {
     }
@@ -54,22 +44,21 @@ namespace TechEngine {
     }
 
     void ExportSettingsPanel::exportProject() {
-        std::filesystem::remove_all(buildDirectory);
-        std::filesystem::create_directory(buildDirectory);
+        std::filesystem::remove_all(ProjectManager::getBuildPath());
+        std::filesystem::create_directory(ProjectManager::getBuildPath());
         if (currentScenePath.empty()) {
-            SceneSerializer::serialize("project/scenes/defaultScene.scene");
+            SceneSerializer::serialize(ProjectManager::getUserProjectScenePath().string() + "/defaultScene.scene");
             currentScenePath = "scenes/defaultScene.scene";
         }
         std::filesystem::copy_options copyOptions = std::filesystem::copy_options::recursive |
                                                     std::filesystem::copy_options::overwrite_existing;
 
-        std::string TechEngineSettingsPath = buildDirectory + "/ExportSettings.TESettings";
-        serializeEngineSettings(TechEngineSettingsPath);
-        PanelsManager::compileUserScripts(projectDirectory, std::filesystem::current_path());
-        std::filesystem::copy(projectDirectory + "/scenes", buildDirectory + "/scenes", copyOptions);
-        std::filesystem::copy(cmakeProjectDirectory + "/runtime/UserProject.dll", buildDirectory, copyOptions);
-        std::filesystem::copy(currentDirectory + "/resources", buildDirectory + "/resources", copyOptions);
-        std::filesystem::copy(currentDirectory + "/runtime", buildDirectory, copyOptions);
+        serializeEngineSettings(ProjectManager::getEngineExportSettingsFile());
+        PanelsManager::compileUserScripts();
+        std::filesystem::copy(ProjectManager::getUserProjectScenePath(), ProjectManager::getBuildPath(), copyOptions);
+        std::filesystem::copy(ProjectManager::getUserScriptsDLLPath(), ProjectManager::getBuildPath(), copyOptions);
+        std::filesystem::copy(ProjectManager::getResourcesPath(), ProjectManager::getBuildResourcesPath(), copyOptions);
+        std::filesystem::copy(ProjectManager::getRuntimePath(), ProjectManager::getBuildPath(), copyOptions);
         std::cout << "Export completed!" << std::endl;
     }
 
@@ -100,4 +89,6 @@ namespace TechEngine {
     bool ExportSettingsPanel::isVisible() {
         return visible;
     }
+
+
 }

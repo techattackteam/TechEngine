@@ -16,9 +16,10 @@
 #include <yaml-cpp/exceptions.h>
 #include <yaml-cpp/emitter.h>
 #include <fstream>
+#include "project/ProjectManager.hpp"
 
 namespace TechEngine {
-    PanelsManager::PanelsManager(Window &window) : window(window), exportSettingsPanel(currentDirectory, projectDirectory, buildDirectory, cmakeProjectDirectory, currentScenePath) {
+    PanelsManager::PanelsManager(Window &window) : window(window), exportSettingsPanel(currentScenePath) {
         TechEngineCore::EventDispatcher::getInstance().subscribe(RegisterCustomPanel::eventType, [this](TechEngineCore::Event *event) {
             registerCustomPanel((RegisterCustomPanel *) event);
         });
@@ -143,7 +144,7 @@ namespace TechEngine {
                 for (const auto &entry: std::filesystem::directory_iterator(buildDirectory))
                     std::filesystem::remove_all(entry.path());
                 std::filesystem::copy(projectDirectory, buildDirectory, std::filesystem::copy_options::recursive);
-                compileUserScripts(projectDirectory, std::filesystem::current_path());
+                compileUserScripts();
             }
 
             if (ImGui::MenuItem("Export")) {
@@ -244,8 +245,7 @@ namespace TechEngine {
         return std::string();
     }
 
-    void PanelsManager::compileUserScripts(const std::filesystem::path &cmakeProjectDirectory, const std::filesystem::path &dllTargetPath) {
-        std::string dllPath = cmakeProjectDirectory.string() + "/runtime/UserProject.dll";
+    void PanelsManager::compileUserScripts() {
         if (!exists(std::filesystem::path("C:/dev/TechEngine/bin/TechEngineEditor/debug/project/scripts/build"))) {
             std::string command = "cd C:/dev/TechEngine/bin/TechEngineEditor/debug/project/scripts &&"
                                   " \"C:/Program Files/CMake/bin/cmake.exe\" -Bbuild -H.";
@@ -253,29 +253,32 @@ namespace TechEngine {
 
         }
         std::string command = "\"C:/Program Files/CMake/bin/cmake.exe\""
+                              " --build C:/dev/TechEngine/bin/TechEngineEditor/debug/project/scripts/build --target clean";
+        std::system(command.c_str());
+        command = "\"C:/Program Files/CMake/bin/cmake.exe\""
                               " --build C:/dev/TechEngine/bin/TechEngineEditor/debug/project/scripts/build --target UserScripts --config Debug";
         std::system(command.c_str());
     }
 
     void PanelsManager::startRunningScene() {
-        SceneSerializer::serialize(projectDirectory + "/scenes/SceneSaveTemporary.scene");
-        ScriptEngine::getInstance()->init(cmakeProjectDirectory + "/build/Debug/UserScripts.dll");
+        SceneSerializer::serialize(ProjectManager::getUserProjectScenePath().string() + "/SceneSaveTemporary.scene");
+        ScriptEngine::getInstance()->init(ProjectManager::getUserScriptsDLLPath().string());
     }
 
     void PanelsManager::stopRunningScene() {
         ScriptEngine::getInstance()->stop();
-        SceneSerializer::deserialize(projectDirectory + "/scenes/SceneSaveTemporary.scene");
+        SceneSerializer::deserialize(ProjectManager::getUserProjectScenePath().string() + "/SceneSaveTemporary.scene");
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
             if (gameObject->hasComponent<CameraComponent>() && gameObject->getComponent<CameraComponent>()->isMainCamera()) {
                 SceneHelper::mainCamera = gameObject->getComponent<CameraComponent>();
             }
         }
-        std::filesystem::remove(projectDirectory + "/scenes/SceneSaveTemporary.scene");
+        std::filesystem::remove(ProjectManager::getUserProjectScenePath().string() + "/SceneSaveTemporary.scene");
     }
 
     void PanelsManager::onCloseAppEvent() {
         if (currentScenePath.empty()) {
-            currentScenePath = "project/scenes/DefaultScene.scene";
+            currentScenePath = ProjectManager::getUserProjectScenePath().string() + "/DefaultScene.scene";
         }
         SceneSerializer::serialize(currentScenePath);
         saveEngineSettings();
@@ -307,8 +310,7 @@ namespace TechEngine {
         out << YAML::Key << "Scene path" << YAML::Value << currentScenePath;
         out << YAML::EndSeq;
         out << YAML::EndMap;
-        std::string settingsFilePath = currentDirectory + "/EngineSettings.TESettings";
-        std::ofstream fout(settingsFilePath);
+        std::ofstream fout(ProjectManager::getEngineExportSettingsFile().string());
         fout << out.c_str();
         TE_LOGGER_INFO("EngineSettings saved");
     }
@@ -319,14 +321,14 @@ namespace TechEngine {
     }
 
     void PanelsManager::openSceneOnStartup() {
-        if (std::filesystem::exists(currentDirectory + "/EngineSettings.TESettings")) {
+        if (std::filesystem::exists(ProjectManager::getEngineExportSettingsFile().string())) {
             YAML::Node data;
             try {
-                data = YAML::LoadFile(currentDirectory + "/EngineSettings.TESettings");
+                data = YAML::LoadFile(ProjectManager::getEngineExportSettingsFile().string());
                 currentScenePath = data["Scene path"].as<std::string>();
             }
             catch (YAML::Exception &e) {
-                TE_LOGGER_CRITICAL("Failed to load .TESettings file {0}.\n      {1}", currentDirectory + "/EngineSettings.TESettings", e.what());
+                TE_LOGGER_CRITICAL("Failed to load .TESettings file {0}.\n      {1}", ProjectManager::getEngineExportSettingsFile().string(), e.what());
             }
             TE_LOGGER_INFO("EngineSettings loaded");
             SceneSerializer::deserialize(currentScenePath);

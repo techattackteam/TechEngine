@@ -3,7 +3,7 @@ file(GLOB_RECURSE TechEngineEditor_Headers "src/*.hpp")
 
 find_package(imgui CONFIG REQUIRED)
 
-add_executable(TechEngineEditor ${TechEngineEditor_Sources} ${TechEngineEditor_Headers})
+add_executable(TechEngineEditor ${TechEngineEditor_Sources} ${TechEngineEditor_Headers} src/project/ProjectManager.cpp src/project/ProjectManager.hpp)
 
 if (WIN32) # WINDOWS
     set(TECH_ENGINE_EDITOR_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineEditor/")

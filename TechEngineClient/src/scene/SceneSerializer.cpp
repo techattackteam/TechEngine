@@ -159,8 +159,8 @@ namespace TechEngine {
         }
         out << YAML::EndSeq;
         out << YAML::EndMap;
-
-        std::filesystem::create_directories("project/scenes");
+        std::filesystem::path path = filepath;
+        std::filesystem::create_directories(path.parent_path());
         std::ofstream fout(filepath);
         fout << out.c_str();
     }
