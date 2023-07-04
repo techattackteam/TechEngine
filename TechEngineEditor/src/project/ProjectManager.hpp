@@ -12,15 +12,17 @@ private:
     ProjectManager();
 
     //Editor root path
+    path cmakePath = "\"C:/Program Files/CMake/bin/cmake.exe\"";
+
     path rootPath = std::filesystem::current_path();
 
     path buildPath = rootPath.string() + "/build";
     path buildResourcesPath = buildPath.string() + "/resources";
 
-    path userProjectRootPath = rootPath.string() + "/project";
+    path userProjectRootPath = rootPath.string() + "\\project";
     path userProjectScenesPath = userProjectRootPath.string() + "/scenes";
-    path userProjectScriptsPath = userProjectRootPath.string() + "/scripts";
-    path userProjectBuildPath = userProjectScriptsPath.string() + "/build";
+    path userProjectScriptsPath = userProjectRootPath.string() + "\\scripts";
+    path userProjectBuildPath = userProjectScriptsPath.string() + "\\build";
 public:
 
 
@@ -57,4 +59,6 @@ public:
     static const path &getResourcesPath();
 
     static const path &getUserProjectBuildPath();
+
+    static const path &getCmakePath();
 };

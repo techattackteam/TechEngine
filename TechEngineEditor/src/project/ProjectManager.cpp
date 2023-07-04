@@ -54,3 +54,7 @@ const path &ProjectManager::getResourcesPath() {
 const path &ProjectManager::getUserProjectBuildPath() {
     return getInstance()->userProjectBuildPath;
 }
+
+const path &ProjectManager::getCmakePath() {
+    return getInstance()->cmakePath;
+}

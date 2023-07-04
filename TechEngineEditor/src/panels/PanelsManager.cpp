@@ -245,16 +245,15 @@ namespace TechEngine {
 
     void PanelsManager::compileUserScripts() {
         if (!exists(ProjectManager::getUserProjectBuildPath())) {
-            std::string command = "cd " + ProjectManager::getUserProjectBuildPath().string() + " && \"C:/Program Files/CMake/bin/cmake.exe\" -Bbuild -H.";
+            std::string command = "\"" + ProjectManager::getCmakePath().string() +
+                                  " -G \"Visual Studio 17 2022\" -S " + ProjectManager::getUserProjectScriptsPath().string() +
+                                  " -B " + ProjectManager::getUserProjectBuildPath().string() + "\"";
             std::system(command.c_str());
         }
-        std::string command = "\"C:/Program Files/CMake/bin/cmake.exe\""
-                              " --build " + ProjectManager::getUserProjectBuildPath().string() + " --target clean";
+        std::string command = "\"" + ProjectManager::getCmakePath().string() +
+                              " --build " + ProjectManager::getUserProjectBuildPath().string() + " --target UserScripts --config Debug\"";
         std::system(command.c_str());
-        command = "\"C:/Program Files/CMake/bin/cmake.exe\""
-                  " --build " + ProjectManager::getUserProjectBuildPath().string() + " --target UserScripts --config Debug";
-        std::system(command.c_str());
-        TE_LOGGER_INFO(ProjectManager::getUserProjectBuildPath().string());
+        TE_LOGGER_INFO("Build finished!");
     }
 
     void PanelsManager::startRunningScene() {
