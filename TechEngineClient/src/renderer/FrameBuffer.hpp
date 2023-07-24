@@ -9,7 +9,7 @@ namespace TechEngine {
         uint32_t id;
 
     public:
-        uint32_t depthMap = 0;
+        uint32_t depthTexture = 0;
         uint32_t colorTexture = 0;
         uint32_t width = 0;
         uint32_t height = 0;
@@ -28,11 +28,12 @@ namespace TechEngine {
 
         uint32_t getColorAttachmentRenderer();
 
-        void createDepthTexture(uint32_t width, uint32_t height);
 
         void clear();
 
         void bindShadowMapTexture();
+
+        void attachDepthTexture(uint32_t width, uint32_t height);
 
         void attachColorTexture(uint32_t width, uint32_t height);
 

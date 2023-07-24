@@ -4,9 +4,9 @@ in vec2 texCoord;
 
 out vec4 fragColor;
 
-uniform sampler2D depthMap;
+uniform sampler2D depthTexture;
 
 void main(){
-    float depthValue = texture(depthMap, texCoord).r;
+    float depthValue = texture(depthTexture, texCoord).r;
     fragColor = vec4(vec3(depthValue), 1.0f);
 }
