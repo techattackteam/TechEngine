@@ -7,7 +7,7 @@
 namespace TechEngine {
     class SceneHelper {
     public:
-        inline static CameraComponent *mainCamera = nullptr;
+        Engine_API inline static CameraComponent *mainCamera;
 
         static bool findCameraComponent();
 
@@ -15,4 +15,5 @@ namespace TechEngine {
 
         static void clear();
     };
+
 }

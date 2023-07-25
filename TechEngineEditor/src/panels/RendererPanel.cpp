@@ -17,6 +17,7 @@ namespace TechEngine {
         renderer->renderPipeline();
         uint64_t textureID = renderer->getFramebuffer().getColorAttachmentRenderer();
         ImGui::Image(reinterpret_cast<void *>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
+        guizmo.editTransform(ImGui::GetCurrentContext());
         renderer->getFramebuffer().unBind();
         ImGui::End();
         ImGui::PopStyleVar();
