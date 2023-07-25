@@ -57,11 +57,11 @@ namespace TechEngine {
                 DirectionalLightComponent *light = gameObject->getComponent<DirectionalLightComponent>();
                 GlCall(glViewport(0, 0, 1024, 1024));
                 shadersManager.changeActiveShader("shadowMap");
-                shadowMapBuffer.bind();
-                shadowMapBuffer.clear();
+                //shadowMapBuffer.bind();
+                //shadowMapBuffer.clear();
                 shadersManager.getActiveShader()->setUniformMatrix4f("lightSpaceMatrix", light->getProjectionMatrix() * light->getViewMatrix());
                 renderGeometryPass(true);
-                shadowMapBuffer.unBind();
+                //shadowMapBuffer.unBind();
             }
         } else {
             shadersManager.getActiveShader()->setUniformBool("isLightingActive", false);
@@ -75,7 +75,6 @@ namespace TechEngine {
         shadersManager.getActiveShader()->setUniformVec3("cameraPosition", SceneHelper::mainCamera->getTransform().getPosition());
         GlCall(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
         GlCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-        //shadowMapBuffer.bindShadowMapTexture();
         if (scene.isLightingActive()) {
             renderWithLightPass();
         } else {
@@ -89,11 +88,9 @@ namespace TechEngine {
         if (!SceneHelper::hasMainCamera()) {
             return;
         }
-
         vertexBuffer.bind();
         vertexArray.bind();
 
-        //shadowPass();
         geometryPass();
 
         vertexBuffer.unBind();

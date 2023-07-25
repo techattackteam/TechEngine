@@ -33,7 +33,11 @@ namespace TechEngine {
 
         void bindShadowMapTexture();
 
+        void attachDepthTexture();
+
         void attachDepthTexture(uint32_t width, uint32_t height);
+
+        void attachColorTexture();
 
         void attachColorTexture(uint32_t width, uint32_t height);
 

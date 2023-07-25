@@ -14,7 +14,6 @@ namespace TechEngine {
         ShadersManager shadersManager;
         VertexArray vertexArray;
         VertexBuffer vertexBuffer;
-        FrameBuffer shadowMapBuffer;
         FrameBuffer frameBuffer;
         Scene &scene = Scene::getInstance();
     public:

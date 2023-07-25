@@ -15,14 +15,21 @@ namespace TechEngine {
         this->id = id;
         GlCall(glGenFramebuffers(1, &this->id));
         glViewport(0, 0, width, height);
-        GlCall(attachDepthTexture(width, height));
-        GlCall(attachColorTexture(width, height));
         bind();
+        //Todo: Transfer this to the renderer init without for some reason crashing
+        attachDepthTexture();
+        attachColorTexture();
     }
 
 
     FrameBuffer::~FrameBuffer() {
         GlCall(glDeleteFramebuffers(1, &this->id));
+        if (colorTexture != 0) {
+            GlCall(glDeleteTextures(1, &colorTexture));
+        }
+        if (depthTexture != 0) {
+            GlCall(glDeleteTextures(1, &depthTexture));
+        }
     }
 
     void FrameBuffer::bind() {
@@ -44,6 +51,10 @@ namespace TechEngine {
         init(id, width, height);
     }
 
+    void FrameBuffer::attachColorTexture() {
+        attachColorTexture(width, height);
+    }
+
     void FrameBuffer::attachColorTexture(uint32_t width, uint32_t height) {
         glGenTextures(1, &colorTexture);
         glBindTexture(GL_TEXTURE_2D, colorTexture);
@@ -55,17 +66,13 @@ namespace TechEngine {
         GlCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
         GlCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 
-        bind();
         GlCall(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0));
         GlCall(glDrawBuffer(GL_COLOR_ATTACHMENT0));
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-            std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << glCheckFramebufferStatus(GL_FRAMEBUFFER) << std::endl;
-        }
-        unBind();
     }
 
-    uint32_t FrameBuffer::getColorAttachmentRenderer() {
-        return colorTexture;
+
+    void FrameBuffer::attachDepthTexture() {
+        attachDepthTexture(width, height);
     }
 
     void FrameBuffer::attachDepthTexture(uint32_t width, uint32_t height) {
@@ -78,14 +85,9 @@ namespace TechEngine {
         GlCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
         GlCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
 
-        bind();
         GlCall(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0));
         GlCall(glDrawBuffer(GL_NONE));
         GlCall(glReadBuffer(GL_NONE));
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-            std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << glCheckFramebufferStatus(GL_FRAMEBUFFER) << std::endl;
-        }
-        unBind();
     }
 
     void FrameBuffer::clear() {
@@ -97,7 +99,13 @@ namespace TechEngine {
         GlCall(glBindTexture(GL_TEXTURE_2D, depthTexture));
     }
 
+    uint32_t FrameBuffer::getColorAttachmentRenderer() {
+        return colorTexture;
+    }
+
     uint32_t FrameBuffer::getID() {
         return id;
     }
+
+
 }
