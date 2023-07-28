@@ -34,7 +34,7 @@ namespace TechEngineCore {
             while (!canExecute) {
                 canExecuteCond.wait(lock);
             }
-            if (!running)
+            //if (!running) Not sure why this is here
                 execute();
             canExecute = false;
         }

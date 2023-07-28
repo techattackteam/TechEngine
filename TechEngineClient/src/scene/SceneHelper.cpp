@@ -1,6 +1,5 @@
 #include "SceneHelper.hpp"
 #include "components/DirectionalLightComponent.hpp"
-
 namespace TechEngine {
     bool SceneHelper::findCameraComponent() {
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {

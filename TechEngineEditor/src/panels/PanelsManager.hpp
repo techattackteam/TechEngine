@@ -16,6 +16,7 @@
 namespace TechEngine {
     class PanelsManager {
     private:
+        inline static PanelsManager *instance;
         std::vector<CustomPanel *> customPanels;
         ImGuiContext *imguiContext;
         Window &window;
@@ -28,6 +29,8 @@ namespace TechEngine {
 
         std::string currentScenePath;
         bool m_currentPlaying = false;
+
+        GameObject *selectedGameObject = nullptr;
     public:
 
         PanelsManager(Window &window);
@@ -35,6 +38,10 @@ namespace TechEngine {
         void update();
 
         static void compileUserScripts();
+
+        GameObject *getSelectedGameObject() const;
+
+        static PanelsManager &getInstance();
 
     private:
         void initImGui();
