@@ -13,6 +13,7 @@ namespace TechEngine {
 
         void onUpdate() override;
 
+        void changeGuizmoOperation(int operation);
     };
 }
 

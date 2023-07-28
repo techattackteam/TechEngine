@@ -67,6 +67,9 @@ namespace TechEngine {
     }
 
     void Guizmo::editTransform(ImGuiContext *context) {
+        if (operation == -1) {
+            return;
+        }
         if (PanelsManager::getInstance().getSelectedGameObject() == nullptr || !SceneHelper::hasMainCamera()) {
             return;
         }
@@ -88,14 +91,19 @@ namespace TechEngine {
 
         glm::mat4 transform = PanelsManager::getInstance().getSelectedGameObject()->getModelMatrix();
         ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
-                             (ImGuizmo::OPERATION) ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::LOCAL, glm::value_ptr(transform),
+                             (ImGuizmo::OPERATION) operation, ImGuizmo::LOCAL, glm::value_ptr(transform),
                              nullptr, nullptr);
 
         if (ImGuizmo::IsUsing()) {
             glm::vec3 translation, rotation, scale;
             DecomposeTransform(transform, translation, rotation, scale);
-
             PanelsManager::getInstance().getSelectedGameObject()->getTransform().translateTo(translation);
+            PanelsManager::getInstance().getSelectedGameObject()->getTransform().rotate(glm::degrees(rotation));
+            PanelsManager::getInstance().getSelectedGameObject()->getTransform().setScale(scale);
         }
+    }
+
+    void Guizmo::setOperation(int operation) {
+        this->operation = operation;
     }
 }
