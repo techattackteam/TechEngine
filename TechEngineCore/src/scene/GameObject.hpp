@@ -13,6 +13,7 @@ namespace TechEngine {
 
     class GameObject {
     private:
+
         GameObject *parent = nullptr;
         std::unordered_map<std::string, GameObject *> children;
         std::unordered_map<std::string, Component *> components;
@@ -24,8 +25,10 @@ namespace TechEngine {
     protected:
         GameObject(std::string basicString, GameObject *pObject);
 
+
     public:
 
+        GameObject(std::string name, const std::string &tag);
         explicit GameObject(std::string name);
 
         GameObject() = default;
@@ -75,7 +78,7 @@ namespace TechEngine {
 
         std::string getTag();
 
-        GameObject* getParent();
+        GameObject *getParent();
 
         TransformComponent &getTransform();
 

@@ -1,7 +1,5 @@
 #include "Guizmo.hpp"
 #include "event/EventDispatcher.hpp"
-#include "events/OnSelectGameObjectEvent.hpp"
-#include "events/OnDeselectGameObjectEvent.hpp"
 #include <glm/gtx/matrix_decompose.hpp>
 #include "scene/SceneHelper.hpp"
 #include "panels/PanelsManager.hpp"

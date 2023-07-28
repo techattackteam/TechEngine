@@ -17,7 +17,6 @@
 #include <yaml-cpp/emitter.h>
 #include <fstream>
 #include "project/ProjectManager.hpp"
-#include "events/OnDeselectGameObjectEvent.hpp"
 
 namespace TechEngine {
     PanelsManager::PanelsManager(Window &window) : window(window), exportSettingsPanel(currentScenePath) {
@@ -31,18 +30,9 @@ namespace TechEngine {
         });
 
         TechEngineCore::EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngineCore::Event *event) {
-            if (selectedGameObject == ((GameObjectDestroyEvent *) event)->getGameObject()) {
-                selectedGameObject = nullptr;
-            }
+            //deselectGameObject(((GameObjectDestroyEvent *) event)->getGameObject());
         });
 
-        TechEngineCore::EventDispatcher::getInstance().subscribe(OnSelectGameObjectEvent::eventType, [this](TechEngineCore::Event *event) {
-            selectedGameObject = ((OnSelectGameObjectEvent *) event)->getGameObject();
-        });
-
-        TechEngineCore::EventDispatcher::getInstance().subscribe(OnDeselectGameObjectEvent::eventType, [this](TechEngineCore::Event *event) {
-            selectedGameObject = nullptr;
-        });
 
         openSceneOnStartup();
 
@@ -279,11 +269,17 @@ namespace TechEngine {
 
     void PanelsManager::stopRunningScene() {
         ScriptEngine::getInstance()->stop();
-        TechEngineCore::EventDispatcher::getInstance().dispatch(new OnDeselectGameObjectEvent(nullptr));
+        std::string currentSelectedGameObjectTag = "";
+        if (gameObjectSelected != nullptr) {
+            currentSelectedGameObjectTag = gameObjectSelected->getTag();
+        }
         SceneSerializer::deserialize(ProjectManager::getUserProjectScenePath().string() + "/SceneSaveTemporary.scene");
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
             if (gameObject->hasComponent<CameraComponent>() && gameObject->getComponent<CameraComponent>()->isMainCamera()) {
                 SceneHelper::mainCamera = gameObject->getComponent<CameraComponent>();
+            }
+            if (gameObject->getTag() == currentSelectedGameObjectTag) {
+                selectedGameObject(gameObject);
             }
         }
         std::filesystem::remove(ProjectManager::getUserProjectScenePath().string() + "/SceneSaveTemporary.scene");
@@ -355,7 +351,21 @@ namespace TechEngine {
         return *instance;
     }
 
+    void PanelsManager::selectedGameObject(GameObject *gameObject) {
+        gameObjectSelected = gameObject;
+    }
+
+    void PanelsManager::deselectGameObject() {
+        deselectGameObject(nullptr);
+    }
+
+    void PanelsManager::deselectGameObject(GameObject *gameObject) {
+        if (gameObject == nullptr || gameObject->getTag() == gameObjectSelected->getTag()) {
+            gameObjectSelected = nullptr;
+        }
+    }
+
     GameObject *PanelsManager::getSelectedGameObject() const {
-        return selectedGameObject;
+        return gameObjectSelected;
     }
 }

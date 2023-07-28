@@ -104,6 +104,7 @@ namespace TechEngine {
     static void serializeGameObject(YAML::Emitter &out, GameObject *gameObject) {
         out << YAML::BeginMap;
         out << YAML::Key << "Name" << YAML::Value << gameObject->getName();
+        out << YAML::Key << "Tag" << YAML::Value << gameObject->getTag();
 
         if (gameObject->hasComponent<TransformComponent>()) {
             out << YAML::Key << "TransformComponent";
@@ -167,7 +168,8 @@ namespace TechEngine {
 
     static void deserializeGameObject(YAML::Node gameObjectYAML, GameObject *parent) {
         auto name = gameObjectYAML["Name"].as<std::string>();
-        GameObject *gameObject = new GameObject(name);
+        auto tag = gameObjectYAML["Tag"].as<std::string>();
+        GameObject *gameObject = new GameObject(name, tag);
         if (parent != nullptr) {
             Scene::getInstance().makeChildTo(parent, gameObject);
         }

@@ -19,8 +19,12 @@ namespace TechEngine {
     }
 
     void Scene::registerGameObject(GameObject *gameObject) {
+        registerGameObject(gameObject, genGOTag());
+    }
+
+    void Scene::registerGameObject(GameObject *gameObject, std::string tag) {
         gameObjects.emplace_back(gameObject);
-        gameObject->setTag(genGOTag());
+        gameObject->setTag(tag);
         if (gameObject->hasComponent<DirectionalLightComponent>()) {
             lights.emplace_back(gameObject);
         }
@@ -102,4 +106,6 @@ namespace TechEngine {
     void Scene::onGameObjectDeleteRequest(TechEngine::RequestDeleteGameObject *event) {
         delete event->getGameObject();
     }
+
+
 }

@@ -2,7 +2,6 @@
 
 #include "CustomPanel.hpp"
 #include "scene/GameObject.hpp"
-#include "events/OnSelectGameObjectEvent.hpp"
 #include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
 
 namespace TechEngine {

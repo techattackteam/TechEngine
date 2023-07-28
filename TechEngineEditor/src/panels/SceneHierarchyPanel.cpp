@@ -2,10 +2,9 @@
 #include <imgui_internal.h>
 #include "SceneHierarchyPanel.hpp"
 #include "scene/SceneHelper.hpp"
-#include "events/OnSelectGameObjectEvent.hpp"
 #include "testGameObject/QuadMeshTest.hpp"
 #include "event/events/gameObjects/RequestDeleteGameObject.hpp"
-#include "events/OnDeselectGameObjectEvent.hpp"
+#include "PanelsManager.hpp"
 
 namespace TechEngine {
     SceneHierarchyPanel::SceneHierarchyPanel() : Panel("SceneHierarchyPanel") {
@@ -40,7 +39,7 @@ namespace TechEngine {
         bool opened = ImGui::TreeNodeEx(gameObject, flags, "%s", name.c_str());
         if (ImGui::IsItemClicked()) {
             selectedGO = gameObject;
-            TechEngineCore::EventDispatcher::getInstance().dispatch(new OnSelectGameObjectEvent(gameObject));
+            PanelsManager::getInstance().selectedGameObject(gameObject);
         }
 
 
@@ -54,7 +53,7 @@ namespace TechEngine {
             }
             if (ImGui::MenuItem("Delete GameObject")) {
                 TechEngineCore::EventDispatcher::getInstance().dispatch(new RequestDeleteGameObject(gameObject));
-                TechEngineCore::EventDispatcher::getInstance().dispatch(new OnDeselectGameObjectEvent(gameObject));
+                PanelsManager::getInstance().deselectGameObject(gameObject);
                 selectedGO = nullptr;
             }
 

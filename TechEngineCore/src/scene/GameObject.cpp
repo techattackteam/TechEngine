@@ -14,6 +14,12 @@ namespace TechEngine {
         Scene::getInstance().registerGameObject(this);
     }
 
+    GameObject::GameObject(std::string name, const std::string &tag) : name(std::move(name)) {
+        addComponent<TransformComponent>();
+        TechEngineCore::EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
+        Scene::getInstance().registerGameObject(this, tag);
+    }
+
     GameObject::GameObject(std::string name, GameObject *pObject) : name(std::move(name)) {
         addComponent<TransformComponent>();
         TechEngineCore::EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
