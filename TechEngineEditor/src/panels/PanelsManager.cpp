@@ -17,6 +17,7 @@
 #include <yaml-cpp/emitter.h>
 #include <fstream>
 #include "project/ProjectManager.hpp"
+#include "events/input/KeyPressedEvent.hpp"
 
 namespace TechEngine {
     PanelsManager::PanelsManager(Window &window) : window(window), exportSettingsPanel(currentScenePath) {
@@ -30,7 +31,11 @@ namespace TechEngine {
         });
 
         TechEngineCore::EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngineCore::Event *event) {
-            //deselectGameObject(((GameObjectDestroyEvent *) event)->getGameObject());
+            deselectGameObject(((GameObjectDestroyEvent *) event)->getGameObject());
+        });
+
+        TechEngineCore::EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngineCore::Event *event) {
+            OnKeyPressedEvent(((KeyPressedEvent *) event)->getKey());
         });
 
 
@@ -367,5 +372,30 @@ namespace TechEngine {
 
     GameObject *PanelsManager::getSelectedGameObject() const {
         return gameObjectSelected;
+    }
+
+    void PanelsManager::OnKeyPressedEvent(Key &key) {
+        switch (key.getKeyCode()) {
+            case Q: {
+                if (!ImGuizmo::IsUsing())
+                    rendererPanel.changeGuizmoOperation(-1);
+                break;
+            }
+            case T: {
+                if (!ImGuizmo::IsUsing())
+                    rendererPanel.changeGuizmoOperation(ImGuizmo::OPERATION::TRANSLATE);
+                break;
+            }
+            case R: {
+                if (!ImGuizmo::IsUsing())
+                    rendererPanel.changeGuizmoOperation(ImGuizmo::OPERATION::ROTATE);
+                break;
+            }
+            case S: {
+                if (!ImGuizmo::IsUsing())
+                    rendererPanel.changeGuizmoOperation(ImGuizmo::OPERATION::SCALE);
+                break;
+            }
+        }
     }
 }

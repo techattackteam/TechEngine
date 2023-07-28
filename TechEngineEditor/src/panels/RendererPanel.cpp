@@ -22,4 +22,8 @@ namespace TechEngine {
         ImGui::End();
         ImGui::PopStyleVar();
     }
+
+    void RendererPanel::changeGuizmoOperation(int operation) {
+        guizmo.setOperation(operation);
+    }
 }

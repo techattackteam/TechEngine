@@ -12,6 +12,7 @@
 #include "ProjectBrowserPanel.hpp"
 #include "ExportSettingsPanel.hpp"
 #include "events/panels/RegisterCustomPanel.hpp"
+#include "core/Key.hpp"
 
 namespace TechEngine {
     class PanelsManager {
@@ -84,6 +85,7 @@ namespace TechEngine {
 
         void saveEngineSettings();
 
+        void OnKeyPressedEvent(Key &key);
     };
 }
 
