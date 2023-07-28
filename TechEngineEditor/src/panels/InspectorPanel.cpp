@@ -4,31 +4,21 @@
 #include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
 #include "components/MeshRendererComponent.hpp"
 #include "events/OnDeselectGameObjectEvent.hpp"
+#include "PanelsManager.hpp"
 
 namespace TechEngine {
     InspectorPanel::InspectorPanel() : Panel("Inspector") {
-        TechEngineCore::EventDispatcher::getInstance().subscribe(OnSelectGameObjectEvent::eventType, [this](TechEngineCore::Event *event) {
-            this->gameObject = ((OnSelectGameObjectEvent *) event)->getGameObject();
-        });
 
-        TechEngineCore::EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngineCore::Event *event) {
-            onGameObjectDestroyEvent((GameObjectDestroyEvent *) event);
-        });
-
-        TechEngineCore::EventDispatcher::getInstance().subscribe(OnDeselectGameObjectEvent::eventType, [this](TechEngineCore::Event *event) {
-            gameObject = nullptr;
-        });
     }
-
 
     void InspectorPanel::onUpdate() {
         ImGui::Begin(name.c_str());
-        if (gameObject != nullptr) {
+        if (PanelsManager::getInstance().getSelectedGameObject() != nullptr) {
             drawComponents();
         }
         if (ImGui::BeginPopupContextWindow("Add Component", 1, false)) {
             if (ImGui::MenuItem("Mesh Renderer")) {
-                gameObject->addComponent<MeshRendererComponent>();
+                PanelsManager::getInstance().getSelectedGameObject()->addComponent<MeshRendererComponent>();
             }
 
             ImGui::EndPopup();
@@ -39,8 +29,8 @@ namespace TechEngine {
     template<typename T, typename UIFunction>
     void InspectorPanel::drawComponent(const std::string &name, UIFunction uiFunction) {
         const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
-        if (gameObject->hasComponent<T>()) {
-            auto component = gameObject->getComponent<T>();
+        if (PanelsManager::getInstance().getSelectedGameObject()->hasComponent<T>()) {
+            auto component = PanelsManager::getInstance().getSelectedGameObject()->getComponent<T>();
             ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
 
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
@@ -67,7 +57,7 @@ namespace TechEngine {
             }
 
             if (removeComponent)
-                gameObject->removeComponent<T>();
+                PanelsManager::getInstance().getSelectedGameObject()->removeComponent<T>();
         }
     }
 
@@ -229,11 +219,4 @@ namespace TechEngine {
 
         ImGui::PopID();
     }
-
-    void InspectorPanel::onGameObjectDestroyEvent(TechEngine::GameObjectDestroyEvent *event) {
-        if (event->getGameObject() == this->gameObject) {
-            this->gameObject = nullptr;
-        }
-    }
-
 }

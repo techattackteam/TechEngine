@@ -8,7 +8,6 @@
 namespace TechEngine {
     class InspectorPanel : public Panel {
     private:
-        GameObject *gameObject = nullptr;
     public:
         explicit InspectorPanel();
 
@@ -21,7 +20,6 @@ namespace TechEngine {
 
         void drawVec3Control(const std::string &label, glm::vec3 &values, float resetValue = 0.0f, float columnWidth = 100.0f, float min = 0.0f, float max = 0.0f);
 
-        void onGameObjectDestroyEvent(TechEngine::GameObjectDestroyEvent *pEvent);
     };
 }
 

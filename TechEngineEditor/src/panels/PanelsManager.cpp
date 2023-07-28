@@ -17,15 +17,31 @@
 #include <yaml-cpp/emitter.h>
 #include <fstream>
 #include "project/ProjectManager.hpp"
+#include "events/OnDeselectGameObjectEvent.hpp"
 
 namespace TechEngine {
     PanelsManager::PanelsManager(Window &window) : window(window), exportSettingsPanel(currentScenePath) {
+        instance = this;
         TechEngineCore::EventDispatcher::getInstance().subscribe(RegisterCustomPanel::eventType, [this](TechEngineCore::Event *event) {
             registerCustomPanel((RegisterCustomPanel *) event);
         });
 
         TechEngineCore::EventDispatcher::getInstance().subscribe(AppCloseRequestEvent::eventType, [this](TechEngineCore::Event *event) {
             onCloseAppEvent();
+        });
+
+        TechEngineCore::EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngineCore::Event *event) {
+            if (selectedGameObject == ((GameObjectDestroyEvent *) event)->getGameObject()) {
+                selectedGameObject = nullptr;
+            }
+        });
+
+        TechEngineCore::EventDispatcher::getInstance().subscribe(OnSelectGameObjectEvent::eventType, [this](TechEngineCore::Event *event) {
+            selectedGameObject = ((OnSelectGameObjectEvent *) event)->getGameObject();
+        });
+
+        TechEngineCore::EventDispatcher::getInstance().subscribe(OnDeselectGameObjectEvent::eventType, [this](TechEngineCore::Event *event) {
+            selectedGameObject = nullptr;
         });
 
         openSceneOnStartup();
@@ -263,6 +279,7 @@ namespace TechEngine {
 
     void PanelsManager::stopRunningScene() {
         ScriptEngine::getInstance()->stop();
+        TechEngineCore::EventDispatcher::getInstance().dispatch(new OnDeselectGameObjectEvent(nullptr));
         SceneSerializer::deserialize(ProjectManager::getUserProjectScenePath().string() + "/SceneSaveTemporary.scene");
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
             if (gameObject->hasComponent<CameraComponent>() && gameObject->getComponent<CameraComponent>()->isMainCamera()) {
@@ -332,5 +349,13 @@ namespace TechEngine {
             new SceneCamera();
             new QuadMeshTest("FixedUpdateEntity");
         }
+    }
+
+    PanelsManager &PanelsManager::getInstance() {
+        return *instance;
+    }
+
+    GameObject *PanelsManager::getSelectedGameObject() const {
+        return selectedGameObject;
     }
 }

@@ -4,20 +4,10 @@
 #include "events/OnDeselectGameObjectEvent.hpp"
 #include <glm/gtx/matrix_decompose.hpp>
 #include "scene/SceneHelper.hpp"
+#include "panels/PanelsManager.hpp"
 
 namespace TechEngine {
     Guizmo::Guizmo() {
-        TechEngineCore::EventDispatcher::getInstance().subscribe(OnSelectGameObjectEvent::eventType, [this](TechEngineCore::Event *event) {
-            this->selectedObject = ((OnSelectGameObjectEvent *) event)->getGameObject();
-        });
-
-        TechEngineCore::EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngineCore::Event *event) {
-            onGameObjectDestroyEvent((GameObjectDestroyEvent *) event);
-        });
-
-        TechEngineCore::EventDispatcher::getInstance().subscribe(OnDeselectGameObjectEvent::eventType, [this](TechEngineCore::Event *event) {
-            selectedObject = nullptr;
-        });
     }
 
     bool DecomposeTransform(const glm::mat4 &transform, glm::vec3 &translation, glm::vec3 &rotation, glm::vec3 &scale) {
@@ -79,7 +69,7 @@ namespace TechEngine {
     }
 
     void Guizmo::editTransform(ImGuiContext *context) {
-        if (selectedObject == nullptr || !SceneHelper::hasMainCamera()) {
+        if (PanelsManager::getInstance().getSelectedGameObject() == nullptr || !SceneHelper::hasMainCamera()) {
             return;
         }
 
@@ -98,7 +88,7 @@ namespace TechEngine {
         const glm::mat4 &cameraProjection = SceneHelper::mainCamera->getProjectionMatrix();
         glm::mat4 cameraView = SceneHelper::mainCamera->getViewMatrix();
 
-        glm::mat4 transform = selectedObject->getModelMatrix();
+        glm::mat4 transform = PanelsManager::getInstance().getSelectedGameObject()->getModelMatrix();
         ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
                              (ImGuizmo::OPERATION) ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::LOCAL, glm::value_ptr(transform),
                              nullptr, nullptr);
@@ -107,13 +97,7 @@ namespace TechEngine {
             glm::vec3 translation, rotation, scale;
             DecomposeTransform(transform, translation, rotation, scale);
 
-            selectedObject->getTransform().translateTo(translation);
-        }
-    }
-
-    void Guizmo::onGameObjectDestroyEvent(TechEngine::GameObjectDestroyEvent *event) {
-        if (event->getGameObject() == this->selectedObject) {
-            this->selectedObject = nullptr;
+            PanelsManager::getInstance().getSelectedGameObject()->getTransform().translateTo(translation);
         }
     }
 }
