@@ -23,7 +23,10 @@ namespace TechEngine {
 
         virtual ~Scene();
 
+
         virtual void registerGameObject(GameObject *gameObject);
+
+        virtual void registerGameObject(GameObject *gameObject, std::string tag);
 
         virtual void unregisterGameObject(GameObject *gameObject);
 

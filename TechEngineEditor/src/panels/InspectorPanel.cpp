@@ -3,7 +3,6 @@
 #include "components/CameraComponent.hpp"
 #include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
 #include "components/MeshRendererComponent.hpp"
-#include "events/OnDeselectGameObjectEvent.hpp"
 #include "PanelsManager.hpp"
 
 namespace TechEngine {

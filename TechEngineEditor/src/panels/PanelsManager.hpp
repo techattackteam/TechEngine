@@ -30,7 +30,7 @@ namespace TechEngine {
         std::string currentScenePath;
         bool m_currentPlaying = false;
 
-        GameObject *selectedGameObject = nullptr;
+        GameObject *gameObjectSelected = nullptr;
     public:
 
         PanelsManager(Window &window);
@@ -42,6 +42,12 @@ namespace TechEngine {
         GameObject *getSelectedGameObject() const;
 
         static PanelsManager &getInstance();
+
+        void selectedGameObject(GameObject *gameObject);
+
+        void deselectGameObject();
+
+        void deselectGameObject(GameObject *gameObject);
 
     private:
         void initImGui();
@@ -77,6 +83,7 @@ namespace TechEngine {
         void openSceneOnStartup();
 
         void saveEngineSettings();
+
     };
 }
 
