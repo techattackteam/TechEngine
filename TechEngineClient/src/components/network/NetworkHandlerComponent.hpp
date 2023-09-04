@@ -15,7 +15,7 @@ namespace TechEngine {
 
         void connectionWithServer();
 
-        void sendPacket(TechEngineCore::Packet *packet);
+        void sendPacket(TechEngine::Packet *packet);
 
         void update() override;
 

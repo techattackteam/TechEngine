@@ -25,7 +25,6 @@ namespace TechEngine {
     protected:
         GameObject(std::string basicString, GameObject *pObject);
 
-
     public:
 
         GameObject(std::string name, const std::string &tag);

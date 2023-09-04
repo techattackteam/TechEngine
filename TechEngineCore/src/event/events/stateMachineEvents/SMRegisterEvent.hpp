@@ -4,13 +4,13 @@
 #include "../../../stateMachine/StateMachine.hpp"
 #include "core/Core.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
     class /*Engine_API*/ SMRegisterEvent : public Event {
     public:
         inline static EventType eventType = EventType("SMRegisterEvent", ASYNC);
         StateMachine *stateMachine;
 
-        explicit SMRegisterEvent(StateMachine *stateMachine) : TechEngineCore::Event(eventType) {
+        explicit SMRegisterEvent(StateMachine *stateMachine) : TechEngine::Event(eventType) {
             this->stateMachine = stateMachine;
         }
 

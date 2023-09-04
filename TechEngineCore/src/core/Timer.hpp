@@ -2,7 +2,7 @@
 
 #include <chrono>
 
-namespace TechEngineCore {
+namespace TechEngine {
     class Timer {
     private:
         inline static Timer *instance;

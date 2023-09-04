@@ -3,7 +3,7 @@
 #include "event/events/connection/DisconnectionSuccessfulEvent.hpp"
 
 
-namespace TechEngineCore {
+namespace TechEngine {
     void DisconnectionSuccessfulPacket::onPacketReceive() {
         EventDispatcher::getInstance().dispatch(new DisconnectionSuccessfulEvent(uuid));
     }

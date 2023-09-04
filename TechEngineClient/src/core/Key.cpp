@@ -88,6 +88,12 @@ std::string Key::getKeyName() {
             return "RIGHT";
         case ARROW_LEFT:
             return "LEFT";
+        case MOUSE_1:
+            return "MOUSE_1";
+        case MOUSE_2:
+            return "MOUSE_2";
+        case MOUSE_3:
+            return "MOUSE_3";
         default:
             return "";
     }
@@ -187,6 +193,12 @@ KeyCode Key::getKeyCode(int key) {
             return KeyCode::ARROW_RIGHT;
         case GLFW_KEY_LEFT:
             return KeyCode::ARROW_LEFT;
+        case GLFW_MOUSE_BUTTON_1:
+            return KeyCode::MOUSE_1;
+        case GLFW_MOUSE_BUTTON_2:
+            return KeyCode::MOUSE_2;
+        case GLFW_MOUSE_BUTTON_3:
+            return KeyCode::MOUSE_3;
         default:
             return KeyCode::None;
     }

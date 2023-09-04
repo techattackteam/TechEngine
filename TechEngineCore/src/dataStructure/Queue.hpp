@@ -4,7 +4,7 @@
 #include <queue>
 #include "../network/Packet.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
     class Queue {
     private:
         std::queue<Packet *> list;

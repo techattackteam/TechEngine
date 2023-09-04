@@ -18,24 +18,39 @@
 #include <fstream>
 #include "project/ProjectManager.hpp"
 #include "events/input/KeyPressedEvent.hpp"
+#include "events/input/KeyReleasedEvent.hpp"
+#include "events/input/MouseScrollEvent.hpp"
+#include "events/input/MouseMoveEvent.hpp"
 
 namespace TechEngine {
     PanelsManager::PanelsManager(Window &window) : window(window), exportSettingsPanel(currentScenePath) {
         instance = this;
-        TechEngineCore::EventDispatcher::getInstance().subscribe(RegisterCustomPanel::eventType, [this](TechEngineCore::Event *event) {
+        EventDispatcher::getInstance().subscribe(RegisterCustomPanel::eventType, [this](TechEngine::Event *event) {
             registerCustomPanel((RegisterCustomPanel *) event);
         });
 
-        TechEngineCore::EventDispatcher::getInstance().subscribe(AppCloseRequestEvent::eventType, [this](TechEngineCore::Event *event) {
+        EventDispatcher::getInstance().subscribe(AppCloseRequestEvent::eventType, [this](TechEngine::Event *event) {
             onCloseAppEvent();
         });
 
-        TechEngineCore::EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngineCore::Event *event) {
+        EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngine::Event *event) {
             deselectGameObject(((GameObjectDestroyEvent *) event)->getGameObject());
         });
 
-        TechEngineCore::EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngineCore::Event *event) {
+        EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event *event) {
             OnKeyPressedEvent(((KeyPressedEvent *) event)->getKey());
+        });
+
+        EventDispatcher::getInstance().subscribe(KeyReleasedEvent::eventType, [this](TechEngine::Event *event) {
+            OnKeyReleasedEvent(((KeyReleasedEvent *) event)->getKey());
+        });
+
+        EventDispatcher::getInstance().subscribe(MouseMoveEvent::eventType, [this](TechEngine::Event *event) {
+            OnMouseMoveEvent(((MouseMoveEvent *) event)->getDelta());
+        });
+
+        EventDispatcher::getInstance().subscribe(MouseScrollEvent::eventType, [this](TechEngine::Event *event) {
+            OnMouseScrollEvent(((MouseScrollEvent *) event)->getXOffset(), ((MouseScrollEvent *) event)->getYOffset());
         });
 
 
@@ -164,7 +179,7 @@ namespace TechEngine {
                 }
             }
             if (ImGui::MenuItem("Exit")) {
-                TechEngineCore::EventDispatcher::getInstance().dispatch(new AppCloseRequestEvent());
+                TechEngine::EventDispatcher::getInstance().dispatch(new AppCloseRequestEvent());
             }
             ImGui::EndMenu();
         }
@@ -270,6 +285,7 @@ namespace TechEngine {
     void PanelsManager::startRunningScene() {
         SceneSerializer::serialize(ProjectManager::getUserProjectScenePath().string() + "/SceneSaveTemporary.scene");
         ScriptEngine::getInstance()->init(ProjectManager::getUserScriptsDLLPath().string());
+        m_isRunning = true;
     }
 
     void PanelsManager::stopRunningScene() {
@@ -288,6 +304,7 @@ namespace TechEngine {
             }
         }
         std::filesystem::remove(ProjectManager::getUserProjectScenePath().string() + "/SceneSaveTemporary.scene");
+        m_isRunning = false;
     }
 
     void PanelsManager::onCloseAppEvent() {
@@ -396,6 +413,55 @@ namespace TechEngine {
                     rendererPanel.changeGuizmoOperation(ImGuizmo::OPERATION::SCALE);
                 break;
             }
+            case MOUSE_2: {
+                mouse2 = true;
+                break;
+            }
+            case MOUSE_3: {
+                mouse3 = true;
+                break;
+            }
+                TE_LOGGER_INFO("Key pressed event: {0}", key.getKeyName());
+        }
+    }
+
+    void PanelsManager::OnKeyReleasedEvent(Key &key) {
+        switch (key.getKeyCode()) {
+            case MOUSE_2: {
+                mouse2 = false;
+                break;
+            }
+            case MOUSE_3: {
+                mouse3 = false;
+                break;
+            }
+        }
+    }
+
+    void PanelsManager::OnMouseScrollEvent(float xOffset, float yOffset) {
+        const glm::mat4 inverted = glm::inverse(SceneHelper::mainCamera->getViewMatrix());
+        const glm::vec3 forward = normalize(glm::vec3(inverted[2]));
+        if (yOffset == -1.0f) {
+            SceneHelper::mainCamera->getTransform().translate(forward);
+        } else if (yOffset == 1.0f) {
+            SceneHelper::mainCamera->getTransform().translate(-forward);
+        }
+    }
+
+    void PanelsManager::OnMouseMoveEvent(glm::vec2 delta) {
+        if(m_currentPlaying){
+            return;
+        }
+        const glm::mat4 inverted = glm::inverse(SceneHelper::mainCamera->getViewMatrix());
+        const glm::vec3 right = normalize(glm::vec3(inverted[0]));
+        const glm::vec3 up = normalize(glm::vec3(inverted[1]));
+        if (mouse3) {
+            const glm::vec3 move = -right * delta.x * 0.01f + up * delta.y * 0.01f;
+            SceneHelper::mainCamera->getTransform().translate(move);
+        }
+        if (mouse2) {
+            const glm::vec3 rotate = glm::vec3(-delta.y * 0.5f, -delta.x * 0.5f, 0);
+            SceneHelper::mainCamera->getTransform().rotate(rotate);
         }
     }
 }

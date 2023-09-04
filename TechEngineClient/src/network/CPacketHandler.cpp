@@ -2,7 +2,7 @@
 #include "CNetworkHandler.hpp"
 
 namespace TechEngine {
-    CPacketHandler::CPacketHandler(TechEngineCore::NetworkHandler *networkHandler) : PacketHandler(networkHandler) {
+    CPacketHandler::CPacketHandler(TechEngine::NetworkHandler *networkHandler) : PacketHandler(networkHandler) {
 
     }
 }

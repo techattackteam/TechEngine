@@ -2,7 +2,7 @@
 #include <iostream>
 #include "AsyncEventManager.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
     AsyncEventManager::AsyncEventManager() : EventManager() {
         thread = new std::thread(&AsyncEventManager::runThread, this);
         running = true;

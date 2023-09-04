@@ -1,7 +1,7 @@
 #include "PacketHandler.hpp"
 #include "NetworkHandler.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
     PacketHandler::PacketHandler(NetworkHandler *networkHandler) : networkHandler(networkHandler), incomePackets(), outcomePackets() {
     }
 

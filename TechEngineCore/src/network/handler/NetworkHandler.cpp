@@ -1,6 +1,6 @@
 #include "NetworkHandler.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
 
     NetworkHandler::NetworkHandler(SocketHandler *socketHandler, ConnectionHandler *connectionHandler, PacketHandler *packetHandler) {
         running = true;

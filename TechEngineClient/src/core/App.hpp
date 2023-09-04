@@ -4,10 +4,10 @@
 #include "stateMachine/StateMachineManager.hpp"
 #include "scene/SceneHelper.hpp"
 #include "events/window/WindowCloseEvent.hpp"
-#include "../../TechEngineCore/src/core/App.hpp"
+#include "../../TechEngineCore/src/core/AppCore.hpp"
 
 namespace TechEngine {
-    class Engine_API App : public TechEngineCore::App {
+    class Engine_API App : public TechEngine::AppCore {
     public:
         Scene scene;
 

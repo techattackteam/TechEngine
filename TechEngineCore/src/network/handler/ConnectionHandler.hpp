@@ -1,7 +1,7 @@
 #pragma once
 
 
-namespace TechEngineCore {
+namespace TechEngine {
     class NetworkHandler;
 
     class ConnectionHandler {

@@ -5,7 +5,7 @@
 #include "event/events/stateMachineEvents/SMRegisterEvent.hpp"
 #include "event/events/stateMachineEvents/SMDeleteEvent.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
     StateMachine::StateMachine() {
         states = std::unordered_map<StateName, State *>();
         EventDispatcher::getInstance().dispatch(new SMRegisterEvent(this));

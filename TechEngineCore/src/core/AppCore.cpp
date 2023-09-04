@@ -1,18 +1,18 @@
-#include "App.hpp"
+#include "AppCore.hpp"
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
 
-namespace TechEngineCore {
-    App::App() : timer() {
+namespace TechEngine {
+    AppCore::AppCore() : timer() {
         eventDispatcher.subscribe(TechEngine::AppCloseRequestEvent::eventType, [this](Event *event) {
             onAppCloseRequestEvent();
         });
     }
 
-    App::~App() {
+    AppCore::~AppCore() {
 
     }
 
-    void App::onAppCloseRequestEvent() {
+    void AppCore::onAppCloseRequestEvent() {
         running = false;
     }
 }

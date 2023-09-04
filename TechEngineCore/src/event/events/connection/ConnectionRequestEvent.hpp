@@ -5,7 +5,7 @@
 #include "core/Core.hpp"
 
 using boost::asio::ip::udp;
-namespace TechEngineCore {
+namespace TechEngine {
     class /*Engine_API*/ ConnectionRequestEvent : public Event {
     private:
         udp::endpoint endpoint;

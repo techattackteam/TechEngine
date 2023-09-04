@@ -10,7 +10,7 @@
 
 #pragma once
 
-namespace TechEngineCore {
+namespace TechEngine {
     class EventDispatcher {
     protected:
         inline static EventDispatcher *instance;
@@ -19,7 +19,7 @@ namespace TechEngineCore {
         EventDispatcher();
 
         SyncEventManager syncEventManager{};
-        TechEngine::FixedSyncEventManager fixedSyncEventManager{};
+        FixedSyncEventManager fixedSyncEventManager{};
         AsyncEventManager asyncEventManager{};
 
         void subscribe(const EventType &type, const std::function<void(Event *)> &callback);

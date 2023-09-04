@@ -3,9 +3,9 @@
 #include "event/manager/EventManager.hpp"
 
 namespace TechEngine {
-    class FixedSyncEventManager : public TechEngineCore::EventManager {
+    class FixedSyncEventManager : public TechEngine::EventManager {
     public:
-        void dispatch(TechEngineCore::Event *event) override;
+        void dispatch(TechEngine::Event *event) override;
 
         void execute() override;
     };

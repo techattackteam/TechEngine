@@ -12,19 +12,20 @@ namespace TechEngine {
 
     TechEngineRuntime::TechEngineRuntime() : App() {
         if (!loadRendererSettings()) {
-            TechEngineCore::EventDispatcher::getInstance().dispatch(new AppCloseRequestEvent());
+            TechEngine::EventDispatcher::getInstance().dispatch(new AppCloseRequestEvent());
             return;
         }
         window.init(windowName, width, height);
         //TODO: FIX THIS
         SceneSerializer::deserialize(std::filesystem::current_path().string() + "/scenes/" + sceneToLoadName + ".scene");
-        TechEngineCore::EventDispatcher::getInstance().syncEventManager.execute();
+        TechEngine::EventDispatcher::getInstance().syncEventManager.execute();
         SceneHelper::mainCamera = Scene::getInstance().getGameObject("SceneCamera")->getComponent<CameraComponent>();
         window.getRenderer().init();
         ScriptEngine::getInstance()->init(std::filesystem::current_path().string() + "/UserProject.dll");
     }
 
     void TechEngineRuntime::onUpdate() {
+        Mouse::onUpdate();
         window.getRenderer().renderPipeline();
         window.onUpdate();
     }
@@ -53,6 +54,6 @@ namespace TechEngine {
     }
 }
 
-TechEngineCore::App *TechEngineCore::createApp() {
+TechEngine::AppCore *TechEngine::createApp() {
     return new TechEngine::TechEngineRuntime();
 }

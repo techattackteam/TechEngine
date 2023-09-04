@@ -5,7 +5,7 @@
 
 namespace TechEngine {
 
-    class CSocketHandler : public TechEngineCore::SocketHandler {
+    class CSocketHandler : public TechEngine::SocketHandler {
     private:
         udp::resolver *resolver;
         CNetworkHandler *networkHandler;

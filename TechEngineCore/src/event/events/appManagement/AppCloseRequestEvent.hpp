@@ -3,7 +3,7 @@
 #include "event/events/Event.hpp"
 
 namespace TechEngine {
-    class AppCloseRequestEvent : public TechEngineCore::Event {
+    class AppCloseRequestEvent : public TechEngine::Event {
     public:
         static inline EventType eventType = EventType("AppCloseRequestEvent", ASYNC);
 

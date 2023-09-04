@@ -5,7 +5,7 @@
 #include "../EventManager.hpp"
 
 #pragma once
-namespace TechEngineCore {
+namespace TechEngine {
     class AsyncEventManager : public EventManager {
     private:
         std::thread *thread;

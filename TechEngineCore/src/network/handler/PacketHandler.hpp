@@ -4,7 +4,7 @@
 #include "dataStructure/Queue.hpp"
 
 
-namespace TechEngineCore {
+namespace TechEngine {
     class NetworkHandler;
 
     class PacketHandler {

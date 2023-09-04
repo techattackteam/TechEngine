@@ -2,11 +2,11 @@
 
 
 namespace TechEngine {
-    void dispatchEvent(TechEngineCore::Event *event) {
-        TechEngineCore::EventDispatcher::getInstance().dispatch(event);
+    void dispatchEvent(TechEngine::Event *event) {
+        TechEngine::EventDispatcher::getInstance().dispatch(event);
     }
 
-    void subscribeEvent(const EventType &type, const std::function<void(TechEngineCore::Event * )> &callback) {
-        TechEngineCore::EventDispatcher::getInstance().subscribe(type, callback);
+    void subscribeEvent(const EventType &type, const std::function<void(TechEngine::Event * )> &callback) {
+        TechEngine::EventDispatcher::getInstance().subscribe(type, callback);
     }
 }

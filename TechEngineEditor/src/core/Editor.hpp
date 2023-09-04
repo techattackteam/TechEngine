@@ -7,7 +7,7 @@
 #include "external/EntryPoint.hpp"
 
 namespace TechEngine {
-    class Editor : public TechEngine::App {
+    class Editor : public App {
     private:
         Window window{"TechEngine", RendererSettings::width, RendererSettings::height};
         PanelsManager panelsManager{window};

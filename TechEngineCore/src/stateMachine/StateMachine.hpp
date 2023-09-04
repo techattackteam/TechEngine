@@ -7,7 +7,7 @@
 
 #pragma once
 
-namespace TechEngineCore {
+namespace TechEngine {
 
     class StateMachine {
     private:

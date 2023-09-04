@@ -3,7 +3,7 @@
 #include "network/handler/NetworkHandler.hpp"
 
 namespace TechEngine {
-    class CNetworkHandler : public TechEngineCore::NetworkHandler {
+    class CNetworkHandler : public TechEngine::NetworkHandler {
     private:
         udp::endpoint serverEndpoint;
 
@@ -16,7 +16,7 @@ namespace TechEngine {
 
         void init() override;
 
-        void sendPacket(TechEngineCore::Packet *packet);
+        void sendPacket(TechEngine::Packet *packet);
 
         udp::endpoint getServerEndpoint() const;
 

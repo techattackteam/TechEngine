@@ -1,6 +1,6 @@
 #include "EventManager.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
     EventManager::EventManager() {
         dispatchedEvents = std::queue<Event *>();
         observers = Observers();
@@ -20,7 +20,10 @@ namespace TechEngineCore {
     void EventManager::unsubscribe(EventName name, const std::function<void(Event *)> &callback) {
         std::vector<std::function<void(Event *)>> callbacks = observers.at(name);
         for (int i = 0; i < callbacks.size(); i++) {
-            //TODO
+            if (callbacks[i].target_type() == callback.target_type()) {
+                callbacks.erase(callbacks.begin() + i);
+                break;
+            }
         }
     }
 

@@ -80,8 +80,6 @@ namespace TechEngine {
         } else {
             renderGeometryPass(false);
         }
-
-
     }
 
     void Renderer::renderPipeline() {
@@ -99,7 +97,6 @@ namespace TechEngine {
 
     void Renderer::flushMeshData(MeshRendererComponent *meshRenderer) {
         vertexBuffer.addData(meshRenderer->getVertices().data(), meshRenderer->getVertices().size() * sizeof(Vertex), 0);
-        //shadersManager.getActiveShader()->setUniformVec4("material.color", material.getColor());
     }
 
     FrameBuffer &Renderer::getFramebuffer() {

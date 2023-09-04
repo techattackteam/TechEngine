@@ -1,7 +1,7 @@
 #include "../EventManager.hpp"
 
 #pragma once
-namespace TechEngineCore {
+namespace TechEngine {
     class SyncEventManager : public EventManager {
 
     public:

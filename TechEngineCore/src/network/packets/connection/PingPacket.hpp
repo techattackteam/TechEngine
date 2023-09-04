@@ -4,7 +4,7 @@
 #include "event/EventDispatcher.hpp"
 #include "event/events/connection/PingEvent.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
 
     class PingPacket : public Packet {
     public:

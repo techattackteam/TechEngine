@@ -25,11 +25,13 @@ namespace TechEngine {
 
         void translateTo(glm::vec3 position);
 
+        void setRotation(glm::vec3 rotation);
+
         void rotate(glm::vec3 rotation);
 
-        void setScale(glm::vec3 vector);
-
         void rotate(glm::quat quaternion);
+
+        void setScale(glm::vec3 vector);
 
         void lookAt(glm::vec3 position);
 

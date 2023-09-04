@@ -9,7 +9,7 @@
 #include <boost/uuid/uuid_io.hpp>
 
 namespace TechEngineServer {
-    class SConnectionHandler : public TechEngineCore::ConnectionHandler {
+    class SConnectionHandler : public TechEngine::ConnectionHandler {
     private:
         SNetworkHandler *networkHandler;
 
@@ -22,15 +22,15 @@ namespace TechEngineServer {
 
         ~SConnectionHandler();
 
-        void onConnectionRequest(TechEngineCore::ConnectionRequestEvent *event);
+        void onConnectionRequest(TechEngine::ConnectionRequestEvent *event);
 
-        void onDisconnectionRequest(TechEngineCore::DisconnectionRequestEvent *event);
+        void onDisconnectionRequest(TechEngine::DisconnectionRequestEvent *event);
 
         void checkAlive(const std::string &uuid, std::chrono::system_clock::time_point timeStamp);
 
         void checkAliveClients();
 
-        void onPingEvent(TechEngineCore::PingEvent *event);
+        void onPingEvent(TechEngine::PingEvent *event);
 
         void timeoutClient(Client *client);
 

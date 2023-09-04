@@ -3,8 +3,8 @@
 #include "network/handler/PacketHandler.hpp"
 
 namespace TechEngine {
-    class CPacketHandler : public TechEngineCore::PacketHandler {
+    class CPacketHandler : public TechEngine::PacketHandler {
     public:
-        CPacketHandler(TechEngineCore::NetworkHandler *networkHandler);
+        CPacketHandler(TechEngine::NetworkHandler *networkHandler);
     };
 }

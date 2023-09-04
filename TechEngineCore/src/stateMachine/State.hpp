@@ -2,7 +2,7 @@
 #include <vector>
 
 #pragma once
-namespace TechEngineCore {
+namespace TechEngine {
     using StateName = std::string;
 
     class State {

@@ -1,7 +1,7 @@
 #include "App.hpp"
 
 namespace TechEngineServer {
-    App::App() : networkHandler(std::string("localhost"), 25565), TechEngineCore::App() {
+    App::App() : networkHandler(std::string("localhost"), 25565), TechEngine::AppCore() {
         timer.init();
         networkHandler.init();
     }

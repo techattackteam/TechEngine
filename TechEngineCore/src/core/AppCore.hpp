@@ -4,8 +4,8 @@
 #include "../event/EventDispatcher.hpp"
 #include "Timer.hpp"
 
-namespace TechEngineCore {
-    class App {
+namespace TechEngine {
+    class AppCore {
     protected:
         bool running = true;
 
@@ -14,9 +14,9 @@ namespace TechEngineCore {
         StateMachineManager stateMachineManager;
         Timer timer;
 
-        App();
+        AppCore();
 
-        virtual ~App();
+        virtual ~AppCore();
 
         virtual void run() = 0;
 
@@ -28,5 +28,5 @@ namespace TechEngineCore {
         void onAppCloseRequestEvent();
     };
 
-    App *createApp();
+    AppCore *createApp();
 };

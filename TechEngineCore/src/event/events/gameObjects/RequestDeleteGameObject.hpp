@@ -4,7 +4,7 @@
 #include "scene/GameObject.hpp"
 
 namespace TechEngine {
-    class RequestDeleteGameObject : public TechEngineCore::Event {
+    class RequestDeleteGameObject : public TechEngine::Event {
     private:
         GameObject *gameObject;
     public:

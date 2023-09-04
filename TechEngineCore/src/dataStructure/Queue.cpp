@@ -1,6 +1,6 @@
 #include "Queue.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
 
     Queue::Queue() : list() {
 

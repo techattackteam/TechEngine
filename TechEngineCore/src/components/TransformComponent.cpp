@@ -18,9 +18,7 @@ namespace TechEngine {
 
             parent = parent->getParent();
         }
-        model = glm::translate(glm::mat4(1), glm::mix(lastPosition, position, TechEngineCore::Timer::getInstance().getInterpolation())) *
-                glm::toMat4(glm::quat(glm::radians(glm::mix(lastOrientation, orientation, TechEngineCore::Timer::getInstance().getInterpolation())))) *
-                glm::scale(glm::mat4(1), scale);
+        model = glm::translate(glm::mat4(1), position) * glm::toMat4(glm::quat(glm::radians(orientation))) * glm::scale(glm::mat4(1), scale);
 
         return model;
     }
@@ -36,14 +34,19 @@ namespace TechEngine {
     }
 
     /*Rotate using Euler angles in Degrees*/
-    void TransformComponent::rotate(glm::vec3 rotation) {
+    void TransformComponent::setRotation(glm::vec3 rotation) {
         lastOrientation = rotation;
         this->orientation = rotation;
     }
 
+    void TransformComponent::rotate(glm::vec3 rotation) {
+        lastOrientation = orientation;
+        this->orientation += rotation;
+    }
+
     /*Rotate using Quaternions in Degrees*/
     void TransformComponent::rotate(glm::quat quaternion) {
-        rotate(glm::degrees(glm::eulerAngles(quaternion)));
+        setRotation(glm::degrees(glm::eulerAngles(quaternion)));
     }
 
     void TransformComponent::setScale(glm::vec3 scale) {

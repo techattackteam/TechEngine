@@ -5,12 +5,12 @@
 
 namespace TechEngine {
     CConnectionHandler::CConnectionHandler(CNetworkHandler *networkHandler) : networkHandler(networkHandler), ConnectionHandler(networkHandler) {
-        TechEngineCore::EventDispatcher::getInstance().subscribe(TechEngineCore::PingEvent::eventType, [this](TechEngineCore::Event *event) {
-            onPingEvent((TechEngineCore::PingEvent *) event);
+        TechEngine::EventDispatcher::getInstance().subscribe(TechEngine::PingEvent::eventType, [this](TechEngine::Event *event) {
+            onPingEvent((TechEngine::PingEvent *) event);
         });
 
-        TechEngineCore::EventDispatcher::getInstance().subscribe(TechEngineCore::ConnectionSuccessfulEvent::eventType, [this](TechEngineCore::Event *event) {
-            onConnectionSuccessEvent((TechEngineCore::ConnectionSuccessfulEvent *) event);
+        TechEngine::EventDispatcher::getInstance().subscribe(TechEngine::ConnectionSuccessfulEvent::eventType, [this](TechEngine::Event *event) {
+            onConnectionSuccessEvent((TechEngine::ConnectionSuccessfulEvent *) event);
         });
     }
 
@@ -22,15 +22,15 @@ namespace TechEngine {
     }
 
     void CConnectionHandler::requestConnection() {
-        networkHandler->sendPacket(new TechEngineCore::ConnectionRequestPacket());
+        networkHandler->sendPacket(new TechEngine::ConnectionRequestPacket());
     }
 
-    void CConnectionHandler::onConnectionSuccessEvent(TechEngineCore::ConnectionSuccessfulEvent *event) {
+    void CConnectionHandler::onConnectionSuccessEvent(TechEngine::ConnectionSuccessfulEvent *event) {
         networkHandler->setUUID(event->getUUID());
         std::cout << "Connected with server. My UUID: " << event->getUUID() << std::endl;
     }
 
-    void CConnectionHandler::onPingEvent(TechEngineCore::PingEvent *event) {
-        networkHandler->sendPacket(new TechEngineCore::PingPacket());
+    void CConnectionHandler::onPingEvent(TechEngine::PingEvent *event) {
+        networkHandler->sendPacket(new TechEngine::PingPacket());
     }
 }

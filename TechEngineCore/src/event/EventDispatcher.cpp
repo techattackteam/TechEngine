@@ -1,6 +1,6 @@
 #include "EventDispatcher.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
     EventDispatcher::EventDispatcher() {
         EventDispatcher::instance = this;
     }

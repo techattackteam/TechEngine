@@ -80,7 +80,7 @@ namespace TechEngine {
             if (position != component->position)
                 component->translateTo(position);
             if (orientation != component->orientation)
-                component->rotate(orientation);
+                component->setRotation(orientation);
             if (scale != component->scale)
                 component->setScale(scale);
         });
