@@ -4,7 +4,7 @@
 #include "scene/GameObject.hpp"
 
 namespace TechEngine {
-    class GameObjectDestroyEvent : public TechEngineCore::Event {
+    class GameObjectDestroyEvent : public TechEngine::Event {
     private:
         GameObject *gameObject;
     public:

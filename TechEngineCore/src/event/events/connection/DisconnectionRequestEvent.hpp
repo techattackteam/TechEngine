@@ -2,7 +2,7 @@
 
 #include "event/events/Event.hpp"
 #include "core/Core.hpp"
-namespace TechEngineCore {
+namespace TechEngine {
     class /*Engine_API*/ DisconnectionRequestEvent : public Event {
     private:
         std::string uuid;

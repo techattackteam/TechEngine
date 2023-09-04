@@ -4,7 +4,7 @@
 #include "event/EventDispatcher.hpp"
 #include "event/events/connection/DisconnectionSuccessfulEvent.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
 
     class DisconnectionSuccessfulPacket : public Packet {
     public:

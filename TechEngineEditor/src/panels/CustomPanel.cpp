@@ -3,7 +3,7 @@
 
 namespace TechEngine {
     CustomPanel::CustomPanel(const std::string &name) : Panel(name) {
-        TechEngineCore::EventDispatcher::getInstance().dispatch(new RegisterCustomPanel(this));
+        TechEngine::EventDispatcher::getInstance().dispatch(new RegisterCustomPanel(this));
     }
 
     CustomPanel::~CustomPanel() = default;

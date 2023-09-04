@@ -6,6 +6,8 @@
 #include "events/window/WindowCloseEvent.hpp"
 #include "wrapper/Wrapper.hpp"
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
+#include "events/input/MouseScrollEvent.hpp"
+#include "events/input/MouseMoveEvent.hpp"
 
 namespace TechEngine {
     Window::Window(const std::string &title, uint32_t width, uint32_t height) {
@@ -33,7 +35,7 @@ namespace TechEngine {
         glDepthMask(GL_TRUE);
         //glEnable(GL_CULL_FACE);
         //glCullFace(GL_BACK);
-
+        glfwSwapInterval(1);
         glfwSetWindowUserPointer(handler, this);
         glfwSetWindowCloseCallback(handler, [](GLFWwindow *handler) {
             TechEngine::dispatchEvent(new WindowCloseEvent());
@@ -42,15 +44,25 @@ namespace TechEngine {
         glfwSetKeyCallback(handler, [](GLFWwindow *handler, int key, int scancode, int action, int mods) {
             Window::windowKeyInput(key, action);
         });
-        glfwSetFramebufferSizeCallback(handler, [](GLFWwindow *handler, int width, int height) {
-            TechEngine::dispatchEvent(new WindowResizeEvent(width, height));
+        glfwSetMouseButtonCallback(handler, [](GLFWwindow *handler, int key, int action, int mods) {
+            Window::windowKeyInput(key, action);
         });
-        TechEngineCore::EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngineCore::Event *event) {
+        glfwSetScrollCallback(handler, [](GLFWwindow *handler, double xoffset, double yoffset) {
+            dispatchEvent(new MouseScrollEvent(xoffset, yoffset));
+        });
+        glfwSetCursorPosCallback(handler, [](GLFWwindow *handler, double xpos, double ypos) {
+            Mouse::getInstance().onMouseMove(xpos, ypos);
+        });
+        glfwSetFramebufferSizeCallback(handler, [](GLFWwindow *handler, int width, int height) {
+            dispatchEvent(new WindowResizeEvent(width, height));
+        });
+        EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngine::Event *event) {
             onWindowResizeEvent((WindowResizeEvent *) event);
         });
     }
 
     void Window::onUpdate() {
+        Mouse::getInstance().onUpdate();
         glfwSwapBuffers(handler);
         glfwPollEvents();
     }
@@ -70,15 +82,15 @@ namespace TechEngine {
     void Window::windowKeyInput(int key, int action) {
         switch (action) {
             case GLFW_PRESS: {
-                TechEngineCore::EventDispatcher::getInstance().dispatch(new KeyPressedEvent(Key(Key::getKeyCode(key))));
+                EventDispatcher::getInstance().dispatch(new KeyPressedEvent(Key(Key::getKeyCode(key))));
                 break;
             }
             case GLFW_RELEASE: {
-                TechEngineCore::EventDispatcher::getInstance().dispatch(new KeyReleasedEvent(Key(Key::getKeyCode(key))));
+                EventDispatcher::getInstance().dispatch(new KeyReleasedEvent(Key(Key::getKeyCode(key))));
                 break;
             }
             case GLFW_REPEAT: {
-                TechEngineCore::EventDispatcher::getInstance().dispatch(new KeyHoldEvent(Key(Key::getKeyCode(key))));
+                EventDispatcher::getInstance().dispatch(new KeyHoldEvent(Key(Key::getKeyCode(key))));
                 break;
             }
         }

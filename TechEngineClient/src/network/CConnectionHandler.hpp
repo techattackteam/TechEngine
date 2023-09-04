@@ -5,7 +5,7 @@
 #include "event/events/connection/ConnectionSuccessfulEvent.hpp"
 
 namespace TechEngine {
-    class CConnectionHandler : public TechEngineCore::ConnectionHandler {
+    class CConnectionHandler : public TechEngine::ConnectionHandler {
     private:
         CNetworkHandler *networkHandler;
     public:
@@ -17,8 +17,8 @@ namespace TechEngine {
 
         void connectToServer();
 
-        void onConnectionSuccessEvent(TechEngineCore::ConnectionSuccessfulEvent *event);
+        void onConnectionSuccessEvent(TechEngine::ConnectionSuccessfulEvent *event);
 
-        void onPingEvent(TechEngineCore::PingEvent *event);
+        void onPingEvent(TechEngine::PingEvent *event);
     };
 }

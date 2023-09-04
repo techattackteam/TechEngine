@@ -7,7 +7,7 @@
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 
-namespace TechEngineCore {
+namespace TechEngine {
     using boost::asio::ip::udp;
 
     class Packet {

@@ -2,7 +2,7 @@
 
 namespace TechEngine {
 
-    void FixedSyncEventManager::dispatch(TechEngineCore::Event *event) {
+    void FixedSyncEventManager::dispatch(TechEngine::Event *event) {
         EventManager::dispatch(event);
     }
 

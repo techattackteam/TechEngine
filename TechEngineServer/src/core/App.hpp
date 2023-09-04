@@ -1,10 +1,10 @@
 #pragma once
 
 #include "network/SNetworkHandler.hpp"
-#include "../../TechEngineCore/src/core/App.hpp"
+#include "../../TechEngineCore/src/core/AppCore.hpp"
 
 namespace TechEngineServer {
-    class App : public TechEngineCore::App {
+    class App : public TechEngine::AppCore {
     private:
         bool running = true;
 

@@ -3,7 +3,7 @@
 #include "core/Core.hpp"
 
 namespace TechEngine {
-    class WindowCloseEvent : public TechEngineCore::Event {
+    class WindowCloseEvent : public TechEngine::Event {
     public:
         inline static EventType eventType = EventType("WindowCloseEvent", SYNC);
 

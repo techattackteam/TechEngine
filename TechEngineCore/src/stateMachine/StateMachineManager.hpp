@@ -5,7 +5,7 @@
 #include "../event/events/stateMachineEvents/SMRegisterEvent.hpp"
 #include "../event/events/stateMachineEvents/SMDeleteEvent.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
     class StateMachineManager {
     private:
         std::vector<StateMachine *> stateMachines;

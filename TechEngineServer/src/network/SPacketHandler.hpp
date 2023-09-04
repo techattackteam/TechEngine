@@ -3,7 +3,7 @@
 #include "SNetworkHandler.hpp"
 
 namespace TechEngineServer {
-    class SPacketHandler : public TechEngineCore::PacketHandler {
+    class SPacketHandler : public TechEngine::PacketHandler {
     private:
 
     public:

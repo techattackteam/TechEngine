@@ -5,7 +5,7 @@
 #include "PacketHandler.hpp"
 #include "dataStructure/Queue.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
 
     class SocketHandler;
 

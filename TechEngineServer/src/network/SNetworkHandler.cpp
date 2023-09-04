@@ -17,11 +17,11 @@ namespace TechEngineServer {
         ((SPacketHandler *) packetHandler)->init();
     }
 
-    void SNetworkHandler::sendPacket(TechEngineCore::Packet *packet, Client *client) {
+    void SNetworkHandler::sendPacket(TechEngine::Packet *packet, Client *client) {
         packetHandler->sendPacket(client->UUID, packet, client->endpoint);
     }
 
-    void SNetworkHandler::sendPacket(TechEngineCore::Packet *packet, const std::string &uuid) {
+    void SNetworkHandler::sendPacket(TechEngine::Packet *packet, const std::string &uuid) {
         sendPacket(packet, getClient(uuid));
     }
 

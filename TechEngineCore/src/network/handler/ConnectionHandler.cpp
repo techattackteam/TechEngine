@@ -1,6 +1,6 @@
 #include "ConnectionHandler.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
 
     ConnectionHandler::ConnectionHandler(NetworkHandler *networkHandler) : networkHandler(networkHandler) {
 

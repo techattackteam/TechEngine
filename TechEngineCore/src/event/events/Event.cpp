@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace TechEngineCore {
+namespace TechEngine {
     Event::Event(EventType eventType) : eventType(std::move(eventType)) {
     }
 

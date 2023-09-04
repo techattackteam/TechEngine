@@ -1,6 +1,6 @@
 #include "Timer.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
 
     Timer::Timer() {
         Timer::instance = this;

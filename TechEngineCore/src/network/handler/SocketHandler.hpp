@@ -10,7 +10,7 @@ using boost::asio::ip::udp;
 
 #define MAX_PACKET_SIZE 100000
 
-namespace TechEngineCore {
+namespace TechEngine {
     class NetworkHandler;
 
     class SocketHandler {

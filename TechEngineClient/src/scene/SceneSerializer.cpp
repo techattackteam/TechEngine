@@ -179,7 +179,7 @@ namespace TechEngine {
         if (transformComponentNode) {
             auto tc = gameObject->getComponent<TransformComponent>();
             tc->translateTo(transformComponentNode["Position"].as<glm::vec3>());
-            tc->rotate(transformComponentNode["Orientation"].as<glm::vec3>());
+            tc->setRotation(transformComponentNode["Orientation"].as<glm::vec3>());
             tc->setScale(transformComponentNode["Scale"].as<glm::vec3>());
         }
 

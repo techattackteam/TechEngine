@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #include "../events/window/WindowResizeEvent.hpp"
 #include "renderer/Renderer.hpp"
+#include "Mouse.hpp"
 
 namespace TechEngine {
     class Window {
@@ -20,6 +21,8 @@ namespace TechEngine {
         bool vSync = false;
 
         GLFWwindow *handler;
+
+        Mouse mouse;
 
         void onWindowResizeEvent(WindowResizeEvent *event);
 

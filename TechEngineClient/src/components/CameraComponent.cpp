@@ -19,7 +19,7 @@ namespace TechEngine {
     }
 
     void CameraComponent::init() {
-        TechEngineCore::EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngineCore::Event *event) {
+        TechEngine::EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngine::Event *event) {
             onWindowResizeEvent((WindowResizeEvent *) (event));
         });
 
@@ -27,7 +27,7 @@ namespace TechEngine {
         updateProjectionMatrix();
     }
 
-    void CameraComponent::fixedUpdate() {
+    void CameraComponent::update() {
         updateViewMatrix();
         updateProjectionMatrix();
     }
@@ -62,39 +62,6 @@ namespace TechEngine {
         return projectionMatrix;
     }
 
-/*    void CameraComponent::getInfo() {
-        if (ImGui::CollapsingHeader(name.c_str())) {
-            ImGui::PushID(name.c_str());
-            ImGui::PushMultiItemsWidths(1, ImGui::CalcItemWidth());
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
-
-            ImGui::Text(" Fov ");
-            ImGui::SameLine();
-            ImGui::DragFloat("##FOV", &fov, 0.1f, 45.0f, 120.0f, "%.2f");
-            ImGui::NewLine();
-
-            ImGui::Text(" Viewport ");
-            ImGui::NewLine();
-            ImGui::Text("##Width: %d", WindowSettings::width);
-            ImGui::NewLine();
-            ImGui::Text("##Height: %d", WindowSettings::height);
-            ImGui::NewLine();
-            ImGui::Text("Aspect ratio: %.2f", WindowSettings::aspectRatio);
-            ImGui::NewLine();
-
-            if (ImGui::Button("Update View matrix", ImVec2(300.0f, 300.0f))) {
-                std::cout << "Update view matrix" << std::endl;
-                updateViewMatrix();
-                updateProjectionMatrix();
-            }
-
-            ImGui::PopItemWidth();
-            ImGui::PopStyleVar();
-            ImGui::PopID();
-        }
-
-    }
-*/
     bool CameraComponent::isMainCamera() {
         return mainCamera;
     }

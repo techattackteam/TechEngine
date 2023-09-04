@@ -4,7 +4,7 @@
 
 namespace TechEngineServer {
 
-    class SSocketHandler : public TechEngineCore::SocketHandler {
+    class SSocketHandler : public TechEngine::SocketHandler {
     private:
         SNetworkHandler *networkHandler;
     public:

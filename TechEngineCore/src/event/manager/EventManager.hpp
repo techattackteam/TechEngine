@@ -6,7 +6,7 @@
 #include "event/events/Event.hpp"
 
 #pragma once
-namespace TechEngineCore {
+namespace TechEngine {
     using Observers = std::unordered_map<EventName, std::vector<std::function<void(Event *)>>>;
 
     class EventManager {

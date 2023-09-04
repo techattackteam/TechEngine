@@ -1,6 +1,6 @@
 #include "Packet.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
 
     template<class Archive>
     void Packet::serialize(Archive &ar, unsigned int version) {

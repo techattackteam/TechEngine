@@ -98,7 +98,7 @@ namespace TechEngine {
             glm::vec3 translation, rotation, scale;
             DecomposeTransform(transform, translation, rotation, scale);
             PanelsManager::getInstance().getSelectedGameObject()->getTransform().translateTo(translation);
-            PanelsManager::getInstance().getSelectedGameObject()->getTransform().rotate(glm::degrees(rotation));
+            PanelsManager::getInstance().getSelectedGameObject()->getTransform().setRotation(glm::degrees(rotation));
             PanelsManager::getInstance().getSelectedGameObject()->getTransform().setScale(scale);
         }
     }

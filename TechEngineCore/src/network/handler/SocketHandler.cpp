@@ -3,7 +3,7 @@
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 
-namespace TechEngineCore {
+namespace TechEngine {
     SocketHandler::SocketHandler(NetworkHandler *networkHandler) : networkHandler(networkHandler) {
     }
 

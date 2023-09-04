@@ -4,7 +4,7 @@
 #include "event/events/connection/ConnectionRequestEvent.hpp"
 #include "event/EventDispatcher.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
     class ConnectionRequestPacket : public Packet {
     private:
     public:

@@ -1,6 +1,6 @@
 #include "SyncEventManager.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
     void SyncEventManager::execute() {
         EventManager::execute();
     }

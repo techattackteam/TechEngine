@@ -33,7 +33,7 @@ namespace TechEngine {
 
         void init();
 
-        void fixedUpdate() override;
+        void update() override;
 
         void updateProjectionMatrix();
 

@@ -2,8 +2,8 @@
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
-    App::App() : TechEngineCore::App() {
-        eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](TechEngineCore::Event *event) {
+    App::App() : TechEngine::AppCore() {
+        eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event *event) {
             onWindowCloseEvent((WindowCloseEvent *) (event));
         });
 

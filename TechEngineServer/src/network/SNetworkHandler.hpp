@@ -5,7 +5,7 @@
 
 namespace TechEngineServer {
 
-    class SNetworkHandler : public TechEngineCore::NetworkHandler {
+    class SNetworkHandler : public TechEngine::NetworkHandler {
     private:
         std::unordered_map<std::string, Client *> clients;
         std::string ip;
@@ -15,9 +15,9 @@ namespace TechEngineServer {
 
         void init() override;
 
-        void sendPacket(TechEngineCore::Packet *packet, Client *client);
+        void sendPacket(TechEngine::Packet *packet, Client *client);
 
-        void sendPacket(TechEngineCore::Packet *packet, const std::string &uuid);
+        void sendPacket(TechEngine::Packet *packet, const std::string &uuid);
 
         std::unordered_map<std::string, Client *> &getClients();
 

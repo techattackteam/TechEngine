@@ -3,7 +3,7 @@
 #include <iostream>
 
 namespace TechEngine {
-    class RegisterCustomPanel : public TechEngineCore::Event {
+    class RegisterCustomPanel : public TechEngine::Event {
     private:
         CustomPanel *panel;
     public:

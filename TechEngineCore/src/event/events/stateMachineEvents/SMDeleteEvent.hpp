@@ -4,13 +4,13 @@
 #include "../../../stateMachine/StateMachine.hpp"
 #include "core/Core.hpp"
 
-namespace TechEngineCore {
-    class /*Engine_API*/ SMDeleteEvent : public TechEngineCore::Event {
+namespace TechEngine {
+    class /*Engine_API*/ SMDeleteEvent : public TechEngine::Event {
     public:
         inline static EventType eventType = EventType("SMDeleteEvent", ASYNC);
         StateMachine *stateMachine;
 
-        explicit SMDeleteEvent(StateMachine *stateMachine) : TechEngineCore::Event(eventType) {
+        explicit SMDeleteEvent(StateMachine *stateMachine) : TechEngine::Event(eventType) {
             this->stateMachine = stateMachine;
         }
 

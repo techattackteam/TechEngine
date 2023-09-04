@@ -1,7 +1,7 @@
 #include "StateMachineManager.hpp"
 #include "../event/EventDispatcher.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
     StateMachineManager::StateMachineManager() {
         instance = this;
 

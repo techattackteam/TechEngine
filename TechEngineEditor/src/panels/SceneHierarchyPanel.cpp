@@ -52,7 +52,7 @@ namespace TechEngine {
                 new QuadMeshTest(gameObject->getName() + "'s duplicate", gameObject);
             }
             if (ImGui::MenuItem("Delete GameObject")) {
-                TechEngineCore::EventDispatcher::getInstance().dispatch(new RequestDeleteGameObject(gameObject));
+                TechEngine::EventDispatcher::getInstance().dispatch(new RequestDeleteGameObject(gameObject));
                 PanelsManager::getInstance().deselectGameObject(gameObject);
                 selectedGO = nullptr;
             }

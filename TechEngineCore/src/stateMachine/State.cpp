@@ -1,6 +1,6 @@
 #include "State.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
     State::State(const StateName &stateName) {
         this->stateName = stateName;
     }

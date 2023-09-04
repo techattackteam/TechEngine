@@ -32,6 +32,10 @@ namespace TechEngine {
         bool m_currentPlaying = false;
 
         GameObject *gameObjectSelected = nullptr;
+
+        bool mouse2 = false;
+        bool mouse3 = false;
+        bool m_isRunning = false;
     public:
 
         PanelsManager(Window &window);
@@ -86,6 +90,12 @@ namespace TechEngine {
         void saveEngineSettings();
 
         void OnKeyPressedEvent(Key &key);
+
+        void OnMouseScrollEvent(float xOffset, float yOffset);
+
+        void OnMouseMoveEvent(glm::vec2 delta);
+
+        void OnKeyReleasedEvent(Key &key);
     };
 }
 

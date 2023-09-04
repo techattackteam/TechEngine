@@ -2,7 +2,7 @@
 
 #include "EventType.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
     class Event {
     protected:
         EventType eventType;

@@ -16,6 +16,7 @@ namespace TechEngine {
 
 }
 
-TechEngineCore::App *TechEngineCore::createApp() {
+TechEngine::AppCore *TechEngine::createApp() {
     return new TechEngine::Editor();
 }
+

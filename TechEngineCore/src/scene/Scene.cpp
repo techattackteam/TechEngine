@@ -9,7 +9,7 @@
 namespace TechEngine {
     Scene::Scene(std::string name) : name(std::move(name)) {
         Scene::instance = this;
-        TechEngineCore::EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this](TechEngineCore::Event *event) {
+        TechEngine::EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this](TechEngine::Event *event) {
             onGameObjectDeleteRequest((RequestDeleteGameObject *) event);
         });
     }

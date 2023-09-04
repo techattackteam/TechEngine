@@ -4,7 +4,7 @@
 #include "event/EventDispatcher.hpp"
 #include "event/events/connection/ConnectionSuccessfulEvent.hpp"
 
-namespace TechEngineCore {
+namespace TechEngine {
 
     class ConnectionSuccessfulPacket : public Packet {
     public:

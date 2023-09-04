@@ -16,7 +16,7 @@ namespace TechEngine {
         networkHandler.connectWithServer();
     }
 
-    void NetworkHandlerComponent::sendPacket(TechEngineCore::Packet *packet) {
+    void NetworkHandlerComponent::sendPacket(TechEngine::Packet *packet) {
         networkHandler.sendPacket(packet);
     }
 

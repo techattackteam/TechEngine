@@ -4,7 +4,7 @@
 #include "core/Core.hpp"
 
 namespace TechEngine {
-    class KeyHoldEvent : public TechEngineCore::Event {
+    class KeyHoldEvent : public TechEngine::Event {
     private:
         Key key;
     public:
