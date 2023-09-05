@@ -40,10 +40,10 @@ namespace TechEngine {
 
     void CameraComponent::updateProjectionMatrix() {
         if (projectionType == PERSPECTIVE) {
-            projectionMatrix = glm::perspective(glm::radians(fov), RendererSettings::aspectRatio, 0.1f, 50.0f);
+            projectionMatrix = glm::perspective(glm::radians(fov), RendererSettings::aspectRatio, nearPlane, farPlane);
 
         } else if (projectionType == ORTHOGRAPHIC) {
-            projectionMatrix = glm::ortho(-5.0f * RendererSettings::aspectRatio, 5.0f * RendererSettings::aspectRatio, -5.0f, 5.0f, 0.3f, 1000.0f);
+            projectionMatrix = glm::ortho(-orthoSize * RendererSettings::aspectRatio, orthoSize * RendererSettings::aspectRatio, -orthoSize, orthoSize, nearPlane, farPlane);
         }
     }
 
@@ -88,11 +88,35 @@ namespace TechEngine {
         return this->projectionType;
     }
 
+    void CameraComponent::setFov(float fov) {
+        this->fov = fov;
+    }
+
+    void CameraComponent::setNear(float nearPlane) {
+        this->nearPlane = nearPlane;
+    }
+
+    void CameraComponent::setFar(float farPlane) {
+        this->farPlane = farPlane;
+    }
+
+    float CameraComponent::getFov() {
+        return fov;
+    }
+
     float CameraComponent::getNear() {
         return nearPlane;
     }
 
     float CameraComponent::getFar() {
         return farPlane;
+    }
+
+    void CameraComponent::setOrthoSize(float orthoSize) {
+        this->orthoSize = orthoSize;
+    }
+
+    float CameraComponent::getOrthoSize() {
+        return orthoSize;
     }
 }

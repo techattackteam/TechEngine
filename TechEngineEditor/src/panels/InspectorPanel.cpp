@@ -107,35 +107,34 @@ namespace TechEngine {
                                                ImGui::EndCombo();
                                            }
 
-/*                                           if (camera.GetProjectionType() == SceneCamera::ProjectionType::Perspective) {
-                                               float perspectiveVerticalFov = glm::degrees(camera.GetPerspectiveVerticalFOV());
+                                           if (camera->getProjectionType() == CameraComponent::ProjectionType::PERSPECTIVE) {
+                                               float perspectiveVerticalFov = camera->getFov();
                                                if (ImGui::DragFloat("Vertical FOV", &perspectiveVerticalFov))
-                                                   camera.SetPerspectiveVerticalFOV(glm::radians(perspectiveVerticalFov));
+                                                   camera->setFov(perspectiveVerticalFov);
 
-                                               float perspectiveNear = camera.GetPerspectiveNearClip();
+                                               float perspectiveNear = camera->getNear();
                                                if (ImGui::DragFloat("Near", &perspectiveNear))
-                                                   camera.SetPerspectiveNearClip(perspectiveNear);
+                                                   camera->setNear(perspectiveNear);
 
-                                               float perspectiveFar = camera.GetPerspectiveFarClip();
+                                               float perspectiveFar = camera->getFar();
                                                if (ImGui::DragFloat("Far", &perspectiveFar))
-                                                   camera.SetPerspectiveFarClip(perspectiveFar);
-                                           }*/
+                                                   camera->setFar(perspectiveFar);
+                                           }
 
-                                           /*                                     if (camera.GetProjectionType() == SceneCamera::ProjectionType::Orthographic) {
-                                                                                    float orthoSize = camera.GetOrthographicSize();
-                                                                                    if (ImGui::DragFloat("Size", &orthoSize))
-                                                                                        camera.SetOrthographicSize(orthoSize);
+                                           if (camera->getProjectionType() == CameraComponent::ProjectionType::ORTHOGRAPHIC) {
+                                               float orthoSize = camera->getOrthoSize();
+                                               if (ImGui::DragFloat("Size", &orthoSize))
+                                                   camera->setOrthoSize(orthoSize);
 
-                                                                                    float orthoNear = camera.GetOrthographicNearClip();
-                                                                                    if (ImGui::DragFloat("Near", &orthoNear))
-                                                                                        camera.SetOrthographicNearClip(orthoNear);
+                                               float perspectiveNear = camera->getNear();
+                                               if (ImGui::DragFloat("Near", &perspectiveNear))
+                                                   camera->setNear(perspectiveNear);
 
-                                                                                    float orthoFar = camera.GetOrthographicFarClip();
-                                                                                    if (ImGui::DragFloat("Far", &orthoFar))
-                                                                                        camera.SetOrthographicFarClip(orthoFar);
+                                               float perspectiveFar = camera->getFar();
+                                               if (ImGui::DragFloat("Far", &perspectiveFar))
+                                                   camera->setFar(perspectiveFar);
 
-                                                                                    ImGui::Checkbox("Fixed Aspect Ratio", &component->FixedAspectRatio);
-                                                                                }*/
+                                           }
                                        }
         );
         drawComponent<MeshRendererComponent>("Mesh Renderer", [this](auto &component) {

@@ -23,7 +23,7 @@ namespace TechEngine {
         float fov = 90;
         float nearPlane = 10;
         float farPlane = 100;
-
+        float orthoSize = 5;
 
     public:
         bool mainCamera = false;
@@ -59,6 +59,18 @@ namespace TechEngine {
         float getNear();
 
         float getFar();
+
+        float getFov();
+
+        float getOrthoSize();
+
+        void setFar(float farPlane);
+
+        void setNear(float nearPlane);
+
+        void setFov(float fov);
+
+        void setOrthoSize(float orthoSize);
     };
 }
 
