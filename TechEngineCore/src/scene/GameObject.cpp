@@ -117,4 +117,12 @@ namespace TechEngine {
         return !children.empty();
     }
 
+    void GameObject::setEditorOnly(bool editorOnly) {
+        this->editorOnly = editorOnly;
+    }
+
+    bool GameObject::isEditorOnly() const {
+        return editorOnly;
+    }
+
 }

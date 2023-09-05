@@ -1,7 +1,6 @@
 #pragma once
 
 #include "event/events/Event.hpp"
-#include "core/Core.hpp"
 
 namespace TechEngine {
     class WindowResizeEvent : public TechEngine::Event {

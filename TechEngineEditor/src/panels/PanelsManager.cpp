@@ -4,7 +4,6 @@
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
 #include "scene/SceneHelper.hpp"
 #include "core/Logger.hpp"
-#include "core/SceneCamera.hpp"
 #include "testGameObject/QuadMeshTest.hpp"
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
@@ -21,6 +20,7 @@
 #include "events/input/KeyReleasedEvent.hpp"
 #include "events/input/MouseScrollEvent.hpp"
 #include "events/input/MouseMoveEvent.hpp"
+#include "testGameObject/MainCamera.hpp"
 
 namespace TechEngine {
     PanelsManager::PanelsManager(Window &window) : window(window), exportSettingsPanel(currentScenePath) {
@@ -66,7 +66,8 @@ namespace TechEngine {
         }
         sceneHierarchyPanel.onUpdate();
         inspectorPanel.onUpdate();
-        rendererPanel.onUpdate();
+        sceneView.onUpdate();
+        gameView.onUpdate();
         contentBrowser.onUpdate();
         exportSettingsPanel.onUpdate();
         endImGuiFrame();
@@ -364,7 +365,7 @@ namespace TechEngine {
             TE_LOGGER_INFO("EngineSettings loaded");
             SceneSerializer::deserialize(currentScenePath);
         } else {
-            new SceneCamera();
+            new MainCamera();
             new QuadMeshTest("FixedUpdateEntity");
         }
     }
@@ -395,22 +396,22 @@ namespace TechEngine {
         switch (key.getKeyCode()) {
             case Q: {
                 if (!ImGuizmo::IsUsing())
-                    rendererPanel.changeGuizmoOperation(-1);
+                    sceneView.changeGuizmoOperation(-1);
                 break;
             }
             case T: {
                 if (!ImGuizmo::IsUsing())
-                    rendererPanel.changeGuizmoOperation(ImGuizmo::OPERATION::TRANSLATE);
+                    sceneView.changeGuizmoOperation(ImGuizmo::OPERATION::TRANSLATE);
                 break;
             }
             case R: {
                 if (!ImGuizmo::IsUsing())
-                    rendererPanel.changeGuizmoOperation(ImGuizmo::OPERATION::ROTATE);
+                    sceneView.changeGuizmoOperation(ImGuizmo::OPERATION::ROTATE);
                 break;
             }
             case S: {
                 if (!ImGuizmo::IsUsing())
-                    rendererPanel.changeGuizmoOperation(ImGuizmo::OPERATION::SCALE);
+                    sceneView.changeGuizmoOperation(ImGuizmo::OPERATION::SCALE);
                 break;
             }
             case MOUSE_2: {
@@ -439,29 +440,29 @@ namespace TechEngine {
     }
 
     void PanelsManager::OnMouseScrollEvent(float xOffset, float yOffset) {
-        const glm::mat4 inverted = glm::inverse(SceneHelper::mainCamera->getViewMatrix());
+        const glm::mat4 inverted = glm::inverse(sceneView.getSceneCamera()->getComponent<CameraComponent>()->getViewMatrix());
         const glm::vec3 forward = normalize(glm::vec3(inverted[2]));
         if (yOffset == -1.0f) {
-            SceneHelper::mainCamera->getTransform().translate(forward);
+            sceneView.getSceneCamera()->getTransform().translate(forward);
         } else if (yOffset == 1.0f) {
-            SceneHelper::mainCamera->getTransform().translate(-forward);
+            sceneView.getSceneCamera()->getTransform().translate(-forward);
         }
     }
 
     void PanelsManager::OnMouseMoveEvent(glm::vec2 delta) {
-        if(m_currentPlaying){
+        if (m_currentPlaying) {
             return;
         }
-        const glm::mat4 inverted = glm::inverse(SceneHelper::mainCamera->getViewMatrix());
+        const glm::mat4 inverted = glm::inverse(sceneView.getSceneCamera()->getComponent<CameraComponent>()->getViewMatrix());
         const glm::vec3 right = normalize(glm::vec3(inverted[0]));
         const glm::vec3 up = normalize(glm::vec3(inverted[1]));
         if (mouse3) {
             const glm::vec3 move = -right * delta.x * 0.01f + up * delta.y * 0.01f;
-            SceneHelper::mainCamera->getTransform().translate(move);
+            sceneView.getSceneCamera()->getTransform().translate(move);
         }
         if (mouse2) {
             const glm::vec3 rotate = glm::vec3(-delta.y * 0.5f, -delta.x * 0.5f, 0);
-            SceneHelper::mainCamera->getTransform().rotate(rotate);
+            sceneView.getSceneCamera()->getTransform().rotate(rotate);
         }
     }
 }

@@ -1,17 +1,22 @@
 #include "GLFW.hpp"
 #include "Renderer.hpp"
 #include "ErrorCatcher.hpp"
-#include "RendererSettings.hpp"
 #include "components/DirectionalLightComponent.hpp"
 #include "scene/SceneHelper.hpp"
+#include "core/Logger.hpp"
 
 namespace TechEngine {
     void Renderer::init() {
         vertexArray.init(id);
         vertexBuffer.init(id, 10000000 * sizeof(Vertex));
         shadersManager.init();
-        frameBuffer.init(id, RendererSettings::width, RendererSettings::height);
         vertexArray.addNewBuffer(vertexBuffer);
+    }
+
+    Renderer::~Renderer() {
+        for (auto &frameBuffer: frameBuffers) {
+            delete frameBuffer;
+        }
     }
 
     void Renderer::renderWithLightPass() {
@@ -99,7 +104,20 @@ namespace TechEngine {
         vertexBuffer.addData(meshRenderer->getVertices().data(), meshRenderer->getVertices().size() * sizeof(Vertex), 0);
     }
 
-    FrameBuffer &Renderer::getFramebuffer() {
-        return frameBuffer;
+    FrameBuffer &Renderer::getFramebuffer(uint32_t id) {
+        for (auto &frameBuffer: frameBuffers) {
+            if (frameBuffer->getID() == id) {
+                return *frameBuffer;
+            }
+        }
+        TE_LOGGER_CRITICAL("Framebuffer with id: %d not found", id);
+        throw std::runtime_error("Framebuffer not found");
+    }
+
+    uint32_t Renderer::createFramebuffer(uint32_t width, uint32_t height) {
+        FrameBuffer *frameBuffer = new FrameBuffer();
+        frameBuffer->init(frameBuffers.size() + 1, width, height);
+        frameBuffers.emplace_back(frameBuffer);
+        return frameBuffer->getID();
     }
 }

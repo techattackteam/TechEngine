@@ -6,7 +6,7 @@
 namespace TechEngine {
     class FrameBuffer {
     private:
-        uint32_t id;
+        uint32_t id = 1;
 
     public:
         uint32_t depthTexture = 0;
@@ -40,7 +40,6 @@ namespace TechEngine {
         void attachColorTexture();
 
         void attachColorTexture(uint32_t width, uint32_t height);
-
 
         uint32_t getID();
     };

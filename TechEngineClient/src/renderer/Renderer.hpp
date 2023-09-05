@@ -14,19 +14,21 @@ namespace TechEngine {
         ShadersManager shadersManager;
         VertexArray vertexArray;
         VertexBuffer vertexBuffer;
-        FrameBuffer frameBuffer;
+        std::list<FrameBuffer *> frameBuffers;
         Scene &scene = Scene::getInstance();
     public:
 
         Renderer() = default;
-
+        ~Renderer();
         void init();
 
         void renderPipeline();
 
         void flushMeshData(MeshRendererComponent *meshRenderer);
 
-        FrameBuffer &getFramebuffer();
+        FrameBuffer &getFramebuffer(uint32_t id);
+
+        uint32_t createFramebuffer(uint32_t width, uint32_t height);
 
     private:
         void shadowPass();

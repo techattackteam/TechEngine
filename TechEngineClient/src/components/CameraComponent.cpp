@@ -4,6 +4,8 @@
 #include "components/TransformComponent.hpp"
 #include "renderer/RendererSettings.hpp"
 #include "event/EventDispatcher.hpp"
+#include "core/Logger.hpp"
+#include "scene/SceneHelper.hpp"
 
 namespace TechEngine {
     CameraComponent::CameraComponent(GameObject *gameObject) : Component(gameObject, "Camera") {
@@ -23,6 +25,10 @@ namespace TechEngine {
             onWindowResizeEvent((WindowResizeEvent *) (event));
         });
 
+        EventDispatcher::getInstance().subscribe(FramebufferResizeEvent::eventType, [this](Event *event) {
+            onFramebufferResizeEvent((FramebufferResizeEvent *) (event));
+        });
+
         updateViewMatrix();
         updateProjectionMatrix();
     }
@@ -35,6 +41,7 @@ namespace TechEngine {
     void CameraComponent::updateProjectionMatrix() {
         if (projectionType == PERSPECTIVE) {
             projectionMatrix = glm::perspective(glm::radians(fov), RendererSettings::aspectRatio, 0.1f, 50.0f);
+
         } else if (projectionType == ORTHOGRAPHIC) {
             projectionMatrix = glm::ortho(-5.0f * RendererSettings::aspectRatio, 5.0f * RendererSettings::aspectRatio, -5.0f, 5.0f, 0.3f, 1000.0f);
         }
@@ -54,6 +61,12 @@ namespace TechEngine {
         updateProjectionMatrix();
     }
 
+    void CameraComponent::onFramebufferResizeEvent(FramebufferResizeEvent *event) {
+        if (RendererSettings::targetId == event->getId()) {
+            updateProjectionMatrix();
+        }
+    }
+
     glm::mat4 TechEngine::CameraComponent::getViewMatrix() {
         return viewMatrix;
     }
@@ -68,6 +81,7 @@ namespace TechEngine {
 
     void CameraComponent::setIsMainCamera(bool mainCamera) {
         this->mainCamera = mainCamera;
+        SceneHelper::changeMainCameraTo(this);
     }
 
     CameraComponent::ProjectionType &CameraComponent::getProjectionType() {
