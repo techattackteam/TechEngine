@@ -33,8 +33,8 @@ namespace TechEngine {
         }
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_TRUE);
-        //glEnable(GL_CULL_FACE);
-        //glCullFace(GL_BACK);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
         glfwSwapInterval(1);
         glfwSetWindowUserPointer(handler, this);
         glfwSetWindowCloseCallback(handler, [](GLFWwindow *handler) {

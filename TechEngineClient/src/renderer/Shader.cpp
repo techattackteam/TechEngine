@@ -46,8 +46,8 @@ uint32_t Shader::compileShader(uint32_t type, const std::string &source) {
         GlCall(glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &length));
         char *message = new char[length];
         GlCall(glGetShaderInfoLog(shaderID, length, &length, message));
-        TE_LOGGER_WARN("Failed to compile {0} {1} shader!", (type == GL_VERTEX_SHADER ? "vertices " : "fragment "), shaderName);
-        TE_LOGGER_WARN(message);
+        TE_LOGGER_CRITICAL("Failed to compile {0} {1} shader!", (type == GL_VERTEX_SHADER ? "vertices " : "fragment "), shaderName);
+        TE_LOGGER_CRITICAL(message);
         GlCall(glDeleteShader(shaderID));
         delete[] message;
         return -1;
@@ -85,8 +85,7 @@ ShaderSource Shader::parseShader(const char *vertexShaderPath, const char *fragm
         shaderCode[0] = shaderStream[0].str();
         shaderCode[1] = shaderStream[1].str();
     } catch (std::ifstream::failure &e) {
-        std::cout << e.what() << std::endl;
-        std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ" << std::endl;
+        TE_LOGGER_CRITICAL("ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ >> {0} ", e.what());
     }
     return ShaderSource({shaderCode[0], shaderCode[1]});
 }

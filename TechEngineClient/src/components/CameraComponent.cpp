@@ -87,4 +87,12 @@ namespace TechEngine {
     CameraComponent::ProjectionType &CameraComponent::getProjectionType() {
         return this->projectionType;
     }
+
+    float CameraComponent::getNear() {
+        return nearPlane;
+    }
+
+    float CameraComponent::getFar() {
+        return farPlane;
+    }
 }

@@ -30,6 +30,8 @@ namespace TechEngine {
 
         uint32_t createFramebuffer(uint32_t width, uint32_t height);
 
+        void renderLine(const glm::vec3 &startPosition, const glm::vec3 &endPosition, const glm::vec3 &color);
+
     private:
         void shadowPass();
 
@@ -40,6 +42,7 @@ namespace TechEngine {
         void renderGeometryPass(bool shadow);
 
         void renderGameObject(GameObject *gameObject, bool shadow);
+
     };
 }
 

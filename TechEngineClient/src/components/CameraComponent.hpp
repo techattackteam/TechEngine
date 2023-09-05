@@ -21,8 +21,8 @@ namespace TechEngine {
         glm::mat4 projectionMatrix = glm::mat4(1.0f);
 
         float fov = 90;
-        float nearPlane;
-        float farPlane;
+        float nearPlane = 10;
+        float farPlane = 100;
 
 
     public:
@@ -55,6 +55,10 @@ namespace TechEngine {
         void setIsMainCamera(bool mainCamera);
 
         ProjectionType &getProjectionType();
+
+        float getNear();
+
+        float getFar();
     };
 }
 

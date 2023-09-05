@@ -78,13 +78,23 @@ namespace TechEngine {
         shadersManager.getActiveShader()->setUniformMatrix4f("projection", SceneHelper::mainCamera->getProjectionMatrix());
         shadersManager.getActiveShader()->setUniformMatrix4f("view", SceneHelper::mainCamera->getViewMatrix());
         shadersManager.getActiveShader()->setUniformVec3("cameraPosition", SceneHelper::mainCamera->getTransform().getPosition());
-        GlCall(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
-        GlCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
         if (scene.isLightingActive()) {
             renderWithLightPass();
         } else {
             renderGeometryPass(false);
         }
+    }
+
+    void Renderer::renderLine(const glm::vec3 &startPosition, const glm::vec3 &endPosition, const glm::vec3 &color) {
+        shadersManager.changeActiveShader("line");
+        shadersManager.getActiveShader()->setUniformMatrix4f("projection", SceneHelper::mainCamera->getProjectionMatrix());
+        shadersManager.getActiveShader()->setUniformMatrix4f("view", SceneHelper::mainCamera->getViewMatrix());
+        shadersManager.getActiveShader()->setUniformVec3("start", startPosition);
+        shadersManager.getActiveShader()->setUniformVec3("end", endPosition);
+        shadersManager.getActiveShader()->setUniformVec3("color", color);
+
+        GlCall(glDrawArrays(GL_LINES, 0, 2));
     }
 
     void Renderer::renderPipeline() {
@@ -93,7 +103,8 @@ namespace TechEngine {
         }
         vertexBuffer.bind();
         vertexArray.bind();
-
+        GlCall(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
+        GlCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         geometryPass();
 
         vertexBuffer.unBind();
