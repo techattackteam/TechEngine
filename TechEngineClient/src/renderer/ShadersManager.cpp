@@ -15,6 +15,7 @@ void ShadersManager::init() {
     shaders["geometry"] = new Shader("geometry", "resources/shaders/geometryVertex.shader", "resources/shaders/geometryFragment.shader");
     shaders["shadowMap"] = new Shader("shadowMap", "resources/shaders/shadowMapVertex.shader", "resources/shaders/shadowMapFragment.shader");
     shaders["depthDebug"] = new Shader("depthDebug", "resources/shaders/debugDepthVertex.shader", "resources/shaders/debugDepthFragment.shader");
+    shaders["line"] = new Shader("line", "resources/shaders/lineVertex.shader", "resources/shaders/lineFragment.shader");
 }
 
 void ShadersManager::changeActiveShader(const std::string &name) {

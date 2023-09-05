@@ -4,6 +4,7 @@
 #include "renderer/Renderer.hpp"
 #include "UIUtils/Guizmo.hpp"
 #include "core/SceneCamera.hpp"
+#include "components/CameraComponent.hpp"
 
 namespace TechEngine {
     class SceneView : public Panel {
@@ -21,6 +22,9 @@ namespace TechEngine {
         SceneCamera *getSceneCamera() const {
             return sceneCamera;
         }
+
+
+        void renderCameraFrustum(TechEngine::CameraComponent *camera);
     };
 }
 
