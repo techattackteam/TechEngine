@@ -7,12 +7,14 @@
 #include "core/Window.hpp"
 #include "SceneHierarchyPanel.hpp"
 #include "InspectorPanel.hpp"
-#include "RendererPanel.hpp"
+#include "SceneView.hpp"
 #include "SettingsPanel.hpp"
 #include "ProjectBrowserPanel.hpp"
 #include "ExportSettingsPanel.hpp"
 #include "events/panels/RegisterCustomPanel.hpp"
 #include "core/Key.hpp"
+#include "GameView.hpp"
+#include "core/SceneCamera.hpp"
 
 namespace TechEngine {
     class PanelsManager {
@@ -21,7 +23,8 @@ namespace TechEngine {
         std::vector<CustomPanel *> customPanels;
         ImGuiContext *imguiContext;
         Window &window;
-        RendererPanel rendererPanel{window.getRenderer()};
+        SceneView sceneView{window.getRenderer()};
+        GameView gameView{window.getRenderer()};
         InspectorPanel inspectorPanel;
         //SettingsPanel settingsPanel{};
         ProjectBrowserPanel contentBrowser;

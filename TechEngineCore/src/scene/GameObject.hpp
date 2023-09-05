@@ -21,13 +21,14 @@ namespace TechEngine {
         std::string name;
         std::string tag;
         bool stackAllocated = false;
-
+        bool editorOnly = false;
     protected:
         GameObject(std::string basicString, GameObject *pObject);
 
     public:
 
         GameObject(std::string name, const std::string &tag);
+
         explicit GameObject(std::string name);
 
         GameObject() = default;
@@ -106,6 +107,10 @@ namespace TechEngine {
         bool hasParent();
 
         bool hasChildren();
+
+        void setEditorOnly(bool editorOnly);
+
+        bool isEditorOnly() const;
 
     private:
         void deleteChildren();

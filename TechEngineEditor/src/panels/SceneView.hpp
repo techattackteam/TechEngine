@@ -3,17 +3,24 @@
 #include "Panel.hpp"
 #include "renderer/Renderer.hpp"
 #include "UIUtils/Guizmo.hpp"
+#include "core/SceneCamera.hpp"
 
 namespace TechEngine {
-    class RendererPanel : public Panel {
+    class SceneView : public Panel {
+        uint32_t frameBufferID;
         Renderer *renderer;
+        SceneCamera *sceneCamera;
         Guizmo guizmo;
     public:
-        RendererPanel(Renderer &renderer);
+        SceneView(Renderer &renderer);
 
         void onUpdate() override;
 
         void changeGuizmoOperation(int operation);
+
+        SceneCamera *getSceneCamera() const {
+            return sceneCamera;
+        }
     };
 }
 

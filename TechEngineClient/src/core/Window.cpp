@@ -59,6 +59,7 @@ namespace TechEngine {
         EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngine::Event *event) {
             onWindowResizeEvent((WindowResizeEvent *) event);
         });
+        renderer.init();
     }
 
     void Window::onUpdate() {
@@ -109,4 +110,5 @@ namespace TechEngine {
     Renderer &Window::getRenderer() {
         return renderer;
     }
+
 }

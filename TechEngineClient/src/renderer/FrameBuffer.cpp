@@ -1,6 +1,8 @@
 #include "FrameBuffer.hpp"
 #include "ErrorCatcher.hpp"
 #include "RendererSettings.hpp"
+#include "event/EventDispatcher.hpp"
+#include "events/window/FramebufferResizeEvent.hpp"
 
 namespace TechEngine {
 
@@ -34,11 +36,13 @@ namespace TechEngine {
 
     void FrameBuffer::bind() {
         GlCall(glBindFramebuffer(GL_FRAMEBUFFER, this->id));
+        RendererSettings::targetId = id;
         glViewport(0, 0, width, height);
     }
 
     void FrameBuffer::unBind() {
         GlCall(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+        RendererSettings::targetId = 0;
     }
 
     void FrameBuffer::resize(uint32_t width, uint32_t height) {
@@ -47,6 +51,7 @@ namespace TechEngine {
         }
         if (RendererSettings::targetId == id) {
             RendererSettings::resize(width, height);
+            EventDispatcher::getInstance().dispatch(new FramebufferResizeEvent(id, width, height));
         }
         init(id, width, height);
     }
@@ -106,6 +111,4 @@ namespace TechEngine {
     uint32_t FrameBuffer::getID() {
         return id;
     }
-
-
 }

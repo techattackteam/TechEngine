@@ -15,6 +15,9 @@ namespace TechEngine {
         ImGui::Begin("Scene Hierarchy");
         if (!scene.getGameObjects().empty()) {
             for (auto element: scene.getGameObjects()) {
+                if (element->isEditorOnly()) {
+                    continue;
+                }
                 drawEntityNode(element);
             }
 

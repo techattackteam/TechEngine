@@ -9,6 +9,8 @@ namespace TechEngine {
     public:
         Engine_API inline static CameraComponent *mainCamera;
 
+        static void changeMainCameraTo(CameraComponent *cameraComponent);
+
         static bool findCameraComponent();
 
         static bool hasMainCamera();

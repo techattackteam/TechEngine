@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/Core.hpp"
+#include "event/events/Event.hpp"
 
 namespace TechEngine {
     class WindowCloseEvent : public TechEngine::Event {

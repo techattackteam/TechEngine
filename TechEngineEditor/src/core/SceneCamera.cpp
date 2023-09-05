@@ -2,7 +2,8 @@
 #include "components/CameraComponent.hpp"
 
 namespace TechEngine {
-    SceneCamera::SceneCamera() : GameObject("SceneCamera") {
-        addComponent<CameraComponent>(true, CameraComponent::ORTHOGRAPHIC);
+    SceneCamera::SceneCamera() {
+        addComponent<TransformComponent>();
+        addComponent<CameraComponent>(false, CameraComponent::PERSPECTIVE);
     }
 }
