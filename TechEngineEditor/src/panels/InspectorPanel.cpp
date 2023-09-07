@@ -15,7 +15,7 @@ namespace TechEngine {
         if (PanelsManager::getInstance().getSelectedGameObject() != nullptr) {
             drawComponents();
         }
-        if (ImGui::BeginPopupContextWindow("Add Component", 1, false)) {
+        if (ImGui::BeginPopupContextWindow("Add Component", 1)) {
             if (ImGui::MenuItem("Mesh Renderer")) {
                 PanelsManager::getInstance().getSelectedGameObject()->addComponent<MeshRendererComponent>();
             }
