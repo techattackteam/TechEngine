@@ -25,7 +25,7 @@ namespace TechEngine {
     }
 
     void TechEngineRuntime::onUpdate() {
-        Mouse::onUpdate();
+        Mouse::getInstance().onUpdate();
         window.getRenderer().renderPipeline();
         window.onUpdate();
     }

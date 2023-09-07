@@ -21,7 +21,7 @@ namespace TechEngine {
                 drawEntityNode(element);
             }
 
-            if (ImGui::BeginPopupContextWindow(0, 1, false)) {
+            if (ImGui::BeginPopupContextWindow(0, 1)) {
                 if (ImGui::MenuItem("New Game Object")) {
                     new QuadMeshTest("QuadMeshTest");
                 }
