@@ -1,16 +1,19 @@
 #include <imgui.h>
-
+#include "project/ProjectManager.hpp"
 #include "ProjectBrowserPanel.hpp"
 
 namespace TechEngine {
     ProjectBrowserPanel::ProjectBrowserPanel() : Panel("ProjectBrowserPanel") {
-        projectPath = std::filesystem::current_path().string() + "\\project";
-        currentPath = projectPath;
+
+    }
+
+    void ProjectBrowserPanel::init() {
+        currentPath = ProjectManager::getUserProjectRootPath();
     }
 
     void ProjectBrowserPanel::onUpdate() {
         ImGui::Begin("Project Browser");
-        if (currentPath != std::filesystem::path(projectPath)) {
+        if (currentPath != std::filesystem::path(ProjectManager::getUserProjectRootPath())) {
             if (ImGui::Button("...")) {
                 currentPath = currentPath.parent_path();
             }
@@ -18,7 +21,7 @@ namespace TechEngine {
 
         for (auto &directoryEntry: std::filesystem::directory_iterator(currentPath)) {
             const auto &path = directoryEntry.path();
-            auto relativePath = std::filesystem::relative(path, "project");
+            auto relativePath = std::filesystem::relative(path, ProjectManager::getUserProjectRootPath());
             std::string filenameString = relativePath.filename().string();
             if (directoryEntry.is_directory()) {
                 if (ImGui::Button(filenameString.c_str())) {

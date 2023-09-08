@@ -53,7 +53,7 @@ namespace TechEngine {
         std::filesystem::copy_options copyOptions = std::filesystem::copy_options::recursive |
                                                     std::filesystem::copy_options::overwrite_existing;
 
-        serializeEngineSettings(ProjectManager::getEngineExportSettingsFile());
+        //serializeEngineSettings(ProjectManager::getEngineExportSettingsFile());
         PanelsManager::compileUserScripts();
         std::filesystem::copy(ProjectManager::getUserProjectScenePath(), ProjectManager::getBuildPath(), copyOptions);
         std::filesystem::copy(ProjectManager::getUserScriptsDLLPath(), ProjectManager::getBuildPath(), copyOptions);

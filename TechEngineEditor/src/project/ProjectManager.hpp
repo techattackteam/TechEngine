@@ -4,61 +4,69 @@
 #include "core/Core.hpp"
 
 using std::filesystem::path;
+namespace TechEngine {
+    class ProjectManager {
+    private:
+        inline static ProjectManager *instance;
 
-class ProjectManager {
-private:
-    inline static ProjectManager *instance;
+        ProjectManager();
 
-    ProjectManager();
-
-    //Editor root path
-    path cmakePath = "\"C:/Program Files/CMake/bin/cmake.exe\"";
-
-    path rootPath = std::filesystem::current_path();
-
-    path buildPath = rootPath.string() + "/build";
-    path buildResourcesPath = buildPath.string() + "/resources";
-
-    path userProjectRootPath = rootPath.string() + "\\project";
-    path userProjectScenesPath = userProjectRootPath.string() + "/scenes";
-    path userProjectScriptsPath = userProjectRootPath.string() + "\\scripts";
-    path userProjectBuildPath = userProjectScriptsPath.string() + "\\build";
-public:
+        //Editor root path
+        path cmakePath = "\"C:/Program Files/CMake/bin/cmake.exe\"";
+        path rootPath = std::filesystem::current_path();
+        path projectTemplate = rootPath.string() + "\\projectTemplate";
+        path scriptsTemplate = rootPath.string() + "\\scripts";
 
 
-private:
-    path userScriptsDLLPath = userProjectBuildPath.string() + "/Debug/UserScripts.dll";
+        path userProjectRootPath = rootPath.string() + "\\New Project";
+        path userProjectScenesPath = userProjectRootPath.string() + "\\scenes";
+        path userProjectScriptsPath = userProjectRootPath.string() + "\\scripts";
+        path userProjectBuildPath = userProjectScriptsPath.string() + "\\build";
 
-    path resourcesPath = rootPath.string() + "/resources";
+        path buildPath = userProjectRootPath.string() + "\\build";
+        path buildResourcesPath = buildPath.string() + "\\resources";
 
-    path runtimePath = rootPath.string() + "/runtime";
+        path userScriptsDLLPath = userProjectBuildPath.string() + "\\Debug\\UserScripts.dll";
+        path resourcesPath = rootPath.string() + "\\resources";
 
-    path engineExportSettingsFile = rootPath.string() + "/EngineSettings.TESettings";
+        path runtimePath = rootPath.string() + "\\runtime";
 
-    static ProjectManager *getInstance();
+        path projectSettings = userProjectRootPath.string() + "\\projectSettings.PjSettings";
 
-public:
-    static const path &getRootPath();
 
-    static const path &getBuildPath();
+        static ProjectManager *getInstance();
 
-    static const path &getUserProjectRootPath();
+    public:
+        static const void init(path rootPath);
 
-    static const path &getUserProjectScriptsPath();
+        static const path &getRootPath();
 
-    static const path &getUserProjectScenePath();
+        static const path &getProjectTemplate();
 
-    static const path &getUserScriptsDLLPath();
+        static const path &getScriptsTemplate();
 
-    static const path &getEngineExportSettingsFile();
+        static const path &getBuildPath();
 
-    static const path &getRuntimePath();
+        static const path &getUserProjectRootPath();
 
-    static const path &getBuildResourcesPath();
+        static const path &getUserProjectScriptsPath();
 
-    static const path &getResourcesPath();
+        static const path &getUserProjectScenePath();
 
-    static const path &getUserProjectBuildPath();
+        static const path &getUserScriptsDLLPath();
 
-    static const path &getCmakePath();
-};
+        static const path &getRuntimePath();
+
+        static const path &getBuildResourcesPath();
+
+        static const path &getResourcesPath();
+
+        static const path &getUserProjectBuildPath();
+
+        static const path &getCmakePath();
+
+        static void createNewProject(const char *string);
+
+        static void loadProject(std::string projectPath);
+    };
+}
