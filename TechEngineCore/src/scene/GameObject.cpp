@@ -33,7 +33,7 @@ namespace TechEngine {
             parent->removeChild(tag);
         }
         deleteChildren();
-        TechEngine::EventDispatcher::getInstance().dispatch(new GameObjectDestroyEvent(this));
+        TechEngine::EventDispatcher::getInstance().dispatch(new GameObjectDestroyEvent(tag));
     }
 
     void GameObject::fixUpdate() {

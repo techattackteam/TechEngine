@@ -31,17 +31,17 @@ namespace TechEngine {
         SceneHierarchyPanel sceneHierarchyPanel;
         ExportSettingsPanel exportSettingsPanel;
 
-        std::string currentScenePath;
         bool m_currentPlaying = false;
 
         GameObject *gameObjectSelected = nullptr;
 
         bool mouse2 = false;
         bool mouse3 = false;
-        bool m_isRunning = false;
     public:
 
         PanelsManager(Window &window);
+
+        void init();
 
         void update();
 
@@ -55,7 +55,7 @@ namespace TechEngine {
 
         void deselectGameObject();
 
-        void deselectGameObject(GameObject *gameObject);
+        void deselectGameObject(std::string gameObject);
 
     private:
         void initImGui();
@@ -80,15 +80,11 @@ namespace TechEngine {
 
         void stopRunningScene();
 
-        void onCloseAppEvent();
-
         void saveScene();
 
         void saveSceneAs();
 
         void openScene();
-
-        void openSceneOnStartup();
 
         void saveEngineSettings();
 

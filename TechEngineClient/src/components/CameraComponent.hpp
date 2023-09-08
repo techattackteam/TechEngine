@@ -21,7 +21,7 @@ namespace TechEngine {
         glm::mat4 projectionMatrix = glm::mat4(1.0f);
 
         float fov = 90;
-        float nearPlane = 10;
+        float nearPlane = 0.1f;
         float farPlane = 100;
         float orthoSize = 5;
 

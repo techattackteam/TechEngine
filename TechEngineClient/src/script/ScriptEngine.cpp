@@ -1,5 +1,6 @@
 #include <iostream>
 #include "ScriptEngine.hpp"
+#include "core/Logger.hpp"
 
 namespace TechEngine {
     ScriptEngine::ScriptEngine() {
@@ -18,7 +19,10 @@ namespace TechEngine {
 
     void ScriptEngine::stop() {
         if (m_userCustomDll) {
-            FreeLibrary(m_userCustomDll);
+            bool result = FreeLibrary(m_userCustomDll);
+            if (!result) {
+                TE_LOGGER_ERROR("Failed to unload user scripts dll");
+            }
             ScriptEngine::getInstance()->deleteScripts();
         }
     }

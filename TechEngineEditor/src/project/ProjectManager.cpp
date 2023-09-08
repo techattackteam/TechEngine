@@ -1,60 +1,111 @@
+#include <fstream>
 #include "ProjectManager.hpp"
+#include "yaml-cpp/yaml.h"
+#include "core/Logger.hpp"
+#include "scene/SceneSerializer.hpp"
 
-ProjectManager::ProjectManager() {
+namespace TechEngine {
 
-}
+    ProjectManager::ProjectManager() {
 
-ProjectManager *ProjectManager::getInstance() {
-    if (instance == nullptr) {
-        instance = new ProjectManager();
     }
-    return instance;
-}
 
-const path &ProjectManager::getRootPath() {
-    return getInstance()->rootPath;
-}
+    ProjectManager *ProjectManager::getInstance() {
+        if (instance == nullptr) {
+            instance = new ProjectManager();
+        }
+        return instance;
+    }
 
-const path &ProjectManager::getUserProjectRootPath() {
-    return getInstance()->userProjectRootPath;
-}
+    const void ProjectManager::init(path rootPath) {
+        getInstance()->rootPath = rootPath;
+    }
 
-const path &ProjectManager::getUserProjectScriptsPath() {
-    return getInstance()->userProjectScriptsPath;
-}
+    const path &ProjectManager::getRootPath() {
+        return getInstance()->rootPath;
+    }
 
-const path &ProjectManager::getUserProjectScenePath() {
-    return getInstance()->userProjectScenesPath;
-}
+    const path &ProjectManager::getUserProjectRootPath() {
+        return getInstance()->userProjectRootPath;
+    }
 
-const path &ProjectManager::getUserScriptsDLLPath() {
-    return getInstance()->userScriptsDLLPath;
-}
+    const path &ProjectManager::getUserProjectScriptsPath() {
+        return getInstance()->userProjectScriptsPath;
+    }
 
-const path &ProjectManager::getEngineExportSettingsFile() {
-    return getInstance()->engineExportSettingsFile;
-}
+    const path &ProjectManager::getUserProjectScenePath() {
+        return getInstance()->userProjectScenesPath;
+    }
 
-const path &ProjectManager::getRuntimePath() {
-    return getInstance()->runtimePath;
-}
+    const path &ProjectManager::getUserScriptsDLLPath() {
+        return getInstance()->userScriptsDLLPath;
+    }
 
-const path &ProjectManager::getBuildPath() {
-    return getInstance()->buildPath;
-}
+    const path &ProjectManager::getRuntimePath() {
+        return getInstance()->runtimePath;
+    }
 
-const path &ProjectManager::getBuildResourcesPath() {
-    return getInstance()->buildResourcesPath;
-}
+    const path &ProjectManager::getBuildPath() {
+        return getInstance()->buildPath;
+    }
 
-const path &ProjectManager::getResourcesPath() {
-    return getInstance()->resourcesPath;
-}
+    const path &ProjectManager::getBuildResourcesPath() {
+        return getInstance()->buildResourcesPath;
+    }
 
-const path &ProjectManager::getUserProjectBuildPath() {
-    return getInstance()->userProjectBuildPath;
-}
+    const path &ProjectManager::getResourcesPath() {
+        return getInstance()->resourcesPath;
+    }
 
-const path &ProjectManager::getCmakePath() {
-    return getInstance()->cmakePath;
+    const path &ProjectManager::getUserProjectBuildPath() {
+        return getInstance()->userProjectBuildPath;
+    }
+
+    const path &ProjectManager::getCmakePath() {
+        return getInstance()->cmakePath;
+    }
+
+    const path &ProjectManager::getProjectTemplate() {
+        return getInstance()->projectTemplate;
+    }
+
+    const path &ProjectManager::getScriptsTemplate() {
+        return getInstance()->scriptsTemplate;
+    }
+
+    void ProjectManager::createNewProject(const char *projectName) {
+        std::filesystem::create_directory(projectName);
+        std::filesystem::copy(getInstance()->projectTemplate, projectName, std::filesystem::copy_options::recursive);
+    }
+
+    void ProjectManager::loadProject(std::string projectPath) {
+        getInstance()->userProjectRootPath = projectPath;
+        getInstance()->userProjectScriptsPath = projectPath + "/scripts";
+        getInstance()->userProjectScenesPath = projectPath + "/scenes";
+        getInstance()->userProjectBuildPath = projectPath + "/scripts/build";
+        getInstance()->userScriptsDLLPath = projectPath + "/scripts/build/Debug/UserScripts.dll";
+        getInstance()->projectSettings = projectPath + "/projectSettings.PjSettings";
+        std::string lastSceneLoaded;
+        if (std::filesystem::exists(getInstance()->projectSettings)) {
+            YAML::Node data;
+            try {
+                data = YAML::LoadFile(getInstance()->projectSettings.string());
+                lastSceneLoaded = data["Last scene loaded"].as<std::string>();
+            }
+            catch (YAML::Exception &e) {
+                TE_LOGGER_CRITICAL("Failed to load EditorSettings.TESettings file.\n      {0}", e.what());
+                exit(1);
+            }
+        } else {
+            lastSceneLoaded = getInstance()->userProjectRootPath.string() + "\\scenes\\DefaultScene.scene";
+            YAML::Emitter out;
+            out << YAML::BeginMap;
+            out << YAML::Key << "Last scene loaded" << YAML::Value << lastSceneLoaded;
+            out << YAML::EndSeq;
+            out << YAML::EndMap;
+            std::ofstream fout(getInstance()->projectSettings.string());
+            fout << out.c_str();
+        }
+        SceneSerializer::deserialize(lastSceneLoaded);
+    }
 }

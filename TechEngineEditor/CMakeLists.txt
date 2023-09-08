@@ -4,7 +4,7 @@ file(GLOB_RECURSE TechEngineEditor_Headers "src/*.hpp")
 find_package(imgui CONFIG REQUIRED)
 find_package(imguizmo CONFIG REQUIRED)
 
-add_executable(TechEngineEditor ${TechEngineEditor_Sources} ${TechEngineEditor_Headers} src/project/ProjectManager.cpp src/project/ProjectManager.hpp)
+add_executable(TechEngineEditor ${TechEngineEditor_Sources} ${TechEngineEditor_Headers})
 
 if (WIN32) # WINDOWS
     set(TECH_ENGINE_EDITOR_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineEditor/")
@@ -40,11 +40,18 @@ set(MY_VARIABLE TRUE)
 file(GENERATE
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/CopyConfigurationData$<CONFIG>.cmake"
         CONTENT
-        "if (NOT EXISTS \"$<TARGET_FILE_DIR:TechEngineEditor>/project\")
+        "if (NOT EXISTS \"$<TARGET_FILE_DIR:TechEngineEditor>/projectTemplate\")
                 execute_process(
                      COMMAND \"${CMAKE_COMMAND}\" -E copy_directory
-                         \"${PROJECT_SOURCE_DIR}/bin/ProjectTemplate\"
-                    \"$<TARGET_FILE_DIR:TechEngineEditor>/project\"
+                         \"${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate\"
+                    \"$<TARGET_FILE_DIR:TechEngineEditor>/projectTemplate\"
+                )
+            endif()
+         if (NOT EXISTS \"$<TARGET_FILE_DIR:TechEngineEditor>/scriptTemplate\")
+                execute_process(
+                     COMMAND \"${CMAKE_COMMAND}\" -E copy_directory
+                         \"${PROJECT_SOURCE_DIR}/TechEngineTemplates/ScriptTemplate\"
+                    \"$<TARGET_FILE_DIR:TechEngineEditor>/scriptTemplate\"
                 )
             endif()"
         )

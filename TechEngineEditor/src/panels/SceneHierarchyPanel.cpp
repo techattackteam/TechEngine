@@ -56,7 +56,7 @@ namespace TechEngine {
             }
             if (ImGui::MenuItem("Delete GameObject")) {
                 TechEngine::EventDispatcher::getInstance().dispatch(new RequestDeleteGameObject(gameObject));
-                PanelsManager::getInstance().deselectGameObject(gameObject);
+                PanelsManager::getInstance().deselectGameObject(gameObject->getTag());
                 selectedGO = nullptr;
             }
 

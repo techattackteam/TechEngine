@@ -23,18 +23,18 @@
 #include "testGameObject/MainCamera.hpp"
 
 namespace TechEngine {
-    PanelsManager::PanelsManager(Window &window) : window(window), exportSettingsPanel(currentScenePath) {
+    PanelsManager::PanelsManager(Window &window) : window(window), exportSettingsPanel((std::string &) "TEMPORARY") {
         instance = this;
+
+    }
+
+    void PanelsManager::init() {
         EventDispatcher::getInstance().subscribe(RegisterCustomPanel::eventType, [this](TechEngine::Event *event) {
             registerCustomPanel((RegisterCustomPanel *) event);
         });
 
-        EventDispatcher::getInstance().subscribe(AppCloseRequestEvent::eventType, [this](TechEngine::Event *event) {
-            onCloseAppEvent();
-        });
-
         EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngine::Event *event) {
-            deselectGameObject(((GameObjectDestroyEvent *) event)->getGameObject());
+            deselectGameObject(((GameObjectDestroyEvent *) event)->getGameObjectTag());
         });
 
         EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event *event) {
@@ -52,10 +52,7 @@ namespace TechEngine {
         EventDispatcher::getInstance().subscribe(MouseScrollEvent::eventType, [this](TechEngine::Event *event) {
             OnMouseScrollEvent(((MouseScrollEvent *) event)->getXOffset(), ((MouseScrollEvent *) event)->getYOffset());
         });
-
-
-        openSceneOnStartup();
-
+        contentBrowser.init();
         initImGui();
     }
 
@@ -166,9 +163,7 @@ namespace TechEngine {
                     stopRunningScene();
                     m_currentPlaying = false;
                 }
-                for (const auto &entry: std::filesystem::directory_iterator(ProjectManager::getBuildPath()))
-                    std::filesystem::remove_all(entry.path());
-                std::filesystem::copy(ProjectManager::getUserProjectRootPath(), ProjectManager::getBuildPath(), std::filesystem::copy_options::recursive);
+
                 compileUserScripts();
             }
 
@@ -203,10 +198,8 @@ namespace TechEngine {
         if (ImGui::Button(m_currentPlaying == true ? "Stop" : "Play", ImVec2(size, 0))) {
             if (!m_currentPlaying) {
                 startRunningScene();
-                m_currentPlaying = true;
             } else {
                 stopRunningScene();
-                m_currentPlaying = false;
             }
         }
 
@@ -273,12 +266,12 @@ namespace TechEngine {
     void PanelsManager::compileUserScripts() {
         if (!exists(ProjectManager::getUserProjectBuildPath())) {
             std::string command = "\"" + ProjectManager::getCmakePath().string() +
-                                  " -G \"Visual Studio 17 2022\" -S " + ProjectManager::getUserProjectScriptsPath().string() +
-                                  " -B " + ProjectManager::getUserProjectBuildPath().string() + "\"";
+                                  " -G \"Visual Studio 17 2022\" -S " + "\"" + ProjectManager::getUserProjectScriptsPath().string() + "\"" +
+                                  " -B " + "\"" + ProjectManager::getUserProjectBuildPath().string() + "\"" + "\"";
             std::system(command.c_str());
         }
         std::string command = "\"" + ProjectManager::getCmakePath().string() +
-                              " --build " + ProjectManager::getUserProjectBuildPath().string() + " --target UserScripts --config Debug\"";
+                              " --build " + "\"" + ProjectManager::getUserProjectBuildPath().string() + "\"" + " --target UserScripts --config Debug\"";
         std::system(command.c_str());
         TE_LOGGER_INFO("Build finished!");
     }
@@ -286,12 +279,12 @@ namespace TechEngine {
     void PanelsManager::startRunningScene() {
         SceneSerializer::serialize(ProjectManager::getUserProjectScenePath().string() + "/SceneSaveTemporary.scene");
         ScriptEngine::getInstance()->init(ProjectManager::getUserScriptsDLLPath().string());
-        m_isRunning = true;
+        m_currentPlaying = true;
     }
 
     void PanelsManager::stopRunningScene() {
         ScriptEngine::getInstance()->stop();
-        std::string currentSelectedGameObjectTag = "";
+        std::string currentSelectedGameObjectTag;
         if (gameObjectSelected != nullptr) {
             currentSelectedGameObjectTag = gameObjectSelected->getTag();
         }
@@ -305,19 +298,12 @@ namespace TechEngine {
             }
         }
         std::filesystem::remove(ProjectManager::getUserProjectScenePath().string() + "/SceneSaveTemporary.scene");
-        m_isRunning = false;
+        m_currentPlaying = false;
     }
 
-    void PanelsManager::onCloseAppEvent() {
-        if (currentScenePath.empty()) {
-            currentScenePath = ProjectManager::getUserProjectScenePath().string() + "/DefaultScene.scene";
-        }
-        SceneSerializer::serialize(currentScenePath);
-        saveEngineSettings();
-    }
 
     void PanelsManager::saveScene() {
-        if (currentScenePath.empty()) {
+/*        if (currentScenePath.empty()) {
             std::string filepath = saveFile("TechEngine Scene (*.scene)\0*.scene\0");
             if (!filepath.empty()) {
                 SceneSerializer::serialize(filepath);
@@ -325,49 +311,31 @@ namespace TechEngine {
             }
         } else {
             SceneSerializer::serialize(currentScenePath);
-        }
+        }*/
     }
 
     void PanelsManager::saveSceneAs() {
-        std::string filepath = saveFile("TechEngine Scene (*.scene)\0*.scene\0");
+/*        std::string filepath = saveFile("TechEngine Scene (*.scene)\0*.scene\0");
         if (!filepath.empty()) {
             SceneSerializer::serialize(filepath);
             currentScenePath = filepath;
-        }
+        }*/
     }
 
     void PanelsManager::saveEngineSettings() {
-        YAML::Emitter out;
+/*        YAML::Emitter out;
         out << YAML::BeginMap;
         out << YAML::Key << "Scene path" << YAML::Value << currentScenePath;
         out << YAML::EndSeq;
         out << YAML::EndMap;
         std::ofstream fout(ProjectManager::getEngineExportSettingsFile().string());
-        fout << out.c_str();
+        fout << out.c_str();*/
         TE_LOGGER_INFO("EngineSettings saved");
     }
 
     void PanelsManager::openScene() {
         std::string filepath = openFileWindow("TechEngine Scene (*.scene)\0*.scene\0");
         SceneSerializer::deserialize(filepath);
-    }
-
-    void PanelsManager::openSceneOnStartup() {
-        if (std::filesystem::exists(ProjectManager::getEngineExportSettingsFile().string())) {
-            YAML::Node data;
-            try {
-                data = YAML::LoadFile(ProjectManager::getEngineExportSettingsFile().string());
-                currentScenePath = data["Scene path"].as<std::string>();
-            }
-            catch (YAML::Exception &e) {
-                TE_LOGGER_CRITICAL("Failed to load .TESettings file {0}.\n      {1}", ProjectManager::getEngineExportSettingsFile().string(), e.what());
-            }
-            TE_LOGGER_INFO("EngineSettings loaded");
-            SceneSerializer::deserialize(currentScenePath);
-        } else {
-            new MainCamera();
-            new QuadMeshTest("FixedUpdateEntity");
-        }
     }
 
     PanelsManager &PanelsManager::getInstance() {
@@ -379,11 +347,11 @@ namespace TechEngine {
     }
 
     void PanelsManager::deselectGameObject() {
-        deselectGameObject(nullptr);
+        deselectGameObject((std::string &) "");
     }
 
-    void PanelsManager::deselectGameObject(GameObject *gameObject) {
-        if (gameObject == nullptr || gameObject->getTag() == gameObjectSelected->getTag()) {
+    void PanelsManager::deselectGameObject(std::string tag) {
+        if (gameObjectSelected != nullptr && tag == gameObjectSelected->getTag()) {
             gameObjectSelected = nullptr;
         }
     }
