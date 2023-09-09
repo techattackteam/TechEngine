@@ -31,7 +31,7 @@ namespace TechEngine {
 
         path runtimePath = rootPath.string() + "\\runtime";
 
-        path projectSettings = userProjectRootPath.string() + "\\projectSettings.PjSettings";
+        path projectSettingsPath = userProjectRootPath.string() + "\\projectSettings.PjSettings";
 
 
         static ProjectManager *getInstance();

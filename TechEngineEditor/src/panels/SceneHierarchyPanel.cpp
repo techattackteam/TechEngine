@@ -42,7 +42,7 @@ namespace TechEngine {
         bool opened = ImGui::TreeNodeEx(gameObject, flags, "%s", name.c_str());
         if (ImGui::IsItemClicked()) {
             selectedGO = gameObject;
-            PanelsManager::getInstance().selectedGameObject(gameObject);
+            PanelsManager::getInstance().selectGameObject(gameObject->getTag());
         }
 
 

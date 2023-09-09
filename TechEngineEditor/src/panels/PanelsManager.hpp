@@ -33,7 +33,7 @@ namespace TechEngine {
 
         bool m_currentPlaying = false;
 
-        GameObject *gameObjectSelected = nullptr;
+        std::string gameObjectSelectedTag;
 
         bool mouse2 = false;
         bool mouse3 = false;
@@ -51,7 +51,7 @@ namespace TechEngine {
 
         static PanelsManager &getInstance();
 
-        void selectedGameObject(GameObject *gameObject);
+        void selectGameObject(const std::string &gameObjectTag);
 
         void deselectGameObject();
 
