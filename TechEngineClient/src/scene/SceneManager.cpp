@@ -257,6 +257,21 @@ namespace TechEngine {
         std::filesystem::copy(TechEngine::Paths::scenesTemplate, scenePath);
     }
 
+    bool SceneManager::deleteScene(std::string &scenePath) {
+        std::string sceneName = getSceneNameFromPath(scenePath);
+        if (m_activeSceneName == sceneName) {
+            TE_LOGGER_CRITICAL("Failed to delete scene '{0}'.\n Cannot delete active scene.", sceneName);
+            return false;
+        } else if (m_scenesBank.find(sceneName) != m_scenesBank.end()) {
+            std::filesystem::remove(scenePath);
+            m_scenesBank.erase(sceneName);
+            return true;
+        } else {
+            TE_LOGGER_CRITICAL("Failed to delete scene '{0}'", sceneName);
+            return false;
+        }
+    }
+
     void SceneManager::loadScene(const std::string &sceneName) {
         if (m_scenesBank.find(sceneName) != m_scenesBank.end()) {
             if (!m_activeSceneName.empty()) {

@@ -37,7 +37,7 @@ namespace TechEngine {
         static ProjectManager *getInstance();
 
     public:
-        static const void init(path rootPath);
+        static void init(path rootPath);
 
         static const path &getRootPath();
 
@@ -66,6 +66,8 @@ namespace TechEngine {
         static const path &getCmakePath();
 
         static void createNewProject(const char *string);
+
+        static void saveProject();
 
         static void loadProject(std::string projectPath);
     };

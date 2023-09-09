@@ -15,8 +15,10 @@ namespace TechEngine {
 
         void onUpdate() override;
 
+        void openFile(const std::string &filename);
+
         void renameFile(const std::string &filename, const std::string &newName);
 
-        void openFile(const std::string &filename);
+        void deleteFile(const std::string &filename);
     };
 }

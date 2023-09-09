@@ -3,6 +3,8 @@
 #include "yaml-cpp/yaml.h"
 #include "core/Logger.hpp"
 #include "scene/SceneManager.hpp"
+#include "event/events/appManagement/AppCloseRequestEvent.hpp"
+#include "event/EventDispatcher.hpp"
 
 namespace TechEngine {
 
@@ -17,8 +19,11 @@ namespace TechEngine {
         return instance;
     }
 
-    const void ProjectManager::init(path rootPath) {
+    void ProjectManager::init(path rootPath) {
         getInstance()->rootPath = rootPath;
+        EventDispatcher::getInstance().subscribe(AppCloseRequestEvent::eventType, [](Event *event) {
+            saveProject();
+        });
     }
 
     const path &ProjectManager::getRootPath() {
@@ -76,6 +81,24 @@ namespace TechEngine {
     void ProjectManager::createNewProject(const char *projectName) {
         std::filesystem::create_directory(projectName);
         std::filesystem::copy(getInstance()->projectTemplate, projectName, std::filesystem::copy_options::recursive);
+    }
+
+    void ProjectManager::saveProject() {
+        SceneManager::saveCurrentScene();
+        YAML::Emitter out;
+        try {
+            out << YAML::BeginMap;
+            out << YAML::Key << "Last scene loaded" << YAML::Value << SceneManager::getActiveSceneName();
+            out << YAML::EndMap;
+            std::filesystem::path path = getInstance()->projectSettingsPath;;
+            std::filesystem::create_directories(path.parent_path());
+            std::ofstream fout(path);
+            fout << out.c_str();
+        }
+        catch (YAML::Exception &e) {
+            TE_LOGGER_CRITICAL("Failed to save projectSettings.PjSettings file.\n      {0}", e.what());
+            exit(1);
+        }
     }
 
     void ProjectManager::loadProject(std::string projectPath) {
