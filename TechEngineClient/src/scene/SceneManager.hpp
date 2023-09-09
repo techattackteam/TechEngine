@@ -25,6 +25,8 @@ namespace TechEngine {
 
         static void createNewScene(std::string &scenePath);
 
+        static bool deleteScene(std::string &scenePath);
+
         static void loadScene(const std::string &sceneName);
 
         static void saveScene(const std::string &sceneName);

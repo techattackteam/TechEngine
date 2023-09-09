@@ -8,7 +8,7 @@
 namespace TechEngine {
     Scene::Scene() {
         Scene::instance = this;
-        TechEngine::EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this](TechEngine::Event *event) {
+        TechEngine::EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this](Event *event) {
             onGameObjectDeleteRequest((RequestDeleteGameObject *) event);
         });
     }

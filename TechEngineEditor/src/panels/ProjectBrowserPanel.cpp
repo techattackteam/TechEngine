@@ -61,7 +61,7 @@ namespace TechEngine {
                         renameFile(path.filename().string(), newName);
                     }
                     if (ImGui::Button("Delete")) {
-                        std::filesystem::remove_all(path);
+                        deleteFile(path.filename().string());
                     }
                     ImGui::EndPopup();
                 }
@@ -88,17 +88,26 @@ namespace TechEngine {
         ImGui::End();
     }
 
+    void ProjectBrowserPanel::openFile(const std::string &filename) {
+        std::string extension = filename.substr(filename.find_last_of('.'));
+        if (extension == ".scene") {
+            std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
+            SceneManager::loadScene(filenameWithoutExtension);
+        }
+    }
+
     void ProjectBrowserPanel::renameFile(const std::string &filename, const std::string &newName) {
         std::string extension = filename.substr(filename.find_last_of('.'));
         std::filesystem::rename(currentPath / filename, currentPath / (newName + extension));
     }
 
-    void ProjectBrowserPanel::openFile(const std::string &filename) {
+    void ProjectBrowserPanel::deleteFile(const std::string &filename) {
         std::string extension = filename.substr(filename.find_last_of('.'));
         if (extension == ".scene") {
-            //remove extension from file
-            std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
-            SceneManager::loadScene(filenameWithoutExtension);
+            std::string path = currentPath.string() + "\\" + filename;
+            if (SceneManager::deleteScene(path)) {
+                std::filesystem::remove(path);
+            }
         }
     }
 }
