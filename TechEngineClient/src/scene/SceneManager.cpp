@@ -1,5 +1,6 @@
-#include "SceneSerializer.hpp"
+#include "SceneManager.hpp"
 
+#include "core/ConstantPaths.hpp"
 #include "scene/GameObject.hpp"
 #include "components/CameraComponent.hpp"
 #include "components/TransformComponent.hpp"
@@ -7,11 +8,9 @@
 #include "mesh/CubeMesh.hpp"
 #include "core/Logger.hpp"
 #include "SceneHelper.hpp"
-
-#include <fstream>
 #include <filesystem>
-
 #include <yaml-cpp/yaml.h>
+#include <fstream>
 
 namespace YAML {
 
@@ -149,10 +148,10 @@ namespace TechEngine {
         out << YAML::EndMap;
     }
 
-    void SceneSerializer::serialize(const std::string &filepath) {
+    void SceneManager::serialize(const std::string &sceneName, const std::string &filepath) {
         YAML::Emitter out;
         out << YAML::BeginMap;
-        out << YAML::Key << "Scene" << YAML::Value << Scene::getInstance().getName();
+        out << YAML::Key << "Scene" << YAML::Value << sceneName;
         out << YAML::Key << "GameObjects" << YAML::Value << YAML::BeginSeq;
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
             serializeGameObject(out, gameObject);
@@ -209,7 +208,7 @@ namespace TechEngine {
         }
     }
 
-    bool SceneSerializer::deserialize(const std::string &filepath) {
+    bool SceneManager::deserialize(const std::string &filepath) {
         YAML::Node data;
         try {
             data = YAML::LoadFile(filepath);
@@ -218,12 +217,6 @@ namespace TechEngine {
             TE_LOGGER_CRITICAL("Failed to load .scene file {0}.\n      {1}", filepath, e.what());
             return false;
         }
-
-        if (!data["Scene"])
-            return false;
-
-        std::string sceneName = data["Scene"].as<std::string>();
-        TE_LOGGER_TRACE("Deserializing scene '{0}'", sceneName);
 
         YAML::Node node = data["GameObjects"];
         SceneHelper::clear();
@@ -234,5 +227,90 @@ namespace TechEngine {
         }
 
         return true;
+    }
+
+    void SceneManager::init(const std::string &projectPath) {
+        for (const std::filesystem::directory_entry &p: std::filesystem::recursive_directory_iterator(projectPath)) {
+            std::string path = p.path().string();
+            std::string fileName = p.path().filename().string();
+            if (fileName.find(".scene") != std::string::npos) {
+                registerScene(path);
+            }
+        }
+    }
+
+
+    void SceneManager::registerScene(std::string &scenePath) {
+        std::string sceneName = getSceneNameFromPath(scenePath);
+        if (m_scenesBank.find(sceneName) != m_scenesBank.end()) {
+            replaceSceneNameFromPath(scenePath);
+            sceneName = getSceneNameFromPath(scenePath);
+            m_scenesBank[sceneName] = scenePath;
+        } else {
+            m_scenesBank[sceneName] = scenePath;
+        }
+    }
+
+    void SceneManager::createNewScene(std::string &scenePath) {
+        std::string sceneName = getSceneNameFromPath(scenePath);
+        registerScene(scenePath);
+        std::filesystem::copy(TechEngine::Paths::scenesTemplate, scenePath);
+    }
+
+    void SceneManager::loadScene(const std::string &sceneName) {
+        if (m_scenesBank.find(sceneName) != m_scenesBank.end()) {
+            if (!m_activeSceneName.empty()) {
+                saveScene(m_activeSceneName);
+                Scene::getInstance().clear();
+            }
+            std::string scenePath = m_scenesBank[sceneName];
+            deserialize(scenePath);
+            m_activeSceneName = sceneName;
+        } else {
+            TE_LOGGER_CRITICAL("Failed to load scene '{0}'.\n Could not find scene.", sceneName);
+        }
+    }
+
+    void SceneManager::saveScene(const std::string &sceneName) {
+        if (m_scenesBank.find(sceneName) != m_scenesBank.end()) {
+            std::string scenePath = m_scenesBank[sceneName];
+            serialize(sceneName, scenePath);
+        } else {
+            TE_LOGGER_CRITICAL("Failed to save scene '{0}'", sceneName);
+        }
+    }
+
+    void SceneManager::saveCurrentScene() {
+        saveScene(m_activeSceneName);
+    }
+
+    void SceneManager::saveSceneAsTemporarily(const std::string &sceneName) {
+        std::string scenePath = m_scenesBank[sceneName];
+        std::string sceneTemporaryPath = scenePath.substr(0, scenePath.find_last_of("\\/")) + "\\SceneTemporary.scene";
+        serialize(sceneName, scenePath);
+    }
+
+    void SceneManager::loadSceneFromTemporarily(const std::string &sceneName) {
+        std::string scenePath = m_scenesBank[sceneName];
+        std::string sceneTemporaryPath = scenePath.substr(0, scenePath.find_last_of("\\/")) + "\\SceneTemporary.scene";
+        deserialize(sceneTemporaryPath);
+        std::filesystem::remove(sceneTemporaryPath);
+    }
+
+    const std::string &SceneManager::getActiveSceneName() {
+        return m_activeSceneName;
+    }
+
+    void SceneManager::replaceSceneNameFromPath(std::string &scenePath) {
+        std::string sceneName = getSceneNameFromPath(scenePath);
+        int i = 1;
+        while (m_scenesBank.find(sceneName + std::to_string(i)) != m_scenesBank.end()) {
+            i++;
+        }
+        scenePath = scenePath.substr(0, scenePath.find_last_of("\\/")) + "\\" + sceneName + std::to_string(i) + ".scene";
+    }
+
+    std::string SceneManager::getSceneNameFromPath(const std::string &scenePath) {
+        return scenePath.substr(scenePath.find_last_of("\\/") + 1, scenePath.find_last_of('.') - scenePath.find_last_of("\\/") - 1);
     }
 }

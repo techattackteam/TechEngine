@@ -2,7 +2,7 @@
 #include "ProjectManager.hpp"
 #include "yaml-cpp/yaml.h"
 #include "core/Logger.hpp"
-#include "scene/SceneSerializer.hpp"
+#include "scene/SceneManager.hpp"
 
 namespace TechEngine {
 
@@ -84,12 +84,14 @@ namespace TechEngine {
         getInstance()->userProjectScenesPath = projectPath + "/scenes";
         getInstance()->userProjectBuildPath = projectPath + "/scripts/build";
         getInstance()->userScriptsDLLPath = projectPath + "/scripts/build/Debug/UserScripts.dll";
-        getInstance()->projectSettings = projectPath + "/projectSettings.PjSettings";
+        getInstance()->projectSettingsPath = projectPath + "/projectSettings.PjSettings";
+        SceneManager::init(projectPath);
+
         std::string lastSceneLoaded;
-        if (std::filesystem::exists(getInstance()->projectSettings)) {
+        if (std::filesystem::exists(getInstance()->projectSettingsPath)) {
             YAML::Node data;
             try {
-                data = YAML::LoadFile(getInstance()->projectSettings.string());
+                data = YAML::LoadFile(getInstance()->projectSettingsPath.string());
                 lastSceneLoaded = data["Last scene loaded"].as<std::string>();
             }
             catch (YAML::Exception &e) {
@@ -97,15 +99,15 @@ namespace TechEngine {
                 exit(1);
             }
         } else {
-            lastSceneLoaded = getInstance()->userProjectRootPath.string() + "\\scenes\\DefaultScene.scene";
+            lastSceneLoaded = "default scene";
             YAML::Emitter out;
             out << YAML::BeginMap;
             out << YAML::Key << "Last scene loaded" << YAML::Value << lastSceneLoaded;
             out << YAML::EndSeq;
             out << YAML::EndMap;
-            std::ofstream fout(getInstance()->projectSettings.string());
+            std::ofstream fout(getInstance()->projectSettingsPath.string());
             fout << out.c_str();
         }
-        SceneSerializer::deserialize(lastSceneLoaded);
+        SceneManager::loadScene(lastSceneLoaded);
     }
 }

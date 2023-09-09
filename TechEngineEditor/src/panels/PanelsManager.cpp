@@ -1,5 +1,5 @@
 #include "PanelsManager.hpp"
-#include "scene/SceneSerializer.hpp"
+#include "scene/SceneManager.hpp"
 #include "script/ScriptEngine.hpp"
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
 #include "scene/SceneHelper.hpp"
@@ -147,16 +147,13 @@ namespace TechEngine {
     void PanelsManager::createMenuBar() {
         ImGui::BeginMenuBar();
         if (ImGui::BeginMenu("File")) {
-            if (ImGui::MenuItem("New", "Ctrl+N")) {
+            if (ImGui::MenuItem("New Project", "Ctrl+N")) {
             }
-            if (ImGui::MenuItem("Open...", "Ctrl+O")) {
+            if (ImGui::MenuItem("Open Project", "Ctrl+O")) {
                 openScene();
             }
-            if (ImGui::MenuItem("Save", "Ctrl+S")) {
-                saveScene();
-            }
-            if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S")) {
-                saveSceneAs();
+            if (ImGui::MenuItem("Save Project", "Ctrl+S")) {
+                SceneManager::saveCurrentScene();
             }
             if (ImGui::MenuItem("Build")) {
                 if (m_currentPlaying) {
@@ -277,50 +274,25 @@ namespace TechEngine {
     }
 
     void PanelsManager::startRunningScene() {
-        SceneSerializer::serialize(ProjectManager::getUserProjectScenePath().string() + "/SceneSaveTemporary.scene");
+        SceneManager::saveSceneAsTemporarily(SceneManager::getActiveSceneName());
         ScriptEngine::getInstance()->init(ProjectManager::getUserScriptsDLLPath().string());
         m_currentPlaying = true;
     }
 
     void PanelsManager::stopRunningScene() {
         ScriptEngine::getInstance()->stop();
-        std::string currentSelectedGameObjectTag;
-        if (gameObjectSelected != nullptr) {
-            currentSelectedGameObjectTag = gameObjectSelected->getTag();
-        }
-        SceneSerializer::deserialize(ProjectManager::getUserProjectScenePath().string() + "/SceneSaveTemporary.scene");
+        SceneManager::loadSceneFromTemporarily(SceneManager::getActiveSceneName());
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
             if (gameObject->hasComponent<CameraComponent>() && gameObject->getComponent<CameraComponent>()->isMainCamera()) {
                 SceneHelper::mainCamera = gameObject->getComponent<CameraComponent>();
             }
-            if (gameObject->getTag() == currentSelectedGameObjectTag) {
-                selectedGameObject(gameObject);
+            if (gameObject->getTag() == gameObjectSelectedTag) {
+                selectGameObject(gameObject->getTag());
             }
         }
-        std::filesystem::remove(ProjectManager::getUserProjectScenePath().string() + "/SceneSaveTemporary.scene");
         m_currentPlaying = false;
     }
 
-
-    void PanelsManager::saveScene() {
-/*        if (currentScenePath.empty()) {
-            std::string filepath = saveFile("TechEngine Scene (*.scene)\0*.scene\0");
-            if (!filepath.empty()) {
-                SceneSerializer::serialize(filepath);
-                currentScenePath = filepath;
-            }
-        } else {
-            SceneSerializer::serialize(currentScenePath);
-        }*/
-    }
-
-    void PanelsManager::saveSceneAs() {
-/*        std::string filepath = saveFile("TechEngine Scene (*.scene)\0*.scene\0");
-        if (!filepath.empty()) {
-            SceneSerializer::serialize(filepath);
-            currentScenePath = filepath;
-        }*/
-    }
 
     void PanelsManager::saveEngineSettings() {
 /*        YAML::Emitter out;
@@ -335,29 +307,30 @@ namespace TechEngine {
 
     void PanelsManager::openScene() {
         std::string filepath = openFileWindow("TechEngine Scene (*.scene)\0*.scene\0");
-        SceneSerializer::deserialize(filepath);
+        std::string filename = filepath.substr(filepath.find_last_of("/\\") + 1);
+        SceneManager::loadScene(filename);
     }
 
     PanelsManager &PanelsManager::getInstance() {
         return *instance;
     }
 
-    void PanelsManager::selectedGameObject(GameObject *gameObject) {
-        gameObjectSelected = gameObject;
+    void PanelsManager::selectGameObject(const std::string &tag) {
+        gameObjectSelectedTag = tag;
     }
 
     void PanelsManager::deselectGameObject() {
-        deselectGameObject((std::string &) "");
+        gameObjectSelectedTag = "";
     }
 
     void PanelsManager::deselectGameObject(std::string tag) {
-        if (gameObjectSelected != nullptr && tag == gameObjectSelected->getTag()) {
-            gameObjectSelected = nullptr;
+        if (tag == gameObjectSelectedTag) {
+            deselectGameObject();
         }
     }
 
     GameObject *PanelsManager::getSelectedGameObject() const {
-        return gameObjectSelected;
+        return Scene::getInstance().getGameObjectByTag(gameObjectSelectedTag);
     }
 
     void PanelsManager::OnKeyPressedEvent(Key &key) {

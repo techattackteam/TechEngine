@@ -1,13 +1,12 @@
 #include <iostream>
 #include <boost/uuid/uuid_io.hpp>
-#include <utility>
 #include "Scene.hpp"
 #include "event/EventDispatcher.hpp"
 #include "components/DirectionalLightComponent.hpp"
 #include "event/events/gameObjects/RequestDeleteGameObject.hpp"
 
 namespace TechEngine {
-    Scene::Scene(std::string name) : name(std::move(name)) {
+    Scene::Scene() {
         Scene::instance = this;
         TechEngine::EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this](TechEngine::Event *event) {
             onGameObjectDeleteRequest((RequestDeleteGameObject *) event);
@@ -83,16 +82,17 @@ namespace TechEngine {
         return nullptr;
     }
 
+    GameObject *Scene::getGameObjectByTag(const std::string &tag) {
+        for (GameObject *gameObject: gameObjects) {
+            if (gameObject->getTag() == tag) {
+                return gameObject;
+            }
+        }
+        return nullptr;
+    }
+
     bool Scene::isLightingActive() const {
         return lights.size() != 0;
-    }
-
-    const std::string &Scene::getName() const {
-        return name;
-    }
-
-    void Scene::setName(const std::string &name) {
-        Scene::name = name;
     }
 
     void Scene::clear() {
@@ -106,5 +106,4 @@ namespace TechEngine {
     void Scene::onGameObjectDeleteRequest(TechEngine::RequestDeleteGameObject *event) {
         delete event->getGameObject();
     }
-
 }

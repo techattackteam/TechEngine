@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <yaml-cpp/exceptions.h>
 #include "TechEngineRuntime.hpp"
-#include "scene/SceneSerializer.hpp"
+#include "scene/SceneManager.hpp"
 #include "renderer/RendererSettings.hpp"
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
 #include "script/ScriptEngine.hpp"
@@ -17,7 +17,7 @@ namespace TechEngine {
         }
         window.init(windowName, width, height);
         //TODO: FIX THIS
-        SceneSerializer::deserialize(std::filesystem::current_path().string() + "/scenes/" + sceneToLoadName + ".scene");
+        SceneManager::deserialize(std::filesystem::current_path().string() + "/scenes/" + sceneToLoadName + ".scene");
         TechEngine::EventDispatcher::getInstance().syncEventManager.execute();
         SceneHelper::mainCamera = Scene::getInstance().getGameObject("SceneCamera")->getComponent<CameraComponent>();
         window.getRenderer().init();

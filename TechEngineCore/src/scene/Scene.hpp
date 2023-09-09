@@ -11,7 +11,6 @@
 namespace TechEngine {
     class Scene {
     private:
-        std::string name;
         boost::uuids::random_generator goTagGenerator;
         inline static Scene *instance;
         std::list<GameObject *> gameObjects;
@@ -19,7 +18,7 @@ namespace TechEngine {
 
     public:
 
-        Scene(std::string name = "default scene");
+        Scene();
 
         virtual ~Scene();
 
@@ -43,11 +42,9 @@ namespace TechEngine {
 
         GameObject *getGameObject(const std::string &name);
 
+        GameObject *getGameObjectByTag(const std::string &tag);
+
         bool isLightingActive() const;
-
-        const std::string &getName() const;
-
-        void setName(const std::string &name);
 
         void clear();
 

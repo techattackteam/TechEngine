@@ -1,6 +1,6 @@
 #include <imgui.h>
 #include "ExportSettingsPanel.hpp"
-#include "scene/SceneSerializer.hpp"
+#include "scene/SceneManager.hpp"
 #include "PanelsManager.hpp"
 #include <filesystem>
 #include <yaml-cpp/emitter.h>
@@ -46,10 +46,7 @@ namespace TechEngine {
     void ExportSettingsPanel::exportProject() {
         std::filesystem::remove_all(ProjectManager::getBuildPath());
         std::filesystem::create_directory(ProjectManager::getBuildPath());
-        if (currentScenePath.empty()) {
-            SceneSerializer::serialize(ProjectManager::getUserProjectScenePath().string() + "/defaultScene.scene");
-            currentScenePath = "scenes/defaultScene.scene";
-        }
+        SceneManager::saveCurrentScene();
         std::filesystem::copy_options copyOptions = std::filesystem::copy_options::recursive |
                                                     std::filesystem::copy_options::overwrite_existing;
 
