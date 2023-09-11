@@ -25,6 +25,8 @@ namespace TechEngine {
 
 
         void renderCameraFrustum(TechEngine::CameraComponent *camera);
+
+        void renderColliders();
     };
 }
 

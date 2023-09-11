@@ -8,6 +8,7 @@
 #include "mesh/CubeMesh.hpp"
 #include "core/Logger.hpp"
 #include "SceneHelper.hpp"
+#include "components/BoxColliderComponent.hpp"
 #include <filesystem>
 #include <yaml-cpp/yaml.h>
 #include <fstream>
@@ -137,6 +138,16 @@ namespace TechEngine {
             out << YAML::EndMap;
         }
 
+        if (gameObject->hasComponent<BoxColliderComponent>()) {
+            out << YAML::Key << "BoxColliderComponent";
+            out << YAML::BeginMap;
+            auto boxColliderComponent = gameObject->getComponent<BoxColliderComponent>();
+            out << YAML::Key << "Size" << YAML::Value << boxColliderComponent->getSize();
+            out << YAML::Key << "Offset" << YAML::Value << boxColliderComponent->getOffset();
+            out << YAML::Key << "IsDynamic" << YAML::Value << boxColliderComponent->isDynamic();
+            out << YAML::EndMap;
+        }
+
         if (gameObject->hasChildren()) {
             out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
             for (auto &pair: gameObject->getChildren()) {
@@ -200,6 +211,14 @@ namespace TechEngine {
             Material *material = new Material(color, ambient, diffuse, specular, shininess);
             gameObject->addComponent<MeshRendererComponent>(new CubeMesh(), material);
         }
+        auto boxColliderNode = gameObjectYAML["BoxColliderComponent"];
+        if (boxColliderNode) {
+            gameObject->addComponent<BoxColliderComponent>();
+            BoxColliderComponent *boxColliderComponent = gameObject->getComponent<BoxColliderComponent>();
+            boxColliderComponent->setSize(boxColliderNode["Size"].as<glm::vec3>());
+            boxColliderComponent->setSize(boxColliderNode["Offset"].as<glm::vec3>());
+            boxColliderComponent->setDynamic(boxColliderNode["IsDynamic"].as<bool>());
+        }
         auto childrenNode = gameObjectYAML["Children"];
         for (auto childNodeYAML: childrenNode) {
             if (childrenNode) {
@@ -238,7 +257,6 @@ namespace TechEngine {
             }
         }
     }
-
 
     void SceneManager::registerScene(std::string &scenePath) {
         std::string sceneName = getSceneNameFromPath(scenePath);
@@ -302,7 +320,7 @@ namespace TechEngine {
     void SceneManager::saveSceneAsTemporarily(const std::string &sceneName) {
         std::string scenePath = m_scenesBank[sceneName];
         std::string sceneTemporaryPath = scenePath.substr(0, scenePath.find_last_of("\\/")) + "\\SceneTemporary.scene";
-        serialize(sceneName, scenePath);
+        serialize("Temporary Scene", sceneTemporaryPath);
     }
 
     void SceneManager::loadSceneFromTemporarily(const std::string &sceneName) {

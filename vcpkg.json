@@ -9,11 +9,16 @@
     "glm",
     "spdlog",
     "yaml-cpp",
-    "imgui",
-    "imgui-docking",
-    "opengl3-binding",
-    "glfw-binding",
+    {
+      "name": "imgui",
+      "features": [
+        "docking-experimental",
+        "opengl3-binding",
+        "glfw-binding"
+      ]
+    },
     "imguizmo",
-    "glew"
+    "glew",
+    "physx"
   ]
 }

@@ -70,7 +70,6 @@ namespace TechEngine {
         return accumulator;
     }
 
-
     Timer &Timer::getInstance() {
         return *instance;
     }

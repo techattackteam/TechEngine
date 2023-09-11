@@ -1,8 +1,9 @@
 #include <imgui_internal.h>
 #include "InspectorPanel.hpp"
-#include "components/CameraComponent.hpp"
 #include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
+#include "components/CameraComponent.hpp"
 #include "components/MeshRendererComponent.hpp"
+#include "components/BoxColliderComponent.hpp"
 #include "PanelsManager.hpp"
 
 namespace TechEngine {
@@ -16,8 +17,17 @@ namespace TechEngine {
             drawComponents();
         }
         if (ImGui::BeginPopupContextWindow("Add Component", 1)) {
+            if (ImGui::MenuItem("Camera")) {
+                PanelsManager::getInstance().getSelectedGameObject()->addComponent<CameraComponent>();
+            }
             if (ImGui::MenuItem("Mesh Renderer")) {
                 PanelsManager::getInstance().getSelectedGameObject()->addComponent<MeshRendererComponent>();
+            }
+            if (ImGui::BeginMenu("Physics")) {
+                if (ImGui::MenuItem("Box Collider")) {
+                    PanelsManager::getInstance().getSelectedGameObject()->addComponent<BoxColliderComponent>();
+                }
+                ImGui::EndMenu();
             }
 
             ImGui::EndPopup();
@@ -150,6 +160,22 @@ namespace TechEngine {
             drawVec3Control("specular", material.getSpecular(), 1, 100.0f, 0, 1);
             component->paintMesh();
             ImGui::PopID();
+        });
+
+        drawComponent<BoxColliderComponent>("Box Collider", [this](auto &component) {
+            auto &boxCollider = component;
+            glm::vec3 size = boxCollider->getSize();
+            glm::vec3 offset = boxCollider->getOffset();
+            bool dynamic = boxCollider->isDynamic();
+            drawVec3Control("Size", size, 1, 100.0f, 0);
+            drawVec3Control("Offset", offset, 1, 100.0f, 0);
+            ImGui::Checkbox("Dynamic", &dynamic);
+            if (size != boxCollider->getSize())
+                boxCollider->setSize(size);
+            if (offset != boxCollider->getOffset())
+                boxCollider->setOffset(offset);
+            if (dynamic != boxCollider->isDynamic())
+                boxCollider->setDynamic(dynamic);
         });
     }
 

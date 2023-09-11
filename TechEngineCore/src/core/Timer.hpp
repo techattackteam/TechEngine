@@ -12,7 +12,7 @@ namespace TechEngine {
         float timeCount = 0.0f;
 
         float deltaTime = 0.0f;
-        const float TPS = 1.0f / 20.0f; // 20 ticks
+        const float TPS = 1.0f / 60.0f; // 60 ticks
         float accumulator = 0;
         float interpolation = 0;
 

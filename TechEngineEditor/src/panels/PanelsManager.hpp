@@ -80,13 +80,8 @@ namespace TechEngine {
 
         void stopRunningScene();
 
-        void saveScene();
-
-        void saveSceneAs();
 
         void openScene();
-
-        void saveEngineSettings();
 
         void OnKeyPressedEvent(Key &key);
 

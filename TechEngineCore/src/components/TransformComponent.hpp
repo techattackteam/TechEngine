@@ -29,7 +29,7 @@ namespace TechEngine {
 
         void rotate(glm::vec3 rotation);
 
-        void rotate(glm::quat quaternion);
+        void setRotation(glm::quat quaternion);
 
         void setScale(glm::vec3 vector);
 

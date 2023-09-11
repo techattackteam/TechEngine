@@ -19,7 +19,7 @@ namespace TechEngine {
                 result = false;
             }
             ImGui::EndMenu();
-            return result;
         }
+        return result;
     }
 }

@@ -39,14 +39,14 @@ namespace TechEngine {
         this->orientation = rotation;
     }
 
+    /*Rotate using Quaternions in Degrees*/
+    void TransformComponent::setRotation(glm::quat quaternion) {
+        setRotation(glm::degrees(glm::eulerAngles(quaternion)));
+    }
+
     void TransformComponent::rotate(glm::vec3 rotation) {
         lastOrientation = orientation;
         this->orientation += rotation;
-    }
-
-    /*Rotate using Quaternions in Degrees*/
-    void TransformComponent::rotate(glm::quat quaternion) {
-        setRotation(glm::degrees(glm::eulerAngles(quaternion)));
     }
 
     void TransformComponent::setScale(glm::vec3 scale) {
@@ -55,7 +55,7 @@ namespace TechEngine {
 
     void TransformComponent::lookAt(glm::vec3 lookPosition) {
         glm::mat4 lootAtMatrix = glm::lookAt(position, lookPosition, glm::vec3(0, 1, 0));
-        rotate(glm::toQuat(lootAtMatrix));
+        setRotation(glm::toQuat(lootAtMatrix));
     }
 
     glm::vec3 TransformComponent::getPosition() const {
