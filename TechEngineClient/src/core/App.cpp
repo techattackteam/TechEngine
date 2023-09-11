@@ -8,7 +8,6 @@ namespace TechEngine {
         });
 
         timer.init();
-        ScriptEngine::getInstance()->onStart();
     }
 
     App::~App() = default;
@@ -23,7 +22,6 @@ namespace TechEngine {
                 ScriptEngine::getInstance()->onFixedUpdate();
                 scene.fixedUpdate();
                 onFixedUpdate();
-
                 timer.addAccumulator(-timer.getTPS());
             }
 

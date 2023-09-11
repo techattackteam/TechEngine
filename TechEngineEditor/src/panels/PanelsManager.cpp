@@ -4,23 +4,19 @@
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
 #include "scene/SceneHelper.hpp"
 #include "core/Logger.hpp"
-#include "testGameObject/QuadMeshTest.hpp"
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
 #include <filesystem>
 #include <commdlg.h>
 #include <imgui_internal.h>
-#include <yaml-cpp/node/node.h>
 #include <yaml-cpp/node/parse.h>
-#include <yaml-cpp/exceptions.h>
-#include <yaml-cpp/emitter.h>
-#include <fstream>
 #include "project/ProjectManager.hpp"
 #include "events/input/KeyPressedEvent.hpp"
 #include "events/input/KeyReleasedEvent.hpp"
 #include "events/input/MouseScrollEvent.hpp"
 #include "events/input/MouseMoveEvent.hpp"
 #include "testGameObject/MainCamera.hpp"
+#include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
     PanelsManager::PanelsManager(Window &window) : window(window), exportSettingsPanel((std::string &) "TEMPORARY") {
@@ -69,7 +65,6 @@ namespace TechEngine {
         exportSettingsPanel.onUpdate();
         endImGuiFrame();
     }
-
 
     void PanelsManager::registerCustomPanel(RegisterCustomPanel *event) {
         customPanels.emplace_back(event->getPanel());
@@ -150,10 +145,10 @@ namespace TechEngine {
             if (ImGui::MenuItem("New Project", "Ctrl+N")) {
             }
             if (ImGui::MenuItem("Open Project", "Ctrl+O")) {
-                openScene();
+
             }
             if (ImGui::MenuItem("Save Project", "Ctrl+S")) {
-                SceneManager::saveCurrentScene();
+                ProjectManager::saveProject();
             }
             if (ImGui::MenuItem("Build")) {
                 if (m_currentPlaying) {
@@ -276,11 +271,14 @@ namespace TechEngine {
     void PanelsManager::startRunningScene() {
         SceneManager::saveSceneAsTemporarily(SceneManager::getActiveSceneName());
         ScriptEngine::getInstance()->init(ProjectManager::getUserScriptsDLLPath().string());
+        ScriptEngine::getInstance()->onStart();
+        PhysicsEngine::getInstance()->start();
         m_currentPlaying = true;
     }
 
     void PanelsManager::stopRunningScene() {
         ScriptEngine::getInstance()->stop();
+        PhysicsEngine::getInstance()->stop();
         SceneManager::loadSceneFromTemporarily(SceneManager::getActiveSceneName());
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
             if (gameObject->hasComponent<CameraComponent>() && gameObject->getComponent<CameraComponent>()->isMainCamera()) {
@@ -291,24 +289,6 @@ namespace TechEngine {
             }
         }
         m_currentPlaying = false;
-    }
-
-
-    void PanelsManager::saveEngineSettings() {
-/*        YAML::Emitter out;
-        out << YAML::BeginMap;
-        out << YAML::Key << "Scene path" << YAML::Value << currentScenePath;
-        out << YAML::EndSeq;
-        out << YAML::EndMap;
-        std::ofstream fout(ProjectManager::getEngineExportSettingsFile().string());
-        fout << out.c_str();*/
-        TE_LOGGER_INFO("EngineSettings saved");
-    }
-
-    void PanelsManager::openScene() {
-        std::string filepath = openFileWindow("TechEngine Scene (*.scene)\0*.scene\0");
-        std::string filename = filepath.substr(filepath.find_last_of("/\\") + 1);
-        SceneManager::loadScene(filename);
     }
 
     PanelsManager &PanelsManager::getInstance() {

@@ -25,6 +25,8 @@ namespace TechEngine {
         };
 
         TransformComponent &getTransform();
+
+        GameObject *getGameObject();
     };
 }
 

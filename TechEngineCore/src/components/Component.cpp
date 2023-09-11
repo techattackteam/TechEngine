@@ -23,4 +23,8 @@ namespace TechEngine {
         return gameObject->getTransform();
     }
 
+    GameObject *Component::getGameObject() {
+        return gameObject;
+    }
+
 }

@@ -2,6 +2,7 @@
 #include "Editor.hpp"
 #include "project/ProjectManager.hpp"
 #include "yaml-cpp/yaml.h"
+#include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
 
@@ -9,11 +10,13 @@ namespace TechEngine {
         ProjectManager::init(std::filesystem::current_path());
         rootPath = ProjectManager::getRootPath();
         editorSettings = rootPath.string() + "/EditorSettings.TESettings";
+        PhysicsEngine::getInstance()->init();
         loadEditorSettings();
         panelsManager.init();
     }
 
     void Editor::onUpdate() {
+        PhysicsEngine::getInstance()->onUpdate();
         panelsManager.update();
         window.onUpdate();
     }
