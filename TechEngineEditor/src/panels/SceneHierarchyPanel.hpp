@@ -10,8 +10,8 @@ namespace TechEngine {
     class SceneHierarchyPanel : public Panel {
     private:
         GameObject *selectedGO = nullptr;
-        GameObject *gameObjectToDelete = nullptr;
         Scene &scene = Scene::getInstance();
+        bool openChildMenu = false;
     public:
         SceneHierarchyPanel();
 

@@ -5,7 +5,7 @@
 namespace TechEngine {
     class AppCloseRequestEvent : public TechEngine::Event {
     public:
-        static inline EventType eventType = EventType("AppCloseRequestEvent", ASYNC);
+        static inline EventType eventType = EventType("AppCloseRequestEvent", SYNC);
 
         AppCloseRequestEvent() : Event(eventType) {
         };

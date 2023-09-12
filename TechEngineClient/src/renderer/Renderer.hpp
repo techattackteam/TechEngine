@@ -5,37 +5,44 @@
 #include "ShadersManager.hpp"
 #include "FrameBuffer.hpp"
 #include "scene/Scene.hpp"
+#include "Line.hpp"
 
 namespace TechEngine {
     class Renderer {
     private:
-        uint32_t id = 1;
+        const std::string BufferGameObjects = "GameObjects";
+        const std::string BufferLines = "Lines";
+        uint32_t id = 0;
+
+        std::vector<Line> lines;
 
         ShadersManager shadersManager;
-        VertexArray vertexArray;
-        VertexBuffer vertexBuffer;
+        std::unordered_map<std::string, VertexArray *> vertexArrays;
+        std::unordered_map<std::string, VertexBuffer *> vertexBuffers;
         std::list<FrameBuffer *> frameBuffers;
         Scene &scene = Scene::getInstance();
     public:
 
         Renderer() = default;
+
         ~Renderer();
+
         void init();
 
         void renderPipeline();
 
-        void flushMeshData(MeshRendererComponent *meshRenderer);
+        void createLine(const glm::vec3 &startPosition, const glm::vec3 &endPosition, const glm::vec4 &color);
 
         FrameBuffer &getFramebuffer(uint32_t id);
 
         uint32_t createFramebuffer(uint32_t width, uint32_t height);
 
-        void renderLine(const glm::vec3 &startPosition, const glm::vec3 &endPosition, const glm::vec3 &color);
-
     private:
         void shadowPass();
 
         void geometryPass();
+
+        void linePass();
 
         void renderWithLightPass();
 
@@ -43,6 +50,9 @@ namespace TechEngine {
 
         void renderGameObject(GameObject *gameObject, bool shadow);
 
+        void flushMeshData(MeshRendererComponent *meshRenderer);
+
+        void flushLinesData();
     };
 }
 

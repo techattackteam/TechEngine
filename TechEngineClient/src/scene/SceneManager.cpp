@@ -216,7 +216,7 @@ namespace TechEngine {
             gameObject->addComponent<BoxColliderComponent>();
             BoxColliderComponent *boxColliderComponent = gameObject->getComponent<BoxColliderComponent>();
             boxColliderComponent->setSize(boxColliderNode["Size"].as<glm::vec3>());
-            boxColliderComponent->setSize(boxColliderNode["Offset"].as<glm::vec3>());
+            boxColliderComponent->setOffset(boxColliderNode["Offset"].as<glm::vec3>());
             boxColliderComponent->setDynamic(boxColliderNode["IsDynamic"].as<bool>());
         }
         auto childrenNode = gameObjectYAML["Children"];
