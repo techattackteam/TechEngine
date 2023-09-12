@@ -1,13 +1,16 @@
 #version 330 core
 
-uniform vec3 start;
-uniform vec3 end;
+layout (location = 0) in vec3 position;
+layout (location = 1) in vec4 color;
+
 uniform mat4 view;
 uniform mat4 projection;
 
+out vec4 colorFrag;
+
 void main()
 {
-	vec3 position = gl_VertexID == 0 ? start : end;
+    colorFrag = color;
     gl_Position =  projection * view * vec4(position, 1.0f);
 }
 

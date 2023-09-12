@@ -7,10 +7,18 @@
 
 namespace TechEngine {
     void Renderer::init() {
-        vertexArray.init(id);
-        vertexBuffer.init(id, 10000000 * sizeof(Vertex));
         shadersManager.init();
-        vertexArray.addNewBuffer(vertexBuffer);
+        vertexArrays[BufferGameObjects] = new VertexArray();
+        vertexBuffers[BufferGameObjects] = new VertexBuffer();
+        vertexArrays[BufferGameObjects]->init();
+        vertexBuffers[BufferGameObjects]->init(10000000 * sizeof(Vertex));
+        vertexArrays[BufferGameObjects]->addNewBuffer(*vertexBuffers[BufferGameObjects]);
+
+        vertexArrays[BufferLines] = new VertexArray();
+        vertexBuffers[BufferLines] = new VertexBuffer();
+        vertexArrays[BufferLines]->init();
+        vertexBuffers[BufferLines]->init(10000000 * sizeof(Line));
+        vertexArrays[BufferLines]->addNewLinesBuffer(*vertexBuffers[BufferLines]);
     }
 
     Renderer::~Renderer() {
@@ -44,6 +52,9 @@ namespace TechEngine {
                 shadersManager.getActiveShader()->setUniformVec3("material.specular", material.getSpecular());
                 shadersManager.getActiveShader()->setUniformFloat("material.shininess", material.getShininess());
             }
+
+            vertexBuffers[BufferGameObjects]->bind();
+            vertexArrays[BufferGameObjects]->bind();
             GlCall(glDrawArrays(GL_TRIANGLES, 0, meshRenderer->getVertices().size()));
         }
     }
@@ -74,6 +85,8 @@ namespace TechEngine {
     }
 
     void Renderer::geometryPass() {
+        vertexBuffers[BufferGameObjects]->bind();
+        vertexArrays[BufferGameObjects]->bind();
         shadersManager.changeActiveShader("geometry");
         shadersManager.getActiveShader()->setUniformMatrix4f("projection", SceneHelper::mainCamera->getProjectionMatrix());
         shadersManager.getActiveShader()->setUniformMatrix4f("view", SceneHelper::mainCamera->getViewMatrix());
@@ -84,35 +97,53 @@ namespace TechEngine {
         } else {
             renderGeometryPass(false);
         }
+        vertexBuffers[BufferGameObjects]->unBind();
+        vertexArrays[BufferGameObjects]->unBind();
     }
 
-    void Renderer::renderLine(const glm::vec3 &startPosition, const glm::vec3 &endPosition, const glm::vec3 &color) {
+    void Renderer::linePass() {
+        vertexBuffers[BufferLines]->bind();
+        vertexArrays[BufferLines]->bind();
         shadersManager.changeActiveShader("line");
         shadersManager.getActiveShader()->setUniformMatrix4f("projection", SceneHelper::mainCamera->getProjectionMatrix());
         shadersManager.getActiveShader()->setUniformMatrix4f("view", SceneHelper::mainCamera->getViewMatrix());
-        shadersManager.getActiveShader()->setUniformVec3("start", startPosition);
-        shadersManager.getActiveShader()->setUniformVec3("end", endPosition);
-        shadersManager.getActiveShader()->setUniformVec3("color", color);
+        flushLinesData();
+        vertexBuffers[BufferLines]->bind();
+        vertexArrays[BufferLines]->bind();
+        GlCall(glDrawArrays(GL_LINES, 0, lines.size() * 2));
+        vertexBuffers[BufferLines]->unBind();
+        vertexArrays[BufferLines]->unBind();;
+        lines.clear();
+    }
 
-        GlCall(glDrawArrays(GL_LINES, 0, 2));
+    void Renderer::createLine(const glm::vec3 &startPosition, const glm::vec3 &endPosition, const glm::vec4 &color) {
+        Line line = Line(startPosition, endPosition, color);
+        lines.push_back(line);
     }
 
     void Renderer::renderPipeline() {
         if (!SceneHelper::hasMainCamera()) {
             return;
         }
-        vertexBuffer.bind();
-        vertexArray.bind();
         GlCall(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
         GlCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         geometryPass();
-
-        vertexBuffer.unBind();
-        vertexArray.unBind();
+        if (!lines.empty()) {
+            linePass();
+        }
     }
 
     void Renderer::flushMeshData(MeshRendererComponent *meshRenderer) {
-        vertexBuffer.addData(meshRenderer->getVertices().data(), meshRenderer->getVertices().size() * sizeof(Vertex), 0);
+        vertexBuffers[BufferGameObjects]->addData(meshRenderer->getVertices().data(), meshRenderer->getVertices().size() * sizeof(Vertex), 0);
+    }
+
+    void Renderer::flushLinesData() {
+        std::vector<LineVertex> vertices;
+        for (Line line: lines) {
+            vertices.push_back(line.getStart());
+            vertices.push_back(line.getEnd());
+        }
+        vertexBuffers[BufferLines]->addData(vertices.data(), vertices.size() * sizeof(LineVertex), 0);
     }
 
     FrameBuffer &Renderer::getFramebuffer(uint32_t id) {

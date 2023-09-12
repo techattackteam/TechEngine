@@ -24,9 +24,9 @@ namespace TechEngine {
         ImVec2 wsize = ImGui::GetContentRegionAvail();
         frameBuffer.bind();
         frameBuffer.resize(wsize.x, wsize.y);
-        renderer->renderPipeline();
         renderCameraFrustum(currentMainCamera);
         renderColliders();
+        renderer->renderPipeline();
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
         ImGui::Image(reinterpret_cast<void *>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
         guizmo.editTransform(ImGui::GetCurrentContext());
@@ -60,22 +60,22 @@ namespace TechEngine {
             worldPoint /= worldPoint.w; // Homogeneous divide
             frustumPoints.push_back(glm::vec3(worldPoint));
         }
-        glm::vec3 color = glm::vec3(1, 1, 1);
+        glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
         // Render the near plane as a square
-        renderer->renderLine(frustumPoints[0], frustumPoints[1], color);
-        renderer->renderLine(frustumPoints[1], frustumPoints[3], color);
-        renderer->renderLine(frustumPoints[2], frustumPoints[3], color);
-        renderer->renderLine(frustumPoints[0], frustumPoints[2], color);
+        renderer->createLine(frustumPoints[0], frustumPoints[1], color);
+        renderer->createLine(frustumPoints[1], frustumPoints[3], color);
+        renderer->createLine(frustumPoints[2], frustumPoints[3], color);
+        renderer->createLine(frustumPoints[0], frustumPoints[2], color);
 
         // Render the far plane as a square
-        renderer->renderLine(frustumPoints[4], frustumPoints[5], color);
-        renderer->renderLine(frustumPoints[5], frustumPoints[7], color);
-        renderer->renderLine(frustumPoints[6], frustumPoints[7], color);
-        renderer->renderLine(frustumPoints[4], frustumPoints[6], color);
+        renderer->createLine(frustumPoints[4], frustumPoints[5], color);
+        renderer->createLine(frustumPoints[5], frustumPoints[7], color);
+        renderer->createLine(frustumPoints[6], frustumPoints[7], color);
+        renderer->createLine(frustumPoints[4], frustumPoints[6], color);
 
         // Connect the near and far plane corners to complete the edges
         for (int i = 0; i < 4; ++i) {
-            renderer->renderLine(frustumPoints[i], frustumPoints[i + 4], color);
+            renderer->createLine(frustumPoints[i], frustumPoints[i + 4], color);
         }
 
     }
@@ -91,8 +91,10 @@ namespace TechEngine {
             // Calculate the world space transformation matrix
             glm::mat4 modelMatrix = transform->getModelMatrix();
 
+            float offset = 0.005f;
             // Calculate the half-size of the box based on the scale
-            glm::vec3 halfSize = collider->getSize() * 0.5f;
+            glm::vec3 halfSize = collider->getSize() * 0.5f + offset;
+
 
             // Define the vertices of the box in local space (unrotated)
             glm::vec3 vertices[8] = {
@@ -113,22 +115,23 @@ namespace TechEngine {
             // Render the box collider lines
             // Assuming renderLine(startPosition, endPosition, color) function is available
             // Render the front face
-            renderer->renderLine(vertices[0], vertices[1], glm::vec3(1.0f, 0.0f, 0.0f));
-            renderer->renderLine(vertices[1], vertices[2], glm::vec3(1.0f, 0.0f, 0.0f));
-            renderer->renderLine(vertices[2], vertices[3], glm::vec3(1.0f, 0.0f, 0.0f));
-            renderer->renderLine(vertices[3], vertices[0], glm::vec3(1.0f, 0.0f, 0.0f));
+            glm::vec4 color = glm::vec4(1.0f, 0, 0, 1.0f);
+            renderer->createLine(vertices[0], vertices[1], color);
+            renderer->createLine(vertices[1], vertices[2], color);
+            renderer->createLine(vertices[2], vertices[3], color);
+            renderer->createLine(vertices[3], vertices[0], color);
 
             // Render the back face (adjust the Z-coordinate)
-            renderer->renderLine(vertices[0], vertices[4], glm::vec3(1.0f, 0.0f, 0.0f));
-            renderer->renderLine(vertices[1], vertices[5], glm::vec3(1.0f, 0.0f, 0.0f));
-            renderer->renderLine(vertices[2], vertices[6], glm::vec3(1.0f, 0.0f, 0.0f));
-            renderer->renderLine(vertices[3], vertices[7], glm::vec3(1.0f, 0.0f, 0.0f));
+            renderer->createLine(vertices[0], vertices[4], color);
+            renderer->createLine(vertices[1], vertices[5], color);
+            renderer->createLine(vertices[2], vertices[6], color);
+            renderer->createLine(vertices[3], vertices[7], color);
 
             // Render the connecting lines between the front and back faces
-            renderer->renderLine(vertices[4], vertices[5], glm::vec3(1.0f, 0.0f, 0.0f));
-            renderer->renderLine(vertices[5], vertices[6], glm::vec3(1.0f, 0.0f, 0.0f));
-            renderer->renderLine(vertices[6], vertices[7], glm::vec3(1.0f, 0.0f, 0.0f));
-            renderer->renderLine(vertices[7], vertices[4], glm::vec3(1.0f, 0.0f, 0.0f));
+            renderer->createLine(vertices[4], vertices[5], color);
+            renderer->createLine(vertices[5], vertices[6], color);
+            renderer->createLine(vertices[6], vertices[7], color);
+            renderer->createLine(vertices[7], vertices[4], color);
 
         }
     }

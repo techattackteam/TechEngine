@@ -22,10 +22,12 @@ namespace TechEngine {
             }
 
             if (ImGui::BeginPopupContextWindow(0, 1)) {
-                if (ImGui::MenuItem("New Game Object")) {
-                    new QuadMeshTest("QuadMeshTest");
+                if (ImGui::MenuItem("New Empty Game Object")) {
+                    new GameObject("Empty");
                 }
-
+                if (ImGui::MenuItem("New Game Object")) {
+                    new QuadMeshTest("Cube");
+                }
                 ImGui::EndPopup();
             }
 

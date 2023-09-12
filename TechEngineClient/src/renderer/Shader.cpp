@@ -98,6 +98,10 @@ void Shader::setUniformVec3(const std::string &name, glm::vec3 vector) {
     GlCall(glUniform3fv(getUniformLocation(name), 1, glm::value_ptr(vector)));
 }
 
+void Shader::setUniformVec4(const std::string &name, glm::vec4 vector) {
+    GlCall(glUniform4fv(getUniformLocation(name), 1, glm::value_ptr(vector)));
+}
+
 void Shader::setUniformInt(const std::string &name, int value) {
     GlCall(glUniform1i(getUniformLocation(name), value));
 }

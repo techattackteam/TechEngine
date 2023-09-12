@@ -41,10 +41,13 @@ public:
 
     void setUniformVec3(const std::string &name, glm::vec3 vector);
 
+    void setUniformVec4(const std::string &name, glm::vec4 vector);
+
     void setUniformInt(const std::string &name, int value);
 
     void setUniformBool(const std::string &name, bool value);
 
     void setUniformFloat(const std::string &name, float value);
+
 };
 
