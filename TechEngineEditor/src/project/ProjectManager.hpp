@@ -14,9 +14,6 @@ namespace TechEngine {
         //Editor root path
         path cmakePath = "\"C:/Program Files/CMake/bin/cmake.exe\"";
         path rootPath = std::filesystem::current_path();
-        path projectTemplate = rootPath.string() + "\\projectTemplate";
-        path scriptsTemplate = rootPath.string() + "\\scripts";
-
 
         path userProjectRootPath = rootPath.string() + "\\New Project";
         path userProjectScenesPath = userProjectRootPath.string() + "\\scenes";

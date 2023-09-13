@@ -20,8 +20,11 @@ namespace TechEngine {
                 }
                 drawEntityNode(element);
             }
-
-            if (ImGui::BeginPopupContextWindow(0, 1)) {
+            if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()) {
+                selectedGO = nullptr;
+                PanelsManager::getInstance().deselectGameObject();
+            }
+            if (!ImGui::IsAnyItemHovered() && ImGui::BeginPopupContextWindow(0, 1)) {
                 if (ImGui::MenuItem("New Empty Game Object")) {
                     new GameObject("Empty");
                 }
@@ -30,7 +33,6 @@ namespace TechEngine {
                 }
                 ImGui::EndPopup();
             }
-
         }
         ImGui::End();
     }
@@ -47,8 +49,7 @@ namespace TechEngine {
             PanelsManager::getInstance().selectGameObject(gameObject->getTag());
         }
 
-
-        if (ImGui::BeginPopupContextItem()) {
+        if (ImGui::BeginPopupContextItem("GameObject Menu", 1)) {
             if (ImGui::MenuItem("Make Child")) {
                 GameObject *child = new QuadMeshTest(gameObject->getName() + "'s Child");
                 Scene::getInstance().makeChildTo(gameObject, child);
@@ -61,7 +62,6 @@ namespace TechEngine {
                 PanelsManager::getInstance().deselectGameObject(gameObject->getTag());
                 selectedGO = nullptr;
             }
-
             ImGui::EndPopup();
         }
         if (opened) {
