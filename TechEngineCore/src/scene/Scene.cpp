@@ -49,7 +49,7 @@ namespace TechEngine {
     }
 
     void Scene::makeChildTo(GameObject *parent, GameObject *child) {
-        if (getGameObject(child->getName()) != nullptr) {
+        if (getGameObjectByTag(child->getTag()) != nullptr) {
             gameObjects.remove(child);
         }
         parent->addChild(child);
@@ -67,6 +67,22 @@ namespace TechEngine {
 
     std::list<GameObject *> &Scene::getGameObjects() {
         return gameObjects;
+    }
+
+    std::list<GameObject *> Scene::getAllGameObjects() {
+        std::list<GameObject *> allGameObjects;
+        for (GameObject *gameObject: gameObjects) {
+            std::vector<GameObject *> nodes_to_visit = {gameObject};
+            while (!nodes_to_visit.empty()) {
+                GameObject *child = nodes_to_visit.front();
+                nodes_to_visit.erase(nodes_to_visit.begin());
+                for (auto &child: child->getChildren()) {
+                    nodes_to_visit.push_back(child.second);
+                }
+                allGameObjects.emplace_back(child);
+            }
+        }
+        return allGameObjects;
     }
 
     std::list<GameObject *> &Scene::getLights() {

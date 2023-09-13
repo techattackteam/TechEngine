@@ -22,9 +22,6 @@ namespace TechEngine {
         std::string tag;
         bool stackAllocated = false;
         bool editorOnly = false;
-    protected:
-        GameObject(std::string basicString, GameObject *pObject);
-
     public:
 
         GameObject(std::string name, const std::string &tag);
@@ -74,6 +71,8 @@ namespace TechEngine {
 
         glm::mat4 getModelMatrix();
 
+        glm::mat4 getLocalModelMatrix();
+
         std::string getName();
 
         std::string getTag();
@@ -87,7 +86,7 @@ namespace TechEngine {
         std::unordered_map<std::string, GameObject *> &getChildren();
 
         bool operator==(const GameObject *gameObject) {
-            return name == gameObject->name;
+            return tag == gameObject->tag;
         }
 
         void *operator new(size_t size) {
@@ -114,6 +113,7 @@ namespace TechEngine {
 
     private:
         void deleteChildren();
+
     };
 }
 

@@ -24,7 +24,7 @@ namespace TechEngine {
                 selectedGO = nullptr;
                 PanelsManager::getInstance().deselectGameObject();
             }
-            if (!ImGui::IsAnyItemHovered() && ImGui::BeginPopupContextWindow(0, 1)) {
+            if (!ImGui::IsItemHovered() && ImGui::BeginPopupContextWindow(0, 1)) {
                 if (ImGui::MenuItem("New Empty Game Object")) {
                     new GameObject("Empty");
                 }
@@ -55,7 +55,7 @@ namespace TechEngine {
                 Scene::getInstance().makeChildTo(gameObject, child);
             }
             if (ImGui::MenuItem("Duplicate")) {
-                new QuadMeshTest(gameObject->getName() + "'s duplicate", gameObject);
+                new QuadMeshTest(gameObject->getName() + "'s duplicate");
             }
             if (ImGui::MenuItem("Delete GameObject")) {
                 TechEngine::EventDispatcher::getInstance().dispatch(new RequestDeleteGameObject(gameObject));

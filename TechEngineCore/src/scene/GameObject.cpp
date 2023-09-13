@@ -20,12 +20,6 @@ namespace TechEngine {
         Scene::getInstance().registerGameObject(this, tag);
     }
 
-    GameObject::GameObject(std::string name, GameObject *pObject) : name(std::move(name)) {
-        addComponent<TransformComponent>();
-        TechEngine::EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
-        Scene::getInstance().registerGameObject(this);
-    }
-
     GameObject::~GameObject() {
         if (parent == nullptr) {
             Scene::getInstance().unregisterGameObject(this);
@@ -71,6 +65,10 @@ namespace TechEngine {
 
     glm::mat4 GameObject::getModelMatrix() {
         return getTransform().getModelMatrix();
+    }
+
+    glm::mat4 GameObject::getLocalModelMatrix(){
+        return getTransform().getLocalModelMatrix();
     }
 
     std::string GameObject::getName() {

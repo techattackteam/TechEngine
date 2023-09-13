@@ -7,7 +7,6 @@
 #include "wrapper/Wrapper.hpp"
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
 #include "events/input/MouseScrollEvent.hpp"
-#include "events/input/MouseMoveEvent.hpp"
 
 namespace TechEngine {
     Window::Window(const std::string &title, uint32_t width, uint32_t height) {
@@ -35,6 +34,8 @@ namespace TechEngine {
         glDepthMask(GL_TRUE);
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glfwSwapInterval(1);
         glfwSetWindowUserPointer(handler, this);
         glfwSetWindowCloseCallback(handler, [](GLFWwindow *handler) {

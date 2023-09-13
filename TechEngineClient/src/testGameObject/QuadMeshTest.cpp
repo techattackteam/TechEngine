@@ -10,6 +10,3 @@ QuadMeshTest::QuadMeshTest(std::string name) : TechEngine::GameObject(std::move(
 
 }
 
-QuadMeshTest::QuadMeshTest(std::string name, TechEngine::GameObject *gameObject) : GameObject(name, gameObject) {
-
-}
