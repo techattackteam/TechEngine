@@ -80,9 +80,6 @@ namespace TechEngine {
 
         void stopRunningScene();
 
-
-        void openScene();
-
         void OnKeyPressedEvent(Key &key);
 
         void OnMouseScrollEvent(float xOffset, float yOffset);

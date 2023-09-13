@@ -3,6 +3,7 @@
 #include "scene/SceneHelper.hpp"
 #include "components/BoxColliderComponent.hpp"
 #include "core/Logger.hpp"
+#include "PanelsManager.hpp"
 
 namespace TechEngine {
     SceneView::SceneView(Renderer &renderer) : renderer(&renderer), Panel("Scene") {
@@ -60,7 +61,12 @@ namespace TechEngine {
             worldPoint /= worldPoint.w; // Homogeneous divide
             frustumPoints.push_back(glm::vec3(worldPoint));
         }
-        glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+        glm::vec4 color;
+        if (camera->getGameObject() == PanelsManager::getInstance().getSelectedGameObject()) {
+            color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+        } else {
+            color = glm::vec4(1.0f, 1.0f, 1.0f, 0.3f);
+        }
         // Render the near plane as a square
         renderer->createLine(frustumPoints[0], frustumPoints[1], color);
         renderer->createLine(frustumPoints[1], frustumPoints[3], color);
@@ -81,7 +87,7 @@ namespace TechEngine {
     }
 
     void SceneView::renderColliders() {
-        for (auto &element: Scene::getInstance().getGameObjects()) {
+        for (auto &element: Scene::getInstance().getAllGameObjects()) {
             if (element->isEditorOnly() || !element->hasComponent<BoxColliderComponent>()) {
                 continue;
             }
@@ -115,7 +121,12 @@ namespace TechEngine {
             // Render the box collider lines
             // Assuming renderLine(startPosition, endPosition, color) function is available
             // Render the front face
-            glm::vec4 color = glm::vec4(1.0f, 0, 0, 1.0f);
+            glm::vec4 color;
+            if (element == PanelsManager::getInstance().getSelectedGameObject()) {
+                color = glm::vec4(1.0f, 0, 0, 1.0f);
+            } else {
+                color = glm::vec4(1.0f, 0, 0, 0.3f);
+            }
             renderer->createLine(vertices[0], vertices[1], color);
             renderer->createLine(vertices[1], vertices[2], color);
             renderer->createLine(vertices[2], vertices[3], color);

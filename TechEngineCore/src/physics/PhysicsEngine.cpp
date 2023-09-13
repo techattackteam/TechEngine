@@ -19,7 +19,6 @@ namespace TechEngine {
         physics->release();
         pvd->release();
         foundation->release();
-
     }
 
     void PhysicsEngine::init() {
@@ -81,7 +80,7 @@ namespace TechEngine {
     void PhysicsEngine::updateActorPositions() {
         for (auto &actor: actors) {
             TransformComponent *transformComponent = static_cast<TransformComponent *>(actor.second->userData);
-            glm::vec3 position = transformComponent->getPosition();
+            glm::vec3 position = transformComponent->getWorldPosition();
             glm::quat rotation = glm::quat(glm::radians(transformComponent->getOrientation()));
             actor.second->setGlobalPose(physx::PxTransform(physx::PxVec3(position.x, position.y, position.z), physx::PxQuat(rotation.x, rotation.y, rotation.z, rotation.w)));
         }
@@ -91,7 +90,7 @@ namespace TechEngine {
         for (auto &actor: actors) {
             physx::PxTransform transform = actor.second->getGlobalPose();
             TransformComponent *transformComponent = static_cast<TransformComponent *>(actor.second->userData);
-            transformComponent->translateTo(glm::vec3(transform.p.x, transform.p.y, transform.p.z));
+            transformComponent->translateToWorld(glm::vec3(transform.p.x, transform.p.y, transform.p.z));
             transformComponent->setRotation(glm::quat(transform.q.w, transform.q.x, transform.q.y, transform.q.z));
         }
     }
@@ -103,7 +102,7 @@ namespace TechEngine {
             actors.erase(boxColliderComponent->getGameObject()->getTag());
         }
         TransformComponent t = boxColliderComponent->getTransform();
-        glm::vec3 position = t.getPosition() + boxColliderComponent->getOffset();
+        glm::vec3 position = t.getWorldPosition() + boxColliderComponent->getOffset();
         glm::quat rotation = glm::quat(glm::radians(t.getOrientation()));
         physx::PxBoxGeometry boxGeometry(t.getScale().x / 2, t.getScale().y / 2, t.getScale().z / 2);
         physx::PxTransform transform(physx::PxVec3(position.x, position.y, position.z), physx::PxQuat(rotation.x, rotation.y, rotation.z, rotation.w));

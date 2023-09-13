@@ -85,7 +85,6 @@ namespace TechEngine {
         m_ViewportBounds[1] = {viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y};
         ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y, m_ViewportBounds[1].x - m_ViewportBounds[0].x, m_ViewportBounds[1].y - m_ViewportBounds[0].y);
 
-
         const glm::mat4 &cameraProjection = SceneHelper::mainCamera->getProjectionMatrix();
         glm::mat4 cameraView = SceneHelper::mainCamera->getViewMatrix();
 
@@ -97,7 +96,7 @@ namespace TechEngine {
         if (ImGuizmo::IsUsing()) {
             glm::vec3 translation, rotation, scale;
             DecomposeTransform(transform, translation, rotation, scale);
-            PanelsManager::getInstance().getSelectedGameObject()->getTransform().translateTo(translation);
+            PanelsManager::getInstance().getSelectedGameObject()->getTransform().translateToWorld(translation);
             PanelsManager::getInstance().getSelectedGameObject()->getTransform().setRotation(glm::degrees(rotation));
             PanelsManager::getInstance().getSelectedGameObject()->getTransform().setScale(scale);
         }

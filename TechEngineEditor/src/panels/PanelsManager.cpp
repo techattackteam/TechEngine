@@ -371,9 +371,6 @@ namespace TechEngine {
     }
 
     void PanelsManager::OnMouseMoveEvent(glm::vec2 delta) {
-        if (m_currentPlaying) {
-            return;
-        }
         const glm::mat4 inverted = glm::inverse(sceneView.getSceneCamera()->getComponent<CameraComponent>()->getViewMatrix());
         const glm::vec3 right = normalize(glm::vec3(inverted[0]));
         const glm::vec3 up = normalize(glm::vec3(inverted[1]));

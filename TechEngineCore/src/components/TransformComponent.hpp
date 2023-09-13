@@ -25,6 +25,8 @@ namespace TechEngine {
 
         void translateTo(glm::vec3 position);
 
+        void translateToWorld(glm::vec3 worldPosition);
+
         void setRotation(glm::vec3 rotation);
 
         void rotate(glm::vec3 rotation);
@@ -37,7 +39,11 @@ namespace TechEngine {
 
         glm::mat4 getModelMatrix();
 
+        glm::mat4 getLocalModelMatrix();
+
         glm::vec3 getPosition() const;
+
+        glm::vec3 getWorldPosition() const;
 
         glm::vec3 getOrientation() const;
 
