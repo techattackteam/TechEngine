@@ -5,6 +5,7 @@
 #include "scene/SceneManager.hpp"
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
 #include "event/EventDispatcher.hpp"
+#include "core/ConstantPaths.hpp"
 
 namespace TechEngine {
 
@@ -70,17 +71,9 @@ namespace TechEngine {
         return getInstance()->cmakePath;
     }
 
-    const path &ProjectManager::getProjectTemplate() {
-        return getInstance()->projectTemplate;
-    }
-
-    const path &ProjectManager::getScriptsTemplate() {
-        return getInstance()->scriptsTemplate;
-    }
-
     void ProjectManager::createNewProject(const char *projectName) {
         std::filesystem::create_directory(projectName);
-        std::filesystem::copy(getInstance()->projectTemplate, projectName, std::filesystem::copy_options::recursive);
+        std::filesystem::copy(Paths::projectTemplate, projectName, std::filesystem::copy_options::recursive);
     }
 
     void ProjectManager::saveProject() {

@@ -75,8 +75,16 @@ namespace TechEngine {
 
     GameObject *Scene::getGameObject(const std::string &name) {
         for (GameObject *gameObject: gameObjects) {
-            if (gameObject->getName() == name) {
-                return gameObject;
+            std::vector<GameObject *> nodes_to_visit = {gameObject};
+            while (!nodes_to_visit.empty()) {
+                GameObject *child = nodes_to_visit.front();
+                nodes_to_visit.erase(nodes_to_visit.begin());
+                for (auto &child: child->getChildren()) {
+                    nodes_to_visit.push_back(child.second);
+                }
+                if (child->getTag() == name) {
+                    return child;
+                }
             }
         }
         return nullptr;
@@ -84,8 +92,16 @@ namespace TechEngine {
 
     GameObject *Scene::getGameObjectByTag(const std::string &tag) {
         for (GameObject *gameObject: gameObjects) {
-            if (gameObject->getTag() == tag) {
-                return gameObject;
+            std::vector<GameObject *> nodes_to_visit = {gameObject};
+            while (!nodes_to_visit.empty()) {
+                GameObject *child = nodes_to_visit.front();
+                nodes_to_visit.erase(nodes_to_visit.begin());
+                for (auto &child: child->getChildren()) {
+                    nodes_to_visit.push_back(child.second);
+                }
+                if (child->getTag() == tag) {
+                    return child;
+                }
             }
         }
         return nullptr;
