@@ -1,14 +1,14 @@
 #pragma once
 
-#include "Component.hpp"
+#include "components/Component.hpp"
+#include "Collider.hpp"
 
 namespace TechEngine {
-    class BoxColliderComponent : public Component {
+    class BoxColliderComponent : public Collider {
     private:
         glm::vec3 size;
         glm::vec3 offset;
 
-        bool dynamic = true;
     public:
         BoxColliderComponent(GameObject *gameObject);
 
@@ -22,8 +22,5 @@ namespace TechEngine {
 
         glm::vec3 getOffset();
 
-        void setDynamic(bool dynamic);
-
-        bool isDynamic();
     };
 }

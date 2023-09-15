@@ -15,7 +15,7 @@
 #include "events/input/KeyReleasedEvent.hpp"
 #include "events/input/MouseScrollEvent.hpp"
 #include "events/input/MouseMoveEvent.hpp"
-#include "testGameObject/MainCamera.hpp"
+#include "defaultGameObject/MainCamera.hpp"
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {

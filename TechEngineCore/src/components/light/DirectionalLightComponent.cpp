@@ -1,7 +1,6 @@
 #include <glm/ext/matrix_transform.hpp>
 #include "DirectionalLightComponent.hpp"
-#include "scene/Scene.hpp"
-#include "TransformComponent.hpp"
+#include "components/TransformComponent.hpp"
 
 namespace TechEngine {
 

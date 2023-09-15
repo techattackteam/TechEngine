@@ -1,6 +1,5 @@
 #include "TransformComponent.hpp"
 #include "core/Timer.hpp"
-#include "core/Logger.hpp"
 
 namespace TechEngine {
     TransformComponent::TransformComponent(TechEngine::GameObject *gameObject)

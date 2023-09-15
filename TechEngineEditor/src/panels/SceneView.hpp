@@ -23,10 +23,14 @@ namespace TechEngine {
             return sceneCamera;
         }
 
-
         void renderCameraFrustum(TechEngine::CameraComponent *camera);
 
         void renderColliders();
+
+    private:
+        void renderBoxCollider(GameObject *gameObject);
+
+        void renderSphereCollider(GameObject *gameObject);
     };
 }
 

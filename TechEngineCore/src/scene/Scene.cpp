@@ -2,7 +2,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include "Scene.hpp"
 #include "event/EventDispatcher.hpp"
-#include "components/DirectionalLightComponent.hpp"
+#include "components/light/DirectionalLightComponent.hpp"
 #include "event/events/gameObjects/RequestDeleteGameObject.hpp"
 
 namespace TechEngine {

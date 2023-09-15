@@ -1,7 +1,7 @@
 #include "GLFW.hpp"
 #include "Renderer.hpp"
 #include "ErrorCatcher.hpp"
-#include "components/DirectionalLightComponent.hpp"
+#include "components/light/DirectionalLightComponent.hpp"
 #include "scene/SceneHelper.hpp"
 #include "core/Logger.hpp"
 
@@ -13,6 +13,8 @@ namespace TechEngine {
         vertexArrays[BufferGameObjects]->init();
         vertexBuffers[BufferGameObjects]->init(10000000 * sizeof(Vertex));
         vertexArrays[BufferGameObjects]->addNewBuffer(*vertexBuffers[BufferGameObjects]);
+        indicesBuffers[BufferGameObjects] = new IndicesBuffer();
+        indicesBuffers[BufferGameObjects]->init(10000000 * sizeof(uint32_t));
 
         vertexArrays[BufferLines] = new VertexArray();
         vertexBuffers[BufferLines] = new VertexBuffer();
@@ -55,7 +57,8 @@ namespace TechEngine {
 
             vertexBuffers[BufferGameObjects]->bind();
             vertexArrays[BufferGameObjects]->bind();
-            GlCall(glDrawArrays(GL_TRIANGLES, 0, meshRenderer->getVertices().size()));
+            indicesBuffers[BufferGameObjects]->bind();
+            GlCall(glDrawElements(GL_TRIANGLES, meshRenderer->getIndices().size(), GL_UNSIGNED_INT, 0));
         }
     }
 
@@ -135,6 +138,7 @@ namespace TechEngine {
 
     void Renderer::flushMeshData(MeshRendererComponent *meshRenderer) {
         vertexBuffers[BufferGameObjects]->addData(meshRenderer->getVertices().data(), meshRenderer->getVertices().size() * sizeof(Vertex), 0);
+        indicesBuffers[BufferGameObjects]->addData(meshRenderer->getIndices().data(), meshRenderer->getIndices().size() * sizeof(uint32_t));
     }
 
     void Renderer::flushLinesData() {

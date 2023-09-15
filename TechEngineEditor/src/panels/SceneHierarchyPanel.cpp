@@ -2,9 +2,12 @@
 #include <imgui_internal.h>
 #include "SceneHierarchyPanel.hpp"
 #include "scene/SceneHelper.hpp"
-#include "testGameObject/QuadMeshTest.hpp"
 #include "event/events/gameObjects/RequestDeleteGameObject.hpp"
 #include "PanelsManager.hpp"
+#include "defaultGameObject/Cube.hpp"
+#include "defaultGameObject/Sphere.hpp"
+#include "defaultGameObject/Cylinder.hpp"
+//#include "defaultGameObject/Cylinder.hpp"
 
 namespace TechEngine {
     SceneHierarchyPanel::SceneHierarchyPanel() : Panel("SceneHierarchyPanel") {
@@ -25,11 +28,20 @@ namespace TechEngine {
                 PanelsManager::getInstance().deselectGameObject();
             }
             if (!ImGui::IsItemHovered() && ImGui::BeginPopupContextWindow(0, 1)) {
-                if (ImGui::MenuItem("New Empty Game Object")) {
-                    new GameObject("Empty");
-                }
-                if (ImGui::MenuItem("New Game Object")) {
-                    new QuadMeshTest("Cube");
+                if (ImGui::BeginMenu("Create")) {
+                    if (ImGui::MenuItem("Empty")) {
+                        new GameObject("Empty");
+                    }
+                    if (ImGui::MenuItem("Cube")) {
+                        new Cube();
+                    }
+                    if (ImGui::MenuItem("Sphere")) {
+                        new Sphere();
+                    }
+                    if (ImGui::MenuItem("Cylinder")) {
+                        new Cylinder();
+                    }
+                    ImGui::EndMenu();
                 }
                 ImGui::EndPopup();
             }
@@ -50,12 +62,12 @@ namespace TechEngine {
         }
 
         if (ImGui::BeginPopupContextItem("GameObject Menu", 1)) {
-            if (ImGui::MenuItem("Make Child")) {
-                GameObject *child = new QuadMeshTest(gameObject->getName() + "'s Child");
-                Scene::getInstance().makeChildTo(gameObject, child);
+            if (ImGui::MenuItem("Make Child (WIP)")) {
+/*                GameObject *child = new QuadMeshTest(gameObject->getName() + "'s Child");
+                Scene::getInstance().makeChildTo(gameObject, child);*/
             }
-            if (ImGui::MenuItem("Duplicate")) {
-                new QuadMeshTest(gameObject->getName() + "'s duplicate");
+            if (ImGui::MenuItem("Duplicate (WIP)")) {
+                //new QuadMeshTest(gameObject->getName() + "'s duplicate");
             }
             if (ImGui::MenuItem("Delete GameObject")) {
                 TechEngine::EventDispatcher::getInstance().dispatch(new RequestDeleteGameObject(gameObject));
