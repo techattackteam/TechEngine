@@ -9,7 +9,7 @@
 namespace TechEngine {
     class MeshRendererComponent : public Component {
     private:
-        Mesh &mesh;
+        Mesh *mesh;
         Material &material;
 
     public:
@@ -17,13 +17,15 @@ namespace TechEngine {
 
         MeshRendererComponent(GameObject *gameObject, Mesh *mesh, Material *material);
 
-        void changeMesh(Mesh &mesh);
+        void changeMesh(Mesh *mesh);
 
         Mesh &getMesh();
 
         Material &getMaterial();
 
         std::vector<Vertex> getVertices();
+
+        std::vector<int> getIndices();
 
         void paintMesh();
 

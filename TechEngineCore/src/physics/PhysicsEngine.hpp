@@ -1,7 +1,8 @@
 #pragma once
 
 #include <PxPhysicsAPI.h>
-#include "components/BoxColliderComponent.hpp"
+#include "components/physics/BoxColliderComponent.hpp"
+#include "components/physics/SphereCollider.hpp"
 
 namespace TechEngine {
     class PhysicsEngine {
@@ -39,10 +40,21 @@ namespace TechEngine {
 
         void onUpdate();
 
-        void addBoxCollider(BoxColliderComponent *boxColliderComponent);
+        void addCollider(Collider *collider);
 
         void updateGameObjectPositions();
 
         void updateActorPositions();
+
+    private:
+        void addActor(Collider *collider, physx::PxTransform transform, const physx::PxGeometry &actor);
+
+        void addDynamicActor(physx::PxTransform transform, const physx::PxGeometry &geometry, Collider *collider);
+
+        void addStaticActor(physx::PxTransform transform, const physx::PxGeometry &geometry, Collider *collider);
+
+        void removeActor(GameObject *gameObject);
+
+        void removeActor(Collider *collider);
     };
 }

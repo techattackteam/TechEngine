@@ -5,53 +5,61 @@ namespace TechEngine {
         createMesh();
     }
 
-    void CubeMesh::createQuad(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 v4) {
-        glm::vec3 normal = getTriangleNormals(v1, v2, v3);
-        createVertex(v1, normal);
-        createVertex(v4, normal);
-        createVertex(v3, normal);
+    void CubeMesh::createMesh() {
+        createVertex(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(0, 0, 1));
+        createVertex(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(0, 0, 1));
+        createVertex(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec3(0, 0, 1));
+        createVertex(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(0, 0, 1));
 
-        createVertex(v1, normal);
-        createVertex(v3, normal);
-        createVertex(v2, normal);
+        createVertex(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec3(0, 0, -1));
+        createVertex(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec3(0, 0, -1));
+        createVertex(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0, 0, -1));
+        createVertex(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(0, 0, -1));
+
+        createIndex(0);
+        createIndex(1);
+        createIndex(3);
+        createIndex(3);
+        createIndex(1);
+        createIndex(2);
+
+        createIndex(1);
+        createIndex(5);
+        createIndex(2);
+        createIndex(2);
+        createIndex(5);
+        createIndex(6);
+
+        createIndex(5);
+        createIndex(4);
+        createIndex(6);
+        createIndex(6);
+        createIndex(4);
+        createIndex(7);
+
+        createIndex(4);
+        createIndex(0);
+        createIndex(7);
+        createIndex(7);
+        createIndex(0);
+        createIndex(3);
+
+        createIndex(3);
+        createIndex(2);
+        createIndex(7);
+        createIndex(7);
+        createIndex(2);
+        createIndex(6);
+
+        createIndex(4);
+        createIndex(5);
+        createIndex(0);
+        createIndex(0);
+        createIndex(5);
+        createIndex(1);
     }
 
-    void CubeMesh::createMesh() {
-        float BLOCK_SIDE = 0.5f;
-        glm::vec3 v1 = glm::vec3(-BLOCK_SIDE, BLOCK_SIDE, BLOCK_SIDE);
-        glm::vec3 v2 = glm::vec3(BLOCK_SIDE, BLOCK_SIDE, BLOCK_SIDE);
-        glm::vec3 v3 = glm::vec3(BLOCK_SIDE, -BLOCK_SIDE, BLOCK_SIDE);
-        glm::vec3 v4 = glm::vec3(-BLOCK_SIDE, -BLOCK_SIDE, BLOCK_SIDE);
-        createQuad(v1, v2, v3, v4);
-
-        v1 = glm::vec3(BLOCK_SIDE, BLOCK_SIDE, -BLOCK_SIDE);
-        v2 = glm::vec3(-BLOCK_SIDE, BLOCK_SIDE, -BLOCK_SIDE);
-        v3 = glm::vec3(-BLOCK_SIDE, -BLOCK_SIDE, -BLOCK_SIDE);
-        v4 = glm::vec3(BLOCK_SIDE, -BLOCK_SIDE, -BLOCK_SIDE);
-        createQuad(v1, v2, v3, v4);
-
-        v1 = glm::vec3(-BLOCK_SIDE, BLOCK_SIDE, BLOCK_SIDE);
-        v2 = glm::vec3(-BLOCK_SIDE, -BLOCK_SIDE, BLOCK_SIDE);
-        v3 = glm::vec3(-BLOCK_SIDE, -BLOCK_SIDE, -BLOCK_SIDE);
-        v4 = glm::vec3(-BLOCK_SIDE, BLOCK_SIDE, -BLOCK_SIDE);
-        createQuad(v1, v2, v3, v4);
-
-        v1 = glm::vec3(BLOCK_SIDE, BLOCK_SIDE, BLOCK_SIDE);
-        v2 = glm::vec3(BLOCK_SIDE, BLOCK_SIDE, -BLOCK_SIDE);
-        v3 = glm::vec3(BLOCK_SIDE, -BLOCK_SIDE, -BLOCK_SIDE);
-        v4 = glm::vec3(BLOCK_SIDE, -BLOCK_SIDE, BLOCK_SIDE);
-        createQuad(v1, v2, v3, v4);
-
-        v1 = glm::vec3(BLOCK_SIDE, BLOCK_SIDE, BLOCK_SIDE);
-        v2 = glm::vec3(-BLOCK_SIDE, BLOCK_SIDE, BLOCK_SIDE);
-        v3 = glm::vec3(-BLOCK_SIDE, BLOCK_SIDE, -BLOCK_SIDE);
-        v4 = glm::vec3(BLOCK_SIDE, BLOCK_SIDE, -BLOCK_SIDE);
-        createQuad(v1, v2, v3, v4);
-
-        v1 = glm::vec3(BLOCK_SIDE, -BLOCK_SIDE, BLOCK_SIDE);
-        v2 = glm::vec3(BLOCK_SIDE, -BLOCK_SIDE, -BLOCK_SIDE);
-        v3 = glm::vec3(-BLOCK_SIDE, -BLOCK_SIDE, -BLOCK_SIDE);
-        v4 = glm::vec3(-BLOCK_SIDE, -BLOCK_SIDE, BLOCK_SIDE);
-        createQuad(v1, v2, v3, v4);
+    std::string CubeMesh::getName() {
+        return "Cube";
     }
 }

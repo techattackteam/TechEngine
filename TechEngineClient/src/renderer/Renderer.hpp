@@ -6,6 +6,7 @@
 #include "FrameBuffer.hpp"
 #include "scene/Scene.hpp"
 #include "Line.hpp"
+#include "IndicesBuffer.hpp"
 
 namespace TechEngine {
     class Renderer {
@@ -19,6 +20,7 @@ namespace TechEngine {
         ShadersManager shadersManager;
         std::unordered_map<std::string, VertexArray *> vertexArrays;
         std::unordered_map<std::string, VertexBuffer *> vertexBuffers;
+        std::unordered_map<std::string, IndicesBuffer *> indicesBuffers;
         std::list<FrameBuffer *> frameBuffers;
         Scene &scene = Scene::getInstance();
     public:

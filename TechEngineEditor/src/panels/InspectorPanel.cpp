@@ -3,8 +3,12 @@
 #include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
 #include "components/CameraComponent.hpp"
 #include "components/MeshRendererComponent.hpp"
-#include "components/BoxColliderComponent.hpp"
+#include "components/physics/BoxColliderComponent.hpp"
 #include "PanelsManager.hpp"
+#include "components/physics/SphereCollider.hpp"
+#include "mesh/CubeMesh.hpp"
+#include "mesh/SphereMesh.hpp"
+#include "mesh/CylinderMesh.hpp"
 
 namespace TechEngine {
     InspectorPanel::InspectorPanel() : Panel("Inspector") {
@@ -26,6 +30,9 @@ namespace TechEngine {
             if (ImGui::BeginMenu("Physics")) {
                 if (ImGui::MenuItem("Box Collider")) {
                     PanelsManager::getInstance().getSelectedGameObject()->addComponent<BoxColliderComponent>();
+                }
+                if (ImGui::MenuItem("Sphere Collider")) {
+                    PanelsManager::getInstance().getSelectedGameObject()->addComponent<SphereCollider>();
                 }
                 ImGui::EndMenu();
             }
@@ -151,15 +158,45 @@ namespace TechEngine {
             auto &meshRenderer = component;
             auto &mesh = meshRenderer->getMesh();
             auto &material = meshRenderer->getMaterial();
+            static const char *current_item;
             //TODO: change the mesh
-            ImGuiIO &io = ImGui::GetIO();
-            ImGui::PushID("Material");
+            const char *items[] = {"Cube", "Sphere", "Cylinder", "Plane"};
+            if (mesh.getName() == "Cube") {
+                current_item = items[0];
+            } else if (mesh.getName() == "Sphere") {
+                current_item = items[1];
+            } else if (mesh.getName() == "Cylinder") {
+                current_item = items[2];
+            } else if (mesh.getName() == "Plane") {
+                current_item = items[3];
+            }
+
+            if (ImGui::BeginCombo("##combo", current_item)) // The second parameter is the label previewed before opening the combo.
+            {
+                for (int n = 0; n < IM_ARRAYSIZE(items); n++) {
+                    bool is_selected = (current_item == items[n]); // You can store your selection however you want, outside or inside your objects
+                    if (ImGui::Selectable(items[n], is_selected))
+                        current_item = items[n];
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+                }
+                ImGui::EndCombo();
+            }
+            if (current_item != mesh.getName()) {
+                if (current_item == items[0]) {
+                    meshRenderer->changeMesh(new CubeMesh());
+                } else if (current_item == items[1]) {
+                    meshRenderer->changeMesh(new SphereMesh());
+                } else if (current_item == items[2]) {
+                    meshRenderer->changeMesh(new CylinderMesh());
+                } else if (current_item == items[3]) {
+                }
+            }
             ImGui::ColorEdit4("Color", glm::value_ptr(material.getColor()));
             drawVec3Control("Ambient", material.getAmbient(), 1, 100.0f, 0, 1);
             drawVec3Control("diffuse", material.getDiffuse(), 1, 100.0f, 0, 1);
             drawVec3Control("specular", material.getSpecular(), 1, 100.0f, 0, 1);
             component->paintMesh();
-            ImGui::PopID();
         });
 
         drawComponent<BoxColliderComponent>("Box Collider", [this](auto &component) {
@@ -176,6 +213,22 @@ namespace TechEngine {
                 boxCollider->setOffset(offset);
             if (dynamic != boxCollider->isDynamic())
                 boxCollider->setDynamic(dynamic);
+        });
+
+        drawComponent<SphereCollider>("Sphere Collider", [this](auto &component) {
+            auto &collider = component;
+            float radius = collider->getRadius();
+            glm::vec3 offset = collider->getOffset();
+            bool dynamic = collider->isDynamic();
+            ImGui::DragFloat("##X", &radius, 0.1f, 1, 100.0f, "%.2f");
+            drawVec3Control("Offset", offset, 1, 100.0f, 0);
+            ImGui::Checkbox("Dynamic", &dynamic);
+            if (radius != collider->getRadius())
+                collider->setRadius(radius);
+            if (offset != collider->getOffset())
+                collider->setOffset(offset);
+            if (dynamic != collider->isDynamic())
+                collider->setDynamic(dynamic);
         });
     }
 

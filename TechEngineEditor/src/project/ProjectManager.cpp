@@ -73,7 +73,7 @@ namespace TechEngine {
 
     void ProjectManager::createNewProject(const char *projectName) {
         std::filesystem::create_directory(projectName);
-        std::filesystem::copy(Paths::projectTemplate, projectName, std::filesystem::copy_options::recursive);
+        std::filesystem::copy(Paths::projectTemplate, Paths::rootPath.string() + "\\" + projectName, std::filesystem::copy_options::recursive);
     }
 
     void ProjectManager::saveProject() {
@@ -115,7 +115,7 @@ namespace TechEngine {
                 exit(1);
             }
         } else {
-            lastSceneLoaded = "default scene";
+            lastSceneLoaded = "DefaultScene";
             YAML::Emitter out;
             out << YAML::BeginMap;
             out << YAML::Key << "Last scene loaded" << YAML::Value << lastSceneLoaded;

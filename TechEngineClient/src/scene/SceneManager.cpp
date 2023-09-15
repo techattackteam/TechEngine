@@ -6,9 +6,12 @@
 #include "components/TransformComponent.hpp"
 #include "components/MeshRendererComponent.hpp"
 #include "mesh/CubeMesh.hpp"
+#include "mesh/SphereMesh.hpp"
 #include "core/Logger.hpp"
 #include "SceneHelper.hpp"
-#include "components/BoxColliderComponent.hpp"
+#include "components/physics/BoxColliderComponent.hpp"
+#include "components/physics/SphereCollider.hpp"
+#include "mesh/CylinderMesh.hpp"
 #include <filesystem>
 #include <yaml-cpp/yaml.h>
 #include <fstream>
@@ -105,7 +108,7 @@ namespace TechEngine {
         out << YAML::BeginMap;
         out << YAML::Key << "Name" << YAML::Value << gameObject->getName();
         out << YAML::Key << "Tag" << YAML::Value << gameObject->getTag();
-
+        TE_LOGGER_TRACE("Serialize game object with Tag = {0}, name = {1}", gameObject->getTag(), gameObject->getName());
         if (gameObject->hasComponent<TransformComponent>()) {
             out << YAML::Key << "TransformComponent";
             out << YAML::BeginMap;
@@ -122,6 +125,9 @@ namespace TechEngine {
             auto camera = gameObject->getComponent<CameraComponent>();
             out << YAML::Key << "ProjectionType" << YAML::Value << (int) camera->getProjectionType();
             out << YAML::Key << "MainCamera" << YAML::Value << camera->isMainCamera();
+            out << YAML::Key << "Fov" << YAML::Value << camera->getFov();
+            out << YAML::Key << "Near" << YAML::Value << camera->getNear();
+            out << YAML::Key << "Far" << YAML::Value << camera->getFar();
             out << YAML::EndMap;
         }
 
@@ -130,6 +136,7 @@ namespace TechEngine {
             out << YAML::BeginMap;
             auto meshRendererComponent = gameObject->getComponent<MeshRendererComponent>();
             Material &material = meshRendererComponent->getMaterial();
+            out << YAML::Key << "Mesh" << YAML::Value << meshRendererComponent->getMesh().getName();
             out << YAML::Key << "Color" << YAML::Value << material.getColor();
             out << YAML::Key << "Ambient" << YAML::Value << material.getAmbient();
             out << YAML::Key << "Diffuse" << YAML::Value << material.getDiffuse();
@@ -145,6 +152,16 @@ namespace TechEngine {
             out << YAML::Key << "Size" << YAML::Value << boxColliderComponent->getSize();
             out << YAML::Key << "Offset" << YAML::Value << boxColliderComponent->getOffset();
             out << YAML::Key << "IsDynamic" << YAML::Value << boxColliderComponent->isDynamic();
+            out << YAML::EndMap;
+        }
+
+        if (gameObject->hasComponent<SphereCollider>()) {
+            out << YAML::Key << "SphereCollider";
+            out << YAML::BeginMap;
+            auto sphereColliderComponent = gameObject->getComponent<SphereCollider>();
+            out << YAML::Key << "Radius" << YAML::Value << sphereColliderComponent->getRadius();
+            out << YAML::Key << "Offset" << YAML::Value << sphereColliderComponent->getOffset();
+            out << YAML::Key << "IsDynamic" << YAML::Value << sphereColliderComponent->isDynamic();
             out << YAML::EndMap;
         }
 
@@ -166,7 +183,6 @@ namespace TechEngine {
         out << YAML::Key << "GameObjects" << YAML::Value << YAML::BeginSeq;
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
             serializeGameObject(out, gameObject);
-            TE_LOGGER_TRACE("Serialize game object with Tag = {0}, name = {1}", gameObject->getTag(), gameObject->getName());
         }
         out << YAML::EndSeq;
         out << YAML::EndMap;
@@ -199,17 +215,31 @@ namespace TechEngine {
             CameraComponent *cameraComponent = gameObject->getComponent<CameraComponent>();
             cameraComponent->changeProjectionType((CameraComponent::ProjectionType) ccNode["ProjectionType"].as<int>());
             cameraComponent->setIsMainCamera(ccNode["MainCamera"].as<bool>());
+            cameraComponent->setFov(ccNode["Fov"].as<float>());
+            cameraComponent->setNear(ccNode["Near"].as<float>());
+            cameraComponent->setFar(ccNode["Far"].as<float>());
         }
 
         auto meshRendererNode = gameObjectYAML["MeshRendererComponent"];
         if (meshRendererNode) {
+            std::string meshName = meshRendererNode["Mesh"].as<std::string>();
             glm::vec4 color = meshRendererNode["Color"].as<glm::vec4>();
             glm::vec3 ambient = meshRendererNode["Ambient"].as<glm::vec3>();
             glm::vec3 diffuse = meshRendererNode["Diffuse"].as<glm::vec3>();
             glm::vec3 specular = meshRendererNode["Specular"].as<glm::vec3>();
             float shininess = meshRendererNode["Shininess"].as<float>();
             Material *material = new Material(color, ambient, diffuse, specular, shininess);
-            gameObject->addComponent<MeshRendererComponent>(new CubeMesh(), material);
+            Mesh *mesh;
+            if (meshName == "Cube") {
+                mesh = new CubeMesh();
+            } else if (meshName == "Sphere") {
+                mesh = new SphereMesh();
+            } else if (meshName == "Cylinder") {
+                mesh = new CylinderMesh();
+            } else {
+                TE_LOGGER_CRITICAL("Failed to deserialize mesh renderer component.\n      Mesh name {0} is not valid.", meshName);
+            }
+            gameObject->addComponent<MeshRendererComponent>(mesh, material);
         }
         auto boxColliderNode = gameObjectYAML["BoxColliderComponent"];
         if (boxColliderNode) {
@@ -218,6 +248,15 @@ namespace TechEngine {
             boxColliderComponent->setSize(boxColliderNode["Size"].as<glm::vec3>());
             boxColliderComponent->setOffset(boxColliderNode["Offset"].as<glm::vec3>());
             boxColliderComponent->setDynamic(boxColliderNode["IsDynamic"].as<bool>());
+        }
+
+        auto sphereColliderNode = gameObjectYAML["SphereCollider"];
+        if (sphereColliderNode) {
+            gameObject->addComponent<SphereCollider>();
+            SphereCollider *sphereColliderComponent = gameObject->getComponent<SphereCollider>();
+            sphereColliderComponent->setRadius(sphereColliderNode["Radius"].as<float>());
+            sphereColliderComponent->setOffset(sphereColliderNode["Offset"].as<glm::vec3>());
+            sphereColliderComponent->setDynamic(sphereColliderNode["IsDynamic"].as<bool>());
         }
         auto childrenNode = gameObjectYAML["Children"];
         for (auto childNodeYAML: childrenNode) {

@@ -1,5 +1,5 @@
 #include "SceneHelper.hpp"
-#include "components/DirectionalLightComponent.hpp"
+#include "components/light/DirectionalLightComponent.hpp"
 
 namespace TechEngine {
     bool SceneHelper::findCameraComponent() {

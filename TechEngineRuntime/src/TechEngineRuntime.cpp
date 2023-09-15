@@ -17,7 +17,7 @@ namespace TechEngine {
         }
         window.init(windowName, width, height);
         //TODO: FIX THIS
-        SceneManager::deserialize(std::filesystem::current_path().string() + "/scenes/" + sceneToLoadName + ".scene");
+        //SceneManager::deserialize(std::filesystem::current_path().string() + "/scenes/" + sceneToLoadName + ".scene");
         TechEngine::EventDispatcher::getInstance().syncEventManager.execute();
         SceneHelper::mainCamera = Scene::getInstance().getGameObject("SceneCamera")->getComponent<CameraComponent>();
         window.getRenderer().init();

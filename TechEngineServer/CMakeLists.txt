@@ -14,7 +14,7 @@ add_library(TechEngineServer STATIC ${TechEngineServer_Sources} ${TechEngineServ
 #Setup target's output directory
 if (WIN32) # WINDOWS
     set(TECH_ENGINE_SERVER_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineServer/")
-    set_target_properties(TechEngineCore PROPERTIES
+    set_target_properties(TechEngineServer PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_SERVER_OUTPUT_DIRECTORY}/debug"
             LIBRARY_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_SERVER_OUTPUT_DIRECTORY}/debug"
             RUNTIME_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_SERVER_OUTPUT_DIRECTORY}/debug"

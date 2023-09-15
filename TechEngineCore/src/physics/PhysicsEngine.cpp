@@ -3,6 +3,9 @@
 #include "core/Timer.hpp"
 #include "components/TransformComponent.hpp"
 #include "scene/Scene.hpp"
+#include "components/physics/SphereCollider.hpp"
+#include "event/EventDispatcher.hpp"
+#include <typeinfo>
 
 namespace TechEngine {
     PhysicsEngine::PhysicsEngine() {
@@ -11,6 +14,9 @@ namespace TechEngine {
         } else {
             instance = this;
         }
+        EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this](Event *event) {
+            removeActor(((RequestDeleteGameObject *) event)->getGameObject());
+        });
     }
 
     PhysicsEngine::~PhysicsEngine() {
@@ -57,6 +63,9 @@ namespace TechEngine {
             glm::vec3 position = transformComponent->getPosition();
             glm::quat rotation = glm::quat(glm::radians(transformComponent->getOrientation()));
             actor.second->setGlobalPose(physx::PxTransform(physx::PxVec3(position.x, position.y, position.z), physx::PxQuat(rotation.x, rotation.y, rotation.z, rotation.w)));
+            if (actor.second->getNbShapes()) {
+
+            }
             scene->addActor(*actor.second);
         }
         running = true;
@@ -95,27 +104,57 @@ namespace TechEngine {
         }
     }
 
-
-    void PhysicsEngine::addBoxCollider(BoxColliderComponent *boxColliderComponent) {
-        if (actors.find(boxColliderComponent->getGameObject()->getTag()) != actors.end()) {
-            actors[boxColliderComponent->getGameObject()->getTag()]->release();
-            actors.erase(boxColliderComponent->getGameObject()->getTag());
-        }
-        TransformComponent t = boxColliderComponent->getTransform();
-        glm::vec3 position = t.getWorldPosition() + boxColliderComponent->getOffset();
+    void PhysicsEngine::addCollider(Collider *collider) {
+        removeActor(collider);
+        TransformComponent t = collider->getTransform();
+        glm::vec3 position = t.getWorldPosition();
         glm::quat rotation = glm::quat(glm::radians(t.getOrientation()));
-        physx::PxBoxGeometry boxGeometry(t.getScale().x / 2, t.getScale().y / 2, t.getScale().z / 2);
         physx::PxTransform transform(physx::PxVec3(position.x, position.y, position.z), physx::PxQuat(rotation.x, rotation.y, rotation.z, rotation.w));
-        if (boxColliderComponent->isDynamic()) {
-            physx::PxRigidDynamic *dynamicActor = PxCreateDynamic(*physics, transform, boxGeometry, *defaultMaterial, 10.0f);
-            dynamicActor->userData = boxColliderComponent->getGameObject()->getComponent<TransformComponent>();
-            scene->addActor(*dynamicActor);
-            actors[boxColliderComponent->getGameObject()->getTag()] = dynamicActor;
+        if (BoxColliderComponent *boxCollider = dynamic_cast<BoxColliderComponent *>(collider)) {
+            glm::vec3 size = t.getScale() / glm::vec3(2, 2, 2) * boxCollider->getSize();
+            physx::PxBoxGeometry geometry(size.x, size.y, size.z);
+            addActor(boxCollider, transform, geometry);
+        } else if (SphereCollider *sphereCollider = dynamic_cast<SphereCollider *>(collider)) {
+            physx::PxSphereGeometry geometry(sphereCollider->getRadius());
+            addActor(sphereCollider, transform, geometry);
         } else {
-            physx::PxRigidStatic *staticActor = PxCreateStatic(*physics, transform, boxGeometry, *defaultMaterial);
-            staticActor->userData = boxColliderComponent->getGameObject()->getComponent<TransformComponent>();
-            scene->addActor(*staticActor);
-            actors[boxColliderComponent->getGameObject()->getTag()] = staticActor;
+            TE_LOGGER_CRITICAL("Collider type not supported!");
+        }
+    }
+
+    void PhysicsEngine::addActor(Collider *collider, physx::PxTransform transform, const physx::PxGeometry &actor) {
+        if (collider->isDynamic()) {
+            addDynamicActor(transform, actor, collider);
+        } else {
+            addStaticActor(transform, actor, collider);
+        }
+    }
+
+    void PhysicsEngine::addDynamicActor(physx::PxTransform transform, const physx::PxGeometry &geometry, Collider *collider) {
+        physx::PxRigidDynamic *dynamicActor = PxCreateDynamic(*physics, transform, geometry, *defaultMaterial, 10.0f);
+        dynamicActor->userData = collider->getGameObject()->getComponent<TransformComponent>();
+        scene->addActor(*dynamicActor);
+        actors[collider->getGameObject()->getTag()] = dynamicActor;
+    }
+
+    void PhysicsEngine::addStaticActor(physx::PxTransform transform, const physx::PxGeometry &geometry, Collider *collider) {
+        physx::PxRigidStatic *staticActor = PxCreateStatic(*physics, transform, geometry, *defaultMaterial);
+        staticActor->userData = collider->getGameObject()->getComponent<TransformComponent>();
+        scene->addActor(*staticActor);
+        actors[collider->getGameObject()->getTag()] = staticActor;
+    }
+
+    void PhysicsEngine::removeActor(Collider *collider) {
+        if (actors.find(collider->getGameObject()->getTag()) != actors.end()) {
+            actors[collider->getGameObject()->getTag()]->release();
+            actors.erase(collider->getGameObject()->getTag());
+        }
+    }
+
+    void PhysicsEngine::removeActor(GameObject *gameObject) {
+        if (actors.find(gameObject->getTag()) != actors.end()) {
+            actors[gameObject->getTag()]->release();
+            actors.erase(gameObject->getTag());
         }
     }
 
@@ -126,5 +165,6 @@ namespace TechEngine {
             return instance;
         };
     }
+
 
 }
