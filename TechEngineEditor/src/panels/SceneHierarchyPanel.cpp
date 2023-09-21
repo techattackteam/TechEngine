@@ -7,7 +7,7 @@
 #include "defaultGameObject/Cube.hpp"
 #include "defaultGameObject/Sphere.hpp"
 #include "defaultGameObject/Cylinder.hpp"
-//#include "defaultGameObject/Cylinder.hpp"
+#include "defaultGameObject/Capsule.hpp"
 
 namespace TechEngine {
     SceneHierarchyPanel::SceneHierarchyPanel() : Panel("SceneHierarchyPanel") {
@@ -41,6 +41,9 @@ namespace TechEngine {
                     if (ImGui::MenuItem("Cylinder")) {
                         new Cylinder();
                     }
+                    if (ImGui::MenuItem("Capsule")) {
+                        new Capsule();
+                    }
                     ImGui::EndMenu();
                 }
                 ImGui::EndPopup();
@@ -70,7 +73,7 @@ namespace TechEngine {
                 //new QuadMeshTest(gameObject->getName() + "'s duplicate");
             }
             if (ImGui::MenuItem("Delete GameObject")) {
-                TechEngine::EventDispatcher::getInstance().dispatch(new RequestDeleteGameObject(gameObject));
+                EventDispatcher::getInstance().dispatch(new RequestDeleteGameObject(gameObject->getTag()));
                 PanelsManager::getInstance().deselectGameObject(gameObject->getTag());
                 selectedGO = nullptr;
             }

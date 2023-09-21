@@ -18,4 +18,12 @@ namespace TechEngine {
     bool Collider::isDynamic() {
         return dynamic;
     }
+
+    void Collider::setOffset(glm::vec3 offset) {
+        this->offset = offset;
+    }
+
+    glm::vec3 Collider::getOffset() {
+        return offset;
+    }
 }

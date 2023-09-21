@@ -4,28 +4,24 @@
 namespace TechEngine {
     SphereCollider::SphereCollider(GameObject *gameObject) : Collider(gameObject, "SphereCollider") {
         offset = glm::vec3(0, 0, 0);
-        radius = 1;
-        PhysicsEngine::getInstance()->addCollider(this);
+        radius = 0.5f;
     }
 
     SphereCollider::SphereCollider(GameObject *gameObject, glm::vec3 offset, float radius) :
-            Collider(gameObject, "SphereCollider"), offset(offset), radius(radius) {
-        PhysicsEngine::getInstance()->addCollider(this);
+            Collider(gameObject, "SphereCollider"), radius(radius) {
+        this->offset = offset;
     }
 
-    glm::vec3 SphereCollider::getOffset() {
-        return offset;
+    SphereCollider::~SphereCollider() {
+        PhysicsEngine::getInstance()->removeCollider(gameObject->getTag(), this);
     }
 
     float SphereCollider::getRadius() {
         return radius;
     }
 
-    void SphereCollider::setOffset(glm::vec3 offset) {
-        this->offset = offset;
-    }
-
     void SphereCollider::setRadius(float radius) {
         this->radius = radius;
     }
+
 }

@@ -9,6 +9,7 @@
 #include "mesh/CubeMesh.hpp"
 #include "mesh/SphereMesh.hpp"
 #include "mesh/CylinderMesh.hpp"
+#include "components/physics/CylinderCollider.hpp"
 
 namespace TechEngine {
     InspectorPanel::InspectorPanel() : Panel("Inspector") {
@@ -33,6 +34,9 @@ namespace TechEngine {
                 }
                 if (ImGui::MenuItem("Sphere Collider")) {
                     PanelsManager::getInstance().getSelectedGameObject()->addComponent<SphereCollider>();
+                }
+                if (ImGui::MenuItem("Cylinder Collider")) {
+                    PanelsManager::getInstance().getSelectedGameObject()->addComponent<CylinderCollider>();
                 }
                 ImGui::EndMenu();
             }
@@ -82,7 +86,7 @@ namespace TechEngine {
         ImGui::PushItemWidth(-1);
 
         if (ImGui::Button("Add Component"))
-            ImGui::OpenPopup("AddComponent");
+            ImGui::OpenPopup("Add Component");
 
 
         ImGui::PopItemWidth();
@@ -159,16 +163,19 @@ namespace TechEngine {
             auto &mesh = meshRenderer->getMesh();
             auto &material = meshRenderer->getMaterial();
             static const char *current_item;
-            //TODO: change the mesh
-            const char *items[] = {"Cube", "Sphere", "Cylinder", "Plane"};
+            const char *items[] = {"Cube", "Sphere", "Cylinder", "Capsule", "Plane"};
             if (mesh.getName() == "Cube") {
                 current_item = items[0];
             } else if (mesh.getName() == "Sphere") {
                 current_item = items[1];
             } else if (mesh.getName() == "Cylinder") {
                 current_item = items[2];
-            } else if (mesh.getName() == "Plane") {
+            } else if (mesh.getName() == "Capsule") {
                 current_item = items[3];
+            } else if (mesh.getName() == "Plane") {
+                current_item = items[4];
+            } else {
+                current_item = items[0];
             }
 
             if (ImGui::BeginCombo("##combo", current_item)) // The second parameter is the label previewed before opening the combo.
@@ -196,7 +203,7 @@ namespace TechEngine {
             drawVec3Control("Ambient", material.getAmbient(), 1, 100.0f, 0, 1);
             drawVec3Control("diffuse", material.getDiffuse(), 1, 100.0f, 0, 1);
             drawVec3Control("specular", material.getSpecular(), 1, 100.0f, 0, 1);
-            component->paintMesh();
+            //component->paintMesh();
         });
 
         drawComponent<BoxColliderComponent>("Box Collider", [this](auto &component) {
@@ -220,7 +227,7 @@ namespace TechEngine {
             float radius = collider->getRadius();
             glm::vec3 offset = collider->getOffset();
             bool dynamic = collider->isDynamic();
-            ImGui::DragFloat("##X", &radius, 0.1f, 1, 100.0f, "%.2f");
+            ImGui::DragFloat("Radius", &radius, 0.1f, 1, 100.0f, "%.2f");
             drawVec3Control("Offset", offset, 1, 100.0f, 0);
             ImGui::Checkbox("Dynamic", &dynamic);
             if (radius != collider->getRadius())
@@ -229,6 +236,27 @@ namespace TechEngine {
                 collider->setOffset(offset);
             if (dynamic != collider->isDynamic())
                 collider->setDynamic(dynamic);
+        });
+
+        drawComponent<CylinderCollider>("Cylinder Collider", [this](auto &component) {
+            auto &collider = component;
+            float radius = collider->getRadius();
+            float height = collider->getHeight();
+            glm::vec3 offset = collider->getOffset();
+            bool dynamic = collider->isDynamic();
+            ImGui::DragFloat("Radius", &radius, 0.1f, 0.1, 100.0f, "%.2f");
+            ImGui::DragFloat("Height", &height, 0.1f, 0.1, 100.0f, "%.2f");
+            drawVec3Control("Offset", offset, 1, 100.0f, 0);
+            ImGui::Checkbox("Dynamic", &dynamic);
+            if (radius != collider->getRadius())
+                collider->setRadius(radius);
+            if (height != collider->getHeight())
+                collider->setHeight(height);
+            if (offset != collider->getOffset())
+                collider->setOffset(offset);
+            if (dynamic != collider->isDynamic())
+                collider->setDynamic(dynamic);
+
         });
     }
 

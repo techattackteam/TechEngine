@@ -5,7 +5,8 @@
 namespace TechEngine {
 
     class Collider : public Component {
-    private:
+    protected:
+        glm::vec3 offset = glm::vec3(0.0f, 0.0f, 0.0f);
         bool dynamic = true;
     public:
         Collider(GameObject *gameObject, std::string name);
@@ -15,5 +16,10 @@ namespace TechEngine {
         void setDynamic(bool dynamic);
 
         bool isDynamic();
+
+        void setOffset(glm::vec3 offset);
+
+        glm::vec3 getOffset();
+
     };
 }

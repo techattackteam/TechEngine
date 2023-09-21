@@ -5,13 +5,15 @@
 #include "components/CameraComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "components/MeshRendererComponent.hpp"
-#include "mesh/CubeMesh.hpp"
-#include "mesh/SphereMesh.hpp"
-#include "core/Logger.hpp"
-#include "SceneHelper.hpp"
 #include "components/physics/BoxColliderComponent.hpp"
 #include "components/physics/SphereCollider.hpp"
+#include "core/Logger.hpp"
+#include "SceneHelper.hpp"
+#include "mesh/CubeMesh.hpp"
+#include "mesh/SphereMesh.hpp"
 #include "mesh/CylinderMesh.hpp"
+#include "mesh/CapsuleMesh.hpp"
+#include "components/physics/CylinderCollider.hpp"
 #include <filesystem>
 #include <yaml-cpp/yaml.h>
 #include <fstream>
@@ -164,6 +166,16 @@ namespace TechEngine {
             out << YAML::Key << "IsDynamic" << YAML::Value << sphereColliderComponent->isDynamic();
             out << YAML::EndMap;
         }
+        if (gameObject->hasComponent<CylinderCollider>()) {
+            out << YAML::Key << "CylinderCollider";
+            out << YAML::BeginMap;
+            auto cylinderColliderComponent = gameObject->getComponent<CylinderCollider>();
+            out << YAML::Key << "Radius" << YAML::Value << cylinderColliderComponent->getRadius();
+            out << YAML::Key << "Height" << YAML::Value << cylinderColliderComponent->getHeight();
+            out << YAML::Key << "Offset" << YAML::Value << cylinderColliderComponent->getOffset();
+            out << YAML::Key << "IsDynamic" << YAML::Value << cylinderColliderComponent->isDynamic();
+            out << YAML::EndMap;
+        }
 
         if (gameObject->hasChildren()) {
             out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
@@ -236,6 +248,8 @@ namespace TechEngine {
                 mesh = new SphereMesh();
             } else if (meshName == "Cylinder") {
                 mesh = new CylinderMesh();
+            } else if (meshName == "Capsule") {
+                mesh = new CapsuleMesh();
             } else {
                 TE_LOGGER_CRITICAL("Failed to deserialize mesh renderer component.\n      Mesh name {0} is not valid.", meshName);
             }
@@ -258,6 +272,17 @@ namespace TechEngine {
             sphereColliderComponent->setOffset(sphereColliderNode["Offset"].as<glm::vec3>());
             sphereColliderComponent->setDynamic(sphereColliderNode["IsDynamic"].as<bool>());
         }
+
+        auto cylinderColliderNode = gameObjectYAML["CylinderCollider"];
+        if (cylinderColliderNode) {
+            gameObject->addComponent<CylinderCollider>();
+            CylinderCollider *cylinderColliderComponent = gameObject->getComponent<CylinderCollider>();
+            cylinderColliderComponent->setRadius(cylinderColliderNode["Radius"].as<float>());
+            cylinderColliderComponent->setHeight(cylinderColliderNode["Height"].as<float>());
+            cylinderColliderComponent->setOffset(cylinderColliderNode["Offset"].as<glm::vec3>());
+            cylinderColliderComponent->setDynamic(cylinderColliderNode["IsDynamic"].as<bool>());
+        }
+
         auto childrenNode = gameObjectYAML["Children"];
         for (auto childNodeYAML: childrenNode) {
             if (childrenNode) {
@@ -311,7 +336,7 @@ namespace TechEngine {
     void SceneManager::createNewScene(std::string &scenePath) {
         std::string sceneName = getSceneNameFromPath(scenePath);
         registerScene(scenePath);
-        std::filesystem::copy(TechEngine::Paths::scenesTemplate, scenePath);
+        std::filesystem::copy(Paths::scenesTemplate, scenePath);
     }
 
     bool SceneManager::deleteScene(std::string &scenePath) {

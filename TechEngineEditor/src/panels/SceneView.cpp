@@ -5,6 +5,7 @@
 #include "core/Logger.hpp"
 #include "PanelsManager.hpp"
 #include "components/physics/SphereCollider.hpp"
+#include "components/physics/CylinderCollider.hpp"
 
 namespace TechEngine {
     SceneView::SceneView(Renderer &renderer) : renderer(&renderer), Panel("Scene") {
@@ -98,6 +99,9 @@ namespace TechEngine {
             if (element->hasComponent<SphereCollider>()) {
                 renderSphereCollider(element);
             }
+            if (element->hasComponent<CylinderCollider>()) {
+                renderCylinderCollier(element);
+            }
         }
     }
 
@@ -110,8 +114,7 @@ namespace TechEngine {
 
         float offset = 0.005f;
         // Calculate the half-size of the box based on the scale
-        glm::vec3 halfSize = collider->getSize() * 0.5f + offset;
-
+        glm::vec3 halfSize = collider->getSize() / 2.0f;
 
         // Define the vertices of the box in local space (unrotated)
         glm::vec3 vertices[8] = {
@@ -128,6 +131,9 @@ namespace TechEngine {
         // Transform the vertices from local space to world space
         for (int i = 0; i < 8; i++) {
             vertices[i] = glm::vec3(modelMatrix * glm::vec4(vertices[i], 1.0f));
+            vertices[i].x = vertices[i].x >= 0 ? vertices[i].x + offset : vertices[i].x - offset;
+            vertices[i].y = vertices[i].y >= 0 ? vertices[i].y + offset : vertices[i].y - offset;
+            vertices[i].z = vertices[i].z >= 0 ? vertices[i].z + offset : vertices[i].z - offset;
         }
         glm::vec4 color;
         if (gameObject == PanelsManager::getInstance().getSelectedGameObject()) {
@@ -160,7 +166,7 @@ namespace TechEngine {
         const float segmentAngle = glm::two_pi<float>() / static_cast<float>(numSegments);
         const glm::vec3 center = transform->position + collider->getOffset();
         const float offset = 0.005f;
-        const float radius = collider->getRadius() / 2 + offset;
+        const float radius = collider->getRadius() + offset;
         glm::vec4 color;
         if (gameObject == PanelsManager::getInstance().getSelectedGameObject()) {
             color = glm::vec4(1.0f, 0, 0, 1.0f);
@@ -205,7 +211,65 @@ namespace TechEngine {
         }
     }
 
+    void SceneView::renderCylinderCollier(GameObject *gameObject) {
+        TransformComponent *transform = gameObject->getComponent<TransformComponent>();
+        CylinderCollider *collider = gameObject->getComponent<CylinderCollider>();
+        glm::vec3 position = transform->position;
+        glm::quat orientation = transform->getOrientation();
+        const float offset = 0.005f;
+        float radius = collider->getRadius() + offset;
+        float height = collider->getHeight() + offset;
+        // Calculate the vertices to outline the cylinder
+        const int numSegments = 32;
+        std::vector<glm::vec3> vertices;
+
+        for (int i = 0; i <= numSegments; ++i) {
+            float theta = 2.0f * glm::pi<float>() * static_cast<float>(i) / static_cast<float>(numSegments);
+            float x = radius * glm::cos(theta);
+            float z = radius * glm::sin(theta);
+
+            // Calculate top and bottom points
+            glm::vec3 topPoint = glm::vec3(x, height / 2.0f, z);
+            glm::vec3 bottomPoint = glm::vec3(x, -height / 2.0f, z);
+
+            // Apply rotation and translation
+            topPoint = glm::vec3(transform->getModelMatrix() * glm::vec4(topPoint, 1.0f));
+            bottomPoint = glm::vec3(transform->getModelMatrix() * glm::vec4(bottomPoint, 1.0f));
+
+            // Add the points to the vertices array
+            vertices.push_back(topPoint);
+            vertices.push_back(bottomPoint);
+
+            // Draw lines to connect the points
+            if (i > 0) {
+                glm::vec3 prevTopPoint = vertices[(i - 1) * 2];
+                glm::vec3 prevBottomPoint = vertices[(i - 1) * 2 + 1];
+
+                // Render lines for the sides of the cylinder
+                renderer->createLine(prevTopPoint, topPoint, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red lines
+                renderer->createLine(prevBottomPoint, bottomPoint, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red lines
+
+                // Render lines to connect the top and bottom points
+                renderer->createLine(prevTopPoint, prevBottomPoint, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red lines
+            }
+        }
+
+        // Connect the first and last points to close the cylinder
+        glm::vec3 firstTopPoint = vertices[0];
+        glm::vec3 firstBottomPoint = vertices[1];
+        glm::vec3 lastTopPoint = vertices[vertices.size() - 2];
+        glm::vec3 lastBottomPoint = vertices[vertices.size() - 1];
+
+        // Render lines for the sides of the cylinder
+        renderer->createLine(lastTopPoint, firstTopPoint, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red lines
+        renderer->createLine(lastBottomPoint, firstBottomPoint, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red lines
+
+        // Render lines to connect the top and bottom points
+        renderer->createLine(lastTopPoint, lastBottomPoint, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red lines
+    }
+
     void SceneView::changeGuizmoOperation(int operation) {
         guizmo.setOperation(operation);
     }
+
 }
