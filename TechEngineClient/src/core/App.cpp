@@ -25,12 +25,12 @@ namespace TechEngine {
                 timer.addAccumulator(-timer.getTPS());
             }
 
-            stateMachineManager.update();
-            eventDispatcher.syncEventManager.execute();
-            timer.updateInterpolation();
-            ScriptEngine::getInstance()->onUpdate();
             scene.update();
+            timer.updateInterpolation();
+            stateMachineManager.update();
+            ScriptEngine::getInstance()->onUpdate();
             onUpdate();
+            eventDispatcher.syncEventManager.execute();
             timer.update();
             timer.updateFPS();
         }

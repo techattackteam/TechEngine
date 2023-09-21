@@ -4,14 +4,16 @@
 namespace TechEngine {
     BoxColliderComponent::BoxColliderComponent(GameObject *gameObject) : Collider(gameObject, "BoxColliderComponent") {
         size = glm::vec3(1, 1, 1);
-        offset = glm::vec3(0, 0, 0);
-        PhysicsEngine::getInstance()->addCollider(this);
     }
 
 
     BoxColliderComponent::BoxColliderComponent(GameObject *gameObject, glm::vec3 size, glm::vec3 offset, bool dynamic) :
-            Collider(gameObject, "BoxColliderComponent"), size(size), offset(offset) {
-        PhysicsEngine::getInstance()->addCollider(this);
+            Collider(gameObject, "BoxColliderComponent", dynamic), size(size) {
+        this->offset = offset;
+    }
+
+    BoxColliderComponent::~BoxColliderComponent() {
+        PhysicsEngine::getInstance()->removeCollider(gameObject->getTag(), this);
     }
 
     void BoxColliderComponent::setSize(glm::vec3 size) {
@@ -20,13 +22,5 @@ namespace TechEngine {
 
     glm::vec3 BoxColliderComponent::getSize() {
         return size;
-    }
-
-    void BoxColliderComponent::setOffset(glm::vec3 offset) {
-        this->offset = offset;
-    }
-
-    glm::vec3 BoxColliderComponent::getOffset() {
-        return offset;
     }
 }

@@ -17,13 +17,11 @@ namespace TechEngine {
         physx::PxScene *scene;
         physx::PxMaterial *defaultMaterial;
         physx::PxPvd *pvd;
-
         std::unordered_map<std::string, physx::PxRigidActor *> actors;
 
         bool running = false;
 
         void createScene();
-
 
     public:
         static PhysicsEngine *getInstance();
@@ -42,6 +40,8 @@ namespace TechEngine {
 
         void addCollider(Collider *collider);
 
+        void removeCollider(const std::string& gameObjectTag,Collider *collider);
+
         void updateGameObjectPositions();
 
         void updateActorPositions();
@@ -49,12 +49,6 @@ namespace TechEngine {
     private:
         void addActor(Collider *collider, physx::PxTransform transform, const physx::PxGeometry &actor);
 
-        void addDynamicActor(physx::PxTransform transform, const physx::PxGeometry &geometry, Collider *collider);
-
-        void addStaticActor(physx::PxTransform transform, const physx::PxGeometry &geometry, Collider *collider);
-
-        void removeActor(GameObject *gameObject);
-
-        void removeActor(Collider *collider);
+        void removeActor(const std::string &tag);
     };
 }

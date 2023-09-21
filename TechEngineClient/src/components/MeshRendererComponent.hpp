@@ -2,9 +2,8 @@
 
 #include <vector>
 #include "components/Component.hpp"
-#include "../renderer/VertexBuffer.hpp"
-#include "../mesh/Mesh.hpp"
-#include "../mesh/Material.hpp"
+#include "mesh/Mesh.hpp"
+#include "mesh/Material.hpp"
 
 namespace TechEngine {
     class MeshRendererComponent : public Component {

@@ -1,7 +1,6 @@
 
 #include <cstdint>
 #include <glm/glm.hpp>
-#include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <unordered_map>
 #include <string>

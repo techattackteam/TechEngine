@@ -43,7 +43,9 @@ namespace TechEngine {
         template<typename C>
         void removeComponent() {
             if (hasComponent<C>()) {
+                C *component = getComponent<C>();
                 components.erase(typeid(C).name());
+                delete component;
             }
         }
 

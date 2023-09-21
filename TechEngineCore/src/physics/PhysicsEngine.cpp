@@ -1,10 +1,12 @@
 #include "PhysicsEngine.hpp"
 #include "core/Logger.hpp"
 #include "core/Timer.hpp"
-#include "components/TransformComponent.hpp"
-#include "scene/Scene.hpp"
-#include "components/physics/SphereCollider.hpp"
 #include "event/EventDispatcher.hpp"
+#include "scene/Scene.hpp"
+#include "components/TransformComponent.hpp"
+#include "components/physics/SphereCollider.hpp"
+#include "components/physics/CylinderCollider.hpp"
+#include "mesh/CylinderMesh.hpp"
 #include <typeinfo>
 
 namespace TechEngine {
@@ -15,7 +17,7 @@ namespace TechEngine {
             instance = this;
         }
         EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this](Event *event) {
-            removeActor(((RequestDeleteGameObject *) event)->getGameObject());
+            removeActor(((RequestDeleteGameObject *) event)->getTag());
         });
     }
 
@@ -33,13 +35,18 @@ namespace TechEngine {
             TE_LOGGER_CRITICAL("PxCreateFoundation failed!");
         pvd = PxCreatePvd(*foundation);
         physx::PxPvdTransport *transport = physx::PxDefaultPvdSocketTransportCreate("localhost", 5425, 10);
-        pvd->connect(*transport, physx::PxPvdInstrumentationFlag::eALL);
+        if (pvd->connect(*transport, physx::PxPvdInstrumentationFlag::eALL)) {
+            TE_LOGGER_INFO("PVD connected!");
+        } else {
+            TE_LOGGER_CRITICAL("PVD connection failed!");
+        }
         physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, physx::PxTolerancesScale(), true, pvd);
         if (!physics)
             TE_LOGGER_CRITICAL("PxCreatePhysics failed!");
 
         defaultMaterial = physics->createMaterial(0.5f, 0.5f, 0.0f);
         createScene();
+
         TE_LOGGER_INFO("Physics engine initialized!");
     }
 
@@ -63,9 +70,6 @@ namespace TechEngine {
             glm::vec3 position = transformComponent->getPosition();
             glm::quat rotation = glm::quat(glm::radians(transformComponent->getOrientation()));
             actor.second->setGlobalPose(physx::PxTransform(physx::PxVec3(position.x, position.y, position.z), physx::PxQuat(rotation.x, rotation.y, rotation.z, rotation.w)));
-            if (actor.second->getNbShapes()) {
-
-            }
             scene->addActor(*actor.second);
         }
         running = true;
@@ -105,9 +109,8 @@ namespace TechEngine {
     }
 
     void PhysicsEngine::addCollider(Collider *collider) {
-        removeActor(collider);
         TransformComponent t = collider->getTransform();
-        glm::vec3 position = t.getWorldPosition();
+        glm::vec3 position = t.getWorldPosition() + collider->getOffset();
         glm::quat rotation = glm::quat(glm::radians(t.getOrientation()));
         physx::PxTransform transform(physx::PxVec3(position.x, position.y, position.z), physx::PxQuat(rotation.x, rotation.y, rotation.z, rotation.w));
         if (BoxColliderComponent *boxCollider = dynamic_cast<BoxColliderComponent *>(collider)) {
@@ -117,42 +120,82 @@ namespace TechEngine {
         } else if (SphereCollider *sphereCollider = dynamic_cast<SphereCollider *>(collider)) {
             physx::PxSphereGeometry geometry(sphereCollider->getRadius());
             addActor(sphereCollider, transform, geometry);
+        } else if (CylinderCollider *cylinderCollider = dynamic_cast<CylinderCollider *>(collider)) {
+            CylinderMesh mesh = CylinderMesh();
+            cylinderCollider->getHeight();
+            cylinderCollider->getRadius();
+            physx::PxConvexMeshDesc meshDesc;
+            meshDesc.points.count = static_cast<physx::PxU32>(mesh.getVertices().size());
+            meshDesc.points.stride = sizeof(physx::PxVec3);
+            std::vector<physx::PxVec3> convexPoints = std::vector<physx::PxVec3>(mesh.getVertices().size());
+            for (int i = 0; i < mesh.getVertices().size(); i++) {
+                glm::vec3 scale = t.getScale();
+                glm::vec3 position = mesh.getVertices()[i].getPosition() * scale;
+                convexPoints[i] = physx::PxVec3(position.x * cylinderCollider->getRadius() * 2, position.y * cylinderCollider->getHeight(), position.z * cylinderCollider->getRadius() * 2);
+            }
+            meshDesc.points.data = convexPoints.data();
+            meshDesc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX;
+
+            meshDesc.indices.count = static_cast<physx::PxU32>(mesh.getIndices().size());
+            meshDesc.indices.stride = sizeof(physx::PxU32);
+            meshDesc.indices.data = mesh.getIndices().data();
+            physx::PxTolerancesScale scale;
+            physx::PxCookingParams params(scale);
+
+            physx::PxDefaultMemoryOutputStream buf;
+            physx::PxConvexMeshCookingResult::Enum result;
+            physx::PxConvexMesh *convexMesh;
+            if (PxCookConvexMesh(params, meshDesc, buf, &result)) {
+                physx::PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+                convexMesh = physics->createConvexMesh(input);
+            } else {
+                TE_LOGGER_CRITICAL("Cooking cylinder failed!");
+                return;
+            }
+            physx::PxConvexMeshGeometry geometry(convexMesh);
+            addActor(cylinderCollider, transform, geometry);
         } else {
             TE_LOGGER_CRITICAL("Collider type not supported!");
         }
     }
 
-    void PhysicsEngine::addActor(Collider *collider, physx::PxTransform transform, const physx::PxGeometry &actor) {
+    void PhysicsEngine::removeCollider(const std::string &gameObjectTag, Collider *collider) {
+        if (actors.find(gameObjectTag) != actors.end()) {
+            physx::PxRigidActor *actor = actors[gameObjectTag];
+            int shapesNumber = actor->getNbShapes();
+            physx::PxShape **shapes = new physx::PxShape *[shapesNumber];
+            actor->getShapes(shapes, shapesNumber);
+            for (int i = 0; i < shapesNumber; i++) {
+                if (shapes[i]->getGeometry().getType() == physx::PxGeometryType::eBOX && typeid(*collider) == typeid(BoxColliderComponent)) {
+                    actor->detachShape(*shapes[i]);
+                } else if (shapes[i]->getGeometry().getType() == physx::PxGeometryType::eSPHERE && typeid(*collider) == typeid(SphereCollider)) {
+                    actor->detachShape(*shapes[i]);
+                } else if (shapes[i]->getGeometry().getType() == physx::PxGeometryType::eCONVEXMESH && typeid(*collider) == typeid(CylinderCollider)) {
+                    actor->detachShape(*shapes[i]);
+                }
+            }
+        }
+    }
+
+    void PhysicsEngine::addActor(Collider *collider, physx::PxTransform transform, const physx::PxGeometry &geometry) {
+        physx::PxRigidActor *actor = nullptr;
         if (collider->isDynamic()) {
-            addDynamicActor(transform, actor, collider);
+            actor = PxCreateDynamic(*physics, transform, geometry, *defaultMaterial, 10.0f);
         } else {
-            addStaticActor(transform, actor, collider);
+            actor = PxCreateStatic(*physics, transform, geometry, *defaultMaterial);;
         }
+        actor->userData = collider->getGameObject()->getComponent<TransformComponent>();
+        actors[collider->getGameObject()->getTag()] = actor;
     }
 
-    void PhysicsEngine::addDynamicActor(physx::PxTransform transform, const physx::PxGeometry &geometry, Collider *collider) {
-        physx::PxRigidDynamic *dynamicActor = PxCreateDynamic(*physics, transform, geometry, *defaultMaterial, 10.0f);
-        dynamicActor->userData = collider->getGameObject()->getComponent<TransformComponent>();
-        scene->addActor(*dynamicActor);
-        actors[collider->getGameObject()->getTag()] = dynamicActor;
-    }
-
-    void PhysicsEngine::addStaticActor(physx::PxTransform transform, const physx::PxGeometry &geometry, Collider *collider) {
-        physx::PxRigidStatic *staticActor = PxCreateStatic(*physics, transform, geometry, *defaultMaterial);
-        staticActor->userData = collider->getGameObject()->getComponent<TransformComponent>();
-        scene->addActor(*staticActor);
-        actors[collider->getGameObject()->getTag()] = staticActor;
-    }
-
-    void PhysicsEngine::removeActor(Collider *collider) {
-        if (actors.find(collider->getGameObject()->getTag()) != actors.end()) {
-            actors[collider->getGameObject()->getTag()]->release();
-            actors.erase(collider->getGameObject()->getTag());
-        }
-    }
-
-    void PhysicsEngine::removeActor(GameObject *gameObject) {
-        if (actors.find(gameObject->getTag()) != actors.end()) {
+    void PhysicsEngine::removeActor(const std::string &tag) {
+        if (actors.find(tag) != actors.end()) {
+            GameObject *gameObject = Scene::getInstance().getGameObjectByTag(tag);
+            for (std::pair<const std::basic_string<char>, Component *> pair: gameObject->getComponents()) {
+                if (Collider *collider = dynamic_cast<Collider *>(pair.second)) {
+                    removeCollider(gameObject->getTag(), collider);
+                }
+            }
             actors[gameObject->getTag()]->release();
             actors.erase(gameObject->getTag());
         }

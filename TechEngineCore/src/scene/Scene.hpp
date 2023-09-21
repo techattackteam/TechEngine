@@ -15,7 +15,7 @@ namespace TechEngine {
         inline static Scene *instance;
         std::list<GameObject *> gameObjects;
         std::list<GameObject *> lights;
-
+        std::list<GameObject *> gameObjectsToDelete;
     public:
 
         Scene();

@@ -6,7 +6,6 @@
 namespace TechEngine {
     class SphereCollider : public Collider {
     private:
-        glm::vec3 offset;
         float radius;
 
     public:
@@ -14,9 +13,7 @@ namespace TechEngine {
 
         SphereCollider(GameObject *gameObject, glm::vec3 offset, float radius);
 
-        glm::vec3 getOffset();
-
-        void setOffset(glm::vec3 offset);
+        ~SphereCollider() override;
 
         float getRadius();
 

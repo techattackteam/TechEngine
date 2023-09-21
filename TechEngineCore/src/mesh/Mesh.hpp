@@ -2,7 +2,7 @@
 
 #include <vector>
 #include "components/TransformComponent.hpp"
-#include "mesh/Vertex.hpp"
+#include "Vertex.hpp"
 
 namespace TechEngine {
     class Mesh {

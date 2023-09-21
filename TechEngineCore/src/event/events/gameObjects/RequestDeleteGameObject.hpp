@@ -6,16 +6,16 @@
 namespace TechEngine {
     class RequestDeleteGameObject : public TechEngine::Event {
     private:
-        GameObject *gameObject;
+        std::string tag;
     public:
         static inline EventType eventType = EventType("RequestDeleteGameObject", SYNC);
 
-        explicit RequestDeleteGameObject(GameObject *gameObject) : Event(eventType) {
-            this->gameObject = gameObject;
+        explicit RequestDeleteGameObject(const std::string &tag) : Event(eventType) {
+            this->tag = tag;
         }
 
-        GameObject *getGameObject() {
-            return gameObject;
+        std::string &getTag() {
+            return tag;
         }
     };
 }

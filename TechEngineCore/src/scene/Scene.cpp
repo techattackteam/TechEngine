@@ -34,12 +34,17 @@ namespace TechEngine {
         if (gameObject->hasComponent<DirectionalLightComponent>()) {
             lights.remove(gameObject);
         }
+
     }
 
     void Scene::update() {
         for (auto element: gameObjects) {
             element->update();
         }
+        for (GameObject *gameObject: gameObjectsToDelete) {
+            delete gameObject;
+        }
+        gameObjectsToDelete.clear();
     }
 
     void Scene::fixedUpdate() {
@@ -135,7 +140,11 @@ namespace TechEngine {
         lights.clear();
     }
 
-    void Scene::onGameObjectDeleteRequest(TechEngine::RequestDeleteGameObject *event) {
-        delete event->getGameObject();
+    void Scene::onGameObjectDeleteRequest(RequestDeleteGameObject *event) {
+        GameObject *gameObject = getGameObjectByTag(event->getTag());
+        if (gameObject->hasParent()) {
+            gameObject->removeParent();
+        }
+        gameObjectsToDelete.emplace_back(gameObject);
     }
 }

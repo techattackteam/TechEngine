@@ -31,6 +31,8 @@ namespace TechEngine {
         void renderBoxCollider(GameObject *gameObject);
 
         void renderSphereCollider(GameObject *gameObject);
+
+        void renderCylinderCollier(GameObject *gameObject);
     };
 }
 
