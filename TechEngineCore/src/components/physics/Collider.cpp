@@ -12,7 +12,7 @@ namespace TechEngine {
 
     void Collider::setDynamic(bool dynamic) {
         this->dynamic = dynamic;
-        PhysicsEngine::getInstance()->addCollider(this);
+        PhysicsEngine::getInstance()->changeDynamic(this);
     }
 
     bool Collider::isDynamic() {

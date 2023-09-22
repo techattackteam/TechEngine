@@ -211,8 +211,8 @@ namespace TechEngine {
             glm::vec3 size = boxCollider->getSize();
             glm::vec3 offset = boxCollider->getOffset();
             bool dynamic = boxCollider->isDynamic();
-            drawVec3Control("Size", size, 1, 100.0f, 0);
-            drawVec3Control("Offset", offset, 1, 100.0f, 0);
+            drawVec3Control("Size", size, 1.0f, 100.0f, 0);
+            drawVec3Control("Offset", offset, 0, 100.0f, 0);
             ImGui::Checkbox("Dynamic", &dynamic);
             if (size != boxCollider->getSize())
                 boxCollider->setSize(size);
@@ -227,10 +227,10 @@ namespace TechEngine {
             float radius = collider->getRadius();
             glm::vec3 offset = collider->getOffset();
             bool dynamic = collider->isDynamic();
-            ImGui::DragFloat("Radius", &radius, 0.1f, 1, 100.0f, "%.2f");
-            drawVec3Control("Offset", offset, 1, 100.0f, 0);
+            ImGui::DragFloat("Radius", &radius, 0.1f, 0.1f, 100.0f, "%.2f");
+            drawVec3Control("Offset", offset, 0, 100.0f, 0);
             ImGui::Checkbox("Dynamic", &dynamic);
-            if (radius != collider->getRadius())
+            if (radius != collider->getRadius() && radius > 0.0f)
                 collider->setRadius(radius);
             if (offset != collider->getOffset())
                 collider->setOffset(offset);
@@ -244,9 +244,9 @@ namespace TechEngine {
             float height = collider->getHeight();
             glm::vec3 offset = collider->getOffset();
             bool dynamic = collider->isDynamic();
-            ImGui::DragFloat("Radius", &radius, 0.1f, 0.1, 100.0f, "%.2f");
-            ImGui::DragFloat("Height", &height, 0.1f, 0.1, 100.0f, "%.2f");
-            drawVec3Control("Offset", offset, 1, 100.0f, 0);
+            ImGui::DragFloat("Radius", &radius, 0.1f, 0.1f, 100.0f, "%.2f");
+            ImGui::DragFloat("Height", &height, 0.1f, 0.1f, 100.0f, "%.2f");
+            drawVec3Control("Offset", offset, 0, 100.0f, 0);
             ImGui::Checkbox("Dynamic", &dynamic);
             if (radius != collider->getRadius())
                 collider->setRadius(radius);

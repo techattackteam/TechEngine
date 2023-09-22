@@ -3,6 +3,7 @@
 #include <PxPhysicsAPI.h>
 #include "components/physics/BoxColliderComponent.hpp"
 #include "components/physics/SphereCollider.hpp"
+#include "components/physics/CylinderCollider.hpp"
 
 namespace TechEngine {
     class PhysicsEngine {
@@ -40,15 +41,24 @@ namespace TechEngine {
 
         void addCollider(Collider *collider);
 
-        void removeCollider(const std::string& gameObjectTag,Collider *collider);
+        void removeCollider(const std::string &gameObjectTag, Collider *collider);
 
+        void changeDynamic(Collider *collider);
+
+    private:
         void updateGameObjectPositions();
 
         void updateActorPositions();
 
-    private:
-        void addActor(Collider *collider, physx::PxTransform transform, const physx::PxGeometry &actor);
+        physx::PxGeometry *createGeometry(TransformComponent &transform, Collider *collider);
+
+        physx::PxGeometry *createCylinderMesh(TechEngine::CylinderCollider *cylinderCollider, TransformComponent &t);
+
+        void addActor(Collider *collider, const physx::PxTransform &transform, const physx::PxGeometry &actor, const physx::PxTransform &transformOffset);
 
         void removeActor(const std::string &tag);
+
+        void updateActor(Collider *collider, const physx::PxTransform &transformOffset, const physx::PxGeometry &geometry);
+
     };
 }
