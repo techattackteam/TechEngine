@@ -7,11 +7,13 @@ namespace TechEngine {
         this->gameObject = gameObject;
         this->radius = 0.5f;
         this->height = 1.0f;
+        PhysicsEngine::getInstance()->addCollider(this);
     }
 
     CylinderCollider::CylinderCollider(GameObject *gameObject, glm::vec3 offset, float radius, float height) :
             Collider(gameObject, "CylinderCollider"), radius(radius), height(height) {
         this->offset = offset;
+        PhysicsEngine::getInstance()->addCollider(this);
     }
 
     CylinderCollider::~CylinderCollider() {
