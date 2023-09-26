@@ -179,9 +179,10 @@ namespace TechEngine {
             float theta1 = i * segmentAngle;
             float theta2 = (i + 1) * segmentAngle;
 
-            glm::vec3 point1 = center + glm::vec3(radius, radius, 0.0f) * glm::vec3(glm::cos(theta1), glm::sin(theta1), 0.0f);
-            glm::vec3 point2 = center + glm::vec3(radius, radius, 0.0f) * glm::vec3(glm::cos(theta2), glm::sin(theta2), 0.0f);
-
+            glm::vec3 point1 = glm::vec3(radius, radius, 0.0f) * glm::vec3(glm::cos(theta1), glm::sin(theta1), 0.0f);
+            glm::vec3 point2 = glm::vec3(radius, radius, 0.0f) * glm::vec3(glm::cos(theta2), glm::sin(theta2), 0.0f);
+            point1 = glm::vec3(transform->getModelMatrix() * glm::vec4(point1, 1.0f));
+            point2 = glm::vec3(transform->getModelMatrix() * glm::vec4(point2, 1.0f));
             // Create a line segment along the X-axis with the specified color
             renderer->createLine(point1, point2, color);
         }
@@ -191,8 +192,10 @@ namespace TechEngine {
             float theta1 = i * segmentAngle;
             float theta2 = (i + 1) * segmentAngle;
 
-            glm::vec3 point1 = center + glm::vec3(0.0f, radius, radius) * glm::vec3(1.0f, glm::cos(theta1), glm::sin(theta1));
-            glm::vec3 point2 = center + glm::vec3(0.0f, radius, radius) * glm::vec3(1.0f, glm::cos(theta2), glm::sin(theta2));
+            glm::vec3 point1 = glm::vec3(0.0f, radius, radius) * glm::vec3(1.0f, glm::cos(theta1), glm::sin(theta1));
+            glm::vec3 point2 = glm::vec3(0.0f, radius, radius) * glm::vec3(1.0f, glm::cos(theta2), glm::sin(theta2));
+            point1 = glm::vec3(transform->getModelMatrix() * glm::vec4(point1, 1.0f));
+            point2 = glm::vec3(transform->getModelMatrix() * glm::vec4(point2, 1.0f));
 
             // Create a line segment along the Y-axis with the specified color
             renderer->createLine(point1, point2, color);
@@ -203,8 +206,10 @@ namespace TechEngine {
             float theta1 = i * segmentAngle;
             float theta2 = (i + 1) * segmentAngle;
 
-            glm::vec3 point1 = center + glm::vec3(radius, 0.0f, radius) * glm::vec3(glm::cos(theta1), 1.0f, glm::sin(theta1));
-            glm::vec3 point2 = center + glm::vec3(radius, 0.0f, radius) * glm::vec3(glm::cos(theta2), 1.0f, glm::sin(theta2));
+            glm::vec3 point1 = glm::vec3(radius, 0.0f, radius) * glm::vec3(glm::cos(theta1), 1.0f, glm::sin(theta1));
+            glm::vec3 point2 = glm::vec3(radius, 0.0f, radius) * glm::vec3(glm::cos(theta2), 1.0f, glm::sin(theta2));
+            point1 = glm::vec3(transform->getModelMatrix() * glm::vec4(point1, 1.0f));
+            point2 = glm::vec3(transform->getModelMatrix() * glm::vec4(point2, 1.0f));
 
             // Create a line segment along the Z-axis with the specified color
             renderer->createLine(point1, point2, color);
