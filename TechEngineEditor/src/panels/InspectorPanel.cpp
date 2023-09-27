@@ -10,6 +10,7 @@
 #include "mesh/SphereMesh.hpp"
 #include "mesh/CylinderMesh.hpp"
 #include "components/physics/CylinderCollider.hpp"
+#include "components/physics/RigidBody.hpp"
 
 namespace TechEngine {
     InspectorPanel::InspectorPanel() : Panel("Inspector") {
@@ -29,14 +30,22 @@ namespace TechEngine {
                 PanelsManager::getInstance().getSelectedGameObject()->addComponent<MeshRendererComponent>();
             }
             if (ImGui::BeginMenu("Physics")) {
-                if (ImGui::MenuItem("Box Collider")) {
-                    PanelsManager::getInstance().getSelectedGameObject()->addComponent<BoxColliderComponent>();
+                if (ImGui::MenuItem("Rigid Body")) {
+                    PanelsManager::getInstance().getSelectedGameObject()->addComponent<RigidBody>();
+                    PanelsManager::getInstance().getSelectedGameObject()->getComponent<RigidBody>()->registerRB();
                 }
-                if (ImGui::MenuItem("Sphere Collider")) {
-                    PanelsManager::getInstance().getSelectedGameObject()->addComponent<SphereCollider>();
-                }
-                if (ImGui::MenuItem("Cylinder Collider")) {
-                    PanelsManager::getInstance().getSelectedGameObject()->addComponent<CylinderCollider>();
+                if (ImGui::BeginMenu("Colliders")) {
+
+                    if (ImGui::MenuItem("Box Collider")) {
+                        PanelsManager::getInstance().getSelectedGameObject()->addComponent<BoxColliderComponent>();
+                    }
+                    if (ImGui::MenuItem("Sphere Collider")) {
+                        PanelsManager::getInstance().getSelectedGameObject()->addComponent<SphereCollider>();
+                    }
+                    if (ImGui::MenuItem("Cylinder Collider")) {
+                        PanelsManager::getInstance().getSelectedGameObject()->addComponent<CylinderCollider>();
+                    }
+                    ImGui::EndMenu();
                 }
                 ImGui::EndMenu();
             }
@@ -206,36 +215,41 @@ namespace TechEngine {
             //component->paintMesh();
         });
 
+        drawComponent<RigidBody>("Rigid Body", [this](auto &component) {
+            auto &rigidBody = component;
+            float mass = rigidBody->getMass();
+            float density = rigidBody->getDensity();
+            ImGui::DragFloat("Mass", &mass, 0.1f, 0.1f, 100.0f, "%.2f");
+            ImGui::DragFloat("Density", &density, 0.1f, 0.1f, 100.0f, "%.2f");
+            if (mass != rigidBody->getMass())
+                rigidBody->setMass(mass);
+            if (density != rigidBody->getDensity())
+                rigidBody->setDensity(density);
+        });
+
         drawComponent<BoxColliderComponent>("Box Collider", [this](auto &component) {
             auto &boxCollider = component;
             glm::vec3 size = boxCollider->getSize();
             glm::vec3 offset = boxCollider->getOffset();
-            bool dynamic = boxCollider->isDynamic();
             drawVec3Control("Size", size, 1.0f, 100.0f, 0);
             drawVec3Control("Offset", offset, 0, 100.0f, 0);
-            ImGui::Checkbox("Dynamic", &dynamic);
             if (size != boxCollider->getSize())
                 boxCollider->setSize(size);
             if (offset != boxCollider->getOffset())
                 boxCollider->setOffset(offset);
-            if (dynamic != boxCollider->isDynamic())
-                boxCollider->setDynamic(dynamic);
         });
 
         drawComponent<SphereCollider>("Sphere Collider", [this](auto &component) {
             auto &collider = component;
             float radius = collider->getRadius();
             glm::vec3 offset = collider->getOffset();
-            bool dynamic = collider->isDynamic();
             ImGui::DragFloat("Radius", &radius, 0.1f, 0.1f, 100.0f, "%.2f");
             drawVec3Control("Offset", offset, 0, 100.0f, 0);
-            ImGui::Checkbox("Dynamic", &dynamic);
             if (radius != collider->getRadius() && radius > 0.0f)
                 collider->setRadius(radius);
             if (offset != collider->getOffset())
                 collider->setOffset(offset);
-            if (dynamic != collider->isDynamic())
-                collider->setDynamic(dynamic);
+
         });
 
         drawComponent<CylinderCollider>("Cylinder Collider", [this](auto &component) {
@@ -243,20 +257,15 @@ namespace TechEngine {
             float radius = collider->getRadius();
             float height = collider->getHeight();
             glm::vec3 offset = collider->getOffset();
-            bool dynamic = collider->isDynamic();
             ImGui::DragFloat("Radius", &radius, 0.1f, 0.1f, 100.0f, "%.2f");
             ImGui::DragFloat("Height", &height, 0.1f, 0.1f, 100.0f, "%.2f");
             drawVec3Control("Offset", offset, 0, 100.0f, 0);
-            ImGui::Checkbox("Dynamic", &dynamic);
             if (radius != collider->getRadius())
                 collider->setRadius(radius);
             if (height != collider->getHeight())
                 collider->setHeight(height);
             if (offset != collider->getOffset())
                 collider->setOffset(offset);
-            if (dynamic != collider->isDynamic())
-                collider->setDynamic(dynamic);
-
         });
     }
 
