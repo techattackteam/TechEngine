@@ -12,8 +12,8 @@
 #include "mesh/CubeMesh.hpp"
 #include "mesh/SphereMesh.hpp"
 #include "mesh/CylinderMesh.hpp"
-#include "mesh/CapsuleMesh.hpp"
 #include "components/physics/CylinderCollider.hpp"
+#include "components/physics/RigidBody.hpp"
 #include <filesystem>
 #include <yaml-cpp/yaml.h>
 #include <fstream>
@@ -110,7 +110,7 @@ namespace TechEngine {
         out << YAML::BeginMap;
         out << YAML::Key << "Name" << YAML::Value << gameObject->getName();
         out << YAML::Key << "Tag" << YAML::Value << gameObject->getTag();
-        TE_LOGGER_TRACE("Serialize game object with Tag = {0}, name = {1}", gameObject->getTag(), gameObject->getName());
+        //TE_LOGGER_TRACE("Serialize game object with Tag = {0}, name = {1}", gameObject->getTag(), gameObject->getName());
         if (gameObject->hasComponent<TransformComponent>()) {
             out << YAML::Key << "TransformComponent";
             out << YAML::BeginMap;
@@ -153,7 +153,6 @@ namespace TechEngine {
             auto boxColliderComponent = gameObject->getComponent<BoxColliderComponent>();
             out << YAML::Key << "Size" << YAML::Value << boxColliderComponent->getSize();
             out << YAML::Key << "Offset" << YAML::Value << boxColliderComponent->getOffset();
-            out << YAML::Key << "IsDynamic" << YAML::Value << boxColliderComponent->isDynamic();
             out << YAML::EndMap;
         }
 
@@ -163,7 +162,6 @@ namespace TechEngine {
             auto sphereColliderComponent = gameObject->getComponent<SphereCollider>();
             out << YAML::Key << "Radius" << YAML::Value << sphereColliderComponent->getRadius();
             out << YAML::Key << "Offset" << YAML::Value << sphereColliderComponent->getOffset();
-            out << YAML::Key << "IsDynamic" << YAML::Value << sphereColliderComponent->isDynamic();
             out << YAML::EndMap;
         }
         if (gameObject->hasComponent<CylinderCollider>()) {
@@ -173,8 +171,17 @@ namespace TechEngine {
             out << YAML::Key << "Radius" << YAML::Value << cylinderColliderComponent->getRadius();
             out << YAML::Key << "Height" << YAML::Value << cylinderColliderComponent->getHeight();
             out << YAML::Key << "Offset" << YAML::Value << cylinderColliderComponent->getOffset();
-            out << YAML::Key << "IsDynamic" << YAML::Value << cylinderColliderComponent->isDynamic();
             out << YAML::EndMap;
+        }
+
+        if (gameObject->hasComponent<RigidBody>()) {
+            out << YAML::Key << "RigidBody";
+            out << YAML::BeginMap;
+            auto rigidBodyComponent = gameObject->getComponent<RigidBody>();
+            out << YAML::Key << "Mass" << YAML::Value << rigidBodyComponent->getMass();
+            out << YAML::Key << "Density" << YAML::Value << rigidBodyComponent->getDensity();
+            out << YAML::EndMap;
+
         }
 
         if (gameObject->hasChildren()) {
@@ -211,7 +218,7 @@ namespace TechEngine {
         if (parent != nullptr) {
             Scene::getInstance().makeChildTo(parent, gameObject);
         }
-        TE_LOGGER_TRACE("Deserialized game object with Tag = {0}, name = {1}", gameObject->getTag(), name);
+        //TE_LOGGER_TRACE("Deserialized game object with Tag = {0}, name = {1}", gameObject->getTag(), name);
 
         auto transformComponentNode = gameObjectYAML["TransformComponent"];
         if (transformComponentNode) {
@@ -248,8 +255,6 @@ namespace TechEngine {
                 mesh = new SphereMesh();
             } else if (meshName == "Cylinder") {
                 mesh = new CylinderMesh();
-            } else if (meshName == "Capsule") {
-                mesh = new CapsuleMesh();
             } else {
                 TE_LOGGER_CRITICAL("Failed to deserialize mesh renderer component.\n      Mesh name {0} is not valid.", meshName);
             }
@@ -261,7 +266,6 @@ namespace TechEngine {
             BoxColliderComponent *boxColliderComponent = gameObject->getComponent<BoxColliderComponent>();
             boxColliderComponent->setSize(boxColliderNode["Size"].as<glm::vec3>());
             boxColliderComponent->setOffset(boxColliderNode["Offset"].as<glm::vec3>());
-            boxColliderComponent->setDynamic(boxColliderNode["IsDynamic"].as<bool>());
         }
 
         auto sphereColliderNode = gameObjectYAML["SphereCollider"];
@@ -270,7 +274,6 @@ namespace TechEngine {
             SphereCollider *sphereColliderComponent = gameObject->getComponent<SphereCollider>();
             sphereColliderComponent->setRadius(sphereColliderNode["Radius"].as<float>());
             sphereColliderComponent->setOffset(sphereColliderNode["Offset"].as<glm::vec3>());
-            sphereColliderComponent->setDynamic(sphereColliderNode["IsDynamic"].as<bool>());
         }
 
         auto cylinderColliderNode = gameObjectYAML["CylinderCollider"];
@@ -280,7 +283,15 @@ namespace TechEngine {
             cylinderColliderComponent->setRadius(cylinderColliderNode["Radius"].as<float>());
             cylinderColliderComponent->setHeight(cylinderColliderNode["Height"].as<float>());
             cylinderColliderComponent->setOffset(cylinderColliderNode["Offset"].as<glm::vec3>());
-            cylinderColliderComponent->setDynamic(cylinderColliderNode["IsDynamic"].as<bool>());
+        }
+
+        auto rigidBodyNode = gameObjectYAML["RigidBody"];
+        if (rigidBodyNode) {
+            gameObject->addComponent<RigidBody>();
+            RigidBody *rigidBodyComponent = gameObject->getComponent<RigidBody>();
+            rigidBodyComponent->setMass(rigidBodyNode["Mass"].as<float>());
+            rigidBodyComponent->setDensity(rigidBodyNode["Density"].as<float>());
+            rigidBodyComponent->registerRB();
         }
 
         auto childrenNode = gameObjectYAML["Children"];

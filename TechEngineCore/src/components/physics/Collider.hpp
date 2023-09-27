@@ -7,19 +7,15 @@ namespace TechEngine {
     class Collider : public Component {
     protected:
         glm::vec3 offset = glm::vec3(0.0f, 0.0f, 0.0f);
-        bool dynamic = true;
+
     public:
         Collider(GameObject *gameObject, std::string name);
-
-        Collider(GameObject *gameObject, std::string name, bool dynamic);
-
-        void setDynamic(bool dynamic);
-
-        bool isDynamic();
 
         void setOffset(glm::vec3 offset);
 
         glm::vec3 getOffset();
+
+        bool hasRigidBody();
 
     };
 }

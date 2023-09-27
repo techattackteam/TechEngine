@@ -7,8 +7,8 @@ namespace TechEngine {
         PhysicsEngine::getInstance()->addCollider(this);
     }
 
-    BoxColliderComponent::BoxColliderComponent(GameObject *gameObject, glm::vec3 size, glm::vec3 offset, bool dynamic) :
-            Collider(gameObject, "BoxColliderComponent", dynamic), size(size) {
+    BoxColliderComponent::BoxColliderComponent(GameObject *gameObject, glm::vec3 size, glm::vec3 offset) :
+            Collider(gameObject, "BoxColliderComponent"), size(size) {
         this->offset = offset;
         PhysicsEngine::getInstance()->addCollider(this);
     }

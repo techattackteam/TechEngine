@@ -10,7 +10,7 @@ namespace TechEngine {
     public:
         BoxColliderComponent(GameObject *gameObject);
 
-        BoxColliderComponent(GameObject *gameObject, glm::vec3 size, glm::vec3 offset, bool dynamic = true);
+        BoxColliderComponent(GameObject *gameObject, glm::vec3 size, glm::vec3 offset);
 
         ~BoxColliderComponent() override;
 

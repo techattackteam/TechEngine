@@ -4,6 +4,7 @@
 #include "components/physics/BoxColliderComponent.hpp"
 #include "components/physics/SphereCollider.hpp"
 #include "components/physics/CylinderCollider.hpp"
+#include "components/physics/RigidBody.hpp"
 
 namespace TechEngine {
     class PhysicsEngine {
@@ -19,7 +20,7 @@ namespace TechEngine {
         physx::PxMaterial *defaultMaterial;
         physx::PxPvd *pvd;
         std::unordered_map<std::string, physx::PxRigidActor *> actors;
-
+        std::list<std::string> rigidBodiesWithoutColliders;
         bool running = false;
 
         void createScene();
@@ -41,11 +42,16 @@ namespace TechEngine {
 
         void addCollider(Collider *collider);
 
+        void addRigidBody(RigidBody *rigidBody);
+
         void removeCollider(const std::string &gameObjectTag, Collider *collider);
 
-        void changeDynamic(Collider *collider);
+        void removeRigidBody(const std::string &gameObjectTag);
+
+        void updateMaterial(Collider *collider);
 
     private:
+
         void updateGameObjectPositions();
 
         void updateActorPositions();
@@ -54,11 +60,14 @@ namespace TechEngine {
 
         physx::PxGeometry *createCylinderMesh(TechEngine::CylinderCollider *cylinderCollider, TransformComponent &t);
 
-        void addActor(Collider *collider, const physx::PxTransform &transform, const physx::PxGeometry &actor, const physx::PxTransform &transformOffset);
+        void addActor(Collider *collider, const physx::PxTransform &transform, const physx::PxGeometry *actor, const physx::PxTransform &transformOffset);
 
         void removeActor(const std::string &tag);
 
-        void updateActor(Collider *collider, const physx::PxTransform &transformOffset, const physx::PxGeometry &geometry);
+        void updateActor(Collider *collider, const physx::PxTransform &transformOffset, const physx::PxGeometry *geometry);
 
+        std::pair<int, physx::PxShape **> getShapes(GameObject *gameObject);
+
+        void detachCollider(Collider *collider);
     };
 }

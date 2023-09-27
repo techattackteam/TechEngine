@@ -64,6 +64,12 @@ namespace TechEngine {
     void PhysicsEngine::start() {
         if (!scene)
             TE_LOGGER_CRITICAL("createScene failed!");
+        if (!rigidBodiesWithoutColliders.empty()) {
+            for (const std::string &tag: rigidBodiesWithoutColliders) {
+                GameObject *gameObject = Scene::getInstance().getGameObjectByTag(tag);
+                TE_LOGGER_WARN("GameObject {0} has rigid body without collider!", gameObject->getName());
+            }
+        }
         for (auto &actor: actors) {
             GameObject *gameObject = Scene::getInstance().getGameObjectByTag(actor.first);
             TransformComponent *transformComponent = gameObject->getComponent<TransformComponent>();
@@ -115,48 +121,53 @@ namespace TechEngine {
         physx::PxTransform transform(physx::PxVec3(position.x, position.y, position.z), physx::PxQuat(rotation.x, rotation.y, rotation.z, rotation.w));
         physx::PxTransform transformOffset(physx::PxVec3(collider->getOffset().x, -collider->getOffset().y, collider->getOffset().z));
         physx::PxGeometry *geometry = createGeometry(t, collider);
-        if (actors.find(collider->getGameObject()->getTag()) != actors.end()) {
-            updateActor(collider, transformOffset, *geometry);
-        } else {
-            addActor(collider, transform, *geometry, transformOffset);
+        if (std::find(rigidBodiesWithoutColliders.begin(), rigidBodiesWithoutColliders.end(), collider->getGameObject()->getTag()) != rigidBodiesWithoutColliders.end()){
+            rigidBodiesWithoutColliders.remove(collider->getGameObject()->getTag());
         }
-        //delete &geometry;
+        if (actors.find(collider->getGameObject()->getTag()) != actors.end()) {
+            updateActor(collider, transformOffset, geometry);
+        } else {
+            addActor(collider, transform, geometry, transformOffset);
+        }
+        delete geometry;
     }
 
-    void PhysicsEngine::removeCollider(const std::string &gameObjectTag, Collider *collider) {
-        if (actors.find(gameObjectTag) != actors.end()) {
-            physx::PxRigidActor *actor = actors[gameObjectTag];
-            int shapesNumber = actor->getNbShapes();
-            physx::PxShape **shapes = new physx::PxShape *[shapesNumber];
-            actor->getShapes(shapes, shapesNumber);
-            for (int i = 0; i < shapesNumber; i++) {
-                if (shapes[i]->getGeometry().getType() == physx::PxGeometryType::eBOX && typeid(*collider) == typeid(BoxColliderComponent)) {
-                    actor->detachShape(*shapes[i]);
-                } else if (shapes[i]->getGeometry().getType() == physx::PxGeometryType::eSPHERE && typeid(*collider) == typeid(SphereCollider)) {
-                    actor->detachShape(*shapes[i]);
-                } else if (shapes[i]->getGeometry().getType() == physx::PxGeometryType::eCONVEXMESH && typeid(*collider) == typeid(CylinderCollider)) {
-                    actor->detachShape(*shapes[i]);
+    void PhysicsEngine::addRigidBody(RigidBody *rigidBody) {
+        if (actors.find(rigidBody->getGameObject()->getTag()) == actors.end()) {
+            rigidBodiesWithoutColliders.push_back(rigidBody->getGameObject()->getTag());
+        } else {
+            removeActor(rigidBody->getGameObject()->getTag());
+            for (std::pair<std::string, Component *> component: rigidBody->getGameObject()->getComponents()) {
+                if (Collider *collider = dynamic_cast<Collider *>(component.second)) {
+                    addCollider(collider);
                 }
             }
         }
     }
 
-    void PhysicsEngine::changeDynamic(Collider *collider) {
-        if (actors.find(collider->getGameObject()->getTag()) != actors.end()) {
-            physx::PxRigidActor *actor = actors[collider->getGameObject()->getTag()];
-            int shapesNumber = actor->getNbShapes();
-            physx::PxShape **shapes = new physx::PxShape *[shapesNumber];
-            actor->getShapes(shapes, shapesNumber);
-            removeCollider(collider->getGameObject()->getTag(), collider);
-            TransformComponent &t = collider->getTransform();
-            glm::vec3 position = t.getWorldPosition();
-            glm::quat rotation = glm::quat(glm::radians(t.getOrientation()));
-            physx::PxTransform transform(physx::PxVec3(position.x, position.y, position.z), physx::PxQuat(rotation.x, rotation.y, rotation.z, rotation.w));
-            physx::PxTransform transformOffset(physx::PxVec3(collider->getOffset().x, -collider->getOffset().y, collider->getOffset().z));
-            addActor(collider, transform, shapes[0]->getGeometry(), transformOffset);
-            for (int i = 1; i < shapesNumber; i++) {
-                physx::PxShape *shape = shapes[i];
-                updateActor(collider, shape->getLocalPose(), shape->getGeometry());
+    void PhysicsEngine::removeCollider(const std::string &gameObjectTag, Collider *collider) {
+        if (actors.find(gameObjectTag) != actors.end()) {
+            physx::PxRigidActor *actor = actors[gameObjectTag];
+            detachCollider(collider);
+            if (actor->getNbShapes() == 0) {
+                if (collider->hasRigidBody()) {
+                    rigidBodiesWithoutColliders.push_back(gameObjectTag);
+                }
+                actors[gameObjectTag]->release();
+                actors.erase(gameObjectTag);
+            }
+        }
+    }
+
+    void PhysicsEngine::removeRigidBody(const std::string &tag) {
+        if (std::find(rigidBodiesWithoutColliders.begin(), rigidBodiesWithoutColliders.end(), tag) != rigidBodiesWithoutColliders.end()) {
+            rigidBodiesWithoutColliders.remove(tag);
+        } else {
+            GameObject *gameObject = Scene::getInstance().getGameObjectByTag(tag);
+            for (std::pair<std::string, Component *> component: gameObject->getComponents()) {
+                if (Collider *collider = dynamic_cast<Collider *>(component.second)) {
+                    addCollider(collider);
+                }
             }
         }
     }
@@ -211,32 +222,32 @@ namespace TechEngine {
         return convexMeshGeometry;
     }
 
-    void PhysicsEngine::addActor(Collider *collider, const physx::PxTransform &transform, const physx::PxGeometry &geometry, const physx::PxTransform &transformOffset) {
-        physx::PxRigidActor *actor = nullptr;
-        if (collider->isDynamic()) {
-            actor = PxCreateDynamic(*physics, transform, geometry, *defaultMaterial, 10.0f, transformOffset);
+    void PhysicsEngine::addActor(Collider *collider, const physx::PxTransform &transform, const physx::PxGeometry *geometry, const physx::PxTransform &transformOffset) {
+        physx::PxRigidActor *actor;
+        physx::PxMaterial *material = physics->createMaterial(defaultMaterial->getStaticFriction(), defaultMaterial->getDynamicFriction(), defaultMaterial->getRestitution());
+        if (collider->hasRigidBody()) {
+            actor = PxCreateDynamic(*physics, transform, *geometry, *material, 10.0f, transformOffset);
         } else {
-            actor = PxCreateStatic(*physics, transform, geometry, *defaultMaterial, transformOffset);
+            actor = PxCreateStatic(*physics, transform, *geometry, *material, transformOffset);
         }
         actor->userData = collider->getGameObject()->getComponent<TransformComponent>();
         actors[collider->getGameObject()->getTag()] = actor;
-        if (geometry.getType() == physx::PxGeometryType::eCONVEXMESH) {
-            physx::PxConvexMeshGeometry *convexMeshGeometry = (physx::PxConvexMeshGeometry *) &geometry;
+        if (geometry->getType() == physx::PxGeometryType::eCONVEXMESH) {
+            physx::PxConvexMeshGeometry *convexMeshGeometry = (physx::PxConvexMeshGeometry *) geometry;
             convexMeshGeometry->convexMesh->release();
         }
     }
 
-    void PhysicsEngine::updateActor(Collider *collider, const physx::PxTransform &transformOffset, const physx::PxGeometry &geometry) {
+    void PhysicsEngine::updateActor(Collider *collider, const physx::PxTransform &transformOffset, const physx::PxGeometry *geometry) {
+        detachCollider(collider);
         physx::PxRigidActor *actor = actors[collider->getGameObject()->getTag()];
-        removeCollider(collider->getGameObject()->getTag(), collider);
-        physx::PxShape *shape = physics->createShape(geometry, *defaultMaterial);
+        physx::PxShape *shape = physics->createShape(*geometry, *defaultMaterial);
         shape->setLocalPose(transformOffset);
         actor->attachShape(*shape);
-        if (geometry.getType() == physx::PxGeometryType::eCONVEXMESH) {
-            auto *convexMeshGeometry = (physx::PxConvexMeshGeometry *) &geometry;
+        if (geometry->getType() == physx::PxGeometryType::eCONVEXMESH) {
+            auto *convexMeshGeometry = (physx::PxConvexMeshGeometry *) geometry;
             convexMeshGeometry->convexMesh->release();
         }
-        //delete &geometry;
     }
 
     void PhysicsEngine::removeActor(const std::string &tag) {
@@ -247,8 +258,6 @@ namespace TechEngine {
                     removeCollider(gameObject->getTag(), collider);
                 }
             }
-            actors[gameObject->getTag()]->release();
-            actors.erase(gameObject->getTag());
         }
     }
 
@@ -258,5 +267,42 @@ namespace TechEngine {
         } else {
             return instance;
         };
+    }
+
+    void PhysicsEngine::updateMaterial(Collider *collider) {
+        if (actors.find(collider->getGameObject()->getTag()) != actors.end()) {
+            physx::PxRigidActor *actor = actors[collider->getGameObject()->getTag()];
+            int shapesNumber = actor->getNbShapes();
+            physx::PxShape **shapes = new physx::PxShape *[shapesNumber];
+            actor->getShapes(shapes, shapesNumber);
+            for (int i = 0; i < shapesNumber; i++) {
+                shapes[i]->setMaterials(&defaultMaterial, 1);
+            }
+        }
+    }
+
+    std::pair<int, physx::PxShape **> PhysicsEngine::getShapes(GameObject *gameObject) {
+        physx::PxRigidActor *actor = actors[gameObject->getTag()];
+        int shapesNumber = actor->getNbShapes();
+        physx::PxShape **shapes = new physx::PxShape *[shapesNumber];
+        actor->getShapes(shapes, shapesNumber);
+        return std::make_pair(shapesNumber, shapes);
+    }
+
+    void PhysicsEngine::detachCollider(Collider *collider) {
+        physx::PxRigidActor *actor = actors[collider->getGameObject()->getTag()];
+        std::pair<int, physx::PxShape **> shapes = getShapes(collider->getGameObject());
+        for (int i = 0; i < shapes.first; i++) {
+            if (shapes.second[i]->getGeometry().getType() == physx::PxGeometryType::eBOX && typeid(*collider) == typeid(BoxColliderComponent)) {
+                actor->detachShape(*shapes.second[i]);
+                break;
+            } else if (shapes.second[i]->getGeometry().getType() == physx::PxGeometryType::eSPHERE && typeid(*collider) == typeid(SphereCollider)) {
+                actor->detachShape(*shapes.second[i]);
+                break;
+            } else if (shapes.second[i]->getGeometry().getType() == physx::PxGeometryType::eCONVEXMESH && typeid(*collider) == typeid(CylinderCollider)) {
+                actor->detachShape(*shapes.second[i]);
+                break;
+            }
+        }
     }
 }
