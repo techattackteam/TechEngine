@@ -19,6 +19,10 @@ namespace TechEngine {
 
         void changeGuizmoOperation(int operation);
 
+        void changeGuizmoMode(int mode);
+
+        int getGuizmoMode() const;
+
         SceneCamera *getSceneCamera() const {
             return sceneCamera;
         }
