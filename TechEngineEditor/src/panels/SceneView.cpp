@@ -277,4 +277,12 @@ namespace TechEngine {
         guizmo.setOperation(operation);
     }
 
+    void SceneView::changeGuizmoMode(int mode) {
+        guizmo.setMode(mode);
+    }
+
+    int SceneView::getGuizmoMode() const {
+        return guizmo.getMode();
+    }
+
 }

@@ -90,7 +90,7 @@ namespace TechEngine {
 
         glm::mat4 transform = PanelsManager::getInstance().getSelectedGameObject()->getModelMatrix();
         ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
-                             (ImGuizmo::OPERATION) operation, ImGuizmo::LOCAL, glm::value_ptr(transform),
+                             (ImGuizmo::OPERATION) operation, (ImGuizmo::MODE) (mode), glm::value_ptr(transform),
                              nullptr, nullptr);
 
         if (ImGuizmo::IsUsing()) {
@@ -104,5 +104,13 @@ namespace TechEngine {
 
     void Guizmo::setOperation(int operation) {
         this->operation = operation;
+    }
+
+    int Guizmo::getMode() const {
+        return mode;
+    }
+
+    void Guizmo::setMode(int mode) {
+        this->mode = mode;
     }
 }
