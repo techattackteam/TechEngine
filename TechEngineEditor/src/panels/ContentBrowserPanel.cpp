@@ -168,6 +168,7 @@ namespace TechEngine {
             bool open = ImGui::TreeNodeEx(filenameString.c_str(), flags);
             if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
                 TE_LOGGER_INFO("Clicked on {0}", path.string());
+                currentPath = path;
             }
             if (open) {
                 RenderSceneHierarchy(path); // Recursive call to render subdirectories
