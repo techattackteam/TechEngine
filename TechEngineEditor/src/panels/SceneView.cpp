@@ -6,6 +6,7 @@
 #include "PanelsManager.hpp"
 #include "components/physics/SphereCollider.hpp"
 #include "components/physics/CylinderCollider.hpp"
+#include "components/physics/RigidBody.hpp"
 
 namespace TechEngine {
     SceneView::SceneView(Renderer &renderer) : renderer(&renderer), Panel("Scene") {
@@ -135,12 +136,7 @@ namespace TechEngine {
             vertices[i].y = vertices[i].y >= 0 ? vertices[i].y + offset : vertices[i].y - offset;
             vertices[i].z = vertices[i].z >= 0 ? vertices[i].z + offset : vertices[i].z - offset;
         }
-        glm::vec4 color;
-        if (gameObject == PanelsManager::getInstance().getSelectedGameObject()) {
-            color = glm::vec4(1.0f, 0, 0, 1.0f);
-        } else {
-            color = glm::vec4(1.0f, 0, 0, 0.3f);
-        }
+        glm::vec4 color = getColor(gameObject);
         renderer->createLine(vertices[0], vertices[1], color);
         renderer->createLine(vertices[1], vertices[2], color);
         renderer->createLine(vertices[2], vertices[3], color);
@@ -167,12 +163,7 @@ namespace TechEngine {
         const glm::vec3 center = transform->position + collider->getOffset();
         const float offset = 0.005f;
         const float radius = collider->getRadius() + offset;
-        glm::vec4 color;
-        if (gameObject == PanelsManager::getInstance().getSelectedGameObject()) {
-            color = glm::vec4(1.0f, 0, 0, 1.0f);
-        } else {
-            color = glm::vec4(1.0f, 0, 0, 0.3f);
-        }
+        glm::vec4 color = getColor(gameObject);
 
         // Create a circle along the X-axis
         for (int i = 0; i < numSegments; ++i) {
@@ -227,7 +218,7 @@ namespace TechEngine {
         // Calculate the vertices to outline the cylinder
         const int numSegments = 32;
         std::vector<glm::vec3> vertices;
-
+        glm::vec4 color = getColor(gameObject);
         for (int i = 0; i <= numSegments; ++i) {
             float theta = 2.0f * glm::pi<float>() * static_cast<float>(i) / static_cast<float>(numSegments);
             float x = radius * glm::cos(theta);
@@ -251,11 +242,11 @@ namespace TechEngine {
                 glm::vec3 prevBottomPoint = vertices[(i - 1) * 2 + 1];
 
                 // Render lines for the sides of the cylinder
-                renderer->createLine(prevTopPoint, topPoint, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red lines
-                renderer->createLine(prevBottomPoint, bottomPoint, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red lines
+                renderer->createLine(prevTopPoint, topPoint, color); // Red lines
+                renderer->createLine(prevBottomPoint, bottomPoint, color); // Red lines
 
                 // Render lines to connect the top and bottom points
-                renderer->createLine(prevTopPoint, prevBottomPoint, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red lines
+                renderer->createLine(prevTopPoint, prevBottomPoint, color); // Red lines
             }
         }
 
@@ -266,12 +257,29 @@ namespace TechEngine {
         glm::vec3 lastBottomPoint = vertices[vertices.size() - 1];
 
         // Render lines for the sides of the cylinder
-        renderer->createLine(lastTopPoint, firstTopPoint, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red lines
-        renderer->createLine(lastBottomPoint, firstBottomPoint, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red lines
+        renderer->createLine(lastTopPoint, firstTopPoint, color); // Red lines
+        renderer->createLine(lastBottomPoint, firstBottomPoint, color); // Red lines
 
         // Render lines to connect the top and bottom points
-        renderer->createLine(lastTopPoint, lastBottomPoint, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red lines
+        renderer->createLine(lastTopPoint, lastBottomPoint, color); // Red lines
     }
+
+    glm::vec4 SceneView::getColor(GameObject *gameObject) {
+        if (gameObject == PanelsManager::getInstance().getSelectedGameObject()) {
+            if (gameObject->hasComponent<RigidBody>()) {
+                return glm::vec4(0, 1.0f, 0, 1.0f);
+            } else {
+                return glm::vec4(1.0f, 0, 0, 1.0f);
+            }
+        } else {
+            if (gameObject->hasComponent<RigidBody>()) {
+                return glm::vec4(0, 1.0f, 0, 0.3f);
+            } else {
+                return glm::vec4(1.0f, 0, 0, 0.3f);
+            }
+        }
+    }
+
 
     void SceneView::changeGuizmoOperation(int operation) {
         guizmo.setOperation(operation);

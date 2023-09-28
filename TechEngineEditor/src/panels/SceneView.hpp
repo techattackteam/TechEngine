@@ -32,11 +32,14 @@ namespace TechEngine {
         void renderColliders();
 
     private:
+        glm::vec4 getColor(GameObject *gameObject);
+
         void renderBoxCollider(GameObject *gameObject);
 
         void renderSphereCollider(GameObject *gameObject);
 
         void renderCylinderCollier(GameObject *gameObject);
+
     };
 }
 
