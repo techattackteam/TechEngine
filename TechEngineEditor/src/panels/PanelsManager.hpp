@@ -9,7 +9,7 @@
 #include "InspectorPanel.hpp"
 #include "SceneView.hpp"
 #include "SettingsPanel.hpp"
-#include "ProjectBrowserPanel.hpp"
+#include "ContentBrowserPanel.hpp"
 #include "ExportSettingsPanel.hpp"
 #include "events/panels/RegisterCustomPanel.hpp"
 #include "core/Key.hpp"
@@ -27,7 +27,7 @@ namespace TechEngine {
         GameView gameView{window.getRenderer()};
         InspectorPanel inspectorPanel;
         //SettingsPanel settingsPanel{};
-        ProjectBrowserPanel contentBrowser;
+        ContentBrowserPanel contentBrowser;
         SceneHierarchyPanel sceneHierarchyPanel;
         ExportSettingsPanel exportSettingsPanel;
 
