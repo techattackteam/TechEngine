@@ -9,13 +9,12 @@ namespace TechEngine {
 
     MeshRendererComponent::MeshRendererComponent(GameObject *gameObject, Mesh *mesh, Material *material) :
             mesh(mesh), material(*material), Component(gameObject, "MeshRenderer") {
-        if (gameObject->getName() != "Cube")
-            paintMesh();
+        paintMesh();
     }
 
     void MeshRendererComponent::changeMesh(Mesh *mesh) {
         this->mesh = mesh;
-        //paintMesh();
+        paintMesh();
     }
 
     void MeshRendererComponent::paintMesh() {

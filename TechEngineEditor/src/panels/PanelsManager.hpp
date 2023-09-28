@@ -87,6 +87,8 @@ namespace TechEngine {
         void OnMouseMoveEvent(glm::vec2 delta);
 
         void OnKeyReleasedEvent(Key &key);
+
+        void setColorTheme();
     };
 }
 

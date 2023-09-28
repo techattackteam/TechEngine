@@ -84,11 +84,69 @@ namespace TechEngine {
         ImGuiStyle &style = ImGui::GetStyle();
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
             style.WindowRounding = 0.0f;
-            style.Colors[ImGuiCol_WindowBg].w = 1.0f;
         }
+
+        setColorTheme();
 
         ImGui_ImplGlfw_InitForOpenGL(window.getHandler(), true);
         ImGui_ImplOpenGL3_Init("#version 410");
+    }
+
+    void PanelsManager::setColorTheme() {
+        ImGuiStyle &style = ImGui::GetStyle();
+        ImVec4 *colors = style.Colors;
+
+        // Modify the blue color to make it more grayish
+        colors[ImGuiCol_Text] = ImVec4(0.80f, 0.80f, 0.80f, 1.00f); // Gray text
+        colors[ImGuiCol_TextDisabled] = ImVec4(0.24f, 0.24f, 0.24f, 1.00f); // Dark gray text (disabled)
+        colors[ImGuiCol_WindowBg] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f); // Dark gray window background
+        colors[ImGuiCol_Border] = ImVec4(0.30f, 0.30f, 0.30f, 0.30f); // Light gray border
+        colors[ImGuiCol_BorderShadow] = ImVec4(0.10f, 0.10f, 0.10f, 0.20f); // Dark gray border shadow
+        colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f); // Gray frame background
+        colors[ImGuiCol_FrameBgHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.40f); // Light blue frame background (hovered)
+        colors[ImGuiCol_FrameBgActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f); // Light blue frame background (active)
+        colors[ImGuiCol_TitleBg] = ImVec4(0.10f, 0.10f, 0.10f, 1.00f); // Dark gray title background
+        colors[ImGuiCol_TitleBgActive] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f); // Dark gray title background (active)
+        colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f); // Dark gray title background (collapsed)
+        colors[ImGuiCol_MenuBarBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f); // Gray menu bar background
+        colors[ImGuiCol_ScrollbarBg] = ImVec4(0.10f, 0.10f, 0.10f, 1.00f); // Dark gray scrollbar background
+        colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.26f, 0.59f, 0.98f, 0.40f); // Light blue scrollbar grab
+        colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f); // Light blue scrollbar grab (hovered)
+        colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f); // Light blue scrollbar grab (active)
+        colors[ImGuiCol_CheckMark] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f); // Light blue check mark
+        colors[ImGuiCol_SliderGrab] = ImVec4(0.24f, 0.52f, 0.88f, 1.00f); // Blue slider grab
+        colors[ImGuiCol_SliderGrabActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f); // Light blue slider grab (active)
+        colors[ImGuiCol_Button] = ImVec4(0.40f, 0.40f, 0.40f, 0.40f); // Lighter gray button
+        colors[ImGuiCol_ButtonHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f); // Light blue button (hovered)
+        colors[ImGuiCol_ButtonActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f); // Light blue button (active)
+        colors[ImGuiCol_Header] = ImVec4(0.26f, 0.59f, 0.98f, 0.31f); // Light blue header
+        colors[ImGuiCol_HeaderHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f); // Light blue header (hovered)
+        colors[ImGuiCol_HeaderActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f); // Light blue header (active)
+        colors[ImGuiCol_Separator] = colors[ImGuiCol_Border]; // Light gray separator
+        colors[ImGuiCol_SeparatorHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.78f); // Light blue separator (hovered)
+        colors[ImGuiCol_SeparatorActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f); // Light blue separator (active)
+        colors[ImGuiCol_ResizeGrip] = ImVec4(0.26f, 0.59f, 0.98f, 0.25f); // Light blue resize grip
+        colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f); // Light blue resize grip (hovered)
+        colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f); // Light blue resize grip (active)
+        colors[ImGuiCol_Tab] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f); // Gray tab
+        colors[ImGuiCol_TabHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f); // Light blue tab (hovered)
+        colors[ImGuiCol_TabActive] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f); // Dark gray tab (active)
+        colors[ImGuiCol_TabUnfocused] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f); // Gray tab (unfocused)
+        colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f); // Gray tab (unfocused, active)
+        colors[ImGuiCol_DockingPreview] = ImVec4(0.26f, 0.59f, 0.98f, 0.70f); // Light blue docking preview
+        colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f); // Gray docking empty background
+
+        style.WindowRounding = 2.0f;
+        style.FrameRounding = 2.0f;
+        style.FrameBorderSize = 1.0f;
+        style.PopupRounding = 2.0f;
+        style.ChildRounding = 2.0f;
+        style.ScrollbarRounding = 2.0f;
+        style.GrabRounding = 2.0f;
+        style.TabRounding = 2.0f;
+        style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
+
+        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     }
 
     void PanelsManager::beginImGuiFrame() {
@@ -175,7 +233,7 @@ namespace TechEngine {
     }
 
     void PanelsManager::createToolBar() {
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 4));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
         auto &colors = ImGui::GetStyle().Colors;
@@ -185,7 +243,8 @@ namespace TechEngine {
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, 0.5f));
 
         ImGui::Begin("##Toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-        float size = ImGui::GetWindowWidth() / 5;
+        float size = ImGui::GetWindowWidth() / 7;
+        ImGui::SetCursorPosY(ImGui::GetWindowHeight() / 2 - 10);
         if (ImGui::Button(sceneView.getGuizmoMode() == ImGuizmo::MODE::WORLD ? "World" : "Local", ImVec2(size, 0))) {
             sceneView.changeGuizmoMode(sceneView.getGuizmoMode() == ImGuizmo::MODE::WORLD ? ImGuizmo::MODE::LOCAL : ImGuizmo::MODE::WORLD);
         }
