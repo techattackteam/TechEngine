@@ -16,12 +16,7 @@ namespace TechEngine {
     }
 
     void Mesh::createVertex(glm::vec3 vertexPosition, glm::vec3 normal) {
-        Vertex vertex = Vertex(vertexPosition, normal, glm::vec4(-1, -1, -1, -1));
-        vertices.push_back(vertex);
-    }
-
-    void Mesh::createVertex(glm::vec3 vertexPosition, glm::vec3 normal, glm::vec3 color) {
-        Vertex vertex = Vertex(vertexPosition, normal, glm::vec4(color, 1.0f));
+        Vertex vertex = Vertex(vertexPosition, normal);
         vertices.push_back(vertex);
     }
 

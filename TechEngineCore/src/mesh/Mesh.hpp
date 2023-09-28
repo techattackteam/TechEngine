@@ -27,8 +27,6 @@ namespace TechEngine {
 
         void createVertex(glm::vec3 position, glm::vec3 normal);
 
-        void createVertex(glm::vec3 vertexPosition, glm::vec3 normal, glm::vec3 color);
-
         void createIndex(int index);
 
     };

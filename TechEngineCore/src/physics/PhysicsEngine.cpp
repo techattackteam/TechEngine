@@ -17,7 +17,11 @@ namespace TechEngine {
             instance = this;
         }
         EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this](Event *event) {
+            GameObject *gameObject = Scene::getInstance().getGameObjectByTag(((RequestDeleteGameObject *) event)->getTag());
             removeActor(((RequestDeleteGameObject *) event)->getTag());
+            if (gameObject->hasComponent<RigidBody>()) {
+                removeRigidBody(((RequestDeleteGameObject *) event)->getTag());
+            }
         });
     }
 
@@ -121,7 +125,7 @@ namespace TechEngine {
         physx::PxTransform transform(physx::PxVec3(position.x, position.y, position.z), physx::PxQuat(rotation.x, rotation.y, rotation.z, rotation.w));
         physx::PxTransform transformOffset(physx::PxVec3(collider->getOffset().x, -collider->getOffset().y, collider->getOffset().z));
         physx::PxGeometry *geometry = createGeometry(t, collider);
-        if (std::find(rigidBodiesWithoutColliders.begin(), rigidBodiesWithoutColliders.end(), collider->getGameObject()->getTag()) != rigidBodiesWithoutColliders.end()){
+        if (std::find(rigidBodiesWithoutColliders.begin(), rigidBodiesWithoutColliders.end(), collider->getGameObject()->getTag()) != rigidBodiesWithoutColliders.end()) {
             rigidBodiesWithoutColliders.remove(collider->getGameObject()->getTag());
         }
         if (actors.find(collider->getGameObject()->getTag()) != actors.end()) {

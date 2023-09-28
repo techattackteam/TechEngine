@@ -189,10 +189,10 @@ namespace TechEngine {
 
             if (ImGui::BeginCombo("##combo", current_item)) // The second parameter is the label previewed before opening the combo.
             {
-                for (int n = 0; n < IM_ARRAYSIZE(items); n++) {
-                    bool is_selected = (current_item == items[n]); // You can store your selection however you want, outside or inside your objects
-                    if (ImGui::Selectable(items[n], is_selected))
-                        current_item = items[n];
+                for (auto & item : items) {
+                    bool is_selected = (current_item == item); // You can store your selection however you want, outside or inside your objects
+                    if (ImGui::Selectable(item, is_selected))
+                        current_item = item;
                     if (is_selected)
                         ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
                 }
@@ -212,7 +212,7 @@ namespace TechEngine {
             drawVec3Control("Ambient", material.getAmbient(), 1, 100.0f, 0, 1);
             drawVec3Control("diffuse", material.getDiffuse(), 1, 100.0f, 0, 1);
             drawVec3Control("specular", material.getSpecular(), 1, 100.0f, 0, 1);
-            //component->paintMesh();
+            component->paintMesh();
         });
 
         drawComponent<RigidBody>("Rigid Body", [this](auto &component) {
@@ -286,42 +286,30 @@ namespace TechEngine {
         float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
         ImVec2 buttonSize = {lineHeight + 3.0f, lineHeight};
 
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
         ImGui::PushFont(boldFont);
         if (ImGui::Button("X", buttonSize))
             values.x = resetValue;
         ImGui::PopFont();
-        ImGui::PopStyleColor(3);
 
         ImGui::SameLine();
         ImGui::DragFloat("##X", &values.x, 0.1f, min, max, "%.2f");
         ImGui::PopItemWidth();
         ImGui::SameLine();
 
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
         ImGui::PushFont(boldFont);
         if (ImGui::Button("Y", buttonSize))
             values.y = resetValue;
         ImGui::PopFont();
-        ImGui::PopStyleColor(3);
 
         ImGui::SameLine();
         ImGui::DragFloat("##Y", &values.y, 0.1f, min, max, "%.2f");
         ImGui::PopItemWidth();
         ImGui::SameLine();
 
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.2f, 0.35f, 0.9f, 1.0f});
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
         ImGui::PushFont(boldFont);
         if (ImGui::Button("Z", buttonSize))
             values.z = resetValue;
         ImGui::PopFont();
-        ImGui::PopStyleColor(3);
 
         ImGui::SameLine();
         ImGui::DragFloat("##Z", &values.z, 0.1f, min, max, "%.2f");
