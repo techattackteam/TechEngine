@@ -14,6 +14,7 @@ namespace TechEngine {
     }
 
     void SceneHierarchyPanel::onUpdate() {
+        isItemHovered = false;
         ImGui::Begin("Scene Hierarchy");
         if (!scene.getGameObjects().empty()) {
             for (auto element: scene.getGameObjects()) {
@@ -26,7 +27,7 @@ namespace TechEngine {
                 selectedGO = nullptr;
                 PanelsManager::getInstance().deselectGameObject();
             }
-            if (!ImGui::IsItemHovered() && ImGui::BeginPopupContextWindow(0, 1)) {
+            if (!isItemHovered && ImGui::BeginPopupContextWindow()) {
                 if (ImGui::BeginMenu("Create")) {
                     if (ImGui::MenuItem("Empty")) {
                         new GameObject("Empty");
@@ -59,11 +60,14 @@ namespace TechEngine {
             selectedGO = gameObject;
             PanelsManager::getInstance().selectGameObject(gameObject->getTag());
         }
-
-        if (ImGui::BeginPopupContextItem("GameObject Menu", 1)) {
+        if(ImGui::IsItemHovered()) {
+            isItemHovered = true;
+        }
+        if (ImGui::BeginPopupContextItem()) {
+            selectedGO = gameObject;
             if (ImGui::MenuItem("Make Child (WIP)")) {
-/*                GameObject *child = new QuadMeshTest(gameObject->getName() + "'s Child");
-                Scene::getInstance().makeChildTo(gameObject, child);*/
+                GameObject *child = new GameObject(gameObject->getName() + "'s Child");
+                Scene::getInstance().makeChildTo(gameObject, child);
             }
             if (ImGui::MenuItem("Duplicate (WIP)")) {
                 //new QuadMeshTest(gameObject->getName() + "'s duplicate");
