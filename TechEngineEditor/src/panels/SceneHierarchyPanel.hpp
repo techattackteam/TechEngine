@@ -11,7 +11,7 @@ namespace TechEngine {
     private:
         GameObject *selectedGO = nullptr;
         Scene &scene = Scene::getInstance();
-        bool openChildMenu = false;
+        bool isItemHovered = false;
     public:
         SceneHierarchyPanel();
 
