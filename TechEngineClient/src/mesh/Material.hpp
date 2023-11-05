@@ -2,27 +2,30 @@
 
 #include <glm/glm.hpp>
 
-class Material {
-private:
+namespace TechEngine {
 
-    glm::vec3 ambient;
-    glm::vec3 diffuse;
-    glm::vec3 specular;
+    class Material {
+    private:
 
-    glm::vec4 color;
-    float shininess;
+        glm::vec3 ambient;
+        glm::vec3 diffuse;
+        glm::vec3 specular;
 
-public:
-    Material(glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
+        glm::vec4 color;
+        float shininess;
 
-    glm::vec4 &getColor();
+    public:
+        Material(glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
 
-    glm::vec3 &getAmbient();
+        glm::vec4 &getColor();
 
-    glm::vec3 &getDiffuse();
+        glm::vec3 &getAmbient();
 
-    glm::vec3 &getSpecular();
+        glm::vec3 &getDiffuse();
 
-    float &getShininess();
+        glm::vec3 &getSpecular();
 
-};
+        float &getShininess();
+
+    };
+}
