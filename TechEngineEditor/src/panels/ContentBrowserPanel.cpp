@@ -19,136 +19,44 @@ namespace TechEngine {
     }
 
     void ContentBrowserPanel::onUpdate() {
-        /*static float panelSize = 200.0f; // Initial width of the left panel
-        //ImGui::Splitter(true, 8.0f, panelSizes);
-        ImGui::Begin("Project Browser");
-        // Add the left-side panel
-        ImGui::BeginChild("##LeftSidePanel", ImVec2(panelSize, 0), true);
 
-        // You can add your folder hierarchy here
-        if (ImGui::TreeNode("Folder 1")) {
-            if (ImGui::Selectable("Subfolder 1")) {
-                // Handle folder selection
+        ImGui::Begin("Content Browser");
+        if (ImGui::BeginTable("Content", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Resizable)) {
+            ImGui::TableSetupColumn("Outline", 0, 250.f);
+            ImGui::TableSetupColumn("Files", ImGuiTableColumnFlags_WidthStretch);
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+
+            ImGui::BeginChild("Folders");
+
+            ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.f);
+            if (ImGui::TreeNodeEx(ProjectManager::getUserProjectRootPath().filename().string().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+                renderDirectoryHierarchy(ProjectManager::getUserProjectRootPath().filename().string().c_str());
+                ImGui::TreePop();
             }
-            if (ImGui::Selectable("Subfolder 2")) {
-                // Handle folder selection
-            }
-            ImGui::TreePop();
+            ImGui::PopStyleVar();
+
+            ImGui::EndChild();
+
+            ImGui::TableSetColumnIndex(1);
+
+            ImGui::BeginChild("Files", {ImGui::GetContentRegionAvail().x, ImGui::GetWindowSize().y});
+            renderFiles(currentPath);
+            ImGui::EndChild();
+
+            ImGui::EndTable();
         }
-
-        ImGui::EndChild(); // End of left-side panel
-        ImGui::SameLine();
-
-        float availableWidth = ImGui::GetContentRegionAvail().x;
-        float rightPanelSize = availableWidth - panelSize;
-        ImGui::BeginChild("##RightSidePanel", ImVec2(rightPanelSize, 0), true);
-        menuWindowOpen = false;
-        if (currentPath != std::filesystem::path(ProjectManager::getUserProjectRootPath())) {
-            if (ImGui::Button("...")) {
-                currentPath = currentPath.parent_path();
-            }
-        }
-
-        for (auto &directoryEntry: std::filesystem::directory_iterator(currentPath)) {
-            const auto &path = directoryEntry.path();
-            auto relativePath = std::filesystem::relative(path, ProjectManager::getUserProjectRootPath());
-            std::string filenameString = relativePath.filename().string();
-            if (directoryEntry.is_directory()) {
-                if (ImGui::Button(filenameString.c_str())) {
-                    currentPath /= path.filename();
-                }
-                if (ImGui::BeginPopupContextItem()) {
-                    menuWindowOpen = true;
-                    if (ImGui::Button("Open")) {
-                        currentPath /= path.filename();
-                    }
-                    std::string newName;
-                    if (ImGuiUtils::beginMenuWithInputMenuField("Rename", "New name", newName)) {
-                        renameFile(path.filename().string(), newName);
-                    }
-                    if (ImGui::Button("Delete")) {
-                        std::filesystem::remove_all(path);
-                    }
-                    ImGui::EndPopup();
-
-                }
-            } else {
-                if (ImGui::Button(filenameString.c_str())) {
-                    openFile(filenameString);
-                }
-                if (ImGui::BeginPopupContextItem()) {
-                    menuWindowOpen = true;
-                    if (ImGui::Button("Open")) {
-                        openFile(filenameString);
-                    }
-                    std::string newName;
-                    if (ImGuiUtils::beginMenuWithInputMenuField("Rename", "New name", newName)) {
-                        renameFile(path.filename().string(), newName);
-                    }
-                    if (ImGui::Button("Delete")) {
-                        deleteFile(path.filename().string());
-                    }
-                    ImGui::EndPopup();
-                }
-            }
-        }
-
-        if (!menuWindowOpen && ImGui::BeginPopupContextWindow(0, 1)) {
-            std::string newFolderName;
-            if (ImGuiUtils::beginMenuWithInputMenuField("New Folder", "New Folder", newFolderName)) {
-                std::filesystem::create_directory(currentPath / newFolderName);
-            }
-            std::string newSceneName;
-            if (ImGuiUtils::beginMenuWithInputMenuField("New Scene", "Scene name", newSceneName)) {
-                std::string path = currentPath.string() + "\\" + newSceneName + ".scene";
-                SceneManager::createNewScene(path);
-            }
-            std::string newScriptName;
-            if (ImGuiUtils::beginMenuWithInputMenuField("New Script", "Script name", newScriptName)) {
-                TE_LOGGER_INFO("New script name: {0}", newScriptName);
-            }
-            ImGui::EndPopup();
-        }
-        ImGui::EndChild(); // End of left-side panel
-        // Handle resizing by dragging
-        if (ImGui::IsItemHovered() && ImGui::IsMouseDown(0)) {
-            panelSize += ImGui::GetIO().MouseDelta.x;
-            if (panelSize < 50.0f) {
-                panelSize = 50.0f; // Minimum width for the left panel
-            }
-        }
-
-        ImGui::End();*/
-
-        ImGui::Begin("Project Browser");
-        ImVec2 wsize = ImGui::GetContentRegionAvail();
-        static float size1 = 150;
-        float size2 = wsize.x - size1 - 10;
-        Splitter(true, 4.0f, &size1, &size2, 150.0f, 100.0f, -1.0f);
-        ImGui::BeginChild("##LeftPanel", ImVec2(size1, -1), false);
-        if (ImGui::TreeNode(ProjectManager::getUserProjectRootPath().string().substr(ProjectManager::getUserProjectRootPath().string().find_last_of('\\') + 1).c_str())) {
-            RenderSceneHierarchy(ProjectManager::getUserProjectRootPath());
-            ImGui::TreePop();
-        }
-
-        ImGui::EndChild();
-
-        ImGui::SameLine();
-
-        ImGui::BeginChild("##RightPanel", ImVec2(size2, -1), true);
-        ImGui::Text("Right Panel Content");
-
-        ImGui::EndChild();
-
-        ImGui::End(); // End of "Project Browser"
+        ImGui::End();
     }
 
-    void ContentBrowserPanel::RenderSceneHierarchy(const std::filesystem::path &directoryPath) {
+    void ContentBrowserPanel::renderDirectoryHierarchy(const std::filesystem::path &directoryPath) {
         for (auto &directoryEntry: std::filesystem::directory_iterator(directoryPath)) {
             if (!directoryEntry.is_directory()) {
                 continue;
             }
-            const auto &path = directoryEntry.path();
+            const std::filesystem::path &path = directoryEntry.path();
             auto relativePath = std::filesystem::relative(path, ProjectManager::getUserProjectRootPath());
             std::string filenameString = relativePath.filename().string();
             bool hasSubDirs = false;
@@ -165,23 +73,64 @@ namespace TechEngine {
                                        ImGuiTreeNodeFlags_SpanFullWidth |
                                        ImGuiTreeNodeFlags_OpenOnArrow;
 
+
             bool open = ImGui::TreeNodeEx(filenameString.c_str(), flags);
-            if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-                TE_LOGGER_INFO("Clicked on {0}", path.string());
+            if (ImGui::IsItemClicked()) {
                 currentPath = path;
+                selectedPath = path;
             }
             if (open) {
-                RenderSceneHierarchy(path); // Recursive call to render subdirectories
+                renderDirectoryHierarchy(path); // Recursive call to render subdirectories
                 ImGui::TreePop();
             }
         }
     }
 
-    void ContentBrowserPanel::openFile(const std::string &filename) {
-        std::string extension = filename.substr(filename.find_last_of('.'));
-        if (extension == ".scene") {
-            std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
-            SceneManager::loadScene(filenameWithoutExtension);
+    void ContentBrowserPanel::renderFiles(const std::filesystem::path &directoryPath) {
+        bool opened = false;
+        for (auto &directoryEntry: std::filesystem::directory_iterator(directoryPath)) {
+            const auto &path = directoryEntry.path();
+            auto relativePath = std::filesystem::relative(path, ProjectManager::getUserProjectRootPath());
+            std::string filenameString = relativePath.filename().string();
+            if (selectedPath == path.string()) {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+            }
+            ImGui::Button(filenameString.c_str());
+            if (selectedPath == path.string()) {
+                ImGui::PopStyleColor(2);
+            }
+
+
+            if (ImGui::IsItemHovered()) {
+                if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                    openFolderOrFile(path.string());
+                } else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                    selectedPath = path.string();
+                }
+            }
+            if (openMenuPopupItem(path)) {
+                opened = true;
+            }
+
+        }
+        if (!opened) {
+            if (openMenuPopupWindow(currentPath)) {
+                opened = true;
+            }
+        }
+    }
+
+    void ContentBrowserPanel::openFolderOrFile(const std::string &path) {
+        if (std::filesystem::is_directory(path)) {
+            currentPath = path;
+        } else {
+            std::string filename = path.substr(path.find_last_of('\\') + 1);
+            std::string extension = filename.substr(filename.find_last_of('.'));
+            if (extension == ".scene") {
+                std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
+                SceneManager::loadScene(filenameWithoutExtension);
+            }
         }
     }
 
@@ -200,15 +149,56 @@ namespace TechEngine {
         }
     }
 
-    bool ContentBrowserPanel::Splitter(bool split_vertically, float thickness, float *size1, float *size2, float min_size1, float min_size2, float splitter_long_axis_size = -1.0f) {
-        using namespace ImGui;
-        ImGuiContext &g = *GImGui;
-        ImGuiWindow *window = g.CurrentWindow;
-        ImGuiID id = window->GetID("##Splitter");
-        ImRect bb;
-        bb.Min = window->DC.CursorPos + (split_vertically ? ImVec2(*size1, 0.0f) : ImVec2(0.0f, *size1));
-        bb.Max = bb.Min + CalcItemSize(split_vertically ? ImVec2(thickness, splitter_long_axis_size) : ImVec2(splitter_long_axis_size, thickness), 0.0f, 0.0f);
-        return ImGui::SplitterBehavior(bb, id, split_vertically ? ImGuiAxis_X : ImGuiAxis_Y, size1, size2, min_size1, min_size2, 0.0f);
+    bool ContentBrowserPanel::openMenuPopupItem(const std::filesystem::path &path) {
+        bool opened = false;
+        if (ImGui::BeginPopupContextItem()) {
+            opened = true;
+
+            if (ImGui::Button("Open")) {
+                openFolderOrFile(path.string());
+            }
+            std::string filenameString = path.filename().string();
+            if (ImGuiUtils::beginMenuWithInputMenuField("Rename", "New name", filenameString)) {
+                renameFile(path.filename().string(), filenameString);
+            }
+            if (ImGui::Button("Delete")) {
+                if (is_directory(path)) {
+                    std::filesystem::remove_all(path);
+                } else {
+                    deleteFile(path.filename().string());
+                }
+            }
+            ImGui::EndPopup();
+        }
+        return opened;
     }
 
+    bool ContentBrowserPanel::openMenuPopupWindow(const std::filesystem::path &path) {
+        bool opened = false;
+        if (ImGui::BeginPopupContextWindow()) {
+            opened = true;
+            if (ImGui::BeginMenu("New")) {
+                std::string newFolderName;
+                if (ImGuiUtils::beginMenuWithInputMenuField("New Folder", "New Folder", newFolderName)) {
+                    std::filesystem::create_directory(currentPath / newFolderName);
+                }
+                std::string newSceneName;
+                if (ImGuiUtils::beginMenuWithInputMenuField("New Scene", "Scene name", newSceneName)) {
+                    std::string scenePath = currentPath.string() + "\\" + newSceneName + ".scene";
+                    SceneManager::createNewScene(scenePath);
+                }
+                std::string newScriptName;
+                if (ImGuiUtils::beginMenuWithInputMenuField("New Script", "Script name", newScriptName)) {
+                    TE_LOGGER_INFO("(WIP) New script name: {0}", newScriptName);
+                }
+                std::string newMaterialName;
+                if (ImGuiUtils::beginMenuWithInputMenuField("New Material", "Material name", newScriptName)) {
+                    TE_LOGGER_INFO("(WIP) New material name: {0}", newScriptName);
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::EndPopup();
+        }
+        return opened;
+    }
 }
