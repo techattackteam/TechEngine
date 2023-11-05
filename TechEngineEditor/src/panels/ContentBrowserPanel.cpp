@@ -1,6 +1,7 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 
 #include <imgui.h>
+#include <stack>
 #include "imgui_internal.h"
 #include "project/ProjectManager.hpp"
 #include "ContentBrowserPanel.hpp"
@@ -32,10 +33,7 @@ namespace TechEngine {
 
             ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.f);
-            if (ImGui::TreeNodeEx(ProjectManager::getUserProjectRootPath().filename().string().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-                renderDirectoryHierarchy(ProjectManager::getUserProjectRootPath().filename().string().c_str());
-                ImGui::TreePop();
-            }
+            renderDirectoryHierarchy(ProjectManager::getUserProjectRootPath());
             ImGui::PopStyleVar();
 
             ImGui::EndChild();
@@ -52,7 +50,25 @@ namespace TechEngine {
     }
 
     void ContentBrowserPanel::renderDirectoryHierarchy(const std::filesystem::path &directoryPath) {
-        for (auto &directoryEntry: std::filesystem::directory_iterator(directoryPath)) {
+        ImGuiTreeNodeFlags flags = ((currentPath == directoryPath) ? ImGuiTreeNodeFlags_Selected : 0) |
+                                   ImGuiTreeNodeFlags_OpenOnArrow |
+                                   ImGuiTreeNodeFlags_SpanFullWidth |
+                                   ImGuiTreeNodeFlags_OpenOnArrow;
+        std::string relativePath = directoryPath.string().substr(directoryPath.string().find_last_of('\\') + 1);
+        bool open = ImGui::TreeNodeEx(relativePath.c_str(), flags);
+        if (ImGui::IsItemClicked()) {
+            currentPath = directoryPath;
+            selectedPath = directoryPath;
+        }
+        if (open) {
+            renderDirectoryHierarchyRecurse(directoryPath); // Recursive call to render subdirectories
+            ImGui::TreePop();
+        }
+
+    }
+
+    void ContentBrowserPanel::renderDirectoryHierarchyRecurse(const std::filesystem::path &pathToRecurse) {
+        for (auto &directoryEntry: std::filesystem::directory_iterator(pathToRecurse)) {
             if (!directoryEntry.is_directory()) {
                 continue;
             }
@@ -60,27 +76,28 @@ namespace TechEngine {
             auto relativePath = std::filesystem::relative(path, ProjectManager::getUserProjectRootPath());
             std::string filenameString = relativePath.filename().string();
             bool hasSubDirs = false;
+
             for (auto &subDir: std::filesystem::directory_iterator(path)) {
                 if (subDir.is_directory()) {
                     hasSubDirs = true;
                     break;
                 }
             }
+
             // Define flags based on whether the node is selected or not
             ImGuiTreeNodeFlags flags = ((currentPath == path) ? ImGuiTreeNodeFlags_Selected : 0) |
                                        ImGuiTreeNodeFlags_OpenOnArrow |
                                        (hasSubDirs ? 0 : ImGuiTreeNodeFlags_Leaf) |
-                                       ImGuiTreeNodeFlags_SpanFullWidth |
-                                       ImGuiTreeNodeFlags_OpenOnArrow;
+                                       ImGuiTreeNodeFlags_SpanFullWidth;
 
 
             bool open = ImGui::TreeNodeEx(filenameString.c_str(), flags);
-            if (ImGui::IsItemClicked()) {
+            if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
                 currentPath = path;
                 selectedPath = path;
             }
             if (open) {
-                renderDirectoryHierarchy(path); // Recursive call to render subdirectories
+                renderDirectoryHierarchyRecurse(path); // Recursive call to render subdirectories
                 ImGui::TreePop();
             }
         }

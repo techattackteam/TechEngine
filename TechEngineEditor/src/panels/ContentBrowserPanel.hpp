@@ -23,10 +23,13 @@ namespace TechEngine {
 
         void renderDirectoryHierarchy(const std::filesystem::path &directoryPath);
 
+        void renderDirectoryHierarchyRecurse(const std::filesystem::path &path);
+
         void renderFiles(const std::filesystem::path &directoryPath);
 
         bool openMenuPopupItem(const std::filesystem::path &path);
 
         bool openMenuPopupWindow(const std::filesystem::path &path);
+
     };
 }
