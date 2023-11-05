@@ -7,7 +7,7 @@ namespace TechEngine {
     class ContentBrowserPanel : public Panel {
     private:
         std::filesystem::path currentPath;
-        bool menuWindowOpen = false;
+        std::filesystem::path selectedPath;
     public:
         ContentBrowserPanel();
 
@@ -15,14 +15,18 @@ namespace TechEngine {
 
         void onUpdate() override;
 
-        void openFile(const std::string &filename);
+        void openFolderOrFile(const std::string &filename);
 
         void renameFile(const std::string &filename, const std::string &newName);
 
         void deleteFile(const std::string &filename);
 
-        bool Splitter(bool split_vertically, float thickness, float *size1, float *size2, float min_size1, float min_size2, float splitter_long_axis_size);
+        void renderDirectoryHierarchy(const std::filesystem::path &directoryPath);
 
-        void RenderSceneHierarchy(const std::filesystem::path &directoryPath);
+        void renderFiles(const std::filesystem::path &directoryPath);
+
+        bool openMenuPopupItem(const std::filesystem::path &path);
+
+        bool openMenuPopupWindow(const std::filesystem::path &path);
     };
 }
