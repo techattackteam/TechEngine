@@ -1,7 +1,6 @@
 #pragma once
 
 #include <filesystem>
-#include "core/Core.hpp"
 
 using std::filesystem::path;
 namespace TechEngine {
