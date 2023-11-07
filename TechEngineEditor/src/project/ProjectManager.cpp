@@ -1,11 +1,11 @@
 #include <fstream>
 #include "ProjectManager.hpp"
 #include "yaml-cpp/yaml.h"
+#include "core/FileSystem.hpp"
 #include "core/Logger.hpp"
 #include "scene/SceneManager.hpp"
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
 #include "event/EventDispatcher.hpp"
-#include "core/ConstantPaths.hpp"
 
 namespace TechEngine {
 
@@ -73,7 +73,7 @@ namespace TechEngine {
 
     void ProjectManager::createNewProject(const char *projectName) {
         std::filesystem::create_directory(projectName);
-        std::filesystem::copy(Paths::projectTemplate, Paths::rootPath.string() + "\\" + projectName, std::filesystem::copy_options::recursive);
+        std::filesystem::copy(FileSystem::projectTemplate, FileSystem::rootPath.string() + "\\" + projectName, std::filesystem::copy_options::recursive);
     }
 
     void ProjectManager::saveProject() {
