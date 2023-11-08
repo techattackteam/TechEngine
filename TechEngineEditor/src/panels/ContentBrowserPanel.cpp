@@ -116,6 +116,11 @@ namespace TechEngine {
                 ImGui::PopStyleColor(2);
             }
 
+            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", filenameString.c_str(), filenameString.size() + 1);
+                ImGui::Text("%s", filenameString.c_str());
+                ImGui::EndDragDropSource();
+            }
 
             if (ImGui::IsItemHovered()) {
                 if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
