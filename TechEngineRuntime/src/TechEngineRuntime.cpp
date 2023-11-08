@@ -3,7 +3,6 @@
 #include <filesystem>
 #include <yaml-cpp/exceptions.h>
 #include "TechEngineRuntime.hpp"
-#include "scene/SceneManager.hpp"
 #include "renderer/RendererSettings.hpp"
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
 #include "script/ScriptEngine.hpp"

@@ -1,14 +1,15 @@
 #include "MeshRendererComponent.hpp"
 #include "mesh/CubeMesh.hpp"
+#include "material/MaterialManager.hpp"
 
 namespace TechEngine {
     MeshRendererComponent::MeshRendererComponent(GameObject *gameObject) :
-            mesh(new CubeMesh()), material(*new Material(glm::vec4(1, 1, 1, 1), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), 32.0f)), Component(gameObject, "MeshRenderer") {
+            mesh(new CubeMesh()), m_material(&MaterialManager::getMaterial("DefaultMaterial")), Component(gameObject, "MeshRenderer") {
 
     }
 
     MeshRendererComponent::MeshRendererComponent(GameObject *gameObject, Mesh *mesh, Material *material) :
-            mesh(mesh), material(*material), Component(gameObject, "MeshRenderer") {
+            mesh(mesh), m_material(material), Component(gameObject, "MeshRenderer") {
         paintMesh();
     }
 
@@ -17,9 +18,14 @@ namespace TechEngine {
         paintMesh();
     }
 
+    void MeshRendererComponent::changeMaterial(Material &material) {
+        this->m_material = &material;
+        paintMesh();
+    }
+
     void MeshRendererComponent::paintMesh() {
         for (Vertex &vertex: mesh->getVertices()) {
-            vertex.setColor(material.getColor());
+            vertex.setColor(m_material->getColor());
         }
     }
 
@@ -28,7 +34,7 @@ namespace TechEngine {
     }
 
     Material &MeshRendererComponent::getMaterial() {
-        return material;
+        return *m_material;
     }
 
     std::vector<Vertex> MeshRendererComponent::getVertices() {
@@ -38,4 +44,6 @@ namespace TechEngine {
     std::vector<int> MeshRendererComponent::getIndices() {
         return mesh->getIndices();
     }
+
+
 }

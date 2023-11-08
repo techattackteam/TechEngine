@@ -2,7 +2,6 @@
 
 #include "panels/PanelsManager.hpp"
 #include "core/Window.hpp"
-
 #include "core/App.hpp"
 #include "external/EntryPoint.hpp"
 

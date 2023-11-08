@@ -15,6 +15,7 @@
 #include "core/Key.hpp"
 #include "GameView.hpp"
 #include "core/SceneCamera.hpp"
+#include "MaterialEditor.hpp"
 
 namespace TechEngine {
     class PanelsManager {
@@ -30,7 +31,7 @@ namespace TechEngine {
         ContentBrowserPanel contentBrowser;
         SceneHierarchyPanel sceneHierarchyPanel;
         ExportSettingsPanel exportSettingsPanel;
-
+        MaterialEditor materialEditor{window.getRenderer()};
         bool m_currentPlaying = false;
 
         std::string gameObjectSelectedTag;
@@ -56,6 +57,8 @@ namespace TechEngine {
         void deselectGameObject();
 
         void deselectGameObject(std::string gameObject);
+
+        void openMaterialEditor(const std::string &materialName, const std::string &filepath);
 
     private:
         void initImGui();

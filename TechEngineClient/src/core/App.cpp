@@ -1,5 +1,6 @@
 #include "App.hpp"
 #include "script/ScriptEngine.hpp"
+#include "material/MaterialManager.hpp"
 
 namespace TechEngine {
     App::App() : TechEngine::AppCore() {

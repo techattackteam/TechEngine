@@ -1,14 +1,12 @@
-#define IMGUI_DEFINE_MATH_OPERATORS
 
-#include <imgui.h>
-#include <stack>
-#include "imgui_internal.h"
+#include "PanelsManager.hpp"
 #include "project/ProjectManager.hpp"
 #include "ContentBrowserPanel.hpp"
 #include "core/Logger.hpp"
-#include "imgui_stdlib.h"
 #include "UIUtils/ImGuiUtils.hpp"
 #include "scene/SceneManager.hpp"
+#include "material/MaterialManager.hpp"
+
 
 namespace TechEngine {
     ContentBrowserPanel::ContentBrowserPanel() : Panel("ContentBrowserPanel") {
@@ -147,6 +145,9 @@ namespace TechEngine {
             if (extension == ".scene") {
                 std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
                 SceneManager::loadScene(filenameWithoutExtension);
+            } else if (extension == ".mat") {
+                std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
+                PanelsManager::getInstance().openMaterialEditor(filenameWithoutExtension, path);
             }
         }
     }
@@ -161,6 +162,12 @@ namespace TechEngine {
         if (extension == ".scene") {
             std::string path = currentPath.string() + "\\" + filename;
             if (SceneManager::deleteScene(path)) {
+                std::filesystem::remove(path);
+            }
+        } else if (extension == ".mat") {
+            std::string path = currentPath.string() + "\\" + filename;
+            std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
+            if (MaterialManager::deleteMaterial(filenameWithoutExtension)) {
                 std::filesystem::remove(path);
             }
         }
@@ -209,8 +216,8 @@ namespace TechEngine {
                     TE_LOGGER_INFO("(WIP) New script name: {0}", newScriptName);
                 }
                 std::string newMaterialName;
-                if (ImGuiUtils::beginMenuWithInputMenuField("New Material", "Material name", newScriptName)) {
-                    TE_LOGGER_INFO("(WIP) New material name: {0}", newScriptName);
+                if (ImGuiUtils::beginMenuWithInputMenuField("New Material", "Material name", newMaterialName)) {
+                    MaterialManager::createMaterialFile(newMaterialName, path.string());
                 }
                 ImGui::EndMenu();
             }

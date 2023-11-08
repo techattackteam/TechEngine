@@ -1,13 +1,16 @@
 #include <fstream>
 #include "Editor.hpp"
+#include "core/FileSystem.hpp"
 #include "project/ProjectManager.hpp"
 #include "yaml-cpp/yaml.h"
 #include "physics/PhysicsEngine.hpp"
+#include "material/MaterialManager.hpp"
 
 namespace TechEngine {
 
     Editor::Editor() : panelsManager(window) {
         ProjectManager::init(std::filesystem::current_path());
+        MaterialManager::init(FileSystem::getAllFilesWithExtension(".mat"));
         rootPath = ProjectManager::getRootPath();
         editorSettings = rootPath.string() + "/EditorSettings.TESettings";
         PhysicsEngine::getInstance()->init();

@@ -7,6 +7,8 @@ namespace TechEngine {
     class Material {
     private:
 
+        std::string name;
+
         glm::vec3 ambient;
         glm::vec3 diffuse;
         glm::vec3 specular;
@@ -14,8 +16,11 @@ namespace TechEngine {
         glm::vec4 color;
         float shininess;
 
+
     public:
-        Material(glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
+        Material(const std::string &name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
+
+        const std::string &getName();
 
         glm::vec4 &getColor();
 

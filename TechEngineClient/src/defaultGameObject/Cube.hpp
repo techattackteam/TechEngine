@@ -3,7 +3,10 @@
 #include <sstream>
 #include "scene/GameObject.hpp"
 
-class Cube : public TechEngine::GameObject {
-public:
-    Cube();
-};
+namespace TechEngine {
+
+    class Cube : public GameObject {
+    public:
+        Cube();
+    };
+}

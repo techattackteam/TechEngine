@@ -136,6 +136,25 @@ namespace TechEngine {
         }
     }
 
+    void Renderer::renderCustomPipeline(std::vector<GameObject *> &gameObjects) {
+        if (!SceneHelper::hasMainCamera()) {
+            return;
+        }
+        GlCall(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
+        GlCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+        vertexBuffers[BufferGameObjects]->bind();
+        vertexArrays[BufferGameObjects]->bind();
+        shadersManager.changeActiveShader("geometry");
+        shadersManager.getActiveShader()->setUniformMatrix4f("projection", SceneHelper::mainCamera->getProjectionMatrix());
+        shadersManager.getActiveShader()->setUniformMatrix4f("view", SceneHelper::mainCamera->getViewMatrix());
+        shadersManager.getActiveShader()->setUniformVec3("cameraPosition", SceneHelper::mainCamera->getTransform().getPosition());
+        for (GameObject *gameObject: gameObjects) {
+            renderGameObject(gameObject, false);
+        }
+        vertexBuffers[BufferGameObjects]->unBind();
+        vertexArrays[BufferGameObjects]->unBind();
+    }
+
     void Renderer::flushMeshData(MeshRendererComponent *meshRenderer) {
         vertexBuffers[BufferGameObjects]->addData(meshRenderer->getVertices().data(), meshRenderer->getVertices().size() * sizeof(Vertex), 0);
         indicesBuffers[BufferGameObjects]->addData(meshRenderer->getIndices().data(), meshRenderer->getIndices().size() * sizeof(uint32_t));

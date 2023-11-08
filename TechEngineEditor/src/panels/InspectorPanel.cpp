@@ -11,6 +11,7 @@
 #include "mesh/CylinderMesh.hpp"
 #include "components/physics/CylinderCollider.hpp"
 #include "components/physics/RigidBody.hpp"
+#include "UIUtils/ImGuiUtils.hpp"
 
 namespace TechEngine {
     InspectorPanel::InspectorPanel() : Panel("Inspector") {
@@ -104,9 +105,9 @@ namespace TechEngine {
             glm::vec3 position = component->position;
             glm::vec3 orientation = component->orientation;
             glm::vec3 scale = component->scale;
-            drawVec3Control("Translation", position);
-            drawVec3Control("Rotation", orientation);
-            drawVec3Control("Scale", scale, 1.0f);
+            ImGuiUtils::drawVec3Control("Translation", position);
+            ImGuiUtils::drawVec3Control("Rotation", orientation);
+            ImGuiUtils::drawVec3Control("Scale", scale, 1.0f);
             if (position != component->position)
                 component->translateTo(position);
             if (orientation != component->orientation)
@@ -189,7 +190,7 @@ namespace TechEngine {
 
             if (ImGui::BeginCombo("##combo", current_item)) // The second parameter is the label previewed before opening the combo.
             {
-                for (auto & item : items) {
+                for (auto &item: items) {
                     bool is_selected = (current_item == item); // You can store your selection however you want, outside or inside your objects
                     if (ImGui::Selectable(item, is_selected))
                         current_item = item;
@@ -208,10 +209,8 @@ namespace TechEngine {
                 } else if (current_item == items[3]) {
                 }
             }
-            ImGui::ColorEdit4("Color", glm::value_ptr(material.getColor()));
-            drawVec3Control("Ambient", material.getAmbient(), 1, 100.0f, 0, 1);
-            drawVec3Control("diffuse", material.getDiffuse(), 1, 100.0f, 0, 1);
-            drawVec3Control("specular", material.getSpecular(), 1, 100.0f, 0, 1);
+            ImGui::Text("Material: %s", material.getName().c_str());
+
             component->paintMesh();
         });
 
@@ -231,8 +230,8 @@ namespace TechEngine {
             auto &boxCollider = component;
             glm::vec3 size = boxCollider->getSize();
             glm::vec3 offset = boxCollider->getOffset();
-            drawVec3Control("Size", size, 1.0f, 100.0f, 0);
-            drawVec3Control("Offset", offset, 0, 100.0f, 0);
+            ImGuiUtils::drawVec3Control("Size", size, 1.0f, 100.0f, 0);
+            ImGuiUtils::drawVec3Control("Offset", offset, 0, 100.0f, 0);
             if (size != boxCollider->getSize())
                 boxCollider->setSize(size);
             if (offset != boxCollider->getOffset())
@@ -244,7 +243,7 @@ namespace TechEngine {
             float radius = collider->getRadius();
             glm::vec3 offset = collider->getOffset();
             ImGui::DragFloat("Radius", &radius, 0.1f, 0.1f, 100.0f, "%.2f");
-            drawVec3Control("Offset", offset, 0, 100.0f, 0);
+            ImGuiUtils::drawVec3Control("Offset", offset, 0, 100.0f, 0);
             if (radius != collider->getRadius() && radius > 0.0f)
                 collider->setRadius(radius);
             if (offset != collider->getOffset())
@@ -259,7 +258,7 @@ namespace TechEngine {
             glm::vec3 offset = collider->getOffset();
             ImGui::DragFloat("Radius", &radius, 0.1f, 0.1f, 100.0f, "%.2f");
             ImGui::DragFloat("Height", &height, 0.1f, 0.1f, 100.0f, "%.2f");
-            drawVec3Control("Offset", offset, 0, 100.0f, 0);
+            ImGuiUtils::drawVec3Control("Offset", offset, 0, 100.0f, 0);
             if (radius != collider->getRadius())
                 collider->setRadius(radius);
             if (height != collider->getHeight())
@@ -269,56 +268,5 @@ namespace TechEngine {
         });
     }
 
-    void InspectorPanel::drawVec3Control(const std::string &label, glm::vec3 &values, float resetValue, float columnWidth, float min, float max) {
-        ImGuiIO &io = ImGui::GetIO();
-        auto boldFont = io.Fonts->Fonts[0];
 
-        ImGui::PushID(label.c_str());
-
-        ImGui::Columns(2);
-        ImGui::SetColumnWidth(0, columnWidth);
-        ImGui::Text(label.c_str());
-        ImGui::NextColumn();
-
-        ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
-
-        float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
-        ImVec2 buttonSize = {lineHeight + 3.0f, lineHeight};
-
-        ImGui::PushFont(boldFont);
-        if (ImGui::Button("X", buttonSize))
-            values.x = resetValue;
-        ImGui::PopFont();
-
-        ImGui::SameLine();
-        ImGui::DragFloat("##X", &values.x, 0.1f, min, max, "%.2f");
-        ImGui::PopItemWidth();
-        ImGui::SameLine();
-
-        ImGui::PushFont(boldFont);
-        if (ImGui::Button("Y", buttonSize))
-            values.y = resetValue;
-        ImGui::PopFont();
-
-        ImGui::SameLine();
-        ImGui::DragFloat("##Y", &values.y, 0.1f, min, max, "%.2f");
-        ImGui::PopItemWidth();
-        ImGui::SameLine();
-
-        ImGui::PushFont(boldFont);
-        if (ImGui::Button("Z", buttonSize))
-            values.z = resetValue;
-        ImGui::PopFont();
-
-        ImGui::SameLine();
-        ImGui::DragFloat("##Z", &values.z, 0.1f, min, max, "%.2f");
-        ImGui::PopItemWidth();
-
-        ImGui::PopStyleVar();
-
-        ImGui::Columns(1);
-
-        ImGui::PopID();
-    }
 }
