@@ -12,6 +12,8 @@
 #include "components/physics/CylinderCollider.hpp"
 #include "components/physics/RigidBody.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
+#include "core/Logger.hpp"
+#include "material/MaterialManager.hpp"
 
 namespace TechEngine {
     InspectorPanel::InspectorPanel() : Panel("Inspector") {
@@ -171,7 +173,7 @@ namespace TechEngine {
         drawComponent<MeshRendererComponent>("Mesh Renderer", [this](auto &component) {
             auto &meshRenderer = component;
             auto &mesh = meshRenderer->getMesh();
-            auto &material = meshRenderer->getMaterial();
+            Material &material = meshRenderer->getMaterial();
             static const char *current_item;
             const char *items[] = {"Cube", "Sphere", "Cylinder", "Capsule", "Plane"};
             if (mesh.getName() == "Cube") {
@@ -209,7 +211,43 @@ namespace TechEngine {
                 } else if (current_item == items[3]) {
                 }
             }
-            ImGui::Text("Material: %s", material.getName().c_str());
+
+            static bool open = false;
+            if (ImGui::Button(material.getName().c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0)) && !open) {
+                open = true;
+                OPENFILENAMEA ofn;
+                CHAR szFile[260] = {0};
+                CHAR currentDir[256] = {0};
+                ZeroMemory(&ofn, sizeof(OPENFILENAME));
+                ofn.lStructSize = sizeof(OPENFILENAME);
+                ofn.lpstrFile = szFile;
+                ofn.nMaxFile = sizeof(szFile);
+                if (GetCurrentDirectoryA(256, currentDir))
+                    ofn.lpstrInitialDir = currentDir;
+                ofn.lpstrFilter = ".mat";
+                ofn.nFilterIndex = 1;
+                ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
+                if (GetOpenFileNameA(&ofn) == TRUE) {
+                    open = false;
+                    std::string filepath = ofn.lpstrFile;
+                    std::string filename = filepath.substr(filepath.find_last_of("/\\") + 1);
+                    std::string materialName = filename.substr(0, filename.find_last_of("."));
+                    meshRenderer->changeMaterial(MaterialManager::getMaterial(materialName));
+                }
+            };
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+                    std::string filename = (const char *) payload->Data;
+                    std::string extension = filename.substr(filename.find_last_of('.'));
+                    if (extension != ".mat")
+                        return;
+                    std::string materialName = filename.substr(0, filename.find_last_of("."));
+                    meshRenderer->changeMaterial(MaterialManager::getMaterial(materialName));
+                    return;
+                }
+                ImGui::EndDragDropTarget();
+            }
 
             component->paintMesh();
         });
