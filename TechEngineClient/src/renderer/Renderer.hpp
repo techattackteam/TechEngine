@@ -33,6 +33,8 @@ namespace TechEngine {
 
         void renderPipeline();
 
+        void renderCustomPipeline(std::vector<GameObject *> &gameObjects);
+
         void createLine(const glm::vec3 &startPosition, const glm::vec3 &endPosition, const glm::vec4 &color);
 
         FrameBuffer &getFramebuffer(uint32_t id);
@@ -55,6 +57,7 @@ namespace TechEngine {
         void flushMeshData(MeshRendererComponent *meshRenderer);
 
         void flushLinesData();
+
     };
 }
 

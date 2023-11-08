@@ -49,6 +49,7 @@ namespace TechEngine {
             OnMouseScrollEvent(((MouseScrollEvent *) event)->getXOffset(), ((MouseScrollEvent *) event)->getYOffset());
         });
         contentBrowser.init();
+        materialEditor.init();
         initImGui();
     }
 
@@ -63,6 +64,7 @@ namespace TechEngine {
         gameView.onUpdate();
         contentBrowser.onUpdate();
         exportSettingsPanel.onUpdate();
+        materialEditor.onUpdate();
         endImGuiFrame();
     }
 
@@ -146,7 +148,6 @@ namespace TechEngine {
         style.TabRounding = 2.0f;
         style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
 
-        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     }
 
     void PanelsManager::beginImGuiFrame() {
@@ -445,5 +446,9 @@ namespace TechEngine {
             const glm::vec3 rotate = glm::vec3(-delta.y * 0.5f, -delta.x * 0.5f, 0);
             sceneView.getSceneCamera()->getTransform().rotate(rotate);
         }
+    }
+
+    void PanelsManager::openMaterialEditor(const std::string &materialName, const std::string &filepath) {
+        materialEditor.open(materialName, filepath);
     }
 }

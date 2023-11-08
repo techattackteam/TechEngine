@@ -1,9 +1,15 @@
+#include <string>
 #include "Material.hpp"
 
 namespace TechEngine {
-    Material::Material(glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess) :
-            color(color), ambient(ambient), diffuse(diffuse), specular(specular), shininess(shininess) {
 
+    Material::Material(const std::string &name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess) :
+            name(name), color(color), ambient(ambient), diffuse(diffuse), specular(specular), shininess(shininess) {
+
+    }
+
+    const std::string &Material::getName() {
+        return name;
     }
 
     glm::vec4 &Material::getColor() {
@@ -25,5 +31,7 @@ namespace TechEngine {
     float &Material::getShininess() {
         return shininess;
     }
+
+
 }
 

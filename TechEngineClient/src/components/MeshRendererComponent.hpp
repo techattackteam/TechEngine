@@ -3,13 +3,13 @@
 #include <vector>
 #include "components/Component.hpp"
 #include "mesh/Mesh.hpp"
-#include "mesh/Material.hpp"
+#include "material/Material.hpp"
 
 namespace TechEngine {
     class MeshRendererComponent : public Component {
     private:
         Mesh *mesh;
-        Material &material;
+        Material *m_material;
 
     public:
         MeshRendererComponent(GameObject *gameObject);
@@ -17,6 +17,8 @@ namespace TechEngine {
         MeshRendererComponent(GameObject *gameObject, Mesh *mesh, Material *material);
 
         void changeMesh(Mesh *mesh);
+
+        void changeMaterial(Material &material);
 
         Mesh &getMesh();
 

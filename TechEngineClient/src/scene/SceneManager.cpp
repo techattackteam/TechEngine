@@ -1,6 +1,6 @@
 #include "SceneManager.hpp"
 
-#include "core/ConstantPaths.hpp"
+#include "core/FileSystem.hpp"
 #include "scene/GameObject.hpp"
 #include "components/CameraComponent.hpp"
 #include "components/TransformComponent.hpp"
@@ -15,78 +15,10 @@
 #include "components/physics/CylinderCollider.hpp"
 #include "components/physics/RigidBody.hpp"
 #include <filesystem>
-#include <yaml-cpp/yaml.h>
+#include <utils/YAMLUtils.hpp>
 #include <fstream>
+#include "material/MaterialManager.hpp"
 
-namespace YAML {
-
-    template<>
-    struct convert<glm::vec2> {
-        static Node encode(const glm::vec2 &rhs) {
-            Node node;
-            node.push_back(rhs.x);
-            node.push_back(rhs.y);
-            node.SetStyle(EmitterStyle::Flow);
-            return node;
-        }
-
-        static bool decode(const Node &node, glm::vec2 &rhs) {
-            if (!node.IsSequence() || node.size() != 2)
-                return false;
-
-            rhs.x = node[0].as<float>();
-            rhs.y = node[1].as<float>();
-            return true;
-        }
-    };
-
-    template<>
-    struct convert<glm::vec3> {
-        static Node encode(const glm::vec3 &rhs) {
-            Node node;
-            node.push_back(rhs.x);
-            node.push_back(rhs.y);
-            node.push_back(rhs.z);
-            node.SetStyle(EmitterStyle::Flow);
-            return node;
-        }
-
-        static bool decode(const Node &node, glm::vec3 &rhs) {
-            if (!node.IsSequence() || node.size() != 3)
-                return false;
-
-            rhs.x = node[0].as<float>();
-            rhs.y = node[1].as<float>();
-            rhs.z = node[2].as<float>();
-            return true;
-        }
-    };
-
-    template<>
-    struct convert<glm::vec4> {
-        static Node encode(const glm::vec4 &rhs) {
-            Node node;
-            node.push_back(rhs.x);
-            node.push_back(rhs.y);
-            node.push_back(rhs.z);
-            node.push_back(rhs.w);
-            node.SetStyle(EmitterStyle::Flow);
-            return node;
-        }
-
-        static bool decode(const Node &node, glm::vec4 &rhs) {
-            if (!node.IsSequence() || node.size() != 4)
-                return false;
-
-            rhs.x = node[0].as<float>();
-            rhs.y = node[1].as<float>();
-            rhs.z = node[2].as<float>();
-            rhs.w = node[3].as<float>();
-            return true;
-        }
-    };
-
-}
 namespace TechEngine {
     YAML::Emitter &operator<<(YAML::Emitter &out, const glm::vec2 &v) {
         out << YAML::Flow;
@@ -139,11 +71,7 @@ namespace TechEngine {
             auto meshRendererComponent = gameObject->getComponent<MeshRendererComponent>();
             Material &material = meshRendererComponent->getMaterial();
             out << YAML::Key << "Mesh" << YAML::Value << meshRendererComponent->getMesh().getName();
-            out << YAML::Key << "Color" << YAML::Value << material.getColor();
-            out << YAML::Key << "Ambient" << YAML::Value << material.getAmbient();
-            out << YAML::Key << "Diffuse" << YAML::Value << material.getDiffuse();
-            out << YAML::Key << "Specular" << YAML::Value << material.getSpecular();
-            out << YAML::Key << "Shininess" << YAML::Value << material.getShininess();
+            out << YAML::Key << "Material" << YAML::Value << material.getName();
             out << YAML::EndMap;
         }
 
@@ -218,7 +146,6 @@ namespace TechEngine {
         if (parent != nullptr) {
             Scene::getInstance().makeChildTo(parent, gameObject);
         }
-        //TE_LOGGER_TRACE("Deserialized game object with Tag = {0}, name = {1}", gameObject->getTag(), name);
 
         auto transformComponentNode = gameObjectYAML["TransformComponent"];
         if (transformComponentNode) {
@@ -242,12 +169,9 @@ namespace TechEngine {
         auto meshRendererNode = gameObjectYAML["MeshRendererComponent"];
         if (meshRendererNode) {
             std::string meshName = meshRendererNode["Mesh"].as<std::string>();
-            glm::vec4 color = meshRendererNode["Color"].as<glm::vec4>();
-            glm::vec3 ambient = meshRendererNode["Ambient"].as<glm::vec3>();
-            glm::vec3 diffuse = meshRendererNode["Diffuse"].as<glm::vec3>();
-            glm::vec3 specular = meshRendererNode["Specular"].as<glm::vec3>();
-            float shininess = meshRendererNode["Shininess"].as<float>();
-            Material *material = new Material(color, ambient, diffuse, specular, shininess);
+            std::string materialName = meshRendererNode["Material"].as<std::string>();
+
+            Material &material = MaterialManager::getMaterial(materialName);
             Mesh *mesh;
             if (meshName == "Cube") {
                 mesh = new CubeMesh();
@@ -258,7 +182,8 @@ namespace TechEngine {
             } else {
                 TE_LOGGER_CRITICAL("Failed to deserialize mesh renderer component.\n      Mesh name {0} is not valid.", meshName);
             }
-            gameObject->addComponent<MeshRendererComponent>(mesh, material);
+
+            gameObject->addComponent<MeshRendererComponent>(mesh, &material);
         }
         auto boxColliderNode = gameObjectYAML["BoxColliderComponent"];
         if (boxColliderNode) {
@@ -347,7 +272,7 @@ namespace TechEngine {
     void SceneManager::createNewScene(std::string &scenePath) {
         std::string sceneName = getSceneNameFromPath(scenePath);
         registerScene(scenePath);
-        std::filesystem::copy(Paths::scenesTemplate, scenePath);
+        std::filesystem::copy(FileSystem::scenesTemplate, scenePath);
     }
 
     bool SceneManager::deleteScene(std::string &scenePath) {
