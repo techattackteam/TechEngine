@@ -15,20 +15,26 @@ namespace TechEngine {
 
         for (int i = 0; i <= stacks; ++i) {
             stackAngle = glm::pi<float>() / 2 - i * stackStep; // starting from pi/2 to -pi/2
-            float xy = radius * cosf(stackAngle); // r * cos(u)
-            z = radius * sinf(stackAngle); // r * sin(u)
+            float xz = radius * cosf(stackAngle); // r * cos(u)
+            y = radius * sinf(stackAngle); // r * sin(u)
 
             for (int j = 0; j <= sectors; ++j) {
                 sectorAngle = j * sectorStep; // starting from 0 to 2pi
 
                 // vertex position (x, y, z)
-                x = xy * cosf(sectorAngle); // r * cos(u) * cos(v)
-                y = xy * sinf(sectorAngle); // r * cos(u) * sin(v)
+                x = xz * sinf(sectorAngle); // r * cos(u) * sin(v)
+                z = xz * cosf(sectorAngle); // r * cos(u) * cos(v)
 
                 glm::vec3 position(x, y, z);
                 glm::vec3 normal(x / radius, y / radius, z / radius);
 
-                //createVertex(position, normal);
+                // Calculate texture coordinates
+                float s = static_cast<float>(j) / static_cast<float>(sectors);
+                float t = static_cast<float>(i) / static_cast<float>(stacks);
+
+                glm::vec2 texCoord(s, t);
+
+                createVertex(position, normal, texCoord);
             }
         }
         for (int i = 0; i < stacks; ++i) {
