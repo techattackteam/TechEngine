@@ -1,4 +1,3 @@
-
 #include "PanelsManager.hpp"
 #include "project/ProjectManager.hpp"
 #include "ContentBrowserPanel.hpp"
@@ -7,10 +6,8 @@
 #include "scene/SceneManager.hpp"
 #include "material/MaterialManager.hpp"
 
-
 namespace TechEngine {
     ContentBrowserPanel::ContentBrowserPanel() : Panel("ContentBrowserPanel") {
-
     }
 
     void ContentBrowserPanel::init() {
@@ -18,7 +15,6 @@ namespace TechEngine {
     }
 
     void ContentBrowserPanel::onUpdate() {
-
         ImGui::Begin("Content Browser");
         if (ImGui::BeginTable("Content", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Resizable)) {
             ImGui::TableSetupColumn("Outline", 0, 250.f);
@@ -62,7 +58,6 @@ namespace TechEngine {
             renderDirectoryHierarchyRecurse(directoryPath); // Recursive call to render subdirectories
             ImGui::TreePop();
         }
-
     }
 
     void ContentBrowserPanel::renderDirectoryHierarchyRecurse(const std::filesystem::path &pathToRecurse) {
@@ -132,7 +127,6 @@ namespace TechEngine {
             if (openMenuPopupItem(path)) {
                 opened = true;
             }
-
         }
         if (!opened) {
             if (openMenuPopupWindow(currentPath)) {
@@ -162,6 +156,10 @@ namespace TechEngine {
         std::filesystem::rename(currentPath / filename, currentPath / (newName + extension));
     }
 
+    void ContentBrowserPanel::tryLoadModel(const std::string &filepath) {
+        assimpLoader.loadModel(filepath);
+    }
+
     void ContentBrowserPanel::deleteFile(const std::string &filename) {
         std::string extension = filename.substr(filename.find_last_of('.'));
         if (extension == ".scene") {
@@ -189,6 +187,9 @@ namespace TechEngine {
             std::string filenameString = path.filename().string();
             if (ImGuiUtils::beginMenuWithInputMenuField("Rename", "New name", filenameString)) {
                 renameFile(path.filename().string(), filenameString);
+            }
+            if (ImGui::Button("LoadModel")) {
+                tryLoadModel(path.string());
             }
             if (ImGui::Button("Delete")) {
                 if (is_directory(path)) {

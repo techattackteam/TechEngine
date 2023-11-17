@@ -12,20 +12,23 @@ namespace TechEngine {
     public:
         Mesh();
 
-        virtual ~Mesh();
+        Mesh(std::vector<Vertex> vertices, std::vector<int> indices);
 
-        virtual void createMesh() = 0;
+        ~Mesh();
+
+        virtual void createMesh();
 
         std::vector<Vertex> &getVertices();
 
         std::vector<int> getIndices();
 
-        virtual std::string getName() = 0;
+        virtual std::string getName();
+
 
     protected:
         glm::vec3 getTriangleNormals(glm::vec3 vec1, glm::vec3 vec2, glm::vec3 vec3);
 
-        void createVertex(glm::vec3 position, glm::vec3 normal);
+        void createVertex(glm::vec3 position, glm::vec3 normal, glm::vec2 textureCoordinate);
 
         void createIndex(int index);
 
