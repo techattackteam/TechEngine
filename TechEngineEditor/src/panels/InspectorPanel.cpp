@@ -1,6 +1,5 @@
 #include <imgui_internal.h>
 #include "InspectorPanel.hpp"
-#include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
 #include "components/CameraComponent.hpp"
 #include "components/MeshRendererComponent.hpp"
 #include "components/physics/BoxColliderComponent.hpp"
@@ -12,12 +11,10 @@
 #include "components/physics/CylinderCollider.hpp"
 #include "components/physics/RigidBody.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
-#include "core/Logger.hpp"
 #include "material/MaterialManager.hpp"
 
 namespace TechEngine {
     InspectorPanel::InspectorPanel() : Panel("Inspector") {
-
     }
 
     void InspectorPanel::onUpdate() {
@@ -38,7 +35,6 @@ namespace TechEngine {
                     PanelsManager::getInstance().getSelectedGameObject()->getComponent<RigidBody>()->registerRB();
                 }
                 if (ImGui::BeginMenu("Colliders")) {
-
                     if (ImGui::MenuItem("Box Collider")) {
                         PanelsManager::getInstance().getSelectedGameObject()->addComponent<BoxColliderComponent>();
                     }
@@ -166,7 +162,6 @@ namespace TechEngine {
                                                float perspectiveFar = camera->getFar();
                                                if (ImGui::DragFloat("Far", &perspectiveFar))
                                                    camera->setFar(perspectiveFar);
-
                                            }
                                        }
         );
@@ -174,44 +169,39 @@ namespace TechEngine {
             auto &meshRenderer = component;
             auto &mesh = meshRenderer->getMesh();
             Material &material = meshRenderer->getMaterial();
-            static const char *current_item;
-            const char *items[] = {"Cube", "Sphere", "Cylinder", "Capsule", "Plane"};
-            if (mesh.getName() == "Cube") {
-                current_item = items[0];
-            } else if (mesh.getName() == "Sphere") {
-                current_item = items[1];
-            } else if (mesh.getName() == "Cylinder") {
-                current_item = items[2];
-            } else if (mesh.getName() == "Capsule") {
-                current_item = items[3];
-            } else if (mesh.getName() == "Plane") {
-                current_item = items[4];
+            if (mesh.getName() == "ImportedMesh") {
+                ImGui::Text("Imported Mesh");
             } else {
-                current_item = items[0];
-            }
-
-            if (ImGui::BeginCombo("##combo", current_item)) // The second parameter is the label previewed before opening the combo.
-            {
-                for (auto &item: items) {
-                    bool is_selected = (current_item == item); // You can store your selection however you want, outside or inside your objects
-                    if (ImGui::Selectable(item, is_selected))
-                        current_item = item;
-                    if (is_selected)
-                        ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+                static const char *current_item;
+                const char *items[] = {"Cube", "Sphere", "Cylinder", "Capsule", "Plane"};
+                for (int i = 0; i < sizeof(items) / sizeof(items[0]); i++) {
+                    if (mesh.getName() == items[i]) {
+                        current_item = items[i];
+                        break;
+                    }
                 }
-                ImGui::EndCombo();
-            }
-            if (current_item != mesh.getName()) {
-                if (current_item == items[0]) {
-                    meshRenderer->changeMesh(new CubeMesh());
-                } else if (current_item == items[1]) {
-                    meshRenderer->changeMesh(new SphereMesh());
-                } else if (current_item == items[2]) {
-                    meshRenderer->changeMesh(new CylinderMesh());
-                } else if (current_item == items[3]) {
+
+                if (ImGui::BeginCombo("##combo", current_item)) {// The second parameter is the label previewed before opening the combo.
+                    for (auto &item: items) {
+                        bool is_selected = (current_item == item); // You can store your selection however you want, outside or inside your objects
+                        if (ImGui::Selectable(item, is_selected))
+                            current_item = item;
+                        if (is_selected)
+                            ImGui::SetItemDefaultFocus(); // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+                    }
+                    ImGui::EndCombo();
+                }
+                if (current_item != mesh.getName()) {
+                    if (current_item == items[0]) {
+                        meshRenderer->changeMesh(new CubeMesh());
+                    } else if (current_item == items[1]) {
+                        meshRenderer->changeMesh(new SphereMesh());
+                    } else if (current_item == items[2]) {
+                        meshRenderer->changeMesh(new CylinderMesh());
+                    } else if (current_item == items[3]) {
+                    }
                 }
             }
-
             static bool open = false;
             if (ImGui::Button(material.getName().c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0)) && !open) {
                 open = true;
@@ -286,7 +276,6 @@ namespace TechEngine {
                 collider->setRadius(radius);
             if (offset != collider->getOffset())
                 collider->setOffset(offset);
-
         });
 
         drawComponent<CylinderCollider>("Cylinder Collider", [this](auto &component) {
@@ -305,6 +294,4 @@ namespace TechEngine {
                 collider->setOffset(offset);
         });
     }
-
-
 }

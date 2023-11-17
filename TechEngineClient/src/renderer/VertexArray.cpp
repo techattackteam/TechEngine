@@ -25,17 +25,17 @@ namespace TechEngine {
     void VertexArray::addNewBuffer(const VertexBuffer &vertexBuffer) const {
         bind();
         vertexBuffer.bind();
-        GlCall(glEnableVertexAttribArray(0));
         GlCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *) nullptr));
+        GlCall(glEnableVertexAttribArray(0));
 
-        GlCall(glEnableVertexAttribArray(1));
         GlCall(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *) (3 * sizeof(float))));
+        GlCall(glEnableVertexAttribArray(1));
 
-        GlCall(glEnableVertexAttribArray(2));
         GlCall(glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *) (6 * sizeof(float))));
+        GlCall(glEnableVertexAttribArray(2));
 
-        GlCall(glEnableVertexAttribArray(3));
         GlCall(glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *) (8 * sizeof(float))));
+        GlCall(glEnableVertexAttribArray(3));
 
         vertexBuffer.unBind();
         unBind();

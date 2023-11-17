@@ -3,6 +3,7 @@ file(GLOB_RECURSE TechEngineEditor_Headers "src/*.hpp")
 
 find_package(imgui CONFIG REQUIRED)
 find_package(imguizmo CONFIG REQUIRED)
+find_package(assimp CONFIG REQUIRED)
 
 add_executable(TechEngineEditor ${TechEngineEditor_Sources} ${TechEngineEditor_Headers})
 
@@ -22,7 +23,7 @@ endif ()
 
 
 target_include_directories(TechEngineEditor PRIVATE "src")
-target_link_libraries(TechEngineEditor TechEngineClient imgui::imgui imguizmo::imguizmo)
+target_link_libraries(TechEngineEditor TechEngineClient imgui::imgui imguizmo::imguizmo assimp::assimp)
 
 add_custom_command(TARGET TechEngineEditor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory

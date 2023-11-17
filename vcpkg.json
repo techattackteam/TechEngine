@@ -19,6 +19,8 @@
     },
     "imguizmo",
     "glew",
-    "physx"
+    "physx",
+    "stb",
+    "assimp"
   ]
 }

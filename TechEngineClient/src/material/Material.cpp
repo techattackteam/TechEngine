@@ -8,6 +8,11 @@ namespace TechEngine {
 
     }
 
+    Material::Material(const std::string &name, Texture *diffuse) :
+            name(name), diffuseTexture(diffuse) {
+        useTexture = true;
+    }
+
     const std::string &Material::getName() {
         return name;
     }
@@ -33,5 +38,16 @@ namespace TechEngine {
     }
 
 
+    bool &Material::getUseTexture() {
+        return useTexture;
+    }
+
+    Texture *Material::getDiffuseTexture() {
+        return diffuseTexture;
+    }
+
+    void Material::setDiffuseTexture(Texture *texture) {
+        diffuseTexture = texture;
+    }
 }
 

@@ -28,7 +28,7 @@ namespace TechEngine {
                 glm::vec3 position(x, y, z);
                 glm::vec3 normal(x / radius, y / radius, z / radius);
 
-                createVertex(position, normal);
+                //createVertex(position, normal);
             }
         }
         for (int i = 0; i < stacks; ++i) {

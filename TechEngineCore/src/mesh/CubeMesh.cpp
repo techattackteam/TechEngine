@@ -6,15 +6,15 @@ namespace TechEngine {
     }
 
     void CubeMesh::createMesh() {
-        createVertex(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec3(0, 0, 1));
-        createVertex(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec3(0, 0, 1));
-        createVertex(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0, 0, 1));
-        createVertex(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(0, 0, 1));
+        createVertex(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec3(0, 0, 1), glm::vec2(0, 0));
+        createVertex(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec3(0, 0, 1), glm::vec2(1, 0));
+        createVertex(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0, 0, 1), glm::vec2(1, 1));
+        createVertex(glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(0, 0, 1), glm::vec2(0, 1));
 
-        createVertex(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(0, 0, -1));
-        createVertex(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(0, 0, -1));
-        createVertex(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec3(0, 0, -1));
-        createVertex(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(0, 0, -1));
+        createVertex(glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(0, 0, -1), glm::vec2(0, 0));
+        createVertex(glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(0, 0, -1), glm::vec2(1, 0));
+        createVertex(glm::vec3(0.5f, 0.5f, -0.5f), glm::vec3(0, 0, -1), glm::vec2(1, 1));
+        createVertex(glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(0, 0, -1), glm::vec2(0, 1));
 
         createIndex(0);
         createIndex(1);

@@ -1,3 +1,6 @@
+#include <filesystem>
+#include <windows.h>
+#include <commdlg.h>
 #include "MaterialEditor.hpp"
 #include "imgui.h"
 #include "material/MaterialManager.hpp"
@@ -6,6 +9,7 @@
 #include "components/CameraComponent.hpp"
 #include "scene/SceneHelper.hpp"
 #include "core/Logger.hpp"
+#include "renderer/TextureManager.hpp"
 
 namespace TechEngine {
     MaterialEditor::MaterialEditor(Renderer &renderer) : m_renderer(renderer), Panel("Material Editor") {
@@ -43,6 +47,45 @@ namespace TechEngine {
                     ImGuiUtils::drawVec3Control("diffuse", m_material->getDiffuse(), 1, 100.0f, 0, 1);
                     ImGuiUtils::drawVec3Control("specular", m_material->getSpecular(), 1, 100.0f, 0, 1);
                     ImGui::Separator();
+                    ImGui::Checkbox("Use Textures", &m_material->getUseTexture());
+                    ImGui::NewLine();
+                    static bool open = false;
+                    std::string textureName = "Diffuse texture";
+                    if (ImGui::Button(textureName.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0)) && !open) {
+                        open = true;
+                        OPENFILENAMEA ofn;
+                        CHAR szFile[260] = {0};
+                        CHAR currentDir[256] = {0};
+                        ZeroMemory(&ofn, sizeof(OPENFILENAME));
+                        ofn.lStructSize = sizeof(OPENFILENAME);
+                        ofn.lpstrFile = szFile;
+                        ofn.nMaxFile = sizeof(szFile);
+                        if (GetCurrentDirectoryA(256, currentDir))
+                            ofn.lpstrInitialDir = currentDir;
+                        ofn.lpstrFilter = ".jpg\0*.jpg\0.png\0*.png\0\0";
+                        ofn.nFilterIndex = 1;
+                        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
+                        if (GetOpenFileNameA(&ofn) == TRUE) {
+                            open = false;
+                            std::string filepath = ofn.lpstrFile;
+                            std::string filename = filepath.substr(filepath.find_last_of("/\\") + 1);
+                            std::string materialName = filename.substr(0, filename.find_last_of("."));
+                            m_material->setDiffuseTexture(&TextureManager::getTexture(materialName));
+                        }
+                    };
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+                            std::string filename = (const char *) payload->Data;
+                            std::string extension = filename.substr(filename.find_last_of('.'));
+                            if (extension != ".mat")
+                                return;
+                            std::string textureName = filename.substr(0, filename.find_last_of("."));
+                            m_material->setDiffuseTexture(&TextureManager::getTexture(textureName));
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+                    ImGui::SameLine();
 
                     ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
                     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.f);

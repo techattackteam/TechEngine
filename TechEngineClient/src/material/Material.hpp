@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include "renderer/Texture.hpp"
 
 namespace TechEngine {
 
@@ -16,9 +17,14 @@ namespace TechEngine {
         glm::vec4 color;
         float shininess;
 
+        bool useTexture = false;
+
+        Texture *diffuseTexture = nullptr;
 
     public:
         Material(const std::string &name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
+
+        Material(const std::string &name, Texture *diffuse);
 
         const std::string &getName();
 
@@ -32,5 +38,10 @@ namespace TechEngine {
 
         float &getShininess();
 
+        bool &getUseTexture();
+
+        Texture *getDiffuseTexture();
+
+        void setDiffuseTexture(Texture *texture);
     };
 }

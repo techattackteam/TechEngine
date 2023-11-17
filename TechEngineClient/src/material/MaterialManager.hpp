@@ -17,14 +17,17 @@ namespace TechEngine {
 
     public:
 
-
         static void init(const std::vector<std::string> &materialsFilePaths);
 
         static Material &createMaterial(const std::string &name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
 
+        static Material &createMaterial(const std::string &name, Texture *diffuse);
+
         static Material &createMaterialFile(const std::string &name, const std::string &filepath);
 
         static bool deleteMaterial(const std::string &name);
+
+        static bool materialExists(const std::string &name);
 
         static Material &getMaterial(const std::string &name);
 
@@ -44,5 +47,6 @@ namespace TechEngine {
             static MaterialManager instance;
             return instance;
         }
+
     };
 }

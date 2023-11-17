@@ -5,6 +5,7 @@ find_package(GLEW REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
+#find_package(Stb REQUIRED)
 
 add_definitions(-DENGINE_BUILD_DLL)
 
@@ -23,16 +24,18 @@ if (WIN32) # WINDOWS
             ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/debug"
             LIBRARY_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/debug"
             RUNTIME_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/debug"
-            )
+    )
     set_target_properties(TechEngineClient PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/release"
             LIBRARY_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/release"
             RUNTIME_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/release"
-            )
+    )
 endif ()
-
+set(Stb_INCLUDE_DIR "C:\\dev\\TechEngine\\dependencies\\vcpkg\\packages\\stb_x64-windows\\include")
+target_include_directories(TechEngineClient PRIVATE ${Stb_INCLUDE_DIR})
 target_include_directories(TechEngineClient PUBLIC "src")
 target_link_libraries(TechEngineClient TechEngineCore GLEW::GLEW glfw glm::glm yaml-cpp)
+
 
 add_custom_command(TARGET TechEngineClient POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory

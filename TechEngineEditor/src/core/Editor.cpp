@@ -5,6 +5,7 @@
 #include "yaml-cpp/yaml.h"
 #include "physics/PhysicsEngine.hpp"
 #include "material/MaterialManager.hpp"
+#include "renderer/TextureManager.hpp"
 
 namespace TechEngine {
 
