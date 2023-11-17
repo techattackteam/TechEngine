@@ -58,17 +58,18 @@ namespace TechEngine {
     }
 
     void MaterialManager::serializeMaterial(const std::string &name, const std::string &filepath) {
+        Material &material = getMaterial(name);
         YAML::Emitter out;
         out << YAML::BeginMap;
         out << YAML::Key << "name" << YAML::Value << name;
-        out << YAML::Key << "color" << YAML::Value << YAML::Flow << YAML::BeginSeq << getMaterial(name).getColor().x << getMaterial(name).getColor().y << getMaterial(name).getColor().z << getMaterial(name).getColor().w << YAML::EndSeq;
-        out << YAML::Key << "ambient" << YAML::Value << YAML::Flow << YAML::BeginSeq << getMaterial(name).getAmbient().x << getMaterial(name).getAmbient().y << getMaterial(name).getAmbient().z << YAML::EndSeq;
-        out << YAML::Key << "diffuse" << YAML::Value << YAML::Flow << YAML::BeginSeq << getMaterial(name).getDiffuse().x << getMaterial(name).getDiffuse().y << getMaterial(name).getDiffuse().z << YAML::EndSeq;
-        out << YAML::Key << "specular" << YAML::Value << YAML::Flow << YAML::BeginSeq << getMaterial(name).getSpecular().x << getMaterial(name).getSpecular().y << getMaterial(name).getSpecular().z << YAML::EndSeq;
-        out << YAML::Key << "shininess" << YAML::Value << getMaterial(name).getShininess();
-        out << YAML::Key << "useTexture" << YAML::Value << getMaterial(name).getUseTexture();
-        if (getMaterial(name).getUseTexture()) {
-            out << YAML::Key << "diffuseTexture" << YAML::Value << getMaterial(name).getDiffuseTexture()->getName();
+        out << YAML::Key << "color" << YAML::Value << YAML::Flow << YAML::BeginSeq << material.getColor().x << material.getColor().y << material.getColor().z << material.getColor().w << YAML::EndSeq;
+        out << YAML::Key << "ambient" << YAML::Value << YAML::Flow << YAML::BeginSeq << material.getAmbient().x << material.getAmbient().y << material.getAmbient().z << YAML::EndSeq;
+        out << YAML::Key << "diffuse" << YAML::Value << YAML::Flow << YAML::BeginSeq << material.getDiffuse().x << material.getDiffuse().y << material.getDiffuse().z << YAML::EndSeq;
+        out << YAML::Key << "specular" << YAML::Value << YAML::Flow << YAML::BeginSeq << material.getSpecular().x << material.getSpecular().y << material.getSpecular().z << YAML::EndSeq;
+        out << YAML::Key << "shininess" << YAML::Value << material.getShininess();
+        out << YAML::Key << "useTexture" << YAML::Value << material.getUseTexture();
+        if (material.getUseTexture()) {
+            out << YAML::Key << "diffuseTexture" << YAML::Value << material.getDiffuseTexture()->getName();
         } else {
             out << YAML::Key << "diffuseTexture" << YAML::Value << "";
         }

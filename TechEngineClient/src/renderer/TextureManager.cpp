@@ -12,12 +12,9 @@ namespace TechEngine {
     }
 
     Texture &TextureManager::createTexture(const std::string &name, const std::string &filepath) {
-        Texture *texture = new Texture(filepath);
-        auto iterator = getInstance().m_texturesBank.find(name);
-        if (iterator == getInstance().m_texturesBank.end()) {
-            iterator = getInstance().m_texturesBank.emplace(name, texture).first;
-        }
-        return *iterator->second;
+        Texture texture =  Texture(filepath);
+        auto result = getInstance().m_texturesBank.emplace(name, texture);
+        return result.first->second;
     }
 
     bool TextureManager::deleteTexture(const std::string &name) {
@@ -31,6 +28,6 @@ namespace TechEngine {
     Texture &TextureManager::getTexture(const std::string &name) {
         if (getInstance().m_texturesBank.find(name) == getInstance().m_texturesBank.end())
             TE_LOGGER_ERROR("Texture {0} not found", name);
-        return *getInstance().m_texturesBank.at(name);
+        return getInstance().m_texturesBank.at(name);
     }
 }

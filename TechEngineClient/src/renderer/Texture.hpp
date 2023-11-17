@@ -8,7 +8,6 @@ namespace TechEngine {
         std::string m_filepath;
         std::string m_name;
         unsigned int m_id;
-        unsigned char *m_localBuffer;
         int m_width, m_height, m_channels;
 
     public:

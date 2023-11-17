@@ -6,7 +6,7 @@
 namespace TechEngine {
     class TextureManager {
     private:
-        std::unordered_map<std::string, Texture*> m_texturesBank = std::unordered_map<std::string, Texture*>();
+        std::unordered_map<std::string, Texture> m_texturesBank = std::unordered_map<std::string, Texture>();
     public:
         static void init(const std::vector<std::string> &texturesFilePaths);
 
