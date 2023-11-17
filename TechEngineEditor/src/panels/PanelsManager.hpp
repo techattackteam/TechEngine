@@ -3,6 +3,9 @@
 #include <string>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+
+#define NOMINMAX
+
 #include <windows.h>
 #include "core/Window.hpp"
 #include "SceneHierarchyPanel.hpp"

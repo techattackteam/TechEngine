@@ -179,6 +179,8 @@ namespace TechEngine {
                 mesh = new SphereMesh();
             } else if (meshName == "Cylinder") {
                 mesh = new CylinderMesh();
+            } else if (meshName == "ImportedMesh") {
+
             } else {
                 TE_LOGGER_CRITICAL("Failed to deserialize mesh renderer component.\n      Mesh name {0} is not valid.", meshName);
             }

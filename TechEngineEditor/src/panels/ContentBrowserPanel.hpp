@@ -2,12 +2,15 @@
 
 #include <filesystem>
 #include "Panel.hpp"
+#include "assimp/AssimpLoader.hpp"
 
 namespace TechEngine {
     class ContentBrowserPanel : public Panel {
     private:
         std::filesystem::path currentPath;
         std::filesystem::path selectedPath;
+        AssimpLoader assimpLoader;
+
     public:
         ContentBrowserPanel();
 
@@ -15,21 +18,22 @@ namespace TechEngine {
 
         void onUpdate() override;
 
-        void openFolderOrFile(const std::string &filename);
+        void openFolderOrFile(const std::string&filename);
 
-        void renameFile(const std::string &filename, const std::string &newName);
+        void renameFile(const std::string&filename, const std::string&newName);
 
-        void deleteFile(const std::string &filename);
+        void tryLoadModel(const std::string&filepath);
 
-        void renderDirectoryHierarchy(const std::filesystem::path &directoryPath);
+        void deleteFile(const std::string&filename);
 
-        void renderDirectoryHierarchyRecurse(const std::filesystem::path &path);
+        void renderDirectoryHierarchy(const std::filesystem::path&directoryPath);
 
-        void renderFiles(const std::filesystem::path &directoryPath);
+        void renderDirectoryHierarchyRecurse(const std::filesystem::path&path);
 
-        bool openMenuPopupItem(const std::filesystem::path &path);
+        void renderFiles(const std::filesystem::path&directoryPath);
 
-        bool openMenuPopupWindow(const std::filesystem::path &path);
+        bool openMenuPopupItem(const std::filesystem::path&path);
 
+        bool openMenuPopupWindow(const std::filesystem::path&path);
     };
 }

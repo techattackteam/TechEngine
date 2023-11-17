@@ -5,6 +5,11 @@ namespace TechEngine {
     Mesh::Mesh() : vertices() {
     }
 
+    Mesh::Mesh(std::vector<Vertex> vertices, std::vector<int> indices) {
+        this->vertices = vertices;
+        this->indices = indices;
+    }
+
     Mesh::~Mesh() {
 
     }
@@ -15,8 +20,12 @@ namespace TechEngine {
         return glm::normalize(glm::cross(edge1, edge2));
     }
 
-    void Mesh::createVertex(glm::vec3 vertexPosition, glm::vec3 normal) {
-        Vertex vertex = Vertex(vertexPosition, normal);
+    void Mesh::createMesh() {
+
+    }
+
+    void Mesh::createVertex(glm::vec3 vertexPosition, glm::vec3 normal, glm::vec2 textureCoordinate) {
+        Vertex vertex = Vertex(vertexPosition, normal, textureCoordinate);
         vertices.push_back(vertex);
     }
 
@@ -30,5 +39,9 @@ namespace TechEngine {
 
     void Mesh::createIndex(int index) {
         indices.push_back(index);
+    }
+
+    std::string Mesh::getName() {
+        return "Mesh";
     }
 }
