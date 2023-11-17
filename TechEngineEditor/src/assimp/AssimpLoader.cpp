@@ -42,16 +42,8 @@ namespace TechEngine {
             std::pair<Mesh *, Material *> processedMesh = processMesh(modelName, aiMesh, scene);
             GameObject *gameObject = new GameObject(aiMesh->mName.C_Str());
             gameObject->addComponent<MeshRendererComponent>(processedMesh.first, processedMesh.second);
-            aiNode *parentNode = node->mParent;
-            while (parentNode->mParent != nullptr) {
-                aiVector3t<float> parentRotation;
-                aiVector3t<float> parentPosition;
-                parentNode->mTransformation.Decompose(scaling, rotation, position);
-                position += parentPosition;
-                rotation += parentRotation;
-            }
             gameObject->getTransform().translateTo(glm::vec3(position.x / scaling.x, position.y / scaling.y, position.z / scaling.z));
-            gameObject->getTransform().setRotation(glm::vec3(rotation.x, rotation.y, rotation.z));
+            gameObject->getTransform().setRotation(glm::degrees(glm::vec3(rotation.x, rotation.y, rotation.z)));
 
             gameObjects.push_back(gameObject);
         }
