@@ -4,10 +4,14 @@
 #include "components/light/DirectionalLightComponent.hpp"
 #include "scene/SceneHelper.hpp"
 #include "core/Logger.hpp"
+#include "TextureManager.hpp"
+#include "core/FileSystem.hpp"
 
 namespace TechEngine {
     void Renderer::init() {
         shadersManager.init();
+        TextureManager::init(FileSystem::getAllFilesWithExtension(".jpg"));
+        TextureManager::init(FileSystem::getAllFilesWithExtension(".png"));
         vertexArrays[BufferGameObjects] = new VertexArray();
         vertexBuffers[BufferGameObjects] = new VertexBuffer();
         vertexArrays[BufferGameObjects]->init();
@@ -53,6 +57,11 @@ namespace TechEngine {
                 shadersManager.getActiveShader()->setUniformVec3("material.diffuse", material.getDiffuse());
                 shadersManager.getActiveShader()->setUniformVec3("material.specular", material.getSpecular());
                 shadersManager.getActiveShader()->setUniformFloat("material.shininess", material.getShininess());
+                shadersManager.getActiveShader()->setUniformBool("material.useTexture", material.getUseTexture());
+                if (material.getUseTexture()) {
+                    material.getDiffuseTexture()->bind(1);
+                    shadersManager.getActiveShader()->setUniformInt("diffuseTexture", 1);
+                }
             }
 
             vertexBuffers[BufferGameObjects]->bind();

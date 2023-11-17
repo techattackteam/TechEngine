@@ -29,7 +29,7 @@ namespace TechEngine {
                     delta = inc * 0.5f;
                 else
                     delta = 0.0f;
-                createVertex(glm::vec3(p[i * 2] * cos(j * inc), p[(i * 2) + 1], p[i * 2] * sin(-j * inc)), glm::vec3(nx * cos(j * inc + delta), ny, nx * sin(-j * inc + delta)));
+                //createVertex(glm::vec3(p[i * 2] * cos(j * inc), p[(i * 2) + 1], p[i * 2] * sin(-j * inc)), glm::vec3(nx * cos(j * inc + delta), ny, nx * sin(-j * inc + delta)));
             }
         }
 

@@ -17,7 +17,7 @@ struct ShaderSource {
 
 class Shader {
 private:
-    uint32_t id;
+
     std::string shaderName;
     std::unordered_map<std::string, int32_t> uniformLocationCache;
 
@@ -26,6 +26,7 @@ private:
     uint32_t createShader(const std::string &vertexShader, const std::string &fragmentShader);
 
 public:
+    uint32_t id;
     Shader(const std::string &name, const char *vertexShaderPath, const char *fragmentShaderPath);
 
     ShaderSource parseShader(const char *vertexShaderPath, const char *fragmentShaderPath);

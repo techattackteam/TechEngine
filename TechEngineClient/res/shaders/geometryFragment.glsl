@@ -6,24 +6,27 @@ in vec3 fragPos;
 in vec4 vertexColor;
 in vec3 vertexNormal;
 in vec4 fragPosLightSpace;
+in vec2 fragTextCoord;
 
 uniform vec3 cameraPosition;
 uniform vec3 lightDirection;
 uniform vec3 lightColor;
 uniform bool isLightingActive;
+
 uniform sampler2D shadowMap;
 
 struct Material {
+    bool useTexture;
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
     float shininess;
 };
+uniform sampler2D diffuseTexture;
 
 uniform Material material;
 
-
-float shadowCalculation(vec3 lightDir){
+float shadowCalculation(vec3 lightDir) {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
     float closesDepth = texture(shadowMap, projCoords.xy).r;
@@ -32,8 +35,8 @@ float shadowCalculation(vec3 lightDir){
     return currentDepth - bias > closesDepth ? 1.0f : 0.0f;
 }
 
-void main(){
-    if (isLightingActive){
+void main() {
+    if (isLightingActive) {
 
         float ambientStrength = 0.1f;
         vec3 ambient = ambientStrength * lightColor * material.ambient;
@@ -52,6 +55,10 @@ void main(){
         float shadow = shadowCalculation(lightDir);
         fragColor = vec4(ambient + (1.0 - shadow) * (diffuse + specular), 1.0f) * vertexColor;
     } else {
-        fragColor = vertexColor;
+        if (material.useTexture) {
+            fragColor = texture(diffuseTexture, fragTextCoord);
+        } else {
+            fragColor = vertexColor;
+        }
     }
 }

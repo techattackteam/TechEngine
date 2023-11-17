@@ -10,13 +10,13 @@
 namespace TechEngine {
     GameObject::GameObject(std::string name) : name(std::move(name)) {
         addComponent<TransformComponent>();
-        TechEngine::EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
+        EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
         Scene::getInstance().registerGameObject(this);
     }
 
     GameObject::GameObject(std::string name, const std::string &tag) : name(std::move(name)) {
         addComponent<TransformComponent>();
-        TechEngine::EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
+        EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
         Scene::getInstance().registerGameObject(this, tag);
     }
 
@@ -27,7 +27,7 @@ namespace TechEngine {
             parent->removeChild(tag);
         }
         deleteChildren();
-        TechEngine::EventDispatcher::getInstance().dispatch(new GameObjectDestroyEvent(tag));
+        EventDispatcher::getInstance().dispatch(new GameObjectDestroyEvent(tag));
     }
 
     void GameObject::fixUpdate() {
