@@ -7,11 +7,31 @@
 #include "components/physics/SphereCollider.hpp"
 #include "components/physics/CylinderCollider.hpp"
 #include "components/physics/RigidBody.hpp"
+#include "events/input/MouseMoveEvent.hpp"
+#include "events/input/MouseScrollEvent.hpp"
+#include "events/input/KeyPressedEvent.hpp"
+#include "events/input/KeyReleasedEvent.hpp"
 
 namespace TechEngine {
     SceneView::SceneView(Renderer &renderer) : renderer(&renderer), Panel("Scene") {
         frameBufferID = renderer.createFramebuffer(RendererSettings::width, RendererSettings::height);
         sceneCamera = new SceneCamera();
+
+        EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event *event) {
+            OnKeyPressedEvent(((KeyPressedEvent *) event)->getKey());
+        });
+
+        EventDispatcher::getInstance().subscribe(KeyReleasedEvent::eventType, [this](TechEngine::Event *event) {
+            OnKeyReleasedEvent(((KeyReleasedEvent *) event)->getKey());
+        });
+
+        EventDispatcher::getInstance().subscribe(MouseMoveEvent::eventType, [this](TechEngine::Event *event) {
+            OnMouseMoveEvent(((MouseMoveEvent *) event)->getDelta());
+        });
+
+        EventDispatcher::getInstance().subscribe(MouseScrollEvent::eventType, [this](TechEngine::Event *event) {
+            OnMouseScrollEvent(((MouseScrollEvent *) event)->getXOffset(), ((MouseScrollEvent *) event)->getYOffset());
+        });
     }
 
 
@@ -25,6 +45,7 @@ namespace TechEngine {
         FrameBuffer &frameBuffer = renderer->getFramebuffer(frameBufferID);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
         ImGui::Begin(name.c_str());
+        isWindowHovered = ImGui::IsWindowHovered();
         ImVec2 wsize = ImGui::GetContentRegionAvail();
         frameBuffer.bind();
         frameBuffer.resize(wsize.x, wsize.y);
@@ -264,6 +285,63 @@ namespace TechEngine {
         renderer->createLine(lastTopPoint, lastBottomPoint, color); // Red lines
     }
 
+    void SceneView::OnKeyPressedEvent(Key &key) {
+        switch (key.getKeyCode()) {
+            case MOUSE_2: {
+                mouse2 = true;
+                break;
+            }
+            case MOUSE_3: {
+                mouse3 = true;
+                break;
+            }
+        }
+    }
+
+    void SceneView::OnKeyReleasedEvent(Key &key) {
+        switch (key.getKeyCode()) {
+            case MOUSE_2: {
+                mouse2 = false;
+                moving = false;
+                break;
+            }
+            case MOUSE_3: {
+                mouse3 = false;
+                moving = false;
+                break;
+            }
+        }
+    }
+
+    void SceneView::OnMouseScrollEvent(float xOffset, float yOffset) {
+        if (isWindowHovered) {
+            const glm::mat4 inverted = glm::inverse(getSceneCamera()->getComponent<CameraComponent>()->getViewMatrix());
+            const glm::vec3 forward = normalize(glm::vec3(inverted[2]));
+            if (yOffset == -1.0f) {
+                getSceneCamera()->getTransform().translate(forward);
+            } else if (yOffset == 1.0f) {
+                getSceneCamera()->getTransform().translate(-forward);
+            }
+        }
+    }
+
+    void SceneView::OnMouseMoveEvent(glm::vec2 delta) {
+        if (isWindowHovered || moving) {
+            moving = true;
+            const glm::mat4 inverted = glm::inverse(getSceneCamera()->getComponent<CameraComponent>()->getViewMatrix());
+            const glm::vec3 right = normalize(glm::vec3(inverted[0]));
+            const glm::vec3 up = normalize(glm::vec3(inverted[1]));
+            if (mouse3) {
+                const glm::vec3 move = -right * delta.x * 0.01f + up * delta.y * 0.01f;
+                getSceneCamera()->getTransform().translate(move);
+            }
+            if (mouse2) {
+                const glm::vec3 rotate = glm::vec3(-delta.y * 0.5f, -delta.x * 0.5f, 0);
+                getSceneCamera()->getTransform().rotate(rotate);
+            }
+        }
+    }
+
     glm::vec4 SceneView::getColor(GameObject *gameObject) {
         if (gameObject == PanelsManager::getInstance().getSelectedGameObject()) {
             if (gameObject->hasComponent<RigidBody>()) {
@@ -279,7 +357,6 @@ namespace TechEngine {
             }
         }
     }
-
 
     void SceneView::changeGuizmoOperation(int operation) {
         guizmo.setOperation(operation);

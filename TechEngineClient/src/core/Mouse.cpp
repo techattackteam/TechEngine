@@ -32,28 +32,28 @@ namespace TechEngine {
 
     void Mouse::onUpdate() {
         if (button_pressed[0]) {
-            TechEngine::dispatchEvent(new KeyHoldEvent(Key(MOUSE_1)));
+            dispatchEvent(new KeyHoldEvent(Key(MOUSE_1)));
         }
         if (button_pressed[1]) {
-            TechEngine::dispatchEvent(new KeyHoldEvent(Key(MOUSE_2)));
+            dispatchEvent(new KeyHoldEvent(Key(MOUSE_2)));
         }
         if (button_pressed[2]) {
-            TechEngine::dispatchEvent(new KeyHoldEvent(Key(MOUSE_3)));
+            dispatchEvent(new KeyHoldEvent(Key(MOUSE_3)));
         }
         if (button_pressed[3]) {
-            TechEngine::dispatchEvent(new KeyHoldEvent(Key(MOUSE_4)));
+            dispatchEvent(new KeyHoldEvent(Key(MOUSE_4)));
         }
         if (button_pressed[4]) {
-            TechEngine::dispatchEvent(new KeyHoldEvent(Key(MOUSE_5)));
+            dispatchEvent(new KeyHoldEvent(Key(MOUSE_5)));
         }
         if (button_pressed[5]) {
-            TechEngine::dispatchEvent(new KeyHoldEvent(Key(MOUSE_6)));
+            dispatchEvent(new KeyHoldEvent(Key(MOUSE_6)));
         }
         if (button_pressed[6]) {
-            TechEngine::dispatchEvent(new KeyHoldEvent(Key(MOUSE_7)));
+            dispatchEvent(new KeyHoldEvent(Key(MOUSE_7)));
         }
         if (button_pressed[7]) {
-            TechEngine::dispatchEvent(new KeyHoldEvent(Key(MOUSE_8)));
+            dispatchEvent(new KeyHoldEvent(Key(MOUSE_8)));
         }
     }
 
