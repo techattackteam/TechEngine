@@ -39,8 +39,7 @@ namespace TechEngine {
 
         std::string gameObjectSelectedTag;
 
-        bool mouse2 = false;
-        bool mouse3 = false;
+
     public:
 
         PanelsManager(Window &window);
@@ -87,12 +86,6 @@ namespace TechEngine {
         void stopRunningScene();
 
         void OnKeyPressedEvent(Key &key);
-
-        void OnMouseScrollEvent(float xOffset, float yOffset);
-
-        void OnMouseMoveEvent(glm::vec2 delta);
-
-        void OnKeyReleasedEvent(Key &key);
 
         void setColorTheme();
     };

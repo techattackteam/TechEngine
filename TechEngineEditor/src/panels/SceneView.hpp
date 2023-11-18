@@ -5,6 +5,7 @@
 #include "UIUtils/Guizmo.hpp"
 #include "core/SceneCamera.hpp"
 #include "components/CameraComponent.hpp"
+#include "core/Key.hpp"
 
 namespace TechEngine {
     class SceneView : public Panel {
@@ -12,6 +13,11 @@ namespace TechEngine {
         Renderer *renderer;
         SceneCamera *sceneCamera;
         Guizmo guizmo;
+
+        bool mouse2 = false;
+        bool mouse3 = false;
+        bool moving = false;
+        bool isWindowHovered = false;
     public:
         SceneView(Renderer &renderer);
 
@@ -39,6 +45,14 @@ namespace TechEngine {
         void renderSphereCollider(GameObject *gameObject);
 
         void renderCylinderCollier(GameObject *gameObject);
+
+        void OnKeyPressedEvent(Key &key);
+
+        void OnKeyReleasedEvent(Key &key);
+
+        void OnMouseScrollEvent(float xOffset, float yOffset);
+
+        void OnMouseMoveEvent(glm::vec2 delta);
 
     };
 }

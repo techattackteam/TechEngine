@@ -13,15 +13,12 @@
 #include "project/ProjectManager.hpp"
 #include "events/input/KeyPressedEvent.hpp"
 #include "events/input/KeyReleasedEvent.hpp"
-#include "events/input/MouseScrollEvent.hpp"
-#include "events/input/MouseMoveEvent.hpp"
 #include "defaultGameObject/MainCamera.hpp"
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
     PanelsManager::PanelsManager(Window &window) : window(window), exportSettingsPanel((std::string &) "TEMPORARY") {
         instance = this;
-
     }
 
     void PanelsManager::init() {
@@ -37,17 +34,7 @@ namespace TechEngine {
             OnKeyPressedEvent(((KeyPressedEvent *) event)->getKey());
         });
 
-        EventDispatcher::getInstance().subscribe(KeyReleasedEvent::eventType, [this](TechEngine::Event *event) {
-            OnKeyReleasedEvent(((KeyReleasedEvent *) event)->getKey());
-        });
 
-        EventDispatcher::getInstance().subscribe(MouseMoveEvent::eventType, [this](TechEngine::Event *event) {
-            OnMouseMoveEvent(((MouseMoveEvent *) event)->getDelta());
-        });
-
-        EventDispatcher::getInstance().subscribe(MouseScrollEvent::eventType, [this](TechEngine::Event *event) {
-            OnMouseScrollEvent(((MouseScrollEvent *) event)->getXOffset(), ((MouseScrollEvent *) event)->getYOffset());
-        });
         contentBrowser.init();
         materialEditor.init();
         initImGui();
@@ -399,54 +386,10 @@ namespace TechEngine {
                     sceneView.changeGuizmoOperation(ImGuizmo::OPERATION::SCALE);
                 break;
             }
-            case MOUSE_2: {
-                mouse2 = true;
-                break;
-            }
-            case MOUSE_3: {
-                mouse3 = true;
-                break;
-            }
                 TE_LOGGER_INFO("Key pressed event: {0}", key.getKeyName());
         }
     }
 
-    void PanelsManager::OnKeyReleasedEvent(Key &key) {
-        switch (key.getKeyCode()) {
-            case MOUSE_2: {
-                mouse2 = false;
-                break;
-            }
-            case MOUSE_3: {
-                mouse3 = false;
-                break;
-            }
-        }
-    }
-
-    void PanelsManager::OnMouseScrollEvent(float xOffset, float yOffset) {
-        const glm::mat4 inverted = glm::inverse(sceneView.getSceneCamera()->getComponent<CameraComponent>()->getViewMatrix());
-        const glm::vec3 forward = normalize(glm::vec3(inverted[2]));
-        if (yOffset == -1.0f) {
-            sceneView.getSceneCamera()->getTransform().translate(forward);
-        } else if (yOffset == 1.0f) {
-            sceneView.getSceneCamera()->getTransform().translate(-forward);
-        }
-    }
-
-    void PanelsManager::OnMouseMoveEvent(glm::vec2 delta) {
-        const glm::mat4 inverted = glm::inverse(sceneView.getSceneCamera()->getComponent<CameraComponent>()->getViewMatrix());
-        const glm::vec3 right = normalize(glm::vec3(inverted[0]));
-        const glm::vec3 up = normalize(glm::vec3(inverted[1]));
-        if (mouse3) {
-            const glm::vec3 move = -right * delta.x * 0.01f + up * delta.y * 0.01f;
-            sceneView.getSceneCamera()->getTransform().translate(move);
-        }
-        if (mouse2) {
-            const glm::vec3 rotate = glm::vec3(-delta.y * 0.5f, -delta.x * 0.5f, 0);
-            sceneView.getSceneCamera()->getTransform().rotate(rotate);
-        }
-    }
 
     void PanelsManager::openMaterialEditor(const std::string &materialName, const std::string &filepath) {
         materialEditor.open(materialName, filepath);

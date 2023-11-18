@@ -10,15 +10,19 @@ namespace TechEngine {
 
     glm::mat4 TransformComponent::getModelMatrix() {
         GameObject *parent = gameObject->getParent();
-        glm::vec3 position = this->position;
-        glm::vec3 lastPosition = this->lastPosition;
+        glm::vec3 position = glm::vec3(0, 0, 0);
+        glm::vec3 lastPosition = position;
+        glm::vec3 orientation = glm::vec3(0, 0, 0);
+        glm::vec3 scale = glm::vec3(1, 1, 1);
+        model = glm::mat4(1.0f);
         while (parent != nullptr) {
-            position += parent->getTransform().position;
-            lastPosition += parent->getTransform().lastPosition;
-
+            position = parent->getTransform().position;
+            orientation = parent->getTransform().orientation;
+            scale = parent->getTransform().scale;
+            model *= glm::translate(glm::mat4(1), position) * glm::toMat4(glm::quat(glm::radians(orientation))) * glm::scale(glm::mat4(1), scale);
             parent = parent->getParent();
         }
-        model = glm::translate(glm::mat4(1), position) * glm::toMat4(glm::quat(glm::radians(orientation))) * glm::scale(glm::mat4(1), scale);
+        model *= glm::translate(glm::mat4(1), this->position) * glm::toMat4(glm::quat(glm::radians(this->orientation))) * glm::scale(glm::mat4(1), this->scale);
 
         return model;
     }
