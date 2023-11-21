@@ -30,12 +30,11 @@ add_custom_command(TARGET TechEngineEditor POST_BUILD
         ${CMAKE_SOURCE_DIR}/TechEngineClient/res ${CMAKE_BINARY_DIR}/TechEngineClient/res)
 
 #Copy Engine lib for user code
-file(GLOB_RECURSE TechEngineAPI_libs "${PROJECT_SOURCE_DIR}/bin/TechEngineClient/debug/TechEngineGame.lib" "${PROJECT_SOURCE_DIR}/bin/TechEngineCore/debug/TechEngineCore.lib")
+file(GLOB_RECURSE TechEngineAPI_libs "${PROJECT_SOURCE_DIR}/bin/TechEngineClient/debug/TechEngineClient.lib" "${PROJECT_SOURCE_DIR}/bin/TechEngineCore/debug/TechEngineCore.lib")
 add_custom_command(TARGET TechEngineEditor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
         ${TechEngineAPI_libs} $<TARGET_FILE_DIR:TechEngineEditor>/TechEngineAPI/lib
         COMMAND_EXPAND_LISTS)
-set(MY_VARIABLE TRUE)
 
 #Copy project template
 file(GENERATE
