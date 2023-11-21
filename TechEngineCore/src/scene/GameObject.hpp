@@ -54,6 +54,10 @@ namespace TechEngine {
             return components.contains(typeid(C).name());
         }
 
+        bool hasComponent(const std::string &name) {
+            return components.contains(name);
+        }
+
         template<class C>
         C *getComponent() {
             return (C *) components[typeid(C).name()];

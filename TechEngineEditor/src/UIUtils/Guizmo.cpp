@@ -69,7 +69,7 @@ namespace TechEngine {
         if (operation == -1) {
             return;
         }
-        if (PanelsManager::getInstance().getSelectedGameObject() == nullptr || !SceneHelper::hasMainCamera()) {
+        if (PanelsManager::getInstance().getSelectedGameObjects().empty() || !SceneHelper::hasMainCamera()) {
             return;
         }
 
@@ -87,7 +87,7 @@ namespace TechEngine {
         const glm::mat4 &cameraProjection = SceneHelper::mainCamera->getProjectionMatrix();
         glm::mat4 cameraView = SceneHelper::mainCamera->getViewMatrix();
 
-        glm::mat4 transform = PanelsManager::getInstance().getSelectedGameObject()->getModelMatrix();
+        glm::mat4 transform = PanelsManager::getInstance().getSelectedGameObjects().front()->getModelMatrix();
         ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
                              (ImGuizmo::OPERATION) operation, (ImGuizmo::MODE) (mode), glm::value_ptr(transform),
                              nullptr, nullptr);
@@ -95,9 +95,9 @@ namespace TechEngine {
         if (ImGuizmo::IsUsing()) {
             glm::vec3 translation, rotation, scale;
             DecomposeTransform(transform, translation, rotation, scale);
-            PanelsManager::getInstance().getSelectedGameObject()->getTransform().translateToWorld(translation);
-            PanelsManager::getInstance().getSelectedGameObject()->getTransform().setRotation(glm::degrees(rotation));
-            PanelsManager::getInstance().getSelectedGameObject()->getTransform().setScale(scale);
+            PanelsManager::getInstance().getSelectedGameObjects().front()->getTransform().translateToWorld(translation);
+            PanelsManager::getInstance().getSelectedGameObjects().front()->getTransform().setRotation(glm::degrees(rotation));
+            PanelsManager::getInstance().getSelectedGameObjects().front()->getTransform().setScale(scale);
         }
     }
 

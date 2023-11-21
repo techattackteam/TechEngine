@@ -23,10 +23,11 @@ namespace TechEngine {
                 }
                 drawEntityNode(element);
             }
-            if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()) {
-                selectedGO = nullptr;
-                PanelsManager::getInstance().deselectGameObject();
+
+            if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) {
+                selectedGO.clear();
             }
+
             if (!isItemHovered && ImGui::BeginPopupContextWindow()) {
                 if (ImGui::BeginMenu("Create")) {
                     if (ImGui::MenuItem("Empty")) {
@@ -52,19 +53,52 @@ namespace TechEngine {
     void SceneHierarchyPanel::drawEntityNode(GameObject *gameObject) {
         std::string name = gameObject->getName();
 
-        ImGuiTreeNodeFlags flags = ((selectedGO == gameObject) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow |
+        ImGuiTreeNodeFlags flags = ((std::find(selectedGO.begin(), selectedGO.end(), gameObject) != selectedGO.end()) ? ImGuiTreeNodeFlags_Selected : 0) |
+                                   ImGuiTreeNodeFlags_OpenOnArrow |
                                    (gameObject->getChildren().empty() ? ImGuiTreeNodeFlags_Leaf : 0) |
                                    ImGuiTreeNodeFlags_SpanAvailWidth;
         bool opened = ImGui::TreeNodeEx(gameObject, flags, "%s", name.c_str());
         if (ImGui::IsItemClicked()) {
-            selectedGO = gameObject;
-            PanelsManager::getInstance().selectGameObject(gameObject->getTag());
+            if (isCtrlPressed) {
+                if (std::find(selectedGO.begin(), selectedGO.end(), gameObject) != selectedGO.end()) {
+                    selectedGO.remove(gameObject);
+                } else {
+                    selectedGO.push_back(gameObject);
+                }
+            } else if (isShiftPressed) {
+                if (selectedGO.empty()) {
+                    selectedGO.push_back(gameObject);
+                } else {
+                    GameObject *first = selectedGO.front();
+
+                    bool selecting = false;
+                    for (GameObject *go: scene.getGameObjects()) {
+                        if (go->isEditorOnly()) {
+                            continue;
+                        }
+                        if (go == first && !selecting || go == gameObject && !selecting) {
+                            selecting = true;
+                            selectedGO.push_back(go);
+                        } else if (go == gameObject && selecting || go == first && selecting) {
+                            selecting = false;
+                            selectedGO.push_back(go);
+
+                        } else if (selecting) {
+                            selectedGO.push_back(go);
+                        }
+                    }
+                }
+            } else {
+                selectedGO.clear();
+                selectedGO.push_back(gameObject);
+            }
         }
-        if(ImGui::IsItemHovered()) {
+        if (ImGui::IsItemHovered()) {
             isItemHovered = true;
         }
         if (ImGui::BeginPopupContextItem()) {
-            selectedGO = gameObject;
+            //selectedGO.clear();
+            selectedGO.push_back(gameObject);
             if (ImGui::MenuItem("Make Child (WIP)")) {
                 GameObject *child = new GameObject(gameObject->getName() + "'s Child");
                 Scene::getInstance().makeChildTo(gameObject, child);
@@ -73,9 +107,7 @@ namespace TechEngine {
                 //new QuadMeshTest(gameObject->getName() + "'s duplicate");
             }
             if (ImGui::MenuItem("Delete GameObject")) {
-                EventDispatcher::getInstance().dispatch(new RequestDeleteGameObject(gameObject->getTag()));
-                PanelsManager::getInstance().deselectGameObject(gameObject->getTag());
-                selectedGO = nullptr;
+                deleteGameObject(gameObject);
             }
             ImGui::EndPopup();
         }
@@ -84,6 +116,54 @@ namespace TechEngine {
                 drawEntityNode(pair.second);
             }
             ImGui::TreePop();
+        }
+    }
+
+    void SceneHierarchyPanel::onKeyPressedEvent(Key &key) {
+        if (key.getKeyCode() == KeyCode::DEL && !selectedGO.empty()) {
+            for (GameObject *gameObject: selectedGO) {
+                deleteGameObject(gameObject);
+            }
+
+        } else if (key.getKeyCode() == KeyCode::F && ImGui::IsWindowFocused()) {
+            if (!selectedGO.empty()) {
+                GameObject *gameObject = selectedGO.front();
+/*                PanelsManager::getInstance().getSceneView().setCameraPosition(gameObject->getTransform().getPosition());
+                PanelsManager::getInstance().getSceneView().setCameraRotation(gameObject->getTransform().getRotation());*/
+            }
+        } else if (key.getKeyCode() == KeyCode::LEFT_SHIFT || key.getKeyCode() == KeyCode::RIGHT_SHIFT) {
+            isShiftPressed = true;
+        } else if (key.getKeyCode() == KeyCode::LEFT_CTRL || key.getKeyCode() == KeyCode::RIGHT_CTRL) {
+            isCtrlPressed = true;
+        }
+    }
+
+    void SceneHierarchyPanel::onKeyReleasedEvent(TechEngine::Key &key) {
+        if (key.getKeyCode() == KeyCode::LEFT_SHIFT || key.getKeyCode() == KeyCode::RIGHT_SHIFT) {
+            isShiftPressed = false;
+        } else if (key.getKeyCode() == KeyCode::LEFT_CTRL || key.getKeyCode() == KeyCode::RIGHT_CTRL) {
+            isCtrlPressed = false;
+        }
+    }
+
+    void SceneHierarchyPanel::deleteGameObject(GameObject *gameObject) {
+        EventDispatcher::getInstance().dispatch(new RequestDeleteGameObject(gameObject->getTag()));
+        if (std::find(selectedGO.begin(), selectedGO.end(), gameObject) != selectedGO.end()) {
+            selectedGO.remove(gameObject);
+        }
+    }
+
+    std::list<GameObject *> &SceneHierarchyPanel::getSelectedGO() {
+        return selectedGO;
+    }
+
+    void SceneHierarchyPanel::selectGO(GameObject *selectedGO) {
+        this->selectedGO.push_back(selectedGO);
+    }
+
+    void SceneHierarchyPanel::deselectGO(GameObject *selectedGO) {
+        if (std::find(this->selectedGO.begin(), this->selectedGO.end(), selectedGO) != this->selectedGO.end()) {
+            this->selectedGO.remove(selectedGO);
         }
     }
 }

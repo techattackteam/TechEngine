@@ -27,7 +27,7 @@ namespace TechEngine {
         });
 
         EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngine::Event *event) {
-            deselectGameObject(((GameObjectDestroyEvent *) event)->getGameObjectTag());
+            sceneHierarchyPanel.deselectGO(Scene::getInstance().getGameObjectByTag(((GameObjectDestroyEvent *) event)->getGameObjectTag()));
         });
 
         EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event *event) {
@@ -213,7 +213,7 @@ namespace TechEngine {
                 }
             }
             if (ImGui::MenuItem("Exit")) {
-                TechEngine::EventDispatcher::getInstance().dispatch(new AppCloseRequestEvent());
+                EventDispatcher::getInstance().dispatch(new AppCloseRequestEvent());
             }
             ImGui::EndMenu();
         }
@@ -331,12 +331,13 @@ namespace TechEngine {
         ScriptEngine::getInstance()->stop();
         PhysicsEngine::getInstance()->stop();
         SceneManager::loadSceneFromTemporarily(SceneManager::getActiveSceneName());
+        sceneHierarchyPanel.getSelectedGO().clear();
         for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
             if (gameObject->hasComponent<CameraComponent>() && gameObject->getComponent<CameraComponent>()->isMainCamera()) {
                 SceneHelper::mainCamera = gameObject->getComponent<CameraComponent>();
             }
-            if (gameObject->getTag() == gameObjectSelectedTag) {
-                selectGameObject(gameObject->getTag());
+            if (std::find(getSelectedGameObjects().begin(), getSelectedGameObjects().end(), gameObject) != getSelectedGameObjects().end()) {
+                sceneHierarchyPanel.selectGO(gameObject);
             }
         }
         m_currentPlaying = false;
@@ -346,22 +347,8 @@ namespace TechEngine {
         return *instance;
     }
 
-    void PanelsManager::selectGameObject(const std::string &tag) {
-        gameObjectSelectedTag = tag;
-    }
-
-    void PanelsManager::deselectGameObject() {
-        gameObjectSelectedTag = "";
-    }
-
-    void PanelsManager::deselectGameObject(std::string tag) {
-        if (tag == gameObjectSelectedTag) {
-            deselectGameObject();
-        }
-    }
-
-    GameObject *PanelsManager::getSelectedGameObject() const {
-        return Scene::getInstance().getGameObjectByTag(gameObjectSelectedTag);
+    std::list<GameObject *> &PanelsManager::getSelectedGameObjects() {
+        return sceneHierarchyPanel.getSelectedGO();
     }
 
     void PanelsManager::OnKeyPressedEvent(Key &key) {
