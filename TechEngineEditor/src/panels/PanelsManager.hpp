@@ -37,8 +37,6 @@ namespace TechEngine {
         MaterialEditor materialEditor{window.getRenderer()};
         bool m_currentPlaying = false;
 
-        std::string gameObjectSelectedTag;
-
 
     public:
 
@@ -50,17 +48,11 @@ namespace TechEngine {
 
         static void compileUserScripts();
 
-        GameObject *getSelectedGameObject() const;
-
-        static PanelsManager &getInstance();
-
-        void selectGameObject(const std::string &gameObjectTag);
-
-        void deselectGameObject();
-
-        void deselectGameObject(std::string gameObject);
+        std::list<GameObject *> &getSelectedGameObjects();
 
         void openMaterialEditor(const std::string &materialName, const std::string &filepath);
+
+        static PanelsManager &getInstance();
 
     private:
         void initImGui();

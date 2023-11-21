@@ -7,31 +7,11 @@
 #include "components/physics/SphereCollider.hpp"
 #include "components/physics/CylinderCollider.hpp"
 #include "components/physics/RigidBody.hpp"
-#include "events/input/MouseMoveEvent.hpp"
-#include "events/input/MouseScrollEvent.hpp"
-#include "events/input/KeyPressedEvent.hpp"
-#include "events/input/KeyReleasedEvent.hpp"
 
 namespace TechEngine {
     SceneView::SceneView(Renderer &renderer) : renderer(&renderer), Panel("Scene") {
         frameBufferID = renderer.createFramebuffer(RendererSettings::width, RendererSettings::height);
         sceneCamera = new SceneCamera();
-
-        EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event *event) {
-            OnKeyPressedEvent(((KeyPressedEvent *) event)->getKey());
-        });
-
-        EventDispatcher::getInstance().subscribe(KeyReleasedEvent::eventType, [this](TechEngine::Event *event) {
-            OnKeyReleasedEvent(((KeyReleasedEvent *) event)->getKey());
-        });
-
-        EventDispatcher::getInstance().subscribe(MouseMoveEvent::eventType, [this](TechEngine::Event *event) {
-            OnMouseMoveEvent(((MouseMoveEvent *) event)->getDelta());
-        });
-
-        EventDispatcher::getInstance().subscribe(MouseScrollEvent::eventType, [this](TechEngine::Event *event) {
-            OnMouseScrollEvent(((MouseScrollEvent *) event)->getXOffset(), ((MouseScrollEvent *) event)->getYOffset());
-        });
     }
 
 
@@ -86,7 +66,8 @@ namespace TechEngine {
             frustumPoints.push_back(glm::vec3(worldPoint));
         }
         glm::vec4 color;
-        if (camera->getGameObject() == PanelsManager::getInstance().getSelectedGameObject()) {
+        if (PanelsManager::getInstance().getSelectedGameObjects().size() == 1
+            && camera->getGameObject() == PanelsManager::getInstance().getSelectedGameObjects().front()) {
             color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
         } else {
             color = glm::vec4(1.0f, 1.0f, 1.0f, 0.3f);
@@ -285,7 +266,7 @@ namespace TechEngine {
         renderer->createLine(lastTopPoint, lastBottomPoint, color); // Red lines
     }
 
-    void SceneView::OnKeyPressedEvent(Key &key) {
+    void SceneView::onKeyPressedEvent(Key &key) {
         switch (key.getKeyCode()) {
             case MOUSE_2: {
                 mouse2 = true;
@@ -298,7 +279,7 @@ namespace TechEngine {
         }
     }
 
-    void SceneView::OnKeyReleasedEvent(Key &key) {
+    void SceneView::onKeyReleasedEvent(Key &key) {
         switch (key.getKeyCode()) {
             case MOUSE_2: {
                 mouse2 = false;
@@ -313,7 +294,7 @@ namespace TechEngine {
         }
     }
 
-    void SceneView::OnMouseScrollEvent(float xOffset, float yOffset) {
+    void SceneView::onMouseScrollEvent(float xOffset, float yOffset) {
         if (isWindowHovered) {
             const glm::mat4 inverted = glm::inverse(getSceneCamera()->getComponent<CameraComponent>()->getViewMatrix());
             const glm::vec3 forward = normalize(glm::vec3(inverted[2]));
@@ -325,7 +306,7 @@ namespace TechEngine {
         }
     }
 
-    void SceneView::OnMouseMoveEvent(glm::vec2 delta) {
+    void SceneView::onMouseMoveEvent(glm::vec2 delta) {
         if (isWindowHovered || moving) {
             moving = true;
             const glm::mat4 inverted = glm::inverse(getSceneCamera()->getComponent<CameraComponent>()->getViewMatrix());
@@ -343,7 +324,8 @@ namespace TechEngine {
     }
 
     glm::vec4 SceneView::getColor(GameObject *gameObject) {
-        if (gameObject == PanelsManager::getInstance().getSelectedGameObject()) {
+        std::list<GameObject *> selectedGO = PanelsManager::getInstance().getSelectedGameObjects();
+        if (std::find(selectedGO.begin(), selectedGO.end(), gameObject) != selectedGO.end()) {
             if (gameObject->hasComponent<RigidBody>()) {
                 return glm::vec4(0, 1.0f, 0, 1.0f);
             } else {

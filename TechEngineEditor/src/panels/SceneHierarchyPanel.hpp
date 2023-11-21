@@ -9,15 +9,34 @@ namespace TechEngine {
 
     class SceneHierarchyPanel : public Panel {
     private:
-        GameObject *selectedGO = nullptr;
+        std::list<GameObject *> selectedGO;
         Scene &scene = Scene::getInstance();
         bool isItemHovered = false;
+        bool isShiftPressed = false;
+        bool isCtrlPressed = false;
+
     public:
         SceneHierarchyPanel();
 
         void onUpdate() override;
 
         void drawEntityNode(GameObject *gameObject);
+
+
+        std::list<GameObject *> &getSelectedGO();
+
+        void selectGO(GameObject *selectedGO);
+
+        void deselectGO(GameObject *selectedGO);
+
+
+    private:
+        void deleteGameObject(GameObject *gameObject);
+
+        void onKeyPressedEvent(Key &key) override;
+
+        void onKeyReleasedEvent(Key &key) override;
+
     };
 }
 

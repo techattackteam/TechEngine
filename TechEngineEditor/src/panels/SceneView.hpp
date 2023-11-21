@@ -46,13 +46,13 @@ namespace TechEngine {
 
         void renderCylinderCollier(GameObject *gameObject);
 
-        void OnKeyPressedEvent(Key &key);
+        void onKeyPressedEvent(Key &key) override;
 
-        void OnKeyReleasedEvent(Key &key);
+        void onKeyReleasedEvent(Key &key) override;
 
-        void OnMouseScrollEvent(float xOffset, float yOffset);
+        void onMouseScrollEvent(float xOffset, float yOffset) override;
 
-        void OnMouseMoveEvent(glm::vec2 delta);
+        void onMouseMoveEvent(glm::vec2 delta) override;
 
     };
 }

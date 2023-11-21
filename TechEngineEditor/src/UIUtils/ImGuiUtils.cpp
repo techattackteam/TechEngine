@@ -24,7 +24,7 @@ namespace TechEngine {
         return result;
     }
 
-    void ImGuiUtils::drawVec3Control(const std::string &label, glm::vec3 &values, float resetValue, float columnWidth, float min, float max) {
+    void ImGuiUtils::drawVec3Control(const std::string &label, glm::vec3 &values, float resetValue, float columnWidth, float min, float max, bool enable) {
         ImGuiIO &io = ImGui::GetIO();
         auto boldFont = io.Fonts->Fonts[0];
 
@@ -47,7 +47,13 @@ namespace TechEngine {
         ImGui::PopFont();
 
         ImGui::SameLine();
-        ImGui::DragFloat("##X", &values.x, 0.1f, min, max, "%.2f");
+        if (!enable) {
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.1f);
+            ImGui::DragFloat("##X", &values.x, 0.1f, min, max, "%.2f");
+            ImGui::PopStyleVar();
+        } else {
+            ImGui::DragFloat("##X", &values.x, 0.1f, min, max, "%.2f");
+        }
         ImGui::PopItemWidth();
         ImGui::SameLine();
 
@@ -57,7 +63,13 @@ namespace TechEngine {
         ImGui::PopFont();
 
         ImGui::SameLine();
-        ImGui::DragFloat("##Y", &values.y, 0.1f, min, max, "%.2f");
+        if (!enable) {
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.1f);
+            ImGui::DragFloat("##Y", &values.y, 0.1f, min, max, "%.2f");
+            ImGui::PopStyleVar();
+        } else {
+            ImGui::DragFloat("##Y", &values.y, 0.1f, min, max, "%.2f");
+        }
         ImGui::PopItemWidth();
         ImGui::SameLine();
 
@@ -67,7 +79,13 @@ namespace TechEngine {
         ImGui::PopFont();
 
         ImGui::SameLine();
-        ImGui::DragFloat("##Z", &values.z, 0.1f, min, max, "%.2f");
+        if (!enable) {
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.1f);
+            ImGui::DragFloat("##Z", &values.z, 0.1f, min, max, "%.2f");
+            ImGui::PopStyleVar();
+        } else {
+            ImGui::DragFloat("##Z", &values.z, 0.1f, min, max, "%.2f");
+        }
         ImGui::PopItemWidth();
 
         ImGui::PopStyleVar();

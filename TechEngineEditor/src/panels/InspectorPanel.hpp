@@ -13,12 +13,15 @@ namespace TechEngine {
         void onUpdate() override;
 
         template<typename T, typename UIFunction>
-        void drawComponent(const std::string &name, UIFunction uiFunction);
+        void drawComponent(GameObject *gameObject, const std::string &name, UIFunction uiFunction);
 
         void drawComponents();
 
+    private:
+        template<typename C>
+        void addComponent();
 
-
+        void drawCommonComponents();
     };
 }
 
