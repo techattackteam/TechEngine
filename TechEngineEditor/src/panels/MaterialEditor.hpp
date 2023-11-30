@@ -3,14 +3,20 @@
 #include "Panel.hpp"
 #include "material/Material.hpp"
 #include "renderer/Renderer.hpp"
-#include "panels/materialEditorScene/Sphere.hpp"
 #include "core/SceneCamera.hpp"
+#include "renderer/TextureManager.hpp"
+#include "material/MaterialManager.hpp"
+#include "panels/materialEditorScene/Sphere.hpp"
 
 namespace TechEngine {
     class MaterialEditor : public Panel {
     private:
         Renderer &m_renderer;
         Material *m_material;
+
+        TextureManager &textureManager;
+        MaterialManager &materialManager;
+        Scene &scene;
         std::string m_filepath;
         bool m_open = false;
         uint32_t frameBufferID;
@@ -19,7 +25,7 @@ namespace TechEngine {
         SceneCamera m_camera;
 
     public:
-        MaterialEditor(Renderer &renderer);
+        MaterialEditor(Renderer &renderer, TextureManager &textureManager, MaterialManager &materialManager, Scene &scene);
 
         ~MaterialEditor() = default;
 

@@ -14,12 +14,15 @@ namespace TechEngine {
         SceneCamera *sceneCamera;
         Guizmo guizmo;
 
+        Scene &scene;
+        std::vector<GameObject *> &selectedGO;
+
         bool mouse2 = false;
         bool mouse3 = false;
         bool moving = false;
         bool isWindowHovered = false;
     public:
-        SceneView(Renderer &renderer);
+        SceneView(Renderer &renderer, Scene &scene, std::vector<GameObject *> &selectedGO);
 
         void onUpdate() override;
 

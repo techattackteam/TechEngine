@@ -2,20 +2,13 @@
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    SphereCollider::SphereCollider(GameObject *gameObject) : Collider(gameObject, "SphereCollider") {
+    SphereCollider::SphereCollider(GameObject *gameObject, PhysicsEngine &physicsEngine) : Collider(gameObject, physicsEngine, "SphereCollider") {
         offset = glm::vec3(0, 0, 0);
         radius = 0.5f;
-        PhysicsEngine::getInstance()->addCollider(this);
     }
 
-    SphereCollider::SphereCollider(GameObject *gameObject, glm::vec3 offset, float radius) :
-            Collider(gameObject, "SphereCollider"), radius(radius) {
+    SphereCollider::SphereCollider(GameObject *gameObject, PhysicsEngine &physicsEngine, glm::vec3 offset, float radius) : Collider(gameObject, physicsEngine, "SphereCollider"), radius(radius) {
         this->offset = offset;
-        PhysicsEngine::getInstance()->addCollider(this);
-    }
-
-    SphereCollider::~SphereCollider() {
-        PhysicsEngine::getInstance()->removeCollider(gameObject->getTag(), this);
     }
 
     float SphereCollider::getRadius() {
@@ -24,7 +17,7 @@ namespace TechEngine {
 
     void SphereCollider::setRadius(float radius) {
         this->radius = radius;
-        PhysicsEngine::getInstance()->addCollider(this);
+        physicsEngine.addCollider(this);
     }
 
 }

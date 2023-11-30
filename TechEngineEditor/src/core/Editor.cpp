@@ -9,18 +9,17 @@
 
 namespace TechEngine {
 
-    Editor::Editor() : panelsManager(window) {
-        ProjectManager::init(std::filesystem::current_path());
-        MaterialManager::init(FileSystem::getAllFilesWithExtension(".mat"));
-        rootPath = ProjectManager::getRootPath();
-        editorSettings = rootPath.string() + "/EditorSettings.TESettings";
-        PhysicsEngine::getInstance()->init();
+    Editor::Editor() : App("TechEngine", RendererSettings::width, RendererSettings::height), panelsManager(window, sceneManager, projectManager, physicsEngine, textureManager, materialManager) {
+
+        editorSettings = FileSystem::rootPath.string() + "/EditorSettings.TESettings";
+
         loadEditorSettings();
+
         panelsManager.init();
     }
 
     void Editor::onUpdate() {
-        PhysicsEngine::getInstance()->onUpdate();
+        physicsEngine.onUpdate();
         panelsManager.update();
         window.onUpdate();
     }
@@ -34,10 +33,10 @@ namespace TechEngine {
         if (std::filesystem::exists(editorSettings)) {
             YAML::Node data;
             try {
-                data = YAML::LoadFile(editorSettings.string());
+                data = YAML::LoadFile(editorSettings);
                 lastProjectLoaded = data["Last project loaded"].as<std::string>();
                 if (std::filesystem::exists(lastProjectLoaded)) {
-                    ProjectManager::loadProject(lastProjectLoaded);
+                    projectManager.loadProject(lastProjectLoaded);
                     return;
                 }
             }
@@ -45,17 +44,18 @@ namespace TechEngine {
                 TE_LOGGER_CRITICAL("Failed to load EditorSettings.TESettings file.\n      {0}", e.what());
             }
         }
-        ProjectManager::createNewProject("New Project");
-        lastProjectLoaded = rootPath.string() + "\\New Project";
+        projectManager.createNewProject("New Project");
+        lastProjectLoaded = FileSystem::rootPath.string() + "\\New Project";
         YAML::Emitter out;
         out << YAML::BeginMap;
         out << YAML::Key << "Last project loaded" << YAML::Value << lastProjectLoaded;
         out << YAML::EndSeq;
         out << YAML::EndMap;
-        std::ofstream fout(editorSettings.string());
+        std::ofstream fout(editorSettings);
         fout << out.c_str();
-        ProjectManager::loadProject(lastProjectLoaded);
+        projectManager.loadProject(lastProjectLoaded);
     }
+
 }
 
 TechEngine::AppCore *TechEngine::createApp() {

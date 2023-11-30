@@ -2,8 +2,11 @@
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    Collider::Collider(GameObject *gameObject, std::string name) : Component(gameObject, name) {
+    Collider::Collider(GameObject *gameObject, PhysicsEngine &physicsEngine, std::string name) : physicsEngine(physicsEngine), Component(gameObject, name) {
+    }
 
+    Collider::~Collider() {
+        physicsEngine.removeCollider(gameObject->getTag(), this);
     }
 
     void Collider::setOffset(glm::vec3 offset) {
@@ -17,4 +20,6 @@ namespace TechEngine {
     bool Collider::hasRigidBody() {
         return gameObject->hasComponent<RigidBody>();
     }
+
+
 }

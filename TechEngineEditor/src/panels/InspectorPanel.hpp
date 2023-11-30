@@ -3,12 +3,19 @@
 #include "CustomPanel.hpp"
 #include "scene/GameObject.hpp"
 #include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
+#include "material/MaterialManager.hpp"
+#include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
     class InspectorPanel : public Panel {
     private:
+        std::vector<GameObject *> &selectedGameObjects;
+        bool m_isActive = false;
+
+        MaterialManager &materialManager;
+        PhysicsEngine &physicsEngine;
     public:
-        explicit InspectorPanel();
+        explicit InspectorPanel(std::vector<GameObject *> &selectedGameObjects, MaterialManager &materialManager, PhysicsEngine &physicsEngine);
 
         void onUpdate() override;
 
@@ -18,10 +25,11 @@ namespace TechEngine {
         void drawComponents();
 
     private:
-        template<typename C>
-        void addComponent();
+        template<typename C, typename... A>
+        void addComponent(A &...args);
 
         void drawCommonComponents();
+
     };
 }
 

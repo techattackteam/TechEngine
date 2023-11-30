@@ -9,66 +9,60 @@
 
 namespace TechEngine {
 
-    ProjectManager::ProjectManager() {
+    ProjectManager::ProjectManager(SceneManager &sceneManager) : sceneManager(sceneManager) {
 
     }
 
-    ProjectManager *ProjectManager::getInstance() {
-        if (instance == nullptr) {
-            instance = new ProjectManager();
-        }
-        return instance;
-    }
 
     void ProjectManager::init(path rootPath) {
-        getInstance()->rootPath = rootPath;
-        EventDispatcher::getInstance().subscribe(AppCloseRequestEvent::eventType, [](Event *event) {
+        rootPath = rootPath;
+        EventDispatcher::getInstance().subscribe(AppCloseRequestEvent::eventType, [this](Event *event) {
             saveProject();
         });
     }
 
     const path &ProjectManager::getRootPath() {
-        return getInstance()->rootPath;
+        return rootPath;
     }
 
     const path &ProjectManager::getUserProjectRootPath() {
-        return getInstance()->userProjectRootPath;
+        return userProjectRootPath;
     }
 
     const path &ProjectManager::getUserProjectScriptsPath() {
-        return getInstance()->userProjectScriptsPath;
+        return userProjectScriptsPath;
     }
 
     const path &ProjectManager::getUserProjectScenePath() {
-        return getInstance()->userProjectScenesPath;
+        return userProjectScenesPath;
     }
 
     const path &ProjectManager::getUserScriptsDLLPath() {
-        return getInstance()->userScriptsDLLPath;
+        return userScriptsDLLPath;
     }
 
     const path &ProjectManager::getRuntimePath() {
-        return getInstance()->runtimePath;
+        return runtimePath;
     }
 
     const path &ProjectManager::getBuildPath() {
-        return getInstance()->buildPath;
+        return buildPath;
     }
 
     const path &ProjectManager::getBuildResourcesPath() {
-        return getInstance()->buildResourcesPath;
+        return buildResourcesPath;
     }
 
     const path &ProjectManager::getResourcesPath() {
-        return getInstance()->resourcesPath;
+        return resourcesPath;
     }
 
     const path &ProjectManager::getUserProjectBuildPath() {
-        return getInstance()->userProjectBuildPath;
+        return userProjectBuildPath;
     }
 
     const path &ProjectManager::getCmakePath() {
-        return getInstance()->cmakePath;
+        return cmakePath;
     }
 
     void ProjectManager::createNewProject(const char *projectName) {
@@ -77,13 +71,13 @@ namespace TechEngine {
     }
 
     void ProjectManager::saveProject() {
-        SceneManager::saveCurrentScene();
+        sceneManager.saveCurrentScene();
         YAML::Emitter out;
         try {
             out << YAML::BeginMap;
-            out << YAML::Key << "Last scene loaded" << YAML::Value << SceneManager::getActiveSceneName();
+            out << YAML::Key << "Last scene loaded" << YAML::Value << sceneManager.getActiveSceneName();
             out << YAML::EndMap;
-            std::filesystem::path path = getInstance()->projectSettingsPath;;
+            std::filesystem::path path = projectSettingsPath;;
             std::filesystem::create_directories(path.parent_path());
             std::ofstream fout(path);
             fout << out.c_str();
@@ -95,19 +89,19 @@ namespace TechEngine {
     }
 
     void ProjectManager::loadProject(std::string projectPath) {
-        getInstance()->userProjectRootPath = projectPath;
-        getInstance()->userProjectScriptsPath = projectPath + "/scripts";
-        getInstance()->userProjectScenesPath = projectPath + "/scenes";
-        getInstance()->userProjectBuildPath = projectPath + "/scripts/build";
-        getInstance()->userScriptsDLLPath = projectPath + "/scripts/build/Debug/UserScripts.dll";
-        getInstance()->projectSettingsPath = projectPath + "/projectSettings.PjSettings";
-        SceneManager::init(projectPath);
+        userProjectRootPath = projectPath;
+        userProjectScriptsPath = projectPath + "/scripts";
+        userProjectScenesPath = projectPath + "/scenes";
+        userProjectBuildPath = projectPath + "/scripts/build";
+        userScriptsDLLPath = projectPath + "/scripts/build/Debug/UserScripts.dll";
+        projectSettingsPath = projectPath + "/projectSettings.PjSettings";
+        sceneManager.init(projectPath);
 
         std::string lastSceneLoaded;
-        if (std::filesystem::exists(getInstance()->projectSettingsPath)) {
+        if (std::filesystem::exists(projectSettingsPath)) {
             YAML::Node data;
             try {
-                data = YAML::LoadFile(getInstance()->projectSettingsPath.string());
+                data = YAML::LoadFile(projectSettingsPath.string());
                 lastSceneLoaded = data["Last scene loaded"].as<std::string>();
             }
             catch (YAML::Exception &e) {
@@ -121,9 +115,9 @@ namespace TechEngine {
             out << YAML::Key << "Last scene loaded" << YAML::Value << lastSceneLoaded;
             out << YAML::EndSeq;
             out << YAML::EndMap;
-            std::ofstream fout(getInstance()->projectSettingsPath.string());
+            std::ofstream fout(projectSettingsPath.string());
             fout << out.c_str();
         }
-        SceneManager::loadScene(lastSceneLoaded);
+        sceneManager.loadScene(lastSceneLoaded);
     }
 }

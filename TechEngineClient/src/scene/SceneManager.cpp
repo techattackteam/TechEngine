@@ -18,6 +18,7 @@
 #include <utils/YAMLUtils.hpp>
 #include <fstream>
 #include "material/MaterialManager.hpp"
+#include "mesh/ImportedMesh.hpp"
 
 namespace TechEngine {
     YAML::Emitter &operator<<(YAML::Emitter &out, const glm::vec2 &v) {
@@ -71,6 +72,38 @@ namespace TechEngine {
             auto meshRendererComponent = gameObject->getComponent<MeshRendererComponent>();
             Material &material = meshRendererComponent->getMaterial();
             out << YAML::Key << "Mesh" << YAML::Value << meshRendererComponent->getMesh().getName();
+            if (meshRendererComponent->getMesh().getName() == "ImportedMesh") {
+                std::string path = FileSystem::rootPath.string() + R"(\Resources\Models\)" + gameObject->getParent()->getName() + ".mesh";
+                if (!std::filesystem::exists(path)) {
+                    std::filesystem::create_directories(std::filesystem::path(path).parent_path());
+                }
+                YAML::Emitter emitter;
+                emitter << YAML::BeginMap;
+                emitter << YAML::Key << gameObject->getName() << YAML::Value << YAML::BeginSeq;
+                emitter << YAML::BeginMap;
+                for (Vertex &vertex: meshRendererComponent->getMesh().getVertices()) {
+                    emitter << YAML::Key << "Vertex";
+                    emitter << YAML::BeginMap;
+                    emitter << YAML::Key << "Position" << YAML::Value << vertex.getPosition();
+                    emitter << YAML::Key << "Normal" << YAML::Value << vertex.getNormal();
+                    emitter << YAML::Key << "TextureCoordinate" << YAML::Value << vertex.getTextureCoordinate();
+                    emitter << YAML::Key << "Color" << YAML::Value << vertex.getColor();
+                    emitter << YAML::EndMap;
+                }
+                emitter << "Indices" << YAML::Value << YAML::BeginSeq;
+                for (int &index: meshRendererComponent->getMesh().getIndices()) {
+                    emitter << index;
+                }
+                emitter << YAML::EndSeq;
+                emitter << YAML::EndMap;
+                emitter << YAML::EndSeq;
+                emitter << YAML::EndMap;
+                std::filesystem::path filepath = path;
+                std::ofstream fout;
+                fout.open(filepath, std::ios::app);
+                fout << emitter.c_str();
+                fout.close();
+            }
             out << YAML::Key << "Material" << YAML::Value << material.getName();
             out << YAML::EndMap;
         }
@@ -109,7 +142,6 @@ namespace TechEngine {
             out << YAML::Key << "Mass" << YAML::Value << rigidBodyComponent->getMass();
             out << YAML::Key << "Density" << YAML::Value << rigidBodyComponent->getDensity();
             out << YAML::EndMap;
-
         }
 
         if (gameObject->hasChildren()) {
@@ -123,12 +155,18 @@ namespace TechEngine {
         out << YAML::EndMap;
     }
 
+    SceneManager::SceneManager(PhysicsEngine &physicsEngine, MaterialManager &materialManager) : physicsEngine(physicsEngine), materialManager(materialManager) {
+
+    }
+
     void SceneManager::serialize(const std::string &sceneName, const std::string &filepath) {
+        //Measure time
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         YAML::Emitter out;
         out << YAML::BeginMap;
         out << YAML::Key << "Scene" << YAML::Value << sceneName;
         out << YAML::Key << "GameObjects" << YAML::Value << YAML::BeginSeq;
-        for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
+        for (GameObject *gameObject: scene.getGameObjects()) {
             serializeGameObject(out, gameObject);
         }
         out << YAML::EndSeq;
@@ -137,19 +175,22 @@ namespace TechEngine {
         std::filesystem::create_directories(path.parent_path());
         std::ofstream fout(filepath);
         fout << out.c_str();
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::chrono::duration<double> elapsed_seconds = end - begin;
+        TE_LOGGER_INFO("Scene {0} saved in {1} seconds", sceneName, elapsed_seconds.count());
     }
 
-    static void deserializeGameObject(YAML::Node gameObjectYAML, GameObject *parent) {
+    void SceneManager::deserializeGameObject(YAML::Node gameObjectYAML, GameObject *parent) {
         auto name = gameObjectYAML["Name"].as<std::string>();
         auto tag = gameObjectYAML["Tag"].as<std::string>();
-        GameObject *gameObject = new GameObject(name, tag);
+        GameObject &gameObject = scene.registerGameObject<GameObject>(name, tag);
         if (parent != nullptr) {
-            Scene::getInstance().makeChildTo(parent, gameObject);
+            scene.makeChildTo(parent, &gameObject);
         }
 
         auto transformComponentNode = gameObjectYAML["TransformComponent"];
         if (transformComponentNode) {
-            auto tc = gameObject->getComponent<TransformComponent>();
+            auto tc = gameObject.getComponent<TransformComponent>();
             tc->translateTo(transformComponentNode["Position"].as<glm::vec3>());
             tc->setRotation(transformComponentNode["Orientation"].as<glm::vec3>());
             tc->setScale(transformComponentNode["Scale"].as<glm::vec3>());
@@ -157,8 +198,8 @@ namespace TechEngine {
 
         auto ccNode = gameObjectYAML["CameraComponent"];
         if (ccNode) {
-            gameObject->addComponent<CameraComponent>();
-            CameraComponent *cameraComponent = gameObject->getComponent<CameraComponent>();
+            gameObject.addComponent<CameraComponent>();
+            CameraComponent *cameraComponent = gameObject.getComponent<CameraComponent>();
             cameraComponent->changeProjectionType((CameraComponent::ProjectionType) ccNode["ProjectionType"].as<int>());
             cameraComponent->setIsMainCamera(ccNode["MainCamera"].as<bool>());
             cameraComponent->setFov(ccNode["Fov"].as<float>());
@@ -171,7 +212,7 @@ namespace TechEngine {
             std::string meshName = meshRendererNode["Mesh"].as<std::string>();
             std::string materialName = meshRendererNode["Material"].as<std::string>();
 
-            Material &material = MaterialManager::getMaterial(materialName);
+            Material &material = materialManager.getMaterial(materialName);
             Mesh *mesh;
             if (meshName == "Cube") {
                 mesh = new CubeMesh();
@@ -180,33 +221,53 @@ namespace TechEngine {
             } else if (meshName == "Cylinder") {
                 mesh = new CylinderMesh();
             } else if (meshName == "ImportedMesh") {
-
+                std::string filepath = FileSystem::rootPath.string() + R"(\Resources\Models\)" + gameObject.getParent()->getName() + ".mesh";
+                YAML::Node data;
+                try {
+                    data = YAML::LoadFile(filepath);
+                }
+                catch (YAML::Exception &e) {
+                    TE_LOGGER_CRITICAL("Failed to load .scene file {0}.\n      {1}", filepath, e.what());
+                    return;
+                }
+                std::vector<Vertex> vertices;
+                std::vector<int> indices;
+                auto meshNode = data[gameObject.getName()];
+                for (auto vertexNode: meshNode["Vertex"]) {
+                    Vertex vertex(vertexNode["Position"].as<glm::vec3>(), vertexNode["Normal"].as<glm::vec3>(), vertexNode["TextureCoordinate"].as<glm::vec2>());
+                    vertex.setColor(vertexNode["Color"].as<glm::vec4>());
+                    vertices.push_back(vertex);
+                }
+                for (auto indexNode: meshNode["Index"]) {
+                    indices.push_back(indexNode.as<int>());
+                }
+                mesh = new ImportedMesh(vertices, indices);
             } else {
                 TE_LOGGER_CRITICAL("Failed to deserialize mesh renderer component.\n      Mesh name {0} is not valid.", meshName);
             }
 
-            gameObject->addComponent<MeshRendererComponent>(mesh, &material);
+            gameObject.addComponent<MeshRendererComponent>(mesh, &material);
         }
         auto boxColliderNode = gameObjectYAML["BoxColliderComponent"];
         if (boxColliderNode) {
-            gameObject->addComponent<BoxColliderComponent>();
-            BoxColliderComponent *boxColliderComponent = gameObject->getComponent<BoxColliderComponent>();
+            gameObject.addComponent<BoxColliderComponent>(physicsEngine);
+            BoxColliderComponent *boxColliderComponent = gameObject.getComponent<BoxColliderComponent>();
             boxColliderComponent->setSize(boxColliderNode["Size"].as<glm::vec3>());
             boxColliderComponent->setOffset(boxColliderNode["Offset"].as<glm::vec3>());
         }
 
         auto sphereColliderNode = gameObjectYAML["SphereCollider"];
         if (sphereColliderNode) {
-            gameObject->addComponent<SphereCollider>();
-            SphereCollider *sphereColliderComponent = gameObject->getComponent<SphereCollider>();
+            gameObject.addComponent<SphereCollider>(physicsEngine);
+            SphereCollider *sphereColliderComponent = gameObject.getComponent<SphereCollider>();
             sphereColliderComponent->setRadius(sphereColliderNode["Radius"].as<float>());
             sphereColliderComponent->setOffset(sphereColliderNode["Offset"].as<glm::vec3>());
         }
 
         auto cylinderColliderNode = gameObjectYAML["CylinderCollider"];
         if (cylinderColliderNode) {
-            gameObject->addComponent<CylinderCollider>();
-            CylinderCollider *cylinderColliderComponent = gameObject->getComponent<CylinderCollider>();
+            gameObject.addComponent<CylinderCollider>(physicsEngine);
+            CylinderCollider *cylinderColliderComponent = gameObject.getComponent<CylinderCollider>();
             cylinderColliderComponent->setRadius(cylinderColliderNode["Radius"].as<float>());
             cylinderColliderComponent->setHeight(cylinderColliderNode["Height"].as<float>());
             cylinderColliderComponent->setOffset(cylinderColliderNode["Offset"].as<glm::vec3>());
@@ -214,22 +275,23 @@ namespace TechEngine {
 
         auto rigidBodyNode = gameObjectYAML["RigidBody"];
         if (rigidBodyNode) {
-            gameObject->addComponent<RigidBody>();
-            RigidBody *rigidBodyComponent = gameObject->getComponent<RigidBody>();
+            gameObject.addComponent<RigidBody>();
+            RigidBody *rigidBodyComponent = gameObject.getComponent<RigidBody>();
             rigidBodyComponent->setMass(rigidBodyNode["Mass"].as<float>());
             rigidBodyComponent->setDensity(rigidBodyNode["Density"].as<float>());
-            rigidBodyComponent->registerRB();
+            physicsEngine.addRigidBody(rigidBodyComponent);
         }
 
         auto childrenNode = gameObjectYAML["Children"];
         for (auto childNodeYAML: childrenNode) {
             if (childrenNode) {
-                deserializeGameObject(childNodeYAML, gameObject);
+                deserializeGameObject(childNodeYAML, &gameObject);
             }
         }
     }
 
     bool SceneManager::deserialize(const std::string &filepath) {
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         YAML::Node data;
         try {
             data = YAML::LoadFile(filepath);
@@ -240,13 +302,15 @@ namespace TechEngine {
         }
 
         YAML::Node node = data["GameObjects"];
-        SceneHelper::clear();
+        SceneHelper::clear(scene);
         if (node) {
             for (YAML::Node gameObjectYAML: node) {
                 deserializeGameObject(gameObjectYAML, nullptr);
             }
         }
-
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::chrono::duration<double> elapsed_seconds = end - begin;
+        TE_LOGGER_INFO("Scene {0} loaded in {1} seconds", getSceneNameFromPath(filepath), elapsed_seconds.count());
         return true;
     }
 
@@ -296,7 +360,8 @@ namespace TechEngine {
         if (m_scenesBank.find(sceneName) != m_scenesBank.end()) {
             if (!m_activeSceneName.empty()) {
                 saveScene(m_activeSceneName);
-                Scene::getInstance().clear();
+                scene.clear();
+                physicsEngine.clear();
             }
             std::string scenePath = m_scenesBank[sceneName];
             deserialize(scenePath);
@@ -326,6 +391,8 @@ namespace TechEngine {
     }
 
     void SceneManager::loadSceneFromTemporarily(const std::string &sceneName) {
+        scene.clear();
+        physicsEngine.clear();
         std::string scenePath = m_scenesBank[sceneName];
         std::string sceneTemporaryPath = scenePath.substr(0, scenePath.find_last_of("\\/")) + "\\SceneTemporary.scene";
         deserialize(sceneTemporaryPath);
@@ -348,4 +415,9 @@ namespace TechEngine {
     std::string SceneManager::getSceneNameFromPath(const std::string &scenePath) {
         return scenePath.substr(scenePath.find_last_of("\\/") + 1, scenePath.find_last_of('.') - scenePath.find_last_of("\\/") - 1);
     }
+
+    Scene &SceneManager::getScene() {
+        return scene;
+    }
+
 }

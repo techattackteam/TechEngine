@@ -6,10 +6,6 @@ namespace TechEngine {
 
     }
 
-    void ImportedMesh::createMesh() {
-
-    }
-
     std::string ImportedMesh::getName() {
         return "ImportedMesh";
     }

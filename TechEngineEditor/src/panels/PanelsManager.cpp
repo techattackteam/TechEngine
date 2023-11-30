@@ -17,8 +17,23 @@
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    PanelsManager::PanelsManager(Window &window) : window(window), exportSettingsPanel((std::string &) "TEMPORARY") {
-        instance = this;
+    PanelsManager::PanelsManager(Window &window, SceneManager &sceneManager,
+                                 ProjectManager &projectManager,
+                                 PhysicsEngine &physicsEngine,
+                                 TextureManager &textureManager,
+                                 MaterialManager &materialManager) :
+            window(window),
+            sceneManager(sceneManager),
+            projectManager(projectManager),
+            physicsEngine(physicsEngine),
+
+            gameView(window.getRenderer(), sceneManager.getScene()),
+            contentBrowser(*this, projectManager, sceneManager, materialManager),
+            exportSettingsPanel(*this, projectManager, sceneManager),
+            sceneHierarchyPanel(sceneManager.getScene(), materialManager),
+            sceneView(window.getRenderer(), sceneManager.getScene(), sceneHierarchyPanel.getSelectedGO()),
+            inspectorPanel(sceneHierarchyPanel.getSelectedGO(), materialManager, physicsEngine),
+            materialEditor(window.getRenderer(), textureManager, materialManager, sceneManager.getScene()) {
     }
 
     void PanelsManager::init() {
@@ -27,7 +42,7 @@ namespace TechEngine {
         });
 
         EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngine::Event *event) {
-            sceneHierarchyPanel.deselectGO(Scene::getInstance().getGameObjectByTag(((GameObjectDestroyEvent *) event)->getGameObjectTag()));
+            sceneHierarchyPanel.deselectGO(sceneManager.getScene().getGameObjectByTag(((GameObjectDestroyEvent *) event)->getGameObjectTag()));
         });
 
         EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event *event) {
@@ -194,7 +209,7 @@ namespace TechEngine {
 
             }
             if (ImGui::MenuItem("Save Project", "Ctrl+S")) {
-                ProjectManager::saveProject();
+                projectManager.saveProject();
             }
             if (ImGui::MenuItem("Build")) {
                 if (m_currentPlaying) {
@@ -307,32 +322,32 @@ namespace TechEngine {
     }
 
     void PanelsManager::compileUserScripts() {
-        if (!exists(ProjectManager::getUserProjectBuildPath())) {
-            std::string command = "\"" + ProjectManager::getCmakePath().string() +
-                                  " -G \"Visual Studio 17 2022\" -S " + "\"" + ProjectManager::getUserProjectScriptsPath().string() + "\"" +
-                                  " -B " + "\"" + ProjectManager::getUserProjectBuildPath().string() + "\"" + "\"";
+        if (!exists(projectManager.getUserProjectBuildPath())) {
+            std::string command = "\"" + projectManager.getCmakePath().string() +
+                                  " -G \"Visual Studio 17 2022\" -S " + "\"" + projectManager.getUserProjectScriptsPath().string() + "\"" +
+                                  " -B " + "\"" + projectManager.getUserProjectBuildPath().string() + "\"" + "\"";
             std::system(command.c_str());
         }
-        std::string command = "\"" + ProjectManager::getCmakePath().string() +
-                              " --build " + "\"" + ProjectManager::getUserProjectBuildPath().string() + "\"" + " --target UserScripts --config Debug\"";
+        std::string command = "\"" + projectManager.getCmakePath().string() +
+                              " --build " + "\"" + projectManager.getUserProjectBuildPath().string() + "\"" + " --target UserScripts --config Debug\"";
         std::system(command.c_str());
         TE_LOGGER_INFO("Build finished!");
     }
 
     void PanelsManager::startRunningScene() {
-        SceneManager::saveSceneAsTemporarily(SceneManager::getActiveSceneName());
-        ScriptEngine::getInstance()->init(ProjectManager::getUserScriptsDLLPath().string());
+        sceneManager.saveSceneAsTemporarily(sceneManager.getActiveSceneName());
+        ScriptEngine::getInstance()->init(projectManager.getUserScriptsDLLPath().string());
         ScriptEngine::getInstance()->onStart();
-        PhysicsEngine::getInstance()->start();
+        physicsEngine.start();
         m_currentPlaying = true;
     }
 
     void PanelsManager::stopRunningScene() {
         ScriptEngine::getInstance()->stop();
-        PhysicsEngine::getInstance()->stop();
-        SceneManager::loadSceneFromTemporarily(SceneManager::getActiveSceneName());
+        physicsEngine.stop();
+        sceneManager.loadSceneFromTemporarily(sceneManager.getActiveSceneName());
         sceneHierarchyPanel.getSelectedGO().clear();
-        for (GameObject *gameObject: Scene::getInstance().getGameObjects()) {
+        for (GameObject *gameObject: sceneManager.getScene().getGameObjects()) {
             if (gameObject->hasComponent<CameraComponent>() && gameObject->getComponent<CameraComponent>()->isMainCamera()) {
                 SceneHelper::mainCamera = gameObject->getComponent<CameraComponent>();
             }
@@ -343,11 +358,7 @@ namespace TechEngine {
         m_currentPlaying = false;
     }
 
-    PanelsManager &PanelsManager::getInstance() {
-        return *instance;
-    }
-
-    std::list<GameObject *> &PanelsManager::getSelectedGameObjects() {
+    std::vector<GameObject *> &PanelsManager::getSelectedGameObjects() {
         return sceneHierarchyPanel.getSelectedGO();
     }
 
@@ -381,4 +392,5 @@ namespace TechEngine {
     void PanelsManager::openMaterialEditor(const std::string &materialName, const std::string &filepath) {
         materialEditor.open(materialName, filepath);
     }
+
 }

@@ -1,14 +1,21 @@
 #include "App.hpp"
 #include "script/ScriptEngine.hpp"
-#include "material/MaterialManager.hpp"
+#include "FileSystem.hpp"
 
 namespace TechEngine {
-    App::App() : TechEngine::AppCore() {
+    App::App(std::string name, int width, int height) :
+            AppCore(), window(name, width, height), textureManager(), materialManager(textureManager), sceneManager(physicsEngine, materialManager), projectManager(sceneManager), physicsEngine(sceneManager.getScene()) {
         eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event *event) {
             onWindowCloseEvent((WindowCloseEvent *) (event));
         });
 
         timer.init();
+        textureManager.init(FileSystem::getAllFilesWithExtension(".jpg"));
+        textureManager.init(FileSystem::getAllFilesWithExtension(".png"));
+        materialManager.init(FileSystem::getAllFilesWithExtension(".mat"));
+        sceneManager.init(FileSystem::rootPath.string());
+        projectManager.init(FileSystem::rootPath);
+        physicsEngine.init();
     }
 
     App::~App() = default;
@@ -21,17 +28,17 @@ namespace TechEngine {
 
                 eventDispatcher.fixedSyncEventManager.execute();
                 ScriptEngine::getInstance()->onFixedUpdate();
-                scene.fixedUpdate();
+                sceneManager.getScene().fixedUpdate();
                 onFixedUpdate();
                 timer.addAccumulator(-timer.getTPS());
             }
 
-            scene.update();
+            sceneManager.getScene().update();
             timer.updateInterpolation();
             stateMachineManager.update();
             ScriptEngine::getInstance()->onUpdate();
-            onUpdate();
             eventDispatcher.syncEventManager.execute();
+            onUpdate();
             timer.update();
             timer.updateFPS();
         }

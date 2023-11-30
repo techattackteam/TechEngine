@@ -14,8 +14,6 @@ namespace TechEngine {
     public:
         SphereMesh();
 
-        void createMesh() override;
-
         std::string getName() override;
     };
 }

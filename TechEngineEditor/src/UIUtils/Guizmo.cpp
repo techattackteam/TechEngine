@@ -65,11 +65,11 @@ namespace TechEngine {
         return true;
     }
 
-    void Guizmo::editTransform(ImGuiContext *context) {
+    void Guizmo::editTransform(ImGuiContext *context, std::vector<GameObject *> &selectedGameObjects) {
         if (operation == -1) {
             return;
         }
-        if (PanelsManager::getInstance().getSelectedGameObjects().empty() || !SceneHelper::hasMainCamera()) {
+        if (selectedGameObjects.empty() /*|| !SceneHelper::hasMainCamera()*/) {
             return;
         }
 
@@ -87,7 +87,7 @@ namespace TechEngine {
         const glm::mat4 &cameraProjection = SceneHelper::mainCamera->getProjectionMatrix();
         glm::mat4 cameraView = SceneHelper::mainCamera->getViewMatrix();
 
-        glm::mat4 transform = PanelsManager::getInstance().getSelectedGameObjects().front()->getModelMatrix();
+        glm::mat4 transform = selectedGameObjects.front()->getModelMatrix();
         ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
                              (ImGuizmo::OPERATION) operation, (ImGuizmo::MODE) (mode), glm::value_ptr(transform),
                              nullptr, nullptr);
@@ -95,9 +95,9 @@ namespace TechEngine {
         if (ImGuizmo::IsUsing()) {
             glm::vec3 translation, rotation, scale;
             DecomposeTransform(transform, translation, rotation, scale);
-            PanelsManager::getInstance().getSelectedGameObjects().front()->getTransform().translateToWorld(translation);
-            PanelsManager::getInstance().getSelectedGameObjects().front()->getTransform().setRotation(glm::degrees(rotation));
-            PanelsManager::getInstance().getSelectedGameObjects().front()->getTransform().setScale(scale);
+            selectedGameObjects.front()->getTransform().translateToWorld(translation);
+            selectedGameObjects.front()->getTransform().setRotation(glm::degrees(rotation));
+            selectedGameObjects.front()->getTransform().setScale(scale);
         }
     }
 

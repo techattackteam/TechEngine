@@ -2,7 +2,7 @@
 #include "components/CameraComponent.hpp"
 
 namespace TechEngine {
-    SceneCamera::SceneCamera() {
+    SceneCamera::SceneCamera() : GameObject("SceneCamera") {
         addComponent<TransformComponent>();
         addComponent<CameraComponent>(false, CameraComponent::PERSPECTIVE);
     }

@@ -2,12 +2,6 @@
 
 namespace TechEngine {
     CubeMesh::CubeMesh() : Mesh() {
-        createMesh();
-    }
-
-    void CubeMesh::createMesh() {
-        // Define vertices with positions, normals, and texture coordinates
-        // Front face
         createVertex(glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec3(0, 0, 1), glm::vec2(0, 0));
         createVertex(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec3(0, 0, 1), glm::vec2(1, 0));
         createVertex(glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0, 0, 1), glm::vec2(1, 1));

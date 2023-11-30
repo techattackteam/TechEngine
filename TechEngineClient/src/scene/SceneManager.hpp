@@ -2,42 +2,57 @@
 
 #include <string>
 #include <unordered_map>
+#include "physics/PhysicsEngine.hpp"
+#include "yaml-cpp/node/node.h"
+#include "yaml-cpp/yaml.h"
+#include "scene/Scene.hpp"
+#include "material/MaterialManager.hpp"
 
 namespace TechEngine {
     class SceneManager {
     private:
-        inline static std::unordered_map<std::string, std::string> m_scenesBank;
+        Scene scene;
+        PhysicsEngine &physicsEngine;
+        MaterialManager &materialManager;
+        std::unordered_map<std::string, std::string> m_scenesBank;
 
-        inline static std::string m_activeSceneName;
+        std::string m_activeSceneName;
 
-        static void serialize(const std::string &sceneName, const std::string &filepath);
+        void serialize(const std::string &sceneName, const std::string &filepath);
 
-        static bool deserialize(const std::string &filepath);
+        void deserializeGameObject(YAML::Node gameObjectYAML, GameObject *parent);
 
-        static void replaceSceneNameFromPath(std::string &sceneName);
+        bool deserialize(const std::string &filepath);
 
-        static std::string getSceneNameFromPath(const std::string &scenePath);
+        void replaceSceneNameFromPath(std::string &sceneName);
+
+        std::string getSceneNameFromPath(const std::string &scenePath);
 
     public:
-        static void init(const std::string &projectPath);
+        SceneManager(PhysicsEngine &physicsEngine, MaterialManager &materialManager);
 
-        static void registerScene(std::string &scenePath);
+        void init(const std::string &projectPath);
 
-        static void createNewScene(std::string &scenePath);
+        void registerScene(std::string &scenePath);
 
-        static bool deleteScene(std::string &scenePath);
+        void createNewScene(std::string &scenePath);
 
-        static void loadScene(const std::string &sceneName);
+        bool deleteScene(std::string &scenePath);
 
-        static void saveScene(const std::string &sceneName);
+        void loadScene(const std::string &sceneName);
 
-        static void saveCurrentScene();
+        void saveScene(const std::string &sceneName);
 
-        static void saveSceneAsTemporarily(const std::string &sceneName);
+        void saveCurrentScene();
 
-        static void loadSceneFromTemporarily(const std::string &sceneName);
+        void saveSceneAsTemporarily(const std::string &sceneName);
 
-        static const std::string &getActiveSceneName();
+        void loadSceneFromTemporarily(const std::string &sceneName);
+
+        const std::string &getActiveSceneName();
+
+        Scene &getScene();
+
 
     };
 }

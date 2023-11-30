@@ -3,22 +3,17 @@
 
 namespace TechEngine {
 
-    CylinderCollider::CylinderCollider(TechEngine::GameObject *gameObject) : Collider(gameObject, "CylinderCollider") {
+    CylinderCollider::CylinderCollider(GameObject *gameObject, PhysicsEngine &physicsEngine) : Collider(gameObject, physicsEngine, "CylinderCollider") {
         this->gameObject = gameObject;
         this->radius = 0.5f;
         this->height = 1.0f;
-        PhysicsEngine::getInstance()->addCollider(this);
     }
 
-    CylinderCollider::CylinderCollider(GameObject *gameObject, glm::vec3 offset, float radius, float height) :
-            Collider(gameObject, "CylinderCollider"), radius(radius), height(height) {
+    CylinderCollider::CylinderCollider(GameObject *gameObject, PhysicsEngine &physicsEngine, glm::vec3 offset, float radius, float height) :
+            Collider(gameObject, physicsEngine, "CylinderCollider"), radius(radius), height(height) {
         this->offset = offset;
-        PhysicsEngine::getInstance()->addCollider(this);
     }
 
-    CylinderCollider::~CylinderCollider() {
-        PhysicsEngine::getInstance()->removeCollider(gameObject->getTag(), this);
-    }
 
     float CylinderCollider::getRadius() const {
         return radius;
@@ -26,7 +21,7 @@ namespace TechEngine {
 
     void CylinderCollider::setRadius(float radius) {
         this->radius = radius;
-        PhysicsEngine::getInstance()->addCollider(this);
+        physicsEngine.addCollider(this);
     }
 
     float CylinderCollider::getHeight() const {
@@ -35,6 +30,6 @@ namespace TechEngine {
 
     void CylinderCollider::setHeight(float height) {
         this->height = height;
-        PhysicsEngine::getInstance()->addCollider(this);
+        physicsEngine.addCollider(this);
     }
 }

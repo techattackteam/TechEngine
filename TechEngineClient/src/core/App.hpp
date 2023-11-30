@@ -1,29 +1,33 @@
 #pragma once
 
-#include "event/EventDispatcher.hpp"
-#include "stateMachine/StateMachineManager.hpp"
-#include "scene/SceneHelper.hpp"
+#include "core/AppCore.hpp"
+#include "Window.hpp"
 #include "events/window/WindowCloseEvent.hpp"
-#include "../../TechEngineCore/src/core/AppCore.hpp"
+#include "material/MaterialManager.hpp"
+#include "renderer/TextureManager.hpp"
+#include "project/ProjectManager.hpp"
+#include "scene/SceneManager.hpp"
+#include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
     class Engine_API App : public TechEngine::AppCore {
     public:
-        Scene scene;
+        Window window;
+        TextureManager textureManager;
+        MaterialManager materialManager;
+        SceneManager sceneManager;
+        ProjectManager projectManager;
+        PhysicsEngine physicsEngine;
 
-        App();
+        App(std::string name, int width, int height);
 
         ~App() override;
 
         void run() override;
 
-        virtual void onUpdate() = 0;
-
-        virtual void onFixedUpdate() = 0;
-
     private:
 
-        void onWindowCloseEvent(TechEngine::WindowCloseEvent *event);
+        void onWindowCloseEvent(WindowCloseEvent *event);
     };
 
 }

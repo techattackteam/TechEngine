@@ -4,8 +4,7 @@
 #include "material/MaterialManager.hpp"
 
 namespace TechEngine {
-    Sphere::Sphere() : GameObject("Sphere") {
-        addComponent<TechEngine::MeshRendererComponent>(new TechEngine::SphereMesh(),
-                                                        &MaterialManager::getMaterial("DefaultMaterial"));
+    Sphere::Sphere(Material *material) : GameObject("Sphere") {
+        addComponent<TechEngine::MeshRendererComponent>(new TechEngine::SphereMesh(), material);
     }
 }

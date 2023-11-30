@@ -8,8 +8,6 @@ namespace TechEngine {
     public:
         CubeMesh();
 
-        void createMesh() override;
-
         std::string getName() override;
     };
 }

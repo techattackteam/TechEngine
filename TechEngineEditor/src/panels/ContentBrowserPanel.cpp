@@ -7,11 +7,18 @@
 #include "material/MaterialManager.hpp"
 
 namespace TechEngine {
-    ContentBrowserPanel::ContentBrowserPanel() : Panel("ContentBrowserPanel") {
+    ContentBrowserPanel::ContentBrowserPanel(PanelsManager &panelsManager, ProjectManager &projectManager, SceneManager &sceneManager, MaterialManager &materialManager) :
+            panelsManager(panelsManager),
+            projectManager(projectManager),
+            sceneManager(sceneManager),
+            materialManager(materialManager),
+            assimpLoader(sceneManager.getScene(), materialManager),
+            Panel("ContentBrowserPanel") {
     }
 
+
     void ContentBrowserPanel::init() {
-        currentPath = ProjectManager::getUserProjectRootPath();
+        currentPath = projectManager.getUserProjectRootPath();
     }
 
     void ContentBrowserPanel::onUpdate() {
@@ -27,7 +34,7 @@ namespace TechEngine {
 
             ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.f);
-            renderDirectoryHierarchy(ProjectManager::getUserProjectRootPath());
+            renderDirectoryHierarchy(projectManager.getUserProjectRootPath());
             ImGui::PopStyleVar();
 
             ImGui::EndChild();
@@ -66,7 +73,7 @@ namespace TechEngine {
                 continue;
             }
             const std::filesystem::path &path = directoryEntry.path();
-            auto relativePath = std::filesystem::relative(path, ProjectManager::getUserProjectRootPath());
+            auto relativePath = std::filesystem::relative(path, projectManager.getUserProjectRootPath());
             std::string filenameString = relativePath.filename().string();
             bool hasSubDirs = false;
 
@@ -100,7 +107,7 @@ namespace TechEngine {
         bool opened = false;
         for (auto &directoryEntry: std::filesystem::directory_iterator(directoryPath)) {
             const auto &path = directoryEntry.path();
-            auto relativePath = std::filesystem::relative(path, ProjectManager::getUserProjectRootPath());
+            auto relativePath = std::filesystem::relative(path, projectManager.getUserProjectRootPath());
             std::string filenameString = relativePath.filename().string();
             if (selectedPath == path.string()) {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
@@ -143,10 +150,10 @@ namespace TechEngine {
             std::string extension = filename.substr(filename.find_last_of('.'));
             if (extension == ".scene") {
                 std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
-                SceneManager::loadScene(filenameWithoutExtension);
+                sceneManager.loadScene(filenameWithoutExtension);
             } else if (extension == ".mat") {
                 std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
-                PanelsManager::getInstance().openMaterialEditor(filenameWithoutExtension, path);
+                panelsManager.openMaterialEditor(filenameWithoutExtension, path);
             }
         }
     }
@@ -164,13 +171,13 @@ namespace TechEngine {
         std::string extension = filename.substr(filename.find_last_of('.'));
         if (extension == ".scene") {
             std::string path = currentPath.string() + "\\" + filename;
-            if (SceneManager::deleteScene(path)) {
+            if (sceneManager.deleteScene(path)) {
                 std::filesystem::remove(path);
             }
         } else if (extension == ".mat") {
             std::string path = currentPath.string() + "\\" + filename;
             std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
-            if (MaterialManager::deleteMaterial(filenameWithoutExtension)) {
+            if (materialManager.deleteMaterial(filenameWithoutExtension)) {
                 std::filesystem::remove(path);
             }
         }
@@ -215,7 +222,7 @@ namespace TechEngine {
                 std::string newSceneName;
                 if (ImGuiUtils::beginMenuWithInputMenuField("New Scene", "Scene name", newSceneName)) {
                     std::string scenePath = currentPath.string() + "\\" + newSceneName + ".scene";
-                    SceneManager::createNewScene(scenePath);
+                    sceneManager.createNewScene(scenePath);
                 }
                 std::string newScriptName;
                 if (ImGuiUtils::beginMenuWithInputMenuField("New Script", "Script name", newScriptName)) {
@@ -223,7 +230,7 @@ namespace TechEngine {
                 }
                 std::string newMaterialName;
                 if (ImGuiUtils::beginMenuWithInputMenuField("New Material", "Material name", newMaterialName)) {
-                    MaterialManager::createMaterialFile(newMaterialName, path.string());
+                    materialManager.createMaterialFile(newMaterialName, path.string());
                 }
                 ImGui::EndMenu();
             }

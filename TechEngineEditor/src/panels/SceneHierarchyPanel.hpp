@@ -1,34 +1,32 @@
 #pragma once
 
 #include "CustomPanel.hpp"
-#include "event/events/gameObjects/GameObjectCreateEvent.hpp"
-#include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
 #include "scene/Scene.hpp"
+#include "material/MaterialManager.hpp"
 
 namespace TechEngine {
 
     class SceneHierarchyPanel : public Panel {
     private:
-        std::list<GameObject *> selectedGO;
-        Scene &scene = Scene::getInstance();
+        std::vector<GameObject *> selectedGO;
+        MaterialManager &materialManager;
+        Scene &scene;
         bool isItemHovered = false;
         bool isShiftPressed = false;
         bool isCtrlPressed = false;
 
     public:
-        SceneHierarchyPanel();
+        SceneHierarchyPanel(Scene &scene, MaterialManager &materialManager);
 
         void onUpdate() override;
 
         void drawEntityNode(GameObject *gameObject);
 
-
-        std::list<GameObject *> &getSelectedGO();
+        std::vector<GameObject *> &getSelectedGO();
 
         void selectGO(GameObject *selectedGO);
 
         void deselectGO(GameObject *selectedGO);
-
 
     private:
         void deleteGameObject(GameObject *gameObject);

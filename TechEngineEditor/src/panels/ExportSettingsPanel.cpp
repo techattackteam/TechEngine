@@ -7,11 +7,14 @@
 #include <iostream>
 #include <fstream>
 #include <imgui_internal.h>
-#include "project/ProjectManager.hpp"
 
 namespace TechEngine {
 
-    ExportSettingsPanel::ExportSettingsPanel(std::string &currentScenePath) : currentScenePath(currentScenePath), Panel("ExportSettingsPanel") {
+    ExportSettingsPanel::ExportSettingsPanel(PanelsManager &panelsManager, ProjectManager &projectManager, SceneManager &sceneManager) :
+            panelsManager(panelsManager),
+            projectManager(projectManager),
+            sceneManager(sceneManager),
+            Panel("ExportSettingsPanel") {
 
     }
 
@@ -44,18 +47,18 @@ namespace TechEngine {
     }
 
     void ExportSettingsPanel::exportProject() {
-        std::filesystem::remove_all(ProjectManager::getBuildPath());
-        std::filesystem::create_directory(ProjectManager::getBuildPath());
-        SceneManager::saveCurrentScene();
+        std::filesystem::remove_all(projectManager.getBuildPath());
+        std::filesystem::create_directory(projectManager.getBuildPath());
+        sceneManager.saveCurrentScene();
         std::filesystem::copy_options copyOptions = std::filesystem::copy_options::recursive |
                                                     std::filesystem::copy_options::overwrite_existing;
 
-        //serializeEngineSettings(ProjectManager::getEngineExportSettingsFile());
-        PanelsManager::compileUserScripts();
-        std::filesystem::copy(ProjectManager::getUserProjectScenePath(), ProjectManager::getBuildPath(), copyOptions);
-        std::filesystem::copy(ProjectManager::getUserScriptsDLLPath(), ProjectManager::getBuildPath(), copyOptions);
-        std::filesystem::copy(ProjectManager::getResourcesPath(), ProjectManager::getBuildResourcesPath(), copyOptions);
-        std::filesystem::copy(ProjectManager::getRuntimePath(), ProjectManager::getBuildPath(), copyOptions);
+        //serializeEngineSettings(projectManager.getEngineExportSettingsFile());
+        panelsManager.compileUserScripts();
+        std::filesystem::copy(projectManager.getUserProjectScenePath(), projectManager.getBuildPath(), copyOptions);
+        std::filesystem::copy(projectManager.getUserScriptsDLLPath(), projectManager.getBuildPath(), copyOptions);
+        std::filesystem::copy(projectManager.getResourcesPath(), projectManager.getBuildResourcesPath(), copyOptions);
+        std::filesystem::copy(projectManager.getRuntimePath(), projectManager.getBuildPath(), copyOptions);
         std::cout << "Export completed!" << std::endl;
     }
 

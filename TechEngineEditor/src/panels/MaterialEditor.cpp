@@ -3,7 +3,6 @@
 #include <commdlg.h>
 #include "MaterialEditor.hpp"
 #include "imgui.h"
-#include "material/MaterialManager.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
 #include "components/CameraComponent.hpp"
@@ -12,13 +11,17 @@
 #include "renderer/TextureManager.hpp"
 
 namespace TechEngine {
-    MaterialEditor::MaterialEditor(Renderer &renderer) : m_renderer(renderer), Panel("Material Editor") {
+    MaterialEditor::MaterialEditor(Renderer &renderer, TextureManager &textureManager, MaterialManager &materialManager, Scene &scene) :
+            m_renderer(renderer),
+            textureManager(textureManager),
+            materialManager(materialManager),
+            scene(scene), Panel("Material Editor") {
         m_open = false;
         frameBufferID = renderer.createFramebuffer(1080, 720);
     }
 
     void MaterialEditor::init() {
-        m_sphere.init();
+        m_sphere.init(&materialManager.getMaterial("DefaultMaterial"));
         m_sphere.getTransform().position = glm::vec3(0, 0, 0);
         m_camera.getTransform().position = glm::vec3(0, 0, 3);
     }
@@ -71,7 +74,7 @@ namespace TechEngine {
                             std::string filepath = ofn.lpstrFile;
                             std::string filename = filepath.substr(filepath.find_last_of("/\\") + 1);
                             std::string materialName = filename.substr(0, filename.find_last_of("."));
-                            m_material->setDiffuseTexture(&TextureManager::getTexture(materialName));
+                            m_material->setDiffuseTexture(&textureManager.getTexture(materialName));
                         }
                     };
                     if (ImGui::BeginDragDropTarget()) {
@@ -81,7 +84,7 @@ namespace TechEngine {
                             if (extension != ".mat")
                                 return;
                             std::string textureName = filename.substr(0, filename.find_last_of("."));
-                            m_material->setDiffuseTexture(&TextureManager::getTexture(textureName));
+                            m_material->setDiffuseTexture(&textureManager.getTexture(textureName));
                         }
                         ImGui::EndDragDropTarget();
                     }
@@ -103,8 +106,8 @@ namespace TechEngine {
                 }
                 ImGui::End();
                 if (!m_open) {
-                    MaterialManager::serializeMaterial(m_material->getName(), m_filepath);
-                    for (GameObject *gameObject: Scene::getInstance().getAllGameObjects()) {
+                    materialManager.serializeMaterial(m_material->getName(), m_filepath);
+                    for (GameObject *gameObject: scene.getGameObjects()) {
                         if (gameObject->hasComponent<MeshRendererComponent>()) {
                             MeshRendererComponent *meshRendererComponent = gameObject->getComponent<MeshRendererComponent>();
                             if (meshRendererComponent->getMaterial().getName() == m_material->getName()) {
@@ -143,7 +146,7 @@ namespace TechEngine {
 
     void MaterialEditor::open(const std::string &name, const std::string &filepath) {
         m_open = true;
-        m_material = &MaterialManager::getMaterial(name);
+        m_material = &materialManager.getMaterial(name);
         m_sphere.getComponent<MeshRendererComponent>()->changeMaterial(*m_material);
         m_filepath = filepath;
     }

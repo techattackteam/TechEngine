@@ -22,7 +22,6 @@ namespace TechEngine {
         std::unordered_map<std::string, VertexBuffer *> vertexBuffers;
         std::unordered_map<std::string, IndicesBuffer *> indicesBuffers;
         std::list<FrameBuffer *> frameBuffers;
-        Scene &scene = Scene::getInstance();
     public:
 
         Renderer() = default;
@@ -31,7 +30,7 @@ namespace TechEngine {
 
         void init();
 
-        void renderPipeline();
+        void renderPipeline(Scene &scene);
 
         void renderCustomPipeline(std::vector<GameObject *> &gameObjects);
 
@@ -42,15 +41,15 @@ namespace TechEngine {
         uint32_t createFramebuffer(uint32_t width, uint32_t height);
 
     private:
-        void shadowPass();
+        void shadowPass(Scene &scene);
 
-        void geometryPass();
+        void geometryPass(Scene &scene);
 
         void linePass();
 
-        void renderWithLightPass();
+        void renderWithLightPass(Scene &scene);
 
-        void renderGeometryPass(bool shadow);
+        void renderGeometryPass(Scene &scene, bool shadow);
 
         void renderGameObject(GameObject *gameObject, bool shadow);
 

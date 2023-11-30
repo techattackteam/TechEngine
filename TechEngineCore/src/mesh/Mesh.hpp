@@ -16,14 +16,11 @@ namespace TechEngine {
 
         ~Mesh();
 
-        virtual void createMesh();
-
         std::vector<Vertex> &getVertices();
 
         std::vector<int> getIndices();
 
         virtual std::string getName();
-
 
     protected:
         glm::vec3 getTriangleNormals(glm::vec3 vec1, glm::vec3 vec2, glm::vec3 vec3);

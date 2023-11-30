@@ -9,11 +9,10 @@ namespace TechEngine {
         float radius;
 
     public:
-        SphereCollider(GameObject *gameObject);
+        SphereCollider(GameObject *gameObject, PhysicsEngine &physicsEngine);
 
-        SphereCollider(GameObject *gameObject, glm::vec3 offset, float radius);
+        SphereCollider(GameObject *gameObject, PhysicsEngine &physicsEngine, glm::vec3 offset, float radius);
 
-        ~SphereCollider() override;
 
         float getRadius();
 

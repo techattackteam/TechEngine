@@ -15,13 +15,14 @@
 #include "core/Logger.hpp"
 
 namespace TechEngine {
-    InspectorPanel::InspectorPanel() : Panel("Inspector") {
+    InspectorPanel::InspectorPanel(std::vector<GameObject *> &selectedGameObjects, MaterialManager &materialManager, PhysicsEngine &physicsEngine) :
+            materialManager(materialManager), physicsEngine(physicsEngine), selectedGameObjects(selectedGameObjects), Panel("Inspector") {
     }
 
     void InspectorPanel::onUpdate() {
         ImGui::Begin(name.c_str());
-        if (!PanelsManager::getInstance().getSelectedGameObjects().empty()) {
-            if (PanelsManager::getInstance().getSelectedGameObjects().size() == 1) {
+        if (!selectedGameObjects.empty()) {
+            if (selectedGameObjects.size() == 1) {
                 drawComponents();
             } else {
                 drawCommonComponents();
@@ -37,19 +38,28 @@ namespace TechEngine {
                 if (ImGui::BeginMenu("Physics")) {
                     if (ImGui::MenuItem("Rigid Body")) {
                         addComponent<RigidBody>();
-                        for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
-                            gameObject->getComponent<RigidBody>()->registerRB();
+                        for (GameObject *gameObject: selectedGameObjects) {
+                            physicsEngine.addRigidBody(gameObject->getComponent<RigidBody>());
                         }
                     }
                     if (ImGui::BeginMenu("Colliders")) {
                         if (ImGui::MenuItem("Box Collider")) {
-                            addComponent<BoxColliderComponent>();
+                            addComponent<BoxColliderComponent>(physicsEngine);
+                            for (GameObject *gameObject: selectedGameObjects) {
+                                physicsEngine.addCollider(gameObject->getComponent<BoxColliderComponent>());
+                            }
                         }
                         if (ImGui::MenuItem("Sphere Collider")) {
-                            addComponent<SphereCollider>();
+                            addComponent<SphereCollider>(physicsEngine);
+                            for (GameObject *gameObject: selectedGameObjects) {
+                                physicsEngine.addCollider(gameObject->getComponent<SphereCollider>());
+                            }
                         }
                         if (ImGui::MenuItem("Cylinder Collider")) {
-                            addComponent<CylinderCollider>();
+                            addComponent<CylinderCollider>(physicsEngine);
+                            for (GameObject *gameObject: selectedGameObjects) {
+                                physicsEngine.addCollider(gameObject->getComponent<CylinderCollider>());
+                            }
                         }
                         ImGui::EndMenu();
                     }
@@ -93,7 +103,7 @@ namespace TechEngine {
             }
 
             if (removeComponent) {
-                for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
+                for (GameObject *gameObject: selectedGameObjects) {
                     gameObject->removeComponent<T>();
                 }
             }
@@ -109,7 +119,7 @@ namespace TechEngine {
         }
 
         ImGui::PopItemWidth();
-        GameObject *gameObject = PanelsManager::getInstance().getSelectedGameObjects().front();
+        GameObject *gameObject = selectedGameObjects.front();
         drawComponent<TransformComponent>(gameObject, "Transform", [](auto &component) {
             glm::vec3 position = component->position;
             glm::vec3 orientation = component->orientation;
@@ -174,7 +184,7 @@ namespace TechEngine {
                     camera->setFar(perspectiveFar);
             }
         });
-        drawComponent<MeshRendererComponent>(gameObject, "Mesh Renderer", [](auto &component) {
+        drawComponent<MeshRendererComponent>(gameObject, "Mesh Renderer", [this](auto &component) {
             auto &meshRenderer = component;
             auto &mesh = meshRenderer->getMesh();
             Material &material = meshRenderer->getMaterial();
@@ -232,7 +242,7 @@ namespace TechEngine {
                     std::string filepath = ofn.lpstrFile;
                     std::string filename = filepath.substr(filepath.find_last_of("/\\") + 1);
                     std::string materialName = filename.substr(0, filename.find_last_of("."));
-                    meshRenderer->changeMaterial(MaterialManager::getMaterial(materialName));
+                    meshRenderer->changeMaterial(materialManager.getMaterial(materialName));
                 }
             };
             if (ImGui::BeginDragDropTarget()) {
@@ -242,7 +252,7 @@ namespace TechEngine {
                     if (extension != ".mat")
                         return;
                     std::string materialName = filename.substr(0, filename.find_last_of("."));
-                    meshRenderer->changeMaterial(MaterialManager::getMaterial(materialName));
+                    meshRenderer->changeMaterial(materialManager.getMaterial(materialName));
                     return;
                 }
                 ImGui::EndDragDropTarget();
@@ -300,35 +310,6 @@ namespace TechEngine {
         });
     }
 
-    template<typename T, typename DrawFunc, typename UpdateFunc, typename LabelFunc>
-    void drawCommonComponent(const LabelFunc &labelFunction, const DrawFunc &drawFunction, const UpdateFunc &updateFunction) {
-        bool isCommon = true;
-        T commonComponent = PanelsManager::getInstance().getSelectedGameObjects().front()->getComponent<T>();
-
-        for (GameObject *currentObject: PanelsManager::getInstance().getSelectedGameObjects()) {
-            auto currentComponent = currentObject->getComponent<T>();
-            if (!currentComponent) {
-                isCommon = false;
-                break;
-            }
-
-            if (currentComponent != commonComponent) {
-                isCommon = false;
-                break;
-            }
-        }
-
-        labelFunction(isCommon);
-
-        // Update the values for all selected objects
-        for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
-            auto currentComponent = gameObject->getComponent<T>();
-            if (isCommon) {
-                updateFunction(*currentComponent);
-            }
-        }
-    }
-
     void InspectorPanel::drawCommonComponents() {
         ImGui::SameLine();
         ImGui::PushItemWidth(-1);
@@ -339,7 +320,6 @@ namespace TechEngine {
 
         ImGui::PopItemWidth();
         std::vector<std::string> componentsToDraw = std::vector<std::string>();
-        std::list<GameObject *> selectedGameObjects = PanelsManager::getInstance().getSelectedGameObjects();
 
         GameObject *firstObject = selectedGameObjects.front();
         for (std::pair<std::string, Component *> component: firstObject->getComponents()) {
@@ -356,7 +336,7 @@ namespace TechEngine {
             }
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(TransformComponent).name()) != componentsToDraw.end()) {
-            drawComponent<TransformComponent>(firstObject, "Transform", [](auto &component) {
+            drawComponent<TransformComponent>(firstObject, "Transform", [this](auto &component) {
                 glm::vec3 position = component->getPosition();
                 glm::vec3 orientation = component->getOrientation();
                 glm::vec3 scale = component->getScale();
@@ -364,7 +344,7 @@ namespace TechEngine {
                 bool drawOrientation = true;
                 bool drawScale = true;
 
-                for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
+                for (GameObject *gameObject: selectedGameObjects) {
                     if (gameObject->getComponent<TransformComponent>()->position != position) {
                         drawPosition = false;
                     }
@@ -381,7 +361,7 @@ namespace TechEngine {
                 bool move = false;
                 bool rotate = false;
                 bool scaling = false;
-                for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
+                for (GameObject *gameObject: selectedGameObjects) {
                     if (position != component->position || move) {
                         gameObject->getComponent<TransformComponent>()->translateTo(position);
                         move = true;
@@ -398,7 +378,7 @@ namespace TechEngine {
             });
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(CameraComponent).name()) != componentsToDraw.end()) {
-            drawComponent<CameraComponent>(firstObject, "Camera", [](auto &component) {
+            drawComponent<CameraComponent>(firstObject, "Camera", [this](auto &component) {
                 auto &camera = component;
 
                 const char *projectionTypeStrings[] = {"Perspective", "Orthographic"};
@@ -413,7 +393,7 @@ namespace TechEngine {
                 float commonFar = camera->getFar();
 
 
-                for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
+                for (GameObject *gameObject: selectedGameObjects) {
                     auto currentCamera = gameObject->getComponent<CameraComponent>();
 
                     if (currentCamera->getProjectionType() != commonProjectionType) {
@@ -466,7 +446,7 @@ namespace TechEngine {
                         changeFar = true;
                     }
 
-                    for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
+                    for (GameObject *gameObject: selectedGameObjects) {
                         if (changeFov) gameObject->getComponent<CameraComponent>()->setFov(commonFov);
                         if (changeNear) gameObject->getComponent<CameraComponent>()->setNear(commonNear);
                         if (changeFar) gameObject->getComponent<CameraComponent>()->setFar(commonFar);
@@ -491,7 +471,7 @@ namespace TechEngine {
                         changeOrthoFar = true;
                     }
 
-                    for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
+                    for (GameObject *gameObject: selectedGameObjects) {
                         if (changeOrthoSize) gameObject->getComponent<CameraComponent>()->setOrthoSize(commonFov);
                         if (changeOrthoNear) gameObject->getComponent<CameraComponent>()->setNear(commonNear);
                         if (changeOrthoFar) gameObject->getComponent<CameraComponent>()->setFar(commonFar);
@@ -503,14 +483,14 @@ namespace TechEngine {
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(MeshRendererComponent).name()) != componentsToDraw.end()) {
 
-            drawComponent<MeshRendererComponent>(firstObject, "Mesh Renderer", [](auto &component) {
+            drawComponent<MeshRendererComponent>(firstObject, "Mesh Renderer", [this](auto &component) {
 
                 bool isMeshCommon = true;
                 bool isMaterialCommon = true;
                 std::string commonMeshName = component->getMesh().getName();
                 std::string commonMaterialName = component->getMaterial().getName();
 
-                for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
+                for (GameObject *gameObject: selectedGameObjects) {
                     auto currentMeshRenderer = gameObject->getComponent<MeshRendererComponent>();
 
                     if (currentMeshRenderer->getMesh().getName() != commonMeshName) {
@@ -546,7 +526,7 @@ namespace TechEngine {
                         ImGui::EndCombo();
                     }
                     if (current_item != commonMeshName) {
-                        for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
+                        for (GameObject *gameObject: selectedGameObjects) {
                             if (current_item == items[0]) {
                                 gameObject->getComponent<MeshRendererComponent>()->changeMesh(new CubeMesh());
                             } else if (current_item == items[1]) {
@@ -579,8 +559,8 @@ namespace TechEngine {
                         std::string filepath = ofn.lpstrFile;
                         std::string filename = filepath.substr(filepath.find_last_of("/\\") + 1);
                         std::string materialName = filename.substr(0, filename.find_last_of("."));
-                        for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
-                            gameObject->getComponent<MeshRendererComponent>()->changeMaterial(MaterialManager::getMaterial(materialName));
+                        for (GameObject *gameObject: selectedGameObjects) {
+                            gameObject->getComponent<MeshRendererComponent>()->changeMaterial(materialManager.getMaterial(materialName));
                         }
                     }
                 };
@@ -591,8 +571,8 @@ namespace TechEngine {
                         if (extension != ".mat")
                             return;
                         std::string materialName = filename.substr(0, filename.find_last_of("."));
-                        for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
-                            gameObject->getComponent<MeshRendererComponent>()->changeMaterial(MaterialManager::getMaterial(materialName));
+                        for (GameObject *gameObject: selectedGameObjects) {
+                            gameObject->getComponent<MeshRendererComponent>()->changeMaterial(materialManager.getMaterial(materialName));
                         }
                         return;
                     }
@@ -603,13 +583,13 @@ namespace TechEngine {
             });
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(RigidBody).name()) != componentsToDraw.end()) {
-            drawComponent<RigidBody>(firstObject, "Rigid Body", [](auto &component) {
+            drawComponent<RigidBody>(firstObject, "Rigid Body", [this](auto &component) {
                 float commonMass = component->getMass();
                 float commonDensity = component->getDensity();
                 bool isMassCommon = true;
                 bool isDensityCommon = true;
 
-                for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
+                for (GameObject *gameObject: selectedGameObjects) {
                     auto currentRigidBody = gameObject->getComponent<RigidBody>();
 
                     if (currentRigidBody->getMass() != commonMass) {
@@ -629,20 +609,20 @@ namespace TechEngine {
                 if (ImGui::DragFloat(isDensityCommon ? "Density" : "-", &commonDensity, 0.1f, 0.1f, 100.0f, "%.2f")) {
                     changeDensity = true;
                 }
-                for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
+                for (GameObject *gameObject: selectedGameObjects) {
                     if (changeMass) gameObject->getComponent<RigidBody>()->setMass(commonMass);
                     if (changeDensity) gameObject->getComponent<RigidBody>()->setDensity(commonDensity);
                 }
             });
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(BoxColliderComponent).name()) != componentsToDraw.end()) {
-            drawComponent<BoxColliderComponent>(firstObject, "Box Collider", [](auto &component) {
+            drawComponent<BoxColliderComponent>(firstObject, "Box Collider", [this](auto &component) {
                 glm::vec3 commonSize = component->getSize();
                 glm::vec3 commonOffset = component->getOffset();
                 bool isSizeCommon = true;
                 bool isOffsetCommon = true;
 
-                for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
+                for (GameObject *gameObject: selectedGameObjects) {
                     auto currentBoxCollider = gameObject->getComponent<BoxColliderComponent>();
 
                     if (currentBoxCollider->getSize() != commonSize) {
@@ -664,21 +644,21 @@ namespace TechEngine {
                 if (commonOffset != component->getOffset()) {
                     changeOffset = true;
                 }
-                for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
+                for (GameObject *gameObject: selectedGameObjects) {
                     if (changeSize) gameObject->getComponent<BoxColliderComponent>()->setSize(commonSize);
                     if (changeOffset) gameObject->getComponent<BoxColliderComponent>()->setOffset(commonOffset);
                 }
             });
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(SphereCollider).name()) != componentsToDraw.end()) {
-            drawComponent<SphereCollider>(firstObject, "Sphere Collider", [](auto &component) {
+            drawComponent<SphereCollider>(firstObject, "Sphere Collider", [this](auto &component) {
                 float commonRadius = component->getRadius();
                 glm::vec3 commonOffset = component->getOffset();
 
                 bool isRadiusCommon = true;
                 bool isOffsetCommon = true;
 
-                for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
+                for (GameObject *gameObject: selectedGameObjects) {
                     auto currentSphereCollider = gameObject->getComponent<SphereCollider>();
 
                     if (currentSphereCollider->getRadius() != commonRadius) {
@@ -700,14 +680,14 @@ namespace TechEngine {
                 if (commonOffset != component->getOffset()) {
                     changeOffset = true;
                 }
-                for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
+                for (GameObject *gameObject: selectedGameObjects) {
                     if (changeRadius) gameObject->getComponent<SphereCollider>()->setRadius(commonRadius);
                     if (changeOffset) gameObject->getComponent<SphereCollider>()->setOffset(commonOffset);
                 }
             });
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(CylinderCollider).name()) != componentsToDraw.end()) {
-            drawComponent<CylinderCollider>(firstObject, "Cylinder Collider", [](auto &component) {
+            drawComponent<CylinderCollider>(firstObject, "Cylinder Collider", [this](auto &component) {
                 float commonRadius = component->getRadius();
                 float commonHeight = component->getHeight();
                 glm::vec3 commonOffset = component->getOffset();
@@ -716,7 +696,7 @@ namespace TechEngine {
                 bool isHeightCommon = true;
                 bool isOffsetCommon = true;
 
-                for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
+                for (GameObject *gameObject: selectedGameObjects) {
                     auto currentCylinderCollider = gameObject->getComponent<CylinderCollider>();
 
                     if (currentCylinderCollider->getRadius() != commonRadius) {
@@ -747,7 +727,7 @@ namespace TechEngine {
                     changeOffset = true;
                 }
 
-                for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
+                for (GameObject *gameObject: selectedGameObjects) {
                     if (changeRadius) gameObject->getComponent<CylinderCollider>()->setRadius(commonRadius);
                     if (changeHeight) gameObject->getComponent<CylinderCollider>()->setHeight(commonHeight);
                     if (changeOffset) gameObject->getComponent<CylinderCollider>()->setOffset(commonOffset);
@@ -756,11 +736,10 @@ namespace TechEngine {
         }
     }
 
-    template<typename C>
-    void InspectorPanel::addComponent() {
-        for (GameObject *gameObject: PanelsManager::getInstance().getSelectedGameObjects()) {
-            gameObject->addComponent<C>();
+    template<typename C, typename... A>
+    void InspectorPanel::addComponent(A &...args) {
+        for (GameObject *gameObject: selectedGameObjects) {
+            gameObject->addComponent<C>(args...);
         }
     }
-
 }

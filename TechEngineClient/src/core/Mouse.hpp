@@ -5,7 +5,6 @@ namespace TechEngine {
     private:
         bool button_pressed[8] = {false, false, false, false, false, false, false, false};
 
-        inline static Mouse *instance;
         glm::vec2 lastPosition = glm::vec2(0, 0);
     public:
         Mouse();
@@ -14,7 +13,14 @@ namespace TechEngine {
 
         void onMouseMove(double x, double y);
 
-        static Mouse &getInstance();
+        Mouse(const Mouse &) = delete;
+
+        Mouse &operator=(const Mouse &) = delete;
+
+        static Mouse &getInstance() {
+            static Mouse instance;
+            return instance;
+        }
     };
 
 }

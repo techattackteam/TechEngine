@@ -1,6 +1,5 @@
 #pragma once
 
-#include "components/Component.hpp"
 #include "Collider.hpp"
 
 namespace TechEngine {
@@ -8,11 +7,9 @@ namespace TechEngine {
     private:
         glm::vec3 size;
     public:
-        BoxColliderComponent(GameObject *gameObject);
+        BoxColliderComponent(GameObject *gameObject, PhysicsEngine &physicsEngine);
 
-        BoxColliderComponent(GameObject *gameObject, glm::vec3 size, glm::vec3 offset);
-
-        ~BoxColliderComponent() override;
+        BoxColliderComponent(GameObject *gameObject, PhysicsEngine &physicsEngine, glm::vec3 size, glm::vec3 offset);
 
         void setSize(glm::vec3 size);
 

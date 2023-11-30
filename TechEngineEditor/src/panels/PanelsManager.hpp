@@ -19,40 +19,46 @@
 #include "GameView.hpp"
 #include "core/SceneCamera.hpp"
 #include "MaterialEditor.hpp"
+#include "project/ProjectManager.hpp"
 
 namespace TechEngine {
     class PanelsManager {
     private:
-        inline static PanelsManager *instance;
         std::vector<CustomPanel *> customPanels;
         ImGuiContext *imguiContext;
         Window &window;
-        SceneView sceneView{window.getRenderer()};
-        GameView gameView{window.getRenderer()};
-        InspectorPanel inspectorPanel;
+        ProjectManager &projectManager;
+        SceneManager &sceneManager;
+        PhysicsEngine &physicsEngine;
+
+
+        GameView gameView;
         //SettingsPanel settingsPanel{};
         ContentBrowserPanel contentBrowser;
-        SceneHierarchyPanel sceneHierarchyPanel;
         ExportSettingsPanel exportSettingsPanel;
-        MaterialEditor materialEditor{window.getRenderer()};
+        SceneHierarchyPanel sceneHierarchyPanel;
+        SceneView sceneView;
+        InspectorPanel inspectorPanel;
+        MaterialEditor materialEditor;
         bool m_currentPlaying = false;
-
 
     public:
 
-        PanelsManager(Window &window);
+        PanelsManager(Window &window, SceneManager &sceneManager,
+                      ProjectManager &projectManager,
+                      PhysicsEngine &physicsEngine,
+                      TextureManager &textureManager,
+                      MaterialManager &materialManager);
 
         void init();
 
         void update();
 
-        static void compileUserScripts();
+        void compileUserScripts();
 
-        std::list<GameObject *> &getSelectedGameObjects();
+        std::vector<GameObject *> &getSelectedGameObjects();
 
         void openMaterialEditor(const std::string &materialName, const std::string &filepath);
-
-        static PanelsManager &getInstance();
 
     private:
         void initImGui();

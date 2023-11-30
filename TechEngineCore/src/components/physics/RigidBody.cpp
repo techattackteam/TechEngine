@@ -5,13 +5,6 @@ namespace TechEngine {
     RigidBody::RigidBody(GameObject *gameObject) : Component(gameObject, "RigidBody") {
     }
 
-    RigidBody::~RigidBody() {
-        PhysicsEngine::getInstance()->removeRigidBody(gameObject->getTag());
-    }
-
-    void RigidBody::registerRB() {
-        PhysicsEngine::getInstance()->addRigidBody(this);
-    }
 
     void RigidBody::setMass(float mass) {
         this->mass = mass;
