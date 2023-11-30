@@ -20,10 +20,6 @@ namespace TechEngine {
         return glm::normalize(glm::cross(edge1, edge2));
     }
 
-    void Mesh::createMesh() {
-
-    }
-
     void Mesh::createVertex(glm::vec3 vertexPosition, glm::vec3 normal, glm::vec2 textureCoordinate) {
         Vertex vertex = Vertex(vertexPosition, normal, textureCoordinate);
         vertices.push_back(vertex);

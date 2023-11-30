@@ -11,11 +11,11 @@ namespace TechEngine {
 
         static void changeMainCameraTo(CameraComponent *cameraComponent);
 
-        static bool findCameraComponent();
+        static bool findCameraComponent(Scene& scene);
 
-        static bool hasMainCamera();
+        static bool hasMainCamera(Scene& scene);
 
-        static void clear();
+        static void clear(Scene& scene);
     };
 
 }

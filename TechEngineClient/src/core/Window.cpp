@@ -1,12 +1,13 @@
 #include <iostream>
 #include "Window.hpp"
-#include "../events/input/KeyPressedEvent.hpp"
-#include "../events/input/KeyReleasedEvent.hpp"
-#include "../events/input/KeyHoldEvent.hpp"
+#include "events/input/KeyPressedEvent.hpp"
+#include "events/input/KeyReleasedEvent.hpp"
+#include "events/input/KeyHoldEvent.hpp"
 #include "events/window/WindowCloseEvent.hpp"
 #include "wrapper/Wrapper.hpp"
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
 #include "events/input/MouseScrollEvent.hpp"
+#include "Mouse.hpp"
 
 namespace TechEngine {
     Window::Window(const std::string &title, uint32_t width, uint32_t height) {
@@ -39,8 +40,8 @@ namespace TechEngine {
         glfwSwapInterval(1);
         glfwSetWindowUserPointer(handler, this);
         glfwSetWindowCloseCallback(handler, [](GLFWwindow *handler) {
-            TechEngine::dispatchEvent(new WindowCloseEvent());
-            TechEngine::dispatchEvent(new AppCloseRequestEvent());
+            dispatchEvent(new WindowCloseEvent());
+            dispatchEvent(new AppCloseRequestEvent());
         });
         glfwSetKeyCallback(handler, [](GLFWwindow *handler, int key, int scancode, int action, int mods) {
             Window::windowKeyInput(key, action);

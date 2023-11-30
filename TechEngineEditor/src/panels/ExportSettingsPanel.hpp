@@ -3,19 +3,24 @@
 #include <filesystem>
 #include "Panel.hpp"
 #include "renderer/RendererSettings.hpp"
+#include "project/ProjectManager.hpp"
 
 namespace TechEngine {
+    class PanelsManager;
+
     class ExportSettingsPanel : public Panel {
     private:
         int32_t width = RendererSettings::width;
         int32_t height = RendererSettings::height;
 
-        std::string &currentScenePath;
-
         bool visible = false;
 
+        PanelsManager &panelsManager;
+        ProjectManager &projectManager;
+        SceneManager &sceneManager;
+
     public:
-        explicit ExportSettingsPanel(std::string &currentScenePath);
+        explicit ExportSettingsPanel(PanelsManager &panelsManager, ProjectManager &projectManager, SceneManager &sceneManager);
 
         ~ExportSettingsPanel() override;
 

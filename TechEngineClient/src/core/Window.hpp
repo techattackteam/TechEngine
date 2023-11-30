@@ -3,14 +3,12 @@
 #include <string>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include "../events/window/WindowResizeEvent.hpp"
+#include "events/window/WindowResizeEvent.hpp"
 #include "renderer/Renderer.hpp"
-#include "Mouse.hpp"
 
 namespace TechEngine {
     class Window {
     private:
-
         Renderer renderer;
 
         std::string title;
@@ -22,13 +20,9 @@ namespace TechEngine {
 
         GLFWwindow *handler;
 
-        Mouse mouse;
-
         void onWindowResizeEvent(WindowResizeEvent *event);
 
     public:
-        Window() = default;
-
         Window(const std::string &title, uint32_t width, uint32_t height);
 
         ~Window();

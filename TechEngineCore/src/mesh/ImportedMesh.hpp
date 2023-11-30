@@ -8,8 +8,6 @@ namespace TechEngine {
 
         ImportedMesh(std::vector<Vertex> vertices, std::vector<int> indices);
 
-        void createMesh() override;
-
         std::string getName() override;
     };
 

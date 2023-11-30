@@ -5,10 +5,8 @@
 #include "material/MaterialManager.hpp"
 
 namespace TechEngine {
-    Cube::Cube() : GameObject("Cube") {
-        addComponent<TechEngine::MeshRendererComponent>(new CubeMesh(),
-                                                        &MaterialManager::getMaterial("DefaultMaterial"));
-
+    Cube::Cube(Material *material) : GameObject("Cube") {
+        addComponent<MeshRendererComponent>(new CubeMesh(), material);
     }
 }
 

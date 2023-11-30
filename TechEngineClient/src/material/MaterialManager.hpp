@@ -3,10 +3,12 @@
 #include <unordered_map>
 #include <string>
 #include "Material.hpp"
+#include "renderer/TextureManager.hpp"
 
 namespace TechEngine {
     class MaterialManager {
     private:
+        TextureManager &m_textureManager;
         std::unordered_map<std::string, Material> m_materialsBank = std::unordered_map<std::string, Material>();
 
         glm::vec4 m_defaultColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -16,37 +18,26 @@ namespace TechEngine {
         float m_defaultShininess = 32.0f;
 
     public:
+        MaterialManager(TextureManager &textureManager);
 
-        static void init(const std::vector<std::string> &materialsFilePaths);
+        void init(const std::vector<std::string> &materialsFilePaths);
 
-        static Material &createMaterial(const std::string &name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
+        Material &createMaterial(const std::string &name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
 
-        static Material &createMaterial(const std::string &name, Texture *diffuse);
+        Material &createMaterial(const std::string &name, Texture *diffuse);
 
-        static Material &createMaterialFile(const std::string &name, const std::string &filepath);
+        Material &createMaterialFile(const std::string &name, const std::string &filepath);
 
-        static bool deleteMaterial(const std::string &name);
+        bool deleteMaterial(const std::string &name);
 
-        static bool materialExists(const std::string &name);
+        bool materialExists(const std::string &name);
 
-        static Material &getMaterial(const std::string &name);
+        Material &getMaterial(const std::string &name);
 
-        static void serializeMaterial(const std::string &name, const std::string &filepath);
+        void serializeMaterial(const std::string &name, const std::string &filepath);
 
     private:
-        MaterialManager() = default;
-
-
-        static bool deserializeMaterial(const std::string &filepath);
-
-        MaterialManager(const MaterialManager &) = delete;
-
-        MaterialManager &operator=(const MaterialManager &) = delete;
-
-        static MaterialManager &getInstance() {
-            static MaterialManager instance;
-            return instance;
-        }
+        bool deserializeMaterial(const std::string &filepath);
 
     };
 }

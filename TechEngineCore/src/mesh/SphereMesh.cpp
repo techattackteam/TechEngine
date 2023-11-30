@@ -4,10 +4,6 @@
 namespace TechEngine {
 
     SphereMesh::SphereMesh() : Mesh() {
-        createMesh();
-    }
-
-    void SphereMesh::createMesh() {
         float sectorStep = 2 * glm::pi<float>() / sectors;
         float stackStep = glm::pi<float>() / stacks;
         float sectorAngle, stackAngle;

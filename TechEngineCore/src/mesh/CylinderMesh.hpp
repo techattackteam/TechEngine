@@ -12,8 +12,6 @@ namespace TechEngine {
     public:
         CylinderMesh();
 
-        void createMesh() override;
-
         std::string getName() override;
     };
 }

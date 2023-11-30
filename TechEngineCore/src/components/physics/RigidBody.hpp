@@ -8,12 +8,7 @@ namespace TechEngine {
         float mass = 0.1f;
         float density = 0.1f;
     public:
-
         RigidBody(GameObject *gameObject);
-
-        ~RigidBody();
-
-        void registerRB();
 
         void setMass(float mass);
 

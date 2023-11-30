@@ -1,6 +1,5 @@
 #pragma once
 
-#include <list>
 #include "GameObject.hpp"
 #include "event/events/gameObjects/GameObjectCreateEvent.hpp"
 #include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
@@ -12,21 +11,36 @@ namespace TechEngine {
     class Scene {
     private:
         boost::uuids::random_generator goTagGenerator;
-        inline static Scene *instance;
-        std::list<GameObject *> gameObjects;
-        std::list<GameObject *> lights;
-        std::list<GameObject *> gameObjectsToDelete;
+        std::vector<GameObject *> gameObjects;
+        std::vector<GameObject *> lights;
+        std::vector<GameObject *> gameObjectsToDelete;
     public:
 
         Scene();
 
         virtual ~Scene();
 
-        virtual void registerGameObject(GameObject *gameObject);
+        template<typename T, typename ...A>
+        GameObject &createGameObject(A &&...args) {
+            GameObject *gameObject = new T(args...); //-> implies name already defined
+            gameObject->setTag(genGOTag());
+            gameObjects.push_back(gameObject);
+            return *gameObject;
+        }
 
-        virtual void registerGameObject(GameObject *gameObject, std::string tag);
+        template<typename T, typename ...A>
+        GameObject &createGameObject(std::string name, A &&...args) {
+            return registerGameObject<T, A...>(name, genGOTag(), args...);
+        }
 
-        virtual void unregisterGameObject(GameObject *gameObject);
+        template<typename T, typename ...A>
+        GameObject &registerGameObject(std::string name, std::string tag, A &&...args) {
+            GameObject *gameObject = new T(name, tag, args...);
+            gameObjects.push_back(gameObject);
+            return *gameObject;
+        }
+
+        void deleteGameObject(GameObject *gameObject);
 
         void update();
 
@@ -34,13 +48,9 @@ namespace TechEngine {
 
         std::string genGOTag();
 
-        static Scene &getInstance();
+        std::vector<GameObject *> getGameObjects();
 
-        std::list<GameObject *> &getGameObjects();
-
-        std::list<GameObject *> getAllGameObjects();
-
-        std::list<GameObject *> &getLights();
+        std::vector<GameObject *> getLights();
 
         GameObject *getGameObject(const std::string &name);
 

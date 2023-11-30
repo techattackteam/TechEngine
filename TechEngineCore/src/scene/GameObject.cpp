@@ -4,26 +4,21 @@
 #include "event/EventDispatcher.hpp"
 #include "components/TransformComponent.hpp"
 #include "Scene.hpp"
-#include "event/events/gameObjects/RequestDeleteGameObject.hpp"
 #include <iostream>
 
 namespace TechEngine {
     GameObject::GameObject(std::string name) : name(std::move(name)) {
         addComponent<TransformComponent>();
         EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
-        Scene::getInstance().registerGameObject(this);
     }
 
-    GameObject::GameObject(std::string name, const std::string &tag) : name(std::move(name)) {
+    GameObject::GameObject(std::string name, const std::string &tag) : name(std::move(name)), tag(tag) {
         addComponent<TransformComponent>();
         EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
-        Scene::getInstance().registerGameObject(this, tag);
     }
 
     GameObject::~GameObject() {
-        if (parent == nullptr) {
-            Scene::getInstance().unregisterGameObject(this);
-        } else {
+        if (parent != nullptr) {
             parent->removeChild(tag);
         }
         deleteChildren();
@@ -67,7 +62,7 @@ namespace TechEngine {
         return getTransform().getModelMatrix();
     }
 
-    glm::mat4 GameObject::getLocalModelMatrix(){
+    glm::mat4 GameObject::getLocalModelMatrix() {
         return getTransform().getLocalModelMatrix();
     }
 

@@ -4,7 +4,7 @@
 
 namespace TechEngine {
     MeshRendererComponent::MeshRendererComponent(GameObject *gameObject) :
-            mesh(new CubeMesh()), m_material(&MaterialManager::getMaterial("DefaultMaterial")), Component(gameObject, "MeshRenderer") {
+            mesh(new CubeMesh()), m_material(), Component(gameObject, "MeshRenderer") {
 
     }
 

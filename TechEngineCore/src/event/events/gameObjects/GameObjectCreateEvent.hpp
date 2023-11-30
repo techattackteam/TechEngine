@@ -4,7 +4,7 @@
 #include "scene/GameObject.hpp"
 
 namespace TechEngine {
-    class GameObjectCreateEvent : public TechEngine::Event {
+    class GameObjectCreateEvent : public Event {
     private:
         GameObject *gameObject;
     public:

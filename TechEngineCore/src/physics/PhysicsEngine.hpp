@@ -1,34 +1,32 @@
 #pragma once
 
 #include <PxPhysicsAPI.h>
-#include "components/physics/BoxColliderComponent.hpp"
-#include "components/physics/SphereCollider.hpp"
-#include "components/physics/CylinderCollider.hpp"
+
 #include "components/physics/RigidBody.hpp"
+#include "components/physics/CylinderCollider.hpp"
 
 namespace TechEngine {
     class PhysicsEngine {
     private:
-        inline static PhysicsEngine *instance;
-
         physx::PxDefaultAllocator allocator;
         physx::PxDefaultErrorCallback errorCallback;
         physx::PxDefaultCpuDispatcher *dispatcher;
         physx::PxFoundation *foundation;
         physx::PxPhysics *physics;
-        physx::PxScene *scene;
+        physx::PxScene *pxScene;
         physx::PxMaterial *defaultMaterial;
         physx::PxPvd *pvd;
         std::unordered_map<std::string, physx::PxRigidActor *> actors;
         std::list<std::string> rigidBodiesWithoutColliders;
         bool running = false;
 
+        Scene &scene;
+
         void createScene();
 
     public:
-        static PhysicsEngine *getInstance();
 
-        PhysicsEngine();
+        explicit PhysicsEngine(Scene &scene);
 
         ~PhysicsEngine();
 
@@ -39,6 +37,8 @@ namespace TechEngine {
         void stop();
 
         void onUpdate();
+
+        void clear();
 
         void addCollider(Collider *collider);
 
@@ -58,7 +58,7 @@ namespace TechEngine {
 
         physx::PxGeometry *createGeometry(TransformComponent &transform, Collider *collider);
 
-        physx::PxGeometry *createCylinderMesh(TechEngine::CylinderCollider *cylinderCollider, TransformComponent &t);
+        physx::PxGeometry *createCylinderMesh(CylinderCollider *cylinderCollider, TransformComponent &t);
 
         void addActor(Collider *collider, const physx::PxTransform &transform, const physx::PxGeometry *actor, const physx::PxTransform &transformOffset);
 

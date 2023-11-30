@@ -9,11 +9,9 @@ using std::filesystem::path;
 namespace TechEngine {
     class Editor : public App {
     private:
-        Window window{"TechEngine", RendererSettings::width, RendererSettings::height};
         PanelsManager panelsManager;
 
-        path rootPath;
-        path editorSettings;
+        std::string editorSettings;
     public:
         Editor();
 

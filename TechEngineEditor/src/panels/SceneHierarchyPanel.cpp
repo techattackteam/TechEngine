@@ -9,13 +9,20 @@
 #include "defaultGameObject/Cylinder.hpp"
 
 namespace TechEngine {
-    SceneHierarchyPanel::SceneHierarchyPanel() : Panel("SceneHierarchyPanel") {
-
+    SceneHierarchyPanel::SceneHierarchyPanel(Scene &scene, MaterialManager &materialManager) : scene(scene), materialManager(materialManager), Panel("SceneHierarchyPanel") {
+        EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this, &scene](Event *event) {
+            std::string tag = ((GameObjectDestroyEvent *) event)->getGameObjectTag();
+            if (scene.getGameObjectByTag(tag) == nullptr) {
+                return;
+            }
+            deselectGO(scene.getGameObjectByTag(tag));
+        });
     }
 
     void SceneHierarchyPanel::onUpdate() {
         isItemHovered = false;
         ImGui::Begin("Scene Hierarchy");
+        getSelectedGO();
         if (!scene.getGameObjects().empty()) {
             for (auto element: scene.getGameObjects()) {
                 if (element->isEditorOnly()) {
@@ -31,16 +38,16 @@ namespace TechEngine {
             if (!isItemHovered && ImGui::BeginPopupContextWindow()) {
                 if (ImGui::BeginMenu("Create")) {
                     if (ImGui::MenuItem("Empty")) {
-                        new GameObject("Empty");
+                        scene.createGameObject<GameObject>("Empty");
                     }
                     if (ImGui::MenuItem("Cube")) {
-                        new Cube();
+                        scene.createGameObject<Cube>(&materialManager.getMaterial("DefaultMaterial"));
                     }
                     if (ImGui::MenuItem("Sphere")) {
-                        new Sphere();
+                        scene.createGameObject<Sphere>(&materialManager.getMaterial("DefaultMaterial"));
                     }
                     if (ImGui::MenuItem("Cylinder")) {
-                        new Cylinder();
+                        scene.createGameObject<Cylinder>(&materialManager.getMaterial("DefaultMaterial"));
                     }
                     ImGui::EndMenu();
                 }
@@ -61,7 +68,7 @@ namespace TechEngine {
         if (ImGui::IsItemClicked()) {
             if (isCtrlPressed) {
                 if (std::find(selectedGO.begin(), selectedGO.end(), gameObject) != selectedGO.end()) {
-                    selectedGO.remove(gameObject);
+                    selectedGO.erase(std::remove(selectedGO.begin(), selectedGO.end(), gameObject), selectedGO.end());
                 } else {
                     selectedGO.push_back(gameObject);
                 }
@@ -97,11 +104,11 @@ namespace TechEngine {
             isItemHovered = true;
         }
         if (ImGui::BeginPopupContextItem()) {
-            //selectedGO.clear();
+            selectedGO.clear();
             selectedGO.push_back(gameObject);
             if (ImGui::MenuItem("Make Child (WIP)")) {
-                GameObject *child = new GameObject(gameObject->getName() + "'s Child");
-                Scene::getInstance().makeChildTo(gameObject, child);
+                GameObject &child = scene.createGameObject<GameObject>(gameObject->getName() + "'s Child");
+                scene.makeChildTo(gameObject, &child);
             }
             if (ImGui::MenuItem("Duplicate (WIP)")) {
                 //new QuadMeshTest(gameObject->getName() + "'s duplicate");
@@ -124,6 +131,7 @@ namespace TechEngine {
             for (GameObject *gameObject: selectedGO) {
                 deleteGameObject(gameObject);
             }
+            selectedGO.clear();
 
         } else if (key.getKeyCode() == KeyCode::F && ImGui::IsWindowFocused()) {
             if (!selectedGO.empty()) {
@@ -149,11 +157,18 @@ namespace TechEngine {
     void SceneHierarchyPanel::deleteGameObject(GameObject *gameObject) {
         EventDispatcher::getInstance().dispatch(new RequestDeleteGameObject(gameObject->getTag()));
         if (std::find(selectedGO.begin(), selectedGO.end(), gameObject) != selectedGO.end()) {
-            selectedGO.remove(gameObject);
+            selectedGO.erase(std::remove(selectedGO.begin(), selectedGO.end(), gameObject), selectedGO.end());
         }
     }
 
-    std::list<GameObject *> &SceneHierarchyPanel::getSelectedGO() {
+    std::vector<GameObject *> &SceneHierarchyPanel::getSelectedGO() {
+        for (int i = 0; i < selectedGO.size(); i++) {
+            GameObject *gameObject = scene.getGameObjectByTag(selectedGO.front()->getTag());
+            if (gameObject == nullptr) {
+                selectedGO.erase(selectedGO.begin() + i);
+                i--;
+            }
+        }
         return selectedGO;
     }
 
@@ -163,7 +178,7 @@ namespace TechEngine {
 
     void SceneHierarchyPanel::deselectGO(GameObject *selectedGO) {
         if (std::find(this->selectedGO.begin(), this->selectedGO.end(), selectedGO) != this->selectedGO.end()) {
-            this->selectedGO.remove(selectedGO);
+            this->selectedGO.erase(std::remove(this->selectedGO.begin(), this->selectedGO.end(), selectedGO), this->selectedGO.end());
         }
     }
 }

@@ -8,12 +8,7 @@
 
 namespace TechEngine {
     Mouse::Mouse() {
-        if (Mouse::instance != nullptr) {
-            delete this;
-            return;
-        } else {
-            Mouse::instance = this;
-        }
+
         EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](Event *event) {
             auto *keyPressedEvent = dynamic_cast<KeyPressedEvent *>(event);
             if (keyPressedEvent->getKey().getKeyCode() >= MOUSE_1 && keyPressedEvent->getKey().getKeyCode() <= MOUSE_8) {
@@ -62,10 +57,6 @@ namespace TechEngine {
         glm::vec2 toPosition = glm::vec2(x, y);
         dispatchEvent(new MouseMoveEvent(fromPosition, toPosition));
         lastPosition = toPosition;
-    }
-
-    Mouse &Mouse::getInstance() {
-        return *instance;
     }
 
 }

@@ -5,9 +5,8 @@
 #include "material/MaterialManager.hpp"
 
 namespace TechEngine {
-    Cylinder::Cylinder() : GameObject("Cylinder") {
-        addComponent<TechEngine::MeshRendererComponent>(new CylinderMesh(),
-                                                        &MaterialManager::getMaterial("DefaultMaterial"));
+    Cylinder::Cylinder(Material *material) : GameObject("Cylinder") {
+        addComponent<TechEngine::MeshRendererComponent>(new CylinderMesh(), material);
     }
 }
 

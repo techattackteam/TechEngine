@@ -13,7 +13,6 @@ namespace TechEngine {
 
     class GameObject {
     private:
-
         GameObject *parent = nullptr;
         std::unordered_map<std::string, GameObject *> children;
         std::unordered_map<std::string, Component *> components;
@@ -22,18 +21,20 @@ namespace TechEngine {
         std::string tag;
         bool stackAllocated = false;
         bool editorOnly = false;
-    public:
 
-        GameObject(std::string name, const std::string &tag);
+    protected:
 
         explicit GameObject(std::string name);
 
-        GameObject() = default;
+        GameObject(std::string name, const std::string &tag);
 
+        friend class Scene;
+
+    public:
         virtual ~GameObject();
 
         template<class C, typename... A>
-        void addComponent(A ...args) {
+        void addComponent(A&& ...args) {
             if (!hasComponent<C>()) {
                 C *component = new C(this, args...);
                 components[typeid(C).name()] = component;

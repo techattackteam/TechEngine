@@ -3,10 +3,6 @@
 namespace TechEngine {
 
     CylinderMesh::CylinderMesh() : Mesh() {
-        createMesh();
-    }
-
-    void CylinderMesh::createMesh() {
         float points[] = {
                 -radius, -height * 0.5f,
                 0.0f, -height * 0.5f,

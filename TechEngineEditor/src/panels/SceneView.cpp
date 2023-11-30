@@ -9,7 +9,7 @@
 #include "components/physics/RigidBody.hpp"
 
 namespace TechEngine {
-    SceneView::SceneView(Renderer &renderer) : renderer(&renderer), Panel("Scene") {
+    SceneView::SceneView(Renderer &renderer, Scene &scene, std::vector<GameObject *> &selectedGO) : renderer(&renderer), scene(scene), selectedGO(selectedGO), Panel("Scene") {
         frameBufferID = renderer.createFramebuffer(RendererSettings::width, RendererSettings::height);
         sceneCamera = new SceneCamera();
     }
@@ -31,10 +31,10 @@ namespace TechEngine {
         frameBuffer.resize(wsize.x, wsize.y);
         renderCameraFrustum(currentMainCamera);
         renderColliders();
-        renderer->renderPipeline();
+        renderer->renderPipeline(scene);
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
         ImGui::Image(reinterpret_cast<void *>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
-        guizmo.editTransform(ImGui::GetCurrentContext());
+        guizmo.editTransform(ImGui::GetCurrentContext(), selectedGO);
         frameBuffer.unBind();
         ImGui::End();
         ImGui::PopStyleVar();
@@ -66,8 +66,8 @@ namespace TechEngine {
             frustumPoints.push_back(glm::vec3(worldPoint));
         }
         glm::vec4 color;
-        if (PanelsManager::getInstance().getSelectedGameObjects().size() == 1
-            && camera->getGameObject() == PanelsManager::getInstance().getSelectedGameObjects().front()) {
+        if (selectedGO.size() == 1
+            && camera->getGameObject() == selectedGO.front()) {
             color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
         } else {
             color = glm::vec4(1.0f, 1.0f, 1.0f, 0.3f);
@@ -92,7 +92,7 @@ namespace TechEngine {
     }
 
     void SceneView::renderColliders() {
-        for (auto &element: Scene::getInstance().getAllGameObjects()) {
+        for (auto &element: scene.getGameObjects()) {
             if (element->isEditorOnly()) {
                 continue;
             }
@@ -324,7 +324,6 @@ namespace TechEngine {
     }
 
     glm::vec4 SceneView::getColor(GameObject *gameObject) {
-        std::list<GameObject *> selectedGO = PanelsManager::getInstance().getSelectedGameObjects();
         if (std::find(selectedGO.begin(), selectedGO.end(), gameObject) != selectedGO.end()) {
             if (gameObject->hasComponent<RigidBody>()) {
                 return glm::vec4(0, 1.0f, 0, 1.0f);

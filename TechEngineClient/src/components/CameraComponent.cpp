@@ -21,7 +21,7 @@ namespace TechEngine {
     }
 
     void CameraComponent::init() {
-        TechEngine::EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngine::Event *event) {
+        EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngine::Event *event) {
             onWindowResizeEvent((WindowResizeEvent *) (event));
         });
 

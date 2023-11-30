@@ -2,6 +2,7 @@
 
 #include "scene/GameObject.hpp"
 #include "mesh/SphereMesh.hpp"
+#include "material/Material.hpp"
 
 namespace TechEngine::MaterialEditorGameObjects {
     class Sphere : public GameObject {
@@ -10,6 +11,6 @@ namespace TechEngine::MaterialEditorGameObjects {
     public:
         Sphere();
 
-        void init();
+        void init(Material *material);
     };
 }

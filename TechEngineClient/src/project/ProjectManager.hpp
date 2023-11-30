@@ -1,14 +1,13 @@
 #pragma once
 
 #include <filesystem>
+#include "scene/SceneManager.hpp"
 
 using std::filesystem::path;
 namespace TechEngine {
     class ProjectManager {
     private:
-        inline static ProjectManager *instance;
-
-        ProjectManager();
+        SceneManager &sceneManager;
 
         //Editor root path
         path cmakePath = "\"C:/Program Files/CMake/bin/cmake.exe\"";
@@ -29,42 +28,41 @@ namespace TechEngine {
 
         path projectSettingsPath = userProjectRootPath.string() + "\\projectSettings.PjSettings";
 
-
-        static ProjectManager *getInstance();
-
     public:
-        static void init(path rootPath);
+        ProjectManager(SceneManager &sceneManager);
 
-        static const path &getRootPath();
+        void init(path rootPath);
 
-        static const path &getProjectTemplate();
+        const path &getRootPath();
 
-        static const path &getScriptsTemplate();
+        const path &getProjectTemplate();
 
-        static const path &getBuildPath();
+        const path &getScriptsTemplate();
 
-        static const path &getUserProjectRootPath();
+        const path &getBuildPath();
 
-        static const path &getUserProjectScriptsPath();
+        const path &getUserProjectRootPath();
 
-        static const path &getUserProjectScenePath();
+        const path &getUserProjectScriptsPath();
 
-        static const path &getUserScriptsDLLPath();
+        const path &getUserProjectScenePath();
 
-        static const path &getRuntimePath();
+        const path &getUserScriptsDLLPath();
 
-        static const path &getBuildResourcesPath();
+        const path &getRuntimePath();
 
-        static const path &getResourcesPath();
+        const path &getBuildResourcesPath();
 
-        static const path &getUserProjectBuildPath();
+        const path &getResourcesPath();
 
-        static const path &getCmakePath();
+        const path &getUserProjectBuildPath();
 
-        static void createNewProject(const char *string);
+        const path &getCmakePath();
 
-        static void saveProject();
+        void createNewProject(const char *string);
 
-        static void loadProject(std::string projectPath);
+        void saveProject();
+
+        void loadProject(std::string projectPath);
     };
 }
