@@ -189,4 +189,8 @@ namespace TechEngine {
         frameBuffers.emplace_back(frameBuffer);
         return frameBuffer->getID();
     }
+
+    ShadersManager &Renderer::getShadersManager() {
+        return shadersManager;
+    }
 }

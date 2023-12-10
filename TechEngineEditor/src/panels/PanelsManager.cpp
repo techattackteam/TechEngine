@@ -29,7 +29,7 @@ namespace TechEngine {
 
             gameView(window.getRenderer(), sceneManager.getScene()),
             contentBrowser(*this, projectManager, sceneManager, materialManager),
-            exportSettingsPanel(*this, projectManager, sceneManager),
+            exportSettingsPanel(*this, projectManager, sceneManager, window.getRenderer().getShadersManager()),
             sceneHierarchyPanel(sceneManager.getScene(), materialManager),
             sceneView(window.getRenderer(), sceneManager.getScene(), sceneHierarchyPanel.getSelectedGO()),
             inspectorPanel(sceneHierarchyPanel.getSelectedGO(), materialManager, physicsEngine),
@@ -322,21 +322,21 @@ namespace TechEngine {
     }
 
     void PanelsManager::compileUserScripts() {
-        if (!exists(projectManager.getUserProjectBuildPath())) {
+        if (!exists(projectManager.getScriptsBuildPath())) {
             std::string command = "\"" + projectManager.getCmakePath().string() +
-                                  " -G \"Visual Studio 17 2022\" -S " + "\"" + projectManager.getUserProjectScriptsPath().string() + "\"" +
-                                  " -B " + "\"" + projectManager.getUserProjectBuildPath().string() + "\"" + "\"";
+                                  " -G \"Visual Studio 17 2022\" -S " + "\"" + projectManager.getProjectLocation().string() + "\"" +
+                                  " -B " + "\"" + projectManager.getScriptsBuildPath().string() + "\"" + "\"";
             std::system(command.c_str());
         }
         std::string command = "\"" + projectManager.getCmakePath().string() +
-                              " --build " + "\"" + projectManager.getUserProjectBuildPath().string() + "\"" + " --target UserScripts --config Debug\"";
+                              " --build " + "\"" + projectManager.getScriptsBuildPath().string() + "\"" + " --target UserScripts --config Debug\"";
         std::system(command.c_str());
         TE_LOGGER_INFO("Build finished!");
     }
 
     void PanelsManager::startRunningScene() {
         sceneManager.saveSceneAsTemporarily(sceneManager.getActiveSceneName());
-        ScriptEngine::getInstance()->init(projectManager.getUserScriptsDLLPath().string());
+        ScriptEngine::getInstance()->init(projectManager.getScriptsDLLPath().string());
         ScriptEngine::getInstance()->onStart();
         physicsEngine.start();
         m_currentPlaying = true;

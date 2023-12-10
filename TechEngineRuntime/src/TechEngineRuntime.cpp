@@ -1,57 +1,63 @@
 #include <yaml-cpp/yaml.h>
-#include <iostream>
-#include <filesystem>
 #include <yaml-cpp/exceptions.h>
 #include "TechEngineRuntime.hpp"
 #include "renderer/RendererSettings.hpp"
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
 #include "script/ScriptEngine.hpp"
+#include "core/Logger.hpp"
+#include "core/FileSystem.hpp"
 
 namespace TechEngine {
 
-    TechEngineRuntime::TechEngineRuntime() : App() {
+    TechEngineRuntime::TechEngineRuntime() : App("TechEngine", RendererSettings::width, RendererSettings::height) {
+        EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngine::Event *event) {
+            onWindowResizeEvent((WindowResizeEvent *) event);
+        });
         if (!loadRendererSettings()) {
-            TechEngine::EventDispatcher::getInstance().dispatch(new AppCloseRequestEvent());
+            EventDispatcher::getInstance().dispatch(new AppCloseRequestEvent());
             return;
         }
-        window.init(windowName, width, height);
-        //TODO: FIX THIS
-        //SceneManager::deserialize(std::filesystem::current_path().string() + "/scenes/" + sceneToLoadName + ".scene");
-        TechEngine::EventDispatcher::getInstance().syncEventManager.execute();
-        SceneHelper::mainCamera = Scene::getInstance().getGameObject("SceneCamera")->getComponent<CameraComponent>();
-        window.getRenderer().init();
-        ScriptEngine::getInstance()->init(std::filesystem::current_path().string() + "/UserProject.dll");
+        ScriptEngine::getInstance()->init(projectManager.getProjectLocation().string() + "/UserProject.dll");
     }
 
     void TechEngineRuntime::onUpdate() {
-        Mouse::getInstance().onUpdate();
-        window.getRenderer().renderPipeline();
+        window.getRenderer().renderPipeline(sceneManager.getScene());
         window.onUpdate();
     }
 
     void TechEngineRuntime::onFixedUpdate() {
-
+        physicsEngine.onFixedUpdate();
     }
 
     bool TechEngineRuntime::loadRendererSettings() {
+        projectManager.loadProject(FileSystem::getAllFilesWithExtension(std::filesystem::current_path().string(), ".teprj")[0]);
         YAML::Node data;
         try {
-            data = YAML::LoadFile(std::filesystem::current_path().string() + "/ExportSettings.TESettings");
+            data = YAML::LoadFile(projectManager.getProjectLocation().string() + "/Export.texp");
         } catch (YAML::Exception &e) {
-            std::cout << "Failed to load .TESettings file " << "\n     " << e.what() << std::endl;
+            TE_LOGGER_ERROR("Failed to load .TESettings file \n {0}", e.what());
             return false;
         }
+
         auto rendererSettingsNode = data["Window settings"];
+
         windowName = rendererSettingsNode["name"].as<std::string>();
         width = rendererSettingsNode["width"].as<uint32_t>();
         height = rendererSettingsNode["height"].as<uint32_t>();
 
+        window.changeTitle(windowName);
         RendererSettings::resize(width, height);
-
         sceneToLoadName = data["Default Scene"].as<std::string>();
         return true;
     }
+
+
+    void TechEngineRuntime::onWindowResizeEvent(WindowResizeEvent *event) {
+        RendererSettings::resize(event->getWidth(), event->getHeight());
+        glViewport(0, 0, event->getWidth(), event->getHeight());
+    }
 }
+
 
 TechEngine::AppCore *TechEngine::createApp() {
     return new TechEngine::TechEngineRuntime();

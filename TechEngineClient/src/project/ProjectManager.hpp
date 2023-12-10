@@ -8,56 +8,45 @@ namespace TechEngine {
     class ProjectManager {
     private:
         SceneManager &sceneManager;
+        TextureManager &textureManager;
+        MaterialManager &materialManager;
+
+        std::string projectName = "New Project";
 
         //Editor root path
-        path cmakePath = "\"C:/Program Files/CMake/bin/cmake.exe\"";
-        path rootPath = std::filesystem::current_path();
+        path cmakePath = "\"C:/Program Files/CMake/bin/cmake.exe\""; //TODO: Make this path dynamic
 
-        path userProjectRootPath = rootPath.string() + "\\New Project";
-        path userProjectScenesPath = userProjectRootPath.string() + "\\scenes";
-        path userProjectScriptsPath = userProjectRootPath.string() + "\\scripts";
-        path userProjectBuildPath = userProjectScriptsPath.string() + "\\build";
+        path projectFilePath;
+        path projectLocation = std::filesystem::current_path().string() + "\\" + projectName;
+        path projectAssetsPath = projectLocation.string() + "\\Assets";
+        path projectResourcesPath = projectLocation.string() + "\\Resources";
+        path projectExportPath = projectLocation.string() + "\\Build";
 
-        path buildPath = userProjectRootPath.string() + "\\build";
-        path buildResourcesPath = buildPath.string() + "\\resources";
-
-        path userScriptsDLLPath = userProjectBuildPath.string() + "\\Debug\\UserScripts.dll";
-        path resourcesPath = rootPath.string() + "\\resources";
-
-        path runtimePath = rootPath.string() + "\\runtime";
-
-        path projectSettingsPath = userProjectRootPath.string() + "\\projectSettings.PjSettings";
+        path scriptsBuildPath = projectResourcesPath.string() + "\\scripts\\build";
+        path userScriptsDLLPath = scriptsBuildPath.string() + "\\Debug\\UserScripts.dll";
 
     public:
-        ProjectManager(SceneManager &sceneManager);
+        ProjectManager(SceneManager &sceneManager, TextureManager &textureManager, MaterialManager &materialManager);
 
-        void init(path rootPath);
+        void init();
 
-        const path &getRootPath();
+        const path &getProjectFilePath();
 
-        const path &getProjectTemplate();
+        const path &getProjectLocation();
 
-        const path &getScriptsTemplate();
+        const path &getProjectAssetsPath();
 
-        const path &getBuildPath();
+        const path &getProjectResourcesPath();
 
-        const path &getUserProjectRootPath();
+        const path &getScriptsDLLPath();
 
-        const path &getUserProjectScriptsPath();
+        const path &getScriptsBuildPath();
 
-        const path &getUserProjectScenePath();
-
-        const path &getUserScriptsDLLPath();
-
-        const path &getRuntimePath();
-
-        const path &getBuildResourcesPath();
-
-        const path &getResourcesPath();
-
-        const path &getUserProjectBuildPath();
+        const path &getProjectExportPath();
 
         const path &getCmakePath();
+
+        const std::string &getProjectName();
 
         void createNewProject(const char *string);
 

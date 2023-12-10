@@ -36,7 +36,7 @@ namespace TechEngine {
 
         void stop();
 
-        void onUpdate();
+        void onFixedUpdate();
 
         void clear();
 

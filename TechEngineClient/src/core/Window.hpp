@@ -12,15 +12,10 @@ namespace TechEngine {
         Renderer renderer;
 
         std::string title;
-        uint32_t width = 0;
-        uint32_t height = 0;
-        float aspectRatio = 0;
 
         bool vSync = false;
 
         GLFWwindow *handler;
-
-        void onWindowResizeEvent(WindowResizeEvent *event);
 
     public:
         Window(const std::string &title, uint32_t width, uint32_t height);

@@ -4,6 +4,7 @@
 #include "Panel.hpp"
 #include "renderer/RendererSettings.hpp"
 #include "project/ProjectManager.hpp"
+#include "renderer/ShadersManager.hpp"
 
 namespace TechEngine {
     class PanelsManager;
@@ -18,9 +19,9 @@ namespace TechEngine {
         PanelsManager &panelsManager;
         ProjectManager &projectManager;
         SceneManager &sceneManager;
-
+        ShadersManager &shadersManager;
     public:
-        explicit ExportSettingsPanel(PanelsManager &panelsManager, ProjectManager &projectManager, SceneManager &sceneManager);
+        explicit ExportSettingsPanel(PanelsManager &panelsManager, ProjectManager &projectManager, SceneManager &sceneManager, ShadersManager &shadersManager);
 
         ~ExportSettingsPanel() override;
 

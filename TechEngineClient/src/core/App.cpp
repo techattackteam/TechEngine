@@ -4,17 +4,14 @@
 
 namespace TechEngine {
     App::App(std::string name, int width, int height) :
-            AppCore(), window(name, width, height), textureManager(), materialManager(textureManager), sceneManager(physicsEngine, materialManager), projectManager(sceneManager), physicsEngine(sceneManager.getScene()) {
+            AppCore(), window(name, width, height), textureManager(), materialManager(textureManager), sceneManager(physicsEngine, materialManager),
+            projectManager(sceneManager, textureManager, materialManager), physicsEngine(sceneManager.getScene()) {
         eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event *event) {
             onWindowCloseEvent((WindowCloseEvent *) (event));
         });
 
         timer.init();
-        textureManager.init(FileSystem::getAllFilesWithExtension(".jpg"));
-        textureManager.init(FileSystem::getAllFilesWithExtension(".png"));
-        materialManager.init(FileSystem::getAllFilesWithExtension(".mat"));
-        sceneManager.init(FileSystem::rootPath.string());
-        projectManager.init(FileSystem::rootPath);
+
         physicsEngine.init();
     }
 

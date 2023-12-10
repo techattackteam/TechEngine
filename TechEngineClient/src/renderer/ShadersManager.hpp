@@ -3,24 +3,27 @@
 #include <vector>
 #include "Shader.hpp"
 
-class ShadersManager {
-private:
-    std::unordered_map<std::string, Shader *> shaders;
-    Shader *activeShader;
+namespace TechEngine {
 
-public:
+    class ShadersManager {
+    private:
+        std::unordered_map<std::string, Shader *> shaders;
+        Shader *activeShader;
 
-    ShadersManager();
+    public:
 
-    ~ShadersManager();
+        ShadersManager();
 
-    void changeActiveShader(const std::string &name);
+        ~ShadersManager();
 
-    Shader *getActiveShader();
+        void changeActiveShader(const std::string &name);
 
-    void unBindShader();
+        Shader *getActiveShader();
 
-    void init();
-};
+        void unBindShader();
 
+        void init();
 
+        void exportShaderFiles(const std::string &path);
+    };
+}

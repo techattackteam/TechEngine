@@ -1,13 +1,12 @@
 #pragma once
 
-#include "core/App.hpp"
 #include "core/Window.hpp"
+#include "core/App.hpp"
 #include "external/EntryPoint.hpp"
 
 namespace TechEngine {
     class TechEngineRuntime : public App {
     private:
-        Window window;
         std::string sceneToLoadName;
         std::string windowName;
         uint32_t width;
@@ -22,5 +21,7 @@ namespace TechEngine {
         void onFixedUpdate() override;
 
         bool loadRendererSettings();
+
+        void onWindowResizeEvent(WindowResizeEvent *event);
     };
 }

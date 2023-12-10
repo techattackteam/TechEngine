@@ -7,13 +7,16 @@
 #include <iostream>
 #include <fstream>
 #include <imgui_internal.h>
+#include "core/FileSystem.hpp"
+#include "core/Logger.hpp"
 
 namespace TechEngine {
 
-    ExportSettingsPanel::ExportSettingsPanel(PanelsManager &panelsManager, ProjectManager &projectManager, SceneManager &sceneManager) :
+    ExportSettingsPanel::ExportSettingsPanel(PanelsManager &panelsManager, ProjectManager &projectManager, SceneManager &sceneManager, ShadersManager &shadersManager) :
             panelsManager(panelsManager),
             projectManager(projectManager),
             sceneManager(sceneManager),
+            shadersManager(shadersManager),
             Panel("ExportSettingsPanel") {
 
     }
@@ -47,34 +50,39 @@ namespace TechEngine {
     }
 
     void ExportSettingsPanel::exportProject() {
-        std::filesystem::remove_all(projectManager.getBuildPath());
-        std::filesystem::create_directory(projectManager.getBuildPath());
+        std::filesystem::remove_all(projectManager.getProjectExportPath());
+        std::filesystem::create_directory(projectManager.getProjectExportPath());
         sceneManager.saveCurrentScene();
         std::filesystem::copy_options copyOptions = std::filesystem::copy_options::recursive |
                                                     std::filesystem::copy_options::overwrite_existing;
 
-        //serializeEngineSettings(projectManager.getEngineExportSettingsFile());
-        panelsManager.compileUserScripts();
-        std::filesystem::copy(projectManager.getUserProjectScenePath(), projectManager.getBuildPath(), copyOptions);
-        std::filesystem::copy(projectManager.getUserScriptsDLLPath(), projectManager.getBuildPath(), copyOptions);
-        std::filesystem::copy(projectManager.getResourcesPath(), projectManager.getBuildResourcesPath(), copyOptions);
-        std::filesystem::copy(projectManager.getRuntimePath(), projectManager.getBuildPath(), copyOptions);
-        std::cout << "Export completed!" << std::endl;
+        serializeEngineSettings(projectManager.getProjectExportPath().string() + "//Export.texp");
+        std::filesystem::copy(projectManager.getProjectFilePath(), projectManager.getProjectExportPath(), copyOptions);
+        //panelsManager.compileUserScripts();
+        FileSystem::copyRecursive(projectManager.getProjectAssetsPath(), projectManager.getProjectExportPath().string() + "//Assets", {".cpp", ".hpp"}, {"cmake"});
+        if (std::filesystem::exists(projectManager.getScriptsDLLPath())) {
+            std::filesystem::copy(projectManager.getScriptsDLLPath(), projectManager.getProjectExportPath(), copyOptions);
+        }
+        std::filesystem::create_directory(projectManager.getProjectExportPath().string() + "//Resources");
+        FileSystem::copyRecursive(projectManager.getProjectResourcesPath(), projectManager.getProjectExportPath().string() + "//Resources", {".cpp", ".hpp"}, {"cmake"});
+        std::filesystem::copy(FileSystem::runtimePath, projectManager.getProjectExportPath(), copyOptions);
+        shadersManager.exportShaderFiles(projectManager.getProjectExportPath().string() + "//Resources//shaders");
+        TE_LOGGER_INFO("Project exported to: {0}", projectManager.getProjectExportPath().string());
     }
 
     void ExportSettingsPanel::serializeEngineSettings(const std::filesystem::path &exportPath) {
         YAML::Emitter out;
         out << YAML::BeginMap;
-        out << YAML::Key << "Project Name" << "PLACEHOLDER";
+        out << YAML::Key << "Project Name" << projectManager.getProjectName();
 
         out << YAML::Key << "Window settings";
         out << YAML::BeginMap;
-        out << YAML::Key << "name" << YAML::Value << "PLACEHOLDER";
+        out << YAML::Key << "name" << YAML::Value << projectManager.getProjectName();
         out << YAML::Key << "width" << YAML::Value << width;
         out << YAML::Key << "height" << YAML::Value << height;
         out << YAML::EndMap;
 
-        out << YAML::Key << "Default Scene" << YAML::Value << "defaultScene";
+        out << YAML::Key << "Default Scene" << YAML::Value << sceneManager.getActiveSceneName();
         out << YAML::EndSeq;
         out << YAML::EndMap;
 
