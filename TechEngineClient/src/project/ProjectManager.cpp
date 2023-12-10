@@ -51,6 +51,9 @@ namespace TechEngine {
         return projectExportPath;
     }
 
+    const path &ProjectManager::getCmakeListPath() {
+        return cmakeListPath;
+    }
 
     const path &ProjectManager::getCmakePath() {
         return cmakePath;
@@ -100,9 +103,11 @@ namespace TechEngine {
         projectLocation = std::filesystem::path(projectFilePath).parent_path();
         projectAssetsPath = projectLocation.string() + "\\Assets";
         projectResourcesPath = projectLocation.string() + "\\Resources";
+        projectExportPath = projectLocation.string() + "\\Build";
+
         scriptsBuildPath = projectResourcesPath.string() + "\\scripts\\build";
         userScriptsDLLPath = scriptsBuildPath.string() + "\\Debug\\UserScripts.dll";
-        projectExportPath = projectLocation.string() + "\\Build";
+        cmakeListPath = projectResourcesPath.string() + "\\cmake";
 
         std::string lastSceneLoaded;
         if (std::filesystem::exists(this->projectFilePath)) {
@@ -136,4 +141,6 @@ namespace TechEngine {
     const std::string &ProjectManager::getProjectName() {
         return projectName;
     }
+
+
 }

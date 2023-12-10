@@ -24,6 +24,8 @@ namespace TechEngine {
 
         path scriptsBuildPath = projectResourcesPath.string() + "\\scripts\\build";
         path userScriptsDLLPath = scriptsBuildPath.string() + "\\Debug\\UserScripts.dll";
+        path cmakeListPath = projectResourcesPath.string() + "\\cmake";
+
 
     public:
         ProjectManager(SceneManager &sceneManager, TextureManager &textureManager, MaterialManager &materialManager);
@@ -45,6 +47,8 @@ namespace TechEngine {
         const path &getProjectExportPath();
 
         const path &getCmakePath();
+
+        const path &getCmakeListPath();
 
         const std::string &getProjectName();
 

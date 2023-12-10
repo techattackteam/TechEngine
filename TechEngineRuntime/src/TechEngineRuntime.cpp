@@ -17,15 +17,17 @@ namespace TechEngine {
             EventDispatcher::getInstance().dispatch(new AppCloseRequestEvent());
             return;
         }
-        ScriptEngine::getInstance()->init(projectManager.getProjectLocation().string() + "/UserProject.dll");
+        ScriptEngine::getInstance()->init(projectManager.getScriptsDLLPath().string());
     }
 
     void TechEngineRuntime::onUpdate() {
+        ScriptEngine::getInstance()->onUpdate();
         window.getRenderer().renderPipeline(sceneManager.getScene());
         window.onUpdate();
     }
 
     void TechEngineRuntime::onFixedUpdate() {
+        ScriptEngine::getInstance()->onFixedUpdate();
         physicsEngine.onFixedUpdate();
     }
 

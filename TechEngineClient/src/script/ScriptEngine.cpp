@@ -12,8 +12,10 @@ namespace TechEngine {
     }
 
     void ScriptEngine::init(const std::string &dllPath) {
-        if (!dllPath.empty()) {
+        if (std::filesystem::exists(dllPath)) {
             m_userCustomDll = LoadLibraryA(dllPath.c_str());
+        } else {
+            TE_LOGGER_ERROR("Failed to load user scripts dll");
         }
     }
 
