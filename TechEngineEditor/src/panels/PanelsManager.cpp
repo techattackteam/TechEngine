@@ -324,7 +324,7 @@ namespace TechEngine {
     void PanelsManager::compileUserScripts() {
         if (!exists(projectManager.getScriptsBuildPath())) {
             std::string command = "\"" + projectManager.getCmakePath().string() +
-                                  " -G \"Visual Studio 17 2022\" -S " + "\"" + projectManager.getProjectLocation().string() + "\"" +
+                                  " -G \"Visual Studio 17 2022\" -S " + "\"" + projectManager.getCmakeListPath().string() + "\"" +
                                   " -B " + "\"" + projectManager.getScriptsBuildPath().string() + "\"" + "\"";
             std::system(command.c_str());
         }
