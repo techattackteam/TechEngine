@@ -20,9 +20,6 @@ namespace TechEngine {
 
     void Window::init(const std::string &title, uint32_t width, uint32_t height) {
         this->title = title;
-        this->width = width;
-        this->height = height;
-        this->aspectRatio = (float) width / (float) height;
         glfwInit();
 
         handler = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
@@ -57,9 +54,6 @@ namespace TechEngine {
         });
         glfwSetFramebufferSizeCallback(handler, [](GLFWwindow *handler, int width, int height) {
             dispatchEvent(new WindowResizeEvent(width, height));
-        });
-        EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngine::Event *event) {
-            onWindowResizeEvent((WindowResizeEvent *) event);
         });
         renderer.init();
     }
@@ -99,11 +93,6 @@ namespace TechEngine {
         }
     }
 
-    void Window::onWindowResizeEvent(WindowResizeEvent *event) {
-        this->width = event->getWidth();
-        this->height = event->getHeight();
-        this->aspectRatio = (float) event->getWidth() / (float) event->getHeight();
-    }
 
     void Window::changeTitle(const std::string &name) {
         this->title = name;

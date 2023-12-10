@@ -87,7 +87,7 @@ namespace TechEngine {
         running = false;
     }
 
-    void PhysicsEngine::onUpdate() {
+    void PhysicsEngine::onFixedUpdate() {
         if (running) {
             updateActorPositions();
             pxScene->simulate(Timer::getInstance().getTPS());

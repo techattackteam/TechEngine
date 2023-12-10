@@ -40,6 +40,8 @@ namespace TechEngine {
 
         uint32_t createFramebuffer(uint32_t width, uint32_t height);
 
+        ShadersManager& getShadersManager();
+
     private:
         void shadowPass(Scene &scene);
 

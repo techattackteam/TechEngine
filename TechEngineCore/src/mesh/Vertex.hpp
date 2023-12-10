@@ -17,6 +17,18 @@ public:
         return this->position;
     }
 
+    inline glm::vec3 getNormal() {
+        return this->normal;
+    }
+
+    inline glm::vec2 getTextureCoordinate() {
+        return this->textCoords;
+    }
+
+    inline glm::vec3 getColor() {
+        return this->color;
+    }
+
     inline void setColor(glm::vec4 color) {
         this->color = color;
     }

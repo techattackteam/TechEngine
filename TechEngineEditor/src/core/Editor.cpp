@@ -1,31 +1,25 @@
 #include <fstream>
 #include "Editor.hpp"
 #include "core/FileSystem.hpp"
-#include "project/ProjectManager.hpp"
 #include "yaml-cpp/yaml.h"
-#include "physics/PhysicsEngine.hpp"
-#include "material/MaterialManager.hpp"
-#include "renderer/TextureManager.hpp"
 
 namespace TechEngine {
 
     Editor::Editor() : App("TechEngine", RendererSettings::width, RendererSettings::height), panelsManager(window, sceneManager, projectManager, physicsEngine, textureManager, materialManager) {
 
         editorSettings = FileSystem::rootPath.string() + "/EditorSettings.TESettings";
-
+        projectManager.init();
         loadEditorSettings();
-
         panelsManager.init();
     }
 
     void Editor::onUpdate() {
-        physicsEngine.onUpdate();
         panelsManager.update();
         window.onUpdate();
     }
 
     void Editor::onFixedUpdate() {
-
+        physicsEngine.onFixedUpdate();
     }
 
     void Editor::loadEditorSettings() {
