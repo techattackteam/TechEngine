@@ -18,7 +18,7 @@ namespace TechEngine {
 
 
     void ContentBrowserPanel::init() {
-        currentPath = projectManager.getProjectLocation();
+        currentPath = projectManager.getProjectAssetsPath();
     }
 
     void ContentBrowserPanel::onUpdate() {
@@ -34,7 +34,7 @@ namespace TechEngine {
 
             ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.f);
-            renderDirectoryHierarchy(projectManager.getProjectLocation());
+            renderDirectoryHierarchy(projectManager.getProjectAssetsPath());
             ImGui::PopStyleVar();
 
             ImGui::EndChild();
@@ -107,7 +107,7 @@ namespace TechEngine {
         bool opened = false;
         for (auto &directoryEntry: std::filesystem::directory_iterator(directoryPath)) {
             const auto &path = directoryEntry.path();
-            auto relativePath = std::filesystem::relative(path, projectManager.getProjectLocation());
+            auto relativePath = std::filesystem::relative(path, projectManager.getProjectAssetsPath());
             std::string filenameString = relativePath.filename().string();
             if (selectedPath == path.string()) {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
