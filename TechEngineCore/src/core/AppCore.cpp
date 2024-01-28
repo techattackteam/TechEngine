@@ -3,7 +3,7 @@
 
 namespace TechEngine {
     AppCore::AppCore() : timer() {
-        eventDispatcher.subscribe(TechEngine::AppCloseRequestEvent::eventType, [this](Event *event) {
+        eventDispatcher.subscribe(AppCloseRequestEvent::eventType, [this](Event *event) {
             onAppCloseRequestEvent();
         });
     }

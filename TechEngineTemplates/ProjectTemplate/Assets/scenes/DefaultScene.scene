@@ -1,4 +1,4 @@
-Scene: default scene
+Scene: DefaultScene
 GameObjects:
   - Name: MainCamera
     Tag: c684dc7a-82fb-48dc-98da-8e1312696dd0
@@ -8,20 +8,16 @@ GameObjects:
       Scale: [1, 1, 1]
     CameraComponent:
       ProjectionType: 0
-      MainCamera: false
+      MainCamera: true
       Fov: 60
-      Near: 0.1
+      Near: 0.100000001
       Far: 100
   - Name: Cube
-    Tag: c6e8d015-5c1e-46ac-8169-573169610d65
+    Tag: f4d6fe79-43bd-4186-b9a4-d3b4ef435ed7
     TransformComponent:
       Position: [0, 0, 0]
-      Orientation: [0, 0, 0]
+      Orientation: [0, -0, 0]
       Scale: [1, 1, 1]
     MeshRendererComponent:
       Mesh: Cube
-      Color: [1, 1, 1, 1]
-      Ambient: [1, 1, 1]
-      Diffuse: [1, 1, 1]
-      Specular: [1, 1, 1]
-      Shininess: 32
+      Material: DefaultMaterial

@@ -4,7 +4,7 @@
 #include "core/Core.hpp"
 
 namespace TechEngine {
-    class Engine_API RendererSettings {
+    class /*Engine_API*/ RendererSettings {
     public:
 
         static inline uint32_t targetId = 0;
