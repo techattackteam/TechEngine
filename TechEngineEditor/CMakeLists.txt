@@ -28,13 +28,6 @@ add_custom_command(TARGET TechEngineEditor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/TechEngineClient/res ${CMAKE_BINARY_DIR}/TechEngineClient/res)
 
-#Copy Engine lib for user code
-file(GLOB_RECURSE TechEngineAPI_libs "${PROJECT_SOURCE_DIR}/bin/TechEngineClient/debug/TechEngineClient.lib" "${PROJECT_SOURCE_DIR}/bin/TechEngineCore/debug/TechEngineCore.lib")
-add_custom_command(TARGET TechEngineEditor POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${TechEngineAPI_libs} $<TARGET_FILE_DIR:TechEngineEditor>/TechEngineAPI/lib
-        COMMAND_EXPAND_LISTS)
-
 #Copy project template
 file(GENERATE
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/CopyConfigurationData$<CONFIG>.cmake"
@@ -62,34 +55,6 @@ add_custom_command(
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
-#Copy Engine includes for user code
-#For now it will include everything -> subject to change
-file(GLOB_RECURSE TechEngineAPI_include "${CMAKE_CURRENT_SOURCE_DIR}/../TechEngineClient/src")
-add_custom_command(TARGET TechEngineEditor POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_CURRENT_SOURCE_DIR}/../TechEngineClient/src $<TARGET_FILE_DIR:TechEngineEditor>/TechEngineAPI/include/TechEngineGame
-        COMMAND_EXPAND_LISTS)
-
-file(GLOB_RECURSE TechEngineAPI_include "${CMAKE_CURRENT_SOURCE_DIR}/../TechEngineCore/src")
-add_custom_command(TARGET TechEngineEditor POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../TechEngineCore/src $<TARGET_FILE_DIR:TechEngineEditor>/TechEngineAPI/include/TechEngineCore
-        COMMAND_EXPAND_LISTS)
-
-file(GLOB_RECURSE CORE_FILES "${CMAKE_BINARY_DIR}/TechEngineEditor/TechEngineAPI/include/TechEngineCore/*.cpp")
-file(GLOB_RECURSE GAME_FILES "${CMAKE_BINARY_DIR}/TechEngineEditor/TechEngineAPI/include/TechEngineClient/*.cpp")
-
-if (EXISTS CORE_FILES)
-    add_custom_command(TARGET TechEngineEditor
-            COMMAND ${CMAKE_COMMAND} -E rm -f ${GAME_FILES}
-            COMMAND_EXPAND_LISTS)
-endif ()
-
-if (EXISTS GAME_FILES)
-    add_custom_command(TARGET TechEngineEditor
-            COMMAND ${CMAKE_COMMAND} -E rm -f ${CORE_FILES}
-            COMMAND_EXPAND_LISTS)
-endif ()
 
 #copy engine's runtime to build directory
 add_custom_command(TARGET TechEngineEditor POST_BUILD
