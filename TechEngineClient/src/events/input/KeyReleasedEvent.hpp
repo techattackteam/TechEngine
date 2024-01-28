@@ -1,7 +1,6 @@
 #pragma once
 
 #include "core/Key.hpp"
-#include "core/Core.hpp"
 
 namespace TechEngine {
     class KeyReleasedEvent : public TechEngine::Event {

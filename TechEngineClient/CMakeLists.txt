@@ -7,8 +7,6 @@ find_package(glm CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
 #find_package(Stb REQUIRED)
 
-add_definitions(-DENGINE_BUILD_DLL)
-
 foreach (_headerFile ${TechEngineClient_Headers})
     get_filename_component(_dir ${_headerFile} PATH)
     list(APPEND TechEngineClient_Include_Dirs ${_dir})

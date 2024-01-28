@@ -1,9 +1,8 @@
 #pragma once
 
 #include "event/events/Event.hpp"
-#include "core/Core.hpp"
 namespace TechEngine {
-    class /*Engine_API*/ DisconnectionRequestEvent : public Event {
+    class  DisconnectionRequestEvent : public Event {
     private:
         std::string uuid;
         udp::endpoint endpoint;
