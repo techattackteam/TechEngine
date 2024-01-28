@@ -15,7 +15,7 @@ foreach (_headerFile ${TechEngineClient_Headers})
 endforeach ()
 list(REMOVE_DUPLICATES TechEngineClient_Include_Dirs)
 
-add_library(TechEngineClient SHARED ${TechEngineClient_Sources} ${TechEngineClient_Headers})
+add_library(TechEngineClient STATIC ${TechEngineClient_Sources} ${TechEngineClient_Headers})
 
 #Setup target's output directory
 if (WIN32) # WINDOWS
@@ -32,9 +32,9 @@ if (WIN32) # WINDOWS
     )
 endif ()
 set(Stb_INCLUDE_DIR "C:\\dev\\TechEngine\\dependencies\\vcpkg\\packages\\stb_x64-windows\\include")
-target_include_directories(TechEngineClient PRIVATE ${Stb_INCLUDE_DIR})
+target_include_directories(TechEngineClient PUBLIC ${Stb_INCLUDE_DIR})
 target_include_directories(TechEngineClient PUBLIC "src")
-target_link_libraries(TechEngineClient TechEngineCore GLEW::GLEW glfw glm::glm yaml-cpp)
+target_link_libraries(TechEngineClient PUBLIC TechEngineCore GLEW::GLEW glfw glm::glm yaml-cpp)
 
 
 add_custom_command(TARGET TechEngineClient POST_BUILD
@@ -42,9 +42,9 @@ add_custom_command(TARGET TechEngineClient POST_BUILD
         ${CMAKE_SOURCE_DIR}/TechEngineClient/res $<TARGET_FILE_DIR:TechEngineEditor>/resources
         COMMAND_EXPAND_LISTS)
 
-add_custom_command(TARGET TechEngineClient POST_BUILD
+#[[add_custom_command(TARGET TechEngineClient POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
         $<TARGET_RUNTIME_DLLS:TechEngineEditor>
         $<TARGET_FILE_DIR:TechEngineEditor>
-        COMMAND_EXPAND_LISTS)
+        COMMAND_EXPAND_LISTS)]]
 
