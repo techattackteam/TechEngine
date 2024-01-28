@@ -1,5 +1,5 @@
 #pragma once
-
+#include <PxConfig.h>
 #include <PxPhysicsAPI.h>
 
 #include "components/physics/RigidBody.hpp"

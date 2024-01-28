@@ -38,11 +38,11 @@ namespace TechEngine {
         if (pvd->connect(*transport, physx::PxPvdInstrumentationFlag::eALL)) {
             TE_LOGGER_INFO("PVD connected!");
         } else {
-            TE_LOGGER_CRITICAL("PVD connection failed!");
+            TE_LOGGER_ERROR("PVD connection failed!");
         }
         physics = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, physx::PxTolerancesScale(), true, pvd);
         if (!physics)
-            TE_LOGGER_CRITICAL("PxCreatePhysics failed!");
+            TE_LOGGER_ERROR("PxCreatePhysics failed!");
 
         defaultMaterial = physics->createMaterial(0.5f, 0.5f, 0.0f);
         createScene();
