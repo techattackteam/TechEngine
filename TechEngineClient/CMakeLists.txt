@@ -32,7 +32,7 @@ endif ()
 set(Stb_INCLUDE_DIR "C:\\dev\\TechEngine\\dependencies\\vcpkg\\packages\\stb_x64-windows\\include")
 target_include_directories(TechEngineClient PUBLIC ${Stb_INCLUDE_DIR})
 target_include_directories(TechEngineClient PUBLIC "src")
-target_link_libraries(TechEngineClient PUBLIC TechEngineCore GLEW::GLEW glfw glm::glm yaml-cpp)
+target_link_libraries(TechEngineClient PUBLIC TechEngineCore TechEngineAPI GLEW::GLEW glfw glm::glm yaml-cpp)
 
 
 add_custom_command(TARGET TechEngineClient POST_BUILD
