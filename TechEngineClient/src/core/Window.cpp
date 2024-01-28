@@ -8,6 +8,7 @@
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
 #include "events/input/MouseScrollEvent.hpp"
 #include "Mouse.hpp"
+#include "events/window/WindowResizeEvent.hpp"
 
 namespace TechEngine {
     Window::Window(const std::string &title, uint32_t width, uint32_t height) {

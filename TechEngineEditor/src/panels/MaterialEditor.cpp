@@ -21,7 +21,7 @@ namespace TechEngine {
     }
 
     void MaterialEditor::init() {
-        m_sphere.init(&materialManager.getMaterial("DefaultMaterial"));
+        //m_sphere.init(&materialManager.getMaterial("DefaultMaterial"));
         m_sphere.getTransform().position = glm::vec3(0, 0, 0);
         m_camera.getTransform().position = glm::vec3(0, 0, 3);
     }

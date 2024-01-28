@@ -1,6 +1,6 @@
 #include "GameView.hpp"
 #include "renderer/RendererSettings.hpp"
-
+#include "imgui.h"
 namespace TechEngine {
 
     GameView::GameView(Renderer &renderer, Scene &scene) : renderer(&renderer), scene(scene), Panel("Game") {

@@ -4,7 +4,7 @@
 #include <string>
 
 namespace TechEngine {
-    class Engine_API EngineSettings {
+    class /*Engine_API*/ EngineSettings {
     private:
         std::string settingsFilePath;
 

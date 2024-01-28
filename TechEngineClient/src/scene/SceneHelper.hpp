@@ -7,7 +7,7 @@
 namespace TechEngine {
     class SceneHelper {
     public:
-        Engine_API inline static CameraComponent *mainCamera;
+        /*Engine_API*/ inline static CameraComponent *mainCamera;
 
         static void changeMainCameraTo(CameraComponent *cameraComponent);
 

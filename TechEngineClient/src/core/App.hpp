@@ -10,7 +10,7 @@
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    class Engine_API App : public TechEngine::AppCore {
+    class /*Engine_API*/ App : public TechEngine::AppCore {
     public:
         Window window;
         TextureManager textureManager;
@@ -26,9 +26,6 @@ namespace TechEngine {
         void run() override;
 
     private:
-
-        void onWindowCloseEvent(WindowCloseEvent *event);
+        void onWindowCloseEvent(WindowCloseEvent* event);
     };
-
 }
-

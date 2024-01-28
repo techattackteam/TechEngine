@@ -6,6 +6,9 @@
 #include "Scene.hpp"
 #include <iostream>
 
+#include "event/events/gameObjects/GameObjectCreateEvent.hpp"
+#include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
+
 namespace TechEngine {
     GameObject::GameObject(std::string name) : name(std::move(name)) {
         addComponent<TransformComponent>();

@@ -96,7 +96,7 @@ namespace TechEngine {
 
     void ProjectManager::loadProject(const std::string&projectLocation) {
         this->projectLocation = projectLocation;
-        this->projectFilePath = this->projectLocation.string() + "\\" + projectLocation + ".teprj";
+        this->projectFilePath = this->projectLocation.string() + "\\" + FileSystem::getFileName(projectLocation) + ".teprj";
         projectAssetsPath = this->projectLocation.string() + "\\Assets";
         projectResourcesPath = this->projectLocation.string() + "\\Resources";
         projectExportPath = this->projectLocation.string() + "\\Build";

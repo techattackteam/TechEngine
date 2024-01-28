@@ -2,6 +2,7 @@
 
 #include "core/Window.hpp"
 #include "core/App.hpp"
+#include "events/window/WindowResizeEvent.hpp"
 #include "external/EntryPoint.hpp"
 
 namespace TechEngine {

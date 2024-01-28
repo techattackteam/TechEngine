@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-#include <imgui.h>
 #include "scene/GameObject.hpp"
 
 namespace TechEngine {

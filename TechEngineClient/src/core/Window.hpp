@@ -3,7 +3,6 @@
 #include <string>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include "events/window/WindowResizeEvent.hpp"
 #include "renderer/Renderer.hpp"
 
 namespace TechEngine {
