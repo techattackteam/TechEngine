@@ -4,9 +4,7 @@
 #include "yaml-cpp/yaml.h"
 
 namespace TechEngine {
-
     Editor::Editor() : App("TechEngine", RendererSettings::width, RendererSettings::height), panelsManager(window, sceneManager, projectManager, physicsEngine, textureManager, materialManager) {
-
         editorSettings = FileSystem::rootPath.string() + "/EditorSettings.TESettings";
         projectManager.init();
         loadEditorSettings();
@@ -31,12 +29,12 @@ namespace TechEngine {
                 lastProjectLoaded = data["Last project loaded"].as<std::string>();
                 if (std::filesystem::exists(lastProjectLoaded)) {
                     projectManager.loadProject(lastProjectLoaded);
-                    return;
                 }
             }
-            catch (YAML::Exception &e) {
+            catch (YAML::Exception&e) {
                 TE_LOGGER_CRITICAL("Failed to load EditorSettings.TESettings file.\n      {0}", e.what());
             }
+            return;
         }
         projectManager.createNewProject("New Project");
         lastProjectLoaded = FileSystem::rootPath.string() + "\\New Project";
@@ -49,10 +47,8 @@ namespace TechEngine {
         fout << out.c_str();
         projectManager.loadProject(lastProjectLoaded);
     }
-
 }
 
-TechEngine::AppCore *TechEngine::createApp() {
+TechEngine::AppCore* TechEngine::createApp() {
     return new TechEngine::Editor();
 }
-
