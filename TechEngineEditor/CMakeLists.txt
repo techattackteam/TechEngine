@@ -21,7 +21,6 @@ if (WIN32) # WINDOWS
             )
 endif ()
 
-
 target_include_directories(TechEngineEditor PRIVATE "src")
 target_link_libraries(TechEngineEditor TechEngineClient imgui::imgui imguizmo::imguizmo assimp::assimp)
 
