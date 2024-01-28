@@ -56,6 +56,6 @@ namespace TechEngine {
 
         void saveProject();
 
-        void loadProject(std::string projectPath);
+        void loadProject(const std::string& projectPath);
     };
 }
