@@ -10,7 +10,7 @@
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    class /*Engine_API*/ App : public TechEngine::AppCore {
+    class  App : public TechEngine::AppCore {
     public:
         Window window;
         TextureManager textureManager;

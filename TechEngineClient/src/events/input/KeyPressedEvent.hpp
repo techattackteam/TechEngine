@@ -2,7 +2,6 @@
 
 #include "event/events/Event.hpp"
 #include "core/Key.hpp"
-#include "core/Core.hpp"
 
 namespace TechEngine {
     class KeyPressedEvent : public TechEngine::Event {

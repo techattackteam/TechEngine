@@ -4,9 +4,9 @@
 
 #include "../Event.hpp"
 #include "event/events/Event.hpp"
-#include "core/Core.hpp"
+
 namespace TechEngine {
-    class /*Engine_API*/ ConnectionSuccessfulEvent : public Event {
+    class ConnectionSuccessfulEvent : public Event {
     private:
         const std::string uuid;
     public:
