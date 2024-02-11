@@ -1,19 +1,15 @@
-
+#pragma once
 #include <functional>
-#include <unordered_map>
-#include <vector>
 #include "manager/managers/AsyncEventManager.hpp"
 #include "manager/managers/SyncEventManager.hpp"
-#include "manager/EventManager.hpp"
 #include "events/Event.hpp"
 #include "event/manager/managers/FixedSyncEventManager.hpp"
 
-#pragma once
 
 namespace TechEngine {
     class EventDispatcher {
     protected:
-        inline static EventDispatcher *instance;
+        inline static EventDispatcher* instance;
 
     public:
         EventDispatcher();
@@ -22,15 +18,12 @@ namespace TechEngine {
         FixedSyncEventManager fixedSyncEventManager{};
         AsyncEventManager asyncEventManager{};
 
-        void subscribe(const EventType &type, const std::function<void(Event *)> &callback);
+        void subscribe(const EventType&type, const std::function<void(Event*)>&callback);
 
-        void unsubscribe(const EventType &type, const std::function<void(Event *)> &callback);
+        void unsubscribe(const EventType&type, const std::function<void(Event*)>&callback);
 
-        void dispatch(Event *event);
+        void dispatch(Event* event);
 
-        static EventDispatcher &getInstance();
-
+        static EventDispatcher& getInstance();
     };
-
-
 }

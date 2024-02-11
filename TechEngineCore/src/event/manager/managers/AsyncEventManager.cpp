@@ -17,7 +17,7 @@ namespace TechEngine {
         delete thread;
     }
 
-    void AsyncEventManager::dispatch(Event *event) {
+    void AsyncEventManager::dispatch(Event* event) {
         std::unique_lock<std::recursive_mutex> lock(mutex);
         EventManager::dispatch(event);
         canExecute = true;
@@ -35,7 +35,7 @@ namespace TechEngine {
                 canExecuteCond.wait(lock);
             }
             //if (!running) Not sure why this is here
-                execute();
+            execute();
             canExecute = false;
         }
     }

@@ -4,37 +4,36 @@
 #include "event/events/appManagement/AppCloseRequestEvent.hpp"
 #include "scene/SceneHelper.hpp"
 #include "core/Logger.hpp"
+#include "GL/glew.h"
+#include "GLFW/glfw3.h"
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
 #include <filesystem>
 #include <commdlg.h>
 #include <imgui_internal.h>
-#include <yaml-cpp/node/parse.h>
 #include "project/ProjectManager.hpp"
 #include "events/input/KeyPressedEvent.hpp"
-#include "events/input/KeyReleasedEvent.hpp"
 #include "defaultGameObject/MainCamera.hpp"
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    PanelsManager::PanelsManager(Window &window, SceneManager &sceneManager,
-                                 ProjectManager &projectManager,
-                                 PhysicsEngine &physicsEngine,
-                                 TextureManager &textureManager,
-                                 MaterialManager &materialManager) :
-            window(window),
-            sceneManager(sceneManager),
-            projectManager(projectManager),
-            physicsEngine(physicsEngine),
+    PanelsManager::PanelsManager(Window&window, SceneManager&sceneManager,
+                                 ProjectManager&projectManager,
+                                 PhysicsEngine&physicsEngine,
+                                 TextureManager&textureManager,
+                                 MaterialManager&materialManager) : window(window),
+                                                                    sceneManager(sceneManager),
+                                                                    projectManager(projectManager),
+                                                                    physicsEngine(physicsEngine),
 
-            gameView(window.getRenderer(), sceneManager.getScene()),
-            contentBrowser(*this, projectManager, sceneManager, materialManager),
-            exportSettingsPanel(*this, projectManager, sceneManager, window.getRenderer().getShadersManager()),
-            sceneHierarchyPanel(sceneManager.getScene(), materialManager),
-            sceneView(window.getRenderer(), sceneManager.getScene(), sceneHierarchyPanel.getSelectedGO()),
-            inspectorPanel(sceneHierarchyPanel.getSelectedGO(), materialManager, physicsEngine),
-            materialEditor(window.getRenderer(), textureManager, materialManager, sceneManager.getScene()) {
+                                                                    gameView(window.getRenderer(), sceneManager.getScene()),
+                                                                    contentBrowser(*this, projectManager, sceneManager, materialManager),
+                                                                    exportSettingsPanel(*this, projectManager, sceneManager, window.getRenderer().getShadersManager()),
+                                                                    sceneHierarchyPanel(sceneManager.getScene(), materialManager),
+                                                                    sceneView(window.getRenderer(), sceneManager.getScene(), sceneHierarchyPanel.getSelectedGO()),
+                                                                    inspectorPanel(sceneHierarchyPanel.getSelectedGO(), materialManager, physicsEngine),
+                                                                    materialEditor(window.getRenderer(), textureManager, materialManager, sceneManager.getScene()) {
     }
 
     void PanelsManager::init() {
@@ -58,7 +57,7 @@ namespace TechEngine {
 
     void PanelsManager::update() {
         beginImGuiFrame();
-        for (CustomPanel *panel: customPanels) {
+        for (CustomPanel* panel: customPanels) {
             panel->onUpdate();
         }
         sceneHierarchyPanel.onUpdate();
@@ -71,14 +70,14 @@ namespace TechEngine {
         endImGuiFrame();
     }
 
-    void PanelsManager::registerCustomPanel(RegisterCustomPanel *event) {
+    void PanelsManager::registerCustomPanel(RegisterCustomPanel* event) {
         customPanels.emplace_back(event->getPanel());
         event->getPanel()->setupImGuiContext(imguiContext);
     }
 
     void PanelsManager::initImGui() {
         imguiContext = ImGui::CreateContext();
-        ImGuiIO &io = ImGui::GetIO();
+        ImGuiIO&io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -86,7 +85,7 @@ namespace TechEngine {
 
         ImGui::StyleColorsDark();
 
-        ImGuiStyle &style = ImGui::GetStyle();
+        ImGuiStyle&style = ImGui::GetStyle();
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
             style.WindowRounding = 0.0f;
         }
@@ -98,8 +97,8 @@ namespace TechEngine {
     }
 
     void PanelsManager::setColorTheme() {
-        ImGuiStyle &style = ImGui::GetStyle();
-        ImVec4 *colors = style.Colors;
+        ImGuiStyle&style = ImGui::GetStyle();
+        ImVec4* colors = style.Colors;
 
         // Modify the blue color to make it more grayish
         colors[ImGuiCol_Text] = ImVec4(0.80f, 0.80f, 0.80f, 1.00f); // Gray text
@@ -150,7 +149,6 @@ namespace TechEngine {
         style.GrabRounding = 2.0f;
         style.TabRounding = 2.0f;
         style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
-
     }
 
     void PanelsManager::beginImGuiFrame() {
@@ -171,7 +169,7 @@ namespace TechEngine {
         static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-        ImGuiViewport *viewport = ImGui::GetMainViewport();
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->Pos);
         ImGui::SetNextWindowSize(viewport->Size);
         ImGui::SetNextWindowViewport(viewport->ID);
@@ -190,8 +188,8 @@ namespace TechEngine {
         ImGui::PopStyleVar(2);
 
         // DockSpace
-        ImGuiIO &io = ImGui::GetIO();
-        ImGuiStyle &style = ImGui::GetStyle();
+        ImGuiIO&io = ImGui::GetIO();
+        ImGuiStyle&style = ImGui::GetStyle();
         float minWinSizeX = style.WindowMinSize.x;
         style.WindowMinSize.x = 170.0f;
         if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
@@ -207,7 +205,6 @@ namespace TechEngine {
             if (ImGui::MenuItem("New Project", "Ctrl+N")) {
             }
             if (ImGui::MenuItem("Open Project", "Ctrl+O")) {
-
             }
             if (ImGui::MenuItem("Save Project", "Ctrl+S")) {
                 projectManager.saveProject();
@@ -224,7 +221,8 @@ namespace TechEngine {
             if (ImGui::MenuItem("Export")) {
                 if (exportSettingsPanel.isVisible()) {
                     exportSettingsPanel.setVisibility(false);
-                } else {
+                }
+                else {
                     exportSettingsPanel.setVisibility(true);
                 }
             }
@@ -240,10 +238,10 @@ namespace TechEngine {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 4));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-        auto &colors = ImGui::GetStyle().Colors;
-        const auto &buttonHovered = colors[ImGuiCol_ButtonHovered];
+        auto&colors = ImGui::GetStyle().Colors;
+        const auto&buttonHovered = colors[ImGuiCol_ButtonHovered];
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f));
-        const auto &buttonActive = colors[ImGuiCol_ButtonActive];
+        const auto&buttonActive = colors[ImGuiCol_ButtonActive];
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, 0.5f));
 
         ImGui::Begin("##Toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
@@ -257,7 +255,8 @@ namespace TechEngine {
         if (ImGui::Button(m_currentPlaying == true ? "Stop" : "Play", ImVec2(size, 0))) {
             if (!m_currentPlaying) {
                 startRunningScene();
-            } else {
+            }
+            else {
                 stopRunningScene();
             }
         }
@@ -273,13 +272,13 @@ namespace TechEngine {
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         ImGui::EndFrame();
-        GLFWwindow *backup_current_context = glfwGetCurrentContext();
+        GLFWwindow* backup_current_context = glfwGetCurrentContext();
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
     }
 
-    std::string PanelsManager::openFileWindow(const char *filter) {
+    std::string PanelsManager::openFileWindow(const char* filter) {
         OPENFILENAMEA ofn;
         CHAR szFile[260] = {0};
         CHAR currentDir[256] = {0};
@@ -299,7 +298,7 @@ namespace TechEngine {
         return std::string();
     }
 
-    std::string PanelsManager::saveFile(const char *filter) {
+    std::string PanelsManager::saveFile(const char* filter) {
         OPENFILENAMEA ofn;
         CHAR szFile[260] = {0};
         CHAR currentDir[256] = {0};
@@ -323,7 +322,7 @@ namespace TechEngine {
     }
 
     void PanelsManager::compileUserScripts() {
-        if (!exists(projectManager.getScriptsBuildPath())) {
+        if (!exists(projectManager.getScriptsBuildPath()) || std::filesystem::is_empty(projectManager.getScriptsBuildPath())) {
             std::string command = "\"" + projectManager.getCmakePath().string() +
                                   " -G \"Visual Studio 17 2022\" -S " + "\"" + projectManager.getCmakeListPath().string() + "\"" +
                                   " -B " + "\"" + projectManager.getScriptsBuildPath().string() + "\"" + "\"";
@@ -348,7 +347,7 @@ namespace TechEngine {
         physicsEngine.stop();
         sceneManager.loadSceneFromTemporarily(sceneManager.getActiveSceneName());
         sceneHierarchyPanel.getSelectedGO().clear();
-        for (GameObject *gameObject: sceneManager.getScene().getGameObjects()) {
+        for (GameObject* gameObject: sceneManager.getScene().getGameObjects()) {
             if (gameObject->hasComponent<CameraComponent>() && gameObject->getComponent<CameraComponent>()->isMainCamera()) {
                 SceneHelper::mainCamera = gameObject->getComponent<CameraComponent>();
             }
@@ -359,11 +358,11 @@ namespace TechEngine {
         m_currentPlaying = false;
     }
 
-    std::vector<GameObject *> &PanelsManager::getSelectedGameObjects() {
+    std::vector<GameObject *>& PanelsManager::getSelectedGameObjects() {
         return sceneHierarchyPanel.getSelectedGO();
     }
 
-    void PanelsManager::OnKeyPressedEvent(Key &key) {
+    void PanelsManager::OnKeyPressedEvent(Key&key) {
         switch (key.getKeyCode()) {
             case Q: {
                 if (!ImGuizmo::IsUsing())
@@ -390,8 +389,7 @@ namespace TechEngine {
     }
 
 
-    void PanelsManager::openMaterialEditor(const std::string &materialName, const std::string &filepath) {
+    void PanelsManager::openMaterialEditor(const std::string&materialName, const std::string&filepath) {
         materialEditor.open(materialName, filepath);
     }
-
 }

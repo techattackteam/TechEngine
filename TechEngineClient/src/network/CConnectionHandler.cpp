@@ -25,12 +25,12 @@ namespace TechEngine {
         networkHandler->sendPacket(new TechEngine::ConnectionRequestPacket());
     }
 
-    void CConnectionHandler::onConnectionSuccessEvent(TechEngine::ConnectionSuccessfulEvent *event) {
+    void CConnectionHandler::onConnectionSuccessEvent(TechEngine::ConnectionSuccessfulEvent* event) {
         networkHandler->setUUID(event->getUUID());
         std::cout << "Connected with server. My UUID: " << event->getUUID() << std::endl;
     }
 
-    void CConnectionHandler::onPingEvent(TechEngine::PingEvent *event) {
+    void CConnectionHandler::onPingEvent(TechEngine::PingEvent* event) {
         networkHandler->sendPacket(new TechEngine::PingPacket());
     }
 }

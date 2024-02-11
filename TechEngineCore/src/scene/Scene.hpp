@@ -62,5 +62,6 @@ namespace TechEngine {
         void makeChildTo(GameObject* parent, GameObject* child);
 
         void onGameObjectDeleteRequest(TechEngine::RequestDeleteGameObject* event);
+
     };
 }

@@ -58,5 +58,4 @@ namespace TechEngine {
         dispatchEvent(new MouseMoveEvent(fromPosition, toPosition));
         lastPosition = toPosition;
     }
-
 }

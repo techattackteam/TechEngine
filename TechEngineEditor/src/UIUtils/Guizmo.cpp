@@ -7,7 +7,7 @@ namespace TechEngine {
     Guizmo::Guizmo() {
     }
 
-    bool DecomposeTransform(const glm::mat4 &transform, glm::vec3 &translation, glm::vec3 &rotation, glm::vec3 &scale) {
+    bool DecomposeTransform(const glm::mat4&transform, glm::vec3&translation, glm::vec3&rotation, glm::vec3&scale) {
         // From glm::decompose in matrix_decompose.inl
 
         using namespace glm;
@@ -21,9 +21,9 @@ namespace TechEngine {
 
         // First, isolate perspective.  This is the messiest.
         if (
-                epsilonNotEqual(LocalMatrix[0][3], static_cast<T>(0), epsilon<T>()) ||
-                epsilonNotEqual(LocalMatrix[1][3], static_cast<T>(0), epsilon<T>()) ||
-                epsilonNotEqual(LocalMatrix[2][3], static_cast<T>(0), epsilon<T>())) {
+            epsilonNotEqual(LocalMatrix[0][3], static_cast<T>(0), epsilon<T>()) ||
+            epsilonNotEqual(LocalMatrix[1][3], static_cast<T>(0), epsilon<T>()) ||
+            epsilonNotEqual(LocalMatrix[2][3], static_cast<T>(0), epsilon<T>())) {
             // Clear the perspective partition
             LocalMatrix[0][3] = LocalMatrix[1][3] = LocalMatrix[2][3] = static_cast<T>(0);
             LocalMatrix[3][3] = static_cast<T>(1);
@@ -65,7 +65,7 @@ namespace TechEngine {
         return true;
     }
 
-    void Guizmo::editTransform(ImGuiContext *context, std::vector<GameObject *> &selectedGameObjects) {
+    void Guizmo::editTransform(ImGuiContext* context, std::vector<GameObject *>&selectedGameObjects) {
         if (operation == -1) {
             return;
         }
@@ -84,13 +84,13 @@ namespace TechEngine {
         m_ViewportBounds[1] = {viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y};
         ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y, m_ViewportBounds[1].x - m_ViewportBounds[0].x, m_ViewportBounds[1].y - m_ViewportBounds[0].y);
 
-        const glm::mat4 &cameraProjection = SceneHelper::mainCamera->getProjectionMatrix();
+        const glm::mat4&cameraProjection = SceneHelper::mainCamera->getProjectionMatrix();
         glm::mat4 cameraView = SceneHelper::mainCamera->getViewMatrix();
 
         glm::mat4 transform = selectedGameObjects.front()->getModelMatrix();
-        ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
-                             (ImGuizmo::OPERATION) operation, (ImGuizmo::MODE) (mode), glm::value_ptr(transform),
-                             nullptr, nullptr);
+        Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
+                   (ImGuizmo::OPERATION)operation, (ImGuizmo::MODE)(mode), glm::value_ptr(transform),
+                   nullptr, nullptr);
 
         if (ImGuizmo::IsUsing()) {
             glm::vec3 translation, rotation, scale;

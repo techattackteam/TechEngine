@@ -1,11 +1,11 @@
 #include "SceneHelper.hpp"
-#include "components/light/DirectionalLightComponent.hpp"
+#include "scene/Scene.hpp"
 
 namespace TechEngine {
-    bool SceneHelper::findCameraComponent(Scene &scene) {
-        for (GameObject *gameObject: scene.getGameObjects()) {
+    bool SceneHelper::findCameraComponent(Scene&scene) {
+        for (GameObject* gameObject: scene.getGameObjects()) {
             if (gameObject->hasComponent<CameraComponent>()) {
-                CameraComponent *cameraComponent = gameObject->getComponent<CameraComponent>();
+                CameraComponent* cameraComponent = gameObject->getComponent<CameraComponent>();
                 if (cameraComponent->isMainCamera()) {
                     mainCamera = cameraComponent;
                     return true;
@@ -15,7 +15,7 @@ namespace TechEngine {
         return false;
     }
 
-    bool SceneHelper::hasMainCamera(Scene &scene) {
+    bool SceneHelper::hasMainCamera(Scene&scene) {
         if (mainCamera == nullptr) {
             return findCameraComponent(scene);
         } else if (!mainCamera->isMainCamera()) {
@@ -25,11 +25,11 @@ namespace TechEngine {
         return true;
     }
 
-    void SceneHelper::clear(Scene &scene) {
+    void SceneHelper::clear(Scene&scene) {
         mainCamera = nullptr;
     }
 
-    void SceneHelper::changeMainCameraTo(CameraComponent *cameraComponent) {
+    void SceneHelper::changeMainCameraTo(CameraComponent* cameraComponent) {
         if (mainCamera != nullptr) {
             mainCamera->mainCamera = false;
         }

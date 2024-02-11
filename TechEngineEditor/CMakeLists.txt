@@ -13,16 +13,16 @@ if (WIN32) # WINDOWS
             ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_EDITOR_OUTPUT_DIRECTORY}/debug"
             LIBRARY_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_EDITOR_OUTPUT_DIRECTORY}/debug"
             RUNTIME_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_EDITOR_OUTPUT_DIRECTORY}/debug"
-            )
+    )
     set_target_properties(TechEngineEditor PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_EDITOR_OUTPUT_DIRECTORY}/release"
             LIBRARY_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_EDITOR_OUTPUT_DIRECTORY}/release"
             RUNTIME_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_EDITOR_OUTPUT_DIRECTORY}/release"
-            )
+    )
 endif ()
 
 target_include_directories(TechEngineEditor PRIVATE "src")
-target_link_libraries(TechEngineEditor TechEngineClient imgui::imgui imguizmo::imguizmo assimp::assimp)
+target_link_libraries(TechEngineEditor PUBLIC TechEngineClient imgui::imgui imguizmo::imguizmo assimp::assimp)
 
 add_custom_command(TARGET TechEngineEditor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -46,7 +46,7 @@ file(GENERATE
                     \"$<TARGET_FILE_DIR:TechEngineEditor>/scriptTemplate\"
                 )
             endif()"
-        )
+)
 
 add_custom_command(
         TARGET TechEngineEditor

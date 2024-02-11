@@ -14,14 +14,14 @@ namespace TechEngine {
 
         bool vSync = false;
 
-        GLFWwindow *handler;
+        GLFWwindow* handler;
 
     public:
-        Window(const std::string &title, uint32_t width, uint32_t height);
+        Window(const std::string&title, uint32_t width, uint32_t height);
 
         ~Window();
 
-        void init(const std::string &title, uint32_t width, uint32_t height);
+        void init(const std::string&title, uint32_t width, uint32_t height);
 
         void onUpdate();
 
@@ -29,14 +29,12 @@ namespace TechEngine {
 
         bool isVSync();
 
-        GLFWwindow *getHandler();
+        GLFWwindow* getHandler();
 
         static void windowKeyInput(int key, int action);
 
-        void changeTitle(const std::string &name);
+        void changeTitle(const std::string&name);
 
-        Renderer &getRenderer();
+        Renderer& getRenderer();
     };
 }
-
-

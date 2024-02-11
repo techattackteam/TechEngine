@@ -1,6 +1,7 @@
 #include <fstream>
 #include "Editor.hpp"
 #include "core/FileSystem.hpp"
+#include "external/EntryPoint.hpp"
 #include "yaml-cpp/yaml.h"
 
 namespace TechEngine {

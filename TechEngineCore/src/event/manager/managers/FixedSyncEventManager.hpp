@@ -3,7 +3,7 @@
 #include "event/manager/EventManager.hpp"
 
 namespace TechEngine {
-    class FixedSyncEventManager : public TechEngine::EventManager {
+    class FixedSyncEventManager : public EventManager {
     public:
         void dispatch(TechEngine::Event *event) override;
 

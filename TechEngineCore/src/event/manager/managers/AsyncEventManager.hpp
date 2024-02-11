@@ -1,10 +1,9 @@
-
+#pragma once
 #include <condition_variable>
 #include <thread>
 #include <mutex>
 #include "../EventManager.hpp"
 
-#pragma once
 namespace TechEngine {
     class AsyncEventManager : public EventManager {
     private:
@@ -26,5 +25,4 @@ namespace TechEngine {
 
         void dispatch(Event *event) override;
     };
-
 }
