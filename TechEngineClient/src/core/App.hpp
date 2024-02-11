@@ -8,9 +8,10 @@
 #include "project/ProjectManager.hpp"
 #include "scene/SceneManager.hpp"
 #include "physics/PhysicsEngine.hpp"
+#include "ScriptingAPI/TechEngineAPI.hpp"
 
 namespace TechEngine {
-    class  App : public TechEngine::AppCore {
+    class TECHENGINE_API App : public AppCore {
     public:
         Window window;
         TextureManager textureManager;
@@ -18,6 +19,7 @@ namespace TechEngine {
         SceneManager sceneManager;
         ProjectManager projectManager;
         PhysicsEngine physicsEngine;
+        TechEngineAPI::TechEngineAPI api;
 
         App(std::string name, int width, int height);
 

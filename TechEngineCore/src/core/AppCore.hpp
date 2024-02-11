@@ -28,5 +28,5 @@ namespace TechEngine {
         void onAppCloseRequestEvent();
     };
 
-    AppCore *createApp();
+    AppCore* createApp();
 };

@@ -7,6 +7,6 @@ namespace TechEngine {
     }
 
     void subscribeEvent(const EventType &type, const std::function<void(TechEngine::Event *)> &callback) {
-        EventDispatcher::getInstance().subscribe(type, callback);
+        //EventDispatcher::getInstance().subscribe(type, callback);
     }
 }

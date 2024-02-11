@@ -1,0 +1,10 @@
+^C:\DEV\TECHENGINE\BIN\TECHENGINEEDITOR\DEBUG\NEW PROJECT\RESOURCES\CMAKE\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SC:/dev/TechEngine/bin/TechEngineEditor/debug/New Project/Resources/cmake" "-BC:/dev/TechEngine/bin/TechEngineEditor/debug/New Project/Resources/scripts/build" --check-stamp-file "C:/dev/TechEngine/bin/TechEngineEditor/debug/New Project/Resources/scripts/build/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

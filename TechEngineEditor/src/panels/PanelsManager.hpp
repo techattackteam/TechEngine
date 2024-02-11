@@ -6,18 +6,15 @@
 
 #define NOMINMAX
 
-#include <windows.h>
 #include "core/Window.hpp"
 #include "SceneHierarchyPanel.hpp"
 #include "InspectorPanel.hpp"
 #include "SceneView.hpp"
-#include "SettingsPanel.hpp"
 #include "ContentBrowserPanel.hpp"
 #include "ExportSettingsPanel.hpp"
 #include "events/panels/RegisterCustomPanel.hpp"
 #include "core/Key.hpp"
 #include "GameView.hpp"
-#include "core/SceneCamera.hpp"
 #include "MaterialEditor.hpp"
 #include "project/ProjectManager.hpp"
 
@@ -25,11 +22,11 @@ namespace TechEngine {
     class PanelsManager {
     private:
         std::vector<CustomPanel *> customPanels;
-        ImGuiContext *imguiContext;
-        Window &window;
-        ProjectManager &projectManager;
-        SceneManager &sceneManager;
-        PhysicsEngine &physicsEngine;
+        ImGuiContext* imguiContext;
+        Window&window;
+        ProjectManager&projectManager;
+        SceneManager&sceneManager;
+        PhysicsEngine&physicsEngine;
 
 
         GameView gameView;
@@ -43,12 +40,11 @@ namespace TechEngine {
         bool m_currentPlaying = false;
 
     public:
-
-        PanelsManager(Window &window, SceneManager &sceneManager,
-                      ProjectManager &projectManager,
-                      PhysicsEngine &physicsEngine,
-                      TextureManager &textureManager,
-                      MaterialManager &materialManager);
+        PanelsManager(Window&window, SceneManager&sceneManager,
+                      ProjectManager&projectManager,
+                      PhysicsEngine&physicsEngine,
+                      TextureManager&textureManager,
+                      MaterialManager&materialManager);
 
         void init();
 
@@ -56,14 +52,14 @@ namespace TechEngine {
 
         void compileUserScripts();
 
-        std::vector<GameObject *> &getSelectedGameObjects();
+        std::vector<GameObject *>& getSelectedGameObjects();
 
-        void openMaterialEditor(const std::string &materialName, const std::string &filepath);
+        void openMaterialEditor(const std::string&materialName, const std::string&filepath);
 
     private:
         void initImGui();
 
-        void registerCustomPanel(TechEngine::RegisterCustomPanel *event);
+        void registerCustomPanel(RegisterCustomPanel* event);
 
         void beginImGuiFrame();
 
@@ -75,18 +71,16 @@ namespace TechEngine {
 
         void endImGuiFrame();
 
-        std::string openFileWindow(const char *filter);
+        std::string openFileWindow(const char* filter);
 
-        std::string saveFile(const char *filter);
+        std::string saveFile(const char* filter);
 
         void startRunningScene();
 
         void stopRunningScene();
 
-        void OnKeyPressedEvent(Key &key);
+        void OnKeyPressedEvent(Key&key);
 
         void setColorTheme();
     };
 }
-
-

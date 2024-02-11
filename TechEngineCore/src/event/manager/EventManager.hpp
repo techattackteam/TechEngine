@@ -1,11 +1,10 @@
-
+#pragma once
 #include <vector>
 #include <unordered_map>
 #include <functional>
 #include <queue>
 #include "event/events/Event.hpp"
 
-#pragma once
 namespace TechEngine {
     using Observers = std::unordered_map<EventName, std::vector<std::function<void(Event *)>>>;
 
@@ -17,7 +16,7 @@ namespace TechEngine {
     public:
         EventManager();
 
-        ~EventManager();
+        virtual ~EventManager();
 
         void subscribe(EventName name, const std::function<void(Event *)> &callback);
 

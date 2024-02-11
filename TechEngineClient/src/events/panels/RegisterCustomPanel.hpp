@@ -1,9 +1,7 @@
 #pragma once
 
-#include <iostream>
-
 namespace TechEngine {
-    class RegisterCustomPanel : public TechEngine::Event {
+    class RegisterCustomPanel : public Event {
     private:
         CustomPanel *panel;
     public:

@@ -14,28 +14,26 @@ namespace TechEngine {
     }
 
     StateMachineManager::~StateMachineManager() {
-
     }
 
     void StateMachineManager::update() {
-        for (StateMachine *stateMachine: stateMachines) {
+        for (StateMachine* stateMachine: stateMachines) {
             stateMachine->update();
         }
     }
 
-    void StateMachineManager::registerSM(SMRegisterEvent *event) {
+    void StateMachineManager::registerSM(SMRegisterEvent* event) {
         stateMachines.emplace_back(event->stateMachine);
     }
 
-    void StateMachineManager::removeSM(SMDeleteEvent *event) {
+    void StateMachineManager::removeSM(SMDeleteEvent* event) {
         auto index = std::find(stateMachines.begin(), stateMachines.end(), event->stateMachine);
         if (index != stateMachines.end()) {
             stateMachines.erase(index);
         }
     }
 
-    StateMachineManager &StateMachineManager::getInstance() {
+    StateMachineManager& StateMachineManager::getInstance() {
         return *instance;
     }
-
 }

@@ -1,13 +1,16 @@
 #include "App.hpp"
 #include "script/ScriptEngine.hpp"
-#include "FileSystem.hpp"
 
 namespace TechEngine {
-    App::App(std::string name, int width, int height) :
-            AppCore(), window(name, width, height), textureManager(), materialManager(textureManager), sceneManager(physicsEngine, materialManager),
-            projectManager(sceneManager, textureManager, materialManager), physicsEngine(sceneManager.getScene()) {
-        eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event *event) {
-            onWindowCloseEvent((WindowCloseEvent *) (event));
+    App::App(std::string name, int width, int height) : AppCore(),
+                                                        window(name, width, height),
+                                                        textureManager(),
+                                                        materialManager(textureManager),
+                                                        sceneManager(physicsEngine, materialManager),
+                                                        projectManager(sceneManager, textureManager, materialManager), physicsEngine(sceneManager.getScene()),
+                                                        api(&sceneManager, &eventDispatcher, ScriptEngine::getInstance()) {
+        eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event* event) {
+            onWindowCloseEvent((WindowCloseEvent *)(event));
         });
 
         timer.init();

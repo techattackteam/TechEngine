@@ -1,0 +1,3 @@
+C:/dev/TechEngine/bin/TechEngineEditor/debug/New Project/Resources/scripts/build/CMakeFiles/UserScripts.dir
+C:/dev/TechEngine/bin/TechEngineEditor/debug/New Project/Resources/scripts/build/CMakeFiles/ALL_BUILD.dir
+C:/dev/TechEngine/bin/TechEngineEditor/debug/New Project/Resources/scripts/build/CMakeFiles/ZERO_CHECK.dir

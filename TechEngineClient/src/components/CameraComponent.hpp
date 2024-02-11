@@ -8,12 +8,12 @@
 #include <glm/glm.hpp>
 
 namespace TechEngine {
-
     class CameraComponent : public Component {
     public:
         enum ProjectionType {
             PERSPECTIVE, ORTHOGRAPHIC
         };
+
     private:
         ProjectionType projectionType = PERSPECTIVE;
 
@@ -28,9 +28,9 @@ namespace TechEngine {
     public:
         bool mainCamera = false;
 
-        explicit CameraComponent(GameObject *gameObject);
+        explicit CameraComponent(GameObject* gameObject);
 
-        CameraComponent(GameObject *gameObject, bool mainCamera, ProjectionType projectionType);
+        CameraComponent(GameObject* gameObject, bool mainCamera, ProjectionType projectionType);
 
         void init();
 
@@ -42,9 +42,9 @@ namespace TechEngine {
 
         void changeProjectionType(ProjectionType projectionType);
 
-        void onWindowResizeEvent(WindowResizeEvent *event);
+        void onWindowResizeEvent(WindowResizeEvent* event);
 
-        void onFramebufferResizeEvent(FramebufferResizeEvent *event);
+        void onFramebufferResizeEvent(FramebufferResizeEvent* event);
 
         glm::mat4 getViewMatrix();
 
@@ -54,7 +54,7 @@ namespace TechEngine {
 
         void setIsMainCamera(bool mainCamera);
 
-        ProjectionType &getProjectionType();
+        ProjectionType& getProjectionType();
 
         float getNear();
 
@@ -73,5 +73,3 @@ namespace TechEngine {
         void setOrthoSize(float orthoSize);
     };
 }
-
-

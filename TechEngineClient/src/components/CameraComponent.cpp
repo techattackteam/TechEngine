@@ -8,13 +8,13 @@
 #include "scene/SceneHelper.hpp"
 
 namespace TechEngine {
-    CameraComponent::CameraComponent(GameObject *gameObject) : Component(gameObject, "Camera") {
+    CameraComponent::CameraComponent(GameObject* gameObject) : Component(gameObject, "Camera") {
         mainCamera = false;
         this->projectionType = PERSPECTIVE;
         init();
     }
 
-    CameraComponent::CameraComponent(GameObject *gameObject, bool mainCamera, ProjectionType projectionType) : Component(gameObject, "Camera") {
+    CameraComponent::CameraComponent(GameObject* gameObject, bool mainCamera, ProjectionType projectionType) : Component(gameObject, "Camera") {
         this->mainCamera = mainCamera;
         this->projectionType = projectionType;
         init();
@@ -41,8 +41,8 @@ namespace TechEngine {
     void CameraComponent::updateProjectionMatrix() {
         if (projectionType == PERSPECTIVE) {
             projectionMatrix = glm::perspective(glm::radians(fov), RendererSettings::aspectRatio, nearPlane, farPlane);
-
-        } else if (projectionType == ORTHOGRAPHIC) {
+        }
+        else if (projectionType == ORTHOGRAPHIC) {
             projectionMatrix = glm::ortho(-orthoSize * RendererSettings::aspectRatio, orthoSize * RendererSettings::aspectRatio, -orthoSize, orthoSize, nearPlane, farPlane);
         }
     }
@@ -57,11 +57,11 @@ namespace TechEngine {
         this->projectionType = projectionType;
     }
 
-    void CameraComponent::onWindowResizeEvent(WindowResizeEvent *event) {
+    void CameraComponent::onWindowResizeEvent(WindowResizeEvent* event) {
         updateProjectionMatrix();
     }
 
-    void CameraComponent::onFramebufferResizeEvent(FramebufferResizeEvent *event) {
+    void CameraComponent::onFramebufferResizeEvent(FramebufferResizeEvent* event) {
         if (RendererSettings::targetId == event->getId()) {
             updateProjectionMatrix();
         }
@@ -84,7 +84,7 @@ namespace TechEngine {
         SceneHelper::changeMainCameraTo(this);
     }
 
-    CameraComponent::ProjectionType &CameraComponent::getProjectionType() {
+    CameraComponent::ProjectionType& CameraComponent::getProjectionType() {
         return this->projectionType;
     }
 
