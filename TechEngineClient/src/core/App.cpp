@@ -8,9 +8,9 @@ namespace TechEngine {
                                                         materialManager(textureManager),
                                                         sceneManager(physicsEngine, materialManager),
                                                         projectManager(sceneManager, textureManager, materialManager), physicsEngine(sceneManager.getScene()),
-                                                        api(&sceneManager, &eventDispatcher, ScriptEngine::getInstance()) {
+                                                        api(&sceneManager, &eventDispatcher, ScriptEngine::getInstance(), &materialManager) {
         eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event* event) {
-            onWindowCloseEvent((WindowCloseEvent *)(event));
+            onWindowCloseEvent((WindowCloseEvent*)(event));
         });
 
         timer.init();
@@ -44,7 +44,7 @@ namespace TechEngine {
         }
     }
 
-    void App::onWindowCloseEvent(WindowCloseEvent *event) {
+    void App::onWindowCloseEvent(WindowCloseEvent* event) {
         running = false;
     }
 }

@@ -9,6 +9,7 @@ namespace TechEngine {
 
 namespace TechEngineAPI {
     class TransformComponent;
+    class MeshRendererComponent;
 
     class GameObject {
     private:
@@ -18,13 +19,11 @@ namespace TechEngineAPI {
         GameObject(TechEngine::GameObject* gameObject) : gameObject(gameObject) {
         }
 
-        template<typename C>
-        std::shared_ptr<C> getComponent() {
-            C* component = gameObject->template getComponent<C>();
-            return std::make_shared<C>(component);
-        }
+        void addMeshRendererComponent();
 
         std::shared_ptr<TechEngineAPI::TransformComponent> getTransform() const;
+
+        std::shared_ptr<TechEngineAPI::MeshRendererComponent> getMeshRenderer() const;
 
         std::string getName() const;
     };

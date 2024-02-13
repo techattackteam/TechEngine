@@ -22,7 +22,7 @@ namespace TechEngine {
         Texture *diffuseTexture = nullptr;
 
     public:
-        Material(const std::string &name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
+        Material(std::string name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
 
         Material(const std::string &name, Texture *diffuse);
 
