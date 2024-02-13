@@ -21,25 +21,25 @@
 #include "mesh/ImportedMesh.hpp"
 
 namespace TechEngine {
-    YAML::Emitter& operator<<(YAML::Emitter&out, const glm::vec2&v) {
+    YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec2& v) {
         out << YAML::Flow;
         out << YAML::BeginSeq << v.x << v.y << YAML::EndSeq;
         return out;
     }
 
-    YAML::Emitter& operator<<(YAML::Emitter&out, const glm::vec3&v) {
+    YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec3& v) {
         out << YAML::Flow;
         out << YAML::BeginSeq << v.x << v.y << v.z << YAML::EndSeq;
         return out;
     }
 
-    YAML::Emitter& operator<<(YAML::Emitter&out, const glm::vec4&v) {
+    YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec4& v) {
         out << YAML::Flow;
         out << YAML::BeginSeq << v.x << v.y << v.z << v.w << YAML::EndSeq;
         return out;
     }
 
-    static void serializeGameObject(YAML::Emitter&out, GameObject* gameObject) {
+    static void serializeGameObject(YAML::Emitter& out, GameObject* gameObject) {
         out << YAML::BeginMap;
         out << YAML::Key << "Name" << YAML::Value << gameObject->getName();
         out << YAML::Key << "Tag" << YAML::Value << gameObject->getTag();
@@ -70,7 +70,7 @@ namespace TechEngine {
             out << YAML::Key << "MeshRendererComponent";
             out << YAML::BeginMap;
             auto meshRendererComponent = gameObject->getComponent<MeshRendererComponent>();
-            Material&material = meshRendererComponent->getMaterial();
+            Material& material = meshRendererComponent->getMaterial();
             out << YAML::Key << "Mesh" << YAML::Value << meshRendererComponent->getMesh().getName();
             if (meshRendererComponent->getMesh().getName() == "ImportedMesh") {
                 std::string path = FileSystem::rootPath.string() + R"(\Resources\Models\)" + gameObject->getParent()->getName() + ".mesh";
@@ -81,7 +81,7 @@ namespace TechEngine {
                 emitter << YAML::BeginMap;
                 emitter << YAML::Key << gameObject->getName() << YAML::Value << YAML::BeginSeq;
                 emitter << YAML::BeginMap;
-                for (Vertex&vertex: meshRendererComponent->getMesh().getVertices()) {
+                for (Vertex& vertex: meshRendererComponent->getMesh().getVertices()) {
                     emitter << YAML::Key << "Vertex";
                     emitter << YAML::BeginMap;
                     emitter << YAML::Key << "Position" << YAML::Value << vertex.getPosition();
@@ -91,7 +91,7 @@ namespace TechEngine {
                     emitter << YAML::EndMap;
                 }
                 emitter << "Indices" << YAML::Value << YAML::BeginSeq;
-                for (int&index: meshRendererComponent->getMesh().getIndices()) {
+                for (int& index: meshRendererComponent->getMesh().getIndices()) {
                     emitter << index;
                 }
                 emitter << YAML::EndSeq;
@@ -146,7 +146,7 @@ namespace TechEngine {
 
         if (gameObject->hasChildren()) {
             out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
-            for (auto&pair: gameObject->getChildren()) {
+            for (auto& pair: gameObject->getChildren()) {
                 serializeGameObject(out, pair.second);
             }
             out << YAML::EndSeq;
@@ -155,15 +155,38 @@ namespace TechEngine {
         out << YAML::EndMap;
     }
 
-    SceneManager::SceneManager(PhysicsEngine&physicsEngine, MaterialManager&materialManager) : physicsEngine(physicsEngine), materialManager(materialManager) {
+    static void serializeMaterial(YAML::Emitter& out, Material* material) {
+        out << YAML::BeginMap;
+        out << YAML::Key << "name" << YAML::Value << material->getName();
+        out << YAML::Key << "color" << YAML::Value << material->getColor();
+        out << YAML::Key << "ambient" << YAML::Value << material->getAmbient();
+        out << YAML::Key << "diffuse" << YAML::Value << material->getDiffuse();
+        out << YAML::Key << "specular" << YAML::Value << material->getSpecular();
+        out << YAML::Key << "shininess" << YAML::Value << material->getShininess();
+        out << YAML::Key << "useTexture" << YAML::Value << material->getUseTexture();
+        if (material->getUseTexture()) {
+            out << YAML::Key << "diffuseTexture" << YAML::Value << material->getDiffuseTexture()->getName();
+        } else {
+            out << YAML::Key << "diffuseTexture" << YAML::Value << "";
+        }
+        out << YAML::EndMap;
     }
 
-    void SceneManager::serialize(const std::string&sceneName, const std::string&filepath) {
+
+    SceneManager::SceneManager(PhysicsEngine& physicsEngine, MaterialManager& materialManager, TextureManager& textureManager) : physicsEngine(physicsEngine), materialManager(materialManager), textureManager(textureManager) {
+    }
+
+    void SceneManager::serialize(const std::string& sceneName, const std::string& filepath) {
         //Measure time
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         YAML::Emitter out;
         out << YAML::BeginMap;
         out << YAML::Key << "Scene" << YAML::Value << sceneName;
+        out << YAML::Key << "Materials" << YAML::Value << YAML::BeginSeq;
+        for (Material* material: materialManager.getMaterials()) {
+            serializeMaterial(out, material);
+        }
+        out << YAML::EndSeq;
         out << YAML::Key << "GameObjects" << YAML::Value << YAML::BeginSeq;
         for (GameObject* gameObject: scene.getGameObjects()) {
             serializeGameObject(out, gameObject);
@@ -182,7 +205,7 @@ namespace TechEngine {
     void SceneManager::deserializeGameObject(YAML::Node gameObjectYAML, GameObject* parent) {
         auto name = gameObjectYAML["Name"].as<std::string>();
         auto tag = gameObjectYAML["Tag"].as<std::string>();
-        GameObject&gameObject = scene.registerGameObject<GameObject>(name, tag);
+        GameObject& gameObject = scene.registerGameObject<GameObject>(name, tag);
         if (parent != nullptr) {
             scene.makeChildTo(parent, &gameObject);
         }
@@ -211,24 +234,20 @@ namespace TechEngine {
             std::string meshName = meshRendererNode["Mesh"].as<std::string>();
             std::string materialName = meshRendererNode["Material"].as<std::string>();
 
-            Material&material = materialManager.getMaterial(materialName);
+            Material& material = materialManager.getMaterial(materialName);
             Mesh* mesh;
             if (meshName == "Cube") {
                 mesh = new CubeMesh();
-            }
-            else if (meshName == "Sphere") {
+            } else if (meshName == "Sphere") {
                 mesh = new SphereMesh();
-            }
-            else if (meshName == "Cylinder") {
+            } else if (meshName == "Cylinder") {
                 mesh = new CylinderMesh();
-            }
-            else if (meshName == "ImportedMesh") {
+            } else if (meshName == "ImportedMesh") {
                 std::string filepath = FileSystem::rootPath.string() + R"(\Resources\Models\)" + gameObject.getParent()->getName() + ".mesh";
                 YAML::Node data;
                 try {
                     data = YAML::LoadFile(filepath);
-                }
-                catch (YAML::Exception&e) {
+                } catch (YAML::Exception& e) {
                     TE_LOGGER_CRITICAL("Failed to load .scene file {0}.\n      {1}", filepath, e.what());
                     return;
                 }
@@ -244,8 +263,7 @@ namespace TechEngine {
                     indices.push_back(indexNode.as<int>());
                 }
                 mesh = new ImportedMesh(vertices, indices);
-            }
-            else {
+            } else {
                 TE_LOGGER_CRITICAL("Failed to deserialize mesh renderer component.\n      Mesh name {0} is not valid.", meshName);
             }
 
@@ -293,32 +311,53 @@ namespace TechEngine {
         }
     }
 
-    bool SceneManager::deserialize(const std::string&filepath) {
+    void SceneManager::deserializeMaterial(const YAML::Node& materialYAML) {
+        std::string name = materialYAML["name"].as<std::string>();
+        glm::vec4 color = materialYAML["color"].as<glm::vec4>();
+        glm::vec3 ambient = materialYAML["ambient"].as<glm::vec3>();
+        glm::vec3 diffuse = materialYAML["diffuse"].as<glm::vec3>();
+        glm::vec3 specular = materialYAML["specular"].as<glm::vec3>();
+        float shininess = materialYAML["shininess"].as<float>();
+        bool useTexture = materialYAML["useTexture"].as<bool>();
+        std::string diffuseTextureName = materialYAML["diffuseTexture"].as<std::string>();
+        Material& material = materialManager.createMaterial(name, color, ambient, diffuse, specular, shininess);
+        if (useTexture) {
+            material.setDiffuseTexture(&textureManager.getTexture(diffuseTextureName));
+        }
+    }
+
+    bool SceneManager::deserialize(const std::string& filepath) {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         YAML::Node data;
         try {
             data = YAML::LoadFile(filepath);
-        }
-        catch (YAML::Exception&e) {
+        } catch (YAML::Exception& e) {
             TE_LOGGER_CRITICAL("Failed to load .scene file {0}.\n      {1}", filepath, e.what());
-            return false;
         }
 
-        YAML::Node node = data["GameObjects"];
+        materialManager.clear();
+        YAML::Node materialsNode = data["Materials"];
+        if (materialsNode) {
+            for (YAML::Node materialYAML: materialsNode) {
+                deserializeMaterial(materialYAML);
+            }
+        }
         SceneHelper::clear(scene);
+        YAML::Node node = data["GameObjects"];
         if (node) {
             for (YAML::Node gameObjectYAML: node) {
                 deserializeGameObject(gameObjectYAML, nullptr);
             }
         }
+
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         std::chrono::duration<double> elapsed_seconds = end - begin;
         TE_LOGGER_INFO("Scene {0} loaded in {1} seconds", getSceneNameFromPath(filepath), elapsed_seconds.count());
         return true;
     }
 
-    void SceneManager::init(const std::string&projectPath) {
-        for (const std::filesystem::directory_entry&p: std::filesystem::recursive_directory_iterator(projectPath)) {
+    void SceneManager::init(const std::string& projectPath) {
+        for (const std::filesystem::directory_entry& p: std::filesystem::recursive_directory_iterator(projectPath)) {
             std::string path = p.path().string();
             std::string fileName = p.path().filename().string();
             if (fileName.find(".scene") != std::string::npos) {
@@ -327,42 +366,39 @@ namespace TechEngine {
         }
     }
 
-    void SceneManager::registerScene(std::string&scenePath) {
+    void SceneManager::registerScene(std::string& scenePath) {
         std::string sceneName = getSceneNameFromPath(scenePath);
         if (m_scenesBank.find(sceneName) != m_scenesBank.end()) {
             replaceSceneNameFromPath(scenePath);
             sceneName = getSceneNameFromPath(scenePath);
             m_scenesBank[sceneName] = scenePath;
-        }
-        else {
+        } else {
             m_scenesBank[sceneName] = scenePath;
         }
     }
 
-    void SceneManager::createNewScene(std::string&scenePath) {
+    void SceneManager::createNewScene(std::string& scenePath) {
         std::string sceneName = getSceneNameFromPath(scenePath);
         registerScene(scenePath);
         std::filesystem::copy(FileSystem::scenesTemplate, scenePath);
     }
 
-    bool SceneManager::deleteScene(std::string&scenePath) {
+    bool SceneManager::deleteScene(std::string& scenePath) {
         std::string sceneName = getSceneNameFromPath(scenePath);
         if (m_activeSceneName == sceneName) {
             TE_LOGGER_CRITICAL("Failed to delete scene '{0}'.\n Cannot delete active scene.", sceneName);
             return false;
-        }
-        else if (m_scenesBank.find(sceneName) != m_scenesBank.end()) {
+        } else if (m_scenesBank.find(sceneName) != m_scenesBank.end()) {
             std::filesystem::remove(scenePath);
             m_scenesBank.erase(sceneName);
             return true;
-        }
-        else {
+        } else {
             TE_LOGGER_CRITICAL("Failed to delete scene '{0}'", sceneName);
             return false;
         }
     }
 
-    void SceneManager::loadScene(const std::string&sceneName) {
+    void SceneManager::loadScene(const std::string& sceneName) {
         if (m_scenesBank.find(sceneName) != m_scenesBank.end()) {
             if (!m_activeSceneName.empty()) {
                 saveScene(m_activeSceneName);
@@ -372,18 +408,16 @@ namespace TechEngine {
             std::string scenePath = m_scenesBank[sceneName];
             deserialize(scenePath);
             m_activeSceneName = sceneName;
-        }
-        else {
+        } else {
             TE_LOGGER_ERROR("Failed to load scene '{0}'.\n Could not find scene.", sceneName);
         }
     }
 
-    void SceneManager::saveScene(const std::string&sceneName) {
+    void SceneManager::saveScene(const std::string& sceneName) {
         if (m_scenesBank.find(sceneName) != m_scenesBank.end()) {
             std::string scenePath = m_scenesBank[sceneName];
             serialize(sceneName, scenePath);
-        }
-        else {
+        } else {
             TE_LOGGER_ERROR("Failed to save scene '{0}'", sceneName);
         }
     }
@@ -392,13 +426,13 @@ namespace TechEngine {
         saveScene(m_activeSceneName);
     }
 
-    void SceneManager::saveSceneAsTemporarily(const std::string&sceneName) {
+    void SceneManager::saveSceneAsTemporarily(const std::string& sceneName) {
         std::string scenePath = m_scenesBank[sceneName];
         std::string sceneTemporaryPath = scenePath.substr(0, scenePath.find_last_of("\\/")) + "\\SceneTemporary.scene";
         serialize("Temporary Scene", sceneTemporaryPath);
     }
 
-    void SceneManager::loadSceneFromTemporarily(const std::string&sceneName) {
+    void SceneManager::loadSceneFromTemporarily(const std::string& sceneName) {
         scene.clear();
         physicsEngine.clear();
         std::string scenePath = m_scenesBank[sceneName];
@@ -411,7 +445,7 @@ namespace TechEngine {
         return m_activeSceneName;
     }
 
-    void SceneManager::replaceSceneNameFromPath(std::string&scenePath) {
+    void SceneManager::replaceSceneNameFromPath(std::string& scenePath) {
         std::string sceneName = getSceneNameFromPath(scenePath);
         int i = 1;
         while (m_scenesBank.find(sceneName + std::to_string(i)) != m_scenesBank.end()) {
@@ -420,7 +454,7 @@ namespace TechEngine {
         scenePath = scenePath.substr(0, scenePath.find_last_of("\\/")) + "\\" + sceneName + std::to_string(i) + ".scene";
     }
 
-    std::string SceneManager::getSceneNameFromPath(const std::string&scenePath) {
+    std::string SceneManager::getSceneNameFromPath(const std::string& scenePath) {
         return scenePath.substr(scenePath.find_last_of("\\/") + 1, scenePath.find_last_of('.') - scenePath.find_last_of("\\/") - 1);
     }
 

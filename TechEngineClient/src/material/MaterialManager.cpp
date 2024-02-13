@@ -61,6 +61,14 @@ namespace TechEngine {
         return m_materialsBank.at(name);
     }
 
+    std::vector<Material*> MaterialManager::getMaterials() {
+        std::vector<Material*> materials;
+        for (auto& [name, material]: m_materialsBank) {
+            materials.push_back(&material);
+        }
+        return materials;
+    }
+
     void MaterialManager::serializeMaterial(const std::string& name, const std::string& filepath) {
         Material& material = getMaterial(name);
         YAML::Emitter out;
@@ -82,6 +90,10 @@ namespace TechEngine {
         std::filesystem::create_directories(path.parent_path());
         std::ofstream fout(filepath);
         fout << out.c_str();
+    }
+
+    void MaterialManager::clear() {
+        m_materialsBank.clear();
     }
 
     bool MaterialManager::deserializeMaterial(const std::string& filepath) {
