@@ -18,7 +18,7 @@ namespace TechEngine {
         float m_defaultShininess = 32.0f;
 
     public:
-        MaterialManager(TextureManager &textureManager);
+        explicit MaterialManager(TextureManager &textureManager);
 
         void init(const std::vector<std::string> &materialsFilePaths);
 

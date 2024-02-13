@@ -6,17 +6,16 @@
 #include <fstream>
 
 namespace TechEngine {
-    MaterialManager::MaterialManager(TextureManager &textureManager) : m_textureManager(textureManager) {
-
+    MaterialManager::MaterialManager(TextureManager& textureManager) : m_textureManager(textureManager) {
     }
 
-    void MaterialManager::init(const std::vector<std::string> &materialsFilePaths) {
-        for (const std::string &materialFilePath: materialsFilePaths) {
+    void MaterialManager::init(const std::vector<std::string>& materialsFilePaths) {
+        for (const std::string& materialFilePath: materialsFilePaths) {
             deserializeMaterial(materialFilePath);
         }
     }
 
-    Material &MaterialManager::createMaterial(const std::string &name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess) {
+    Material& MaterialManager::createMaterial(const std::string& name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess) {
         Material material(name, color, ambient, diffuse, specular, shininess);
         auto iterator = m_materialsBank.find(name);
         if (iterator == m_materialsBank.end()) {
@@ -25,7 +24,7 @@ namespace TechEngine {
         return iterator->second;
     }
 
-    Material &MaterialManager::createMaterial(const std::string &name, Texture *diffuse) {
+    Material& MaterialManager::createMaterial(const std::string& name, Texture* diffuse) {
         Material material(name, diffuse);
         auto iterator = m_materialsBank.find(name);
         if (iterator == m_materialsBank.end()) {
@@ -34,34 +33,36 @@ namespace TechEngine {
         return iterator->second;
     }
 
-    Material &MaterialManager::createMaterialFile(const std::string &name, const std::string &folderPath) {
+    Material& MaterialManager::createMaterialFile(const std::string& name, const std::string& folderPath) {
         std::string filepath = folderPath + "/" + name + ".mat";
-        Material &material = createMaterial(name, m_defaultColor, m_defaultAmbient, m_defaultDiffuse, m_defaultSpecular, m_defaultShininess);
+        Material& material = createMaterial(name, m_defaultColor, m_defaultAmbient, m_defaultDiffuse, m_defaultSpecular, m_defaultShininess);
         serializeMaterial(name, filepath);
         return material;
     }
 
-    bool MaterialManager::deleteMaterial(const std::string &name) {
+    bool MaterialManager::deleteMaterial(const std::string& name) {
         if (!m_materialsBank.empty() && materialExists(name)) {
             m_materialsBank.erase(name);
             return true;
+        } else {
+            TE_LOGGER_WARN("Material {0} does not exist!", name);
         }
         return false;
     }
 
-    bool MaterialManager::materialExists(const std::string &name) {
+    bool MaterialManager::materialExists(const std::string& name) {
         return m_materialsBank.contains(name);
     }
 
-    Material &MaterialManager::getMaterial(const std::string &name) {
+    Material& MaterialManager::getMaterial(const std::string& name) {
         if (!materialExists(name)) {
             TE_LOGGER_ERROR("Material {0} not found", name);
         }
         return m_materialsBank.at(name);
     }
 
-    void MaterialManager::serializeMaterial(const std::string &name, const std::string &filepath) {
-        Material &material = getMaterial(name);
+    void MaterialManager::serializeMaterial(const std::string& name, const std::string& filepath) {
+        Material& material = getMaterial(name);
         YAML::Emitter out;
         out << YAML::BeginMap;
         out << YAML::Key << "name" << YAML::Value << name;
@@ -83,11 +84,11 @@ namespace TechEngine {
         fout << out.c_str();
     }
 
-    bool MaterialManager::deserializeMaterial(const std::string &filepath) {
+    bool MaterialManager::deserializeMaterial(const std::string& filepath) {
         YAML::Node data;
         try {
             data = YAML::LoadFile(filepath);
-        } catch (YAML::Exception &e) {
+        } catch (YAML::Exception& e) {
             TE_LOGGER_CRITICAL("Failed to load material file: {0}", e.what());
             return false;
         }
@@ -130,11 +131,11 @@ namespace TechEngine {
         glm::vec3 diffuse = diffuseNode.as<glm::vec3>();
         glm::vec3 specular = specularNode.as<glm::vec3>();
         float shininess = shininessNode.as<float>();
-        Material &material = createMaterial(name.as<std::string>(), color, ambient, diffuse, specular, shininess);
+        Material& material = createMaterial(name.as<std::string>(), color, ambient, diffuse, specular, shininess);
         material.getUseTexture() = useTextureNode.as<bool>();
         std::string diffuseTextureName = diffuseTextureNode.as<std::string>();
         if (!diffuseTextureName.empty()) {
-            Texture *diffuseTexture = &m_textureManager.getTexture(diffuseTextureName);
+            Texture* diffuseTexture = &m_textureManager.getTexture(diffuseTextureName);
             material.setDiffuseTexture(diffuseTexture);
         } else {
             material.setDiffuseTexture(nullptr);
@@ -142,5 +143,4 @@ namespace TechEngine {
         }
         return true;
     }
-
 }

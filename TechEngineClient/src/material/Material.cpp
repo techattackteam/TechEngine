@@ -1,10 +1,11 @@
 #include <string>
+#include <utility>
 #include "Material.hpp"
 
 namespace TechEngine {
 
-    Material::Material(const std::string &name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess) :
-            name(name), color(color), ambient(ambient), diffuse(diffuse), specular(specular), shininess(shininess) {
+    Material::Material(std::string name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess) :
+            name(std::move(name)), color(color), ambient(ambient), diffuse(diffuse), specular(specular), shininess(shininess) {
 
     }
 

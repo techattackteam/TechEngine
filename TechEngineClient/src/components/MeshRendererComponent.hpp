@@ -2,35 +2,32 @@
 
 #include <vector>
 #include "components/Component.hpp"
-#include "mesh/Mesh.hpp"
 #include "material/Material.hpp"
+#include "mesh/Mesh.hpp"
 
 namespace TechEngine {
     class MeshRendererComponent : public Component {
     private:
-        Mesh *mesh;
-        Material *m_material;
+        Mesh* mesh;
+        Material* m_material = nullptr;
 
     public:
-        MeshRendererComponent(GameObject *gameObject);
+        MeshRendererComponent(GameObject* gameObject);
 
-        MeshRendererComponent(GameObject *gameObject, Mesh *mesh, Material *material);
+        MeshRendererComponent(GameObject* gameObject, Mesh* mesh, Material* material);
 
-        void changeMesh(Mesh *mesh);
+        void changeMesh(Mesh* mesh);
 
-        void changeMaterial(Material &material);
+        void changeMaterial(Material& material);
 
-        Mesh &getMesh();
+        Mesh& getMesh();
 
-        Material &getMaterial();
+        Material& getMaterial();
 
         std::vector<Vertex> getVertices();
 
         std::vector<int> getIndices();
 
         void paintMesh();
-
     };
 }
-
-
