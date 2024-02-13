@@ -12,46 +12,48 @@ namespace TechEngine {
     class SceneManager {
     private:
         Scene scene;
-        PhysicsEngine &physicsEngine;
-        MaterialManager &materialManager;
+        PhysicsEngine& physicsEngine;
+        MaterialManager& materialManager;
+        TextureManager& textureManager;
         std::unordered_map<std::string, std::string> m_scenesBank;
 
         std::string m_activeSceneName;
 
-        void serialize(const std::string &sceneName, const std::string &filepath);
+        void serialize(const std::string& sceneName, const std::string& filepath);
 
-        void deserializeGameObject(YAML::Node gameObjectYAML, GameObject *parent);
+        void deserializeGameObject(YAML::Node gameObjectYAML, GameObject* parent);
 
-        bool deserialize(const std::string &filepath);
+        void deserializeMaterial(const YAML::Node& materialYAML);
 
-        void replaceSceneNameFromPath(std::string &sceneName);
+        bool deserialize(const std::string& filepath);
 
-        std::string getSceneNameFromPath(const std::string &scenePath);
+        void replaceSceneNameFromPath(std::string& sceneName);
+
+        std::string getSceneNameFromPath(const std::string& scenePath);
 
     public:
-        SceneManager(PhysicsEngine &physicsEngine, MaterialManager &materialManager);
+        SceneManager(PhysicsEngine& physicsEngine, MaterialManager& materialManager, TextureManager& textureManager);
 
-        void init(const std::string &projectPath);
+        void init(const std::string& projectPath);
 
-        void registerScene(std::string &scenePath);
+        void registerScene(std::string& scenePath);
 
-        void createNewScene(std::string &scenePath);
+        void createNewScene(std::string& scenePath);
 
-        bool deleteScene(std::string &scenePath);
+        bool deleteScene(std::string& scenePath);
 
-        void loadScene(const std::string &sceneName);
+        void loadScene(const std::string& sceneName);
 
-        void saveScene(const std::string &sceneName);
+        void saveScene(const std::string& sceneName);
 
         void saveCurrentScene();
 
-        void saveSceneAsTemporarily(const std::string &sceneName);
+        void saveSceneAsTemporarily(const std::string& sceneName);
 
-        void loadSceneFromTemporarily(const std::string &sceneName);
+        void loadSceneFromTemporarily(const std::string& sceneName);
 
-        const std::string &getActiveSceneName();
+        const std::string& getActiveSceneName();
 
-        Scene &getScene();
-
+        Scene& getScene();
     };
 }

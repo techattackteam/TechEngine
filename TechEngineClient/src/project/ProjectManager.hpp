@@ -14,7 +14,7 @@ namespace TechEngine {
         std::string projectName = "New Project";
 
         //Editor root path
-        path cmakePath = "\"C:/Program Files/CMake/bin/cmake.exe\""; //TODO: Make this path dynamic
+        path cmakePath = "\"C:/Program Files/CMake/bin/cmake.exe\""; //TODO: Make this path relative
 
         path projectFilePath;
         path projectLocation = std::filesystem::current_path().string() + "\\" + projectName;
