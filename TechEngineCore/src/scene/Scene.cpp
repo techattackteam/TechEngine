@@ -1,12 +1,13 @@
 #include <boost/uuid/uuid_io.hpp>
 #include "Scene.hpp"
+
 #include "event/EventDispatcher.hpp"
 #include "event/events/gameObjects/RequestDeleteGameObject.hpp"
 
 namespace TechEngine {
     Scene::Scene() {
-        EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this](Event *event) {
-            onGameObjectDeleteRequest((RequestDeleteGameObject *) event);
+        EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this](Event* event) {
+            onGameObjectDeleteRequest((RequestDeleteGameObject*)event);
         });
     }
 
@@ -45,19 +46,19 @@ namespace TechEngine {
         return uuidString;
     }
 
-    std::vector<GameObject *> Scene::getGameObjects() {
-        std::vector<GameObject *> gameObjects;
+    std::vector<GameObject*> Scene::getGameObjects() {
+        std::vector<GameObject*> gameObjects;
         for (GameObject* gameObject: this->gameObjects) {
             gameObjects.emplace_back(gameObject);
         }
         return gameObjects;
     }
 
-    std::vector<GameObject *> Scene::getLights() {
+    std::vector<GameObject*> Scene::getLights() {
         return lights;
     }
 
-    GameObject* Scene::getGameObject(const std::string&name) {
+    GameObject* Scene::getGameObject(const std::string& name) {
         for (GameObject* gameObject: gameObjects) {
             if (gameObject->getName() == name) {
                 return gameObject;
@@ -66,7 +67,7 @@ namespace TechEngine {
         return nullptr;
     }
 
-    GameObject* Scene::getGameObjectByTag(const std::string&tag) {
+    GameObject* Scene::getGameObjectByTag(const std::string& tag) {
         for (GameObject* gameObject: gameObjects) {
             if (gameObject->getTag() == tag) {
                 return gameObject;

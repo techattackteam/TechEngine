@@ -3,21 +3,18 @@
 #include "components/MeshRendererComponent.hpp"
 #include "core/FileSystem.hpp"
 #include "mesh/ImportedMesh.hpp"
-#include "renderer/TextureManager.hpp"
 #include "material/MaterialManager.hpp"
 #include <assimp/postprocess.h>
 
 namespace TechEngine {
-    AssimpLoader::AssimpLoader(Scene &scene, MaterialManager &materialManager) :
-            scene(scene), materialManager(materialManager) {
-
+    AssimpLoader::AssimpLoader(Scene& scene, MaterialManager& materialManager) : scene(scene), materialManager(materialManager) {
     }
 
 
-    GameObject *AssimpLoader::loadModel(const std::string &path) {
+    GameObject* AssimpLoader::loadModel(const std::string& path) {
         Assimp::Importer importer;
         directory = std::filesystem::path(path).parent_path().string();
-        const aiScene *aiScene = importer.ReadFile(path, aiProcess_Triangulate);
+        const aiScene* aiScene = importer.ReadFile(path, aiProcess_Triangulate);
 
         if (!aiScene || aiScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !aiScene->mRootNode) {
             TE_LOGGER_WARN("Assimp error: {}", importer.GetErrorString());
@@ -25,27 +22,27 @@ namespace TechEngine {
         }
 
         // Process the scene and create a game object
-        GameObject &gameObject = scene.createGameObject<GameObject>(FileSystem::getFileName(path));
-        std::vector<GameObject *> children = processNode(FileSystem::getFileName(path), aiScene->mRootNode, aiScene);
+        GameObject& gameObject = scene.createGameObject<GameObject>(FileSystem::getFileName(path));
+        std::vector<GameObject*> children = processNode(FileSystem::getFileName(path), aiScene->mRootNode, aiScene);
         TE_LOGGER_INFO("Loaded Model with {0} meshes, {1} materials and {2} textures", aiScene->mNumMeshes, aiScene->mNumMaterials, aiScene->mNumTextures);
-        for (GameObject *child: children) {
+        for (GameObject* child: children) {
             scene.makeChildTo(&gameObject, child);
         }
 
         return &gameObject;
     }
 
-    std::vector<GameObject *> AssimpLoader::processNode(const std::string &modelName, aiNode *node, const aiScene *aiScene) {
-        std::vector<GameObject *> gameObjects;
+    std::vector<GameObject*> AssimpLoader::processNode(const std::string& modelName, aiNode* node, const aiScene* aiScene) {
+        std::vector<GameObject*> gameObjects;
         for (unsigned int i = 0; i < node->mNumMeshes; i++) {
             aiVector3t<float> scaling;
             aiVector3t<float> rotation;
             aiVector3t<float> position;
             node->mTransformation.Decompose(scaling, rotation, position);
-            aiMesh *aiMesh = aiScene->mMeshes[node->mMeshes[i]];
+            aiMesh* aiMesh = aiScene->mMeshes[node->mMeshes[i]];
 
-            std::pair<Mesh *, Material *> processedMesh = processMesh(modelName, aiMesh, aiScene);
-            GameObject &gameObject = scene.createGameObject<GameObject>(aiMesh->mName.C_Str());
+            std::pair<Mesh*, Material*> processedMesh = processMesh(modelName, aiMesh, aiScene);
+            GameObject& gameObject = scene.createGameObject<GameObject>(aiMesh->mName.C_Str());
             gameObject.addComponent<MeshRendererComponent>(processedMesh.first, processedMesh.second);
             gameObject.getTransform().translateTo(glm::vec3(position.x / scaling.x, position.y / scaling.y, position.z / scaling.z));
             gameObject.getTransform().setRotation(glm::degrees(glm::vec3(rotation.x, rotation.y, rotation.z)));
@@ -53,16 +50,16 @@ namespace TechEngine {
             gameObjects.push_back(&gameObject);
         }
         for (unsigned int i = 0; i < node->mNumChildren; i++) {
-            std::vector<GameObject *> game_objects = processNode(modelName, node->mChildren[i], aiScene);
+            std::vector<GameObject*> game_objects = processNode(modelName, node->mChildren[i], aiScene);
             gameObjects.insert(gameObjects.end(), game_objects.begin(), game_objects.end());
         }
         return gameObjects;
     }
 
-    std::pair<Mesh *, Material *> AssimpLoader::processMesh(const std::string &modelName, aiMesh *mesh, const aiScene *scene) {
+    std::pair<Mesh*, Material*> AssimpLoader::processMesh(const std::string& modelName, aiMesh* mesh, const aiScene* scene) {
         std::vector<Vertex> vertices;
         std::vector<int> indices;
-        std::vector<Texture *> textures;
+        std::vector<Texture*> textures;
         std::vector<int> materialsIndices;
         for (int i = 0; i < mesh->mNumVertices; i++) {
             glm::vec3 position;
@@ -84,7 +81,7 @@ namespace TechEngine {
                 textureCoordinate = glm::vec2(0.0f, 0.0f);
             vertices.emplace_back(position, normal, textureCoordinate);
         }
-        Material *material;
+        Material* material;
         if (mesh->mMaterialIndex >= 0) {
             for (int i = 0; i < mesh->mNumFaces; i++) {
                 aiFace face = mesh->mFaces[i];

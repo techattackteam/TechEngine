@@ -14,7 +14,7 @@ namespace TechEngine {
     class Editor : public App {
     private:
         PanelsManager panelsManager;
-        TechEngineAPI::TechEngineAPI* techEngineAPI = nullptr;
+        TechEngineAPI* techEngineAPI = nullptr;
         std::string editorSettings;
 
     public:

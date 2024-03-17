@@ -17,6 +17,8 @@
 #include <filesystem>
 #include <utils/YAMLUtils.hpp>
 #include <fstream>
+
+#include "event/EventDispatcher.hpp"
 #include "material/MaterialManager.hpp"
 #include "mesh/ImportedMesh.hpp"
 
@@ -174,6 +176,9 @@ namespace TechEngine {
 
 
     SceneManager::SceneManager(PhysicsEngine& physicsEngine, MaterialManager& materialManager, TextureManager& textureManager) : physicsEngine(physicsEngine), materialManager(materialManager), textureManager(textureManager) {
+        EventDispatcher::getInstance().subscribe(MaterialUpdateEvent::eventType, [this](Event* event) {
+            onMaterialUpdateEvent((MaterialUpdateEvent&)*event);
+        });
     }
 
     void SceneManager::serialize(const std::string& sceneName, const std::string& filepath) {
@@ -456,6 +461,17 @@ namespace TechEngine {
 
     std::string SceneManager::getSceneNameFromPath(const std::string& scenePath) {
         return scenePath.substr(scenePath.find_last_of("\\/") + 1, scenePath.find_last_of('.') - scenePath.find_last_of("\\/") - 1);
+    }
+
+    void SceneManager::onMaterialUpdateEvent(MaterialUpdateEvent& event) {
+        for (GameObject* gameObject: scene.getGameObjects()) {
+            if (gameObject->hasComponent<MeshRendererComponent>()) {
+                MeshRendererComponent* meshRendererComponent = gameObject->getComponent<MeshRendererComponent>();
+                if (meshRendererComponent->getMaterial().getName() == event.getMaterialName()) {
+                    meshRendererComponent->paintMesh();
+                }
+            }
+        }
     }
 
     Scene& SceneManager::getScene() {

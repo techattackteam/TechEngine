@@ -8,7 +8,7 @@
 #include "components/CameraComponent.hpp"
 #include "scene/SceneHelper.hpp"
 #include "core/Logger.hpp"
-#include "renderer/TextureManager.hpp"
+#include "texture/TextureManager.hpp"
 
 namespace TechEngine {
     MaterialEditor::MaterialEditor(Renderer &renderer, TextureManager &textureManager, MaterialManager &materialManager, Scene &scene) :
@@ -37,6 +37,12 @@ namespace TechEngine {
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
 
+                    glm::vec4 color = m_material->getColor();
+                    glm::vec3 ambient = m_material->getAmbient();
+                    glm::vec3 diffuse = m_material->getDiffuse();
+                    glm::vec3 specular = m_material->getSpecular();
+                    bool useTexture = m_material->getUseTexture();
+
                     ImGui::BeginChild("Settings");
                     ImGui::Text("Material Settings");
                     ImGui::Separator();
@@ -44,13 +50,18 @@ namespace TechEngine {
                     ImGui::Separator();
                     ImGui::Text("Color");
                     ImGui::SameLine();
-                    ImGui::ColorEdit4("##Color", glm::value_ptr(m_material->getColor()));
+                    ImGui::ColorEdit4("##Color", glm::value_ptr(color));
                     ImGui::Separator();
-                    ImGuiUtils::drawVec3Control("Ambient", m_material->getAmbient(), 1, 100.0f, 0, 1);
-                    ImGuiUtils::drawVec3Control("diffuse", m_material->getDiffuse(), 1, 100.0f, 0, 1);
-                    ImGuiUtils::drawVec3Control("specular", m_material->getSpecular(), 1, 100.0f, 0, 1);
+                    ImGuiUtils::drawVec3Control("Ambient", ambient, 1, 100.0f, 0, 1);
+                    ImGuiUtils::drawVec3Control("diffuse", diffuse, 1, 100.0f, 0, 1);
+                    ImGuiUtils::drawVec3Control("specular", specular, 1, 100.0f, 0, 1);
+
+                    if(color != m_material->getColor()) {
+                        m_material->setColor(color);
+                    }
+
                     ImGui::Separator();
-                    ImGui::Checkbox("Use Textures", &m_material->getUseTexture());
+                    ImGui::Checkbox("Use Textures", &useTexture);
                     ImGui::NewLine();
                     static bool open = false;
                     std::string textureName = "Diffuse texture";

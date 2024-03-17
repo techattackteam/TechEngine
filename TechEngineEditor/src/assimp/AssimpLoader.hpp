@@ -2,7 +2,7 @@
 
 #include <string>
 #include <assimp/Importer.hpp>
-#include "renderer/Texture.hpp"
+#include "texture/Texture.hpp"
 #include "mesh/Mesh.hpp"
 #include "material/MaterialManager.hpp"
 #include "assimp/scene.h"

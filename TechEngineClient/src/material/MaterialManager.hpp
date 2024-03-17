@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <string>
 #include "Material.hpp"
-#include "renderer/TextureManager.hpp"
+#include "texture/TextureManager.hpp"
 
 namespace TechEngine {
     class MaterialManager {

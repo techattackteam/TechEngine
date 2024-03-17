@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <glm/glm.hpp>
@@ -13,9 +12,9 @@ namespace TechEngine {
 
     class GameObject {
     private:
-        GameObject *parent = nullptr;
-        std::unordered_map<std::string, GameObject *> children;
-        std::unordered_map<std::string, Component *> components;
+        GameObject* parent = nullptr;
+        std::unordered_map<std::string, GameObject*> children;
+        std::unordered_map<std::string, Component*> components;
 
         std::string name;
         std::string tag;
@@ -34,9 +33,9 @@ namespace TechEngine {
         virtual ~GameObject();
 
         template<class C, typename... A>
-        void addComponent(A&& ...args) {
+        void addComponent(A&&... args) {
             if (!hasComponent<C>()) {
-                C *component = new C(this, args...);
+                C* component = new C(this, args...);
                 components[typeid(C).name()] = component;
             }
         }
@@ -44,7 +43,7 @@ namespace TechEngine {
         template<typename C>
         void removeComponent() {
             if (hasComponent<C>()) {
-                C *component = getComponent<C>();
+                C* component = getComponent<C>();
                 components.erase(typeid(C).name());
                 delete component;
             }
@@ -55,26 +54,26 @@ namespace TechEngine {
             return components.contains(typeid(C).name());
         }
 
-        bool hasComponent(const std::string &name) {
+        bool hasComponent(const std::string& name) {
             return components.contains(name);
         }
 
         template<class C>
-        C *getComponent() {
-            return (C *) components[typeid(C).name()];
+        C* getComponent() {
+            return (C*)components[typeid(C).name()];
         }
 
         virtual void fixUpdate();
 
         virtual void update();
 
-        void makeParent(GameObject *parent);
+        void makeParent(GameObject* parent);
 
-        void addChild(GameObject *child);
+        void addChild(GameObject* child);
 
         void removeParent();
 
-        void removeChild(const std::string &tag);
+        void removeChild(const std::string& tag);
 
         glm::mat4 getModelMatrix();
 
@@ -84,26 +83,26 @@ namespace TechEngine {
 
         std::string getTag();
 
-        GameObject *getParent();
+        GameObject* getParent();
 
-        TransformComponent &getTransform();
+        TransformComponent& getTransform();
 
-        std::unordered_map<std::string, Component *> &getComponents();
+        std::unordered_map<std::string, Component*>& getComponents();
 
-        std::unordered_map<std::string, GameObject *> &getChildren();
+        std::unordered_map<std::string, GameObject*>& getChildren();
 
-        bool operator==(const GameObject *gameObject) {
+        bool operator==(const GameObject* gameObject) {
             return tag == gameObject->tag;
         }
 
-        void *operator new(size_t size) {
-            void *p = ::operator new(size);
-            ((GameObject *) p)->stackAllocated = true;
+        void* operator new(size_t size) {
+            void* p = ::operator new(size);
+            ((GameObject*)p)->stackAllocated = true;
             return p;
         }
 
-        void operator delete(void *p) {
-            if (((GameObject *) p)->stackAllocated) {
+        void operator delete(void* p) {
+            if (((GameObject*)p)->stackAllocated) {
                 ::operator delete(p);
             }
         }
@@ -120,8 +119,5 @@ namespace TechEngine {
 
     private:
         void deleteChildren();
-
     };
 }
-
-

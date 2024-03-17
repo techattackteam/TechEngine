@@ -1,0 +1,24 @@
+#pragma once
+
+#include <boost/asio/ip/udp.hpp>
+#include "event/EventDispatcher.hpp"
+
+using boost::asio::ip::udp;
+namespace TechEngine {
+    class ConnectionRequestEvent : public Event {
+    private:
+        udp::endpoint endpoint;
+    public:
+        static inline EventType eventType = EventType("ConnectionRequestEvent", ASYNC);
+
+        ConnectionRequestEvent(udp::endpoint endpoint) : endpoint(endpoint), Event(eventType) {
+        };
+
+        ~ConnectionRequestEvent() override = default;
+
+
+        udp::endpoint getEndpoint() {
+            return endpoint;
+        }
+    };
+}
