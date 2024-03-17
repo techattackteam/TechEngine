@@ -4,7 +4,7 @@
 #include "components/light/DirectionalLightComponent.hpp"
 #include "scene/SceneHelper.hpp"
 #include "core/Logger.hpp"
-#include "TextureManager.hpp"
+#include "texture/TextureManager.hpp"
 #include "core/FileSystem.hpp"
 
 namespace TechEngine {

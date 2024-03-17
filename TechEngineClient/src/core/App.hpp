@@ -4,11 +4,11 @@
 #include "Window.hpp"
 #include "events/window/WindowCloseEvent.hpp"
 #include "material/MaterialManager.hpp"
-#include "renderer/TextureManager.hpp"
+#include "texture/TextureManager.hpp"
 #include "project/ProjectManager.hpp"
 #include "scene/SceneManager.hpp"
 #include "physics/PhysicsEngine.hpp"
-#include "ScriptingAPI/TechEngineAPI.hpp"
+#include "scriptingAPI/TechEngineAPI.hpp"
 
 namespace TechEngine {
     class TECHENGINE_API App : public AppCore {
@@ -19,7 +19,7 @@ namespace TechEngine {
         SceneManager sceneManager;
         ProjectManager projectManager;
         PhysicsEngine physicsEngine;
-        TechEngineAPI::TechEngineAPI api;
+        TechEngineAPI api;
 
         App(std::string name, int width, int height);
 

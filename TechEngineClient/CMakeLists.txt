@@ -49,18 +49,51 @@ add_custom_command(TARGET TechEngineClient POST_BUILD
         COMMAND_EXPAND_LISTS)
 
 #Copy API include files to project template
-file(GLOB_RECURSE TechEngineAPI_include "src/script/*.hpp")
-add_custom_command(TARGET TechEngineClient POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${PROJECT_SOURCE_DIR}/TechEngineClient/src/ScriptingAPI" "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/include"
-        COMMAND_EXPAND_LISTS)
+set(TECH_ENGINE_CLIENT_API_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/include/TechEngineClient")
+set(TECH_ENGINE_CLIENT_API_FILES
+        "${PROJECT_SOURCE_DIR}/TechEngineClient/src/core/Key.hpp"
+        "${PROJECT_SOURCE_DIR}/TechEngineClient/src/core/Mouse.hpp"
+        "${PROJECT_SOURCE_DIR}/TechEngineClient/src/material/Material.hpp"
+        "${PROJECT_SOURCE_DIR}/TechEngineClient/src/components"
+        "${PROJECT_SOURCE_DIR}/TechEngineClient/src/events"
+        "${PROJECT_SOURCE_DIR}/TechEngineClient/src/script"
+        "${PROJECT_SOURCE_DIR}/TechEngineClient/src/scriptingAPI"
+        "${PROJECT_SOURCE_DIR}/TechEngineClient/src/texture"
+)
 
-file(GLOB_RECURSE CPP_FILES "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/include/*.cpp")
+#Clear TechEngineClient API directory
+file(REMOVE_RECURSE "${TECH_ENGINE_CLIENT_API_DIRECTORY}")
 
-foreach (_file ${CPP_FILES})
-    if (EXISTS ${_file})
-        add_custom_command(TARGET TechEngineClient
-                COMMAND ${CMAKE_COMMAND} -E rm -f ${_file}
+
+foreach (entry ${TECH_ENGINE_CLIENT_API_FILES})
+    if (IS_DIRECTORY ${entry})
+        get_filename_component(folder_name ${entry} NAME)
+        add_custom_command(TARGET TechEngineClient POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E rm -rf "${TECH_ENGINE_CLIENT_API_DIRECTORY}/${folder_name}"
+                COMMAND_EXPAND_LISTS)
+        message(STATUS "Removed ${TECH_ENGINE_CLIENT_API_DIRECTORY}/${folder_name}")
+        add_custom_command(TARGET TechEngineClient POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_directory "${entry}" "${TECH_ENGINE_CLIENT_API_DIRECTORY}/${folder_name}"
+                COMMAND_EXPAND_LISTS)
+        add_custom_command(TARGET TechEngineClient POST_BUILD
+                COMMAND powershell -Command "Get-ChildItem -Path ${TECH_ENGINE_CLIENT_API_DIRECTORY}/${folder_name} -Filter *.cpp -Recurse | Remove-Item -Force"
+                COMMAND_EXPAND_LISTS)
+    else ()
+        get_filename_component(folder_name ${entry} DIRECTORY)
+        get_filename_component(folder_name ${folder_name} NAME)
+        if (NOT EXISTS "${TECH_ENGINE_CLIENT_API_DIRECTORY}/${folder_name}")
+            file(MAKE_DIRECTORY "${TECH_ENGINE_CLIENT_API_DIRECTORY}/${folder_name}")
+        endif ()
+        add_custom_command(TARGET TechEngineClient PRE_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy "${entry}" "${TECH_ENGINE_CLIENT_API_DIRECTORY}/${folder_name}"
                 COMMAND_EXPAND_LISTS)
     endif ()
 endforeach ()
+
+
+#Copy DLLS to project template
+add_custom_command(TARGET TechEngineClient POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_RUNTIME_DLLS:TechEngineClient>
+        "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib"
+        COMMAND_EXPAND_LISTS)

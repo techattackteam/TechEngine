@@ -15,7 +15,7 @@ namespace TechEngine {
         EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
     }
 
-    GameObject::GameObject(std::string name, const std::string &tag) : name(std::move(name)), tag(tag) {
+    GameObject::GameObject(std::string name, const std::string& tag) : name(std::move(name)), tag(tag) {
         addComponent<TransformComponent>();
         EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
     }
@@ -40,11 +40,11 @@ namespace TechEngine {
         }
     }
 
-    void GameObject::makeParent(GameObject *parent) {
+    void GameObject::makeParent(GameObject* parent) {
         this->parent = parent;
     }
 
-    void GameObject::addChild(GameObject *child) {
+    void GameObject::addChild(GameObject* child) {
         child->makeParent(this);
         children.insert(std::make_pair(child->getTag(), child));
     }
@@ -53,9 +53,9 @@ namespace TechEngine {
         removeChild(parent->getTag());
     }
 
-    void GameObject::removeChild(const std::string &tag) {
+    void GameObject::removeChild(const std::string& tag) {
         if (children.contains(tag)) {
-            GameObject *child = children.at(tag);
+            GameObject* child = children.at(tag);
             child->parent = nullptr;
             children.erase(tag);
         }
@@ -77,25 +77,25 @@ namespace TechEngine {
         return tag;
     }
 
-    GameObject *GameObject::getParent() {
+    GameObject* GameObject::getParent() {
         return parent;
     }
 
-    TransformComponent &GameObject::getTransform() {
+    TransformComponent& GameObject::getTransform() {
         return *getComponent<TransformComponent>();
     }
 
-    std::unordered_map<std::string, Component *> &GameObject::getComponents() {
+    std::unordered_map<std::string, Component*>& GameObject::getComponents() {
         return components;
     }
 
-    std::unordered_map<std::string, GameObject *> &GameObject::getChildren() {
+    std::unordered_map<std::string, GameObject*>& GameObject::getChildren() {
         return children;
     }
 
     void GameObject::deleteChildren() {
         while (!children.empty()) {
-            GameObject *child = children.begin()->second;
+            GameObject* child = children.begin()->second;
             children.erase(child->tag);
             delete child;
         }
@@ -120,5 +120,4 @@ namespace TechEngine {
     bool GameObject::isEditorOnly() const {
         return editorOnly;
     }
-
 }

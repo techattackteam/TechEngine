@@ -4,7 +4,7 @@
 #include "material/Material.hpp"
 #include "renderer/Renderer.hpp"
 #include "core/SceneCamera.hpp"
-#include "renderer/TextureManager.hpp"
+#include "texture/TextureManager.hpp"
 #include "material/MaterialManager.hpp"
 #include "panels/materialEditorScene/Sphere.hpp"
 

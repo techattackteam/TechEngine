@@ -2,6 +2,7 @@
 #include "Editor.hpp"
 #include "core/FileSystem.hpp"
 #include "external/EntryPoint.hpp"
+#include "script/ScriptEngine.hpp"
 #include "yaml-cpp/yaml.h"
 
 namespace TechEngine {
@@ -10,6 +11,7 @@ namespace TechEngine {
         projectManager.init();
         loadEditorSettings();
         panelsManager.init();
+        ScriptEngine* scriptEngine = new ScriptEngine();
     }
 
     void Editor::onUpdate() {
@@ -31,8 +33,7 @@ namespace TechEngine {
                 if (std::filesystem::exists(lastProjectLoaded)) {
                     projectManager.loadProject(lastProjectLoaded);
                 }
-            }
-            catch (YAML::Exception&e) {
+            } catch (YAML::Exception& e) {
                 TE_LOGGER_CRITICAL("Failed to load EditorSettings.TESettings file.\n      {0}", e.what());
             }
             return;

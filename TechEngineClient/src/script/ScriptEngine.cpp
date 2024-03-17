@@ -6,17 +6,15 @@ namespace TechEngine {
     ScriptEngine::ScriptEngine() {
         if (instance != nullptr) {
             delete this;
-        }
-        else {
+        } else {
             instance = this;
         }
     }
 
-    void ScriptEngine::init(const std::string&dllPath) {
+    void ScriptEngine::init(const std::string& dllPath) {
         if (std::filesystem::exists(dllPath)) {
             m_userCustomDll = LoadLibraryA(dllPath.c_str());
-        }
-        else {
+        } else {
             TE_LOGGER_ERROR("Failed to load user scripts dll");
         }
     }
@@ -51,13 +49,13 @@ namespace TechEngine {
 
     ScriptEngine* ScriptEngine::getInstance() {
         if (instance == nullptr) {
-            return new ScriptEngine();
+            TE_LOGGER_CRITICAL("ScriptEngine instance is nullptr in getInstance() method.");
         }
         return instance;
     }
 
-    void ScriptEngine::registerScript(Script* pScript) {
-        scripts.push_back(pScript);
+    void ScriptEngine::registerScript(Script* script) {
+        getInstance()->scripts.push_back(script);
     }
 
     void ScriptEngine::deleteScripts() {

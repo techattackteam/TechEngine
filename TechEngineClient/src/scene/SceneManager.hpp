@@ -2,6 +2,8 @@
 
 #include <string>
 #include <unordered_map>
+
+#include "events/material/MaterialUpdateEvent.hpp"
 #include "physics/PhysicsEngine.hpp"
 #include "yaml-cpp/node/node.h"
 #include "yaml-cpp/yaml.h"
@@ -30,6 +32,9 @@ namespace TechEngine {
         void replaceSceneNameFromPath(std::string& sceneName);
 
         std::string getSceneNameFromPath(const std::string& scenePath);
+
+        //TODO: change this to the actual Scene class
+        void onMaterialUpdateEvent(MaterialUpdateEvent& event);
 
     public:
         SceneManager(PhysicsEngine& physicsEngine, MaterialManager& materialManager, TextureManager& textureManager);

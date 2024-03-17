@@ -1,6 +1,6 @@
 #include "MaterialManager.hpp"
 #include "core/Logger.hpp"
-#include "renderer/TextureManager.hpp"
+#include "texture/TextureManager.hpp"
 #include <utils/YAMLUtils.hpp>
 #include <filesystem>
 #include <fstream>
@@ -144,14 +144,14 @@ namespace TechEngine {
         glm::vec3 specular = specularNode.as<glm::vec3>();
         float shininess = shininessNode.as<float>();
         Material& material = createMaterial(name.as<std::string>(), color, ambient, diffuse, specular, shininess);
-        material.getUseTexture() = useTextureNode.as<bool>();
+        material.setUseTexture(useTextureNode.as<bool>());
         std::string diffuseTextureName = diffuseTextureNode.as<std::string>();
         if (!diffuseTextureName.empty()) {
             Texture* diffuseTexture = &m_textureManager.getTexture(diffuseTextureName);
             material.setDiffuseTexture(diffuseTexture);
         } else {
             material.setDiffuseTexture(nullptr);
-            material.getUseTexture() = false;
+            material.setUseTexture(false);
         }
         return true;
     }
