@@ -1,4 +1,6 @@
 #pragma once
+#include <functional>
+
 #include "event/events/Event.hpp"
 
 namespace TechEngine {
@@ -8,13 +10,15 @@ namespace TechEngine {
 namespace TechEngine {
     class EventDispatcherAPI {
     private:
-        inline static TechEngine::EventDispatcher* eventDispatcher = nullptr;
+        inline static EventDispatcher* eventDispatcher = nullptr;
 
     public:
-        explicit EventDispatcherAPI(TechEngine::EventDispatcher* eventDispatcher);
+        explicit EventDispatcherAPI(EventDispatcher* eventDispatcher);
 
         ~EventDispatcherAPI();
 
-        static void dispatch(TechEngine::Event* event);
+        static void dispatch(Event* event);
+
+        static void subscribe(EventType eventType, const std::function<void(Event*)>& callback);
     };
 }
