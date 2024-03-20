@@ -5,6 +5,8 @@
 #include <filesystem>
 #include <fstream>
 
+#include "core/App.hpp"
+
 namespace TechEngine {
     MaterialManager::MaterialManager(TextureManager& textureManager) : m_textureManager(textureManager) {
     }
@@ -86,14 +88,32 @@ namespace TechEngine {
             out << YAML::Key << "diffuseTexture" << YAML::Value << "";
         }
         out << YAML::EndMap;
-        std::filesystem::path path = filepath;
-        std::filesystem::create_directories(path.parent_path());
+        path path = filepath;
+        create_directories(path.parent_path());
         std::ofstream fout(filepath);
         fout << out.c_str();
     }
 
     void MaterialManager::clear() {
         m_materialsBank.clear();
+    }
+
+    void MaterialManager::copy() {
+        delete m_copy;
+        m_copy = new MaterialManager(m_textureManager);
+        for (auto& [name, material]: m_materialsBank) {
+            m_copy->createMaterial(name, material.getColor(), material.getAmbient(), material.getDiffuse(), material.getSpecular(), material.getShininess());
+        }
+    }
+
+    void MaterialManager::restoreCopy() {
+        for (auto& [name, material]: m_copy->m_materialsBank) {
+            if (materialExists(name)) {
+                deleteMaterial(name);
+            }
+            createMaterial(name, material.getColor(), material.getAmbient(), material.getDiffuse(), material.getSpecular(), material.getShininess());
+        }
+        delete m_copy;
     }
 
     bool MaterialManager::deserializeMaterial(const std::string& filepath) {

@@ -23,7 +23,7 @@ namespace TechEngine {
 
     void Material::setColor(glm::vec4 color) {
         this->color = color;
-        EventDispatcher::getInstance().dispatch(new MaterialUpdateEvent(this));
+        EventDispatcher::getInstance().dispatch(new MaterialUpdateEvent(*this));
     }
 
     glm::vec3 Material::getAmbient() {
@@ -32,7 +32,7 @@ namespace TechEngine {
 
     void Material::setAmbient(glm::vec3 ambient) {
         this->ambient = ambient;
-        EventDispatcher::getInstance().dispatch(new MaterialUpdateEvent(this));
+        EventDispatcher::getInstance().dispatch(new MaterialUpdateEvent(*this));
     }
 
     glm::vec3 Material::getDiffuse() {
@@ -41,7 +41,7 @@ namespace TechEngine {
 
     void Material::setDiffuse(glm::vec3 diffuse) {
         this->diffuse = diffuse;
-        EventDispatcher::getInstance().dispatch(new MaterialUpdateEvent(this));
+        EventDispatcher::getInstance().dispatch(new MaterialUpdateEvent(*this));
     }
 
     glm::vec3 Material::getSpecular() {
@@ -50,7 +50,7 @@ namespace TechEngine {
 
     void Material::setSpecular(glm::vec3 specular) {
         this->specular = specular;
-        EventDispatcher::getInstance().dispatch(new MaterialUpdateEvent(this));
+        EventDispatcher::getInstance().dispatch(new MaterialUpdateEvent(*this));
     }
 
     float Material::getShininess() const {
@@ -59,7 +59,7 @@ namespace TechEngine {
 
     void Material::setShininess(float shininess) {
         this->shininess = shininess;
-        EventDispatcher::getInstance().dispatch(new MaterialUpdateEvent(this));
+        EventDispatcher::getInstance().dispatch(new MaterialUpdateEvent(*this));
     }
 
 
@@ -69,7 +69,7 @@ namespace TechEngine {
 
     void Material::setUseTexture(bool useTexture) {
         this->useTexture = useTexture;
-        EventDispatcher::getInstance().dispatch(new MaterialUpdateEvent(this));
+        EventDispatcher::getInstance().dispatch(new MaterialUpdateEvent(*this));
     }
 
     Texture* Material::getDiffuseTexture() {
@@ -78,6 +78,6 @@ namespace TechEngine {
 
     void Material::setDiffuseTexture(Texture* texture) {
         diffuseTexture = texture;
-        EventDispatcher::getInstance().dispatch(new MaterialUpdateEvent(this));
+        EventDispatcher::getInstance().dispatch(new MaterialUpdateEvent(*this));
     }
 }

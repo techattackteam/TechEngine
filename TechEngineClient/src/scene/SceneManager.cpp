@@ -21,6 +21,7 @@
 #include "event/EventDispatcher.hpp"
 #include "material/MaterialManager.hpp"
 #include "mesh/ImportedMesh.hpp"
+#include "project/ProjectManager.hpp"
 
 namespace TechEngine {
     YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec2& v) {
@@ -175,7 +176,7 @@ namespace TechEngine {
     }
 
 
-    SceneManager::SceneManager(PhysicsEngine& physicsEngine, MaterialManager& materialManager, TextureManager& textureManager) : physicsEngine(physicsEngine), materialManager(materialManager), textureManager(textureManager) {
+    SceneManager::SceneManager(ProjectManager& projectManager, PhysicsEngine& physicsEngine, MaterialManager& materialManager, TextureManager& textureManager) : projectManager(projectManager), physicsEngine(physicsEngine), materialManager(materialManager), textureManager(textureManager) {
         EventDispatcher::getInstance().subscribe(MaterialUpdateEvent::eventType, [this](Event* event) {
             onMaterialUpdateEvent((MaterialUpdateEvent&)*event);
         });
@@ -341,12 +342,7 @@ namespace TechEngine {
         }
 
         materialManager.clear();
-        YAML::Node materialsNode = data["Materials"];
-        if (materialsNode) {
-            for (YAML::Node materialYAML: materialsNode) {
-                deserializeMaterial(materialYAML);
-            }
-        }
+        materialManager.init(FileSystem::getAllFilesWithExtension(projectManager.getProjectLocation().string(), ".mat"));
         SceneHelper::clear(scene);
         YAML::Node node = data["GameObjects"];
         if (node) {
@@ -467,9 +463,9 @@ namespace TechEngine {
         for (GameObject* gameObject: scene.getGameObjects()) {
             if (gameObject->hasComponent<MeshRendererComponent>()) {
                 MeshRendererComponent* meshRendererComponent = gameObject->getComponent<MeshRendererComponent>();
-                if (meshRendererComponent->getMaterial().getName() == event.getMaterialName()) {
+                /*if (meshRendererComponent->getMaterial().getName() == event.getMaterialName()) {
                     meshRendererComponent->paintMesh();
-                }
+                }*/
             }
         }
     }

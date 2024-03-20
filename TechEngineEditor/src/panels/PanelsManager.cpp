@@ -18,35 +18,35 @@
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    PanelsManager::PanelsManager(Window&window, SceneManager&sceneManager,
-                                 ProjectManager&projectManager,
-                                 PhysicsEngine&physicsEngine,
-                                 TextureManager&textureManager,
-                                 MaterialManager&materialManager) : window(window),
-                                                                    sceneManager(sceneManager),
-                                                                    projectManager(projectManager),
-                                                                    physicsEngine(physicsEngine),
+    PanelsManager::PanelsManager(Window& window, SceneManager& sceneManager,
+                                 ProjectManager& projectManager,
+                                 PhysicsEngine& physicsEngine,
+                                 TextureManager& textureManager,
+                                 MaterialManager& materialManager) : window(window),
+                                                                     sceneManager(sceneManager),
+                                                                     projectManager(projectManager),
+                                                                     physicsEngine(physicsEngine),
 
-                                                                    gameView(window.getRenderer(), sceneManager.getScene()),
-                                                                    contentBrowser(*this, projectManager, sceneManager, materialManager),
-                                                                    exportSettingsPanel(*this, projectManager, sceneManager, window.getRenderer().getShadersManager()),
-                                                                    sceneHierarchyPanel(sceneManager.getScene(), materialManager),
-                                                                    sceneView(window.getRenderer(), sceneManager.getScene(), sceneHierarchyPanel.getSelectedGO()),
-                                                                    inspectorPanel(sceneHierarchyPanel.getSelectedGO(), materialManager, physicsEngine),
-                                                                    materialEditor(window.getRenderer(), textureManager, materialManager, sceneManager.getScene()) {
+                                                                     gameView(window.getRenderer(), sceneManager.getScene()),
+                                                                     contentBrowser(*this, projectManager, sceneManager, materialManager),
+                                                                     exportSettingsPanel(*this, projectManager, sceneManager, window.getRenderer().getShadersManager()),
+                                                                     sceneHierarchyPanel(sceneManager.getScene(), materialManager),
+                                                                     sceneView(window.getRenderer(), sceneManager.getScene(), sceneHierarchyPanel.getSelectedGO()),
+                                                                     inspectorPanel(sceneHierarchyPanel.getSelectedGO(), materialManager, physicsEngine),
+                                                                     materialEditor(window.getRenderer(), textureManager, materialManager, sceneManager.getScene()) {
     }
 
     void PanelsManager::init() {
-        EventDispatcher::getInstance().subscribe(RegisterCustomPanel::eventType, [this](TechEngine::Event *event) {
-            registerCustomPanel((RegisterCustomPanel *) event);
+        EventDispatcher::getInstance().subscribe(RegisterCustomPanel::eventType, [this](TechEngine::Event* event) {
+            registerCustomPanel((RegisterCustomPanel*)event);
         });
 
-        EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngine::Event *event) {
-            sceneHierarchyPanel.deselectGO(sceneManager.getScene().getGameObjectByTag(((GameObjectDestroyEvent *) event)->getGameObjectTag()));
+        EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngine::Event* event) {
+            sceneHierarchyPanel.deselectGO(sceneManager.getScene().getGameObjectByTag(((GameObjectDestroyEvent*)event)->getGameObjectTag()));
         });
 
-        EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event *event) {
-            OnKeyPressedEvent(((KeyPressedEvent *) event)->getKey());
+        EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event* event) {
+            OnKeyPressedEvent(((KeyPressedEvent*)event)->getKey());
         });
 
 
@@ -77,7 +77,7 @@ namespace TechEngine {
 
     void PanelsManager::initImGui() {
         imguiContext = ImGui::CreateContext();
-        ImGuiIO&io = ImGui::GetIO();
+        ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -85,7 +85,7 @@ namespace TechEngine {
 
         ImGui::StyleColorsDark();
 
-        ImGuiStyle&style = ImGui::GetStyle();
+        ImGuiStyle& style = ImGui::GetStyle();
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
             style.WindowRounding = 0.0f;
         }
@@ -97,7 +97,7 @@ namespace TechEngine {
     }
 
     void PanelsManager::setColorTheme() {
-        ImGuiStyle&style = ImGui::GetStyle();
+        ImGuiStyle& style = ImGui::GetStyle();
         ImVec4* colors = style.Colors;
 
         // Modify the blue color to make it more grayish
@@ -188,8 +188,8 @@ namespace TechEngine {
         ImGui::PopStyleVar(2);
 
         // DockSpace
-        ImGuiIO&io = ImGui::GetIO();
-        ImGuiStyle&style = ImGui::GetStyle();
+        ImGuiIO& io = ImGui::GetIO();
+        ImGuiStyle& style = ImGui::GetStyle();
         float minWinSizeX = style.WindowMinSize.x;
         style.WindowMinSize.x = 170.0f;
         if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
@@ -221,8 +221,7 @@ namespace TechEngine {
             if (ImGui::MenuItem("Export")) {
                 if (exportSettingsPanel.isVisible()) {
                     exportSettingsPanel.setVisibility(false);
-                }
-                else {
+                } else {
                     exportSettingsPanel.setVisibility(true);
                 }
             }
@@ -238,10 +237,10 @@ namespace TechEngine {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 4));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-        auto&colors = ImGui::GetStyle().Colors;
-        const auto&buttonHovered = colors[ImGuiCol_ButtonHovered];
+        auto& colors = ImGui::GetStyle().Colors;
+        const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f));
-        const auto&buttonActive = colors[ImGuiCol_ButtonActive];
+        const auto& buttonActive = colors[ImGuiCol_ButtonActive];
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, 0.5f));
 
         ImGui::Begin("##Toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
@@ -255,8 +254,7 @@ namespace TechEngine {
         if (ImGui::Button(m_currentPlaying == true ? "Stop" : "Play", ImVec2(size, 0))) {
             if (!m_currentPlaying) {
                 startRunningScene();
-            }
-            else {
+            } else {
                 stopRunningScene();
             }
         }
@@ -336,6 +334,7 @@ namespace TechEngine {
 
     void PanelsManager::startRunningScene() {
         sceneManager.saveSceneAsTemporarily(sceneManager.getActiveSceneName());
+        EventDispatcher::getInstance().copy();
         ScriptEngine::getInstance()->init(projectManager.getScriptsDLLPath().string());
         ScriptEngine::getInstance()->onStart();
         physicsEngine.start();
@@ -343,8 +342,8 @@ namespace TechEngine {
     }
 
     void PanelsManager::stopRunningScene() {
-        ScriptEngine::getInstance()->stop();
         physicsEngine.stop();
+        EventDispatcher::getInstance().restoreCopy();
         sceneManager.loadSceneFromTemporarily(sceneManager.getActiveSceneName());
         sceneHierarchyPanel.getSelectedGO().clear();
         for (GameObject* gameObject: sceneManager.getScene().getGameObjects()) {
@@ -356,13 +355,15 @@ namespace TechEngine {
             }
         }
         m_currentPlaying = false;
+        ScriptEngine::getInstance()->stop();
+
     }
 
-    std::vector<GameObject *>& PanelsManager::getSelectedGameObjects() {
+    std::vector<GameObject*>& PanelsManager::getSelectedGameObjects() {
         return sceneHierarchyPanel.getSelectedGO();
     }
 
-    void PanelsManager::OnKeyPressedEvent(Key&key) {
+    void PanelsManager::OnKeyPressedEvent(Key& key) {
         switch (key.getKeyCode()) {
             case Q: {
                 if (!ImGuizmo::IsUsing())
@@ -389,7 +390,7 @@ namespace TechEngine {
     }
 
 
-    void PanelsManager::openMaterialEditor(const std::string&materialName, const std::string&filepath) {
+    void PanelsManager::openMaterialEditor(const std::string& materialName, const std::string& filepath) {
         materialEditor.open(materialName, filepath);
     }
 }

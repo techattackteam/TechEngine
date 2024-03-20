@@ -6,17 +6,20 @@
 #include "events/material/MaterialUpdateEvent.hpp"
 #include "physics/PhysicsEngine.hpp"
 #include "yaml-cpp/node/node.h"
-#include "yaml-cpp/yaml.h"
 #include "scene/Scene.hpp"
 #include "material/MaterialManager.hpp"
 
+
 namespace TechEngine {
+    class ProjectManager;
+
     class SceneManager {
     private:
         Scene scene;
         PhysicsEngine& physicsEngine;
         MaterialManager& materialManager;
         TextureManager& textureManager;
+        ProjectManager& projectManager;
         std::unordered_map<std::string, std::string> m_scenesBank;
 
         std::string m_activeSceneName;
@@ -37,7 +40,7 @@ namespace TechEngine {
         void onMaterialUpdateEvent(MaterialUpdateEvent& event);
 
     public:
-        SceneManager(PhysicsEngine& physicsEngine, MaterialManager& materialManager, TextureManager& textureManager);
+        SceneManager(ProjectManager& projectManager, PhysicsEngine& physicsEngine, MaterialManager& materialManager, TextureManager& textureManager);
 
         void init(const std::string& projectPath);
 

@@ -17,12 +17,14 @@ namespace TechEngine {
         glm::vec3 m_defaultSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
         float m_defaultShininess = 32.0f;
 
+        MaterialManager *m_copy = nullptr;
+
     public:
         explicit MaterialManager(TextureManager& textureManager);
 
         void init(const std::vector<std::string>& materialsFilePaths);
 
-        Material& createMaterial(const std::string& name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
+        Material& createMaterial(const ::std::string& name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
 
         Material& createMaterial(const std::string& name, Texture* diffuse);
 
@@ -39,6 +41,10 @@ namespace TechEngine {
         void serializeMaterial(const std::string& name, const std::string& filepath);
 
         void clear();
+
+        void copy();
+
+        void restoreCopy();
 
     private:
         bool deserializeMaterial(const std::string& filepath);

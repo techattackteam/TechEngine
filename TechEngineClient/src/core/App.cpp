@@ -6,7 +6,7 @@ namespace TechEngine {
                                                         window(name, width, height),
                                                         textureManager(),
                                                         materialManager(textureManager),
-                                                        sceneManager(physicsEngine, materialManager, textureManager),
+                                                        sceneManager(projectManager, physicsEngine, materialManager, textureManager),
                                                         projectManager(sceneManager, textureManager, materialManager), physicsEngine(sceneManager.getScene()),
                                                         api(&sceneManager, &eventDispatcher/*, ScriptEngine::getInstance()*/, &materialManager) {
         eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event* event) {
