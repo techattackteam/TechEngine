@@ -101,8 +101,8 @@ namespace TechEngine {
         projectResourcesPath = this->projectLocation.string() + "\\Resources";
         projectExportPath = this->projectLocation.string() + "\\Build";
 
-        scriptsBuildPath = projectResourcesPath.string() + "\\scripts\\build";
-        userScriptsDLLPath = scriptsBuildPath.string() + "\\Debug\\UserScripts.dll";
+        scriptsBuildPath = projectResourcesPath.string() + "\\cmake\\cmake-build-debug";
+        userScriptsDLLPath = projectResourcesPath.string() + "\\scripts\\build\\debug\\UserScripts.dll";
         cmakeListPath = projectResourcesPath.string() + "\\cmake";
 
         std::string lastSceneLoaded;

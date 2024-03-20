@@ -2,12 +2,12 @@
 #include <condition_variable>
 #include <thread>
 #include <mutex>
-#include "../EventManager.hpp"
+#include "event/manager/EventManager.hpp"
 
 namespace TechEngine {
     class AsyncEventManager : public EventManager {
     private:
-        std::thread *thread;
+        std::thread* thread;
         std::condition_variable_any canExecuteCond;
         std::recursive_mutex mutex;
 
@@ -21,8 +21,10 @@ namespace TechEngine {
     public:
         AsyncEventManager();
 
-        ~AsyncEventManager();
+        ~AsyncEventManager() override;
 
-        void dispatch(Event *event) override;
+        AsyncEventManager& operator=(const AsyncEventManager&);
+
+        void dispatch(Event* event) override;
     };
 }

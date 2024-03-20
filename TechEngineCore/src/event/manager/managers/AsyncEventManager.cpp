@@ -17,6 +17,27 @@ namespace TechEngine {
         delete thread;
     }
 
+    AsyncEventManager& AsyncEventManager::operator=(const AsyncEventManager& asyncEventManager) {
+        if (this == &asyncEventManager) {
+            return *this;
+        }
+        this->running = false;
+        this->canExecute = true;
+        this->canExecuteCond.notify_all();
+        this->thread->join();
+        delete this->thread;
+        this->thread = new std::thread(&AsyncEventManager::runThread, this);
+        this->running = true;
+        this->canExecute = false;
+        for (auto& observer : asyncEventManager.observers) {
+            for (auto& callback : observer.second) {
+                this->subscribe(observer.first, callback);
+            }
+        }
+        this->dispatchedEvents = asyncEventManager.dispatchedEvents;
+        return *this;
+    }
+
     void AsyncEventManager::dispatch(Event* event) {
         std::unique_lock<std::recursive_mutex> lock(mutex);
         EventManager::dispatch(event);

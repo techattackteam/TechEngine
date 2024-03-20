@@ -22,8 +22,8 @@ namespace TechEngine {
         path projectResourcesPath = projectLocation.string() + "\\Resources";
         path projectExportPath = projectLocation.string() + "\\Build";
 
-        path scriptsBuildPath = projectResourcesPath.string() + "\\scripts\\build";
-        path userScriptsDLLPath = scriptsBuildPath.string() + "\\Debug\\UserScripts.dll";
+        path scriptsBuildPath = projectResourcesPath.string() + "\\cmake\\cmake-build-debug";
+        path userScriptsDLLPath = projectResourcesPath.string() + "\\scripts\\build\\debug\\UserScripts.dll";
         path cmakeListPath = projectResourcesPath.string() + "\\cmake";
 
 
