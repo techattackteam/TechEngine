@@ -322,14 +322,18 @@ namespace TechEngine {
     }
 
     void PanelsManager::compileUserScripts() {
-        if (!exists(projectManager.getScriptsBuildPath()) || std::filesystem::is_empty(projectManager.getScriptsBuildPath())) {
+        if (!exists(projectManager.getScriptsBuildPath()) || is_empty(projectManager.getScriptsBuildPath())) {
             std::string command = "\"" + projectManager.getCmakePath().string() +
-                                  " -G \"Visual Studio 17 2022\" -S " + "\"" + projectManager.getCmakeListPath().string() + "\"" +
+                                  " -G \"Visual Studio 17 2022\""
+                                  " -D TechEngineClientLIB:STRING=\"" + projectManager.getTechEngineClientLibPath().string() + "\"" +
+                                  " -D TechEngineCoreLIB:STRING=\"" + projectManager.getTechEngineCoreLibPath().string() + "\"" +
+                                  " -S " + "\"" + projectManager.getCmakeListPath().string() + "\"" +
                                   " -B " + "\"" + projectManager.getScriptsBuildPath().string() + "\"" + "\"";
             std::system(command.c_str());
+            TE_LOGGER_INFO("Command executed: {0}", command);
         }
         std::string command = "\"" + projectManager.getCmakePath().string() +
-                              " --build " + "\"" + projectManager.getScriptsBuildPath().string() + "\"" + " --target UserScripts --config Debug\"";
+                  " --build " + "\"" + projectManager.getScriptsBuildPath().string() + "\"" + " --target UserScripts --config Debug\"";
         std::system(command.c_str());
         TE_LOGGER_INFO("Build finished!");
     }

@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.24)
 project(UserProject)
 
 set(CMAKE_CXX_STANDARD 20)
+set(TechEngineCoreLIB "TechEngineCoreLIB-placeholder" CACHE STRING "File path for the TechEngineCore lib")
+set(TechEngineClientLIB "TechEngineClientLIB-placeholder" CACHE STRING "File path for the TechEngineClient lib")
 
 file(GLOB_RECURSE UserScripts_Sources CONFIGURE_DEPENDS "../../Assets/*.cpp")
 file(GLOB_RECURSE UserScripts_Headers "../../Assets/*.hpp")
@@ -27,5 +29,10 @@ if (WIN32) # WINDOWS
             RUNTIME_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_API_OUTPUT_DIRECTORY}/release"
     )
 endif ()
-target_include_directories(UserScripts PUBLIC "../TechEngineAPI/include" "../dependencies/glm")
-target_link_libraries(UserScripts "C:/dev/TechEngine/bin/TechEngineClient/debug/TechEngineClient.lib")
+target_include_directories(UserScripts PUBLIC
+        "../TechEngineAPI/include/TechEngineCore"
+        "../TechEngineAPI/include/TechEngineClient"
+        "../TechEngineAPI/include"
+        "../dependencies/glm"
+        "../dependencies/yaml-cpp/include")
+target_link_libraries(UserScripts ${TechEngineCoreLIB} ${TechEngineClientLIB})
