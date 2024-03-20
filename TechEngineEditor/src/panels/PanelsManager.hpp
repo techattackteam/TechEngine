@@ -27,6 +27,8 @@ namespace TechEngine {
         ProjectManager&projectManager;
         SceneManager&sceneManager;
         PhysicsEngine&physicsEngine;
+        TextureManager&textureManager;
+        MaterialManager&materialManager;
 
 
         GameView gameView;

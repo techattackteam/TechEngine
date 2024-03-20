@@ -26,6 +26,8 @@ namespace TechEngine {
                                                                      sceneManager(sceneManager),
                                                                      projectManager(projectManager),
                                                                      physicsEngine(physicsEngine),
+                                                                     materialManager(materialManager),
+                                                                     textureManager(textureManager),
 
                                                                      gameView(window.getRenderer(), sceneManager.getScene()),
                                                                      contentBrowser(*this, projectManager, sceneManager, materialManager),
@@ -335,6 +337,7 @@ namespace TechEngine {
     void PanelsManager::startRunningScene() {
         sceneManager.saveSceneAsTemporarily(sceneManager.getActiveSceneName());
         EventDispatcher::getInstance().copy();
+        materialManager.copy();
         ScriptEngine::getInstance()->init(projectManager.getScriptsDLLPath().string());
         ScriptEngine::getInstance()->onStart();
         physicsEngine.start();
@@ -344,6 +347,7 @@ namespace TechEngine {
     void PanelsManager::stopRunningScene() {
         physicsEngine.stop();
         EventDispatcher::getInstance().restoreCopy();
+        materialManager.restoreCopy();
         sceneManager.loadSceneFromTemporarily(sceneManager.getActiveSceneName());
         sceneHierarchyPanel.getSelectedGO().clear();
         for (GameObject* gameObject: sceneManager.getScene().getGameObjects()) {
@@ -356,7 +360,6 @@ namespace TechEngine {
         }
         m_currentPlaying = false;
         ScriptEngine::getInstance()->stop();
-
     }
 
     std::vector<GameObject*>& PanelsManager::getSelectedGameObjects() {
