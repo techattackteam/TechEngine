@@ -28,8 +28,6 @@ namespace TechEngine {
 
         void deserializeGameObject(YAML::Node gameObjectYAML, GameObject* parent);
 
-        void deserializeMaterial(const YAML::Node& materialYAML);
-
         bool deserialize(const std::string& filepath);
 
         void replaceSceneNameFromPath(std::string& sceneName);

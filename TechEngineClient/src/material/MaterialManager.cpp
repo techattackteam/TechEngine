@@ -101,19 +101,13 @@ namespace TechEngine {
     void MaterialManager::copy() {
         delete m_copy;
         m_copy = new MaterialManager(m_textureManager);
-        for (auto& [name, material]: m_materialsBank) {
-            m_copy->createMaterial(name, material.getColor(), material.getAmbient(), material.getDiffuse(), material.getSpecular(), material.getShininess());
-        }
+        m_copy->m_materialsBank = m_materialsBank;
     }
 
     void MaterialManager::restoreCopy() {
-        for (auto& [name, material]: m_copy->m_materialsBank) {
-            if (materialExists(name)) {
-                deleteMaterial(name);
-            }
-            createMaterial(name, material.getColor(), material.getAmbient(), material.getDiffuse(), material.getSpecular(), material.getShininess());
-        }
+        m_materialsBank = m_copy->m_materialsBank;
         delete m_copy;
+        m_copy = nullptr;
     }
 
     bool MaterialManager::deserializeMaterial(const std::string& filepath) {

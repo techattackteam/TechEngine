@@ -21,7 +21,6 @@
 #include "event/EventDispatcher.hpp"
 #include "material/MaterialManager.hpp"
 #include "mesh/ImportedMesh.hpp"
-#include "project/ProjectManager.hpp"
 
 namespace TechEngine {
     YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec2& v) {
@@ -158,24 +157,6 @@ namespace TechEngine {
         out << YAML::EndMap;
     }
 
-    static void serializeMaterial(YAML::Emitter& out, Material* material) {
-        out << YAML::BeginMap;
-        out << YAML::Key << "name" << YAML::Value << material->getName();
-        out << YAML::Key << "color" << YAML::Value << material->getColor();
-        out << YAML::Key << "ambient" << YAML::Value << material->getAmbient();
-        out << YAML::Key << "diffuse" << YAML::Value << material->getDiffuse();
-        out << YAML::Key << "specular" << YAML::Value << material->getSpecular();
-        out << YAML::Key << "shininess" << YAML::Value << material->getShininess();
-        out << YAML::Key << "useTexture" << YAML::Value << material->getUseTexture();
-        if (material->getUseTexture()) {
-            out << YAML::Key << "diffuseTexture" << YAML::Value << material->getDiffuseTexture()->getName();
-        } else {
-            out << YAML::Key << "diffuseTexture" << YAML::Value << "";
-        }
-        out << YAML::EndMap;
-    }
-
-
     SceneManager::SceneManager(ProjectManager& projectManager, PhysicsEngine& physicsEngine, MaterialManager& materialManager, TextureManager& textureManager) : projectManager(projectManager), physicsEngine(physicsEngine), materialManager(materialManager), textureManager(textureManager) {
         EventDispatcher::getInstance().subscribe(MaterialUpdateEvent::eventType, [this](Event* event) {
             onMaterialUpdateEvent((MaterialUpdateEvent&)*event);
@@ -188,11 +169,6 @@ namespace TechEngine {
         YAML::Emitter out;
         out << YAML::BeginMap;
         out << YAML::Key << "Scene" << YAML::Value << sceneName;
-        out << YAML::Key << "Materials" << YAML::Value << YAML::BeginSeq;
-        for (Material* material: materialManager.getMaterials()) {
-            serializeMaterial(out, material);
-        }
-        out << YAML::EndSeq;
         out << YAML::Key << "GameObjects" << YAML::Value << YAML::BeginSeq;
         for (GameObject* gameObject: scene.getGameObjects()) {
             serializeGameObject(out, gameObject);
@@ -317,21 +293,6 @@ namespace TechEngine {
         }
     }
 
-    void SceneManager::deserializeMaterial(const YAML::Node& materialYAML) {
-        std::string name = materialYAML["name"].as<std::string>();
-        glm::vec4 color = materialYAML["color"].as<glm::vec4>();
-        glm::vec3 ambient = materialYAML["ambient"].as<glm::vec3>();
-        glm::vec3 diffuse = materialYAML["diffuse"].as<glm::vec3>();
-        glm::vec3 specular = materialYAML["specular"].as<glm::vec3>();
-        float shininess = materialYAML["shininess"].as<float>();
-        bool useTexture = materialYAML["useTexture"].as<bool>();
-        std::string diffuseTextureName = materialYAML["diffuseTexture"].as<std::string>();
-        Material& material = materialManager.createMaterial(name, color, ambient, diffuse, specular, shininess);
-        if (useTexture) {
-            material.setDiffuseTexture(&textureManager.getTexture(diffuseTextureName));
-        }
-    }
-
     bool SceneManager::deserialize(const std::string& filepath) {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         YAML::Node data;
@@ -341,8 +302,6 @@ namespace TechEngine {
             TE_LOGGER_CRITICAL("Failed to load .scene file {0}.\n      {1}", filepath, e.what());
         }
 
-        materialManager.clear();
-        materialManager.init(FileSystem::getAllFilesWithExtension(projectManager.getProjectLocation().string(), ".mat"));
         SceneHelper::clear(scene);
         YAML::Node node = data["GameObjects"];
         if (node) {
@@ -463,9 +422,9 @@ namespace TechEngine {
         for (GameObject* gameObject: scene.getGameObjects()) {
             if (gameObject->hasComponent<MeshRendererComponent>()) {
                 MeshRendererComponent* meshRendererComponent = gameObject->getComponent<MeshRendererComponent>();
-                /*if (meshRendererComponent->getMaterial().getName() == event.getMaterialName()) {
+                if (meshRendererComponent->getMaterial().getName() == event.getMaterialName()) {
                     meshRendererComponent->paintMesh();
-                }*/
+                }
             }
         }
     }
