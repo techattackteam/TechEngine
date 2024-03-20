@@ -94,23 +94,11 @@ foreach (entry ${TECH_ENGINE_CLIENT_API_FILES})
     endif ()
 endforeach ()
 
-#Copy DLLs to project template
+#Copy .lib files to project template
 if (WIN32)
     set(TECH_ENGINE_CLIENT_DLL_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib")
     add_custom_command(TARGET TechEngineCore POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:TechEngineCore>
-            "${TECH_ENGINE_CLIENT_DLL_DIRECTORY}")
-    add_custom_command(TARGET TechEngineCore POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:unofficial::omniverse-physx-sdk::sdk>
-            "${TECH_ENGINE_CLIENT_DLL_DIRECTORY}")
-    add_custom_command(TARGET TechEngineCore POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:unofficial::omniverse-physx-sdk::gpu-library>
-            "${TECH_ENGINE_CLIENT_DLL_DIRECTORY}")
-    add_custom_command(TARGET TechEngineCore POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:unofficial::omniverse-physx-sdk::gpu-device-library>
+            COMMAND ${CMAKE_COMMAND} -E copy
+            "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/debug/TechEngineCore.lib"
             "${TECH_ENGINE_CLIENT_DLL_DIRECTORY}")
 endif ()

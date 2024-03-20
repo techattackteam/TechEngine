@@ -25,7 +25,8 @@ namespace TechEngine {
         path scriptsBuildPath = projectResourcesPath.string() + "\\cmake\\cmake-build-debug";
         path userScriptsDLLPath = projectResourcesPath.string() + "\\scripts\\build\\debug\\UserScripts.dll";
         path cmakeListPath = projectResourcesPath.string() + "\\cmake";
-
+        path techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\TechEngineCore.lib";
+        path techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\TechEngineClient.lib";
 
     public:
         ProjectManager(SceneManager &sceneManager, TextureManager &textureManager, MaterialManager &materialManager);
@@ -49,6 +50,10 @@ namespace TechEngine {
         const path &getCmakePath();
 
         const path &getCmakeListPath();
+
+        const path &getTechEngineCoreLibPath();
+
+        const path &getTechEngineClientLibPath();
 
         const std::string &getProjectName();
 

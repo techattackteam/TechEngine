@@ -21,11 +21,11 @@ namespace TechEngine {
 
     void ScriptEngine::stop() {
         if (m_userCustomDll) {
+            deleteScripts();
             bool result = FreeLibrary(m_userCustomDll);
             if (!result) {
                 TE_LOGGER_ERROR("Failed to unload user scripts dll");
             }
-            deleteScripts();
         }
     }
 
@@ -59,6 +59,9 @@ namespace TechEngine {
     }
 
     void ScriptEngine::deleteScripts() {
+        for(Script* script: scripts) {
+            delete script;
+        }
         scripts.clear();
     }
 }

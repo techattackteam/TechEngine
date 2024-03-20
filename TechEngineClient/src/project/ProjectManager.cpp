@@ -52,6 +52,14 @@ namespace TechEngine {
         return cmakeListPath;
     }
 
+    const path& ProjectManager::getTechEngineCoreLibPath() {
+        return techEngineCoreLibPath;
+    }
+
+    const path& ProjectManager::getTechEngineClientLibPath() {
+        return techEngineClientLibPath;
+    }
+
     const path& ProjectManager::getCmakePath() {
         return cmakePath;
     }
@@ -104,6 +112,8 @@ namespace TechEngine {
         scriptsBuildPath = projectResourcesPath.string() + "\\cmake\\cmake-build-debug";
         userScriptsDLLPath = projectResourcesPath.string() + "\\scripts\\build\\debug\\UserScripts.dll";
         cmakeListPath = projectResourcesPath.string() + "\\cmake";
+        techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\TechEngineCore.lib";
+        techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\TechEngineClient.lib";
 
         std::string lastSceneLoaded;
         if (std::filesystem::exists(this->projectFilePath)) {

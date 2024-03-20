@@ -94,6 +94,6 @@ endforeach ()
 #Copy DLLS to project template
 add_custom_command(TARGET TechEngineClient POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        $<TARGET_RUNTIME_DLLS:TechEngineClient>
+        "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/debug/TechEngineClient.lib"
         "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib"
         COMMAND_EXPAND_LISTS)

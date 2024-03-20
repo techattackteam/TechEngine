@@ -61,10 +61,3 @@ add_custom_command(TARGET TechEngineEditor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         $<TARGET_FILE_DIR:TechEngineRuntime> ${CMAKE_BINARY_DIR}/TechEngineEditor/runtime
         COMMAND_EXPAND_LISTS)
-
-#Copy DLLS to project template
-add_custom_command(TARGET TechEngineEditor POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        $<TARGET_RUNTIME_DLLS:TechEngineEditor>
-        "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib"
-        COMMAND_EXPAND_LISTS)
