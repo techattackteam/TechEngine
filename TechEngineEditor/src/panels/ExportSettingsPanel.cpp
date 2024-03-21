@@ -57,10 +57,10 @@ namespace TechEngine {
 
         serializeEngineSettings(projectManager.getProjectExportPath().string() + "//Export.texp");
         std::filesystem::copy(projectManager.getProjectFilePath(), projectManager.getProjectExportPath(), copyOptions);
-        panelsManager.compileUserScripts();
+        panelsManager.compileUserScripts(RELEASE);
         FileSystem::copyRecursive(projectManager.getProjectAssetsPath(), projectManager.getProjectExportPath().string() + "//Assets", {".cpp", ".hpp"}, {"cmake"});
-        if (std::filesystem::exists(projectManager.getScriptsDLLPath())) {
-            std::filesystem::copy(projectManager.getScriptsDLLPath(), projectManager.getProjectExportPath(), copyOptions);
+        if (std::filesystem::exists(projectManager.getScriptsDebugDLLPath())) {
+            std::filesystem::copy(projectManager.getScriptsDebugDLLPath(), projectManager.getProjectExportPath(), copyOptions);
         }
         std::filesystem::create_directory(projectManager.getProjectExportPath().string() + "//Resources");
         FileSystem::copyRecursive(projectManager.getProjectResourcesPath(), projectManager.getProjectExportPath().string() + "//Resources", {".cpp", ".hpp"}, {"cmake"});

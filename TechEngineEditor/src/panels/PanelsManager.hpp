@@ -19,6 +19,10 @@
 #include "project/ProjectManager.hpp"
 
 namespace TechEngine {
+    enum CompileMode {
+        DEBUG,
+        RELEASE
+    };
     class PanelsManager {
     private:
         std::vector<CustomPanel *> customPanels;
@@ -52,7 +56,7 @@ namespace TechEngine {
 
         void update();
 
-        void compileUserScripts();
+        void compileUserScripts(CompileMode compileMode);
 
         std::vector<GameObject *>& getSelectedGameObjects();
 

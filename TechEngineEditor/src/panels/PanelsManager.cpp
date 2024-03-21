@@ -216,8 +216,7 @@ namespace TechEngine {
                     stopRunningScene();
                     m_currentPlaying = false;
                 }
-
-                compileUserScripts();
+                compileUserScripts(RELEASE);
             }
 
             if (ImGui::MenuItem("Export")) {
@@ -255,6 +254,7 @@ namespace TechEngine {
         ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x / 2) - (size / 2));
         if (ImGui::Button(m_currentPlaying == true ? "Stop" : "Play", ImVec2(size, 0))) {
             if (!m_currentPlaying) {
+                compileUserScripts(RELEASE);
                 startRunningScene();
             } else {
                 stopRunningScene();
@@ -321,7 +321,7 @@ namespace TechEngine {
         return std::string();
     }
 
-    void PanelsManager::compileUserScripts() {
+    void PanelsManager::compileUserScripts(CompileMode compileMode) {
         if (!exists(projectManager.getScriptsBuildPath()) || is_empty(projectManager.getScriptsBuildPath())) {
             std::string command = "\"" + projectManager.getCmakePath().string() +
                                   " -G \"Visual Studio 17 2022\""
@@ -332,8 +332,9 @@ namespace TechEngine {
             std::system(command.c_str());
             TE_LOGGER_INFO("Command executed: {0}", command);
         }
+        std::string cm = compileMode == CompileMode::DEBUG ? "Debug" : "Release";
         std::string command = "\"" + projectManager.getCmakePath().string() +
-                  " --build " + "\"" + projectManager.getScriptsBuildPath().string() + "\"" + " --target UserScripts --config Debug\"";
+                              " --build " + "\"" + projectManager.getScriptsBuildPath().string() + "\"" + " --target UserScripts --config " + cm + "\"";
         std::system(command.c_str());
         TE_LOGGER_INFO("Build finished!");
     }
@@ -342,7 +343,7 @@ namespace TechEngine {
         sceneManager.saveSceneAsTemporarily(sceneManager.getActiveSceneName());
         EventDispatcher::getInstance().copy();
         materialManager.copy();
-        ScriptEngine::getInstance()->init(projectManager.getScriptsDLLPath().string());
+        ScriptEngine::getInstance()->init(projectManager.getScriptsReleaseDLLPath().string()); //TODO: Change this to debug dll without crashing
         ScriptEngine::getInstance()->onStart();
         physicsEngine.start();
         m_currentPlaying = true;

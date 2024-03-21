@@ -18,7 +18,7 @@ namespace TechEngine {
             return;
         }
         ScriptEngine* scriptEngine = new ScriptEngine();
-        ScriptEngine::getInstance()->init(projectManager.getScriptsDLLPath().string());
+        ScriptEngine::getInstance()->init(projectManager.getScriptsReleaseDLLPath().string());
         ScriptEngine::getInstance()->onStart();
     }
 
