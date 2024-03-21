@@ -17,7 +17,9 @@ namespace TechEngine {
             EventDispatcher::getInstance().dispatch(new AppCloseRequestEvent());
             return;
         }
+        ScriptEngine* scriptEngine = new ScriptEngine();
         ScriptEngine::getInstance()->init(projectManager.getScriptsDLLPath().string());
+        ScriptEngine::getInstance()->onStart();
     }
 
     void TechEngineRuntime::onUpdate() {
@@ -32,12 +34,12 @@ namespace TechEngine {
     }
 
     bool TechEngineRuntime::loadRendererSettings() {
-        projectManager.loadProject(FileSystem::getAllFilesWithExtension(std::filesystem::current_path().string(), ".teprj")[0]);
+        projectManager.loadProject(std::filesystem::current_path().string());
         YAML::Node data;
         try {
             data = YAML::LoadFile(projectManager.getProjectLocation().string() + "/Export.texp");
         } catch (YAML::Exception &e) {
-            TE_LOGGER_ERROR("Failed to load .TESettings file \n {0}", e.what());
+            TE_LOGGER_ERROR("Failed to load .texp file \n {0}", e.what());
             return false;
         }
 
