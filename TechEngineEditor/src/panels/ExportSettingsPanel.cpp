@@ -6,7 +6,6 @@
 #include <yaml-cpp/emitter.h>
 #include <iostream>
 #include <fstream>
-#include <imgui_internal.h>
 #include "core/FileSystem.hpp"
 #include "core/Logger.hpp"
 
