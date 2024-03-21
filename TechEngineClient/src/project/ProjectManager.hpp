@@ -23,7 +23,8 @@ namespace TechEngine {
         path projectExportPath = projectLocation.string() + "\\Build";
 
         path scriptsBuildPath = projectResourcesPath.string() + "\\cmake\\cmake-build-debug";
-        path userScriptsDLLPath = projectResourcesPath.string() + "\\scripts\\build\\debug\\UserScripts.dll";
+        path userScriptsDebugDLLPath = projectResourcesPath.string() + "\\scripts\\build\\debug\\UserScripts.dll";
+        path userScriptsReleaseDLLPath = projectResourcesPath.string() + "\\scripts\\build\\release\\UserScripts.dll";
         path cmakeListPath = projectResourcesPath.string() + "\\cmake";
         path techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\TechEngineCore.lib";
         path techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\TechEngineClient.lib";
@@ -41,7 +42,9 @@ namespace TechEngine {
 
         const path &getProjectResourcesPath();
 
-        const path &getScriptsDLLPath();
+        const path &getScriptsDebugDLLPath();
+
+        const path& getScriptsReleaseDLLPath();
 
         const path &getScriptsBuildPath();
 

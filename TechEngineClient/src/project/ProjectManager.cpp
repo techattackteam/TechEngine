@@ -36,8 +36,12 @@ namespace TechEngine {
         return projectResourcesPath;
     }
 
-    const path& ProjectManager::getScriptsDLLPath() {
-        return userScriptsDLLPath;
+    const path& ProjectManager::getScriptsDebugDLLPath() {
+        return userScriptsDebugDLLPath;
+    }
+
+    const path& ProjectManager::getScriptsReleaseDLLPath() {
+        return userScriptsReleaseDLLPath;
     }
 
     const path& ProjectManager::getScriptsBuildPath() {
@@ -110,7 +114,8 @@ namespace TechEngine {
         projectExportPath = this->projectLocation.string() + "\\Build";
 
         scriptsBuildPath = projectResourcesPath.string() + "\\cmake\\cmake-build-debug";
-        userScriptsDLLPath = projectResourcesPath.string() + "\\scripts\\build\\debug\\UserScripts.dll";
+        userScriptsDebugDLLPath = projectResourcesPath.string() + "\\scripts\\build\\debug\\UserScripts.dll";
+        userScriptsReleaseDLLPath = projectResourcesPath.string() + "\\scripts\\build\\release\\UserScripts.dll";
         cmakeListPath = projectResourcesPath.string() + "\\cmake";
         techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\TechEngineCore.lib";
         techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\TechEngineClient.lib";
