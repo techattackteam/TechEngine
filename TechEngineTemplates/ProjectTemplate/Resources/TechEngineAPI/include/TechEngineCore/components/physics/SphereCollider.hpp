@@ -1,6 +1,5 @@
 #pragma once
 
-#include "glm/vec3.hpp"
 #include "Collider.hpp"
 
 namespace TechEngine {
@@ -9,14 +8,13 @@ namespace TechEngine {
         float radius;
 
     public:
-        SphereCollider(GameObject *gameObject, PhysicsEngine &physicsEngine);
+        SphereCollider(GameObject* gameObject);
 
-        SphereCollider(GameObject *gameObject, PhysicsEngine &physicsEngine, glm::vec3 offset, float radius);
+        SphereCollider(GameObject* gameObject, glm::vec3 offset, float radius);
 
 
         float getRadius();
 
         void setRadius(float radius);
-
     };
 }

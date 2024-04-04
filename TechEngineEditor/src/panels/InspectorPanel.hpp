@@ -2,7 +2,6 @@
 
 #include "CustomPanel.hpp"
 #include "scene/GameObject.hpp"
-#include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
 #include "material/MaterialManager.hpp"
 #include "physics/PhysicsEngine.hpp"
 

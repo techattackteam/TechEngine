@@ -16,7 +16,7 @@
 #include <windows.h>
 
 namespace TechEngine {
-    InspectorPanel::InspectorPanel(std::vector<GameObject *>&selectedGameObjects, MaterialManager&materialManager, PhysicsEngine&physicsEngine) : materialManager(materialManager), physicsEngine(physicsEngine), selectedGameObjects(selectedGameObjects), Panel("Inspector") {
+    InspectorPanel::InspectorPanel(std::vector<GameObject*>& selectedGameObjects, MaterialManager& materialManager, PhysicsEngine& physicsEngine) : materialManager(materialManager), physicsEngine(physicsEngine), selectedGameObjects(selectedGameObjects), Panel("Inspector") {
     }
 
     void InspectorPanel::onUpdate() {
@@ -24,8 +24,7 @@ namespace TechEngine {
         if (!selectedGameObjects.empty()) {
             if (selectedGameObjects.size() == 1) {
                 drawComponents();
-            }
-            else {
+            } else {
                 drawCommonComponents();
             }
             if (ImGui::BeginPopupContextWindow("Add Component", 1)) {
@@ -44,19 +43,19 @@ namespace TechEngine {
                     }
                     if (ImGui::BeginMenu("Colliders")) {
                         if (ImGui::MenuItem("Box Collider")) {
-                            addComponent<BoxColliderComponent>(physicsEngine);
+                            addComponent<BoxColliderComponent>();
                             for (GameObject* gameObject: selectedGameObjects) {
                                 physicsEngine.addCollider(gameObject->getComponent<BoxColliderComponent>());
                             }
                         }
                         if (ImGui::MenuItem("Sphere Collider")) {
-                            addComponent<SphereCollider>(physicsEngine);
+                            addComponent<SphereCollider>();
                             for (GameObject* gameObject: selectedGameObjects) {
                                 physicsEngine.addCollider(gameObject->getComponent<SphereCollider>());
                             }
                         }
                         if (ImGui::MenuItem("Cylinder Collider")) {
-                            addComponent<CylinderCollider>(physicsEngine);
+                            addComponent<CylinderCollider>();
                             for (GameObject* gameObject: selectedGameObjects) {
                                 physicsEngine.addCollider(gameObject->getComponent<CylinderCollider>());
                             }
@@ -73,7 +72,7 @@ namespace TechEngine {
     }
 
     template<typename T, typename UIFunction>
-    void InspectorPanel::drawComponent(GameObject* gameObject, const std::string&name, UIFunction uiFunction) {
+    void InspectorPanel::drawComponent(GameObject* gameObject, const std::string& name, UIFunction uiFunction) {
         const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
         if (gameObject->hasComponent<T>()) {
             auto component = gameObject->getComponent<T>();
@@ -82,7 +81,7 @@ namespace TechEngine {
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
             float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
             ImGui::Separator();
-            bool open = ImGui::TreeNodeEx((void *)typeid(T).hash_code(), treeNodeFlags, "%s", name.c_str());
+            bool open = ImGui::TreeNodeEx((void*)typeid(T).hash_code(), treeNodeFlags, "%s", name.c_str());
             ImGui::PopStyleVar();
             ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
             if (ImGui::Button("-", ImVec2{lineHeight, lineHeight})) {
@@ -120,22 +119,40 @@ namespace TechEngine {
 
         ImGui::PopItemWidth();
         GameObject* gameObject = selectedGameObjects.front();
-        drawComponent<TransformComponent>(gameObject, "Transform", [](auto&component) {
+        drawComponent<TransformComponent>(gameObject, "Transform", [this](auto& component) {
+            bool update = false;
             glm::vec3 position = component->position;
             glm::vec3 orientation = component->orientation;
             glm::vec3 scale = component->scale;
             ImGuiUtils::drawVec3Control("Translation", position);
             ImGuiUtils::drawVec3Control("Rotation", orientation);
             ImGuiUtils::drawVec3Control("Scale", scale, 1.0f);
-            if (position != component->position)
+            if (position != component->position) {
                 component->translateTo(position);
-            if (orientation != component->orientation)
+                update = true;
+            }
+            if (orientation != component->orientation) {
                 component->setRotation(orientation);
-            if (scale != component->scale)
+                update = true;
+            }
+
+            if (scale != component->scale) {
                 component->setScale(scale);
+                update = true;
+            }
+
+            if (update && component->getGameObject()->template hasComponent<RigidBody>()) {
+                physicsEngine.addRigidBody(component->getGameObject()->template getComponent<RigidBody>());
+            } else if (update && component->getGameObject()->template hasComponent<BoxColliderComponent>()) {
+                physicsEngine.addCollider(component->getGameObject()->template getComponent<BoxColliderComponent>());
+            } else if (update && component->getGameObject()->template hasComponent<SphereCollider>()) {
+                physicsEngine.addCollider(component->getGameObject()->template getComponent<SphereCollider>());
+            } else if (update && component->getGameObject()->template hasComponent<CylinderCollider>()) {
+                physicsEngine.addCollider(component->getGameObject()->template getComponent<CylinderCollider>());
+            }
         });
-        drawComponent<CameraComponent>(gameObject, "Camera", [](auto&component) {
-            auto&camera = component;
+        drawComponent<CameraComponent>(gameObject, "Camera", [](auto& component) {
+            auto& camera = component;
 
             ImGui::Checkbox("Primary", &component->mainCamera);
 
@@ -184,14 +201,13 @@ namespace TechEngine {
                     camera->setFar(perspectiveFar);
             }
         });
-        drawComponent<MeshRendererComponent>(gameObject, "Mesh Renderer", [this](auto&component) {
-            auto&meshRenderer = component;
-            auto&mesh = meshRenderer->getMesh();
-            Material&material = meshRenderer->getMaterial();
+        drawComponent<MeshRendererComponent>(gameObject, "Mesh Renderer", [this](auto& component) {
+            auto& meshRenderer = component;
+            auto& mesh = meshRenderer->getMesh();
+            Material& material = meshRenderer->getMaterial();
             if (mesh.getName() == "ImportedMesh") {
                 ImGui::Text("Imported Mesh");
-            }
-            else {
+            } else {
                 static const char* current_item;
                 const char* items[] = {"Cube", "Sphere", "Cylinder", "Capsule", "Plane"};
                 for (int i = 0; i < sizeof(items) / sizeof(items[0]); i++) {
@@ -203,7 +219,7 @@ namespace TechEngine {
 
                 if (ImGui::BeginCombo("##combo", current_item)) {
                     // The second parameter is the label previewed before opening the combo.
-                    for (auto&item: items) {
+                    for (auto& item: items) {
                         bool is_selected = (current_item == item); // You can store your selection however you want, outside or inside your objects
                         if (ImGui::Selectable(item, is_selected))
                             current_item = item;
@@ -215,14 +231,11 @@ namespace TechEngine {
                 if (current_item != mesh.getName()) {
                     if (current_item == items[0]) {
                         meshRenderer->changeMesh(new CubeMesh());
-                    }
-                    else if (current_item == items[1]) {
+                    } else if (current_item == items[1]) {
                         meshRenderer->changeMesh(new SphereMesh());
-                    }
-                    else if (current_item == items[2]) {
+                    } else if (current_item == items[2]) {
                         meshRenderer->changeMesh(new CylinderMesh());
-                    }
-                    else if (current_item == items[3]) {
+                    } else if (current_item == items[3]) {
                     }
                 }
             }
@@ -252,7 +265,7 @@ namespace TechEngine {
             };
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-                    std::string filename = (const char *)payload->Data;
+                    std::string filename = (const char*)payload->Data;
                     std::string extension = filename.substr(filename.find_last_of('.'));
                     if (extension != ".mat")
                         return;
@@ -265,8 +278,8 @@ namespace TechEngine {
 
             component->paintMesh();
         });
-        drawComponent<RigidBody>(gameObject, "Rigid Body", [](auto&component) {
-            auto&rigidBody = component;
+        drawComponent<RigidBody>(gameObject, "Rigid Body", [](auto& component) {
+            auto& rigidBody = component;
             float mass = rigidBody->getMass();
             float density = rigidBody->getDensity();
             ImGui::DragFloat("Mass", &mass, 0.1f, 0.1f, 100.0f, "%.2f");
@@ -276,8 +289,8 @@ namespace TechEngine {
             if (density != rigidBody->getDensity())
                 rigidBody->setDensity(density);
         });
-        drawComponent<BoxColliderComponent>(gameObject, "Box Collider", [](auto&component) {
-            auto&boxCollider = component;
+        drawComponent<BoxColliderComponent>(gameObject, "Box Collider", [](auto& component) {
+            auto& boxCollider = component;
             glm::vec3 size = boxCollider->getSize();
             glm::vec3 offset = boxCollider->getOffset();
             ImGuiUtils::drawVec3Control("Size", size, 1.0f, 100.0f, 0);
@@ -287,8 +300,8 @@ namespace TechEngine {
             if (offset != boxCollider->getOffset())
                 boxCollider->setOffset(offset);
         });
-        drawComponent<SphereCollider>(gameObject, "Sphere Collider", [](auto&component) {
-            auto&collider = component;
+        drawComponent<SphereCollider>(gameObject, "Sphere Collider", [](auto& component) {
+            auto& collider = component;
             float radius = collider->getRadius();
             glm::vec3 offset = collider->getOffset();
             ImGui::DragFloat("Radius", &radius, 0.1f, 0.1f, 100.0f, "%.2f");
@@ -298,8 +311,8 @@ namespace TechEngine {
             if (offset != collider->getOffset())
                 collider->setOffset(offset);
         });
-        drawComponent<CylinderCollider>(gameObject, "Cylinder Collider", [](auto&component) {
-            auto&collider = component;
+        drawComponent<CylinderCollider>(gameObject, "Cylinder Collider", [](auto& component) {
+            auto& collider = component;
             float radius = collider->getRadius();
             float height = collider->getHeight();
             glm::vec3 offset = collider->getOffset();
@@ -327,7 +340,7 @@ namespace TechEngine {
         std::vector<std::string> componentsToDraw = std::vector<std::string>();
 
         GameObject* firstObject = selectedGameObjects.front();
-        for (std::pair<std::string, Component *> component: firstObject->getComponents()) {
+        for (std::pair<std::string, Component*> component: firstObject->getComponents()) {
             bool isCommon = true;
             for (GameObject* currentObject: selectedGameObjects) {
                 if (!currentObject->hasComponent(component.first)) {
@@ -341,7 +354,7 @@ namespace TechEngine {
             }
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(TransformComponent).name()) != componentsToDraw.end()) {
-            drawComponent<TransformComponent>(firstObject, "Transform", [this](auto&component) {
+            drawComponent<TransformComponent>(firstObject, "Transform", [this](auto& component) {
                 glm::vec3 position = component->getPosition();
                 glm::vec3 orientation = component->getOrientation();
                 glm::vec3 scale = component->getScale();
@@ -383,8 +396,8 @@ namespace TechEngine {
             });
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(CameraComponent).name()) != componentsToDraw.end()) {
-            drawComponent<CameraComponent>(firstObject, "Camera", [this](auto&component) {
-                auto&camera = component;
+            drawComponent<CameraComponent>(firstObject, "Camera", [this](auto& component) {
+                auto& camera = component;
 
                 const char* projectionTypeStrings[] = {"Perspective", "Orthographic"};
                 bool isProjectionCommon = true;
@@ -486,7 +499,7 @@ namespace TechEngine {
             });
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(MeshRendererComponent).name()) != componentsToDraw.end()) {
-            drawComponent<MeshRendererComponent>(firstObject, "Mesh Renderer", [this](auto&component) {
+            drawComponent<MeshRendererComponent>(firstObject, "Mesh Renderer", [this](auto& component) {
                 bool isMeshCommon = true;
                 bool isMaterialCommon = true;
                 std::string commonMeshName = component->getMesh().getName();
@@ -507,11 +520,10 @@ namespace TechEngine {
 
                 if (isMeshCommon && commonMeshName == "ImportedMesh") {
                     ImGui::Text("Imported Mesh");
-                }
-                else {
+                } else {
                     static const char* current_item;
                     const char* items[] = {"Cube", "Sphere", "Cylinder", "Capsule", "Plane"};
-                    for (auto&item: items) {
+                    for (auto& item: items) {
                         if (commonMeshName == item) {
                             current_item = item;
                             break;
@@ -520,7 +532,7 @@ namespace TechEngine {
 
                     if (ImGui::BeginCombo("##combo", isMeshCommon ? current_item : "-")) {
                         // The second parameter is the label previewed before opening the combo.
-                        for (auto&item: items) {
+                        for (auto& item: items) {
                             bool is_selected = (current_item == item); // You can store your selection however you want, outside or inside your objects
                             if (ImGui::Selectable(item, is_selected))
                                 current_item = item;
@@ -533,14 +545,11 @@ namespace TechEngine {
                         for (GameObject* gameObject: selectedGameObjects) {
                             if (current_item == items[0]) {
                                 gameObject->getComponent<MeshRendererComponent>()->changeMesh(new CubeMesh());
-                            }
-                            else if (current_item == items[1]) {
+                            } else if (current_item == items[1]) {
                                 gameObject->getComponent<MeshRendererComponent>()->changeMesh(new SphereMesh());
-                            }
-                            else if (current_item == items[2]) {
+                            } else if (current_item == items[2]) {
                                 gameObject->getComponent<MeshRendererComponent>()->changeMesh(new CylinderMesh());
-                            }
-                            else if (current_item == items[3]) {
+                            } else if (current_item == items[3]) {
                             }
                         }
                     }
@@ -573,7 +582,7 @@ namespace TechEngine {
                 };
                 if (ImGui::BeginDragDropTarget()) {
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-                        std::string filename = (const char *)payload->Data;
+                        std::string filename = (const char*)payload->Data;
                         std::string extension = filename.substr(filename.find_last_of('.'));
                         if (extension != ".mat")
                             return;
@@ -590,7 +599,7 @@ namespace TechEngine {
             });
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(RigidBody).name()) != componentsToDraw.end()) {
-            drawComponent<RigidBody>(firstObject, "Rigid Body", [this](auto&component) {
+            drawComponent<RigidBody>(firstObject, "Rigid Body", [this](auto& component) {
                 float commonMass = component->getMass();
                 float commonDensity = component->getDensity();
                 bool isMassCommon = true;
@@ -623,7 +632,7 @@ namespace TechEngine {
             });
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(BoxColliderComponent).name()) != componentsToDraw.end()) {
-            drawComponent<BoxColliderComponent>(firstObject, "Box Collider", [this](auto&component) {
+            drawComponent<BoxColliderComponent>(firstObject, "Box Collider", [this](auto& component) {
                 glm::vec3 commonSize = component->getSize();
                 glm::vec3 commonOffset = component->getOffset();
                 bool isSizeCommon = true;
@@ -658,7 +667,7 @@ namespace TechEngine {
             });
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(SphereCollider).name()) != componentsToDraw.end()) {
-            drawComponent<SphereCollider>(firstObject, "Sphere Collider", [this](auto&component) {
+            drawComponent<SphereCollider>(firstObject, "Sphere Collider", [this](auto& component) {
                 float commonRadius = component->getRadius();
                 glm::vec3 commonOffset = component->getOffset();
 
@@ -694,7 +703,7 @@ namespace TechEngine {
             });
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(CylinderCollider).name()) != componentsToDraw.end()) {
-            drawComponent<CylinderCollider>(firstObject, "Cylinder Collider", [this](auto&component) {
+            drawComponent<CylinderCollider>(firstObject, "Cylinder Collider", [this](auto& component) {
                 float commonRadius = component->getRadius();
                 float commonHeight = component->getHeight();
                 glm::vec3 commonOffset = component->getOffset();

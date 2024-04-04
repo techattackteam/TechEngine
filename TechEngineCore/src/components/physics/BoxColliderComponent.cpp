@@ -1,19 +1,22 @@
 #include "BoxColliderComponent.hpp"
+
+#include "event/EventDispatcher.hpp"
+#include "event/events/physics/AddColliderEvent.hpp"
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    BoxColliderComponent::BoxColliderComponent(GameObject* gameObject, PhysicsEngine&physicsEngine) : Collider(gameObject, physicsEngine, "BoxColliderComponent") {
+    BoxColliderComponent::BoxColliderComponent(GameObject* gameObject) : Collider(gameObject, "BoxColliderComponent") {
         size = glm::vec3(1, 1, 1);
-        physicsEngine.addCollider(this);
+        EventDispatcher::getInstance().dispatch(new AddColliderEvent(this));
     }
 
-    BoxColliderComponent::BoxColliderComponent(GameObject* gameObject, PhysicsEngine&physicsEngine, glm::vec3 size, glm::vec3 offset) : Collider(gameObject, physicsEngine, "BoxColliderComponent"), size(size) {
+    BoxColliderComponent::BoxColliderComponent(GameObject* gameObject, glm::vec3 size, glm::vec3 offset) : Collider(gameObject, "BoxColliderComponent"), size(size) {
         this->offset = offset;
     }
 
     void BoxColliderComponent::setSize(glm::vec3 size) {
         this->size = size;
-        physicsEngine.addCollider(this);
+        EventDispatcher::getInstance().dispatch(new AddColliderEvent(this));
     }
 
     glm::vec3 BoxColliderComponent::getSize() {

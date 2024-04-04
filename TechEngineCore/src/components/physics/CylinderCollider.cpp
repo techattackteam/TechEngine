@@ -1,16 +1,17 @@
 #include "CylinderCollider.hpp"
+
+#include "event/EventDispatcher.hpp"
+#include "event/events/physics/AddColliderEvent.hpp"
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-
-    CylinderCollider::CylinderCollider(GameObject *gameObject, PhysicsEngine &physicsEngine) : Collider(gameObject, physicsEngine, "CylinderCollider") {
+    CylinderCollider::CylinderCollider(GameObject* gameObject) : Collider(gameObject, "CylinderCollider") {
         this->gameObject = gameObject;
         this->radius = 0.5f;
         this->height = 1.0f;
     }
 
-    CylinderCollider::CylinderCollider(GameObject *gameObject, PhysicsEngine &physicsEngine, glm::vec3 offset, float radius, float height) :
-            Collider(gameObject, physicsEngine, "CylinderCollider"), radius(radius), height(height) {
+    CylinderCollider::CylinderCollider(GameObject* gameObject, glm::vec3 offset, float radius, float height) : Collider(gameObject, "CylinderCollider"), radius(radius), height(height) {
         this->offset = offset;
     }
 
@@ -21,7 +22,7 @@ namespace TechEngine {
 
     void CylinderCollider::setRadius(float radius) {
         this->radius = radius;
-        physicsEngine.addCollider(this);
+        EventDispatcher::getInstance().dispatch(new AddColliderEvent(this));
     }
 
     float CylinderCollider::getHeight() const {
@@ -30,6 +31,6 @@ namespace TechEngine {
 
     void CylinderCollider::setHeight(float height) {
         this->height = height;
-        physicsEngine.addCollider(this);
+        EventDispatcher::getInstance().dispatch(new AddColliderEvent(this));
     }
 }

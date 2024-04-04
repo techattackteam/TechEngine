@@ -5,7 +5,7 @@
 #include "renderer/RendererSettings.hpp"
 #include "event/EventDispatcher.hpp"
 #include "core/Logger.hpp"
-#include "scene/SceneHelper.hpp"
+#include "scene/GameObject.hpp"
 
 namespace TechEngine {
     CameraComponent::CameraComponent(GameObject* gameObject) : Component(gameObject, "Camera") {
@@ -21,12 +21,12 @@ namespace TechEngine {
     }
 
     void CameraComponent::init() {
-        EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngine::Event *event) {
-            onWindowResizeEvent((WindowResizeEvent *) (event));
+        EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngine::Event* event) {
+            onWindowResizeEvent((WindowResizeEvent*)(event));
         });
 
-        EventDispatcher::getInstance().subscribe(FramebufferResizeEvent::eventType, [this](Event *event) {
-            onFramebufferResizeEvent((FramebufferResizeEvent *) (event));
+        EventDispatcher::getInstance().subscribe(FramebufferResizeEvent::eventType, [this](Event* event) {
+            onFramebufferResizeEvent((FramebufferResizeEvent*)(event));
         });
 
         updateViewMatrix();
@@ -41,8 +41,7 @@ namespace TechEngine {
     void CameraComponent::updateProjectionMatrix() {
         if (projectionType == PERSPECTIVE) {
             projectionMatrix = glm::perspective(glm::radians(fov), RendererSettings::aspectRatio, nearPlane, farPlane);
-        }
-        else if (projectionType == ORTHOGRAPHIC) {
+        } else if (projectionType == ORTHOGRAPHIC) {
             projectionMatrix = glm::ortho(-orthoSize * RendererSettings::aspectRatio, orthoSize * RendererSettings::aspectRatio, -orthoSize, orthoSize, nearPlane, farPlane);
         }
     }
@@ -67,7 +66,7 @@ namespace TechEngine {
         }
     }
 
-    glm::mat4 TechEngine::CameraComponent::getViewMatrix() {
+    glm::mat4 CameraComponent::getViewMatrix() {
         return viewMatrix;
     }
 
@@ -81,7 +80,6 @@ namespace TechEngine {
 
     void CameraComponent::setIsMainCamera(bool mainCamera) {
         this->mainCamera = mainCamera;
-        SceneHelper::changeMainCameraTo(this);
     }
 
     CameraComponent::ProjectionType& CameraComponent::getProjectionType() {

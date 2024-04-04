@@ -253,7 +253,7 @@ namespace TechEngine {
         }
         auto boxColliderNode = gameObjectYAML["BoxColliderComponent"];
         if (boxColliderNode) {
-            gameObject.addComponent<BoxColliderComponent>(physicsEngine);
+            gameObject.addComponent<BoxColliderComponent>();
             BoxColliderComponent* boxColliderComponent = gameObject.getComponent<BoxColliderComponent>();
             boxColliderComponent->setSize(boxColliderNode["Size"].as<glm::vec3>());
             boxColliderComponent->setOffset(boxColliderNode["Offset"].as<glm::vec3>());
@@ -261,7 +261,7 @@ namespace TechEngine {
 
         auto sphereColliderNode = gameObjectYAML["SphereCollider"];
         if (sphereColliderNode) {
-            gameObject.addComponent<SphereCollider>(physicsEngine);
+            gameObject.addComponent<SphereCollider>();
             SphereCollider* sphereColliderComponent = gameObject.getComponent<SphereCollider>();
             sphereColliderComponent->setRadius(sphereColliderNode["Radius"].as<float>());
             sphereColliderComponent->setOffset(sphereColliderNode["Offset"].as<glm::vec3>());
@@ -269,7 +269,7 @@ namespace TechEngine {
 
         auto cylinderColliderNode = gameObjectYAML["CylinderCollider"];
         if (cylinderColliderNode) {
-            gameObject.addComponent<CylinderCollider>(physicsEngine);
+            gameObject.addComponent<CylinderCollider>();
             CylinderCollider* cylinderColliderComponent = gameObject.getComponent<CylinderCollider>();
             cylinderColliderComponent->setRadius(cylinderColliderNode["Radius"].as<float>());
             cylinderColliderComponent->setHeight(cylinderColliderNode["Height"].as<float>());

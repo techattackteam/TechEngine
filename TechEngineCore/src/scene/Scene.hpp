@@ -5,14 +5,13 @@
 #include "GameObject.hpp"
 #include "event/events/gameObjects/RequestDeleteGameObject.hpp"
 
-
 namespace TechEngine {
     class Scene {
     private:
         boost::uuids::random_generator goTagGenerator;
-        std::vector<GameObject *> gameObjects;
-        std::vector<GameObject *> lights;
-        std::vector<GameObject *> gameObjectsToDelete;
+        std::vector<GameObject*> gameObjects;
+        std::vector<GameObject*> lights;
+        std::vector<GameObject*> gameObjectsToDelete;
 
     public:
         Scene();
@@ -47,13 +46,13 @@ namespace TechEngine {
 
         std::string genGOTag();
 
-        std::vector<GameObject *> getGameObjects();
+        std::vector<GameObject*> getGameObjects();
 
-        std::vector<GameObject *> getLights();
+        std::vector<GameObject*> getLights();
 
-        GameObject* getGameObject(const std::string&name);
+        GameObject* getGameObject(const std::string& name);
 
-        GameObject* getGameObjectByTag(const std::string&tag);
+        GameObject* getGameObjectByTag(const std::string& tag);
 
         bool isLightingActive() const;
 
@@ -62,6 +61,5 @@ namespace TechEngine {
         void makeChildTo(GameObject* parent, GameObject* child);
 
         void onGameObjectDeleteRequest(TechEngine::RequestDeleteGameObject* event);
-
     };
 }

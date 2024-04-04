@@ -23,16 +23,17 @@ namespace TechEngine {
         DEBUG,
         RELEASE
     };
+
     class PanelsManager {
     private:
-        std::vector<CustomPanel *> customPanels;
+        std::vector<CustomPanel*> customPanels;
         ImGuiContext* imguiContext;
-        Window&window;
-        ProjectManager&projectManager;
-        SceneManager&sceneManager;
-        PhysicsEngine&physicsEngine;
-        TextureManager&textureManager;
-        MaterialManager&materialManager;
+        Window& window;
+        ProjectManager& projectManager;
+        SceneManager& sceneManager;
+        PhysicsEngine& physicsEngine;
+        TextureManager& textureManager;
+        MaterialManager& materialManager;
 
 
         GameView gameView;
@@ -46,11 +47,11 @@ namespace TechEngine {
         bool m_currentPlaying = false;
 
     public:
-        PanelsManager(Window&window, SceneManager&sceneManager,
-                      ProjectManager&projectManager,
-                      PhysicsEngine&physicsEngine,
-                      TextureManager&textureManager,
-                      MaterialManager&materialManager);
+        PanelsManager(Window& window, SceneManager& sceneManager,
+                      ProjectManager& projectManager,
+                      PhysicsEngine& physicsEngine,
+                      TextureManager& textureManager,
+                      MaterialManager& materialManager);
 
         void init();
 
@@ -58,9 +59,9 @@ namespace TechEngine {
 
         void compileUserScripts(CompileMode compileMode);
 
-        std::vector<GameObject *>& getSelectedGameObjects();
+        std::vector<GameObject*>& getSelectedGameObjects();
 
-        void openMaterialEditor(const std::string&materialName, const std::string&filepath);
+        void openMaterialEditor(const std::string& materialName, const std::string& filepath);
 
     private:
         void initImGui();
@@ -85,7 +86,7 @@ namespace TechEngine {
 
         void stopRunningScene();
 
-        void OnKeyPressedEvent(Key&key);
+        void OnKeyPressedEvent(Key& key);
 
         void setColorTheme();
     };

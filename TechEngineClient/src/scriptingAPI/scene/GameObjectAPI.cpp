@@ -2,6 +2,10 @@
 
 #include "components/CameraComponent.hpp"
 #include "components/MeshRendererComponent.hpp"
+#include "components/physics/BoxColliderComponent.hpp"
+#include "components/physics/SphereCollider.hpp"
+#include "components/physics/CylinderCollider.hpp"
+#include "components/physics/RigidBody.hpp"
 #include "scene/GameObject.hpp"
 
 namespace TechEngine {
@@ -25,9 +29,29 @@ namespace TechEngine {
 
     template TransformComponent* GameObjectAPI::getComponent<TransformComponent>();
 
+    template CameraComponent* GameObjectAPI::getComponent<CameraComponent>();
+
     template MeshRendererComponent* GameObjectAPI::getComponent<MeshRendererComponent>();
+
+    template BoxColliderComponent* GameObjectAPI::getComponent<BoxColliderComponent>();
+
+    template SphereCollider* GameObjectAPI::getComponent<SphereCollider>();
+
+    template CylinderCollider* GameObjectAPI::getComponent<CylinderCollider>();
+
+    template RigidBody* GameObjectAPI::getComponent<RigidBody>();
+
+    template void GameObjectAPI::addComponent<TransformComponent>();
+
+    template void GameObjectAPI::addComponent<CameraComponent>();
 
     template void GameObjectAPI::addComponent<MeshRendererComponent>();
 
-    template void GameObjectAPI::addComponent<TransformComponent>();
+    template void GameObjectAPI::addComponent<BoxColliderComponent>();
+
+    template void GameObjectAPI::addComponent<SphereCollider>();
+
+    template void GameObjectAPI::addComponent<CylinderCollider>();
+
+    template void GameObjectAPI::addComponent<RigidBody>();
 }

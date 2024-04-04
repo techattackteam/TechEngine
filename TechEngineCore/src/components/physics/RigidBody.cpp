@@ -1,8 +1,12 @@
 #include "RigidBody.hpp"
+
+#include "event/EventDispatcher.hpp"
+#include "event/events/physics/AddRigidBodyEvent.hpp"
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    RigidBody::RigidBody(GameObject *gameObject) : Component(gameObject, "RigidBody") {
+    RigidBody::RigidBody(GameObject* gameObject) : Component(gameObject, "RigidBody") {
+        EventDispatcher::getInstance().dispatch(new AddRigidBodyEvent(this));
     }
 
 
@@ -21,5 +25,4 @@ namespace TechEngine {
     float RigidBody::getDensity() const {
         return density;
     }
-
 }

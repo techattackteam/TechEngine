@@ -7,10 +7,11 @@ namespace TechEngine {
     private:
         float radius;
         float height;
-    public:
-        CylinderCollider(GameObject *gameObject, PhysicsEngine &physicsEngine);
 
-        CylinderCollider(GameObject *gameObject, PhysicsEngine &physicsEngine, glm::vec3 offset, float radius, float height);
+    public:
+        CylinderCollider(GameObject* gameObject);
+
+        CylinderCollider(GameObject* gameObject, glm::vec3 offset, float radius, float height);
 
         float getRadius() const;
 
