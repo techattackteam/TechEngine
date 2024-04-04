@@ -1,12 +1,15 @@
 #include "Collider.hpp"
+
+#include "event/EventDispatcher.hpp"
+#include "event/events/physics/RemoveColliderEvent.hpp"
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    Collider::Collider(GameObject *gameObject, PhysicsEngine &physicsEngine, std::string name) : physicsEngine(physicsEngine), Component(gameObject, name) {
+    Collider::Collider(GameObject *gameObject,std::string name) :  Component(gameObject, name) {
     }
 
     Collider::~Collider() {
-        physicsEngine.removeCollider(gameObject->getTag(), this);
+        EventDispatcher::getInstance().dispatch(new RemoveColliderEvent(gameObject->getTag(), this));
     }
 
     void Collider::setOffset(glm::vec3 offset) {

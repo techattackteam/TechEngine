@@ -1,8 +1,7 @@
 #include "SceneHelper.hpp"
-#include "scene/Scene.hpp"
 
 namespace TechEngine {
-    bool SceneHelper::findCameraComponent(Scene&scene) {
+    bool SceneHelper::findCameraComponent(Scene& scene) {
         for (GameObject* gameObject: scene.getGameObjects()) {
             if (gameObject->hasComponent<CameraComponent>()) {
                 CameraComponent* cameraComponent = gameObject->getComponent<CameraComponent>();
@@ -15,7 +14,7 @@ namespace TechEngine {
         return false;
     }
 
-    bool SceneHelper::hasMainCamera(Scene&scene) {
+    bool SceneHelper::hasMainCamera(Scene& scene) {
         if (mainCamera == nullptr) {
             return findCameraComponent(scene);
         } else if (!mainCamera->isMainCamera()) {
@@ -25,7 +24,7 @@ namespace TechEngine {
         return true;
     }
 
-    void SceneHelper::clear(Scene&scene) {
+    void SceneHelper::clear(Scene& scene) {
         mainCamera = nullptr;
     }
 

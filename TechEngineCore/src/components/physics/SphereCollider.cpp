@@ -1,13 +1,16 @@
 #include "SphereCollider.hpp"
+
+#include "event/EventDispatcher.hpp"
+#include "event/events/physics/AddColliderEvent.hpp"
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    SphereCollider::SphereCollider(GameObject *gameObject, PhysicsEngine &physicsEngine) : Collider(gameObject, physicsEngine, "SphereCollider") {
+    SphereCollider::SphereCollider(GameObject* gameObject) : Collider(gameObject, "SphereCollider") {
         offset = glm::vec3(0, 0, 0);
         radius = 0.5f;
     }
 
-    SphereCollider::SphereCollider(GameObject *gameObject, PhysicsEngine &physicsEngine, glm::vec3 offset, float radius) : Collider(gameObject, physicsEngine, "SphereCollider"), radius(radius) {
+    SphereCollider::SphereCollider(GameObject* gameObject, glm::vec3 offset, float radius) : Collider(gameObject, "SphereCollider"), radius(radius) {
         this->offset = offset;
     }
 
@@ -17,7 +20,6 @@ namespace TechEngine {
 
     void SphereCollider::setRadius(float radius) {
         this->radius = radius;
-        physicsEngine.addCollider(this);
+        EventDispatcher::getInstance().dispatch(new AddColliderEvent(this));
     }
-
 }

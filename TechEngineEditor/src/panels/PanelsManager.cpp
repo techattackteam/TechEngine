@@ -15,6 +15,8 @@
 #include "project/ProjectManager.hpp"
 #include "events/input/KeyPressedEvent.hpp"
 #include "defaultGameObject/MainCamera.hpp"
+#include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
+#include "events/window/WindowCloseEvent.hpp"
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
@@ -33,12 +35,18 @@ namespace TechEngine {
                                                                      contentBrowser(*this, projectManager, sceneManager, materialManager),
                                                                      exportSettingsPanel(*this, projectManager, sceneManager, window.getRenderer().getShadersManager()),
                                                                      sceneHierarchyPanel(sceneManager.getScene(), materialManager),
-                                                                     sceneView(window.getRenderer(), sceneManager.getScene(), sceneHierarchyPanel.getSelectedGO()),
+                                                                     sceneView(window.getRenderer(), sceneManager.getScene(), physicsEngine, sceneHierarchyPanel.getSelectedGO()),
                                                                      inspectorPanel(sceneHierarchyPanel.getSelectedGO(), materialManager, physicsEngine),
                                                                      materialEditor(window.getRenderer(), textureManager, materialManager, sceneManager.getScene()) {
     }
 
     void PanelsManager::init() {
+        EventDispatcher::getInstance().subscribe(WindowCloseEvent::eventType, [this](TechEngine::Event* event) {
+            if (m_currentPlaying) {
+                stopRunningScene();
+                m_currentPlaying = false;
+            }
+        });
         EventDispatcher::getInstance().subscribe(RegisterCustomPanel::eventType, [this](TechEngine::Event* event) {
             registerCustomPanel((RegisterCustomPanel*)event);
         });
@@ -216,7 +224,7 @@ namespace TechEngine {
                     stopRunningScene();
                     m_currentPlaying = false;
                 }
-                compileUserScripts(RELEASE);
+                compileUserScripts(DEBUG);
             }
 
             if (ImGui::MenuItem("Export")) {
@@ -254,7 +262,6 @@ namespace TechEngine {
         ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x / 2) - (size / 2));
         if (ImGui::Button(m_currentPlaying == true ? "Stop" : "Play", ImVec2(size, 0))) {
             if (!m_currentPlaying) {
-                compileUserScripts(RELEASE);
                 startRunningScene();
             } else {
                 stopRunningScene();
@@ -343,7 +350,7 @@ namespace TechEngine {
         sceneManager.saveSceneAsTemporarily(sceneManager.getActiveSceneName());
         EventDispatcher::getInstance().copy();
         materialManager.copy();
-        ScriptEngine::getInstance()->init(projectManager.getScriptsReleaseDLLPath().string()); //TODO: Change this to debug dll without crashing
+        ScriptEngine::getInstance()->init(projectManager.getScriptsDebugDLLPath().string()); //TODO: Change this to debug dll without crashing
         ScriptEngine::getInstance()->onStart();
         physicsEngine.start();
         m_currentPlaying = true;

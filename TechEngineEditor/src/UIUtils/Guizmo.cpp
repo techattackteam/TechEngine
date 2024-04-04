@@ -1,13 +1,16 @@
 #include "Guizmo.hpp"
 #include <glm/gtx/matrix_decompose.hpp>
+
+#include "components/physics/BoxColliderComponent.hpp"
+#include "components/physics/SphereCollider.hpp"
 #include "scene/SceneHelper.hpp"
 #include "panels/PanelsManager.hpp"
 
 namespace TechEngine {
-    Guizmo::Guizmo() {
+    Guizmo::Guizmo(PhysicsEngine& physicsEngine) : physicsEngine(physicsEngine) {
     }
 
-    bool DecomposeTransform(const glm::mat4&transform, glm::vec3&translation, glm::vec3&rotation, glm::vec3&scale) {
+    bool DecomposeTransform(const glm::mat4& transform, glm::vec3& translation, glm::vec3& rotation, glm::vec3& scale) {
         // From glm::decompose in matrix_decompose.inl
 
         using namespace glm;
@@ -65,7 +68,7 @@ namespace TechEngine {
         return true;
     }
 
-    void Guizmo::editTransform(ImGuiContext* context, std::vector<GameObject *>&selectedGameObjects) {
+    void Guizmo::editTransform(ImGuiContext* context, std::vector<GameObject*>& selectedGameObjects) {
         if (operation == -1) {
             return;
         }
@@ -84,7 +87,7 @@ namespace TechEngine {
         m_ViewportBounds[1] = {viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y};
         ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y, m_ViewportBounds[1].x - m_ViewportBounds[0].x, m_ViewportBounds[1].y - m_ViewportBounds[0].y);
 
-        const glm::mat4&cameraProjection = SceneHelper::mainCamera->getProjectionMatrix();
+        const glm::mat4& cameraProjection = SceneHelper::mainCamera->getProjectionMatrix();
         glm::mat4 cameraView = SceneHelper::mainCamera->getViewMatrix();
 
         glm::mat4 transform = selectedGameObjects.front()->getModelMatrix();
@@ -98,6 +101,15 @@ namespace TechEngine {
             selectedGameObjects.front()->getTransform().translateToWorld(translation);
             selectedGameObjects.front()->getTransform().setRotation(glm::degrees(rotation));
             selectedGameObjects.front()->getTransform().setScale(scale);
+            if (selectedGameObjects.front()->hasComponent<RigidBody>()) {
+                physicsEngine.addRigidBody(selectedGameObjects.front()->getComponent<RigidBody>());
+            } else if (selectedGameObjects.front()->hasComponent<BoxColliderComponent>()) {
+                physicsEngine.addCollider(selectedGameObjects.front()->getComponent<BoxColliderComponent>());
+            } else if (selectedGameObjects.front()->hasComponent<SphereCollider>()) {
+                physicsEngine.addCollider(selectedGameObjects.front()->getComponent<SphereCollider>());
+            } else if (selectedGameObjects.front()->hasComponent<CylinderCollider>()) {
+                physicsEngine.addCollider(selectedGameObjects.front()->getComponent<CylinderCollider>());
+            }
         }
     }
 

@@ -97,3 +97,10 @@ add_custom_command(TARGET TechEngineClient POST_BUILD
         "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/debug/TechEngineClient.lib"
         "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib"
         COMMAND_EXPAND_LISTS)
+
+#Copy Shader to project template resources
+add_custom_command(TARGET TechEngineClient POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${PROJECT_SOURCE_DIR}/TechEngineClient/res/shaders"
+        "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/Resources/shaders"
+        COMMAND_EXPAND_LISTS)
