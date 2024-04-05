@@ -1,6 +1,6 @@
 #pragma once
 
-#include "event/events/Event.hpp"
+#include "events/Event.hpp"
 
 namespace TechEngine {
     class MouseMoveEvent : public Event {

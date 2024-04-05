@@ -1,14 +1,14 @@
 #include <boost/uuid/uuid_io.hpp>
 #include "Scene.hpp"
 
-#include "event/EventDispatcher.hpp"
-#include "event/events/gameObjects/RequestDeleteGameObject.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+//#include "events/gameObjects/RequestDeleteGameObject.hpp"
 
 namespace TechEngine {
     Scene::Scene() {
-        EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this](Event* event) {
+        /*EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this](Event* event) {
             onGameObjectDeleteRequest((RequestDeleteGameObject*)event);
-        });
+        });*/
     }
 
     Scene::~Scene() {
@@ -17,7 +17,13 @@ namespace TechEngine {
 
 
     void Scene::deleteGameObject(GameObject* gameObject) {
-        gameObjects.erase(std::remove(gameObjects.begin(), gameObjects.end(), gameObject), gameObjects.end());
+        for (auto it = gameObjects.begin(); it != gameObjects.end(); it++) {
+            if (*it == gameObject) {
+                gameObjects.erase(it);
+                delete gameObject;
+                return;
+            }
+        }
     }
 
     void Scene::update() {
@@ -86,11 +92,11 @@ namespace TechEngine {
         gameObjectsToDelete.clear();
     }
 
-    void Scene::onGameObjectDeleteRequest(RequestDeleteGameObject* event) {
-        GameObject* gameObject = getGameObjectByTag(event->getTag());
+    void Scene::onGameObjectDeleteRequest() {
+        /*GameObject* gameObject = getGameObjectByTag(event->getTag());
         if (gameObject->hasParent()) {
             gameObject->removeParent();
         }
-        gameObjectsToDelete.emplace_back(gameObject);
+        gameObjectsToDelete.emplace_back(gameObject);*/
     }
 }

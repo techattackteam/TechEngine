@@ -3,7 +3,7 @@
 #include "CameraComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "renderer/RendererSettings.hpp"
-#include "event/EventDispatcher.hpp"
+#include "eventSystem/EventDispatcher.hpp"
 #include "core/Logger.hpp"
 #include "scene/GameObject.hpp"
 

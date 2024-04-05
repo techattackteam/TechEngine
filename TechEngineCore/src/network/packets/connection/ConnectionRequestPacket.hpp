@@ -1,8 +1,6 @@
 #pragma once
 
 #include "network/Packet.hpp"
-#include "event/events/connection/ConnectionRequestEvent.hpp"
-#include "event/EventDispatcher.hpp"
 
 namespace TechEngine {
     class ConnectionRequestPacket : public Packet {

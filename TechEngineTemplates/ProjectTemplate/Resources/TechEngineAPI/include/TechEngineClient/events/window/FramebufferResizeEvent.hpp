@@ -1,6 +1,6 @@
 
 #include <cstdint>
-#include "event/events/Event.hpp"
+#include "events/Event.hpp"
 
 namespace TechEngine {
     class FramebufferResizeEvent : public Event {

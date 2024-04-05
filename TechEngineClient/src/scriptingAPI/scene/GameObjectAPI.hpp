@@ -12,6 +12,7 @@ namespace TechEngine {
     class GameObjectAPI {
     private:
         GameObject* gameObject;
+        friend class SceneAPI;
 
     public:
         explicit GameObjectAPI(GameObject* gameObject) : gameObject(gameObject) {

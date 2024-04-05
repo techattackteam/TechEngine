@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../stateMachine/StateMachineManager.hpp"
-#include "../event/EventDispatcher.hpp"
+#include "../eventSystem/EventDispatcher.hpp"
 #include "Timer.hpp"
 
 namespace TechEngine {

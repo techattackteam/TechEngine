@@ -1,6 +1,6 @@
 #include "DisconnectionSuccessfulPacket.hpp"
-#include "event/EventDispatcher.hpp"
-#include "event/events/connection/DisconnectionSuccessfulEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "events/connection/DisconnectionSuccessfulEvent.hpp"
 
 
 namespace TechEngine {

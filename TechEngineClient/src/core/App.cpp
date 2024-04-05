@@ -3,11 +3,11 @@
 
 namespace TechEngine {
     App::App(std::string name, int width, int height) : AppCore(),
-                                                        window(name, width, height),
                                                         textureManager(),
                                                         materialManager(textureManager),
                                                         sceneManager(projectManager, physicsEngine, materialManager, textureManager),
                                                         projectManager(sceneManager, textureManager, materialManager), physicsEngine(sceneManager.getScene()),
+                                                        window(projectManager,name, width, height),
                                                         api(&sceneManager, &eventDispatcher/*, ScriptEngine::getInstance()*/, &materialManager) {
         eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event* event) {
             onWindowCloseEvent((WindowCloseEvent*)(event));
@@ -16,6 +16,7 @@ namespace TechEngine {
         timer.init();
 
         physicsEngine.init();
+        window.init(projectManager,name, width, height);
     }
 
     App::~App() = default;

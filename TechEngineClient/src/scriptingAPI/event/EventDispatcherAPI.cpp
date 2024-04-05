@@ -1,5 +1,5 @@
 #include "EventDispatcherAPI.hpp"
-#include "event/EventDispatcher.hpp"
+#include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngine {
     EventDispatcherAPI::EventDispatcherAPI(EventDispatcher* eventDispatcher) {

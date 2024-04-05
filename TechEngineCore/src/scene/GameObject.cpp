@@ -1,13 +1,13 @@
 #include "GameObject.hpp"
 
 #include <utility>
-#include "event/EventDispatcher.hpp"
+#include "eventSystem/EventDispatcher.hpp"
 #include "components/TransformComponent.hpp"
 #include "Scene.hpp"
 #include <iostream>
 
-#include "event/events/gameObjects/GameObjectCreateEvent.hpp"
-#include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
+#include "events/gameObjects/GameObjectCreateEvent.hpp"
+#include "events/gameObjects/GameObjectDestroyEvent.hpp"
 
 namespace TechEngine {
     GameObject::GameObject(std::string name) : name(std::move(name)) {

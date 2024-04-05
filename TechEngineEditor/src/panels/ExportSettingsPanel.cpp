@@ -65,7 +65,7 @@ namespace TechEngine {
         std::filesystem::create_directory(projectManager.getProjectExportPath().string() + "//Resources");
         FileSystem::copyRecursive(projectManager.getProjectResourcesPath(), projectManager.getProjectExportPath().string() + "//Resources", {".cpp", ".hpp"}, {"cmake"});
         std::filesystem::copy(FileSystem::runtimePath, projectManager.getProjectExportPath(), copyOptions);
-        shadersManager.exportShaderFiles(projectManager.getProjectExportPath().string() + "//Resources//shaders");
+        //shadersManager.exportShaderFiles(projectManager.getProjectExportPath().string() + "//Resources//shaders");
         TE_LOGGER_INFO("Project exported to: {0}", projectManager.getProjectExportPath().string());
     }
 

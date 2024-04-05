@@ -1,7 +1,7 @@
 #include "RigidBody.hpp"
 
-#include "event/EventDispatcher.hpp"
-#include "event/events/physics/AddRigidBodyEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "events/physics/registry/AddRigidBodyEvent.hpp"
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {

@@ -1,23 +1,22 @@
 #pragma once
 
-#include "event/events/Event.hpp"
+#include "events/Event.hpp"
 #include "scene/GameObject.hpp"
 
 namespace TechEngine {
-    class RequestDeleteGameObject : public TechEngine::Event {
+    class RequestDeleteGameObject : public Event {
     private:
         std::string tag;
+
     public:
         static inline EventType eventType = EventType("RequestDeleteGameObject", SYNC);
 
-        explicit RequestDeleteGameObject(const std::string &tag) : Event(eventType) {
+        explicit RequestDeleteGameObject(const std::string& tag) : Event(eventType) {
             this->tag = tag;
         }
 
-        std::string &getTag() {
+        std::string& getTag() {
             return tag;
         }
     };
 }
-
-

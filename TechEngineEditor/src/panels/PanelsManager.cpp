@@ -1,7 +1,7 @@
 #include "PanelsManager.hpp"
 #include "scene/SceneManager.hpp"
 #include "script/ScriptEngine.hpp"
-#include "event/events/appManagement/AppCloseRequestEvent.hpp"
+#include "events/appManagement/AppCloseRequestEvent.hpp"
 #include "scene/SceneHelper.hpp"
 #include "core/Logger.hpp"
 #include "GL/glew.h"
@@ -15,7 +15,7 @@
 #include "project/ProjectManager.hpp"
 #include "events/input/KeyPressedEvent.hpp"
 #include "defaultGameObject/MainCamera.hpp"
-#include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
+#include "events/gameObjects/GameObjectDestroyEvent.hpp"
 #include "events/window/WindowCloseEvent.hpp"
 #include "physics/PhysicsEngine.hpp"
 

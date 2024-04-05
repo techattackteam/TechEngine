@@ -36,12 +36,7 @@ target_include_directories(TechEngineClient PUBLIC ${Stb_INCLUDE_DIR})
 target_include_directories(TechEngineClient PUBLIC "src")
 target_link_libraries(TechEngineClient PUBLIC TechEngineCore GLEW::GLEW glfw glm::glm yaml-cpp)
 
-
-add_custom_command(TARGET TechEngineClient POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/TechEngineClient/res $<TARGET_FILE_DIR:TechEngineEditor>/resources
-        COMMAND_EXPAND_LISTS)
-
+#Copy DLLS to output directory
 add_custom_command(TARGET TechEngineClient POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
         $<TARGET_RUNTIME_DLLS:TechEngineEditor>
@@ -102,5 +97,5 @@ add_custom_command(TARGET TechEngineClient POST_BUILD
 add_custom_command(TARGET TechEngineClient POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${PROJECT_SOURCE_DIR}/TechEngineClient/res/shaders"
-        "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/Resources/shaders"
+        "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/defaults/shaders"
         COMMAND_EXPAND_LISTS)

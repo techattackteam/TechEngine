@@ -2,28 +2,28 @@
 
 #include <vector>
 #include "Shader.hpp"
+#include "project/ProjectManager.hpp"
 
 namespace TechEngine {
-
     class ShadersManager {
     private:
-        std::unordered_map<std::string, Shader *> shaders;
-        Shader *activeShader;
+        std::unordered_map<std::string, Shader*> shaders;
+        Shader* activeShader;
 
     public:
-
         ShadersManager();
 
         ~ShadersManager();
 
-        void changeActiveShader(const std::string &name);
+        void init(ProjectManager& projectManager);
 
-        Shader *getActiveShader();
+        void changeActiveShader(const std::string& name);
+
+        Shader* getActiveShader();
 
         void unBindShader();
 
-        void init();
 
-        void exportShaderFiles(const std::string &path);
+        void exportShaderFiles(const std::string& path);
     };
 }

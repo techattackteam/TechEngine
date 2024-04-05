@@ -1,6 +1,6 @@
 #pragma once
 
-#include "event/EventDispatcher.hpp"
+#include "eventSystem/EventDispatcher.hpp"
 #include "core/Key.hpp"
 #include "glm/vec2.hpp"
 

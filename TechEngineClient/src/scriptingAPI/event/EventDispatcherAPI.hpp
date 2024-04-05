@@ -1,7 +1,7 @@
 #pragma once
 #include <functional>
 
-#include "event/events/Event.hpp"
+#include "events/Event.hpp"
 
 namespace TechEngine {
     class EventDispatcher;

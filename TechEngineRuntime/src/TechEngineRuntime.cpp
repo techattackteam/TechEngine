@@ -2,7 +2,7 @@
 #include <yaml-cpp/exceptions.h>
 #include "TechEngineRuntime.hpp"
 #include "renderer/RendererSettings.hpp"
-#include "event/events/appManagement/AppCloseRequestEvent.hpp"
+#include "events/appManagement/AppCloseRequestEvent.hpp"
 #include "script/ScriptEngine.hpp"
 #include "core/Logger.hpp"
 #include "core/FileSystem.hpp"

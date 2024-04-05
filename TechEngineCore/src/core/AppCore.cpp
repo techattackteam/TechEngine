@@ -1,5 +1,5 @@
 #include "AppCore.hpp"
-#include "event/events/appManagement/AppCloseRequestEvent.hpp"
+#include "events/appManagement/AppCloseRequestEvent.hpp"
 
 namespace TechEngine {
     AppCore::AppCore() : timer() {

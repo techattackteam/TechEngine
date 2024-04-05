@@ -1,6 +1,6 @@
 #include "ConnectionRequestPacket.hpp"
-#include "event/EventDispatcher.hpp"
-#include "event/events/connection/ConnectionRequestEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "events/connection/ConnectionRequestEvent.hpp"
 
 
 namespace TechEngine {
@@ -9,8 +9,7 @@ namespace TechEngine {
     }
 
     template<class Archive>
-    void ConnectionRequestPacket::serialize(Archive &ar, unsigned int version) {
+    void ConnectionRequestPacket::serialize(Archive& ar, unsigned int version) {
         ar & boost::serialization::base_object<TechEngine::Packet>(*this);
     }
 }
-
