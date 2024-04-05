@@ -1,7 +1,7 @@
 #include "PhysicsEngine.hpp"
 #include "core/Logger.hpp"
 #include "core/Timer.hpp"
-#include "event/EventDispatcher.hpp"
+#include "eventSystem/EventDispatcher.hpp"
 #include "scene/Scene.hpp"
 #include "components/TransformComponent.hpp"
 #include "components/physics/SphereCollider.hpp"
@@ -10,19 +10,19 @@
 #include "components/physics/BoxColliderComponent.hpp"
 #include <typeinfo>
 
-#include "event/events/physics/AddColliderEvent.hpp"
-#include "event/events/physics/AddRigidBodyEvent.hpp"
-#include "event/events/physics/RemoveColliderEvent.hpp"
-#include "event/events/physics/RemoveRigidBodyEvent.hpp"
+#include "events/gameObjects/GameObjectDestroyEvent.hpp"
+#include "events/physics/registry/AddColliderEvent.hpp"
+#include "events/physics/registry/AddRigidBodyEvent.hpp"
+#include "events/physics/registry/RemoveColliderEvent.hpp"
+#include "events/physics/registry/RemoveRigidBodyEvent.hpp"
 
 namespace TechEngine {
     PhysicsEngine::PhysicsEngine(Scene& scene) : scene(scene) {
-        EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this](Event* event) {
-            GameObject* gameObject = this->scene.getGameObjectByTag(((RequestDeleteGameObject*)event)->getTag());
-            removeActor(((RequestDeleteGameObject*)event)->getTag());
-            if (gameObject->hasComponent<RigidBody>()) {
-                removeRigidBody(((RequestDeleteGameObject*)event)->getTag());
-            }
+        callback = new PhysicsCallback(scene, *this);
+
+        EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](Event* event) {
+            std::string tag = ((GameObjectDestroyEvent*)event)->getGameObjectTag();
+            removeActor(tag);
         });
         EventDispatcher::getInstance().subscribe(AddColliderEvent::eventType, [this](Event* event) {
             addCollider(((AddColliderEvent*)event)->getCollider());
@@ -46,6 +46,7 @@ namespace TechEngine {
         physics->release();
         pvd->release();
         foundation->release();
+        delete callback;
     }
 
     void PhysicsEngine::init() {
@@ -69,15 +70,30 @@ namespace TechEngine {
         TE_LOGGER_INFO("Physics engine initialized!");
     }
 
+    physx::PxFilterFlags CollisionFilterShader(
+        physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
+        physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
+        physx::PxPairFlags& pairFlags, const void* constantBlock, physx::PxU32 constantBlockSize) {
+        // Enable contact and trigger events for all pairs of interacting objects
+        pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT |
+                    physx::PxPairFlag::eTRIGGER_DEFAULT |
+                    physx::PxPairFlag::eNOTIFY_TOUCH_FOUND |
+                    physx::PxPairFlag::eNOTIFY_TOUCH_LOST;
+
+        return physx::PxFilterFlag::eDEFAULT;
+    }
+
     void PhysicsEngine::createScene() {
         physx::PxSceneDesc sceneDesc(physics->getTolerancesScale());
         sceneDesc.gravity = physx::PxVec3(0.0f, -9.81f, 0.0f);
         dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
         sceneDesc.cpuDispatcher = dispatcher;
-        sceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
+        sceneDesc.filterShader = CollisionFilterShader;
         pxScene = physics->createScene(sceneDesc);
-        if (!pxScene)
+        if (!pxScene) {
             TE_LOGGER_CRITICAL("createScene failed!");
+        }
+        pxScene->setSimulationEventCallback(callback);
     }
 
     void PhysicsEngine::start() {
@@ -162,7 +178,7 @@ namespace TechEngine {
         if (actors.find(rigidBody->getGameObject()->getTag()) == actors.end()) {
             rigidBodiesWithoutColliders.push_back(rigidBody->getGameObject()->getTag());
         } else {
-            removeActor(rigidBody->getGameObject()->getTag());
+            //removeActor(rigidBody->getGameObject()->getTag());
             for (std::pair<std::string, Component*> component: rigidBody->getGameObject()->getComponents()) {
                 if (Collider* collider = dynamic_cast<Collider*>(component.second)) {
                     addCollider(collider);
@@ -190,6 +206,9 @@ namespace TechEngine {
             rigidBodiesWithoutColliders.remove(tag);
         } else {
             GameObject* gameObject = scene.getGameObjectByTag(tag);
+            if (gameObject == nullptr) {
+                return;
+            }
             for (std::pair<std::string, Component*> component: gameObject->getComponents()) {
                 if (Collider* collider = dynamic_cast<Collider*>(component.second)) {
                     addCollider(collider);
@@ -279,12 +298,7 @@ namespace TechEngine {
 
     void PhysicsEngine::removeActor(const std::string& tag) {
         if (actors.find(tag) != actors.end()) {
-            GameObject* gameObject = scene.getGameObjectByTag(tag);
-            for (std::pair<const std::basic_string<char>, Component*> pair: gameObject->getComponents()) {
-                if (Collider* collider = dynamic_cast<Collider*>(pair.second)) {
-                    removeCollider(gameObject->getTag(), collider);
-                }
-            }
+            pxScene->removeActor(*actors[tag]);
         }
     }
 

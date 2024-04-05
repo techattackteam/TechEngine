@@ -4,8 +4,8 @@
 #include "core/FileSystem.hpp"
 #include "core/Logger.hpp"
 #include "scene/SceneManager.hpp"
-#include "event/events/appManagement/AppCloseRequestEvent.hpp"
-#include "event/EventDispatcher.hpp"
+#include "events/appManagement/AppCloseRequestEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngine {
     ProjectManager::ProjectManager(SceneManager&sceneManager, TextureManager&textureManager, MaterialManager&materialManager) : sceneManager(sceneManager),

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "CNetworkHandler.hpp"
-#include "event/events/connection/PingEvent.hpp"
-#include "event/events/connection/ConnectionSuccessfulEvent.hpp"
+#include "events/connection/PingEvent.hpp"
+#include "events/connection/ConnectionSuccessfulEvent.hpp"
 
 namespace TechEngine {
     class CConnectionHandler : public TechEngine::ConnectionHandler {

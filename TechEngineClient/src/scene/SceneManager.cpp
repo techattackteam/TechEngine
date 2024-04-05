@@ -18,7 +18,7 @@
 #include <utils/YAMLUtils.hpp>
 #include <fstream>
 
-#include "event/EventDispatcher.hpp"
+#include "eventSystem/EventDispatcher.hpp"
 #include "material/MaterialManager.hpp"
 #include "mesh/ImportedMesh.hpp"
 

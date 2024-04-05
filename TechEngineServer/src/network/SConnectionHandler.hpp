@@ -1,9 +1,9 @@
 #pragma once
 
 #include "SNetworkHandler.hpp"
-#include "event/events/connection/PingEvent.hpp"
-#include "event/events/connection/DisconnectionRequestEvent.hpp"
-#include "event/events/connection/ConnectionRequestEvent.hpp"
+#include "events/connection/PingEvent.hpp"
+#include "events/connection/DisconnectionRequestEvent.hpp"
+#include "events/connection/ConnectionRequestEvent.hpp"
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>

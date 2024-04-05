@@ -5,21 +5,21 @@
 #include "events/input/KeyHoldEvent.hpp"
 #include "events/window/WindowCloseEvent.hpp"
 #include "wrapper/Wrapper.hpp"
-#include "event/events/appManagement/AppCloseRequestEvent.hpp"
+#include "events/appManagement/AppCloseRequestEvent.hpp"
 #include "events/input/MouseScrollEvent.hpp"
 #include "Mouse.hpp"
 #include "events/window/WindowResizeEvent.hpp"
 
 namespace TechEngine {
-    Window::Window(const std::string &title, uint32_t width, uint32_t height) {
-        init(title, width, height);
+    Window::Window(ProjectManager& projectManager, const std::string& title, uint32_t width, uint32_t height) {
+        //init(projectManager, title, width, height);
     }
 
     Window::~Window() {
         glfwMakeContextCurrent(handler);
     }
 
-    void Window::init(const std::string &title, uint32_t width, uint32_t height) {
+    void Window::init(ProjectManager& projectManager, const std::string& title, uint32_t width, uint32_t height) {
         this->title = title;
         glfwInit();
 
@@ -37,26 +37,26 @@ namespace TechEngine {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glfwSwapInterval(1);
         glfwSetWindowUserPointer(handler, this);
-        glfwSetWindowCloseCallback(handler, [](GLFWwindow *handler) {
+        glfwSetWindowCloseCallback(handler, [](GLFWwindow* handler) {
             dispatchEvent(new WindowCloseEvent());
             dispatchEvent(new AppCloseRequestEvent());
         });
-        glfwSetKeyCallback(handler, [](GLFWwindow *handler, int key, int scancode, int action, int mods) {
+        glfwSetKeyCallback(handler, [](GLFWwindow* handler, int key, int scancode, int action, int mods) {
             Window::windowKeyInput(key, action);
         });
-        glfwSetMouseButtonCallback(handler, [](GLFWwindow *handler, int key, int action, int mods) {
+        glfwSetMouseButtonCallback(handler, [](GLFWwindow* handler, int key, int action, int mods) {
             Window::windowKeyInput(key, action);
         });
-        glfwSetScrollCallback(handler, [](GLFWwindow *handler, double xoffset, double yoffset) {
+        glfwSetScrollCallback(handler, [](GLFWwindow* handler, double xoffset, double yoffset) {
             dispatchEvent(new MouseScrollEvent(xoffset, yoffset));
         });
-        glfwSetCursorPosCallback(handler, [](GLFWwindow *handler, double xpos, double ypos) {
+        glfwSetCursorPosCallback(handler, [](GLFWwindow* handler, double xpos, double ypos) {
             Mouse::getInstance().onMouseMove(xpos, ypos);
         });
-        glfwSetFramebufferSizeCallback(handler, [](GLFWwindow *handler, int width, int height) {
+        glfwSetFramebufferSizeCallback(handler, [](GLFWwindow* handler, int width, int height) {
             dispatchEvent(new WindowResizeEvent(width, height));
         });
-        renderer.init();
+        renderer.init(projectManager);
     }
 
     void Window::onUpdate() {
@@ -73,7 +73,7 @@ namespace TechEngine {
         return vSync;
     }
 
-    GLFWwindow *Window::getHandler() {
+    GLFWwindow* Window::getHandler() {
         return handler;
     }
 
@@ -95,12 +95,11 @@ namespace TechEngine {
     }
 
 
-    void Window::changeTitle(const std::string &name) {
+    void Window::changeTitle(const std::string& name) {
         this->title = name;
     }
 
-    Renderer &Window::getRenderer() {
+    Renderer& Window::getRenderer() {
         return renderer;
     }
-
 }

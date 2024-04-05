@@ -1,6 +1,6 @@
 #include "PingPacket.hpp"
-#include "event/EventDispatcher.hpp"
-#include "event/events/connection/PingEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "events/connection/PingEvent.hpp"
 
 
 namespace TechEngine {

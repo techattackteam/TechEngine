@@ -2,6 +2,7 @@
 //#define PX_PHYSX_STATIC_LIB
 #include <PxPhysicsAPI.h>
 
+#include "PhysicsCallback.hpp"
 #include "components/physics/RigidBody.hpp"
 #include "components/physics/CylinderCollider.hpp"
 #include "scene/Scene.hpp"
@@ -22,6 +23,9 @@ namespace TechEngine {
         bool running = false;
 
         Scene& scene;
+        PhysicsCallback* callback;
+
+        friend class PhysicsCallback;
 
         void createScene();
 

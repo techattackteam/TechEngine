@@ -2,22 +2,21 @@
 #include <imgui_internal.h>
 #include "SceneHierarchyPanel.hpp"
 #include "scene/SceneHelper.hpp"
-#include "event/events/gameObjects/RequestDeleteGameObject.hpp"
 #include "PanelsManager.hpp"
 #include "defaultGameObject/Cube.hpp"
 #include "defaultGameObject/Sphere.hpp"
 #include "defaultGameObject/Cylinder.hpp"
-#include "event/events/gameObjects/GameObjectDestroyEvent.hpp"
+//#include "events/gameObjects/RequestDeleteGameObject.hpp"
 
 namespace TechEngine {
     SceneHierarchyPanel::SceneHierarchyPanel(Scene& scene, MaterialManager& materialManager) : scene(scene), materialManager(materialManager), Panel("SceneHierarchyPanel") {
-        EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this, &scene](Event* event) {
+        /*EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this, &scene](Event* event) {
             std::string tag = ((GameObjectDestroyEvent*)event)->getGameObjectTag();
             if (scene.getGameObjectByTag(tag) == nullptr) {
                 return;
             }
             deselectGO(scene.getGameObjectByTag(tag));
-        });
+        });*/
     }
 
     void SceneHierarchyPanel::onUpdate() {
@@ -25,9 +24,15 @@ namespace TechEngine {
         ImGui::Begin("Scene Hierarchy");
         getSelectedGO();
         if (!scene.getGameObjects().empty()) {
-            for (auto element: scene.getGameObjects()) {
+            int originalSize = scene.getGameObjects().size();
+            for (int i = 0; i < scene.getGameObjects().size(); i++) {
+                GameObject* element = scene.getGameObjects()[i];
                 if (element->isEditorOnly()) {
                     continue;
+                }
+                if (originalSize != scene.getGameObjects().size()) {
+                    i--;
+                    originalSize = scene.getGameObjects().size();
                 }
                 drawEntityNode(element);
             }
@@ -115,12 +120,15 @@ namespace TechEngine {
             }
             if (ImGui::MenuItem("Delete GameObject")) {
                 deleteGameObject(gameObject);
+                gameObject = nullptr;
             }
             ImGui::EndPopup();
         }
         if (opened) {
-            for (const auto& pair: gameObject->getChildren()) {
-                drawEntityNode(pair.second);
+            if (gameObject != nullptr) {
+                for (const auto& pair: gameObject->getChildren()) {
+                    drawEntityNode(pair.second);
+                }
             }
             ImGui::TreePop();
         }
@@ -154,10 +162,10 @@ namespace TechEngine {
     }
 
     void SceneHierarchyPanel::deleteGameObject(GameObject* gameObject) {
-        EventDispatcher::getInstance().dispatch(new RequestDeleteGameObject(gameObject->getTag()));
         if (std::find(selectedGO.begin(), selectedGO.end(), gameObject) != selectedGO.end()) {
             selectedGO.erase(std::remove(selectedGO.begin(), selectedGO.end(), gameObject), selectedGO.end());
         }
+        scene.deleteGameObject(gameObject);
     }
 
     std::vector<GameObject*>& SceneHierarchyPanel::getSelectedGO() {

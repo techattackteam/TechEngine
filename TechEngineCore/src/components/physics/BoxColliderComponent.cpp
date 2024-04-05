@@ -1,7 +1,7 @@
 #include "BoxColliderComponent.hpp"
 
-#include "event/EventDispatcher.hpp"
-#include "event/events/physics/AddColliderEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "events/physics/registry/AddColliderEvent.hpp"
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {

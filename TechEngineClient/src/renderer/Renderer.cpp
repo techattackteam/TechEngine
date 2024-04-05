@@ -8,8 +8,8 @@
 #include "core/FileSystem.hpp"
 
 namespace TechEngine {
-    void Renderer::init() {
-        shadersManager.init();
+    void Renderer::init(ProjectManager &projectManager) {
+        shadersManager.init(projectManager);
         vertexArrays[BufferGameObjects] = new VertexArray();
         vertexBuffers[BufferGameObjects] = new VertexBuffer();
         vertexArrays[BufferGameObjects]->init();

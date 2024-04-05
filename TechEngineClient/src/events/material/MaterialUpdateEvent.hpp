@@ -1,5 +1,5 @@
 #pragma once
-#include "event/events/Event.hpp"
+#include "events/Event.hpp"
 #include "material/Material.hpp"
 
 namespace TechEngine {

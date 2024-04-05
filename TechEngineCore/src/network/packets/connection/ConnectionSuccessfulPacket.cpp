@@ -1,6 +1,6 @@
 #include "ConnectionSuccessfulPacket.hpp"
-#include "event/EventDispatcher.hpp"
-#include "event/events/connection/ConnectionSuccessfulEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "events/connection/ConnectionSuccessfulEvent.hpp"
 
 
 namespace TechEngine {
@@ -9,9 +9,8 @@ namespace TechEngine {
     }
 
     template<class Archive>
-    void ConnectionSuccessfulPacket::serialize(Archive &ar, unsigned int version) {
+    void ConnectionSuccessfulPacket::serialize(Archive& ar, unsigned int version) {
         ar & boost::serialization::base_object<TechEngine::Packet>(*this);
         ar & uuid;
     }
 }
-

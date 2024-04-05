@@ -1,7 +1,7 @@
 #include "FrameBuffer.hpp"
 #include "ErrorCatcher.hpp"
 #include "RendererSettings.hpp"
-#include "event/EventDispatcher.hpp"
+#include "eventSystem/EventDispatcher.hpp"
 #include "events/window/FramebufferResizeEvent.hpp"
 
 namespace TechEngine {

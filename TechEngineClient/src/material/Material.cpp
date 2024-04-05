@@ -2,7 +2,7 @@
 #include <utility>
 #include "Material.hpp"
 
-#include "event/EventDispatcher.hpp"
+#include "eventSystem/EventDispatcher.hpp"
 #include "events/material/MaterialUpdateEvent.hpp"
 
 namespace TechEngine {

@@ -17,11 +17,11 @@ namespace TechEngine {
         GLFWwindow* handler;
 
     public:
-        Window(const std::string&title, uint32_t width, uint32_t height);
+        Window(ProjectManager& projectManager,const std::string&title, uint32_t width, uint32_t height);
 
         ~Window();
 
-        void init(const std::string&title, uint32_t width, uint32_t height);
+        void init(ProjectManager& projectManager,const std::string&title, uint32_t width, uint32_t height);
 
         void onUpdate();
 

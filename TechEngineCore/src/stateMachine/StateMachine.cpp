@@ -1,9 +1,9 @@
 #include <memory>
 #include <utility>
 #include "StateMachine.hpp"
-#include "event/EventDispatcher.hpp"
-#include "event/events/stateMachineEvents/SMRegisterEvent.hpp"
-#include "event/events/stateMachineEvents/SMDeleteEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "events/stateMachineEvents/SMRegisterEvent.hpp"
+#include "events/stateMachineEvents/SMDeleteEvent.hpp"
 
 namespace TechEngine {
     StateMachine::StateMachine() {

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "network/Packet.hpp"
-#include "event/EventDispatcher.hpp"
-#include "event/events/connection/ConnectionSuccessfulEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "events/connection/ConnectionSuccessfulEvent.hpp"
 
 namespace TechEngine {
 

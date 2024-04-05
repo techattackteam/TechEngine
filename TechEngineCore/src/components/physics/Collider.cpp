@@ -1,7 +1,7 @@
 #include "Collider.hpp"
 
-#include "event/EventDispatcher.hpp"
-#include "event/events/physics/RemoveColliderEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "events/physics/registry/RemoveColliderEvent.hpp"
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {

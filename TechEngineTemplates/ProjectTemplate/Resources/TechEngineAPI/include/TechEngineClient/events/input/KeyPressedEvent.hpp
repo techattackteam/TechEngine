@@ -1,6 +1,6 @@
 #pragma once
 
-#include "event/events/Event.hpp"
+#include "events/Event.hpp"
 #include "core/Key.hpp"
 
 namespace TechEngine {

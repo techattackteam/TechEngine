@@ -61,7 +61,7 @@ set(TECH_ENGINE_CLIENT_API_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/
 set(TECH_ENGINE_CLIENT_API_FILES
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/core/Logger.hpp"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/core/Timer.hpp"
-        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/event/events"
+        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/events"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/components"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/physics"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/mesh"

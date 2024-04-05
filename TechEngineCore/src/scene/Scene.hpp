@@ -3,7 +3,6 @@
 #include <boost/uuid/random_generator.hpp>
 
 #include "GameObject.hpp"
-#include "event/events/gameObjects/RequestDeleteGameObject.hpp"
 
 namespace TechEngine {
     class Scene {
@@ -60,6 +59,6 @@ namespace TechEngine {
 
         void makeChildTo(GameObject* parent, GameObject* child);
 
-        void onGameObjectDeleteRequest(TechEngine::RequestDeleteGameObject* event);
+        void onGameObjectDeleteRequest();
     };
 }

@@ -13,4 +13,12 @@ namespace TechEngine {
     std::shared_ptr<GameObjectAPI> SceneAPI::getGameObject(const std::string& name) {
         return std::make_shared<GameObjectAPI>(scene->getGameObject(name));
     }
+
+    void SceneAPI::deleteGameObject(const std::string& name) {
+        scene->deleteGameObject(scene->getGameObject(name));
+    }
+
+    void SceneAPI::deleteGameObject(const std::shared_ptr<GameObjectAPI>& gameObject) {
+        scene->deleteGameObject(gameObject->gameObject);
+    }
 }

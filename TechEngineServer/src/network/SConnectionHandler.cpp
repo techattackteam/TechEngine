@@ -4,7 +4,7 @@
 #include "SNetworkHandler.hpp"
 #include "network/packets/connection/ConnectionSuccessfulPacket.hpp"
 #include "network/packets/connection/PingPacket.hpp"
-#include "event/events/connection/DisconnectionRequestEvent.hpp"
+#include "events/connection/DisconnectionRequestEvent.hpp"
 #include "network/packets/connection/DisconnectionSuccessfulPacket.hpp"
 
 namespace TechEngineServer {

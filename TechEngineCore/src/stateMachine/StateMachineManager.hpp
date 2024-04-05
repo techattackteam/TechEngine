@@ -2,8 +2,8 @@
 
 #include <vector>
 #include "StateMachine.hpp"
-#include "../event/events/stateMachineEvents/SMRegisterEvent.hpp"
-#include "../event/events/stateMachineEvents/SMDeleteEvent.hpp"
+#include "events/stateMachineEvents/SMRegisterEvent.hpp"
+#include "events/stateMachineEvents/SMDeleteEvent.hpp"
 
 namespace TechEngine {
     class StateMachineManager {
