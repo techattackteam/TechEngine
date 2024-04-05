@@ -39,7 +39,3 @@ add_custom_command(TARGET TechEngineRuntime POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:TechEngineRuntime> $<TARGET_FILE_DIR:TechEngineRuntime>
         COMMAND_EXPAND_LISTS)
 
-add_custom_command(TARGET TechEngineRuntime POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        $<TARGET_FILE_DIR:TechEngineRuntime> $<TARGET_FILE_DIR:TechEngineEditor>/runtime
-        COMMAND_EXPAND_LISTS)

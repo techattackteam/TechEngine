@@ -8,9 +8,9 @@
 #include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngine {
-    ProjectManager::ProjectManager(SceneManager&sceneManager, TextureManager&textureManager, MaterialManager&materialManager) : sceneManager(sceneManager),
-                                                                                                                                textureManager(textureManager),
-                                                                                                                                materialManager(materialManager) {
+    ProjectManager::ProjectManager(SceneManager& sceneManager, TextureManager& textureManager, MaterialManager& materialManager) : sceneManager(sceneManager),
+                                                                                                                                   textureManager(textureManager),
+                                                                                                                                   materialManager(materialManager) {
     }
 
 
@@ -45,7 +45,7 @@ namespace TechEngine {
     }
 
     const path& ProjectManager::getScriptsBuildPath() {
-        return scriptsBuildPath;
+        return cmakeBuildPath;
     }
 
     const path& ProjectManager::getProjectExportPath() {
@@ -80,8 +80,7 @@ namespace TechEngine {
             out << YAML::EndMap;
             std::ofstream fout(projectFilePath);
             fout << out.c_str();
-        }
-        catch (YAML::Exception&e) {
+        } catch (YAML::Exception& e) {
             TE_LOGGER_CRITICAL("Failed to load {0}.teprj file.\n      {1}", this->projectFilePath.string(), e.what());
             exit(1);
         }
@@ -92,34 +91,20 @@ namespace TechEngine {
         YAML::Emitter out;
         try {
             out << YAML::BeginMap;
-            out << YAML::Key << "Project Name" << YAML::Value << projectName;
             out << YAML::Key << "Last scene loaded" << YAML::Value << sceneManager.getActiveSceneName();
             out << YAML::EndMap;
             std::filesystem::path path = projectFilePath;;
             std::filesystem::create_directories(path.parent_path());
             std::ofstream fout(path);
             fout << out.c_str();
-        }
-        catch (YAML::Exception&e) {
+        } catch (YAML::Exception& e) {
             TE_LOGGER_CRITICAL("Failed to load {0}.teprj file.\n      {1}", this->projectFilePath.string(), e.what());
             exit(1);
         }
     }
 
-    void ProjectManager::loadProject(const std::string&projectLocation) {
-        this->projectLocation = projectLocation;
-        this->projectFilePath = this->projectLocation.string() + "\\" + projectName + ".teprj";
-        projectAssetsPath = this->projectLocation.string() + "\\Assets";
-        projectResourcesPath = this->projectLocation.string() + "\\Resources";
-        projectExportPath = this->projectLocation.string() + "\\Build";
-
-        scriptsBuildPath = projectResourcesPath.string() + "\\cmake\\cmake-build-debug";
-        userScriptsDebugDLLPath = projectResourcesPath.string() + "\\scripts\\build\\debug\\UserScripts.dll";
-        userScriptsReleaseDLLPath = projectResourcesPath.string() + "\\scripts\\build\\release\\UserScripts.dll";
-        cmakeListPath = projectResourcesPath.string() + "\\cmake";
-        techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\TechEngineCore.lib";
-        techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\TechEngineClient.lib";
-
+    void ProjectManager::loadEditorProject(const std::string& projectLocation) {
+        setupPaths(projectLocation);
         std::string lastSceneLoaded;
         if (std::filesystem::exists(this->projectFilePath)) {
             YAML::Node data;
@@ -127,13 +112,11 @@ namespace TechEngine {
                 data = YAML::LoadFile(this->projectFilePath.string());
                 projectName = data["Project Name"].as<std::string>();
                 lastSceneLoaded = data["Last scene loaded"].as<std::string>();
-            }
-            catch (YAML::Exception&e) {
+            } catch (YAML::Exception& e) {
                 TE_LOGGER_CRITICAL("Failed to load {0} project.\n      {1}", this->projectFilePath.string(), e.what());
                 exit(1);
             }
-        }
-        else {
+        } else {
             lastSceneLoaded = "DefaultScene";
             YAML::Emitter out;
             out << YAML::BeginMap;
@@ -143,11 +126,55 @@ namespace TechEngine {
             std::ofstream fout(this->projectFilePath);
             fout << out.c_str();
         }
-        textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), ".jpg"));
-        textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), ".png"));
-        materialManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), ".mat"));
+        textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), ".jpg", true));
+        textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), ".png", true));
+        materialManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), ".mat", true));
         sceneManager.init(getProjectLocation().string());
         sceneManager.loadScene(lastSceneLoaded);
+    }
+
+    void ProjectManager::loadRuntimeProject(const std::string& projectLocation) {
+        setupPaths(projectLocation);
+        YAML::Node data;
+        std::string lastSceneLoaded;
+        try {
+            data = YAML::LoadFile(this->projectFilePath.string());
+            lastSceneLoaded = data["Last scene loaded"].as<std::string>();
+        } catch (YAML::Exception& e) {
+            TE_LOGGER_CRITICAL("Failed to load {0} project.\n      {1}", this->projectFilePath.string(), e.what());
+            exit(1);
+        }
+        textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), ".jpg", true));
+        textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), ".png", true));
+        materialManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), ".mat", true));
+        sceneManager.init(getProjectLocation().string());
+        sceneManager.loadScene(lastSceneLoaded);
+    }
+
+    void ProjectManager::setupPaths(const std::string& projectLocation) {
+        this->projectLocation = projectLocation;
+        std::vector<std::string> files = FileSystem::getAllFilesWithExtension(projectLocation, ".teprj", false);
+        std::string projectFile = files[0];
+        this->projectFilePath = projectFile;
+        projectName = projectFile.substr(projectFile.find_last_of("\\") + 1, projectFile.find_last_of(".") - projectFile.find_last_of("\\") - 1);
+        projectAssetsPath = this->projectLocation.string() + "\\Assets";
+        projectResourcesPath = this->projectLocation.string() + "\\Resources";
+        projectExportPath = this->projectLocation.string() + "\\Build";
+
+        cmakeBuildPath = projectResourcesPath.string() + "\\cmake\\cmake-build-debug";
+        userScriptsDebugDLLPath = projectResourcesPath.string() + "\\scripts\\build\\debug\\UserScripts.dll";
+        userScriptsReleaseDLLPath = projectResourcesPath.string() + "\\scripts\\build\\release\\UserScripts.dll";
+        cmakeListPath = projectResourcesPath.string() + "\\cmake";
+#ifdef TE_DEBUG
+        techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCore.lib";
+#elif TE_RELEASE
+        techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCore.lib";
+#endif
+#ifdef TE_DEBUG
+        techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineClient.lib";
+#elif TE_RELEASE
+        techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineClient.lib";
+#endif
     }
 
     const std::string& ProjectManager::getProjectName() {

@@ -51,7 +51,8 @@ namespace TechEngine {
                       ProjectManager& projectManager,
                       PhysicsEngine& physicsEngine,
                       TextureManager& textureManager,
-                      MaterialManager& materialManager);
+                      MaterialManager& materialManager,
+                      Renderer& renderer);
 
         void init();
 

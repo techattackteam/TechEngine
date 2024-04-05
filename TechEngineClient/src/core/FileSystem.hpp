@@ -5,18 +5,26 @@
 
 
 namespace TechEngine::FileSystem {
-        inline std::filesystem::path rootPath = std::filesystem::current_path(); //This could be Editor path or Runtime path
+    inline std::filesystem::path rootPath = std::filesystem::current_path(); //This could be Editor path or Runtime path
     inline std::filesystem::path projectTemplate = rootPath.string() + "\\projectTemplate";
     inline std::filesystem::path scenesTemplate = projectTemplate.string() + "\\scenes\\DefaultScene.scene";
     inline std::filesystem::path scriptsTemplate = projectTemplate.string() + "\\scripts";
     inline std::filesystem::path runtimePath = rootPath.string() + "\\runtime";
     inline std::filesystem::path editorResourcesPath = rootPath.string() + "\\resources"; //Only use this in editor
 
-    inline std::vector<std::string> getAllFilesWithExtension(const std::string& path, const std::string &extension) {
+    inline std::vector<std::string> getAllFilesWithExtension(const std::string& path, const std::string& extension, bool recursive) {
         std::vector<std::string> filesWithExtension;
-        for (const auto &entry: std::filesystem::recursive_directory_iterator(path)) {
-            if (entry.path().extension() == extension) {
-                filesWithExtension.push_back(entry.path().string());
+        if (recursive) {
+            for (const auto& entry: std::filesystem::recursive_directory_iterator(path)) {
+                if (entry.path().extension() == extension) {
+                    filesWithExtension.push_back(entry.path().string());
+                }
+            }
+        } else {
+            for (const auto& entry: std::filesystem::directory_iterator(path)) {
+                if (entry.path().extension() == extension) {
+                    filesWithExtension.push_back(entry.path().string());
+                }
             }
         }
         return filesWithExtension;
@@ -29,14 +37,14 @@ namespace TechEngine::FileSystem {
         return name;
     }
 
-    inline bool isExcluded(const std::filesystem::path &path, const std::vector<std::string> &excludedExtension, const std::vector<std::string> &excludedFolders) {
+    inline bool isExcluded(const std::filesystem::path& path, const std::vector<std::string>& excludedExtension, const std::vector<std::string>& excludedFolders) {
         return (std::find(excludedExtension.begin(), excludedExtension.end(), path.extension().string()) != excludedExtension.end()) ||
                (std::filesystem::is_directory(path) && std::find(excludedFolders.begin(), excludedFolders.end(), path.filename()) != excludedFolders.end());
     }
 
-    inline void copyRecursive(const std::filesystem::path &source, const std::filesystem::path &destination, const std::vector<std::string> &excludedExtension, const std::vector<std::string> &excludedFolders) {
-        for (const auto &entry: std::filesystem::directory_iterator(source)) {
-            const std::filesystem::path &currentPath = entry.path();
+    inline void copyRecursive(const std::filesystem::path& source, const std::filesystem::path& destination, const std::vector<std::string>& excludedExtension, const std::vector<std::string>& excludedFolders) {
+        for (const auto& entry: std::filesystem::directory_iterator(source)) {
+            const std::filesystem::path& currentPath = entry.path();
             const std::filesystem::path destinationPath = destination / currentPath.filename();
 
             if (isExcluded(currentPath, excludedExtension, excludedFolders)) {

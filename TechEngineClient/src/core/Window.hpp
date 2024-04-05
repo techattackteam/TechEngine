@@ -8,8 +8,6 @@
 namespace TechEngine {
     class Window {
     private:
-        Renderer renderer;
-
         std::string title;
 
         bool vSync = false;
@@ -17,11 +15,11 @@ namespace TechEngine {
         GLFWwindow* handler;
 
     public:
-        Window(ProjectManager& projectManager,const std::string&title, uint32_t width, uint32_t height);
+        Window(const std::string& title, uint32_t width, uint32_t height);
 
         ~Window();
 
-        void init(ProjectManager& projectManager,const std::string&title, uint32_t width, uint32_t height);
+        void init(const std::string& title, uint32_t width, uint32_t height);
 
         void onUpdate();
 
@@ -33,8 +31,6 @@ namespace TechEngine {
 
         static void windowKeyInput(int key, int action);
 
-        void changeTitle(const std::string&name);
-
-        Renderer& getRenderer();
+        void changeTitle(const std::string& name);
     };
 }

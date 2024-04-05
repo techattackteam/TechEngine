@@ -140,12 +140,12 @@ namespace TechEngine {
                 deleteGameObject(gameObject);
             }
             selectedGO.clear();
-        } else if (key.getKeyCode() == KeyCode::F && ImGui::IsWindowFocused()) {
+        /*} else if (key.getKeyCode() == KeyCode::F && ImGui::IsWindowFocused()) {
             if (!selectedGO.empty()) {
                 GameObject* gameObject = selectedGO.front();
                 /*                PanelsManager::getInstance().getSceneView().setCameraPosition(gameObject->getTransform().getPosition());
-                                PanelsManager::getInstance().getSceneView().setCameraRotation(gameObject->getTransform().getRotation());*/
-            }
+                                PanelsManager::getInstance().getSceneView().setCameraRotation(gameObject->getTransform().getRotation());#1#
+            }*/
         } else if (key.getKeyCode() == KeyCode::LEFT_SHIFT || key.getKeyCode() == KeyCode::RIGHT_SHIFT) {
             isShiftPressed = true;
         } else if (key.getKeyCode() == KeyCode::LEFT_CTRL || key.getKeyCode() == KeyCode::RIGHT_CTRL) {

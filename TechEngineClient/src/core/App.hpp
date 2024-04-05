@@ -14,6 +14,7 @@ namespace TechEngine {
     class TECHENGINE_API App : public AppCore {
     public:
         Window window;
+        Renderer renderer;
         TextureManager textureManager;
         MaterialManager materialManager;
         SceneManager sceneManager;

@@ -11,15 +11,15 @@
 #include "events/window/WindowResizeEvent.hpp"
 
 namespace TechEngine {
-    Window::Window(ProjectManager& projectManager, const std::string& title, uint32_t width, uint32_t height) {
-        //init(projectManager, title, width, height);
+    Window::Window(const std::string& title, uint32_t width, uint32_t height) {
+        init(title, width, height);
     }
 
     Window::~Window() {
         glfwMakeContextCurrent(handler);
     }
 
-    void Window::init(ProjectManager& projectManager, const std::string& title, uint32_t width, uint32_t height) {
+    void Window::init(const std::string& title, uint32_t width, uint32_t height) {
         this->title = title;
         glfwInit();
 
@@ -56,7 +56,6 @@ namespace TechEngine {
         glfwSetFramebufferSizeCallback(handler, [](GLFWwindow* handler, int width, int height) {
             dispatchEvent(new WindowResizeEvent(width, height));
         });
-        renderer.init(projectManager);
     }
 
     void Window::onUpdate() {
@@ -97,9 +96,5 @@ namespace TechEngine {
 
     void Window::changeTitle(const std::string& name) {
         this->title = name;
-    }
-
-    Renderer& Window::getRenderer() {
-        return renderer;
     }
 }

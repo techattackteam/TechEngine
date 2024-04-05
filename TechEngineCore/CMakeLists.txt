@@ -16,7 +16,7 @@ add_library(TechEngineCore SHARED ${TechEngineCore_Sources} ${TechEngineCore_Hea
 add_compile_definitions(TECH_ENGINE_API_EXPORTS)
 #Setup target's output directory
 if (WIN32) # WINDOWS
-    set(TECH_ENGINE_CORE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineCore/")
+    set(TECH_ENGINE_CORE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineCore")
     set_target_properties(TechEngineCore PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/debug"
             LIBRARY_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/debug"
@@ -55,6 +55,11 @@ endif ()
 
 target_include_directories(TechEngineCore PUBLIC "src")
 target_link_libraries(TechEngineCore PUBLIC Boost::boost Boost::serialization spdlog::spdlog unofficial::omniverse-physx-sdk::sdk)
+target_compile_definitions(TechEngineCore PRIVATE PUBLIC
+        $<$<CONFIG:Debug>:TE_DEBUG>
+        $<$<CONFIG:Release>:TE_RELEASE>
+        $<$<CONFIG:RelWithDebInfo>:TE_DEBUG>
+        $<$<CONFIG:MinSizeRel>:TE_RELEASE>)
 
 #Copy API include files to project template
 set(TECH_ENGINE_CLIENT_API_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/include/TechEngineCore")
@@ -95,10 +100,20 @@ foreach (entry ${TECH_ENGINE_CLIENT_API_FILES})
 endforeach ()
 
 #Copy .lib files to project template
-if (WIN32)
-    set(TECH_ENGINE_CLIENT_DLL_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib")
+        file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib")
+    endif ()
     add_custom_command(TARGET TechEngineCore POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy
             "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/debug/TechEngineCore.lib"
-            "${TECH_ENGINE_CLIENT_DLL_DIRECTORY}")
+            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib/debug")
+elseif (CMAKE_BUILD_TYPE STREQUAL "Release")
+    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/include/TechEngineCore")
+        file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/include/TechEngineCore")
+    endif ()
+    add_custom_command(TARGET TechEngineCore POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+            "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/release/TechEngineCore.lib"
+            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib/release")
 endif ()

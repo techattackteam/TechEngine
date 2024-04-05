@@ -19,7 +19,7 @@ add_compile_definitions(TECH_ENGINE_API_EXPORTS)
 
 #Setup target's output directory
 if (WIN32) # WINDOWS
-    set(TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineClient/")
+    set(TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineClient")
     set_target_properties(TechEngineClient PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/debug"
             LIBRARY_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/debug"
@@ -31,17 +31,11 @@ if (WIN32) # WINDOWS
             RUNTIME_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/release"
     )
 endif ()
+
 set(Stb_INCLUDE_DIR "C:\\dev\\TechEngine\\dependencies\\vcpkg\\packages\\stb_x64-windows\\include")
 target_include_directories(TechEngineClient PUBLIC ${Stb_INCLUDE_DIR})
 target_include_directories(TechEngineClient PUBLIC "src")
 target_link_libraries(TechEngineClient PUBLIC TechEngineCore GLEW::GLEW glfw glm::glm yaml-cpp)
-
-#Copy DLLS to output directory
-add_custom_command(TARGET TechEngineClient POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        $<TARGET_RUNTIME_DLLS:TechEngineEditor>
-        $<TARGET_FILE_DIR:TechEngineEditor>
-        COMMAND_EXPAND_LISTS)
 
 #Copy API include files to project template
 set(TECH_ENGINE_CLIENT_API_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/include/TechEngineClient")
@@ -58,7 +52,6 @@ set(TECH_ENGINE_CLIENT_API_FILES
 
 #Clear TechEngineClient API directory
 file(REMOVE_RECURSE "${TECH_ENGINE_CLIENT_API_DIRECTORY}")
-
 
 foreach (entry ${TECH_ENGINE_CLIENT_API_FILES})
     if (IS_DIRECTORY ${entry})
@@ -86,12 +79,27 @@ foreach (entry ${TECH_ENGINE_CLIENT_API_FILES})
 endforeach ()
 
 
-#Copy DLLS to project template
-add_custom_command(TARGET TechEngineClient POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/debug/TechEngineClient.lib"
-        "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib"
-        COMMAND_EXPAND_LISTS)
+#Copy .lib to project template
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib/debug")
+        file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib/debug")
+    endif ()
+    add_custom_command(TARGET TechEngineClient POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+            "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/debug/TechEngineClient.lib"
+            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib/debug"
+            COMMAND_EXPAND_LISTS)
+elseif (CMAKE_BUILD_TYPE STREQUAL "Release")
+    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib/release")
+        file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib/release")
+    endif ()
+    add_custom_command(TARGET TechEngineClient POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+            "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/release/TechEngineClient.lib"
+            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib/release"
+            COMMAND_EXPAND_LISTS)
+endif ()
+
 
 #Copy Shader to project template resources
 add_custom_command(TARGET TechEngineClient POST_BUILD

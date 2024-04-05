@@ -7,13 +7,13 @@
 #include "ErrorCatcher.hpp"
 #include "core/Logger.hpp"
 
-Shader::Shader(const std::string &name, const char *vertexShaderPath, const char *fragmentShaderPath) {
+Shader::Shader(const std::string& name, const char* vertexShaderPath, const char* fragmentShaderPath) {
     this->shaderName = name;
     ShaderSource shaderSource = parseShader(vertexShaderPath, fragmentShaderPath);
     id = createShader(shaderSource.vertexShader, shaderSource.fragmentShader);
 }
 
-uint32_t Shader::createShader(const std::string &vertexShader, const std::string &fragmentShader) {
+uint32_t Shader::createShader(const std::string& vertexShader, const std::string& fragmentShader) {
     uint32_t program;
     GlCall(program = glCreateProgram());
     uint32_t vs = compileShader(GL_VERTEX_SHADER, vertexShader);
@@ -32,10 +32,10 @@ uint32_t Shader::createShader(const std::string &vertexShader, const std::string
     return program;
 }
 
-uint32_t Shader::compileShader(uint32_t type, const std::string &source) {
+uint32_t Shader::compileShader(uint32_t type, const std::string& source) {
     uint32_t shaderID;
     GlCall(shaderID = glCreateShader(type));
-    const char *src = source.c_str();
+    const char* src = source.c_str();
     GlCall(glShaderSource(shaderID, 1, &src, nullptr));
     GlCall(glCompileShader(shaderID));
 
@@ -44,7 +44,7 @@ uint32_t Shader::compileShader(uint32_t type, const std::string &source) {
     if (result == GL_FALSE) {
         int length;
         GlCall(glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &length));
-        char *message = new char[length];
+        char* message = new char[length];
         GlCall(glGetShaderInfoLog(shaderID, length, &length, message));
         TE_LOGGER_CRITICAL("Failed to compile {0} {1} shader!", (type == GL_VERTEX_SHADER ? "vertices " : "fragment "), shaderName);
         TE_LOGGER_CRITICAL(message);
@@ -64,7 +64,7 @@ void Shader::unBind() const {
     GlCall(glUseProgram(0));
 }
 
-ShaderSource Shader::parseShader(const char *vertexShaderPath, const char *fragmentShaderPath) {
+ShaderSource Shader::parseShader(const char* vertexShaderPath, const char* fragmentShaderPath) {
     //0 = vertices. 1 = fragment
     std::string shaderCode[2];
     std::ifstream shaderFile[2];
@@ -84,38 +84,39 @@ ShaderSource Shader::parseShader(const char *vertexShaderPath, const char *fragm
         // convert stream into string
         shaderCode[0] = shaderStream[0].str();
         shaderCode[1] = shaderStream[1].str();
-    } catch (std::ifstream::failure &e) {
-        TE_LOGGER_CRITICAL("ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ >> {0} ", e.what());
+    } catch (std::ifstream::failure& e) {
+        TE_LOGGER_CRITICAL("Error while reading shader file at path: {0} or {1}.", vertexShaderPath, fragmentShaderPath);
+        TE_LOGGER_CRITICAL(e.what());
     }
     return ShaderSource({shaderCode[0], shaderCode[1]});
 }
 
-void Shader::setUniformMatrix4f(const std::string &name, glm::mat4 matrix) {
+void Shader::setUniformMatrix4f(const std::string& name, glm::mat4 matrix) {
     GlCall(glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix)));
 }
 
-void Shader::setUniformVec3(const std::string &name, glm::vec3 vector) {
+void Shader::setUniformVec3(const std::string& name, glm::vec3 vector) {
     GlCall(glUniform3fv(getUniformLocation(name), 1, glm::value_ptr(vector)));
 }
 
-void Shader::setUniformVec4(const std::string &name, glm::vec4 vector) {
+void Shader::setUniformVec4(const std::string& name, glm::vec4 vector) {
     GlCall(glUniform4fv(getUniformLocation(name), 1, glm::value_ptr(vector)));
 }
 
-void Shader::setUniformInt(const std::string &name, int value) {
+void Shader::setUniformInt(const std::string& name, int value) {
     GlCall(glUniform1i(getUniformLocation(name), value));
 }
 
-void Shader::setUniformBool(const std::string &name, bool value) {
+void Shader::setUniformBool(const std::string& name, bool value) {
     GlCall(glUniform1i(getUniformLocation(name), value));
 }
 
 
-void Shader::setUniformFloat(const std::string &name, float value) {
+void Shader::setUniformFloat(const std::string& name, float value) {
     GlCall(glUniform1f(getUniformLocation(name), value));
 }
 
-uint32_t Shader::getUniformLocation(const std::string &name) {
+uint32_t Shader::getUniformLocation(const std::string& name) {
     if (uniformLocationCache.find(name) != uniformLocationCache.end()) {
         return uniformLocationCache[name];
     }
@@ -128,5 +129,3 @@ uint32_t Shader::getUniformLocation(const std::string &name) {
     }
     return location;
 }
-
-
