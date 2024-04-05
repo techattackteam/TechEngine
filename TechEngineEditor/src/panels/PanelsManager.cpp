@@ -24,20 +24,21 @@ namespace TechEngine {
                                  ProjectManager& projectManager,
                                  PhysicsEngine& physicsEngine,
                                  TextureManager& textureManager,
-                                 MaterialManager& materialManager) : window(window),
-                                                                     sceneManager(sceneManager),
-                                                                     projectManager(projectManager),
-                                                                     physicsEngine(physicsEngine),
-                                                                     materialManager(materialManager),
-                                                                     textureManager(textureManager),
+                                 MaterialManager& materialManager,
+                                 Renderer& renderer) : window(window),
+                                                       sceneManager(sceneManager),
+                                                       projectManager(projectManager),
+                                                       physicsEngine(physicsEngine),
+                                                       materialManager(materialManager),
+                                                       textureManager(textureManager),
 
-                                                                     gameView(window.getRenderer(), sceneManager.getScene()),
-                                                                     contentBrowser(*this, projectManager, sceneManager, materialManager),
-                                                                     exportSettingsPanel(*this, projectManager, sceneManager, window.getRenderer().getShadersManager()),
-                                                                     sceneHierarchyPanel(sceneManager.getScene(), materialManager),
-                                                                     sceneView(window.getRenderer(), sceneManager.getScene(), physicsEngine, sceneHierarchyPanel.getSelectedGO()),
-                                                                     inspectorPanel(sceneHierarchyPanel.getSelectedGO(), materialManager, physicsEngine),
-                                                                     materialEditor(window.getRenderer(), textureManager, materialManager, sceneManager.getScene()) {
+                                                       gameView(renderer, sceneManager.getScene()),
+                                                       contentBrowser(*this, projectManager, sceneManager, materialManager),
+                                                       exportSettingsPanel(*this, projectManager, sceneManager, renderer.getShadersManager()),
+                                                       sceneHierarchyPanel(sceneManager.getScene(), materialManager),
+                                                       sceneView(renderer, sceneManager.getScene(), physicsEngine, sceneHierarchyPanel.getSelectedGO()),
+                                                       inspectorPanel(sceneHierarchyPanel.getSelectedGO(), materialManager, physicsEngine),
+                                                       materialEditor(renderer, textureManager, materialManager, sceneManager.getScene()) {
     }
 
     void PanelsManager::init() {
@@ -224,7 +225,11 @@ namespace TechEngine {
                     stopRunningScene();
                     m_currentPlaying = false;
                 }
+#ifdef TE_DEBUG
                 compileUserScripts(DEBUG);
+#elif TE_RELEASE
+                compileUserScripts(RELEASE);
+#endif
             }
 
             if (ImGui::MenuItem("Export")) {
@@ -350,7 +355,12 @@ namespace TechEngine {
         sceneManager.saveSceneAsTemporarily(sceneManager.getActiveSceneName());
         EventDispatcher::getInstance().copy();
         materialManager.copy();
-        ScriptEngine::getInstance()->init(projectManager.getScriptsDebugDLLPath().string()); //TODO: Change this to debug dll without crashing
+#ifdef TE_DEBUG
+        ScriptEngine::getInstance()->init(projectManager.getScriptsDebugDLLPath().string());
+#elif TE_RELEASE
+        ScriptEngine::getInstance()->init(projectManager.getScriptsReleaseDLLPath().string());
+#endif
+
         ScriptEngine::getInstance()->onStart();
         physicsEngine.start();
         m_currentPlaying = true;

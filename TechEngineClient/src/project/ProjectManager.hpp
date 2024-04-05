@@ -4,12 +4,13 @@
 #include "scene/SceneManager.hpp"
 
 using std::filesystem::path;
+
 namespace TechEngine {
     class ProjectManager {
     private:
-        SceneManager &sceneManager;
-        TextureManager &textureManager;
-        MaterialManager &materialManager;
+        SceneManager& sceneManager;
+        TextureManager& textureManager;
+        MaterialManager& materialManager;
 
         std::string projectName = "New Project";
 
@@ -22,48 +23,61 @@ namespace TechEngine {
         path projectResourcesPath = projectLocation.string() + "\\Resources";
         path projectExportPath = projectLocation.string() + "\\Build";
 
-        path scriptsBuildPath = projectResourcesPath.string() + "\\cmake\\cmake-build-debug";
+        path cmakeBuildPath = projectResourcesPath.string() + "\\cmake\\cmake-build-debug";
         path userScriptsDebugDLLPath = projectResourcesPath.string() + "\\scripts\\build\\debug\\UserScripts.dll";
         path userScriptsReleaseDLLPath = projectResourcesPath.string() + "\\scripts\\build\\release\\UserScripts.dll";
         path cmakeListPath = projectResourcesPath.string() + "\\cmake";
-        path techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\TechEngineCore.lib";
-        path techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\TechEngineClient.lib";
+#ifdef TE_DEBUG
+        path techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCore.lib";
+#elif TE_RELEASE
+        path techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCore.lib";
+#endif
+#ifdef TE_DEBUG
+        path techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineClient.lib";
+#elif TE_RELEASE
+        path techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineClient.lib";
+#endif
 
     public:
-        ProjectManager(SceneManager &sceneManager, TextureManager &textureManager, MaterialManager &materialManager);
+        ProjectManager(SceneManager& sceneManager, TextureManager& textureManager, MaterialManager& materialManager);
 
         void init();
 
-        const path &getProjectFilePath();
+        const path& getProjectFilePath();
 
-        const path &getProjectLocation();
+        const path& getProjectLocation();
 
-        const path &getProjectAssetsPath();
+        const path& getProjectAssetsPath();
 
-        const path &getProjectResourcesPath();
+        const path& getProjectResourcesPath();
 
-        const path &getScriptsDebugDLLPath();
+        const path& getScriptsDebugDLLPath();
 
         const path& getScriptsReleaseDLLPath();
 
-        const path &getScriptsBuildPath();
+        const path& getScriptsBuildPath();
 
-        const path &getProjectExportPath();
+        const path& getProjectExportPath();
 
-        const path &getCmakePath();
+        const path& getCmakePath();
 
-        const path &getCmakeListPath();
+        const path& getCmakeListPath();
 
-        const path &getTechEngineCoreLibPath();
+        const path& getTechEngineCoreLibPath();
 
-        const path &getTechEngineClientLibPath();
+        const path& getTechEngineClientLibPath();
 
-        const std::string &getProjectName();
+        const std::string& getProjectName();
 
-        void createNewProject(const char *string);
+        void createNewProject(const char* string);
 
         void saveProject();
 
-        void loadProject(const std::string& projectPath);
+        void loadEditorProject(const std::string& projectPath);
+
+        void loadRuntimeProject(const std::string& projectPath);
+
+    private:
+        void setupPaths(const std::string& projectPath);
     };
 }

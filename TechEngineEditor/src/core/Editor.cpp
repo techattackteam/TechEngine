@@ -6,12 +6,12 @@
 #include "yaml-cpp/yaml.h"
 
 namespace TechEngine {
-    Editor::Editor() : App("TechEngine", RendererSettings::width, RendererSettings::height), panelsManager(window, sceneManager, projectManager, physicsEngine, textureManager, materialManager) {
+    Editor::Editor() : App("TechEngine", RendererSettings::width, RendererSettings::height), panelsManager(window, sceneManager, projectManager, physicsEngine, textureManager, materialManager, renderer) {
         editorSettings = FileSystem::rootPath.string() + "/EditorSettings.TESettings";
         projectManager.init();
         loadEditorSettings();
         panelsManager.init();
-        ScriptEngine* scriptEngine = new ScriptEngine();
+        renderer.init(projectManager);
     }
 
     void Editor::onUpdate() {
@@ -31,7 +31,7 @@ namespace TechEngine {
                 data = YAML::LoadFile(editorSettings);
                 lastProjectLoaded = data["Last project loaded"].as<std::string>();
                 if (std::filesystem::exists(lastProjectLoaded)) {
-                    projectManager.loadProject(lastProjectLoaded);
+                    projectManager.loadEditorProject(lastProjectLoaded);
                 }
             } catch (YAML::Exception& e) {
                 TE_LOGGER_CRITICAL("Failed to load EditorSettings.TESettings file.\n      {0}", e.what());
@@ -47,7 +47,7 @@ namespace TechEngine {
         out << YAML::EndMap;
         std::ofstream fout(editorSettings);
         fout << out.c_str();
-        projectManager.loadProject(lastProjectLoaded);
+        projectManager.loadEditorProject(lastProjectLoaded);
     }
 }
 

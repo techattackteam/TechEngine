@@ -7,16 +7,16 @@ namespace TechEngine {
                                                         materialManager(textureManager),
                                                         sceneManager(projectManager, physicsEngine, materialManager, textureManager),
                                                         projectManager(sceneManager, textureManager, materialManager), physicsEngine(sceneManager.getScene()),
-                                                        window(projectManager,name, width, height),
-                                                        api(&sceneManager, &eventDispatcher/*, ScriptEngine::getInstance()*/, &materialManager) {
+                                                        window(name, width, height),
+                                                        renderer(),
+                                                        api(&sceneManager, &eventDispatcher, &materialManager) {
         eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event* event) {
             onWindowCloseEvent((WindowCloseEvent*)(event));
         });
 
         timer.init();
-
         physicsEngine.init();
-        window.init(projectManager,name, width, height);
+        ScriptEngine* scriptEngine = new ScriptEngine();
     }
 
     App::~App() = default;
