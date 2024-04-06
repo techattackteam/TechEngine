@@ -12,12 +12,13 @@ namespace TechEngine {
         EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngine::Event* event) {
             onWindowResizeEvent((WindowResizeEvent*)event);
         });
+
         if (!loadRendererSettings()) {
             EventDispatcher::getInstance().dispatch(new AppCloseRequestEvent());
             return;
         }
         renderer.init(projectManager);
-        ScriptEngine* scriptEngine = new ScriptEngine();
+        ScriptEngine* scriptEngine = new ScriptEngine(true);
         ScriptEngine::getInstance()->init(projectManager.getScriptsReleaseDLLPath().string());
         ScriptEngine::getInstance()->onStart();
         physicsEngine.start();

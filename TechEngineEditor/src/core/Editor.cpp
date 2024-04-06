@@ -7,6 +7,7 @@
 
 namespace TechEngine {
     Editor::Editor() : App("TechEngine", RendererSettings::width, RendererSettings::height), panelsManager(window, sceneManager, projectManager, physicsEngine, textureManager, materialManager, renderer) {
+        ScriptEngine* scriptEngine = new ScriptEngine(false);
         editorSettings = FileSystem::rootPath.string() + "/EditorSettings.TESettings";
         projectManager.init();
         loadEditorSettings();

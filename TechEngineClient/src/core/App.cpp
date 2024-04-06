@@ -16,7 +16,6 @@ namespace TechEngine {
 
         timer.init();
         physicsEngine.init();
-        ScriptEngine* scriptEngine = new ScriptEngine();
     }
 
     App::~App() = default;
