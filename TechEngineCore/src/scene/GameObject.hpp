@@ -22,10 +22,9 @@ namespace TechEngine {
         bool editorOnly = false;
 
     protected:
-
         explicit GameObject(std::string name);
 
-        GameObject(std::string name, const std::string &tag);
+        GameObject(std::string name, const std::string& tag);
 
         GameObject(GameObject* gameObject, const std::string& tag);
 
@@ -80,6 +79,8 @@ namespace TechEngine {
         glm::mat4 getModelMatrix();
 
         glm::mat4 getLocalModelMatrix();
+
+        void setName(const std::string& name);
 
         std::string getName();
 
