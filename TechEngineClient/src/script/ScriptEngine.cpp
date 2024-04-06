@@ -1,9 +1,9 @@
 #include "ScriptEngine.hpp"
 
-#include "core/Logger.hpp"
+#include <script/ScriptCrashHandler.hpp>
 
 namespace TechEngine {
-    ScriptEngine::ScriptEngine() {
+    ScriptEngine::ScriptEngine(bool runtime) : runtime(runtime) {
         if (instance != nullptr) {
             delete this;
         } else {
@@ -31,19 +31,19 @@ namespace TechEngine {
 
     void ScriptEngine::onStart() {
         for (Script* script: scripts) {
-            script->onStart();
+            RUN_SCRIPT_FUNCTION(script, onStart);
         }
     }
 
     void ScriptEngine::onUpdate() {
         for (Script* script: scripts) {
-            script->onUpdate();
+            RUN_SCRIPT_FUNCTION(script, onUpdate);
         }
     }
 
     void ScriptEngine::onFixedUpdate() {
         for (Script* script: scripts) {
-            script->onFixedUpdate();
+            RUN_SCRIPT_FUNCTION(script, onFixedUpdate);
         }
     }
 

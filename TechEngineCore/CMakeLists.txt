@@ -55,11 +55,11 @@ endif ()
 
 target_include_directories(TechEngineCore PUBLIC "src")
 target_link_libraries(TechEngineCore PUBLIC Boost::boost Boost::serialization spdlog::spdlog unofficial::omniverse-physx-sdk::sdk)
-target_compile_definitions(TechEngineCore PRIVATE PUBLIC
+target_compile_definitions(TechEngineCore PUBLIC
         $<$<CONFIG:Debug>:TE_DEBUG>
         $<$<CONFIG:Release>:TE_RELEASEDEBUG>
         $<$<CONFIG:RelWithDebInfo>:TE_DEBUG>
-        $<$<CONFIG:MinSizeRel>:TE_RELEASE>)
+)
 
 #Copy API include files to project template
 set(TECH_ENGINE_CLIENT_API_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/include/TechEngineCore")

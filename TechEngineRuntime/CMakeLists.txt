@@ -18,12 +18,12 @@ if (WIN32) # WINDOWS
             ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_RUNTIME_OUTPUT_DIRECTORY}/debug"
             LIBRARY_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_RUNTIME_OUTPUT_DIRECTORY}/debug"
             RUNTIME_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_RUNTIME_OUTPUT_DIRECTORY}/debug"
-            )
+    )
     set_target_properties(TechEngineRuntime PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_RUNTIME_OUTPUT_DIRECTORY}/release"
             LIBRARY_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_RUNTIME_OUTPUT_DIRECTORY}/release"
             RUNTIME_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_RUNTIME_OUTPUT_DIRECTORY}/release"
-            )
+    )
 endif ()
 
 target_link_directories(TechEngineRuntime PRIVATE ${TechEngineRuntime_Include_Dirs})
@@ -33,7 +33,7 @@ set_target_properties(TechEngineRuntime PROPERTIES
         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/TechEngineRuntime/archive"
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/TechEngineRuntime/libs"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/TechEngineRuntime/runtime"
-        )
+)
 
 add_custom_command(TARGET TechEngineRuntime POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:TechEngineRuntime> $<TARGET_FILE_DIR:TechEngineRuntime>

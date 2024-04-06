@@ -10,6 +10,7 @@ namespace TechEngine {
     class ScriptEngine {
     private:
         std::list<Script*> scripts = {};
+        bool runtime = false;
         inline static ScriptEngine* instance;
 
         HINSTANCE m_userCustomDll = nullptr;
@@ -17,7 +18,7 @@ namespace TechEngine {
         HANDLE m_dllThreadHandle = nullptr;
 
     public:
-        ScriptEngine();
+        ScriptEngine(bool runtime);
 
         void init(const std::string& dllPath);
 
@@ -26,6 +27,8 @@ namespace TechEngine {
         void onUpdate();
 
         void onFixedUpdate();
+
+        void onFixedUpdateLoop();
 
         static ScriptEngine* getInstance();
 
