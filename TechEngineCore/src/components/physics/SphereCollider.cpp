@@ -22,4 +22,10 @@ namespace TechEngine {
         this->radius = radius;
         EventDispatcher::getInstance().dispatch(new AddColliderEvent(this));
     }
+
+    Component* SphereCollider::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
+        SphereCollider* collider = (SphereCollider*)componentToCopy;
+        auto* component = new SphereCollider(gameObjectToAttach, collider->offset, collider->radius);
+        return component;
+    }
 }

@@ -20,6 +20,14 @@ namespace TechEngine {
         EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
     }
 
+    GameObject::GameObject(GameObject* gameObject, const std::string& tag): tag(tag) {
+        name = gameObject->name + "(copy)";
+        for (auto& element: gameObject->components) {
+            components[element.first] = element.second->copy(this, element.second);
+        }
+        EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
+    }
+
     GameObject::~GameObject() {
         if (parent != nullptr) {
             parent->removeChild(tag);

@@ -3,9 +3,7 @@
 #include "NetworkHandlerComponent.hpp"
 
 namespace TechEngine {
-
-    NetworkHandlerComponent::NetworkHandlerComponent(GameObject *gameObject) :
-            networkHandler(std::string("localhost"), 25565, port), Component(gameObject, "NetworkHandler") {
+    NetworkHandlerComponent::NetworkHandlerComponent(GameObject* gameObject) : networkHandler(std::string("localhost"), 25565, port), Component(gameObject, "NetworkHandler") {
     }
 
     NetworkHandlerComponent::~NetworkHandlerComponent() {
@@ -16,7 +14,7 @@ namespace TechEngine {
         networkHandler.connectWithServer();
     }
 
-    void NetworkHandlerComponent::sendPacket(TechEngine::Packet *packet) {
+    void NetworkHandlerComponent::sendPacket(TechEngine::Packet* packet) {
         networkHandler.sendPacket(packet);
     }
 
@@ -24,11 +22,15 @@ namespace TechEngine {
         networkHandler.update();
     }
 
-    const std::string &NetworkHandlerComponent::getUUID() {
+    const std::string& NetworkHandlerComponent::getUUID() {
         return networkHandler.getUUID();
     }
 
-/*    void NetworkHandlerComponent::getInfo() {
+    Component* NetworkHandlerComponent::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
+        return nullptr;
+    }
+
+    /*    void NetworkHandlerComponent::getInfo() {
         if (ImGui::CollapsingHeader(name.c_str())) {
             ImGui::PushID(name.c_str());
             ImGui::PushMultiItemsWidths(1, ImGui::CalcItemWidth());

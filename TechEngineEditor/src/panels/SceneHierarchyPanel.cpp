@@ -1,22 +1,12 @@
-#include <ios>
-#include <imgui_internal.h>
 #include "SceneHierarchyPanel.hpp"
 #include "scene/SceneHelper.hpp"
 #include "PanelsManager.hpp"
 #include "defaultGameObject/Cube.hpp"
 #include "defaultGameObject/Sphere.hpp"
 #include "defaultGameObject/Cylinder.hpp"
-//#include "events/gameObjects/RequestDeleteGameObject.hpp"
 
 namespace TechEngine {
     SceneHierarchyPanel::SceneHierarchyPanel(Scene& scene, MaterialManager& materialManager) : scene(scene), materialManager(materialManager), Panel("SceneHierarchyPanel") {
-        /*EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this, &scene](Event* event) {
-            std::string tag = ((GameObjectDestroyEvent*)event)->getGameObjectTag();
-            if (scene.getGameObjectByTag(tag) == nullptr) {
-                return;
-            }
-            deselectGO(scene.getGameObjectByTag(tag));
-        });*/
     }
 
     void SceneHierarchyPanel::onUpdate() {
@@ -27,7 +17,7 @@ namespace TechEngine {
             int originalSize = scene.getGameObjects().size();
             for (int i = 0; i < scene.getGameObjects().size(); i++) {
                 GameObject* element = scene.getGameObjects()[i];
-                if (element->isEditorOnly()) {
+                if (element->isEditorOnly() || element->getParent() != nullptr) {
                     continue;
                 }
                 if (originalSize != scene.getGameObjects().size()) {
@@ -116,7 +106,7 @@ namespace TechEngine {
                 scene.makeChildTo(gameObject, &child);
             }
             if (ImGui::MenuItem("Duplicate (WIP)")) {
-                //new QuadMeshTest(gameObject->getName() + "'s duplicate");
+                scene.duplicateGameObject(gameObject);
             }
             if (ImGui::MenuItem("Delete GameObject")) {
                 deleteGameObject(gameObject);
@@ -140,12 +130,12 @@ namespace TechEngine {
                 deleteGameObject(gameObject);
             }
             selectedGO.clear();
-        /*} else if (key.getKeyCode() == KeyCode::F && ImGui::IsWindowFocused()) {
-            if (!selectedGO.empty()) {
-                GameObject* gameObject = selectedGO.front();
-                /*                PanelsManager::getInstance().getSceneView().setCameraPosition(gameObject->getTransform().getPosition());
-                                PanelsManager::getInstance().getSceneView().setCameraRotation(gameObject->getTransform().getRotation());#1#
-            }*/
+            /*} else if (key.getKeyCode() == KeyCode::F && ImGui::IsWindowFocused()) {
+                if (!selectedGO.empty()) {
+                    GameObject* gameObject = selectedGO.front();
+                    /*                PanelsManager::getInstance().getSceneView().setCameraPosition(gameObject->getTransform().getPosition());
+                                    PanelsManager::getInstance().getSceneView().setCameraRotation(gameObject->getTransform().getRotation());#1#
+                }*/
         } else if (key.getKeyCode() == KeyCode::LEFT_SHIFT || key.getKeyCode() == KeyCode::RIGHT_SHIFT) {
             isShiftPressed = true;
         } else if (key.getKeyCode() == KeyCode::LEFT_CTRL || key.getKeyCode() == KeyCode::RIGHT_CTRL) {

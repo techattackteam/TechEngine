@@ -117,4 +117,14 @@ namespace TechEngine {
     float CameraComponent::getOrthoSize() {
         return orthoSize;
     }
+
+    Component* CameraComponent::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
+        CameraComponent* cameraComponent = (CameraComponent*)componentToCopy;
+        CameraComponent* newCameraComponent = new CameraComponent(gameObjectToAttach, cameraComponent->mainCamera, cameraComponent->projectionType);
+        newCameraComponent->fov = cameraComponent->fov;
+        newCameraComponent->nearPlane = cameraComponent->nearPlane;
+        newCameraComponent->farPlane = cameraComponent->farPlane;
+        newCameraComponent->orthoSize = cameraComponent->orthoSize;
+        return newCameraComponent;
+    }
 }

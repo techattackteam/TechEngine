@@ -37,6 +37,8 @@ namespace TechEngine {
             return *gameObject;
         }
 
+        void duplicateGameObject(GameObject* game_object);
+
         void deleteGameObject(GameObject* gameObject);
 
         void update();

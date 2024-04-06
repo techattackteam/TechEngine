@@ -33,4 +33,10 @@ namespace TechEngine {
         this->height = height;
         EventDispatcher::getInstance().dispatch(new AddColliderEvent(this));
     }
+
+    Component* CylinderCollider::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
+        CylinderCollider* collider = (CylinderCollider*)componentToCopy;
+        auto* component = new CylinderCollider(gameObjectToAttach, collider->offset, collider->radius, collider->height);
+        return component;
+    }
 }

@@ -101,4 +101,17 @@ namespace TechEngine {
     glm::vec3 TransformComponent::getScale() const {
         return scale;
     }
+
+    Component* TransformComponent::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
+        TransformComponent* transformComponet = (TransformComponent*)componentToCopy;
+        TransformComponent* newComponent = new TransformComponent(gameObjectToAttach);
+        newComponent->position = transformComponet->position;
+        newComponent->orientation = transformComponet->orientation;
+        newComponent->scale = transformComponet->scale;
+        newComponent->model = transformComponet->model;
+        newComponent->lastPosition = transformComponet->lastPosition;
+        newComponent->lastOrientation = transformComponet->lastOrientation;
+        newComponent->name = transformComponet->name;
+        return newComponent;
+    }
 }

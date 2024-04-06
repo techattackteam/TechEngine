@@ -31,5 +31,7 @@ namespace TechEngine {
         std::vector<int> getIndices();
 
         void paintMesh();
+
+        Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) override;
     };
 }

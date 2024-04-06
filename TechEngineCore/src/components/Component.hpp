@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+
 namespace TechEngine {
     class GameObject;
     class TransformComponent;
@@ -18,6 +19,8 @@ namespace TechEngine {
         virtual void fixedUpdate();
 
         virtual void update();
+
+        virtual Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) = 0;
 
         virtual std::string& getName() {
             return name;

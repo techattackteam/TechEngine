@@ -25,4 +25,12 @@ namespace TechEngine {
     float RigidBody::getDensity() const {
         return density;
     }
+
+    Component* RigidBody::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
+        RigidBody* rigidBody = (RigidBody*)componentToCopy;
+        auto* component = new RigidBody(gameObjectToAttach);
+        component->setMass(rigidBody->mass);
+        component->setDensity(rigidBody->density);
+        return component;
+    }
 }
