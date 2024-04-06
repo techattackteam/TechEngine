@@ -77,6 +77,10 @@ namespace TechEngine {
         return getTransform().getLocalModelMatrix();
     }
 
+    void GameObject::setName(const std::string& name) {
+        this->name = name;
+    }
+
     std::string GameObject::getName() {
         return name;
     }

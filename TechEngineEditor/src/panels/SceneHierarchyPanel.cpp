@@ -4,6 +4,7 @@
 #include "defaultGameObject/Cube.hpp"
 #include "defaultGameObject/Sphere.hpp"
 #include "defaultGameObject/Cylinder.hpp"
+#include "UIUtils/ImGuiUtils.hpp"
 
 namespace TechEngine {
     SceneHierarchyPanel::SceneHierarchyPanel(Scene& scene, MaterialManager& materialManager) : scene(scene), materialManager(materialManager), Panel("SceneHierarchyPanel") {
@@ -101,11 +102,14 @@ namespace TechEngine {
         if (ImGui::BeginPopupContextItem()) {
             selectedGO.clear();
             selectedGO.push_back(gameObject);
+            if (ImGuiUtils::beginMenuWithInputMenuField("Rename", "Name", name)) {
+                gameObject->setName(name);
+            }
             if (ImGui::MenuItem("Make Child (WIP)")) {
                 GameObject& child = scene.createGameObject<GameObject>(gameObject->getName() + "'s Child");
                 scene.makeChildTo(gameObject, &child);
             }
-            if (ImGui::MenuItem("Duplicate (WIP)")) {
+            if (ImGui::MenuItem("Duplicate")) {
                 scene.duplicateGameObject(gameObject);
             }
             if (ImGui::MenuItem("Delete GameObject")) {
