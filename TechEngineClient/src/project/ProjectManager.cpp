@@ -44,7 +44,21 @@ namespace TechEngine {
         return userScriptsReleaseDLLPath;
     }
 
-    const path& ProjectManager::getScriptsBuildPath() {
+    const path& ProjectManager::getScriptsReleaseDebugDLLPath() {
+        return userScriptsReleaseDebugDLLPath;
+    }
+
+    const path& ProjectManager::getUserScriptsDLLPath() {
+#ifdef TE_DEBUG
+        return userScriptsDebugDLLPath;
+#elif TE_RELEASEDEBUG
+        return userScriptsReleaseDebugDLLPath;
+#elif TE_RELEASE
+        return userScriptsReleaseDLLPath;
+#endif
+    }
+
+    const path& ProjectManager::getCmakeBuildPath() {
         return cmakeBuildPath;
     }
 
@@ -110,7 +124,7 @@ namespace TechEngine {
             YAML::Node data;
             try {
                 data = YAML::LoadFile(this->projectFilePath.string());
-                projectName = data["Project Name"].as<std::string>();
+                //projectName = data["Project Name"].as<std::string>();
                 lastSceneLoaded = data["Last scene loaded"].as<std::string>();
             } catch (YAML::Exception& e) {
                 TE_LOGGER_CRITICAL("Failed to load {0} project.\n      {1}", this->projectFilePath.string(), e.what());
@@ -164,16 +178,21 @@ namespace TechEngine {
         cmakeBuildPath = projectResourcesPath.string() + "\\cmake\\cmake-build-debug";
         userScriptsDebugDLLPath = projectResourcesPath.string() + "\\scripts\\build\\debug\\UserScripts.dll";
         userScriptsReleaseDLLPath = projectResourcesPath.string() + "\\scripts\\build\\release\\UserScripts.dll";
+        userScriptsReleaseDebugDLLPath = projectResourcesPath.string() + "\\scripts\\build\\releaseWithDebug\\UserScripts.dll";
         cmakeListPath = projectResourcesPath.string() + "\\cmake";
 #ifdef TE_DEBUG
-        techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCore.lib";
+        path techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCore.lib";
+#elif TE_RELEASEDEBUG
+        path techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\releaseWithDebug\\TechEngineCore.lib";
 #elif TE_RELEASE
-        techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCore.lib";
+        path tehcengineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCore.lib";
 #endif
 #ifdef TE_DEBUG
-        techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineClient.lib";
+        path techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineClient.lib";
+#elif TE_RELEASEDEBUG
+        path techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\releaseWithDebug\\TechEngineClient.lib";
 #elif TE_RELEASE
-        techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineClient.lib";
+        path techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineClient.lib";
 #endif
     }
 

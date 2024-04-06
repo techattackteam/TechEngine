@@ -55,9 +55,6 @@ namespace TechEngine {
             std::filesystem::copy(projectManager.getProjectFilePath(), projectManager.getProjectExportPath(), copyOptions);
             panelsManager.compileUserScripts(RELEASE);
             FileSystem::copyRecursive(projectManager.getProjectAssetsPath(), projectManager.getProjectExportPath().string() + "//Assets", {".cpp", ".hpp"}, {"cmake"});
-            if (std::filesystem::exists(projectManager.getScriptsDebugDLLPath())) {
-                std::filesystem::copy(projectManager.getScriptsDebugDLLPath(), projectManager.getProjectExportPath(), copyOptions);
-            }
             std::filesystem::create_directory(projectManager.getProjectExportPath().string() + "//Resources");
             FileSystem::copyRecursive(projectManager.getProjectResourcesPath(), projectManager.getProjectExportPath().string() + "//Resources", {".cpp", ".hpp"}, {"cmake"});
             std::filesystem::copy(FileSystem::runtimePath, projectManager.getProjectExportPath(), copyOptions);

@@ -11,17 +11,17 @@ namespace TechEngine {
         std::string windowName;
         uint32_t width;
         uint32_t height;
+
     public:
         TechEngineRuntime();
 
     private:
-
         void onUpdate() override;
 
         void onFixedUpdate() override;
 
         bool loadRendererSettings();
 
-        void onWindowResizeEvent(WindowResizeEvent *event);
+        void onWindowResizeEvent(WindowResizeEvent* event);
     };
 }
