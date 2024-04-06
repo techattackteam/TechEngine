@@ -23,6 +23,8 @@ namespace TechEngine {
         glm::mat4 &getViewMatrix();
 
         glm::vec4 &getColor();
+
+        Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) override;
     };
 }
 

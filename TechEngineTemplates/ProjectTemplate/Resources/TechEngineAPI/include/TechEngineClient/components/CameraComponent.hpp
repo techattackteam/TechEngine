@@ -71,5 +71,7 @@ namespace TechEngine {
         void setFov(float fov);
 
         void setOrthoSize(float orthoSize);
+
+        Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) override;
     };
 }

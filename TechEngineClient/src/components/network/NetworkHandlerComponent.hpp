@@ -20,5 +20,7 @@ namespace TechEngine {
         void update() override;
 
         const std::string &getUUID();
+
+        Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) override;
     };
 }

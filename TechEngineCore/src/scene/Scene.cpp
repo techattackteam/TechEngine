@@ -1,20 +1,20 @@
 #include <boost/uuid/uuid_io.hpp>
 #include "Scene.hpp"
-
 #include "eventSystem/EventDispatcher.hpp"
-//#include "events/gameObjects/RequestDeleteGameObject.hpp"
 
 namespace TechEngine {
     Scene::Scene() {
-        /*EventDispatcher::getInstance().subscribe(RequestDeleteGameObject::eventType, [this](Event* event) {
-            onGameObjectDeleteRequest((RequestDeleteGameObject*)event);
-        });*/
     }
 
     Scene::~Scene() {
         clear();
     }
 
+
+    void Scene::duplicateGameObject(GameObject* gameObject) {
+        GameObject* newGameObject = new GameObject(gameObject, genGOTag());
+        gameObjects.push_back(newGameObject);
+    }
 
     void Scene::deleteGameObject(GameObject* gameObject) {
         for (auto it = gameObjects.begin(); it != gameObjects.end(); it++) {

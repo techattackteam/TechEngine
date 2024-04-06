@@ -7,8 +7,9 @@ namespace TechEngine {
     private:
         float mass = 0.1f;
         float density = 0.1f;
+
     public:
-        RigidBody(GameObject *gameObject);
+        RigidBody(GameObject* gameObject);
 
         void setMass(float mass);
 
@@ -17,5 +18,7 @@ namespace TechEngine {
         void setDensity(float density);
 
         float getDensity() const;
+
+        Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) override;
     };
 }

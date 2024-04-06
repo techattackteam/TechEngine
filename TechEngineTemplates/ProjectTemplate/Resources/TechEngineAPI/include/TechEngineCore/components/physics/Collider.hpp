@@ -20,5 +20,7 @@ namespace TechEngine {
         glm::vec3 getOffset();
 
         bool hasRigidBody();
+
+        Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) = 0;
     };
 }

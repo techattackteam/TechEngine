@@ -22,4 +22,9 @@ namespace TechEngine {
     glm::vec3 BoxColliderComponent::getSize() {
         return size;
     }
+
+    Component* BoxColliderComponent::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
+        auto* component = dynamic_cast<BoxColliderComponent*>(componentToCopy);
+        return new BoxColliderComponent(gameObjectToAttach, component->size, component->offset);
+    }
 }

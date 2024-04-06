@@ -27,6 +27,8 @@ namespace TechEngine {
 
         GameObject(std::string name, const std::string &tag);
 
+        GameObject(GameObject* gameObject, const std::string& tag);
+
         friend class Scene;
 
     public:

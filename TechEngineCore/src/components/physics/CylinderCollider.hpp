@@ -20,5 +20,7 @@ namespace TechEngine {
         float getHeight() const;
 
         void setHeight(float height);
+
+        Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) override;
     };
 }

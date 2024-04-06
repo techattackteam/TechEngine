@@ -15,5 +15,7 @@ namespace TechEngine {
         void setSize(glm::vec3 size);
 
         glm::vec3 getSize();
+
+        Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) override;
     };
 }

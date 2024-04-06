@@ -51,4 +51,11 @@ namespace TechEngine {
     std::vector<int> MeshRendererComponent::getIndices() {
         return mesh->getIndices();
     }
+
+    Component* MeshRendererComponent::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
+        MeshRendererComponent* meshRenderer = (MeshRendererComponent*)componentToCopy;
+        Mesh* mesh = new Mesh(meshRenderer->getVertices(), meshRenderer->getIndices());
+        auto* newComponent = new MeshRendererComponent(gameObjectToAttach, mesh, m_material);
+        return newComponent;
+    }
 }

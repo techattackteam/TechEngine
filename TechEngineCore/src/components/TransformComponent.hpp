@@ -46,5 +46,7 @@ namespace TechEngine {
         glm::vec3 getOrientation() const;
 
         glm::vec3 getScale() const;
+
+        Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) override;
     };
 }
