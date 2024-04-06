@@ -17,6 +17,7 @@
 #include "defaultGameObject/MainCamera.hpp"
 #include "events/gameObjects/GameObjectDestroyEvent.hpp"
 #include "events/window/WindowCloseEvent.hpp"
+#include "events/scripts/ScriptCrashEvent.hpp"
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
@@ -58,6 +59,10 @@ namespace TechEngine {
 
         EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event* event) {
             OnKeyPressedEvent(((KeyPressedEvent*)event)->getKey());
+        });
+
+        EventDispatcher::getInstance().subscribe(ScriptCrashEvent::eventType, [this](Event* event) {
+            stopRunningScene();
         });
 
 
