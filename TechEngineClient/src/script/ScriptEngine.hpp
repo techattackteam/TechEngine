@@ -13,6 +13,8 @@ namespace TechEngine {
         inline static ScriptEngine* instance;
 
         HINSTANCE m_userCustomDll = nullptr;
+        HANDLE m_dllProcessHandle = nullptr;
+        HANDLE m_dllThreadHandle = nullptr;
 
     public:
         ScriptEngine();

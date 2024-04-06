@@ -57,7 +57,7 @@ target_include_directories(TechEngineCore PUBLIC "src")
 target_link_libraries(TechEngineCore PUBLIC Boost::boost Boost::serialization spdlog::spdlog unofficial::omniverse-physx-sdk::sdk)
 target_compile_definitions(TechEngineCore PRIVATE PUBLIC
         $<$<CONFIG:Debug>:TE_DEBUG>
-        $<$<CONFIG:Release>:TE_RELEASE>
+        $<$<CONFIG:Release>:TE_RELEASEDEBUG>
         $<$<CONFIG:RelWithDebInfo>:TE_DEBUG>
         $<$<CONFIG:MinSizeRel>:TE_RELEASE>)
 

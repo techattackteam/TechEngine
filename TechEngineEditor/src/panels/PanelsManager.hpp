@@ -21,7 +21,8 @@
 namespace TechEngine {
     enum CompileMode {
         DEBUG,
-        RELEASE
+        RELEASE,
+        RELEASEDEBUG
     };
 
     class PanelsManager {

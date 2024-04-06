@@ -59,7 +59,7 @@ namespace TechEngine {
     }
 
     void ScriptEngine::deleteScripts() {
-        for(Script* script: scripts) {
+        for (Script* script: scripts) {
             delete script;
         }
         scripts.clear();

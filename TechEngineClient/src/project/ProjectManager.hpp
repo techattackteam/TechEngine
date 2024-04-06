@@ -26,14 +26,19 @@ namespace TechEngine {
         path cmakeBuildPath = projectResourcesPath.string() + "\\cmake\\cmake-build-debug";
         path userScriptsDebugDLLPath = projectResourcesPath.string() + "\\scripts\\build\\debug\\UserScripts.dll";
         path userScriptsReleaseDLLPath = projectResourcesPath.string() + "\\scripts\\build\\release\\UserScripts.dll";
+        path userScriptsReleaseDebugDLLPath = projectResourcesPath.string() + "\\scripts\\build\\releaseWithDebug\\UserScripts.dll";
         path cmakeListPath = projectResourcesPath.string() + "\\cmake";
 #ifdef TE_DEBUG
         path techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCore.lib";
+#elif TE_RELEASEDEBUG
+        path techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\releaseWithDebug\\TechEngineCore.lib";
 #elif TE_RELEASE
-        path techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCore.lib";
+        path tehcengineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCore.lib";
 #endif
 #ifdef TE_DEBUG
         path techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineClient.lib";
+#elif TE_RELEASEDEBUG
+        path techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\releaseWithDebug\\TechEngineClient.lib";
 #elif TE_RELEASE
         path techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineClient.lib";
 #endif
@@ -55,7 +60,11 @@ namespace TechEngine {
 
         const path& getScriptsReleaseDLLPath();
 
-        const path& getScriptsBuildPath();
+        const path& getScriptsReleaseDebugDLLPath();
+
+        const path& getUserScriptsDLLPath();
+
+        const path& getCmakeBuildPath();
 
         const path& getProjectExportPath();
 

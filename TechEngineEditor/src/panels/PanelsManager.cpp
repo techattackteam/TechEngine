@@ -229,6 +229,8 @@ namespace TechEngine {
                 compileUserScripts(DEBUG);
 #elif TE_RELEASE
                 compileUserScripts(RELEASE);
+#elif TE_RELEASEDEBUG
+                compileUserScripts(RELEASEDEBUG);
 #endif
             }
 
@@ -334,19 +336,25 @@ namespace TechEngine {
     }
 
     void PanelsManager::compileUserScripts(CompileMode compileMode) {
-        if (!exists(projectManager.getScriptsBuildPath()) || is_empty(projectManager.getScriptsBuildPath())) {
+        if (!exists(projectManager.getCmakeBuildPath()) || is_empty(projectManager.getCmakeBuildPath())) {
             std::string command = "\"" + projectManager.getCmakePath().string() +
                                   " -G \"Visual Studio 17 2022\""
                                   " -D TechEngineClientLIB:STRING=\"" + projectManager.getTechEngineClientLibPath().string() + "\"" +
                                   " -D TechEngineCoreLIB:STRING=\"" + projectManager.getTechEngineCoreLibPath().string() + "\"" +
                                   " -S " + "\"" + projectManager.getCmakeListPath().string() + "\"" +
-                                  " -B " + "\"" + projectManager.getScriptsBuildPath().string() + "\"" + "\"";
+                                  " -B " + "\"" + projectManager.getCmakeBuildPath().string() + "\"" + "\"";
             std::system(command.c_str());
-            TE_LOGGER_INFO("Command executed: {0}", command);
         }
-        std::string cm = compileMode == CompileMode::DEBUG ? "Debug" : "Release";
+        std::string cm;
+        if (compileMode == CompileMode::RELEASE) {
+            cm = "Release";
+        } else if (compileMode == CompileMode::RELEASEDEBUG) {
+            cm = "RelWithDebInfo";
+        } else if (compileMode == CompileMode::DEBUG) {
+            cm = "Debug";
+        }
         std::string command = "\"" + projectManager.getCmakePath().string() +
-                              " --build " + "\"" + projectManager.getScriptsBuildPath().string() + "\"" + " --target UserScripts --config " + cm + "\"";
+                              " --build " + "\"" + projectManager.getCmakeBuildPath().string() + "\"" + " --target UserScripts --config " + cm + "\"";
         std::system(command.c_str());
         TE_LOGGER_INFO("Build finished!");
     }
@@ -355,11 +363,7 @@ namespace TechEngine {
         sceneManager.saveSceneAsTemporarily(sceneManager.getActiveSceneName());
         EventDispatcher::getInstance().copy();
         materialManager.copy();
-#ifdef TE_DEBUG
-        ScriptEngine::getInstance()->init(projectManager.getScriptsDebugDLLPath().string());
-#elif TE_RELEASE
-        ScriptEngine::getInstance()->init(projectManager.getScriptsReleaseDLLPath().string());
-#endif
+        ScriptEngine::getInstance()->init(projectManager.getUserScriptsDLLPath().string());
 
         ScriptEngine::getInstance()->onStart();
         physicsEngine.start();
