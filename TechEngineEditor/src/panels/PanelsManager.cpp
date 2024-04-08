@@ -16,6 +16,7 @@
 #include "events/input/KeyPressedEvent.hpp"
 #include "defaultGameObject/MainCamera.hpp"
 #include "events/gameObjects/GameObjectDestroyEvent.hpp"
+#include "events/input/KeyReleasedEvent.hpp"
 #include "events/window/WindowCloseEvent.hpp"
 #include "events/scripts/ScriptCrashEvent.hpp"
 #include "physics/PhysicsEngine.hpp"
@@ -55,6 +56,14 @@ namespace TechEngine {
 
         EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngine::Event* event) {
             sceneHierarchyPanel.deselectGO(sceneManager.getScene().getGameObjectByTag(((GameObjectDestroyEvent*)event)->getGameObjectTag()));
+        });
+
+        EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event* event) {
+            OnKeyPressedEvent(((KeyPressedEvent*)event)->getKey());
+        });
+
+        EventDispatcher::getInstance().subscribe(KeyReleasedEvent::eventType, [this](Event* event) {
+            OnKeyReleasedEvent(((KeyReleasedEvent*)event)->getKey());
         });
 
         EventDispatcher::getInstance().subscribe(ScriptCrashEvent::eventType, [this](Event* event) {
@@ -387,10 +396,23 @@ namespace TechEngine {
         ScriptEngine::getInstance()->stop();
     }
 
+    void PanelsManager::OnKeyPressedEvent(Key& key) {
+        if (key.getKeyCode() == LEFT_CTRL || key.getKeyCode() == RIGHT_CTRL) {
+            isCtrlPressed = true;
+        } else if (isCtrlPressed && key.getKeyCode() == S) {
+            projectManager.saveProject();
+        }
+    }
+
+    void PanelsManager::OnKeyReleasedEvent(Key& key) {
+        if (key.getKeyCode() == LEFT_CTRL || key.getKeyCode() == RIGHT_CTRL) {
+            isCtrlPressed = false;
+        }
+    }
+
     std::vector<GameObject*>& PanelsManager::getSelectedGameObjects() {
         return sceneHierarchyPanel.getSelectedGO();
     }
-
 
     void PanelsManager::openMaterialEditor(const std::string& materialName, const std::string& filepath) {
         materialEditor.open(materialName, filepath);
