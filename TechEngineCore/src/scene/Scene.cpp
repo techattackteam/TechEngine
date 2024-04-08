@@ -17,13 +17,16 @@ namespace TechEngine {
     }
 
     void Scene::deleteGameObject(GameObject* gameObject) {
-        for (auto it = gameObjects.begin(); it != gameObjects.end(); it++) {
-            if (*it == gameObject) {
-                gameObjects.erase(it);
-                delete gameObject;
-                return;
-            }
+        //delete gameObject and all its children
+        if (gameObject->hasParent()) {
+            gameObject->removeParent();
         }
+        while (!gameObject->getChildren().empty()) {
+            GameObject* child = gameObject->getChildren().begin()->second;
+            deleteGameObject(child);
+        }
+        gameObjects.erase(std::remove(gameObjects.begin(), gameObjects.end(), gameObject), gameObjects.end());
+        delete gameObject;
     }
 
     void Scene::update() {

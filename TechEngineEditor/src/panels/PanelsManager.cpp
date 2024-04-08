@@ -36,7 +36,7 @@ namespace TechEngine {
                                                        gameView(renderer, sceneManager.getScene()),
                                                        contentBrowser(*this, projectManager, sceneManager, materialManager),
                                                        exportSettingsPanel(*this, projectManager, sceneManager, renderer.getShadersManager()),
-                                                       sceneHierarchyPanel(sceneManager.getScene(), materialManager),
+                                                       sceneHierarchyPanel(sceneManager.getScene(), materialManager, sceneView),
                                                        sceneView(renderer, sceneManager.getScene(), physicsEngine, sceneHierarchyPanel.getSelectedGO()),
                                                        inspectorPanel(sceneHierarchyPanel.getSelectedGO(), materialManager, physicsEngine),
                                                        materialEditor(renderer, textureManager, materialManager, sceneManager.getScene()) {
@@ -57,10 +57,6 @@ namespace TechEngine {
             sceneHierarchyPanel.deselectGO(sceneManager.getScene().getGameObjectByTag(((GameObjectDestroyEvent*)event)->getGameObjectTag()));
         });
 
-        EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event* event) {
-            OnKeyPressedEvent(((KeyPressedEvent*)event)->getKey());
-        });
-
         EventDispatcher::getInstance().subscribe(ScriptCrashEvent::eventType, [this](Event* event) {
             stopRunningScene();
         });
@@ -74,15 +70,15 @@ namespace TechEngine {
     void PanelsManager::update() {
         beginImGuiFrame();
         for (CustomPanel* panel: customPanels) {
-            panel->onUpdate();
+            panel->update();
         }
-        sceneHierarchyPanel.onUpdate();
-        inspectorPanel.onUpdate();
-        sceneView.onUpdate();
-        gameView.onUpdate();
-        contentBrowser.onUpdate();
-        exportSettingsPanel.onUpdate();
-        materialEditor.onUpdate();
+        sceneHierarchyPanel.update();
+        inspectorPanel.update();
+        sceneView.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+        gameView.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+        contentBrowser.update();
+        exportSettingsPanel.update();
+        materialEditor.update();
         endImGuiFrame();
     }
 
@@ -240,10 +236,8 @@ namespace TechEngine {
             }
 
             if (ImGui::MenuItem("Export")) {
-                if (exportSettingsPanel.isVisible()) {
-                    exportSettingsPanel.setVisibility(false);
-                } else {
-                    exportSettingsPanel.setVisibility(true);
+                if (!exportSettingsPanel.isOpen()) {
+                    exportSettingsPanel.open();
                 }
             }
             if (ImGui::MenuItem("Exit")) {
@@ -395,32 +389,6 @@ namespace TechEngine {
 
     std::vector<GameObject*>& PanelsManager::getSelectedGameObjects() {
         return sceneHierarchyPanel.getSelectedGO();
-    }
-
-    void PanelsManager::OnKeyPressedEvent(Key& key) {
-        switch (key.getKeyCode()) {
-            case Q: {
-                if (!ImGuizmo::IsUsing())
-                    sceneView.changeGuizmoOperation(-1);
-                break;
-            }
-            case T: {
-                if (!ImGuizmo::IsUsing())
-                    sceneView.changeGuizmoOperation(ImGuizmo::OPERATION::TRANSLATE);
-                break;
-            }
-            case R: {
-                if (!ImGuizmo::IsUsing())
-                    sceneView.changeGuizmoOperation(ImGuizmo::OPERATION::ROTATE);
-                break;
-            }
-            case S: {
-                if (!ImGuizmo::IsUsing())
-                    sceneView.changeGuizmoOperation(ImGuizmo::OPERATION::SCALE);
-                break;
-            }
-                TE_LOGGER_INFO("Key pressed event: {0}", key.getKeyName());
-        }
     }
 
 

@@ -16,6 +16,7 @@ namespace TechEngine {
         glm::vec3 orientation;
         glm::vec3 scale;
         glm::mat4 model;
+        glm::vec3 forward;
 
         explicit TransformComponent(GameObject* gameObject);
 
@@ -46,6 +47,8 @@ namespace TechEngine {
         glm::vec3 getOrientation() const;
 
         glm::vec3 getScale() const;
+
+        glm::vec3 getForward() const;
 
         Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) override;
     };

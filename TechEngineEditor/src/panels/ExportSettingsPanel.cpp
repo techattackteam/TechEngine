@@ -15,33 +15,29 @@ namespace TechEngine {
                                                                                                                                                                          sceneManager(sceneManager),
                                                                                                                                                                          shadersManager(shadersManager),
                                                                                                                                                                          Panel("ExportSettingsPanel") {
+        m_open = false;
     }
 
     ExportSettingsPanel::~ExportSettingsPanel() {
     }
 
     void ExportSettingsPanel::onUpdate() {
-        if (visible) {
-            ImGui::Begin("Export Settings");
-            ImGui::Text("Resolution:");
+        ImGui::Text("Resolution:");
 
-            ImGui::Text("   Width ");
-            ImGui::SameLine();
-            ImGui::DragInt("##Width", &width, 1, 0, 0);
-            ImGui::Text("   Height ");
-            ImGui::SameLine();
-            ImGui::DragInt("##Height", &height, 1, 0, 0);
+        ImGui::Text("   Width ");
+        ImGui::SameLine();
+        ImGui::DragInt("##Width", &width, 1, 0, 0);
+        ImGui::Text("   Height ");
+        ImGui::SameLine();
+        ImGui::DragInt("##Height", &height, 1, 0, 0);
 
 
-            if (ImGui::Button("Export")) {
-                exportProject();
-            }
-            if (ImGui::Button("Close")) {
-                setVisibility(false);
-            };
-
-            ImGui::End();
+        if (ImGui::Button("Export")) {
+            exportProject();
         }
+        if (ImGui::Button("Close")) {
+            m_open = false;
+        };
     }
 
     void ExportSettingsPanel::exportProject() {
@@ -83,13 +79,5 @@ namespace TechEngine {
 
         std::ofstream fout(exportPath);
         fout << out.c_str();
-    }
-
-    void ExportSettingsPanel::setVisibility(bool visible) {
-        this->visible = visible;
-    }
-
-    bool ExportSettingsPanel::isVisible() {
-        return visible;
     }
 }

@@ -20,7 +20,6 @@ namespace TechEngine {
     }
 
     void InspectorPanel::onUpdate() {
-        ImGui::Begin(name.c_str());
         if (!selectedGameObjects.empty()) {
             if (selectedGameObjects.size() == 1) {
                 drawComponents();
@@ -67,8 +66,6 @@ namespace TechEngine {
                 ImGui::EndPopup();
             }
         }
-
-        ImGui::End();
     }
 
     template<typename T, typename UIFunction>

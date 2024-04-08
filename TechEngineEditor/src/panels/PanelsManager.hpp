@@ -13,7 +13,6 @@
 #include "ContentBrowserPanel.hpp"
 #include "ExportSettingsPanel.hpp"
 #include "events/panels/RegisterCustomPanel.hpp"
-#include "core/Key.hpp"
 #include "GameView.hpp"
 #include "MaterialEditor.hpp"
 #include "project/ProjectManager.hpp"
@@ -35,7 +34,6 @@ namespace TechEngine {
         PhysicsEngine& physicsEngine;
         TextureManager& textureManager;
         MaterialManager& materialManager;
-
 
         GameView gameView;
         //SettingsPanel settingsPanel{};
@@ -87,8 +85,6 @@ namespace TechEngine {
         void startRunningScene();
 
         void stopRunningScene();
-
-        void OnKeyPressedEvent(Key& key);
 
         void setColorTheme();
     };

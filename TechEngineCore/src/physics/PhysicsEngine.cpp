@@ -299,6 +299,8 @@ namespace TechEngine {
     void PhysicsEngine::removeActor(const std::string& tag) {
         if (actors.find(tag) != actors.end()) {
             pxScene->removeActor(*actors[tag]);
+            actors[tag]->release();
+            actors.erase(tag);
         }
     }
 

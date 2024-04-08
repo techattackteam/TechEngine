@@ -14,14 +14,13 @@ namespace TechEngine {
         int32_t width = RendererSettings::width;
         int32_t height = RendererSettings::height;
 
-        bool visible = false;
+        PanelsManager& panelsManager;
+        ProjectManager& projectManager;
+        SceneManager& sceneManager;
+        ShadersManager& shadersManager;
 
-        PanelsManager &panelsManager;
-        ProjectManager &projectManager;
-        SceneManager &sceneManager;
-        ShadersManager &shadersManager;
     public:
-        explicit ExportSettingsPanel(PanelsManager &panelsManager, ProjectManager &projectManager, SceneManager &sceneManager, ShadersManager &shadersManager);
+        explicit ExportSettingsPanel(PanelsManager& panelsManager, ProjectManager& projectManager, SceneManager& sceneManager, ShadersManager& shadersManager);
 
         ~ExportSettingsPanel() override;
 
@@ -29,10 +28,6 @@ namespace TechEngine {
 
         void exportProject();
 
-        void serializeEngineSettings(const std::filesystem::path &exportPath);
-
-        void setVisibility(bool visible);
-
-        bool isVisible();
+        void serializeEngineSettings(const std::filesystem::path& exportPath);
     };
 }

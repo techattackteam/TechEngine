@@ -20,11 +20,18 @@ namespace TechEngine {
         explicit Key(KeyCode keyCode) : keyCode(keyCode) {
         }
 
-        KeyCode &getKeyCode();
+        explicit Key(int key) : keyCode(getKeyCode(key)) {
+        }
 
-        std::string getKeyName();
+        KeyCode& getKeyCode();
 
-        static KeyCode getKeyCode(int key);
+        std::string getKeyName() const;
+
+        KeyCode getKeyCode(int key) const;
+
+        bool operator==(const Key& key) const {
+            return keyCode == key.keyCode;
+        }
 
     private:
         KeyCode keyCode;
