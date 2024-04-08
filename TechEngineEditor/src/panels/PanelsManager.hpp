@@ -13,6 +13,7 @@
 #include "ContentBrowserPanel.hpp"
 #include "ExportSettingsPanel.hpp"
 #include "events/panels/RegisterCustomPanel.hpp"
+#include "core/Key.hpp"
 #include "GameView.hpp"
 #include "MaterialEditor.hpp"
 #include "project/ProjectManager.hpp"
@@ -35,6 +36,7 @@ namespace TechEngine {
         TextureManager& textureManager;
         MaterialManager& materialManager;
 
+
         GameView gameView;
         //SettingsPanel settingsPanel{};
         ContentBrowserPanel contentBrowser;
@@ -44,6 +46,7 @@ namespace TechEngine {
         InspectorPanel inspectorPanel;
         MaterialEditor materialEditor;
         bool m_currentPlaying = false;
+        bool isCtrlPressed = false;
 
     public:
         PanelsManager(Window& window, SceneManager& sceneManager,
@@ -85,6 +88,10 @@ namespace TechEngine {
         void startRunningScene();
 
         void stopRunningScene();
+
+        void OnKeyPressedEvent(Key& key);
+
+        void OnKeyReleasedEvent(Key& key);
 
         void setColorTheme();
     };
