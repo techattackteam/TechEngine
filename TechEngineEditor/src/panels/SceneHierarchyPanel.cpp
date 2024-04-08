@@ -7,12 +7,11 @@
 #include "UIUtils/ImGuiUtils.hpp"
 
 namespace TechEngine {
-    SceneHierarchyPanel::SceneHierarchyPanel(Scene& scene, MaterialManager& materialManager) : scene(scene), materialManager(materialManager), Panel("SceneHierarchyPanel") {
+    SceneHierarchyPanel::SceneHierarchyPanel(Scene& scene, MaterialManager& materialManager, SceneView& sceneView) : scene(scene), materialManager(materialManager), sceneView(sceneView), Panel("Scene Hierarchy") {
     }
 
     void SceneHierarchyPanel::onUpdate() {
         isItemHovered = false;
-        ImGui::Begin("Scene Hierarchy");
         getSelectedGO();
         if (!scene.getGameObjects().empty()) {
             int originalSize = scene.getGameObjects().size();
@@ -51,7 +50,6 @@ namespace TechEngine {
                 ImGui::EndPopup();
             }
         }
-        ImGui::End();
     }
 
     void SceneHierarchyPanel::drawEntityNode(GameObject* gameObject) {
@@ -129,22 +127,12 @@ namespace TechEngine {
     }
 
     void SceneHierarchyPanel::onKeyPressedEvent(Key& key) {
-        if (key.getKeyCode() == KeyCode::DEL && !selectedGO.empty()) {
-            for (GameObject* gameObject: selectedGO) {
-                deleteGameObject(gameObject);
-            }
-            selectedGO.clear();
-            /*} else if (key.getKeyCode() == KeyCode::F && ImGui::IsWindowFocused()) {
-                if (!selectedGO.empty()) {
-                    GameObject* gameObject = selectedGO.front();
-                    /*                PanelsManager::getInstance().getSceneView().setCameraPosition(gameObject->getTransform().getPosition());
-                                    PanelsManager::getInstance().getSceneView().setCameraRotation(gameObject->getTransform().getRotation());#1#
-                }*/
-        } else if (key.getKeyCode() == KeyCode::LEFT_SHIFT || key.getKeyCode() == KeyCode::RIGHT_SHIFT) {
+        if (key.getKeyCode() == KeyCode::LEFT_SHIFT || key.getKeyCode() == KeyCode::RIGHT_SHIFT) {
             isShiftPressed = true;
         } else if (key.getKeyCode() == KeyCode::LEFT_CTRL || key.getKeyCode() == KeyCode::RIGHT_CTRL) {
             isCtrlPressed = true;
         }
+        Panel::onKeyPressedEvent(key);
     }
 
     void SceneHierarchyPanel::onKeyReleasedEvent(TechEngine::Key& key) {
@@ -152,6 +140,31 @@ namespace TechEngine {
             isShiftPressed = false;
         } else if (key.getKeyCode() == KeyCode::LEFT_CTRL || key.getKeyCode() == KeyCode::RIGHT_CTRL) {
             isCtrlPressed = false;
+        }
+        Panel::onKeyReleasedEvent(key);
+    }
+
+    void SceneHierarchyPanel::processShortcuts() {
+        for (Key& key: keysPressed) {
+            if (key.getKeyCode() == KeyCode::DEL) {
+                for (GameObject* gameObject: selectedGO) {
+                    deleteGameObject(gameObject);
+                }
+                selectedGO.clear();
+            } else if (isCtrlPressed && key.getKeyCode() == KeyCode::D) {
+                for (GameObject* gameObject: selectedGO) {
+                    scene.duplicateGameObject(gameObject);
+                }
+            } else if (key.getKeyCode() == KeyCode::F) {
+                if (!selectedGO.empty()) {
+                    sceneView.focusOnGameObject(selectedGO.front());
+                }
+            } else if (key.getKeyCode() == KeyCode::W) {
+                if (!selectedGO.empty()) {
+                    GameObject& child = scene.createGameObject<GameObject>(selectedGO.front()->getName() + "'s Child");
+                    scene.makeChildTo(selectedGO.front(), &child);
+                }
+            }
         }
     }
 

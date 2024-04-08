@@ -11,27 +11,26 @@
 namespace TechEngine {
     class MaterialEditor : public Panel {
     private:
-        Renderer &m_renderer;
-        Material *m_material;
+        Renderer& m_renderer;
+        Material* m_material;
 
-        TextureManager &textureManager;
-        MaterialManager &materialManager;
-        Scene &scene;
+        TextureManager& textureManager;
+        MaterialManager& materialManager;
+        Scene& scene;
         std::string m_filepath;
-        bool m_open = false;
         uint32_t frameBufferID;
 
         MaterialEditorGameObjects::Sphere m_sphere;
         SceneCamera m_camera;
 
     public:
-        MaterialEditor(Renderer &renderer, TextureManager &textureManager, MaterialManager &materialManager, Scene &scene);
+        MaterialEditor(Renderer& renderer, TextureManager& textureManager, MaterialManager& materialManager, Scene& scene);
 
         ~MaterialEditor() = default;
 
         void onUpdate() override;
 
-        void open(const std::string &name, const std::string &filepath);
+        void open(const std::string& name, const std::string& filepath);
 
         void renderObjectWithMaterial();
 

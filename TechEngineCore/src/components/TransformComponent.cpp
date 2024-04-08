@@ -102,6 +102,14 @@ namespace TechEngine {
         return scale;
     }
 
+    glm::vec3 TransformComponent::getForward() const {
+        glm::vec3 initialForward(0.0f, 0.0f, -1.0f);
+        glm::vec3 rotationInRadians = glm::radians(orientation);
+        glm::quat orientation = glm::quat(rotationInRadians);
+        glm::vec3 forward = glm::rotate(orientation, initialForward);
+        return forward;
+    }
+
     Component* TransformComponent::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
         TransformComponent* transformComponet = (TransformComponent*)componentToCopy;
         TransformComponent* newComponent = new TransformComponent(gameObjectToAttach);

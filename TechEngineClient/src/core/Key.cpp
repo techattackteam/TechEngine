@@ -2,11 +2,11 @@
 #include <GLFW/glfw3.h>
 
 namespace TechEngine {
-    KeyCode &Key::getKeyCode() {
+    KeyCode& Key::getKeyCode() {
         return keyCode;
     }
 
-    std::string Key::getKeyName() {
+    std::string Key::getKeyName() const {
         switch (keyCode) {
             case Q:
                 return "Q";
@@ -72,7 +72,7 @@ namespace TechEngine {
                 return "4";
             case FIVE:
                 return "5";
-            case SIX :
+            case SIX:
                 return "6";
             case SEVEN:
                 return "7";
@@ -123,7 +123,7 @@ namespace TechEngine {
         }
     }
 
-    KeyCode Key::getKeyCode(int key) {
+    KeyCode Key::getKeyCode(int key) const {
         switch (key) {
             case GLFW_KEY_Q:
                 return KeyCode::Q;

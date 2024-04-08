@@ -13,7 +13,7 @@ namespace TechEngine {
             sceneManager(sceneManager),
             materialManager(materialManager),
             assimpLoader(sceneManager.getScene(), materialManager),
-            Panel("ContentBrowserPanel") {
+            Panel("Content Browser") {
     }
 
 
@@ -22,7 +22,6 @@ namespace TechEngine {
     }
 
     void ContentBrowserPanel::onUpdate() {
-        ImGui::Begin("Content Browser");
         if (ImGui::BeginTable("Content", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Resizable)) {
             ImGui::TableSetupColumn("Outline", 0, 250.f);
             ImGui::TableSetupColumn("Files", ImGuiTableColumnFlags_WidthStretch);
@@ -47,7 +46,6 @@ namespace TechEngine {
 
             ImGui::EndTable();
         }
-        ImGui::End();
     }
 
     void ContentBrowserPanel::renderDirectoryHierarchy(const std::filesystem::path &directoryPath) {

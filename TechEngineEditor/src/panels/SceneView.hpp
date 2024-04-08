@@ -43,6 +43,8 @@ namespace TechEngine {
 
         void renderColliders();
 
+        void focusOnGameObject(GameObject* gameObject);
+
     private:
         glm::vec4 getColor(GameObject* gameObject);
 
@@ -59,5 +61,7 @@ namespace TechEngine {
         void onMouseScrollEvent(float xOffset, float yOffset) override;
 
         void onMouseMoveEvent(glm::vec2 delta) override;
+
+        void processShortcuts() override;
     };
 }

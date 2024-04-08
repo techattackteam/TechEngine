@@ -79,15 +79,15 @@ namespace TechEngine {
     void Window::windowKeyInput(int key, int action) {
         switch (action) {
             case GLFW_PRESS: {
-                EventDispatcher::getInstance().dispatch(new KeyPressedEvent(Key(Key::getKeyCode(key))));
+                EventDispatcher::getInstance().dispatch(new KeyPressedEvent(Key(key)));
                 break;
             }
             case GLFW_RELEASE: {
-                EventDispatcher::getInstance().dispatch(new KeyReleasedEvent(Key(Key::getKeyCode(key))));
+                EventDispatcher::getInstance().dispatch(new KeyReleasedEvent(Key(key)));
                 break;
             }
             case GLFW_REPEAT: {
-                EventDispatcher::getInstance().dispatch(new KeyHoldEvent(Key(Key::getKeyCode(key))));
+                EventDispatcher::getInstance().dispatch(new KeyHoldEvent(Key(key)));
                 break;
             }
         }

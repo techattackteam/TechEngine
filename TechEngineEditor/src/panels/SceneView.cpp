@@ -28,8 +28,6 @@ namespace TechEngine {
         sceneCamera->getComponent<CameraComponent>()->update();
         SceneHelper::changeMainCameraTo(sceneCamera->getComponent<CameraComponent>());
         FrameBuffer& frameBuffer = renderer->getFramebuffer(frameBufferID);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-        ImGui::Begin(name.c_str());
         isWindowHovered = ImGui::IsWindowHovered();
         ImVec2 wsize = ImGui::GetContentRegionAvail();
         frameBuffer.bind();
@@ -41,8 +39,6 @@ namespace TechEngine {
         ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
         guizmo.editTransform(ImGui::GetCurrentContext(), selectedGO);
         frameBuffer.unBind();
-        ImGui::End();
-        ImGui::PopStyleVar();
         SceneHelper::changeMainCameraTo(currentMainCamera);
     }
 
@@ -110,6 +106,12 @@ namespace TechEngine {
                 renderCylinderCollier(element);
             }
         }
+    }
+
+    void SceneView::focusOnGameObject(GameObject* gameObject) {
+        glm::vec3 position = gameObject->getComponent<TransformComponent>()->position;
+        glm::vec3 forward = glm::normalize(glm::vec3(glm::inverse(getSceneCamera()->getComponent<CameraComponent>()->getViewMatrix())[2]));
+        getSceneCamera()->getTransform().position = position + forward * 2.5f;
     }
 
     void SceneView::renderBoxCollider(GameObject* gameObject) {
@@ -281,6 +283,7 @@ namespace TechEngine {
                 break;
             }
         }
+        Panel::onKeyPressedEvent(key);
     }
 
     void SceneView::onKeyReleasedEvent(Key& key) {
@@ -296,6 +299,7 @@ namespace TechEngine {
                 break;
             }
         }
+        Panel::onKeyReleasedEvent(key);
     }
 
     void SceneView::onMouseScrollEvent(float xOffset, float yOffset) {
@@ -323,6 +327,24 @@ namespace TechEngine {
             if (mouse2) {
                 const glm::vec3 rotate = glm::vec3(-delta.y * 0.5f, -delta.x * 0.5f, 0);
                 getSceneCamera()->getTransform().rotate(rotate);
+            }
+        }
+    }
+
+    void SceneView::processShortcuts() {
+        for (Key& key: keysPressed) {
+            if (key.getKeyCode() == KeyCode::F) {
+                if (selectedGO.size() == 1) {
+                    focusOnGameObject(selectedGO.front());
+                }
+            } else if (key.getKeyCode() == KeyCode::T) {
+                changeGuizmoOperation(ImGuizmo::TRANSLATE);
+            } else if (key.getKeyCode() == KeyCode::R) {
+                changeGuizmoOperation(ImGuizmo::ROTATE);
+            } else if (key.getKeyCode() == KeyCode::S) {
+                changeGuizmoOperation(ImGuizmo::SCALE);
+            } else if (key.getKeyCode() == KeyCode::C) {
+                changeGuizmoMode(guizmo.getMode() == ImGuizmo::LOCAL ? ImGuizmo::WORLD : ImGuizmo::LOCAL);
             }
         }
     }
