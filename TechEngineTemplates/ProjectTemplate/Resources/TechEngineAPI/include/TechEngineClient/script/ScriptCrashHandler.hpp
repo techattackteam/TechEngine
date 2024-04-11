@@ -60,8 +60,7 @@ namespace TechEngine {
             lineInfo.SizeOfStruct = sizeof(lineInfo);
 
             if (SymGetLineFromAddr64(process, reinterpret_cast<DWORD64>(stackFrames[i]), &displacement, &lineInfo)) {
-                TE_LOGGER_ERROR("\t{0}: {1} - 0x{2} (File: {3}, Line: {4})",
-                                i, symbol->Name, symbol->Address, lineInfo.FileName, lineInfo.LineNumber);
+                TE_LOGGER_ERROR("\t{0}: {1} - 0x{2} (File: {3}, Line: {4})", i, symbol->Name, symbol->Address, lineInfo.FileName, lineInfo.LineNumber);
             } else {
                 // Existing logging if line info is unavailable
                 TE_LOGGER_ERROR("\t{0}: {1} - 0x{2}", i, symbol->Name, symbol->Address);
@@ -74,8 +73,7 @@ namespace TechEngine {
     inline int filter(unsigned int code, struct _EXCEPTION_POINTERS* ep, Script* script) {
         std::string name;
         if (script != nullptr) {
-            name = typeid(*script).name();
-            name.replace(0, 6, "");
+            name = script->getName();
         } else {
             name = "";
         }

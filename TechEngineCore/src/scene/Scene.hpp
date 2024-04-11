@@ -1,13 +1,10 @@
 #pragma once
 
-#include <boost/uuid/random_generator.hpp>
-
 #include "GameObject.hpp"
 
 namespace TechEngine {
     class Scene {
     private:
-        boost::uuids::random_generator goTagGenerator;
         std::vector<GameObject*> gameObjects;
         std::vector<GameObject*> lights;
         std::vector<GameObject*> gameObjectsToDelete;

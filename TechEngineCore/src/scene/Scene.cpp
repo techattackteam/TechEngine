@@ -1,5 +1,6 @@
-#include <boost/uuid/uuid_io.hpp>
 #include "Scene.hpp"
+
+#include "core/UUID.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngine {
@@ -50,8 +51,8 @@ namespace TechEngine {
     }
 
     std::string Scene::genGOTag() {
-        boost::uuids::uuid uuid = goTagGenerator();
-        std::string uuidString = boost::uuids::to_string(uuid);
+        UUID uuid;
+        std::string uuidString = std::to_string(uuid);
         return uuidString;
     }
 

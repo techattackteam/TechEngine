@@ -2,7 +2,7 @@
 
 #include "panels/PanelsManager.hpp"
 #include "core/Window.hpp"
-#include "core/App.hpp"
+#include "core/Client.hpp"
 
 namespace TechEngineAPI {
     class TechEngineAPI;
@@ -11,7 +11,7 @@ namespace TechEngineAPI {
 using std::filesystem::path;
 
 namespace TechEngine {
-    class Editor : public App {
+    class Editor : public Client {
     private:
         PanelsManager panelsManager;
         std::string editorSettings;

@@ -17,7 +17,7 @@ namespace TechEngine {
         glm::vec3 m_defaultSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
         float m_defaultShininess = 32.0f;
 
-        MaterialManager *m_copy = nullptr;
+        MaterialManager* m_copy = nullptr;
 
     public:
         explicit MaterialManager(TextureManager& textureManager);

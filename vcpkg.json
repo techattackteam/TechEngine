@@ -2,9 +2,6 @@
   "name": "techegine",
   "version": "1.0",
   "dependencies": [
-    "boost-serialization",
-    "boost-uuid",
-    "boost-asio",
     "glfw3",
     "glm",
     "spdlog",

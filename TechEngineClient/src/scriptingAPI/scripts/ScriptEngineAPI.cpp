@@ -9,6 +9,10 @@ namespace TechEngine {
     ScriptEngineAPI::~ScriptEngineAPI() {
     }
 
+    Script* ScriptEngineAPI::getScript(const std::string& name) {
+        return scriptEngine->getScript(name);
+    }
+
     void ScriptEngineAPI::registerScript(TechEngine::Script* script) {
         scriptEngine->registerScript(script);
     }

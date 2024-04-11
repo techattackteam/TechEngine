@@ -1,4 +1,3 @@
-#include <yaml-cpp/yaml.h>
 #include <yaml-cpp/exceptions.h>
 #include "TechEngineRuntime.hpp"
 #include "renderer/RendererSettings.hpp"
@@ -8,7 +7,7 @@
 #include "core/FileSystem.hpp"
 
 namespace TechEngine {
-    TechEngineRuntime::TechEngineRuntime() : App("TechEngine", RendererSettings::width, RendererSettings::height) {
+    TechEngineRuntime::TechEngineRuntime() : Client("TechEngine", RendererSettings::width, RendererSettings::height) {
         EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngine::Event* event) {
             onWindowResizeEvent((WindowResizeEvent*)event);
         });

@@ -5,7 +5,6 @@
 #include <filesystem>
 #include <fstream>
 
-#include "core/App.hpp"
 
 namespace TechEngine {
     MaterialManager::MaterialManager(TextureManager& textureManager) : m_textureManager(textureManager) {
@@ -88,7 +87,7 @@ namespace TechEngine {
             out << YAML::Key << "diffuseTexture" << YAML::Value << "";
         }
         out << YAML::EndMap;
-        path path = filepath;
+        std::filesystem::path path = filepath;
         create_directories(path.parent_path());
         std::ofstream fout(filepath);
         fout << out.c_str();
