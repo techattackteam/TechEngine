@@ -1,15 +1,15 @@
-#include "App.hpp"
+#include "Client.hpp"
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
-    App::App(std::string name, int width, int height) : AppCore(),
-                                                        textureManager(),
-                                                        materialManager(textureManager),
-                                                        sceneManager(projectManager, physicsEngine, materialManager, textureManager),
-                                                        projectManager(sceneManager, textureManager, materialManager), physicsEngine(sceneManager.getScene()),
-                                                        window(name, width, height),
-                                                        renderer(),
-                                                        api(&sceneManager, &eventDispatcher, &materialManager) {
+    Client::Client(std::string name, int width, int height) : AppCore(),
+                                                              textureManager(),
+                                                              materialManager(textureManager),
+                                                              sceneManager(projectManager, physicsEngine, materialManager, textureManager),
+                                                              projectManager(sceneManager, textureManager, materialManager), physicsEngine(sceneManager.getScene()),
+                                                              window(name, width, height),
+                                                              renderer(),
+                                                              api(&sceneManager, &eventDispatcher, &materialManager) {
         eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event* event) {
             onWindowCloseEvent((WindowCloseEvent*)(event));
         });
@@ -18,9 +18,9 @@ namespace TechEngine {
         physicsEngine.init();
     }
 
-    App::~App() = default;
+    Client::~Client() = default;
 
-    void App::run() {
+    void Client::run() {
         while (running) {
             timer.addAccumulator(timer.getDeltaTime());
             while (timer.getAccumulator() >= timer.getTPS()) {
@@ -35,7 +35,6 @@ namespace TechEngine {
 
             sceneManager.getScene().update();
             timer.updateInterpolation();
-            stateMachineManager.update();
             ScriptEngine::getInstance()->onUpdate();
             eventDispatcher.syncEventManager.execute();
             onUpdate();
@@ -44,7 +43,7 @@ namespace TechEngine {
         }
     }
 
-    void App::onWindowCloseEvent(WindowCloseEvent* event) {
+    void Client::onWindowCloseEvent(WindowCloseEvent* event) {
         running = false;
     }
 }

@@ -3,10 +3,9 @@
 #include "core/Window.hpp"
 #include "core/App.hpp"
 #include "events/window/WindowResizeEvent.hpp"
-#include "external/EntryPoint.hpp"
 
 namespace TechEngine {
-    class TechEngineRuntime : public App {
+    class TechEngineRuntime : public Client {
     private:
         std::string windowName;
         uint32_t width;

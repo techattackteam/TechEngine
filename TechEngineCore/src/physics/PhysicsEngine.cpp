@@ -178,7 +178,6 @@ namespace TechEngine {
         if (actors.find(rigidBody->getGameObject()->getTag()) == actors.end()) {
             rigidBodiesWithoutColliders.push_back(rigidBody->getGameObject()->getTag());
         } else {
-            //removeActor(rigidBody->getGameObject()->getTag());
             for (std::pair<std::string, Component*> component: rigidBody->getGameObject()->getComponents()) {
                 if (Collider* collider = dynamic_cast<Collider*>(component.second)) {
                     addCollider(collider);

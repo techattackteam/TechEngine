@@ -1,7 +1,6 @@
 file(GLOB_RECURSE TechEngineCore_Sources CONFIGURE_DEPENDS "src/*.cpp")
 file(GLOB_RECURSE TechEngineCore_Headers "src/*.hpp")
 
-find_package(Boost COMPONENTS serialization)
 find_package(spdlog CONFIG REQUIRED)
 find_package(unofficial-omniverse-physx-sdk CONFIG REQUIRED)
 
@@ -54,7 +53,7 @@ else ()
 endif ()
 
 target_include_directories(TechEngineCore PUBLIC "src")
-target_link_libraries(TechEngineCore PUBLIC Boost::boost Boost::serialization spdlog::spdlog unofficial::omniverse-physx-sdk::sdk)
+target_link_libraries(TechEngineCore PUBLIC spdlog::spdlog unofficial::omniverse-physx-sdk::sdk)
 target_compile_definitions(TechEngineCore PUBLIC
         $<$<CONFIG:Debug>:TE_DEBUG>
         $<$<CONFIG:Release>:TE_RELEASEDEBUG>

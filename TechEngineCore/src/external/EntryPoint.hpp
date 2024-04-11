@@ -1,11 +1,11 @@
 #pragma once
 
-#include "core/App.hpp"
+#include "core/AppCore.hpp"
 #include "core/Logger.hpp"
 
-extern TechEngine::AppCore *TechEngine::createApp();
+extern TechEngine::AppCore* TechEngine::createApp();
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     TechEngine::Logger::init();
     auto app = TechEngine::createApp();
     app->run();

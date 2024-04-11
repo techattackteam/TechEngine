@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 
 namespace TechEngine {
@@ -15,6 +16,8 @@ namespace TechEngine {
         explicit ScriptEngineAPI(ScriptEngine* scriptEngine);
 
         ~ScriptEngineAPI();
+
+        Script* getScript(const std::string& name);
 
         static void registerScript(Script* script);
     };

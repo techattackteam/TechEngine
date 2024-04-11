@@ -1,8 +1,7 @@
 #pragma once
 
-#include "../stateMachine/StateMachineManager.hpp"
-#include "../eventSystem/EventDispatcher.hpp"
 #include "Timer.hpp"
+#include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngine {
     class AppCore {
@@ -11,7 +10,6 @@ namespace TechEngine {
 
     public:
         EventDispatcher eventDispatcher;
-        StateMachineManager stateMachineManager;
         Timer timer;
 
         AppCore();

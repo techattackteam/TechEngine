@@ -47,6 +47,16 @@ namespace TechEngine {
         }
     }
 
+    Script* ScriptEngine::getScript(const std::string& name) {
+        for (Script* script: scripts) {
+            if (script->getName() == name) {
+                return script;
+            }
+        }
+        TE_LOGGER_ERROR("Script with name: " + name + " not found. Returning nullptr.");
+        return nullptr;
+    }
+
     ScriptEngine* ScriptEngine::getInstance() {
         if (instance == nullptr) {
             TE_LOGGER_CRITICAL("ScriptEngine instance is nullptr in getInstance() method.");
@@ -55,6 +65,8 @@ namespace TechEngine {
     }
 
     void ScriptEngine::registerScript(Script* script) {
+        script->name = typeid(*script).name();
+        script->name.replace(0, 6, "");
         getInstance()->scripts.push_back(script);
     }
 

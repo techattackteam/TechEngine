@@ -7,8 +7,8 @@
 namespace TechEngine::FileSystem {
     inline std::filesystem::path rootPath = std::filesystem::current_path(); //This could be Editor path or Runtime path
     inline std::filesystem::path projectTemplate = rootPath.string() + "\\projectTemplate";
-    inline std::filesystem::path scenesTemplate = projectTemplate.string() + "\\scenes\\DefaultScene.scene";
-    inline std::filesystem::path scriptsTemplate = projectTemplate.string() + "\\scripts";
+    inline std::filesystem::path scenesTemplate = projectTemplate.string() + "\\Assets\\scenes\\DefaultScene.scene";
+    inline std::filesystem::path scriptsTemplate = projectTemplate.string() + "\\Assets\\scripts";
     inline std::filesystem::path runtimePath = rootPath.string() + "\\runtime";
     inline std::filesystem::path editorResourcesPath = rootPath.string() + "\\resources"; //Only use this in editor
 

@@ -1,3 +1,4 @@
+/*
 #include <imgui_internal.h>
 #include <iostream>
 #include "NetworkHandlerComponent.hpp"
@@ -48,5 +49,6 @@ namespace TechEngine {
             ImGui::PopStyleVar();
             ImGui::PopID();
         }
-    }*/
+    }#1#
 }
+*/

@@ -171,7 +171,9 @@ namespace TechEngine {
         out << YAML::Key << "Scene" << YAML::Value << sceneName;
         out << YAML::Key << "GameObjects" << YAML::Value << YAML::BeginSeq;
         for (GameObject* gameObject: scene.getGameObjects()) {
-            serializeGameObject(out, gameObject);
+            if (!gameObject->hasParent()) {
+                serializeGameObject(out, gameObject);
+            }
         }
         out << YAML::EndSeq;
         out << YAML::EndMap;

@@ -1,7 +1,13 @@
 #pragma once
+#include <string>
 
 namespace TechEngine {
     class Script {
+    private:
+        std::string name;
+
+        friend class ScriptEngine;
+
     public:
         Script();
 
@@ -14,6 +20,10 @@ namespace TechEngine {
         virtual void onUpdate();
 
         virtual void onClose();
+
+        const std::string& getName() const {
+            return name;
+        }
     };
 }
 

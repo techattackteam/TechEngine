@@ -30,6 +30,8 @@ namespace TechEngine {
 
         void onFixedUpdateLoop();
 
+        Script* getScript(const std::string& name);
+
         static ScriptEngine* getInstance();
 
         static void registerScript(Script* script);

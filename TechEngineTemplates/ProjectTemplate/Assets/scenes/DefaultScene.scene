@@ -1,9 +1,9 @@
 Scene: DefaultScene
 GameObjects:
   - Name: MainCamera
-    Tag: c684dc7a-82fb-48dc-98da-8e1312696dd0
+    Tag: 4445362971816043799
     TransformComponent:
-      Position: [0, 0, 5]
+      Position: [0, 0, 0]
       Orientation: [0, 0, 0]
       Scale: [1, 1, 1]
     CameraComponent:
@@ -13,9 +13,9 @@ GameObjects:
       Near: 0.100000001
       Far: 100
   - Name: Cube
-    Tag: f4d6fe79-43bd-4186-b9a4-d3b4ef435ed7
+    Tag: 5943352459065396339
     TransformComponent:
-      Position: [0, 0, 0]
+      Position: [0, 0, -5]
       Orientation: [0, -0, 0]
       Scale: [1, 1, 1]
     MeshRendererComponent:
