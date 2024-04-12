@@ -3,13 +3,8 @@
 
 namespace TechEngine {
     Client::Client(std::string name, int width, int height) : AppCore(),
-                                                              textureManager(),
-                                                              materialManager(textureManager),
-                                                              sceneManager(projectManager, physicsEngine, materialManager, textureManager),
-                                                              projectManager(sceneManager, textureManager, materialManager), physicsEngine(sceneManager.getScene()),
                                                               window(name, width, height),
-                                                              renderer(sceneManager.getScene()),
-                                                              api(&sceneManager, &eventDispatcher, &materialManager) {
+                                                              renderer(sceneManager.getScene()) {
         eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event* event) {
             onWindowCloseEvent((WindowCloseEvent*)(event));
         });

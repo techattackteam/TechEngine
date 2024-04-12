@@ -44,6 +44,7 @@ file(GENERATE
             endif()"
 )
 
+#Copy dll files to build directory
 add_custom_command(TARGET TechEngineEditor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
         $<TARGET_RUNTIME_DLLS:TechEngineEditor>
@@ -57,7 +58,7 @@ add_custom_command(
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
-#copy engine's runtime to build directory
+#Copy engine's runtime to build directory
 add_custom_command(TARGET TechEngineEditor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         $<TARGET_FILE_DIR:TechEngineRuntime> $<TARGET_FILE_DIR:TechEngineEditor>/runtime

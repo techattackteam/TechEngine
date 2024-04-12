@@ -35,6 +35,7 @@ set_target_properties(TechEngineRuntime PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/TechEngineRuntime/runtime"
 )
 
+#Copy dll files to build directory
 add_custom_command(TARGET TechEngineRuntime POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:TechEngineRuntime> $<TARGET_FILE_DIR:TechEngineRuntime>
         COMMAND_EXPAND_LISTS)

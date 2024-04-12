@@ -253,6 +253,31 @@ namespace TechEngine {
             }
             ImGui::EndMenu();
         }
+        if (ImGui::BeginMenu("Client")) {
+            if (ImGui::MenuItem("Build")) {
+                if (m_currentPlaying) {
+                    stopRunningScene();
+                    m_currentPlaying = false;
+                }
+#ifdef TE_DEBUG
+                compileUserScripts(DEBUG);
+#elif TE_RELEASE
+                compileUserScripts(RELEASE);
+#elif TE_RELEASEDEBUG
+                compileUserScripts(RELEASEDEBUG);
+#endif
+            } else if (ImGui::MenuItem("Run")) {
+                runClientProcess();
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Server")) {
+            if (ImGui::MenuItem("Build")) {
+            } else if (ImGui::MenuItem("Run")) {
+                runServerProcess();
+            }
+            ImGui::EndMenu();
+        }
         ImGui::EndMenuBar();
     }
 
@@ -390,6 +415,67 @@ namespace TechEngine {
         }
         m_currentPlaying = false;
         ScriptEngine::getInstance()->stop();
+    }
+
+    void PanelsManager::runServerProcess() {
+        //if (std::filesystem::exists(dllPath)) {
+        // 1. Create child process
+        STARTUPINFOA si;
+        PROCESS_INFORMATION pi;
+
+        ZeroMemory(&si, sizeof(si));
+        si.cb = sizeof(si);
+        ZeroMemory(&pi, sizeof(pi));
+        std::string path = "C:\\dev\\TechEngine\\bin\\TechEngineServer\\debug\\TechEngineServer.exe";
+        if (!CreateProcessA(
+            nullptr, // Application name (we can specify the engine executable here to launch a copy)
+            (LPSTR)path.c_str(), // Command line argument: the DLL path
+            nullptr, // Process security attributes
+            nullptr, // Thread security attributes
+            FALSE, // Do not inherit handles
+            CREATE_NEW_CONSOLE, // Creation flags
+            nullptr, // Environment variables
+            nullptr, // Current directory
+            &si, // Startup info
+            &pi // Process information
+        )) {
+            TE_LOGGER_ERROR("Failed to create process for user scripts dll");
+            return;
+        }
+
+        // Store process information for later management
+        /*m_dllProcessHandle = pi.hProcess;
+        m_dllThreadHandle = pi.hThread;*/
+        //} else {
+        //  TE_LOGGER_ERROR("Failed to load user scripts dll: File not found");
+        //}
+    }
+
+    void PanelsManager::runClientProcess() {
+        exportSettingsPanel.exportProject();
+        STARTUPINFOA si;
+        PROCESS_INFORMATION pi;
+
+        ZeroMemory(&si, sizeof(si));
+        si.cb = sizeof(si);
+        ZeroMemory(&pi, sizeof(pi));
+        std::string path = projectManager.getProjectExportPath().string() + "\\TechEngineRuntime.exe";
+        std::string currentDirectory = projectManager.getProjectExportPath().string();
+        if (!CreateProcessA(
+            nullptr, // Application name (we can specify the engine executable here to launch a copy)
+            (LPSTR)path.c_str(), // Command line argument: the DLL path
+            nullptr, // Process security attributes
+            nullptr, // Thread security attributes
+            TRUE, // Do not inherit handles
+            CREATE_NEW_CONSOLE, // Creation flags
+            nullptr, // Environment variables
+            (LPSTR)currentDirectory.c_str(), // Current directory
+            &si, // Startup info
+            &pi // Process information
+        )) {
+            TE_LOGGER_ERROR("Failed to create process for user scripts dll");
+            return;
+        }
     }
 
     void PanelsManager::OnKeyPressedEvent(Key& key) {
