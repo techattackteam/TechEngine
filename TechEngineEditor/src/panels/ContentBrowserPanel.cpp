@@ -6,13 +6,12 @@
 #include "material/MaterialManager.hpp"
 
 namespace TechEngine {
-    ContentBrowserPanel::ContentBrowserPanel(PanelsManager &panelsManager, ProjectManager &projectManager, SceneManager &sceneManager, MaterialManager &materialManager) :
-            panelsManager(panelsManager),
-            projectManager(projectManager),
-            sceneManager(sceneManager),
-            materialManager(materialManager),
-            assimpLoader(sceneManager.getScene(), materialManager),
-            Panel("Content Browser") {
+    ContentBrowserPanel::ContentBrowserPanel(PanelsManager& panelsManager, ProjectManager& projectManager, SceneManager& sceneManager, MaterialManager& materialManager) : panelsManager(panelsManager),
+                                                                                                                                                                           projectManager(projectManager),
+                                                                                                                                                                           sceneManager(sceneManager),
+                                                                                                                                                                           materialManager(materialManager),
+                                                                                                                                                                           assimpLoader(sceneManager.getScene(), materialManager),
+                                                                                                                                                                           Panel("Content Browser") {
     }
 
 
@@ -32,7 +31,9 @@ namespace TechEngine {
 
             ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.f);
-            renderDirectoryHierarchy(projectManager.getProjectAssetsPath());
+            renderDirectoryHierarchy(projectManager.getProjectAssetsPath().string() + "\\Client");
+            renderDirectoryHierarchy(projectManager.getProjectAssetsPath().string() + "\\Common");
+            renderDirectoryHierarchy(projectManager.getProjectAssetsPath().string() + "\\Server");
             ImGui::PopStyleVar();
 
             ImGui::EndChild();
@@ -47,7 +48,7 @@ namespace TechEngine {
         }
     }
 
-    void ContentBrowserPanel::renderDirectoryHierarchy(const std::filesystem::path &directoryPath) {
+    void ContentBrowserPanel::renderDirectoryHierarchy(const std::filesystem::path& directoryPath) {
         ImGuiTreeNodeFlags flags = ((currentPath == directoryPath) ? ImGuiTreeNodeFlags_Selected : 0) |
                                    ImGuiTreeNodeFlags_OpenOnArrow |
                                    ImGuiTreeNodeFlags_SpanFullWidth |
@@ -64,17 +65,17 @@ namespace TechEngine {
         }
     }
 
-    void ContentBrowserPanel::renderDirectoryHierarchyRecurse(const std::filesystem::path &pathToRecurse) {
-        for (auto &directoryEntry: std::filesystem::directory_iterator(pathToRecurse)) {
+    void ContentBrowserPanel::renderDirectoryHierarchyRecurse(const std::filesystem::path& pathToRecurse) {
+        for (auto& directoryEntry: std::filesystem::directory_iterator(pathToRecurse)) {
             if (!directoryEntry.is_directory()) {
                 continue;
             }
-            const std::filesystem::path &path = directoryEntry.path();
+            const std::filesystem::path& path = directoryEntry.path();
             auto relativePath = std::filesystem::relative(path, projectManager.getProjectLocation());
             std::string filenameString = relativePath.filename().string();
             bool hasSubDirs = false;
 
-            for (auto &subDir: std::filesystem::directory_iterator(path)) {
+            for (auto& subDir: std::filesystem::directory_iterator(path)) {
                 if (subDir.is_directory()) {
                     hasSubDirs = true;
                     break;
@@ -100,10 +101,10 @@ namespace TechEngine {
         }
     }
 
-    void ContentBrowserPanel::renderFiles(const std::filesystem::path &directoryPath) {
+    void ContentBrowserPanel::renderFiles(const std::filesystem::path& directoryPath) {
         bool opened = false;
-        for (auto &directoryEntry: std::filesystem::directory_iterator(directoryPath)) {
-            const auto &path = directoryEntry.path();
+        for (auto& directoryEntry: std::filesystem::directory_iterator(directoryPath)) {
+            const auto& path = directoryEntry.path();
             auto relativePath = std::filesystem::relative(path, projectManager.getProjectAssetsPath());
             std::string filenameString = relativePath.filename().string();
             if (selectedPath == path.string()) {
@@ -139,7 +140,7 @@ namespace TechEngine {
         }
     }
 
-    void ContentBrowserPanel::openFolderOrFile(const std::string &path) {
+    void ContentBrowserPanel::openFolderOrFile(const std::string& path) {
         if (std::filesystem::is_directory(path)) {
             currentPath = path;
         } else {
@@ -155,16 +156,16 @@ namespace TechEngine {
         }
     }
 
-    void ContentBrowserPanel::renameFile(const std::string &filename, const std::string &newName) {
+    void ContentBrowserPanel::renameFile(const std::string& filename, const std::string& newName) {
         std::string extension = filename.substr(filename.find_last_of('.'));
         std::filesystem::rename(currentPath / filename, currentPath / (newName + extension));
     }
 
-    void ContentBrowserPanel::tryLoadModel(const std::string &filepath) {
+    void ContentBrowserPanel::tryLoadModel(const std::string& filepath) {
         assimpLoader.loadModel(filepath);
     }
 
-    void ContentBrowserPanel::deleteFile(const std::string &filename) {
+    void ContentBrowserPanel::deleteFile(const std::string& filename) {
         std::string extension = filename.substr(filename.find_last_of('.'));
         if (extension == ".scene") {
             std::string path = currentPath.string() + "\\" + filename;
@@ -180,7 +181,7 @@ namespace TechEngine {
         }
     }
 
-    bool ContentBrowserPanel::openMenuPopupItem(const std::filesystem::path &path) {
+    bool ContentBrowserPanel::openMenuPopupItem(const std::filesystem::path& path) {
         bool opened = false;
         if (ImGui::BeginPopupContextItem()) {
             opened = true;
@@ -207,7 +208,7 @@ namespace TechEngine {
         return opened;
     }
 
-    bool ContentBrowserPanel::openMenuPopupWindow(const std::filesystem::path &path) {
+    bool ContentBrowserPanel::openMenuPopupWindow(const std::filesystem::path& path) {
         bool opened = false;
         if (ImGui::BeginPopupContextWindow()) {
             opened = true;

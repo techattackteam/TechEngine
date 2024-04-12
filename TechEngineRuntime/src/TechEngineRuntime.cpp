@@ -1,4 +1,5 @@
 #include "TechEngineRuntime.hpp"
+#include "external/EntryPoint.hpp"
 #include "core/Client.hpp"
 #include "events/appManagement/AppCloseRequestEvent.hpp"
 #include "script/ScriptEngine.hpp"
@@ -6,7 +7,7 @@
 
 namespace TechEngine {
     TechEngineRuntime::TechEngineRuntime() : Client("TechEngine", 1080, 720) {
-        EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngine::Event* event) {
+        EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](Event* event) {
             onWindowResizeEvent((WindowResizeEvent*)event);
         });
 
@@ -16,7 +17,13 @@ namespace TechEngine {
         }
         renderer.init(projectManager);
         ScriptEngine* scriptEngine = new ScriptEngine(true);
+#ifdef TE_DEBUG
+        ScriptEngine::getInstance()->init(projectManager.getScriptsDebugDLLPath().string());
+#elif TE_RELEASEDEBUG
         ScriptEngine::getInstance()->init(projectManager.getScriptsReleaseDLLPath().string());
+#elif TE_RELEASE
+        ScriptEngine::getInstance()->init(projectManager.getScriptsReleaseDLLPath().string());
+#endif
         ScriptEngine::getInstance()->onStart();
         physicsEngine.start();
     }

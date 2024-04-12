@@ -89,6 +89,10 @@ namespace TechEngine {
 
         void stopRunningScene();
 
+        void runServerProcess();
+
+        void runClientProcess();
+
         void OnKeyPressedEvent(Key& key);
 
         void OnKeyReleasedEvent(Key& key);

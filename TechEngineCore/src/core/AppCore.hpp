@@ -2,6 +2,8 @@
 
 #include "Timer.hpp"
 #include "eventSystem/EventDispatcher.hpp"
+#include "project/ProjectManager.hpp"
+#include "scriptingAPI/TechEngineAPI.hpp"
 
 namespace TechEngine {
     class AppCore {
@@ -11,6 +13,12 @@ namespace TechEngine {
     public:
         EventDispatcher eventDispatcher;
         Timer timer;
+        TextureManager textureManager;
+        MaterialManager materialManager;
+        SceneManager sceneManager;
+        ProjectManager projectManager;
+        PhysicsEngine physicsEngine;
+        TechEngineAPI api;
 
         AppCore();
 

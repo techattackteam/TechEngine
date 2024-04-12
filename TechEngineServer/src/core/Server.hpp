@@ -1,6 +1,6 @@
 #pragma once
+#include "core/Core.hpp"
 #include "core/AppCore.hpp"
-
 
 namespace TechEngine {
     class TECHENGINE_API Server : public AppCore {

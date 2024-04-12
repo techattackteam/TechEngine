@@ -172,7 +172,7 @@ namespace TechEngine {
         projectName = projectFile.substr(projectFile.find_last_of("\\") + 1, projectFile.find_last_of(".") - projectFile.find_last_of("\\") - 1);
         projectAssetsPath = this->projectLocation.string() + "\\Assets";
         projectResourcesPath = this->projectLocation.string() + "\\Resources";
-        projectExportPath = this->projectLocation.string() + "\\Build";
+        projectExportPath = this->projectLocation.string() + "\\GameBuild";
 
         cmakeBuildPath = projectResourcesPath.string() + "\\cmake\\cmake-build-debug";
         userScriptsDebugDLLPath = projectResourcesPath.string() + "\\scripts\\build\\debug\\UserScripts.dll";
