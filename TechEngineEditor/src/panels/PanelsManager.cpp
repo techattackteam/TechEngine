@@ -2,7 +2,6 @@
 #include "scene/SceneManager.hpp"
 #include "script/ScriptEngine.hpp"
 #include "events/appManagement/AppCloseRequestEvent.hpp"
-#include "scene/SceneHelper.hpp"
 #include "core/Logger.hpp"
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
@@ -385,9 +384,6 @@ namespace TechEngine {
         sceneManager.loadSceneFromTemporarily(sceneManager.getActiveSceneName());
         sceneHierarchyPanel.getSelectedGO().clear();
         for (GameObject* gameObject: sceneManager.getScene().getGameObjects()) {
-            if (gameObject->hasComponent<CameraComponent>() && gameObject->getComponent<CameraComponent>()->isMainCamera()) {
-                SceneHelper::mainCamera = gameObject->getComponent<CameraComponent>();
-            }
             if (std::find(getSelectedGameObjects().begin(), getSelectedGameObjects().end(), gameObject) != getSelectedGameObjects().end()) {
                 sceneHierarchyPanel.selectGO(gameObject);
             }

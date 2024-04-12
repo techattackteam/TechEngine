@@ -3,7 +3,7 @@ file(GLOB_RECURSE TechEngineCore_Headers "src/*.hpp")
 
 find_package(spdlog CONFIG REQUIRED)
 find_package(unofficial-omniverse-physx-sdk CONFIG REQUIRED)
-
+find_package(yaml-cpp CONFIG REQUIRED)
 
 foreach (_headerFile ${TechEngineCore_Headers})
     get_filename_component(_dir ${_headerFile} PATH)
@@ -53,7 +53,7 @@ else ()
 endif ()
 
 target_include_directories(TechEngineCore PUBLIC "src")
-target_link_libraries(TechEngineCore PUBLIC spdlog::spdlog unofficial::omniverse-physx-sdk::sdk)
+target_link_libraries(TechEngineCore PUBLIC spdlog::spdlog unofficial::omniverse-physx-sdk::sdk yaml-cpp)
 target_compile_definitions(TechEngineCore PUBLIC
         $<$<CONFIG:Debug>:TE_DEBUG>
         $<$<CONFIG:Release>:TE_RELEASEDEBUG>
@@ -69,6 +69,10 @@ set(TECH_ENGINE_CLIENT_API_FILES
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/components"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/physics"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/mesh"
+        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/script"
+        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/scriptingAPI"
+        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/material/Material.hpp"
+        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/texture"
 )
 foreach (entry ${TECH_ENGINE_CLIENT_API_FILES})
     if (IS_DIRECTORY ${entry})

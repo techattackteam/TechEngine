@@ -5,8 +5,7 @@
 #include "imgui.h"
 #include "glm/gtc/type_ptr.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
-#include "components/CameraComponent.hpp"
-#include "scene/SceneHelper.hpp"
+#include "components/render/CameraComponent.hpp"
 #include "core/Logger.hpp"
 #include "texture/TextureManager.hpp"
 
@@ -126,12 +125,10 @@ namespace TechEngine {
     }
 
     void MaterialEditor::renderObjectWithMaterial() {
-        CameraComponent* currentMainCamera = SceneHelper::mainCamera;
-        if (!currentMainCamera) {
+        if (!scene.hasMainCamera()) {
             return;
         }
         m_camera.getComponent<CameraComponent>()->update();
-        SceneHelper::changeMainCameraTo(m_camera.getComponent<CameraComponent>());
         m_sphere.getComponent<MeshRendererComponent>()->changeMaterial(*m_material);
         FrameBuffer& frameBuffer = m_renderer.getFramebuffer(frameBufferID);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
@@ -139,14 +136,14 @@ namespace TechEngine {
         ImVec2 wsize = ImGui::GetContentRegionAvail();
         frameBuffer.bind();
         frameBuffer.resize(wsize.x, wsize.y);
+        m_camera.getComponent<CameraComponent>()->updateProjectionMatrix(wsize.x / wsize.y);
         std::vector<GameObject*> objects = {&m_sphere, &m_camera};
-        m_renderer.renderCustomPipeline(objects);
+        m_renderer.renderCustomPipeline(m_camera.getComponent<CameraComponent>(), objects);
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
         ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
         frameBuffer.unBind();
         ImGui::End();
         ImGui::PopStyleVar();
-        SceneHelper::changeMainCameraTo(currentMainCamera);
     }
 
     void MaterialEditor::open(const std::string& name, const std::string& filepath) {

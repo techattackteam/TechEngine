@@ -2,13 +2,12 @@
 
 #include "core/FileSystem.hpp"
 #include "scene/GameObject.hpp"
-#include "components/CameraComponent.hpp"
+#include "components/render/CameraComponent.hpp"
 #include "components/TransformComponent.hpp"
-#include "components/MeshRendererComponent.hpp"
+#include "components/render/MeshRendererComponent.hpp"
 #include "components/physics/BoxColliderComponent.hpp"
 #include "components/physics/SphereCollider.hpp"
 #include "core/Logger.hpp"
-#include "SceneHelper.hpp"
 #include "mesh/CubeMesh.hpp"
 #include "mesh/SphereMesh.hpp"
 #include "mesh/CylinderMesh.hpp"
@@ -304,7 +303,6 @@ namespace TechEngine {
             TE_LOGGER_CRITICAL("Failed to load .scene file {0}.\n      {1}", filepath, e.what());
         }
 
-        SceneHelper::clear(scene);
         YAML::Node node = data["GameObjects"];
         if (node) {
             for (YAML::Node gameObjectYAML: node) {

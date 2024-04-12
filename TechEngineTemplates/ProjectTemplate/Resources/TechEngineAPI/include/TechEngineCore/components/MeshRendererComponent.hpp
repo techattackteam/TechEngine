@@ -1,9 +1,9 @@
 #pragma once
 
 #include <vector>
-#include "components/Component.hpp"
-#include "material/Material.hpp"
-#include "mesh/Mesh.hpp"
+#include "Component.hpp"
+#include "../material/Material.hpp"
+#include "../mesh/Mesh.hpp"
 
 namespace TechEngine {
     class MeshRendererComponent : public Component {

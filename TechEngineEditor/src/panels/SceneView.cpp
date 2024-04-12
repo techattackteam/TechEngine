@@ -1,6 +1,4 @@
 #include "SceneView.hpp"
-#include "renderer/RendererSettings.hpp"
-#include "scene/SceneHelper.hpp"
 #include "components/physics/BoxColliderComponent.hpp"
 #include "core/Logger.hpp"
 #include "PanelsManager.hpp"
@@ -11,7 +9,7 @@
 namespace TechEngine {
     SceneView::SceneView(Renderer& renderer, Scene& scene, PhysicsEngine& physicsEngine, std::vector<GameObject*>& selectedGO)
         : renderer(&renderer), scene(scene), guizmo(physicsEngine), selectedGO(selectedGO), Panel("Scene") {
-        frameBufferID = renderer.createFramebuffer(RendererSettings::width, RendererSettings::height);
+        frameBufferID = renderer.createFramebuffer(1080, 720);
         sceneCamera = new SceneCamera();
     }
 
@@ -21,25 +19,20 @@ namespace TechEngine {
 
 
     void SceneView::onUpdate() {
-        CameraComponent* currentMainCamera = SceneHelper::mainCamera;
-        if (!currentMainCamera) {
-            return;
-        }
         sceneCamera->getComponent<CameraComponent>()->update();
-        SceneHelper::changeMainCameraTo(sceneCamera->getComponent<CameraComponent>());
         FrameBuffer& frameBuffer = renderer->getFramebuffer(frameBufferID);
         isWindowHovered = ImGui::IsWindowHovered();
         ImVec2 wsize = ImGui::GetContentRegionAvail();
         frameBuffer.bind();
         frameBuffer.resize(wsize.x, wsize.y);
-        renderCameraFrustum(currentMainCamera);
+        sceneCamera->getComponent<CameraComponent>()->updateProjectionMatrix(wsize.x / wsize.y);
+        renderCameraFrustum(scene.getMainCamera());
         renderColliders();
-        renderer->renderPipeline(scene);
+        renderer->renderPipeline(sceneCamera->getComponent<CameraComponent>());
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
         ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
-        guizmo.editTransform(ImGui::GetCurrentContext(), selectedGO);
+        guizmo.editTransform(sceneCamera->getComponent<CameraComponent>(), ImGui::GetCurrentContext(), selectedGO);
         frameBuffer.unBind();
-        SceneHelper::changeMainCameraTo(currentMainCamera);
     }
 
     void SceneView::renderCameraFrustum(CameraComponent* camera) {

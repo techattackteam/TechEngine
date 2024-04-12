@@ -16,7 +16,7 @@
 #include "core/Key.hpp"
 #include "GameView.hpp"
 #include "MaterialEditor.hpp"
-#include "project/ProjectManager.hpp"
+#include "scene/SceneManager.hpp"
 
 namespace TechEngine {
     enum CompileMode {

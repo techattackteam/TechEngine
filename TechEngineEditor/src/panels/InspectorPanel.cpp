@@ -1,7 +1,7 @@
 #include <imgui_internal.h>
 #include "InspectorPanel.hpp"
-#include "components/CameraComponent.hpp"
-#include "components/MeshRendererComponent.hpp"
+#include "components/render/CameraComponent.hpp"
+#include "components/render/MeshRendererComponent.hpp"
 #include "components/physics/BoxColliderComponent.hpp"
 #include "PanelsManager.hpp"
 #include "components/physics/SphereCollider.hpp"

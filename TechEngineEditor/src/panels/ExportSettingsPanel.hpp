@@ -2,7 +2,6 @@
 
 #include <filesystem>
 #include "Panel.hpp"
-#include "renderer/RendererSettings.hpp"
 #include "project/ProjectManager.hpp"
 #include "renderer/ShadersManager.hpp"
 
@@ -11,8 +10,8 @@ namespace TechEngine {
 
     class ExportSettingsPanel : public Panel {
     private:
-        int32_t width = RendererSettings::width;
-        int32_t height = RendererSettings::height;
+        int32_t width = 1080;
+        int32_t height = 720;
 
         PanelsManager& panelsManager;
         ProjectManager& projectManager;

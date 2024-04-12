@@ -1,6 +1,6 @@
 #include "PhysicsCallback.hpp"
 #include "PhysicsEngine.hpp"
-#include "../../../TechEngineClient/src/scriptingAPI/scene/GameObjectAPI.hpp"
+#include "scriptingAPI/scene/GameObjectAPI.hpp"
 #include "core/Logger.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 #include "events/physics/callbacks/OnCollisionEvent.hpp"

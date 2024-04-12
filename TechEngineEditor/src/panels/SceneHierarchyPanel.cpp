@@ -1,5 +1,4 @@
 #include "SceneHierarchyPanel.hpp"
-#include "scene/SceneHelper.hpp"
 #include "PanelsManager.hpp"
 #include "defaultGameObject/Cube.hpp"
 #include "defaultGameObject/Sphere.hpp"

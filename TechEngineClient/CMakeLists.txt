@@ -4,7 +4,6 @@ file(GLOB_RECURSE TechEngineClient_Headers "src/*.hpp")
 find_package(GLEW REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
-find_package(yaml-cpp CONFIG REQUIRED)
 #find_package(Stb REQUIRED)
 
 foreach (_headerFile ${TechEngineClient_Headers})
@@ -35,19 +34,15 @@ endif ()
 set(Stb_INCLUDE_DIR "C:\\dev\\TechEngine\\dependencies\\vcpkg\\packages\\stb_x64-windows\\include")
 target_include_directories(TechEngineClient PUBLIC ${Stb_INCLUDE_DIR})
 target_include_directories(TechEngineClient PUBLIC "src")
-target_link_libraries(TechEngineClient PUBLIC TechEngineCore GLEW::GLEW glfw glm::glm yaml-cpp)
+target_link_libraries(TechEngineClient PUBLIC TechEngineCore GLEW::GLEW glfw glm::glm)
 
 #Copy API include files to project template
 set(TECH_ENGINE_CLIENT_API_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/include/TechEngineClient")
 set(TECH_ENGINE_CLIENT_API_FILES
         "${PROJECT_SOURCE_DIR}/TechEngineClient/src/core/Key.hpp"
         "${PROJECT_SOURCE_DIR}/TechEngineClient/src/core/Mouse.hpp"
-        "${PROJECT_SOURCE_DIR}/TechEngineClient/src/material/Material.hpp"
         "${PROJECT_SOURCE_DIR}/TechEngineClient/src/components"
         "${PROJECT_SOURCE_DIR}/TechEngineClient/src/events"
-        "${PROJECT_SOURCE_DIR}/TechEngineClient/src/script"
-        "${PROJECT_SOURCE_DIR}/TechEngineClient/src/scriptingAPI"
-        "${PROJECT_SOURCE_DIR}/TechEngineClient/src/texture"
 )
 
 #Clear TechEngineClient API directory

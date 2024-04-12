@@ -1,13 +1,11 @@
-#include <yaml-cpp/exceptions.h>
 #include "TechEngineRuntime.hpp"
-#include "renderer/RendererSettings.hpp"
+#include "core/Client.hpp"
 #include "events/appManagement/AppCloseRequestEvent.hpp"
 #include "script/ScriptEngine.hpp"
 #include "core/Logger.hpp"
-#include "core/FileSystem.hpp"
 
 namespace TechEngine {
-    TechEngineRuntime::TechEngineRuntime() : Client("TechEngine", RendererSettings::width, RendererSettings::height) {
+    TechEngineRuntime::TechEngineRuntime() : Client("TechEngine", 1080, 720) {
         EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngine::Event* event) {
             onWindowResizeEvent((WindowResizeEvent*)event);
         });
@@ -25,7 +23,7 @@ namespace TechEngine {
 
     void TechEngineRuntime::onUpdate() {
         ScriptEngine::getInstance()->onUpdate();
-        renderer.renderPipeline(sceneManager.getScene());
+        renderer.renderPipeline(sceneManager.getScene().getMainCamera());
         window.onUpdate();
     }
 
@@ -37,14 +35,19 @@ namespace TechEngine {
     bool TechEngineRuntime::loadRendererSettings() {
         projectManager.loadRuntimeProject(std::filesystem::current_path().string());
         window.changeTitle(projectManager.getProjectName());
-        RendererSettings::resize(1080, 720);
+        float width = 1080;
+        float height = 720;
+        float aspectRatio = width / height;
+        glViewport(0, 0, width, height);
+        sceneManager.getScene().getMainCamera()->updateProjectionMatrix(aspectRatio);
         return true;
     }
 
 
     void TechEngineRuntime::onWindowResizeEvent(WindowResizeEvent* event) {
-        RendererSettings::resize(event->getWidth(), event->getHeight());
+        float aspectRatio = (float)event->getWidth() / (float)event->getHeight();
         glViewport(0, 0, event->getWidth(), event->getHeight());
+        sceneManager.getScene().getMainCamera()->updateProjectionMatrix(aspectRatio);
     }
 }
 

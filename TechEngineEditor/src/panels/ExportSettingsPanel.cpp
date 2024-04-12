@@ -1,6 +1,5 @@
 #include <imgui.h>
 #include "ExportSettingsPanel.hpp"
-#include "scene/SceneManager.hpp"
 #include "PanelsManager.hpp"
 #include <filesystem>
 #include <yaml-cpp/emitter.h>

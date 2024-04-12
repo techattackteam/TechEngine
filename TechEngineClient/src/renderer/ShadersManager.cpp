@@ -1,6 +1,6 @@
 #include <filesystem>
 #include "ShadersManager.hpp"
-#include "core/FileSystem.hpp"
+#include "../../../TechEngineCore/src/core/FileSystem.hpp"
 #include "core/Logger.hpp"
 
 namespace TechEngine {

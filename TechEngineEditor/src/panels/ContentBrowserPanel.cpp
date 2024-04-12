@@ -3,7 +3,6 @@
 #include "ContentBrowserPanel.hpp"
 #include "core/Logger.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
-#include "scene/SceneManager.hpp"
 #include "material/MaterialManager.hpp"
 
 namespace TechEngine {
