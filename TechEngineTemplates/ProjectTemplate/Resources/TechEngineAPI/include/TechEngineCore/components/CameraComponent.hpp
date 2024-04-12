@@ -1,10 +1,9 @@
 #pragma once
 
-#include "components/Component.hpp"
 #include "scene/GameObject.hpp"
 #include "components/TransformComponent.hpp"
-#include "events/window/WindowResizeEvent.hpp"
-#include "events/window/FramebufferResizeEvent.hpp"
+/*#include "events/window/WindowResizeEvent.hpp"
+#include "events/window/FramebufferResizeEvent.hpp"*/
 #include <glm/glm.hpp>
 
 namespace TechEngine {
@@ -42,9 +41,9 @@ namespace TechEngine {
 
         void changeProjectionType(ProjectionType projectionType);
 
-        void onWindowResizeEvent(WindowResizeEvent* event);
+        /*void onWindowResizeEvent(WindowResizeEvent* event);
 
-        void onFramebufferResizeEvent(FramebufferResizeEvent* event);
+        void onFramebufferResizeEvent(FramebufferResizeEvent* event);*/
 
         glm::mat4 getViewMatrix();
 

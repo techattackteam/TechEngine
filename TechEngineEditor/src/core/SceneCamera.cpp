@@ -1,5 +1,5 @@
 #include "SceneCamera.hpp"
-#include "components/CameraComponent.hpp"
+#include "components/render/CameraComponent.hpp"
 
 namespace TechEngine {
     SceneCamera::SceneCamera() : GameObject("SceneCamera") {

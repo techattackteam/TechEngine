@@ -1,5 +1,7 @@
 #pragma once
 
+#include <components/render/CameraComponent.hpp>
+
 #include "GameObject.hpp"
 
 namespace TechEngine {
@@ -59,5 +61,9 @@ namespace TechEngine {
         void makeChildTo(GameObject* parent, GameObject* child);
 
         void onGameObjectDeleteRequest();
+
+        bool hasMainCamera();
+
+        CameraComponent* getMainCamera();
     };
 }

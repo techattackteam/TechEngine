@@ -3,7 +3,6 @@
 
 #include "components/physics/BoxColliderComponent.hpp"
 #include "components/physics/SphereCollider.hpp"
-#include "scene/SceneHelper.hpp"
 #include "panels/PanelsManager.hpp"
 
 namespace TechEngine {
@@ -68,7 +67,7 @@ namespace TechEngine {
         return true;
     }
 
-    void Guizmo::editTransform(ImGuiContext* context, std::vector<GameObject*>& selectedGameObjects) {
+    void Guizmo::editTransform(CameraComponent* camera, ImGuiContext* context, std::vector<GameObject*>& selectedGameObjects) {
         if (operation == -1) {
             return;
         }
@@ -87,8 +86,8 @@ namespace TechEngine {
         m_ViewportBounds[1] = {viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y};
         ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y, m_ViewportBounds[1].x - m_ViewportBounds[0].x, m_ViewportBounds[1].y - m_ViewportBounds[0].y);
 
-        const glm::mat4& cameraProjection = SceneHelper::mainCamera->getProjectionMatrix();
-        glm::mat4 cameraView = SceneHelper::mainCamera->getViewMatrix();
+        const glm::mat4& cameraProjection = camera->getProjectionMatrix();
+        glm::mat4 cameraView = camera->getViewMatrix();
 
         glm::mat4 transform = selectedGameObjects.front()->getModelMatrix();
         Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),

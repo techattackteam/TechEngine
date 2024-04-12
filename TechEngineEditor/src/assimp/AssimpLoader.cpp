@@ -1,6 +1,6 @@
 #include "AssimpLoader.hpp"
 #include "core/Logger.hpp"
-#include "components/MeshRendererComponent.hpp"
+#include "components/render/MeshRendererComponent.hpp"
 #include "core/FileSystem.hpp"
 #include "mesh/ImportedMesh.hpp"
 #include "material/MaterialManager.hpp"

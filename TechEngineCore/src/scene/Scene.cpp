@@ -103,4 +103,22 @@ namespace TechEngine {
         }
         gameObjectsToDelete.emplace_back(gameObject);*/
     }
+
+    bool Scene::hasMainCamera() {
+        for (GameObject* gameObject: gameObjects) {
+            if (gameObject->hasComponent<CameraComponent>() && gameObject->getComponent<CameraComponent>()->isMainCamera()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    CameraComponent* Scene::getMainCamera() {
+        for (GameObject* gameObject: gameObjects) {
+            if (gameObject->hasComponent<CameraComponent>() && gameObject->getComponent<CameraComponent>()->isMainCamera()) {
+                return gameObject->getComponent<CameraComponent>();
+            }
+        }
+        return nullptr;
+    }
 }

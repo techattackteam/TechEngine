@@ -2,7 +2,7 @@
 #include <glm/ext/matrix_transform.hpp>
 #include "CameraComponent.hpp"
 #include "components/TransformComponent.hpp"
-#include "renderer/RendererSettings.hpp"
+/*#include "renderer/RendererSettings.hpp"*/
 #include "eventSystem/EventDispatcher.hpp"
 #include "core/Logger.hpp"
 #include "scene/GameObject.hpp"
@@ -21,28 +21,28 @@ namespace TechEngine {
     }
 
     void CameraComponent::init() {
-        EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngine::Event* event) {
+        /*EventDispatcher::getInstance().subscribe(WindowResizeEvent::eventType, [this](TechEngine::Event* event) {
             onWindowResizeEvent((WindowResizeEvent*)(event));
         });
 
         EventDispatcher::getInstance().subscribe(FramebufferResizeEvent::eventType, [this](Event* event) {
             onFramebufferResizeEvent((FramebufferResizeEvent*)(event));
-        });
+        });*/
 
         updateViewMatrix();
-        updateProjectionMatrix();
+        //updateProjectionMatrix();
     }
 
     void CameraComponent::update() {
         updateViewMatrix();
-        updateProjectionMatrix();
+        //updateProjectionMatrix();
     }
 
-    void CameraComponent::updateProjectionMatrix() {
+    void CameraComponent::updateProjectionMatrix(float aspectRatio) {
         if (projectionType == PERSPECTIVE) {
-            projectionMatrix = glm::perspective(glm::radians(fov), RendererSettings::aspectRatio, nearPlane, farPlane);
+            projectionMatrix = glm::perspective(glm::radians(fov), aspectRatio, nearPlane, farPlane);
         } else if (projectionType == ORTHOGRAPHIC) {
-            projectionMatrix = glm::ortho(-orthoSize * RendererSettings::aspectRatio, orthoSize * RendererSettings::aspectRatio, -orthoSize, orthoSize, nearPlane, farPlane);
+            projectionMatrix = glm::ortho(-orthoSize * aspectRatio, orthoSize * aspectRatio, -orthoSize, orthoSize, nearPlane, farPlane);
         }
     }
 
@@ -54,16 +54,6 @@ namespace TechEngine {
 
     void CameraComponent::changeProjectionType(ProjectionType projectionType) {
         this->projectionType = projectionType;
-    }
-
-    void CameraComponent::onWindowResizeEvent(WindowResizeEvent* event) {
-        updateProjectionMatrix();
-    }
-
-    void CameraComponent::onFramebufferResizeEvent(FramebufferResizeEvent* event) {
-        if (RendererSettings::targetId == event->getId()) {
-            updateProjectionMatrix();
-        }
     }
 
     glm::mat4 CameraComponent::getViewMatrix() {

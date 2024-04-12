@@ -3,7 +3,6 @@
 #include <imGuizmo.h>
 
 #include "physics/PhysicsEngine.hpp"
-#include "scene/GameObject.hpp"
 
 namespace TechEngine {
     class Guizmo {
@@ -15,7 +14,7 @@ namespace TechEngine {
     public:
         Guizmo(PhysicsEngine& physicsEngine);
 
-        void editTransform(ImGuiContext* context, std::vector<GameObject*>& selectedGO);
+        void editTransform(CameraComponent* camera, ImGuiContext* context, std::vector<GameObject*>& selectedGO);
 
         void setOperation(int operation);
 

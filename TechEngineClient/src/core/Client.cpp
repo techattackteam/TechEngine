@@ -8,7 +8,7 @@ namespace TechEngine {
                                                               sceneManager(projectManager, physicsEngine, materialManager, textureManager),
                                                               projectManager(sceneManager, textureManager, materialManager), physicsEngine(sceneManager.getScene()),
                                                               window(name, width, height),
-                                                              renderer(),
+                                                              renderer(sceneManager.getScene()),
                                                               api(&sceneManager, &eventDispatcher, &materialManager) {
         eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event* event) {
             onWindowCloseEvent((WindowCloseEvent*)(event));

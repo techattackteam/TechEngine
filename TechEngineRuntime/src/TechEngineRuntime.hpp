@@ -1,7 +1,7 @@
 #pragma once
 
+#include "core/Client.hpp"
 #include "core/Window.hpp"
-#include "core/App.hpp"
 #include "events/window/WindowResizeEvent.hpp"
 
 namespace TechEngine {

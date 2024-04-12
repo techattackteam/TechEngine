@@ -1,5 +1,5 @@
 #include "Sphere.hpp"
-#include "components/MeshRendererComponent.hpp"
+#include "components/render/MeshRendererComponent.hpp"
 #include "material/MaterialManager.hpp"
 
 namespace TechEngine::MaterialEditorGameObjects {
@@ -7,7 +7,7 @@ namespace TechEngine::MaterialEditorGameObjects {
         addComponent<TransformComponent>();
     }
 
-    void Sphere::init(Material *material) {
+    void Sphere::init(Material* material) {
         addComponent<MeshRendererComponent>(&mesh, material);
     }
 }

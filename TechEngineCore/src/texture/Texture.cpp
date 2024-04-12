@@ -1,16 +1,16 @@
 #include "Texture.hpp"
-#include "GL/glew.h"
-#include "core/Logger.hpp"
+/*#include "GL/glew.h"
+#include "core/Logger.hpp"*/
 #include "core/FileSystem.hpp"
-#include "renderer/ErrorCatcher.hpp"
 
-#define STB_IMAGE_IMPLEMENTATION
+/*#define STB_IMAGE_IMPLEMENTATION
 
-#include <stb_image.h>
+#include <stb_image.h>*/
 
 namespace TechEngine {
+            //Move this to the client module
     Texture::Texture(const std::string& filepath) {
-        int width, height, channels;
+        /*int width, height, channels;
         stbi_set_flip_vertically_on_load(1);
         stbi_uc* data = stbi_load(filepath.c_str(), &width, &height, &channels, 0);
         if (data) {
@@ -45,7 +45,7 @@ namespace TechEngine {
             TE_LOGGER_INFO("Texture {0} loaded", filepath);
         } else {
             TE_LOGGER_ERROR("Failed to load texture {0}", filepath);
-        }
+        }*/
     }
 
     Texture::~Texture() {
@@ -53,11 +53,11 @@ namespace TechEngine {
     }
 
     void Texture::bind(unsigned int slot) const {
-        GlCall(glActiveTexture(GL_TEXTURE1));
-        glBindTexture(GL_TEXTURE_2D, m_id);
+        /*GlCall(glActiveTexture(GL_TEXTURE1));
+        glBindTexture(GL_TEXTURE_2D, m_id);*/
     }
 
     void Texture::unbind() const {
-        glBindTexture(GL_TEXTURE_2D, 0);
+        /*glBindTexture(GL_TEXTURE_2D, 0);*/
     }
 }

@@ -3,7 +3,6 @@
 #include "yaml-cpp/yaml.h"
 #include "core/FileSystem.hpp"
 #include "core/Logger.hpp"
-#include "scene/SceneManager.hpp"
 #include "events/appManagement/AppCloseRequestEvent.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 

@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Panel.hpp"
+#include "components/render/CameraComponent.hpp"
 #include "renderer/Renderer.hpp"
 #include "UIUtils/Guizmo.hpp"
 #include "core/SceneCamera.hpp"
-#include "components/CameraComponent.hpp"
 #include "core/Key.hpp"
 
 namespace TechEngine {
@@ -39,7 +39,7 @@ namespace TechEngine {
             return sceneCamera;
         }
 
-        void renderCameraFrustum(TechEngine::CameraComponent* camera);
+        void renderCameraFrustum(CameraComponent* camera);
 
         void renderColliders();
 

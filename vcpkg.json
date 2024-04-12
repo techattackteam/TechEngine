@@ -18,6 +18,7 @@
     "glew",
     "physx",
     "stb",
-    "assimp"
+    "assimp",
+    "gamenetworkingsockets"
   ]
 }

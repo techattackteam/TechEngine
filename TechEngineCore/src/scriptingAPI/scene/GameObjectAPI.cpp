@@ -1,7 +1,7 @@
 #include "GameObjectAPI.hpp"
 
-#include "components/CameraComponent.hpp"
-#include "components/MeshRendererComponent.hpp"
+#include "components/render/CameraComponent.hpp"
+#include "components/render/MeshRendererComponent.hpp"
 #include "components/physics/BoxColliderComponent.hpp"
 #include "components/physics/SphereCollider.hpp"
 #include "components/physics/CylinderCollider.hpp"

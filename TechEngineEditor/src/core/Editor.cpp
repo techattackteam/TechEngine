@@ -1,12 +1,12 @@
 #include <fstream>
 #include "Editor.hpp"
-#include "core/FileSystem.hpp"
+#include "../../../TechEngineCore/src/core/FileSystem.hpp"
 #include "external/EntryPoint.hpp"
 #include "script/ScriptEngine.hpp"
 #include "yaml-cpp/yaml.h"
 
 namespace TechEngine {
-    Editor::Editor() : Client("TechEngine", RendererSettings::width, RendererSettings::height), panelsManager(window, sceneManager, projectManager, physicsEngine, textureManager, materialManager, renderer) {
+    Editor::Editor() : Client("TechEngine", 1600    , 900), panelsManager(window, sceneManager, projectManager, physicsEngine, textureManager, materialManager, renderer) {
         ScriptEngine* scriptEngine = new ScriptEngine(false);
         editorSettings = FileSystem::rootPath.string() + "/EditorSettings.TESettings";
         projectManager.init();

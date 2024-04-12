@@ -1,6 +1,6 @@
 #pragma once
 
-#include "components/MeshRendererComponent.hpp"
+#include "components/render/MeshRendererComponent.hpp"
 #include "VertexArray.hpp"
 #include "ShadersManager.hpp"
 #include "FrameBuffer.hpp"
@@ -23,18 +23,22 @@ namespace TechEngine {
         std::unordered_map<std::string, IndicesBuffer*> indicesBuffers;
         std::list<FrameBuffer*> frameBuffers;
 
+        Scene& scene;
+
     public:
-        Renderer() = default;
+        Renderer(Scene& scene);
 
         ~Renderer();
 
         void init(ProjectManager& projectManager);
 
-        void renderPipeline(Scene& scene);
+        void renderPipeline();
 
-        void renderCustomPipeline(std::vector<GameObject*>& gameObjects);
+        void renderCustomPipeline(CameraComponent* camera, std::vector<GameObject*>& gameObjects);
 
         void createLine(const glm::vec3& startPosition, const glm::vec3& endPosition, const glm::vec4& color);
+
+        void renderPipeline(CameraComponent* camera);
 
         FrameBuffer& getFramebuffer(uint32_t id);
 
@@ -43,15 +47,15 @@ namespace TechEngine {
         ShadersManager& getShadersManager();
 
     private:
-        void shadowPass(Scene& scene);
+        void shadowPass();
 
-        void geometryPass(Scene& scene);
+        void geometryPass(CameraComponent* camera);
 
-        void linePass();
+        void linePass(CameraComponent* camera);
 
-        void renderWithLightPass(Scene& scene);
+        void renderWithLightPass();
 
-        void renderGeometryPass(Scene& scene, bool shadow);
+        void renderGeometryPass(bool shadow);
 
         void renderGameObject(GameObject* gameObject, bool shadow);
 
