@@ -21,7 +21,8 @@ namespace TechEngine {
         path projectLocation = std::filesystem::current_path().string() + "\\" + projectName;
         path projectAssetsPath = projectLocation.string() + "\\Assets";
         path projectResourcesPath = projectLocation.string() + "\\Resources";
-        path projectExportPath = projectLocation.string() + "\\GameBuild";
+        path projectGameExportPath = projectLocation.string() + "\\Build\\GameBuild";
+        path projectServerExportPath = projectLocation.string() + "\\Build\\ServerBuild";
 
         path cmakeBuildPath = projectResourcesPath.string() + "\\cmake\\cmake-build-debug";
         path userScriptsDebugDLLPath = projectResourcesPath.string() + "\\scripts\\build\\debug\\UserScripts.dll";
@@ -66,7 +67,9 @@ namespace TechEngine {
 
         const path& getCmakeBuildPath();
 
-        const path& getProjectExportPath();
+        const path& getProjectGameExportPath();
+
+        const path& getProjectServerExportPath();
 
         const path& getCmakePath();
 

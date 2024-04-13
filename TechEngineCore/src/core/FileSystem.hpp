@@ -9,7 +9,8 @@ namespace TechEngine::FileSystem {
     inline std::filesystem::path projectTemplate = rootPath.string() + "\\projectTemplate";
     inline std::filesystem::path scenesTemplate = projectTemplate.string() + "\\Assets\\scenes\\DefaultScene.scene";
     inline std::filesystem::path scriptsTemplate = projectTemplate.string() + "\\Assets\\scripts";
-    inline std::filesystem::path runtimePath = rootPath.string() + "\\runtime";
+    inline std::filesystem::path runtimePath = rootPath.string() + "\\TechEngineRuntime";
+    inline std::filesystem::path serverPath = rootPath.string() + "\\TechEngineServer";
     inline std::filesystem::path editorResourcesPath = rootPath.string() + "\\resources"; //Only use this in editor
 
     inline std::vector<std::string> getAllFilesWithExtension(const std::string& path, const std::string& extension, bool recursive) {
