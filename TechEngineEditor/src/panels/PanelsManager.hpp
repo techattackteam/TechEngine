@@ -17,6 +17,7 @@
 #include "GameView.hpp"
 #include "MaterialEditor.hpp"
 #include "scene/SceneManager.hpp"
+#include "windows.h"
 
 namespace TechEngine {
     enum CompileMode {
@@ -47,6 +48,9 @@ namespace TechEngine {
         MaterialEditor materialEditor;
         bool m_currentPlaying = false;
         bool isCtrlPressed = false;
+
+        std::vector<PROCESS_INFORMATION> clientProcesses;
+        std::vector<PROCESS_INFORMATION> serverProcesses;
 
     public:
         PanelsManager(Window& window, SceneManager& sceneManager,
@@ -92,6 +96,10 @@ namespace TechEngine {
         void runServerProcess();
 
         void runClientProcess();
+
+        void OnCloseProcessEvent(DWORD processId);
+
+        void CloseAllProcessEvents();
 
         void OnKeyPressedEvent(Key& key);
 

@@ -14,6 +14,7 @@
 #include "project/ProjectManager.hpp"
 #include "events/input/KeyPressedEvent.hpp"
 #include "defaultGameObject/MainCamera.hpp"
+#include "events/OnProcessCloseEvent.hpp"
 #include "events/gameObjects/GameObjectDestroyEvent.hpp"
 #include "events/input/KeyReleasedEvent.hpp"
 #include "events/window/WindowCloseEvent.hpp"
@@ -48,6 +49,7 @@ namespace TechEngine {
                 stopRunningScene();
                 m_currentPlaying = false;
             }
+            CloseAllProcessEvents();
         });
         EventDispatcher::getInstance().subscribe(RegisterCustomPanel::eventType, [this](TechEngine::Event* event) {
             registerCustomPanel((RegisterCustomPanel*)event);
@@ -69,6 +71,9 @@ namespace TechEngine {
             stopRunningScene();
         });
 
+        EventDispatcher::getInstance().subscribe(OnProcessCloseEvent::eventType, [this](Event* event) {
+            OnCloseProcessEvent(((OnProcessCloseEvent*)event)->getProcessId());
+        });
 
         contentBrowser.init();
         materialEditor.init();
@@ -417,16 +422,20 @@ namespace TechEngine {
         ScriptEngine::getInstance()->stop();
     }
 
+    void closeRunningClientProcesses(PVOID lpParameter, BOOLEAN TimerOrWaitFiredm) {
+        DWORD dwProcessId = reinterpret_cast<DWORD>(lpParameter);
+        EventDispatcher::getInstance().dispatch(new OnProcessCloseEvent(dwProcessId));
+    }
+
     void PanelsManager::runServerProcess() {
-        //if (std::filesystem::exists(dllPath)) {
-        // 1. Create child process
+        exportSettingsPanel.exportServerProject();
         STARTUPINFOA si;
         PROCESS_INFORMATION pi;
 
         ZeroMemory(&si, sizeof(si));
         si.cb = sizeof(si);
         ZeroMemory(&pi, sizeof(pi));
-        std::string path = "C:\\dev\\TechEngine\\bin\\TechEngineServer\\debug\\TechEngineServer.exe";
+        std::string path = projectManager.getProjectServerExportPath().string() + "\\TechEngineServer.exe";
         if (!CreateProcessA(
             nullptr, // Application name (we can specify the engine executable here to launch a copy)
             (LPSTR)path.c_str(), // Command line argument: the DLL path
@@ -442,25 +451,29 @@ namespace TechEngine {
             TE_LOGGER_ERROR("Failed to create process for user scripts dll");
             return;
         }
-
-        // Store process information for later management
-        /*m_dllProcessHandle = pi.hProcess;
-        m_dllThreadHandle = pi.hThread;*/
-        //} else {
-        //  TE_LOGGER_ERROR("Failed to load user scripts dll: File not found");
-        //}
+        serverProcesses.push_back(pi);
+        HANDLE hWaitHandle;
+        if (!RegisterWaitForSingleObject(
+            &hWaitHandle,
+            pi.hProcess, // Handle to wait on
+            &closeRunningClientProcesses, // Callback function
+            reinterpret_cast<void*>(pi.dwProcessId), // Context passed to the callback
+            INFINITE, // Timeout
+            WT_EXECUTEONLYONCE // Trigger callback only once
+        )) {
+            TE_LOGGER_ERROR("Failed to register wait for single object");
+        }
     }
 
     void PanelsManager::runClientProcess() {
-        exportSettingsPanel.exportProject();
+        exportSettingsPanel.exportGameProject();
         STARTUPINFOA si;
         PROCESS_INFORMATION pi;
-
         ZeroMemory(&si, sizeof(si));
         si.cb = sizeof(si);
         ZeroMemory(&pi, sizeof(pi));
-        std::string path = projectManager.getProjectExportPath().string() + "\\TechEngineRuntime.exe";
-        std::string currentDirectory = projectManager.getProjectExportPath().string();
+        std::string path = projectManager.getProjectGameExportPath().string() + "\\TechEngineRuntime.exe";
+        std::string currentDirectory = projectManager.getProjectGameExportPath().string();
         if (!CreateProcessA(
             nullptr, // Application name (we can specify the engine executable here to launch a copy)
             (LPSTR)path.c_str(), // Command line argument: the DLL path
@@ -475,6 +488,36 @@ namespace TechEngine {
         )) {
             TE_LOGGER_ERROR("Failed to create process for user scripts dll");
             return;
+        }
+        clientProcesses.push_back(pi);
+        HANDLE hWaitHandle;
+        if (!RegisterWaitForSingleObject(
+            &hWaitHandle,
+            pi.hProcess, // Handle to wait on
+            &closeRunningClientProcesses, // Callback function
+            reinterpret_cast<void*>(pi.dwProcessId), // Context passed to the callback
+            INFINITE, // Timeout
+            WT_EXECUTEONLYONCE // Trigger callback only once
+        )) {
+            TE_LOGGER_ERROR("Failed to register wait for single object");
+        }
+    }
+
+    void PanelsManager::OnCloseProcessEvent(DWORD processId) {
+        for (auto it = clientProcesses.begin(); it != clientProcesses.end(); it++) {
+            if (it->dwProcessId == processId) {
+                clientProcesses.erase(it);
+                break;
+            }
+        }
+    }
+
+    void PanelsManager::CloseAllProcessEvents() {
+        for (auto it = clientProcesses.begin(); it != clientProcesses.end(); it++) {
+            TerminateProcess(it->hProcess, 0);
+        }
+        for (auto it = serverProcesses.begin(); it != serverProcesses.end(); it++) {
+            TerminateProcess(it->hProcess, 0);
         }
     }
 

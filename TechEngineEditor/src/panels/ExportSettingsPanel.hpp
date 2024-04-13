@@ -25,7 +25,9 @@ namespace TechEngine {
 
         void onUpdate() override;
 
-        void exportProject();
+        void exportGameProject();
+
+        void exportServerProject();
 
         void serializeEngineSettings(const std::filesystem::path& exportPath);
     };

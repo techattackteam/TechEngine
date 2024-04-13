@@ -32,28 +32,49 @@ namespace TechEngine {
 
 
         if (ImGui::Button("Export")) {
-            exportProject();
+            exportGameProject();
         }
         if (ImGui::Button("Close")) {
             m_open = false;
         };
     }
 
-    void ExportSettingsPanel::exportProject() {
+    void ExportSettingsPanel::exportGameProject() {
         try {
-            std::filesystem::remove_all(projectManager.getProjectExportPath());
-            std::filesystem::create_directory(projectManager.getProjectExportPath());
+            std::filesystem::remove_all(projectManager.getProjectGameExportPath());
+            std::filesystem::create_directory(projectManager.getProjectGameExportPath());
             sceneManager.saveCurrentScene();
             std::filesystem::copy_options copyOptions = std::filesystem::copy_options::recursive |
                                                         std::filesystem::copy_options::overwrite_existing;
 
-            std::filesystem::copy(projectManager.getProjectFilePath(), projectManager.getProjectExportPath(), copyOptions);
+            std::filesystem::copy(projectManager.getProjectFilePath(), projectManager.getProjectGameExportPath(), copyOptions);
             panelsManager.compileUserScripts(RELEASE);
-            FileSystem::copyRecursive(projectManager.getProjectAssetsPath(), projectManager.getProjectExportPath().string() + "//Assets", {".cpp", ".hpp"}, {"cmake"});
-            std::filesystem::create_directory(projectManager.getProjectExportPath().string() + "//Resources");
-            FileSystem::copyRecursive(projectManager.getProjectResourcesPath(), projectManager.getProjectExportPath().string() + "//Resources", {".cpp", ".hpp"}, {"cmake"});
-            std::filesystem::copy(FileSystem::runtimePath, projectManager.getProjectExportPath(), copyOptions);
-            TE_LOGGER_INFO("Project exported to: {0}", projectManager.getProjectExportPath().string());
+            FileSystem::copyRecursive(projectManager.getProjectAssetsPath(), projectManager.getProjectGameExportPath().string() + "//Assets", {".cpp", ".hpp"}, {"cmake"});
+            std::filesystem::create_directory(projectManager.getProjectGameExportPath().string() + "//Resources");
+            FileSystem::copyRecursive(projectManager.getProjectResourcesPath(), projectManager.getProjectGameExportPath().string() + "//Resources", {".cpp", ".hpp"}, {"cmake"});
+            std::filesystem::copy(FileSystem::runtimePath, projectManager.getProjectGameExportPath(), copyOptions);
+            TE_LOGGER_INFO("Project exported to: {0}", projectManager.getProjectGameExportPath().string());
+        } catch (std::filesystem::filesystem_error& e) {
+            TE_LOGGER_ERROR("Error while exporting project: {0}", e.what());
+            return;
+        }
+    }
+
+    void ExportSettingsPanel::exportServerProject() {
+        try {
+            std::filesystem::remove_all(projectManager.getProjectServerExportPath());
+            std::filesystem::create_directory(projectManager.getProjectServerExportPath());
+            sceneManager.saveCurrentScene();
+            std::filesystem::copy_options copyOptions = std::filesystem::copy_options::recursive |
+                                                        std::filesystem::copy_options::overwrite_existing;
+
+            std::filesystem::copy(projectManager.getProjectFilePath(), projectManager.getProjectServerExportPath(), copyOptions);
+            panelsManager.compileUserScripts(RELEASE);
+            FileSystem::copyRecursive(projectManager.getProjectAssetsPath(), projectManager.getProjectServerExportPath().string() + "//Assets", {".cpp", ".hpp"}, {"cmake"});
+            std::filesystem::create_directory(projectManager.getProjectServerExportPath().string() + "//Resources");
+            FileSystem::copyRecursive(projectManager.getProjectResourcesPath(), projectManager.getProjectServerExportPath().string() + "//Resources", {".cpp", ".hpp"}, {"cmake"});
+            std::filesystem::copy(FileSystem::serverPath, projectManager.getProjectServerExportPath(), copyOptions);
+            TE_LOGGER_INFO("Project exported to: {0}", projectManager.getProjectServerExportPath().string());
         } catch (std::filesystem::filesystem_error& e) {
             TE_LOGGER_ERROR("Error while exporting project: {0}", e.what());
             return;
