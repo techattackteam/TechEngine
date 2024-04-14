@@ -5,7 +5,7 @@
 #include "yaml-cpp/yaml.h"
 
 namespace TechEngine {
-    Editor::Editor() : Client("TechEngine", 1600, 900), panelsManager(window, sceneManager, projectManager, physicsEngine, textureManager, materialManager, renderer) {
+    Editor::Editor() : Client("TechEngine", 1600, 900), panelsManager(window, sceneManager, projectManager, physicsEngine, textureManager, materialManager, renderer, networkEngine) {
         editorSettings = FileSystem::rootPath.string() + "/EditorSettings.TESettings";
         projectManager.init();
         loadEditorSettings();

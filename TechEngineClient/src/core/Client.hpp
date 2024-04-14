@@ -4,6 +4,7 @@
 #include "core/AppCore.hpp"
 #include "Window.hpp"
 #include "events/window/WindowCloseEvent.hpp"
+#include "network/NetworkEngine.hpp"
 
 
 namespace TechEngine {
@@ -11,6 +12,8 @@ namespace TechEngine {
     public:
         Window window;
         Renderer renderer;
+        NetworkEngine networkEngine;
+
         Client(std::string name, int width, int height);
 
         ~Client() override;

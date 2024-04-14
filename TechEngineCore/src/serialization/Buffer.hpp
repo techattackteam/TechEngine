@@ -52,6 +52,16 @@ namespace TechEngine {
             size = 0;
         }
 
+        void resize(uint64_t newSize) {
+            void* newData = new uint8_t[newSize];
+            if (data) {
+                memcpy(newData, data, size < newSize ? size : newSize);
+                delete[] static_cast<uint8_t*>(data);
+            }
+            data = newData;
+            size = newSize;
+        }
+
         void zeroInitialize() {
             if (data)
                 memset(data, 0, size);

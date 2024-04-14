@@ -1,24 +1,30 @@
-#include "NetworkHandlerComponent.hpp"
+#include "NetworkEngine.hpp"
 
-#include <steam/steamnetworkingsockets.h>
-#include <steam/ISteamNetworkingUtils.h>
 #include "core/Logger.hpp"
 #include "network/PacketType.hpp"
 #include "serialization/BufferStream.hpp"
 
-namespace TechEngine {
-    NetworkHandlerComponent::NetworkHandlerComponent(GameObject* gameObject) : Component(gameObject, "NetworkHandler") {
-    }
-
-    NetworkHandlerComponent::~NetworkHandlerComponent() {
-    }
-
+#include <steam/steamnetworkingsockets.h>
+#include <steam/ISteamNetworkingUtils.h>
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 
+#include "network/SceneSynchronizer.hpp"
+#include "scene/GameObject.hpp"
+
+namespace TechEngine {
+    NetworkEngine::NetworkEngine(Scene& scene) : scene(scene) {
+    }
+
+    NetworkEngine::~NetworkEngine() {
+        if (running) {
+            disconnectServer();
+        }
+    }
+
+
     std::string ResolveDomainName(std::string_view name) {
         // Adapted from example at https://learn.microsoft.com/en-us/windows/win32/api/ws2tcpip/nf-ws2tcpip-getaddrinfo
-        // TODO(Yan): better error logging
 
         WSADATA wsaData;
         int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -101,7 +107,7 @@ namespace TechEngine {
         return SplitString(string, std::string(1, delimiter));
     }
 
-    void NetworkHandlerComponent::connectServer() {
+    void NetworkEngine::connectServer() {
         connectionStatus = ConnectionStatus::Connecting;
 
         SteamDatagramErrMsg errMsg;
@@ -142,30 +148,29 @@ namespace TechEngine {
     }
 
 
-    void NetworkHandlerComponent::update() {
+    void NetworkEngine::update() {
         if (running) {
-            /*pollIncomingMessages();*/
+            pollIncomingMessages();
             pollConnectionStateChanges();
             //std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }
 
-    void NetworkHandlerComponent::fixedUpdate() {
-        Component::fixedUpdate();
+    void NetworkEngine::fixedUpdate() {
     }
 
-    void NetworkHandlerComponent::disconnectServer() {
+    void NetworkEngine::disconnectServer() {
         running = false;
         sockets->CloseConnection(connection, 0, nullptr, false);
         connectionStatus = ConnectionStatus::Disconnected;
         GameNetworkingSockets_Kill();
     }
 
-    void NetworkHandlerComponent::setServerAddress(const std::string& address) {
+    void NetworkEngine::setServerAddress(const std::string& address) {
         serverAddress = address;
     }
 
-    void NetworkHandlerComponent::sendBuffer(Buffer buffer, bool reliable) {
+    void NetworkEngine::sendBuffer(Buffer buffer, bool reliable) {
         EResult result = sockets->SendMessageToConnection(connection, buffer.data, buffer.GetSize(), reliable ? k_nSteamNetworkingSend_Reliable : k_nSteamNetworkingSend_Unreliable, nullptr);
         if (result != k_EResultOK) {
             TE_LOGGER_ERROR("Failed to send message to server. Error: {0}", (int)result);
@@ -174,32 +179,27 @@ namespace TechEngine {
         }
     }
 
-    void NetworkHandlerComponent::sendString(const std::string& string, bool reliable) {
+    void NetworkEngine::sendString(const std::string& string, bool reliable) {
         sendBuffer(Buffer(string.c_str(), string.size()), reliable);
     }
 
-    bool NetworkHandlerComponent::isRunning() {
+    bool NetworkEngine::isRunning() {
         return running;
     }
 
-    NetworkHandlerComponent::ConnectionStatus NetworkHandlerComponent::getConnectionStatus() const {
+    NetworkEngine::ConnectionStatus NetworkEngine::getConnectionStatus() const {
         return connectionStatus;
     }
 
-    const std::string& NetworkHandlerComponent::getConnectionDebugMessage() const {
+    const std::string& NetworkEngine::getConnectionDebugMessage() const {
         return connectionDebugMessage;
     }
 
-    const std::string& NetworkHandlerComponent::getServerAddress() const {
+    const std::string& NetworkEngine::getServerAddress() const {
         return serverAddress;
     }
 
-    Component* NetworkHandlerComponent::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
-        //TODO: Implement
-        return nullptr;
-    }
-
-    void NetworkHandlerComponent::pollIncomingMessages() {
+    void NetworkEngine::pollIncomingMessages() {
         while (running) {
             ISteamNetworkingMessage* incomingMessage = nullptr;
             int messageCount = sockets->ReceiveMessagesOnConnection(connection, &incomingMessage, 1);
@@ -213,18 +213,18 @@ namespace TechEngine {
             }
 
             //m_DataReceivedCallback(Buffer(incomingMessage->m_pData, incomingMessage->m_cbSize));
-
+            onDataReceived(Buffer(incomingMessage->m_pData, incomingMessage->m_cbSize));
             // Release when done
             incomingMessage->Release();
         }
     }
 
-    void NetworkHandlerComponent::pollConnectionStateChanges() {
+    void NetworkEngine::pollConnectionStateChanges() {
         sockets->RunCallbacks();
     }
 
-    void NetworkHandlerComponent::onConnectionStatusChanged(SteamNetConnectionStatusChangedCallback_t* info) {
-        NetworkHandlerComponent* self = reinterpret_cast<NetworkHandlerComponent*>(SteamNetworkingSockets()->GetConnectionUserData(info->m_hConn));
+    void NetworkEngine::onConnectionStatusChanged(SteamNetConnectionStatusChangedCallback_t* info) {
+        NetworkEngine* self = reinterpret_cast<NetworkEngine*>(SteamNetworkingSockets()->GetConnectionUserData(info->m_hConn));
         switch (info->m_info.m_eState) {
             case k_ESteamNetworkingConnectionState_None:
                 // NOTE: We will get callbacks here when we destroy connections. You can ignore these.
@@ -280,7 +280,70 @@ namespace TechEngine {
         }
     }
 
-    void NetworkHandlerComponent::sendMessage(const std::string& message) {
+    void NetworkEngine::onDataReceived(Buffer buffer) {
+        BufferStreamReader stream(buffer);
+
+        PacketType type;
+        bool success = stream.readRaw<PacketType>(type);
+        if (!success) // Why couldn't we read packet type? Probs invalid packet
+            return;
+
+        switch (type) {
+            case PacketType::Message: {
+                std::string message;
+                success = stream.readString(message);
+                if (!success)
+                    return;
+
+                // User callback
+                TE_LOGGER_INFO("Received message from server: {0}", message);
+                break;
+            }
+            case PacketType::ClientConnectionRequest: {
+                break;
+            }
+            case PacketType::ConnectionStatus: {
+                break;
+            }
+            case PacketType::ClientList: {
+                break;
+            }
+            case PacketType::ClientConnect: {
+                break;
+            }
+            case PacketType::ClientUpdate: {
+                break;
+            }
+            case PacketType::ClientDisconnect: {
+                break;
+            }
+            case PacketType::ClientUpdateResponse: {
+                break;
+            }
+            case PacketType::MessageHistory: {
+                break;
+            }
+            case PacketType::ServerShutdown: {
+                break;
+            }
+            case PacketType::ClientKick: {
+                break;
+            }
+            case PacketType::ClientBan: {
+                break;
+            }
+            case PacketType::SyncGameObject: {
+                GameObject& gameobject = SceneSynchronizer::deserializeGameObject(stream, scene);
+                TE_LOGGER_INFO("Received game object {0}", gameobject.getName());
+                break;
+            }
+
+            default:
+                break;
+        }
+    }
+
+    void NetworkEngine::sendMessage(const std::string& message) {
         Buffer scratchBuffer;
         scratchBuffer.allocate(1024);
         BufferStreamWriter stream(scratchBuffer);

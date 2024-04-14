@@ -111,6 +111,17 @@ namespace TechEngine {
         // User has been kicked from server
         // 1. String reason, could be empty string
         ClientKick = 11,
+        ClientBan = 12,
+
+        //
+        // -- SyncGameObject --
+        //
+        // [Server->Client]
+        // Sync game object
+        // 1. GameObject
+        // [Client->Server]
+        // Sync game object
+        SyncGameObject = 13,
     };
 
     std::string_view PacketTypeToString(PacketType type);

@@ -41,7 +41,12 @@ namespace TechEngine {
 
         template<typename T>
         void writeObject(const T& obj) {
-            T::Serialize(this, obj);
+            if constexpr (std::is_pointer<T>::value) {
+                using PointedType = typename std::remove_pointer<T>::type;
+                PointedType::Serialize(this, *obj);
+            } else {
+                T::Serialize(this, obj);
+            }
         }
 
         template<typename Key, typename Value>
@@ -50,15 +55,31 @@ namespace TechEngine {
                 writeRaw<uint32_t>((uint32_t)map.size());
 
             for (const auto& [key, value]: map) {
-                if constexpr (std::is_trivial<Key>())
-                    writeRaw<Key>(key);
-                else
-                    writeObject<Key>(key);
+                if constexpr (std::is_pointer<Key>::value) {
+                    using PointedType = typename std::remove_pointer<Key>::type;
+                    if constexpr (std::is_trivial<PointedType>::value)
+                        writeRaw<Key>(value);
+                    else
+                        writeObject<Key>(value);
+                } else {
+                    if constexpr (std::is_trivial<Key>::value)
+                        writeRaw<Key>(value);
+                    else
+                        writeObject<Key>(value);
+                }
 
-                if constexpr (std::is_trivial<Value>())
-                    writeRaw<Value>(value);
-                else
-                    writeObject<Value>(value);
+                if constexpr (std::is_pointer<Value>::value) {
+                    using PointedType = typename std::remove_pointer<Value>::type;
+                    if constexpr (std::is_trivial<PointedType>::value)
+                        writeRaw<Value>(value);
+                    else
+                        writeObject<Value>(value);
+                } else {
+                    if constexpr (std::is_trivial<Value>::value)
+                        writeRaw<Value>(value);
+                    else
+                        writeObject<Value>(value);
+                }
             }
         }
 
@@ -68,15 +89,31 @@ namespace TechEngine {
                 writeRaw<uint32_t>((uint32_t)map.size());
 
             for (const auto& [key, value]: map) {
-                if constexpr (std::is_trivial<Key>())
-                    WriteRaw<Key>(key);
-                else
-                    WriteObject<Key>(key);
+                if constexpr (std::is_pointer<Key>::value) {
+                    using PointedType = typename std::remove_pointer<Key>::type;
+                    if constexpr (std::is_trivial<PointedType>::value)
+                        writeRaw<Key>(value);
+                    else
+                        writeObject<Key>(value);
+                } else {
+                    if constexpr (std::is_trivial<Key>::value)
+                        writeRaw<Key>(value);
+                    else
+                        writeObject<Key>(value);
+                }
 
-                if constexpr (std::is_trivial<Value>())
-                    WriteRaw<Value>(value);
-                else
-                    WriteObject<Value>(value);
+                if constexpr (std::is_pointer<Value>::value) {
+                    using PointedType = typename std::remove_pointer<Value>::type;
+                    if constexpr (std::is_trivial<PointedType>::value)
+                        writeRaw<Value>(value);
+                    else
+                        writeObject<Value>(value);
+                } else {
+                    if constexpr (std::is_trivial<Value>::value)
+                        writeRaw<Value>(value);
+                    else
+                        writeObject<Value>(value);
+                }
             }
         }
 
@@ -86,12 +123,20 @@ namespace TechEngine {
                 writeRaw<uint32_t>((uint32_t)map.size());
 
             for (const auto& [key, value]: map) {
-                WriteString(key);
+                writeString(key);
 
-                if constexpr (std::is_trivial<Value>())
-                    WriteRaw<Value>(value);
-                else
-                    WriteObject<Value>(value);
+                if constexpr (std::is_pointer<Value>::value) {
+                    using PointedType = typename std::remove_pointer<Value>::type;
+                    if constexpr (std::is_trivial<PointedType>::value)
+                        writeRaw<Value>(value);
+                    else
+                        writeObject<Value>(value);
+                } else {
+                    if constexpr (std::is_trivial<Value>::value)
+                        writeRaw<Value>(value);
+                    else
+                        writeObject<Value>(value);
+                }
             }
         }
 

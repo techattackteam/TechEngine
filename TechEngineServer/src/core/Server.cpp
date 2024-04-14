@@ -1,6 +1,7 @@
 #include "Server.hpp"
 #include "external/EntryPoint.hpp"
 #include "network/PacketType.hpp"
+#include "network/SceneSynchronizer.hpp"
 #include "script/ScriptEngine.hpp"
 #include "serialization/BufferStream.hpp"
 
@@ -8,6 +9,7 @@ namespace TechEngine {
     Server::Server() : AppCore() {
         instance = this;
         timer.init();
+        sceneManager.getScene().createGameObject<GameObject>("Test");
     }
 
     Server::~Server() {
@@ -106,7 +108,6 @@ namespace TechEngine {
                 return;
             }
 
-
             auto itClient = m_ConnectedClients.find(incomingMessage->m_conn);
             if (itClient == m_ConnectedClients.end()) {
                 TE_LOGGER_ERROR("ERROR: Received data from unregistered client\n");
@@ -143,6 +144,13 @@ namespace TechEngine {
             default:
                 break;
         }
+    }
+
+    void Server::onClientConnected(const ClientInfo& clientInfo) {
+        //Temp
+        //Sync all game objects to client
+        Buffer buffer = SceneSynchronizer::serializeGameObject(*sceneManager.getScene().getGameObjects()[0]);
+        sendBufferToClient(clientInfo.ID, buffer, true);
     }
 
 
@@ -215,8 +223,9 @@ namespace TechEngine {
                 client.ConnectionDesc = connectionInfo.m_szConnectionDescription;
 
                 // User callback
-                //m_ClientConnectedCallback(client);
+                onClientConnected(client);
                 TE_LOGGER_INFO("Client connected: {0}", client.ConnectionDesc);
+
                 break;
             }
 

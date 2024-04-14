@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "serialization/BufferStream.hpp"
+
 namespace TechEngine {
     class GameObject;
     class TransformComponent;
@@ -24,7 +26,13 @@ namespace TechEngine {
 
         virtual std::string& getName() {
             return name;
-        };
+        }
+
+        void setGameObject(const GameObject& gameObject);
+
+        static void Serialize(StreamWriter* stream, const Component& component);
+
+        static void Deserialize(StreamReader* stream, Component& component);
 
         TransformComponent& getTransform();
 

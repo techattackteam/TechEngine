@@ -35,7 +35,12 @@ namespace TechEngine {
 
         template<typename T>
         void readObject(T& obj) {
-            T::Deserialize(this, obj);
+            if constexpr (std::is_pointer<T>::value) {
+                using PointedType = typename std::remove_pointer<T>::type;
+                PointedType::Deserialize(this, *obj);
+            } else {
+                T::Deserialize(this, obj);
+            }
         }
 
         template<typename Key, typename Value>
@@ -45,15 +50,31 @@ namespace TechEngine {
 
             for (uint32_t i = 0; i < size; i++) {
                 Key key;
-                if constexpr (std::is_trivial<Key>())
-                    readRaw<Key>(key);
-                else
-                    readObject<Key>(key);
+                if (std::is_pointer<Key>::value) {
+                    using PointedType = typename std::remove_pointer<Key>::type;
+                    if constexpr (std::is_trivial<PointedType>())
+                        readRaw<Key>(key);
+                    else
+                        readObject<Key>(key);
+                } else {
+                    if constexpr (std::is_trivial<Key>())
+                        readRaw<Key>(key);
+                    else
+                        readObject<Key>(key);
+                }
 
-                if constexpr (std::is_trivial<Value>())
-                    readRaw<Value>(map[key]);
-                else
-                    readObject<Value>(map[key]);
+                if constexpr (std::is_pointer<Value>::value) {
+                    using PointerType = typename std::remove_pointer<Value>::type;
+                    if constexpr (std::is_trivial<PointerType>())
+                        readRaw<Value>(map[key]);
+                    else
+                        readObject<Value>(map[key]);
+                } else {
+                    if constexpr (std::is_trivial<Value>())
+                        readRaw<Value>(map[key]);
+                    else
+                        readObject<Value>(map[key]);
+                }
             }
         }
 
@@ -64,15 +85,31 @@ namespace TechEngine {
 
             for (uint32_t i = 0; i < size; i++) {
                 Key key;
-                if constexpr (std::is_trivial<Key>())
-                    readRaw<Key>(key);
-                else
-                    readObject<Key>(key);
+                if (std::is_pointer<Key>::value) {
+                    using PointedType = typename std::remove_pointer<Key>::type;
+                    if constexpr (std::is_trivial<PointedType>())
+                        readRaw<Key>(key);
+                    else
+                        readObject<Key>(key);
+                } else {
+                    if constexpr (std::is_trivial<Key>())
+                        readRaw<Key>(key);
+                    else
+                        readObject<Key>(key);
+                }
 
-                if constexpr (std::is_trivial<Value>())
-                    readRaw<Value>(map[key]);
-                else
-                    readObject<Value>(map[key]);
+                if constexpr (std::is_pointer<Value>::value) {
+                    using PointerType = typename std::remove_pointer<Value>::type;
+                    if constexpr (std::is_trivial<PointerType>())
+                        readRaw<Value>(map[key]);
+                    else
+                        readObject<Value>(map[key]);
+                } else {
+                    if constexpr (std::is_trivial<Value>())
+                        readRaw<Value>(map[key]);
+                    else
+                        readObject<Value>(map[key]);
+                }
             }
         }
 
@@ -85,10 +122,18 @@ namespace TechEngine {
                 std::string key;
                 readString(key);
 
-                if constexpr (std::is_trivial<Value>())
-                    readRaw<Value>(map[key]);
-                else
-                    readObject<Value>(map[key]);
+                if constexpr (std::is_pointer<Value>::value) {
+                    using PointerType = typename std::remove_pointer<Value>::type;
+                    if constexpr (std::is_trivial<PointerType>())
+                        readRaw<Value>(map[key]);
+                    else
+                        readObject<Value>(map[key]);
+                } else {
+                    if constexpr (std::is_trivial<Value>())
+                        readRaw<Value>(map[key]);
+                    else
+                        readObject<Value>(map[key]);
+                }
             }
         }
 

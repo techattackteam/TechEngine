@@ -5,6 +5,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "Component.hpp"
+#include "serialization/BufferStream.hpp"
 
 namespace TechEngine {
     class TransformComponent : public Component {
@@ -51,5 +52,9 @@ namespace TechEngine {
         glm::vec3 getForward() const;
 
         Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) override;
+
+        static void Serialize(StreamWriter* stream, TransformComponent& transformComponent);
+
+        static void Deserialize(StreamReader* stream, TransformComponent& transformComponent);
     };
 }

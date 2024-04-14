@@ -5,6 +5,9 @@
 #include <typeinfo>
 #include <string>
 
+#include "serialization/StreamReader.hpp"
+#include "serialization/StreamWriter.hpp"
+
 namespace TechEngine {
     class Component;
 
@@ -119,6 +122,10 @@ namespace TechEngine {
         void setEditorOnly(bool editorOnly);
 
         bool isEditorOnly() const;
+
+        static void Serialize(StreamWriter* stream, const GameObject& gameObject);
+
+        static void Deserialize(StreamReader* stream, GameObject& gameObject);
 
     private:
         void deleteChildren();
