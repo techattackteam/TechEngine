@@ -17,6 +17,7 @@
 #include <utils/YAMLUtils.hpp>
 #include <fstream>
 
+#include "components/network/NetworkHandlerComponent.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 #include "material/MaterialManager.hpp"
 #include "mesh/ImportedMesh.hpp"
@@ -142,6 +143,14 @@ namespace TechEngine {
             auto rigidBodyComponent = gameObject->getComponent<RigidBody>();
             out << YAML::Key << "Mass" << YAML::Value << rigidBodyComponent->getMass();
             out << YAML::Key << "Density" << YAML::Value << rigidBodyComponent->getDensity();
+            out << YAML::EndMap;
+        }
+
+        if (gameObject->hasComponent<NetworkHandlerComponent>()) {
+            out << YAML::Key << "NetworkHandlerComponent";
+            out << YAML::BeginMap;
+            auto networkHandlerComponent = gameObject->getComponent<NetworkHandlerComponent>();
+            out << YAML::Key << "Server Address" << YAML::Value << networkHandlerComponent->getServerAddress();
             out << YAML::EndMap;
         }
 
@@ -285,7 +294,12 @@ namespace TechEngine {
             rigidBodyComponent->setDensity(rigidBodyNode["Density"].as<float>());
             physicsEngine.addRigidBody(rigidBodyComponent);
         }
-
+        auto networkHandlerNode = gameObjectYAML["NetworkHandlerComponent"];
+        if (networkHandlerNode) {
+            gameObject.addComponent<NetworkHandlerComponent>();
+            NetworkHandlerComponent* networkHandlerComponent = gameObject.getComponent<NetworkHandlerComponent>();
+            networkHandlerComponent->setServerAddress(networkHandlerNode["Server Address"].as<std::string>());
+        }
         auto childrenNode = gameObjectYAML["Children"];
         for (auto childNodeYAML: childrenNode) {
             if (childrenNode) {

@@ -49,7 +49,8 @@ namespace TechEngine {
 
             std::filesystem::copy(projectManager.getProjectFilePath(), projectManager.getProjectGameExportPath(), copyOptions);
             panelsManager.compileUserScripts(RELEASE);
-            FileSystem::copyRecursive(projectManager.getProjectAssetsPath(), projectManager.getProjectGameExportPath().string() + "//Assets", {".cpp", ".hpp"}, {"cmake"});
+            FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Common", projectManager.getProjectGameExportPath().string() + "\\Assets\\Common", {".cpp", ".hpp"}, {"cmake"});
+            FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Client", projectManager.getProjectGameExportPath().string() + "\\Assets\\Client", {".cpp", ".hpp"}, {"cmake"});
             std::filesystem::create_directory(projectManager.getProjectGameExportPath().string() + "//Resources");
             FileSystem::copyRecursive(projectManager.getProjectResourcesPath(), projectManager.getProjectGameExportPath().string() + "//Resources", {".cpp", ".hpp"}, {"cmake"});
             std::filesystem::copy(FileSystem::runtimePath, projectManager.getProjectGameExportPath(), copyOptions);
@@ -70,7 +71,8 @@ namespace TechEngine {
 
             std::filesystem::copy(projectManager.getProjectFilePath(), projectManager.getProjectServerExportPath(), copyOptions);
             panelsManager.compileUserScripts(RELEASE);
-            FileSystem::copyRecursive(projectManager.getProjectAssetsPath(), projectManager.getProjectServerExportPath().string() + "//Assets", {".cpp", ".hpp"}, {"cmake"});
+            FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Server", projectManager.getProjectServerExportPath().string() + "//Assets//Server", {".cpp", ".hpp"}, {"cmake"});
+            FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Common", projectManager.getProjectServerExportPath().string() + "//Assets//Common", {".cpp", ".hpp"}, {"cmake"});
             std::filesystem::create_directory(projectManager.getProjectServerExportPath().string() + "//Resources");
             FileSystem::copyRecursive(projectManager.getProjectResourcesPath(), projectManager.getProjectServerExportPath().string() + "//Resources", {".cpp", ".hpp"}, {"cmake"});
             std::filesystem::copy(FileSystem::serverPath, projectManager.getProjectServerExportPath(), copyOptions);

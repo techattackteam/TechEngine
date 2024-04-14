@@ -1,8 +1,25 @@
 #pragma once
+#include <functional>
+#include <string>
+#include <steam/steamnetworkingsockets.h>
+#include <steam/isteamnetworkingutils.h>
 
+#include "../../../TechEngineCore/src/serialization/Buffer.hpp"
 
-namespace TechEngineServer {
+namespace TechEngine {
     class Client {
-    public:
+    private:
+        std::function<void(const Buffer)> dataReceivedCallback;
+        std::function<void()> serverConnectedCallback;
+        std::function<void()> serverDisconnectedCallback;
+
+        //ConnectionStatus connectionStatus = ConnectionStatus::Disconnected;
+        std::string connectionDebugMessage;
+
+        std::string serverAddress;
+        bool running = false;
+
+        ISteamNetworkingSockets* m_Interface = nullptr;
+        HSteamNetConnection m_Connection = 0;
     };
 }

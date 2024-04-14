@@ -18,17 +18,17 @@ namespace TechEngine {
         path cmakePath = "\"C:/Program Files/CMake/bin/cmake.exe\""; //TODO: Make this path relative
 
         path projectFilePath;
-        path projectLocation = std::filesystem::current_path().string() + "\\" + projectName;
-        path projectAssetsPath = projectLocation.string() + "\\Assets";
-        path projectResourcesPath = projectLocation.string() + "\\Resources";
-        path projectGameExportPath = projectLocation.string() + "\\Build\\GameBuild";
-        path projectServerExportPath = projectLocation.string() + "\\Build\\ServerBuild";
+        path projectLocation;
+        path projectAssetsPath;
+        path projectResourcesPath;
+        path projectGameExportPath;
+        path projectServerExportPath;
 
-        path cmakeBuildPath = projectResourcesPath.string() + "\\cmake\\cmake-build-debug";
-        path userScriptsDebugDLLPath = projectResourcesPath.string() + "\\scripts\\build\\debug\\UserScripts.dll";
-        path userScriptsReleaseDLLPath = projectResourcesPath.string() + "\\scripts\\build\\release\\UserScripts.dll";
-        path userScriptsReleaseDebugDLLPath = projectResourcesPath.string() + "\\scripts\\build\\releaseWithDebug\\UserScripts.dll";
-        path cmakeListPath = projectResourcesPath.string() + "\\cmake";
+        path cmakeBuildPath;
+        path userScriptsDebugDLLPath;
+        path userScriptsReleaseDLLPath;
+        path userScriptsReleaseDebugDLLPath;
+        path cmakeListPath;
 #ifdef TE_DEBUG
         path techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCore.lib";
 #elif TE_RELEASEDEBUG
