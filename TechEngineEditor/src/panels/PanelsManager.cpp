@@ -27,20 +27,23 @@ namespace TechEngine {
                                  PhysicsEngine& physicsEngine,
                                  TextureManager& textureManager,
                                  MaterialManager& materialManager,
-                                 Renderer& renderer) : window(window),
-                                                       sceneManager(sceneManager),
-                                                       projectManager(projectManager),
-                                                       physicsEngine(physicsEngine),
-                                                       materialManager(materialManager),
-                                                       textureManager(textureManager),
+                                 Renderer& renderer,
+                                 NetworkEngine& networkEngine) : window(window),
+                                                                 sceneManager(sceneManager),
+                                                                 projectManager(projectManager),
+                                                                 physicsEngine(physicsEngine),
+                                                                 materialManager(materialManager),
+                                                                 textureManager(textureManager),
+                                                                 networkEngine(networkEngine),
 
-                                                       gameView(renderer, sceneManager.getScene()),
-                                                       contentBrowser(*this, projectManager, sceneManager, materialManager),
-                                                       exportSettingsPanel(*this, projectManager, sceneManager, renderer.getShadersManager()),
-                                                       sceneHierarchyPanel(sceneManager.getScene(), materialManager, sceneView),
-                                                       sceneView(renderer, sceneManager.getScene(), physicsEngine, sceneHierarchyPanel.getSelectedGO()),
-                                                       inspectorPanel(sceneHierarchyPanel.getSelectedGO(), materialManager, physicsEngine),
-                                                       materialEditor(renderer, textureManager, materialManager, sceneManager.getScene()) {
+                                                                 gameView(renderer, sceneManager.getScene()),
+                                                                 contentBrowser(*this, projectManager, sceneManager, materialManager),
+                                                                 exportSettingsPanel(*this, projectManager, sceneManager, renderer.getShadersManager()),
+                                                                 sceneHierarchyPanel(sceneManager.getScene(), materialManager, sceneView),
+                                                                 sceneView(renderer, sceneManager.getScene(), physicsEngine, sceneHierarchyPanel.getSelectedGO()),
+                                                                 inspectorPanel(sceneHierarchyPanel.getSelectedGO(), materialManager, physicsEngine),
+                                                                 materialEditor(renderer, textureManager, materialManager, sceneManager.getScene()),
+                                                                 networkHelper(networkEngine) {
     }
 
     void PanelsManager::init() {
@@ -92,6 +95,7 @@ namespace TechEngine {
         contentBrowser.update();
         exportSettingsPanel.update();
         materialEditor.update();
+        networkHelper.update();
         endImGuiFrame();
     }
 

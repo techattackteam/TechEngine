@@ -1,13 +1,13 @@
 #pragma once
-
-#include <filesystem>
-#include <GameNetworkingSockets/steam/isteamnetworkingsockets.h>
-
-#include "components/Component.hpp"
 #include "serialization/Buffer.hpp"
 
+#include <filesystem>
+#include <steam/isteamnetworkingsockets.h>
+
+#include "scene/Scene.hpp"
+
 namespace TechEngine {
-    class NetworkHandlerComponent : public Component {
+    class NetworkEngine {
     public:
         enum class ConnectionStatus {
             Disconnected = 0, Connected, Connecting, FailedToConnect
@@ -23,16 +23,18 @@ namespace TechEngine {
         ISteamNetworkingSockets* sockets = nullptr;
         HSteamNetConnection connection = 0;
 
-    public:
-        explicit NetworkHandlerComponent(GameObject* gameObject);
+        Scene& scene;
 
-        ~NetworkHandlerComponent() override;
+    public:
+        explicit NetworkEngine(Scene& scene);
+
+        ~NetworkEngine();
 
         void connectServer();
 
-        void update() override;
+        void update();
 
-        void fixedUpdate() override;
+        void fixedUpdate();
 
         void disconnectServer();
 
@@ -55,14 +57,14 @@ namespace TechEngine {
 
         const std::string& getServerAddress() const;
 
-        Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) override;
-
     private:
         void pollIncomingMessages();
 
         void pollConnectionStateChanges();
 
         static void onConnectionStatusChanged(SteamNetConnectionStatusChangedCallback_t* info);
+
+        void onDataReceived(Buffer buffer);
 
         void sendMessage(const std::string& message);
     };

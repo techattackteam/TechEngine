@@ -1,5 +1,4 @@
 #include <imgui_internal.h>
-#include "imgui_stdlib.h"
 #include "InspectorPanel.hpp"
 #include "components/render/CameraComponent.hpp"
 #include "components/render/MeshRendererComponent.hpp"
@@ -16,7 +15,7 @@
 #include "core/Logger.hpp"
 #include <windows.h>
 
-#include "components/network/NetworkHandlerComponent.hpp"
+#include "components/network/NetworkSync.hpp"
 
 namespace TechEngine {
     InspectorPanel::InspectorPanel(std::vector<GameObject*>& selectedGameObjects, MaterialManager& materialManager, PhysicsEngine& physicsEngine) : materialManager(materialManager), physicsEngine(physicsEngine), selectedGameObjects(selectedGameObjects), Panel("Inspector") {
@@ -68,7 +67,7 @@ namespace TechEngine {
                 }
                 if (ImGui::BeginMenu("Network")) {
                     if (ImGui::MenuItem("Network Handler")) {
-                        addComponent<NetworkHandlerComponent>();
+                        addComponent<NetworkSync>();
                     }
                     ImGui::EndMenu();
                 }
@@ -332,24 +331,8 @@ namespace TechEngine {
             if (offset != collider->getOffset())
                 collider->setOffset(offset);
         });
-        drawComponent<NetworkHandlerComponent>(gameObject, "Network Handler", [](auto& component) {
-            ImGui::Text("Connection status: %s", component->getConnectionStatus() == NetworkHandlerComponent::ConnectionStatus::Connected ? "Connected" : "Disconnected");
-            if (component->getConnectionStatus() == NetworkHandlerComponent::ConnectionStatus::Disconnected) {
-                std::string label = "Server address";
-                std::string serverAddress;
-                ImGui::InputText(label.c_str(), &serverAddress);
-                component->setServerAddress("localhost:25565");
-                if (!serverAddress.empty() && serverAddress != component->getServerAddress()) {
-                }
-                if (ImGui::Button("Connect")) {
-                    component->connectServer();
-                }
-            } else {
-                if (ImGui::Button("Disconnect")) {
-                    component->disconnectServer();
-                }
-            }
-            ImGui::Text("Debug message: %s", component->getConnectionDebugMessage().c_str());
+        drawComponent<NetworkSync>(gameObject, "Network Sync", [](auto& component) {
+            ImGui::Text("Marker for network sync");
         });
     }
 

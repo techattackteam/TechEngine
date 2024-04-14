@@ -132,4 +132,18 @@ namespace TechEngine {
     bool GameObject::isEditorOnly() const {
         return editorOnly;
     }
+
+    void GameObject::Serialize(StreamWriter* stream, const GameObject& gameObject) {
+        stream->writeString(gameObject.name);
+        stream->writeString(gameObject.tag);
+        stream->writeMap(gameObject.components);
+        //stream->writeMap(gameObject.children);
+    }
+
+    void GameObject::Deserialize(StreamReader* stream, GameObject& gameObject) {
+        stream->readString(gameObject.name);
+        stream->readString(gameObject.tag);
+        stream->readMap(gameObject.components);
+        //stream->readMap(gameObject.children);
+    }
 }

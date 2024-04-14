@@ -16,6 +16,7 @@
 #include "core/Key.hpp"
 #include "GameView.hpp"
 #include "MaterialEditor.hpp"
+#include "NetworkHelper.hpp"
 #include "scene/SceneManager.hpp"
 #include "windows.h"
 
@@ -29,13 +30,14 @@ namespace TechEngine {
     class PanelsManager {
     private:
         std::vector<CustomPanel*> customPanels;
-        ImGuiContext* imguiContext;
+        ImGuiContext* imguiContext{};
         Window& window;
         ProjectManager& projectManager;
         SceneManager& sceneManager;
         PhysicsEngine& physicsEngine;
         TextureManager& textureManager;
         MaterialManager& materialManager;
+        NetworkEngine& networkEngine;
 
 
         GameView gameView;
@@ -46,6 +48,7 @@ namespace TechEngine {
         SceneView sceneView;
         InspectorPanel inspectorPanel;
         MaterialEditor materialEditor;
+        NetworkHelper networkHelper;
         bool m_currentPlaying = false;
         bool isCtrlPressed = false;
 
@@ -58,7 +61,8 @@ namespace TechEngine {
                       PhysicsEngine& physicsEngine,
                       TextureManager& textureManager,
                       MaterialManager& materialManager,
-                      Renderer& renderer);
+                      Renderer& renderer,
+                      NetworkEngine& networkEngine);
 
         void init();
 

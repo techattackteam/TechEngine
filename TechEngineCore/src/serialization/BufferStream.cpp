@@ -6,9 +6,9 @@ namespace TechEngine {
     }
 
     bool BufferStreamWriter::writeData(const char* data, size_t size) {
-        bool valid = bufferPosition + size <= targetBuffer.size;
-        if (!valid)
-            return false;
+        if (bufferPosition + size > targetBuffer.size) {
+            targetBuffer.resize(targetBuffer.size * 2);
+        }
 
         memcpy(targetBuffer.As<uint8_t>() + bufferPosition, data, size);
         bufferPosition += size;

@@ -4,7 +4,8 @@
 namespace TechEngine {
     Client::Client(std::string name, int width, int height) : AppCore(),
                                                               window(name, width, height),
-                                                              renderer(sceneManager.getScene()) {
+                                                              renderer(sceneManager.getScene()),
+                                                              networkEngine(sceneManager.getScene()) {
         eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event* event) {
             onWindowCloseEvent((WindowCloseEvent*)(event));
         });
@@ -24,11 +25,13 @@ namespace TechEngine {
                 eventDispatcher.fixedSyncEventManager.execute();
                 ScriptEngine::getInstance()->onFixedUpdate();
                 sceneManager.getScene().fixedUpdate();
+                networkEngine.fixedUpdate();
                 onFixedUpdate();
                 timer.addAccumulator(-timer.getTPS());
             }
 
             sceneManager.getScene().update();
+            networkEngine.update();
             timer.updateInterpolation();
             ScriptEngine::getInstance()->onUpdate();
             eventDispatcher.syncEventManager.execute();

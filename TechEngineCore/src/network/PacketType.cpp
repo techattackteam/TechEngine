@@ -15,7 +15,8 @@ namespace TechEngine {
             case PacketType::MessageHistory: return "PacketType::MessageHistory";
             case PacketType::ServerShutdown: return "PacketType::ServerShutdown";
             case PacketType::ClientKick: return "PacketType::ClientKick";
-
+            case PacketType::ClientBan: return "PacketType::ClientBan";
+            case PacketType::SyncGameObject: return "PacketType::SyncGameObject";
             default: return "PacketType::<Invalid>";
         }
 

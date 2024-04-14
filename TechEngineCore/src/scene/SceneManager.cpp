@@ -17,7 +17,7 @@
 #include <utils/YAMLUtils.hpp>
 #include <fstream>
 
-#include "components/network/NetworkHandlerComponent.hpp"
+#include "components/network/NetworkSync.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 #include "material/MaterialManager.hpp"
 #include "mesh/ImportedMesh.hpp"
@@ -146,11 +146,9 @@ namespace TechEngine {
             out << YAML::EndMap;
         }
 
-        if (gameObject->hasComponent<NetworkHandlerComponent>()) {
+        if (gameObject->hasComponent<NetworkSync>()) {
             out << YAML::Key << "NetworkHandlerComponent";
             out << YAML::BeginMap;
-            auto networkHandlerComponent = gameObject->getComponent<NetworkHandlerComponent>();
-            out << YAML::Key << "Server Address" << YAML::Value << networkHandlerComponent->getServerAddress();
             out << YAML::EndMap;
         }
 
@@ -296,9 +294,7 @@ namespace TechEngine {
         }
         auto networkHandlerNode = gameObjectYAML["NetworkHandlerComponent"];
         if (networkHandlerNode) {
-            gameObject.addComponent<NetworkHandlerComponent>();
-            NetworkHandlerComponent* networkHandlerComponent = gameObject.getComponent<NetworkHandlerComponent>();
-            networkHandlerComponent->setServerAddress(networkHandlerNode["Server Address"].as<std::string>());
+            gameObject.addComponent<NetworkSync>();
         }
         auto childrenNode = gameObjectYAML["Children"];
         for (auto childNodeYAML: childrenNode) {
