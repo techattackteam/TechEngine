@@ -1,4 +1,5 @@
 #include "Client.hpp"
 
-namespace TechEngineServer {
+namespace TechEngine {
+
 }

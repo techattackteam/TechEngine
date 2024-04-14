@@ -401,7 +401,6 @@ namespace TechEngine {
         EventDispatcher::getInstance().copy();
         materialManager.copy();
         ScriptEngine::getInstance()->init(projectManager.getUserScriptsDLLPath().string());
-
         ScriptEngine::getInstance()->onStart();
         physicsEngine.start();
         m_currentPlaying = true;

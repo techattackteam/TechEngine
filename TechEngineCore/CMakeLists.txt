@@ -4,6 +4,7 @@ file(GLOB_RECURSE TechEngineCore_Headers "src/*.hpp")
 find_package(spdlog CONFIG REQUIRED)
 find_package(unofficial-omniverse-physx-sdk CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
+find_package(GameNetworkingSockets CONFIG REQUIRED)
 
 foreach (_headerFile ${TechEngineCore_Headers})
     get_filename_component(_dir ${_headerFile} PATH)
@@ -53,7 +54,7 @@ else ()
 endif ()
 
 target_include_directories(TechEngineCore PUBLIC "src")
-target_link_libraries(TechEngineCore PUBLIC spdlog::spdlog unofficial::omniverse-physx-sdk::sdk yaml-cpp)
+target_link_libraries(TechEngineCore PUBLIC spdlog::spdlog unofficial::omniverse-physx-sdk::sdk yaml-cpp GameNetworkingSockets::shared)
 target_compile_definitions(TechEngineCore PUBLIC
         $<$<CONFIG:Debug>:TE_DEBUG>
         $<$<CONFIG:Release>:TE_RELEASEDEBUG>
