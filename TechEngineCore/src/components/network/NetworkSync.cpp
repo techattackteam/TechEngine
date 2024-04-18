@@ -3,21 +3,27 @@
 #include "serialization/BufferStream.hpp"
 
 namespace TechEngine {
-    NetworkSync::NetworkSync(GameObject* gameObject) : Component(gameObject, "NetworkHandler") {
+    NetworkSync::NetworkSync(GameObject* gameObject) : Component(gameObject, "NetworkSync") {
     }
 
     NetworkSync::~NetworkSync() {
     }
 
     void NetworkSync::update() {
-        Component::update();
     }
 
     void NetworkSync::fixedUpdate() {
-        Component::fixedUpdate();
     }
 
     Component* NetworkSync::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
         return nullptr;
+    }
+
+    void NetworkSync::Serialize(StreamWriter* stream) {
+        Component::Serialize(stream);
+    }
+
+    void NetworkSync::Deserialize(StreamReader* stream) {
+        Component::Deserialize(stream);
     }
 }

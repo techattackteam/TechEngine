@@ -67,9 +67,9 @@ namespace TechEngine {
             return (C*)components[typeid(C).name()];
         }
 
-        virtual void fixUpdate();
+        void fixUpdate();
 
-        virtual void update();
+        void update();
 
         void makeParent(GameObject* parent);
 

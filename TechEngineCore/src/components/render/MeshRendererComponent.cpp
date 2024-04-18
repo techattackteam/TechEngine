@@ -58,4 +58,18 @@ namespace TechEngine {
         auto* newComponent = new MeshRendererComponent(gameObjectToAttach, mesh, m_material);
         return newComponent;
     }
+
+    void MeshRendererComponent::Serialize(StreamWriter* stream) {
+        Component::Serialize(stream);
+        //stream->writeString(mesh->getName());
+        stream->writeString(m_material->getName());
+    }
+
+    void MeshRendererComponent::Deserialize(StreamReader* stream) {
+        Component::Deserialize(stream);
+        mesh = new CubeMesh(); //TODO: for now only cube mesh is supported need to implement mesh bank
+        std::string materialName;
+        stream->readString(materialName);
+        m_material = MaterialManagerAPI::getMaterial(materialName);
+    }
 }

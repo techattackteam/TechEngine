@@ -294,7 +294,6 @@ namespace TechEngine {
                 success = stream.readString(message);
                 if (!success)
                     return;
-
                 // User callback
                 TE_LOGGER_INFO("Received message from server: {0}", message);
                 break;
@@ -333,8 +332,11 @@ namespace TechEngine {
                 break;
             }
             case PacketType::SyncGameObject: {
-                GameObject& gameobject = SceneSynchronizer::deserializeGameObject(stream, scene);
-                TE_LOGGER_INFO("Received game object {0}", gameobject.getName());
+                SceneSynchronizer::deserializeGameObject(stream, scene);
+                break;
+            }
+            case PacketType::SyncGameState: {
+                SceneSynchronizer::deserializeScene(stream, scene);
                 break;
             }
 

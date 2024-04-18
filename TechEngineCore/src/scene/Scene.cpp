@@ -1,10 +1,14 @@
 #include "Scene.hpp"
 
+#include "components/render/MeshRendererComponent.hpp"
 #include "core/UUID.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngine {
     Scene::Scene() {
+        EventDispatcher::getInstance().subscribe(MaterialUpdateEvent::eventType, [this](Event* event) {
+            onMaterialUpdateEvent((MaterialUpdateEvent&)*event);
+        });
     }
 
     Scene::~Scene() {
@@ -120,5 +124,16 @@ namespace TechEngine {
             }
         }
         return nullptr;
+    }
+
+    void Scene::onMaterialUpdateEvent(MaterialUpdateEvent& event) {
+        for (GameObject* gameObject: getGameObjects()) {
+            if (gameObject->hasComponent<MeshRendererComponent>()) {
+                MeshRendererComponent* meshRendererComponent = gameObject->getComponent<MeshRendererComponent>();
+                if (meshRendererComponent->getMaterial().getName() == event.getMaterialName()) {
+                    meshRendererComponent->paintMesh();
+                }
+            }
+        }
     }
 }

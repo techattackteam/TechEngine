@@ -55,8 +55,8 @@ namespace TechEngine {
         void resize(uint64_t newSize) {
             void* newData = new uint8_t[newSize];
             if (data) {
-                memcpy(newData, data, size < newSize ? size : newSize);
-                delete[] static_cast<uint8_t*>(data);
+                memcpy(newData, data, newSize);
+                delete[](uint8_t*)data;
             }
             data = newData;
             size = newSize;
@@ -65,27 +65,6 @@ namespace TechEngine {
         void zeroInitialize() {
             if (data)
                 memset(data, 0, size);
-        }
-
-        template<typename T>
-        T& read(uint64_t offset = 0) {
-            return *(T*)((uint32_t*)data + offset);
-        }
-
-        template<typename T>
-        const T& read(uint64_t offset = 0) const {
-            return *(T*)((uint32_t*)data + offset);
-        }
-
-        uint8_t* readBytes(uint64_t size, uint64_t offset) const {
-            //WL_CORE_ASSERT(offset + size <= Size, "Buffer overflow!");
-            uint8_t* buffer = new uint8_t[size];
-            memcpy(buffer, (uint8_t*)data + offset, size);
-            return buffer;
-        }
-
-        void write(const void* data, uint64_t size, uint64_t offset = 0) {
-            memcpy((uint8_t*)data + offset, data, size);
         }
 
         operator bool() const {

@@ -3,6 +3,7 @@
 #include <components/render/CameraComponent.hpp>
 
 #include "GameObject.hpp"
+#include "events/material/MaterialUpdateEvent.hpp"
 
 namespace TechEngine {
     class Scene {
@@ -65,5 +66,7 @@ namespace TechEngine {
         bool hasMainCamera();
 
         CameraComponent* getMainCamera();
+
+        void onMaterialUpdateEvent(MaterialUpdateEvent& event);
     };
 }

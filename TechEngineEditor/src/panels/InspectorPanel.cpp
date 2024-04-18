@@ -332,7 +332,7 @@ namespace TechEngine {
                 collider->setOffset(offset);
         });
         drawComponent<NetworkSync>(gameObject, "Network Sync", [](auto& component) {
-            ImGui::Text("Marker for network sync");
+            ImGui::Text("GameObject is synchronized over network");
         });
     }
 
@@ -757,6 +757,20 @@ namespace TechEngine {
                     if (changeOffset) gameObject->getComponent<CylinderCollider>()->setOffset(commonOffset);
                 }
             });
+        }
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(NetworkSync).name()) != componentsToDraw.end()) {
+            bool draw = true;
+            for (GameObject* gameObject: selectedGameObjects) {
+                if (!gameObject->hasComponent<NetworkSync>()) {
+                    draw = false;
+                    break;
+                }
+            }
+            if (draw) {
+                drawComponent<NetworkSync>(firstObject, "Network Sync", [](auto& component) {
+                    ImGui::Text("GameObject is synchronized over network");
+                });
+            }
         }
     }
 

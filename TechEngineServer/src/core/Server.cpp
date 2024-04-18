@@ -1,4 +1,7 @@
 #include "Server.hpp"
+
+
+#include "components/render/MeshRendererComponent.hpp"
 #include "external/EntryPoint.hpp"
 #include "network/PacketType.hpp"
 #include "network/SceneSynchronizer.hpp"
@@ -9,7 +12,19 @@ namespace TechEngine {
     Server::Server() : AppCore() {
         instance = this;
         timer.init();
+        projectManager.loadRuntimeProject(std::filesystem::current_path().string());
+#ifdef TE_DEBUG
+        ScriptEngine::getInstance()->init(projectManager.getScriptsDebugDLLPath().string());
+#elif TE_RELEASEDEBUG
+        ScriptEngine::getInstance()->init(projectManager.getScriptsReleaseDLLPath().string());
+#elif TE_RELEASE
+        ScriptEngine::getInstance()->init(projectManager.getScriptsReleaseDLLPath().string());
+#endif
+        ScriptEngine::getInstance()->onStart();
+        physicsEngine.start();
         sceneManager.getScene().createGameObject<GameObject>("Test");
+        sceneManager.getScene().getGameObject("Test")->addComponent<MeshRendererComponent>();
+        sceneManager.getScene().getGameObject("Test")->addComponent<NetworkSync>();
     }
 
     Server::~Server() {
@@ -30,25 +45,6 @@ namespace TechEngine {
 
 
     void Server::run() {
-        /*while (running) {
-            timer.addAccumulator(timer.getDeltaTime());
-            while (timer.getAccumulator() >= timer.getTPS()) {
-                timer.updateTicks();
-
-                eventDispatcher.fixedSyncEventManager.execute();
-                eventDispatcher.syncEventManager.execute();
-                ScriptEngine::getInstance()->onFixedUpdate();
-                ScriptEngine::getInstance()->onUpdate();
-                sceneManager.getScene().fixedUpdate();
-                sceneManager.getScene().update();
-                onFixedUpdate();
-                timer.addAccumulator(-timer.getTPS());
-            }
-            timer.updateInterpolation();
-            timer.update();
-            timer.updateFPS();
-        }*/
-        //s_Instance = this;
         running = true;
         m_port = 25565;
         SteamDatagramErrMsg errMsg;
@@ -83,16 +79,37 @@ namespace TechEngine {
 
         TE_LOGGER_INFO("Server listening on port {0}", m_port);
         while (running) {
-            PollIncomingMessages();
-            m_interface->RunCallbacks();
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            timer.addAccumulator(timer.getDeltaTime());
+            while (timer.getAccumulator() >= timer.getTPS()) {
+                timer.updateTicks();
+                onFixedUpdate();
+                timer.addAccumulator(-timer.getTPS());
+                PollIncomingMessages();
+                m_interface->RunCallbacks();
+            }
+            onUpdate();
         }
     }
 
     void Server::onUpdate() {
+        timer.updateInterpolation();
+        timer.update();
+        timer.updateFPS();
     }
 
     void Server::onFixedUpdate() {
+        eventDispatcher.fixedSyncEventManager.execute();
+        eventDispatcher.syncEventManager.execute();
+        ScriptEngine::getInstance()->onFixedUpdate();
+        ScriptEngine::getInstance()->onUpdate();
+        sceneManager.getScene().fixedUpdate();
+        sceneManager.getScene().update();
+
+        //Move gameObject in sine wave pattern
+        auto gameObject = sceneManager.getScene().getGameObject("Test");
+        gameObject->getTransform().position.y = 5 * sin(timer.getTime());
+        Buffer buffer = SceneSynchronizer::serializeGameObject(*gameObject);
+        sendBufferToAllClients(buffer, -1, true);
     }
 
     void Server::PollIncomingMessages() {
@@ -121,7 +138,7 @@ namespace TechEngine {
         }
     }
 
-    void Server::onDataReceivedCallback(const ClientInfo& clientInfo, const Buffer buffer) {
+    void Server::onDataReceivedCallback(const ClientInfo& clientInfo, Buffer buffer) {
         BufferStreamReader stream(buffer);
 
         PacketType type;
@@ -147,9 +164,11 @@ namespace TechEngine {
     }
 
     void Server::onClientConnected(const ClientInfo& clientInfo) {
-        //Temp
-        //Sync all game objects to client
-        Buffer buffer = SceneSynchronizer::serializeGameObject(*sceneManager.getScene().getGameObjects()[0]);
+        syncGameState(clientInfo);
+    }
+
+    void Server::syncGameState(const ClientInfo& clientInfo) {
+        Buffer buffer = SceneSynchronizer::serializeGameState(sceneManager.getScene());
         sendBufferToClient(clientInfo.ID, buffer, true);
     }
 
@@ -252,7 +271,11 @@ namespace TechEngine {
     }
 
     void Server::sendBufferToClient(ClientID clientID, Buffer buffer, bool reliable) {
-        m_interface->SendMessageToConnection((HSteamNetConnection)clientID, buffer.data, (ClientID)buffer.size, reliable ? k_nSteamNetworkingSend_Reliable : k_nSteamNetworkingSend_Unreliable, nullptr);
+        //Add error handling
+        EResult result = m_interface->SendMessageToConnection((HSteamNetConnection)clientID, buffer.data, (ClientID)buffer.size, reliable ? k_nSteamNetworkingSend_Reliable : k_nSteamNetworkingSend_Unreliable, nullptr);
+        if (result != k_EResultOK) {
+            TE_LOGGER_ERROR("Failed to send message to client {0}", clientID);
+        }
     }
 
     void Server::sendBufferToAllClients(Buffer buffer, ClientID excludeClientID, bool reliable) {

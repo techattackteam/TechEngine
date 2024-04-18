@@ -53,8 +53,8 @@ namespace TechEngine {
 
         Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) override;
 
-        static void Serialize(StreamWriter* stream, TransformComponent& transformComponent);
+        virtual void Serialize(StreamWriter* stream);
 
-        static void Deserialize(StreamReader* stream, TransformComponent& transformComponent);
+        virtual void Deserialize(StreamReader* stream);
     };
 }

@@ -1,13 +1,18 @@
 #include "BufferStream.hpp"
 
 namespace TechEngine {
-    BufferStreamWriter::BufferStreamWriter(Buffer targetBuffer, uint64_t position)
+    BufferStreamWriter::BufferStreamWriter(Buffer& targetBuffer, uint64_t position)
         : targetBuffer(targetBuffer), bufferPosition(position) {
     }
 
     bool BufferStreamWriter::writeData(const char* data, size_t size) {
         if (bufferPosition + size > targetBuffer.size) {
-            targetBuffer.resize(targetBuffer.size * 2);
+            uint64_t newSize = targetBuffer.size;
+            do {
+                newSize *= 2;
+            } while (bufferPosition + size > newSize);
+
+            targetBuffer.resize(newSize);
         }
 
         memcpy(targetBuffer.As<uint8_t>() + bufferPosition, data, size);
@@ -15,7 +20,7 @@ namespace TechEngine {
         return true;
     }
 
-    BufferStreamReader::BufferStreamReader(Buffer targetBuffer, uint64_t position)
+    BufferStreamReader::BufferStreamReader(Buffer& targetBuffer, uint64_t position)
         : targetBuffer(targetBuffer), bufferPosition(position) {
     }
 

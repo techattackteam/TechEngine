@@ -33,5 +33,9 @@ namespace TechEngine {
         void paintMesh();
 
         Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) override;
+
+        void Serialize(StreamWriter* stream) override;
+
+        void Deserialize(StreamReader* stream) override;
     };
 }

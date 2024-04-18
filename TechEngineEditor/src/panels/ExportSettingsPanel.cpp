@@ -5,6 +5,8 @@
 #include <yaml-cpp/emitter.h>
 #include <iostream>
 #include <fstream>
+
+#include "components/network/NetworkSync.hpp"
 #include "core/FileSystem.hpp"
 #include "core/Logger.hpp"
 
@@ -66,6 +68,11 @@ namespace TechEngine {
             std::filesystem::remove_all(projectManager.getProjectServerExportPath());
             std::filesystem::create_directory(projectManager.getProjectServerExportPath());
             sceneManager.saveCurrentScene();
+            for (auto gameObject: sceneManager.getScene().getGameObjects()) {
+                if (!gameObject->hasComponent<NetworkSync>()) {
+                    TE_LOGGER_WARN("GameObject {0} doesn't have NetworkSync component. It wont sync.", gameObject->getName());
+                }
+            }
             std::filesystem::copy_options copyOptions = std::filesystem::copy_options::recursive |
                                                         std::filesystem::copy_options::overwrite_existing;
 

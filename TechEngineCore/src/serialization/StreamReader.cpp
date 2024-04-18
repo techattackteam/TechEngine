@@ -20,4 +20,4 @@ namespace TechEngine {
         string.resize(size);
         return readData((char*)string.data(), sizeof(char) * size);
     }
-} // namespace Hazel
+}

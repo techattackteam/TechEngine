@@ -123,17 +123,17 @@ namespace TechEngine {
         return newComponent;
     }
 
-    void TransformComponent::Serialize(StreamWriter* stream, TransformComponent& transformComponent) {
-        Component::Serialize(stream, transformComponent);
-        stream->writeRaw(transformComponent.position);
-        stream->writeRaw(transformComponent.orientation);
-        stream->writeRaw(transformComponent.scale);
+    void TransformComponent::Serialize(StreamWriter* stream) {
+        Component::Serialize(stream);
+        stream->writeRaw(position);
+        stream->writeRaw(orientation);
+        stream->writeRaw(scale);
     }
 
-    void TransformComponent::Deserialize(StreamReader* stream, TransformComponent& transformComponent) {
-        Component::Deserialize(stream, transformComponent);
-        stream->readRaw(transformComponent.position);
-        stream->readRaw(transformComponent.orientation);
-        stream->readRaw(transformComponent.scale);
+    void TransformComponent::Deserialize(StreamReader* stream) {
+        Component::Deserialize(stream);
+        stream->readRaw(position);
+        stream->readRaw(orientation);
+        stream->readRaw(scale);
     }
 }
