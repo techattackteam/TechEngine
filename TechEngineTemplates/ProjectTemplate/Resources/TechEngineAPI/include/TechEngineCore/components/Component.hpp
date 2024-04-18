@@ -30,9 +30,9 @@ namespace TechEngine {
 
         void setGameObject(const GameObject& gameObject);
 
-        static void Serialize(StreamWriter* stream, const Component& component);
+        virtual void Serialize(StreamWriter* stream);
 
-        static void Deserialize(StreamReader* stream, Component& component);
+        virtual void Deserialize(StreamReader* stream);
 
         TransformComponent& getTransform();
 

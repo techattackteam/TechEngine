@@ -77,8 +77,10 @@ namespace TechEngine {
 
         void PollIncomingMessages();
 
-        void onDataReceivedCallback(const ClientInfo&, const Buffer);
+        void onDataReceivedCallback(const ClientInfo&, Buffer);
 
         void onClientConnected(const ClientInfo& clientInfo);
+
+        void syncGameState(const ClientInfo& clientInfo);
     };
 }

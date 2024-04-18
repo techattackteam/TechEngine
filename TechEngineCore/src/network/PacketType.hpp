@@ -111,6 +111,13 @@ namespace TechEngine {
         // User has been kicked from server
         // 1. String reason, could be empty string
         ClientKick = 11,
+
+        //
+        // -- ClientBan --
+        //
+        // [Server->Client]
+        // User has been banned from server
+        // 1. String reason, could be empty string
         ClientBan = 12,
 
         //
@@ -122,6 +129,14 @@ namespace TechEngine {
         // [Client->Server]
         // Sync game object
         SyncGameObject = 13,
+
+        //
+        // -- SyncGameState --
+        //
+        // [Server->Client]
+        // Sync game state
+        // 1. GameState
+        SyncGameState = 14
     };
 
     std::string_view PacketTypeToString(PacketType type);

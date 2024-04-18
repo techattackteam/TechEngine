@@ -10,7 +10,7 @@ namespace TechEngine {
     /// BufferStreamWriter
     class BufferStreamWriter : public StreamWriter {
     public:
-        BufferStreamWriter(Buffer targetBuffer, uint64_t position = 0);
+        BufferStreamWriter(Buffer& targetBuffer, uint64_t position = 0);
 
         BufferStreamWriter(const BufferStreamWriter&) = delete;
 
@@ -36,7 +36,7 @@ namespace TechEngine {
         }
 
     private:
-        Buffer targetBuffer;
+        Buffer& targetBuffer;
         uint64_t bufferPosition = 0;
     };
 
@@ -44,7 +44,7 @@ namespace TechEngine {
     /// BufferStreamReader
     class BufferStreamReader : public StreamReader {
     public:
-        BufferStreamReader(Buffer targetBuffer, uint64_t position = 0);
+        BufferStreamReader(Buffer& targetBuffer, uint64_t position = 0);
 
         BufferStreamReader(const BufferStreamReader&) = delete;
 
@@ -70,7 +70,7 @@ namespace TechEngine {
         }
 
     private:
-        Buffer targetBuffer;
+        Buffer& targetBuffer;
         uint64_t bufferPosition = 0;
     };
 }

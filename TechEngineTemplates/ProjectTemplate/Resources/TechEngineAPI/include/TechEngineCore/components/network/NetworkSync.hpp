@@ -14,5 +14,9 @@ namespace TechEngine {
         void fixedUpdate() override;
 
         Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) override;
+
+        void Serialize(StreamWriter* stream) override;
+
+        void Deserialize(StreamReader* stream);
     };
 }

@@ -6,6 +6,7 @@
 #include "Scene.hpp"
 #include <iostream>
 
+#include "components/ComponentFactory.hpp"
 #include "events/gameObjects/GameObjectCreateEvent.hpp"
 #include "events/gameObjects/GameObjectDestroyEvent.hpp"
 
@@ -136,14 +137,24 @@ namespace TechEngine {
     void GameObject::Serialize(StreamWriter* stream, const GameObject& gameObject) {
         stream->writeString(gameObject.name);
         stream->writeString(gameObject.tag);
-        stream->writeMap(gameObject.components);
-        //stream->writeMap(gameObject.children);
+        stream->writeRaw<int>(gameObject.components.size());
+        for (auto& element: gameObject.components) {
+            stream->writeString(element.first);
+            element.second->Serialize(stream);
+        }
     }
 
     void GameObject::Deserialize(StreamReader* stream, GameObject& gameObject) {
         stream->readString(gameObject.name);
         stream->readString(gameObject.tag);
-        stream->readMap(gameObject.components);
-        //stream->readMap(gameObject.children);
+        int componentsSize = 0;
+        stream->readRaw<int>(componentsSize);
+        for (int i = 0; i < componentsSize; i++) {
+            std::string componentName;
+            stream->readString(componentName);
+            Component* component = ComponentFactory::createComponent(componentName, &gameObject);
+            component->Deserialize(stream);
+            gameObject.components[componentName] = component;
+        }
     }
 }

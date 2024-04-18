@@ -22,12 +22,12 @@ namespace TechEngine {
         *this->gameObject = gameObject;
     }
 
-    void Component::Serialize(StreamWriter* stream, const Component& component) {
-        stream->writeString(component.name);
+    void Component::Serialize(StreamWriter* stream) {
+        stream->writeString(name);
     }
 
-    void Component::Deserialize(StreamReader* stream, Component& component) {
-        stream->readString(component.name);
+    void Component::Deserialize(StreamReader* stream) {
+        stream->readString(name);
     }
 
     TransformComponent& Component::getTransform() {
