@@ -2,11 +2,11 @@
 
 #include <filesystem>
 #include "Panel.hpp"
-#include "project/ProjectManager.hpp"
 #include "renderer/ShadersManager.hpp"
 
 namespace TechEngine {
     class PanelsManager;
+    enum CompileMode;
 
     class ExportSettingsPanel : public Panel {
     private:
@@ -25,9 +25,9 @@ namespace TechEngine {
 
         void onUpdate() override;
 
-        void exportGameProject();
+        void exportGameProject(CompileMode compileMode);
 
-        void exportServerProject();
+        void exportServerProject(CompileMode compileMode);
 
         void serializeEngineSettings(const std::filesystem::path& exportPath);
     };

@@ -31,34 +31,62 @@ namespace TechEngine {
         return projectAssetsPath;
     }
 
-    const path& ProjectManager::getProjectResourcesPath() {
-        return projectResourcesPath;
+    const path& ProjectManager::getProjectCachePath() {
+        return projectCachePath;
     }
 
-    const path& ProjectManager::getScriptsDebugDLLPath() {
-        return userScriptsDebugDLLPath;
+    const path& ProjectManager::getProjectServerResourcesPath() {
+        return projectServerResourcesPath;
     }
 
-    const path& ProjectManager::getScriptsReleaseDLLPath() {
-        return userScriptsReleaseDLLPath;
+    const path& ProjectManager::getProjectCommonResourcesPath() {
+        return projectCommonResourcesPath;
     }
 
-    const path& ProjectManager::getScriptsReleaseDebugDLLPath() {
-        return userScriptsReleaseDebugDLLPath;
+    const path& ProjectManager::getProjectClientResourcesPath() {
+        return projectClientResourcesPath;
     }
 
-    const path& ProjectManager::getUserScriptsDLLPath() {
+    const path& ProjectManager::getClientScriptsDebugDLLPath() {
+        return clientUserScriptsDebugDLLPath;
+    }
+
+    const path& ProjectManager::getClientScriptsReleaseDLLPath() {
+        return clientUserScriptsReleaseDLLPath;
+    }
+
+    const path& ProjectManager::getClientScriptsReleaseDebugDLLPath() {
+        return clientUserScriptsReleaseDebugDLLPath;
+    }
+
+    const path& ProjectManager::getClientUserScriptsDLLPath() {
 #ifdef TE_DEBUG
-        return userScriptsDebugDLLPath;
+        return clientUserScriptsDebugDLLPath;
 #elif TE_RELEASEDEBUG
-        return userScriptsReleaseDebugDLLPath;
+        return clientUserScriptsReleaseDebugDLLPath;
 #elif TE_RELEASE
-        return userScriptsReleaseDLLPath;
+        return clientUserScriptsReleaseDLLPath;
 #endif
     }
 
-    const path& ProjectManager::getCmakeBuildPath() {
-        return cmakeBuildPath;
+    const path& ProjectManager::getClientCmakeBuildPath() {
+        return clientCmakeBuildPath;
+    }
+
+    const path& ProjectManager::getServerScriptsDebugDLLPath() {
+        return serverUserScriptsDebugDLLPath;
+    }
+
+    const path& ProjectManager::getServerScriptsReleaseDLLPath() {
+        return serverUserScriptsReleaseDLLPath;
+    }
+
+    const path& ProjectManager::getServerScriptsReleaseDebugDLLPath() {
+        return serverUserScriptsReleaseDebugDLLPath;
+    }
+
+    const path& ProjectManager::getServerCmakeBuildPath() {
+        return serverCmakeBuildPath;
     }
 
     const path& ProjectManager::getProjectGameExportPath() {
@@ -69,8 +97,12 @@ namespace TechEngine {
         return projectServerExportPath;
     }
 
-    const path& ProjectManager::getCmakeListPath() {
-        return cmakeListPath;
+    const path& ProjectManager::getClientCmakeListPath() {
+        return clientCmakeListPath;
+    }
+
+    const path& ProjectManager::getServerCmakeListPath() {
+        return serverCmakeListPath;
     }
 
     const path& ProjectManager::getTechEngineCoreLibPath() {
@@ -79,6 +111,10 @@ namespace TechEngine {
 
     const path& ProjectManager::getTechEngineClientLibPath() {
         return techEngineClientLibPath;
+    }
+
+    const path& ProjectManager::getTechEngineServerLibPath() {
+        return techEngineServerLibPath;
     }
 
     const path& ProjectManager::getCmakePath() {
@@ -175,28 +211,51 @@ namespace TechEngine {
         this->projectFilePath = projectFile;
         projectName = projectFile.substr(projectFile.find_last_of("\\") + 1, projectFile.find_last_of(".") - projectFile.find_last_of("\\") - 1);
         projectAssetsPath = this->projectLocation.string() + "\\Assets";
-        projectResourcesPath = this->projectLocation.string() + "\\Resources";
+        projectCachePath = this->projectLocation.string() + "\\Cache";
+        projectClientResourcesPath = this->projectLocation.string() + "\\Resources\\Client";
+        projectCommonResourcesPath = this->projectLocation.string() + "\\Resources\\Common";
+        projectServerResourcesPath = this->projectLocation.string() + "\\Resources\\Server";
         projectGameExportPath = this->projectLocation.string() + "\\Build\\GameBuild";
-        projectServerExportPath = this->projectLocation.string() + "\\Build\\GameBuild";
+        projectServerExportPath = this->projectLocation.string() + "\\Build\\ServerBuild";
+        std::string cmakeBuildPath = "\\cmake\\cmake-build-debug";
+        std::string cmakeListPath = "\\cmake";
+        std::string scriptsDebugDLLPath = "\\scripts\\build\\debug\\UserScripts.dll";
+        std::string scriptsReleaseDLLPath = "\\scripts\\build\\release\\UserScripts.dll";
+        std::string scriptsReleaseDebugDLLPath = "\\scripts\\build\\releaseWithDebug\\UserScripts.dll";
 
-        cmakeBuildPath = projectResourcesPath.string() + "\\cmake\\cmake-build-debug";
-        userScriptsDebugDLLPath = projectResourcesPath.string() + "\\scripts\\build\\debug\\UserScripts.dll";
-        userScriptsReleaseDLLPath = projectResourcesPath.string() + "\\scripts\\build\\release\\UserScripts.dll";
-        userScriptsReleaseDebugDLLPath = projectResourcesPath.string() + "\\scripts\\build\\releaseWithDebug\\UserScripts.dll";
-        cmakeListPath = projectResourcesPath.string() + "\\cmake";
+        clientCmakeBuildPath = projectClientResourcesPath.string() + cmakeBuildPath;
+        clientCmakeListPath = projectClientResourcesPath.string() + cmakeListPath;
+        clientUserScriptsDebugDLLPath = projectClientResourcesPath.string() + scriptsDebugDLLPath;
+        clientUserScriptsReleaseDLLPath = projectClientResourcesPath.string() + scriptsReleaseDLLPath;
+        clientUserScriptsReleaseDebugDLLPath = projectClientResourcesPath.string() + scriptsReleaseDebugDLLPath;
+
+        serverCmakeBuildPath = projectServerResourcesPath.string() + cmakeBuildPath;
+        serverCmakeListPath = projectServerResourcesPath.string() + cmakeListPath;
+        serverUserScriptsDebugDLLPath = projectServerResourcesPath.string() + scriptsDebugDLLPath;
+        serverUserScriptsReleaseDLLPath = projectServerResourcesPath.string() + scriptsReleaseDLLPath;
+        serverUserScriptsReleaseDebugDLLPath = projectServerResourcesPath.string() + scriptsReleaseDebugDLLPath;
+
 #ifdef TE_DEBUG
-        path techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCore.lib";
+        techEngineCoreLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCore.lib";
 #elif TE_RELEASEDEBUG
-        path techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\releaseWithDebug\\TechEngineCore.lib";
+        techEngineCoreLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCore.lib";
 #elif TE_RELEASE
-        path tehcengineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCore.lib";
+         tehcengineCoreLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCore.lib";
+#endif
+
+#ifdef TE_DEBUG
+        techEngineClientLibPath = projectClientResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineClient.lib";
+#elif TE_RELEASEDEBUG
+        techEngineClientLibPath = projectClientResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineClient.lib";
+#elif TE_RELEASE
+         techEngineClientLibPath = projectClientResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineClient.lib";
 #endif
 #ifdef TE_DEBUG
-        path techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineClient.lib";
+        techEngineServerLibPath = projectServerResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineServer.lib";
 #elif TE_RELEASEDEBUG
-        path techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\releaseWithDebug\\TechEngineClient.lib";
+        techEngineServerLibPath = projectServerResourcesPath.string() + "\\TechEngineAPI\\lib\\releaseWithDebug\\TechEngineServer.lib";
 #elif TE_RELEASE
-        path techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineClient.lib";
+         techEngineServerLibPath = projectServerResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineServer.lib";
 #endif
     }
 

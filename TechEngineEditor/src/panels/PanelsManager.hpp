@@ -68,7 +68,9 @@ namespace TechEngine {
 
         void update();
 
-        void compileUserScripts(CompileMode compileMode);
+        void compileClientUserScripts(CompileMode compileMode);
+
+        void compileServerUserScripts(CompileMode compileMode);
 
         std::vector<GameObject*>& getSelectedGameObjects();
 
@@ -101,9 +103,9 @@ namespace TechEngine {
 
         void runClientProcess();
 
-        void OnCloseProcessEvent(DWORD processId);
+        void onCloseProcessEvent(DWORD processId);
 
-        void CloseAllProcessEvents();
+        void closeAllProcessEvents();
 
         void OnKeyPressedEvent(Key& key);
 

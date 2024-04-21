@@ -20,29 +20,29 @@ namespace TechEngine {
         path projectFilePath;
         path projectLocation;
         path projectAssetsPath;
-        path projectResourcesPath;
+        path projectCachePath;
+        path projectCommonResourcesPath;
+        path projectClientResourcesPath;
+        path projectServerResourcesPath;
+
         path projectGameExportPath;
         path projectServerExportPath;
 
-        path cmakeBuildPath;
-        path userScriptsDebugDLLPath;
-        path userScriptsReleaseDLLPath;
-        path userScriptsReleaseDebugDLLPath;
-        path cmakeListPath;
-#ifdef TE_DEBUG
-        path techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCore.lib";
-#elif TE_RELEASEDEBUG
-        path techEngineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\releaseWithDebug\\TechEngineCore.lib";
-#elif TE_RELEASE
-        path tehcengineCoreLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCore.lib";
-#endif
-#ifdef TE_DEBUG
-        path techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineClient.lib";
-#elif TE_RELEASEDEBUG
-        path techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\releaseWithDebug\\TechEngineClient.lib";
-#elif TE_RELEASE
-        path techEngineClientLibPath = projectResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineClient.lib";
-#endif
+        path clientCmakeBuildPath;
+        path clientUserScriptsDebugDLLPath;
+        path clientUserScriptsReleaseDLLPath;
+        path clientUserScriptsReleaseDebugDLLPath;
+        path clientCmakeListPath;
+
+        path serverCmakeBuildPath;
+        path serverUserScriptsDebugDLLPath;
+        path serverUserScriptsReleaseDLLPath;
+        path serverUserScriptsReleaseDebugDLLPath;
+        path serverCmakeListPath;
+
+        path techEngineCoreLibPath;
+        path techEngineClientLibPath;
+        path techEngineServerLibPath;
 
     public:
         ProjectManager(SceneManager& sceneManager, TextureManager& textureManager, MaterialManager& materialManager);
@@ -55,17 +55,31 @@ namespace TechEngine {
 
         const path& getProjectAssetsPath();
 
-        const path& getProjectResourcesPath();
+        const path& getProjectCachePath();
 
-        const path& getScriptsDebugDLLPath();
+        const path& getProjectServerResourcesPath();
 
-        const path& getScriptsReleaseDLLPath();
+        const path& getProjectCommonResourcesPath();
 
-        const path& getScriptsReleaseDebugDLLPath();
+        const path& getProjectClientResourcesPath();
 
-        const path& getUserScriptsDLLPath();
+        const path& getClientScriptsDebugDLLPath();
 
-        const path& getCmakeBuildPath();
+        const path& getClientScriptsReleaseDLLPath();
+
+        const path& getClientScriptsReleaseDebugDLLPath();
+
+        const path& getClientUserScriptsDLLPath();
+
+        const path& getClientCmakeBuildPath();
+
+        const path& getServerScriptsDebugDLLPath();
+
+        const path& getServerScriptsReleaseDLLPath();
+
+        const path& getServerScriptsReleaseDebugDLLPath();
+
+        const path& getServerCmakeBuildPath();
 
         const path& getProjectGameExportPath();
 
@@ -73,11 +87,15 @@ namespace TechEngine {
 
         const path& getCmakePath();
 
-        const path& getCmakeListPath();
+        const path& getClientCmakeListPath();
+
+        const path& getServerCmakeListPath();
 
         const path& getTechEngineCoreLibPath();
 
         const path& getTechEngineClientLibPath();
+
+        const path& getTechEngineServerLibPath();
 
         const std::string& getProjectName();
 
