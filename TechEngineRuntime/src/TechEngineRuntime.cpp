@@ -18,11 +18,14 @@ namespace TechEngine {
         renderer.init(projectManager);
         ScriptEngine* scriptEngine = new ScriptEngine(true);
 #ifdef TE_DEBUG
-        ScriptEngine::getInstance()->init(projectManager.getScriptsDebugDLLPath().string());
+        ScriptEngine::getInstance()->init(projectManager.getClientScriptsDebugDLLPath().string());
+        TE_LOGGER_INFO("Debug");
 #elif TE_RELEASEDEBUG
-        ScriptEngine::getInstance()->init(projectManager.getScriptsReleaseDLLPath().string());
+        ScriptEngine::getInstance()->init(projectManager.getClientScriptsReleaseDebugDLLPath().string());
+        TE_LOGGER_INFO("ReleaseDebug");
 #elif TE_RELEASE
-        ScriptEngine::getInstance()->init(projectManager.getScriptsReleaseDLLPath().string());
+        ScriptEngine::getInstance()->init(projectManager.getClientScriptsReleaseDLLPath().string());
+        TE_LOGGER_INFO("Release");
 #endif
         ScriptEngine::getInstance()->onStart();
         physicsEngine.start();

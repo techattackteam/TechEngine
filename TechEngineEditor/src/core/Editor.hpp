@@ -24,5 +24,7 @@ namespace TechEngine {
         void onFixedUpdate() override;
 
         void loadEditorSettings();
+
+        void createNewProject();
     };
 }

@@ -62,11 +62,12 @@ target_compile_definitions(TechEngineCore PUBLIC
 )
 
 #Copy API include files to project template
-set(TECH_ENGINE_CLIENT_API_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/include/TechEngineCore")
-set(TECH_ENGINE_CLIENT_API_FILES
+set(TECH_ENGINE_CORE_API_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/include/TechEngineCore")
+set(TECH_ENGINE_CORE_API_FILES
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/core/Logger.hpp"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/core/Timer.hpp"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/events"
+        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/eventSystem"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/components"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/physics"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/mesh"
@@ -74,50 +75,53 @@ set(TECH_ENGINE_CLIENT_API_FILES
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/scriptingAPI"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/material/Material.hpp"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/texture"
+        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/serialization"
 )
-foreach (entry ${TECH_ENGINE_CLIENT_API_FILES})
+
+#Clear TechEngineClientAPI files
+file(REMOVE_RECURSE "${TECH_ENGINE_CORE_API_DIRECTORY}")
+
+#Copy API files to TechEngineCore API directory
+foreach (entry ${TECH_ENGINE_CORE_API_FILES})
     if (IS_DIRECTORY ${entry})
         get_filename_component(folder_name ${entry} NAME)
-        if (NOT EXISTS "${TECH_ENGINE_CLIENT_API_FILES}/${folder_name}")
-            file(MAKE_DIRECTORY "${TECH_ENGINE_CLIENT_API_DIRECTORY}/${folder_name}")
-        else ()
-            add_custom_command(TARGET TechEngineCore POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E rm -rf "${TECH_ENGINE_CLIENT_API_DIRECTORY}/${folder_name}"
-                    COMMAND_EXPAND_LISTS)
-        endif ()
         add_custom_command(TARGET TechEngineCore POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_directory "${entry}" "${TECH_ENGINE_CLIENT_API_DIRECTORY}/${folder_name}"
+                COMMAND ${CMAKE_COMMAND} -E rm -rf "${TECH_ENGINE_CORE_API_DIRECTORY}/${folder_name}"
+                COMMAND_EXPAND_LISTS)
+        message(STATUS "Removed ${TECH_ENGINE_CORE_API_DIRECTORY}/${folder_name}")
+        add_custom_command(TARGET TechEngineCore POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_directory "${entry}" "${TECH_ENGINE_CORE_API_DIRECTORY}/${folder_name}"
                 COMMAND_EXPAND_LISTS)
         add_custom_command(TARGET TechEngineCore POST_BUILD
-                COMMAND powershell -Command "Get-ChildItem -Path ${TECH_ENGINE_CLIENT_API_DIRECTORY}/${folder_name} -Filter *.cpp -Recurse | Remove-Item -Force"
+                COMMAND powershell -Command "Get-ChildItem -Path ${TECH_ENGINE_CORE_API_DIRECTORY}/${folder_name} -Filter *.cpp -Recurse | Remove-Item -Force"
                 COMMAND_EXPAND_LISTS)
     else ()
         get_filename_component(folder_name ${entry} DIRECTORY)
         get_filename_component(folder_name ${folder_name} NAME)
-        if (NOT EXISTS "${TECH_ENGINE_CLIENT_API_DIRECTORY}/${folder_name}")
-            file(MAKE_DIRECTORY "${TECH_ENGINE_CLIENT_API_DIRECTORY}/${folder_name}")
+        if (NOT EXISTS "${TECH_ENGINE_CORE_API_DIRECTORY}/${folder_name}")
+            file(MAKE_DIRECTORY "${TECH_ENGINE_CORE_API_DIRECTORY}/${folder_name}")
         endif ()
         add_custom_command(TARGET TechEngineCore PRE_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy "${entry}" "${TECH_ENGINE_CLIENT_API_DIRECTORY}/${folder_name}"
+                COMMAND ${CMAKE_COMMAND} -E copy "${entry}" "${TECH_ENGINE_CORE_API_DIRECTORY}/${folder_name}"
                 COMMAND_EXPAND_LISTS)
     endif ()
 endforeach ()
 
 #Copy .lib files to project template
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib")
-        file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib")
+    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/debug")
+        file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/debug")
     endif ()
     add_custom_command(TARGET TechEngineCore POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy
             "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/debug/TechEngineCore.lib"
-            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib/debug")
+            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/debug")
 elseif (CMAKE_BUILD_TYPE STREQUAL "Release")
-    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/include/TechEngineCore")
-        file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/include/TechEngineCore")
+    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/release")
+        file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/release")
     endif ()
     add_custom_command(TARGET TechEngineCore POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy
             "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/release/TechEngineCore.lib"
-            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib/release")
+            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/release")
 endif ()

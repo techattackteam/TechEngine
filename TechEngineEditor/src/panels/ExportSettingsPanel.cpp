@@ -34,39 +34,69 @@ namespace TechEngine {
 
 
         if (ImGui::Button("Export")) {
-            exportGameProject();
+            exportGameProject(RELEASE);
         }
         if (ImGui::Button("Close")) {
             m_open = false;
         };
     }
 
-    void ExportSettingsPanel::exportGameProject() {
+    void ExportSettingsPanel::exportGameProject(CompileMode compileMode) {
         try {
-            std::filesystem::remove_all(projectManager.getProjectGameExportPath());
-            std::filesystem::create_directory(projectManager.getProjectGameExportPath());
+            path exportPath;
+            if (compileMode == RELEASE) { // Happens when building the game to build path. If in debug engines is in debug mode
+                if (!std::filesystem::exists(projectManager.getProjectLocation().string() + "\\Build"))
+                    std::filesystem::create_directory(projectManager.getProjectLocation().string() + "\\Build");
+                exportPath = projectManager.getProjectGameExportPath();
+            } else if (compileMode == DEBUG || compileMode == RELEASEDEBUG) { // Happens when editor launches a new process to run the game
+                if (!std::filesystem::exists(projectManager.getProjectCachePath())) {
+                    std::filesystem::create_directory(projectManager.getProjectCachePath());
+                }
+                exportPath = projectManager.getProjectCachePath().string() + "\\Client";
+            } else {
+                TE_LOGGER_ERROR("Export Game: Invalid compile mode");
+                return;
+            }
+            std::filesystem::remove_all(exportPath);
+            std::filesystem::create_directory(exportPath);
             sceneManager.saveCurrentScene();
             std::filesystem::copy_options copyOptions = std::filesystem::copy_options::recursive |
                                                         std::filesystem::copy_options::overwrite_existing;
 
-            std::filesystem::copy(projectManager.getProjectFilePath(), projectManager.getProjectGameExportPath(), copyOptions);
-            panelsManager.compileUserScripts(RELEASE);
-            FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Common", projectManager.getProjectGameExportPath().string() + "\\Assets\\Common", {".cpp", ".hpp"}, {"cmake"});
-            FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Client", projectManager.getProjectGameExportPath().string() + "\\Assets\\Client", {".cpp", ".hpp"}, {"cmake"});
-            std::filesystem::create_directory(projectManager.getProjectGameExportPath().string() + "//Resources");
-            FileSystem::copyRecursive(projectManager.getProjectResourcesPath(), projectManager.getProjectGameExportPath().string() + "//Resources", {".cpp", ".hpp"}, {"cmake"});
-            std::filesystem::copy(FileSystem::runtimePath, projectManager.getProjectGameExportPath(), copyOptions);
-            TE_LOGGER_INFO("Project exported to: {0}", projectManager.getProjectGameExportPath().string());
+            std::filesystem::copy(projectManager.getProjectFilePath(), exportPath, copyOptions);
+            panelsManager.compileClientUserScripts(compileMode);
+            FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Common", exportPath.string() + "\\Assets\\Common", {".cpp", ".hpp"}, {"cmake"});
+            FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Client", exportPath.string() + "\\Assets\\Client", {".cpp", ".hpp"}, {"cmake"});
+            std::filesystem::create_directory(exportPath.string() + "//Resources");
+            FileSystem::copyRecursive(projectManager.getProjectCommonResourcesPath(), exportPath.string() + "//Resources//Common", {".cpp", ".hpp"}, {"cmake"});
+            FileSystem::copyRecursive(projectManager.getProjectClientResourcesPath(), exportPath.string() + "//Resources//Client", {".cpp", ".hpp"}, {"cmake"});
+            std::filesystem::copy(FileSystem::runtimePath, exportPath, copyOptions);
+            TE_LOGGER_INFO("Project exported to: {0}", exportPath.string());
         } catch (std::filesystem::filesystem_error& e) {
             TE_LOGGER_ERROR("Error while exporting project: {0}", e.what());
             return;
         }
     }
 
-    void ExportSettingsPanel::exportServerProject() {
+    void ExportSettingsPanel::exportServerProject(CompileMode compileMode) {
         try {
-            std::filesystem::remove_all(projectManager.getProjectServerExportPath());
-            std::filesystem::create_directory(projectManager.getProjectServerExportPath());
+            path exportPath;
+            if (compileMode == RELEASE) { // Happens when building the game to build path. If in debug engines is in debug mode
+                if (!std::filesystem::exists(projectManager.getProjectLocation().string() + "\\Build")) {
+                    std::filesystem::create_directory(projectManager.getProjectLocation().string() + "\\Build");
+                }
+                exportPath = projectManager.getProjectServerExportPath();
+            } else if (compileMode == DEBUG || compileMode == RELEASEDEBUG) { // Happens when editor launches a new process to run the game
+                if (!std::filesystem::exists(projectManager.getProjectCachePath())) {
+                    std::filesystem::create_directory(projectManager.getProjectCachePath());
+                }
+                exportPath = projectManager.getProjectCachePath().string() + "\\Server";
+            } else {
+                TE_LOGGER_ERROR("Export Game: Invalid compile mode");
+                return;
+            }
+            std::filesystem::remove_all(exportPath);
+            std::filesystem::create_directory(exportPath);
             sceneManager.saveCurrentScene();
             for (auto gameObject: sceneManager.getScene().getGameObjects()) {
                 if (!gameObject->hasComponent<NetworkSync>()) {
@@ -76,14 +106,15 @@ namespace TechEngine {
             std::filesystem::copy_options copyOptions = std::filesystem::copy_options::recursive |
                                                         std::filesystem::copy_options::overwrite_existing;
 
-            std::filesystem::copy(projectManager.getProjectFilePath(), projectManager.getProjectServerExportPath(), copyOptions);
-            panelsManager.compileUserScripts(RELEASE);
-            FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Server", projectManager.getProjectServerExportPath().string() + "//Assets//Server", {".cpp", ".hpp"}, {"cmake"});
-            FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Common", projectManager.getProjectServerExportPath().string() + "//Assets//Common", {".cpp", ".hpp"}, {"cmake"});
-            std::filesystem::create_directory(projectManager.getProjectServerExportPath().string() + "//Resources");
-            FileSystem::copyRecursive(projectManager.getProjectResourcesPath(), projectManager.getProjectServerExportPath().string() + "//Resources", {".cpp", ".hpp"}, {"cmake"});
-            std::filesystem::copy(FileSystem::serverPath, projectManager.getProjectServerExportPath(), copyOptions);
-            TE_LOGGER_INFO("Project exported to: {0}", projectManager.getProjectServerExportPath().string());
+            std::filesystem::copy(projectManager.getProjectFilePath(), exportPath, copyOptions);
+            panelsManager.compileServerUserScripts(compileMode);
+            FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Server", exportPath.string() + "//Assets//Server", {".cpp", ".hpp"}, {"cmake"});
+            FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Common", exportPath.string() + "//Assets//Common", {".cpp", ".hpp"}, {"cmake"});
+            std::filesystem::create_directory(exportPath.string() + "//Resources");
+            FileSystem::copyRecursive(projectManager.getProjectCommonResourcesPath(), exportPath.string() + "//Resources//Common", {".cpp", ".hpp"}, {"cmake"});
+            FileSystem::copyRecursive(projectManager.getProjectServerResourcesPath(), exportPath.string() + "//Resources//Server", {".cpp", ".hpp"}, {"cmake"});
+            std::filesystem::copy(FileSystem::serverPath, exportPath, copyOptions);
+            TE_LOGGER_INFO("Project exported to: {0}", exportPath.string());
         } catch (std::filesystem::filesystem_error& e) {
             TE_LOGGER_ERROR("Error while exporting project: {0}", e.what());
             return;

@@ -52,7 +52,7 @@ namespace TechEngine {
                 stopRunningScene();
                 m_currentPlaying = false;
             }
-            CloseAllProcessEvents();
+            closeAllProcessEvents();
         });
         EventDispatcher::getInstance().subscribe(RegisterCustomPanel::eventType, [this](TechEngine::Event* event) {
             registerCustomPanel((RegisterCustomPanel*)event);
@@ -75,7 +75,7 @@ namespace TechEngine {
         });
 
         EventDispatcher::getInstance().subscribe(OnProcessCloseEvent::eventType, [this](Event* event) {
-            OnCloseProcessEvent(((OnProcessCloseEvent*)event)->getProcessId());
+            onCloseProcessEvent(((OnProcessCloseEvent*)event)->getProcessId());
         });
 
         contentBrowser.init();
@@ -244,11 +244,11 @@ namespace TechEngine {
                     m_currentPlaying = false;
                 }
 #ifdef TE_DEBUG
-                compileUserScripts(DEBUG);
+                compileClientUserScripts(DEBUG);
 #elif TE_RELEASE
-                compileUserScripts(RELEASE);
+                compileClientUserScripts(RELEASE);
 #elif TE_RELEASEDEBUG
-                compileUserScripts(RELEASEDEBUG);
+                compileClientUserScripts(RELEASEDEBUG);
 #endif
             }
 
@@ -269,11 +269,11 @@ namespace TechEngine {
                     m_currentPlaying = false;
                 }
 #ifdef TE_DEBUG
-                compileUserScripts(DEBUG);
+                compileClientUserScripts(DEBUG);
 #elif TE_RELEASE
-                compileUserScripts(RELEASE);
+                compileClientUserScripts(RELEASE);
 #elif TE_RELEASEDEBUG
-                compileUserScripts(RELEASEDEBUG);
+                compileClientUserScripts(RELEASEDEBUG);
 #endif
             } else if (ImGui::MenuItem("Run")) {
                 runClientProcess();
@@ -282,6 +282,20 @@ namespace TechEngine {
         }
         if (ImGui::BeginMenu("Server")) {
             if (ImGui::MenuItem("Build")) {
+                if (!serverProcesses.empty()) {
+                    for (PROCESS_INFORMATION& process: serverProcesses) {
+                        TerminateProcess(process.hProcess, 0);
+                        onCloseProcessEvent(process.dwProcessId);
+                    }
+                    m_currentPlaying = false;
+                }
+#ifdef TE_DEBUG
+                compileServerUserScripts(DEBUG);
+#elif TE_RELEASE
+                compileServerUserScripts(RELEASE);
+#elif TE_RELEASEDEBUG
+                compileServerUserScripts(RELEASEDEBUG);
+#endif
             } else if (ImGui::MenuItem("Run")) {
                 runServerProcess();
             }
@@ -376,14 +390,14 @@ namespace TechEngine {
         return std::string();
     }
 
-    void PanelsManager::compileUserScripts(CompileMode compileMode) {
-        if (!exists(projectManager.getCmakeBuildPath()) || is_empty(projectManager.getCmakeBuildPath())) {
+    void PanelsManager::compileClientUserScripts(CompileMode compileMode) {
+        if (!exists(projectManager.getClientCmakeBuildPath()) || is_empty(projectManager.getClientCmakeBuildPath())) {
             std::string command = "\"" + projectManager.getCmakePath().string() +
                                   " -G \"Visual Studio 17 2022\""
                                   " -D TechEngineClientLIB:STRING=\"" + projectManager.getTechEngineClientLibPath().string() + "\"" +
                                   " -D TechEngineCoreLIB:STRING=\"" + projectManager.getTechEngineCoreLibPath().string() + "\"" +
-                                  " -S " + "\"" + projectManager.getCmakeListPath().string() + "\"" +
-                                  " -B " + "\"" + projectManager.getCmakeBuildPath().string() + "\"" + "\"";
+                                  " -S " + "\"" + projectManager.getClientCmakeListPath().string() + "\"" +
+                                  " -B " + "\"" + projectManager.getClientCmakeBuildPath().string() + "\"" + "\"";
             std::system(command.c_str());
         }
         std::string cm;
@@ -395,7 +409,31 @@ namespace TechEngine {
             cm = "Debug";
         }
         std::string command = "\"" + projectManager.getCmakePath().string() +
-                              " --build " + "\"" + projectManager.getCmakeBuildPath().string() + "\"" + " --target UserScripts --config " + cm + "\"";
+                              " --build " + "\"" + projectManager.getClientCmakeBuildPath().string() + "\"" + " --target UserScripts --config " + cm + "\"";
+        std::system(command.c_str());
+        TE_LOGGER_INFO("Build finished! {0}", cm);
+    }
+
+    void PanelsManager::compileServerUserScripts(CompileMode compileMode) {
+        if (!exists(projectManager.getServerCmakeBuildPath()) || is_empty(projectManager.getServerCmakeBuildPath())) {
+            std::string command = "\"" + projectManager.getCmakePath().string() +
+                                  " -G \"Visual Studio 17 2022\""
+                                  " -D TechEngineServerLIB:STRING=\"" + projectManager.getTechEngineServerLibPath().string() + "\"" +
+                                  " -D TechEngineCoreLIB:STRING=\"" + projectManager.getTechEngineCoreLibPath().string() + "\"" +
+                                  " -S " + "\"" + projectManager.getServerCmakeListPath().string() + "\"" +
+                                  " -B " + "\"" + projectManager.getServerCmakeBuildPath().string() + "\"" + "\"";
+            std::system(command.c_str());
+        }
+        std::string cm;
+        if (compileMode == CompileMode::RELEASE) {
+            cm = "Release";
+        } else if (compileMode == CompileMode::RELEASEDEBUG) {
+            cm = "RelWithDebInfo";
+        } else if (compileMode == CompileMode::DEBUG) {
+            cm = "Debug";
+        }
+        std::string command = "\"" + projectManager.getCmakePath().string() +
+                              " --build " + "\"" + projectManager.getServerCmakeBuildPath().string() + "\"" + " --target UserScripts --config " + cm + "\"";
         std::system(command.c_str());
         TE_LOGGER_INFO("Build finished!");
     }
@@ -404,7 +442,7 @@ namespace TechEngine {
         sceneManager.saveSceneAsTemporarily(sceneManager.getActiveSceneName());
         EventDispatcher::getInstance().copy();
         materialManager.copy();
-        ScriptEngine::getInstance()->init(projectManager.getUserScriptsDLLPath().string());
+        ScriptEngine::getInstance()->init(projectManager.getClientUserScriptsDLLPath().string());
         ScriptEngine::getInstance()->onStart();
         physicsEngine.start();
         m_currentPlaying = true;
@@ -425,20 +463,25 @@ namespace TechEngine {
         ScriptEngine::getInstance()->stop();
     }
 
-    void closeRunningClientProcesses(PVOID lpParameter, BOOLEAN TimerOrWaitFiredm) {
+    void closeRunningProcesses(PVOID lpParameter, BOOLEAN TimerOrWaitFiredm) {
         DWORD dwProcessId = reinterpret_cast<DWORD>(lpParameter);
         EventDispatcher::getInstance().dispatch(new OnProcessCloseEvent(dwProcessId));
     }
 
     void PanelsManager::runServerProcess() {
-        exportSettingsPanel.exportServerProject();
+#ifdef TE_DEBUG
+        exportSettingsPanel.exportServerProject(DEBUG);
+#else
+            exportSettingsPanel.exportServerProject(RELEASEDEBUG);
+#endif
         STARTUPINFOA si;
         PROCESS_INFORMATION pi;
 
         ZeroMemory(&si, sizeof(si));
         si.cb = sizeof(si);
         ZeroMemory(&pi, sizeof(pi));
-        std::string path = projectManager.getProjectServerExportPath().string() + "\\TechEngineServer.exe";
+        std::string path = projectManager.getProjectCachePath().string() + "\\Server\\TechEngineServer.exe";
+        std::string currentDirectory = projectManager.getProjectCachePath().string() + "\\Server";
         if (!CreateProcessA(
             nullptr, // Application name (we can specify the engine executable here to launch a copy)
             (LPSTR)path.c_str(), // Command line argument: the DLL path
@@ -447,11 +490,11 @@ namespace TechEngine {
             FALSE, // Do not inherit handles
             CREATE_NEW_CONSOLE, // Creation flags
             nullptr, // Environment variables
-            nullptr, // Current directory
+            currentDirectory.c_str(), // Current directory
             &si, // Startup info
             &pi // Process information
         )) {
-            TE_LOGGER_ERROR("Failed to create process for user scripts dll");
+            TE_LOGGER_ERROR("Failed to create process for TechEngineServer.\nError code: {0}", GetLastError());
             return;
         }
         serverProcesses.push_back(pi);
@@ -459,7 +502,7 @@ namespace TechEngine {
         if (!RegisterWaitForSingleObject(
             &hWaitHandle,
             pi.hProcess, // Handle to wait on
-            &closeRunningClientProcesses, // Callback function
+            &closeRunningProcesses, // Callback function
             reinterpret_cast<void*>(pi.dwProcessId), // Context passed to the callback
             INFINITE, // Timeout
             WT_EXECUTEONLYONCE // Trigger callback only once
@@ -469,17 +512,17 @@ namespace TechEngine {
     }
 
     void PanelsManager::runClientProcess() {
-        exportSettingsPanel.exportGameProject();
+        exportSettingsPanel.exportGameProject(RELEASEDEBUG);
         STARTUPINFOA si;
         PROCESS_INFORMATION pi;
         ZeroMemory(&si, sizeof(si));
         si.cb = sizeof(si);
         ZeroMemory(&pi, sizeof(pi));
-        std::string path = projectManager.getProjectGameExportPath().string() + "\\TechEngineRuntime.exe";
-        std::string currentDirectory = projectManager.getProjectGameExportPath().string();
+        std::string path = projectManager.getProjectCachePath().string() + "\\Client\\TechEngineRuntime.exe";
+        std::string currentDirectory = projectManager.getProjectCachePath().string() + "\\Client";
         if (!CreateProcessA(
             nullptr, // Application name (we can specify the engine executable here to launch a copy)
-            (LPSTR)path.c_str(), // Command line argument: the DLL path
+            (LPSTR)path.c_str(), // Command line argument: the EXE path
             nullptr, // Process security attributes
             nullptr, // Thread security attributes
             TRUE, // Do not inherit handles
@@ -489,7 +532,7 @@ namespace TechEngine {
             &si, // Startup info
             &pi // Process information
         )) {
-            TE_LOGGER_ERROR("Failed to create process for user scripts dll");
+            TE_LOGGER_ERROR("Failed to create process for TechEngineRuntime.\nError code: {0}", GetLastError());
             return;
         }
         clientProcesses.push_back(pi);
@@ -497,7 +540,7 @@ namespace TechEngine {
         if (!RegisterWaitForSingleObject(
             &hWaitHandle,
             pi.hProcess, // Handle to wait on
-            &closeRunningClientProcesses, // Callback function
+            &closeRunningProcesses, // Callback function
             reinterpret_cast<void*>(pi.dwProcessId), // Context passed to the callback
             INFINITE, // Timeout
             WT_EXECUTEONLYONCE // Trigger callback only once
@@ -506,16 +549,22 @@ namespace TechEngine {
         }
     }
 
-    void PanelsManager::OnCloseProcessEvent(DWORD processId) {
+    void PanelsManager::onCloseProcessEvent(DWORD processId) {
         for (auto it = clientProcesses.begin(); it != clientProcesses.end(); it++) {
             if (it->dwProcessId == processId) {
                 clientProcesses.erase(it);
-                break;
+                return;
+            }
+        }
+        for (auto it = serverProcesses.begin(); it != serverProcesses.end(); it++) {
+            if (it->dwProcessId == processId) {
+                serverProcesses.erase(it);
+                return;
             }
         }
     }
 
-    void PanelsManager::CloseAllProcessEvents() {
+    void PanelsManager::closeAllProcessEvents() {
         for (auto it = clientProcesses.begin(); it != clientProcesses.end(); it++) {
             TerminateProcess(it->hProcess, 0);
         }

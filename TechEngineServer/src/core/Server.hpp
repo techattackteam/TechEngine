@@ -26,9 +26,6 @@ namespace TechEngine {
         int m_port = 0;
         std::map<HSteamNetConnection, ClientInfo> m_ConnectedClients;
 
-        std::function<void(const ClientInfo&)> m_ClientConnectedCallback;
-        std::function<void(const ClientInfo&)> m_ClientDisconnectedCallback;
-
         ISteamNetworkingSockets* m_interface = nullptr;
         HSteamListenSocket m_ListenSocket = 0u;
         HSteamNetPollGroup m_PollGroup = 0u;
@@ -43,10 +40,6 @@ namespace TechEngine {
         virtual void onUpdate();
 
         virtual void onFixedUpdate();
-
-        void setClientConnectedCallback(const std::function<void(const ClientInfo&)>& function);
-
-        void setClientDisconnectedCallback(std::function<void(const ClientInfo&)>& function);
 
         void sendBufferToClient(ClientID clientID, Buffer buffer, bool reliable);
 

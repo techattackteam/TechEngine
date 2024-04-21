@@ -2,6 +2,9 @@
 
 
 #include "components/render/MeshRendererComponent.hpp"
+#include "events/connections/OnClientConnected.hpp"
+#include "events/connections/OnClientConnectionRequest.hpp"
+#include "events/connections/OnClientDisconnected.hpp"
 #include "external/EntryPoint.hpp"
 #include "network/PacketType.hpp"
 #include "network/SceneSynchronizer.hpp"
@@ -14,11 +17,11 @@ namespace TechEngine {
         timer.init();
         projectManager.loadRuntimeProject(std::filesystem::current_path().string());
 #ifdef TE_DEBUG
-        ScriptEngine::getInstance()->init(projectManager.getScriptsDebugDLLPath().string());
+        ScriptEngine::getInstance()->init(projectManager.getServerScriptsDebugDLLPath().string());
 #elif TE_RELEASEDEBUG
-        ScriptEngine::getInstance()->init(projectManager.getScriptsReleaseDLLPath().string());
+        ScriptEngine::getInstance()->init(projectManager.getServerScriptsReleaseDLLPath().string());
 #elif TE_RELEASE
-        ScriptEngine::getInstance()->init(projectManager.getScriptsReleaseDLLPath().string());
+        ScriptEngine::getInstance()->init(projectManager.getServerScriptsReleaseDLLPath().string());
 #endif
         ScriptEngine::getInstance()->onStart();
         physicsEngine.start();
@@ -157,6 +160,10 @@ namespace TechEngine {
                 TE_LOGGER_INFO("Received message from {0}: {1}", clientInfo.ConnectionDesc, message);
                 break;
             }
+            case PacketType::ClientConnectionRequest: {
+                EventDispatcher::getInstance().dispatch(new OnClientConnectionRequest());
+                break;
+            }
 
             default:
                 break;
@@ -196,8 +203,6 @@ namespace TechEngine {
 
                     // Either ClosedByPeer or ProblemDetectedLocally - should be communicated to user callback
                     // User callback
-                    //m_ClientDisconnectedCallback(itClient->second);
-
                     m_ConnectedClients.erase(itClient);
                 } else {
                     //assert(info->m_eOldState == k_ESteamNetworkingConnectionState_Connecting);
@@ -211,6 +216,7 @@ namespace TechEngine {
                 // so we just pass 0s.
                 TE_LOGGER_INFO("Client disconnected: {0}", status->m_info.m_szEndDebug);
                 m_interface->CloseConnection(status->m_hConn, 0, nullptr, false);
+                EventDispatcher::getInstance().dispatch(new OnClientDisconnected());
                 break;
             }
 
@@ -221,7 +227,7 @@ namespace TechEngine {
                 // Try to accept incoming connection
                 if (m_interface->AcceptConnection(status->m_hConn) != k_EResultOK) {
                     m_interface->CloseConnection(status->m_hConn, 0, nullptr, false);
-                    TE_LOGGER_INFO("Couldn't accept connection (it was already closed?)");
+                    TE_LOGGER_INFO("Couldn't accept connection: {0}", status->m_info.m_szEndDebug);
                     break;
                 }
 
@@ -243,8 +249,8 @@ namespace TechEngine {
 
                 // User callback
                 onClientConnected(client);
+                EventDispatcher::getInstance().dispatch(new OnClientConnected());
                 TE_LOGGER_INFO("Client connected: {0}", client.ConnectionDesc);
-
                 break;
             }
 
@@ -262,13 +268,6 @@ namespace TechEngine {
         m_interface->SetConnectionName(hConnection, nick);
     }
 
-    void Server::setClientConnectedCallback(const std::function<void(const ClientInfo&)>& function) {
-        m_ClientConnectedCallback = function;
-    }
-
-    void Server::setClientDisconnectedCallback(std::function<void(const ClientInfo&)>& function) {
-        m_ClientDisconnectedCallback = function;
-    }
 
     void Server::sendBufferToClient(ClientID clientID, Buffer buffer, bool reliable) {
         //Add error handling

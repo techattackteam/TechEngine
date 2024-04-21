@@ -31,22 +31,28 @@ namespace TechEngine {
                 lastProjectLoaded = data["Last project loaded"].as<std::string>();
                 if (std::filesystem::exists(lastProjectLoaded)) {
                     projectManager.loadEditorProject(lastProjectLoaded);
+                } else {
+                    TE_LOGGER_INFO("Unable to load {0}.\n Creating new project.", lastProjectLoaded);
+                    createNewProject();
                 }
             } catch (YAML::Exception& e) {
                 TE_LOGGER_CRITICAL("Failed to load EditorSettings.TESettings file.\n      {0}", e.what());
             }
             return;
         }
-        projectManager.createNewProject("New Project");
-        lastProjectLoaded = FileSystem::rootPath.string() + "\\New Project";
+        createNewProject();
+    }
+
+    void Editor::createNewProject() {
+        projectManager.createNewProject("DefaultProject");
         YAML::Emitter out;
         out << YAML::BeginMap;
-        out << YAML::Key << "Last project loaded" << YAML::Value << lastProjectLoaded;
+        out << YAML::Key << "Last project loaded" << YAML::Value << FileSystem::rootPath.string() + "\\DefaultProject";
         out << YAML::EndSeq;
         out << YAML::EndMap;
         std::ofstream fout(editorSettings);
         fout << out.c_str();
-        projectManager.loadEditorProject(lastProjectLoaded);
+        projectManager.loadEditorProject(FileSystem::rootPath.string() + "\\DefaultProject");
     }
 }
 

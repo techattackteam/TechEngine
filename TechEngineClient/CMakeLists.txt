@@ -37,7 +37,7 @@ target_include_directories(TechEngineClient PUBLIC "src")
 target_link_libraries(TechEngineClient PUBLIC TechEngineCore GLEW::GLEW glfw glm::glm)
 
 #Copy API include files to project template
-set(TECH_ENGINE_CLIENT_API_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/include/TechEngineClient")
+set(TECH_ENGINE_CLIENT_API_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/include/TechEngineClient")
 set(TECH_ENGINE_CLIENT_API_FILES
         "${PROJECT_SOURCE_DIR}/TechEngineClient/src/core/Key.hpp"
         "${PROJECT_SOURCE_DIR}/TechEngineClient/src/core/Mouse.hpp"
@@ -47,6 +47,7 @@ set(TECH_ENGINE_CLIENT_API_FILES
 #Clear TechEngineClient API directory
 file(REMOVE_RECURSE "${TECH_ENGINE_CLIENT_API_DIRECTORY}")
 
+#Copy API files to TechEngineClient API directory
 foreach (entry ${TECH_ENGINE_CLIENT_API_FILES})
     if (IS_DIRECTORY ${entry})
         get_filename_component(folder_name ${entry} NAME)
@@ -75,22 +76,22 @@ endforeach ()
 
 #Copy .lib to project template
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib/debug")
-        file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib/debug")
+    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/lib/debug")
+        file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/lib/debug")
     endif ()
     add_custom_command(TARGET TechEngineClient POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy
             "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/debug/TechEngineClient.lib"
-            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib/debug"
+            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/lib/debug"
             COMMAND_EXPAND_LISTS)
 elseif (CMAKE_BUILD_TYPE STREQUAL "Release")
-    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib/release")
-        file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib/release")
+    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/lib/release")
+        file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/lib/release")
     endif ()
     add_custom_command(TARGET TechEngineClient POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy
             "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/release/TechEngineClient.lib"
-            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/TechEngineAPI/lib/release"
+            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/lib/release"
             COMMAND_EXPAND_LISTS)
 endif ()
 
@@ -99,5 +100,5 @@ endif ()
 add_custom_command(TARGET TechEngineClient POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${PROJECT_SOURCE_DIR}/TechEngineClient/res/shaders"
-        "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/defaults/shaders"
+        "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/defaults/shaders"
         COMMAND_EXPAND_LISTS)

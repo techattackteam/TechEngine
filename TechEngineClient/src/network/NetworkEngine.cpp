@@ -9,6 +9,10 @@
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 
+#include "events/network/ClientBanEvent.hpp"
+#include "events/network/ClientKickEvent.hpp"
+#include "events/network/ConnectionEstablishedEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
 #include "network/SceneSynchronizer.hpp"
 #include "scene/GameObject.hpp"
 
@@ -212,9 +216,7 @@ namespace TechEngine {
                 return;
             }
 
-            //m_DataReceivedCallback(Buffer(incomingMessage->m_pData, incomingMessage->m_cbSize));
             onDataReceived(Buffer(incomingMessage->m_pData, incomingMessage->m_cbSize));
-            // Release when done
             incomingMessage->Release();
         }
     }
@@ -271,7 +273,7 @@ namespace TechEngine {
                 self->connectionStatus = ConnectionStatus::Connected;
                 TE_LOGGER_INFO("Connected to remote host");
                 self->sendMessage("Hello from client");
-            //serverConnectedCallback();
+                EventDispatcher::getInstance().dispatch(new ConnectionEstablishedEvent());
                 break;
 
             default:
@@ -326,9 +328,11 @@ namespace TechEngine {
                 break;
             }
             case PacketType::ClientKick: {
+                EventDispatcher::getInstance().dispatch(new ClientKickEvent());
                 break;
             }
             case PacketType::ClientBan: {
+                EventDispatcher::getInstance().dispatch(new ClientBanEvent());
                 break;
             }
             case PacketType::SyncGameObject: {
