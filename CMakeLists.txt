@@ -24,3 +24,8 @@ add_subdirectory(TechEngineClient)
 add_subdirectory(TechEngineServer)
 add_subdirectory(TechEngineEditor)
 add_subdirectory(TechEngineRuntime)
+
+add_custom_target(TechEngine)
+add_custom_target(Runtimes)
+add_dependencies(Runtimes TechEngineRuntime TechEngineServer)
+add_dependencies(TechEngine Runtimes TechEngineEditor)

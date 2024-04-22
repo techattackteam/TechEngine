@@ -4,7 +4,6 @@
 #include "scene/SceneManagerAPI.hpp"
 #include "scripts/ScriptEngineAPI.hpp"
 
-
 namespace TechEngine {
     class TechEngineAPI {
     private:

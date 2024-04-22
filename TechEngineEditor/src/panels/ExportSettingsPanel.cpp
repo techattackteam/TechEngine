@@ -59,12 +59,21 @@ namespace TechEngine {
             }
             std::filesystem::remove_all(exportPath);
             std::filesystem::create_directory(exportPath);
+            std::filesystem::create_directory(exportPath.string() + "\\Assets");
+            std::filesystem::create_directory(exportPath.string() + "\\Assets\\Common");
+            std::filesystem::create_directory(exportPath.string() + "\\Assets\\Server");
+            std::filesystem::create_directory(exportPath.string() + "\\Resources");
+            std::filesystem::create_directory(exportPath.string() + "\\Resources\\Common");
+            std::filesystem::create_directory(exportPath.string() + "\\Resources\\Server");
             sceneManager.saveCurrentScene();
             std::filesystem::copy_options copyOptions = std::filesystem::copy_options::recursive |
                                                         std::filesystem::copy_options::overwrite_existing;
 
             std::filesystem::copy(projectManager.getProjectFilePath(), exportPath, copyOptions);
-            panelsManager.compileClientUserScripts(compileMode);
+            if (!FileSystem::getAllFilesWithExtension(projectManager.getProjectAssetsPath().string() + "\\Client", {".cpp", ".hpp"}, true).empty() ||
+                !FileSystem::getAllFilesWithExtension(projectManager.getProjectAssetsPath().string() + "\\Common", {".cpp", ".hpp"}, true).empty()) {
+                panelsManager.compileServerUserScripts(compileMode);
+            }
             FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Common", exportPath.string() + "\\Assets\\Common", {".cpp", ".hpp"}, {"cmake"});
             FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Client", exportPath.string() + "\\Assets\\Client", {".cpp", ".hpp"}, {"cmake"});
             std::filesystem::create_directory(exportPath.string() + "//Resources");
@@ -97,6 +106,13 @@ namespace TechEngine {
             }
             std::filesystem::remove_all(exportPath);
             std::filesystem::create_directory(exportPath);
+
+            std::filesystem::create_directory(exportPath.string() + "\\Assets");
+            std::filesystem::create_directory(exportPath.string() + "\\Assets\\Common");
+            std::filesystem::create_directory(exportPath.string() + "\\Assets\\Server");
+            std::filesystem::create_directory(exportPath.string() + "\\Resources");
+            std::filesystem::create_directory(exportPath.string() + "\\Resources\\Common");
+            std::filesystem::create_directory(exportPath.string() + "\\Resources\\Server");
             sceneManager.saveCurrentScene();
             for (auto gameObject: sceneManager.getScene().getGameObjects()) {
                 if (!gameObject->hasComponent<NetworkSync>()) {
@@ -107,12 +123,15 @@ namespace TechEngine {
                                                         std::filesystem::copy_options::overwrite_existing;
 
             std::filesystem::copy(projectManager.getProjectFilePath(), exportPath, copyOptions);
-            panelsManager.compileServerUserScripts(compileMode);
-            FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Server", exportPath.string() + "//Assets//Server", {".cpp", ".hpp"}, {"cmake"});
-            FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Common", exportPath.string() + "//Assets//Common", {".cpp", ".hpp"}, {"cmake"});
-            std::filesystem::create_directory(exportPath.string() + "//Resources");
-            FileSystem::copyRecursive(projectManager.getProjectCommonResourcesPath(), exportPath.string() + "//Resources//Common", {".cpp", ".hpp"}, {"cmake"});
-            FileSystem::copyRecursive(projectManager.getProjectServerResourcesPath(), exportPath.string() + "//Resources//Server", {".cpp", ".hpp"}, {"cmake"});
+            if (!FileSystem::getAllFilesWithExtension(projectManager.getProjectAssetsPath().string() + "\\Server", {".cpp", ".hpp"}, true).empty() ||
+                !FileSystem::getAllFilesWithExtension(projectManager.getProjectAssetsPath().string() + "\\Common", {".cpp", ".hpp"}, true).empty()) {
+                panelsManager.compileServerUserScripts(compileMode);
+            }
+            FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Server", exportPath.string() + "\\Assets\\Server", {".cpp", ".hpp"}, {"cmake"});
+            FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Common", exportPath.string() + "\\Assets\\Common", {".cpp", ".hpp"}, {"cmake"});
+            std::filesystem::create_directory(exportPath.string() + "\\Resources");
+            FileSystem::copyRecursive(projectManager.getProjectCommonResourcesPath(), exportPath.string() + "\\Resources\\Common", {".cpp", ".hpp"}, {"cmake"});
+            FileSystem::copyRecursive(projectManager.getProjectServerResourcesPath(), exportPath.string() + "\\Resources\\Server", {".cpp", ".hpp"}, {"cmake"});
             std::filesystem::copy(FileSystem::serverPath, exportPath, copyOptions);
             TE_LOGGER_INFO("Project exported to: {0}", exportPath.string());
         } catch (std::filesystem::filesystem_error& e) {

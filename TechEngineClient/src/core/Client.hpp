@@ -1,5 +1,7 @@
 #pragma once
 
+#include <scriptingAPI/TechEngineAPIClient.hpp>
+
 #include "core/Core.hpp"
 #include "core/AppCore.hpp"
 #include "Window.hpp"
@@ -13,6 +15,7 @@ namespace TechEngine {
         Window window;
         Renderer renderer;
         NetworkEngine networkEngine;
+        TechEngineAPIClient api;
 
         Client(std::string name, int width, int height);
 
