@@ -2,7 +2,6 @@ file(GLOB_RECURSE TechEngineServer_Sources CONFIGURE_DEPENDS "src/*.cpp")
 file(GLOB_RECURSE TechEngineServer_Headers "src/*.hpp")
 
 add_executable(TechEngineServer ${TechEngineServer_Sources} ${TechEngineServer_Headers})
-add_compile_definitions(TECH_ENGINE_API_EXPORTS)
 #Setup target's output directory
 if (WIN32) # WINDOWS
     set(TECH_ENGINE_SERVER_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineServer/")

@@ -13,7 +13,8 @@ endforeach ()
 list(REMOVE_DUPLICATES TechEngineCore_Include_Dirs)
 
 add_library(TechEngineCore SHARED ${TechEngineCore_Sources} ${TechEngineCore_Headers})
-add_compile_definitions(TECH_ENGINE_API_EXPORTS)
+target_compile_definitions(TechEngineCore PUBLIC TECH_ENGINE_API_EXPORTS)
+target_compile_definitions(TechEngineCore PUBLIC GLM_ENABLE_EXPERIMENTAL)
 #Setup target's output directory
 if (WIN32) # WINDOWS
     set(TECH_ENGINE_CORE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineCore")
@@ -54,7 +55,7 @@ else ()
 endif ()
 
 target_include_directories(TechEngineCore PUBLIC "src")
-target_link_libraries(TechEngineCore PUBLIC spdlog::spdlog unofficial::omniverse-physx-sdk::sdk yaml-cpp GameNetworkingSockets::shared)
+target_link_libraries(TechEngineCore PUBLIC spdlog::spdlog unofficial::omniverse-physx-sdk::sdk yaml-cpp::yaml-cpp GameNetworkingSockets::shared)
 target_compile_definitions(TechEngineCore PUBLIC
         $<$<CONFIG:Debug>:TE_DEBUG>
         $<$<CONFIG:Release>:TE_RELEASEDEBUG>
