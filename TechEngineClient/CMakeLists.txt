@@ -42,6 +42,7 @@ set(TECH_ENGINE_CLIENT_API_FILES
         "${PROJECT_SOURCE_DIR}/TechEngineClient/src/core/Key.hpp"
         "${PROJECT_SOURCE_DIR}/TechEngineClient/src/core/Mouse.hpp"
         "${PROJECT_SOURCE_DIR}/TechEngineClient/src/events"
+        "${PROJECT_SOURCE_DIR}/TechEngineClient/src/scriptingAPI/network"
 )
 
 #Clear TechEngineClient API directory

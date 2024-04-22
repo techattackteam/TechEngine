@@ -439,6 +439,11 @@ namespace TechEngine {
     }
 
     void PanelsManager::startRunningScene() {
+#ifdef TE_DEBUG
+        compileClientUserScripts(DEBUG);
+#else
+        compileClientUserScripts(RELEASEDEBUG);
+#endif
         sceneManager.saveSceneAsTemporarily(sceneManager.getActiveSceneName());
         EventDispatcher::getInstance().copy();
         materialManager.copy();
@@ -512,7 +517,11 @@ namespace TechEngine {
     }
 
     void PanelsManager::runClientProcess() {
+#ifdef TE_DEBUG
+        exportSettingsPanel.exportGameProject(DEBUG);
+#else
         exportSettingsPanel.exportGameProject(RELEASEDEBUG);
+#endif
         STARTUPINFOA si;
         PROCESS_INFORMATION pi;
         ZeroMemory(&si, sizeof(si));

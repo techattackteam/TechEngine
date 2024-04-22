@@ -7,6 +7,9 @@ namespace TechEngine {
         EventDispatcherAPI::eventDispatcher = eventDispatcher;
     }
 
+    EventDispatcherAPI::~EventDispatcherAPI() {
+    }
+
     void EventDispatcherAPI::dispatch(Event* event) {
         eventDispatcher->dispatch(event);
     }

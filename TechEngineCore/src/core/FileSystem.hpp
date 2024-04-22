@@ -3,6 +3,8 @@
 #include <string>
 #include <filesystem>
 
+#include "Logger.hpp"
+
 
 namespace TechEngine::FileSystem {
     inline std::filesystem::path rootPath = std::filesystem::current_path(); //This could be Editor path or Runtime path
@@ -13,17 +15,17 @@ namespace TechEngine::FileSystem {
     inline std::filesystem::path serverPath = rootPath.string() + "\\TechEngineServer";
     inline std::filesystem::path editorResourcesPath = rootPath.string() + "\\resources"; //Only use this in editor
 
-    inline std::vector<std::string> getAllFilesWithExtension(const std::string& path, const std::string& extension, bool recursive) {
+    inline std::vector<std::string> getAllFilesWithExtension(const std::string& path, const std::vector<std::string>& extensions, bool recursive) {
         std::vector<std::string> filesWithExtension;
         if (recursive) {
             for (const auto& entry: std::filesystem::recursive_directory_iterator(path)) {
-                if (entry.path().extension() == extension) {
+                if (std::find(extensions.begin(), extensions.end(), entry.path().extension().string()) != extensions.end()) {
                     filesWithExtension.push_back(entry.path().string());
                 }
             }
         } else {
             for (const auto& entry: std::filesystem::directory_iterator(path)) {
-                if (entry.path().extension() == extension) {
+                if (std::find(extensions.begin(), extensions.end(), entry.path().extension().string()) != extensions.end()) {
                     filesWithExtension.push_back(entry.path().string());
                 }
             }
@@ -56,7 +58,7 @@ namespace TechEngine::FileSystem {
                 std::filesystem::create_directories(destinationPath);
                 copyRecursive(currentPath, destinationPath, excludedExtension, excludedFolders);
             } else {
-                std::filesystem::copy_file(currentPath, destinationPath, std::filesystem::copy_options::overwrite_existing);
+                std::filesystem::copy_file(currentPath, destinationPath);
             }
         }
     }

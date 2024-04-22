@@ -17,7 +17,7 @@ namespace TechEngine {
         ConnectionStatus connectionStatus = ConnectionStatus::Disconnected;
         std::string connectionDebugMessage;
 
-        std::string serverAddress;
+        //std::string serverAddress;
         bool running = false;
 
         ISteamNetworkingSockets* sockets = nullptr;
@@ -30,15 +30,13 @@ namespace TechEngine {
 
         ~NetworkEngine();
 
-        void connectServer();
+        void connectServer(const std::string& ip, const std::string& port);
 
         void update();
 
         void fixedUpdate();
 
         void disconnectServer();
-
-        void setServerAddress(const std::string& address);
 
         void sendBuffer(Buffer buffer, bool reliable = true);
 
@@ -54,8 +52,6 @@ namespace TechEngine {
         ConnectionStatus getConnectionStatus() const;
 
         const std::string& getConnectionDebugMessage() const;
-
-        const std::string& getServerAddress() const;
 
     private:
         void pollIncomingMessages();

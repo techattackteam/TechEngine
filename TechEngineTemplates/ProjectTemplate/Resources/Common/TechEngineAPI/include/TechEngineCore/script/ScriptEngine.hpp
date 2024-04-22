@@ -11,6 +11,7 @@ namespace TechEngine {
     private:
         std::list<Script*> scripts = {};
         bool runtime = false;
+        bool dllLoaded = false;
         inline static ScriptEngine* instance;
 
         HINSTANCE m_userCustomDll = nullptr;

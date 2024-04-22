@@ -179,9 +179,8 @@ namespace TechEngine {
             std::ofstream fout(this->projectFilePath);
             fout << out.c_str();
         }
-        textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), ".jpg", true));
-        textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), ".png", true));
-        materialManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), ".mat", true));
+        textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), {".jpg", ".png"}, true));
+        materialManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), {".mat"}, true));
         sceneManager.init(getProjectLocation().string());
         sceneManager.loadScene(lastSceneLoaded);
     }
@@ -197,16 +196,15 @@ namespace TechEngine {
             TE_LOGGER_CRITICAL("Failed to load {0} project.\n      {1}", this->projectFilePath.string(), e.what());
             exit(1);
         }
-        textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), ".jpg", true));
-        textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), ".png", true));
-        materialManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), ".mat", true));
+        textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), {".jpg", ".png"}, true));
+        materialManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), {".mat"}, true));
         sceneManager.init(getProjectLocation().string());
         sceneManager.loadScene(lastSceneLoaded);
     }
 
     void ProjectManager::setupPaths(const std::string& projectLocation) {
         this->projectLocation = projectLocation;
-        std::vector<std::string> files = FileSystem::getAllFilesWithExtension(projectLocation, ".teprj", false);
+        std::vector<std::string> files = FileSystem::getAllFilesWithExtension(projectLocation, {".teprj"}, false);
         std::string projectFile = files[0];
         this->projectFilePath = projectFile;
         projectName = projectFile.substr(projectFile.find_last_of("\\") + 1, projectFile.find_last_of(".") - projectFile.find_last_of("\\") - 1);

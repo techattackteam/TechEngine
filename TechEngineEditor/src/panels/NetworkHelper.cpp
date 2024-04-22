@@ -12,14 +12,18 @@ namespace TechEngine {
         ImGui::Text("Network Helper");
         ImGui::Separator();
         ImGui::Text("IP: ");
-        std::string hint = "localhost:25565";
-        std::string serverAddress = networkEngine.getServerAddress();
-        ImGui::InputTextWithHint("##", hint.c_str(), &serverAddress);
+        std::string hintIP = "localhost";
+        std::string hintPort = "localhost";
+        static std::string serverAddress = "";
+        static std::string serverPort = "";
+        ImGui::InputTextWithHint("##", hintIP.c_str(), &serverAddress, ImGuiInputTextFlags_EnterReturnsTrue);
+        ImGui::Text("Port: ");
+        ImGui::InputTextWithHint("###", hintPort.c_str(), &serverPort, ImGuiInputTextFlags_EnterReturnsTrue);
         if (serverAddress.empty()) {
-            serverAddress = "localhost:25565";
-            networkEngine.setServerAddress(serverAddress);
-        } else if (serverAddress != networkEngine.getServerAddress()) {
-            networkEngine.setServerAddress(serverAddress);
+            serverAddress = "localhost";
+        }
+        if (serverPort.empty()) {
+            serverPort = "25565";
         }
         if (networkEngine.getConnectionStatus() == NetworkEngine::ConnectionStatus::Connected) {
             if (ImGui::Button("Disconnect")) {
@@ -27,7 +31,7 @@ namespace TechEngine {
             }
         } else {
             if (ImGui::Button("Connect")) {
-                networkEngine.connectServer();
+                networkEngine.connectServer("localhost", "25565");
             }
         }
 

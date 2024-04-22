@@ -111,7 +111,7 @@ namespace TechEngine {
         return SplitString(string, std::string(1, delimiter));
     }
 
-    void NetworkEngine::connectServer() {
+    void NetworkEngine::connectServer(const std::string& ip, const std::string& port) {
         connectionStatus = ConnectionStatus::Connecting;
 
         SteamDatagramErrMsg errMsg;
@@ -124,16 +124,15 @@ namespace TechEngine {
         // Select instance to use.  For now we'll always use the default.
         sockets = SteamNetworkingSockets();
         // Try resolve domain name
-        auto ipTokens = SplitString(serverAddress, ':'); // [0] == hostname, [1] (optional) == port
-        std::string serverIP = ResolveDomainName(ipTokens[0]);
-        if (ipTokens.size() != 2)
+        std::string serverIP = ResolveDomainName(ip);
+        if (port.empty())
             serverIP = fmt::format("{}:{}", serverIP, 8192); // Add default port if hostname doesn't contain port
         else
-            serverIP = fmt::format("{}:{}", serverIP, ipTokens[1]); // Add specified port
+            serverIP = fmt::format("{}:{}", serverIP, port); // Add specified port
         // Start connecting
         SteamNetworkingIPAddr address;
         if (!address.ParseString(serverIP.c_str())) {
-            TE_LOGGER_ERROR("Invalid IP address - could not parse {0}", serverAddress);
+            TE_LOGGER_ERROR("Invalid IP address - could not parse {0}:{1}", ip, port);
             connectionDebugMessage = "Invalid IP address";
             connectionStatus = ConnectionStatus::FailedToConnect;
             return;
@@ -170,10 +169,6 @@ namespace TechEngine {
         GameNetworkingSockets_Kill();
     }
 
-    void NetworkEngine::setServerAddress(const std::string& address) {
-        serverAddress = address;
-    }
-
     void NetworkEngine::sendBuffer(Buffer buffer, bool reliable) {
         EResult result = sockets->SendMessageToConnection(connection, buffer.data, buffer.GetSize(), reliable ? k_nSteamNetworkingSend_Reliable : k_nSteamNetworkingSend_Unreliable, nullptr);
         if (result != k_EResultOK) {
@@ -197,10 +192,6 @@ namespace TechEngine {
 
     const std::string& NetworkEngine::getConnectionDebugMessage() const {
         return connectionDebugMessage;
-    }
-
-    const std::string& NetworkEngine::getServerAddress() const {
-        return serverAddress;
     }
 
     void NetworkEngine::pollIncomingMessages() {

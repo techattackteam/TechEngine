@@ -15,5 +15,8 @@ namespace TechEngine {
 
     TechEngineAPI::~TechEngineAPI() {
         delete sceneManagerAPI;
+        delete eventDispatcherAPI;
+        //delete scriptEngineAPI;
+        delete materialManagerAPI;
     }
 }
