@@ -13,9 +13,6 @@ endforeach ()
 list(REMOVE_DUPLICATES TechEngineClient_Include_Dirs)
 
 add_library(TechEngineClient SHARED ${TechEngineClient_Sources} ${TechEngineClient_Headers})
-
-add_compile_definitions(TECH_ENGINE_API_EXPORTS)
-
 #Setup target's output directory
 if (WIN32) # WINDOWS
     set(TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineClient")

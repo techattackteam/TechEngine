@@ -1,6 +1,8 @@
 #include "TransformComponent.hpp"
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/transform.hpp>
+
 #include "core/Timer.hpp"
-#include <glm/gtx/quaternion.hpp>
 #include "scene/GameObject.hpp"
 
 namespace TechEngine {
@@ -21,16 +23,16 @@ namespace TechEngine {
             position = parent->getTransform().position;
             orientation = parent->getTransform().orientation;
             scale = parent->getTransform().scale;
-            model *= glm::translate(glm::mat4(1), position) * glm::toMat4(glm::quat(glm::radians(orientation))) * glm::scale(glm::mat4(1), scale);
+            model *= glm::translate(glm::mat4(1), position) * glm::mat4_cast(glm::quat(glm::radians(orientation))) * glm::scale(glm::mat4(1), scale);
             parent = parent->getParent();
         }
-        model *= glm::translate(glm::mat4(1), this->position) * glm::toMat4(glm::quat(glm::radians(this->orientation))) * glm::scale(glm::mat4(1), this->scale);
+        model *= glm::translate(glm::mat4(1), this->position) * glm::mat4_cast(glm::quat(glm::radians(this->orientation))) * glm::scale(glm::mat4(1), this->scale);
 
         return model;
     }
 
     glm::mat4 TransformComponent::getLocalModelMatrix() {
-        return glm::translate(glm::mat4(1), position) * glm::toMat4(glm::quat(glm::radians(orientation))) * glm::scale(glm::mat4(1), scale);
+        return glm::translate(glm::mat4(1), position) * glm::mat4_cast(glm::quat(glm::radians(orientation))) * glm::scale(glm::mat4(1), scale);
     }
 
     void TransformComponent::translate(glm::vec3 vector) {
@@ -76,7 +78,7 @@ namespace TechEngine {
 
     void TransformComponent::lookAt(glm::vec3 lookPosition) {
         glm::mat4 lootAtMatrix = glm::lookAt(position, lookPosition, glm::vec3(0, 1, 0));
-        setRotation(glm::toQuat(lootAtMatrix));
+        setRotation(glm::quat_cast(lootAtMatrix));
     }
 
     glm::vec3 TransformComponent::getPosition() const {
@@ -106,7 +108,7 @@ namespace TechEngine {
         glm::vec3 initialForward(0.0f, 0.0f, -1.0f);
         glm::vec3 rotationInRadians = glm::radians(orientation);
         glm::quat orientation = glm::quat(rotationInRadians);
-        glm::vec3 forward = glm::rotate(orientation, initialForward);
+        glm::vec3 forward = glm::normalize(orientation * initialForward);
         return forward;
     }
 
