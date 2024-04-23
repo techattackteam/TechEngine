@@ -1,5 +1,4 @@
 #pragma once
-#include <memory>
 #include <string>
 
 #include "components/TransformComponent.hpp"

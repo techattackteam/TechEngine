@@ -1,5 +1,7 @@
 #include "GameObjectAPI.hpp"
 
+
+#include "components/network/NetworkSync.hpp"
 #include "components/render/CameraComponent.hpp"
 #include "components/render/MeshRendererComponent.hpp"
 #include "components/physics/BoxColliderComponent.hpp"
@@ -41,6 +43,8 @@ namespace TechEngine {
 
     template RigidBody* GameObjectAPI::getComponent<RigidBody>();
 
+    template NetworkSync* GameObjectAPI::getComponent<NetworkSync>();
+
     template void GameObjectAPI::addComponent<TransformComponent>();
 
     template void GameObjectAPI::addComponent<CameraComponent>();
@@ -54,4 +58,6 @@ namespace TechEngine {
     template void GameObjectAPI::addComponent<CylinderCollider>();
 
     template void GameObjectAPI::addComponent<RigidBody>();
+
+    template void GameObjectAPI::addComponent<NetworkSync>();
 }
