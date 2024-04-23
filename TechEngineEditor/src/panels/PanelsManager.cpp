@@ -238,19 +238,6 @@ namespace TechEngine {
             if (ImGui::MenuItem("Save Project", "Ctrl+S")) {
                 projectManager.saveProject();
             }
-            if (ImGui::MenuItem("Build")) {
-                if (m_currentPlaying) {
-                    stopRunningScene();
-                    m_currentPlaying = false;
-                }
-#ifdef TE_DEBUG
-                compileClientUserScripts(DEBUG);
-#elif TE_RELEASE
-                compileClientUserScripts(RELEASE);
-#elif TE_RELEASEDEBUG
-                compileClientUserScripts(RELEASEDEBUG);
-#endif
-            }
 
             if (ImGui::MenuItem("Export")) {
                 if (!exportSettingsPanel.isOpen()) {
@@ -477,7 +464,7 @@ namespace TechEngine {
 #ifdef TE_DEBUG
         exportSettingsPanel.exportServerProject(DEBUG);
 #else
-            exportSettingsPanel.exportServerProject(RELEASEDEBUG);
+        exportSettingsPanel.exportServerProject(RELEASEDEBUG);
 #endif
         STARTUPINFOA si;
         PROCESS_INFORMATION pi;

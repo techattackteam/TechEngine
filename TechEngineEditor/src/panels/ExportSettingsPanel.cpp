@@ -72,13 +72,13 @@ namespace TechEngine {
             std::filesystem::copy(projectManager.getProjectFilePath(), exportPath, copyOptions);
             if (!FileSystem::getAllFilesWithExtension(projectManager.getProjectAssetsPath().string() + "\\Client", {".cpp", ".hpp"}, true).empty() ||
                 !FileSystem::getAllFilesWithExtension(projectManager.getProjectAssetsPath().string() + "\\Common", {".cpp", ".hpp"}, true).empty()) {
-                panelsManager.compileServerUserScripts(compileMode);
+                panelsManager.compileClientUserScripts(compileMode);
             }
             FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Common", exportPath.string() + "\\Assets\\Common", {".cpp", ".hpp"}, {"cmake"});
             FileSystem::copyRecursive(projectManager.getProjectAssetsPath().string() + "\\Client", exportPath.string() + "\\Assets\\Client", {".cpp", ".hpp"}, {"cmake"});
-            std::filesystem::create_directory(exportPath.string() + "//Resources");
-            FileSystem::copyRecursive(projectManager.getProjectCommonResourcesPath(), exportPath.string() + "//Resources//Common", {".cpp", ".hpp"}, {"cmake"});
-            FileSystem::copyRecursive(projectManager.getProjectClientResourcesPath(), exportPath.string() + "//Resources//Client", {".cpp", ".hpp"}, {"cmake"});
+            std::filesystem::create_directory(exportPath.string() + "\\Resources");
+            FileSystem::copyRecursive(projectManager.getProjectCommonResourcesPath(), exportPath.string() + "\\Resources\\Common", {".cpp", ".hpp"}, {"cmake"});
+            FileSystem::copyRecursive(projectManager.getProjectClientResourcesPath(), exportPath.string() + "\\Resources\\Client", {".cpp", ".hpp"}, {"cmake"});
             std::filesystem::copy(FileSystem::runtimePath, exportPath, copyOptions);
             TE_LOGGER_INFO("Project exported to: {0}", exportPath.string());
         } catch (std::filesystem::filesystem_error& e) {

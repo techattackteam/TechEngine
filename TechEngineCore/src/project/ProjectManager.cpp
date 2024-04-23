@@ -232,29 +232,6 @@ namespace TechEngine {
         serverUserScriptsDebugDLLPath = projectServerResourcesPath.string() + scriptsDebugDLLPath;
         serverUserScriptsReleaseDLLPath = projectServerResourcesPath.string() + scriptsReleaseDLLPath;
         serverUserScriptsReleaseDebugDLLPath = projectServerResourcesPath.string() + scriptsReleaseDebugDLLPath;
-
-#ifdef TE_DEBUG
-        techEngineCoreLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCore.lib";
-#elif TE_RELEASEDEBUG
-        techEngineCoreLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCore.lib";
-#elif TE_RELEASE
-         tehcengineCoreLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCore.lib";
-#endif
-
-#ifdef TE_DEBUG
-        techEngineClientLibPath = projectClientResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineClient.lib";
-#elif TE_RELEASEDEBUG
-        techEngineClientLibPath = projectClientResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineClient.lib";
-#elif TE_RELEASE
-         techEngineClientLibPath = projectClientResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineClient.lib";
-#endif
-#ifdef TE_DEBUG
-        techEngineServerLibPath = projectServerResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineServer.lib";
-#elif TE_RELEASEDEBUG
-        techEngineServerLibPath = projectServerResourcesPath.string() + "\\TechEngineAPI\\lib\\releaseWithDebug\\TechEngineServer.lib";
-#elif TE_RELEASE
-         techEngineServerLibPath = projectServerResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineServer.lib";
-#endif
     }
 
     const std::string& ProjectManager::getProjectName() {

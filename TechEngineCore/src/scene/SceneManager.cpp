@@ -16,6 +16,7 @@
 #include <filesystem>
 #include <utils/YAMLUtils.hpp>
 #include <fstream>
+#include <project/ProjectManager.hpp>
 
 #include "components/network/NetworkSync.hpp"
 #include "eventSystem/EventDispatcher.hpp"
@@ -164,7 +165,6 @@ namespace TechEngine {
     }
 
     SceneManager::SceneManager(ProjectManager& projectManager, PhysicsEngine& physicsEngine, MaterialManager& materialManager, TextureManager& textureManager) : projectManager(projectManager), physicsEngine(physicsEngine), materialManager(materialManager), textureManager(textureManager) {
-
     }
 
     void SceneManager::serialize(const std::string& sceneName, const std::string& filepath) {
@@ -377,7 +377,20 @@ namespace TechEngine {
             deserialize(scenePath);
             m_activeSceneName = sceneName;
         } else {
-            TE_LOGGER_ERROR("Failed to load scene '{0}'.\n Could not find scene.", sceneName);
+            TE_LOGGER_ERROR("Failed to load scene '{0}'.\n Could not find scene. Creating default one", sceneName);
+            scene.clear();
+            physicsEngine.clear();
+            m_activeSceneName = sceneName;
+            GameObject& gameObject = scene.createGameObject<GameObject>("Main Camera");
+            gameObject.addComponent<CameraComponent>();
+            gameObject.getComponent<CameraComponent>()->setIsMainCamera(true);
+            gameObject.getComponent<TransformComponent>()->translateTo(glm::vec3(0.0f, 0.0f, 5.0f));
+            GameObject& cube = scene.createGameObject<GameObject>("Cube");
+            cube.addComponent<MeshRendererComponent>(new CubeMesh(), &materialManager.getMaterial("DefaultMaterial"));
+            cube.getComponent<TransformComponent>()->translateTo(glm::vec3(0.0f, 0.0f, 0.0f));
+            std::string scenePath = projectManager.getProjectAssetsPath().string() + "\\Common\\Scenes\\" + sceneName + ".scene";
+            registerScene(scenePath);
+            saveScene(sceneName);
         }
     }
 
