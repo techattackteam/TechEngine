@@ -5,20 +5,28 @@
 #include "yaml-cpp/yaml.h"
 
 namespace TechEngine {
-    Editor::Editor() : Client("TechEngine", 1600, 900), panelsManager(window, sceneManager, projectManager, physicsEngine, textureManager, materialManager, renderer, networkEngine) {
+    Editor::Editor() : AppCore(),
+                       client("TechEngineEditor", 1600, 900),
+                       server(),
+                       projectManager(client, server),
+                       panelsManager(client, server, projectManager) {
         editorSettings = FileSystem::rootPath.string() + "/EditorSettings.TESettings";
         projectManager.init();
         loadEditorSettings();
         panelsManager.init();
-        renderer.init(projectManager);
+        client.renderer.init(client.filePaths);
+        server.init();
     }
 
     void Editor::onUpdate() {
+        client.onUpdate();
+        server.onUpdate();
         panelsManager.update();
-        window.onUpdate();
     }
 
     void Editor::onFixedUpdate() {
+        client.onFixedUpdate();
+        server.onFixedUpdate();
         physicsEngine.onFixedUpdate();
     }
 

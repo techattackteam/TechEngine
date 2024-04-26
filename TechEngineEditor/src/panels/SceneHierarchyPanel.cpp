@@ -6,7 +6,9 @@
 #include "UIUtils/ImGuiUtils.hpp"
 
 namespace TechEngine {
-    SceneHierarchyPanel::SceneHierarchyPanel(Scene& scene, MaterialManager& materialManager, SceneView& sceneView) : scene(scene), materialManager(materialManager), sceneView(sceneView), Panel("Scene Hierarchy") {
+    SceneHierarchyPanel::SceneHierarchyPanel(const std::string& name, Scene& scene, MaterialManager& materialManager/*, SceneView& sceneView*/) : scene(scene),
+                                                                                                                                                  materialManager(materialManager),
+                                                                                                                                                  /*sceneView(sceneView),*/ Panel(name) {
     }
 
     void SceneHierarchyPanel::onUpdate() {
@@ -156,7 +158,7 @@ namespace TechEngine {
                 }
             } else if (key.getKeyCode() == KeyCode::F) {
                 if (!selectedGO.empty()) {
-                    sceneView.focusOnGameObject(selectedGO.front());
+                    //sceneView.focusOnGameObject(selectedGO.front());
                 }
             } else if (key.getKeyCode() == KeyCode::W) {
                 if (!selectedGO.empty()) {

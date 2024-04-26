@@ -3,10 +3,17 @@
 #include <filesystem>
 #include "Panel.hpp"
 #include "assimp/AssimpLoader.hpp"
-#include "project/ProjectManager.hpp"
+#include "core/Server.hpp"
+#include "core/Client.hpp"
 
 namespace TechEngine {
     class PanelsManager;
+
+    enum FileType {
+        CLIENT,
+        SERVER,
+        COMMON
+    };
 
     class ContentBrowserPanel : public Panel {
     private:
@@ -15,12 +22,12 @@ namespace TechEngine {
 
         PanelsManager& panelsManager;
         ProjectManager& projectManager;
-        SceneManager& sceneManager;
-        MaterialManager& materialManager;
-        AssimpLoader assimpLoader;
+        Client& client;
+        Server& server;
+        //AssimpLoader assimpLoader; //TODO: change the way we load models
 
     public:
-        ContentBrowserPanel(PanelsManager& panelsManager, ProjectManager& projectManager, SceneManager& sceneManager, MaterialManager& materialManager);
+        ContentBrowserPanel(Client& client, Server& server, PanelsManager& panelsManager, ProjectManager& projectManager);
 
         void init();
 
@@ -43,5 +50,10 @@ namespace TechEngine {
         bool openMenuPopupItem(const std::filesystem::path& path);
 
         bool openMenuPopupWindow(const std::filesystem::path& path);
+
+        void runFunctionBasedOnFileType(std::string path, const std::function<void()>& clientFunction, const std::function<void()>& serverFunction);
+
+    private:
+        FileType getFileType(const std::filesystem::path& path);
     };
 }

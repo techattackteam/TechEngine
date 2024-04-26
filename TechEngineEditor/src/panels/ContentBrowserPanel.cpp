@@ -3,15 +3,17 @@
 #include "ContentBrowserPanel.hpp"
 #include "core/Logger.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
-#include "material/MaterialManager.hpp"
 
 namespace TechEngine {
-    ContentBrowserPanel::ContentBrowserPanel(PanelsManager& panelsManager, ProjectManager& projectManager, SceneManager& sceneManager, MaterialManager& materialManager) : panelsManager(panelsManager),
-                                                                                                                                                                           projectManager(projectManager),
-                                                                                                                                                                           sceneManager(sceneManager),
-                                                                                                                                                                           materialManager(materialManager),
-                                                                                                                                                                           assimpLoader(sceneManager.getScene(), materialManager),
-                                                                                                                                                                           Panel("Content Browser") {
+    ContentBrowserPanel::ContentBrowserPanel(Client& client,
+                                             Server& server,
+                                             PanelsManager& panelsManager,
+                                             ProjectManager& projectManager) : client(client),
+                                                                               server(server),
+                                                                               panelsManager(panelsManager),
+                                                                               projectManager(projectManager),
+                                                                               /*assimpLoader(/*sceneManager.getScene(), materialManager#1#),*/
+                                                                               Panel("Content Browser") {
     }
 
 
@@ -43,7 +45,6 @@ namespace TechEngine {
             ImGui::BeginChild("Files", {ImGui::GetContentRegionAvail().x, ImGui::GetWindowSize().y});
             renderFiles(currentPath);
             ImGui::EndChild();
-
             ImGui::EndTable();
         }
     }
@@ -148,7 +149,14 @@ namespace TechEngine {
             std::string extension = filename.substr(filename.find_last_of('.'));
             if (extension == ".scene") {
                 std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
-                sceneManager.loadScene(filenameWithoutExtension);
+                runFunctionBasedOnFileType(path,
+                                           [&] {
+                                               client.sceneManager.loadScene(filenameWithoutExtension);
+                                           },
+                                           [&] {
+                                               server.sceneManager.loadScene(filenameWithoutExtension);
+                                           }
+                );
             } else if (extension == ".mat") {
                 std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
                 panelsManager.openMaterialEditor(filenameWithoutExtension, path);
@@ -162,20 +170,29 @@ namespace TechEngine {
     }
 
     void ContentBrowserPanel::tryLoadModel(const std::string& filepath) {
-        assimpLoader.loadModel(filepath);
+        //assimpLoader.loadModel(filepath);
     }
 
     void ContentBrowserPanel::deleteFile(const std::string& filename) {
         std::string extension = filename.substr(filename.find_last_of('.'));
         if (extension == ".scene") {
             std::string path = currentPath.string() + "\\" + filename;
-            if (sceneManager.deleteScene(path)) {
+
+            if (client.sceneManager.hasScene(path)) {
+                client.sceneManager.deleteScene(path);
+                std::filesystem::remove(path);
+            } else if (server.sceneManager.hasScene(path)) {
+                server.sceneManager.deleteScene(path);
                 std::filesystem::remove(path);
             }
         } else if (extension == ".mat") {
             std::string path = currentPath.string() + "\\" + filename;
             std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
-            if (materialManager.deleteMaterial(filenameWithoutExtension)) {
+            if (client.materialManager.materialExists(filenameWithoutExtension)) {
+                client.materialManager.deleteMaterial(filenameWithoutExtension);
+                std::filesystem::remove(path);
+            } else if (server.materialManager.materialExists(filenameWithoutExtension)) {
+                server.materialManager.deleteMaterial(filenameWithoutExtension);
                 std::filesystem::remove(path);
             }
         }
@@ -220,7 +237,13 @@ namespace TechEngine {
                 std::string newSceneName;
                 if (ImGuiUtils::beginMenuWithInputMenuField("New Scene", "Scene name", newSceneName)) {
                     std::string scenePath = currentPath.string() + "\\" + newSceneName + ".scene";
-                    sceneManager.createNewScene(scenePath);
+                    runFunctionBasedOnFileType(scenePath,
+                                               [&] {
+                                                   client.sceneManager.createNewScene(scenePath);
+                                               },
+                                               [&] {
+                                                   server.sceneManager.createNewScene(scenePath);
+                                               });
                 }
                 std::string newScriptName;
                 if (ImGuiUtils::beginMenuWithInputMenuField("New Script", "Script name", newScriptName)) {
@@ -228,12 +251,45 @@ namespace TechEngine {
                 }
                 std::string newMaterialName;
                 if (ImGuiUtils::beginMenuWithInputMenuField("New Material", "Material name", newMaterialName)) {
-                    materialManager.createMaterialFile(newMaterialName, path.string());
+                    runFunctionBasedOnFileType(currentPath.string() + "\\" + newMaterialName + ".mat",
+                                               [&] {
+                                                   client.materialManager.createMaterialFile(newMaterialName, path.string());
+                                               },
+                                               [&] {
+                                                   server.materialManager.createMaterialFile(newMaterialName, path.string());
+                                               });
                 }
                 ImGui::EndMenu();
             }
             ImGui::EndPopup();
         }
         return opened;
+    }
+
+    void ContentBrowserPanel::runFunctionBasedOnFileType(std::string path, const std::function<void()>& clientFunction, const std::function<void()>& serverFunction) {
+        FileType fileType = getFileType(path);
+        if (fileType == FileType::CLIENT) {
+            clientFunction();
+        } else if (fileType == FileType::SERVER) {
+            serverFunction();
+        } else if (fileType == FileType::COMMON) {
+            clientFunction();
+            serverFunction();
+        }
+    }
+
+    FileType ContentBrowserPanel::getFileType(const std::filesystem::path& path) {
+        std::string rootFolder = path.string().substr(projectManager.getProjectLocation().string().size() + std::string("\\Assets\\").size());
+        rootFolder = rootFolder.substr(0, rootFolder.find_first_of('\\'));
+        if (rootFolder == "Client") {
+            return FileType::CLIENT;
+        } else if (rootFolder == "Server") {
+            return FileType::SERVER;
+        } else if (rootFolder == "Common") {
+            return FileType::COMMON;
+        } else {
+            TE_LOGGER_CRITICAL("Unknown file type: \n\tRoot folder: {0}\n\tPath: {1}", rootFolder, path.string());
+            return FileType::COMMON;
+        }
     }
 }

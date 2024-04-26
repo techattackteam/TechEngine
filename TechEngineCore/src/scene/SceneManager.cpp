@@ -16,7 +16,6 @@
 #include <filesystem>
 #include <utils/YAMLUtils.hpp>
 #include <fstream>
-#include <project/ProjectManager.hpp>
 
 #include "components/network/NetworkSync.hpp"
 #include "eventSystem/EventDispatcher.hpp"
@@ -164,7 +163,7 @@ namespace TechEngine {
         out << YAML::EndMap;
     }
 
-    SceneManager::SceneManager(ProjectManager& projectManager, PhysicsEngine& physicsEngine, MaterialManager& materialManager, TextureManager& textureManager) : projectManager(projectManager), physicsEngine(physicsEngine), materialManager(materialManager), textureManager(textureManager) {
+    SceneManager::SceneManager(PhysicsEngine& physicsEngine, MaterialManager& materialManager, TextureManager& textureManager, FilePaths& filePaths) : physicsEngine(physicsEngine), materialManager(materialManager), textureManager(textureManager), filePaths(filePaths) {
     }
 
     void SceneManager::serialize(const std::string& sceneName, const std::string& filepath) {
@@ -356,18 +355,22 @@ namespace TechEngine {
         if (m_activeSceneName == sceneName) {
             TE_LOGGER_CRITICAL("Failed to delete scene '{0}'.\n Cannot delete active scene.", sceneName);
             return false;
-        } else if (m_scenesBank.find(sceneName) != m_scenesBank.end()) {
+        } else if (hasScene(sceneName)) {
             std::filesystem::remove(scenePath);
             m_scenesBank.erase(sceneName);
             return true;
         } else {
-            TE_LOGGER_CRITICAL("Failed to delete scene '{0}'", sceneName);
+            TE_LOGGER_CRITICAL("Failed to delete scene '{0}'.\n Scene not found!", sceneName);
             return false;
         }
     }
 
+    bool SceneManager::hasScene(const std::string& sceneName) {
+        return m_scenesBank.find(sceneName) != m_scenesBank.end();
+    }
+
     void SceneManager::loadScene(const std::string& sceneName) {
-        if (m_scenesBank.find(sceneName) != m_scenesBank.end()) {
+        if (hasScene(sceneName)) {
             if (!m_activeSceneName.empty()) {
                 saveScene(m_activeSceneName);
                 scene.clear();
@@ -388,7 +391,7 @@ namespace TechEngine {
             GameObject& cube = scene.createGameObject<GameObject>("Cube");
             cube.addComponent<MeshRendererComponent>(new CubeMesh(), &materialManager.getMaterial("DefaultMaterial"));
             cube.getComponent<TransformComponent>()->translateTo(glm::vec3(0.0f, 0.0f, 0.0f));
-            std::string scenePath = projectManager.getProjectAssetsPath().string() + "\\Common\\Scenes\\" + sceneName + ".scene";
+            std::string scenePath = filePaths.commonAssetsPath + "\\Scenes\\" + sceneName + ".scene";
             registerScene(scenePath);
             saveScene(sceneName);
         }

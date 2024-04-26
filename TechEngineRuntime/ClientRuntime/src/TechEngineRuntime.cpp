@@ -34,7 +34,6 @@ namespace TechEngine {
     void TechEngineRuntime::onUpdate() {
         ScriptEngine::getInstance()->onUpdate();
         renderer.renderPipeline(sceneManager.getScene().getMainCamera());
-        window.onUpdate();
     }
 
     void TechEngineRuntime::onFixedUpdate() {

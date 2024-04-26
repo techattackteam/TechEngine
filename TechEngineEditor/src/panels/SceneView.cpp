@@ -7,8 +7,8 @@
 #include "components/physics/RigidBody.hpp"
 
 namespace TechEngine {
-    SceneView::SceneView(Renderer& renderer, Scene& scene, PhysicsEngine& physicsEngine, std::vector<GameObject*>& selectedGO)
-        : renderer(&renderer), scene(scene), guizmo(physicsEngine), selectedGO(selectedGO), Panel("Scene") {
+    SceneView::SceneView(const std::string& name, Renderer& renderer, Scene& scene, PhysicsEngine& physicsEngine, std::vector<GameObject*>& selectedGO)
+        : renderer(&renderer), scene(scene), guizmo(physicsEngine), selectedGO(selectedGO), Panel(name) {
         frameBufferID = renderer.createFramebuffer(1080, 720);
         sceneCamera = new SceneCamera();
     }
@@ -19,6 +19,9 @@ namespace TechEngine {
 
 
     void SceneView::onUpdate() {
+        if (ImGui::IsWindowCollapsed()) {
+            return;
+        }
         sceneCamera->getComponent<CameraComponent>()->update();
         FrameBuffer& frameBuffer = renderer->getFramebuffer(frameBufferID);
         isWindowHovered = ImGui::IsWindowHovered();
@@ -26,7 +29,9 @@ namespace TechEngine {
         frameBuffer.bind();
         frameBuffer.resize(wsize.x, wsize.y);
         sceneCamera->getComponent<CameraComponent>()->updateProjectionMatrix(wsize.x / wsize.y);
-        renderCameraFrustum(scene.getMainCamera());
+        if (scene.hasMainCamera()) {
+            renderCameraFrustum(scene.getMainCamera());
+        }
         renderColliders();
         renderer->renderPipeline(sceneCamera->getComponent<CameraComponent>());
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();

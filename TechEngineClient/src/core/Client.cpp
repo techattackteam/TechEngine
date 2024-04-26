@@ -11,12 +11,29 @@ namespace TechEngine {
             onWindowCloseEvent((WindowCloseEvent*)(event));
         });
 
-        timer.init();
+
         physicsEngine.init();
     }
 
     Client::~Client() = default;
 
+    void Client::onFixedUpdate() {
+        eventDispatcher.fixedSyncEventManager.execute();
+        ScriptEngine::getInstance()->onFixedUpdate();
+        sceneManager.getScene().fixedUpdate();
+        networkEngine.fixedUpdate();
+    }
+
+    void Client::onUpdate() {
+        sceneManager.getScene().update();
+        ScriptEngine::getInstance()->onUpdate();
+        eventDispatcher.syncEventManager.execute();
+        networkEngine.update();
+        window.onUpdate();
+    }
+
+
+    /*
     void Client::run() {
         while (running) {
             timer.addAccumulator(timer.getDeltaTime());
@@ -41,8 +58,13 @@ namespace TechEngine {
             timer.updateFPS();
         }
     }
+    */
 
     void Client::onWindowCloseEvent(WindowCloseEvent* event) {
         running = false;
     }
+}
+
+TechEngine::AppCore* TechEngine::createApp() {
+    return nullptr;
 }

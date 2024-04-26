@@ -18,7 +18,13 @@
 #include "components/network/NetworkSync.hpp"
 
 namespace TechEngine {
-    InspectorPanel::InspectorPanel(std::vector<GameObject*>& selectedGameObjects, MaterialManager& materialManager, PhysicsEngine& physicsEngine) : materialManager(materialManager), physicsEngine(physicsEngine), selectedGameObjects(selectedGameObjects), Panel("Inspector") {
+    InspectorPanel::InspectorPanel(const std::string& name,
+                                   std::vector<GameObject*>& selectedGameObjects,
+                                   MaterialManager& materialManager,
+                                   PhysicsEngine& physicsEngine) : materialManager(materialManager),
+                                                                   physicsEngine(physicsEngine),
+                                                                   selectedGameObjects(selectedGameObjects),
+                                                                   Panel(name) {
     }
 
     void InspectorPanel::onUpdate() {

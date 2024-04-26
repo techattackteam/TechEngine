@@ -13,19 +13,19 @@ namespace TechEngine {
         }
     }
 
-    void ShadersManager::init(ProjectManager& projectManager) {
+    void ShadersManager::init(FilePaths& filePaths) {
         shaders = std::unordered_map<std::string, Shader*>();
-        shaders["geometry"] = new Shader("geometry", (projectManager.getProjectClientResourcesPath().string() + "/defaults/shaders/geometryVertex.glsl").c_str(),
-                                         (projectManager.getProjectClientResourcesPath().string() + "/defaults/shaders/geometryFragment.glsl").c_str());
+        shaders["geometry"] = new Shader("geometry", (filePaths.resourcesPath + "/defaults/shaders/geometryVertex.glsl").c_str(),
+                                         (filePaths.resourcesPath + "/defaults/shaders/geometryFragment.glsl").c_str());
 
-        shaders["shadowMap"] = new Shader("shadowMap", (projectManager.getProjectClientResourcesPath().string() + "/defaults/shaders/shadowMapVertex.glsl").c_str(),
-                                          (projectManager.getProjectClientResourcesPath().string() + "/defaults/shaders/shadowMapFragment.glsl").c_str());
+        shaders["shadowMap"] = new Shader("shadowMap", (filePaths.resourcesPath + "/defaults/shaders/shadowMapVertex.glsl").c_str(),
+                                          (filePaths.resourcesPath + "/defaults/shaders/shadowMapFragment.glsl").c_str());
 
-        shaders["debugDepth"] = new Shader("depthDebug", (projectManager.getProjectClientResourcesPath().string() + "/defaults/shaders/debugDepthVertex.glsl").c_str(),
-                                           (projectManager.getProjectClientResourcesPath().string() + "/defaults/shaders/debugDepthFragment.glsl").c_str());
+        shaders["debugDepth"] = new Shader("depthDebug", (filePaths.resourcesPath + "/defaults/shaders/debugDepthVertex.glsl").c_str(),
+                                           (filePaths.resourcesPath + "/defaults/shaders/debugDepthFragment.glsl").c_str());
 
-        shaders["line"] = new Shader("line", (projectManager.getProjectClientResourcesPath().string() + "/defaults/shaders/lineVertex.glsl").c_str(),
-                                     (projectManager.getProjectClientResourcesPath().string() + "/defaults/shaders/lineFragment.glsl").c_str());
+        shaders["line"] = new Shader("line", (filePaths.resourcesPath + "/defaults/shaders/lineVertex.glsl").c_str(),
+                                     (filePaths.resourcesPath + "/defaults/shaders/lineFragment.glsl").c_str());
     }
 
     void ShadersManager::changeActiveShader(const std::string& name) {

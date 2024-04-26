@@ -6,19 +6,20 @@
 
 #define NOMINMAX
 
+#include "ClientPanel.hpp"
 #include "core/Window.hpp"
-#include "SceneHierarchyPanel.hpp"
 #include "InspectorPanel.hpp"
-#include "SceneView.hpp"
 #include "ContentBrowserPanel.hpp"
 #include "ExportSettingsPanel.hpp"
 #include "events/panels/RegisterCustomPanel.hpp"
 #include "core/Key.hpp"
-#include "GameView.hpp"
 #include "MaterialEditor.hpp"
 #include "NetworkHelper.hpp"
+#include "ServerPanel.hpp"
 #include "scene/SceneManager.hpp"
 #include "windows.h"
+#include "core/Client.hpp"
+#include "core/Server.hpp"
 
 namespace TechEngine {
     enum CompileMode {
@@ -31,22 +32,22 @@ namespace TechEngine {
     private:
         std::vector<CustomPanel*> customPanels;
         ImGuiContext* imguiContext{};
-        Window& window;
+        /*Window& window;
         ProjectManager& projectManager;
         SceneManager& sceneManager;
         PhysicsEngine& physicsEngine;
         TextureManager& textureManager;
         MaterialManager& materialManager;
-        NetworkEngine& networkEngine;
+        NetworkEngine& networkEngine;*/
+        Client& client;
+        Server& server;
+        ProjectManager& projectManager;
 
-
-        GameView gameView;
         //SettingsPanel settingsPanel{};
         ContentBrowserPanel contentBrowser;
         ExportSettingsPanel exportSettingsPanel;
-        SceneHierarchyPanel sceneHierarchyPanel;
-        SceneView sceneView;
-        InspectorPanel inspectorPanel;
+        ClientPanel clientPanel;
+        ServerPanel serverPanel;
         MaterialEditor materialEditor;
         NetworkHelper networkHelper;
         bool m_currentPlaying = false;
@@ -56,13 +57,7 @@ namespace TechEngine {
         std::vector<PROCESS_INFORMATION> serverProcesses;
 
     public:
-        PanelsManager(Window& window, SceneManager& sceneManager,
-                      ProjectManager& projectManager,
-                      PhysicsEngine& physicsEngine,
-                      TextureManager& textureManager,
-                      MaterialManager& materialManager,
-                      Renderer& renderer,
-                      NetworkEngine& networkEngine);
+        PanelsManager(Client& client, Server& server, ProjectManager& projectManager);
 
         void init();
 
@@ -72,7 +67,6 @@ namespace TechEngine {
 
         void compileServerUserScripts(CompileMode compileMode);
 
-        std::vector<GameObject*>& getSelectedGameObjects();
 
         void openMaterialEditor(const std::string& materialName, const std::string& filepath);
 
@@ -86,8 +80,6 @@ namespace TechEngine {
         void createDockSpace();
 
         void createMenuBar();
-
-        void createToolBar();
 
         void endImGuiFrame();
 

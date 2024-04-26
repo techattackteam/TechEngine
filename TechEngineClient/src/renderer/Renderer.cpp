@@ -8,8 +8,8 @@
 #include "components/render/CameraComponent.hpp"
 
 namespace TechEngine {
-    void Renderer::init(ProjectManager& projectManager) {
-        shadersManager.init(projectManager);
+    void Renderer::init(FilePaths& filePaths) {
+        shadersManager.init(filePaths);
         vertexArrays[BufferGameObjects] = new VertexArray();
         vertexBuffers[BufferGameObjects] = new VertexBuffer();
         vertexArrays[BufferGameObjects]->init();

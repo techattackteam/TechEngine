@@ -9,13 +9,13 @@ namespace TechEngine {
         std::vector<GameObject*> selectedGO;
         MaterialManager& materialManager;
         Scene& scene;
-        SceneView& sceneView;
+        /*SceneView& sceneView;*/
         bool isItemHovered = false;
         bool isShiftPressed = false;
         bool isCtrlPressed = false;
 
     public:
-        SceneHierarchyPanel(Scene& scene, MaterialManager& materialManager, SceneView& sceneView);
+        SceneHierarchyPanel(const std::string& name, Scene& scene, MaterialManager& materialManager/*, SceneView& sceneView*/);
 
         void onUpdate() override;
 

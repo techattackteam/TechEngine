@@ -3,6 +3,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "core/FilePaths.hpp"
 #include "physics/PhysicsEngine.hpp"
 #include "yaml-cpp/node/node.h"
 #include "scene/Scene.hpp"
@@ -17,13 +18,13 @@ namespace TechEngine {
         PhysicsEngine& physicsEngine;
         MaterialManager& materialManager;
         TextureManager& textureManager;
-        ProjectManager& projectManager;
+        FilePaths& filePaths;
         std::unordered_map<std::string, std::string> m_scenesBank;
 
         std::string m_activeSceneName;
 
     public:
-        SceneManager(ProjectManager& projectManager, PhysicsEngine& physicsEngine, MaterialManager& materialManager, TextureManager& textureManager);
+        SceneManager(PhysicsEngine& physicsEngine, MaterialManager& materialManager, TextureManager& textureManager, FilePaths& filePaths);
 
         void init(const std::string& projectPath);
 
@@ -32,6 +33,8 @@ namespace TechEngine {
         void createNewScene(std::string& scenePath);
 
         bool deleteScene(std::string& scenePath);
+
+        bool hasScene(const std::string& sceneName);
 
         void loadScene(const std::string& sceneName);
 

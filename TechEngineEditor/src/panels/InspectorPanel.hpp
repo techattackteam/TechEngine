@@ -14,7 +14,7 @@ namespace TechEngine {
         MaterialManager &materialManager;
         PhysicsEngine &physicsEngine;
     public:
-        explicit InspectorPanel(std::vector<GameObject *> &selectedGameObjects, MaterialManager &materialManager, PhysicsEngine &physicsEngine);
+        explicit InspectorPanel(const std::string& name, std::vector<GameObject *> &selectedGameObjects, MaterialManager &materialManager, PhysicsEngine &physicsEngine);
 
         void onUpdate() override;
 

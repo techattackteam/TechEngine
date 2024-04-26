@@ -30,7 +30,7 @@ namespace TechEngine {
 
         ~Renderer();
 
-        void init(ProjectManager& projectManager);
+        void init(FilePaths& filePaths);
 
         void renderPipeline();
 

@@ -5,6 +5,7 @@
 #include "core/Core.hpp"
 #include "core/AppCore.hpp"
 #include "Window.hpp"
+#include "core/FilePaths.hpp"
 #include "events/window/WindowCloseEvent.hpp"
 #include "network/NetworkEngine.hpp"
 
@@ -16,12 +17,15 @@ namespace TechEngine {
         Renderer renderer;
         NetworkEngine networkEngine;
         TechEngineAPIClient api;
+        FilePaths filePaths;
 
         Client(std::string name, int width, int height);
 
         ~Client() override;
 
-        void run() override;
+        void onFixedUpdate() override;
+
+        void onUpdate() override;
 
     private:
         void onWindowCloseEvent(WindowCloseEvent* event);
