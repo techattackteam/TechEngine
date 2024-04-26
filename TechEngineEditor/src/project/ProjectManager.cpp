@@ -31,6 +31,18 @@ namespace TechEngine {
         return projectAssetsPath;
     }
 
+    const std::filesystem::path& ProjectManager::getProjectCommonAssetsPath() {
+        return projectCommonAssetsPath;
+    }
+
+    const std::filesystem::path& ProjectManager::getProjectClientAssetsPath() {
+        return projectClientAssetsPath;
+    }
+
+    const std::filesystem::path& ProjectManager::getProjectServerAssetsPath() {
+        return projectServerAssetsPath;
+    }
+
     const std::filesystem::path& ProjectManager::getProjectCachePath() {
         return projectCachePath;
     }
@@ -160,11 +172,11 @@ namespace TechEngine {
 
     void ProjectManager::loadEditorProject(const std::string& projectLocation) {
         setupPaths(projectLocation);
-        client.filePaths.assetsPath = projectAssetsPath.string();
+        client.filePaths.assetsPath = projectClientAssetsPath.string();
         client.filePaths.resourcesPath = projectClientResourcesPath.string();
         client.filePaths.commonResourcesPath = projectCommonResourcesPath.string();
         client.filePaths.commonAssetsPath = projectCommonResourcesPath.string();
-        server.filePaths.assetsPath = projectAssetsPath.string();
+        server.filePaths.assetsPath = projectServerAssetsPath.string();
         server.filePaths.resourcesPath = projectServerResourcesPath.string();
         server.filePaths.commonResourcesPath = projectCommonResourcesPath.string();
         server.filePaths.commonAssetsPath = projectCommonResourcesPath.string();
@@ -176,14 +188,14 @@ namespace TechEngine {
             try {
                 data = YAML::LoadFile(this->projectFilePath.string());
                 clientLoadedScene = data["Client last loaded scene"].as<std::string>();
-                clientLoadedScene = data["Server last loaded scene"].as<std::string>();
+                serverLoadedScene = data["Server last loaded scene"].as<std::string>();
             } catch (YAML::Exception& e) {
                 TE_LOGGER_CRITICAL("Failed to load {0} project.\n      {1}", this->projectFilePath.string(), e.what());
                 exit(1);
             }
         } else {
             clientLoadedScene = "DefaultScene";
-            clientLoadedScene = "DefaultScene";
+            serverLoadedScene = "DefaultScene";
             YAML::Emitter out;
             out << YAML::BeginMap;
             out << YAML::Key << "Client last loaded scene" << YAML::Value << clientLoadedScene;
@@ -193,39 +205,64 @@ namespace TechEngine {
             std::ofstream fout(this->projectFilePath);
             fout << out.c_str();
         }
-        client.textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), {".jpg", ".png"}, true));
-        client.materialManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), {".mat"}, true));
-        client.sceneManager.init(getProjectLocation().string());
+        client.textureManager.init(FileSystem::getAllFilesWithExtension({
+                                                                            getProjectClientResourcesPath().string(),
+                                                                            getProjectCommonResourcesPath().string(),
+                                                                            getProjectClientAssetsPath().string(),
+                                                                            getProjectCommonAssetsPath().string()
+                                                                        },
+                                                                        {".jpg", ".png"},
+                                                                        true));
+        client.materialManager.init(FileSystem::getAllFilesWithExtension({
+                                                                             getProjectClientResourcesPath().string(),
+                                                                             getProjectCommonResourcesPath().string(),
+                                                                             getProjectClientAssetsPath().string(),
+                                                                             getProjectCommonAssetsPath().string()
+                                                                         }, {".mat"}, true));
+        client.sceneManager.init(FileSystem::getAllFilesWithExtension({
+                                                                          getProjectClientResourcesPath().string(),
+                                                                          getProjectCommonResourcesPath().string(),
+                                                                          getProjectClientAssetsPath().string(),
+                                                                          getProjectCommonAssetsPath().string()
+                                                                      }, {".scene"}, true));
         client.sceneManager.loadScene(clientLoadedScene);
-    }
 
-    /*void ProjectManager::loadRuntimeProject(const std::string& projectLocation) {
-        setupPaths(projectLocation);
-        YAML::Node data;
-        std::string lastSceneLoaded;
-        try {
-            data = YAML::LoadFile(this->projectFilePath.string());
-            lastSceneLoaded = data["Last scene loaded"].as<std::string>();
-        } catch (YAML::Exception& e) {
-            TE_LOGGER_CRITICAL("Failed to load {0} project.\n      {1}", this->projectFilePath.string(), e.what());
-            exit(1);
-        }
-        /*textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), {".jpg", ".png"}, true));
-        materialManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), {".mat"}, true));
-        sceneManager.init(getProjectLocation().string());
-        sceneManager.loadScene(lastSceneLoaded);#1#
-    }*/
+        server.textureManager.init(FileSystem::getAllFilesWithExtension({
+                                                                            getProjectServerResourcesPath().string(),
+                                                                            getProjectCommonResourcesPath().string(),
+                                                                            getProjectServerAssetsPath().string(),
+                                                                            getProjectCommonAssetsPath().string()
+                                                                        },
+                                                                        {".jpg", ".png"},
+                                                                        true));
+        server.materialManager.init(FileSystem::getAllFilesWithExtension({
+                                                                             getProjectServerResourcesPath().string(),
+                                                                             getProjectCommonResourcesPath().string(),
+                                                                             getProjectServerAssetsPath().string(),
+                                                                             getProjectCommonAssetsPath().string()
+                                                                         }, {".mat"}, true));
+        server.sceneManager.init(FileSystem::getAllFilesWithExtension({
+                                                                          getProjectServerResourcesPath().string(),
+                                                                          getProjectCommonResourcesPath().string(),
+                                                                          getProjectServerAssetsPath().string(),
+                                                                          getProjectCommonAssetsPath().string()
+                                                                      }, {".scene"}, true));
+        server.sceneManager.loadScene(serverLoadedScene);
+    }
 
     void ProjectManager::setupPaths(const std::string& projectLocation) {
         this->projectLocation = projectLocation;
-        std::vector<std::string> files = FileSystem::getAllFilesWithExtension(projectLocation, {".teprj"}, false);
+        std::vector<std::string> files = FileSystem::getAllFilesWithExtension({projectLocation}, {".teprj"}, false);
         std::string projectFile = files[0];
         this->projectFilePath = projectFile;
         projectName = projectFile.substr(projectFile.find_last_of("\\") + 1, projectFile.find_last_of(".") - projectFile.find_last_of("\\") - 1);
-        projectAssetsPath = this->projectLocation.string() + "\\Assets";
         projectCachePath = this->projectLocation.string() + "\\Cache";
-        projectClientResourcesPath = this->projectLocation.string() + "\\Resources\\Client";
+        projectAssetsPath = this->projectLocation.string() + "\\Assets";
+        projectCommonAssetsPath = this->projectLocation.string() + "\\Assets\\Common";
+        projectClientAssetsPath = this->projectLocation.string() + "\\Assets\\Client";
+        projectServerAssetsPath = this->projectLocation.string() + "\\Assets\\Server";
         projectCommonResourcesPath = this->projectLocation.string() + "\\Resources\\Common";
+        projectClientResourcesPath = this->projectLocation.string() + "\\Resources\\Client";
         projectServerResourcesPath = this->projectLocation.string() + "\\Resources\\Server";
         projectGameExportPath = this->projectLocation.string() + "\\Build\\GameBuild";
         projectServerExportPath = this->projectLocation.string() + "\\Build\\ServerBuild";

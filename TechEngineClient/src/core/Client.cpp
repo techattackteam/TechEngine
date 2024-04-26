@@ -4,7 +4,7 @@
 namespace TechEngine {
     Client::Client(std::string name, int width, int height) : AppCore(),
                                                               window(name, width, height),
-                                                              renderer(sceneManager.getScene()),
+                                                              renderer(),
                                                               networkEngine(sceneManager.getScene()),
                                                               api(&networkEngine) {
         eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event* event) {

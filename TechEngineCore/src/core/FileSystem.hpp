@@ -15,18 +15,20 @@ namespace TechEngine::FileSystem {
     inline std::filesystem::path serverPath = rootPath.string() + "\\TechEngineServer";
     inline std::filesystem::path editorResourcesPath = rootPath.string() + "\\resources"; //Only use this in editor
 
-    inline std::vector<std::string> getAllFilesWithExtension(const std::string& path, const std::vector<std::string>& extensions, bool recursive) {
+    inline std::vector<std::string> getAllFilesWithExtension(const std::vector<std::string>& paths, const std::vector<std::string>& extensions, bool recursive) {
         std::vector<std::string> filesWithExtension;
-        if (recursive) {
-            for (const auto& entry: std::filesystem::recursive_directory_iterator(path)) {
-                if (std::find(extensions.begin(), extensions.end(), entry.path().extension().string()) != extensions.end()) {
-                    filesWithExtension.push_back(entry.path().string());
+        for (const std::string& path: paths) {
+            if (recursive) {
+                for (const auto& entry: std::filesystem::recursive_directory_iterator(path)) {
+                    if (std::find(extensions.begin(), extensions.end(), entry.path().extension().string()) != extensions.end()) {
+                        filesWithExtension.push_back(entry.path().string());
+                    }
                 }
-            }
-        } else {
-            for (const auto& entry: std::filesystem::directory_iterator(path)) {
-                if (std::find(extensions.begin(), extensions.end(), entry.path().extension().string()) != extensions.end()) {
-                    filesWithExtension.push_back(entry.path().string());
+            } else {
+                for (const auto& entry: std::filesystem::directory_iterator(path)) {
+                    if (std::find(extensions.begin(), extensions.end(), entry.path().extension().string()) != extensions.end()) {
+                        filesWithExtension.push_back(entry.path().string());
+                    }
                 }
             }
         }

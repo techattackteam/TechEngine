@@ -26,7 +26,7 @@ namespace TechEngine {
     public:
         SceneManager(PhysicsEngine& physicsEngine, MaterialManager& materialManager, TextureManager& textureManager, FilePaths& filePaths);
 
-        void init(const std::string& projectPath);
+        void init(const std::vector<std::string>& scenes);
 
         void registerScene(std::string& scenePath);
 
