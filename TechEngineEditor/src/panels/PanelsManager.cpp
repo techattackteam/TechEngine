@@ -18,7 +18,6 @@
 #include "events/input/KeyReleasedEvent.hpp"
 #include "events/window/WindowCloseEvent.hpp"
 #include "events/scripts/ScriptCrashEvent.hpp"
-#include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
     PanelsManager::PanelsManager(Client& client, Server& server, ProjectManager& projectManager) : client(client),
@@ -26,7 +25,7 @@ namespace TechEngine {
                                                                                                    projectManager(projectManager),
                                                                                                    contentBrowser(client, server, *this, projectManager),
                                                                                                    exportSettingsPanel(*this, projectManager, client.sceneManager, client.renderer.getShadersManager()),
-                                                                                                   clientPanel(client),
+                                                                                                   clientPanel(client, projectManager),
                                                                                                    serverPanel(server, client.renderer),
                                                                                                    materialEditor(client, server),
                                                                                                    networkHelper(client.networkEngine) {
@@ -239,7 +238,7 @@ namespace TechEngine {
                     m_currentPlaying = false;
                 }
 #ifdef TE_DEBUG
-                compileClientUserScripts(DEBUG);
+                clientPanel.compileClientUserScripts(DEBUG);
 #elif TE_RELEASE
                 compileClientUserScripts(RELEASE);
 #elif TE_RELEASEDEBUG
@@ -329,29 +328,6 @@ namespace TechEngine {
         return std::string();
     }
 
-    void PanelsManager::compileClientUserScripts(CompileMode compileMode) {
-        if (!exists(projectManager.getClientCmakeBuildPath()) || is_empty(projectManager.getClientCmakeBuildPath())) {
-            std::string command = "\"" + projectManager.getCmakePath().string() +
-                                  " -G \"Visual Studio 17 2022\""
-                                  " -D TechEngineClientLIB:STRING=\"" + projectManager.getTechEngineClientLibPath().string() + "\"" +
-                                  " -D TechEngineCoreLIB:STRING=\"" + projectManager.getTechEngineCoreLibPath().string() + "\"" +
-                                  " -S " + "\"" + projectManager.getClientCmakeListPath().string() + "\"" +
-                                  " -B " + "\"" + projectManager.getClientCmakeBuildPath().string() + "\"" + "\"";
-            std::system(command.c_str());
-        }
-        std::string cm;
-        if (compileMode == CompileMode::RELEASE) {
-            cm = "Release";
-        } else if (compileMode == CompileMode::RELEASEDEBUG) {
-            cm = "RelWithDebInfo";
-        } else if (compileMode == CompileMode::DEBUG) {
-            cm = "Debug";
-        }
-        std::string command = "\"" + projectManager.getCmakePath().string() +
-                              " --build " + "\"" + projectManager.getClientCmakeBuildPath().string() + "\"" + " --target UserScripts --config " + cm + "\"";
-        std::system(command.c_str());
-        TE_LOGGER_INFO("Build finished! {0}", cm);
-    }
 
     void PanelsManager::compileServerUserScripts(CompileMode compileMode) {
         if (!exists(projectManager.getServerCmakeBuildPath()) || is_empty(projectManager.getServerCmakeBuildPath())) {
@@ -378,33 +354,9 @@ namespace TechEngine {
     }
 
     void PanelsManager::startRunningScene() {
-#ifdef TE_DEBUG
-        compileClientUserScripts(DEBUG);
-#else
-        compileClientUserScripts(RELEASEDEBUG);
-#endif
-        server.sceneManager.saveSceneAsTemporarily(server.sceneManager.getActiveSceneName());
-        EventDispatcher::getInstance().copy();
-        server.materialManager.copy();
-        ScriptEngine::getInstance()->init(projectManager.getClientUserScriptsDLLPath().string());
-        ScriptEngine::getInstance()->onStart();
-        server.physicsEngine.start();
-        m_currentPlaying = true;
     }
 
     void PanelsManager::stopRunningScene() {
-        /*physicsEngine.stop();
-        EventDispatcher::getInstance().restoreCopy();
-        materialManager.restoreCopy();
-        sceneManager.loadSceneFromTemporarily(sceneManager.getActiveSceneName());*/
-        //sceneHierarchyPanel.getSelectedGO().clear();
-        /*for (GameObject* gameObject: sceneManager.getScene().getGameObjects()) {
-            if (std::find(getSelectedGameObjects().begin(), getSelectedGameObjects().end(), gameObject) != getSelectedGameObjects().end()) {
-                //sceneHierarchyPanel.selectGO(gameObject);
-            }
-        }*/
-        m_currentPlaying = false;
-        ScriptEngine::getInstance()->stop();
     }
 
     void closeRunningProcesses(PVOID lpParameter, BOOLEAN TimerOrWaitFiredm) {

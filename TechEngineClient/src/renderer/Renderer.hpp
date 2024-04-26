@@ -23,22 +23,20 @@ namespace TechEngine {
         std::unordered_map<std::string, IndicesBuffer*> indicesBuffers;
         std::list<FrameBuffer*> frameBuffers;
 
-        Scene& scene;
-
     public:
-        Renderer(Scene& scene);
+        Renderer();
 
         ~Renderer();
 
         void init(FilePaths& filePaths);
 
-        void renderPipeline();
+        void renderPipeline(Scene& scene);
 
         void renderCustomPipeline(CameraComponent* camera, std::vector<GameObject*>& gameObjects);
 
         void createLine(const glm::vec3& startPosition, const glm::vec3& endPosition, const glm::vec4& color);
 
-        void renderPipeline(CameraComponent* camera);
+        void renderPipeline(Scene& scene, CameraComponent* camera);
 
         FrameBuffer& getFramebuffer(uint32_t id);
 
@@ -47,15 +45,15 @@ namespace TechEngine {
         ShadersManager& getShadersManager();
 
     private:
-        void shadowPass();
+        void shadowPass(Scene& scene);
 
-        void geometryPass(CameraComponent* camera);
+        void geometryPass(Scene& scene, CameraComponent* camera);
 
         void linePass(CameraComponent* camera);
 
-        void renderWithLightPass();
+        void renderWithLightPass(Scene& scene);
 
-        void renderGeometryPass(bool shadow);
+        void renderGeometryPass(Scene& scene, bool shadow);
 
         void renderGameObject(GameObject* gameObject, bool shadow);
 

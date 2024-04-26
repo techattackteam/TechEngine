@@ -323,13 +323,9 @@ namespace TechEngine {
         return true;
     }
 
-    void SceneManager::init(const std::string& projectPath) {
-        for (const std::filesystem::directory_entry& p: std::filesystem::recursive_directory_iterator(projectPath)) {
-            std::string path = p.path().string();
-            std::string fileName = p.path().filename().string();
-            if (fileName.find(".scene") != std::string::npos) {
-                registerScene(path);
-            }
+    void SceneManager::init(const std::vector<std::string>& scenes) {
+        for (std::string scene: scenes) {
+            registerScene(scene);
         }
     }
 
@@ -383,7 +379,7 @@ namespace TechEngine {
             TE_LOGGER_ERROR("Failed to load scene '{0}'.\n Could not find scene. Creating default one", sceneName);
             scene.clear();
             physicsEngine.clear();
-            m_activeSceneName = sceneName;
+            m_activeSceneName = "DefaultScene";
             GameObject& gameObject = scene.createGameObject<GameObject>("Main Camera");
             gameObject.addComponent<CameraComponent>();
             gameObject.getComponent<CameraComponent>()->setIsMainCamera(true);
@@ -391,9 +387,9 @@ namespace TechEngine {
             GameObject& cube = scene.createGameObject<GameObject>("Cube");
             cube.addComponent<MeshRendererComponent>(new CubeMesh(), &materialManager.getMaterial("DefaultMaterial"));
             cube.getComponent<TransformComponent>()->translateTo(glm::vec3(0.0f, 0.0f, 0.0f));
-            std::string scenePath = filePaths.commonAssetsPath + "\\Scenes\\" + sceneName + ".scene";
+            std::string scenePath = filePaths.commonAssetsPath + "\\Scenes\\" + m_activeSceneName + ".scene";
             registerScene(scenePath);
-            saveScene(sceneName);
+            saveScene(m_activeSceneName);
         }
     }
 

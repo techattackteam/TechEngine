@@ -25,7 +25,7 @@ namespace TechEngine {
         vertexArrays[BufferLines]->addNewLinesBuffer(*vertexBuffers[BufferLines]);
     }
 
-    Renderer::Renderer(Scene& scene): scene(scene) {
+    Renderer::Renderer() {
     }
 
     Renderer::~Renderer() {
@@ -34,13 +34,13 @@ namespace TechEngine {
         }
     }
 
-    void Renderer::renderWithLightPass() {
+    void Renderer::renderWithLightPass(Scene& scene) {
         for (auto* light: scene.getLights()) {
             auto* directionLight = light->getComponent<DirectionalLightComponent>();
             shadersManager.getActiveShader()->setUniformMatrix4f("lightSpaceMatrix", directionLight->getProjectionMatrix() * directionLight->getViewMatrix());
             shadersManager.getActiveShader()->setUniformVec3("lightDirection", light->getTransform().getOrientation());
             shadersManager.getActiveShader()->setUniformVec3("lightColor", directionLight->getColor());
-            renderGeometryPass(false);
+            renderGeometryPass(scene, false);
         }
     }
 
@@ -72,13 +72,13 @@ namespace TechEngine {
         }
     }
 
-    void Renderer::renderGeometryPass(bool shadow) {
+    void Renderer::renderGeometryPass(Scene& scene, bool shadow) {
         for (GameObject* gameObject: scene.getGameObjects()) {
             renderGameObject(gameObject, shadow);
         }
     }
 
-    void Renderer::shadowPass() {
+    void Renderer::shadowPass(Scene& scene) {
         shadersManager.changeActiveShader("geometry");
         if (scene.isLightingActive()) {
             shadersManager.getActiveShader()->setUniformBool("isLightingActive", true);
@@ -89,7 +89,7 @@ namespace TechEngine {
                 //shadowMapBuffer.bind();
                 //shadowMapBuffer.clear();
                 shadersManager.getActiveShader()->setUniformMatrix4f("lightSpaceMatrix", light->getProjectionMatrix() * light->getViewMatrix());
-                renderGeometryPass(true);
+                renderGeometryPass(scene, true);
                 //shadowMapBuffer.unBind();
             }
         } else {
@@ -97,7 +97,7 @@ namespace TechEngine {
         }
     }
 
-    void Renderer::geometryPass(CameraComponent* camera) {
+    void Renderer::geometryPass(Scene& scene, CameraComponent* camera) {
         vertexBuffers[BufferGameObjects]->bind();
         vertexArrays[BufferGameObjects]->bind();
         shadersManager.changeActiveShader("geometry");
@@ -106,9 +106,9 @@ namespace TechEngine {
         shadersManager.getActiveShader()->setUniformVec3("cameraPosition", camera->getTransform().getPosition());
 
         if (scene.isLightingActive()) {
-            renderWithLightPass();
+            renderWithLightPass(scene);
         } else {
-            renderGeometryPass(false);
+            renderGeometryPass(scene, false);
         }
         vertexBuffers[BufferGameObjects]->unBind();
         vertexArrays[BufferGameObjects]->unBind();
@@ -134,23 +134,23 @@ namespace TechEngine {
         lines.push_back(line);
     }
 
-    void Renderer::renderPipeline(CameraComponent* camera) {
+    void Renderer::renderPipeline(Scene& scene, CameraComponent* camera) {
         GlCall(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
         GlCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-        geometryPass(camera);
+        geometryPass(scene, camera);
         if (!lines.empty()) {
             linePass(camera);
         }
     }
 
-    void Renderer::renderPipeline() {
+    void Renderer::renderPipeline(Scene& scene) {
         if (!scene.hasMainCamera()) {
             return;
         }
         CameraComponent* camera = scene.getMainCamera();
         GlCall(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
         GlCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-        geometryPass(camera);
+        geometryPass(scene, camera);
         if (!lines.empty()) {
             linePass(camera);
         }

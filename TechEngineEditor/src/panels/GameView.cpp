@@ -15,7 +15,7 @@ namespace TechEngine {
         frameBuffer.bind();
         frameBuffer.resize(wsize.x, wsize.y);
         scene.getMainCamera()->updateProjectionMatrix(wsize.x / wsize.y);
-        renderer->renderPipeline();
+        renderer->renderPipeline(scene);
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
         ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
         frameBuffer.unBind();

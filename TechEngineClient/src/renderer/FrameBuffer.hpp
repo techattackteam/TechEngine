@@ -28,7 +28,6 @@ namespace TechEngine {
 
         uint32_t getColorAttachmentRenderer();
 
-
         void clear();
 
         void bindShadowMapTexture();

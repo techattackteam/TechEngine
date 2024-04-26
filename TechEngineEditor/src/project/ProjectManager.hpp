@@ -16,8 +16,11 @@ namespace TechEngine {
 
         std::filesystem::path projectFilePath;
         std::filesystem::path projectLocation;
-        std::filesystem::path projectAssetsPath;
         std::filesystem::path projectCachePath;
+        std::filesystem::path projectAssetsPath;
+        std::filesystem::path projectCommonAssetsPath;
+        std::filesystem::path projectClientAssetsPath;
+        std::filesystem::path projectServerAssetsPath;
         std::filesystem::path projectCommonResourcesPath;
         std::filesystem::path projectClientResourcesPath;
         std::filesystem::path projectServerResourcesPath;
@@ -51,6 +54,12 @@ namespace TechEngine {
         const std::filesystem::path& getProjectLocation();
 
         const std::filesystem::path& getProjectAssetsPath();
+
+        const std::filesystem::path& getProjectCommonAssetsPath();
+
+        const std::filesystem::path& getProjectClientAssetsPath();
+
+        const std::filesystem::path& getProjectServerAssetsPath();
 
         const std::filesystem::path& getProjectCachePath();
 
@@ -101,7 +110,6 @@ namespace TechEngine {
         void saveProject();
 
         void loadEditorProject(const std::string& projectPath);
-
 
     private:
         void setupPaths(const std::string& projectPath);

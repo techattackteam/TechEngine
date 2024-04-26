@@ -33,7 +33,7 @@ namespace TechEngine {
             renderCameraFrustum(scene.getMainCamera());
         }
         renderColliders();
-        renderer->renderPipeline(sceneCamera->getComponent<CameraComponent>());
+        renderer->renderPipeline(scene, sceneCamera->getComponent<CameraComponent>());
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
         ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
         guizmo.editTransform(sceneCamera->getComponent<CameraComponent>(), ImGui::GetCurrentContext(), selectedGO);

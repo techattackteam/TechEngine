@@ -1,12 +1,17 @@
 #include "ClientPanel.hpp"
 
+#include "PanelsManager.hpp"
+#include "core/Logger.hpp"
+#include "script/ScriptEngine.hpp"
+
 namespace TechEngine {
-    ClientPanel::ClientPanel(Client& client) : client(client),
-                                               gameView(client.renderer, client.sceneManager.getScene()),
-                                               inspectorPanel("Client Inspector", sceneHierarchyPanel.getSelectedGO(), client.materialManager, client.physicsEngine),
-                                               sceneView("Client Scene", client.renderer, client.sceneManager.getScene(), client.physicsEngine, sceneHierarchyPanel.getSelectedGO()),
-                                               sceneHierarchyPanel("Client Scene Hierarchy", client.sceneManager.getScene(), client.materialManager),
-                                               Panel("ClientPanel") {
+    ClientPanel::ClientPanel(Client& client, ProjectManager& projectManager) : client(client),
+                                                                               projectManager(projectManager),
+                                                                               gameView(client.renderer, client.sceneManager.getScene()),
+                                                                               inspectorPanel("Client Inspector", sceneHierarchyPanel.getSelectedGO(), client.materialManager, client.physicsEngine),
+                                                                               sceneView("Client Scene", client.renderer, client.sceneManager.getScene(), client.physicsEngine, sceneHierarchyPanel.getSelectedGO()),
+                                                                               sceneHierarchyPanel("Client Scene Hierarchy", client.sceneManager.getScene(), client.materialManager),
+                                                                               Panel("ClientPanel") {
     }
 
     void ClientPanel::onUpdate() {
@@ -55,9 +60,9 @@ namespace TechEngine {
         ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x / 2) - (size / 2));
         if (ImGui::Button(m_currentPlaying == true ? "Stop" : "Play", ImVec2(size, 0))) {
             if (!m_currentPlaying) {
-                //startRunningScene();
+                startRunningScene();
             } else {
-                //stopRunningScene();
+                stopRunningScene();
             }
         }
 
@@ -65,5 +70,59 @@ namespace TechEngine {
         ImGui::PopStyleColor(3);
 
         ImGui::End();
+    }
+
+    void ClientPanel::startRunningScene() {
+#ifdef TE_DEBUG
+        compileClientUserScripts(DEBUG);
+#else
+        compileClientUserScripts(RELEASEDEBUG);
+#endif
+        client.sceneManager.saveSceneAsTemporarily(client.sceneManager.getActiveSceneName());
+        EventDispatcher::getInstance().copy();
+        client.materialManager.copy();
+        ScriptEngine::getInstance()->init(projectManager.getClientUserScriptsDLLPath().string());
+        ScriptEngine::getInstance()->onStart();
+        client.physicsEngine.start();
+        m_currentPlaying = true;
+    }
+
+    void ClientPanel::stopRunningScene() {
+        client.physicsEngine.stop();
+        EventDispatcher::getInstance().restoreCopy();
+        client.materialManager.restoreCopy();
+        client.sceneManager.loadSceneFromTemporarily(client.sceneManager.getActiveSceneName());
+        sceneHierarchyPanel.getSelectedGO().clear();
+        for (GameObject* gameObject: client.sceneManager.getScene().getGameObjects()) {
+            if (std::find(sceneHierarchyPanel.getSelectedGO().begin(), sceneHierarchyPanel.getSelectedGO().end(), gameObject) != sceneHierarchyPanel.getSelectedGO().end()) {
+                sceneHierarchyPanel.selectGO(gameObject);
+            }
+        }
+        m_currentPlaying = false;
+        ScriptEngine::getInstance()->stop();
+    }
+
+    void ClientPanel::compileClientUserScripts(CompileMode compileMode) {
+        if (!exists(projectManager.getClientCmakeBuildPath()) || is_empty(projectManager.getClientCmakeBuildPath())) {
+            std::string command = "\"" + projectManager.getCmakePath().string() +
+                                  " -G \"Visual Studio 17 2022\""
+                                  " -D TechEngineClientLIB:STRING=\"" + projectManager.getTechEngineClientLibPath().string() + "\"" +
+                                  " -D TechEngineCoreLIB:STRING=\"" + projectManager.getTechEngineCoreLibPath().string() + "\"" +
+                                  " -S " + "\"" + projectManager.getClientCmakeListPath().string() + "\"" +
+                                  " -B " + "\"" + projectManager.getClientCmakeBuildPath().string() + "\"" + "\"";
+            std::system(command.c_str());
+        }
+        std::string cm;
+        if (compileMode == CompileMode::RELEASE) {
+            cm = "Release";
+        } else if (compileMode == CompileMode::RELEASEDEBUG) {
+            cm = "RelWithDebInfo";
+        } else if (compileMode == CompileMode::DEBUG) {
+            cm = "Debug";
+        }
+        std::string command = "\"" + projectManager.getCmakePath().string() +
+                              " --build " + "\"" + projectManager.getClientCmakeBuildPath().string() + "\"" + " --target UserScripts --config " + cm + "\"";
+        std::system(command.c_str());
+        TE_LOGGER_INFO("Build finished! {0}", cm);
     }
 }

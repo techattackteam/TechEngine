@@ -7,7 +7,6 @@
 #define NOMINMAX
 
 #include "ClientPanel.hpp"
-#include "core/Window.hpp"
 #include "InspectorPanel.hpp"
 #include "ContentBrowserPanel.hpp"
 #include "ExportSettingsPanel.hpp"
@@ -32,13 +31,6 @@ namespace TechEngine {
     private:
         std::vector<CustomPanel*> customPanels;
         ImGuiContext* imguiContext{};
-        /*Window& window;
-        ProjectManager& projectManager;
-        SceneManager& sceneManager;
-        PhysicsEngine& physicsEngine;
-        TextureManager& textureManager;
-        MaterialManager& materialManager;
-        NetworkEngine& networkEngine;*/
         Client& client;
         Server& server;
         ProjectManager& projectManager;
@@ -55,6 +47,7 @@ namespace TechEngine {
 
         std::vector<PROCESS_INFORMATION> clientProcesses;
         std::vector<PROCESS_INFORMATION> serverProcesses;
+        friend class ContentBrowserPanel;
 
     public:
         PanelsManager(Client& client, Server& server, ProjectManager& projectManager);
@@ -63,10 +56,7 @@ namespace TechEngine {
 
         void update();
 
-        void compileClientUserScripts(CompileMode compileMode);
-
         void compileServerUserScripts(CompileMode compileMode);
-
 
         void openMaterialEditor(const std::string& materialName, const std::string& filepath);
 
