@@ -6,7 +6,7 @@
 #include "panels/PanelsManager.hpp"
 
 namespace TechEngine {
-    Guizmo::Guizmo(PhysicsEngine& physicsEngine) : physicsEngine(physicsEngine) {
+    Guizmo::Guizmo(int id, PhysicsEngine& physicsEngine) : id(id), physicsEngine(physicsEngine) {
     }
 
     bool DecomposeTransform(const glm::mat4& transform, glm::vec3& translation, glm::vec3& rotation, glm::vec3& scale) {
@@ -76,7 +76,8 @@ namespace TechEngine {
         }
 
         ImGuizmo::SetImGuiContext(context);
-        ImGuizmo::SetOrthographic(false);
+        ImGuizmo::SetOrthographic(true);
+        ImGuizmo::AllowAxisFlip(false);
         ImGuizmo::SetDrawlist();
         auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
         auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
@@ -94,7 +95,8 @@ namespace TechEngine {
                    (ImGuizmo::OPERATION)operation, (ImGuizmo::MODE)(mode), glm::value_ptr(transform),
                    nullptr, nullptr);
 
-        if (ImGuizmo::IsUsing()) {
+        if (ImGuizmo::IsUsing() && lastUsingID == -1 || lastUsingID == id) {
+            lastUsingID = id;
             glm::vec3 translation, rotation, scale;
             DecomposeTransform(transform, translation, rotation, scale);
             selectedGameObjects.front()->getTransform().translateToWorld(translation);
@@ -109,6 +111,8 @@ namespace TechEngine {
             } else if (selectedGameObjects.front()->hasComponent<CylinderCollider>()) {
                 physicsEngine.addCollider(selectedGameObjects.front()->getComponent<CylinderCollider>());
             }
+        } else {
+            lastUsingID = -1;
         }
     }
 

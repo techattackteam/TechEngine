@@ -9,7 +9,7 @@ namespace TechEngine {
                                                                                projectManager(projectManager),
                                                                                gameView(client.renderer, client.sceneManager.getScene()),
                                                                                inspectorPanel("Client Inspector", sceneHierarchyPanel.getSelectedGO(), client.materialManager, client.physicsEngine),
-                                                                               sceneView("Client Scene", client.renderer, client.sceneManager.getScene(), client.physicsEngine, sceneHierarchyPanel.getSelectedGO()),
+                                                                               sceneView("Client Scene", 1, client.renderer, client.sceneManager.getScene(), client.physicsEngine, sceneHierarchyPanel.getSelectedGO()),
                                                                                sceneHierarchyPanel("Client Scene Hierarchy", client.sceneManager.getScene(), client.materialManager),
                                                                                Panel("ClientPanel") {
     }

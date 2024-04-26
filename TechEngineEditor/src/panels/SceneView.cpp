@@ -7,8 +7,8 @@
 #include "components/physics/RigidBody.hpp"
 
 namespace TechEngine {
-    SceneView::SceneView(const std::string& name, Renderer& renderer, Scene& scene, PhysicsEngine& physicsEngine, std::vector<GameObject*>& selectedGO)
-        : renderer(&renderer), scene(scene), guizmo(physicsEngine), selectedGO(selectedGO), Panel(name) {
+    SceneView::SceneView(const std::string& name,int guizmoID, Renderer& renderer, Scene& scene, PhysicsEngine& physicsEngine, std::vector<GameObject*>& selectedGO)
+        : renderer(&renderer), scene(scene), guizmo(guizmoID,physicsEngine), selectedGO(selectedGO), Panel(name) {
         frameBufferID = renderer.createFramebuffer(1080, 720);
         sceneCamera = new SceneCamera();
     }
