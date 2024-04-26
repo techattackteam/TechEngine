@@ -2,14 +2,14 @@
 #include "ProjectManager.hpp"
 #include "yaml-cpp/yaml.h"
 #include "core/FileSystem.hpp"
+#include "core/Key.hpp"
 #include "core/Logger.hpp"
 #include "events/appManagement/AppCloseRequestEvent.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngine {
-    ProjectManager::ProjectManager(SceneManager& sceneManager, TextureManager& textureManager, MaterialManager& materialManager) : sceneManager(sceneManager),
-                                                                                                                                   textureManager(textureManager),
-                                                                                                                                   materialManager(materialManager) {
+    ProjectManager::ProjectManager(Client& client, Server& server) : client(client),
+                                                                     server(server) {
     }
 
 
@@ -19,47 +19,47 @@ namespace TechEngine {
         });
     }
 
-    const path& ProjectManager::getProjectFilePath() {
+    const std::filesystem::path& ProjectManager::getProjectFilePath() {
         return projectFilePath;
     }
 
-    const path& ProjectManager::getProjectLocation() {
+    const std::filesystem::path& ProjectManager::getProjectLocation() {
         return projectLocation;
     }
 
-    const path& ProjectManager::getProjectAssetsPath() {
+    const std::filesystem::path& ProjectManager::getProjectAssetsPath() {
         return projectAssetsPath;
     }
 
-    const path& ProjectManager::getProjectCachePath() {
+    const std::filesystem::path& ProjectManager::getProjectCachePath() {
         return projectCachePath;
     }
 
-    const path& ProjectManager::getProjectServerResourcesPath() {
+    const std::filesystem::path& ProjectManager::getProjectServerResourcesPath() {
         return projectServerResourcesPath;
     }
 
-    const path& ProjectManager::getProjectCommonResourcesPath() {
+    const std::filesystem::path& ProjectManager::getProjectCommonResourcesPath() {
         return projectCommonResourcesPath;
     }
 
-    const path& ProjectManager::getProjectClientResourcesPath() {
+    const std::filesystem::path& ProjectManager::getProjectClientResourcesPath() {
         return projectClientResourcesPath;
     }
 
-    const path& ProjectManager::getClientScriptsDebugDLLPath() {
+    const std::filesystem::path& ProjectManager::getClientScriptsDebugDLLPath() {
         return clientUserScriptsDebugDLLPath;
     }
 
-    const path& ProjectManager::getClientScriptsReleaseDLLPath() {
+    const std::filesystem::path& ProjectManager::getClientScriptsReleaseDLLPath() {
         return clientUserScriptsReleaseDLLPath;
     }
 
-    const path& ProjectManager::getClientScriptsReleaseDebugDLLPath() {
+    const std::filesystem::path& ProjectManager::getClientScriptsReleaseDebugDLLPath() {
         return clientUserScriptsReleaseDebugDLLPath;
     }
 
-    const path& ProjectManager::getClientUserScriptsDLLPath() {
+    const std::filesystem::path& ProjectManager::getClientUserScriptsDLLPath() {
 #ifdef TE_DEBUG
         return clientUserScriptsDebugDLLPath;
 #elif TE_RELEASEDEBUG
@@ -69,55 +69,55 @@ namespace TechEngine {
 #endif
     }
 
-    const path& ProjectManager::getClientCmakeBuildPath() {
+    const std::filesystem::path& ProjectManager::getClientCmakeBuildPath() {
         return clientCmakeBuildPath;
     }
 
-    const path& ProjectManager::getServerScriptsDebugDLLPath() {
+    const std::filesystem::path& ProjectManager::getServerScriptsDebugDLLPath() {
         return serverUserScriptsDebugDLLPath;
     }
 
-    const path& ProjectManager::getServerScriptsReleaseDLLPath() {
+    const std::filesystem::path& ProjectManager::getServerScriptsReleaseDLLPath() {
         return serverUserScriptsReleaseDLLPath;
     }
 
-    const path& ProjectManager::getServerScriptsReleaseDebugDLLPath() {
+    const std::filesystem::path& ProjectManager::getServerScriptsReleaseDebugDLLPath() {
         return serverUserScriptsReleaseDebugDLLPath;
     }
 
-    const path& ProjectManager::getServerCmakeBuildPath() {
+    const std::filesystem::path& ProjectManager::getServerCmakeBuildPath() {
         return serverCmakeBuildPath;
     }
 
-    const path& ProjectManager::getProjectGameExportPath() {
+    const std::filesystem::path& ProjectManager::getProjectGameExportPath() {
         return projectGameExportPath;
     }
 
-    const path& ProjectManager::getProjectServerExportPath() {
+    const std::filesystem::path& ProjectManager::getProjectServerExportPath() {
         return projectServerExportPath;
     }
 
-    const path& ProjectManager::getClientCmakeListPath() {
+    const std::filesystem::path& ProjectManager::getClientCmakeListPath() {
         return clientCmakeListPath;
     }
 
-    const path& ProjectManager::getServerCmakeListPath() {
+    const std::filesystem::path& ProjectManager::getServerCmakeListPath() {
         return serverCmakeListPath;
     }
 
-    const path& ProjectManager::getTechEngineCoreLibPath() {
+    const std::filesystem::path& ProjectManager::getTechEngineCoreLibPath() {
         return techEngineCoreLibPath;
     }
 
-    const path& ProjectManager::getTechEngineClientLibPath() {
+    const std::filesystem::path& ProjectManager::getTechEngineClientLibPath() {
         return techEngineClientLibPath;
     }
 
-    const path& ProjectManager::getTechEngineServerLibPath() {
+    const std::filesystem::path& ProjectManager::getTechEngineServerLibPath() {
         return techEngineServerLibPath;
     }
 
-    const path& ProjectManager::getCmakePath() {
+    const std::filesystem::path& ProjectManager::getCmakePath() {
         return cmakePath;
     }
 
@@ -140,11 +140,13 @@ namespace TechEngine {
     }
 
     void ProjectManager::saveProject() {
-        sceneManager.saveCurrentScene();
+        client.sceneManager.saveCurrentScene();
+        server.sceneManager.saveCurrentScene();
         YAML::Emitter out;
         try {
             out << YAML::BeginMap;
-            out << YAML::Key << "Last scene loaded" << YAML::Value << sceneManager.getActiveSceneName();
+            out << YAML::Key << "Client last loaded scene" << YAML::Value << client.sceneManager.getActiveSceneName();
+            out << YAML::Key << "Server last loaded scene" << YAML::Value << server.sceneManager.getActiveSceneName();
             out << YAML::EndMap;
             std::filesystem::path path = projectFilePath;;
             std::filesystem::create_directories(path.parent_path());
@@ -158,34 +160,46 @@ namespace TechEngine {
 
     void ProjectManager::loadEditorProject(const std::string& projectLocation) {
         setupPaths(projectLocation);
-        std::string lastSceneLoaded;
+        client.filePaths.assetsPath = projectAssetsPath.string();
+        client.filePaths.resourcesPath = projectClientResourcesPath.string();
+        client.filePaths.commonResourcesPath = projectCommonResourcesPath.string();
+        client.filePaths.commonAssetsPath = projectCommonResourcesPath.string();
+        server.filePaths.assetsPath = projectAssetsPath.string();
+        server.filePaths.resourcesPath = projectServerResourcesPath.string();
+        server.filePaths.commonResourcesPath = projectCommonResourcesPath.string();
+        server.filePaths.commonAssetsPath = projectCommonResourcesPath.string();
+
+        std::string clientLoadedScene;
+        std::string serverLoadedScene;
         if (std::filesystem::exists(this->projectFilePath)) {
             YAML::Node data;
             try {
                 data = YAML::LoadFile(this->projectFilePath.string());
-                //projectName = data["Project Name"].as<std::string>();
-                lastSceneLoaded = data["Last scene loaded"].as<std::string>();
+                clientLoadedScene = data["Client last loaded scene"].as<std::string>();
+                clientLoadedScene = data["Server last loaded scene"].as<std::string>();
             } catch (YAML::Exception& e) {
                 TE_LOGGER_CRITICAL("Failed to load {0} project.\n      {1}", this->projectFilePath.string(), e.what());
                 exit(1);
             }
         } else {
-            lastSceneLoaded = "DefaultScene";
+            clientLoadedScene = "DefaultScene";
+            clientLoadedScene = "DefaultScene";
             YAML::Emitter out;
             out << YAML::BeginMap;
-            out << YAML::Key << "Last scene loaded" << YAML::Value << lastSceneLoaded;
+            out << YAML::Key << "Client last loaded scene" << YAML::Value << clientLoadedScene;
+            out << YAML::Key << "Server last loaded scene" << YAML::Value << serverLoadedScene;
             out << YAML::EndSeq;
             out << YAML::EndMap;
             std::ofstream fout(this->projectFilePath);
             fout << out.c_str();
         }
-        textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), {".jpg", ".png"}, true));
-        materialManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), {".mat"}, true));
-        sceneManager.init(getProjectLocation().string());
-        sceneManager.loadScene(lastSceneLoaded);
+        client.textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), {".jpg", ".png"}, true));
+        client.materialManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), {".mat"}, true));
+        client.sceneManager.init(getProjectLocation().string());
+        client.sceneManager.loadScene(clientLoadedScene);
     }
 
-    void ProjectManager::loadRuntimeProject(const std::string& projectLocation) {
+    /*void ProjectManager::loadRuntimeProject(const std::string& projectLocation) {
         setupPaths(projectLocation);
         YAML::Node data;
         std::string lastSceneLoaded;
@@ -196,11 +210,11 @@ namespace TechEngine {
             TE_LOGGER_CRITICAL("Failed to load {0} project.\n      {1}", this->projectFilePath.string(), e.what());
             exit(1);
         }
-        textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), {".jpg", ".png"}, true));
+        /*textureManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), {".jpg", ".png"}, true));
         materialManager.init(FileSystem::getAllFilesWithExtension(getProjectLocation().string(), {".mat"}, true));
         sceneManager.init(getProjectLocation().string());
-        sceneManager.loadScene(lastSceneLoaded);
-    }
+        sceneManager.loadScene(lastSceneLoaded);#1#
+    }*/
 
     void ProjectManager::setupPaths(const std::string& projectLocation) {
         this->projectLocation = projectLocation;

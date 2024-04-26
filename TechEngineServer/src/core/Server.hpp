@@ -6,6 +6,7 @@
 #include <steam/steamnetworkingsockets.h>
 #include <steam/isteamnetworkingutils.h>
 
+#include "core/FilePaths.hpp"
 #include "serialization/Buffer.hpp"
 #ifndef STEAMNETWORKINGSOCKETS_OPENSOURCE
 #include <steam/steam_api.h>
@@ -13,7 +14,10 @@
 
 namespace TechEngine {
     class TECHENGINE_API Server : public AppCore {
-    private:
+    public:
+        FilePaths filePaths;
+
+    protected:
         inline static Server* instance;
         using ClientID = HSteamNetConnection;
 
@@ -33,9 +37,9 @@ namespace TechEngine {
     public:
         Server();
 
-        ~Server() override;
+        virtual ~Server();
 
-        void run() override;
+        void init();
 
         virtual void onUpdate();
 

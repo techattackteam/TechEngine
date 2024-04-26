@@ -2,7 +2,8 @@
 
 #include "Timer.hpp"
 #include "eventSystem/EventDispatcher.hpp"
-#include "project/ProjectManager.hpp"
+#include "physics/PhysicsEngine.hpp"
+#include "scene/SceneManager.hpp"
 #include "scriptingAPI/TechEngineAPI.hpp"
 
 namespace TechEngine {
@@ -13,10 +14,10 @@ namespace TechEngine {
     public:
         EventDispatcher eventDispatcher;
         Timer timer;
+        FilePaths filePaths;
         TextureManager textureManager;
         MaterialManager materialManager;
         SceneManager sceneManager;
-        ProjectManager projectManager;
         PhysicsEngine physicsEngine;
         TechEngineAPI api;
 
@@ -24,7 +25,7 @@ namespace TechEngine {
 
         virtual ~AppCore();
 
-        virtual void run() = 0;
+        void run();
 
         virtual void onUpdate() = 0;
 

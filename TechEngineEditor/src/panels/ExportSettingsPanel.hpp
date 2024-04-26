@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include "Panel.hpp"
+#include "project/ProjectManager.hpp"
 #include "renderer/ShadersManager.hpp"
 
 namespace TechEngine {

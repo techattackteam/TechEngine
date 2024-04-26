@@ -1,7 +1,7 @@
 file(GLOB_RECURSE TechEngineServer_Sources CONFIGURE_DEPENDS "src/*.cpp")
 file(GLOB_RECURSE TechEngineServer_Headers "src/*.hpp")
 
-add_executable(TechEngineServer ${TechEngineServer_Sources} ${TechEngineServer_Headers})
+add_library(TechEngineServer ${TechEngineServer_Sources} ${TechEngineServer_Headers})
 #Setup target's output directory
 if (WIN32) # WINDOWS
     set(TECH_ENGINE_SERVER_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineServer/")
@@ -32,7 +32,6 @@ add_custom_command(TARGET TechEngineServer POST_BUILD
 #Copy API include files to project template
 set(TECH_ENGINE_SERVER_API_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Server/TechEngineAPI/include/TechEngineServer")
 set(TECH_ENGINE_SERVER_API_FILES
-        "${PROJECT_SOURCE_DIR}/TechEngineServer/src/core/Client.hpp" #Placeholder
         "${PROJECT_SOURCE_DIR}/TechEngineServer/src/events"
 )
 

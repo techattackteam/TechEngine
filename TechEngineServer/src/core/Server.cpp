@@ -1,6 +1,4 @@
 #include "Server.hpp"
-
-
 #include "components/render/MeshRendererComponent.hpp"
 #include "events/connections/OnClientConnected.hpp"
 #include "events/connections/OnClientConnectionRequest.hpp"
@@ -8,26 +6,11 @@
 #include "external/EntryPoint.hpp"
 #include "network/PacketType.hpp"
 #include "network/SceneSynchronizer.hpp"
-#include "script/ScriptEngine.hpp"
 #include "serialization/BufferStream.hpp"
+#include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
     Server::Server() : AppCore() {
-        instance = this;
-        timer.init();
-        projectManager.loadRuntimeProject(std::filesystem::current_path().string());
-#ifdef TE_DEBUG
-        ScriptEngine::getInstance()->init(projectManager.getServerScriptsDebugDLLPath().string());
-#elif TE_RELEASEDEBUG
-        ScriptEngine::getInstance()->init(projectManager.getServerScriptsReleaseDLLPath().string());
-#elif TE_RELEASE
-        ScriptEngine::getInstance()->init(projectManager.getServerScriptsReleaseDLLPath().string());
-#endif
-        ScriptEngine::getInstance()->onStart();
-        physicsEngine.start();
-        sceneManager.getScene().createGameObject<GameObject>("Test");
-        sceneManager.getScene().getGameObject("Test")->addComponent<MeshRendererComponent>();
-        sceneManager.getScene().getGameObject("Test")->addComponent<NetworkSync>();
     }
 
     Server::~Server() {
@@ -46,8 +29,7 @@ namespace TechEngine {
         m_PollGroup = k_HSteamNetPollGroup_Invalid;
     }
 
-
-    void Server::run() {
+    void Server::init() {
         running = true;
         m_port = 25565;
         SteamDatagramErrMsg errMsg;
@@ -64,7 +46,7 @@ namespace TechEngine {
         serverLocalAddress.m_port = m_port;
 
         SteamNetworkingConfigValue_t options;
-        options.SetPtr(k_ESteamNetworkingConfig_Callback_ConnectionStatusChanged, (void*)Server::ConnectionStatusChangedCallback);
+        options.SetPtr(k_ESteamNetworkingConfig_Callback_ConnectionStatusChanged, (void*)ConnectionStatusChangedCallback);
 
         // Try to start listen socket on port
         m_ListenSocket = m_interface->CreateListenSocketIP(serverLocalAddress, 1, &options);
@@ -78,19 +60,6 @@ namespace TechEngine {
         if (m_PollGroup == k_HSteamNetPollGroup_Invalid) {
             TE_LOGGER_CRITICAL("Fatal error: Failed to listen on port {0}", m_port);
             return;
-        }
-
-        TE_LOGGER_INFO("Server listening on port {0}", m_port);
-        while (running) {
-            timer.addAccumulator(timer.getDeltaTime());
-            while (timer.getAccumulator() >= timer.getTPS()) {
-                timer.updateTicks();
-                onFixedUpdate();
-                timer.addAccumulator(-timer.getTPS());
-                PollIncomingMessages();
-                m_interface->RunCallbacks();
-            }
-            onUpdate();
         }
     }
 
@@ -107,12 +76,8 @@ namespace TechEngine {
         ScriptEngine::getInstance()->onUpdate();
         sceneManager.getScene().fixedUpdate();
         sceneManager.getScene().update();
-
-        //Move gameObject in sine wave pattern
-        auto gameObject = sceneManager.getScene().getGameObject("Test");
-        gameObject->getTransform().position.y = 5 * sin(timer.getTime());
-        Buffer buffer = SceneSynchronizer::serializeGameObject(*gameObject);
-        sendBufferToAllClients(buffer, -1, true);
+        PollIncomingMessages();
+        m_interface->RunCallbacks();
     }
 
     void Server::PollIncomingMessages() {
@@ -298,5 +263,5 @@ namespace TechEngine {
 }
 
 TechEngine::AppCore* TechEngine::createApp() {
-    return new TechEngine::Server();
+    return nullptr;
 }

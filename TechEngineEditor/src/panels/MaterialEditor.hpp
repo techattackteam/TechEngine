@@ -1,22 +1,19 @@
 #pragma once
 
 #include "Panel.hpp"
-#include "material/Material.hpp"
-#include "renderer/Renderer.hpp"
+#include "core/Client.hpp"
 #include "core/SceneCamera.hpp"
-#include "texture/TextureManager.hpp"
-#include "material/MaterialManager.hpp"
-#include "panels/materialEditorScene/Sphere.hpp"
+#include "core/Server.hpp"
+#include "materialEditorScene/Sphere.hpp"
+
 
 namespace TechEngine {
     class MaterialEditor : public Panel {
     private:
-        Renderer& m_renderer;
+        Client& client;
+        Server& server;
         Material* m_material;
 
-        TextureManager& textureManager;
-        MaterialManager& materialManager;
-        Scene& scene;
         std::string m_filepath;
         uint32_t frameBufferID;
 
@@ -24,7 +21,7 @@ namespace TechEngine {
         SceneCamera m_camera;
 
     public:
-        MaterialEditor(Renderer& renderer, TextureManager& textureManager, MaterialManager& materialManager, Scene& scene);
+        MaterialEditor(Client& client, Server& server);
 
         ~MaterialEditor() = default;
 

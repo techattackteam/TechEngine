@@ -1,4 +1,3 @@
-#include <iostream>
 #include "Panel.hpp"
 
 #include <imgui.h>
@@ -10,8 +9,7 @@
 #include "events/input/MouseScrollEvent.hpp"
 
 namespace TechEngine {
-    Panel::Panel(const std::string& name) : keysPressed() {
-        this->name = name;
+    Panel::Panel(const std::string& name) : name(name), keysPressed() {
         EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event* event) {
             onKeyPressedEvent(((KeyPressedEvent*)event)->getKey());
         });

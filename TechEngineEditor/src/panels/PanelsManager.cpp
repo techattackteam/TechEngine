@@ -11,39 +11,25 @@
 #include <filesystem>
 #include <commdlg.h>
 #include <imgui_internal.h>
+
 #include "project/ProjectManager.hpp"
 #include "events/input/KeyPressedEvent.hpp"
-#include "defaultGameObject/MainCamera.hpp"
 #include "events/OnProcessCloseEvent.hpp"
-#include "events/gameObjects/GameObjectDestroyEvent.hpp"
 #include "events/input/KeyReleasedEvent.hpp"
 #include "events/window/WindowCloseEvent.hpp"
 #include "events/scripts/ScriptCrashEvent.hpp"
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    PanelsManager::PanelsManager(Window& window, SceneManager& sceneManager,
-                                 ProjectManager& projectManager,
-                                 PhysicsEngine& physicsEngine,
-                                 TextureManager& textureManager,
-                                 MaterialManager& materialManager,
-                                 Renderer& renderer,
-                                 NetworkEngine& networkEngine) : window(window),
-                                                                 sceneManager(sceneManager),
-                                                                 projectManager(projectManager),
-                                                                 physicsEngine(physicsEngine),
-                                                                 materialManager(materialManager),
-                                                                 textureManager(textureManager),
-                                                                 networkEngine(networkEngine),
-
-                                                                 gameView(renderer, sceneManager.getScene()),
-                                                                 contentBrowser(*this, projectManager, sceneManager, materialManager),
-                                                                 exportSettingsPanel(*this, projectManager, sceneManager, renderer.getShadersManager()),
-                                                                 sceneHierarchyPanel(sceneManager.getScene(), materialManager, sceneView),
-                                                                 sceneView(renderer, sceneManager.getScene(), physicsEngine, sceneHierarchyPanel.getSelectedGO()),
-                                                                 inspectorPanel(sceneHierarchyPanel.getSelectedGO(), materialManager, physicsEngine),
-                                                                 materialEditor(renderer, textureManager, materialManager, sceneManager.getScene()),
-                                                                 networkHelper(networkEngine) {
+    PanelsManager::PanelsManager(Client& client, Server& server, ProjectManager& projectManager) : client(client),
+                                                                                                   server(server),
+                                                                                                   projectManager(projectManager),
+                                                                                                   contentBrowser(client, server, *this, projectManager),
+                                                                                                   exportSettingsPanel(*this, projectManager, client.sceneManager, client.renderer.getShadersManager()),
+                                                                                                   clientPanel(client),
+                                                                                                   serverPanel(server, client.renderer),
+                                                                                                   materialEditor(client, server),
+                                                                                                   networkHelper(client.networkEngine) {
     }
 
     void PanelsManager::init() {
@@ -58,9 +44,9 @@ namespace TechEngine {
             registerCustomPanel((RegisterCustomPanel*)event);
         });
 
-        EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngine::Event* event) {
+        /*EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngine::Event* event) {
             sceneHierarchyPanel.deselectGO(sceneManager.getScene().getGameObjectByTag(((GameObjectDestroyEvent*)event)->getGameObjectTag()));
-        });
+        });*/
 
         EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event* event) {
             OnKeyPressedEvent(((KeyPressedEvent*)event)->getKey());
@@ -88,13 +74,11 @@ namespace TechEngine {
         for (CustomPanel* panel: customPanels) {
             panel->update();
         }
-        sceneHierarchyPanel.update();
-        inspectorPanel.update();
-        sceneView.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-        gameView.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+        clientPanel.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+        serverPanel.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
         contentBrowser.update();
         exportSettingsPanel.update();
-        materialEditor.update();
+        materialEditor.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0}, ImGuiWindowFlags_None, true);
         networkHelper.update();
         endImGuiFrame();
     }
@@ -121,7 +105,7 @@ namespace TechEngine {
 
         setColorTheme();
 
-        ImGui_ImplGlfw_InitForOpenGL(window.getHandler(), true);
+        ImGui_ImplGlfw_InitForOpenGL(client.window.getHandler(), true);
         ImGui_ImplOpenGL3_Init("#version 410");
     }
 
@@ -187,7 +171,6 @@ namespace TechEngine {
 
         createDockSpace();
         createMenuBar();
-        createToolBar();
 
         ImGui::End();
     }
@@ -291,37 +274,6 @@ namespace TechEngine {
         ImGui::EndMenuBar();
     }
 
-    void PanelsManager::createToolBar() {
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 4));
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-        auto& colors = ImGui::GetStyle().Colors;
-        const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f));
-        const auto& buttonActive = colors[ImGuiCol_ButtonActive];
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, 0.5f));
-
-        ImGui::Begin("##Toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-        float size = ImGui::GetWindowWidth() / 7;
-        ImGui::SetCursorPosY(ImGui::GetWindowHeight() / 2 - 10);
-        if (ImGui::Button(sceneView.getGuizmoMode() == ImGuizmo::MODE::WORLD ? "World" : "Local", ImVec2(size, 0))) {
-            sceneView.changeGuizmoMode(sceneView.getGuizmoMode() == ImGuizmo::MODE::WORLD ? ImGuizmo::MODE::LOCAL : ImGuizmo::MODE::WORLD);
-        }
-        ImGui::SameLine();
-        ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x / 2) - (size / 2));
-        if (ImGui::Button(m_currentPlaying == true ? "Stop" : "Play", ImVec2(size, 0))) {
-            if (!m_currentPlaying) {
-                startRunningScene();
-            } else {
-                stopRunningScene();
-            }
-        }
-
-        ImGui::PopStyleVar(2);
-        ImGui::PopStyleColor(3);
-
-        ImGui::End();
-    }
 
     void PanelsManager::endImGuiFrame() {
         ImGui::Render();
@@ -431,26 +383,26 @@ namespace TechEngine {
 #else
         compileClientUserScripts(RELEASEDEBUG);
 #endif
-        sceneManager.saveSceneAsTemporarily(sceneManager.getActiveSceneName());
+        server.sceneManager.saveSceneAsTemporarily(server.sceneManager.getActiveSceneName());
         EventDispatcher::getInstance().copy();
-        materialManager.copy();
+        server.materialManager.copy();
         ScriptEngine::getInstance()->init(projectManager.getClientUserScriptsDLLPath().string());
         ScriptEngine::getInstance()->onStart();
-        physicsEngine.start();
+        server.physicsEngine.start();
         m_currentPlaying = true;
     }
 
     void PanelsManager::stopRunningScene() {
-        physicsEngine.stop();
+        /*physicsEngine.stop();
         EventDispatcher::getInstance().restoreCopy();
         materialManager.restoreCopy();
-        sceneManager.loadSceneFromTemporarily(sceneManager.getActiveSceneName());
-        sceneHierarchyPanel.getSelectedGO().clear();
-        for (GameObject* gameObject: sceneManager.getScene().getGameObjects()) {
+        sceneManager.loadSceneFromTemporarily(sceneManager.getActiveSceneName());*/
+        //sceneHierarchyPanel.getSelectedGO().clear();
+        /*for (GameObject* gameObject: sceneManager.getScene().getGameObjects()) {
             if (std::find(getSelectedGameObjects().begin(), getSelectedGameObjects().end(), gameObject) != getSelectedGameObjects().end()) {
-                sceneHierarchyPanel.selectGO(gameObject);
+                //sceneHierarchyPanel.selectGO(gameObject);
             }
-        }
+        }*/
         m_currentPlaying = false;
         ScriptEngine::getInstance()->stop();
     }
@@ -583,9 +535,9 @@ namespace TechEngine {
         }
     }
 
-    std::vector<GameObject*>& PanelsManager::getSelectedGameObjects() {
+    /*std::vector<GameObject*>& PanelsManager::getSelectedGameObjects() {
         return sceneHierarchyPanel.getSelectedGO();
-    }
+    }*/
 
     void PanelsManager::openMaterialEditor(const std::string& materialName, const std::string& filepath) {
         materialEditor.open(materialName, filepath);

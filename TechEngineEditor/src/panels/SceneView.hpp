@@ -23,7 +23,7 @@ namespace TechEngine {
         bool isWindowHovered = false;
 
     public:
-        SceneView(Renderer& renderer, Scene& scene, PhysicsEngine& physicsEngine, std::vector<GameObject*>& selectedGO);
+        SceneView(const std::string& name, Renderer& renderer, Scene& scene, PhysicsEngine& physicsEngine, std::vector<GameObject*>& selectedGO);
 
         ~SceneView();
 

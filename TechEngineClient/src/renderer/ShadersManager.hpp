@@ -1,8 +1,7 @@
 #pragma once
 
-#include <vector>
 #include "Shader.hpp"
-#include "project/ProjectManager.hpp"
+#include "core/FilePaths.hpp"
 
 namespace TechEngine {
     class ShadersManager {
@@ -15,7 +14,7 @@ namespace TechEngine {
 
         ~ShadersManager();
 
-        void init(ProjectManager& projectManager);
+        void init(FilePaths& filePaths);
 
         void changeActiveShader(const std::string& name);
 
