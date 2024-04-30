@@ -7,8 +7,11 @@
 #include "core/Client.hpp"
 
 namespace TechEngine {
+    class PanelsManager;
+
     class ServerPanel : public Panel {
     private:
+        PanelsManager& panelsManager;
         Server& server;
         SceneView sceneView;
         InspectorPanel inspectorPanel;
@@ -16,7 +19,7 @@ namespace TechEngine {
         bool m_currentPlaying = false;
 
     public:
-        ServerPanel(Server& server, Renderer& renderer);
+        ServerPanel(PanelsManager& panelsManager, Server& server, Renderer& renderer);
 
         void onUpdate() override;
 

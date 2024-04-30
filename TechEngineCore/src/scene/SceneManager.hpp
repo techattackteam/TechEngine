@@ -3,6 +3,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "core/Core.hpp"
 #include "core/FilePaths.hpp"
 #include "physics/PhysicsEngine.hpp"
 #include "yaml-cpp/node/node.h"
@@ -42,9 +43,9 @@ namespace TechEngine {
 
         void saveCurrentScene();
 
-        void saveSceneAsTemporarily(const std::string& sceneName);
+        void saveSceneAsTemporarily(const std::string& cachPath, CompileProject compileProject);
 
-        void loadSceneFromTemporarily(const std::string& sceneName);
+        void loadSceneFromTemporarily(const std::string& cachPath, CompileProject compileProject);
 
         const std::string& getActiveSceneName();
 

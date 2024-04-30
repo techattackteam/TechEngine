@@ -7,5 +7,6 @@ namespace TechEngine {
         std::string assetsPath;
         std::string commonResourcesPath;
         std::string commonAssetsPath;
+        std::string cachPath;
     };
 };

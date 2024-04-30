@@ -8,12 +8,18 @@
 #include "core/Client.hpp"
 
 namespace TechEngine {
+    class PanelsManager;
+}
+
+namespace TechEngine {
     enum CompileMode;
 
     class ClientPanel : public Panel {
     private:
         Client& client;
         ProjectManager& projectManager;
+        PanelsManager& panelsManager;
+
         GameView gameView;
         SceneView sceneView;
         InspectorPanel inspectorPanel;
@@ -21,7 +27,7 @@ namespace TechEngine {
         bool m_currentPlaying = false;
 
     public:
-        ClientPanel(Client& client, ProjectManager& projectManager);
+        ClientPanel(PanelsManager& panelsManager, Client& client, ProjectManager& projectManager);
 
         void onUpdate() override;
 
@@ -34,8 +40,6 @@ namespace TechEngine {
         SceneView& getSceneView() {
             return sceneView;
         }
-
-        void compileClientUserScripts(CompileMode compileMode);
 
     private:
         void startRunningScene();

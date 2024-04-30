@@ -56,7 +56,7 @@ namespace TechEngine {
 
         void update();
 
-        void compileServerUserScripts(CompileMode compileMode);
+        void compileUserScripts(CompileMode compileMode, CompileProject compileProject);
 
         void openMaterialEditor(const std::string& materialName, const std::string& filepath);
 

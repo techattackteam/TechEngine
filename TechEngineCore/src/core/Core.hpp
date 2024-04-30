@@ -5,3 +5,10 @@
 #else
 #define TECHENGINE_API __declspec(dllimport)
 #endif
+
+namespace TechEngine {
+    enum CompileProject {
+        PROJECT_CLIENT,
+        PROJECT_SERVER
+    };
+}

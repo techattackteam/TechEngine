@@ -1,13 +1,17 @@
 #include "ServerPanel.hpp"
 
 #include "core/Client.hpp"
+#include "PanelsManager.hpp"
 
 namespace TechEngine {
-    ServerPanel::ServerPanel(Server& server, Renderer& renderer) : server(server),
-                                                                   inspectorPanel("Server Inspector", sceneHierarchyPanel.getSelectedGO(), server.materialManager, server.physicsEngine),
-                                                                   sceneView("Server Scene", renderer, server.sceneManager.getScene(), server.physicsEngine, sceneHierarchyPanel.getSelectedGO()),
-                                                                   sceneHierarchyPanel("Server Scene Hierarchy", server.sceneManager.getScene(), server.materialManager),
-                                                                   Panel("ServerPanel") {
+    ServerPanel::ServerPanel(PanelsManager& panelsManager,
+                             Server& server,
+                             Renderer& renderer) : server(server),
+                                                   panelsManager(panelsManager),
+                                                   inspectorPanel("Server Inspector", sceneHierarchyPanel.getSelectedGO(), server.materialManager, server.physicsEngine),
+                                                   sceneView("Server Scene", renderer, server.sceneManager.getScene(), server.physicsEngine, sceneHierarchyPanel.getSelectedGO()),
+                                                   sceneHierarchyPanel("Server Scene Hierarchy", server.sceneManager.getScene(), server.materialManager),
+                                                   Panel("ServerPanel") {
     }
 
     void ServerPanel::onUpdate() {
