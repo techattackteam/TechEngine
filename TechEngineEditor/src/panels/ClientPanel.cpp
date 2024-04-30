@@ -9,7 +9,7 @@ namespace TechEngine {
                                                                                projectManager(projectManager),
                                                                                gameView(client.renderer, client.sceneManager.getScene()),
                                                                                inspectorPanel("Client Inspector", sceneHierarchyPanel.getSelectedGO(), client.materialManager, client.physicsEngine),
-                                                                               sceneView("Client Scene", 1, client.renderer, client.sceneManager.getScene(), client.physicsEngine, sceneHierarchyPanel.getSelectedGO()),
+                                                                               sceneView("Client Scene", client.renderer, client.sceneManager.getScene(), client.physicsEngine, sceneHierarchyPanel.getSelectedGO()),
                                                                                sceneHierarchyPanel("Client Scene Hierarchy", client.sceneManager.getScene(), client.materialManager),
                                                                                Panel("ClientPanel") {
     }
@@ -27,11 +27,11 @@ namespace TechEngine {
         createToolBar();
         // Set the window class for the next window
         ImGui::SetNextWindowClass(&windowClass);
-        inspectorPanel.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+        inspectorPanel.update();
 
         // Set the window class for the next window
         ImGui::SetNextWindowClass(&windowClass);
-        sceneHierarchyPanel.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+        sceneHierarchyPanel.update();
 
         ImGui::SetNextWindowClass(&windowClass);
         sceneView.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});

@@ -6,6 +6,7 @@
 #include "UIUtils/Guizmo.hpp"
 #include "core/SceneCamera.hpp"
 #include "core/Key.hpp"
+#include "core/Core.hpp"
 
 namespace TechEngine {
     class SceneView : public Panel {
@@ -21,9 +22,12 @@ namespace TechEngine {
         bool mouse3 = false;
         bool moving = false;
         bool isWindowHovered = false;
+        int id;
+        inline TECHENGINE_API static int lastUsingId = -1;
+        inline static int totalIds = 0;
 
     public:
-        SceneView(const std::string& name, int guizmoID, Renderer& renderer, Scene& scene, PhysicsEngine& physicsEngine, std::vector<GameObject*>& selectedGO);
+        SceneView(const std::string& name, Renderer& renderer, Scene& scene, PhysicsEngine& physicsEngine, std::vector<GameObject*>& selectedGO);
 
         ~SceneView();
 
