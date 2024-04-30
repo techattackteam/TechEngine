@@ -25,8 +25,8 @@ namespace TechEngine {
                                                                                                    projectManager(projectManager),
                                                                                                    contentBrowser(client, server, *this, projectManager),
                                                                                                    exportSettingsPanel(*this, projectManager, client.sceneManager, client.renderer.getShadersManager()),
-                                                                                                   clientPanel(client, projectManager),
-                                                                                                   serverPanel(server, client.renderer),
+                                                                                                   clientPanel(*this, client, projectManager),
+                                                                                                   serverPanel(*this, server, client.renderer),
                                                                                                    materialEditor(client, server),
                                                                                                    networkHelper(client.networkEngine) {
     }
@@ -44,7 +44,7 @@ namespace TechEngine {
         });
 
         /*EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](TechEngine::Event* event) {
-            sceneHierarchyPanel.deselectGO(sceneManager.getScene().getGameObjectByTag(((GameObjectDestroyEvent*)event)->getGameObjectTag()));
+            clientPanel.sceneHierarchyPanel.deselectGO(sceneManager.getScene().getGameObjectByTag(((GameObjectDestroyEvent*)event)->getGameObjectTag()));
         });*/
 
         EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event* event) {
@@ -77,7 +77,7 @@ namespace TechEngine {
         serverPanel.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
         contentBrowser.update();
         exportSettingsPanel.update();
-        materialEditor.update(/*ImGuiStyleVar_WindowPadding, ImVec2{0, 0}, ImGuiWindowFlags_None, true*/);
+        materialEditor.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0}, ImGuiWindowFlags_None, true);
         networkHelper.update();
         endImGuiFrame();
     }
@@ -233,7 +233,7 @@ namespace TechEngine {
         }
         if (ImGui::BeginMenu("Client")) {
             if (ImGui::MenuItem("Build")) {
-                if (m_currentPlaying) {
+                /*if (m_currentPlaying) {
                     stopRunningScene();
                     m_currentPlaying = false;
                 }
@@ -243,7 +243,7 @@ namespace TechEngine {
                 compileClientUserScripts(RELEASE);
 #elif TE_RELEASEDEBUG
                 compileClientUserScripts(RELEASEDEBUG);
-#endif
+#endif*/
             } else if (ImGui::MenuItem("Run")) {
                 runClientProcess();
             }
@@ -251,7 +251,7 @@ namespace TechEngine {
         }
         if (ImGui::BeginMenu("Server")) {
             if (ImGui::MenuItem("Build")) {
-                if (!serverProcesses.empty()) {
+                /*if (!serverProcesses.empty()) {
                     for (PROCESS_INFORMATION& process: serverProcesses) {
                         TerminateProcess(process.hProcess, 0);
                         onCloseProcessEvent(process.dwProcessId);
@@ -264,7 +264,7 @@ namespace TechEngine {
                 compileServerUserScripts(RELEASE);
 #elif TE_RELEASEDEBUG
                 compileServerUserScripts(RELEASEDEBUG);
-#endif
+#endif*/
             } else if (ImGui::MenuItem("Run")) {
                 runServerProcess();
             }
@@ -329,14 +329,18 @@ namespace TechEngine {
     }
 
 
-    void PanelsManager::compileServerUserScripts(CompileMode compileMode) {
-        if (!exists(projectManager.getServerCmakeBuildPath()) || is_empty(projectManager.getServerCmakeBuildPath())) {
+    void PanelsManager::compileUserScripts(CompileMode compileMode, CompileProject compileProject) {
+        std::string cmakeBuildPath = compileProject == CLIENT ? projectManager.getClientCmakeBuildPath().string() : projectManager.getServerCmakeBuildPath().string();
+        std::string cmakeListPath = compileProject == CLIENT ? projectManager.getClientCmakeListPath().string() : projectManager.getServerCmakeListPath().string();
+        std::string techEngineLibPath = compileProject == CLIENT ? projectManager.getTechEngineClientLibPath().string() : projectManager.getTechEngineServerLibPath().string();
+        std::string techEngineCoreLibPath = projectManager.getTechEngineCoreLibPath().string();
+        if (!std::filesystem::exists(cmakeBuildPath) || std::filesystem::is_empty(cmakeBuildPath)) {
             std::string command = "\"" + projectManager.getCmakePath().string() +
                                   " -G \"Visual Studio 17 2022\""
-                                  " -D TechEngineServerLIB:STRING=\"" + projectManager.getTechEngineServerLibPath().string() + "\"" +
-                                  " -D TechEngineCoreLIB:STRING=\"" + projectManager.getTechEngineCoreLibPath().string() + "\"" +
-                                  " -S " + "\"" + projectManager.getServerCmakeListPath().string() + "\"" +
-                                  " -B " + "\"" + projectManager.getServerCmakeBuildPath().string() + "\"" + "\"";
+                                  " -D TechEngineServerLIB:STRING=\"" + techEngineLibPath + "\"" +
+                                  " -D TechEngineCoreLIB:STRING=\"" + techEngineCoreLibPath + "\"" +
+                                  " -S " + "\"" + cmakeListPath + "\"" +
+                                  " -B " + "\"" + cmakeBuildPath + "\"" + "\"";
             std::system(command.c_str());
         }
         std::string cm;
@@ -348,7 +352,7 @@ namespace TechEngine {
             cm = "Debug";
         }
         std::string command = "\"" + projectManager.getCmakePath().string() +
-                              " --build " + "\"" + projectManager.getServerCmakeBuildPath().string() + "\"" + " --target UserScripts --config " + cm + "\"";
+                              " --build " + "\"" + cmakeBuildPath + "\"" + " --target UserScripts --config " + cm + "\"";
         std::system(command.c_str());
         TE_LOGGER_INFO("Build finished!");
     }

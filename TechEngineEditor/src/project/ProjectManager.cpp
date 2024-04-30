@@ -176,10 +176,12 @@ namespace TechEngine {
         client.filePaths.resourcesPath = projectClientResourcesPath.string();
         client.filePaths.commonResourcesPath = projectCommonResourcesPath.string();
         client.filePaths.commonAssetsPath = projectCommonResourcesPath.string();
+        client.filePaths.cachPath = projectCachePath.string();
         server.filePaths.assetsPath = projectServerAssetsPath.string();
         server.filePaths.resourcesPath = projectServerResourcesPath.string();
         server.filePaths.commonResourcesPath = projectCommonResourcesPath.string();
         server.filePaths.commonAssetsPath = projectCommonResourcesPath.string();
+        server.filePaths.cachPath = projectCachePath.string();
 
         std::string clientLoadedScene;
         std::string serverLoadedScene;

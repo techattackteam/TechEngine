@@ -1,26 +1,27 @@
 #include "SceneManager.hpp"
 
 #include "core/FileSystem.hpp"
+#include "core/Core.hpp"
+#include "core/Logger.hpp"
 #include "scene/GameObject.hpp"
 #include "components/render/CameraComponent.hpp"
 #include "components/TransformComponent.hpp"
 #include "components/render/MeshRendererComponent.hpp"
 #include "components/physics/BoxColliderComponent.hpp"
 #include "components/physics/SphereCollider.hpp"
-#include "core/Logger.hpp"
+#include "components/physics/CylinderCollider.hpp"
+#include "components/physics/RigidBody.hpp"
+#include "components/network/NetworkSync.hpp"
 #include "mesh/CubeMesh.hpp"
 #include "mesh/SphereMesh.hpp"
 #include "mesh/CylinderMesh.hpp"
-#include "components/physics/CylinderCollider.hpp"
-#include "components/physics/RigidBody.hpp"
-#include <filesystem>
-#include <utils/YAMLUtils.hpp>
-#include <fstream>
-
-#include "components/network/NetworkSync.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 #include "material/MaterialManager.hpp"
 #include "mesh/ImportedMesh.hpp"
+
+#include <filesystem>
+#include <utils/YAMLUtils.hpp>
+#include <fstream>
 
 namespace TechEngine {
     YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec2& v) {
@@ -406,17 +407,17 @@ namespace TechEngine {
         saveScene(m_activeSceneName);
     }
 
-    void SceneManager::saveSceneAsTemporarily(const std::string& sceneName) {
-        std::string scenePath = m_scenesBank[sceneName];
-        std::string sceneTemporaryPath = scenePath.substr(0, scenePath.find_last_of("\\/")) + "\\SceneTemporary.scene";
-        serialize("Temporary Scene", sceneTemporaryPath);
+    void SceneManager::saveSceneAsTemporarily(const std::string& cachPath, CompileProject compileProject) {
+        std::string sceneName = compileProject == PROJECT_CLIENT ? "SceneClientTemporary" : "SceneServerTemporary";
+        std::string sceneTemporaryPath = cachPath + "\\" + sceneName + ".scene";
+        serialize(sceneName, sceneTemporaryPath);
     }
 
-    void SceneManager::loadSceneFromTemporarily(const std::string& sceneName) {
+    void SceneManager::loadSceneFromTemporarily(const std::string& cachPath, CompileProject compileProject) {
         scene.clear();
         physicsEngine.clear();
-        std::string scenePath = m_scenesBank[sceneName];
-        std::string sceneTemporaryPath = scenePath.substr(0, scenePath.find_last_of("\\/")) + "\\SceneTemporary.scene";
+        std::string sceneName = compileProject == PROJECT_CLIENT ? "SceneClientTemporary" : "SceneServerTemporary";
+        std::string sceneTemporaryPath = cachPath + "\\" + sceneName + ".scene";
         deserialize(sceneTemporaryPath);
         std::filesystem::remove(sceneTemporaryPath);
     }
