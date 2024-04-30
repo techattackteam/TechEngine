@@ -3,10 +3,11 @@
 
 #include "components/physics/BoxColliderComponent.hpp"
 #include "components/physics/SphereCollider.hpp"
+#include "core/Logger.hpp"
 #include "panels/PanelsManager.hpp"
 
 namespace TechEngine {
-    Guizmo::Guizmo(int id, PhysicsEngine& physicsEngine) : id(id), physicsEngine(physicsEngine) {
+    Guizmo::Guizmo(int& id, PhysicsEngine& physicsEngine) : id(id), physicsEngine(physicsEngine) {
     }
 
     bool DecomposeTransform(const glm::mat4& transform, glm::vec3& translation, glm::vec3& rotation, glm::vec3& scale) {
@@ -71,7 +72,7 @@ namespace TechEngine {
         if (operation == -1) {
             return;
         }
-        if (selectedGameObjects.empty() /*|| !SceneHelper::hasMainCamera()*/) {
+        if (selectedGameObjects.empty()) {
             return;
         }
 
@@ -95,7 +96,7 @@ namespace TechEngine {
                    (ImGuizmo::OPERATION)operation, (ImGuizmo::MODE)(mode), glm::value_ptr(transform),
                    nullptr, nullptr);
 
-        if (ImGuizmo::IsUsing() && lastUsingID == -1 || lastUsingID == id) {
+        if (ImGuizmo::IsUsing() && (lastUsingID == -1 || lastUsingID == id)) {
             lastUsingID = id;
             glm::vec3 translation, rotation, scale;
             DecomposeTransform(transform, translation, rotation, scale);

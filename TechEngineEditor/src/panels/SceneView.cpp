@@ -7,10 +7,11 @@
 #include "components/physics/RigidBody.hpp"
 
 namespace TechEngine {
-    SceneView::SceneView(const std::string& name,int guizmoID, Renderer& renderer, Scene& scene, PhysicsEngine& physicsEngine, std::vector<GameObject*>& selectedGO)
-        : renderer(&renderer), scene(scene), guizmo(guizmoID,physicsEngine), selectedGO(selectedGO), Panel(name) {
+    SceneView::SceneView(const std::string& name, Renderer& renderer, Scene& scene, PhysicsEngine& physicsEngine, std::vector<GameObject*>& selectedGO)
+        : renderer(&renderer), scene(scene), guizmo(id, physicsEngine), selectedGO(selectedGO), Panel(name) {
         frameBufferID = renderer.createFramebuffer(1080, 720);
         sceneCamera = new SceneCamera();
+        id = totalIds++;
     }
 
     SceneView::~SceneView() {
@@ -289,11 +290,13 @@ namespace TechEngine {
             case MOUSE_2: {
                 mouse2 = false;
                 moving = false;
+                lastUsingId = -1;
                 break;
             }
             case MOUSE_3: {
                 mouse3 = false;
                 moving = false;
+                lastUsingId = -1;
                 break;
             }
         }
@@ -301,7 +304,7 @@ namespace TechEngine {
     }
 
     void SceneView::onMouseScrollEvent(float xOffset, float yOffset) {
-        if (isWindowHovered) {
+        if (isWindowHovered && (lastUsingId == -1 || lastUsingId == id)) {
             const glm::mat4 inverted = glm::inverse(getSceneCamera()->getComponent<CameraComponent>()->getViewMatrix());
             const glm::vec3 forward = normalize(glm::vec3(inverted[2]));
             if (yOffset == -1.0f) {
@@ -310,11 +313,13 @@ namespace TechEngine {
                 getSceneCamera()->getTransform().translate(-forward);
             }
         }
+        //TE_LOGGER_INFO("Mouse scroll event id: {0}, {1}", id, lastUsingId);
     }
 
     void SceneView::onMouseMoveEvent(glm::vec2 delta) {
-        if (isWindowHovered || moving) {
+        if ((lastUsingId == -1 || lastUsingId == id) && (isWindowHovered || moving) && (mouse2 || mouse3)) {
             moving = true;
+            lastUsingId = id;
             const glm::mat4 inverted = glm::inverse(getSceneCamera()->getComponent<CameraComponent>()->getViewMatrix());
             const glm::vec3 right = normalize(glm::vec3(inverted[0]));
             const glm::vec3 up = normalize(glm::vec3(inverted[1]));
@@ -327,6 +332,7 @@ namespace TechEngine {
                 getSceneCamera()->getTransform().rotate(rotate);
             }
         }
+        //TE_LOGGER_INFO("Mouse scroll event id: {0}, {1}", id, lastUsingId);
     }
 
     void SceneView::processShortcuts() {

@@ -40,12 +40,12 @@ namespace TechEngine {
             } else {
                 ImGui::Begin(name.c_str(), nullptr, flags);
             }
-            onUpdate();
-            shortcuts();
-            ImGui::End();
             if (ImGuiStyleVar_WindowPadding != -1) {
                 ImGui::PopStyleVar();
             }
+            onUpdate();
+            shortcuts();
+            ImGui::End();
         }
     }
 

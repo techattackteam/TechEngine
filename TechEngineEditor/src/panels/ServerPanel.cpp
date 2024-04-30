@@ -5,7 +5,7 @@
 namespace TechEngine {
     ServerPanel::ServerPanel(Server& server, Renderer& renderer) : server(server),
                                                                    inspectorPanel("Server Inspector", sceneHierarchyPanel.getSelectedGO(), server.materialManager, server.physicsEngine),
-                                                                   sceneView("Server Scene", 2, renderer, server.sceneManager.getScene(), server.physicsEngine, sceneHierarchyPanel.getSelectedGO()),
+                                                                   sceneView("Server Scene", renderer, server.sceneManager.getScene(), server.physicsEngine, sceneHierarchyPanel.getSelectedGO()),
                                                                    sceneHierarchyPanel("Server Scene Hierarchy", server.sceneManager.getScene(), server.materialManager),
                                                                    Panel("ServerPanel") {
     }
@@ -23,11 +23,11 @@ namespace TechEngine {
         createToolBar();
         // Set the window class for the next window
         ImGui::SetNextWindowClass(&windowClass);
-        inspectorPanel.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+        inspectorPanel.update();
 
         // Set the window class for the next window
         ImGui::SetNextWindowClass(&windowClass);
-        sceneHierarchyPanel.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+        sceneHierarchyPanel.update();
 
         ImGui::SetNextWindowClass(&windowClass);
         sceneView.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});

@@ -77,7 +77,7 @@ namespace TechEngine {
         serverPanel.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
         contentBrowser.update();
         exportSettingsPanel.update();
-        materialEditor.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0}, ImGuiWindowFlags_None, true);
+        materialEditor.update(/*ImGuiStyleVar_WindowPadding, ImVec2{0, 0}, ImGuiWindowFlags_None, true*/);
         networkHelper.update();
         endImGuiFrame();
     }
