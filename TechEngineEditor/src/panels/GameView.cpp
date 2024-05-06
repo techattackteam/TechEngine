@@ -2,7 +2,7 @@
 #include "imgui.h"
 
 namespace TechEngine {
-    GameView::GameView(Renderer& renderer, Scene& scene) : renderer(&renderer), scene(scene), Panel("Game") {
+    GameView::GameView(EventDispatcher& eventDispatcher, Renderer& renderer, Scene& scene) : renderer(&renderer), scene(scene), Panel("Game", eventDispatcher) {
         frameBufferID = renderer.createFramebuffer(1080, 720);
     }
 

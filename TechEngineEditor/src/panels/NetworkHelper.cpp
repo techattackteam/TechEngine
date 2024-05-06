@@ -2,7 +2,7 @@
 
 
 namespace TechEngine {
-    NetworkHelper::NetworkHelper(NetworkEngine& networkEngine) : networkEngine(networkEngine), Panel("Network Helper") {
+    NetworkHelper::NetworkHelper(NetworkEngine& networkEngine, EventDispatcher& eventDispatcher) : networkEngine(networkEngine), Panel("Network Helper", eventDispatcher) {
     }
 
     NetworkHelper::~NetworkHelper() {

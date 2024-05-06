@@ -8,13 +8,13 @@
 #include "scene/GameObject.hpp"
 
 namespace TechEngine {
-    CameraComponent::CameraComponent(GameObject* gameObject) : Component(gameObject, "Camera") {
+    CameraComponent::CameraComponent(GameObject* gameObject, EventDispatcher& eventDispatcher) : Component(gameObject, eventDispatcher, "Camera") {
         mainCamera = false;
         this->projectionType = PERSPECTIVE;
         init();
     }
 
-    CameraComponent::CameraComponent(GameObject* gameObject, bool mainCamera, ProjectionType projectionType) : Component(gameObject, "Camera") {
+    CameraComponent::CameraComponent(GameObject* gameObject, EventDispatcher& eventDispatcher, bool mainCamera, ProjectionType projectionType) : Component(gameObject, eventDispatcher, "Camera") {
         this->mainCamera = mainCamera;
         this->projectionType = projectionType;
         init();
@@ -110,7 +110,7 @@ namespace TechEngine {
 
     Component* CameraComponent::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
         CameraComponent* cameraComponent = (CameraComponent*)componentToCopy;
-        CameraComponent* newCameraComponent = new CameraComponent(gameObjectToAttach, cameraComponent->mainCamera, cameraComponent->projectionType);
+        CameraComponent* newCameraComponent = new CameraComponent(gameObjectToAttach, eventDispatcher, cameraComponent->mainCamera, cameraComponent->projectionType);
         newCameraComponent->fov = cameraComponent->fov;
         newCameraComponent->nearPlane = cameraComponent->nearPlane;
         newCameraComponent->farPlane = cameraComponent->farPlane;

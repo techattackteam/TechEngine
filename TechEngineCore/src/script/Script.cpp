@@ -13,6 +13,7 @@ namespace TechEngine {
     }
 
     void Script::onUpdate() {
+
     }
 
     void Script::onClose() {

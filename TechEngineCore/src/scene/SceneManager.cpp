@@ -164,7 +164,16 @@ namespace TechEngine {
         out << YAML::EndMap;
     }
 
-    SceneManager::SceneManager(PhysicsEngine& physicsEngine, MaterialManager& materialManager, TextureManager& textureManager, FilePaths& filePaths) : physicsEngine(physicsEngine), materialManager(materialManager), textureManager(textureManager), filePaths(filePaths) {
+    SceneManager::SceneManager(EventDispatcher& eventDispatcher,
+                               PhysicsEngine& physicsEngine,
+                               MaterialManager& materialManager,
+                               TextureManager& textureManager,
+                               FilePaths& filePaths) : eventDispatcher(eventDispatcher),
+                                                       physicsEngine(physicsEngine),
+                                                       materialManager(materialManager),
+                                                       textureManager(textureManager),
+                                                       filePaths(filePaths),
+                                                       scene(eventDispatcher) {
     }
 
     void SceneManager::serialize(const std::string& sceneName, const std::string& filepath) {
@@ -193,7 +202,7 @@ namespace TechEngine {
     void SceneManager::deserializeGameObject(YAML::Node gameObjectYAML, GameObject* parent) {
         auto name = gameObjectYAML["Name"].as<std::string>();
         auto tag = gameObjectYAML["Tag"].as<std::string>();
-        GameObject& gameObject = scene.registerGameObject<GameObject>(name, tag);
+        GameObject& gameObject = scene.registerGameObject(name, tag);
         if (parent != nullptr) {
             scene.makeChildTo(parent, &gameObject);
         }
@@ -381,11 +390,11 @@ namespace TechEngine {
             scene.clear();
             physicsEngine.clear();
             m_activeSceneName = "DefaultScene";
-            GameObject& gameObject = scene.createGameObject<GameObject>("Main Camera");
+            GameObject& gameObject = scene.createGameObject("Main Camera");
             gameObject.addComponent<CameraComponent>();
             gameObject.getComponent<CameraComponent>()->setIsMainCamera(true);
             gameObject.getComponent<TransformComponent>()->translateTo(glm::vec3(0.0f, 0.0f, 5.0f));
-            GameObject& cube = scene.createGameObject<GameObject>("Cube");
+            GameObject& cube = scene.createGameObject("Cube");
             cube.addComponent<MeshRendererComponent>(new CubeMesh(), &materialManager.getMaterial("DefaultMaterial"));
             cube.getComponent<TransformComponent>()->translateTo(glm::vec3(0.0f, 0.0f, 0.0f));
             std::string scenePath = filePaths.commonAssetsPath + "\\Scenes\\" + m_activeSceneName + ".scene";

@@ -9,11 +9,12 @@ namespace TechEngine {
 
     class PhysicsCallback : public physx::PxSimulationEventCallback {
     private:
+        EventDispatcher& eventDispatcher;
         PhysicsEngine& physicsEngine;
         Scene& scene;
 
     public:
-        PhysicsCallback(Scene& scene, PhysicsEngine& physicsEngine) : scene(scene), physicsEngine(physicsEngine) {
+        PhysicsCallback(EventDispatcher& eventDispatcher, Scene& scene, PhysicsEngine& physicsEngine) : eventDispatcher(eventDispatcher), scene(scene), physicsEngine(physicsEngine) {
         }
 
         void onContact(const physx::PxContactPairHeader& pairHeader, const physx::PxContactPair* pairs, physx::PxU32 nbPairs) override;

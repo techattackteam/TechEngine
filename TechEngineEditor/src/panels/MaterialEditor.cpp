@@ -11,13 +11,18 @@
 #include "core/Server.hpp"
 
 namespace TechEngine {
-    MaterialEditor::MaterialEditor(Client& client, Server& server) : client(client), server(server), m_material(nullptr), Panel("Material Editor") {
+    MaterialEditor::MaterialEditor(Client& client, Server& server) : client(client),
+                                                                     server(server),
+                                                                     m_material(nullptr),
+                                                                     m_sphere("Sphere", client.eventDispatcher),
+                                                                     m_camera("SceneCamera", client.eventDispatcher),
+                                                                     Panel("Material Editor", client.eventDispatcher) {
         m_open = false;
         frameBufferID = client.renderer.createFramebuffer(1080, 720);
     }
 
     void MaterialEditor::init() {
-        m_sphere.init(&client.materialManager.getMaterial("DefaultMaterial"));
+        m_sphere.addComponent<MeshRendererComponent>(&mesh, &client.materialManager.getMaterial("DefaultMaterial"));
         m_sphere.getTransform().position = glm::vec3(0, 0, 0);
         m_camera.getTransform().position = glm::vec3(0, 0, 3);
     }

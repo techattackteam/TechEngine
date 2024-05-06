@@ -3,7 +3,7 @@
 #include "serialization/BufferStream.hpp"
 
 namespace TechEngine {
-    NetworkSync::NetworkSync(GameObject* gameObject) : Component(gameObject, "NetworkSync") {
+    NetworkSync::NetworkSync(GameObject* gameObject, EventDispatcher& eventDispatcher) : Component(gameObject, eventDispatcher, "NetworkSync") {
     }
 
     NetworkSync::~NetworkSync() {

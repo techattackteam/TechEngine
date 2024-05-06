@@ -11,7 +11,7 @@ namespace TechEngine {
         glm::vec3 offset = glm::vec3(0.0f, 0.0f, 0.0f);
 
     public:
-        Collider(GameObject* gameObject, std::string name);
+        Collider(GameObject*, EventDispatcher& eventDispatcher, std::string name);
 
         ~Collider() override;
 

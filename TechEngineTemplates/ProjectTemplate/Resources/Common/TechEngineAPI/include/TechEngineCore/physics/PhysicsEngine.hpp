@@ -21,6 +21,7 @@ namespace TechEngine {
         std::list<std::string> rigidBodiesWithoutColliders;
         bool running = false;
 
+        EventDispatcher& eventDispatcher;
         Scene& scene;
         PhysicsCallback* callback;
 
@@ -29,7 +30,7 @@ namespace TechEngine {
         void createScene();
 
     public:
-        explicit PhysicsEngine(Scene& scene);
+        explicit PhysicsEngine(EventDispatcher& eventDispatcher, Scene& scene);
 
         ~PhysicsEngine();
 

@@ -33,6 +33,7 @@ namespace TechEngine {
         ImGuiContext* imguiContext{};
         Client& client;
         Server& server;
+        EventDispatcher& eventDispatcher;
         ProjectManager& projectManager;
 
         //SettingsPanel settingsPanel{};
@@ -42,7 +43,6 @@ namespace TechEngine {
         ServerPanel serverPanel;
         MaterialEditor materialEditor;
         NetworkHelper networkHelper;
-        bool m_currentPlaying = false;
         bool isCtrlPressed = false;
 
         std::vector<PROCESS_INFORMATION> clientProcesses;
@@ -50,7 +50,7 @@ namespace TechEngine {
         friend class ContentBrowserPanel;
 
     public:
-        PanelsManager(Client& client, Server& server, ProjectManager& projectManager);
+        PanelsManager(Client& client, Server& server, EventDispatcher& eventDispatcher, ProjectManager& projectManager);
 
         void init();
 
@@ -76,10 +76,6 @@ namespace TechEngine {
         std::string openFileWindow(const char* filter);
 
         std::string saveFile(const char* filter);
-
-        void startRunningScene();
-
-        void stopRunningScene();
 
         void runServerProcess();
 

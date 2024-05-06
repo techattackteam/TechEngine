@@ -14,7 +14,7 @@ namespace TechEngine {
 
 
     void ProjectManager::init() {
-        EventDispatcher::getInstance().subscribe(AppCloseRequestEvent::eventType, [this](Event* event) {
+        client.eventDispatcher.subscribe(AppCloseRequestEvent::eventType, [this](Event* event) {
             saveProject();
         });
     }

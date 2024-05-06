@@ -5,8 +5,8 @@
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    RigidBody::RigidBody(GameObject* gameObject) : Component(gameObject, "RigidBody") {
-        EventDispatcher::getInstance().dispatch(new AddRigidBodyEvent(this));
+    RigidBody::RigidBody(GameObject* gameObject, EventDispatcher& eventDispatcher) : Component(gameObject, eventDispatcher, "RigidBody") {
+        eventDispatcher.dispatch(new AddRigidBodyEvent(this));
     }
 
 
@@ -28,7 +28,7 @@ namespace TechEngine {
 
     Component* RigidBody::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
         RigidBody* rigidBody = (RigidBody*)componentToCopy;
-        auto* component = new RigidBody(gameObjectToAttach);
+        auto* component = new RigidBody(gameObjectToAttach, eventDispatcher);
         component->setMass(rigidBody->mass);
         component->setDensity(rigidBody->density);
         return component;

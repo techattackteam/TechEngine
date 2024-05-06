@@ -6,7 +6,11 @@
 #include <utility>
 
 namespace TechEngine {
-    Component::Component(GameObject* gameObject, std::string name) : gameObject(gameObject), name(std::move(name)) {
+    Component::Component(GameObject* gameObject,
+                         EventDispatcher& eventDispatcher,
+                         std::string name) : gameObject(gameObject),
+                                             eventDispatcher(eventDispatcher),
+                                             name(std::move(name)) {
     }
 
     Component::~Component() {
@@ -16,10 +20,6 @@ namespace TechEngine {
     }
 
     void Component::update() {
-    }
-
-    void Component::setGameObject(const GameObject& gameObject) {
-        *this->gameObject = gameObject;
     }
 
     void Component::Serialize(StreamWriter* stream) {

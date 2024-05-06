@@ -20,7 +20,7 @@ namespace TechEngine {
                 gameObjects.push_back(std::make_shared<GameObjectAPI>(gameObject));
             }
         }
-        EventDispatcher::getInstance().dispatch(new OnCollisionEvent(gameObjects));
+        eventDispatcher.dispatch(new OnCollisionEvent(gameObjects));
     }
 
     void PhysicsCallback::onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count) {

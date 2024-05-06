@@ -5,7 +5,7 @@
 namespace TechEngine {
     class NetworkSync : public Component {
     public:
-        explicit NetworkSync(GameObject* gameObject);
+        explicit NetworkSync(GameObject* gameObject, EventDispatcher& eventDispatcher);
 
         ~NetworkSync() override;
 

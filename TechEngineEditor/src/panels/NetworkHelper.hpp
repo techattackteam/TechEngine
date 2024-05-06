@@ -9,7 +9,7 @@ namespace TechEngine {
         NetworkEngine& networkEngine;
 
     public:
-        NetworkHelper(NetworkEngine& networkEngine);
+        NetworkHelper(NetworkEngine& networkEngine, EventDispatcher& eventDispatcher);
 
         ~NetworkHelper() override;
 

@@ -5,13 +5,13 @@
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    CylinderCollider::CylinderCollider(GameObject* gameObject) : Collider(gameObject, "CylinderCollider") {
+    CylinderCollider::CylinderCollider(GameObject* gameObject, EventDispatcher& eventDispatcher) : Collider(gameObject, eventDispatcher, "CylinderCollider") {
         this->gameObject = gameObject;
         this->radius = 0.5f;
         this->height = 1.0f;
     }
 
-    CylinderCollider::CylinderCollider(GameObject* gameObject, glm::vec3 offset, float radius, float height) : Collider(gameObject, "CylinderCollider"), radius(radius), height(height) {
+    CylinderCollider::CylinderCollider(GameObject* gameObject, EventDispatcher& eventDispatcher, glm::vec3 offset, float radius, float height) : Collider(gameObject, eventDispatcher, "CylinderCollider"), radius(radius), height(height) {
         this->offset = offset;
     }
 
@@ -22,7 +22,7 @@ namespace TechEngine {
 
     void CylinderCollider::setRadius(float radius) {
         this->radius = radius;
-        EventDispatcher::getInstance().dispatch(new AddColliderEvent(this));
+        eventDispatcher.dispatch(new AddColliderEvent(this));
     }
 
     float CylinderCollider::getHeight() const {
@@ -31,12 +31,12 @@ namespace TechEngine {
 
     void CylinderCollider::setHeight(float height) {
         this->height = height;
-        EventDispatcher::getInstance().dispatch(new AddColliderEvent(this));
+        eventDispatcher.dispatch(new AddColliderEvent(this));
     }
 
     Component* CylinderCollider::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
         CylinderCollider* collider = (CylinderCollider*)componentToCopy;
-        auto* component = new CylinderCollider(gameObjectToAttach, collider->offset, collider->radius, collider->height);
+        auto* component = new CylinderCollider(gameObjectToAttach, eventDispatcher, collider->offset, collider->radius, collider->height);
         return component;
     }
 }

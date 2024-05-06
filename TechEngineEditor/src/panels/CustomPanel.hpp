@@ -7,15 +7,13 @@
 namespace TechEngine {
     class CustomPanel : public Panel {
     protected:
-        ImGuiContext *imGuiContext;
-    public:
+        ImGuiContext* imGuiContext;
 
-        CustomPanel(const std::string &name);
+    public:
+        CustomPanel(const std::string& name, EventDispatcher& eventDispatcher);
 
         ~CustomPanel() override;
 
-        void setupImGuiContext(ImGuiContext *imGuiContext);
+        void setupImGuiContext(ImGuiContext* imGuiContext);
     };
 }
-
-

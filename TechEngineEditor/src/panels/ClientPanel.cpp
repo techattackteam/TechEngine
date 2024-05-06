@@ -5,16 +5,17 @@
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
-    ClientPanel::ClientPanel(PanelsManager& panelsManager,
-                             Client& client,
+    ClientPanel::ClientPanel(Client& client,
+                             EventDispatcher& eventDispatcher,
+                             PanelsManager& panelsManager,
                              ProjectManager& projectManager) : client(client),
                                                                projectManager(projectManager),
                                                                panelsManager(panelsManager),
-                                                               gameView(client.renderer, client.sceneManager.getScene()),
-                                                               inspectorPanel("Client Inspector", sceneHierarchyPanel.getSelectedGO(), client.materialManager, client.physicsEngine),
-                                                               sceneView("Client Scene", client.renderer, client.sceneManager.getScene(), client.physicsEngine, sceneHierarchyPanel.getSelectedGO()),
-                                                               sceneHierarchyPanel("Client Scene Hierarchy", client.sceneManager.getScene(), client.materialManager),
-                                                               Panel("ClientPanel") {
+                                                               gameView(eventDispatcher, client.renderer, client.sceneManager.getScene()),
+                                                               inspectorPanel("Client Inspector", eventDispatcher, sceneHierarchyPanel.getSelectedGO(), client.materialManager, client.physicsEngine),
+                                                               sceneView("Client Scene", client.renderer, client.sceneManager.getScene(), client.physicsEngine, eventDispatcher, sceneHierarchyPanel.getSelectedGO()),
+                                                               sceneHierarchyPanel("Client Scene Hierarchy", eventDispatcher, client.sceneManager.getScene(), client.materialManager),
+                                                               Panel("ClientPanel", eventDispatcher) {
     }
 
     void ClientPanel::onUpdate() {
@@ -82,7 +83,7 @@ namespace TechEngine {
         panelsManager.compileClientUserScripts(RELEASEDEBUG, , PROJECT_CLIENT);
 #endif
         client.sceneManager.saveSceneAsTemporarily(projectManager.getProjectCachePath().string(), PROJECT_CLIENT);
-        EventDispatcher::getInstance().copy();
+        client.eventDispatcher.copy();
         client.materialManager.copy();
         ScriptEngine::getInstance()->init(projectManager.getClientUserScriptsDLLPath().string());
         ScriptEngine::getInstance()->onStart();
@@ -92,7 +93,7 @@ namespace TechEngine {
 
     void ClientPanel::stopRunningScene() {
         client.physicsEngine.stop();
-        EventDispatcher::getInstance().restoreCopy();
+        client.eventDispatcher.restoreCopy();
         client.materialManager.restoreCopy();
         client.sceneManager.loadSceneFromTemporarily(projectManager.getProjectCachePath().string(), PROJECT_CLIENT);
         sceneHierarchyPanel.getSelectedGO().clear();

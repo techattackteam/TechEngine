@@ -1,13 +1,17 @@
 #pragma once
 
-#include <unordered_map>
-#include <string>
+
+#include "eventSystem/EventDispatcher.hpp"
 #include "Material.hpp"
 #include "texture/TextureManager.hpp"
+
+#include <unordered_map>
+#include <string>
 
 namespace TechEngine {
     class MaterialManager {
     private:
+        EventDispatcher& eventDispatcher;
         TextureManager& m_textureManager;
         std::unordered_map<std::string, Material> m_materialsBank = std::unordered_map<std::string, Material>();
 
@@ -20,7 +24,7 @@ namespace TechEngine {
         MaterialManager* m_copy = nullptr;
 
     public:
-        explicit MaterialManager(TextureManager& textureManager);
+        explicit MaterialManager(EventDispatcher& eventDispatcher, TextureManager& textureManager);
 
         void init(const std::vector<std::string>& materialsFilePaths);
 

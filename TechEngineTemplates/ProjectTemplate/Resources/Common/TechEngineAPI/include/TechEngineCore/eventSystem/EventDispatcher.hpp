@@ -9,7 +9,6 @@
 namespace TechEngine {
     class EventDispatcher {
     protected:
-        inline static EventDispatcher* instance;
         bool isCopy = false;
         EventDispatcher* m_copy = nullptr;
 
@@ -18,15 +17,13 @@ namespace TechEngine {
         FixedSyncEventManager fixedSyncEventManager{};
         AsyncEventManager asyncEventManager{};
 
-        EventDispatcher(bool isCopy = false);
+        EventDispatcher();
 
         void subscribe(const EventType& type, const std::function<void(Event*)>& callback);
 
         void unsubscribe(const EventType& type, const std::function<void(Event*)>& callback);
 
         void dispatch(Event* event);
-
-        static EventDispatcher& getInstance();
 
         void copy();
 

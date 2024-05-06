@@ -14,6 +14,7 @@ namespace TechEngine {
         };
 
     private:
+        EventDispatcher& eventDispatcher;
         ConnectionStatus connectionStatus = ConnectionStatus::Disconnected;
         std::string connectionDebugMessage;
 
@@ -26,7 +27,7 @@ namespace TechEngine {
         Scene& scene;
 
     public:
-        explicit NetworkEngine(Scene& scene);
+        explicit NetworkEngine(EventDispatcher& eventDispatcher, Scene& scene);
 
         ~NetworkEngine();
 

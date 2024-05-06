@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <filesystem>
 
 namespace TechEngine {
     class Script {
@@ -27,13 +28,13 @@ namespace TechEngine {
     };
 }
 
-#define RegisterScript(Type)                                    \
-    namespace {                                                 \
-        TechEngine::Script *createScript() {                    \
-            TechEngine::Script *script = new Type();            \
-            TechEngine::ScriptEngine::registerScript(script);   \
-            return script;                                      \
-    }                                                           \
-                                                                \
-    TechEngine::Script *registery = createScript();             \
+#define RegisterScript(Type)                                                                    \
+    namespace {                                                                                 \
+        TechEngine::Script *createScript() {                                                    \
+            TechEngine::Script *script = new Type();                                            \
+            TechEngine::ScriptEngine::registerScript(script, std::filesystem::current_path());  \
+            return script;                                                                      \
+    }                                                                                           \
+                                                                                                \
+    TechEngine::Script *registery = createScript();                                             \
 };

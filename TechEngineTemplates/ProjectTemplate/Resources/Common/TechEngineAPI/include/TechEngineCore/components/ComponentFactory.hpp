@@ -3,5 +3,5 @@
 
 
 namespace TechEngine::ComponentFactory {
-    Component* createComponent(std::string name, GameObject* gameObject);
+    Component* createComponent(std::string name, GameObject* gameObject, EventDispatcher& eventDispatcher);
 }

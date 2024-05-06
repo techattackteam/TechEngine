@@ -2,11 +2,10 @@
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
-    Client::Client(std::string name, int width, int height) : AppCore(),
-                                                              window(name, width, height),
-                                                              renderer(),
-                                                              networkEngine(sceneManager.getScene()),
-                                                              api(&networkEngine) {
+    Client::Client(Window& window) : window(window),
+                                     renderer(),
+                                     networkEngine(eventDispatcher, sceneManager.getScene()),
+                                     api(&networkEngine) {
         eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event* event) {
             onWindowCloseEvent((WindowCloseEvent*)(event));
         });

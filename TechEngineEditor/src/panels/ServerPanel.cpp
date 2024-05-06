@@ -2,16 +2,20 @@
 
 #include "core/Client.hpp"
 #include "PanelsManager.hpp"
+#include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
     ServerPanel::ServerPanel(PanelsManager& panelsManager,
+                             EventDispatcher& eventDispatcher,
                              Server& server,
+                             ProjectManager& projectManager,
                              Renderer& renderer) : server(server),
                                                    panelsManager(panelsManager),
-                                                   inspectorPanel("Server Inspector", sceneHierarchyPanel.getSelectedGO(), server.materialManager, server.physicsEngine),
-                                                   sceneView("Server Scene", renderer, server.sceneManager.getScene(), server.physicsEngine, sceneHierarchyPanel.getSelectedGO()),
-                                                   sceneHierarchyPanel("Server Scene Hierarchy", server.sceneManager.getScene(), server.materialManager),
-                                                   Panel("ServerPanel") {
+                                                   projectManager(projectManager),
+                                                   inspectorPanel("Server Inspector", eventDispatcher, sceneHierarchyPanel.getSelectedGO(), server.materialManager, server.physicsEngine),
+                                                   sceneView("Server Scene", renderer, server.sceneManager.getScene(), server.physicsEngine, eventDispatcher, sceneHierarchyPanel.getSelectedGO()),
+                                                   sceneHierarchyPanel("Server Scene Hierarchy", eventDispatcher, server.sceneManager.getScene(), server.materialManager),
+                                                   Panel("ServerPanel", eventDispatcher) {
     }
 
     void ServerPanel::onUpdate() {
@@ -67,5 +71,39 @@ namespace TechEngine {
         ImGui::PopStyleColor(3);
 
         ImGui::End();
+    }
+
+    bool ServerPanel::isRunning() const {
+        return m_currentPlaying;
+    }
+
+    void ServerPanel::startRunningScene() {
+#ifdef TE_DEBUG
+        panelsManager.compileUserScripts(DEBUG, PROJECT_SERVER);
+#else
+        panelsManager.compileClientUserScripts(RELEASEDEBUG, PROJECT_SERVER);
+#endif
+        server.sceneManager.saveCurrentScene();
+        server.eventDispatcher.copy();
+        server.materialManager.copy();
+        ScriptEngine::getInstance()->init(projectManager.getClientUserScriptsDLLPath().string());
+        ScriptEngine::getInstance()->onStart();
+        server.physicsEngine.start();
+        m_currentPlaying = true;
+    }
+
+    void ServerPanel::stopRunningScene() {
+        server.physicsEngine.stop();
+        server.eventDispatcher.restoreCopy(); //PROBLEM: EventDispatcher is a singleton while there is a client and server instance
+        server.materialManager.restoreCopy();
+        server.sceneManager.loadSceneFromTemporarily(projectManager.getProjectCachePath().string(), PROJECT_CLIENT);
+        sceneHierarchyPanel.getSelectedGO().clear();
+        for (GameObject* gameObject: server.sceneManager.getScene().getGameObjects()) {
+            if (std::find(sceneHierarchyPanel.getSelectedGO().begin(), sceneHierarchyPanel.getSelectedGO().end(), gameObject) != sceneHierarchyPanel.getSelectedGO().end()) {
+                sceneHierarchyPanel.selectGO(gameObject);
+            }
+        }
+        m_currentPlaying = false;
+        ScriptEngine::getInstance()->stop(); //PROBLEM: ScriptEngine is a singleton while there is a client and server instance
     }
 }

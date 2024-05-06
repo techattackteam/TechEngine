@@ -25,7 +25,7 @@ namespace TechEngine::SceneSynchronizer {
         stream.readString(tag);
         GameObject* gameObject;
         if (scene.getGameObject(name) == nullptr) {
-            gameObject = &scene.registerGameObject<GameObject>(name, tag);
+            gameObject = &scene.registerGameObject(name, tag);
         } else {
             gameObject = scene.getGameObject(name);
         }
