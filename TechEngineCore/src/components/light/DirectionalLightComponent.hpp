@@ -14,18 +14,16 @@ namespace TechEngine {
         glm::mat4 projectionMatrix = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f);
 
     public:
-        DirectionalLightComponent(GameObject *gameObject);
+        DirectionalLightComponent(GameObject* gameObject, EventDispatcher& eventDispatcher);
 
         void fixedUpdate() override;
 
-        glm::mat4 &getProjectionMatrix();
+        glm::mat4& getProjectionMatrix();
 
-        glm::mat4 &getViewMatrix();
+        glm::mat4& getViewMatrix();
 
-        glm::vec4 &getColor();
+        glm::vec4& getColor();
 
         Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) override;
     };
 }
-
-

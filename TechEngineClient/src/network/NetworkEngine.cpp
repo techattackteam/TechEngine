@@ -17,7 +17,7 @@
 #include "scene/GameObject.hpp"
 
 namespace TechEngine {
-    NetworkEngine::NetworkEngine(Scene& scene) : scene(scene) {
+    NetworkEngine::NetworkEngine(EventDispatcher& eventDispatcher, Scene& scene) : eventDispatcher(eventDispatcher), scene(scene) {
     }
 
     NetworkEngine::~NetworkEngine() {
@@ -264,7 +264,7 @@ namespace TechEngine {
                 self->connectionStatus = ConnectionStatus::Connected;
                 TE_LOGGER_INFO("Connected to remote host");
                 self->sendMessage("Hello from client");
-                EventDispatcher::getInstance().dispatch(new ConnectionEstablishedEvent());
+            //eventDispatcher.dispatch(new ConnectionEstablishedEvent());
                 break;
 
             default:
@@ -319,11 +319,11 @@ namespace TechEngine {
                 break;
             }
             case PacketType::ClientKick: {
-                EventDispatcher::getInstance().dispatch(new ClientKickEvent());
+                eventDispatcher.dispatch(new ClientKickEvent());
                 break;
             }
             case PacketType::ClientBan: {
-                EventDispatcher::getInstance().dispatch(new ClientBanEvent());
+                eventDispatcher.dispatch(new ClientBanEvent());
                 break;
             }
             case PacketType::SyncGameObject: {

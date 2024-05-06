@@ -9,20 +9,20 @@
 #include "events/input/MouseScrollEvent.hpp"
 
 namespace TechEngine {
-    Panel::Panel(const std::string& name) : name(name), keysPressed() {
-        EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event* event) {
+    Panel::Panel(const std::string& name, EventDispatcher& eventDispatcher) : name(name), keysPressed() {
+        eventDispatcher.subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event* event) {
             onKeyPressedEvent(((KeyPressedEvent*)event)->getKey());
         });
 
-        EventDispatcher::getInstance().subscribe(KeyReleasedEvent::eventType, [this](TechEngine::Event* event) {
+        eventDispatcher.subscribe(KeyReleasedEvent::eventType, [this](TechEngine::Event* event) {
             onKeyReleasedEvent(((KeyReleasedEvent*)event)->getKey());
         });
 
-        EventDispatcher::getInstance().subscribe(MouseMoveEvent::eventType, [this](TechEngine::Event* event) {
+        eventDispatcher.subscribe(MouseMoveEvent::eventType, [this](TechEngine::Event* event) {
             onMouseMoveEvent(((MouseMoveEvent*)event)->getDelta());
         });
 
-        EventDispatcher::getInstance().subscribe(MouseScrollEvent::eventType, [this](TechEngine::Event* event) {
+        eventDispatcher.subscribe(MouseScrollEvent::eventType, [this](TechEngine::Event* event) {
             onMouseScrollEvent(((MouseScrollEvent*)event)->getXOffset(), ((MouseScrollEvent*)event)->getYOffset());
         });
     }

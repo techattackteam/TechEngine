@@ -11,23 +11,23 @@
 #include "render/MeshRendererComponent.hpp"
 
 namespace TechEngine::ComponentFactory {
-    Component* createComponent(std::string name, GameObject* gameObject) {
+    Component* createComponent(std::string name, GameObject* gameObject, EventDispatcher& eventDispatcher) {
         if (name == typeid(TransformComponent).name()) {
-            return new TransformComponent(gameObject);
+            return new TransformComponent(gameObject, eventDispatcher);
         } else if (name == typeid(CameraComponent).name()) {
-            return new CameraComponent(gameObject);
+            return new CameraComponent(gameObject, eventDispatcher);
         } else if (name == typeid(MeshRendererComponent).name()) {
-            return new MeshRendererComponent(gameObject);
+            return new MeshRendererComponent(gameObject, eventDispatcher);
         } else if (name == typeid(BoxColliderComponent).name()) {
-            return new BoxColliderComponent(gameObject);
+            return new BoxColliderComponent(gameObject, eventDispatcher);
         } else if (name == typeid(CylinderCollider).name()) {
-            return new CylinderCollider(gameObject);
+            return new CylinderCollider(gameObject, eventDispatcher);
         } else if (name == typeid(SphereCollider).name()) {
-            return new SphereCollider(gameObject);
+            return new SphereCollider(gameObject, eventDispatcher);
         } else if (name == typeid(RigidBody).name()) {
-            return new RigidBody(gameObject);
+            return new RigidBody(gameObject, eventDispatcher);
         } else if (name == typeid(NetworkSync).name()) {
-            return new NetworkSync(gameObject);
+            return new NetworkSync(gameObject, eventDispatcher);
         } else {
             TE_LOGGER_ERROR("ComponentFactory: Component not found: {0}", name);
             return nullptr;

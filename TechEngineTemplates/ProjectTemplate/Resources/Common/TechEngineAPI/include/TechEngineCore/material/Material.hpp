@@ -1,11 +1,16 @@
 #pragma once
 
-#include <glm/glm.hpp>
+
+#include "eventSystem/EventDispatcher.hpp"
 #include "texture/Texture.hpp"
+
+#include <glm/glm.hpp>
 
 namespace TechEngine {
     class Material {
     private:
+        EventDispatcher& eventDispatcher;
+
         std::string name;
 
         glm::vec3 ambient;
@@ -20,9 +25,9 @@ namespace TechEngine {
         Texture* diffuseTexture = nullptr;
 
     public:
-        Material(std::string name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
+        Material(EventDispatcher& eventDispatcher, std::string name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
 
-        Material(const std::string& name, Texture* diffuse);
+        Material(EventDispatcher& eventDispatcher, const std::string& name, Texture* diffuse);
 
         const std::string& getName();
 

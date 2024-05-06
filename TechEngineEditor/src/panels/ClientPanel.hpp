@@ -25,9 +25,10 @@ namespace TechEngine {
         InspectorPanel inspectorPanel;
         SceneHierarchyPanel sceneHierarchyPanel;
         bool m_currentPlaying = false;
+        friend class PanelsManager;
 
     public:
-        ClientPanel(PanelsManager& panelsManager, Client& client, ProjectManager& projectManager);
+        ClientPanel(Client& client, EventDispatcher& eventDispatcher, PanelsManager& panelsManager, ProjectManager& projectManager);
 
         void onUpdate() override;
 
@@ -39,6 +40,10 @@ namespace TechEngine {
 
         SceneView& getSceneView() {
             return sceneView;
+        }
+
+        const bool& isRunning() const {
+            return m_currentPlaying;
         }
 
     private:

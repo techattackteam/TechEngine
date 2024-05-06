@@ -1,14 +1,17 @@
 #pragma once
 
-#include <string>
-#include <unordered_map>
 
 #include "core/Core.hpp"
 #include "core/FilePaths.hpp"
-#include "physics/PhysicsEngine.hpp"
-#include "yaml-cpp/node/node.h"
 #include "scene/Scene.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "physics/PhysicsEngine.hpp"
 #include "material/MaterialManager.hpp"
+
+
+#include <string>
+#include <unordered_map>
+#include "yaml-cpp/node/node.h"
 
 namespace TechEngine {
     class ProjectManager;
@@ -16,6 +19,7 @@ namespace TechEngine {
     class SceneManager {
     private:
         Scene scene;
+        EventDispatcher& eventDispatcher;
         PhysicsEngine& physicsEngine;
         MaterialManager& materialManager;
         TextureManager& textureManager;
@@ -25,7 +29,11 @@ namespace TechEngine {
         std::string m_activeSceneName;
 
     public:
-        SceneManager(PhysicsEngine& physicsEngine, MaterialManager& materialManager, TextureManager& textureManager, FilePaths& filePaths);
+        SceneManager(EventDispatcher& eventDispatcher,
+                     PhysicsEngine& physicsEngine,
+                     MaterialManager& materialManager,
+                     TextureManager& textureManager,
+                     FilePaths& filePaths);
 
         void init(const std::vector<std::string>& scenes);
 

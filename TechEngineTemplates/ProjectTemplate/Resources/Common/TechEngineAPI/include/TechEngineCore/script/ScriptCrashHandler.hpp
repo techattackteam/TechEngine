@@ -78,7 +78,7 @@ namespace TechEngine {
             name = "";
         }
         logException(ep, name);
-        EventDispatcher::getInstance().dispatch(new ScriptCrashEvent());
+        //eventDispatcher.dispatch(new ScriptCrashEvent());
         if (code == EXCEPTION_ACCESS_VIOLATION) {
             return EXCEPTION_EXECUTE_HANDLER;
         } else {

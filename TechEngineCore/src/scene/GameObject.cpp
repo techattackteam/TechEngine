@@ -1,32 +1,31 @@
 #include "GameObject.hpp"
-
-#include <utility>
-#include "eventSystem/EventDispatcher.hpp"
-#include "components/TransformComponent.hpp"
-#include "Scene.hpp"
-#include <iostream>
-
 #include "components/ComponentFactory.hpp"
+#include "components/TransformComponent.hpp"
+
+#include "eventSystem/EventDispatcher.hpp"
 #include "events/gameObjects/GameObjectCreateEvent.hpp"
 #include "events/gameObjects/GameObjectDestroyEvent.hpp"
 
+#include <utility>
+#include <iostream>
+
 namespace TechEngine {
-    GameObject::GameObject(std::string name) : name(std::move(name)) {
+    GameObject::GameObject(std::string name, EventDispatcher& eventDispatcher) : eventDispatcher(eventDispatcher), name(std::move(name)) {
         addComponent<TransformComponent>();
-        EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
+        eventDispatcher.dispatch(new GameObjectCreateEvent(this));
     }
 
-    GameObject::GameObject(std::string name, const std::string& tag) : name(std::move(name)), tag(tag) {
+    GameObject::GameObject(std::string name, const std::string& tag, EventDispatcher& eventDispatcher) : eventDispatcher(eventDispatcher), name(std::move(name)), tag(tag) {
         addComponent<TransformComponent>();
-        EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
+        eventDispatcher.dispatch(new GameObjectCreateEvent(this));
     }
 
-    GameObject::GameObject(GameObject* gameObject, const std::string& tag): tag(tag) {
+    GameObject::GameObject(GameObject* gameObject, const std::string& tag, EventDispatcher& eventDispatcher): eventDispatcher(eventDispatcher), tag(tag) {
         name = gameObject->name + "(copy)";
         for (auto& element: gameObject->components) {
             components[element.first] = element.second->copy(this, element.second);
         }
-        EventDispatcher::getInstance().dispatch(new GameObjectCreateEvent(this));
+        eventDispatcher.dispatch(new GameObjectCreateEvent(this));
     }
 
     GameObject::~GameObject() {
@@ -34,7 +33,7 @@ namespace TechEngine {
             parent->removeChild(tag);
         }
         deleteChildren();
-        EventDispatcher::getInstance().dispatch(new GameObjectDestroyEvent(tag));
+        eventDispatcher.dispatch(new GameObjectDestroyEvent(tag));
     }
 
     void GameObject::fixUpdate() {
@@ -152,7 +151,7 @@ namespace TechEngine {
         for (int i = 0; i < componentsSize; i++) {
             std::string componentName;
             stream->readString(componentName);
-            Component* component = ComponentFactory::createComponent(componentName, &gameObject);
+            Component* component = ComponentFactory::createComponent(componentName, &gameObject, gameObject.eventDispatcher);
             component->Deserialize(stream);
             gameObject.components[componentName] = component;
         }

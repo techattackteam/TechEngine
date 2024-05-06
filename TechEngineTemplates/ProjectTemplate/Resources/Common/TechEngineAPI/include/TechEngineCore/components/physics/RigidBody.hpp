@@ -9,7 +9,7 @@ namespace TechEngine {
         float density = 0.1f;
 
     public:
-        RigidBody(GameObject* gameObject);
+        RigidBody(GameObject* gameObject, EventDispatcher& eventDispatcher);
 
         void setMass(float mass);
 

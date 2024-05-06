@@ -4,15 +4,14 @@
 #include "components/render/CameraComponent.hpp"
 #include "renderer/Renderer.hpp"
 #include "UIUtils/Guizmo.hpp"
-#include "core/SceneCamera.hpp"
 #include "core/Key.hpp"
-#include "core/Core.hpp"
 
 namespace TechEngine {
     class SceneView : public Panel {
         uint32_t frameBufferID;
         Renderer* renderer;
-        SceneCamera* sceneCamera;
+        EventDispatcher& eventDispatcher;
+        GameObject* sceneCamera;
         Guizmo guizmo;
 
         Scene& scene;
@@ -23,11 +22,16 @@ namespace TechEngine {
         bool moving = false;
         bool isWindowHovered = false;
         int id;
-        inline TECHENGINE_API static int lastUsingId = -1;
+        inline static int lastUsingId = -1;
         inline static int totalIds = 0;
 
     public:
-        SceneView(const std::string& name, Renderer& renderer, Scene& scene, PhysicsEngine& physicsEngine, std::vector<GameObject*>& selectedGO);
+        SceneView(const std::string& name,
+                  Renderer& renderer,
+                  Scene& scene,
+                  PhysicsEngine& physicsEngine,
+                  EventDispatcher& eventDispatcher,
+                  std::vector<GameObject*>& selectedGO);
 
         ~SceneView();
 
@@ -39,7 +43,7 @@ namespace TechEngine {
 
         int getGuizmoMode() const;
 
-        SceneCamera* getSceneCamera() const {
+        GameObject* getSceneCamera() const {
             return sceneCamera;
         }
 

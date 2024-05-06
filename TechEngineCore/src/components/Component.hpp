@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "eventSystem/EventDispatcher.hpp"
 #include "serialization/BufferStream.hpp"
 
 namespace TechEngine {
@@ -12,9 +13,10 @@ namespace TechEngine {
     protected:
         std::string name;
         GameObject* gameObject;
+        EventDispatcher& eventDispatcher;
 
     public:
-        Component(GameObject* gameObject, std::string name);
+        Component(GameObject* gameObject, EventDispatcher& eventDispatcher, std::string name);
 
         virtual ~Component();
 
@@ -27,8 +29,6 @@ namespace TechEngine {
         virtual std::string& getName() {
             return name;
         }
-
-        void setGameObject(const GameObject& gameObject);
 
         virtual void Serialize(StreamWriter* stream);
 

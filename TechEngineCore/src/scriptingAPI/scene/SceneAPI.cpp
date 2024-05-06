@@ -7,7 +7,7 @@ namespace TechEngine {
     }
 
     std::shared_ptr<GameObjectAPI> SceneAPI::createGameObject(const std::string& name) {
-        return std::make_shared<GameObjectAPI>(&scene->createGameObject<GameObject>(name));
+        return std::make_shared<GameObjectAPI>(&scene->createGameObject(name));
     }
 
     std::shared_ptr<GameObjectAPI> SceneAPI::getGameObject(const std::string& name) {

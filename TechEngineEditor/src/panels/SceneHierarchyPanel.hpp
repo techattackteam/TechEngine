@@ -15,7 +15,7 @@ namespace TechEngine {
         bool isCtrlPressed = false;
 
     public:
-        SceneHierarchyPanel(const std::string& name, Scene& scene, MaterialManager& materialManager/*, SceneView& sceneView*/);
+        SceneHierarchyPanel(const std::string& name, EventDispatcher& eventDispatcher, Scene& scene, MaterialManager& materialManager/*, SceneView& sceneView*/);
 
         void onUpdate() override;
 

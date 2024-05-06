@@ -1,10 +1,7 @@
 #include "EventDispatcher.hpp"
 
 namespace TechEngine {
-    EventDispatcher::EventDispatcher(bool isCopy) : isCopy(isCopy) {
-        if (!isCopy) {
-            instance = this;
-        }
+    EventDispatcher::EventDispatcher() {
     }
 
     void EventDispatcher::subscribe(const EventType& eventType, const std::function<void(Event*)>& callback) {
@@ -39,15 +36,10 @@ namespace TechEngine {
         }
     }
 
-    EventDispatcher& EventDispatcher::getInstance() {
-        if (instance == nullptr)
-            instance = new EventDispatcher();
-        return *instance;
-    }
 
     void EventDispatcher::copy() {
         delete m_copy;
-        m_copy = new EventDispatcher(true);
+        m_copy = new EventDispatcher();
         m_copy->syncEventManager = syncEventManager;
         m_copy->fixedSyncEventManager = fixedSyncEventManager;
         m_copy->asyncEventManager = asyncEventManager;

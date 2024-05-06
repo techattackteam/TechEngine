@@ -1,14 +1,14 @@
 #include "SceneHierarchyPanel.hpp"
 #include "PanelsManager.hpp"
-#include "defaultGameObject/Cube.hpp"
-#include "defaultGameObject/Sphere.hpp"
-#include "defaultGameObject/Cylinder.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
 
 namespace TechEngine {
-    SceneHierarchyPanel::SceneHierarchyPanel(const std::string& name, Scene& scene, MaterialManager& materialManager/*, SceneView& sceneView*/) : scene(scene),
-                                                                                                                                                  materialManager(materialManager),
-                                                                                                                                                  /*sceneView(sceneView),*/ Panel(name) {
+    SceneHierarchyPanel::SceneHierarchyPanel(const std::string& name,
+                                             EventDispatcher& eventDispatcher,
+                                             Scene& scene,
+                                             MaterialManager& materialManager/*, SceneView& sceneView*/) : scene(scene),
+                                                                                                           materialManager(materialManager),
+                                                                                                           /*sceneView(sceneView),*/ Panel(name, eventDispatcher) {
     }
 
     void SceneHierarchyPanel::onUpdate() {
@@ -35,16 +35,19 @@ namespace TechEngine {
             if (!isItemHovered && ImGui::BeginPopupContextWindow()) {
                 if (ImGui::BeginMenu("Create")) {
                     if (ImGui::MenuItem("Empty")) {
-                        scene.createGameObject<GameObject>("Empty");
+                        scene.createGameObject("Empty");
                     }
                     if (ImGui::MenuItem("Cube")) {
-                        scene.createGameObject<Cube>(&materialManager.getMaterial("DefaultMaterial"));
+                        GameObject& gameObject = scene.createGameObject("Cube");
+                        gameObject.addComponent<MeshRendererComponent>();
                     }
                     if (ImGui::MenuItem("Sphere")) {
-                        scene.createGameObject<Sphere>(&materialManager.getMaterial("DefaultMaterial"));
+                        GameObject& gameObject = scene.createGameObject("Sphere");
+                        gameObject.addComponent<MeshRendererComponent>();
                     }
                     if (ImGui::MenuItem("Cylinder")) {
-                        scene.createGameObject<Cylinder>(&materialManager.getMaterial("DefaultMaterial"));
+                        GameObject& gameObject = scene.createGameObject("Cylinder");
+                        gameObject.addComponent<MeshRendererComponent>();
                     }
                     ImGui::EndMenu();
                 }
@@ -105,7 +108,7 @@ namespace TechEngine {
                 gameObject->setName(name);
             }
             if (ImGui::MenuItem("Make Child (WIP)")) {
-                GameObject& child = scene.createGameObject<GameObject>(gameObject->getName() + "'s Child");
+                GameObject& child = scene.createGameObject(gameObject->getName() + "'s Child");
                 scene.makeChildTo(gameObject, &child);
             }
             if (ImGui::MenuItem("Duplicate")) {
@@ -162,7 +165,7 @@ namespace TechEngine {
                 }
             } else if (key.getKeyCode() == KeyCode::W) {
                 if (!selectedGO.empty()) {
-                    GameObject& child = scene.createGameObject<GameObject>(selectedGO.front()->getName() + "'s Child");
+                    GameObject& child = scene.createGameObject(selectedGO.front()->getName() + "'s Child");
                     scene.makeChildTo(selectedGO.front(), &child);
                 }
             }

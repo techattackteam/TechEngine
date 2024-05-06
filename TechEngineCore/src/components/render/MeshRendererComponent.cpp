@@ -3,13 +3,18 @@
 #include "scriptingAPI/material/MaterialManagerAPI.hpp"
 
 namespace TechEngine {
-    MeshRendererComponent::MeshRendererComponent(GameObject* gameObject) : mesh(new CubeMesh()), Component(gameObject, "MeshRenderer") {
+    MeshRendererComponent::MeshRendererComponent(GameObject* gameObject, EventDispatcher& eventDispatcher) : mesh(new CubeMesh()), Component(gameObject, eventDispatcher, "MeshRenderer") {
         std::string name = "DefaultMaterial";
         m_material = MaterialManagerAPI::getMaterial(name);
         paintMesh();
     }
 
-    MeshRendererComponent::MeshRendererComponent(GameObject* gameObject, Mesh* mesh, Material* material) : mesh(mesh), m_material(material), Component(gameObject, "MeshRenderer") {
+    MeshRendererComponent::MeshRendererComponent(GameObject* gameObject,
+                                                 EventDispatcher& eventDispatcher,
+                                                 Mesh* mesh,
+                                                 Material* material) : mesh(mesh),
+                                                                       m_material(material),
+                                                                       Component(gameObject, eventDispatcher, "MeshRenderer") {
         paintMesh();
     }
 
@@ -55,7 +60,7 @@ namespace TechEngine {
     Component* MeshRendererComponent::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
         MeshRendererComponent* meshRenderer = (MeshRendererComponent*)componentToCopy;
         Mesh* mesh = new Mesh(meshRenderer->getVertices(), meshRenderer->getIndices());
-        auto* newComponent = new MeshRendererComponent(gameObjectToAttach, mesh, m_material);
+        auto* newComponent = new MeshRendererComponent(gameObjectToAttach, eventDispatcher, mesh, m_material);
         return newComponent;
     }
 

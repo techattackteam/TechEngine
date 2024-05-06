@@ -11,11 +11,14 @@
 #include "core/Logger.hpp"
 
 namespace TechEngine {
-    ExportSettingsPanel::ExportSettingsPanel(PanelsManager& panelsManager, ProjectManager& projectManager, SceneManager& sceneManager, ShadersManager& shadersManager) : panelsManager(panelsManager),
-                                                                                                                                                                         projectManager(projectManager),
-                                                                                                                                                                         sceneManager(sceneManager),
-                                                                                                                                                                         shadersManager(shadersManager),
-                                                                                                                                                                         Panel("ExportSettingsPanel") {
+    ExportSettingsPanel::ExportSettingsPanel(EventDispatcher& eventDispatcher, PanelsManager& panelsManager,
+                                             ProjectManager& projectManager,
+                                             SceneManager& sceneManager,
+                                             ShadersManager& shadersManager) : panelsManager(panelsManager),
+                                                                               projectManager(projectManager),
+                                                                               sceneManager(sceneManager),
+                                                                               shadersManager(shadersManager),
+                                                                               Panel("ExportSettingsPanel", eventDispatcher) {
         m_open = false;
     }
 

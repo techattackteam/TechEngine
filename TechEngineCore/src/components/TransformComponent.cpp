@@ -6,8 +6,12 @@
 #include "scene/GameObject.hpp"
 
 namespace TechEngine {
-    TransformComponent::TransformComponent(GameObject* gameObject)
-        : position(glm::vec3(0, 0, 0)), orientation(glm::vec3(0, 0, 0)), scale(glm::vec3(1, 1, 1)), model(glm::mat4(1.0f)), Component(gameObject, "TransformComponent") {
+    TransformComponent::TransformComponent(GameObject* gameObject, EventDispatcher& eventDispatcher)
+        : position(glm::vec3(0, 0, 0)),
+          orientation(glm::vec3(0, 0, 0)),
+          scale(glm::vec3(1, 1, 1)),
+          model(glm::mat4(1.0f)),
+          Component(gameObject, eventDispatcher, "TransformComponent") {
         lastPosition = position;
         lastOrientation = orientation;
     }
@@ -114,7 +118,7 @@ namespace TechEngine {
 
     Component* TransformComponent::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
         TransformComponent* transformComponet = (TransformComponent*)componentToCopy;
-        TransformComponent* newComponent = new TransformComponent(gameObjectToAttach);
+        TransformComponent* newComponent = new TransformComponent(gameObjectToAttach, eventDispatcher);
         newComponent->position = transformComponet->position;
         newComponent->orientation = transformComponet->orientation;
         newComponent->scale = transformComponet->scale;

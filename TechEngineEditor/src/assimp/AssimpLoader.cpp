@@ -22,7 +22,7 @@ namespace TechEngine {
         }
 
         // Process the scene and create a game object
-        GameObject& gameObject = scene.createGameObject<GameObject>(FileSystem::getFileName(path));
+        GameObject& gameObject = scene.createGameObject(FileSystem::getFileName(path));
         std::vector<GameObject*> children = processNode(FileSystem::getFileName(path), aiScene->mRootNode, aiScene);
         TE_LOGGER_INFO("Loaded Model with {0} meshes, {1} materials and {2} textures", aiScene->mNumMeshes, aiScene->mNumMaterials, aiScene->mNumTextures);
         for (GameObject* child: children) {
@@ -42,7 +42,7 @@ namespace TechEngine {
             aiMesh* aiMesh = aiScene->mMeshes[node->mMeshes[i]];
 
             std::pair<Mesh*, Material*> processedMesh = processMesh(modelName, aiMesh, aiScene);
-            GameObject& gameObject = scene.createGameObject<GameObject>(aiMesh->mName.C_Str());
+            GameObject& gameObject = scene.createGameObject(aiMesh->mName.C_Str());
             gameObject.addComponent<MeshRendererComponent>(processedMesh.first, processedMesh.second);
             gameObject.getTransform().translateTo(glm::vec3(position.x / scaling.x, position.y / scaling.y, position.z / scaling.z));
             gameObject.getTransform().setRotation(glm::degrees(glm::vec3(rotation.x, rotation.y, rotation.z)));

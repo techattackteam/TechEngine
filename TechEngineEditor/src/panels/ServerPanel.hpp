@@ -5,21 +5,26 @@
 #include "SceneView.hpp"
 #include "core/Server.hpp"
 #include "core/Client.hpp"
+#include "project/ProjectManager.hpp"
 
 namespace TechEngine {
     class PanelsManager;
 
     class ServerPanel : public Panel {
     private:
-        PanelsManager& panelsManager;
         Server& server;
+        ProjectManager& projectManager;
+        PanelsManager& panelsManager;
+
+
         SceneView sceneView;
         InspectorPanel inspectorPanel;
         SceneHierarchyPanel sceneHierarchyPanel;
         bool m_currentPlaying = false;
+        friend class PanelsManager;
 
     public:
-        ServerPanel(PanelsManager& panelsManager, Server& server, Renderer& renderer);
+        ServerPanel(PanelsManager& panelsManager, EventDispatcher& eventDispatcher, Server& server, ProjectManager& projectManager, Renderer& renderer);
 
         void onUpdate() override;
 
@@ -28,5 +33,12 @@ namespace TechEngine {
         SceneView& getSceneView() {
             return sceneView;
         }
+
+        bool isRunning() const;
+
+    private:
+        void startRunningScene();
+
+        void stopRunningScene();
     };
 }

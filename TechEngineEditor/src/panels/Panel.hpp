@@ -14,7 +14,7 @@ namespace TechEngine {
         bool m_open = true;
 
     public:
-        explicit Panel(const std::string& name = "Panel");
+        explicit Panel(const std::string& name, EventDispatcher& eventDispatcher);
 
         virtual ~Panel();
 

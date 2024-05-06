@@ -7,7 +7,9 @@
 
 
 namespace TechEngine {
-    MaterialManager::MaterialManager(TextureManager& textureManager) : m_textureManager(textureManager) {
+    MaterialManager::MaterialManager(EventDispatcher& eventDispatcher,
+                                     TextureManager& textureManager) : eventDispatcher(eventDispatcher),
+                                                                       m_textureManager(textureManager) {
     }
 
     void MaterialManager::init(const std::vector<std::string>& materialsFilePaths) {
@@ -17,7 +19,7 @@ namespace TechEngine {
     }
 
     Material& MaterialManager::createMaterial(const std::string& name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess) {
-        Material material(name, color, ambient, diffuse, specular, shininess);
+        Material material(eventDispatcher, name, color, ambient, diffuse, specular, shininess);
         auto iterator = m_materialsBank.find(name);
         if (iterator == m_materialsBank.end()) {
             iterator = m_materialsBank.emplace(name, material).first;
@@ -26,7 +28,7 @@ namespace TechEngine {
     }
 
     Material& MaterialManager::createMaterial(const std::string& name, Texture* diffuse) {
-        Material material(name, diffuse);
+        Material material(eventDispatcher, name, diffuse);
         auto iterator = m_materialsBank.find(name);
         if (iterator == m_materialsBank.end()) {
             iterator = m_materialsBank.emplace(name, material).first;
@@ -99,12 +101,12 @@ namespace TechEngine {
 
     void MaterialManager::copy() {
         delete m_copy;
-        m_copy = new MaterialManager(m_textureManager);
-        m_copy->m_materialsBank = m_materialsBank;
+        m_copy = new MaterialManager(eventDispatcher, m_textureManager);
+        //m_copy->m_materialsBank = m_materialsBank;
     }
 
     void MaterialManager::restoreCopy() {
-        m_materialsBank = m_copy->m_materialsBank;
+        //m_materialsBank = m_copy->m_materialsBank;
         delete m_copy;
         m_copy = nullptr;
     }

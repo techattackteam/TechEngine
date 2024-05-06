@@ -6,10 +6,11 @@
 
 namespace TechEngine {
     Editor::Editor() : AppCore(),
-                       client("TechEngineEditor", 1600, 900),
+                       window(eventDispatcher, "TechEngineEditor", 1600, 900),
+                       client(window),
                        server(),
                        projectManager(client, server),
-                       panelsManager(client, server, projectManager) {
+                       panelsManager(client, server, eventDispatcher, projectManager) {
         editorSettings = FileSystem::rootPath.string() + "/EditorSettings.TESettings";
         projectManager.init();
         loadEditorSettings();
@@ -19,12 +20,14 @@ namespace TechEngine {
     }
 
     void Editor::onUpdate() {
+        eventDispatcher.syncEventManager.execute();
         client.onUpdate();
         server.onUpdate();
         panelsManager.update();
     }
 
     void Editor::onFixedUpdate() {
+        eventDispatcher.fixedSyncEventManager.execute();
         client.onFixedUpdate();
         server.onFixedUpdate();
         physicsEngine.onFixedUpdate();

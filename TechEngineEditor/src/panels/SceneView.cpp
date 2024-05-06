@@ -7,10 +7,11 @@
 #include "components/physics/RigidBody.hpp"
 
 namespace TechEngine {
-    SceneView::SceneView(const std::string& name, Renderer& renderer, Scene& scene, PhysicsEngine& physicsEngine, std::vector<GameObject*>& selectedGO)
-        : renderer(&renderer), scene(scene), guizmo(id, physicsEngine), selectedGO(selectedGO), Panel(name) {
+    SceneView::SceneView(const std::string& name, Renderer& renderer, Scene& scene, PhysicsEngine& physicsEngine, EventDispatcher& eventDispatcher, std::vector<GameObject*>& selectedGO)
+        : renderer(&renderer), scene(scene), eventDispatcher(eventDispatcher), guizmo(id, physicsEngine), selectedGO(selectedGO), Panel(name, eventDispatcher) {
         frameBufferID = renderer.createFramebuffer(1080, 720);
-        sceneCamera = new SceneCamera();
+        sceneCamera = new GameObject("SceneCamera", eventDispatcher);
+        sceneCamera->addComponent<CameraComponent>();
         id = totalIds++;
     }
 
@@ -313,7 +314,6 @@ namespace TechEngine {
                 getSceneCamera()->getTransform().translate(-forward);
             }
         }
-        //TE_LOGGER_INFO("Mouse scroll event id: {0}, {1}", id, lastUsingId);
     }
 
     void SceneView::onMouseMoveEvent(glm::vec2 delta) {

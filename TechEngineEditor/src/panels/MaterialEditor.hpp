@@ -2,9 +2,8 @@
 
 #include "Panel.hpp"
 #include "core/Client.hpp"
-#include "core/SceneCamera.hpp"
 #include "core/Server.hpp"
-#include "materialEditorScene/Sphere.hpp"
+#include "mesh/SphereMesh.hpp"
 
 
 namespace TechEngine {
@@ -17,8 +16,9 @@ namespace TechEngine {
         std::string m_filepath;
         uint32_t frameBufferID;
 
-        MaterialEditorGameObjects::Sphere m_sphere;
-        SceneCamera m_camera;
+        SphereMesh mesh;
+        GameObject m_sphere;
+        GameObject m_camera;
 
     public:
         MaterialEditor(Client& client, Server& server);

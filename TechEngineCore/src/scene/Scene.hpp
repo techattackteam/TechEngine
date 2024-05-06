@@ -1,41 +1,26 @@
 #pragma once
 
-#include <components/render/CameraComponent.hpp>
-
+#include "eventSystem/EventDispatcher.hpp"
 #include "GameObject.hpp"
+#include "components/render/CameraComponent.hpp"
 #include "events/material/MaterialUpdateEvent.hpp"
 
 namespace TechEngine {
     class Scene {
     private:
+        EventDispatcher& eventDispatcher;
         std::vector<GameObject*> gameObjects;
         std::vector<GameObject*> lights;
         std::vector<GameObject*> gameObjectsToDelete;
 
     public:
-        Scene();
+        Scene(EventDispatcher& eventDispatcher);
 
         virtual ~Scene();
 
-        template<typename T, typename... A>
-        GameObject& createGameObject(A&&... args) {
-            GameObject* gameObject = new T(args...); //-> implies name already defined
-            gameObject->setTag(genGOTag());
-            gameObjects.push_back(gameObject);
-            return *gameObject;
-        }
+        GameObject& createGameObject(const std::string& name);
 
-        template<typename T, typename... A>
-        GameObject& createGameObject(std::string name, A&&... args) {
-            return registerGameObject<T, A...>(name, genGOTag(), args...);
-        }
-
-        template<typename T, typename... A>
-        GameObject& registerGameObject(std::string name, std::string tag, A&&... args) {
-            GameObject* gameObject = new T(name, tag, args...);
-            gameObjects.push_back(gameObject);
-            return *gameObject;
-        }
+        GameObject& registerGameObject(const std::string& name, const std::string& tag);
 
         void duplicateGameObject(GameObject* game_object);
 

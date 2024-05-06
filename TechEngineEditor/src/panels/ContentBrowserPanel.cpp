@@ -13,7 +13,7 @@ namespace TechEngine {
                                                                                panelsManager(panelsManager),
                                                                                projectManager(projectManager),
                                                                                /*assimpLoader(/*sceneManager.getScene(), materialManager#1#),*/
-                                                                               Panel("Content Browser") {
+                                                                               Panel("Content Browser", client.eventDispatcher) {
     }
 
 

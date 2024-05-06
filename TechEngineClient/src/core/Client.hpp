@@ -13,13 +13,13 @@
 namespace TechEngine {
     class TECHENGINE_API Client : public AppCore {
     public:
-        Window window;
+        Window& window;
         Renderer renderer;
         NetworkEngine networkEngine;
         TechEngineAPIClient api;
         FilePaths filePaths;
 
-        Client(std::string name, int width, int height);
+        Client(Window& window);
 
         ~Client() override;
 

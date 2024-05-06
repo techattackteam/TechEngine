@@ -5,41 +5,42 @@
 #include <typeinfo>
 #include <string>
 
+#include "eventSystem/EventDispatcher.hpp"
 #include "serialization/StreamReader.hpp"
 #include "serialization/StreamWriter.hpp"
 
 namespace TechEngine {
     class Component;
-
     class TransformComponent;
 
     class GameObject {
     private:
+        EventDispatcher& eventDispatcher;
+
         GameObject* parent = nullptr;
         std::unordered_map<std::string, GameObject*> children;
         std::unordered_map<std::string, Component*> components;
 
         std::string name;
         std::string tag;
-        bool stackAllocated = false;
         bool editorOnly = false;
 
     protected:
-        explicit GameObject(std::string name);
+        GameObject(std::string name, const std::string& tag, EventDispatcher& eventDispatcher);
 
-        GameObject(std::string name, const std::string& tag);
-
-        GameObject(GameObject* gameObject, const std::string& tag);
+        GameObject(GameObject* gameObject, const std::string& tag, EventDispatcher& eventDispatcher);
 
         friend class Scene;
 
     public:
+        GameObject(std::string name, EventDispatcher& eventDispatcher);
+
         virtual ~GameObject();
 
         template<class C, typename... A>
         void addComponent(A&&... args) {
             if (!hasComponent<C>()) {
-                C* component = new C(this, args...);
+                C* component = new C(this, eventDispatcher, args...);
                 components[typeid(C).name()] = component;
             }
         }
@@ -103,14 +104,11 @@ namespace TechEngine {
 
         void* operator new(size_t size) {
             void* p = ::operator new(size);
-            ((GameObject*)p)->stackAllocated = true;
             return p;
         }
 
         void operator delete(void* p) {
-            if (((GameObject*)p)->stackAllocated) {
-                ::operator delete(p);
-            }
+            ::operator delete(p);
         }
 
         void setTag(std::string basicString);

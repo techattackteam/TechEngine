@@ -16,7 +16,7 @@ namespace TechEngine {
         glm::mat4 model;
         glm::vec3 forward;
 
-        explicit TransformComponent(GameObject* gameObject);
+        explicit TransformComponent(GameObject* gameObject, EventDispatcher& eventDispatcher);
 
         void translate(glm::vec3 vector);
 

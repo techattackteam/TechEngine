@@ -20,7 +20,7 @@ namespace TechEngine {
         ShadersManager& shadersManager;
 
     public:
-        explicit ExportSettingsPanel(PanelsManager& panelsManager, ProjectManager& projectManager, SceneManager& sceneManager, ShadersManager& shadersManager);
+        explicit ExportSettingsPanel(EventDispatcher& eventDispatcher, PanelsManager& panelsManager, ProjectManager& projectManager, SceneManager& sceneManager, ShadersManager& shadersManager);
 
         ~ExportSettingsPanel() override;
 

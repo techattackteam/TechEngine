@@ -12,9 +12,9 @@ namespace TechEngine {
         Material* m_material = nullptr;
 
     public:
-        MeshRendererComponent(GameObject* gameObject);
+        MeshRendererComponent(GameObject* gameObject, EventDispatcher& eventDispatcher);
 
-        MeshRendererComponent(GameObject* gameObject, Mesh* mesh, Material* material);
+        MeshRendererComponent(GameObject* gameObject, EventDispatcher& eventDispatcher, Mesh* mesh, Material* material);
 
         void changeMesh(Mesh* mesh);
 

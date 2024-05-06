@@ -5,18 +5,18 @@
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    BoxColliderComponent::BoxColliderComponent(GameObject* gameObject) : Collider(gameObject, "BoxColliderComponent") {
+    BoxColliderComponent::BoxColliderComponent(GameObject* gameObject, EventDispatcher& eventDispatcher) : Collider(gameObject, eventDispatcher, "BoxColliderComponent") {
         size = glm::vec3(1, 1, 1);
-        EventDispatcher::getInstance().dispatch(new AddColliderEvent(this));
+        eventDispatcher.dispatch(new AddColliderEvent(this));
     }
 
-    BoxColliderComponent::BoxColliderComponent(GameObject* gameObject, glm::vec3 size, glm::vec3 offset) : Collider(gameObject, "BoxColliderComponent"), size(size) {
+    BoxColliderComponent::BoxColliderComponent(GameObject* gameObject, EventDispatcher& eventDispatcher, glm::vec3 size, glm::vec3 offset) : Collider(gameObject, eventDispatcher, "BoxColliderComponent"), size(size) {
         this->offset = offset;
     }
 
     void BoxColliderComponent::setSize(glm::vec3 size) {
         this->size = size;
-        EventDispatcher::getInstance().dispatch(new AddColliderEvent(this));
+        eventDispatcher.dispatch(new AddColliderEvent(this));
     }
 
     glm::vec3 BoxColliderComponent::getSize() {
@@ -25,6 +25,6 @@ namespace TechEngine {
 
     Component* BoxColliderComponent::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
         auto* component = dynamic_cast<BoxColliderComponent*>(componentToCopy);
-        return new BoxColliderComponent(gameObjectToAttach, component->size, component->offset);
+        return new BoxColliderComponent(gameObjectToAttach, eventDispatcher, component->size, component->offset);
     }
 }

@@ -17,25 +17,25 @@
 #include "events/physics/registry/RemoveRigidBodyEvent.hpp"
 
 namespace TechEngine {
-    PhysicsEngine::PhysicsEngine(Scene& scene) : scene(scene) {
-        callback = new PhysicsCallback(scene, *this);
+    PhysicsEngine::PhysicsEngine(EventDispatcher& eventDispatcher, Scene& scene) : eventDispatcher(eventDispatcher), scene(scene) {
+        callback = new PhysicsCallback(eventDispatcher, scene, *this);
 
-        EventDispatcher::getInstance().subscribe(GameObjectDestroyEvent::eventType, [this](Event* event) {
+        eventDispatcher.subscribe(GameObjectDestroyEvent::eventType, [this](Event* event) {
             std::string tag = ((GameObjectDestroyEvent*)event)->getGameObjectTag();
             removeActor(tag);
         });
-        EventDispatcher::getInstance().subscribe(AddColliderEvent::eventType, [this](Event* event) {
+        eventDispatcher.subscribe(AddColliderEvent::eventType, [this](Event* event) {
             addCollider(((AddColliderEvent*)event)->getCollider());
         });
-        EventDispatcher::getInstance().subscribe(RemoveColliderEvent::eventType, [this](Event* event) {
+        eventDispatcher.subscribe(RemoveColliderEvent::eventType, [this](Event* event) {
             removeCollider(((RemoveColliderEvent*)event)->getTag(), ((RemoveColliderEvent*)event)->getCollider());
         });
 
-        EventDispatcher::getInstance().subscribe(AddRigidBodyEvent::eventType, [this](Event* event) {
+        eventDispatcher.subscribe(AddRigidBodyEvent::eventType, [this](Event* event) {
             addRigidBody(((AddRigidBodyEvent*)event)->getRigidBody());
         });
 
-        EventDispatcher::getInstance().subscribe(RemoveRigidBodyEvent::eventType, [this](Event* event) {
+        eventDispatcher.subscribe(RemoveRigidBodyEvent::eventType, [this](Event* event) {
             removeRigidBody(((RemoveRigidBodyEvent*)event)->getRigidBody()->getGameObject()->getTag());
         });
     }

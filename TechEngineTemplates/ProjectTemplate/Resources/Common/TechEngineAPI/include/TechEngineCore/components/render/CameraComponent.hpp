@@ -25,9 +25,9 @@ namespace TechEngine {
     public:
         bool mainCamera = false;
 
-        explicit CameraComponent(GameObject* gameObject);
+        explicit CameraComponent(GameObject* gameObject, EventDispatcher& eventDispatcher);
 
-        CameraComponent(GameObject* gameObject, bool mainCamera, ProjectionType projectionType);
+        CameraComponent(GameObject* gameObject, EventDispatcher& eventDispatcher, bool mainCamera, ProjectionType projectionType);
 
         virtual void init();
 

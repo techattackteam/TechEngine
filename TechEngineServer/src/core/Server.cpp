@@ -126,7 +126,7 @@ namespace TechEngine {
                 break;
             }
             case PacketType::ClientConnectionRequest: {
-                EventDispatcher::getInstance().dispatch(new OnClientConnectionRequest());
+                eventDispatcher.dispatch(new OnClientConnectionRequest());
                 break;
             }
 
@@ -181,7 +181,7 @@ namespace TechEngine {
                 // so we just pass 0s.
                 TE_LOGGER_INFO("Client disconnected: {0}", status->m_info.m_szEndDebug);
                 m_interface->CloseConnection(status->m_hConn, 0, nullptr, false);
-                EventDispatcher::getInstance().dispatch(new OnClientDisconnected());
+                eventDispatcher.dispatch(new OnClientDisconnected());
                 break;
             }
 
@@ -214,7 +214,7 @@ namespace TechEngine {
 
                 // User callback
                 onClientConnected(client);
-                EventDispatcher::getInstance().dispatch(new OnClientConnected());
+                eventDispatcher.dispatch(new OnClientConnected());
                 TE_LOGGER_INFO("Client connected: {0}", client.ConnectionDesc);
                 break;
             }

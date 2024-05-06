@@ -5,10 +5,9 @@
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
-    AppCore::AppCore() : timer(), filePaths(), textureManager(),
-                         materialManager(textureManager),
-                         sceneManager(physicsEngine, materialManager, textureManager, filePaths),
-                         physicsEngine(sceneManager.getScene()),
+    AppCore::AppCore() : materialManager(eventDispatcher, textureManager),
+                         sceneManager(eventDispatcher, physicsEngine, materialManager, textureManager, filePaths),
+                         physicsEngine(eventDispatcher, sceneManager.getScene()),
                          api(&sceneManager, &eventDispatcher, &materialManager) {
         ScriptEngine* scriptEngine = new ScriptEngine(false);
         eventDispatcher.subscribe(AppCloseRequestEvent::eventType, [this](Event* event) {

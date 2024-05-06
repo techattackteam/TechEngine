@@ -1,5 +1,4 @@
 #include "PanelsManager.hpp"
-#include "scene/SceneManager.hpp"
 #include "script/ScriptEngine.hpp"
 #include "events/appManagement/AppCloseRequestEvent.hpp"
 #include "core/Logger.hpp"
@@ -20,26 +19,32 @@
 #include "events/scripts/ScriptCrashEvent.hpp"
 
 namespace TechEngine {
-    PanelsManager::PanelsManager(Client& client, Server& server, ProjectManager& projectManager) : client(client),
-                                                                                                   server(server),
-                                                                                                   projectManager(projectManager),
-                                                                                                   contentBrowser(client, server, *this, projectManager),
-                                                                                                   exportSettingsPanel(*this, projectManager, client.sceneManager, client.renderer.getShadersManager()),
-                                                                                                   clientPanel(*this, client, projectManager),
-                                                                                                   serverPanel(*this, server, client.renderer),
-                                                                                                   materialEditor(client, server),
-                                                                                                   networkHelper(client.networkEngine) {
+    PanelsManager::PanelsManager(Client& client,
+                                 Server& server,
+                                 EventDispatcher& eventDispatcher,
+                                 ProjectManager& projectManager) : client(client),
+                                                                   server(server),
+                                                                   eventDispatcher(eventDispatcher),
+                                                                   projectManager(projectManager),
+                                                                   contentBrowser(client, server, *this, projectManager),
+                                                                   exportSettingsPanel(eventDispatcher, *this, projectManager, client.sceneManager, client.renderer.getShadersManager()),
+                                                                   clientPanel(client, eventDispatcher, *this, projectManager),
+                                                                   serverPanel(*this, eventDispatcher, server, projectManager, client.renderer),
+                                                                   materialEditor(client, server),
+                                                                   networkHelper(client.networkEngine, client.eventDispatcher) {
     }
 
     void PanelsManager::init() {
-        EventDispatcher::getInstance().subscribe(WindowCloseEvent::eventType, [this](TechEngine::Event* event) {
-            if (m_currentPlaying) {
-                stopRunningScene();
-                m_currentPlaying = false;
+        eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](TechEngine::Event* event) {
+            if (clientPanel.isRunning()) {
+                clientPanel.stopRunningScene();
+            }
+            if (serverPanel.isRunning()) {
+                serverPanel.stopRunningScene();
             }
             closeAllProcessEvents();
         });
-        EventDispatcher::getInstance().subscribe(RegisterCustomPanel::eventType, [this](TechEngine::Event* event) {
+        eventDispatcher.subscribe(RegisterCustomPanel::eventType, [this](TechEngine::Event* event) {
             registerCustomPanel((RegisterCustomPanel*)event);
         });
 
@@ -47,19 +52,19 @@ namespace TechEngine {
             clientPanel.sceneHierarchyPanel.deselectGO(sceneManager.getScene().getGameObjectByTag(((GameObjectDestroyEvent*)event)->getGameObjectTag()));
         });*/
 
-        EventDispatcher::getInstance().subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event* event) {
+        eventDispatcher.subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event* event) {
             OnKeyPressedEvent(((KeyPressedEvent*)event)->getKey());
         });
 
-        EventDispatcher::getInstance().subscribe(KeyReleasedEvent::eventType, [this](Event* event) {
+        eventDispatcher.subscribe(KeyReleasedEvent::eventType, [this](Event* event) {
             OnKeyReleasedEvent(((KeyReleasedEvent*)event)->getKey());
         });
 
-        EventDispatcher::getInstance().subscribe(ScriptCrashEvent::eventType, [this](Event* event) {
-            stopRunningScene();
-        });
+        /*eventDispatcher.subscribe(ScriptCrashEvent::eventType, [this](Event* event) {
+            //stopRunningScene();
+        });*/
 
-        EventDispatcher::getInstance().subscribe(OnProcessCloseEvent::eventType, [this](Event* event) {
+        eventDispatcher.subscribe(OnProcessCloseEvent::eventType, [this](Event* event) {
             onCloseProcessEvent(((OnProcessCloseEvent*)event)->getProcessId());
         });
 
@@ -227,23 +232,22 @@ namespace TechEngine {
                 }
             }
             if (ImGui::MenuItem("Exit")) {
-                EventDispatcher::getInstance().dispatch(new AppCloseRequestEvent());
+                client.eventDispatcher.dispatch(new AppCloseRequestEvent());
             }
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Client")) {
             if (ImGui::MenuItem("Build")) {
-                /*if (m_currentPlaying) {
-                    stopRunningScene();
-                    m_currentPlaying = false;
-                }
+                /*if (clientPanel.isRunning()) {
+                    clientPanel.stopRunningScene();
+                }*/
 #ifdef TE_DEBUG
-                clientPanel.compileClientUserScripts(DEBUG);
+                compileUserScripts(DEBUG, PROJECT_CLIENT);
 #elif TE_RELEASE
-                compileClientUserScripts(RELEASE);
+                compileUserScripts(RELEASE, PROJECT_CLIENT);
 #elif TE_RELEASEDEBUG
-                compileClientUserScripts(RELEASEDEBUG);
-#endif*/
+                compileUserScripts(RELEASEDEBUG, PROJECT_CLIENT);
+#endif
             } else if (ImGui::MenuItem("Run")) {
                 runClientProcess();
             }
@@ -251,19 +255,18 @@ namespace TechEngine {
         }
         if (ImGui::BeginMenu("Server")) {
             if (ImGui::MenuItem("Build")) {
-                /*if (!serverProcesses.empty()) {
+                if (!serverProcesses.empty()) {
                     for (PROCESS_INFORMATION& process: serverProcesses) {
                         TerminateProcess(process.hProcess, 0);
                         onCloseProcessEvent(process.dwProcessId);
                     }
-                    m_currentPlaying = false;
                 }
 #ifdef TE_DEBUG
-                compileServerUserScripts(DEBUG);
+                compileUserScripts(DEBUG, PROJECT_SERVER);
 #elif TE_RELEASE
-                compileServerUserScripts(RELEASE);
+                compileServerUserScripts(RELEASE, PROJECT_SERVER);
 #elif TE_RELEASEDEBUG
-                compileServerUserScripts(RELEASEDEBUG);
+                compileServerUserScripts(RELEASEDEBUG, PROJECT_SERVER);
 #endif*/
             } else if (ImGui::MenuItem("Run")) {
                 runServerProcess();
@@ -357,15 +360,9 @@ namespace TechEngine {
         TE_LOGGER_INFO("Build finished!");
     }
 
-    void PanelsManager::startRunningScene() {
-    }
-
-    void PanelsManager::stopRunningScene() {
-    }
-
     void closeRunningProcesses(PVOID lpParameter, BOOLEAN TimerOrWaitFiredm) {
         DWORD dwProcessId = reinterpret_cast<DWORD>(lpParameter);
-        EventDispatcher::getInstance().dispatch(new OnProcessCloseEvent(dwProcessId));
+        //client.eventDispatcher.dispatch(new OnProcessCloseEvent(dwProcessId));
     }
 
     void PanelsManager::runServerProcess() {
