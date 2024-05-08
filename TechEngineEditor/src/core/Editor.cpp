@@ -1,9 +1,16 @@
-#include <fstream>
 #include "Editor.hpp"
 #include "core/FileSystem.hpp"
+#include "events/input/KeyPressedEvent.hpp"
+#include "events/input/KeyReleasedEvent.hpp"
+#include "events/input/MouseScrollEvent.hpp"
 #include "external/EntryPoint.hpp"
 #include "script/ScriptRegister.hpp"
+
 #include "yaml-cpp/yaml.h"
+#include <fstream>
+
+#include "events/input/KeyHoldEvent.hpp"
+#include "events/input/MouseMoveEvent.hpp"
 
 namespace TechEngine {
     Editor::Editor() : AppCore(),
@@ -20,6 +27,33 @@ namespace TechEngine {
         server.init();
         ScriptRegister::getInstance().init(&client.scriptEngine, &server.scriptEngine);
         api.initEventDispatcher(&client.eventDispatcher, &server.eventDispatcher);
+
+        eventDispatcher.subscribe(KeyPressedEvent::eventType, [this](Event* event) {
+            Key key = ((KeyPressedEvent*)event)->getKey();
+            client.eventDispatcher.dispatch(new KeyPressedEvent(key));
+        });
+
+        eventDispatcher.subscribe(KeyReleasedEvent::eventType, [this](Event* event) {
+            Key key = ((KeyReleasedEvent*)event)->getKey();
+            client.eventDispatcher.dispatch(new KeyReleasedEvent(key));
+        });
+
+        eventDispatcher.subscribe(KeyHoldEvent::eventType, [this](Event* event) {
+            Key key = ((KeyHoldEvent*)event)->getKey();
+            client.eventDispatcher.dispatch(new KeyHoldEvent(key));
+        });
+
+        eventDispatcher.subscribe(MouseScrollEvent::eventType, [this](Event* event) {
+            float xOffset = ((MouseScrollEvent*)event)->getXOffset();
+            float yOffset = ((MouseScrollEvent*)event)->getYOffset();
+            client.eventDispatcher.dispatch(new MouseScrollEvent(xOffset, yOffset));
+        });
+
+        eventDispatcher.subscribe(MouseMoveEvent::eventType, [this](Event* event) {
+            glm::vec2 fromPos = ((MouseMoveEvent*)event)->getFromPosition();
+            glm::vec2 toPos = ((MouseMoveEvent*)event)->getToPosition();
+            client.eventDispatcher.dispatch(new MouseMoveEvent(fromPos, toPos));
+        });
     }
 
     void Editor::onUpdate() {

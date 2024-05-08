@@ -378,7 +378,9 @@ namespace TechEngine {
     void SceneManager::loadScene(const std::string& sceneName) {
         if (hasScene(sceneName)) {
             if (!m_activeSceneName.empty()) {
-                saveScene(m_activeSceneName);
+                if (m_activeSceneName != sceneName) {
+                    saveScene(m_activeSceneName);
+                }
                 scene.clear();
                 physicsEngine.clear();
             }

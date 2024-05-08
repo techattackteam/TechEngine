@@ -7,6 +7,7 @@
 #include "Mouse.hpp"
 #include "events/appManagement/AppCloseRequestEvent.hpp"
 #include "events/input/MouseScrollEvent.hpp"
+#include "events/window/WindowResizeEvent.hpp"
 
 namespace TechEngine {
     Window::Window(EventDispatcher& eventDispatcher, const std::string& title, uint32_t width, uint32_t height) : eventDispatcher(eventDispatcher), mouse(eventDispatcher) {
@@ -58,7 +59,7 @@ namespace TechEngine {
         });
         glfwSetFramebufferSizeCallback(handler, [](GLFWwindow* handler, int width, int height) {
             Window* window = (Window*)glfwGetWindowUserPointer(handler);
-            window->eventDispatcher.dispatch(new WindowCloseEvent());
+            window->eventDispatcher.dispatch(new WindowResizeEvent(width, height));
         });
     }
 

@@ -11,6 +11,7 @@
 
 namespace TechEngine {
     Server::Server() {
+        instance = this;
         physicsEngine.init();
     }
 
@@ -141,7 +142,7 @@ namespace TechEngine {
     }
 
     void Server::syncGameState(const ClientInfo& clientInfo) {
-        Buffer buffer = SceneSynchronizer::serializeGameState(sceneManager.getScene());
+        Buffer buffer = SceneSynchronizer::serializeGameState(sceneManager);
         sendBufferToClient(clientInfo.ID, buffer, true);
     }
 

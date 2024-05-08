@@ -1,7 +1,6 @@
 #pragma once
 
 
-#include "scene/Scene.hpp"
 #include "serialization/Buffer.hpp"
 #include "serialization/BufferStream.hpp"
 #include "components/network/NetworkSync.hpp"
@@ -33,23 +32,23 @@ namespace TechEngine::SceneSynchronizer {
         return *gameObject;
     }
 
-    inline void deserializeScene(BufferStreamReader& stream, Scene& scene) {
+    inline void deserializeScene(BufferStreamReader& stream, SceneManager& sceneManager) {
         size_t size;
+        sceneManager.getScene().clear();
         stream.readRaw<size_t>(size);
         for (int i = 0; i < size; i++) {
-            deserializeGameObject(stream, scene);
+            deserializeGameObject(stream, sceneManager.getScene());
         }
     }
 
-    inline Buffer serializeGameState(Scene& scene) {
+    inline Buffer serializeGameState(SceneManager& sceneManager) {
         Buffer buffer;
         buffer.allocate(sizeof(PacketType) + sizeof(size_t));
         BufferStreamWriter stream(buffer);
         stream.writeRaw(PacketType::SyncGameState);
         size_t size = 0;
-
         std::vector<GameObject*> gameObjects;
-        for (auto& gameObject: scene.getGameObjects()) {
+        for (auto& gameObject: sceneManager.getScene().getGameObjects()) {
             if (gameObject->hasComponent<NetworkSync>()) {
                 size++;
                 gameObjects.push_back(gameObject);
