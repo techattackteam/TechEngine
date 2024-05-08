@@ -5,6 +5,7 @@
 #include <windows.h>
 
 #include "Script.hpp"
+#include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngine {
     class ScriptEngine {
@@ -17,10 +18,12 @@ namespace TechEngine {
         HANDLE m_dllProcessHandle = nullptr;
         HANDLE m_dllThreadHandle = nullptr;
 
+        EventDispatcher* eventDispatcher = nullptr;
+
     public:
         explicit ScriptEngine(bool runtime);
 
-        void init(const std::string& dllPath);
+        void init(const std::string& dllPath, EventDispatcher* eventDispatcher);
 
         void onStart();
 

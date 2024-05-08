@@ -217,7 +217,7 @@ namespace TechEngine {
     }
 
     void NetworkEngine::onConnectionStatusChanged(SteamNetConnectionStatusChangedCallback_t* info) {
-        NetworkEngine* self = reinterpret_cast<NetworkEngine*>(SteamNetworkingSockets()->GetConnectionUserData(info->m_hConn));
+        NetworkEngine* networkEngine = reinterpret_cast<NetworkEngine*>(SteamNetworkingSockets()->GetConnectionUserData(info->m_hConn));
         switch (info->m_info.m_eState) {
             case k_ESteamNetworkingConnectionState_None:
                 // NOTE: We will get callbacks here when we destroy connections. You can ignore these.
@@ -226,9 +226,9 @@ namespace TechEngine {
             case k_ESteamNetworkingConnectionState_ClosedByPeer:
                 TE_LOGGER_INFO("Disconnected from host. {0}", info->m_info.m_szEndDebug);
             case k_ESteamNetworkingConnectionState_ProblemDetectedLocally: {
-                self->running = false;
-                self->connectionStatus = ConnectionStatus::FailedToConnect;
-                self->connectionDebugMessage = info->m_info.m_szEndDebug;
+                networkEngine->running = false;
+                networkEngine->connectionStatus = ConnectionStatus::FailedToConnect;
+                networkEngine->connectionDebugMessage = info->m_info.m_szEndDebug;
 
                 // Print an appropriate message
                 if (info->m_eOldState == k_ESteamNetworkingConnectionState_Connecting) {
@@ -248,9 +248,9 @@ namespace TechEngine {
                 // to finish up.  The reason information do not matter in this case,
                 // and we cannot linger because it's already closed on the other end,
                 // so we just pass 0s.
-                self->sockets->CloseConnection(info->m_hConn, 0, nullptr, false);
-                self->connection = k_HSteamNetConnection_Invalid;
-                self->connectionStatus = ConnectionStatus::Disconnected;
+                networkEngine->sockets->CloseConnection(info->m_hConn, 0, nullptr, false);
+                networkEngine->connection = k_HSteamNetConnection_Invalid;
+                networkEngine->connectionStatus = ConnectionStatus::Disconnected;
                 break;
             }
 
@@ -261,10 +261,10 @@ namespace TechEngine {
                 break;
 
             case k_ESteamNetworkingConnectionState_Connected:
-                self->connectionStatus = ConnectionStatus::Connected;
+                networkEngine->connectionStatus = ConnectionStatus::Connected;
                 TE_LOGGER_INFO("Connected to remote host");
-                self->sendMessage("Hello from client");
-            //eventDispatcher.dispatch(new ConnectionEstablishedEvent());
+                networkEngine->sendMessage("Hello from client");
+                networkEngine->eventDispatcher.dispatch(new ConnectionEstablishedEvent());
                 break;
 
             default:

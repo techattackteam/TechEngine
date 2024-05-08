@@ -6,8 +6,9 @@ namespace TechEngine {
     ScriptEngine::ScriptEngine(bool runtime) : runtime(runtime) {
     }
 
-    void ScriptEngine::init(const std::string& dllPath) {
+    void ScriptEngine::init(const std::string& dllPath, EventDispatcher* eventDispatcher) {
         if (std::filesystem::exists(dllPath)) {
+            this->eventDispatcher = eventDispatcher;
             m_userCustomDll = LoadLibraryA(dllPath.c_str());
             dllLoaded = true;
         } else {
@@ -29,7 +30,7 @@ namespace TechEngine {
     void ScriptEngine::onStart() {
         if (dllLoaded) {
             for (Script* script: scripts) {
-                RUN_SCRIPT_FUNCTION(script, onStart);
+                RUN_SCRIPT_FUNCTION(script, onStart, *eventDispatcher);
             }
         }
     }
@@ -37,7 +38,7 @@ namespace TechEngine {
     void ScriptEngine::onUpdate() {
         if (dllLoaded) {
             for (Script* script: scripts) {
-                RUN_SCRIPT_FUNCTION(script, onUpdate);
+                RUN_SCRIPT_FUNCTION(script, onUpdate, *eventDispatcher);
             }
         }
     }
@@ -45,7 +46,7 @@ namespace TechEngine {
     void ScriptEngine::onFixedUpdate() {
         if (dllLoaded) {
             for (Script* script: scripts) {
-                RUN_SCRIPT_FUNCTION(script, onFixedUpdate);
+                RUN_SCRIPT_FUNCTION(script, onFixedUpdate, *eventDispatcher);
                 script->onFixedUpdate();
             }
         }

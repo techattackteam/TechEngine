@@ -2,6 +2,7 @@
 
 #include "core/Client.hpp"
 #include "PanelsManager.hpp"
+#include "events/scripts/ScriptCrashEvent.hpp"
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
@@ -16,6 +17,9 @@ namespace TechEngine {
                                                    sceneView("Server Scene", renderer, server.sceneManager.getScene(), server.physicsEngine, eventDispatcher, sceneHierarchyPanel.getSelectedGO()),
                                                    sceneHierarchyPanel("Server Scene Hierarchy", eventDispatcher, server.sceneManager.getScene(), server.materialManager),
                                                    Panel("ServerPanel", eventDispatcher) {
+        server.eventDispatcher.subscribe(ScriptCrashEvent::eventType, [this](Event* event) {
+            stopRunningScene();
+        });
     }
 
     void ServerPanel::onUpdate() {
@@ -86,7 +90,7 @@ namespace TechEngine {
         server.sceneManager.saveSceneAsTemporarily(projectManager.getProjectCachePath().string(), PROJECT_SERVER);
         server.eventDispatcher.copy();
         server.materialManager.copy();
-        server.scriptEngine.init(projectManager.getServerUserScriptsDLLPath().string());
+        server.scriptEngine.init(projectManager.getServerUserScriptsDLLPath().string(), &server.eventDispatcher);
         server.scriptEngine.onStart();
         server.physicsEngine.start();
         m_currentPlaying = true;
