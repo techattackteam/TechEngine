@@ -4,6 +4,7 @@
 #include "eventSystem/EventDispatcher.hpp"
 #include "physics/PhysicsEngine.hpp"
 #include "scene/SceneManager.hpp"
+#include "script/ScriptEngine.hpp"
 #include "scriptingAPI/TechEngineAPI.hpp"
 
 namespace TechEngine {
@@ -19,6 +20,7 @@ namespace TechEngine {
         MaterialManager materialManager;
         SceneManager sceneManager;
         PhysicsEngine physicsEngine;
+        ScriptEngine scriptEngine;
         TechEngineAPI api;
 
         AppCore();

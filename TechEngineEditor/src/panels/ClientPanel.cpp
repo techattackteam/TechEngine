@@ -80,13 +80,13 @@ namespace TechEngine {
 #ifdef TE_DEBUG
         panelsManager.compileUserScripts(DEBUG, PROJECT_CLIENT);
 #else
-        panelsManager.compileClientUserScripts(RELEASEDEBUG, , PROJECT_CLIENT);
+        panelsManager.compileUserScripts(RELEASEDEBUG, PROJECT_CLIENT);
 #endif
         client.sceneManager.saveSceneAsTemporarily(projectManager.getProjectCachePath().string(), PROJECT_CLIENT);
         client.eventDispatcher.copy();
         client.materialManager.copy();
-        ScriptEngine::getInstance()->init(projectManager.getClientUserScriptsDLLPath().string());
-        ScriptEngine::getInstance()->onStart();
+        client.scriptEngine.init(projectManager.getClientUserScriptsDLLPath().string());
+        client.scriptEngine.onStart();
         client.physicsEngine.start();
         m_currentPlaying = true;
     }
@@ -103,6 +103,6 @@ namespace TechEngine {
             }
         }
         m_currentPlaying = false;
-        ScriptEngine::getInstance()->stop();
+        client.scriptEngine.stop();
     }
 }

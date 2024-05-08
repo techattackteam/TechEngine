@@ -4,11 +4,6 @@
 
 namespace TechEngine {
     ScriptEngine::ScriptEngine(bool runtime) : runtime(runtime) {
-        if (instance != nullptr) {
-            delete this;
-        } else {
-            instance = this;
-        }
     }
 
     void ScriptEngine::init(const std::string& dllPath) {
@@ -50,7 +45,7 @@ namespace TechEngine {
     void ScriptEngine::onFixedUpdate() {
         if (dllLoaded) {
             for (Script* script: scripts) {
-                //RUN_SCRIPT_FUNCTION(script, onFixedUpdate);
+                RUN_SCRIPT_FUNCTION(script, onFixedUpdate);
                 script->onFixedUpdate();
             }
         }
@@ -66,17 +61,11 @@ namespace TechEngine {
         return nullptr;
     }
 
-    ScriptEngine* ScriptEngine::getInstance() {
-        if (instance == nullptr) {
-            TE_LOGGER_CRITICAL("ScriptEngine instance is nullptr in getInstance() method.");
-        }
-        return instance;
-    }
 
     void ScriptEngine::registerScript(Script* script) {
         script->name = typeid(*script).name();
         script->name.replace(0, 6, "");
-        getInstance()->scripts.push_back(script);
+        scripts.push_back(script);
     }
 
     void ScriptEngine::deleteScripts() {
