@@ -9,7 +9,7 @@ namespace TechEngine {
                          materialManager(eventDispatcher, textureManager),
                          sceneManager(eventDispatcher, physicsEngine, materialManager, textureManager, filePaths),
                          physicsEngine(eventDispatcher, sceneManager.getScene()),
-                         api(&sceneManager, &eventDispatcher, &materialManager) {
+                         api(&sceneManager, &materialManager) {
         eventDispatcher.subscribe(AppCloseRequestEvent::eventType, [this](Event* event) {
             onAppCloseRequestEvent();
         });

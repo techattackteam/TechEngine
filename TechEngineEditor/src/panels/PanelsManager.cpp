@@ -59,10 +59,6 @@ namespace TechEngine {
             OnKeyReleasedEvent(((KeyReleasedEvent*)event)->getKey());
         });
 
-        /*eventDispatcher.subscribe(ScriptCrashEvent::eventType, [this](Event* event) {
-            //stopRunningScene();
-        });*/
-
         eventDispatcher.subscribe(OnProcessCloseEvent::eventType, [this](Event* event) {
             onCloseProcessEvent(((OnProcessCloseEvent*)event)->getProcessId());
         });

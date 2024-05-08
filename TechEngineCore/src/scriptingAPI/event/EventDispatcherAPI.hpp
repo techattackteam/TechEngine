@@ -9,16 +9,21 @@ namespace TechEngine {
 
 namespace TechEngine {
     class EventDispatcherAPI {
+        enum Type {
+            CLIENT,
+            SERVER,
+            COMMON
+        };
+
     private:
-        inline static EventDispatcher* eventDispatcher = nullptr;
+        inline static EventDispatcher* clientEventDispatcher = nullptr;
+        inline static EventDispatcher* serverEventDispatcher = nullptr;
 
     public:
-        explicit EventDispatcherAPI(EventDispatcher* eventDispatcher);
+        void init(EventDispatcher* clientEventDispatcher, EventDispatcher* serverEventDispatcher);
 
-        ~EventDispatcherAPI();
+        static void dispatch(Type type, Event* event);
 
-        static void dispatch(Event* event);
-
-        static void subscribe(EventType eventType, const std::function<void(Event*)>& callback);
+        static void subscribe(Type type, const EventType& eventType, const std::function<void(Event*)>& callback);
     };
 }

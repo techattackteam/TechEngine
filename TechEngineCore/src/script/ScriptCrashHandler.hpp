@@ -70,7 +70,7 @@ namespace TechEngine {
         SymCleanup(process);
     }
 
-    inline int filter(unsigned int code, struct _EXCEPTION_POINTERS* ep, Script* script) {
+    inline int filter(unsigned int code, _EXCEPTION_POINTERS* ep, Script* script, EventDispatcher& eventDispatcher) {
         std::string name;
         if (script != nullptr) {
             name = script->getName();
@@ -78,7 +78,7 @@ namespace TechEngine {
             name = "";
         }
         logException(ep, name);
-        //eventDispatcher.dispatch(new ScriptCrashEvent());
+        eventDispatcher.dispatch(new ScriptCrashEvent());
         if (code == EXCEPTION_ACCESS_VIOLATION) {
             return EXCEPTION_EXECUTE_HANDLER;
         } else {
@@ -86,20 +86,20 @@ namespace TechEngine {
         };
     }
 
-#define CATCH_EXCEPTION_IN_FUNCTION(callback) \
+#define CATCH_EXCEPTION_IN_FUNCTION(callback, eventDispatcher) \
     [callback](Event* event) {\
     __try {\
         callback(event);\
-    } __except (filter(GetExceptionCode(), GetExceptionInformation(), nullptr)) {\
+    } __except (filter(GetExceptionCode(), GetExceptionInformation(), nullptr, eventDispatcher)) {\
     }\
 }
-#define RUN_SCRIPT_FUNCTION(script, func) \
+#define RUN_SCRIPT_FUNCTION(script, func, eventDispatcher) \
     if (runtime) { \
         script->func(); \
     } else { \
         __try { \
             script->func(); \
-        } __except (filter(GetExceptionCode(), GetExceptionInformation(), script)) { \
+        } __except (filter(GetExceptionCode(), GetExceptionInformation(), script, eventDispatcher)) { \
     } \
 }
 }
