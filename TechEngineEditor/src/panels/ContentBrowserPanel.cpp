@@ -268,11 +268,11 @@ namespace TechEngine {
 
     void ContentBrowserPanel::runFunctionBasedOnFileType(std::string path, const std::function<void()>& clientFunction, const std::function<void()>& serverFunction) {
         FileType fileType = getFileType(path);
-        if (fileType == FileType::CLIENT) {
+        if (fileType == FileType::CLIENT_FILE) {
             clientFunction();
-        } else if (fileType == FileType::SERVER) {
+        } else if (fileType == FileType::SERVER_FILE) {
             serverFunction();
-        } else if (fileType == FileType::COMMON) {
+        } else if (fileType == FileType::COMMON_FILE) {
             clientFunction();
             serverFunction();
         }
@@ -282,14 +282,14 @@ namespace TechEngine {
         std::string rootFolder = path.string().substr(projectManager.getProjectLocation().string().size() + std::string("\\Assets\\").size());
         rootFolder = rootFolder.substr(0, rootFolder.find_first_of('\\'));
         if (rootFolder == "Client") {
-            return FileType::CLIENT;
+            return FileType::CLIENT_FILE;
         } else if (rootFolder == "Server") {
-            return FileType::SERVER;
+            return FileType::SERVER_FILE;
         } else if (rootFolder == "Common") {
-            return FileType::COMMON;
+            return FileType::COMMON_FILE;
         } else {
             TE_LOGGER_CRITICAL("Unknown file type: \n\tRoot folder: {0}\n\tPath: {1}", rootFolder, path.string());
-            return FileType::COMMON;
+            return FileType::COMMON_FILE;
         }
     }
 }

@@ -10,7 +10,8 @@
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
-    Server::Server() : AppCore() {
+    Server::Server() {
+        physicsEngine.init();
     }
 
     Server::~Server() {

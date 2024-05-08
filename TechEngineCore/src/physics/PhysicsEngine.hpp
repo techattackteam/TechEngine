@@ -12,7 +12,7 @@ namespace TechEngine {
         physx::PxDefaultAllocator allocator;
         physx::PxDefaultErrorCallback errorCallback;
         physx::PxDefaultCpuDispatcher* dispatcher;
-        physx::PxFoundation* foundation;
+        inline static physx::PxFoundation* foundation;
         physx::PxPhysics* physics;
         physx::PxScene* pxScene;
         physx::PxMaterial* defaultMaterial;

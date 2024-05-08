@@ -85,16 +85,14 @@ namespace TechEngine {
         return clientCmakeBuildPath;
     }
 
-    const std::filesystem::path& ProjectManager::getServerScriptsDebugDLLPath() {
+    const std::filesystem::path& ProjectManager::getServerUserScriptsDLLPath() {
+#ifdef TE_DEBUG
         return serverUserScriptsDebugDLLPath;
-    }
-
-    const std::filesystem::path& ProjectManager::getServerScriptsReleaseDLLPath() {
-        return serverUserScriptsReleaseDLLPath;
-    }
-
-    const std::filesystem::path& ProjectManager::getServerScriptsReleaseDebugDLLPath() {
+#elif TE_RELEASEDEBUG
         return serverUserScriptsReleaseDebugDLLPath;
+#elif TE_RELEASE
+        return serverUserScriptsReleaseDLLPath;
+#endif
     }
 
     const std::filesystem::path& ProjectManager::getServerCmakeBuildPath() {
