@@ -10,9 +10,9 @@ namespace TechEngine {
     class PanelsManager;
 
     enum FileType {
-        CLIENT,
-        SERVER,
-        COMMON
+        CLIENT_FILE,
+        SERVER_FILE,
+        COMMON_FILE
     };
 
     class ContentBrowserPanel : public Panel {

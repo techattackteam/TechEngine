@@ -83,10 +83,10 @@ namespace TechEngine {
 #else
         panelsManager.compileUserScripts(RELEASEDEBUG, PROJECT_SERVER);
 #endif
-        server.sceneManager.saveCurrentScene();
+        server.sceneManager.saveSceneAsTemporarily(projectManager.getProjectCachePath().string(), PROJECT_SERVER);
         server.eventDispatcher.copy();
         server.materialManager.copy();
-        server.scriptEngine.init(projectManager.getClientUserScriptsDLLPath().string());
+        server.scriptEngine.init(projectManager.getServerUserScriptsDLLPath().string());
         server.scriptEngine.onStart();
         server.physicsEngine.start();
         m_currentPlaying = true;
@@ -96,7 +96,7 @@ namespace TechEngine {
         server.physicsEngine.stop();
         server.eventDispatcher.restoreCopy(); //PROBLEM: EventDispatcher is a singleton while there is a client and server instance
         server.materialManager.restoreCopy();
-        server.sceneManager.loadSceneFromTemporarily(projectManager.getProjectCachePath().string(), PROJECT_CLIENT);
+        server.sceneManager.loadSceneFromTemporarily(projectManager.getProjectCachePath().string(), PROJECT_SERVER);
         sceneHierarchyPanel.getSelectedGO().clear();
         for (GameObject* gameObject: server.sceneManager.getScene().getGameObjects()) {
             if (std::find(sceneHierarchyPanel.getSelectedGO().begin(), sceneHierarchyPanel.getSelectedGO().end(), gameObject) != sceneHierarchyPanel.getSelectedGO().end()) {

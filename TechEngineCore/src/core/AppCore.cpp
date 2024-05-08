@@ -14,6 +14,7 @@ namespace TechEngine {
             onAppCloseRequestEvent();
         });
         timer.init();
+
     }
 
     AppCore::~AppCore() {

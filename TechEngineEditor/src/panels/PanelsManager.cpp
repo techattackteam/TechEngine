@@ -16,7 +16,6 @@
 #include "events/OnProcessCloseEvent.hpp"
 #include "events/input/KeyReleasedEvent.hpp"
 #include "events/window/WindowCloseEvent.hpp"
-#include "events/scripts/ScriptCrashEvent.hpp"
 
 namespace TechEngine {
     PanelsManager::PanelsManager(Client& client,
@@ -333,12 +332,12 @@ namespace TechEngine {
 
 
     void PanelsManager::compileUserScripts(CompileMode compileMode, CompileProject compileProject) {
-        std::string cmakeBuildPath = compileProject == CLIENT ? projectManager.getClientCmakeBuildPath().string() : projectManager.getServerCmakeBuildPath().string();
-        std::string cmakeListPath = compileProject == CLIENT ? projectManager.getClientCmakeListPath().string() : projectManager.getServerCmakeListPath().string();
-        std::string techEngineLibPath = compileProject == CLIENT ? projectManager.getTechEngineClientLibPath().string() : projectManager.getTechEngineServerLibPath().string();
+        std::string cmakeBuildPath = compileProject == CompileProject::PROJECT_CLIENT ? projectManager.getClientCmakeBuildPath().string() : projectManager.getServerCmakeBuildPath().string();
+        std::string cmakeListPath = compileProject == CompileProject::PROJECT_CLIENT ? projectManager.getClientCmakeListPath().string() : projectManager.getServerCmakeListPath().string();
+        std::string techEngineLibPath = compileProject == CompileProject::PROJECT_CLIENT ? projectManager.getTechEngineClientLibPath().string() : projectManager.getTechEngineServerLibPath().string();
         std::string techEngineCoreLibPath = projectManager.getTechEngineCoreLibPath().string();
 
-        std::string variable = compileProject == CLIENT ? "TechEngineClientLIB:STRING=\"" : "TechEngineServerLIB:STRING=\"";
+        std::string variable = compileProject == CompileProject::PROJECT_CLIENT ? "TechEngineClientLIB:STRING=\"" : "TechEngineServerLIB:STRING=\"";
 
         if (!std::filesystem::exists(cmakeBuildPath) || std::filesystem::is_empty(cmakeBuildPath)) {
             std::string command = "\"" + projectManager.getCmakePath().string() +

@@ -50,7 +50,9 @@ namespace TechEngine {
     }
 
     void PhysicsEngine::init() {
-        foundation = PxCreateFoundation(PX_PHYSICS_VERSION, allocator, errorCallback);
+        if (!foundation) {
+            foundation = PxCreateFoundation(PX_PHYSICS_VERSION, allocator, errorCallback);
+        }
         if (!foundation)
             TE_LOGGER_CRITICAL("PxCreateFoundation failed!");
         pvd = PxCreatePvd(*foundation);

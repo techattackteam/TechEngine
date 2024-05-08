@@ -10,7 +10,6 @@ namespace TechEngine {
             onWindowCloseEvent((WindowCloseEvent*)(event));
         });
 
-
         physicsEngine.init();
     }
 

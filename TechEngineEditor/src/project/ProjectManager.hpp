@@ -79,11 +79,7 @@ namespace TechEngine {
 
         const std::filesystem::path& getClientCmakeBuildPath();
 
-        const std::filesystem::path& getServerScriptsDebugDLLPath();
-
-        const std::filesystem::path& getServerScriptsReleaseDLLPath();
-
-        const std::filesystem::path& getServerScriptsReleaseDebugDLLPath();
+        const std::filesystem::path& getServerUserScriptsDLLPath();
 
         const std::filesystem::path& getServerCmakeBuildPath();
 

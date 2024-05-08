@@ -26,13 +26,13 @@ namespace TechEngine {
     };
 }
 
-#define RegisterScript(Type)                                                                    \
-    namespace {                                                                                 \
-        TechEngine::Script *createScript() {                                                    \
-            TechEngine::Script *script = new Type();                                            \
-            TechEngine::ScriptRegister::registerScript(script, __FILE__);  \
-            return script;                                                                      \
-    }                                                                                           \
-                                                                                                \
-    TechEngine::Script *registery = createScript();                                             \
+#define RegisterScript(Type)                                                    \
+    namespace {                                                                 \
+        TechEngine::Script *createScript() {                                    \
+            TechEngine::Script *script = new Type();                            \
+            TechEngine::ScriptRegister::registerScript(script, __FILE__);       \
+            return script;                                                      \
+    }                                                                           \
+                                                                                \
+    TechEngine::Script *registery = createScript();                             \
 };
