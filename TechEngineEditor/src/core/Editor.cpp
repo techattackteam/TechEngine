@@ -2,6 +2,7 @@
 #include "Editor.hpp"
 #include "core/FileSystem.hpp"
 #include "external/EntryPoint.hpp"
+#include "script/ScriptRegister.hpp"
 #include "yaml-cpp/yaml.h"
 
 namespace TechEngine {
@@ -17,6 +18,7 @@ namespace TechEngine {
         panelsManager.init();
         client.renderer.init(client.filePaths);
         server.init();
+        ScriptRegister::getInstance().init(&client.scriptEngine, &server.scriptEngine);
     }
 
     void Editor::onUpdate() {

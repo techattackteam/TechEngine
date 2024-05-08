@@ -141,7 +141,8 @@ namespace TechEngine {
         try {
             out << YAML::BeginMap;
             out << YAML::Key << "Project Name" << YAML::Value << projectName;
-            out << YAML::Key << "Last scene loaded" << YAML::Value << "DefaultScene";
+            out << YAML::Key << "Client last loaded scene" << YAML::Value << "Client";
+            out << YAML::Key << "Server last loaded scene" << YAML::Value << "Server";
             out << YAML::EndMap;
             std::ofstream fout(projectFilePath);
             fout << out.c_str();
@@ -279,6 +280,19 @@ namespace TechEngine {
         clientUserScriptsDebugDLLPath = projectClientResourcesPath.string() + scriptsDebugDLLPath;
         clientUserScriptsReleaseDLLPath = projectClientResourcesPath.string() + scriptsReleaseDLLPath;
         clientUserScriptsReleaseDebugDLLPath = projectClientResourcesPath.string() + scriptsReleaseDebugDLLPath;
+#ifdef TE_DEBUG
+        techEngineClientLibPath = projectClientResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineClient.lib";
+        techEngineServerLibPath = projectServerResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineServer.lib";
+        techEngineCoreLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCore.lib";
+#elif TE_RELEASEDEBUG
+        techEngineClientLibPath = projectClientResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineClient.lib";
+        techEngineServerLibPath = projectServerResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineServer.lib";
+        techEngineCoreLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCore.lib";
+#elif TE_RELEASE
+        techEngineClientLibPath = projectClientResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineClient.lib";
+        techEngineServerLibPath = projectServerResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineServer.lib";
+        techEngineCoreLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCore.lib";
+#endif
 
         serverCmakeBuildPath = projectServerResourcesPath.string() + cmakeBuildPath;
         serverCmakeListPath = projectServerResourcesPath.string() + cmakeListPath;

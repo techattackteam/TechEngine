@@ -264,9 +264,9 @@ namespace TechEngine {
 #ifdef TE_DEBUG
                 compileUserScripts(DEBUG, PROJECT_SERVER);
 #elif TE_RELEASE
-                compileServerUserScripts(RELEASE, PROJECT_SERVER);
+                compileUserScripts(RELEASE, PROJECT_SERVER);
 #elif TE_RELEASEDEBUG
-                compileServerUserScripts(RELEASEDEBUG, PROJECT_SERVER);
+                compileUserScripts(RELEASEDEBUG, PROJECT_SERVER);
 #endif*/
             } else if (ImGui::MenuItem("Run")) {
                 runServerProcess();
@@ -337,10 +337,13 @@ namespace TechEngine {
         std::string cmakeListPath = compileProject == CLIENT ? projectManager.getClientCmakeListPath().string() : projectManager.getServerCmakeListPath().string();
         std::string techEngineLibPath = compileProject == CLIENT ? projectManager.getTechEngineClientLibPath().string() : projectManager.getTechEngineServerLibPath().string();
         std::string techEngineCoreLibPath = projectManager.getTechEngineCoreLibPath().string();
+
+        std::string variable = compileProject == CLIENT ? "TechEngineClientLIB:STRING=\"" : "TechEngineServerLIB:STRING=\"";
+
         if (!std::filesystem::exists(cmakeBuildPath) || std::filesystem::is_empty(cmakeBuildPath)) {
             std::string command = "\"" + projectManager.getCmakePath().string() +
                                   " -G \"Visual Studio 17 2022\""
-                                  " -D TechEngineServerLIB:STRING=\"" + techEngineLibPath + "\"" +
+                                  " -D " + variable + techEngineLibPath + "\"" +
                                   " -D TechEngineCoreLIB:STRING=\"" + techEngineCoreLibPath + "\"" +
                                   " -S " + "\"" + cmakeListPath + "\"" +
                                   " -B " + "\"" + cmakeBuildPath + "\"" + "\"";

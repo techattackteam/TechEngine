@@ -18,14 +18,14 @@ namespace TechEngine {
 
     void Client::onFixedUpdate() {
         eventDispatcher.fixedSyncEventManager.execute();
-        ScriptEngine::getInstance()->onFixedUpdate();
+        scriptEngine.onFixedUpdate();
         sceneManager.getScene().fixedUpdate();
         networkEngine.fixedUpdate();
     }
 
     void Client::onUpdate() {
         sceneManager.getScene().update();
-        ScriptEngine::getInstance()->onUpdate();
+        scriptEngine.onUpdate();
         eventDispatcher.syncEventManager.execute();
         networkEngine.update();
         window.onUpdate();

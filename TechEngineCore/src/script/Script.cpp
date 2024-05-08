@@ -13,9 +13,12 @@ namespace TechEngine {
     }
 
     void Script::onUpdate() {
-
     }
 
     void Script::onClose() {
+    }
+
+    const std::string& Script::getName() const {
+        return name;
     }
 }

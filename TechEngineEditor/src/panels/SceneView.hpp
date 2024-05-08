@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include "Panel.hpp"
 #include "components/render/CameraComponent.hpp"
 #include "renderer/Renderer.hpp"

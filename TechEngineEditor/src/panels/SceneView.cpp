@@ -1,4 +1,7 @@
 #include "SceneView.hpp"
+
+#include <iostream>
+
 #include "components/physics/BoxColliderComponent.hpp"
 #include "core/Logger.hpp"
 #include "PanelsManager.hpp"
@@ -40,6 +43,7 @@ namespace TechEngine {
         ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
         guizmo.editTransform(sceneCamera->getComponent<CameraComponent>(), ImGui::GetCurrentContext(), selectedGO);
         frameBuffer.unBind();
+
     }
 
     void SceneView::renderCameraFrustum(CameraComponent* camera) {

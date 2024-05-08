@@ -39,10 +39,3 @@ inline OStream& operator<<(OStream& os, glm::qua<T, Q> quaternion) {
 #define TE_LOGGER_WARN(...) TechEngine::Logger::getEngineLogger()->warn(__VA_ARGS__)
 #define TE_LOGGER_ERROR(...) TechEngine::Logger::getEngineLogger()->error(__VA_ARGS__)
 #define TE_LOGGER_CRITICAL(...) {TechEngine::Logger::getEngineLogger()->critical(__VA_ARGS__); __debugbreak();}
-
-// Client log macros
-#define GAME_LOGGER_TRACE(...) TechEngine::Logger::getGameLogger()->trace(__VA_ARGS__)
-#define GAME_LOGGER_INFO(...) TechEngine::Logger::getGameLogger()->info(__VA_ARGS__)
-#define GAME_LOGGER_WARN(...) TechEngine::Logger::getGameLogger()->warn(__VA_ARGS__)
-#define GAME_LOGGER_ERROR(...) TechEngine::Logger::getGameLogger()->error(__VA_ARGS__)
-#define GAME_LOGGER_CRITICAL(...) TechEngine::Logger::getGameLogger()->critical(__VA_ARGS__)

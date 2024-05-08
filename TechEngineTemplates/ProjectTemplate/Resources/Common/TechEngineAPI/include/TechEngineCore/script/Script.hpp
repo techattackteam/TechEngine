@@ -22,9 +22,7 @@ namespace TechEngine {
 
         virtual void onClose();
 
-        const std::string& getName() const {
-            return name;
-        }
+        const std::string& getName() const;
     };
 }
 
@@ -32,7 +30,7 @@ namespace TechEngine {
     namespace {                                                                                 \
         TechEngine::Script *createScript() {                                                    \
             TechEngine::Script *script = new Type();                                            \
-            TechEngine::ScriptEngine::registerScript(script, std::filesystem::current_path());  \
+            TechEngine::ScriptRegister::registerScript(script, __FILE__);  \
             return script;                                                                      \
     }                                                                                           \
                                                                                                 \

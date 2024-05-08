@@ -61,9 +61,9 @@ namespace TechEngine {
         ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x / 2) - (size / 2));
         if (ImGui::Button(m_currentPlaying == true ? "Stop" : "Play", ImVec2(size, 0))) {
             if (!m_currentPlaying) {
-                //startRunningScene();
+                startRunningScene();
             } else {
-                //stopRunningScene();
+                stopRunningScene();
             }
         }
 
@@ -81,13 +81,13 @@ namespace TechEngine {
 #ifdef TE_DEBUG
         panelsManager.compileUserScripts(DEBUG, PROJECT_SERVER);
 #else
-        panelsManager.compileClientUserScripts(RELEASEDEBUG, PROJECT_SERVER);
+        panelsManager.compileUserScripts(RELEASEDEBUG, PROJECT_SERVER);
 #endif
         server.sceneManager.saveCurrentScene();
         server.eventDispatcher.copy();
         server.materialManager.copy();
-        ScriptEngine::getInstance()->init(projectManager.getClientUserScriptsDLLPath().string());
-        ScriptEngine::getInstance()->onStart();
+        server.scriptEngine.init(projectManager.getClientUserScriptsDLLPath().string());
+        server.scriptEngine.onStart();
         server.physicsEngine.start();
         m_currentPlaying = true;
     }
@@ -104,6 +104,6 @@ namespace TechEngine {
             }
         }
         m_currentPlaying = false;
-        ScriptEngine::getInstance()->stop(); //PROBLEM: ScriptEngine is a singleton while there is a client and server instance
+        server.scriptEngine.stop(); //PROBLEM: ScriptEngine is a singleton while there is a client and server instance
     }
 }

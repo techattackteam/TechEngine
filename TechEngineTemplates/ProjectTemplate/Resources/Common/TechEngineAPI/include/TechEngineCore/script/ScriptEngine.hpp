@@ -12,14 +12,13 @@ namespace TechEngine {
         std::list<Script*> scripts = {};
         bool runtime = false;
         bool dllLoaded = false;
-        inline static ScriptEngine* instance;
 
         HINSTANCE m_userCustomDll = nullptr;
         HANDLE m_dllProcessHandle = nullptr;
         HANDLE m_dllThreadHandle = nullptr;
 
     public:
-        ScriptEngine(bool runtime);
+        explicit ScriptEngine(bool runtime);
 
         void init(const std::string& dllPath);
 
@@ -29,13 +28,9 @@ namespace TechEngine {
 
         void onFixedUpdate();
 
-        void onFixedUpdateLoop();
-
         Script* getScript(const std::string& name);
 
-        static ScriptEngine* getInstance();
-
-        static void registerScript(Script* script);
+        void registerScript(Script* script);
 
         void deleteScripts();
 

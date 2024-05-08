@@ -15,6 +15,7 @@ list(REMOVE_DUPLICATES TechEngineCore_Include_Dirs)
 add_library(TechEngineCore SHARED ${TechEngineCore_Sources} ${TechEngineCore_Headers})
 target_compile_definitions(TechEngineCore PUBLIC TECH_ENGINE_API_EXPORTS)
 target_compile_definitions(TechEngineCore PUBLIC GLM_ENABLE_EXPERIMENTAL)
+
 #Setup target's output directory
 if (WIN32) # WINDOWS
     set(TECH_ENGINE_CORE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineCore")

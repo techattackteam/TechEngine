@@ -72,8 +72,8 @@ namespace TechEngine {
     void Server::onFixedUpdate() {
         eventDispatcher.fixedSyncEventManager.execute();
         eventDispatcher.syncEventManager.execute();
-        ScriptEngine::getInstance()->onFixedUpdate();
-        ScriptEngine::getInstance()->onUpdate();
+        scriptEngine.onFixedUpdate();
+        scriptEngine.onUpdate();
         sceneManager.getScene().fixedUpdate();
         sceneManager.getScene().update();
         PollIncomingMessages();
