@@ -2,6 +2,8 @@
 #include <string>
 #include <filesystem>
 
+#include "script/ScriptRegister.hpp"
+
 namespace TechEngine {
     class Script {
     private:

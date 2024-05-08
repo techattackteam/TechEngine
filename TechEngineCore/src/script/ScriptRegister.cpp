@@ -1,6 +1,7 @@
 #include "ScriptRegister.hpp"
 
-#include "core/Logger.hpp"
+#include "script/ScriptEngine.hpp"
+#include "script/Script.hpp"
 
 namespace TechEngine {
     ScriptRegister ScriptRegister::instance;
