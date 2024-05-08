@@ -4,7 +4,7 @@
 namespace TechEngine {
     Client::Client(Window& window) : window(window),
                                      renderer(),
-                                     networkEngine(eventDispatcher, sceneManager.getScene()),
+                                     networkEngine(eventDispatcher, sceneManager),
                                      api(&networkEngine) {
         eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event* event) {
             onWindowCloseEvent((WindowCloseEvent*)(event));

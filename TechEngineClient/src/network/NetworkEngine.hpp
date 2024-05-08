@@ -1,10 +1,10 @@
 #pragma once
+
 #include "serialization/Buffer.hpp"
+#include "scene/SceneManager.hpp"
 
-#include <filesystem>
 #include <steam/isteamnetworkingsockets.h>
-
-#include "scene/Scene.hpp"
+#include <filesystem>
 
 namespace TechEngine {
     class NetworkEngine {
@@ -24,10 +24,11 @@ namespace TechEngine {
         ISteamNetworkingSockets* sockets = nullptr;
         HSteamNetConnection connection = 0;
 
-        Scene& scene;
+        SceneManager& sceneManager;
+        const std::string& lastLoadedScene;
 
     public:
-        explicit NetworkEngine(EventDispatcher& eventDispatcher, Scene& scene);
+        explicit NetworkEngine(EventDispatcher& eventDispatcher, SceneManager& sceneManager);
 
         ~NetworkEngine();
 

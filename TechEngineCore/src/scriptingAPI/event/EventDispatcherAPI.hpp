@@ -9,17 +9,17 @@ namespace TechEngine {
 
 namespace TechEngine {
     class EventDispatcherAPI {
+    private:
+        inline static EventDispatcher* clientEventDispatcher = nullptr;
+        inline static EventDispatcher* serverEventDispatcher = nullptr;
+
+    public:
         enum Type {
             CLIENT,
             SERVER,
             COMMON
         };
 
-    private:
-        inline static EventDispatcher* clientEventDispatcher = nullptr;
-        inline static EventDispatcher* serverEventDispatcher = nullptr;
-
-    public:
         void init(EventDispatcher* clientEventDispatcher, EventDispatcher* serverEventDispatcher);
 
         static void dispatch(Type type, Event* event);

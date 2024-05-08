@@ -17,7 +17,7 @@
 #include "scene/GameObject.hpp"
 
 namespace TechEngine {
-    NetworkEngine::NetworkEngine(EventDispatcher& eventDispatcher, Scene& scene) : eventDispatcher(eventDispatcher), scene(scene) {
+    NetworkEngine::NetworkEngine(EventDispatcher& eventDispatcher, SceneManager& sceneManager) : eventDispatcher(eventDispatcher), sceneManager(sceneManager), lastLoadedScene(sceneManager.getActiveSceneName()) {
     }
 
     NetworkEngine::~NetworkEngine() {
@@ -165,8 +165,9 @@ namespace TechEngine {
     void NetworkEngine::disconnectServer() {
         running = false;
         sockets->CloseConnection(connection, 0, nullptr, false);
+        connection = k_HSteamNetConnection_Invalid;
         connectionStatus = ConnectionStatus::Disconnected;
-        GameNetworkingSockets_Kill();
+        sceneManager.loadScene(lastLoadedScene);
     }
 
     void NetworkEngine::sendBuffer(Buffer buffer, bool reliable) {
@@ -248,9 +249,8 @@ namespace TechEngine {
                 // to finish up.  The reason information do not matter in this case,
                 // and we cannot linger because it's already closed on the other end,
                 // so we just pass 0s.
-                networkEngine->sockets->CloseConnection(info->m_hConn, 0, nullptr, false);
-                networkEngine->connection = k_HSteamNetConnection_Invalid;
-                networkEngine->connectionStatus = ConnectionStatus::Disconnected;
+
+                networkEngine->disconnectServer();
                 break;
             }
 
@@ -327,11 +327,12 @@ namespace TechEngine {
                 break;
             }
             case PacketType::SyncGameObject: {
-                SceneSynchronizer::deserializeGameObject(stream, scene);
+                SceneSynchronizer::deserializeGameObject(stream, sceneManager.getScene());
                 break;
             }
             case PacketType::SyncGameState: {
-                SceneSynchronizer::deserializeScene(stream, scene);
+                sceneManager.saveCurrentScene();
+                SceneSynchronizer::deserializeScene(stream, sceneManager);
                 break;
             }
 
