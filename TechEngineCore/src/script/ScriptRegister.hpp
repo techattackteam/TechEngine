@@ -1,8 +1,11 @@
 #pragma once
 
-#include "ScriptEngine.hpp"
+#include <string>
 
 namespace TechEngine {
+    class ScriptEngine;
+    class Script;
+
     class ScriptRegister {
     private:
         ScriptEngine* clientScriptEngine;

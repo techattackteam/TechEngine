@@ -5,10 +5,8 @@
 namespace TechEngine {
     TechEngineAPI::TechEngineAPI(SceneManager* sceneManager,
                                  EventDispatcher* eventDispatcher,
-                                 /*ScriptEngine* scriptEngine,*/
                                  MaterialManager* materialManager) : sceneManagerAPI(new SceneManagerAPI(sceneManager)),
                                                                      eventDispatcherAPI(new EventDispatcherAPI(eventDispatcher)),
-                                                                     /*scriptEngineAPI(new ScriptEngineAPI(scriptEngine)),*/
                                                                      materialManagerAPI(new MaterialManagerAPI(materialManager)) {
     }
 
@@ -16,7 +14,6 @@ namespace TechEngine {
     TechEngineAPI::~TechEngineAPI() {
         delete sceneManagerAPI;
         delete eventDispatcherAPI;
-        //delete scriptEngineAPI;
         delete materialManagerAPI;
     }
 }
