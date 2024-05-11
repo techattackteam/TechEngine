@@ -1,6 +1,17 @@
 #include "PacketType.hpp"
 
+#include "core/Logger.hpp"
+
 namespace TechEngine {
+    bool checkCustomPacketType(const std::string& type) {
+        if (type.empty() || std::find(customPacketTypes.begin(), customPacketTypes.end(), type) != customPacketTypes.end()) {
+            TE_LOGGER_WARN("Invalid custom packet type: {}", type);
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     std::string_view PacketTypeToString(PacketType type) {
         switch (type) {
             case PacketType::None: return "PacketType::None";

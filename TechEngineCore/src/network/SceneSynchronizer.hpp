@@ -4,6 +4,7 @@
 #include "serialization/Buffer.hpp"
 #include "serialization/BufferStream.hpp"
 #include "components/network/NetworkSync.hpp"
+#include "network/PacketType.hpp"
 
 namespace TechEngine::SceneSynchronizer {
     inline Buffer serializeGameObject(GameObject& gameObject) {

@@ -12,6 +12,7 @@
 #include "events/network/ClientBanEvent.hpp"
 #include "events/network/ClientKickEvent.hpp"
 #include "events/network/ConnectionEstablishedEvent.hpp"
+#include "events/network/CustomPacketReceived.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 #include "network/SceneSynchronizer.hpp"
 #include "scene/GameObject.hpp"
@@ -262,7 +263,6 @@ namespace TechEngine {
 
             case k_ESteamNetworkingConnectionState_Connected:
                 networkEngine->connectionStatus = ConnectionStatus::Connected;
-                TE_LOGGER_INFO("Connected to remote host");
                 networkEngine->sendMessage("Hello from client");
                 networkEngine->eventDispatcher.dispatch(new ConnectionEstablishedEvent());
                 break;
@@ -335,6 +335,13 @@ namespace TechEngine {
                 SceneSynchronizer::deserializeScene(stream, sceneManager);
                 break;
             }
+            case PacketType::CustomPacket: {
+                std::string customPacket;
+                stream.readString(customPacket);
+                if (checkCustomPacketType(customPacket)) {
+                    eventDispatcher.dispatch(new CustomPacketReceived(customPacket));
+                }
+            }
 
             default:
                 break;
@@ -348,5 +355,15 @@ namespace TechEngine {
         stream.writeRaw<PacketType>(PacketType::Message);
         stream.writeString(message);
         sendBuffer(stream.getBuffer());
+    }
+
+    void NetworkEngine::sendCustomPacket(const std::string& packetType, Buffer buffer, bool reliable) {
+        Buffer scratchBuffer;
+        scratchBuffer.allocate(sizeof(PacketType::CustomPacket) + buffer.size);
+        BufferStreamWriter stream(scratchBuffer);
+        stream.writeRaw<PacketType>(PacketType::CustomPacket);
+        stream.writeString(packetType);
+        stream.writeBuffer(buffer);
+        sendBuffer(stream.getBuffer(), reliable);
     }
 }

@@ -13,7 +13,6 @@
 #include "events/panels/RegisterCustomPanel.hpp"
 #include "core/Key.hpp"
 #include "MaterialEditor.hpp"
-#include "NetworkHelper.hpp"
 #include "ServerPanel.hpp"
 #include "scene/SceneManager.hpp"
 #include "windows.h"
@@ -42,7 +41,6 @@ namespace TechEngine {
         ClientPanel clientPanel;
         ServerPanel serverPanel;
         MaterialEditor materialEditor;
-        NetworkHelper networkHelper;
         bool isCtrlPressed = false;
 
         std::vector<PROCESS_INFORMATION> clientProcesses;

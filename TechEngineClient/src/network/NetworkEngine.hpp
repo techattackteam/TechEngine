@@ -65,5 +65,7 @@ namespace TechEngine {
         void onDataReceived(Buffer buffer);
 
         void sendMessage(const std::string& message);
+
+        void sendCustomPacket(const std::string& packetType, Buffer buffer, bool reliable = true);
     };
 }

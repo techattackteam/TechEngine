@@ -3,6 +3,7 @@
 #include "events/connections/OnClientConnected.hpp"
 #include "events/connections/OnClientConnectionRequest.hpp"
 #include "events/connections/OnClientDisconnected.hpp"
+#include "events/network/CustomPacketReceived.hpp"
 #include "external/EntryPoint.hpp"
 #include "network/PacketType.hpp"
 #include "network/SceneSynchronizer.hpp"
@@ -10,7 +11,7 @@
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
-    Server::Server() {
+    Server::Server() : m_Communicator(*this), m_serverAPI(this, &m_Communicator) {
         instance = this;
         physicsEngine.init();
     }
@@ -48,7 +49,7 @@ namespace TechEngine {
         serverLocalAddress.m_port = m_port;
 
         SteamNetworkingConfigValue_t options;
-        options.SetPtr(k_ESteamNetworkingConfig_Callback_ConnectionStatusChanged, (void*)ConnectionStatusChangedCallback);
+        options.SetPtr(k_ESteamNetworkingConfig_Callback_ConnectionStatusChanged, (void*)connectionStatusChangedCallback);
 
         // Try to start listen socket on port
         m_ListenSocket = m_interface->CreateListenSocketIP(serverLocalAddress, 1, &options);
@@ -80,6 +81,7 @@ namespace TechEngine {
         sceneManager.getScene().update();
         PollIncomingMessages();
         m_interface->RunCallbacks();
+        syncGameObjects();
     }
 
     void Server::PollIncomingMessages() {
@@ -108,6 +110,13 @@ namespace TechEngine {
         }
     }
 
+    void Server::syncGameObjects() {
+        for (auto& gameObject: sceneManager.getScene().getGameObjects()) {
+            Buffer buffer = SceneSynchronizer::serializeGameObject(*gameObject);
+            m_Communicator.sendBufferToAllClients(buffer, 0, true);
+        }
+    }
+
     void Server::onDataReceivedCallback(const ClientInfo& clientInfo, Buffer buffer) {
         BufferStreamReader stream(buffer);
 
@@ -131,23 +140,25 @@ namespace TechEngine {
                 eventDispatcher.dispatch(new OnClientConnectionRequest());
                 break;
             }
-
+            case PacketType::CustomPacket: {
+                std::string customPacket;
+                stream.readString(customPacket);
+                if (checkCustomPacketType(customPacket)) {
+                    eventDispatcher.dispatch(new CustomPacketReceived(customPacket));
+                }
+                break;
+            }
             default:
                 break;
         }
     }
 
     void Server::onClientConnected(const ClientInfo& clientInfo) {
-        syncGameState(clientInfo);
+        m_Communicator.syncGameState(clientInfo);
+        eventDispatcher.dispatch(new OnClientConnected(clientInfo.ID));
     }
 
-    void Server::syncGameState(const ClientInfo& clientInfo) {
-        Buffer buffer = SceneSynchronizer::serializeGameState(sceneManager);
-        sendBufferToClient(clientInfo.ID, buffer, true);
-    }
-
-
-    void Server::ConnectionStatusChangedCallback(SteamNetConnectionStatusChangedCallback_t* info) {
+    void Server::connectionStatusChangedCallback(SteamNetConnectionStatusChangedCallback_t* info) {
         instance->onConnectionStatusChanged(info);
     }
 
@@ -216,7 +227,6 @@ namespace TechEngine {
 
                 // User callback
                 onClientConnected(client);
-                eventDispatcher.dispatch(new OnClientConnected());
                 TE_LOGGER_INFO("Client connected: {0}", client.ConnectionDesc);
                 break;
             }
@@ -235,31 +245,7 @@ namespace TechEngine {
         m_interface->SetConnectionName(hConnection, nick);
     }
 
-
-    void Server::sendBufferToClient(ClientID clientID, Buffer buffer, bool reliable) {
-        //Add error handling
-        EResult result = m_interface->SendMessageToConnection((HSteamNetConnection)clientID, buffer.data, (ClientID)buffer.size, reliable ? k_nSteamNetworkingSend_Reliable : k_nSteamNetworkingSend_Unreliable, nullptr);
-        if (result != k_EResultOK) {
-            TE_LOGGER_ERROR("Failed to send message to client {0}", clientID);
-        }
-    }
-
-    void Server::sendBufferToAllClients(Buffer buffer, ClientID excludeClientID, bool reliable) {
-        for (const auto& [clientID, clientInfo]: m_ConnectedClients) {
-            if (clientID != excludeClientID)
-                sendBufferToClient(clientID, buffer, reliable);
-        }
-    }
-
-    void Server::sendStringToClient(ClientID clientID, const std::string& string, bool reliable) {
-        sendBufferToClient(clientID, Buffer(string.data(), string.size()), reliable);
-    }
-
-    void Server::sendStringToAllClients(const std::string& string, ClientID excludeClientID, bool reliable) {
-        sendBufferToAllClients(Buffer(string.data(), string.size()), excludeClientID, reliable);
-    }
-
-    void Server::KickClient(ClientID clientID) {
+    void Server::kickClient(ClientID clientID) {
         m_interface->CloseConnection(clientID, 0, "Kicked by host", false);
     }
 }

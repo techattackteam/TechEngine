@@ -1,12 +1,14 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include <string_view>
+#include <vector>
 
-///////////////////////////////////////////////////////////////////////////////////////////
-// Common "protocol" for server<->client communication for this example chat application //
-///////////////////////////////////////////////////////////////////////////////////////////
 namespace TechEngine {
+    inline std::vector<std::string> customPacketTypes;
+
+    bool checkCustomPacketType(const std::string& type);
+
     enum class PacketType : uint16_t {
         //
         // Invalid packet
@@ -136,7 +138,12 @@ namespace TechEngine {
         // [Server->Client]
         // Sync game state
         // 1. GameState
-        SyncGameState = 14
+        SyncGameState = 14,
+
+        //
+        // -- CustomPacket --
+        //
+        CustomPacket = 1000
     };
 
     std::string_view PacketTypeToString(PacketType type);

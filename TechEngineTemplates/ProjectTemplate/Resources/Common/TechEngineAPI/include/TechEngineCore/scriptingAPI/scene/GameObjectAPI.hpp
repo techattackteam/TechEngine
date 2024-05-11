@@ -26,5 +26,7 @@ namespace TechEngine {
         void addComponent(A&&... args);
 
         std::string getName() const;
+
+        std::string getTag() const;
     };
 }
