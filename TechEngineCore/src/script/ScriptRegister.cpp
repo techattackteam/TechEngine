@@ -1,5 +1,6 @@
 #include "ScriptRegister.hpp"
 
+#include "core/Logger.hpp"
 #include "script/ScriptEngine.hpp"
 #include "script/Script.hpp"
 
@@ -16,6 +17,8 @@ namespace TechEngine {
     }
 
     void ScriptRegister::registerScript(Script* script, std::string path) {
+        ScriptEngine* clientScriptEngine = getInstance().clientScriptEngine;
+        ScriptEngine* serverScriptEngine = getInstance().serverScriptEngine;
         //Find first Assets in path
         size_t pos = path.find("\\Assets\\");
         if (pos != std::string::npos) {
@@ -23,12 +26,19 @@ namespace TechEngine {
         }
         path = path.substr(0, path.find_first_of('\\'));
         if (path == "Client") {
-            getInstance().clientScriptEngine->registerScript(script);
+            clientScriptEngine->registerScript(script);
         } else if (path == "Server") {
-            getInstance().serverScriptEngine->registerScript(script);
+            serverScriptEngine->registerScript(script);
+        } else if (path == "Common") {
+            if (clientScriptEngine->isLoadingScripts()) {
+                clientScriptEngine->registerScript(script);
+            } else if (serverScriptEngine->isLoadingScripts()) {
+                serverScriptEngine->registerScript(script);
+            } else {
+                TE_LOGGER_WARN("Client and Server script engines are not loading scripts. Skipping script registration.");
+            }
         } else {
-            getInstance().clientScriptEngine->registerScript(script);
-            getInstance().serverScriptEngine->registerScript(script);
+            TE_LOGGER_WARN("Client and Server script engines are not loading scripts. Skipping script registration.");
         }
     }
 }

@@ -9,7 +9,9 @@ namespace TechEngine {
     void ScriptEngine::init(const std::string& dllPath, EventDispatcher* eventDispatcher) {
         if (std::filesystem::exists(dllPath)) {
             this->eventDispatcher = eventDispatcher;
+            loadingScripts = true;
             m_userCustomDll = LoadLibraryA(dllPath.c_str());
+            loadingScripts = false;
             dllLoaded = true;
         } else {
             TE_LOGGER_WARN("User scripts dll not found. Skipping loading.");

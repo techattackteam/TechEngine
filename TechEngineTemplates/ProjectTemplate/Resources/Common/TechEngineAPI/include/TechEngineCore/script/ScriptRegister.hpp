@@ -1,5 +1,6 @@
 #pragma once
 
+#include <list>
 #include <string>
 
 namespace TechEngine {
@@ -11,6 +12,8 @@ namespace TechEngine {
         ScriptEngine* clientScriptEngine;
         ScriptEngine* serverScriptEngine;
         static ScriptRegister instance;
+
+        std::list<std::string> scriptsNames;
 
     public:
         ScriptRegister() = default;

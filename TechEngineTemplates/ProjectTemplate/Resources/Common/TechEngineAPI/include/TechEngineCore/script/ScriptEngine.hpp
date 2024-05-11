@@ -13,6 +13,7 @@ namespace TechEngine {
         std::list<Script*> scripts = {};
         bool runtime = false;
         bool dllLoaded = false;
+        bool loadingScripts = false;
 
         HINSTANCE m_userCustomDll = nullptr;
         HANDLE m_dllProcessHandle = nullptr;
@@ -38,5 +39,9 @@ namespace TechEngine {
         void deleteScripts();
 
         void stop();
+
+        bool isLoadingScripts() const {
+            return loadingScripts;
+        }
     };
 }
