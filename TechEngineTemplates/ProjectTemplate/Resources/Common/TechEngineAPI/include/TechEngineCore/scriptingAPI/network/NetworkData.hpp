@@ -3,7 +3,8 @@
 #include <string>
 
 namespace TechEngine {
-    namespace NetworkData {
+    class NetworkData {
+    public:
         static void registerPacketType(const std::string& packetName);
     };
 }
