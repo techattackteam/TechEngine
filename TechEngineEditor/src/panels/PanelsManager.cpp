@@ -1,5 +1,4 @@
 #include "PanelsManager.hpp"
-#include "script/ScriptEngine.hpp"
 #include "events/appManagement/AppCloseRequestEvent.hpp"
 #include "core/Logger.hpp"
 #include "GL/glew.h"
@@ -29,8 +28,7 @@ namespace TechEngine {
                                                                    exportSettingsPanel(eventDispatcher, *this, projectManager, client.sceneManager, client.renderer.getShadersManager()),
                                                                    clientPanel(client, eventDispatcher, *this, projectManager),
                                                                    serverPanel(*this, eventDispatcher, server, projectManager, client.renderer),
-                                                                   materialEditor(client, server),
-                                                                   networkHelper(client.networkEngine, client.eventDispatcher) {
+                                                                   materialEditor(client, server) {
     }
 
     void PanelsManager::init() {
@@ -78,7 +76,6 @@ namespace TechEngine {
         contentBrowser.update();
         exportSettingsPanel.update();
         materialEditor.update(ImGuiStyleVar_WindowPadding, ImVec2{0, 0}, ImGuiWindowFlags_None, true);
-        networkHelper.update();
         endImGuiFrame();
     }
 

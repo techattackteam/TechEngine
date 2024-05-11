@@ -33,6 +33,8 @@ add_custom_command(TARGET TechEngineServer POST_BUILD
 set(TECH_ENGINE_SERVER_API_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Server/TechEngineAPI/include/TechEngineServer")
 set(TECH_ENGINE_SERVER_API_FILES
         "${PROJECT_SOURCE_DIR}/TechEngineServer/src/events"
+        "${PROJECT_SOURCE_DIR}/TechEngineServer/src/scriptingAPI"
+        "${PROJECT_SOURCE_DIR}/TechEngineServer/src/core/ClientInfo.hpp"
 )
 
 #Clear TechEngineServer API directory

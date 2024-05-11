@@ -29,6 +29,10 @@ namespace TechEngine {
         return gameObject->getName();
     }
 
+    std::string GameObjectAPI::getTag() const {
+        return gameObject->getTag();
+    }
+
     template TransformComponent* GameObjectAPI::getComponent<TransformComponent>();
 
     template CameraComponent* GameObjectAPI::getComponent<CameraComponent>();
