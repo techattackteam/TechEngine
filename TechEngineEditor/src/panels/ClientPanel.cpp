@@ -108,5 +108,8 @@ namespace TechEngine {
         }
         m_currentPlaying = false;
         client.scriptEngine.stop();
+        if (client.networkEngine.isRunning()) {
+            client.networkEngine.disconnectServer();
+        }
     }
 }
