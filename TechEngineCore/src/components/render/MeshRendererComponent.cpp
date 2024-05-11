@@ -72,7 +72,7 @@ namespace TechEngine {
 
     void MeshRendererComponent::Deserialize(StreamReader* stream) {
         Component::Deserialize(stream);
-        mesh = new CubeMesh(); //TODO: for now only cube mesh is supported need to implement mesh bank
+        //mesh = new CubeMesh();
         std::string materialName;
         stream->readString(materialName);
         m_material = MaterialManagerAPI::getMaterial(materialName);

@@ -112,8 +112,10 @@ namespace TechEngine {
 
     void Server::syncGameObjects() {
         for (auto& gameObject: sceneManager.getScene().getGameObjects()) {
-            Buffer buffer = SceneSynchronizer::serializeGameObject(*gameObject);
-            m_Communicator.sendBufferToAllClients(buffer, 0, true);
+            if (gameObject->hasComponent<NetworkSync>()) {
+                Buffer buffer = SceneSynchronizer::serializeGameObject(*gameObject);
+                m_Communicator.sendBufferToAllClients(buffer, 0, true);
+            }
         }
     }
 
