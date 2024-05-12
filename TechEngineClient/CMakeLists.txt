@@ -82,6 +82,11 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
             "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/debug/TechEngineClient.lib"
             "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/lib/debug"
             COMMAND_EXPAND_LISTS)
+    add_custom_command(TARGET TechEngineClient POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+            "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/debug/TechEngineClient.pdb"
+            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/lib/debug"
+            COMMAND_EXPAND_LISTS)
 elseif (CMAKE_BUILD_TYPE STREQUAL "Release")
     if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/lib/release")
         file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/lib/release")

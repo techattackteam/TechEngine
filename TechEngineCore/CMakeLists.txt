@@ -90,7 +90,6 @@ foreach (entry ${TECH_ENGINE_CORE_API_FILES})
         add_custom_command(TARGET TechEngineCore POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E rm -rf "${TECH_ENGINE_CORE_API_DIRECTORY}/${folder_name}"
                 COMMAND_EXPAND_LISTS)
-        message(STATUS "Removed ${TECH_ENGINE_CORE_API_DIRECTORY}/${folder_name}")
         add_custom_command(TARGET TechEngineCore POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_directory "${entry}" "${TECH_ENGINE_CORE_API_DIRECTORY}/${folder_name}"
                 COMMAND_EXPAND_LISTS)
@@ -117,6 +116,10 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_custom_command(TARGET TechEngineCore POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy
             "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/debug/TechEngineCore.lib"
+            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/debug")
+    add_custom_command(TARGET TechEngineCore POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+            "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/debug/TechEngineCore.pdb"
             "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/debug")
 elseif (CMAKE_BUILD_TYPE STREQUAL "Release")
     if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/release")
