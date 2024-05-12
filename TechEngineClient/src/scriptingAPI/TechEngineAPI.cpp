@@ -4,8 +4,9 @@
 
 namespace TechEngine {
     TechEngineAPI::TechEngineAPI(SceneManager* sceneManager,
-                                 MaterialManager* materialManager) : sceneManagerAPI(new SceneManagerAPI(sceneManager)),
-                                                                     eventDispatcherAPI(new EventDispatcherAPI()),
+                                 MaterialManager* materialManager,
+                                 EventDispatcher* eventDispatcher) : sceneManagerAPI(new SceneManagerAPI(sceneManager)),
+                                                                     eventDispatcherAPI(new EventDispatcherAPI(eventDispatcher)),
                                                                      materialManagerAPI(new MaterialManagerAPI(materialManager)) {
     }
 

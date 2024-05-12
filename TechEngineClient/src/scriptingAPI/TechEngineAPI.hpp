@@ -11,12 +11,8 @@ namespace TechEngine {
         MaterialManagerAPI* materialManagerAPI;
 
     public:
-        TechEngineAPI(SceneManager* sceneManager, MaterialManager* materialManager);
+        TechEngineAPI(SceneManager* sceneManager, MaterialManager* materialManager, EventDispatcher* eventDipatcher);
 
         ~TechEngineAPI();
-
-        void initEventDispatcher(EventDispatcher* clientEventDispatcher, EventDispatcher* serverEventDispatcher) {
-            eventDispatcherAPI->init(clientEventDispatcher, serverEventDispatcher);
-        }
     };
 }

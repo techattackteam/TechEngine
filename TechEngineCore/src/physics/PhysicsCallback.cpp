@@ -1,6 +1,5 @@
 #include "PhysicsCallback.hpp"
 #include "PhysicsEngine.hpp"
-#include "scriptingAPI/scene/GameObjectAPI.hpp"
 #include "core/Logger.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 #include "events/physics/callbacks/OnCollisionEvent.hpp"
@@ -17,7 +16,7 @@ namespace TechEngine {
                 if (gameObject == nullptr) { // If the game object is not found, most likely it was destroyed
                     return;
                 }
-                gameObjects.push_back(std::make_shared<GameObjectAPI>(gameObject));
+                //gameObjects.push_back(std::make_shared<GameObjectAPI>(gameObject));
             }
         }
         eventDispatcher.dispatch(new OnCollisionEvent(gameObjects));

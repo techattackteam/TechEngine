@@ -4,12 +4,12 @@
 #include <steam/steamnetworkingsockets.h>
 #include <steam/isteamnetworkingutils.h>
 
-#include "../../../TechEngineCore/src/serialization/Buffer.hpp"
+#include "serialization/Buffer.hpp"
 
 namespace TechEngine {
     class Client {
     private:
-        std::function<void(const Buffer)> dataReceivedCallback;
+        std::function<void(Buffer)> dataReceivedCallback;
         std::function<void()> serverConnectedCallback;
         std::function<void()> serverDisconnectedCallback;
 
