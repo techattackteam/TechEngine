@@ -11,7 +11,7 @@
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
-    Server::Server() : m_Communicator(*this), m_serverAPI(this, &m_Communicator) {
+    Server::Server() : m_Communicator(*this), m_serverAPI(&sceneManager, &materialManager, &eventDispatcher, this, &m_Communicator) {
         instance = this;
         physicsEngine.init();
     }

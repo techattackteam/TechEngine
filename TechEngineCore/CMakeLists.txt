@@ -74,7 +74,7 @@ set(TECH_ENGINE_CORE_API_FILES
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/physics"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/mesh"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/script"
-        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/scriptingAPI"
+        #"${PROJECT_SOURCE_DIR}/TechEngineCore/src/scriptingAPI"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/material/Material.hpp"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/texture"
         "${PROJECT_SOURCE_DIR}/TechEngineCore/src/serialization"

@@ -8,13 +8,11 @@ namespace TechEngine {
     AppCore::AppCore() : scriptEngine(false),
                          materialManager(eventDispatcher, textureManager),
                          sceneManager(eventDispatcher, physicsEngine, materialManager, textureManager, filePaths),
-                         physicsEngine(eventDispatcher, sceneManager.getScene()),
-                         api(&sceneManager, &materialManager) {
+                         physicsEngine(eventDispatcher, sceneManager.getScene()) {
         eventDispatcher.subscribe(AppCloseRequestEvent::eventType, [this](Event* event) {
             onAppCloseRequestEvent();
         });
         timer.init();
-
     }
 
     AppCore::~AppCore() {

@@ -1,13 +1,14 @@
 #pragma once
 #include "network/NetworkAPI.hpp"
+#include "scriptingAPI/TechEngineAPI.hpp"
 
 namespace TechEngine {
-    class TechEngineAPIClient {
-    private:
+    class TechEngineAPIClient : public TechEngineAPI {
+    protected:
         NetworkAPI* networkAPI;
 
     public:
-        TechEngineAPIClient(NetworkEngine* networkEngine);
+        TechEngineAPIClient(SceneManager* sceneManager, MaterialManager* materialManager, EventDispatcher* eventDispatcher, NetworkEngine* networkEngine);
 
         ~TechEngineAPIClient();
     };

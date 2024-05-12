@@ -1,11 +1,9 @@
 #include "MeshRendererComponent.hpp"
 #include "mesh/CubeMesh.hpp"
-#include "scriptingAPI/material/MaterialManagerAPI.hpp"
 
 namespace TechEngine {
     MeshRendererComponent::MeshRendererComponent(GameObject* gameObject, EventDispatcher& eventDispatcher) : mesh(new CubeMesh()), Component(gameObject, eventDispatcher, "MeshRenderer") {
         std::string name = "DefaultMaterial";
-        m_material = MaterialManagerAPI::getMaterial(name);
         paintMesh();
     }
 
@@ -30,7 +28,6 @@ namespace TechEngine {
     }
 
     void MeshRendererComponent::changeMaterial(std::string& name) {
-        m_material = MaterialManagerAPI::getMaterial(name);
         paintMesh();
     }
 
@@ -75,6 +72,6 @@ namespace TechEngine {
         //mesh = new CubeMesh();
         std::string materialName;
         stream->readString(materialName);
-        m_material = MaterialManagerAPI::getMaterial(materialName);
+        //m_material = MaterialManagerAPI::getMaterial(materialName);
     }
 }
