@@ -115,8 +115,12 @@ namespace TechEngine {
         return serverCmakeListPath;
     }
 
-    const std::filesystem::path& ProjectManager::getTechEngineCoreLibPath() {
-        return techEngineCoreLibPath;
+    const std::filesystem::path& ProjectManager::getTechEngineCoreClientLibPath() {
+        return techEngineCoreClientLibPath;
+    }
+
+    const std::filesystem::path& ProjectManager::getTechEngineCoreServerLibPath() {
+        return techEngineCoreServerLibPath;
     }
 
     const std::filesystem::path& ProjectManager::getTechEngineClientLibPath() {
@@ -281,15 +285,18 @@ namespace TechEngine {
 #ifdef TE_DEBUG
         techEngineClientLibPath = projectClientResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineClient.lib";
         techEngineServerLibPath = projectServerResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineServer.lib";
-        techEngineCoreLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCore.lib";
+        techEngineCoreClientLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCoreClient.lib";
+        techEngineCoreServerLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCoreServer.lib";
 #elif TE_RELEASEDEBUG
         techEngineClientLibPath = projectClientResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineClient.lib";
         techEngineServerLibPath = projectServerResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineServer.lib";
-        techEngineCoreLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCore.lib";
+        techEngineCoreClientLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCoreClient.lib";
+        techEngineCoreServerLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCoreServer.lib";
 #elif TE_RELEASE
         techEngineClientLibPath = projectClientResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineClient.lib";
         techEngineServerLibPath = projectServerResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineServer.lib";
-        techEngineCoreLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCore.lib";
+        techEngineCoreClientLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCoreClient.lib";
+        techEngineCoreServerLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCoreServer.lib";
 #endif
 
         serverCmakeBuildPath = projectServerResourcesPath.string() + cmakeBuildPath;

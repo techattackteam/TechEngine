@@ -8,7 +8,7 @@ namespace TechEngine {
     private:
         static std::shared_ptr<spdlog::logger> engineLogger;
         static std::shared_ptr<spdlog::logger> gameLogger;
-
+        inline static bool initialized = false;
     public:
         static void init();
 

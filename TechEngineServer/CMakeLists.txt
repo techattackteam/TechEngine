@@ -20,7 +20,8 @@ endif ()
 include_directories(src)
 
 target_include_directories(TechEngineServer PUBLIC "src")
-target_link_libraries(TechEngineServer TechEngineCore)
+target_link_libraries(TechEngineServer TechEngineCoreServer)
+target_compile_definitions(TechEngineServer PRIVATE TECH_ENGINE_API_EXPORTS)
 
 #Copy dlls to output directory
 add_custom_command(TARGET TechEngineServer POST_BUILD

@@ -328,7 +328,7 @@ namespace TechEngine {
         std::string cmakeBuildPath = compileProject == CompileProject::PROJECT_CLIENT ? projectManager.getClientCmakeBuildPath().string() : projectManager.getServerCmakeBuildPath().string();
         std::string cmakeListPath = compileProject == CompileProject::PROJECT_CLIENT ? projectManager.getClientCmakeListPath().string() : projectManager.getServerCmakeListPath().string();
         std::string techEngineLibPath = compileProject == CompileProject::PROJECT_CLIENT ? projectManager.getTechEngineClientLibPath().string() : projectManager.getTechEngineServerLibPath().string();
-        std::string techEngineCoreLibPath = projectManager.getTechEngineCoreLibPath().string();
+        std::string techEngineCoreLibPath = compileProject == CompileProject::PROJECT_CLIENT ? projectManager.getTechEngineCoreClientLibPath().string() : projectManager.getTechEngineCoreServerLibPath().string();
 
         std::string variable = compileProject == CompileProject::PROJECT_CLIENT ? "TechEngineClientLIB:STRING=\"" : "TechEngineServerLIB:STRING=\"";
 
@@ -352,7 +352,7 @@ namespace TechEngine {
         std::string command = "\"" + projectManager.getCmakePath().string() +
                               " --build " + "\"" + cmakeBuildPath + "\"" + " --target UserScripts --config " + cm + "\"";
         std::system(command.c_str());
-        TE_LOGGER_INFO("Build finished!");
+        //TE_LOGGER_INFO("Build finished!");
     }
 
     void closeRunningProcesses(PVOID lpParameter, BOOLEAN TimerOrWaitFiredm) {

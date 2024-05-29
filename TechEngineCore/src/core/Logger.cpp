@@ -7,6 +7,9 @@ namespace TechEngine {
     std::shared_ptr<spdlog::logger> Logger::gameLogger;
 
     void Logger::init() {
+        if(initialized) {
+            return;
+        }
         std::vector<spdlog::sink_ptr> logSinks;
         logSinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
         logSinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("TechEngine.log", true));
@@ -22,7 +25,7 @@ namespace TechEngine {
         spdlog::register_logger(gameLogger);
         gameLogger->set_level(spdlog::level::trace);
         gameLogger->flush_on(spdlog::level::trace);
-
+        initialized = true;
     }
 
     std::shared_ptr<spdlog::logger> &Logger::getEngineLogger() {

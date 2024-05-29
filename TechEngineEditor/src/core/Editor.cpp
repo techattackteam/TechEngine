@@ -25,7 +25,6 @@ namespace TechEngine {
         panelsManager.init();
         client.renderer.init(client.filePaths);
         server.init();
-        ScriptRegister::getInstance().init(&client.scriptEngine, &server.scriptEngine);
 
         eventDispatcher.subscribe(KeyPressedEvent::eventType, [this](Event* event) {
             Key key = ((KeyPressedEvent*)event)->getKey();

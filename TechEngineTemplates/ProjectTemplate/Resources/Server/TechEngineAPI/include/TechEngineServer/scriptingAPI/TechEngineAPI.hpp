@@ -1,5 +1,5 @@
 #pragma once
-#include "event/EventDispatcherAPI.hpp"
+#include "scriptingAPI/event/EventDispatcherAPI.hpp"
 #include "material/MaterialManagerAPI.hpp"
 #include "scene/SceneManagerAPI.hpp"
 
