@@ -1,9 +1,9 @@
-[submodule "vcpkg"]
+[submodule "dependencies/glfw"]
+	path = dependencies/glfw
+	url = git@github.com:glfw/glfw.git
+[submodule "dependencies/vcpkg"]
 	path = dependencies/vcpkg
-	url = https://github.com/microsoft/vcpkg.git
-[submodule "GameNetworkingSockets"]
+	url = git@github.com:microsoft/vcpkg.git
+[submodule "dependencies/GameNetworkingSockets"]
 	path = dependencies/GameNetworkingSockets
 	url = git@github.com:ValveSoftware/GameNetworkingSockets.git
-[submodule "glfw"]
-	path = dependencies/glfw
-	url = https://github.com/glfw/glfw
