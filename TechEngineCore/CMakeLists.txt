@@ -128,7 +128,6 @@ endfunction()
 find_package(spdlog CONFIG REQUIRED)
 find_package(unofficial-omniverse-physx-sdk CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
-#find_package(GameNetworkingSockets CONFIG REQUIRED)
 
 # Configure TechEngineCoreClient
 configure_tech_engine_core(TechEngineCoreClient)
