@@ -35,4 +35,4 @@
 /.idea/
 /cmake-build-release/
 /bin
-/dependencies/vcpkg
+/dependencies
