@@ -196,7 +196,7 @@ namespace TechEngine {
         fout << out.c_str();
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         std::chrono::duration<double> elapsed_seconds = end - begin;
-        TE_LOGGER_INFO("Scene {0} saved in {1} seconds", sceneName, elapsed_seconds.count());
+        //TE_LOGGER_INFO("Scene {0} saved in {1} seconds", sceneName, elapsed_seconds.count());
     }
 
     void SceneManager::deserializeGameObject(YAML::Node gameObjectYAML, GameObject* parent) {
@@ -329,7 +329,7 @@ namespace TechEngine {
 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         std::chrono::duration<double> elapsed_seconds = end - begin;
-        TE_LOGGER_INFO("Scene {0} loaded in {1} seconds", getSceneNameFromPath(filepath), elapsed_seconds.count());
+        //TE_LOGGER_INFO("Scene {0} loaded in {1} seconds", getSceneNameFromPath(filepath), elapsed_seconds.count());
         return true;
     }
 

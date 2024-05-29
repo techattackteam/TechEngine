@@ -1,5 +1,5 @@
 #pragma once
-#include "event/EventDispatcherAPI.hpp"
+#include "scriptingAPI/event/EventDispatcherAPI.hpp"
 #include "material/MaterialManagerAPI.hpp"
 #include "scene/SceneManagerAPI.hpp"
 
@@ -11,7 +11,7 @@ namespace TechEngine {
         MaterialManagerAPI* materialManagerAPI;
 
     public:
-        TechEngineAPI(SceneManager* sceneManager, MaterialManager* materialManager, EventDispatcher* eventDipatcher);
+        TechEngineAPI(SceneManager* sceneManager, MaterialManager* materialManager, EventDispatcher* eventDispatcher);
 
         ~TechEngineAPI();
     };

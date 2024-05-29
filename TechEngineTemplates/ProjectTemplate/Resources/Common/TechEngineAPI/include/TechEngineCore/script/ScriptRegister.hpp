@@ -9,14 +9,13 @@ namespace TechEngine {
 
     class ScriptRegister {
     private:
-        ScriptEngine* clientScriptEngine;
-        ScriptEngine* serverScriptEngine;
-        static ScriptRegister instance;
+        ScriptEngine* scriptEngine;
+        inline static ScriptRegister* instance;
 
         std::list<std::string> scriptsNames;
 
     public:
-        ScriptRegister() = default;
+        ScriptRegister();
 
         ScriptRegister(const ScriptRegister&) = delete;
 
@@ -24,10 +23,10 @@ namespace TechEngine {
 
         ~ScriptRegister() = default;
 
-        void init(ScriptEngine* clientScriptEngine, ScriptEngine* serverScriptEngine);
+        void init(ScriptEngine* scriptEngine);
 
-        static ScriptRegister& getInstance();
+        static ScriptRegister* getInstance();
 
-        static void registerScript(Script* script, std::string path);
+        static void registerScript(Script* script);
     };
 }

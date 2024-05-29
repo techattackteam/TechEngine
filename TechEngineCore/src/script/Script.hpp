@@ -32,7 +32,7 @@ namespace TechEngine {
     namespace {                                                                 \
         TechEngine::Script *createScript() {                                    \
             TechEngine::Script *script = new Type();                            \
-            TechEngine::ScriptRegister::registerScript(script, __FILE__);       \
+            TechEngine::ScriptRegister::registerScript(script);                 \
             return script;                                                      \
     }                                                                           \
                                                                                 \

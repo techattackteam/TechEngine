@@ -40,7 +40,8 @@ namespace TechEngine {
         std::filesystem::path serverUserScriptsReleaseDebugDLLPath;
         std::filesystem::path serverCmakeListPath;
 
-        std::filesystem::path techEngineCoreLibPath;
+        std::filesystem::path techEngineCoreClientLibPath;
+        std::filesystem::path techEngineCoreServerLibPath;
         std::filesystem::path techEngineClientLibPath;
         std::filesystem::path techEngineServerLibPath;
 
@@ -93,7 +94,9 @@ namespace TechEngine {
 
         const std::filesystem::path& getServerCmakeListPath();
 
-        const std::filesystem::path& getTechEngineCoreLibPath();
+        const std::filesystem::path& getTechEngineCoreClientLibPath();
+
+        const std::filesystem::path& getTechEngineCoreServerLibPath();
 
         const std::filesystem::path& getTechEngineClientLibPath();
 

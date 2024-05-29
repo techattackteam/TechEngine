@@ -23,7 +23,7 @@ endif ()
 
 target_include_directories(TechEngineEditor PRIVATE "src")
 target_link_libraries(TechEngineEditor PUBLIC TechEngineClient TechEngineServer imgui::imgui imguizmo::imguizmo assimp::assimp)
-
+target_compile_definitions(TechEngineEditor PRIVATE TECH_ENGINE_API_EXPORTS)
 #Copy project template
 file(GENERATE
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/CopyConfigurationData$<CONFIG>.cmake"

@@ -1,132 +1,137 @@
-file(GLOB_RECURSE TechEngineCore_Sources CONFIGURE_DEPENDS "src/*.cpp")
-file(GLOB_RECURSE TechEngineCore_Headers "src/*.hpp")
+# Extract common configurations to a function
+function(configure_tech_engine_core target_name)
+    file(GLOB_RECURSE ${target_name}_Sources CONFIGURE_DEPENDS "src/*.cpp")
+    file(GLOB_RECURSE ${target_name}_Headers "src/*.hpp")
 
+    foreach (_headerFile ${${target_name}_Headers})
+        get_filename_component(_dir ${_headerFile} PATH)
+        list(APPEND ${target_name}_Include_Dirs ${_dir})
+    endforeach ()
+    list(REMOVE_DUPLICATES ${target_name}_Include_Dirs)
+
+    add_library(${target_name} SHARED ${${target_name}_Sources} ${${target_name}_Headers})
+    target_compile_definitions(${target_name} PUBLIC GLM_ENABLE_EXPERIMENTAL)
+    target_compile_definitions(${target_name} PRIVATE TECH_ENGINE_API_EXPORTS)
+    # Setup target's output directory
+    if (WIN32) # WINDOWS
+        set(TECH_ENGINE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineCore/${target_name}")
+        set_target_properties(${target_name} PROPERTIES
+                ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_OUTPUT_DIRECTORY}/debug"
+                LIBRARY_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_OUTPUT_DIRECTORY}/debug"
+                RUNTIME_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_OUTPUT_DIRECTORY}/debug"
+                ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_OUTPUT_DIRECTORY}/release"
+                LIBRARY_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_OUTPUT_DIRECTORY}/release"
+                RUNTIME_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_OUTPUT_DIRECTORY}/release"
+        )
+    endif ()
+
+    # Optional: import the defined target to copy over the GPU acceleration libraries (3rd party provided by NVIDIA)
+    if (TARGET unofficial::omniverse-physx-sdk::gpu-library)
+        if (UNIX)
+            # Add rpath setting to find .so libraries on unix based systems
+            set_target_properties(${target_name} PROPERTIES
+                    BUILD_WITH_INSTALL_RPATH TRUE
+                    INSTALL_RPATH "$ORIGIN"
+            )
+        endif ()
+        add_custom_command(TARGET ${target_name} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_FILE:unofficial::omniverse-physx-sdk::gpu-library>
+                $<TARGET_FILE_DIR:${target_name}>)
+        if (WIN32)
+            add_custom_command(TARGET ${target_name} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    $<TARGET_FILE:unofficial::omniverse-physx-sdk::gpu-device-library>
+                    $<TARGET_FILE_DIR:${target_name}>)
+        endif ()
+    else ()
+        message(WARNING "GPU acceleration library target not defined - GPU acceleration will NOT be available!")
+    endif ()
+
+    target_include_directories(${target_name} PUBLIC "src")
+    target_link_libraries(${target_name} PUBLIC spdlog::spdlog unofficial::omniverse-physx-sdk::sdk yaml-cpp::yaml-cpp GameNetworkingSockets::static)
+    target_compile_definitions(${target_name} PUBLIC
+            $<$<CONFIG:Debug>:TE_DEBUG>
+            $<$<CONFIG:Release>:TE_RELEASEDEBUG>
+            $<$<CONFIG:RelWithDebInfo>:TE_DEBUG>
+    )
+
+    # Copy API include files to project template
+    set(TECH_ENGINE_API_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/include/TechEngineCore")
+    set(TECH_ENGINE_API_FILES
+            "${PROJECT_SOURCE_DIR}/TechEngineCore/src/core/Logger.hpp"
+            "${PROJECT_SOURCE_DIR}/TechEngineCore/src/core/Timer.hpp"
+            "${PROJECT_SOURCE_DIR}/TechEngineCore/src/events"
+            "${PROJECT_SOURCE_DIR}/TechEngineCore/src/eventSystem"
+            "${PROJECT_SOURCE_DIR}/TechEngineCore/src/components"
+            "${PROJECT_SOURCE_DIR}/TechEngineCore/src/physics"
+            "${PROJECT_SOURCE_DIR}/TechEngineCore/src/mesh"
+            "${PROJECT_SOURCE_DIR}/TechEngineCore/src/script"
+            "${PROJECT_SOURCE_DIR}/TechEngineCore/src/material/Material.hpp"
+            "${PROJECT_SOURCE_DIR}/TechEngineCore/src/texture"
+            "${PROJECT_SOURCE_DIR}/TechEngineCore/src/serialization"
+    )
+
+    # Clear API files
+    file(REMOVE_RECURSE "${TECH_ENGINE_API_DIRECTORY}")
+
+    # Copy API files to API directory
+    foreach (entry ${TECH_ENGINE_API_FILES})
+        if (IS_DIRECTORY ${entry})
+            get_filename_component(folder_name ${entry} NAME)
+            add_custom_command(TARGET ${target_name} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E rm -rf "${TECH_ENGINE_API_DIRECTORY}/${folder_name}"
+                    COMMAND_EXPAND_LISTS)
+            add_custom_command(TARGET ${target_name} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${entry}" "${TECH_ENGINE_API_DIRECTORY}/${folder_name}"
+                    COMMAND_EXPAND_LISTS)
+            add_custom_command(TARGET ${target_name} POST_BUILD
+                    COMMAND powershell -Command "Get-ChildItem -Path ${TECH_ENGINE_API_DIRECTORY}/${folder_name} -Filter *.cpp -Recurse | Remove-Item -Force"
+                    COMMAND_EXPAND_LISTS)
+        else ()
+            get_filename_component(folder_name ${entry} DIRECTORY)
+            get_filename_component(folder_name ${folder_name} NAME)
+            if (NOT EXISTS "${TECH_ENGINE_API_DIRECTORY}/${folder_name}")
+                file(MAKE_DIRECTORY "${TECH_ENGINE_API_DIRECTORY}/${folder_name}")
+            endif ()
+            add_custom_command(TARGET ${target_name} PRE_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy "${entry}" "${TECH_ENGINE_API_DIRECTORY}/${folder_name}"
+                    COMMAND_EXPAND_LISTS)
+        endif ()
+    endforeach ()
+
+    # Copy .lib files to project template
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR NOT CMAKE_BUILD_TYPE)
+        if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/debug")
+            file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/debug")
+        endif ()
+        add_custom_command(TARGET ${target_name} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy
+                "${TECH_ENGINE_OUTPUT_DIRECTORY}/debug/${target_name}.lib"
+                "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/debug")
+        add_custom_command(TARGET ${target_name} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy
+                "${TECH_ENGINE_OUTPUT_DIRECTORY}/debug/${target_name}.pdb"
+                "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/debug")
+    elseif (CMAKE_BUILD_TYPE STREQUAL "Release")
+        if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/release")
+            file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/release")
+        endif ()
+        add_custom_command(TARGET ${target_name} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy
+                "${TECH_ENGINE_OUTPUT_DIRECTORY}/release/${target_name}.lib"
+                "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/release")
+    endif ()
+endfunction()
+
+# Create TechEngineCoreClient and TechEngineCoreServer libraries
 find_package(spdlog CONFIG REQUIRED)
 find_package(unofficial-omniverse-physx-sdk CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
-find_package(GameNetworkingSockets CONFIG REQUIRED)
+#find_package(GameNetworkingSockets CONFIG REQUIRED)
 
-foreach (_headerFile ${TechEngineCore_Headers})
-    get_filename_component(_dir ${_headerFile} PATH)
-    list(APPEND TechEngineCore_Include_Dirs ${_dir})
-endforeach ()
-list(REMOVE_DUPLICATES TechEngineCore_Include_Dirs)
+# Configure TechEngineCoreClient
+configure_tech_engine_core(TechEngineCoreClient)
 
-add_library(TechEngineCore SHARED ${TechEngineCore_Sources} ${TechEngineCore_Headers})
-target_compile_definitions(TechEngineCore PUBLIC TECH_ENGINE_API_EXPORTS)
-target_compile_definitions(TechEngineCore PUBLIC GLM_ENABLE_EXPERIMENTAL)
-
-#Setup target's output directory
-if (WIN32) # WINDOWS
-    set(TECH_ENGINE_CORE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineCore")
-    set_target_properties(TechEngineCore PROPERTIES
-            ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/debug"
-            LIBRARY_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/debug"
-            RUNTIME_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/debug"
-    )
-    set_target_properties(TechEngineCore PROPERTIES
-            ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/release"
-            LIBRARY_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/release"
-            RUNTIME_OUTPUT_DIRECTORY_RELEASE "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/release"
-    )
-endif ()
-
-
-# Optional: import the defined target to copy over the GPU acceleration libraries (3rd party provided by NVIDIA)
-if (TARGET unofficial::omniverse-physx-sdk::gpu-library)
-    if (UNIX)
-        # Add rpath setting to find .so libraries on unix based systems
-        set_target_properties(TechEngineCore PROPERTIES
-                BUILD_WITH_INSTALL_RPATH TRUE
-                INSTALL_RPATH "$ORIGIN"
-        )
-    endif ()
-    add_custom_command(TARGET TechEngineCore POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:unofficial::omniverse-physx-sdk::gpu-library>
-            $<TARGET_FILE_DIR:TechEngineCore>)
-    if (WIN32)
-        add_custom_command(TARGET TechEngineCore POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                $<TARGET_FILE:unofficial::omniverse-physx-sdk::gpu-device-library>
-                $<TARGET_FILE_DIR:TechEngineCore>)
-    endif ()
-else ()
-    message(WARNING "GPU acceleration library target not defined - GPU acceleration will NOT be available!")
-endif ()
-
-target_include_directories(TechEngineCore PUBLIC "src")
-target_link_libraries(TechEngineCore PUBLIC spdlog::spdlog unofficial::omniverse-physx-sdk::sdk yaml-cpp::yaml-cpp GameNetworkingSockets::shared)
-target_compile_definitions(TechEngineCore PUBLIC
-        $<$<CONFIG:Debug>:TE_DEBUG>
-        $<$<CONFIG:Release>:TE_RELEASEDEBUG>
-        $<$<CONFIG:RelWithDebInfo>:TE_DEBUG>
-)
-
-#Copy API include files to project template
-set(TECH_ENGINE_CORE_API_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/include/TechEngineCore")
-set(TECH_ENGINE_CORE_API_FILES
-        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/core/Logger.hpp"
-        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/core/Timer.hpp"
-        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/events"
-        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/eventSystem"
-        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/components"
-        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/physics"
-        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/mesh"
-        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/script"
-        #"${PROJECT_SOURCE_DIR}/TechEngineCore/src/scriptingAPI"
-        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/material/Material.hpp"
-        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/texture"
-        "${PROJECT_SOURCE_DIR}/TechEngineCore/src/serialization"
-)
-
-#Clear TechEngineClientAPI files
-file(REMOVE_RECURSE "${TECH_ENGINE_CORE_API_DIRECTORY}")
-
-#Copy API files to TechEngineCore API directory
-foreach (entry ${TECH_ENGINE_CORE_API_FILES})
-    if (IS_DIRECTORY ${entry})
-        get_filename_component(folder_name ${entry} NAME)
-        add_custom_command(TARGET TechEngineCore POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E rm -rf "${TECH_ENGINE_CORE_API_DIRECTORY}/${folder_name}"
-                COMMAND_EXPAND_LISTS)
-        add_custom_command(TARGET TechEngineCore POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_directory "${entry}" "${TECH_ENGINE_CORE_API_DIRECTORY}/${folder_name}"
-                COMMAND_EXPAND_LISTS)
-        add_custom_command(TARGET TechEngineCore POST_BUILD
-                COMMAND powershell -Command "Get-ChildItem -Path ${TECH_ENGINE_CORE_API_DIRECTORY}/${folder_name} -Filter *.cpp -Recurse | Remove-Item -Force"
-                COMMAND_EXPAND_LISTS)
-    else ()
-        get_filename_component(folder_name ${entry} DIRECTORY)
-        get_filename_component(folder_name ${folder_name} NAME)
-        if (NOT EXISTS "${TECH_ENGINE_CORE_API_DIRECTORY}/${folder_name}")
-            file(MAKE_DIRECTORY "${TECH_ENGINE_CORE_API_DIRECTORY}/${folder_name}")
-        endif ()
-        add_custom_command(TARGET TechEngineCore PRE_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy "${entry}" "${TECH_ENGINE_CORE_API_DIRECTORY}/${folder_name}"
-                COMMAND_EXPAND_LISTS)
-    endif ()
-endforeach ()
-
-#Copy .lib files to project template
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/debug")
-        file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/debug")
-    endif ()
-    add_custom_command(TARGET TechEngineCore POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy
-            "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/debug/TechEngineCore.lib"
-            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/debug")
-    add_custom_command(TARGET TechEngineCore POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy
-            "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/debug/TechEngineCore.pdb"
-            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/debug")
-elseif (CMAKE_BUILD_TYPE STREQUAL "Release")
-    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/release")
-        file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/release")
-    endif ()
-    add_custom_command(TARGET TechEngineCore POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy
-            "${TECH_ENGINE_CORE_OUTPUT_DIRECTORY}/release/TechEngineCore.lib"
-            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/release")
-endif ()
+# Configure TechEngineCoreServer
+configure_tech_engine_core(TechEngineCoreServer)

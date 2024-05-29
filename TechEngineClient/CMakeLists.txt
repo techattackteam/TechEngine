@@ -1,10 +1,6 @@
 file(GLOB_RECURSE TechEngineClient_Sources CONFIGURE_DEPENDS "src/*.cpp")
 file(GLOB_RECURSE TechEngineClient_Headers "src/*.hpp")
 
-find_package(GLEW REQUIRED)
-find_package(glfw3 CONFIG REQUIRED)
-find_package(glm CONFIG REQUIRED)
-#find_package(Stb REQUIRED)
 
 foreach (_headerFile ${TechEngineClient_Headers})
     get_filename_component(_dir ${_headerFile} PATH)
@@ -28,10 +24,24 @@ if (WIN32) # WINDOWS
     )
 endif ()
 
+#Setup dependencies
+find_package(GLEW REQUIRED)
+#[[find_package(glfw3 CONFIG REQUIRED)]]
+find_package(glm CONFIG REQUIRED)
+#find_package(Stb REQUIRED)
+
+#GLFW
+set(GLFW_INCLUDE_DIR "${PROJECT_SOURCE_DIR}\\dependencies\\glfw\\include")
+set(GLFW_LIBRARY_DIR "${PROJECT_SOURCE_DIR}\\dependencies\\glfw\\lib-vc2022\\glfw3dll.lib")
+
+
 set(Stb_INCLUDE_DIR "C:\\dev\\TechEngine\\dependencies\\vcpkg\\packages\\stb_x64-windows\\include")
 target_include_directories(TechEngineClient PUBLIC ${Stb_INCLUDE_DIR})
 target_include_directories(TechEngineClient PUBLIC "src")
-target_link_libraries(TechEngineClient PUBLIC TechEngineCore GLEW::GLEW glfw glm::glm)
+target_include_directories(TechEngineClient PRIVATE GLFW_INCLUDE_DIR)
+target_link_libraries(TechEngineClient PUBLIC TechEngineCoreClient GLEW::GLEW ${GLFW_LIBRARY_DIR} glm::glm)
+target_compile_definitions(TechEngineClient PRIVATE TECH_ENGINE_API_EXPORTS)
+
 
 #Copy API include files to project template
 set(TECH_ENGINE_CLIENT_API_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/include/TechEngineClient")

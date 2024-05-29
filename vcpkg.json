@@ -2,7 +2,6 @@
   "name": "techegine",
   "version": "1.0",
   "dependencies": [
-    "glfw3",
     "glm",
     "spdlog",
     "yaml-cpp",
@@ -19,6 +18,9 @@
     "physx",
     "stb",
     "assimp",
-    "gamenetworkingsockets"
+    "protobuf",
+    "openssl",
+    "libsodium",
+    "abseil"
   ]
 }

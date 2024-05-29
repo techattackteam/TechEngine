@@ -11,6 +11,7 @@ namespace TechEngine {
         });
 
         physicsEngine.init();
+        ScriptRegister::getInstance()->init(&scriptEngine);
     }
 
     Client::~Client() = default;
