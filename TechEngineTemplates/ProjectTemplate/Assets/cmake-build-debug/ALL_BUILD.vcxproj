@@ -1,0 +1,196 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ResolveNugetPackages>false</ResolveNugetPackages>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{4CDA20A7-4D3D-3863-A5C0-C32697547773}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.22621.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>ALL_BUILD</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\bin\cmake.exe -SC:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets -BC:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug --check-stamp-file C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeCInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeCXXInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeCommonLanguageInclude.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeDependentOption.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeGenericSystem.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeInitializeConfigs.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeLanguageInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeRCInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeSystemSpecificInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeSystemSpecificInitialize.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Compiler\MSVC-C.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Compiler\MSVC-CXX.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Compiler\MSVC.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows-Initialize.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows-MSVC-C.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows-MSVC.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\WindowsPaths.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\3.28.1\CMakeCCompiler.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\3.28.1\CMakeCXXCompiler.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\3.28.1\CMakeRCCompiler.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\3.28.1\CMakeSystem.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\cmake.verify_globs;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\vcpkg.json;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\vcpkg\scripts\buildsystems\vcpkg.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\bin\cmake.exe -SC:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets -BC:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug --check-stamp-file C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeCInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeCXXInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeCommonLanguageInclude.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeDependentOption.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeGenericSystem.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeInitializeConfigs.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeLanguageInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeRCInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeSystemSpecificInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeSystemSpecificInitialize.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Compiler\MSVC-C.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Compiler\MSVC-CXX.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Compiler\MSVC.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows-Initialize.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows-MSVC-C.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows-MSVC.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\WindowsPaths.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\3.28.1\CMakeCCompiler.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\3.28.1\CMakeCXXCompiler.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\3.28.1\CMakeRCCompiler.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\3.28.1\CMakeSystem.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\cmake.verify_globs;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\vcpkg.json;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\vcpkg\scripts\buildsystems\vcpkg.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\bin\cmake.exe -SC:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets -BC:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug --check-stamp-file C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeCInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeCXXInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeCommonLanguageInclude.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeDependentOption.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeGenericSystem.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeInitializeConfigs.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeLanguageInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeRCInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeSystemSpecificInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeSystemSpecificInitialize.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Compiler\MSVC-C.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Compiler\MSVC-CXX.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Compiler\MSVC.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows-Initialize.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows-MSVC-C.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows-MSVC.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\WindowsPaths.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\3.28.1\CMakeCCompiler.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\3.28.1\CMakeCXXCompiler.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\3.28.1\CMakeRCCompiler.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\3.28.1\CMakeSystem.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\cmake.verify_globs;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\vcpkg.json;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\vcpkg\scripts\buildsystems\vcpkg.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\bin\cmake.exe -SC:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets -BC:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug --check-stamp-file C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeCInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeCXXInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeCommonLanguageInclude.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeDependentOption.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeGenericSystem.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeInitializeConfigs.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeLanguageInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeRCInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeSystemSpecificInformation.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\CMakeSystemSpecificInitialize.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Compiler\MSVC-C.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Compiler\MSVC-CXX.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Compiler\MSVC.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows-Initialize.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows-MSVC-C.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows-MSVC.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\Windows.cmake;C:\Users\migue\AppData\Local\Programs\CLion\bin\cmake\win\x64\share\cmake-3.28\Modules\Platform\WindowsPaths.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\3.28.1\CMakeCCompiler.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\3.28.1\CMakeCXXCompiler.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\3.28.1\CMakeRCCompiler.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\3.28.1\CMakeSystem.cmake;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\cmake.verify_globs;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\vcpkg.json;C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\vcpkg\scripts\buildsystems\vcpkg.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\ZERO_CHECK.vcxproj">
+      <Project>{8134322E-B2FC-3F43-930A-817B2717716E}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\Client\ClientScripts.vcxproj">
+      <Project>{4A896AC2-31F0-3595-8B87-1E90B54B9D77}</Project>
+      <Name>ClientScripts</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\dependencies\GameNetworkingSockets\src\GameNetworkingSockets.vcxproj">
+      <Project>{F03347EA-A03D-3412-832B-0B7FE9588621}</Project>
+      <Name>GameNetworkingSockets</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\dependencies\GameNetworkingSockets\src\GameNetworkingSockets_s.vcxproj">
+      <Project>{BC77976A-2A9E-3EFF-B2D0-3CC78E0F1799}</Project>
+      <Name>GameNetworkingSockets_s</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\Server\ServerScripts.vcxproj">
+      <Project>{C633A69C-35DE-383D-9CA9-B0F03121EBDE}</Project>
+      <Name>ServerScripts</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

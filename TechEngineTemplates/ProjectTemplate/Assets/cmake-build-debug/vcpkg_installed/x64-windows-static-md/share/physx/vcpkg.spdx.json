@@ -1,0 +1,169 @@
+{
+  "$schema": "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json",
+  "spdxVersion": "SPDX-2.2",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "documentNamespace": "https://spdx.org/spdxdocs/physx-x64-windows-static-md-5.3.0-5a8feea8-6830-497a-ae8d-fe3473820975",
+  "name": "physx:x64-windows-static-md@5.3.0 4a53fa89207ff1cadfe6bc76fa76c4da44ac46e89ebd058a482e8193046aa514",
+  "creationInfo": {
+    "creators": [
+      "Tool: vcpkg-d6945642ee5c3076addd1a42c331bbf4cfc97457"
+    ],
+    "created": "2024-05-22T20:40:43Z"
+  },
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "GENERATES",
+      "relatedSpdxElement": "SPDXRef-binary"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-0"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-1"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-2"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-3"
+    },
+    {
+      "spdxElementId": "SPDXRef-binary",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-0",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-1",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-2",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-3",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    }
+  ],
+  "packages": [
+    {
+      "name": "physx",
+      "SPDXID": "SPDXRef-port",
+      "versionInfo": "5.3.0",
+      "downloadLocation": "NOASSERTION",
+      "homepage": "https://github.com/NVIDIA-Omniverse/PhysX",
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "description": "The NVIDIA PhysX SDK is a scalable multi-platform physics solution supporting a wide range of devices, from smartphones to high-end multicore CPUs and GPUs. This is the latest NVIDIA official version of the PhysX engine which also directly integrates into Omniverse. This port is NOT officially supported by NVIDIA.",
+      "comment": "This is the port (recipe) consumed by vcpkg."
+    },
+    {
+      "name": "physx:x64-windows-static-md",
+      "SPDXID": "SPDXRef-binary",
+      "versionInfo": "4a53fa89207ff1cadfe6bc76fa76c4da44ac46e89ebd058a482e8193046aa514",
+      "downloadLocation": "NONE",
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "This is a binary package built by vcpkg."
+    },
+    {
+      "SPDXID": "SPDXRef-resource-1",
+      "name": "NVIDIA-Omniverse/PhysX",
+      "downloadLocation": "git+https://github.com/NVIDIA-Omniverse/PhysX@105.1-physx-5.3.0",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "fa3897738aed583f0498587365aafc77107351d72888058d0b725bd39de1c33b37c99294b6346be165eaf3aa3c6228ca7ddb0a3b18e522c1fb79e2559d70b551"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-resource-2",
+      "name": "PhysXGpu.7z",
+      "packageFileName": "PhysXGpu.7z",
+      "downloadLocation": "https://d4i3qtqj3r0z5.cloudfront.net/PhysXGpu%40105.1-5.3.4207.33265367-windows-public.7z",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "010b4c135026a15710b2e0d0d503197456f8f9d2eb291b32df65aa3dbeff09ba0877c52af1724f7a9384af727657d247cabf9c330e11c7ae1e1be5d1b89dce81"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "fileName": "./C:/dev/TechEngine/dependencies/vcpkg/ports/physx/omniverse-physx-sdk-config.cmake",
+      "SPDXID": "SPDXRef-file-0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3d20744cc7e0077cd5816df1543fd0cf11b0e61bee4fbae7bbaf7b1a83540534"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "./C:/dev/TechEngine/dependencies/vcpkg/ports/physx/portfile.cmake",
+      "SPDXID": "SPDXRef-file-1",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "86438c02a0eea410fe29c170c6768a76fe9c5c35d6f6fb48b8ee92b52e0cfa7e"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "./C:/dev/TechEngine/dependencies/vcpkg/ports/physx/usage",
+      "SPDXID": "SPDXRef-file-2",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "16936e0e410eee217361715b9cfbbf973683dbf4df9ef7148419776041c98117"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "./C:/dev/TechEngine/dependencies/vcpkg/ports/physx/vcpkg.json",
+      "SPDXID": "SPDXRef-file-3",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4c96e51c58d3e20002d058849e992a0efbfa591198e0c204a772393385895abd"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    }
+  ]
+}

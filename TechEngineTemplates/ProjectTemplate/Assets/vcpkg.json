@@ -1,0 +1,15 @@
+{
+  "name": "userproject",
+  "version": "1.0",
+  "dependencies": [
+    "glfw3",
+    "glm",
+    "spdlog",
+    "yaml-cpp",
+    "physx",
+    "protobuf",
+    "openssl",
+    "libsodium",
+    "abseil"
+  ]
+}

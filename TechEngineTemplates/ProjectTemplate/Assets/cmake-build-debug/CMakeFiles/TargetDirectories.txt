@@ -1,0 +1,14 @@
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/CMakeFiles/INSTALL.dir
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/CMakeFiles/ALL_BUILD.dir
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/CMakeFiles/ZERO_CHECK.dir
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/dependencies/GameNetworkingSockets/CMakeFiles/INSTALL.dir
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/dependencies/GameNetworkingSockets/CMakeFiles/ALL_BUILD.dir
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/dependencies/GameNetworkingSockets/examples/CMakeFiles/INSTALL.dir
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/dependencies/GameNetworkingSockets/src/CMakeFiles/GameNetworkingSockets.dir
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/dependencies/GameNetworkingSockets/src/CMakeFiles/GameNetworkingSockets_s.dir
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/dependencies/GameNetworkingSockets/src/CMakeFiles/INSTALL.dir
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/Client/CMakeFiles/ClientScripts.dir
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/Client/CMakeFiles/INSTALL.dir
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/Client/CMakeFiles/ALL_BUILD.dir
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/Server/CMakeFiles/ServerScripts.dir
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/Server/CMakeFiles/INSTALL.dir

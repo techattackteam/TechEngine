@@ -1,0 +1,164 @@
+Package: vcpkg-cmake-config
+Version: 2022-02-06
+Port-Version: 1
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 9ff960d0265259e0a5b8570929340ecc6778317c9726763f0ea882ddcb5bca8e
+Status: install ok installed
+
+Package: vcpkg-cmake
+Version: 2024-04-18
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 3647c646a2e15abf11cd53ef9bbe939aa96c1ef4a88a142957fad90a5abb4c4e
+Status: install ok installed
+
+Package: abseil
+Version: 20240116.2
+Depends: vcpkg-cmake:x64-windows, vcpkg-cmake-config:x64-windows
+Architecture: x64-windows-static-md
+Multi-Arch: same
+Abi: 57bf78958df4baff56eeca99da391a1fdd35b479af761af797548466c128e193
+Description: Abseil is an open-source collection of C++ library code designed to augment the C++ standard library. The Abseil library code is collected from Google's own C++ code base, has been extensively tested and used in production, and is the same code we depend on in our daily coding lives.
+    In some cases, Abseil provides pieces missing from the C++ standard; in others, Abseil provides alternatives to the standard for special needs we've found through usage in the Google code base. We denote those cases clearly within the library code we provide you.
+    Abseil is not meant to be a competitor to the standard library; we've just found that many of these utilities serve a purpose within our code base, and we now want to provide those resources to the C++ community as a whole.
+Status: install ok installed
+
+Package: glfw3
+Version: 3.4
+Depends: vcpkg-cmake:x64-windows, vcpkg-cmake-config:x64-windows
+Architecture: x64-windows-static-md
+Multi-Arch: same
+Abi: e4f1890f004f3f564e1bf8af3c440523084b7d920e714680cff8cda5404816cd
+Description: GLFW is a free, Open Source, multi-platform library for OpenGL, OpenGL ES and Vulkan application development. It provides a simple, platform-independent API for creating windows, contexts and surfaces, reading input, handling events, etc.
+Status: install ok installed
+
+Package: glm
+Version: 1.0.1
+Port-Version: 2
+Depends: vcpkg-cmake:x64-windows, vcpkg-cmake-config:x64-windows
+Architecture: x64-windows-static-md
+Multi-Arch: same
+Abi: 45c50547d7294f0dbc90377b3b6960af9c99de1f39c6e7e7a3d703a60344878d
+Description: OpenGL Mathematics (GLM)
+Status: install ok installed
+
+Package: vcpkg-tool-meson
+Version: 1.3.2
+Port-Version: 2
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 482901f79d31a1c5fff7f0ce3d94a2d2172eb41c748005933f382fc1d62ce7e6
+Description: Meson build system
+Status: install ok installed
+
+Package: pkgconf
+Version: 2.2.0
+Depends: vcpkg-tool-meson
+Architecture: x64-windows
+Multi-Arch: same
+Abi: b8c48f6e53f927142551ac7d4fa0b1d62633b517bc7412564af7843119d7843a
+Description: pkgconf is a program which helps to configure compiler and linker flags for development libraries. It is similar to pkg-config from freedesktop.org.
+Status: install ok installed
+
+Package: vcpkg-pkgconfig-get-modules
+Version: 2024-04-03
+Depends: pkgconf
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 75b298d0d51e0d9b71b5d8875ba70d8e471259b04e6f3c187fd63429ef9d22c0
+Status: install ok installed
+
+Package: vcpkg-cmake-get-vars
+Version: 2023-12-31
+Depends: vcpkg-cmake
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 94a11568282cc41b6814c477f82e7e1f2181c4189f27fb817b1b279e6add7474
+Status: install ok installed
+
+Package: vcpkg-msbuild
+Version: 2023-08-08
+Depends: vcpkg-cmake-get-vars, vcpkg-pkgconfig-get-modules
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 4ca7f83ec14729d7eac722a4f09b58ceb33a5d7ff8cb61a099c903b36e6d7481
+Status: install ok installed
+
+Package: libsodium
+Version: 1.0.19
+Port-Version: 2
+Depends: vcpkg-msbuild:x64-windows
+Architecture: x64-windows-static-md
+Multi-Arch: same
+Abi: cd3d6200607bdc1496311b368a7c49173aa40c18ac5a34986e73d6534bdedeec
+Description: A modern and easy-to-use crypto library
+Status: install ok installed
+
+Package: openssl
+Version: 3.3.0
+Depends: vcpkg-cmake:x64-windows, vcpkg-cmake-config:x64-windows, vcpkg-cmake-get-vars:x64-windows
+Architecture: x64-windows-static-md
+Multi-Arch: same
+Abi: bc58e051482afcee746c3e5a7fdd3fa0402d5807c911c19ff8713f61b757f48e
+Description: OpenSSL is an open source project that provides a robust, commercial-grade, and full-featured toolkit for the Transport Layer Security (TLS) and Secure Sockets Layer (SSL) protocols. It is also a general-purpose cryptography library.
+Status: install ok installed
+
+Package: physx
+Version: 5.3.0
+Depends: vcpkg-cmake:x64-windows, vcpkg-cmake-config:x64-windows, vcpkg-cmake-get-vars:x64-windows
+Architecture: x64-windows-static-md
+Multi-Arch: same
+Abi: 4a53fa89207ff1cadfe6bc76fa76c4da44ac46e89ebd058a482e8193046aa514
+Description: The NVIDIA PhysX SDK is a scalable multi-platform physics solution supporting a wide range of devices, from smartphones to high-end multicore CPUs and GPUs. This is the latest NVIDIA official version of the PhysX engine which also directly integrates into Omniverse. This port is NOT officially supported by NVIDIA.
+Status: install ok installed
+
+Package: protobuf
+Version: 3.21.12
+Port-Version: 2
+Depends: vcpkg-cmake, vcpkg-cmake-config
+Architecture: x64-windows
+Multi-Arch: same
+Abi: ccb821ccee2d3df7b94c936523d44416e1c839d1c0387f4dae5e8ebd630991b5
+Description: Google's language-neutral, platform-neutral, extensible mechanism for serializing structured data.
+Status: install ok installed
+
+Package: protobuf
+Version: 3.21.12
+Port-Version: 2
+Depends: protobuf:x64-windows, vcpkg-cmake:x64-windows, vcpkg-cmake-config:x64-windows
+Architecture: x64-windows-static-md
+Multi-Arch: same
+Abi: ce87cccd0599b7514202d5ef116fdde7784d28b5dac938ce2074bd42e37fe781
+Description: Google's language-neutral, platform-neutral, extensible mechanism for serializing structured data.
+Status: install ok installed
+
+Package: fmt
+Version: 10.2.1
+Port-Version: 2
+Depends: vcpkg-cmake:x64-windows, vcpkg-cmake-config:x64-windows
+Architecture: x64-windows-static-md
+Multi-Arch: same
+Abi: 02a490f6735158817d736f8d714338b306a76b62f063331ace2cbd6bbe4574b1
+Description: {fmt} is an open-source formatting library providing a fast and safe alternative to C stdio and C++ iostreams.
+Status: install ok installed
+
+Package: spdlog
+Version: 1.14.1
+Depends: fmt, vcpkg-cmake:x64-windows, vcpkg-cmake-config:x64-windows
+Architecture: x64-windows-static-md
+Multi-Arch: same
+Abi: 929aa5f6d91642daf08c5e1275442fcb7dd16130427e5d72a717a7d55d2ec190
+Description: Very fast, header-only/compiled, C++ logging library.
+Status: install ok installed
+
+Package: yaml-cpp
+Version: 0.8.0
+Port-Version: 1
+Depends: vcpkg-cmake:x64-windows, vcpkg-cmake-config:x64-windows
+Architecture: x64-windows-static-md
+Multi-Arch: same
+Abi: 1c7c4fdaaa33cc851b9f36c44f1e320695168de449b8f1789fe486b0f765129d
+Description: yaml-cpp is a YAML parser and emitter in C++ matching the YAML 1.2 spec.
+Status: install ok installed
+

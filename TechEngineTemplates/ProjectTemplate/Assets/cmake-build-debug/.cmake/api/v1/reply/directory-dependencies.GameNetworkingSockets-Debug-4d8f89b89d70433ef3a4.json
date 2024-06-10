@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "dependencies/GameNetworkingSockets",
+		"source" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets"
+	}
+}
