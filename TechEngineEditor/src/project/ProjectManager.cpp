@@ -81,10 +81,6 @@ namespace TechEngine {
 #endif
     }
 
-    const std::filesystem::path& ProjectManager::getClientCmakeBuildPath() {
-        return clientCmakeBuildPath;
-    }
-
     const std::filesystem::path& ProjectManager::getServerUserScriptsDLLPath() {
 #ifdef TE_DEBUG
         return serverUserScriptsDebugDLLPath;
@@ -95,10 +91,6 @@ namespace TechEngine {
 #endif
     }
 
-    const std::filesystem::path& ProjectManager::getServerCmakeBuildPath() {
-        return serverCmakeBuildPath;
-    }
-
     const std::filesystem::path& ProjectManager::getProjectGameExportPath() {
         return projectGameExportPath;
     }
@@ -107,12 +99,12 @@ namespace TechEngine {
         return projectServerExportPath;
     }
 
-    const std::filesystem::path& ProjectManager::getClientCmakeListPath() {
-        return clientCmakeListPath;
+    const std::filesystem::path& ProjectManager::getCmakeBuildPath() {
+        return cmakeBuildPath;
     }
 
-    const std::filesystem::path& ProjectManager::getServerCmakeListPath() {
-        return serverCmakeListPath;
+    const std::filesystem::path& ProjectManager::getCmakeListPath() {
+        return cmakeListPath;
     }
 
     const std::filesystem::path& ProjectManager::getTechEngineCoreClientLibPath() {
@@ -271,17 +263,15 @@ namespace TechEngine {
         projectServerResourcesPath = this->projectLocation.string() + "\\Resources\\Server";
         projectGameExportPath = this->projectLocation.string() + "\\Build\\GameBuild";
         projectServerExportPath = this->projectLocation.string() + "\\Build\\ServerBuild";
-        std::string cmakeBuildPath = "\\cmake\\cmake-build-debug";
-        std::string cmakeListPath = "\\cmake";
-        std::string scriptsDebugDLLPath = "\\scripts\\build\\debug\\UserScripts.dll";
-        std::string scriptsReleaseDLLPath = "\\scripts\\build\\release\\UserScripts.dll";
-        std::string scriptsReleaseDebugDLLPath = "\\scripts\\build\\releaseWithDebug\\UserScripts.dll";
+        std::string scriptsDebugDLLPath = "\\scripts\\build\\debug";
+        std::string scriptsReleaseDLLPath = "\\scripts\\build\\release";
+        std::string scriptsReleaseDebugDLLPath = "\\scripts\\build\\releaseWithDebug";
 
-        clientCmakeBuildPath = projectClientResourcesPath.string() + cmakeBuildPath;
-        clientCmakeListPath = projectClientResourcesPath.string() + cmakeListPath;
-        clientUserScriptsDebugDLLPath = projectClientResourcesPath.string() + scriptsDebugDLLPath;
-        clientUserScriptsReleaseDLLPath = projectClientResourcesPath.string() + scriptsReleaseDLLPath;
-        clientUserScriptsReleaseDebugDLLPath = projectClientResourcesPath.string() + scriptsReleaseDebugDLLPath;
+        cmakeListPath = projectAssetsPath.string();
+        cmakeBuildPath = projectAssetsPath.string() + "\\cmake-build-debug";
+        clientUserScriptsDebugDLLPath = projectClientResourcesPath.string() + scriptsDebugDLLPath + "\\ClientScripts.dll";
+        clientUserScriptsReleaseDLLPath = projectClientResourcesPath.string() + scriptsReleaseDLLPath + "\\ClientScripts.dll";
+        clientUserScriptsReleaseDebugDLLPath = projectClientResourcesPath.string() + scriptsReleaseDebugDLLPath + "\\ClientScripts.dll";
 #ifdef TE_DEBUG
         techEngineClientLibPath = projectClientResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineClient.lib";
         techEngineServerLibPath = projectServerResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineServer.lib";
@@ -299,11 +289,9 @@ namespace TechEngine {
         techEngineCoreServerLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCoreServer.lib";
 #endif
 
-        serverCmakeBuildPath = projectServerResourcesPath.string() + cmakeBuildPath;
-        serverCmakeListPath = projectServerResourcesPath.string() + cmakeListPath;
-        serverUserScriptsDebugDLLPath = projectServerResourcesPath.string() + scriptsDebugDLLPath;
-        serverUserScriptsReleaseDLLPath = projectServerResourcesPath.string() + scriptsReleaseDLLPath;
-        serverUserScriptsReleaseDebugDLLPath = projectServerResourcesPath.string() + scriptsReleaseDebugDLLPath;
+        serverUserScriptsDebugDLLPath = projectServerResourcesPath.string() + scriptsDebugDLLPath + "\\ServerScripts.dll";
+        serverUserScriptsReleaseDLLPath = projectServerResourcesPath.string() + scriptsReleaseDLLPath + "\\ServerScripts.dll";
+        serverUserScriptsReleaseDebugDLLPath = projectServerResourcesPath.string() + scriptsReleaseDebugDLLPath + "\\ServerScripts.dll";
     }
 
     const std::string& ProjectManager::getProjectName() {

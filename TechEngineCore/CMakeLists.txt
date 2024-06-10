@@ -62,7 +62,6 @@ function(configure_tech_engine_core target_name)
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/core/Logger.hpp"
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/core/Timer.hpp"
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/events"
-            "${PROJECT_SOURCE_DIR}/TechEngineCore/src/eventSystem"
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/components"
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/physics"
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/mesh"
@@ -70,6 +69,7 @@ function(configure_tech_engine_core target_name)
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/material/Material.hpp"
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/texture"
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/serialization"
+            "${PROJECT_SOURCE_DIR}/TechEngineCore/src/scriptingAPI"
     )
 
     # Clear API files

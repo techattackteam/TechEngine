@@ -325,8 +325,8 @@ namespace TechEngine {
 
 
     void PanelsManager::compileUserScripts(CompileMode compileMode, CompileProject compileProject) {
-        std::string cmakeBuildPath = compileProject == CompileProject::PROJECT_CLIENT ? projectManager.getClientCmakeBuildPath().string() : projectManager.getServerCmakeBuildPath().string();
-        std::string cmakeListPath = compileProject == CompileProject::PROJECT_CLIENT ? projectManager.getClientCmakeListPath().string() : projectManager.getServerCmakeListPath().string();
+        std::string cmakeBuildPath = projectManager.getCmakeBuildPath().string();
+        std::string cmakeListPath = projectManager.getCmakeListPath().string();
         std::string techEngineLibPath = compileProject == CompileProject::PROJECT_CLIENT ? projectManager.getTechEngineClientLibPath().string() : projectManager.getTechEngineServerLibPath().string();
         std::string techEngineCoreLibPath = compileProject == CompileProject::PROJECT_CLIENT ? projectManager.getTechEngineCoreClientLibPath().string() : projectManager.getTechEngineCoreServerLibPath().string();
 
@@ -350,7 +350,11 @@ namespace TechEngine {
             cm = "Debug";
         }
         std::string command = "\"" + projectManager.getCmakePath().string() +
-                              " --build " + "\"" + cmakeBuildPath + "\"" + " --target UserScripts --config " + cm + "\"";
+                              " --build " + "\"" + cmakeBuildPath + "\"" +
+                              " --target " + (compileProject == CompileProject::PROJECT_CLIENT
+                                                  ? "ClientScripts"
+                                                  : "ServerScripts") +
+                              " --config " + cm + "\"";
         std::system(command.c_str());
         //TE_LOGGER_INFO("Build finished!");
     }
