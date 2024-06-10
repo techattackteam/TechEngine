@@ -1,0 +1,130 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\common\steamid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\steamnetworkingsockets\steamnetworkingsockets_certs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\steamnetworkingsockets\steamnetworkingsockets_certstore.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\steamnetworkingsockets\steamnetworkingsockets_shared.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\tier0\dbg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\tier0\platformtime.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\tier0\valve_tracelogging.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\tier1\netadr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\tier1\utlbuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\tier1\utlmemory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\tier1\ipv6text.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\vstdlib\strtools.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\steamnetworkingsockets\steamnetworkingsockets_stats.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\steamnetworkingsockets\steamnetworkingsockets_thinker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\steamnetworkingsockets\clientlib\csteamnetworkingsockets.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\steamnetworkingsockets\clientlib\csteamnetworkingmessages.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\steamnetworkingsockets\clientlib\steamnetworkingsockets_flat.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\steamnetworkingsockets\clientlib\steamnetworkingsockets_connections.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\steamnetworkingsockets\clientlib\steamnetworkingsockets_lowlevel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\steamnetworkingsockets\clientlib\steamnetworkingsockets_p2p.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\steamnetworkingsockets\clientlib\steamnetworkingsockets_stun.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\steamnetworkingsockets\clientlib\steamnetworkingsockets_p2p_ice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\steamnetworkingsockets\clientlib\steamnetworkingsockets_snp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\steamnetworkingsockets\clientlib\steamnetworkingsockets_udp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\dependencies\GameNetworkingSockets\src\steamnetworkingsockets_messages_certs.pb.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\dependencies\GameNetworkingSockets\src\steamnetworkingsockets_messages.pb.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\dependencies\GameNetworkingSockets\src\steamnetworkingsockets_messages_udp.pb.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\common\crypto.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\common\crypto_textencode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\common\keypair.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\common\crypto_openssl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\common\crypto_25519_openssl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\common\crypto_digest_opensslevp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\common\crypto_symmetric_opensslevp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\common\opensslwrapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\ff07caaf7eb58acad44ddb65d2bdf6a3\steamnetworkingsockets_messages_certs.pb.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\ff07caaf7eb58acad44ddb65d2bdf6a3\steamnetworkingsockets_messages.pb.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Assets\cmake-build-debug\CMakeFiles\ff07caaf7eb58acad44ddb65d2bdf6a3\steamnetworkingsockets_messages_udp.pb.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\dev\TechEngine\bin\TechEngineEditor\debug\DefaultProject\Resources\Common\dependencies\GameNetworkingSockets\src\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{C535177F-F874-33F8-9C8C-24CBCF989D21}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{DDCE7C31-7856-3867-869C-C71C18533B61}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

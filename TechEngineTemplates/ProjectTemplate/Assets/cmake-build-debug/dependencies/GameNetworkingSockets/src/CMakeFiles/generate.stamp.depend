@@ -1,0 +1,25 @@
+# CMake generation dependency list for this directory.
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakePackageConfigHelpers.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakePushCheckState.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/CheckCCompilerFlag.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/CheckCSourceCompiles.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/CheckCXXCompilerFlag.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/CheckCXXSourceCompiles.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/CheckIncludeFile.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/CheckLibraryExists.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/CheckSymbolExists.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/FindPackageHandleStandardArgs.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/FindPackageMessage.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/FindProtobuf.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/FindThreads.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/GNUInstallDirs.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/Internal/CheckCompilerFlag.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/Internal/CheckFlagCommonConfig.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/Internal/CheckSourceCompiles.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/SelectLibraryConfigurations.cmake
+C:/Users/migue/AppData/Local/Programs/CLion/bin/cmake/win/x64/share/cmake-3.28/Modules/WriteBasicConfigVersionFile.cmake
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/CMakeFiles/cmake.verify_globs
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/vcpkg_installed/x64-windows-static-md/share/protobuf/vcpkg-cmake-wrapper.cmake
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/cmake/GameNetworkingSocketsConfig.cmake.in
+C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/CMakeLists.txt

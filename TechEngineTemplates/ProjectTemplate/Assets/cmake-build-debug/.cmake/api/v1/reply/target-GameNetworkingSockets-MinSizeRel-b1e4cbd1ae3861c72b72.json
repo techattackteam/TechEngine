@@ -1,0 +1,848 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "bin/MinSizeRel/GameNetworkingSockets.dll"
+		},
+		{
+			"path" : "dependencies/GameNetworkingSockets/src/MinSizeRel/GameNetworkingSockets.lib"
+		},
+		{
+			"path" : "bin/MinSizeRel/GameNetworkingSockets.pdb"
+		}
+	],
+	"backtrace" : 2,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"_add_library",
+			"add_library",
+			"install",
+			"set_clientlib_target_properties",
+			"target_link_libraries",
+			"gns_set_target_protobuf_properties",
+			"gns_set_target_crypto_properties",
+			"target_compile_options",
+			"set_target_common_gns_properties",
+			"target_compile_definitions",
+			"add_definitions",
+			"target_include_directories",
+			"target_compile_features",
+			"target_sources"
+		],
+		"files" : 
+		[
+			"C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/vcpkg/scripts/buildsystems/vcpkg.cmake",
+			"C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/CMakeLists.txt",
+			"C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 325,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 639,
+				"parent" : 1
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 328,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 314,
+				"parent" : 3
+			},
+			{
+				"command" : 5,
+				"file" : 1,
+				"line" : 232,
+				"parent" : 3
+			},
+			{
+				"command" : 4,
+				"file" : 1,
+				"line" : 168,
+				"parent" : 5
+			},
+			{
+				"command" : 6,
+				"file" : 1,
+				"line" : 233,
+				"parent" : 3
+			},
+			{
+				"command" : 4,
+				"file" : 1,
+				"line" : 177,
+				"parent" : 7
+			},
+			{
+				"command" : 4,
+				"file" : 1,
+				"line" : 304,
+				"parent" : 3
+			},
+			{
+				"command" : 8,
+				"file" : 1,
+				"line" : 215,
+				"parent" : 3
+			},
+			{
+				"command" : 7,
+				"file" : 2,
+				"line" : 172,
+				"parent" : 10
+			},
+			{
+				"command" : 7,
+				"file" : 2,
+				"line" : 184,
+				"parent" : 10
+			},
+			{
+				"command" : 7,
+				"file" : 1,
+				"line" : 298,
+				"parent" : 3
+			},
+			{
+				"command" : 9,
+				"file" : 1,
+				"line" : 194,
+				"parent" : 7
+			},
+			{
+				"command" : 9,
+				"file" : 2,
+				"line" : 153,
+				"parent" : 10
+			},
+			{
+				"command" : 9,
+				"file" : 1,
+				"line" : 240,
+				"parent" : 3
+			},
+			{
+				"command" : 9,
+				"file" : 1,
+				"line" : 235,
+				"parent" : 3
+			},
+			{
+				"file" : 2
+			},
+			{
+				"command" : 10,
+				"file" : 2,
+				"line" : 37,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 2,
+				"line" : 39,
+				"parent" : 18
+			},
+			{
+				"command" : 9,
+				"file" : 2,
+				"line" : 167,
+				"parent" : 10
+			},
+			{
+				"command" : 11,
+				"file" : 1,
+				"line" : 221,
+				"parent" : 3
+			},
+			{
+				"command" : 11,
+				"file" : 1,
+				"line" : 226,
+				"parent" : 3
+			},
+			{
+				"command" : 12,
+				"file" : 1,
+				"line" : 260,
+				"parent" : 3
+			},
+			{
+				"command" : 13,
+				"file" : 1,
+				"line" : 209,
+				"parent" : 3
+			},
+			{
+				"command" : 13,
+				"file" : 1,
+				"line" : 199,
+				"parent" : 7
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "/DWIN32 /D_WINDOWS  /O1 /Ob1 /DNDEBUG -std:c++17 -MD"
+				},
+				{
+					"backtrace" : 11,
+					"fragment" : "/EHs-c-"
+				},
+				{
+					"backtrace" : 11,
+					"fragment" : "/wd4146"
+				},
+				{
+					"backtrace" : 11,
+					"fragment" : "/wd4530"
+				},
+				{
+					"backtrace" : 11,
+					"fragment" : "/wd4244"
+				},
+				{
+					"backtrace" : 11,
+					"fragment" : "/wd4251"
+				},
+				{
+					"backtrace" : 11,
+					"fragment" : "/wd4267"
+				},
+				{
+					"backtrace" : 12,
+					"fragment" : "/GR-"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "/GL"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 14,
+					"define" : "ENABLE_OPENSSLCONNECTION"
+				},
+				{
+					"backtrace" : 15,
+					"define" : "GOOGLE_PROTOBUF_NO_RTTI"
+				},
+				{
+					"define" : "GameNetworkingSockets_EXPORTS"
+				},
+				{
+					"backtrace" : 16,
+					"define" : "STEAMNETWORKINGSOCKETS_ENABLE_ICE"
+				},
+				{
+					"backtrace" : 17,
+					"define" : "STEAMNETWORKINGSOCKETS_FOREXPORT"
+				},
+				{
+					"backtrace" : 14,
+					"define" : "VALVE_CRYPTO_25519_OPENSSLEVP"
+				},
+				{
+					"backtrace" : 19,
+					"define" : "VALVE_CRYPTO_ENABLE_25519"
+				},
+				{
+					"backtrace" : 14,
+					"define" : "VALVE_CRYPTO_OPENSSL"
+				},
+				{
+					"backtrace" : 20,
+					"define" : "_CRT_NONSTDC_NO_WARNINGS"
+				},
+				{
+					"backtrace" : 20,
+					"define" : "_CRT_SECURE_NO_WARNINGS"
+				},
+				{
+					"backtrace" : 21,
+					"define" : "_WINDOWS"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 22,
+					"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/../include"
+				},
+				{
+					"backtrace" : 23,
+					"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/common"
+				},
+				{
+					"backtrace" : 23,
+					"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/public"
+				},
+				{
+					"backtrace" : 23,
+					"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/dependencies/GameNetworkingSockets/src"
+				},
+				{
+					"backtrace" : 6,
+					"isSystem" : true,
+					"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/vcpkg_installed/x64-windows-static-md/include"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					24,
+					6
+				],
+				"standard" : "17"
+			},
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18,
+				19,
+				20,
+				21,
+				22,
+				23,
+				24,
+				25,
+				26,
+				27,
+				28,
+				29,
+				30,
+				31,
+				32,
+				33,
+				34
+			]
+		},
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "/DWIN32 /D_WINDOWS /O1 /Ob1 /DNDEBUG -MD"
+				},
+				{
+					"backtrace" : 11,
+					"fragment" : "/EHs-c-"
+				},
+				{
+					"backtrace" : 11,
+					"fragment" : "/wd4146"
+				},
+				{
+					"backtrace" : 11,
+					"fragment" : "/wd4530"
+				},
+				{
+					"backtrace" : 11,
+					"fragment" : "/wd4244"
+				},
+				{
+					"backtrace" : 11,
+					"fragment" : "/wd4251"
+				},
+				{
+					"backtrace" : 11,
+					"fragment" : "/wd4267"
+				},
+				{
+					"backtrace" : 12,
+					"fragment" : "/GR-"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "/GL"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 14,
+					"define" : "ENABLE_OPENSSLCONNECTION"
+				},
+				{
+					"backtrace" : 15,
+					"define" : "GOOGLE_PROTOBUF_NO_RTTI"
+				},
+				{
+					"define" : "GameNetworkingSockets_EXPORTS"
+				},
+				{
+					"backtrace" : 16,
+					"define" : "STEAMNETWORKINGSOCKETS_ENABLE_ICE"
+				},
+				{
+					"backtrace" : 17,
+					"define" : "STEAMNETWORKINGSOCKETS_FOREXPORT"
+				},
+				{
+					"backtrace" : 14,
+					"define" : "VALVE_CRYPTO_25519_OPENSSLEVP"
+				},
+				{
+					"backtrace" : 19,
+					"define" : "VALVE_CRYPTO_ENABLE_25519"
+				},
+				{
+					"backtrace" : 14,
+					"define" : "VALVE_CRYPTO_OPENSSL"
+				},
+				{
+					"backtrace" : 20,
+					"define" : "_CRT_NONSTDC_NO_WARNINGS"
+				},
+				{
+					"backtrace" : 20,
+					"define" : "_CRT_SECURE_NO_WARNINGS"
+				},
+				{
+					"backtrace" : 21,
+					"define" : "_WINDOWS"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 22,
+					"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/../include"
+				},
+				{
+					"backtrace" : 23,
+					"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/common"
+				},
+				{
+					"backtrace" : 23,
+					"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/public"
+				},
+				{
+					"backtrace" : 23,
+					"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/dependencies/GameNetworkingSockets/src"
+				},
+				{
+					"backtrace" : 6,
+					"isSystem" : true,
+					"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Assets/cmake-build-debug/vcpkg_installed/x64-windows-static-md/include"
+				}
+			],
+			"language" : "C",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					24
+				],
+				"standard" : "99"
+			},
+			"sourceIndexes" : 
+			[
+				10
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df"
+		}
+	],
+	"id" : "GameNetworkingSockets::@6fd65c6910765bdb47ff",
+	"install" : 
+	{
+		"destinations" : 
+		[
+			{
+				"backtrace" : 4,
+				"path" : "lib"
+			},
+			{
+				"backtrace" : 4,
+				"path" : "bin"
+			}
+		],
+		"prefix" : 
+		{
+			"path" : "C:/Program Files (x86)/UserScripts"
+		}
+	},
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "/machine:x64 /INCREMENTAL:NO /LTCG /SUBSYSTEM:WINDOWS",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "..\\..\\..\\vcpkg_installed\\x64-windows-static-md\\lib\\libprotobuf.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "..\\..\\..\\vcpkg_installed\\x64-windows-static-md\\lib\\libcrypto.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "ws2_32.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "crypt32.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "winmm.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "Iphlpapi.lib",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "GameNetworkingSockets",
+	"nameOnDisk" : "GameNetworkingSockets.dll",
+	"paths" : 
+	{
+		"build" : "dependencies/GameNetworkingSockets/src",
+		"source" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18,
+				19,
+				20,
+				21,
+				22,
+				23,
+				24,
+				25,
+				26,
+				27,
+				28,
+				29,
+				30,
+				31,
+				32,
+				33,
+				34
+			]
+		},
+		{
+			"name" : "CMake Rules",
+			"sourceIndexes" : 
+			[
+				35,
+				36,
+				37
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/common/steamid.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/steamnetworkingsockets/steamnetworkingsockets_certs.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/steamnetworkingsockets/steamnetworkingsockets_certstore.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/steamnetworkingsockets/steamnetworkingsockets_shared.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/tier0/dbg.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/tier0/platformtime.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/tier0/valve_tracelogging.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/tier1/netadr.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/tier1/utlbuffer.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/tier1/utlmemory.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 1,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/tier1/ipv6text.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/vstdlib/strtools.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/steamnetworkingsockets/steamnetworkingsockets_stats.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/steamnetworkingsockets/steamnetworkingsockets_thinker.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/steamnetworkingsockets/clientlib/csteamnetworkingsockets.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/steamnetworkingsockets/clientlib/csteamnetworkingmessages.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/steamnetworkingsockets/clientlib/steamnetworkingsockets_flat.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/steamnetworkingsockets/clientlib/steamnetworkingsockets_connections.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/steamnetworkingsockets/clientlib/steamnetworkingsockets_lowlevel.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/steamnetworkingsockets/clientlib/steamnetworkingsockets_p2p.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/steamnetworkingsockets/clientlib/steamnetworkingsockets_stun.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/steamnetworkingsockets/clientlib/steamnetworkingsockets_p2p_ice.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/steamnetworkingsockets/clientlib/steamnetworkingsockets_snp.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/steamnetworkingsockets/clientlib/steamnetworkingsockets_udp.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"isGenerated" : true,
+			"path" : "cmake-build-debug/dependencies/GameNetworkingSockets/src/steamnetworkingsockets_messages_certs.pb.cc",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"isGenerated" : true,
+			"path" : "cmake-build-debug/dependencies/GameNetworkingSockets/src/steamnetworkingsockets_messages.pb.cc",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 25,
+			"compileGroupIndex" : 0,
+			"isGenerated" : true,
+			"path" : "cmake-build-debug/dependencies/GameNetworkingSockets/src/steamnetworkingsockets_messages_udp.pb.cc",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 26,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/common/crypto.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 26,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/common/crypto_textencode.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 26,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/common/keypair.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 26,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/common/crypto_openssl.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 26,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/common/crypto_25519_openssl.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 26,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/common/crypto_digest_opensslevp.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 26,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/common/crypto_symmetric_opensslevp.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 26,
+			"compileGroupIndex" : 0,
+			"path" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/common/opensslwrapper.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "cmake-build-debug/CMakeFiles/ff07caaf7eb58acad44ddb65d2bdf6a3/steamnetworkingsockets_messages_certs.pb.h.rule",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "cmake-build-debug/CMakeFiles/ff07caaf7eb58acad44ddb65d2bdf6a3/steamnetworkingsockets_messages.pb.h.rule",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "cmake-build-debug/CMakeFiles/ff07caaf7eb58acad44ddb65d2bdf6a3/steamnetworkingsockets_messages_udp.pb.h.rule",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "SHARED_LIBRARY"
+}

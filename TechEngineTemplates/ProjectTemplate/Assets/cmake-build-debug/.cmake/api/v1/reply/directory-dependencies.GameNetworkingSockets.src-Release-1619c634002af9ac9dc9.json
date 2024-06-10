@@ -1,0 +1,152 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install",
+			"set_clientlib_target_properties"
+		],
+		"files" : 
+		[
+			"C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 328,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 314,
+				"parent" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 336,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 314,
+				"parent" : 3
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 377,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 380,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 404,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"dependencies/GameNetworkingSockets/src/Release/GameNetworkingSockets.lib"
+			],
+			"targetId" : "GameNetworkingSockets::@6fd65c6910765bdb47ff",
+			"targetIndex" : 4,
+			"targetIsImportLibrary" : true,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "bin",
+			"paths" : 
+			[
+				"bin/Release/GameNetworkingSockets.dll"
+			],
+			"targetId" : "GameNetworkingSockets::@6fd65c6910765bdb47ff",
+			"targetIndex" : 4,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 4,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"dependencies/GameNetworkingSockets/src/Release/GameNetworkingSockets_s.lib"
+			],
+			"targetId" : "GameNetworkingSockets_s::@6fd65c6910765bdb47ff",
+			"targetIndex" : 5,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 5,
+			"component" : "Unspecified",
+			"destination" : "include/GameNetworkingSockets",
+			"paths" : 
+			[
+				{
+					"from" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src/../include",
+					"to" : "."
+				}
+			],
+			"type" : "directory"
+		},
+		{
+			"backtrace" : 6,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/GameNetworkingSockets",
+			"exportName" : "GameNetworkingSockets",
+			"exportTargets" : 
+			[
+				{
+					"id" : "GameNetworkingSockets::@6fd65c6910765bdb47ff",
+					"index" : 4
+				},
+				{
+					"id" : "GameNetworkingSockets_s::@6fd65c6910765bdb47ff",
+					"index" : 5
+				}
+			],
+			"paths" : 
+			[
+				"dependencies/GameNetworkingSockets/src/CMakeFiles/Export/9869b6637b2a332ef2a5e0b21a9fb29e/GameNetworkingSockets.cmake"
+			],
+			"type" : "export"
+		},
+		{
+			"backtrace" : 7,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/GameNetworkingSockets",
+			"paths" : 
+			[
+				"cmake-build-debug/dependencies/GameNetworkingSockets/src/GameNetworkingSocketsConfig.cmake"
+			],
+			"type" : "file"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "dependencies/GameNetworkingSockets/src",
+		"source" : "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/dependencies/GameNetworkingSockets/src"
+	}
+}
