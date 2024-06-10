@@ -1,9 +1,14 @@
 #include "MeshRendererComponent.hpp"
+
 #include "mesh/CubeMesh.hpp"
+#include "mesh/CylinderMesh.hpp"
+#include "mesh/SphereMesh.hpp"
+#include "scriptingAPI/material/MaterialManagerAPI.hpp"
 
 namespace TechEngine {
     MeshRendererComponent::MeshRendererComponent(GameObject* gameObject, EventDispatcher& eventDispatcher) : mesh(new CubeMesh()), Component(gameObject, eventDispatcher, "MeshRenderer") {
         std::string name = "DefaultMaterial";
+        m_material = MaterialManagerAPI::getMaterial(name);
         paintMesh();
     }
 
@@ -63,15 +68,23 @@ namespace TechEngine {
 
     void MeshRendererComponent::Serialize(StreamWriter* stream) {
         Component::Serialize(stream);
-        //stream->writeString(mesh->getName());
+        stream->writeString(mesh->getName());
         stream->writeString(m_material->getName());
     }
 
     void MeshRendererComponent::Deserialize(StreamReader* stream) {
         Component::Deserialize(stream);
-        //mesh = new CubeMesh();
+        std::string meshName;
         std::string materialName;
+        stream->readString(meshName);
         stream->readString(materialName);
-        //m_material = MaterialManagerAPI::getMaterial(materialName);
+        if (meshName == "Cube")
+            mesh = new CubeMesh();
+        else if (meshName == "Sphere")
+            mesh = new SphereMesh();
+        else if (meshName == "Cylinder")
+            mesh = new CylinderMesh();
+
+        m_material = MaterialManagerAPI::getMaterial(materialName);
     }
 }

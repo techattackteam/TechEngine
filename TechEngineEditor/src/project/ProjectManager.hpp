@@ -28,17 +28,16 @@ namespace TechEngine {
         std::filesystem::path projectGameExportPath;
         std::filesystem::path projectServerExportPath;
 
-        std::filesystem::path clientCmakeBuildPath;
+        std::filesystem::path cmakeBuildPath;
+        std::filesystem::path cmakeListPath;
+
         std::filesystem::path clientUserScriptsDebugDLLPath;
         std::filesystem::path clientUserScriptsReleaseDLLPath;
         std::filesystem::path clientUserScriptsReleaseDebugDLLPath;
-        std::filesystem::path clientCmakeListPath;
 
-        std::filesystem::path serverCmakeBuildPath;
         std::filesystem::path serverUserScriptsDebugDLLPath;
         std::filesystem::path serverUserScriptsReleaseDLLPath;
         std::filesystem::path serverUserScriptsReleaseDebugDLLPath;
-        std::filesystem::path serverCmakeListPath;
 
         std::filesystem::path techEngineCoreClientLibPath;
         std::filesystem::path techEngineCoreServerLibPath;
@@ -78,21 +77,17 @@ namespace TechEngine {
 
         const std::filesystem::path& getClientUserScriptsDLLPath();
 
-        const std::filesystem::path& getClientCmakeBuildPath();
-
         const std::filesystem::path& getServerUserScriptsDLLPath();
-
-        const std::filesystem::path& getServerCmakeBuildPath();
 
         const std::filesystem::path& getProjectGameExportPath();
 
         const std::filesystem::path& getProjectServerExportPath();
 
+        const std::filesystem::path& getCmakeBuildPath();
+
         const std::filesystem::path& getCmakePath();
 
-        const std::filesystem::path& getClientCmakeListPath();
-
-        const std::filesystem::path& getServerCmakeListPath();
+        const std::filesystem::path& getCmakeListPath();
 
         const std::filesystem::path& getTechEngineCoreClientLibPath();
 
