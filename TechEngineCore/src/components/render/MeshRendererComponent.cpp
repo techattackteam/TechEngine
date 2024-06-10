@@ -86,5 +86,6 @@ namespace TechEngine {
             mesh = new CylinderMesh();
 
         m_material = MaterialManagerAPI::getMaterial(materialName);
+        paintMesh();
     }
 }
