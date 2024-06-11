@@ -85,27 +85,30 @@ namespace TechEngine {
     }
 
     void Server::PollIncomingMessages() {
-        ISteamNetworkingMessage* incomingMessage = nullptr;
-        int messageCount = m_interface->ReceiveMessagesOnPollGroup(m_PollGroup, &incomingMessage, 1);
-        if (messageCount == 0)
-            return;
+        while (running) {
+            ISteamNetworkingMessage* incomingMessage = nullptr;
+            int messageCount = m_interface->ReceiveMessagesOnPollGroup(m_PollGroup, &incomingMessage, 1);
+            if (messageCount == 0)
+                return;
 
-        if (messageCount < 0) {
-            // messageCount < 0 means critical error?
-            running = false;
-            return;
+            if (messageCount < 0) {
+                // messageCount < 0 means critical error?
+                running = false;
+                return;
+            }
+
+            auto itClient = m_ConnectedClients.find(incomingMessage->m_conn);
+            if (itClient == m_ConnectedClients.end()) {
+                TE_LOGGER_ERROR("ERROR: Received data from unregistered client\n");
+                continue;
+            }
+
+            if (incomingMessage->m_cbSize) {
+                onDataReceivedCallback(itClient->second, Buffer(incomingMessage->m_pData, incomingMessage->m_cbSize));
+            }
+
+            incomingMessage->Release();
         }
-
-        auto itClient = m_ConnectedClients.find(incomingMessage->m_conn);
-        if (itClient == m_ConnectedClients.end()) {
-            TE_LOGGER_ERROR("ERROR: Received data from unregistered client\n");
-            return;
-        }
-
-        if (incomingMessage->m_cbSize)
-            onDataReceivedCallback(itClient->second, Buffer(incomingMessage->m_pData, incomingMessage->m_cbSize));
-
-        incomingMessage->Release();
     }
 
     void Server::syncGameObjects() {

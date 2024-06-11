@@ -197,18 +197,20 @@ namespace TechEngine {
     }
 
     void NetworkEngine::pollIncomingMessages() {
-        ISteamNetworkingMessage* incomingMessage = nullptr;
-        int messageCount = sockets->ReceiveMessagesOnConnection(connection, &incomingMessage, 1);
-        if (messageCount == 0)
-            return;
-        if (messageCount < 0) {
-            // messageCount < 0 means critical error?
-            running = false;
-            return;
-        }
+        while (running) {
+            ISteamNetworkingMessage* incomingMessage = nullptr;
+            int messageCount = sockets->ReceiveMessagesOnConnection(connection, &incomingMessage, 1);
+            if (messageCount == 0)
+                return;
+            if (messageCount < 0) {
+                // messageCount < 0 means critical error?
+                running = false;
+                return;
+            }
 
-        onDataReceived(Buffer(incomingMessage->m_pData, incomingMessage->m_cbSize));
-        incomingMessage->Release();
+            onDataReceived(Buffer(incomingMessage->m_pData, incomingMessage->m_cbSize));
+            incomingMessage->Release();
+        }
     }
 
     void NetworkEngine::pollConnectionStateChanges() {

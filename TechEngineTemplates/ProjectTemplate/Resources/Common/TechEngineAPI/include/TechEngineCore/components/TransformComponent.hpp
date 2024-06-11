@@ -18,6 +18,8 @@ namespace TechEngine {
 
         explicit TransformComponent(GameObject* gameObject, EventDispatcher& eventDispatcher);
 
+        void update() override;
+
         void translate(glm::vec3 vector);
 
         void translateTo(glm::vec3 position);
