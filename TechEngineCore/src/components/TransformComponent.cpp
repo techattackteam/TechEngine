@@ -16,10 +16,14 @@ namespace TechEngine {
         lastOrientation = orientation;
     }
 
+    void TransformComponent::update() {
+        lastPosition = position;
+        lastOrientation = orientation;
+    }
+
     glm::mat4 TransformComponent::getModelMatrix() {
         GameObject* parent = gameObject->getParent();
         glm::vec3 position = glm::vec3(0, 0, 0);
-        glm::vec3 lastPosition = position;
         glm::vec3 orientation = glm::vec3(0, 0, 0);
         glm::vec3 scale = glm::vec3(1, 1, 1);
         model = glm::mat4(1.0f);
@@ -45,7 +49,7 @@ namespace TechEngine {
     }
 
     void TransformComponent::translateTo(glm::vec3 position) {
-        lastPosition = position;
+        lastPosition = this->position;
         this->position = position;
     }
 
