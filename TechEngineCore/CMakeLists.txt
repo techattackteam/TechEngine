@@ -11,7 +11,7 @@ function(configure_tech_engine_core target_name)
 
     add_library(${target_name} SHARED ${${target_name}_Sources} ${${target_name}_Headers})
     target_compile_definitions(${target_name} PUBLIC GLM_ENABLE_EXPERIMENTAL)
-    target_compile_definitions(${target_name} PRIVATE TECH_ENGINE_API_EXPORTS)
+    target_compile_definitions(${target_name} PRIVATE TECH_ENGINE_CORE_EXPORTS)
     # Setup target's output directory
     if (WIN32) # WINDOWS
         set(TECH_ENGINE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineCore/${target_name}")
@@ -25,31 +25,8 @@ function(configure_tech_engine_core target_name)
         )
     endif ()
 
-    # Optional: import the defined target to copy over the GPU acceleration libraries (3rd party provided by NVIDIA)
-    if (TARGET unofficial::omniverse-physx-sdk::gpu-library)
-        if (UNIX)
-            # Add rpath setting to find .so libraries on unix based systems
-            set_target_properties(${target_name} PROPERTIES
-                    BUILD_WITH_INSTALL_RPATH TRUE
-                    INSTALL_RPATH "$ORIGIN"
-            )
-        endif ()
-        add_custom_command(TARGET ${target_name} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                $<TARGET_FILE:unofficial::omniverse-physx-sdk::gpu-library>
-                $<TARGET_FILE_DIR:${target_name}>)
-        if (WIN32)
-            add_custom_command(TARGET ${target_name} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                    $<TARGET_FILE:unofficial::omniverse-physx-sdk::gpu-device-library>
-                    $<TARGET_FILE_DIR:${target_name}>)
-        endif ()
-    else ()
-        message(WARNING "GPU acceleration library target not defined - GPU acceleration will NOT be available!")
-    endif ()
-
     target_include_directories(${target_name} PUBLIC "src")
-    target_link_libraries(${target_name} PUBLIC spdlog::spdlog unofficial::omniverse-physx-sdk::sdk yaml-cpp::yaml-cpp GameNetworkingSockets::static)
+    target_link_libraries(${target_name} PUBLIC spdlog::spdlog yaml-cpp::yaml-cpp GameNetworkingSockets::static)
     target_compile_definitions(${target_name} PUBLIC
             $<$<CONFIG:Debug>:TE_DEBUG>
             $<$<CONFIG:Release>:TE_RELEASEDEBUG>
@@ -126,7 +103,6 @@ endfunction()
 
 # Create TechEngineCoreClient and TechEngineCoreServer libraries
 find_package(spdlog CONFIG REQUIRED)
-find_package(unofficial-omniverse-physx-sdk CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
 
 # Configure TechEngineCoreClient
@@ -134,3 +110,7 @@ configure_tech_engine_core(TechEngineCoreClient)
 
 # Configure TechEngineCoreServer
 configure_tech_engine_core(TechEngineCoreServer)
+
+#Configure TechEngineCoreEditor
+configure_tech_engine_core(TechEngineCoreEditor)
+

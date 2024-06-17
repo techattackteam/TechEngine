@@ -3,11 +3,10 @@
 #include <spdlog/sinks/basic_file_sink.h>
 
 namespace TechEngine {
-    std::shared_ptr<spdlog::logger> Logger::engineLogger;
-    std::shared_ptr<spdlog::logger> Logger::gameLogger;
+    std::shared_ptr<spdlog::logger> Logger::logger;
 
-    void Logger::init() {
-        if(initialized) {
+    void Logger::init(std::string name) {
+        if (initialized) {
             return;
         }
         std::vector<spdlog::sink_ptr> logSinks;
@@ -16,23 +15,13 @@ namespace TechEngine {
         logSinks[0]->set_pattern("%^[%T] %n: %v%$");
         logSinks[1]->set_pattern("[%T] [%l] %n: %v%$");
 
-        engineLogger = std::make_shared<spdlog::logger>("TechEngine", begin(logSinks), end(logSinks));
-        spdlog::register_logger(engineLogger);
-        engineLogger->set_level(spdlog::level::trace);
-        engineLogger->flush_on(spdlog::level::trace);
-
-        gameLogger = std::make_shared<spdlog::logger>("Game", begin(logSinks), end(logSinks));
-        spdlog::register_logger(gameLogger);
-        gameLogger->set_level(spdlog::level::trace);
-        gameLogger->flush_on(spdlog::level::trace);
-        initialized = true;
+        logger = std::make_shared<spdlog::logger>(name, begin(logSinks), end(logSinks));
+        spdlog::register_logger(logger);
+        logger->set_level(spdlog::level::trace);
+        logger->flush_on(spdlog::level::trace);
     }
 
-    std::shared_ptr<spdlog::logger> &Logger::getEngineLogger() {
-        return engineLogger;
-    }
-
-    std::shared_ptr<spdlog::logger> &Logger::getGameLogger() {
-        return gameLogger;
+    std::shared_ptr<spdlog::logger>& Logger::getLogger() {
+        return logger;
     }
 }

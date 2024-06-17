@@ -1,17 +1,17 @@
 #pragma once
 
 
-#include "core/Core.hpp"
-#include "core/FilePaths.hpp"
 #include "scene/Scene.hpp"
-#include "eventSystem/EventDispatcher.hpp"
-#include "physics/PhysicsEngine.hpp"
-#include "material/MaterialManager.hpp"
 
 
 #include <string>
 #include <unordered_map>
+
+#include "core/FilePaths.hpp"
+#include "material/MaterialManager.hpp"
+#include "physics/PhysicsEngine.hpp"
 #include "yaml-cpp/node/node.h"
+#include "core/CompileProject.hpp"
 
 namespace TechEngine {
     class ProjectManager;

@@ -1,6 +1,6 @@
 #pragma once
-#define PX_PHYSX_STATIC_LIB
-#include <PxPhysicsAPI.h>
+/*#define PX_PHYSX_STATIC_LIB
+#include <PxPhysicsAPI.h>*/
 
 #include "PhysicsCallback.hpp"
 #include "components/physics/RigidBody.hpp"
@@ -9,22 +9,23 @@
 
 namespace TechEngine {
     class PhysicsEngine {
-    private:
-        physx::PxDefaultAllocator allocator;
-        physx::PxDefaultErrorCallback errorCallback;
-        physx::PxDefaultCpuDispatcher* dispatcher;
-        static inline physx::PxFoundation* foundation;
-        physx::PxPhysics* physics;
-        physx::PxScene* pxScene;
-        physx::PxMaterial* defaultMaterial;
-        physx::PxPvd* pvd;
-        std::unordered_map<std::string, physx::PxRigidActor*> actors;
-        std::list<std::string> rigidBodiesWithoutColliders;
-        bool running = false;
+        /*private:
+            physx::PxDefaultAllocator allocator;
+            physx::PxDefaultErrorCallback errorCallback;
+            physx::PxDefaultCpuDispatcher* dispatcher;
+            static inline physx::PxFoundation* foundation;
+            physx::PxPhysics* physics;
+            physx::PxScene* pxScene;
+            physx::PxMaterial* defaultMaterial;
+            physx::PxPvd* pvd;
+            std::unordered_map<std::string, physx::PxRigidActor*> actors;
+            std::list<std::string> rigidBodiesWithoutColliders;
+            bool running = false;
 
-        EventDispatcher& eventDispatcher;
-        Scene& scene;
-        PhysicsCallback* callback;
+            EventDispatcher& eventDispatcher;
+            Scene& scene;
+            PhysicsCallback* callback;
+            */
 
         friend class PhysicsCallback;
 
@@ -56,7 +57,7 @@ namespace TechEngine {
         void updateMaterial(Collider* collider);
 
     private:
-        void updateGameObjectPositions();
+        /*void updateGameObjectPositions();
 
         void updateActorPositions();
 
@@ -72,6 +73,6 @@ namespace TechEngine {
 
         std::pair<int, physx::PxShape**> getShapes(GameObject* gameObject);
 
-        void detachCollider(Collider* collider);
+        void detachCollider(Collider* collider);*/
     };
 }

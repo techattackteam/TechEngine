@@ -83,11 +83,11 @@ namespace TechEngine {
 
     void ServerPanel::startRunningScene() {
 #ifdef TE_DEBUG
-        panelsManager.compileUserScripts(DEBUG, PROJECT_SERVER);
+        panelsManager.compileUserScripts(DEBUG, CompileProject::PROJECT_SERVER);
 #else
-        panelsManager.compileUserScripts(RELEASEDEBUG, PROJECT_SERVER);
+        panelsManager.compileUserScripts(RELEASEDEBUG, CompileProject::PROJECT_SERVER);
 #endif
-        server.sceneManager.saveSceneAsTemporarily(projectManager.getProjectCachePath().string(), PROJECT_SERVER);
+        server.sceneManager.saveSceneAsTemporarily(projectManager.getProjectCachePath().string(), CompileProject::PROJECT_SERVER);
         server.eventDispatcher.copy();
         server.materialManager.copy();
         server.scriptEngine.init(projectManager.getServerUserScriptsDLLPath().string(), &server.eventDispatcher);
@@ -98,9 +98,9 @@ namespace TechEngine {
 
     void ServerPanel::stopRunningScene() {
         server.physicsEngine.stop();
-        server.eventDispatcher.restoreCopy(); //PROBLEM: EventDispatcher is a singleton while there is a client and server instance
+        server.eventDispatcher.restoreCopy();
         server.materialManager.restoreCopy();
-        server.sceneManager.loadSceneFromTemporarily(projectManager.getProjectCachePath().string(), PROJECT_SERVER);
+        server.sceneManager.loadSceneFromTemporarily(projectManager.getProjectCachePath().string(), CompileProject::PROJECT_SERVER);
         sceneHierarchyPanel.getSelectedGO().clear();
         for (GameObject* gameObject: server.sceneManager.getScene().getGameObjects()) {
             if (std::find(sceneHierarchyPanel.getSelectedGO().begin(), sceneHierarchyPanel.getSelectedGO().end(), gameObject) != sceneHierarchyPanel.getSelectedGO().end()) {
@@ -108,6 +108,6 @@ namespace TechEngine {
             }
         }
         m_currentPlaying = false;
-        server.scriptEngine.stop(); //PROBLEM: ScriptEngine is a singleton while there is a client and server instance
+        server.scriptEngine.stop();
     }
 }

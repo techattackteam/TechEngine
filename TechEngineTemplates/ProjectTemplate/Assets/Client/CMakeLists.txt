@@ -1,13 +1,5 @@
-
-
-set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../../common/dependencies/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
-set(VCPKG_TARGET_TRIPLET "x64-windows-static-md" CACHE STRING "Vcpkg target triplet")
-project(UserProject)
-
-set(CMAKE_CXX_STANDARD 20)
-set(TechEngineCoreLIB   "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/TechEngineAPI/lib/debug/TechEngineCoreClient.lib" CACHE STRING "File path for the TechEngineCore lib")
-set(TechEngineClientLIB "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Client/TechEngineAPI/lib/debug/TechEngineClient.lib"     CACHE STRING "File path for the TechEngineClient lib")
-
+set(TechEngineCoreLIB "TechEngineCoreClientLIB-placeholder" CACHE STRING "TechEngineCoreClient.lib")
+set(TechEngineClientLIB "TechEngineClientLIB-placeholder" CACHE STRING "TechEngineClient.lib")
 find_package(spdlog CONFIG REQUIRED)
 
 file(GLOB_RECURSE ClientScripts_Client_Sources CONFIGURE_DEPENDS "../../../Assets/Client/*.cpp")
@@ -27,9 +19,10 @@ endforeach ()
 list(REMOVE_DUPLICATES TechEngineAPIInclude_Dirs)
 
 add_library(ClientScripts SHARED ${ClientScripts_Client_Sources} ${ClientScripts_Client_Headers} ${ClientScripts_Common_Sources} ${ClientScripts_Common_Headers})
+target_compile_definitions(ClientScripts PRIVATE GLM_ENABLE_EXPERIMENTAL)
 
 if (WIN32) # WINDOWS
-    set(TECH_ENGINE_API_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/../scripts/build")
+    set(TECH_ENGINE_API_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/../Resources/Client/scripts/build")
     set_target_properties(ClientScripts PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_API_OUTPUT_DIRECTORY}/debug"
             LIBRARY_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_API_OUTPUT_DIRECTORY}/debug"
@@ -50,6 +43,6 @@ target_include_directories(ClientScripts PUBLIC
         "../../Resources/Common/TechEngineAPI/include/TechEngineCore"
         "../../Resources/Common/TechEngineAPI"
         "../../Resources/Client/TechEngineAPI/include/TechEngineClient"
-        "../../Resources/ClientTechEngineAPI/include")
+        "../../Resources/Client/TechEngineAPI/include")
 
 target_link_libraries(ClientScripts PUBLIC ${TechEngineCoreLIB} ${TechEngineClientLIB} spdlog::spdlog)
