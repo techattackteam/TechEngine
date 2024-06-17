@@ -1,7 +1,7 @@
 #include "SceneManager.hpp"
 
 #include "core/FileSystem.hpp"
-#include "core/Core.hpp"
+#include "core/CoreExportDll.hpp"
 #include "core/Logger.hpp"
 #include "scene/GameObject.hpp"
 #include "components/render/CameraComponent.hpp"
@@ -419,7 +419,7 @@ namespace TechEngine {
     }
 
     void SceneManager::saveSceneAsTemporarily(const std::string& cachPath, CompileProject compileProject) {
-        std::string sceneName = compileProject == PROJECT_CLIENT ? "SceneClientTemporary" : "SceneServerTemporary";
+        std::string sceneName = compileProject == CompileProject::PROJECT_CLIENT ? "SceneClientTemporary" : "SceneServerTemporary";
         std::string sceneTemporaryPath = cachPath + "\\" + sceneName + ".scene";
         serialize(sceneName, sceneTemporaryPath);
     }
@@ -427,7 +427,7 @@ namespace TechEngine {
     void SceneManager::loadSceneFromTemporarily(const std::string& cachPath, CompileProject compileProject) {
         scene.clear();
         physicsEngine.clear();
-        std::string sceneName = compileProject == PROJECT_CLIENT ? "SceneClientTemporary" : "SceneServerTemporary";
+        std::string sceneName = compileProject == CompileProject::PROJECT_CLIENT ? "SceneClientTemporary" : "SceneServerTemporary";
         std::string sceneTemporaryPath = cachPath + "\\" + sceneName + ".scene";
         deserialize(sceneTemporaryPath);
         std::filesystem::remove(sceneTemporaryPath);

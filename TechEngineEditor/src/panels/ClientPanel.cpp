@@ -82,11 +82,11 @@ namespace TechEngine {
 
     void ClientPanel::startRunningScene() {
 #ifdef TE_DEBUG
-        panelsManager.compileUserScripts(DEBUG, PROJECT_CLIENT);
+        panelsManager.compileUserScripts(DEBUG, CompileProject::PROJECT_CLIENT);
 #else
         panelsManager.compileUserScripts(RELEASEDEBUG, PROJECT_CLIENT);
 #endif
-        client.sceneManager.saveSceneAsTemporarily(projectManager.getProjectCachePath().string(), PROJECT_CLIENT);
+        client.sceneManager.saveSceneAsTemporarily(projectManager.getProjectCachePath().string(), CompileProject::PROJECT_CLIENT);
         client.eventDispatcher.copy();
         client.materialManager.copy();
         client.scriptEngine.init(projectManager.getClientUserScriptsDLLPath().string(), &client.eventDispatcher);
@@ -99,7 +99,7 @@ namespace TechEngine {
         client.physicsEngine.stop();
         client.eventDispatcher.restoreCopy();
         client.materialManager.restoreCopy();
-        client.sceneManager.loadSceneFromTemporarily(projectManager.getProjectCachePath().string(), PROJECT_CLIENT);
+        client.sceneManager.loadSceneFromTemporarily(projectManager.getProjectCachePath().string(), CompileProject::PROJECT_CLIENT);
         sceneHierarchyPanel.getSelectedGO().clear();
         for (GameObject* gameObject: client.sceneManager.getScene().getGameObjects()) {
             if (std::find(sceneHierarchyPanel.getSelectedGO().begin(), sceneHierarchyPanel.getSelectedGO().end(), gameObject) != sceneHierarchyPanel.getSelectedGO().end()) {

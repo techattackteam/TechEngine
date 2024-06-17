@@ -15,7 +15,6 @@
     },
     "imguizmo",
     "glew",
-    "physx",
     "stb",
     "assimp",
     "protobuf",

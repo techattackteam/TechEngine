@@ -234,11 +234,11 @@ namespace TechEngine {
                     clientPanel.stopRunningScene();
                 }*/
 #ifdef TE_DEBUG
-                compileUserScripts(DEBUG, PROJECT_CLIENT);
+                compileUserScripts(DEBUG, CompileProject::PROJECT_CLIENT);
 #elif TE_RELEASE
-                compileUserScripts(RELEASE, PROJECT_CLIENT);
+                compileUserScripts(RELEASE, CompileProject::PROJECT_CLIENT);
 #elif TE_RELEASEDEBUG
-                compileUserScripts(RELEASEDEBUG, PROJECT_CLIENT);
+                compileUserScripts(RELEASEDEBUG, CompileProject::PROJECT_CLIENT);
 #endif
             } else if (ImGui::MenuItem("Run")) {
                 runClientProcess();
@@ -254,11 +254,11 @@ namespace TechEngine {
                     }
                 }
 #ifdef TE_DEBUG
-                compileUserScripts(DEBUG, PROJECT_SERVER);
+                compileUserScripts(DEBUG, CompileProject::PROJECT_CLIENT);
 #elif TE_RELEASE
-                compileUserScripts(RELEASE, PROJECT_SERVER);
+                compileUserScripts(RELEASE, CompileProject::PROJECT_CLIENT);
 #elif TE_RELEASEDEBUG
-                compileUserScripts(RELEASEDEBUG, PROJECT_SERVER);
+                compileUserScripts(RELEASEDEBUG, CompileProject::PROJECT_CLIENT);
 #endif*/
             } else if (ImGui::MenuItem("Run")) {
                 runServerProcess();
@@ -332,7 +332,7 @@ namespace TechEngine {
 
         std::string variable = compileProject == CompileProject::PROJECT_CLIENT ? "TechEngineClientLIB:STRING=\"" : "TechEngineServerLIB:STRING=\"";
 
-        if (!std::filesystem::exists(cmakeBuildPath) || std::filesystem::is_empty(cmakeBuildPath)) {
+        //if (!std::filesystem::exists(cmakeBuildPath) || std::filesystem::is_empty(cmakeBuildPath)) {
             std::string command = "\"" + projectManager.getCmakePath().string() +
                                   " -G \"Visual Studio 17 2022\""
                                   " -D " + variable + techEngineLibPath + "\"" +
@@ -340,7 +340,7 @@ namespace TechEngine {
                                   " -S " + "\"" + cmakeListPath + "\"" +
                                   " -B " + "\"" + cmakeBuildPath + "\"" + "\"";
             std::system(command.c_str());
-        }
+        //}
         std::string cm;
         if (compileMode == CompileMode::RELEASE) {
             cm = "Release";
@@ -349,7 +349,7 @@ namespace TechEngine {
         } else if (compileMode == CompileMode::DEBUG) {
             cm = "Debug";
         }
-        std::string command = "\"" + projectManager.getCmakePath().string() +
+        command = "\"" + projectManager.getCmakePath().string() +
                               " --build " + "\"" + cmakeBuildPath + "\"" +
                               " --target " + (compileProject == CompileProject::PROJECT_CLIENT
                                                   ? "ClientScripts"

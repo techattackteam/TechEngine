@@ -6,15 +6,13 @@
 namespace TechEngine {
     class Logger {
     private:
-        static std::shared_ptr<spdlog::logger> engineLogger;
-        static std::shared_ptr<spdlog::logger> gameLogger;
+        static std::shared_ptr<spdlog::logger> logger;
         inline static bool initialized = false;
+
     public:
-        static void init();
+        static void init(std::string name);
 
-        static std::shared_ptr<spdlog::logger>& getEngineLogger();
-
-        static std::shared_ptr<spdlog::logger>& getGameLogger();
+        static std::shared_ptr<spdlog::logger>& getLogger();
     };
 }
 
@@ -34,8 +32,8 @@ inline OStream& operator<<(OStream& os, glm::qua<T, Q> quaternion) {
 }
 
 // Core log macros
-#define TE_LOGGER_TRACE(...) TechEngine::Logger::getEngineLogger()->trace(__VA_ARGS__)
-#define TE_LOGGER_INFO(...) TechEngine::Logger::getEngineLogger()->info(__VA_ARGS__)
-#define TE_LOGGER_WARN(...) TechEngine::Logger::getEngineLogger()->warn(__VA_ARGS__)
-#define TE_LOGGER_ERROR(...) TechEngine::Logger::getEngineLogger()->error(__VA_ARGS__)
-#define TE_LOGGER_CRITICAL(...) {TechEngine::Logger::getEngineLogger()->critical(__VA_ARGS__); __debugbreak();}
+#define TE_LOGGER_TRACE(...) TechEngine::Logger::getLogger()->trace(__VA_ARGS__)
+#define TE_LOGGER_INFO(...) TechEngine::Logger::getLogger()->info(__VA_ARGS__)
+#define TE_LOGGER_WARN(...) TechEngine::Logger::getLogger()->warn(__VA_ARGS__)
+#define TE_LOGGER_ERROR(...) TechEngine::Logger::getLogger()->error(__VA_ARGS__)
+#define TE_LOGGER_CRITICAL(...) {TechEngine::Logger::getLogger()->critical(__VA_ARGS__); __debugbreak();}

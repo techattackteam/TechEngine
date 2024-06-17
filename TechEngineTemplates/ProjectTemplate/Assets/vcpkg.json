@@ -6,7 +6,6 @@
     "glm",
     "spdlog",
     "yaml-cpp",
-    "physx",
     "protobuf",
     "openssl",
     "libsodium",

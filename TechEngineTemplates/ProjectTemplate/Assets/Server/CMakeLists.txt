@@ -1,6 +1,7 @@
-set(CMAKE_CXX_STANDARD 20)
-set(TechEngineCoreLIB   "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Common/TechEngineAPI/lib/debug/TechEngineCoreServer.lib"CACHE STRING "File path for the TechEngineCore lib")
-set(TechEngineServerLIB "C:/dev/TechEngine/bin/TechEngineEditor/debug/DefaultProject/Resources/Server/TechEngineAPI/lib/debug/TechEngineServer.lib"    CACHE STRING "File path for the TechEngineClient lib")
+set(TechEngineCoreLIB "TechEngineCoreServerLIB-placeholder" CACHE STRING "TechEngineCoreServer.lib")
+set(TechEngineServerLIB "TechEngineServerLIB-placeholder" CACHE STRING "TechEngineServer.lib")
+find_package(spdlog CONFIG REQUIRED)
+
 
 file(GLOB_RECURSE ServerScripts_Server_Sources CONFIGURE_DEPENDS "*.cpp")
 file(GLOB_RECURSE ServerScripts_Server_Headers "*.hpp")
@@ -21,9 +22,10 @@ list(REMOVE_DUPLICATES TechEngineAPIInclude_Dirs)
 
 add_library(ServerScripts SHARED ${ServerScripts_Server_Sources} ${ServerScripts_Server_Headers} ${ServerScripts_Common_Sources} ${ServerScripts_Common_Headers})
 target_include_directories(ServerScripts PRIVATE "../../Common/dependencies/GameNetworkingSockets")
+target_compile_definitions(ServerScripts PRIVATE GLM_ENABLE_EXPERIMENTAL)
 
 if (WIN32) # WINDOWS
-    set(TECH_ENGINE_API_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/../scripts/build")
+    set(TECH_ENGINE_API_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/../Resources/Server/scripts/build")
     set_target_properties(ServerScripts PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_API_OUTPUT_DIRECTORY}/debug"
             LIBRARY_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_API_OUTPUT_DIRECTORY}/debug"
@@ -41,10 +43,8 @@ if (WIN32) # WINDOWS
     )
 endif ()
 target_include_directories(ServerScripts PUBLIC
-        "../../Common/TechEngineAPI/include/TechEngineCore"
-        "../../Common/TechEngineAPI"
-        "../TechEngineAPI/include/TechEngineServer"
-        "../TechEngineAPI/include"
-        "../../Common/dependencies/glm"
-        "../../Common/dependencies/yaml-cpp/include")
-target_link_libraries(ServerScripts ${TechEngineCoreLIB} ${TechEngineServerLIB} GameNetworkingSockets::static)
+        "../../Resources/Common/TechEngineAPI/include/TechEngineCore"
+        "../../Resources/Common/TechEngineAPI"
+        "../../Resources/Server/TechEngineAPI/include/TechEngineServer"
+        "../../Resources/Server/TechEngineAPI/include")
+target_link_libraries(ServerScripts ${TechEngineCoreLIB} ${TechEngineServerLIB} GameNetworkingSockets::static spdlog::spdlog)

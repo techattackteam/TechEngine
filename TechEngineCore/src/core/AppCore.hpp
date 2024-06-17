@@ -1,24 +1,28 @@
 #pragma once
 
 #include "Timer.hpp"
-#include "eventSystem/EventDispatcher.hpp"
-#include "physics/PhysicsEngine.hpp"
-#include "scene/SceneManager.hpp"
+#include "CoreExportDll.hpp"
 #include "script/ScriptEngine.hpp"
+#include "FilePaths.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "material/MaterialManager.hpp"
+#include "scene/SceneManager.hpp"
+#include "texture/TextureManager.hpp"
 
 namespace TechEngine {
-    class AppCore {
+    class CORE_DLL AppCore {
     protected:
         bool running = true;
 
     public:
-        EventDispatcher eventDispatcher;
         Timer timer;
+        EventDispatcher eventDispatcher;
         FilePaths filePaths;
         TextureManager textureManager;
         MaterialManager materialManager;
         SceneManager sceneManager;
         PhysicsEngine physicsEngine;
+
         ScriptEngine scriptEngine;
 
         AppCore();

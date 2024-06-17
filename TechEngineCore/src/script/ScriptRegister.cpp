@@ -19,7 +19,8 @@ namespace TechEngine {
         if (instance == nullptr) {
             instance = new ScriptRegister();
         }
-        std::cout << "ScriptRegister instance at " << (void*)instance << std::endl;
+        std::string string = "ScriptRegister instance at " + std::to_string((long long)instance);
+        TE_LOGGER_INFO(string);
         return instance;
     }
 

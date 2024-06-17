@@ -19,6 +19,7 @@ namespace TechEngine {
                        server(),
                        projectManager(client, server),
                        panelsManager(client, server, eventDispatcher, projectManager) {
+        Logger::init("TechEngineEditor");
         editorSettings = FileSystem::rootPath.string() + "/EditorSettings.TESettings";
         projectManager.init();
         loadEditorSettings();
