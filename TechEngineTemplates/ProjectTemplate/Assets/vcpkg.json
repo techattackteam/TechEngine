@@ -7,8 +7,6 @@
     "spdlog",
     "yaml-cpp",
     "protobuf",
-    "openssl",
-    "libsodium",
-    "abseil"
+    "openssl"
   ]
 }
