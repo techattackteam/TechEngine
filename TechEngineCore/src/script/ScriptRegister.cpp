@@ -25,7 +25,6 @@ namespace TechEngine {
     }
 
     void ScriptRegister::registerScript(Script* script) {
-        ScriptEngine* clientScriptEngine = getInstance()->scriptEngine;
-        clientScriptEngine->registerScript(script);
+        getInstance()->scriptEngine->registerScript(script);
     }
 }

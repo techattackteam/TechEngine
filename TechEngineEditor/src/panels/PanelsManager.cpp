@@ -332,15 +332,13 @@ namespace TechEngine {
 
         std::string variable = compileProject == CompileProject::PROJECT_CLIENT ? "TechEngineClientLIB:STRING=\"" : "TechEngineServerLIB:STRING=\"";
 
-        //if (!std::filesystem::exists(cmakeBuildPath) || std::filesystem::is_empty(cmakeBuildPath)) {
-            std::string command = "\"" + projectManager.getCmakePath().string() +
-                                  " -G \"Visual Studio 17 2022\""
-                                  " -D " + variable + techEngineLibPath + "\"" +
-                                  " -D TechEngineCoreLIB:STRING=\"" + techEngineCoreLibPath + "\"" +
-                                  " -S " + "\"" + cmakeListPath + "\"" +
-                                  " -B " + "\"" + cmakeBuildPath + "\"" + "\"";
-            std::system(command.c_str());
-        //}
+        std::string command = "\"" + projectManager.getCmakePath().string() +
+                              " -G \"Visual Studio 17 2022\""
+                              " -D " + variable + techEngineLibPath + "\"" +
+                              " -D TechEngineCoreLIB:STRING=\"" + techEngineCoreLibPath + "\"" +
+                              " -S " + "\"" + cmakeListPath + "\"" +
+                              " -B " + "\"" + cmakeBuildPath + "\"" + "\"";
+        std::system(command.c_str());
         std::string cm;
         if (compileMode == CompileMode::RELEASE) {
             cm = "Release";
@@ -350,11 +348,11 @@ namespace TechEngine {
             cm = "Debug";
         }
         command = "\"" + projectManager.getCmakePath().string() +
-                              " --build " + "\"" + cmakeBuildPath + "\"" +
-                              " --target " + (compileProject == CompileProject::PROJECT_CLIENT
-                                                  ? "ClientScripts"
-                                                  : "ServerScripts") +
-                              " --config " + cm + "\"";
+                  " --build " + "\"" + cmakeBuildPath + "\"" +
+                  " --target " + (compileProject == CompileProject::PROJECT_CLIENT
+                                      ? "ClientScripts"
+                                      : "ServerScripts") +
+                  " --config " + cm + "\"";
         std::system(command.c_str());
         //TE_LOGGER_INFO("Build finished!");
     }
