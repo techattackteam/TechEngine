@@ -1,18 +1,20 @@
 #include "Client.hpp"
 
 #include "core/Logger.hpp"
+#include "mesh/MeshManager.hpp"
 
 namespace TechEngine {
     Client::Client(Window& window) : window(window),
                                      renderer(),
                                      networkEngine(eventDispatcher, sceneManager),
-                                     api(&sceneManager, &materialManager, &eventDispatcher, &networkEngine)  {
+                                     api(&sceneManager, &materialManager, &eventDispatcher, &networkEngine) {
         Logger::init("TechEngineClient");
+        MeshManager::init();
+        physicsEngine.init();
+        ScriptRegister::getInstance()->init(&scriptEngine);
         eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event* event) {
             onWindowCloseEvent((WindowCloseEvent*)(event));
         });
-        physicsEngine.init();
-        ScriptRegister::getInstance()->init(&scriptEngine);
     }
 
     Client::~Client() = default;

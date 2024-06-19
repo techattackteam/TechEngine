@@ -2,11 +2,12 @@
 
 #include "mesh/CubeMesh.hpp"
 #include "mesh/CylinderMesh.hpp"
+#include "mesh/MeshManager.hpp"
 #include "mesh/SphereMesh.hpp"
 #include "scriptingAPI/material/MaterialManagerAPI.hpp"
 
 namespace TechEngine {
-    MeshRendererComponent::MeshRendererComponent(GameObject* gameObject, EventDispatcher& eventDispatcher) : mesh(new CubeMesh()), Component(gameObject, eventDispatcher, "MeshRenderer") {
+    MeshRendererComponent::MeshRendererComponent(GameObject* gameObject, EventDispatcher& eventDispatcher) : mesh(MeshManager::getMesh("Cube")), Component(gameObject, eventDispatcher, "MeshRenderer") {
         std::string name = "DefaultMaterial";
         m_material = MaterialManagerAPI::getMaterial(name);
         paintMesh();
@@ -14,14 +15,14 @@ namespace TechEngine {
 
     MeshRendererComponent::MeshRendererComponent(GameObject* gameObject,
                                                  EventDispatcher& eventDispatcher,
-                                                 Mesh* mesh,
+                                                 Mesh& mesh,
                                                  Material* material) : mesh(mesh),
                                                                        m_material(material),
                                                                        Component(gameObject, eventDispatcher, "MeshRenderer") {
         paintMesh();
     }
 
-    void MeshRendererComponent::changeMesh(Mesh* mesh) {
+    void MeshRendererComponent::changeMesh(Mesh& mesh) {
         this->mesh = mesh;
         if (m_material != nullptr)
             paintMesh();
@@ -38,13 +39,13 @@ namespace TechEngine {
 
 
     void MeshRendererComponent::paintMesh() {
-        for (Vertex& vertex: mesh->getVertices()) {
+        for (Vertex& vertex: mesh.getVertices()) {
             vertex.setColor(m_material->getColor());
         }
     }
 
     Mesh& MeshRendererComponent::getMesh() {
-        return *mesh;
+        return mesh;
     }
 
     Material& MeshRendererComponent::getMaterial() {
@@ -52,23 +53,23 @@ namespace TechEngine {
     }
 
     std::vector<Vertex> MeshRendererComponent::getVertices() {
-        return mesh->getVertices();
+        return mesh.getVertices();
     }
 
     std::vector<int> MeshRendererComponent::getIndices() {
-        return mesh->getIndices();
+        return mesh.getIndices();
     }
 
     Component* MeshRendererComponent::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
         MeshRendererComponent* meshRenderer = (MeshRendererComponent*)componentToCopy;
-        Mesh* mesh = new Mesh(meshRenderer->getVertices(), meshRenderer->getIndices());
+        Mesh& mesh = *new Mesh(meshRenderer->getVertices(), meshRenderer->getIndices());
         auto* newComponent = new MeshRendererComponent(gameObjectToAttach, eventDispatcher, mesh, m_material);
         return newComponent;
     }
 
     void MeshRendererComponent::Serialize(StreamWriter* stream) {
         Component::Serialize(stream);
-        stream->writeString(mesh->getName());
+        stream->writeString(mesh.getName());
         stream->writeString(m_material->getName());
     }
 
@@ -78,13 +79,7 @@ namespace TechEngine {
         std::string materialName;
         stream->readString(meshName);
         stream->readString(materialName);
-        if (meshName == "Cube")
-            mesh = new CubeMesh();
-        else if (meshName == "Sphere")
-            mesh = new SphereMesh();
-        else if (meshName == "Cylinder")
-            mesh = new CylinderMesh();
-
+        mesh = MeshManager::getMesh(meshName);
         m_material = MaterialManagerAPI::getMaterial(materialName);
         paintMesh();
     }

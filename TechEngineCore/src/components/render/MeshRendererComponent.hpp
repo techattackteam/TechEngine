@@ -8,15 +8,15 @@
 namespace TechEngine {
     class MeshRendererComponent : public Component {
     private:
-        Mesh* mesh;
+        Mesh& mesh;
         Material* m_material = nullptr;
 
     public:
         MeshRendererComponent(GameObject* gameObject, EventDispatcher& eventDispatcher);
 
-        MeshRendererComponent(GameObject* gameObject, EventDispatcher& eventDispatcher, Mesh* mesh, Material* material);
+        MeshRendererComponent(GameObject* gameObject, EventDispatcher& eventDispatcher, Mesh& mesh, Material* material);
 
-        void changeMesh(Mesh* mesh);
+        void changeMesh(Mesh& mesh);
 
         void changeMaterial(Material& material);
 

@@ -23,6 +23,9 @@
 #include <utils/YAMLUtils.hpp>
 #include <fstream>
 
+#include "mesh/MeshManager.hpp"
+#include "script/ScriptEngine.hpp"
+
 namespace TechEngine {
     YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec2& v) {
         out << YAML::Flow;
@@ -232,6 +235,7 @@ namespace TechEngine {
             std::string materialName = meshRendererNode["Material"].as<std::string>();
 
             Material& material = materialManager.getMaterial(materialName);
+            /*
             Mesh* mesh;
             if (meshName == "Cube") {
                 mesh = new CubeMesh();
@@ -263,7 +267,9 @@ namespace TechEngine {
             } else {
                 TE_LOGGER_CRITICAL("Failed to deserialize mesh renderer component.\n      Mesh name {0} is not valid.", meshName);
             }
-
+            */
+            Mesh& mesh = MeshManager::getMesh(meshName);
+            ScriptRegister::getInstance();
             gameObject.addComponent<MeshRendererComponent>(mesh, &material);
         }
         auto boxColliderNode = gameObjectYAML["BoxColliderComponent"];
@@ -397,7 +403,7 @@ namespace TechEngine {
             gameObject.getComponent<CameraComponent>()->setIsMainCamera(true);
             gameObject.getComponent<TransformComponent>()->translateTo(glm::vec3(0.0f, 0.0f, 5.0f));
             GameObject& cube = scene.createGameObject("Cube");
-            cube.addComponent<MeshRendererComponent>(new CubeMesh(), &materialManager.getMaterial("DefaultMaterial"));
+            cube.addComponent<MeshRendererComponent>(MeshManager::getMesh("Cube"), &materialManager.getMaterial("DefaultMaterial"));
             cube.getComponent<TransformComponent>()->translateTo(glm::vec3(0.0f, 0.0f, 0.0f));
             std::string scenePath = filePaths.commonAssetsPath + "\\Scenes\\" + m_activeSceneName + ".scene";
             registerScene(scenePath);
