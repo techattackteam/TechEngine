@@ -16,6 +16,7 @@
 #include <windows.h>
 
 #include "components/network/NetworkSync.hpp"
+#include "mesh/MeshManager.hpp"
 
 namespace TechEngine {
     InspectorPanel::InspectorPanel(const std::string& name, EventDispatcher& eventDispatcher,
@@ -240,14 +241,7 @@ namespace TechEngine {
                     ImGui::EndCombo();
                 }
                 if (current_item != mesh.getName()) {
-                    if (current_item == items[0]) {
-                        meshRenderer->changeMesh(new CubeMesh());
-                    } else if (current_item == items[1]) {
-                        meshRenderer->changeMesh(new SphereMesh());
-                    } else if (current_item == items[2]) {
-                        meshRenderer->changeMesh(new CylinderMesh());
-                    } else if (current_item == items[3]) {
-                    }
+                    meshRenderer->changeMesh(MeshManager::getMesh(current_item));
                 }
             }
             static bool open = false;
@@ -557,14 +551,7 @@ namespace TechEngine {
                     }
                     if (current_item != commonMeshName) {
                         for (GameObject* gameObject: selectedGameObjects) {
-                            if (current_item == items[0]) {
-                                gameObject->getComponent<MeshRendererComponent>()->changeMesh(new CubeMesh());
-                            } else if (current_item == items[1]) {
-                                gameObject->getComponent<MeshRendererComponent>()->changeMesh(new SphereMesh());
-                            } else if (current_item == items[2]) {
-                                gameObject->getComponent<MeshRendererComponent>()->changeMesh(new CylinderMesh());
-                            } else if (current_item == items[3]) {
-                            }
+                            gameObject->getComponent<MeshRendererComponent>()->changeMesh(MeshManager::getMesh(current_item));
                         }
                     }
                 }
