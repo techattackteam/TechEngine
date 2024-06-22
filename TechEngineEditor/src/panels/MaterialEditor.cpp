@@ -12,16 +12,17 @@
 #include "texture/TextureManager.hpp"
 
 namespace TechEngine {
-    MaterialEditor::MaterialEditor(Client& client, Server& server) : client(client),
-                                                                     server(server),
-                                                                     m_material(nullptr),
-                                                                     m_sphere("Sphere", client.systemsRegistry),
-                                                                     m_camera("SceneCamera", client.systemsRegistry),
-                                                                     Panel("Material Editor") {
+    MaterialEditor::MaterialEditor(Client& client, Server& server, SystemsRegistry& editorRegistry) : client(client),
+                                                                                                      server(server),
+                                                                                                      m_material(nullptr),
+                                                                                                      m_sphere("Sphere", client.systemsRegistry),
+                                                                                                      m_camera("SceneCamera", client.systemsRegistry),
+                                                                                                      Panel("Material Editor", editorRegistry) {
         m_open = false;
     }
 
     void MaterialEditor::init() {
+        Panel::init();
         frameBufferID = client.systemsRegistry.getSystem<Renderer>().createFramebuffer(1080, 720);
         m_sphere.addComponent<MeshRendererComponent>(mesh, &client.systemsRegistry.getSystem<MaterialManager>().getMaterial("DefaultMaterial"));
         m_sphere.getTransform().position = glm::vec3(0, 0, 0);

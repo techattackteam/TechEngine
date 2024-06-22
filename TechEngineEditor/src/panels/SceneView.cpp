@@ -17,7 +17,7 @@ namespace TechEngine {
         : appRegistry(appRegistry),
           guizmo(id),
           selectedGO(selectedGO),
-          Panel(name) {
+          Panel(name, editorRegistry) {
     }
 
     SceneView::~SceneView() {
@@ -25,6 +25,7 @@ namespace TechEngine {
     }
 
     void SceneView::init() {
+        Panel::init();
         frameBufferID = appRegistry.getSystem<Renderer>().createFramebuffer(1080, 720);
         sceneCamera = new GameObject("SceneCamera", appRegistry);
         sceneCamera->addComponent<CameraComponent>();

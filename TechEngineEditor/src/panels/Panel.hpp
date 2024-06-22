@@ -1,7 +1,6 @@
 #pragma once
 
 #include <system/SystemsRegistry.hpp>
-#include "eventSystem/EventDispatcher.hpp"
 #include "core/Key.hpp"
 #include "glm/vec2.hpp"
 #include <imgui.h>
@@ -12,13 +11,14 @@ namespace TechEngine {
         std::string name;
         std::vector<Key> keysPressed;
         bool m_open = true;
+        SystemsRegistry& editorRegistry;
 
     public:
-        explicit Panel(const std::string& name);
+        explicit Panel(const std::string& name, SystemsRegistry& editorRegistry);
 
         virtual ~Panel();
 
-        virtual void init() = 0;
+        virtual void init();
 
         void update(ImGuiStyleVar ImGuiStyleVar_WindowPadding = -1, const ImVec2& valImVec2 = {0, 0}, ImGuiWindowFlags flags = 0, bool closable = false);
 

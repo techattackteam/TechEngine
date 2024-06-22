@@ -13,11 +13,12 @@ namespace TechEngine {
                                                                              editorRegistry(editorRegistry),
                                                                              panelsManager(panelsManager),
                                                                              /*assimpLoader(/*sceneManager.getScene(), materialManager#1#),*/
-                                                                             Panel("Content Browser") {
+                                                                             Panel("Content Browser", editorRegistry) {
     }
 
 
     void ContentBrowserPanel::init() {
+        Panel::init();
         currentPath = editorRegistry.getSystem<ProjectManager>().getProjectAssetsPath();
     }
 

@@ -17,13 +17,15 @@
 
 namespace TechEngine {
     InspectorPanel::InspectorPanel(const std::string& name,
+                                   SystemsRegistry& editorRegistry,
                                    SystemsRegistry& appRegistry,
                                    std::vector<GameObject*>& selectedGameObjects) : appRegistry(appRegistry),
                                                                                     selectedGameObjects(selectedGameObjects),
-                                                                                    Panel(name) {
+                                                                                    Panel(name, editorRegistry) {
     }
 
     void InspectorPanel::init() {
+        Panel::init();
     }
 
     void InspectorPanel::onUpdate() {

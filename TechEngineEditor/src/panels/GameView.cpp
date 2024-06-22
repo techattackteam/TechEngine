@@ -3,10 +3,11 @@
 #include "scene/SceneManager.hpp"
 
 namespace TechEngine {
-    GameView::GameView(SystemsRegistry& appRegistry) : appRegistry(appRegistry), Panel("Game") {
+    GameView::GameView(SystemsRegistry& editorRegistry, SystemsRegistry& appRegistry) : appRegistry(appRegistry), Panel("Game", editorRegistry) {
     }
 
     void GameView::init() {
+        Panel::init();
         frameBufferID = appRegistry.getSystem<Renderer>().createFramebuffer(1080, 720);
     }
 

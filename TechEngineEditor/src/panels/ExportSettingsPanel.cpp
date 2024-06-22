@@ -13,7 +13,7 @@ namespace TechEngine {
                                              Client& client,
                                              Server& server,
                                              PanelsManager& panelsManager) : editorRegistry(editorRegistry), panelsManager(panelsManager), client(client), server(server),
-                                                                             Panel("ExportSettingsPanel") {
+                                                                             Panel("ExportSettingsPanel", editorRegistry) {
         m_open = false;
     }
 
@@ -21,6 +21,7 @@ namespace TechEngine {
     }
 
     void ExportSettingsPanel::init() {
+        Panel::init();
     }
 
     void ExportSettingsPanel::onUpdate() {

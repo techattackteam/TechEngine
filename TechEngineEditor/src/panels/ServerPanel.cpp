@@ -13,14 +13,15 @@ namespace TechEngine {
                                                             editorRegistry(editorRegistry),
                                                             appRegistry(appRegistry),
                                                             panelsManager(panelsManager),
-                                                            inspectorPanel("Server Inspector", appRegistry, sceneHierarchyPanel.getSelectedGO()),
+                                                            inspectorPanel("Server Inspector", editorRegistry, appRegistry, sceneHierarchyPanel.getSelectedGO()),
                                                             sceneView("Server Scene", editorRegistry, appRegistry, sceneHierarchyPanel.getSelectedGO()),
-                                                            sceneHierarchyPanel("Server Scene Hierarchy", appRegistry),
-                                                            Panel("ServerPanel") {
+                                                            sceneHierarchyPanel("Server Scene Hierarchy", editorRegistry, appRegistry),
+                                                            Panel("ServerPanel", editorRegistry) {
         server.systemsRegistry.registerSystem<Renderer>();
     }
 
     void ServerPanel::init() {
+        Panel::init();
         server.systemsRegistry.getSystem<Renderer>().init(server.filePaths);
         inspectorPanel.init();
         sceneHierarchyPanel.init();

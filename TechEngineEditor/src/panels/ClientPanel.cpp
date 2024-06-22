@@ -11,17 +11,18 @@ namespace TechEngine {
                                                              editorRegistry(editorRegistry),
                                                              appRegistry(clientRegistry),
                                                              panelsManager(panelsManager),
-                                                             gameView(clientRegistry),
-                                                             inspectorPanel("Client Inspector", clientRegistry, sceneHierarchyPanel.getSelectedGO()),
+                                                             gameView(editorRegistry, clientRegistry),
+                                                             inspectorPanel("Client Inspector", editorRegistry, clientRegistry, sceneHierarchyPanel.getSelectedGO()),
                                                              sceneView("Client Scene", editorRegistry, clientRegistry, sceneHierarchyPanel.getSelectedGO()),
-                                                             sceneHierarchyPanel("Client Scene Hierarchy", clientRegistry),
-                                                             Panel("ClientPanel") {
+                                                             sceneHierarchyPanel("Client Scene Hierarchy", editorRegistry, clientRegistry),
+                                                             Panel("ClientPanel", editorRegistry) {
         /*client.eventDispatcher->subscribe(ScriptCrashEvent::eventType, [this](Event* event) {
             stopRunningScene();
         });*/
     }
 
     void ClientPanel::init() {
+        Panel::init();
         inspectorPanel.init();
         sceneHierarchyPanel.init();
         sceneView.init();
