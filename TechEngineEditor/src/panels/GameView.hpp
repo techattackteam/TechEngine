@@ -10,7 +10,7 @@ namespace TechEngine {
         SystemsRegistry& appRegistry;
 
     public:
-        GameView(SystemsRegistry& appRegistry);
+        GameView(SystemsRegistry& editorRegistry, SystemsRegistry& appRegistry);
 
         void init() override;
 

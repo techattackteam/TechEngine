@@ -21,7 +21,7 @@ namespace TechEngine {
         GameObject m_camera;
 
     public:
-        MaterialEditor(Client& client, Server& server);
+        MaterialEditor(Client& client, Server& server, SystemsRegistry& editorRegistry);
 
         ~MaterialEditor() = default;
 

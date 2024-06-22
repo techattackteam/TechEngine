@@ -10,7 +10,7 @@ namespace TechEngine {
         ImGuiContext* imGuiContext;
 
     public:
-        CustomPanel(const std::string& name);
+        CustomPanel(const std::string& name, SystemsRegistry& editorRegistry);
 
         ~CustomPanel() override;
 

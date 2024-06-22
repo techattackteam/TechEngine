@@ -4,10 +4,12 @@
 
 namespace TechEngine {
     SceneHierarchyPanel::SceneHierarchyPanel(const std::string& name,
-                                             SystemsRegistry& appRegistry) : appRegistry(appRegistry), Panel(name) {
+                                             SystemsRegistry& editorRegistry,
+                                             SystemsRegistry& appRegistry) : appRegistry(appRegistry), Panel(name, editorRegistry) {
     }
 
     void SceneHierarchyPanel::init() {
+        Panel::init();
     }
 
     void SceneHierarchyPanel::onUpdate() {

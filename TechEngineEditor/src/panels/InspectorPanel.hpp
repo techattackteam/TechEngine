@@ -14,7 +14,7 @@ namespace TechEngine {
         SystemsRegistry& appRegistry;
 
     public:
-        explicit InspectorPanel(const std::string& name, SystemsRegistry& appRegistry, std::vector<GameObject*>& selectedGameObjects);
+        explicit InspectorPanel(const std::string& name, SystemsRegistry& editorRegistry, SystemsRegistry& appRegistry, std::vector<GameObject*>& selectedGameObjects);
 
         void init();
 

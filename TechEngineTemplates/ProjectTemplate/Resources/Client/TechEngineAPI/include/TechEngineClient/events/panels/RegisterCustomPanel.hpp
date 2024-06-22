@@ -1,22 +1,22 @@
 #pragma once
+#include "events/Event.hpp"
 
 namespace TechEngine {
     class RegisterCustomPanel : public Event {
     private:
-        CustomPanel *panel;
+        CustomPanel* panel;
+
     public:
         inline static EventType eventType = EventType("RegisterCustomPanel", SYNC);
 
-        explicit RegisterCustomPanel(CustomPanel *panel) : Event(eventType) {
+        explicit RegisterCustomPanel(CustomPanel* panel) : Event(eventType) {
             this->panel = panel;
         };
 
         ~RegisterCustomPanel() override = default;
 
-        CustomPanel *getPanel() {
+        CustomPanel* getPanel() {
             return panel;
         };
     };
-
 }
-

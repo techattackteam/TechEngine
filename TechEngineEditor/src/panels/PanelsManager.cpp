@@ -26,7 +26,7 @@ namespace TechEngine {
                                                                      exportSettingsPanel(systemsRegistry, client, server, *this),
                                                                      clientPanel(client, systemsRegistry, client.systemsRegistry, *this),
                                                                      serverPanel(server, systemsRegistry, server.systemsRegistry, *this),
-                                                                     materialEditor(client, server) {
+                                                                     materialEditor(client, server, systemsRegistry) {
     }
 
     void PanelsManager::init() {

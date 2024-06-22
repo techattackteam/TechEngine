@@ -2,12 +2,13 @@
 #include "events/panels/RegisterCustomPanel.hpp"
 
 namespace TechEngine {
-    CustomPanel::CustomPanel(const std::string& name) : Panel(name) {
+    CustomPanel::CustomPanel(const std::string& name, SystemsRegistry& editorRegistry) : Panel(name, editorRegistry) {
     }
 
     CustomPanel::~CustomPanel() = default;
 
     void CustomPanel::init() {
+        Panel::init();
     }
 
 

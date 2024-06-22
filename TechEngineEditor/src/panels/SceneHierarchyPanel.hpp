@@ -14,8 +14,10 @@ namespace TechEngine {
         bool isCtrlPressed = false;
 
     public:
-        SceneHierarchyPanel(const std::string& name, SystemsRegistry& appRegistry);
+        SceneHierarchyPanel(const std::string& name, SystemsRegistry& editorRegistry, SystemsRegistry& appRegistry);
+
         void init() override;
+
         void onUpdate() override;
 
         void drawEntityNode(GameObject* gameObject);
