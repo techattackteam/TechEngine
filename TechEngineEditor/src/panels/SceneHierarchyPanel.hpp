@@ -6,17 +6,16 @@
 namespace TechEngine {
     class SceneHierarchyPanel : public Panel {
     private:
+        SystemsRegistry& appRegistry;
+
         std::vector<GameObject*> selectedGO;
-        MaterialManager& materialManager;
-        Scene& scene;
-        /*SceneView& sceneView;*/
         bool isItemHovered = false;
         bool isShiftPressed = false;
         bool isCtrlPressed = false;
 
     public:
-        SceneHierarchyPanel(const std::string& name, EventDispatcher& eventDispatcher, Scene& scene, MaterialManager& materialManager/*, SceneView& sceneView*/);
-
+        SceneHierarchyPanel(const std::string& name, SystemsRegistry& appRegistry);
+        void init() override;
         void onUpdate() override;
 
         void drawEntityNode(GameObject* gameObject);

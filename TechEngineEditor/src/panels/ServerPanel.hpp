@@ -13,9 +13,9 @@ namespace TechEngine {
     class ServerPanel : public Panel {
     private:
         Server& server;
-        ProjectManager& projectManager;
         PanelsManager& panelsManager;
-
+        SystemsRegistry& editorRegistry;
+        SystemsRegistry& appRegistry;
 
         SceneView sceneView;
         InspectorPanel inspectorPanel;
@@ -24,7 +24,9 @@ namespace TechEngine {
         friend class PanelsManager;
 
     public:
-        ServerPanel(PanelsManager& panelsManager, EventDispatcher& eventDispatcher, Server& server, ProjectManager& projectManager, Renderer& renderer);
+        ServerPanel(Server& server, SystemsRegistry& editorRegistry, SystemsRegistry& appRegistry, PanelsManager& panels_manager);
+
+        void init() override;
 
         void onUpdate() override;
 

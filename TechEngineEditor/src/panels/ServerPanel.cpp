@@ -6,20 +6,26 @@
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
-    ServerPanel::ServerPanel(PanelsManager& panelsManager,
-                             EventDispatcher& eventDispatcher,
-                             Server& server,
-                             ProjectManager& projectManager,
-                             Renderer& renderer) : server(server),
-                                                   panelsManager(panelsManager),
-                                                   projectManager(projectManager),
-                                                   inspectorPanel("Server Inspector", eventDispatcher, sceneHierarchyPanel.getSelectedGO(), server.materialManager, server.physicsEngine),
-                                                   sceneView("Server Scene", renderer, server.sceneManager.getScene(), server.physicsEngine, eventDispatcher, sceneHierarchyPanel.getSelectedGO()),
-                                                   sceneHierarchyPanel("Server Scene Hierarchy", eventDispatcher, server.sceneManager.getScene(), server.materialManager),
-                                                   Panel("ServerPanel", eventDispatcher) {
-        server.eventDispatcher.subscribe(ScriptCrashEvent::eventType, [this](Event* event) {
-            stopRunningScene();
-        });
+    ServerPanel::ServerPanel(Server& server,
+                             SystemsRegistry& editorRegistry,
+                             SystemsRegistry& appRegistry,
+                             PanelsManager& panelsManager): server(server),
+                                                            editorRegistry(editorRegistry),
+                                                            appRegistry(appRegistry),
+                                                            panelsManager(panelsManager),
+                                                            inspectorPanel("Server Inspector", appRegistry, sceneHierarchyPanel.getSelectedGO()),
+                                                            sceneView("Server Scene", editorRegistry, appRegistry, sceneHierarchyPanel.getSelectedGO()),
+                                                            sceneHierarchyPanel("Server Scene Hierarchy", appRegistry),
+                                                            Panel("ServerPanel") {
+        server.systemsRegistry.registerSystem<Renderer>();
+    }
+
+    void ServerPanel::init() {
+        server.systemsRegistry.getSystem<Renderer>().init(server.filePaths);
+        inspectorPanel.init();
+        sceneHierarchyPanel.init();
+        sceneView.init();
+        sceneHierarchyPanel.init();
     }
 
     void ServerPanel::onUpdate() {
@@ -87,27 +93,27 @@ namespace TechEngine {
 #else
         panelsManager.compileUserScripts(RELEASEDEBUG, CompileProject::PROJECT_SERVER);
 #endif
-        server.sceneManager.saveSceneAsTemporarily(projectManager.getProjectCachePath().string(), CompileProject::PROJECT_SERVER);
-        server.eventDispatcher.copy();
-        server.materialManager.copy();
-        server.scriptEngine.init(projectManager.getServerUserScriptsDLLPath().string(), &server.eventDispatcher);
-        server.scriptEngine.onStart();
-        server.physicsEngine.start();
+        appRegistry.getSystem<SceneManager>().saveSceneAsTemporarily(editorRegistry.getSystem<ProjectManager>().getProjectCachePath().string(), CompileProject::PROJECT_SERVER);
+        appRegistry.getSystem<EventDispatcher>().copy();
+        appRegistry.getSystem<MaterialManager>().copy();
+        appRegistry.getSystem<ScriptEngine>().init(editorRegistry.getSystem<ProjectManager>().getServerUserScriptsDLLPath().string(), &appRegistry.getSystem<EventDispatcher>());
+        appRegistry.getSystem<ScriptEngine>().onStart();
+        appRegistry.getSystem<PhysicsEngine>().start();
         m_currentPlaying = true;
     }
 
     void ServerPanel::stopRunningScene() {
-        server.physicsEngine.stop();
-        server.eventDispatcher.restoreCopy();
-        server.materialManager.restoreCopy();
-        server.sceneManager.loadSceneFromTemporarily(projectManager.getProjectCachePath().string(), CompileProject::PROJECT_SERVER);
+        appRegistry.getSystem<PhysicsEngine>().stop();
+        appRegistry.getSystem<EventDispatcher>().restoreCopy();
+        appRegistry.getSystem<MaterialManager>().restoreCopy();
+        appRegistry.getSystem<SceneManager>().loadSceneFromTemporarily(editorRegistry.getSystem<ProjectManager>().getProjectCachePath().string(), CompileProject::PROJECT_SERVER);
         sceneHierarchyPanel.getSelectedGO().clear();
-        for (GameObject* gameObject: server.sceneManager.getScene().getGameObjects()) {
+        for (GameObject* gameObject: appRegistry.getSystem<SceneManager>().getScene().getGameObjects()) {
             if (std::find(sceneHierarchyPanel.getSelectedGO().begin(), sceneHierarchyPanel.getSelectedGO().end(), gameObject) != sceneHierarchyPanel.getSelectedGO().end()) {
                 sceneHierarchyPanel.selectGO(gameObject);
             }
         }
         m_currentPlaying = false;
-        server.scriptEngine.stop();
+        appRegistry.getSystem<ScriptEngine>().stop();
     }
 }

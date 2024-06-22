@@ -1,5 +1,5 @@
 #pragma once
-
+#include "core/ClientExportDll.hpp"
 #include "components/render/MeshRendererComponent.hpp"
 #include "VertexArray.hpp"
 #include "ShadersManager.hpp"
@@ -9,7 +9,7 @@
 #include "IndicesBuffer.hpp"
 
 namespace TechEngine {
-    class Renderer {
+    class CLIENT_DLL Renderer : public System {
     private:
         const std::string BufferGameObjects = "GameObjects";
         const std::string BufferLines = "Lines";

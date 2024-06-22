@@ -6,15 +6,15 @@
 #include "events/material/MaterialUpdateEvent.hpp"
 
 namespace TechEngine {
-    class Scene {
+    class CORE_DLL Scene {
     private:
-        EventDispatcher& eventDispatcher;
+        SystemsRegistry& systemsRegistry;
         std::vector<GameObject*> gameObjects;
         std::vector<GameObject*> lights;
         std::vector<GameObject*> gameObjectsToDelete;
 
     public:
-        Scene(EventDispatcher& eventDispatcher);
+        Scene(SystemsRegistry& systemsRegistry);
 
         virtual ~Scene();
 

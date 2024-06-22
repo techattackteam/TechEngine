@@ -4,10 +4,11 @@
 #include "manager/managers/AsyncEventManager.hpp"
 #include "manager/managers/SyncEventManager.hpp"
 #include "eventSystem/manager/managers/FixedSyncEventManager.hpp"
-
+#include "core/CoreExportDll.hpp"
+#include "system/System.hpp"
 
 namespace TechEngine {
-    class EventDispatcher {
+    class CORE_DLL EventDispatcher : public System {
     protected:
         bool isCopy = false;
         EventDispatcher* m_copy = nullptr;

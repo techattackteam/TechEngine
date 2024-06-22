@@ -1,4 +1,5 @@
 #include <iostream>
+#include "system/SystemsRegistry.hpp"
 #include "Window.hpp"
 #include "events/input/KeyPressedEvent.hpp"
 #include "events/input/KeyReleasedEvent.hpp"
@@ -10,7 +11,7 @@
 #include "events/window/WindowResizeEvent.hpp"
 
 namespace TechEngine {
-    Window::Window(EventDispatcher& eventDispatcher, const std::string& title, uint32_t width, uint32_t height) : eventDispatcher(eventDispatcher), mouse(eventDispatcher) {
+    Window::Window(SystemsRegistry& systemsRegistry, const std::string& title, uint32_t width, uint32_t height) : systemsRegistry(systemsRegistry), mouse(systemsRegistry) {
         init(title, width, height);
     }
 
@@ -38,8 +39,8 @@ namespace TechEngine {
         glfwSetWindowUserPointer(handler, this);
         glfwSetWindowCloseCallback(handler, [](GLFWwindow* handler) {
             Window* window = (Window*)glfwGetWindowUserPointer(handler);
-            window->eventDispatcher.dispatch(new WindowCloseEvent());
-            window->eventDispatcher.dispatch(new AppCloseRequestEvent());
+            window->systemsRegistry.getSystem<EventDispatcher>().dispatch(new WindowCloseEvent());
+            window->systemsRegistry.getSystem<EventDispatcher>().dispatch(new AppCloseRequestEvent());
         });
         glfwSetKeyCallback(handler, [](GLFWwindow* handler, int key, int scancode, int action, int mods) {
             Window* window = (Window*)glfwGetWindowUserPointer(handler);
@@ -51,7 +52,7 @@ namespace TechEngine {
         });
         glfwSetScrollCallback(handler, [](GLFWwindow* handler, double xoffset, double yoffset) {
             Window* window = (Window*)glfwGetWindowUserPointer(handler);
-            window->eventDispatcher.dispatch(new MouseScrollEvent(xoffset, yoffset));
+            window->systemsRegistry.getSystem<EventDispatcher>().dispatch(new MouseScrollEvent(xoffset, yoffset));
         });
         glfwSetCursorPosCallback(handler, [](GLFWwindow* handler, double xpos, double ypos) {
             Window* window = (Window*)glfwGetWindowUserPointer(handler);
@@ -59,7 +60,7 @@ namespace TechEngine {
         });
         glfwSetFramebufferSizeCallback(handler, [](GLFWwindow* handler, int width, int height) {
             Window* window = (Window*)glfwGetWindowUserPointer(handler);
-            window->eventDispatcher.dispatch(new WindowResizeEvent(width, height));
+            window->systemsRegistry.getSystem<EventDispatcher>().dispatch(new WindowResizeEvent(width, height));
         });
     }
 
@@ -84,15 +85,15 @@ namespace TechEngine {
     void Window::windowKeyInput(int key, int action) {
         switch (action) {
             case GLFW_PRESS: {
-                eventDispatcher.dispatch(new KeyPressedEvent(Key(key)));
+                systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyPressedEvent(Key(key)));
                 break;
             }
             case GLFW_RELEASE: {
-                eventDispatcher.dispatch(new KeyReleasedEvent(Key(key)));
+                systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyReleasedEvent(Key(key)));
                 break;
             }
             case GLFW_REPEAT: {
-                eventDispatcher.dispatch(new KeyHoldEvent(Key(key)));
+                systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyHoldEvent(Key(key)));
                 break;
             }
         }

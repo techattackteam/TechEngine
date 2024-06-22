@@ -4,26 +4,25 @@
 
 namespace TechEngine {
     SceneHierarchyPanel::SceneHierarchyPanel(const std::string& name,
-                                             EventDispatcher& eventDispatcher,
-                                             Scene& scene,
-                                             MaterialManager& materialManager/*, SceneView& sceneView*/) : scene(scene),
-                                                                                                           materialManager(materialManager),
-                                                                                                           /*sceneView(sceneView),*/ Panel(name, eventDispatcher) {
+                                             SystemsRegistry& appRegistry) : appRegistry(appRegistry), Panel(name) {
+    }
+
+    void SceneHierarchyPanel::init() {
     }
 
     void SceneHierarchyPanel::onUpdate() {
         isItemHovered = false;
         getSelectedGO();
-        if (!scene.getGameObjects().empty()) {
-            int originalSize = scene.getGameObjects().size();
-            for (int i = 0; i < scene.getGameObjects().size(); i++) {
-                GameObject* element = scene.getGameObjects()[i];
+        if (!appRegistry.getSystem<SceneManager>().getScene().getGameObjects().empty()) {
+            int originalSize = appRegistry.getSystem<SceneManager>().getScene().getGameObjects().size();
+            for (int i = 0; i < appRegistry.getSystem<SceneManager>().getScene().getGameObjects().size(); i++) {
+                GameObject* element = appRegistry.getSystem<SceneManager>().getScene().getGameObjects()[i];
                 if (element->isEditorOnly() || element->getParent() != nullptr) {
                     continue;
                 }
-                if (originalSize != scene.getGameObjects().size()) {
+                if (originalSize != appRegistry.getSystem<SceneManager>().getScene().getGameObjects().size()) {
                     i--;
-                    originalSize = scene.getGameObjects().size();
+                    originalSize = appRegistry.getSystem<SceneManager>().getScene().getGameObjects().size();
                 }
                 drawEntityNode(element);
             }
@@ -35,18 +34,18 @@ namespace TechEngine {
             if (!isItemHovered && ImGui::BeginPopupContextWindow()) {
                 if (ImGui::BeginMenu("Create")) {
                     if (ImGui::MenuItem("Empty")) {
-                        scene.createGameObject("Empty");
+                        appRegistry.getSystem<SceneManager>().getScene().createGameObject("Empty");
                     }
                     if (ImGui::MenuItem("Cube")) {
-                        GameObject& gameObject = scene.createGameObject("Cube");
+                        GameObject& gameObject = appRegistry.getSystem<SceneManager>().getScene().createGameObject("Cube");
                         gameObject.addComponent<MeshRendererComponent>();
                     }
                     if (ImGui::MenuItem("Sphere")) {
-                        GameObject& gameObject = scene.createGameObject("Sphere");
+                        GameObject& gameObject = appRegistry.getSystem<SceneManager>().getScene().createGameObject("Sphere");
                         gameObject.addComponent<MeshRendererComponent>();
                     }
                     if (ImGui::MenuItem("Cylinder")) {
-                        GameObject& gameObject = scene.createGameObject("Cylinder");
+                        GameObject& gameObject = appRegistry.getSystem<SceneManager>().getScene().createGameObject("Cylinder");
                         gameObject.addComponent<MeshRendererComponent>();
                     }
                     ImGui::EndMenu();
@@ -78,7 +77,7 @@ namespace TechEngine {
                     GameObject* first = selectedGO.front();
 
                     bool selecting = false;
-                    for (GameObject* go: scene.getGameObjects()) {
+                    for (GameObject* go: appRegistry.getSystem<SceneManager>().getScene().getGameObjects()) {
                         if (go->isEditorOnly()) {
                             continue;
                         }
@@ -108,11 +107,11 @@ namespace TechEngine {
                 gameObject->setName(name);
             }
             if (ImGui::MenuItem("Make Child (WIP)")) {
-                GameObject& child = scene.createGameObject(gameObject->getName() + "'s Child");
-                scene.makeChildTo(gameObject, &child);
+                GameObject& child = appRegistry.getSystem<SceneManager>().getScene().createGameObject(gameObject->getName() + "'s Child");
+                appRegistry.getSystem<SceneManager>().getScene().makeChildTo(gameObject, &child);
             }
             if (ImGui::MenuItem("Duplicate")) {
-                scene.duplicateGameObject(gameObject);
+                appRegistry.getSystem<SceneManager>().getScene().duplicateGameObject(gameObject);
             }
             if (ImGui::MenuItem("Delete GameObject")) {
                 deleteGameObject(gameObject);
@@ -157,7 +156,7 @@ namespace TechEngine {
                 selectedGO.clear();
             } else if (isCtrlPressed && key.getKeyCode() == KeyCode::D) {
                 for (GameObject* gameObject: selectedGO) {
-                    scene.duplicateGameObject(gameObject);
+                    appRegistry.getSystem<SceneManager>().getScene().duplicateGameObject(gameObject);
                 }
             } else if (key.getKeyCode() == KeyCode::F) {
                 if (!selectedGO.empty()) {
@@ -165,8 +164,8 @@ namespace TechEngine {
                 }
             } else if (key.getKeyCode() == KeyCode::W) {
                 if (!selectedGO.empty()) {
-                    GameObject& child = scene.createGameObject(selectedGO.front()->getName() + "'s Child");
-                    scene.makeChildTo(selectedGO.front(), &child);
+                    GameObject& child = appRegistry.getSystem<SceneManager>().getScene().createGameObject(selectedGO.front()->getName() + "'s Child");
+                    appRegistry.getSystem<SceneManager>().getScene().makeChildTo(selectedGO.front(), &child);
                 }
             }
         }
@@ -176,12 +175,12 @@ namespace TechEngine {
         if (std::find(selectedGO.begin(), selectedGO.end(), gameObject) != selectedGO.end()) {
             selectedGO.erase(std::remove(selectedGO.begin(), selectedGO.end(), gameObject), selectedGO.end());
         }
-        scene.deleteGameObject(gameObject);
+        appRegistry.getSystem<SceneManager>().getScene().deleteGameObject(gameObject);
     }
 
     std::vector<GameObject*>& SceneHierarchyPanel::getSelectedGO() {
         for (int i = 0; i < selectedGO.size(); i++) {
-            GameObject* gameObject = scene.getGameObjectByTag(selectedGO.front()->getTag());
+            GameObject* gameObject = appRegistry.getSystem<SceneManager>().getScene().getGameObjectByTag(selectedGO.front()->getTag());
             if (gameObject == nullptr) {
                 selectedGO.erase(selectedGO.begin() + i);
                 i--;

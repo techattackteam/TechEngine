@@ -1,11 +1,12 @@
 #pragma once
 
 #include <chrono>
+#include "CoreExportDll.hpp"
+#include "system/System.hpp"
 
 namespace TechEngine {
-    class Timer {
+    class CORE_DLL Timer : public System {
     private:
-        inline static Timer *instance;
         std::chrono::time_point<std::chrono::system_clock> startTime;
 
         double lastLoopTime = 0;
@@ -21,6 +22,7 @@ namespace TechEngine {
 
         int ticks = 0;
         int ticksCount = 0;
+
     public:
         Timer();
 
@@ -46,7 +48,7 @@ namespace TechEngine {
 
         double getLastLoopTime();
 
-        static Timer &getInstance();
+        static Timer& getInstance();
 
         float getAccumulator();
 

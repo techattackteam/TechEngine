@@ -8,14 +8,15 @@
 #include "eventSystem/EventDispatcher.hpp"
 #include "serialization/StreamReader.hpp"
 #include "serialization/StreamWriter.hpp"
+#include "system/SystemsRegistry.hpp"
 
 namespace TechEngine {
     class Component;
     class TransformComponent;
 
-    class GameObject {
+    class CORE_DLL GameObject {
     private:
-        EventDispatcher& eventDispatcher;
+        SystemsRegistry& systemsRegistry;
 
         GameObject* parent = nullptr;
         std::unordered_map<std::string, GameObject*> children;
@@ -26,21 +27,21 @@ namespace TechEngine {
         bool editorOnly = false;
 
     protected:
-        GameObject(std::string name, const std::string& tag, EventDispatcher& eventDispatcher);
+        GameObject(std::string name, const std::string& tag, SystemsRegistry& systemsRegistry);
 
-        GameObject(GameObject* gameObject, const std::string& tag, EventDispatcher& eventDispatcher);
+        GameObject(GameObject* gameObject, const std::string& tag, SystemsRegistry& systemsRegistry);
 
         friend class Scene;
 
     public:
-        GameObject(std::string name, EventDispatcher& eventDispatcher);
+        GameObject(std::string name, SystemsRegistry& systemsRegistry);
 
         virtual ~GameObject();
 
         template<class C, typename... A>
         void addComponent(A&&... args) {
             if (!hasComponent<C>()) {
-                C* component = new C(this, eventDispatcher, args...);
+                C* component = new C(this, systemsRegistry, args...);
                 components[typeid(C).name()] = component;
             }
         }

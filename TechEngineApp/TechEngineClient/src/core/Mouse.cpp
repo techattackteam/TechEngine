@@ -1,4 +1,5 @@
 #include <glm/vec2.hpp>
+#include "system/SystemsRegistry.hpp"
 #include "Mouse.hpp"
 #include "events/input/KeyHoldEvent.hpp"
 #include "events/input/KeyPressedEvent.hpp"
@@ -6,15 +7,15 @@
 #include "events/input/MouseMoveEvent.hpp"
 
 namespace TechEngine {
-    Mouse::Mouse(EventDispatcher& eventDispatcher): eventDispatcher(eventDispatcher) {
-        eventDispatcher.subscribe(KeyPressedEvent::eventType, [this](Event* event) {
+    Mouse::Mouse(SystemsRegistry& systemsRegistry): systemsRegistry(systemsRegistry) {
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(KeyPressedEvent::eventType, [this](Event* event) {
             auto* keyPressedEvent = dynamic_cast<KeyPressedEvent*>(event);
             if (keyPressedEvent->getKey().getKeyCode() >= MOUSE_1 && keyPressedEvent->getKey().getKeyCode() <= MOUSE_8) {
                 button_pressed[keyPressedEvent->getKey().getKeyCode() - MOUSE_1] = true;
             }
         });
 
-        eventDispatcher.subscribe(KeyReleasedEvent::eventType, [this](Event* event) {
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(KeyReleasedEvent::eventType, [this](Event* event) {
             auto* keyReleasedEvent = dynamic_cast<KeyReleasedEvent*>(event);
             if (keyReleasedEvent->getKey().getKeyCode() >= MOUSE_1 && keyReleasedEvent->getKey().getKeyCode() <= MOUSE_8) {
                 button_pressed[keyReleasedEvent->getKey().getKeyCode() - MOUSE_1] = false;
@@ -25,35 +26,35 @@ namespace TechEngine {
 
     void Mouse::onUpdate() {
         if (button_pressed[0]) {
-            eventDispatcher.dispatch(new KeyHoldEvent(Key(MOUSE_1)));
+            systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyHoldEvent(Key(MOUSE_1)));
         }
         if (button_pressed[1]) {
-            eventDispatcher.dispatch(new KeyHoldEvent(Key(MOUSE_2)));
+            systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyHoldEvent(Key(MOUSE_2)));
         }
         if (button_pressed[2]) {
-            eventDispatcher.dispatch(new KeyHoldEvent(Key(MOUSE_3)));
+            systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyHoldEvent(Key(MOUSE_3)));
         }
         if (button_pressed[3]) {
-            eventDispatcher.dispatch(new KeyHoldEvent(Key(MOUSE_4)));
+            systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyHoldEvent(Key(MOUSE_4)));
         }
         if (button_pressed[4]) {
-            eventDispatcher.dispatch(new KeyHoldEvent(Key(MOUSE_5)));
+            systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyHoldEvent(Key(MOUSE_5)));
         }
         if (button_pressed[5]) {
-            eventDispatcher.dispatch(new KeyHoldEvent(Key(MOUSE_6)));
+            systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyHoldEvent(Key(MOUSE_6)));
         }
         if (button_pressed[6]) {
-            eventDispatcher.dispatch(new KeyHoldEvent(Key(MOUSE_7)));
+            systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyHoldEvent(Key(MOUSE_7)));
         }
         if (button_pressed[7]) {
-            eventDispatcher.dispatch(new KeyHoldEvent(Key(MOUSE_8)));
+            systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyHoldEvent(Key(MOUSE_8)));
         }
     }
 
     void Mouse::onMouseMove(double x, double y) {
         glm::vec2 fromPosition = lastPosition;
         glm::vec2 toPosition = glm::vec2(x, y);
-        eventDispatcher.dispatch(new MouseMoveEvent(fromPosition, toPosition));
+        systemsRegistry.getSystem<EventDispatcher>().dispatch(new MouseMoveEvent(fromPosition, toPosition));
         lastPosition = toPosition;
     }
 }

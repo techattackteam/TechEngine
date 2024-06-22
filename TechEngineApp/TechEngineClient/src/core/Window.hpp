@@ -1,17 +1,18 @@
 #pragma once
 
+#include "Mouse.hpp"
+#include "renderer/Renderer.hpp"
+
 #include <string>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "Mouse.hpp"
-#include "renderer/Renderer.hpp"
 
 namespace TechEngine {
-    class Window {
+    class CLIENT_DLL Window {
     private:
         Mouse mouse;
-        EventDispatcher& eventDispatcher;
+        SystemsRegistry& systemsRegistry;
         std::string title;
 
         bool vSync = false;
@@ -19,7 +20,7 @@ namespace TechEngine {
         GLFWwindow* handler;
 
     public:
-        Window(EventDispatcher& eventDispatcher, const std::string& title, uint32_t width, uint32_t height);
+        Window(SystemsRegistry& systemsRegistry, const std::string& title, uint32_t width, uint32_t height);
 
         ~Window();
 

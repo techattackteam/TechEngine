@@ -18,7 +18,7 @@
 #include "scene/GameObject.hpp"
 
 namespace TechEngine {
-    NetworkEngine::NetworkEngine(EventDispatcher& eventDispatcher, SceneManager& sceneManager) : eventDispatcher(eventDispatcher), sceneManager(sceneManager), lastLoadedScene(sceneManager.getActiveSceneName()) {
+    NetworkEngine::NetworkEngine(SystemsRegistry& systemsRegistry) : systemsRegistry(systemsRegistry) {
     }
 
     NetworkEngine::~NetworkEngine() {
@@ -168,7 +168,7 @@ namespace TechEngine {
         sockets->CloseConnection(connection, 0, nullptr, false);
         connection = k_HSteamNetConnection_Invalid;
         connectionStatus = ConnectionStatus::Disconnected;
-        sceneManager.loadScene(lastLoadedScene);
+        systemsRegistry.getSystem<SceneManager>().loadScene(lastLoadedScene);
     }
 
     void NetworkEngine::sendBuffer(Buffer buffer, bool reliable) {
@@ -263,7 +263,7 @@ namespace TechEngine {
             case k_ESteamNetworkingConnectionState_Connected:
                 networkEngine->connectionStatus = ConnectionStatus::Connected;
                 networkEngine->sendMessage("Hello from client");
-                networkEngine->eventDispatcher.dispatch(new ConnectionEstablishedEvent());
+                networkEngine->systemsRegistry.getSystem<EventDispatcher>().dispatch(new ConnectionEstablishedEvent());
                 break;
 
             default:
@@ -318,27 +318,27 @@ namespace TechEngine {
                 break;
             }
             case PacketType::ClientKick: {
-                eventDispatcher.dispatch(new ClientKickEvent());
+                systemsRegistry.getSystem<EventDispatcher>().dispatch(new ClientKickEvent());
                 break;
             }
             case PacketType::ClientBan: {
-                eventDispatcher.dispatch(new ClientBanEvent());
+                systemsRegistry.getSystem<EventDispatcher>().dispatch(new ClientBanEvent());
                 break;
             }
             case PacketType::SyncGameObject: {
-                SceneSynchronizer::deserializeGameObject(stream, sceneManager.getScene());
+                SceneSynchronizer::deserializeGameObject(stream, systemsRegistry.getSystem<SceneManager>().getScene());
                 break;
             }
             case PacketType::SyncGameState: {
-                sceneManager.saveCurrentScene();
-                SceneSynchronizer::deserializeScene(stream, sceneManager);
+                systemsRegistry.getSystem<SceneManager>().saveCurrentScene();
+                SceneSynchronizer::deserializeScene(stream, systemsRegistry.getSystem<SceneManager>());
                 break;
             }
             case PacketType::CustomPacket: {
                 std::string customPacket;
                 stream.readString(customPacket);
                 if (checkCustomPacketType(customPacket)) {
-                    eventDispatcher.dispatch(new CustomPacketReceived(customPacket));
+                    systemsRegistry.getSystem<EventDispatcher>().dispatch(new CustomPacketReceived(customPacket));
                 }
             }
 

@@ -1,15 +1,14 @@
+#include "system/SystemsRegistry.hpp"
 #include "MaterialManager.hpp"
 #include "core/Logger.hpp"
 #include "texture/TextureManager.hpp"
+
 #include <utils/YAMLUtils.hpp>
 #include <filesystem>
 #include <fstream>
 
-
 namespace TechEngine {
-    MaterialManager::MaterialManager(EventDispatcher& eventDispatcher,
-                                     TextureManager& textureManager) : eventDispatcher(eventDispatcher),
-                                                                       m_textureManager(textureManager) {
+    MaterialManager::MaterialManager(SystemsRegistry& systemsRegistry) : systemsRegistry(systemsRegistry) {
     }
 
     void MaterialManager::init(const std::vector<std::string>& materialsFilePaths) {
@@ -19,7 +18,7 @@ namespace TechEngine {
     }
 
     Material& MaterialManager::createMaterial(const std::string& name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess) {
-        Material material(eventDispatcher, name, color, ambient, diffuse, specular, shininess);
+        Material material(systemsRegistry.getSystem<EventDispatcher>(), name, color, ambient, diffuse, specular, shininess);
         auto iterator = m_materialsBank.find(name);
         if (iterator == m_materialsBank.end()) {
             iterator = m_materialsBank.emplace(name, material).first;
@@ -28,7 +27,7 @@ namespace TechEngine {
     }
 
     Material& MaterialManager::createMaterial(const std::string& name, Texture* diffuse) {
-        Material material(eventDispatcher, name, diffuse);
+        Material material(systemsRegistry.getSystem<EventDispatcher>(), name, diffuse);
         auto iterator = m_materialsBank.find(name);
         if (iterator == m_materialsBank.end()) {
             iterator = m_materialsBank.emplace(name, material).first;
@@ -101,7 +100,7 @@ namespace TechEngine {
 
     void MaterialManager::copy() {
         delete m_copy;
-        m_copy = new MaterialManager(eventDispatcher, m_textureManager);
+        m_copy = new MaterialManager(systemsRegistry);
         //m_copy->m_materialsBank = m_materialsBank;
     }
 
@@ -162,8 +161,8 @@ namespace TechEngine {
         material.setUseTexture(useTextureNode.as<bool>());
         std::string diffuseTextureName = diffuseTextureNode.as<std::string>();
         if (!diffuseTextureName.empty()) {
-            Texture* diffuseTexture = &m_textureManager.getTexture(diffuseTextureName);
-            material.setDiffuseTexture(diffuseTexture);
+            Texture& diffuseTexture = systemsRegistry.getSystem<TextureManager>().getTexture(diffuseTextureName);
+            material.setDiffuseTexture(&diffuseTexture);
         } else {
             material.setDiffuseTexture(nullptr);
             material.setUseTexture(false);

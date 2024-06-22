@@ -1,71 +1,48 @@
 #include "Client.hpp"
 
 #include "core/Logger.hpp"
-#include "mesh/MeshManager.hpp"
+#include "script/ScriptRegister.hpp"
+#include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
     Client::Client(Window& window) : window(window),
-                                     renderer(),
-                                     networkEngine(eventDispatcher, sceneManager),
-                                     api(&sceneManager, &materialManager, &eventDispatcher, &networkEngine) {
-        Logger::init("TechEngineClient");
-        MeshManager::init();
-        physicsEngine.init();
-        ScriptRegister::getInstance()->init(&scriptEngine);
-        eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](Event* event) {
-            onWindowCloseEvent((WindowCloseEvent*)(event));
-        });
+                                     /*api(&sceneManager, &materialManager, eventDispatcher, &networkEngine),*/ AppCore() {
+        systemsRegistry.registerSystem<Renderer>();
+        systemsRegistry.registerSystem<NetworkEngine>(systemsRegistry);
+        Client::init();
     }
 
     Client::~Client() = default;
 
+    void Client::init() {
+        AppCore::init();
+        systemsRegistry.getSystem<Logger>().init("TechEngineClient");
+        systemsRegistry.getSystem<PhysicsEngine>().init();
+        ScriptRegister::getInstance()->init(&systemsRegistry.getSystem<ScriptEngine>());
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(WindowCloseEvent::eventType, [this](Event* event) {
+            onWindowCloseEvent((WindowCloseEvent*)(event));
+        });
+        //systemsRegistry.getSystem<SceneManager>().init();
+        //systemsRegistry.getSystem<NetworkEngine>().init();
+        //api.init();
+    }
+
     void Client::onFixedUpdate() {
-        eventDispatcher.fixedSyncEventManager.execute();
-        scriptEngine.onFixedUpdate();
-        sceneManager.getScene().fixedUpdate();
-        networkEngine.fixedUpdate();
+        systemsRegistry.getSystem<EventDispatcher>().fixedSyncEventManager.execute();
+        systemsRegistry.getSystem<ScriptEngine>().onFixedUpdate();
+        systemsRegistry.getSystem<SceneManager>().getScene().fixedUpdate();
+        systemsRegistry.getSystem<NetworkEngine>().fixedUpdate();
     }
 
     void Client::onUpdate() {
-        sceneManager.getScene().update();
-        scriptEngine.onUpdate();
-        eventDispatcher.syncEventManager.execute();
-        networkEngine.update();
+        systemsRegistry.getSystem<EventDispatcher>().syncEventManager.execute();
+        systemsRegistry.getSystem<ScriptEngine>().onUpdate();
+        systemsRegistry.getSystem<SceneManager>().getScene().update();
+        systemsRegistry.getSystem<NetworkEngine>().update();
         window.onUpdate();
     }
-
-
-    /*void Client::run() {
-        while (running) {
-            timer.addAccumulator(timer.getDeltaTime());
-            while (timer.getAccumulator() >= timer.getTPS()) {
-                timer.updateTicks();
-
-                eventDispatcher.fixedSyncEventManager.execute();
-                ScriptEngine::getInstance()->onFixedUpdate();
-                sceneManager.getScene().fixedUpdate();
-                networkEngine.fixedUpdate();
-                onFixedUpdate();
-                timer.addAccumulator(-timer.getTPS());
-            }
-
-            sceneManager.getScene().update();
-            networkEngine.update();
-            timer.updateInterpolation();
-            ScriptEngine::getInstance()->onUpdate();
-            eventDispatcher.syncEventManager.execute();
-            onUpdate();
-            timer.update();
-            timer.updateFPS();
-        }
-    }*/
-
 
     void Client::onWindowCloseEvent(WindowCloseEvent* event) {
         running = false;
     }
-}
-
-TechEngine::AppCore* TechEngine::createApp() {
-    return nullptr;
 }

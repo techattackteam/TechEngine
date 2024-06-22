@@ -10,40 +10,47 @@
 #include "components/physics/RigidBody.hpp"
 
 namespace TechEngine {
-    SceneView::SceneView(const std::string& name, Renderer& renderer, Scene& scene, PhysicsEngine& physicsEngine, EventDispatcher& eventDispatcher, std::vector<GameObject*>& selectedGO)
-        : renderer(&renderer), scene(scene), eventDispatcher(eventDispatcher), guizmo(id, physicsEngine), selectedGO(selectedGO), Panel(name, eventDispatcher) {
-        frameBufferID = renderer.createFramebuffer(1080, 720);
-        sceneCamera = new GameObject("SceneCamera", eventDispatcher);
-        sceneCamera->addComponent<CameraComponent>();
-        id = totalIds++;
+    SceneView::SceneView(const std::string& name,
+                         SystemsRegistry& editorRegistry,
+                         SystemsRegistry& appRegistry,
+                         std::vector<GameObject*>& selectedGO)
+        : appRegistry(appRegistry),
+          guizmo(id),
+          selectedGO(selectedGO),
+          Panel(name) {
     }
 
     SceneView::~SceneView() {
         delete sceneCamera;
     }
 
+    void SceneView::init() {
+        frameBufferID = appRegistry.getSystem<Renderer>().createFramebuffer(1080, 720);
+        sceneCamera = new GameObject("SceneCamera", appRegistry);
+        sceneCamera->addComponent<CameraComponent>();
+        id = totalIds++;
+    }
 
     void SceneView::onUpdate() {
         if (ImGui::IsWindowCollapsed()) {
             return;
         }
         sceneCamera->getComponent<CameraComponent>()->update();
-        FrameBuffer& frameBuffer = renderer->getFramebuffer(frameBufferID);
+        FrameBuffer& frameBuffer = appRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
         isWindowHovered = ImGui::IsWindowHovered();
         ImVec2 wsize = ImGui::GetContentRegionAvail();
         frameBuffer.bind();
         frameBuffer.resize(wsize.x, wsize.y);
         sceneCamera->getComponent<CameraComponent>()->updateProjectionMatrix(wsize.x / wsize.y);
-        if (scene.hasMainCamera()) {
-            renderCameraFrustum(scene.getMainCamera());
+        if (appRegistry.getSystem<SceneManager>().getScene().hasMainCamera()) {
+            renderCameraFrustum(appRegistry.getSystem<SceneManager>().getScene().getMainCamera());
         }
         renderColliders();
-        renderer->renderPipeline(scene, sceneCamera->getComponent<CameraComponent>());
+        appRegistry.getSystem<Renderer>().renderPipeline(appRegistry.getSystem<SceneManager>().getScene(), sceneCamera->getComponent<CameraComponent>());
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
         ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
         guizmo.editTransform(sceneCamera->getComponent<CameraComponent>(), ImGui::GetCurrentContext(), selectedGO);
         frameBuffer.unBind();
-
     }
 
     void SceneView::renderCameraFrustum(CameraComponent* camera) {
@@ -78,25 +85,25 @@ namespace TechEngine {
             color = glm::vec4(1.0f, 1.0f, 1.0f, 0.3f);
         }
         // Render the near plane as a square
-        renderer->createLine(frustumPoints[0], frustumPoints[1], color);
-        renderer->createLine(frustumPoints[1], frustumPoints[3], color);
-        renderer->createLine(frustumPoints[2], frustumPoints[3], color);
-        renderer->createLine(frustumPoints[0], frustumPoints[2], color);
+        appRegistry.getSystem<Renderer>().createLine(frustumPoints[0], frustumPoints[1], color);
+        appRegistry.getSystem<Renderer>().createLine(frustumPoints[1], frustumPoints[3], color);
+        appRegistry.getSystem<Renderer>().createLine(frustumPoints[2], frustumPoints[3], color);
+        appRegistry.getSystem<Renderer>().createLine(frustumPoints[0], frustumPoints[2], color);
 
         // Render the far plane as a square
-        renderer->createLine(frustumPoints[4], frustumPoints[5], color);
-        renderer->createLine(frustumPoints[5], frustumPoints[7], color);
-        renderer->createLine(frustumPoints[6], frustumPoints[7], color);
-        renderer->createLine(frustumPoints[4], frustumPoints[6], color);
+        appRegistry.getSystem<Renderer>().createLine(frustumPoints[4], frustumPoints[5], color);
+        appRegistry.getSystem<Renderer>().createLine(frustumPoints[5], frustumPoints[7], color);
+        appRegistry.getSystem<Renderer>().createLine(frustumPoints[6], frustumPoints[7], color);
+        appRegistry.getSystem<Renderer>().createLine(frustumPoints[4], frustumPoints[6], color);
 
         // Connect the near and far plane corners to complete the edges
         for (int i = 0; i < 4; ++i) {
-            renderer->createLine(frustumPoints[i], frustumPoints[i + 4], color);
+            appRegistry.getSystem<Renderer>().createLine(frustumPoints[i], frustumPoints[i + 4], color);
         }
     }
 
     void SceneView::renderColliders() {
-        for (auto& element: scene.getGameObjects()) {
+        for (auto& element: appRegistry.getSystem<SceneManager>().getScene().getGameObjects()) {
             if (element->isEditorOnly()) {
                 continue;
             }
@@ -149,22 +156,22 @@ namespace TechEngine {
             vertices[i].z = vertices[i].z >= 0 ? vertices[i].z + offset : vertices[i].z - offset;
         }
         glm::vec4 color = getColor(gameObject);
-        renderer->createLine(vertices[0], vertices[1], color);
-        renderer->createLine(vertices[1], vertices[2], color);
-        renderer->createLine(vertices[2], vertices[3], color);
-        renderer->createLine(vertices[3], vertices[0], color);
+        appRegistry.getSystem<Renderer>().createLine(vertices[0], vertices[1], color);
+        appRegistry.getSystem<Renderer>().createLine(vertices[1], vertices[2], color);
+        appRegistry.getSystem<Renderer>().createLine(vertices[2], vertices[3], color);
+        appRegistry.getSystem<Renderer>().createLine(vertices[3], vertices[0], color);
 
         // Render the back face (adjust the Z-coordinate)
-        renderer->createLine(vertices[0], vertices[4], color);
-        renderer->createLine(vertices[1], vertices[5], color);
-        renderer->createLine(vertices[2], vertices[6], color);
-        renderer->createLine(vertices[3], vertices[7], color);
+        appRegistry.getSystem<Renderer>().createLine(vertices[0], vertices[4], color);
+        appRegistry.getSystem<Renderer>().createLine(vertices[1], vertices[5], color);
+        appRegistry.getSystem<Renderer>().createLine(vertices[2], vertices[6], color);
+        appRegistry.getSystem<Renderer>().createLine(vertices[3], vertices[7], color);
 
         // Render the connecting lines between the front and back faces
-        renderer->createLine(vertices[4], vertices[5], color);
-        renderer->createLine(vertices[5], vertices[6], color);
-        renderer->createLine(vertices[6], vertices[7], color);
-        renderer->createLine(vertices[7], vertices[4], color);
+        appRegistry.getSystem<Renderer>().createLine(vertices[4], vertices[5], color);
+        appRegistry.getSystem<Renderer>().createLine(vertices[5], vertices[6], color);
+        appRegistry.getSystem<Renderer>().createLine(vertices[6], vertices[7], color);
+        appRegistry.getSystem<Renderer>().createLine(vertices[7], vertices[4], color);
     }
 
     void SceneView::renderSphereCollider(GameObject* gameObject) {
@@ -187,7 +194,7 @@ namespace TechEngine {
             point1 = glm::vec3(transform->getModelMatrix() * glm::vec4(point1, 1.0f));
             point2 = glm::vec3(transform->getModelMatrix() * glm::vec4(point2, 1.0f));
             // Create a line segment along the X-axis with the specified color
-            renderer->createLine(point1, point2, color);
+            appRegistry.getSystem<Renderer>().createLine(point1, point2, color);
         }
 
         // Create a circle along the Y-axis
@@ -201,7 +208,7 @@ namespace TechEngine {
             point2 = glm::vec3(transform->getModelMatrix() * glm::vec4(point2, 1.0f));
 
             // Create a line segment along the Y-axis with the specified color
-            renderer->createLine(point1, point2, color);
+            appRegistry.getSystem<Renderer>().createLine(point1, point2, color);
         }
 
         // Create a circle along the Z-axis
@@ -215,7 +222,7 @@ namespace TechEngine {
             point2 = glm::vec3(transform->getModelMatrix() * glm::vec4(point2, 1.0f));
 
             // Create a line segment along the Z-axis with the specified color
-            renderer->createLine(point1, point2, color);
+            appRegistry.getSystem<Renderer>().createLine(point1, point2, color);
         }
     }
 
@@ -254,11 +261,11 @@ namespace TechEngine {
                 glm::vec3 prevBottomPoint = vertices[(i - 1) * 2 + 1];
 
                 // Render lines for the sides of the cylinder
-                renderer->createLine(prevTopPoint, topPoint, color); // Red lines
-                renderer->createLine(prevBottomPoint, bottomPoint, color); // Red lines
+                appRegistry.getSystem<Renderer>().createLine(prevTopPoint, topPoint, color); // Red lines
+                appRegistry.getSystem<Renderer>().createLine(prevBottomPoint, bottomPoint, color); // Red lines
 
                 // Render lines to connect the top and bottom points
-                renderer->createLine(prevTopPoint, prevBottomPoint, color); // Red lines
+                appRegistry.getSystem<Renderer>().createLine(prevTopPoint, prevBottomPoint, color); // Red lines
             }
         }
 
@@ -269,11 +276,11 @@ namespace TechEngine {
         glm::vec3 lastBottomPoint = vertices[vertices.size() - 1];
 
         // Render lines for the sides of the cylinder
-        renderer->createLine(lastTopPoint, firstTopPoint, color); // Red lines
-        renderer->createLine(lastBottomPoint, firstBottomPoint, color); // Red lines
+        appRegistry.getSystem<Renderer>().createLine(lastTopPoint, firstTopPoint, color); // Red lines
+        appRegistry.getSystem<Renderer>().createLine(lastBottomPoint, firstBottomPoint, color); // Red lines
 
         // Render lines to connect the top and bottom points
-        renderer->createLine(lastTopPoint, lastBottomPoint, color); // Red lines
+        appRegistry.getSystem<Renderer>().createLine(lastTopPoint, lastBottomPoint, color); // Red lines
     }
 
     void SceneView::onKeyPressedEvent(Key& key) {

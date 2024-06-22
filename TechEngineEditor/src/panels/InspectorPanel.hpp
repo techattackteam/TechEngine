@@ -11,11 +11,12 @@ namespace TechEngine {
         std::vector<GameObject*>& selectedGameObjects;
         bool m_isActive = false;
 
-        MaterialManager& materialManager;
-        PhysicsEngine& physicsEngine;
+        SystemsRegistry& appRegistry;
 
     public:
-        explicit InspectorPanel(const std::string& name, EventDispatcher& eventDispatcher, std::vector<GameObject*>& selectedGameObjects, MaterialManager& materialManager, PhysicsEngine& physicsEngine);
+        explicit InspectorPanel(const std::string& name, SystemsRegistry& appRegistry, std::vector<GameObject*>& selectedGameObjects);
+
+        void init();
 
         void onUpdate() override;
 

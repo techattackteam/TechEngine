@@ -1,24 +1,23 @@
 #include "MeshRendererComponent.hpp"
 
-#include "mesh/CubeMesh.hpp"
-#include "mesh/CylinderMesh.hpp"
 #include "mesh/MeshManager.hpp"
-#include "mesh/SphereMesh.hpp"
-#include "scriptingAPI/material/MaterialManagerAPI.hpp"
+#include "material/MaterialManager.hpp"
 
 namespace TechEngine {
-    MeshRendererComponent::MeshRendererComponent(GameObject* gameObject, EventDispatcher& eventDispatcher) : mesh(MeshManager::getMesh("Cube")), Component(gameObject, eventDispatcher, "MeshRenderer") {
+    MeshRendererComponent::MeshRendererComponent(GameObject* gameObject,
+                                                 SystemsRegistry& systemsRegistry) : mesh(systemsRegistry.getSystem<MeshManager>().getMesh("Cube")),
+                                                                                     Component(gameObject, systemsRegistry, "MeshRenderer") {
         std::string name = "DefaultMaterial";
-        m_material = MaterialManagerAPI::getMaterial(name);
+        m_material = &systemsRegistry.getSystem<MaterialManager>().getMaterial(name);
         paintMesh();
     }
 
     MeshRendererComponent::MeshRendererComponent(GameObject* gameObject,
-                                                 EventDispatcher& eventDispatcher,
+                                                 SystemsRegistry& systemsRegistry,
                                                  Mesh& mesh,
                                                  Material* material) : mesh(mesh),
                                                                        m_material(material),
-                                                                       Component(gameObject, eventDispatcher, "MeshRenderer") {
+                                                                       Component(gameObject, systemsRegistry, "MeshRenderer") {
         paintMesh();
     }
 
@@ -63,7 +62,7 @@ namespace TechEngine {
     Component* MeshRendererComponent::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
         MeshRendererComponent* meshRenderer = (MeshRendererComponent*)componentToCopy;
         Mesh& mesh = *new Mesh(meshRenderer->getVertices(), meshRenderer->getIndices());
-        auto* newComponent = new MeshRendererComponent(gameObjectToAttach, eventDispatcher, mesh, m_material);
+        auto* newComponent = new MeshRendererComponent(gameObjectToAttach, systemsRegistry, mesh, m_material);
         return newComponent;
     }
 
@@ -79,8 +78,8 @@ namespace TechEngine {
         std::string materialName;
         stream->readString(meshName);
         stream->readString(materialName);
-        mesh = MeshManager::getMesh(meshName);
-        m_material = MaterialManagerAPI::getMaterial(materialName);
+        mesh = systemsRegistry.getSystem<MeshManager>().getMesh(meshName);
+        m_material = &systemsRegistry.getSystem<MaterialManager>().getMaterial(materialName);
         paintMesh();
     }
 }

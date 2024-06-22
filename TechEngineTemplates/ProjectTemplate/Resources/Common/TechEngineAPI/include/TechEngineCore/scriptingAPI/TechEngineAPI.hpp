@@ -2,9 +2,10 @@
 #include "event/EventDispatcherAPI.hpp"
 #include "material/MaterialManagerAPI.hpp"
 #include "scene/SceneManagerAPI.hpp"
+#include "core/CoreExportDll.hpp"
 
 namespace TechEngine {
-    class TechEngineAPI {
+    class CORE_DLL TechEngineAPI {
     private:
         SceneManagerAPI* sceneManagerAPI;
         EventDispatcherAPI* eventDispatcherAPI;

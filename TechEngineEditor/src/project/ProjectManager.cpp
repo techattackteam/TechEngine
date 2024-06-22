@@ -6,6 +6,7 @@
 #include "core/Logger.hpp"
 #include "events/appManagement/AppCloseRequestEvent.hpp"
 #include "eventSystem/EventDispatcher.hpp"
+#include "texture/TextureManager.hpp"
 
 namespace TechEngine {
     ProjectManager::ProjectManager(Client& client, Server& server) : client(client),
@@ -14,7 +15,7 @@ namespace TechEngine {
 
 
     void ProjectManager::init() {
-        client.eventDispatcher.subscribe(AppCloseRequestEvent::eventType, [this](Event* event) {
+        client.systemsRegistry.getSystem<EventDispatcher>().subscribe(AppCloseRequestEvent::eventType, [this](Event* event) {
             saveProject();
         });
     }
@@ -147,13 +148,13 @@ namespace TechEngine {
     }
 
     void ProjectManager::saveProject() {
-        client.sceneManager.saveCurrentScene();
-        server.sceneManager.saveCurrentScene();
+        client.systemsRegistry.getSystem<SceneManager>().saveCurrentScene();
+        server.systemsRegistry.getSystem<SceneManager>().saveCurrentScene();
         YAML::Emitter out;
         try {
             out << YAML::BeginMap;
-            out << YAML::Key << "Client last loaded scene" << YAML::Value << client.sceneManager.getActiveSceneName();
-            out << YAML::Key << "Server last loaded scene" << YAML::Value << server.sceneManager.getActiveSceneName();
+            out << YAML::Key << "Client last loaded scene" << YAML::Value << client.systemsRegistry.getSystem<SceneManager>().getActiveSceneName();
+            out << YAML::Key << "Server last loaded scene" << YAML::Value << server.systemsRegistry.getSystem<SceneManager>().getActiveSceneName();
             out << YAML::EndMap;
             std::filesystem::path path = projectFilePath;;
             std::filesystem::create_directories(path.parent_path());
@@ -202,49 +203,49 @@ namespace TechEngine {
             std::ofstream fout(this->projectFilePath);
             fout << out.c_str();
         }
-        client.textureManager.init(FileSystem::getAllFilesWithExtension({
-                                                                            getProjectClientResourcesPath().string(),
-                                                                            getProjectCommonResourcesPath().string(),
-                                                                            getProjectClientAssetsPath().string(),
-                                                                            getProjectCommonAssetsPath().string()
-                                                                        },
-                                                                        {".jpg", ".png"},
-                                                                        true));
-        client.materialManager.init(FileSystem::getAllFilesWithExtension({
-                                                                             getProjectClientResourcesPath().string(),
-                                                                             getProjectCommonResourcesPath().string(),
-                                                                             getProjectClientAssetsPath().string(),
-                                                                             getProjectCommonAssetsPath().string()
-                                                                         }, {".mat"}, true));
-        client.sceneManager.init(FileSystem::getAllFilesWithExtension({
-                                                                          getProjectClientResourcesPath().string(),
-                                                                          getProjectCommonResourcesPath().string(),
-                                                                          getProjectClientAssetsPath().string(),
-                                                                          getProjectCommonAssetsPath().string()
-                                                                      }, {".scene"}, true));
-        client.sceneManager.loadScene(clientLoadedScene);
+        client.systemsRegistry.getSystem<TextureManager>().init(FileSystem::getAllFilesWithExtension({
+                                                                                                         getProjectClientResourcesPath().string(),
+                                                                                                         getProjectCommonResourcesPath().string(),
+                                                                                                         getProjectClientAssetsPath().string(),
+                                                                                                         getProjectCommonAssetsPath().string()
+                                                                                                     },
+                                                                                                     {".jpg", ".png"},
+                                                                                                     true));
+        client.systemsRegistry.getSystem<MaterialManager>().init(FileSystem::getAllFilesWithExtension({
+                                                                                                          getProjectClientResourcesPath().string(),
+                                                                                                          getProjectCommonResourcesPath().string(),
+                                                                                                          getProjectClientAssetsPath().string(),
+                                                                                                          getProjectCommonAssetsPath().string()
+                                                                                                      }, {".mat"}, true));
+        client.systemsRegistry.getSystem<SceneManager>().init(FileSystem::getAllFilesWithExtension({
+                                                                                                       getProjectClientResourcesPath().string(),
+                                                                                                       getProjectCommonResourcesPath().string(),
+                                                                                                       getProjectClientAssetsPath().string(),
+                                                                                                       getProjectCommonAssetsPath().string()
+                                                                                                   }, {".scene"}, true));
+        client.systemsRegistry.getSystem<SceneManager>().loadScene(clientLoadedScene);
 
-        server.textureManager.init(FileSystem::getAllFilesWithExtension({
-                                                                            getProjectServerResourcesPath().string(),
-                                                                            getProjectCommonResourcesPath().string(),
-                                                                            getProjectServerAssetsPath().string(),
-                                                                            getProjectCommonAssetsPath().string()
-                                                                        },
-                                                                        {".jpg", ".png"},
-                                                                        true));
-        server.materialManager.init(FileSystem::getAllFilesWithExtension({
-                                                                             getProjectServerResourcesPath().string(),
-                                                                             getProjectCommonResourcesPath().string(),
-                                                                             getProjectServerAssetsPath().string(),
-                                                                             getProjectCommonAssetsPath().string()
-                                                                         }, {".mat"}, true));
-        server.sceneManager.init(FileSystem::getAllFilesWithExtension({
-                                                                          getProjectServerResourcesPath().string(),
-                                                                          getProjectCommonResourcesPath().string(),
-                                                                          getProjectServerAssetsPath().string(),
-                                                                          getProjectCommonAssetsPath().string()
-                                                                      }, {".scene"}, true));
-        server.sceneManager.loadScene(serverLoadedScene);
+        server.systemsRegistry.getSystem<TextureManager>().init(FileSystem::getAllFilesWithExtension({
+                                                                                                         getProjectServerResourcesPath().string(),
+                                                                                                         getProjectCommonResourcesPath().string(),
+                                                                                                         getProjectServerAssetsPath().string(),
+                                                                                                         getProjectCommonAssetsPath().string()
+                                                                                                     },
+                                                                                                     {".jpg", ".png"},
+                                                                                                     true));
+        server.systemsRegistry.getSystem<MaterialManager>().init(FileSystem::getAllFilesWithExtension({
+                                                                                                          getProjectServerResourcesPath().string(),
+                                                                                                          getProjectCommonResourcesPath().string(),
+                                                                                                          getProjectServerAssetsPath().string(),
+                                                                                                          getProjectCommonAssetsPath().string()
+                                                                                                      }, {".mat"}, true));
+        server.systemsRegistry.getSystem<SceneManager>().init(FileSystem::getAllFilesWithExtension({
+                                                                                                       getProjectServerResourcesPath().string(),
+                                                                                                       getProjectCommonResourcesPath().string(),
+                                                                                                       getProjectServerAssetsPath().string(),
+                                                                                                       getProjectCommonAssetsPath().string()
+                                                                                                   }, {".scene"}, true));
+        server.systemsRegistry.getSystem<SceneManager>().loadScene(serverLoadedScene);
     }
 
     void ProjectManager::setupPaths(const std::string& projectLocation) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/ClientExportDll.hpp"
 #include "serialization/Buffer.hpp"
 #include "scene/SceneManager.hpp"
 
@@ -7,14 +8,16 @@
 #include <filesystem>
 
 namespace TechEngine {
-    class NetworkEngine {
+    class CLIENT_DLL NetworkEngine : public System {
+    private:
+        SystemsRegistry& systemsRegistry;
+
     public:
         enum class ConnectionStatus {
             Disconnected = 0, Connected, Connecting, FailedToConnect
         };
 
     private:
-        EventDispatcher& eventDispatcher;
         ConnectionStatus connectionStatus = ConnectionStatus::Disconnected;
         std::string connectionDebugMessage;
 
@@ -24,11 +27,10 @@ namespace TechEngine {
         ISteamNetworkingSockets* sockets = nullptr;
         HSteamNetConnection connection = 0;
 
-        SceneManager& sceneManager;
-        const std::string& lastLoadedScene;
+        const std::string& lastLoadedScene{};
 
     public:
-        explicit NetworkEngine(EventDispatcher& eventDispatcher, SceneManager& sceneManager);
+        explicit NetworkEngine(SystemsRegistry& systemsRegistry);
 
         ~NetworkEngine();
 

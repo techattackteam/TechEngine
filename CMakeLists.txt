@@ -9,7 +9,6 @@ if (MSVC)
 endif ()
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 set(BUILD_SHARED_LIBS TRUE)
 
 add_subdirectory("dependencies/GameNetworkingSockets")

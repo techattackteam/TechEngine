@@ -1,18 +1,15 @@
 #pragma once
 
-
-#include "eventSystem/EventDispatcher.hpp"
+#include "system/System.hpp"
 #include "Material.hpp"
-#include "texture/TextureManager.hpp"
-
 #include <unordered_map>
 #include <string>
 
+
 namespace TechEngine {
-    class MaterialManager {
+    class CORE_DLL MaterialManager : public System {
     private:
-        EventDispatcher& eventDispatcher;
-        TextureManager& m_textureManager;
+        SystemsRegistry& systemsRegistry;
         std::unordered_map<std::string, Material> m_materialsBank = std::unordered_map<std::string, Material>();
 
         glm::vec4 m_defaultColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -24,7 +21,7 @@ namespace TechEngine {
         MaterialManager* m_copy = nullptr;
 
     public:
-        explicit MaterialManager(EventDispatcher& eventDispatcher, TextureManager& textureManager);
+        explicit MaterialManager(SystemsRegistry& systemsRegistry);
 
         void init(const std::vector<std::string>& materialsFilePaths);
 

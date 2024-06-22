@@ -19,26 +19,26 @@
 
 namespace TechEngine {
     class SERVER_DLL Server : public AppCore {
-        public:
-            FilePaths filePaths;
+    public:
+        FilePaths filePaths;
 
-        protected:
-            inline static Server* instance;
+    protected:
+        inline static Server* instance;
 
-            std::thread networkThread;
-            int m_port = 0;
-            std::map<HSteamNetConnection, ClientInfo> m_ConnectedClients;
+        std::thread networkThread;
+        int m_port = 0;
+        std::map<HSteamNetConnection, ClientInfo> m_ConnectedClients;
 
-            ISteamNetworkingSockets* m_interface = nullptr;
-            HSteamListenSocket m_ListenSocket = 0u;
-            HSteamNetPollGroup m_PollGroup = 0u;
-            Communicator m_Communicator;
+        ISteamNetworkingSockets* m_interface = nullptr;
+        HSteamListenSocket m_ListenSocket = 0u;
+        HSteamNetPollGroup m_PollGroup = 0u;
+        Communicator m_Communicator;
 
-            friend class Communicator;
-            friend class ServerAPI;
+        friend class Communicator;
+        friend class ServerAPI;
 
-        private:
-            TechEngineServerAPI m_serverAPI;
+    private:
+        //TechEngineServerAPI m_serverAPI;
 
     public:
         Server();

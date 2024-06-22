@@ -15,21 +15,21 @@ namespace TechEngine {
         int32_t height = 720;
 
         PanelsManager& panelsManager;
-        ProjectManager& projectManager;
-        SceneManager& sceneManager;
-        ShadersManager& shadersManager;
+        Client& client;
+        Server& server;
+        SystemsRegistry& editorRegistry;
 
     public:
-        explicit ExportSettingsPanel(EventDispatcher& eventDispatcher, PanelsManager& panelsManager, ProjectManager& projectManager, SceneManager& sceneManager, ShadersManager& shadersManager);
+        ExportSettingsPanel(SystemsRegistry& editorRegistry, Client& client, Server& server, PanelsManager& panelsManager);
 
         ~ExportSettingsPanel() override;
+
+        void init() override;
 
         void onUpdate() override;
 
         void exportGameProject(CompileMode compileMode);
 
         void exportServerProject(CompileMode compileMode);
-
-        void serializeEngineSettings(const std::filesystem::path& exportPath);
     };
 }

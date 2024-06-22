@@ -11,23 +11,23 @@
 #include "render/MeshRendererComponent.hpp"
 
 namespace TechEngine::ComponentFactory {
-    Component* createComponent(std::string name, GameObject* gameObject, EventDispatcher& eventDispatcher) {
+    Component* createComponent(std::string name, GameObject* gameObject, SystemsRegistry& systemsRegistry) {
         if (name == typeid(TransformComponent).name()) {
-            return new TransformComponent(gameObject, eventDispatcher);
+            return new TransformComponent(gameObject, systemsRegistry);
         } else if (name == typeid(CameraComponent).name()) {
-            return new CameraComponent(gameObject, eventDispatcher);
+            return new CameraComponent(gameObject, systemsRegistry);
         } else if (name == typeid(MeshRendererComponent).name()) {
-            return new MeshRendererComponent(gameObject, eventDispatcher);
+            return new MeshRendererComponent(gameObject, systemsRegistry);
         } else if (name == typeid(BoxColliderComponent).name()) {
-            return new BoxColliderComponent(gameObject, eventDispatcher);
+            return new BoxColliderComponent(gameObject, systemsRegistry);
         } else if (name == typeid(CylinderCollider).name()) {
-            return new CylinderCollider(gameObject, eventDispatcher);
+            return new CylinderCollider(gameObject, systemsRegistry);
         } else if (name == typeid(SphereCollider).name()) {
-            return new SphereCollider(gameObject, eventDispatcher);
+            return new SphereCollider(gameObject, systemsRegistry);
         } else if (name == typeid(RigidBody).name()) {
-            return new RigidBody(gameObject, eventDispatcher);
+            return new RigidBody(gameObject, systemsRegistry);
         } else if (name == typeid(NetworkSync).name()) {
-            return new NetworkSync(gameObject, eventDispatcher);
+            return new NetworkSync(gameObject, systemsRegistry);
         } else {
             TE_LOGGER_ERROR("ComponentFactory: Component not found: {0}", name);
             return nullptr;

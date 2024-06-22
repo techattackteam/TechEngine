@@ -1,24 +1,40 @@
 #include "AppCore.hpp"
 
 #include "Logger.hpp"
+#include "Timer.hpp"
 #include "events/appManagement/AppCloseRequestEvent.hpp"
+#include "mesh/MeshManager.hpp"
 #include "script/ScriptEngine.hpp"
+#include "system/SystemsRegistry.hpp"
+#include "texture/TextureManager.hpp"
 
 namespace TechEngine {
-    AppCore::AppCore() : scriptEngine(false),
-                         materialManager(eventDispatcher, textureManager),
-                         sceneManager(eventDispatcher, physicsEngine, materialManager, textureManager, filePaths),
-                         physicsEngine(eventDispatcher, sceneManager.getScene()) {
-        eventDispatcher.subscribe(AppCloseRequestEvent::eventType, [this](Event* event) {
+    AppCore::AppCore() {
+        systemsRegistry.registerSystem<Timer>();
+        systemsRegistry.registerSystem<Logger>();
+        systemsRegistry.registerSystem<EventDispatcher>();
+        systemsRegistry.registerSystem<MeshManager>();
+        systemsRegistry.registerSystem<TextureManager>();
+        systemsRegistry.registerSystem<MaterialManager>(systemsRegistry);
+        systemsRegistry.registerSystem<PhysicsEngine>();
+        systemsRegistry.registerSystem<ScriptEngine>();
+        systemsRegistry.registerSystem<SceneManager>(systemsRegistry, filePaths);
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(AppCloseRequestEvent::eventType, [this](Event* event) {
             onAppCloseRequestEvent();
         });
-        timer.init();
+    }
+
+    void AppCore::init() {
+        systemsRegistry.getSystem<Timer>().init();
+        systemsRegistry.getSystem<MeshManager>().init();
     }
 
     AppCore::~AppCore() {
     }
 
     void AppCore::run() {
+        Timer& timer = systemsRegistry.getSystem<Timer>();
+        systemsRegistry.getSystem<Timer>().init();
         while (running) {
             timer.addAccumulator(timer.getDeltaTime());
             while (timer.getAccumulator() >= timer.getTPS()) {

@@ -10,9 +10,11 @@ namespace TechEngine {
         ImGuiContext* imGuiContext;
 
     public:
-        CustomPanel(const std::string& name, EventDispatcher& eventDispatcher);
+        CustomPanel(const std::string& name);
 
         ~CustomPanel() override;
+
+        void init() override;
 
         void setupImGuiContext(ImGuiContext* imGuiContext);
     };

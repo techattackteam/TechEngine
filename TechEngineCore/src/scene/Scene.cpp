@@ -5,8 +5,8 @@
 #include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngine {
-    Scene::Scene(EventDispatcher& eventDispatcher) : eventDispatcher(eventDispatcher) {
-        eventDispatcher.subscribe(MaterialUpdateEvent::eventType, [this](Event* event) {
+    Scene::Scene(SystemsRegistry& systemsRegistry) : systemsRegistry(systemsRegistry) {
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(MaterialUpdateEvent::eventType, [this](Event* event) {
             onMaterialUpdateEvent((MaterialUpdateEvent&)*event);
         });
     }
@@ -21,13 +21,13 @@ namespace TechEngine {
 
 
     GameObject& Scene::registerGameObject(const std::string& name, const std::string& tag) {
-        GameObject* gameObject = new GameObject(name, tag, eventDispatcher);
+        GameObject* gameObject = new GameObject(name, tag, systemsRegistry);
         gameObjects.push_back(gameObject);
         return *gameObject;
     }
 
     void Scene::duplicateGameObject(GameObject* gameObject) {
-        GameObject* newGameObject = new GameObject(gameObject, genGOTag(), eventDispatcher);
+        GameObject* newGameObject = new GameObject(gameObject, genGOTag(), systemsRegistry);
         gameObjects.push_back(newGameObject);
     }
 
@@ -146,5 +146,4 @@ namespace TechEngine {
             }
         }
     }
-
 }
