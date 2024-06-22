@@ -1,10 +1,12 @@
 #pragma once
 
+#include "core/ClientExportDll.hpp"
+
 #include <cstdint>
 #include "GLFW.hpp"
 
 namespace TechEngine {
-    class FrameBuffer {
+    class CLIENT_DLL FrameBuffer {
     private:
         uint32_t id = 1;
 

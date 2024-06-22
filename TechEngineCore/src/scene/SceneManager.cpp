@@ -167,16 +167,10 @@ namespace TechEngine {
         out << YAML::EndMap;
     }
 
-    SceneManager::SceneManager(EventDispatcher& eventDispatcher,
-                               PhysicsEngine& physicsEngine,
-                               MaterialManager& materialManager,
-                               TextureManager& textureManager,
-                               FilePaths& filePaths) : eventDispatcher(eventDispatcher),
-                                                       physicsEngine(physicsEngine),
-                                                       materialManager(materialManager),
-                                                       textureManager(textureManager),
+    SceneManager::SceneManager(SystemsRegistry& systemsRegistry,
+                               FilePaths& filePaths) : systemsRegistry(systemsRegistry),
                                                        filePaths(filePaths),
-                                                       scene(eventDispatcher) {
+                                                       scene(systemsRegistry) {
     }
 
     void SceneManager::serialize(const std::string& sceneName, const std::string& filepath) {
@@ -234,7 +228,7 @@ namespace TechEngine {
             std::string meshName = meshRendererNode["Mesh"].as<std::string>();
             std::string materialName = meshRendererNode["Material"].as<std::string>();
 
-            Material& material = materialManager.getMaterial(materialName);
+            Material& material = systemsRegistry.getSystem<MaterialManager>().getMaterial(materialName);
             /*
             Mesh* mesh;
             if (meshName == "Cube") {
@@ -268,7 +262,7 @@ namespace TechEngine {
                 TE_LOGGER_CRITICAL("Failed to deserialize mesh renderer component.\n      Mesh name {0} is not valid.", meshName);
             }
             */
-            Mesh& mesh = MeshManager::getMesh(meshName);
+            Mesh& mesh = systemsRegistry.getSystem<MeshManager>().getMesh(meshName);
             ScriptRegister::getInstance();
             gameObject.addComponent<MeshRendererComponent>(mesh, &material);
         }
@@ -303,7 +297,7 @@ namespace TechEngine {
             RigidBody* rigidBodyComponent = gameObject.getComponent<RigidBody>();
             rigidBodyComponent->setMass(rigidBodyNode["Mass"].as<float>());
             rigidBodyComponent->setDensity(rigidBodyNode["Density"].as<float>());
-            physicsEngine.addRigidBody(rigidBodyComponent);
+            systemsRegistry.getSystem<PhysicsEngine>().addRigidBody(rigidBodyComponent);
         }
         auto networkHandlerNode = gameObjectYAML["NetworkHandlerComponent"];
         if (networkHandlerNode) {
@@ -388,7 +382,7 @@ namespace TechEngine {
                     saveScene(m_activeSceneName);
                 }
                 scene.clear();
-                physicsEngine.clear();
+                systemsRegistry.getSystem<PhysicsEngine>().clear();
             }
             std::string scenePath = m_scenesBank[sceneName];
             deserialize(scenePath);
@@ -396,14 +390,14 @@ namespace TechEngine {
         } else {
             TE_LOGGER_ERROR("Failed to load scene '{0}'.\n Could not find scene. Creating default one", sceneName);
             scene.clear();
-            physicsEngine.clear();
+            systemsRegistry.getSystem<PhysicsEngine>().clear();
             m_activeSceneName = "DefaultScene";
             GameObject& gameObject = scene.createGameObject("Main Camera");
             gameObject.addComponent<CameraComponent>();
             gameObject.getComponent<CameraComponent>()->setIsMainCamera(true);
             gameObject.getComponent<TransformComponent>()->translateTo(glm::vec3(0.0f, 0.0f, 5.0f));
             GameObject& cube = scene.createGameObject("Cube");
-            cube.addComponent<MeshRendererComponent>(MeshManager::getMesh("Cube"), &materialManager.getMaterial("DefaultMaterial"));
+            cube.addComponent<MeshRendererComponent>(systemsRegistry.getSystem<MeshManager>().getMesh("Cube"), &systemsRegistry.getSystem<MaterialManager>().getMaterial("DefaultMaterial"));
             cube.getComponent<TransformComponent>()->translateTo(glm::vec3(0.0f, 0.0f, 0.0f));
             std::string scenePath = filePaths.commonAssetsPath + "\\Scenes\\" + m_activeSceneName + ".scene";
             registerScene(scenePath);
@@ -432,7 +426,7 @@ namespace TechEngine {
 
     void SceneManager::loadSceneFromTemporarily(const std::string& cachPath, CompileProject compileProject) {
         scene.clear();
-        physicsEngine.clear();
+        systemsRegistry.getSystem<PhysicsEngine>().clear();
         std::string sceneName = compileProject == CompileProject::PROJECT_CLIENT ? "SceneClientTemporary" : "SceneServerTemporary";
         std::string sceneTemporaryPath = cachPath + "\\" + sceneName + ".scene";
         deserialize(sceneTemporaryPath);

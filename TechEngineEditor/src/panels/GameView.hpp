@@ -6,12 +6,13 @@
 namespace TechEngine {
     class GameView : public Panel {
     private:
-        Renderer* renderer;
-        Scene& scene;
         uint32_t frameBufferID;
+        SystemsRegistry& appRegistry;
 
     public:
-        GameView(EventDispatcher& eventDispatcher, Renderer& renderer, Scene& scene);
+        GameView(SystemsRegistry& appRegistry);
+
+        void init() override;
 
         void onUpdate() override;
     };

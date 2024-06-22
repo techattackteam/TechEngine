@@ -7,9 +7,9 @@
 
 namespace TechEngine {
     Component::Component(GameObject* gameObject,
-                         EventDispatcher& eventDispatcher,
+                         SystemsRegistry& systemsRegistry,
                          std::string name) : gameObject(gameObject),
-                                             eventDispatcher(eventDispatcher),
+                                             systemsRegistry(systemsRegistry),
                                              name(std::move(name)) {
     }
 

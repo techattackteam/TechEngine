@@ -1,26 +1,33 @@
 #include "ClientPanel.hpp"
 
 #include "PanelsManager.hpp"
-#include "core/Logger.hpp"
-#include "events/scripts/ScriptCrashEvent.hpp"
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
     ClientPanel::ClientPanel(Client& client,
-                             EventDispatcher& eventDispatcher,
-                             PanelsManager& panelsManager,
-                             ProjectManager& projectManager) : client(client),
-                                                               projectManager(projectManager),
-                                                               panelsManager(panelsManager),
-                                                               gameView(eventDispatcher, client.renderer, client.sceneManager.getScene()),
-                                                               inspectorPanel("Client Inspector", eventDispatcher, sceneHierarchyPanel.getSelectedGO(), client.materialManager, client.physicsEngine),
-                                                               sceneView("Client Scene", client.renderer, client.sceneManager.getScene(), client.physicsEngine, eventDispatcher, sceneHierarchyPanel.getSelectedGO()),
-                                                               sceneHierarchyPanel("Client Scene Hierarchy", eventDispatcher, client.sceneManager.getScene(), client.materialManager),
-                                                               Panel("ClientPanel", eventDispatcher) {
-        client.eventDispatcher.subscribe(ScriptCrashEvent::eventType, [this](Event* event) {
+                             SystemsRegistry& editorRegistry,
+                             SystemsRegistry& clientRegistry,
+                             PanelsManager& panelsManager) : client(client),
+                                                             editorRegistry(editorRegistry),
+                                                             appRegistry(clientRegistry),
+                                                             panelsManager(panelsManager),
+                                                             gameView(clientRegistry),
+                                                             inspectorPanel("Client Inspector", clientRegistry, sceneHierarchyPanel.getSelectedGO()),
+                                                             sceneView("Client Scene", editorRegistry, clientRegistry, sceneHierarchyPanel.getSelectedGO()),
+                                                             sceneHierarchyPanel("Client Scene Hierarchy", clientRegistry),
+                                                             Panel("ClientPanel") {
+        /*client.eventDispatcher->subscribe(ScriptCrashEvent::eventType, [this](Event* event) {
             stopRunningScene();
-        });
+        });*/
     }
+
+    void ClientPanel::init() {
+        inspectorPanel.init();
+        sceneHierarchyPanel.init();
+        sceneView.init();
+        gameView.init();
+    }
+
 
     void ClientPanel::onUpdate() {
         // Create a dockspace in the window
@@ -84,32 +91,32 @@ namespace TechEngine {
 #ifdef TE_DEBUG
         panelsManager.compileUserScripts(DEBUG, CompileProject::PROJECT_CLIENT);
 #else
-        panelsManager.compileUserScripts(RELEASEDEBUG, PROJECT_CLIENT);
+        panelsManager.compileUserScripts(RELEASEDEBUG, CompileProject::PROJECT_CLIENT);
 #endif
-        client.sceneManager.saveSceneAsTemporarily(projectManager.getProjectCachePath().string(), CompileProject::PROJECT_CLIENT);
-        client.eventDispatcher.copy();
-        client.materialManager.copy();
-        client.scriptEngine.init(projectManager.getClientUserScriptsDLLPath().string(), &client.eventDispatcher);
-        client.scriptEngine.onStart();
-        client.physicsEngine.start();
+        appRegistry.getSystem<SceneManager>().saveSceneAsTemporarily(editorRegistry.getSystem<ProjectManager>().getProjectCachePath().string(), CompileProject::PROJECT_CLIENT);
+        appRegistry.getSystem<EventDispatcher>().copy();
+        appRegistry.getSystem<MaterialManager>().copy();
+        appRegistry.getSystem<ScriptEngine>().init(editorRegistry.getSystem<ProjectManager>().getClientUserScriptsDLLPath().string(), &appRegistry.getSystem<EventDispatcher>());
+        appRegistry.getSystem<ScriptEngine>().onStart();
+        appRegistry.getSystem<PhysicsEngine>().start();
         m_currentPlaying = true;
     }
 
     void ClientPanel::stopRunningScene() {
-        client.physicsEngine.stop();
-        client.eventDispatcher.restoreCopy();
-        client.materialManager.restoreCopy();
-        client.sceneManager.loadSceneFromTemporarily(projectManager.getProjectCachePath().string(), CompileProject::PROJECT_CLIENT);
+        appRegistry.getSystem<PhysicsEngine>().stop();
+        appRegistry.getSystem<EventDispatcher>().restoreCopy();
+        appRegistry.getSystem<MaterialManager>().restoreCopy();
+        appRegistry.getSystem<SceneManager>().loadSceneFromTemporarily(editorRegistry.getSystem<ProjectManager>().getProjectCachePath().string(), CompileProject::PROJECT_CLIENT);
         sceneHierarchyPanel.getSelectedGO().clear();
-        for (GameObject* gameObject: client.sceneManager.getScene().getGameObjects()) {
+        for (GameObject* gameObject: appRegistry.getSystem<SceneManager>().getScene().getGameObjects()) {
             if (std::find(sceneHierarchyPanel.getSelectedGO().begin(), sceneHierarchyPanel.getSelectedGO().end(), gameObject) != sceneHierarchyPanel.getSelectedGO().end()) {
                 sceneHierarchyPanel.selectGO(gameObject);
             }
         }
         m_currentPlaying = false;
-        client.scriptEngine.stop();
-        if (client.networkEngine.isRunning()) {
-            client.networkEngine.disconnectServer();
+        appRegistry.getSystem<ScriptEngine>().stop();
+        if (appRegistry.getSystem<NetworkEngine>().isRunning()) {
+            appRegistry.getSystem<NetworkEngine>().disconnectServer();
         }
     }
 }

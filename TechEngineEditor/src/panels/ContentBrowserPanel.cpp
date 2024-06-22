@@ -7,18 +7,18 @@
 namespace TechEngine {
     ContentBrowserPanel::ContentBrowserPanel(Client& client,
                                              Server& server,
-                                             PanelsManager& panelsManager,
-                                             ProjectManager& projectManager) : client(client),
-                                                                               server(server),
-                                                                               panelsManager(panelsManager),
-                                                                               projectManager(projectManager),
-                                                                               /*assimpLoader(/*sceneManager.getScene(), materialManager#1#),*/
-                                                                               Panel("Content Browser", client.eventDispatcher) {
+                                             SystemsRegistry& editorRegistry,
+                                             PanelsManager& panelsManager) : client(client),
+                                                                             server(server),
+                                                                             editorRegistry(editorRegistry),
+                                                                             panelsManager(panelsManager),
+                                                                             /*assimpLoader(/*sceneManager.getScene(), materialManager#1#),*/
+                                                                             Panel("Content Browser") {
     }
 
 
     void ContentBrowserPanel::init() {
-        currentPath = projectManager.getProjectAssetsPath();
+        currentPath = editorRegistry.getSystem<ProjectManager>().getProjectAssetsPath();
     }
 
     void ContentBrowserPanel::onUpdate() {
@@ -33,9 +33,9 @@ namespace TechEngine {
 
             ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.f);
-            renderDirectoryHierarchy(projectManager.getProjectCommonAssetsPath().string());
-            renderDirectoryHierarchy(projectManager.getProjectClientAssetsPath().string());
-            renderDirectoryHierarchy(projectManager.getProjectServerAssetsPath().string());
+            renderDirectoryHierarchy(editorRegistry.getSystem<ProjectManager>().getProjectCommonAssetsPath().string());
+            renderDirectoryHierarchy(editorRegistry.getSystem<ProjectManager>().getProjectClientAssetsPath().string());
+            renderDirectoryHierarchy(editorRegistry.getSystem<ProjectManager>().getProjectServerAssetsPath().string());
             ImGui::PopStyleVar();
 
             ImGui::EndChild();
@@ -72,7 +72,7 @@ namespace TechEngine {
                 continue;
             }
             const std::filesystem::path& path = directoryEntry.path();
-            auto relativePath = std::filesystem::relative(path, projectManager.getProjectLocation());
+            auto relativePath = std::filesystem::relative(path, editorRegistry.getSystem<ProjectManager>().getProjectLocation());
             std::string filenameString = relativePath.filename().string();
             bool hasSubDirs = false;
 
@@ -106,7 +106,7 @@ namespace TechEngine {
         bool opened = false;
         for (auto& directoryEntry: std::filesystem::directory_iterator(directoryPath)) {
             const auto& path = directoryEntry.path();
-            auto relativePath = std::filesystem::relative(path, projectManager.getProjectAssetsPath());
+            auto relativePath = std::filesystem::relative(path, editorRegistry.getSystem<ProjectManager>().getProjectAssetsPath());
             std::string filenameString = relativePath.filename().string();
             if (selectedPath == path.string()) {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
@@ -151,10 +151,10 @@ namespace TechEngine {
                 std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
                 runFunctionBasedOnFileType(path,
                                            [&] {
-                                               client.sceneManager.loadScene(filenameWithoutExtension);
+                                               client.systemsRegistry.getSystem<SceneManager>().loadScene(filenameWithoutExtension);
                                            },
                                            [&] {
-                                               server.sceneManager.loadScene(filenameWithoutExtension);
+                                               server.systemsRegistry.getSystem<SceneManager>().loadScene(filenameWithoutExtension);
                                            }
                 );
             } else if (extension == ".mat") {
@@ -178,21 +178,21 @@ namespace TechEngine {
         if (extension == ".scene") {
             std::string path = currentPath.string() + "\\" + filename;
 
-            if (client.sceneManager.hasScene(path)) {
-                client.sceneManager.deleteScene(path);
+            if (client.systemsRegistry.getSystem<SceneManager>().hasScene(path)) {
+                client.systemsRegistry.getSystem<SceneManager>().deleteScene(path);
                 std::filesystem::remove(path);
-            } else if (server.sceneManager.hasScene(path)) {
-                server.sceneManager.deleteScene(path);
+            } else if (server.systemsRegistry.getSystem<SceneManager>().hasScene(path)) {
+                server.systemsRegistry.getSystem<SceneManager>().deleteScene(path);
                 std::filesystem::remove(path);
             }
         } else if (extension == ".mat") {
             std::string path = currentPath.string() + "\\" + filename;
             std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
-            if (client.materialManager.materialExists(filenameWithoutExtension)) {
-                client.materialManager.deleteMaterial(filenameWithoutExtension);
+            if (client.systemsRegistry.getSystem<MaterialManager>().materialExists(filenameWithoutExtension)) {
+                client.systemsRegistry.getSystem<MaterialManager>().deleteMaterial(filenameWithoutExtension);
                 std::filesystem::remove(path);
-            } else if (server.materialManager.materialExists(filenameWithoutExtension)) {
-                server.materialManager.deleteMaterial(filenameWithoutExtension);
+            } else if (server.systemsRegistry.getSystem<MaterialManager>().materialExists(filenameWithoutExtension)) {
+                server.systemsRegistry.getSystem<MaterialManager>().deleteMaterial(filenameWithoutExtension);
                 std::filesystem::remove(path);
             }
         }
@@ -239,10 +239,10 @@ namespace TechEngine {
                     std::string scenePath = currentPath.string() + "\\" + newSceneName + ".scene";
                     runFunctionBasedOnFileType(scenePath,
                                                [&] {
-                                                   client.sceneManager.createNewScene(scenePath);
+                                                   client.systemsRegistry.getSystem<SceneManager>().createNewScene(scenePath);
                                                },
                                                [&] {
-                                                   server.sceneManager.createNewScene(scenePath);
+                                                   server.systemsRegistry.getSystem<SceneManager>().createNewScene(scenePath);
                                                });
                 }
                 std::string newScriptName;
@@ -253,10 +253,10 @@ namespace TechEngine {
                 if (ImGuiUtils::beginMenuWithInputMenuField("New Material", "Material name", newMaterialName)) {
                     runFunctionBasedOnFileType(currentPath.string() + "\\" + newMaterialName + ".mat",
                                                [&] {
-                                                   client.materialManager.createMaterialFile(newMaterialName, path.string());
+                                                   client.systemsRegistry.getSystem<MaterialManager>().createMaterialFile(newMaterialName, path.string());
                                                },
                                                [&] {
-                                                   server.materialManager.createMaterialFile(newMaterialName, path.string());
+                                                   server.systemsRegistry.getSystem<MaterialManager>().createMaterialFile(newMaterialName, path.string());
                                                });
                 }
                 ImGui::EndMenu();
@@ -279,7 +279,7 @@ namespace TechEngine {
     }
 
     FileType ContentBrowserPanel::getFileType(const std::filesystem::path& path) {
-        std::string rootFolder = path.string().substr(projectManager.getProjectLocation().string().size() + std::string("\\Assets\\").size());
+        std::string rootFolder = path.string().substr(editorRegistry.getSystem<ProjectManager>().getProjectLocation().string().size() + std::string("\\Assets\\").size());
         rootFolder = rootFolder.substr(0, rootFolder.find_first_of('\\'));
         if (rootFolder == "Client") {
             return FileType::CLIENT_FILE;

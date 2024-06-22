@@ -13,7 +13,6 @@ namespace TechEngine {
         Window window;
         Client client;
         Server server;
-        ProjectManager projectManager;
         PanelsManager panelsManager;
         std::string editorSettings;
 

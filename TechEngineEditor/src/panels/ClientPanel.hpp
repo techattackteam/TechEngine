@@ -17,7 +17,8 @@ namespace TechEngine {
     class ClientPanel : public Panel {
     private:
         Client& client;
-        ProjectManager& projectManager;
+        SystemsRegistry& editorRegistry;
+        SystemsRegistry& appRegistry;
         PanelsManager& panelsManager;
 
         GameView gameView;
@@ -28,7 +29,9 @@ namespace TechEngine {
         friend class PanelsManager;
 
     public:
-        ClientPanel(Client& client, EventDispatcher& eventDispatcher, PanelsManager& panelsManager, ProjectManager& projectManager);
+        ClientPanel(Client& client, SystemsRegistry& editorRegistry, SystemsRegistry& appRegistry, PanelsManager& panelsManager);
+
+        void init() override;
 
         void onUpdate() override;
 

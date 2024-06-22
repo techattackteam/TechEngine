@@ -11,12 +11,10 @@
 namespace TechEngine {
     class SceneView : public Panel {
         uint32_t frameBufferID;
-        Renderer* renderer;
-        EventDispatcher& eventDispatcher;
+        SystemsRegistry& appRegistry;
         GameObject* sceneCamera;
         Guizmo guizmo;
 
-        Scene& scene;
         std::vector<GameObject*>& selectedGO;
 
         bool mouse2 = false;
@@ -29,13 +27,13 @@ namespace TechEngine {
 
     public:
         SceneView(const std::string& name,
-                  Renderer& renderer,
-                  Scene& scene,
-                  PhysicsEngine& physicsEngine,
-                  EventDispatcher& eventDispatcher,
+                  SystemsRegistry& editorRegistry,
+                  SystemsRegistry& appRegistry,
                   std::vector<GameObject*>& selectedGO);
 
         ~SceneView();
+
+        void init();
 
         void onUpdate() override;
 

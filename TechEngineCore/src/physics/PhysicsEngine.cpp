@@ -17,7 +17,7 @@
 #include "events/physics/registry/RemoveRigidBodyEvent.hpp"
 
 namespace TechEngine {
-    PhysicsEngine::PhysicsEngine(EventDispatcher& eventDispatcher, Scene& scene) /*: eventDispatcher(eventDispatcher), scene(scene)*/ {
+    PhysicsEngine::PhysicsEngine() /*: eventDispatcher(eventDispatcher), scene(scene)*/ {
         /*callback = new PhysicsCallback(eventDispatcher, scene, *this);
 
         eventDispatcher.subscribe(GameObjectDestroyEvent::eventType, [this](Event* event) {

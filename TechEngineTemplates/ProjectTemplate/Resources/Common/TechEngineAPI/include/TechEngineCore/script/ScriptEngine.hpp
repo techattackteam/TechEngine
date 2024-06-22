@@ -8,7 +8,7 @@
 #include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngine {
-    class ScriptEngine {
+    class CORE_DLL ScriptEngine : public System {
     private:
         std::list<Script*> scripts = {};
         bool runtime = false;
@@ -22,7 +22,7 @@ namespace TechEngine {
         EventDispatcher* eventDispatcher = nullptr;
 
     public:
-        explicit ScriptEngine(bool runtime);
+        explicit ScriptEngine(bool runtime = false);
 
         void init(const std::string& dllPath, EventDispatcher* eventDispatcher);
 

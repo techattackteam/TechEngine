@@ -1,10 +1,11 @@
 #pragma once
-#include <filesystem>
+#include <system/System.hpp>
 #include "core/Server.hpp"
 #include "core/Client.hpp"
+#include <filesystem>
 
 namespace TechEngine {
-    class ProjectManager {
+    class ProjectManager : public System {
     private:
         Client& client;
         Server& server;

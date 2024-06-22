@@ -9,20 +9,21 @@
 #include "core/Client.hpp"
 #include "core/Logger.hpp"
 #include "core/Server.hpp"
+#include "texture/TextureManager.hpp"
 
 namespace TechEngine {
     MaterialEditor::MaterialEditor(Client& client, Server& server) : client(client),
                                                                      server(server),
                                                                      m_material(nullptr),
-                                                                     m_sphere("Sphere", client.eventDispatcher),
-                                                                     m_camera("SceneCamera", client.eventDispatcher),
-                                                                     Panel("Material Editor", client.eventDispatcher) {
+                                                                     m_sphere("Sphere", client.systemsRegistry),
+                                                                     m_camera("SceneCamera", client.systemsRegistry),
+                                                                     Panel("Material Editor") {
         m_open = false;
-        frameBufferID = client.renderer.createFramebuffer(1080, 720);
     }
 
     void MaterialEditor::init() {
-        m_sphere.addComponent<MeshRendererComponent>(mesh, &client.materialManager.getMaterial("DefaultMaterial"));
+        frameBufferID = client.systemsRegistry.getSystem<Renderer>().createFramebuffer(1080, 720);
+        m_sphere.addComponent<MeshRendererComponent>(mesh, &client.systemsRegistry.getSystem<MaterialManager>().getMaterial("DefaultMaterial"));
         m_sphere.getTransform().position = glm::vec3(0, 0, 0);
         m_camera.getTransform().position = glm::vec3(0, 0, 3);
     }
@@ -84,7 +85,7 @@ namespace TechEngine {
                     std::string filepath = ofn.lpstrFile;
                     std::string filename = filepath.substr(filepath.find_last_of("/\\") + 1);
                     std::string materialName = filename.substr(0, filename.find_last_of("."));
-                    m_material->setDiffuseTexture(&client.textureManager.getTexture(materialName));
+                    m_material->setDiffuseTexture(&client.systemsRegistry.getSystem<TextureManager>().getTexture(materialName));
                 }
             };
             if (ImGui::BeginDragDropTarget()) {
@@ -94,7 +95,7 @@ namespace TechEngine {
                     if (extension != ".mat")
                         return;
                     std::string textureName = filename.substr(0, filename.find_last_of("."));
-                    m_material->setDiffuseTexture(&client.textureManager.getTexture(textureName));
+                    m_material->setDiffuseTexture(&client.systemsRegistry.getSystem<TextureManager>().getTexture(textureName));
                 }
                 ImGui::EndDragDropTarget();
             }
@@ -115,9 +116,9 @@ namespace TechEngine {
             ImGui::EndTable();
         }
         if (!m_open) {
-            client.materialManager.serializeMaterial(m_material->getName(), m_filepath);
-            std::vector<GameObject*> objects = client.sceneManager.getScene().getGameObjects();
-            for (GameObject* gameObject: server.sceneManager.getScene().getGameObjects()) {
+            client.systemsRegistry.getSystem<MaterialManager>().serializeMaterial(m_material->getName(), m_filepath);
+            std::vector<GameObject*> objects = client.systemsRegistry.getSystem<SceneManager>().getScene().getGameObjects();
+            for (GameObject* gameObject: server.systemsRegistry.getSystem<SceneManager>().getScene().getGameObjects()) {
                 objects.push_back(gameObject);
             }
             for (GameObject* gameObject: objects) {
@@ -132,12 +133,12 @@ namespace TechEngine {
     }
 
     void MaterialEditor::renderObjectWithMaterial() {
-        if (!client.sceneManager.getScene().hasMainCamera()) {
+        if (!client.systemsRegistry.getSystem<SceneManager>().getScene().hasMainCamera()) {
             return;
         }
         m_camera.getComponent<CameraComponent>()->update();
         m_sphere.getComponent<MeshRendererComponent>()->changeMaterial(*m_material);
-        FrameBuffer& frameBuffer = client.renderer.getFramebuffer(frameBufferID);
+        FrameBuffer& frameBuffer = client.systemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
         ImGui::Begin(name.c_str());
         ImVec2 wsize = ImGui::GetContentRegionAvail();
@@ -145,7 +146,7 @@ namespace TechEngine {
         frameBuffer.resize(wsize.x, wsize.y);
         m_camera.getComponent<CameraComponent>()->updateProjectionMatrix(wsize.x / wsize.y);
         std::vector<GameObject*> objects = {&m_sphere, &m_camera};
-        client.renderer.renderCustomPipeline(m_camera.getComponent<CameraComponent>(), objects);
+        client.systemsRegistry.getSystem<Renderer>().renderCustomPipeline(m_camera.getComponent<CameraComponent>(), objects);
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
         ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
         frameBuffer.unBind();
@@ -155,7 +156,7 @@ namespace TechEngine {
 
     void MaterialEditor::open(const std::string& name, const std::string& filepath) {
         m_open = true;
-        m_material = &client.materialManager.getMaterial(name);
+        m_material = &client.systemsRegistry.getSystem<MaterialManager>().getMaterial(name);
         m_sphere.getComponent<MeshRendererComponent>()->changeMaterial(*m_material);
         m_filepath = filepath;
     }

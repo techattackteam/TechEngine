@@ -1,9 +1,7 @@
 #include "Timer.hpp"
 
 namespace TechEngine {
-
     Timer::Timer() {
-        Timer::instance = this;
     }
 
     void Timer::init() {
@@ -46,7 +44,7 @@ namespace TechEngine {
 
     double Timer::getDeltaTime() {
         double time = getTime();
-        float delta = (float) (time - lastLoopTime);
+        float delta = (float)(time - lastLoopTime);
         lastLoopTime = time;
         timeCount += delta;
         return delta;
@@ -70,9 +68,6 @@ namespace TechEngine {
         return accumulator;
     }
 
-    Timer &Timer::getInstance() {
-        return *instance;
-    }
 
     const float Timer::getTPS() {
         return TPS;
@@ -85,6 +80,4 @@ namespace TechEngine {
     float Timer::getInterpolation() {
         return interpolation;
     }
-
-
 }

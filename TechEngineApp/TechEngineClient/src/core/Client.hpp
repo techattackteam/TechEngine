@@ -6,19 +6,20 @@
 #include "events/window/WindowCloseEvent.hpp"
 #include "network/NetworkEngine.hpp"
 #include "scriptingAPI/TechEngineAPIClient.hpp"
+#include "core/ClientExportDll.hpp"
 
 namespace TechEngine {
-    class Client : public AppCore {
+    class CLIENT_DLL Client : public AppCore {
     public:
         Window& window;
-        Renderer renderer;
-        NetworkEngine networkEngine;
         FilePaths filePaths;
-        TechEngineAPIClient api;
+        //TechEngineAPIClient api;
 
         Client(Window& window);
 
         ~Client() override;
+
+        void init();
 
         void onFixedUpdate() override;
 

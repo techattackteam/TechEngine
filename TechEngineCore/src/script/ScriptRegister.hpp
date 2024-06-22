@@ -2,12 +2,13 @@
 
 #include <list>
 #include <string>
+#include "core/CoreExportDll.hpp"
 
 namespace TechEngine {
     class ScriptEngine;
     class Script;
 
-    class ScriptRegister {
+    class CORE_DLL ScriptRegister {
     private:
         ScriptEngine* scriptEngine;
         inline static ScriptRegister* instance;

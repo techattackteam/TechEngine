@@ -2,9 +2,11 @@
 
 #include "glm/gtx/string_cast.hpp"
 #include "spdlog/spdlog.h"
+#include "system/System.hpp"
+#include "core/CoreExportDLL.hpp"
 
 namespace TechEngine {
-    class Logger {
+    class CORE_DLL Logger : public System {
     private:
         static std::shared_ptr<spdlog::logger> logger;
         inline static bool initialized = false;

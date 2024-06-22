@@ -32,8 +32,7 @@ namespace TechEngine {
         ImGuiContext* imguiContext{};
         Client& client;
         Server& server;
-        EventDispatcher& eventDispatcher;
-        ProjectManager& projectManager;
+        SystemsRegistry& systemsRegistry;
 
         //SettingsPanel settingsPanel{};
         ContentBrowserPanel contentBrowser;
@@ -48,7 +47,7 @@ namespace TechEngine {
         friend class ContentBrowserPanel;
 
     public:
-        PanelsManager(Client& client, Server& server, EventDispatcher& eventDispatcher, ProjectManager& projectManager);
+        PanelsManager(Client& client, Server& server, SystemsRegistry& systemsRegistry);
 
         void init();
 

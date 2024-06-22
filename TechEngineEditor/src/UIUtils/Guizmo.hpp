@@ -9,12 +9,11 @@ namespace TechEngine {
     private:
         int operation = ImGuizmo::OPERATION::TRANSLATE;
         int mode = ImGuizmo::MODE::LOCAL;
-        PhysicsEngine& physicsEngine;
         int& id;
         inline static int lastUsingID = -1;
 
     public:
-        Guizmo(int& id, PhysicsEngine& physicsEngine);
+        Guizmo(int& id);
 
         void editTransform(CameraComponent* camera, ImGuiContext* context, std::vector<GameObject*>& selectedGO);
 

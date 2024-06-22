@@ -31,7 +31,7 @@ namespace TechEngine {
     }
 
     void Communicator::syncGameState(const ClientInfo& clientInfo) {
-        Buffer buffer = SceneSynchronizer::serializeGameState(server.sceneManager);
+        Buffer buffer = SceneSynchronizer::serializeGameState(server.systemsRegistry.getSystem<SceneManager>());
         server.m_Communicator.sendBufferToClient(clientInfo.ID, buffer, true);
     }
 

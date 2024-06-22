@@ -20,14 +20,14 @@ namespace TechEngine {
         std::filesystem::path currentPath;
         std::filesystem::path selectedPath;
 
-        PanelsManager& panelsManager;
-        ProjectManager& projectManager;
         Client& client;
         Server& server;
+        SystemsRegistry& editorRegistry;
+        PanelsManager& panelsManager;
         //AssimpLoader assimpLoader; //TODO: change the way we load models
 
     public:
-        ContentBrowserPanel(Client& client, Server& server, PanelsManager& panelsManager, ProjectManager& projectManager);
+        ContentBrowserPanel(Client& client, Server& server, SystemsRegistry& editorRegistry, PanelsManager& panelsManager);
 
         void init();
 

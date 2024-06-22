@@ -16,24 +16,17 @@
 namespace TechEngine {
     class ProjectManager;
 
-    class SceneManager {
+    class CORE_DLL SceneManager : public System {
     private:
         Scene scene;
-        EventDispatcher& eventDispatcher;
-        PhysicsEngine& physicsEngine;
-        MaterialManager& materialManager;
-        TextureManager& textureManager;
+        SystemsRegistry& systemsRegistry;
         FilePaths& filePaths;
         std::unordered_map<std::string, std::string> m_scenesBank;
 
         std::string m_activeSceneName;
 
     public:
-        SceneManager(EventDispatcher& eventDispatcher,
-                     PhysicsEngine& physicsEngine,
-                     MaterialManager& materialManager,
-                     TextureManager& textureManager,
-                     FilePaths& filePaths);
+        SceneManager(SystemsRegistry& systemsRegistry, FilePaths& filePaths);
 
         void init(const std::vector<std::string>& scenes);
 

@@ -10,22 +10,22 @@
 #include <iostream>
 
 namespace TechEngine {
-    GameObject::GameObject(std::string name, EventDispatcher& eventDispatcher) : eventDispatcher(eventDispatcher), name(std::move(name)) {
+    GameObject::GameObject(std::string name, SystemsRegistry& systemsRegistry) : systemsRegistry(systemsRegistry), name(std::move(name)) {
         addComponent<TransformComponent>();
-        eventDispatcher.dispatch(new GameObjectCreateEvent(this));
+        systemsRegistry.getSystem<EventDispatcher>().dispatch(new GameObjectCreateEvent(this));
     }
 
-    GameObject::GameObject(std::string name, const std::string& tag, EventDispatcher& eventDispatcher) : eventDispatcher(eventDispatcher), name(std::move(name)), tag(tag) {
+    GameObject::GameObject(std::string name, const std::string& tag, SystemsRegistry& systemsRegistry) : systemsRegistry(systemsRegistry), name(std::move(name)), tag(tag) {
         addComponent<TransformComponent>();
-        eventDispatcher.dispatch(new GameObjectCreateEvent(this));
+        systemsRegistry.getSystem<EventDispatcher>().dispatch(new GameObjectCreateEvent(this));
     }
 
-    GameObject::GameObject(GameObject* gameObject, const std::string& tag, EventDispatcher& eventDispatcher): eventDispatcher(eventDispatcher), tag(tag) {
+    GameObject::GameObject(GameObject* gameObject, const std::string& tag, SystemsRegistry& systemsRegistry): systemsRegistry(systemsRegistry), tag(tag) {
         name = gameObject->name + "(copy)";
         for (auto& element: gameObject->components) {
             components[element.first] = element.second->copy(this, element.second);
         }
-        eventDispatcher.dispatch(new GameObjectCreateEvent(this));
+        systemsRegistry.getSystem<EventDispatcher>().dispatch(new GameObjectCreateEvent(this));
     }
 
     GameObject::~GameObject() {
@@ -33,7 +33,7 @@ namespace TechEngine {
             parent->removeChild(tag);
         }
         deleteChildren();
-        eventDispatcher.dispatch(new GameObjectDestroyEvent(tag));
+        systemsRegistry.getSystem<EventDispatcher>().dispatch(new GameObjectDestroyEvent(tag));
     }
 
     void GameObject::fixUpdate() {
@@ -151,7 +151,7 @@ namespace TechEngine {
         for (int i = 0; i < componentsSize; i++) {
             std::string componentName;
             stream->readString(componentName);
-            Component* component = ComponentFactory::createComponent(componentName, &gameObject, gameObject.eventDispatcher);
+            Component* component = ComponentFactory::createComponent(componentName, &gameObject, gameObject.systemsRegistry);
             component->Deserialize(stream);
             gameObject.components[componentName] = component;
         }

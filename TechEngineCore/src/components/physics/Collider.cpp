@@ -5,11 +5,11 @@
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    Collider::Collider(GameObject* gameObject, EventDispatcher& eventDispatcher, std::string name) : Component(gameObject, eventDispatcher, name) {
+    Collider::Collider(GameObject* gameObject, SystemsRegistry& systemsRegistry, std::string name) : Component(gameObject, systemsRegistry, name) {
     }
 
     Collider::~Collider() {
-        eventDispatcher.dispatch(new RemoveColliderEvent(gameObject->getTag(), this));
+        systemsRegistry.getSystem<EventDispatcher>().dispatch(new RemoveColliderEvent(gameObject->getTag(), this));
     }
 
     void Collider::setOffset(glm::vec3 offset) {

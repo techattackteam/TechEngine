@@ -1,10 +1,10 @@
 #pragma once
 
-#include <imgui.h>
-#include "imgui_stdlib.h"
+#include <system/SystemsRegistry.hpp>
 #include "eventSystem/EventDispatcher.hpp"
 #include "core/Key.hpp"
 #include "glm/vec2.hpp"
+#include <imgui.h>
 
 namespace TechEngine {
     class Panel {
@@ -14,9 +14,11 @@ namespace TechEngine {
         bool m_open = true;
 
     public:
-        explicit Panel(const std::string& name, EventDispatcher& eventDispatcher);
+        explicit Panel(const std::string& name);
 
         virtual ~Panel();
+
+        virtual void init() = 0;
 
         void update(ImGuiStyleVar ImGuiStyleVar_WindowPadding = -1, const ImVec2& valImVec2 = {0, 0}, ImGuiWindowFlags flags = 0, bool closable = false);
 

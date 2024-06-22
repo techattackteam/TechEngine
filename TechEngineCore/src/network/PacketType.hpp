@@ -3,11 +3,12 @@
 #include <cstdint>
 #include <string_view>
 #include <vector>
+#include "core/CoreExportDll.hpp"
 
 namespace TechEngine {
     inline std::vector<std::string> customPacketTypes;
 
-    bool checkCustomPacketType(const std::string& type);
+    bool CORE_DLL checkCustomPacketType(const std::string& type);
 
     enum class PacketType : uint16_t {
         //

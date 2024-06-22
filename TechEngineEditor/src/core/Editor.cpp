@@ -3,7 +3,6 @@
 #include "events/input/KeyPressedEvent.hpp"
 #include "events/input/KeyReleasedEvent.hpp"
 #include "events/input/MouseScrollEvent.hpp"
-#include "external/EntryPoint.hpp"
 #include "script/ScriptRegister.hpp"
 
 #include "yaml-cpp/yaml.h"
@@ -14,59 +13,60 @@
 
 namespace TechEngine {
     Editor::Editor() : AppCore(),
-                       window(eventDispatcher, "TechEngineEditor", 1600, 900),
+                       window(systemsRegistry, "TechEngineEditor", 1600, 900),
                        client(window),
                        server(),
-                       projectManager(client, server),
-                       panelsManager(client, server, eventDispatcher, projectManager) {
-        Logger::init("TechEngineEditor");
+                       panelsManager(client, server, systemsRegistry) {
+        systemsRegistry.registerSystem<ProjectManager>(client, server);
+
+        systemsRegistry.getSystem<Logger>().init("TechEngineEditor");
         editorSettings = FileSystem::rootPath.string() + "/EditorSettings.TESettings";
-        projectManager.init();
+        systemsRegistry.getSystem<ProjectManager>().init();
         loadEditorSettings();
         panelsManager.init();
-        client.renderer.init(client.filePaths);
+        client.systemsRegistry.getSystem<Renderer>().init(client.filePaths);
         server.init();
 
-        eventDispatcher.subscribe(KeyPressedEvent::eventType, [this](Event* event) {
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(KeyPressedEvent::eventType, [this](Event* event) {
             Key key = ((KeyPressedEvent*)event)->getKey();
-            client.eventDispatcher.dispatch(new KeyPressedEvent(key));
+            //client.eventDispatcher->dispatch(new KeyPressedEvent(key));
         });
 
-        eventDispatcher.subscribe(KeyReleasedEvent::eventType, [this](Event* event) {
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(KeyReleasedEvent::eventType, [this](Event* event) {
             Key key = ((KeyReleasedEvent*)event)->getKey();
-            client.eventDispatcher.dispatch(new KeyReleasedEvent(key));
+            //client.systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyReleasedEvent(key));
         });
 
-        eventDispatcher.subscribe(KeyHoldEvent::eventType, [this](Event* event) {
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(KeyHoldEvent::eventType, [this](Event* event) {
             Key key = ((KeyHoldEvent*)event)->getKey();
-            client.eventDispatcher.dispatch(new KeyHoldEvent(key));
+            //client.systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyHoldEvent(key));
         });
 
-        eventDispatcher.subscribe(MouseScrollEvent::eventType, [this](Event* event) {
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(MouseScrollEvent::eventType, [this](Event* event) {
             float xOffset = ((MouseScrollEvent*)event)->getXOffset();
             float yOffset = ((MouseScrollEvent*)event)->getYOffset();
-            client.eventDispatcher.dispatch(new MouseScrollEvent(xOffset, yOffset));
+            //client.systemsRegistry.getSystem<EventDispatcher>().dispatch(new MouseScrollEvent(xOffset, yOffset));
         });
 
-        eventDispatcher.subscribe(MouseMoveEvent::eventType, [this](Event* event) {
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(MouseMoveEvent::eventType, [this](Event* event) {
             glm::vec2 fromPos = ((MouseMoveEvent*)event)->getFromPosition();
             glm::vec2 toPos = ((MouseMoveEvent*)event)->getToPosition();
-            client.eventDispatcher.dispatch(new MouseMoveEvent(fromPos, toPos));
+            //client.systemsRegistry.getSystem<EventDispatcher>().dispatch(new MouseMoveEvent(fromPos, toPos));
         });
     }
 
     void Editor::onUpdate() {
-        eventDispatcher.syncEventManager.execute();
+        systemsRegistry.getSystem<EventDispatcher>().syncEventManager.execute();
         client.onUpdate();
         server.onUpdate();
         panelsManager.update();
     }
 
     void Editor::onFixedUpdate() {
-        eventDispatcher.fixedSyncEventManager.execute();
+        systemsRegistry.getSystem<EventDispatcher>().fixedSyncEventManager.execute();
         client.onFixedUpdate();
         server.onFixedUpdate();
-        physicsEngine.onFixedUpdate();
+        systemsRegistry.getSystem<PhysicsEngine>().onFixedUpdate();
     }
 
     void Editor::loadEditorSettings() {
@@ -77,7 +77,7 @@ namespace TechEngine {
                 data = YAML::LoadFile(editorSettings);
                 lastProjectLoaded = data["Last project loaded"].as<std::string>();
                 if (std::filesystem::exists(lastProjectLoaded)) {
-                    projectManager.loadEditorProject(lastProjectLoaded);
+                    systemsRegistry.getSystem<ProjectManager>().loadEditorProject(lastProjectLoaded);
                 } else {
                     TE_LOGGER_INFO("Unable to load {0}.\n Creating new project.", lastProjectLoaded);
                     createNewProject();
@@ -91,7 +91,7 @@ namespace TechEngine {
     }
 
     void Editor::createNewProject() {
-        projectManager.createNewProject("DefaultProject");
+        systemsRegistry.getSystem<ProjectManager>().createNewProject("DefaultProject");
         YAML::Emitter out;
         out << YAML::BeginMap;
         out << YAML::Key << "Last project loaded" << YAML::Value << FileSystem::rootPath.string() + "\\DefaultProject";
@@ -99,10 +99,6 @@ namespace TechEngine {
         out << YAML::EndMap;
         std::ofstream fout(editorSettings);
         fout << out.c_str();
-        projectManager.loadEditorProject(FileSystem::rootPath.string() + "\\DefaultProject");
+        systemsRegistry.getSystem<ProjectManager>().loadEditorProject(FileSystem::rootPath.string() + "\\DefaultProject");
     }
-}
-
-TechEngine::AppCore* TechEngine::createApp() {
-    return new TechEngine::Editor();
 }

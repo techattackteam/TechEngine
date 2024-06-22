@@ -6,12 +6,9 @@
 #include "PanelsManager.hpp"
 #include "components/physics/SphereCollider.hpp"
 #include "mesh/CubeMesh.hpp"
-#include "mesh/SphereMesh.hpp"
-#include "mesh/CylinderMesh.hpp"
 #include "components/physics/CylinderCollider.hpp"
 #include "components/physics/RigidBody.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
-#include "material/MaterialManager.hpp"
 #include "core/Logger.hpp"
 #include <windows.h>
 
@@ -19,13 +16,14 @@
 #include "mesh/MeshManager.hpp"
 
 namespace TechEngine {
-    InspectorPanel::InspectorPanel(const std::string& name, EventDispatcher& eventDispatcher,
-                                   std::vector<GameObject*>& selectedGameObjects,
-                                   MaterialManager& materialManager,
-                                   PhysicsEngine& physicsEngine) : materialManager(materialManager),
-                                                                   physicsEngine(physicsEngine),
-                                                                   selectedGameObjects(selectedGameObjects),
-                                                                   Panel(name, eventDispatcher) {
+    InspectorPanel::InspectorPanel(const std::string& name,
+                                   SystemsRegistry& appRegistry,
+                                   std::vector<GameObject*>& selectedGameObjects) : appRegistry(appRegistry),
+                                                                                    selectedGameObjects(selectedGameObjects),
+                                                                                    Panel(name) {
+    }
+
+    void InspectorPanel::init() {
     }
 
     void InspectorPanel::onUpdate() {
@@ -46,26 +44,26 @@ namespace TechEngine {
                     if (ImGui::MenuItem("Rigid Body")) {
                         addComponent<RigidBody>();
                         for (GameObject* gameObject: selectedGameObjects) {
-                            physicsEngine.addRigidBody(gameObject->getComponent<RigidBody>());
+                            appRegistry.getSystem<PhysicsEngine>().addRigidBody(gameObject->getComponent<RigidBody>());
                         }
                     }
                     if (ImGui::BeginMenu("Colliders")) {
                         if (ImGui::MenuItem("Box Collider")) {
                             addComponent<BoxColliderComponent>();
                             for (GameObject* gameObject: selectedGameObjects) {
-                                physicsEngine.addCollider(gameObject->getComponent<BoxColliderComponent>());
+                                appRegistry.getSystem<PhysicsEngine>().addCollider(gameObject->getComponent<BoxColliderComponent>());
                             }
                         }
                         if (ImGui::MenuItem("Sphere Collider")) {
                             addComponent<SphereCollider>();
                             for (GameObject* gameObject: selectedGameObjects) {
-                                physicsEngine.addCollider(gameObject->getComponent<SphereCollider>());
+                                appRegistry.getSystem<PhysicsEngine>().addCollider(gameObject->getComponent<SphereCollider>());
                             }
                         }
                         if (ImGui::MenuItem("Cylinder Collider")) {
                             addComponent<CylinderCollider>();
                             for (GameObject* gameObject: selectedGameObjects) {
-                                physicsEngine.addCollider(gameObject->getComponent<CylinderCollider>());
+                                appRegistry.getSystem<PhysicsEngine>().addCollider(gameObject->getComponent<CylinderCollider>());
                             }
                         }
                         ImGui::EndMenu();
@@ -154,13 +152,13 @@ namespace TechEngine {
             }
 
             if (update && component->getGameObject()->template hasComponent<RigidBody>()) {
-                physicsEngine.addRigidBody(component->getGameObject()->template getComponent<RigidBody>());
+                appRegistry.getSystem<PhysicsEngine>().addRigidBody(component->getGameObject()->template getComponent<RigidBody>());
             } else if (update && component->getGameObject()->template hasComponent<BoxColliderComponent>()) {
-                physicsEngine.addCollider(component->getGameObject()->template getComponent<BoxColliderComponent>());
+                appRegistry.getSystem<PhysicsEngine>().addCollider(component->getGameObject()->template getComponent<BoxColliderComponent>());
             } else if (update && component->getGameObject()->template hasComponent<SphereCollider>()) {
-                physicsEngine.addCollider(component->getGameObject()->template getComponent<SphereCollider>());
+                appRegistry.getSystem<PhysicsEngine>().addCollider(component->getGameObject()->template getComponent<SphereCollider>());
             } else if (update && component->getGameObject()->template hasComponent<CylinderCollider>()) {
-                physicsEngine.addCollider(component->getGameObject()->template getComponent<CylinderCollider>());
+                appRegistry.getSystem<PhysicsEngine>().addCollider(component->getGameObject()->template getComponent<CylinderCollider>());
             }
         });
         drawComponent<CameraComponent>(gameObject, "Camera", [](auto& component) {
@@ -241,7 +239,7 @@ namespace TechEngine {
                     ImGui::EndCombo();
                 }
                 if (current_item != mesh.getName()) {
-                    meshRenderer->changeMesh(MeshManager::getMesh(current_item));
+                    meshRenderer->changeMesh(appRegistry.getSystem<MeshManager>().getMesh(current_item));
                 }
             }
             static bool open = false;
@@ -265,7 +263,7 @@ namespace TechEngine {
                     std::string filepath = ofn.lpstrFile;
                     std::string filename = filepath.substr(filepath.find_last_of("/\\") + 1);
                     std::string materialName = filename.substr(0, filename.find_last_of("."));
-                    meshRenderer->changeMaterial(materialManager.getMaterial(materialName));
+                    meshRenderer->changeMaterial(appRegistry.getSystem<MaterialManager>().getMaterial(materialName));
                 }
             };
             if (ImGui::BeginDragDropTarget()) {
@@ -275,7 +273,7 @@ namespace TechEngine {
                     if (extension != ".mat")
                         return;
                     std::string materialName = filename.substr(0, filename.find_last_of("."));
-                    meshRenderer->changeMaterial(materialManager.getMaterial(materialName));
+                    meshRenderer->changeMaterial(appRegistry.getSystem<MaterialManager>().getMaterial(materialName));
                     return;
                 }
                 ImGui::EndDragDropTarget();
@@ -551,7 +549,7 @@ namespace TechEngine {
                     }
                     if (current_item != commonMeshName) {
                         for (GameObject* gameObject: selectedGameObjects) {
-                            gameObject->getComponent<MeshRendererComponent>()->changeMesh(MeshManager::getMesh(current_item));
+                            gameObject->getComponent<MeshRendererComponent>()->changeMesh(appRegistry.getSystem<MeshManager>().getMesh(current_item));
                         }
                     }
                 }
@@ -577,7 +575,7 @@ namespace TechEngine {
                         std::string filename = filepath.substr(filepath.find_last_of("/\\") + 1);
                         std::string materialName = filename.substr(0, filename.find_last_of("."));
                         for (GameObject* gameObject: selectedGameObjects) {
-                            gameObject->getComponent<MeshRendererComponent>()->changeMaterial(materialManager.getMaterial(materialName));
+                            gameObject->getComponent<MeshRendererComponent>()->changeMaterial(appRegistry.getSystem<MaterialManager>().getMaterial(materialName));
                         }
                     }
                 };
@@ -589,7 +587,7 @@ namespace TechEngine {
                             return;
                         std::string materialName = filename.substr(0, filename.find_last_of("."));
                         for (GameObject* gameObject: selectedGameObjects) {
-                            gameObject->getComponent<MeshRendererComponent>()->changeMaterial(materialManager.getMaterial(materialName));
+                            gameObject->getComponent<MeshRendererComponent>()->changeMaterial(appRegistry.getSystem<MaterialManager>().getMaterial(materialName));
                         }
                         return;
                     }

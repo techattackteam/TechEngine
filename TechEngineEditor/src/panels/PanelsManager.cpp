@@ -19,20 +19,23 @@
 namespace TechEngine {
     PanelsManager::PanelsManager(Client& client,
                                  Server& server,
-                                 EventDispatcher& eventDispatcher,
-                                 ProjectManager& projectManager) : client(client),
-                                                                   server(server),
-                                                                   eventDispatcher(eventDispatcher),
-                                                                   projectManager(projectManager),
-                                                                   contentBrowser(client, server, *this, projectManager),
-                                                                   exportSettingsPanel(eventDispatcher, *this, projectManager, client.sceneManager, client.renderer.getShadersManager()),
-                                                                   clientPanel(client, eventDispatcher, *this, projectManager),
-                                                                   serverPanel(*this, eventDispatcher, server, projectManager, client.renderer),
-                                                                   materialEditor(client, server) {
+                                 SystemsRegistry& systemsRegistry) : client(client),
+                                                                     server(server),
+                                                                     systemsRegistry(systemsRegistry),
+                                                                     contentBrowser(client, server, systemsRegistry, *this),
+                                                                     exportSettingsPanel(systemsRegistry, client, server, *this),
+                                                                     clientPanel(client, systemsRegistry, client.systemsRegistry, *this),
+                                                                     serverPanel(server, systemsRegistry, server.systemsRegistry, *this),
+                                                                     materialEditor(client, server) {
     }
 
     void PanelsManager::init() {
-        eventDispatcher.subscribe(WindowCloseEvent::eventType, [this](TechEngine::Event* event) {
+        clientPanel.init();
+        serverPanel.init();
+        contentBrowser.init();
+        exportSettingsPanel.init();
+        materialEditor.init();
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(WindowCloseEvent::eventType, [this](TechEngine::Event* event) {
             if (clientPanel.isRunning()) {
                 clientPanel.stopRunningScene();
             }
@@ -41,7 +44,7 @@ namespace TechEngine {
             }
             closeAllProcessEvents();
         });
-        eventDispatcher.subscribe(RegisterCustomPanel::eventType, [this](TechEngine::Event* event) {
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(RegisterCustomPanel::eventType, [this](TechEngine::Event* event) {
             registerCustomPanel((RegisterCustomPanel*)event);
         });
 
@@ -49,15 +52,15 @@ namespace TechEngine {
             clientPanel.sceneHierarchyPanel.deselectGO(sceneManager.getScene().getGameObjectByTag(((GameObjectDestroyEvent*)event)->getGameObjectTag()));
         });*/
 
-        eventDispatcher.subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event* event) {
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(KeyPressedEvent::eventType, [this](TechEngine::Event* event) {
             OnKeyPressedEvent(((KeyPressedEvent*)event)->getKey());
         });
 
-        eventDispatcher.subscribe(KeyReleasedEvent::eventType, [this](Event* event) {
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(KeyReleasedEvent::eventType, [this](Event* event) {
             OnKeyReleasedEvent(((KeyReleasedEvent*)event)->getKey());
         });
 
-        eventDispatcher.subscribe(OnProcessCloseEvent::eventType, [this](Event* event) {
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(OnProcessCloseEvent::eventType, [this](Event* event) {
             onCloseProcessEvent(((OnProcessCloseEvent*)event)->getProcessId());
         });
 
@@ -215,7 +218,7 @@ namespace TechEngine {
             if (ImGui::MenuItem("Open Project", "Ctrl+O")) {
             }
             if (ImGui::MenuItem("Save Project", "Ctrl+S")) {
-                projectManager.saveProject();
+                systemsRegistry.getSystem<ProjectManager>().saveProject();
             }
 
             if (ImGui::MenuItem("Export")) {
@@ -224,7 +227,7 @@ namespace TechEngine {
                 }
             }
             if (ImGui::MenuItem("Exit")) {
-                client.eventDispatcher.dispatch(new AppCloseRequestEvent());
+                client.systemsRegistry.getSystem<EventDispatcher>().dispatch(new AppCloseRequestEvent());
             }
             ImGui::EndMenu();
         }
@@ -325,6 +328,7 @@ namespace TechEngine {
 
 
     void PanelsManager::compileUserScripts(CompileMode compileMode, CompileProject compileProject) {
+        ProjectManager& projectManager = systemsRegistry.getSystem<ProjectManager>();
         std::string cmakeBuildPath = projectManager.getCmakeBuildPath().string();
         std::string cmakeListPath = projectManager.getCmakeListPath().string();
         std::string techEngineLibPath = compileProject == CompileProject::PROJECT_CLIENT ? projectManager.getTechEngineClientLibPath().string() : projectManager.getTechEngineServerLibPath().string();
@@ -363,6 +367,7 @@ namespace TechEngine {
     }
 
     void PanelsManager::runServerProcess() {
+        ProjectManager& projectManager = systemsRegistry.getSystem<ProjectManager>();
 #ifdef TE_DEBUG
         exportSettingsPanel.exportServerProject(DEBUG);
 #else
@@ -406,6 +411,7 @@ namespace TechEngine {
     }
 
     void PanelsManager::runClientProcess() {
+        ProjectManager& projectManager = systemsRegistry.getSystem<ProjectManager>();
 #ifdef TE_DEBUG
         exportSettingsPanel.exportGameProject(DEBUG);
 #else
@@ -475,7 +481,7 @@ namespace TechEngine {
         if (key.getKeyCode() == LEFT_CTRL || key.getKeyCode() == RIGHT_CTRL) {
             isCtrlPressed = true;
         } else if (isCtrlPressed && key.getKeyCode() == S) {
-            projectManager.saveProject();
+            systemsRegistry.getSystem<ProjectManager>().saveProject();
         }
     }
 

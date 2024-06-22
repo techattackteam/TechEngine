@@ -5,13 +5,19 @@
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    CylinderCollider::CylinderCollider(GameObject* gameObject, EventDispatcher& eventDispatcher) : Collider(gameObject, eventDispatcher, "CylinderCollider") {
+    CylinderCollider::CylinderCollider(GameObject* gameObject, SystemsRegistry& systemsRegistry) : Collider(gameObject, systemsRegistry, "CylinderCollider") {
         this->gameObject = gameObject;
         this->radius = 0.5f;
         this->height = 1.0f;
     }
 
-    CylinderCollider::CylinderCollider(GameObject* gameObject, EventDispatcher& eventDispatcher, glm::vec3 offset, float radius, float height) : Collider(gameObject, eventDispatcher, "CylinderCollider"), radius(radius), height(height) {
+    CylinderCollider::CylinderCollider(GameObject* gameObject,
+                                       SystemsRegistry& systemsRegistry,
+                                       glm::vec3 offset,
+                                       float radius,
+                                       float height) : Collider(gameObject, systemsRegistry, "CylinderCollider"),
+                                                       radius(radius),
+                                                       height(height) {
         this->offset = offset;
     }
 
@@ -22,7 +28,7 @@ namespace TechEngine {
 
     void CylinderCollider::setRadius(float radius) {
         this->radius = radius;
-        eventDispatcher.dispatch(new AddColliderEvent(this));
+        systemsRegistry.getSystem<EventDispatcher>().dispatch(new AddColliderEvent(this));
     }
 
     float CylinderCollider::getHeight() const {
@@ -31,12 +37,12 @@ namespace TechEngine {
 
     void CylinderCollider::setHeight(float height) {
         this->height = height;
-        eventDispatcher.dispatch(new AddColliderEvent(this));
+        systemsRegistry.getSystem<EventDispatcher>().dispatch(new AddColliderEvent(this));
     }
 
     Component* CylinderCollider::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
         CylinderCollider* collider = (CylinderCollider*)componentToCopy;
-        auto* component = new CylinderCollider(gameObjectToAttach, eventDispatcher, collider->offset, collider->radius, collider->height);
+        auto* component = new CylinderCollider(gameObjectToAttach, systemsRegistry, collider->offset, collider->radius, collider->height);
         return component;
     }
 }

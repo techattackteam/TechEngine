@@ -3,8 +3,8 @@
 #include "components/TransformComponent.hpp"
 
 namespace TechEngine {
-    DirectionalLightComponent::DirectionalLightComponent(GameObject* gameObject, EventDispatcher& eventDispatcher) : color(glm::vec4(1, 1, 1, 1)),
-                                                                                                                     Component(gameObject, eventDispatcher, "DirectionalLight") {
+    DirectionalLightComponent::DirectionalLightComponent(GameObject* gameObject, SystemsRegistry& systemsRegistry) : color(glm::vec4(1, 1, 1, 1)),
+                                                                                                                     Component(gameObject, systemsRegistry, "DirectionalLight") {
     }
 
     void DirectionalLightComponent::fixedUpdate() {
@@ -24,7 +24,7 @@ namespace TechEngine {
     }
 
     Component* DirectionalLightComponent::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
-        auto* component = new DirectionalLightComponent(gameObjectToAttach, eventDispatcher);
+        auto* component = new DirectionalLightComponent(gameObjectToAttach, systemsRegistry);
         component->color = color;
         component->viewMatrix = viewMatrix;
         component->projectionMatrix = projectionMatrix;

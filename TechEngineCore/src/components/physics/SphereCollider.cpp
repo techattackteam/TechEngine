@@ -5,12 +5,12 @@
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
-    SphereCollider::SphereCollider(GameObject* gameObject, EventDispatcher& eventDispatcher) : Collider(gameObject, eventDispatcher, "SphereCollider") {
+    SphereCollider::SphereCollider(GameObject* gameObject, SystemsRegistry& systemsRegistry) : Collider(gameObject, systemsRegistry, "SphereCollider") {
         offset = glm::vec3(0, 0, 0);
         radius = 0.5f;
     }
 
-    SphereCollider::SphereCollider(GameObject* gameObject, EventDispatcher& eventDispatcher, glm::vec3 offset, float radius) : Collider(gameObject, eventDispatcher, "SphereCollider"), radius(radius) {
+    SphereCollider::SphereCollider(GameObject* gameObject, SystemsRegistry& systemsRegistry, glm::vec3 offset, float radius) : Collider(gameObject, systemsRegistry, "SphereCollider"), radius(radius) {
         this->offset = offset;
     }
 
@@ -20,12 +20,12 @@ namespace TechEngine {
 
     void SphereCollider::setRadius(float radius) {
         this->radius = radius;
-        eventDispatcher.dispatch(new AddColliderEvent(this));
+        systemsRegistry.getSystem<EventDispatcher>().dispatch(new AddColliderEvent(this));
     }
 
     Component* SphereCollider::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
         SphereCollider* collider = (SphereCollider*)componentToCopy;
-        auto* component = new SphereCollider(gameObjectToAttach, eventDispatcher, collider->offset, collider->radius);
+        auto* component = new SphereCollider(gameObjectToAttach, systemsRegistry, collider->offset, collider->radius);
         return component;
     }
 }

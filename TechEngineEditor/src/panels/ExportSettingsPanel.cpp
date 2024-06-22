@@ -1,28 +1,26 @@
-#include <imgui.h>
 #include "ExportSettingsPanel.hpp"
-#include "PanelsManager.hpp"
-#include <filesystem>
-#include <yaml-cpp/emitter.h>
-#include <iostream>
-#include <fstream>
-
 #include "components/network/NetworkSync.hpp"
 #include "core/FileSystem.hpp"
 #include "core/Logger.hpp"
+#include "PanelsManager.hpp"
+#include <imgui.h>
+#include <filesystem>
+#include <yaml-cpp/emitter.h>
+#include <fstream>
 
 namespace TechEngine {
-    ExportSettingsPanel::ExportSettingsPanel(EventDispatcher& eventDispatcher, PanelsManager& panelsManager,
-                                             ProjectManager& projectManager,
-                                             SceneManager& sceneManager,
-                                             ShadersManager& shadersManager) : panelsManager(panelsManager),
-                                                                               projectManager(projectManager),
-                                                                               sceneManager(sceneManager),
-                                                                               shadersManager(shadersManager),
-                                                                               Panel("ExportSettingsPanel", eventDispatcher) {
+    ExportSettingsPanel::ExportSettingsPanel(SystemsRegistry& editorRegistry,
+                                             Client& client,
+                                             Server& server,
+                                             PanelsManager& panelsManager) : editorRegistry(editorRegistry), panelsManager(panelsManager), client(client), server(server),
+                                                                             Panel("ExportSettingsPanel") {
         m_open = false;
     }
 
     ExportSettingsPanel::~ExportSettingsPanel() {
+    }
+
+    void ExportSettingsPanel::init() {
     }
 
     void ExportSettingsPanel::onUpdate() {
@@ -45,6 +43,7 @@ namespace TechEngine {
     }
 
     void ExportSettingsPanel::exportGameProject(CompileMode compileMode) {
+        ProjectManager& projectManager = editorRegistry.getSystem<ProjectManager>();
         try {
             std::filesystem::path exportPath;
             if (compileMode == RELEASE) { // Happens when building the game to build path. If in debug engines is in debug mode
@@ -68,7 +67,7 @@ namespace TechEngine {
             std::filesystem::create_directory(exportPath.string() + "\\Resources");
             std::filesystem::create_directory(exportPath.string() + "\\Resources\\Common");
             std::filesystem::create_directory(exportPath.string() + "\\Resources\\Server");
-            sceneManager.saveCurrentScene();
+            client.systemsRegistry.getSystem<SceneManager>().saveCurrentScene();
             std::filesystem::copy_options copyOptions = std::filesystem::copy_options::recursive |
                                                         std::filesystem::copy_options::overwrite_existing;
 
@@ -93,6 +92,7 @@ namespace TechEngine {
     }
 
     void ExportSettingsPanel::exportServerProject(CompileMode compileMode) {
+        ProjectManager& projectManager = editorRegistry.getSystem<ProjectManager>();
         try {
             std::filesystem::path exportPath;
             if (compileMode == RELEASE) { // Happens when building the game to build path. If in debug engines is in debug mode
@@ -118,8 +118,8 @@ namespace TechEngine {
             std::filesystem::create_directory(exportPath.string() + "\\Resources");
             std::filesystem::create_directory(exportPath.string() + "\\Resources\\Common");
             std::filesystem::create_directory(exportPath.string() + "\\Resources\\Server");
-            sceneManager.saveCurrentScene();
-            for (auto gameObject: sceneManager.getScene().getGameObjects()) {
+            server.systemsRegistry.getSystem<SceneManager>().saveCurrentScene();
+            for (auto gameObject: server.systemsRegistry.getSystem<SceneManager>().getScene().getGameObjects()) {
                 if (!gameObject->hasComponent<NetworkSync>()) {
                     TE_LOGGER_WARN("GameObject {0} doesn't have NetworkSync component. It wont sync.", gameObject->getName());
                 }
@@ -145,25 +145,5 @@ namespace TechEngine {
             TE_LOGGER_ERROR("Error while exporting project: {0}", e.what());
             return;
         }
-    }
-
-    void ExportSettingsPanel::serializeEngineSettings(const std::filesystem::path& exportPath) {
-        YAML::Emitter out;
-        out << YAML::BeginMap;
-        out << YAML::Key << "Project Name" << projectManager.getProjectName();
-
-        out << YAML::Key << "Window settings";
-        out << YAML::BeginMap;
-        out << YAML::Key << "name" << YAML::Value << projectManager.getProjectName();
-        out << YAML::Key << "width" << YAML::Value << width;
-        out << YAML::Key << "height" << YAML::Value << height;
-        out << YAML::EndMap;
-
-        out << YAML::Key << "Default Scene" << YAML::Value << sceneManager.getActiveSceneName();
-        out << YAML::EndSeq;
-        out << YAML::EndMap;
-
-        std::ofstream fout(exportPath);
-        fout << out.c_str();
     }
 }

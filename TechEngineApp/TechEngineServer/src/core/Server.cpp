@@ -1,21 +1,23 @@
 #include "Server.hpp"
 #include "components/render/MeshRendererComponent.hpp"
+#include "core/Logger.hpp"
+#include "core/Timer.hpp"
 #include "events/connections/OnClientConnected.hpp"
 #include "events/connections/OnClientConnectionRequest.hpp"
 #include "events/connections/OnClientDisconnected.hpp"
 #include "events/network/CustomPacketReceived.hpp"
-#include "external/EntryPoint.hpp"
 #include "network/PacketType.hpp"
 #include "network/SceneSynchronizer.hpp"
 #include "serialization/BufferStream.hpp"
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
-    Server::Server() : m_Communicator(*this), m_serverAPI(&sceneManager, &materialManager, &eventDispatcher, this, &m_Communicator) {
-        Logger::init("TechEngineServer");
+    Server::Server() : m_Communicator(*this)/*, m_serverAPI(&sceneManager, &materialManager, eventDispatcher, this, &m_Communicator)*/ {
+        init();
+        systemsRegistry.getSystem<Logger>().init("TechEngineServer");
         instance = this;
-        physicsEngine.init();
-        ScriptRegister::getInstance()->init(&scriptEngine);
+        systemsRegistry.getSystem<PhysicsEngine>().init();
+        ScriptRegister::getInstance()->init(&systemsRegistry.getSystem<ScriptEngine>());
     }
 
     Server::~Server() {
@@ -35,6 +37,7 @@ namespace TechEngine {
     }
 
     void Server::init() {
+        AppCore::init();
         running = true;
         m_port = 25565;
         SteamDatagramErrMsg errMsg;
@@ -69,18 +72,18 @@ namespace TechEngine {
     }
 
     void Server::onUpdate() {
-        timer.updateInterpolation();
-        timer.update();
-        timer.updateFPS();
+        systemsRegistry.getSystem<Timer>().updateInterpolation();
+        systemsRegistry.getSystem<Timer>().update();
+        systemsRegistry.getSystem<Timer>().updateFPS();
     }
 
     void Server::onFixedUpdate() {
-        eventDispatcher.fixedSyncEventManager.execute();
-        eventDispatcher.syncEventManager.execute();
-        scriptEngine.onFixedUpdate();
-        scriptEngine.onUpdate();
-        sceneManager.getScene().fixedUpdate();
-        sceneManager.getScene().update();
+        systemsRegistry.getSystem<EventDispatcher>().fixedSyncEventManager.execute();
+        systemsRegistry.getSystem<EventDispatcher>().syncEventManager.execute();
+        systemsRegistry.getSystem<ScriptEngine>().onFixedUpdate();
+        systemsRegistry.getSystem<ScriptEngine>().onUpdate();
+        systemsRegistry.getSystem<SceneManager>().getScene().fixedUpdate();
+        systemsRegistry.getSystem<SceneManager>().getScene().update();
         PollIncomingMessages();
         m_interface->RunCallbacks();
         syncGameObjects();
@@ -114,7 +117,7 @@ namespace TechEngine {
     }
 
     void Server::syncGameObjects() {
-        for (auto& gameObject: sceneManager.getScene().getGameObjects()) {
+        for (auto& gameObject: systemsRegistry.getSystem<SceneManager>().getScene().getGameObjects()) {
             if (gameObject->hasComponent<NetworkSync>()) {
                 Buffer buffer = SceneSynchronizer::serializeGameObject(*gameObject);
                 m_Communicator.sendBufferToAllClients(buffer, 0, true);
@@ -142,14 +145,14 @@ namespace TechEngine {
                 break;
             }
             case PacketType::ClientConnectionRequest: {
-                eventDispatcher.dispatch(new OnClientConnectionRequest());
+                systemsRegistry.getSystem<EventDispatcher>().dispatch(new OnClientConnectionRequest());
                 break;
             }
             case PacketType::CustomPacket: {
                 std::string customPacket;
                 stream.readString(customPacket);
                 if (checkCustomPacketType(customPacket)) {
-                    eventDispatcher.dispatch(new CustomPacketReceived(customPacket));
+                    systemsRegistry.getSystem<EventDispatcher>().dispatch(new CustomPacketReceived(customPacket));
                 }
                 break;
             }
@@ -160,7 +163,7 @@ namespace TechEngine {
 
     void Server::onClientConnected(const ClientInfo& clientInfo) {
         m_Communicator.syncGameState(clientInfo);
-        eventDispatcher.dispatch(new OnClientConnected(clientInfo.ID));
+        systemsRegistry.getSystem<EventDispatcher>().dispatch(new OnClientConnected(clientInfo.ID));
     }
 
     void Server::connectionStatusChangedCallback(SteamNetConnectionStatusChangedCallback_t* info) {
@@ -199,7 +202,7 @@ namespace TechEngine {
                 // so we just pass 0s.
                 TE_LOGGER_INFO("Client disconnected: {0}", status->m_info.m_szEndDebug);
                 m_interface->CloseConnection(status->m_hConn, 0, nullptr, false);
-                eventDispatcher.dispatch(new OnClientDisconnected());
+                systemsRegistry.getSystem<EventDispatcher>().dispatch(new OnClientDisconnected());
                 break;
             }
 
@@ -253,8 +256,4 @@ namespace TechEngine {
     void Server::kickClient(ClientID clientID) {
         m_interface->CloseConnection(clientID, 0, "Kicked by host", false);
     }
-}
-
-TechEngine::AppCore* TechEngine::createApp() {
-    return nullptr;
 }
