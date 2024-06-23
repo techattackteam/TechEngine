@@ -77,7 +77,7 @@ namespace TechEngine {
         }
 
         ImGuizmo::SetImGuiContext(context);
-        ImGuizmo::SetOrthographic(true);
+        ImGuizmo::SetOrthographic(false);
         ImGuizmo::AllowAxisFlip(false);
         ImGuizmo::SetDrawlist();
         auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
@@ -103,15 +103,6 @@ namespace TechEngine {
             selectedGameObjects.front()->getTransform().translateToWorld(translation);
             selectedGameObjects.front()->getTransform().setRotation(glm::degrees(rotation));
             selectedGameObjects.front()->getTransform().setScale(scale);
-            /*if (selectedGameObjects.front()->hasComponent<RigidBody>()) {
-                physicsEngine.addRigidBody(selectedGameObjects.front()->getComponent<RigidBody>());
-            } else if (selectedGameObjects.front()->hasComponent<BoxColliderComponent>()) {
-                physicsEngine.addCollider(selectedGameObjects.front()->getComponent<BoxColliderComponent>());
-            } else if (selectedGameObjects.front()->hasComponent<SphereCollider>()) {
-                physicsEngine.addCollider(selectedGameObjects.front()->getComponent<SphereCollider>());
-            } else if (selectedGameObjects.front()->hasComponent<CylinderCollider>()) {
-                physicsEngine.addCollider(selectedGameObjects.front()->getComponent<CylinderCollider>());
-            }*/
         } else {
             lastUsingID = -1;
         }
