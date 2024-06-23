@@ -1,8 +1,7 @@
 #pragma once
 
+#include "components/render/CameraComponent.hpp"
 #include <imGuizmo.h>
-
-#include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {
     class Guizmo {
