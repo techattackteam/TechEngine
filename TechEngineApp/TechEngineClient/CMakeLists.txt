@@ -49,6 +49,7 @@ set(TECH_ENGINE_CLIENT_API_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/
 set(TECH_ENGINE_CLIENT_API_FILES
         "${PROJECT_SOURCE_DIR}/TechEngineApp/TechEngineClient/src/core/Key.hpp"
         "${PROJECT_SOURCE_DIR}/TechEngineApp/TechEngineClient/src/core/Mouse.hpp"
+        "${PROJECT_SOURCE_DIR}/TechEngineApp/TechEngineClient/src/core/ClientExportDll.hpp"
         "${PROJECT_SOURCE_DIR}/TechEngineApp/TechEngineClient/src/events"
         "${PROJECT_SOURCE_DIR}/TechEngineApp/TechEngineClient/src/scriptingAPI"
 

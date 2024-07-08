@@ -1,10 +1,12 @@
 #pragma once
+
+#include "core/ClientExportDll.hpp"
 #include <string>
 
 namespace TechEngine {
     class NetworkEngine;
 
-    class NetworkAPI {
+    class CLIENT_DLL NetworkAPI {
     private:
         inline static NetworkEngine* networkEngine;
 

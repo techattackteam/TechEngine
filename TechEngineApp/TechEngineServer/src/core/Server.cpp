@@ -12,8 +12,7 @@
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
-    Server::Server() : m_Communicator(*this)/*, m_serverAPI(&sceneManager, &materialManager, eventDispatcher, this, &m_Communicator)*/ {
-        init();
+    Server::Server() : m_Communicator(*this), m_serverAPI(systemsRegistry, this, &m_Communicator) {
         systemsRegistry.getSystem<Logger>().init("TechEngineServer");
         instance = this;
         systemsRegistry.getSystem<PhysicsEngine>().init();
@@ -38,6 +37,7 @@ namespace TechEngine {
 
     void Server::init() {
         AppCore::init();
+        m_serverAPI.init();
         running = true;
         m_port = 25565;
         SteamDatagramErrMsg errMsg;

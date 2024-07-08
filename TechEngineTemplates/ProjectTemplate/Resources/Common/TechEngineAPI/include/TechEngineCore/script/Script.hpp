@@ -1,11 +1,10 @@
 #pragma once
-#include <string>
-#include <filesystem>
 
 #include "script/ScriptRegister.hpp"
 
+
 namespace TechEngine {
-    class Script {
+    class CORE_DLL Script {
     private:
         std::string name;
 

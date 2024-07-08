@@ -2,13 +2,19 @@
 #include "core/Server.hpp"
 
 namespace TechEngine {
-    TechEngineServerAPI::TechEngineServerAPI(SceneManager* sceneManager,
-                                             MaterialManager* materialManager,
-                                             EventDispatcher* eventDispatcher,
+    TechEngineServerAPI::TechEngineServerAPI(SystemsRegistry& systemsRegistry,
                                              Server* server,
-                                             Communicator* communicator) : serverAPI(new ServerAPI(server, communicator)),
-                                                                           TechEngineAPI(sceneManager,
-                                                                                         materialManager,
-                                                                                         eventDispatcher) {
+                                             Communicator* communicator): server(server),
+                                                                          communicator(communicator),
+                                                                          TechEngineAPI(systemsRegistry) {
+    }
+
+    TechEngineServerAPI::~TechEngineServerAPI() {
+        delete serverAPI;
+    }
+
+    void TechEngineServerAPI::init() {
+        TechEngineAPI::init();
+        serverAPI = new ServerAPI(server, communicator);
     }
 }

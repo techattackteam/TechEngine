@@ -3,7 +3,6 @@
 #include "Panel.hpp"
 #include "core/Client.hpp"
 #include "core/Server.hpp"
-#include "mesh/SphereMesh.hpp"
 
 
 namespace TechEngine {
@@ -16,7 +15,7 @@ namespace TechEngine {
         std::string m_filepath;
         uint32_t frameBufferID;
 
-        SphereMesh mesh;
+        Mesh mesh;
         GameObject m_sphere;
         GameObject m_camera;
 

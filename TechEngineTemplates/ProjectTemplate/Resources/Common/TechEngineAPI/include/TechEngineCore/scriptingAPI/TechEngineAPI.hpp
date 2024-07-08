@@ -6,14 +6,17 @@
 
 namespace TechEngine {
     class CORE_DLL TechEngineAPI {
-    private:
+    protected:
         SceneManagerAPI* sceneManagerAPI;
         EventDispatcherAPI* eventDispatcherAPI;
         MaterialManagerAPI* materialManagerAPI;
+        SystemsRegistry& systemsRegistry;
 
     public:
-        TechEngineAPI(SceneManager* sceneManager, MaterialManager* materialManager, EventDispatcher* eventDispatcher);
+        TechEngineAPI(SystemsRegistry& systemsRegistry);
 
-        ~TechEngineAPI();
+        virtual ~TechEngineAPI();
+
+        virtual void init();
     };
 }

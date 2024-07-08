@@ -9,7 +9,7 @@ namespace TechEngine {
 }
 
 namespace TechEngine {
-    class MaterialManagerAPI {
+    class CORE_DLL MaterialManagerAPI {
     private:
         inline static MaterialManager* materialManager = nullptr;
 

@@ -12,7 +12,7 @@ namespace TechEngine {
         inline static bool initialized = false;
 
     public:
-        static void init(std::string name);
+        void init(std::string name);
 
         static std::shared_ptr<spdlog::logger>& getLogger();
     };

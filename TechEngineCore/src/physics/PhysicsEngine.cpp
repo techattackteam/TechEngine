@@ -6,7 +6,7 @@
 #include "components/TransformComponent.hpp"
 #include "components/physics/SphereCollider.hpp"
 #include "components/physics/CylinderCollider.hpp"
-#include "mesh/CylinderMesh.hpp"
+
 #include "components/physics/BoxColliderComponent.hpp"
 #include <typeinfo>
 

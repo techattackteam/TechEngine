@@ -1,19 +1,17 @@
 #pragma once
 
-
+#include "core/ClientExportDll.hpp"
 #include "Window.hpp"
 #include "core/AppCore.hpp"
 #include "events/window/WindowCloseEvent.hpp"
-#include "network/NetworkEngine.hpp"
 #include "scriptingAPI/TechEngineAPIClient.hpp"
-#include "core/ClientExportDll.hpp"
 
 namespace TechEngine {
     class CLIENT_DLL Client : public AppCore {
     public:
         Window& window;
         FilePaths filePaths;
-        //TechEngineAPIClient api;
+        TechEngineAPIClient api;
 
         Client(Window& window);
 

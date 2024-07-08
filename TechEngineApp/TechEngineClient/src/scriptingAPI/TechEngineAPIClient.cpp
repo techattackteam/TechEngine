@@ -1,16 +1,16 @@
+#include "network/NetworkEngine.hpp"
 #include "TechEngineAPIClient.hpp"
 
 namespace TechEngine {
-    TechEngineAPIClient::TechEngineAPIClient(SceneManager* sceneManager,
-                                             MaterialManager* materialManager,
-                                             EventDispatcher* eventDispatcher,
-                                             NetworkEngine* networkEngine) : networkAPI(new NetworkAPI(networkEngine)),
-                                                                             TechEngineAPI(sceneManager,
-                                                                                           materialManager,
-                                                                                           eventDispatcher) {
+    TechEngineAPIClient::TechEngineAPIClient(SystemsRegistry& systemsRegistry) : TechEngineAPI(systemsRegistry) {
     }
 
     TechEngineAPIClient::~TechEngineAPIClient() {
         delete networkAPI;
+    }
+
+    void TechEngineAPIClient::init() {
+        TechEngineAPI::init();
+        networkAPI = new NetworkAPI(&systemsRegistry.getSystem<NetworkEngine>());
     }
 }

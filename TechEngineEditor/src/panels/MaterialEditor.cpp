@@ -15,6 +15,7 @@ namespace TechEngine {
     MaterialEditor::MaterialEditor(Client& client, Server& server, SystemsRegistry& editorRegistry) : client(client),
                                                                                                       server(server),
                                                                                                       m_material(nullptr),
+                                                                                                      mesh("Sphere"),
                                                                                                       m_sphere("Sphere", client.systemsRegistry),
                                                                                                       m_camera("SceneCamera", client.systemsRegistry),
                                                                                                       Panel("Material Editor", editorRegistry) {

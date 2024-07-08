@@ -8,7 +8,7 @@ namespace TechEngine {
 }
 
 namespace TechEngine {
-    class EventDispatcherAPI {
+    class CORE_DLL EventDispatcherAPI {
     private:
         inline static EventDispatcherAPI* instance;
 

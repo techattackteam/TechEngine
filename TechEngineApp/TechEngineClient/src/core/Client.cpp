@@ -3,13 +3,13 @@
 #include "core/Logger.hpp"
 #include "script/ScriptRegister.hpp"
 #include "script/ScriptEngine.hpp"
+#include "network/NetworkEngine.hpp"
 
 namespace TechEngine {
     Client::Client(Window& window) : window(window),
-                                     /*api(&sceneManager, &materialManager, eventDispatcher, &networkEngine),*/ AppCore() {
+                                     api(systemsRegistry), AppCore() {
         systemsRegistry.registerSystem<Renderer>();
         systemsRegistry.registerSystem<NetworkEngine>(systemsRegistry);
-        Client::init();
     }
 
     Client::~Client() = default;
@@ -19,6 +19,7 @@ namespace TechEngine {
         systemsRegistry.getSystem<Logger>().init("TechEngineClient");
         systemsRegistry.getSystem<PhysicsEngine>().init();
         ScriptRegister::getInstance()->init(&systemsRegistry.getSystem<ScriptEngine>());
+        api.init();
         systemsRegistry.getSystem<EventDispatcher>().subscribe(WindowCloseEvent::eventType, [this](Event* event) {
             onWindowCloseEvent((WindowCloseEvent*)(event));
         });

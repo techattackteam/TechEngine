@@ -1,19 +1,23 @@
 #include "TechEngineAPI.hpp"
 
-#include "../material/MaterialManager.hpp"
-#include "material/MaterialManagerAPI.hpp"
+#include "scene/SceneManager.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "material/MaterialManager.hpp"
 
 namespace TechEngine {
-    TechEngineAPI::TechEngineAPI(SceneManager* sceneManager,
-                                 MaterialManager* materialManager,
-                                 EventDispatcher* eventDispatcher) : sceneManagerAPI(new SceneManagerAPI(sceneManager)),
-                                                                     eventDispatcherAPI(new EventDispatcherAPI(eventDispatcher)),
-                                                                     materialManagerAPI(new MaterialManagerAPI(materialManager)) {
+    TechEngineAPI::TechEngineAPI(SystemsRegistry& systemsRegistry) : systemsRegistry(systemsRegistry) {
     }
+
 
     TechEngineAPI::~TechEngineAPI() {
         delete sceneManagerAPI;
         delete eventDispatcherAPI;
         delete materialManagerAPI;
+    }
+
+    void TechEngineAPI::init() {
+        sceneManagerAPI = new SceneManagerAPI(&systemsRegistry.getSystem<SceneManager>());
+        eventDispatcherAPI = new EventDispatcherAPI(&systemsRegistry.getSystem<EventDispatcher>());
+        materialManagerAPI = new MaterialManagerAPI(&systemsRegistry.getSystem<MaterialManager>());
     }
 }

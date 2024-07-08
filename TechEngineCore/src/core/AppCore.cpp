@@ -5,6 +5,7 @@
 #include "events/appManagement/AppCloseRequestEvent.hpp"
 #include "mesh/MeshManager.hpp"
 #include "script/ScriptEngine.hpp"
+#include "scriptingAPI/TechEngineAPI.hpp"
 #include "system/SystemsRegistry.hpp"
 #include "texture/TextureManager.hpp"
 
@@ -19,14 +20,14 @@ namespace TechEngine {
         systemsRegistry.registerSystem<PhysicsEngine>();
         systemsRegistry.registerSystem<ScriptEngine>();
         systemsRegistry.registerSystem<SceneManager>(systemsRegistry, filePaths);
-        systemsRegistry.getSystem<EventDispatcher>().subscribe(AppCloseRequestEvent::eventType, [this](Event* event) {
-            onAppCloseRequestEvent();
-        });
     }
 
     void AppCore::init() {
         systemsRegistry.getSystem<Timer>().init();
         systemsRegistry.getSystem<MeshManager>().init();
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(AppCloseRequestEvent::eventType, [this](Event* event) {
+            onAppCloseRequestEvent();
+        });
     }
 
     AppCore::~AppCore() {
