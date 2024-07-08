@@ -33,6 +33,7 @@ add_custom_command(TARGET TechEngineServer POST_BUILD
 #Copy API include files to project template
 set(TECH_ENGINE_SERVER_API_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Server/TechEngineAPI/include/TechEngineServer")
 set(TECH_ENGINE_SERVER_API_FILES
+        "${PROJECT_SOURCE_DIR}/TechEngineApp/TechEngineServer/src/core/ServerExportDll.hpp"
         "${PROJECT_SOURCE_DIR}/TechEngineApp/TechEngineServer/src/events"
         "${PROJECT_SOURCE_DIR}/TechEngineApp/TechEngineServer/src/scriptingAPI"
         "${PROJECT_SOURCE_DIR}/TechEngineApp/TechEngineServer/src/core/ClientInfo.hpp"

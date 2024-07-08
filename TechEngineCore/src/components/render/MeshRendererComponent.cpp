@@ -78,6 +78,7 @@ namespace TechEngine {
         std::string materialName;
         stream->readString(meshName);
         stream->readString(materialName);
+        TE_LOGGER_INFO("MeshRendererComponent::Deserialize: meshName: " + meshName + ", materialName: " + materialName);
         mesh = systemsRegistry.getSystem<MeshManager>().getMesh(meshName);
         m_material = &systemsRegistry.getSystem<MaterialManager>().getMaterial(materialName);
         paintMesh();

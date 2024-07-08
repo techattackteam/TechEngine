@@ -8,12 +8,16 @@ namespace TechEngine {
     class SERVER_DLL TechEngineServerAPI : public TechEngineAPI {
     protected:
         ServerAPI* serverAPI;
+        Server* server;
+        Communicator* communicator;
 
     public:
-        TechEngineServerAPI(SceneManager* sceneManager,
-                            MaterialManager* materialManager,
-                            EventDispatcher* eventDispatcher,
+        TechEngineServerAPI(SystemsRegistry& systemsRegistry,
                             Server* server,
                             Communicator* communicator);
+
+        ~TechEngineServerAPI() override;
+
+        void init() override;
     };
 }

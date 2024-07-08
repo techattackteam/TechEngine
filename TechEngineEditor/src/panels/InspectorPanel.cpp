@@ -5,7 +5,6 @@
 #include "components/physics/BoxColliderComponent.hpp"
 #include "PanelsManager.hpp"
 #include "components/physics/SphereCollider.hpp"
-#include "mesh/CubeMesh.hpp"
 #include "components/physics/CylinderCollider.hpp"
 #include "components/physics/RigidBody.hpp"
 #include "UIUtils/ImGuiUtils.hpp"

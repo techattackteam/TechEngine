@@ -22,7 +22,6 @@ namespace TechEngine {
 
     void ServerPanel::init() {
         Panel::init();
-        server.systemsRegistry.getSystem<Renderer>().init(server.filePaths);
         inspectorPanel.init();
         sceneHierarchyPanel.init();
         sceneView.init();

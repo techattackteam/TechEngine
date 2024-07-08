@@ -7,6 +7,6 @@ namespace TechEngine {
     public:
         ImportedMesh(std::vector<Vertex> vertices, std::vector<int> indices);
 
-        std::string getName() override;
+        std::string getName();
     };
 }

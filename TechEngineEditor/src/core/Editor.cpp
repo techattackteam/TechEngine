@@ -22,36 +22,38 @@ namespace TechEngine {
         systemsRegistry.getSystem<Logger>().init("TechEngineEditor");
         editorSettings = FileSystem::rootPath.string() + "/EditorSettings.TESettings";
         systemsRegistry.getSystem<ProjectManager>().init();
-        loadEditorSettings();
-        panelsManager.init();
-        client.systemsRegistry.getSystem<Renderer>().init(client.filePaths);
+        client.init();
         server.init();
+        loadEditorSettings();
+        client.systemsRegistry.getSystem<Renderer>().init(client.filePaths);
+        server.systemsRegistry.getSystem<Renderer>().init(server.filePaths);
+        panelsManager.init();
 
         systemsRegistry.getSystem<EventDispatcher>().subscribe(KeyPressedEvent::eventType, [this](Event* event) {
             Key key = ((KeyPressedEvent*)event)->getKey();
-            //client.eventDispatcher->dispatch(new KeyPressedEvent(key));
+            client.systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyPressedEvent(key));
         });
 
         systemsRegistry.getSystem<EventDispatcher>().subscribe(KeyReleasedEvent::eventType, [this](Event* event) {
             Key key = ((KeyReleasedEvent*)event)->getKey();
-            //client.systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyReleasedEvent(key));
+            client.systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyReleasedEvent(key));
         });
 
         systemsRegistry.getSystem<EventDispatcher>().subscribe(KeyHoldEvent::eventType, [this](Event* event) {
             Key key = ((KeyHoldEvent*)event)->getKey();
-            //client.systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyHoldEvent(key));
+            client.systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyHoldEvent(key));
         });
 
         systemsRegistry.getSystem<EventDispatcher>().subscribe(MouseScrollEvent::eventType, [this](Event* event) {
             float xOffset = ((MouseScrollEvent*)event)->getXOffset();
             float yOffset = ((MouseScrollEvent*)event)->getYOffset();
-            //client.systemsRegistry.getSystem<EventDispatcher>().dispatch(new MouseScrollEvent(xOffset, yOffset));
+            client.systemsRegistry.getSystem<EventDispatcher>().dispatch(new MouseScrollEvent(xOffset, yOffset));
         });
 
         systemsRegistry.getSystem<EventDispatcher>().subscribe(MouseMoveEvent::eventType, [this](Event* event) {
             glm::vec2 fromPos = ((MouseMoveEvent*)event)->getFromPosition();
             glm::vec2 toPos = ((MouseMoveEvent*)event)->getToPosition();
-            //client.systemsRegistry.getSystem<EventDispatcher>().dispatch(new MouseMoveEvent(fromPos, toPos));
+            client.systemsRegistry.getSystem<EventDispatcher>().dispatch(new MouseMoveEvent(fromPos, toPos));
         });
     }
 

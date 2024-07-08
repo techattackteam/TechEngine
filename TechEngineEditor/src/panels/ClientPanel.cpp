@@ -1,7 +1,9 @@
 #include "ClientPanel.hpp"
 
 #include "PanelsManager.hpp"
+#include "events/scripts/ScriptCrashEvent.hpp"
 #include "script/ScriptEngine.hpp"
+#include "network/NetworkEngine.hpp"
 
 namespace TechEngine {
     ClientPanel::ClientPanel(Client& client,
@@ -16,9 +18,6 @@ namespace TechEngine {
                                                              sceneView("Client Scene", editorRegistry, clientRegistry, sceneHierarchyPanel.getSelectedGO()),
                                                              sceneHierarchyPanel("Client Scene Hierarchy", editorRegistry, clientRegistry),
                                                              Panel("ClientPanel", editorRegistry) {
-        /*client.eventDispatcher->subscribe(ScriptCrashEvent::eventType, [this](Event* event) {
-            stopRunningScene();
-        });*/
     }
 
     void ClientPanel::init() {
@@ -27,6 +26,10 @@ namespace TechEngine {
         sceneHierarchyPanel.init();
         sceneView.init();
         gameView.init();
+
+        client.systemsRegistry.getSystem<EventDispatcher>().subscribe(ScriptCrashEvent::eventType, [this](Event* event) {
+            stopRunningScene();
+        });
     }
 
 

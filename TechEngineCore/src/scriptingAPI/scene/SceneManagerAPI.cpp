@@ -2,7 +2,7 @@
 #include "scene/SceneManager.hpp"
 
 namespace TechEngine {
-    SceneManagerAPI::SceneManagerAPI(TechEngine::SceneManager* sceneManager) {
+    SceneManagerAPI::SceneManagerAPI(SceneManager* sceneManager) {
         SceneManagerAPI::sceneManager = sceneManager;
     }
 

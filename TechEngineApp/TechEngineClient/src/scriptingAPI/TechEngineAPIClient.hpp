@@ -9,8 +9,10 @@ namespace TechEngine {
         NetworkAPI* networkAPI;
 
     public:
-        TechEngineAPIClient(SceneManager* sceneManager, MaterialManager* materialManager, EventDispatcher* eventDispatcher, NetworkEngine* networkEngine);
+        explicit TechEngineAPIClient(SystemsRegistry& systemsRegistry);
 
-        ~TechEngineAPIClient();
+        ~TechEngineAPIClient() override;
+
+        void init() override;
     };
 }

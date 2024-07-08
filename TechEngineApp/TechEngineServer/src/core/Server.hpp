@@ -38,7 +38,7 @@ namespace TechEngine {
         friend class ServerAPI;
 
     private:
-        //TechEngineServerAPI m_serverAPI;
+        TechEngineServerAPI m_serverAPI;
 
     public:
         Server();

@@ -1,16 +1,14 @@
 #pragma once
-#include <string>
-#include <vector>
-
+#include "core/ServerExportDll.hpp"
 #include "core/ClientInfo.hpp"
 #include "serialization/Buffer.hpp"
-
+#include <vector>
 
 namespace TechEngine {
     class Server;
     class Communicator;
 
-    class ServerAPI {
+    class SERVER_DLL ServerAPI {
     private:
         inline static ServerAPI* instance;
         Communicator* communicator;

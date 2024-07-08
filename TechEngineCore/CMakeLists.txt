@@ -38,6 +38,8 @@ function(configure_tech_engine_core target_name)
     set(TECH_ENGINE_API_FILES
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/core/Logger.hpp"
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/core/Timer.hpp"
+            "${PROJECT_SOURCE_DIR}/TechEngineCore/src/core/CoreExportDll.hpp"
+            "${PROJECT_SOURCE_DIR}/TechEngineCore/src/system/System.hpp"
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/events"
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/components"
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/physics"

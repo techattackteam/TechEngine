@@ -1,8 +1,5 @@
 #include "MeshManager.hpp"
 
-#include "CubeMesh.hpp"
-#include "CylinderMesh.hpp"
-#include "SphereMesh.hpp"
 #include "core/Logger.hpp"
 
 namespace TechEngine {
@@ -10,9 +7,9 @@ namespace TechEngine {
     }
 
     void MeshManager::init() {
-        registerMesh("Cube", *new CubeMesh());
-        registerMesh("Sphere", *new SphereMesh());
-        registerMesh("Cylinder", *new CylinderMesh());
+        registerMesh("Cube", *new Mesh("Cube"));
+        registerMesh("Sphere", *new Mesh("Sphere"));
+        registerMesh("Cylinder", *new Mesh("Cylinder"));
     }
 
     bool MeshManager::isMeshRegistered(const std::string& name) {
