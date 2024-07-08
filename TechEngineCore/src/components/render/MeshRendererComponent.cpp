@@ -5,7 +5,7 @@
 
 namespace TechEngine {
     MeshRendererComponent::MeshRendererComponent(GameObject* gameObject,
-                                                 SystemsRegistry& systemsRegistry) : mesh(systemsRegistry.getSystem<MeshManager>().getMesh("Cube")),
+                                                 SystemsRegistry& systemsRegistry) : mesh(&systemsRegistry.getSystem<MeshManager>().getMesh("Cube")),
                                                                                      Component(gameObject, systemsRegistry, "MeshRenderer") {
         std::string name = "DefaultMaterial";
         m_material = &systemsRegistry.getSystem<MaterialManager>().getMaterial(name);
@@ -15,14 +15,14 @@ namespace TechEngine {
     MeshRendererComponent::MeshRendererComponent(GameObject* gameObject,
                                                  SystemsRegistry& systemsRegistry,
                                                  Mesh& mesh,
-                                                 Material* material) : mesh(mesh),
+                                                 Material* material) : mesh(&mesh),
                                                                        m_material(material),
                                                                        Component(gameObject, systemsRegistry, "MeshRenderer") {
         paintMesh();
     }
 
     void MeshRendererComponent::changeMesh(Mesh& mesh) {
-        this->mesh = mesh;
+        this->mesh = &mesh;
         if (m_material != nullptr)
             paintMesh();
     }
@@ -38,13 +38,13 @@ namespace TechEngine {
 
 
     void MeshRendererComponent::paintMesh() {
-        for (Vertex& vertex: mesh.getVertices()) {
+        for (Vertex& vertex: mesh->getVertices()) {
             vertex.setColor(m_material->getColor());
         }
     }
 
     Mesh& MeshRendererComponent::getMesh() {
-        return mesh;
+        return *mesh;
     }
 
     Material& MeshRendererComponent::getMaterial() {
@@ -52,11 +52,11 @@ namespace TechEngine {
     }
 
     std::vector<Vertex> MeshRendererComponent::getVertices() {
-        return mesh.getVertices();
+        return mesh->getVertices();
     }
 
     std::vector<int> MeshRendererComponent::getIndices() {
-        return mesh.getIndices();
+        return mesh->getIndices();
     }
 
     Component* MeshRendererComponent::copy(GameObject* gameObjectToAttach, Component* componentToCopy) {
@@ -68,7 +68,7 @@ namespace TechEngine {
 
     void MeshRendererComponent::Serialize(StreamWriter* stream) {
         Component::Serialize(stream);
-        stream->writeString(mesh.getName());
+        stream->writeString(mesh->getName());
         stream->writeString(m_material->getName());
     }
 
@@ -79,7 +79,7 @@ namespace TechEngine {
         stream->readString(meshName);
         stream->readString(materialName);
         TE_LOGGER_INFO("MeshRendererComponent::Deserialize: meshName: " + meshName + ", materialName: " + materialName);
-        mesh = systemsRegistry.getSystem<MeshManager>().getMesh(meshName);
+        mesh = &systemsRegistry.getSystem<MeshManager>().getMesh(meshName);
         m_material = &systemsRegistry.getSystem<MaterialManager>().getMaterial(materialName);
         paintMesh();
     }

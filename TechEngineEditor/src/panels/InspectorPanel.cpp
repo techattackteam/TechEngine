@@ -221,9 +221,9 @@ namespace TechEngine {
             } else {
                 static const char* current_item;
                 const char* items[] = {"Cube", "Sphere", "Cylinder", "Capsule", "Plane"};
-                for (int i = 0; i < sizeof(items) / sizeof(items[0]); i++) {
-                    if (mesh.getName() == items[i]) {
-                        current_item = items[i];
+                for (auto & item : items) {
+                    if (mesh.getName() == item) {
+                        current_item = item;
                         break;
                     }
                 }
