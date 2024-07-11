@@ -60,10 +60,10 @@ add_custom_command(
 #Copy engine's runtime to build directory
 add_custom_command(TARGET TechEngineEditor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        $<TARGET_FILE_DIR:TechEngineRuntime> $<TARGET_FILE_DIR:TechEngineEditor>/TechEngineRuntime
+        $<TARGET_FILE_DIR:TechEngineClientRuntime> $<TARGET_FILE_DIR:TechEngineEditor>/TechEngineClientRuntime
         COMMAND_EXPAND_LISTS)
 
 add_custom_command(TARGET TechEngineEditor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        $<TARGET_FILE_DIR:TechEngineServer> $<TARGET_FILE_DIR:TechEngineEditor>/TechEngineServer
+        $<TARGET_FILE_DIR:TechEngineServerRuntime> $<TARGET_FILE_DIR:TechEngineEditor>/TechEngineServerRuntime
         COMMAND_EXPAND_LISTS)

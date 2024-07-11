@@ -20,7 +20,7 @@
 #include "core/Server.hpp"
 
 namespace TechEngine {
-    enum CompileMode {
+    enum class CompileMode {
         DEBUG,
         RELEASE,
         RELEASEDEBUG

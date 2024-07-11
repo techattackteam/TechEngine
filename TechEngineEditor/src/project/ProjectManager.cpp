@@ -2,10 +2,10 @@
 #include "ProjectManager.hpp"
 #include "yaml-cpp/yaml.h"
 #include "core/FileSystem.hpp"
-#include "core/Key.hpp"
 #include "core/Logger.hpp"
 #include "events/appManagement/AppCloseRequestEvent.hpp"
 #include "eventSystem/EventDispatcher.hpp"
+#include "panels/PanelsManager.hpp"
 #include "texture/TextureManager.hpp"
 
 namespace TechEngine {
@@ -32,64 +32,9 @@ namespace TechEngine {
         return projectAssetsPath;
     }
 
-    const std::filesystem::path& ProjectManager::getProjectCommonAssetsPath() {
-        return projectCommonAssetsPath;
-    }
-
-    const std::filesystem::path& ProjectManager::getProjectClientAssetsPath() {
-        return projectClientAssetsPath;
-    }
-
-    const std::filesystem::path& ProjectManager::getProjectServerAssetsPath() {
-        return projectServerAssetsPath;
-    }
 
     const std::filesystem::path& ProjectManager::getProjectCachePath() {
         return projectCachePath;
-    }
-
-    const std::filesystem::path& ProjectManager::getProjectServerResourcesPath() {
-        return projectServerResourcesPath;
-    }
-
-    const std::filesystem::path& ProjectManager::getProjectCommonResourcesPath() {
-        return projectCommonResourcesPath;
-    }
-
-    const std::filesystem::path& ProjectManager::getProjectClientResourcesPath() {
-        return projectClientResourcesPath;
-    }
-
-    const std::filesystem::path& ProjectManager::getClientScriptsDebugDLLPath() {
-        return clientUserScriptsDebugDLLPath;
-    }
-
-    const std::filesystem::path& ProjectManager::getClientScriptsReleaseDLLPath() {
-        return clientUserScriptsReleaseDLLPath;
-    }
-
-    const std::filesystem::path& ProjectManager::getClientScriptsReleaseDebugDLLPath() {
-        return clientUserScriptsReleaseDebugDLLPath;
-    }
-
-    const std::filesystem::path& ProjectManager::getClientUserScriptsDLLPath() {
-#ifdef TE_DEBUG
-        return clientUserScriptsDebugDLLPath;
-#elif TE_RELEASEDEBUG
-        return clientUserScriptsReleaseDebugDLLPath;
-#elif TE_RELEASE
-        return clientUserScriptsReleaseDLLPath;
-#endif
-    }
-
-    const std::filesystem::path& ProjectManager::getServerUserScriptsDLLPath() {
-#ifdef TE_DEBUG
-        return serverUserScriptsDebugDLLPath;
-#elif TE_RELEASEDEBUG
-        return serverUserScriptsReleaseDebugDLLPath;
-#elif TE_RELEASE
-        return serverUserScriptsReleaseDLLPath;
-#endif
     }
 
     const std::filesystem::path& ProjectManager::getProjectGameExportPath() {
@@ -167,18 +112,7 @@ namespace TechEngine {
     }
 
     void ProjectManager::loadEditorProject(const std::string& projectLocation) {
-        setupPaths(projectLocation);
-        client.filePaths.assetsPath = projectClientAssetsPath.string();
-        client.filePaths.resourcesPath = projectClientResourcesPath.string();
-        client.filePaths.commonResourcesPath = projectCommonResourcesPath.string();
-        client.filePaths.commonAssetsPath = projectCommonResourcesPath.string();
-        client.filePaths.cachPath = projectCachePath.string();
-        server.filePaths.assetsPath = projectServerAssetsPath.string();
-        server.filePaths.resourcesPath = projectServerResourcesPath.string();
-        server.filePaths.commonResourcesPath = projectCommonResourcesPath.string();
-        server.filePaths.commonAssetsPath = projectCommonResourcesPath.string();
-        server.filePaths.cachPath = projectCachePath.string();
-
+        this->projectLocation = projectLocation;
         std::string clientLoadedScene;
         std::string serverLoadedScene;
         if (std::filesystem::exists(this->projectFilePath)) {
@@ -203,65 +137,19 @@ namespace TechEngine {
             std::ofstream fout(this->projectFilePath);
             fout << out.c_str();
         }
-        client.systemsRegistry.getSystem<TextureManager>().init(FileSystem::getAllFilesWithExtension({
-                                                                                                         getProjectClientResourcesPath().string(),
-                                                                                                         getProjectCommonResourcesPath().string(),
-                                                                                                         getProjectClientAssetsPath().string(),
-                                                                                                         getProjectCommonAssetsPath().string()
-                                                                                                     },
-                                                                                                     {".jpg", ".png"},
-                                                                                                     true));
-        client.systemsRegistry.getSystem<MaterialManager>().init(FileSystem::getAllFilesWithExtension({
-                                                                                                          getProjectClientResourcesPath().string(),
-                                                                                                          getProjectCommonResourcesPath().string(),
-                                                                                                          getProjectClientAssetsPath().string(),
-                                                                                                          getProjectCommonAssetsPath().string()
-                                                                                                      }, {".mat"}, true));
-        client.systemsRegistry.getSystem<SceneManager>().init(FileSystem::getAllFilesWithExtension({
-                                                                                                       getProjectClientResourcesPath().string(),
-                                                                                                       getProjectCommonResourcesPath().string(),
-                                                                                                       getProjectClientAssetsPath().string(),
-                                                                                                       getProjectCommonAssetsPath().string()
-                                                                                                   }, {".scene"}, true));
-        client.systemsRegistry.getSystem<SceneManager>().loadScene(clientLoadedScene);
-
-        server.systemsRegistry.getSystem<TextureManager>().init(FileSystem::getAllFilesWithExtension({
-                                                                                                         getProjectServerResourcesPath().string(),
-                                                                                                         getProjectCommonResourcesPath().string(),
-                                                                                                         getProjectServerAssetsPath().string(),
-                                                                                                         getProjectCommonAssetsPath().string()
-                                                                                                     },
-                                                                                                     {".jpg", ".png"},
-                                                                                                     true));
-        server.systemsRegistry.getSystem<MaterialManager>().init(FileSystem::getAllFilesWithExtension({
-                                                                                                          getProjectServerResourcesPath().string(),
-                                                                                                          getProjectCommonResourcesPath().string(),
-                                                                                                          getProjectServerAssetsPath().string(),
-                                                                                                          getProjectCommonAssetsPath().string()
-                                                                                                      }, {".mat"}, true));
-        server.systemsRegistry.getSystem<SceneManager>().init(FileSystem::getAllFilesWithExtension({
-                                                                                                       getProjectServerResourcesPath().string(),
-                                                                                                       getProjectCommonResourcesPath().string(),
-                                                                                                       getProjectServerAssetsPath().string(),
-                                                                                                       getProjectCommonAssetsPath().string()
-                                                                                                   }, {".scene"}, true));
-        server.systemsRegistry.getSystem<SceneManager>().loadScene(serverLoadedScene);
+        client.project.lastLoadedScene = clientLoadedScene;
+        client.project.setupPaths(projectLocation, ProjectType::Client);
+        server.project.lastLoadedScene = serverLoadedScene;
+        server.project.setupPaths(projectLocation, ProjectType::Server);
     }
 
-    void ProjectManager::setupPaths(const std::string& projectLocation) {
-        this->projectLocation = projectLocation;
-        std::vector<std::string> files = FileSystem::getAllFilesWithExtension({projectLocation}, {".teprj"}, false);
+    void ProjectManager::setupPaths() {
+        std::vector<std::string> files = FileSystem::getAllFilesWithExtension({projectLocation.string()}, {".teprj"}, false);
         std::string projectFile = files[0];
         this->projectFilePath = projectFile;
         projectName = projectFile.substr(projectFile.find_last_of("\\") + 1, projectFile.find_last_of(".") - projectFile.find_last_of("\\") - 1);
         projectCachePath = this->projectLocation.string() + "\\Cache";
         projectAssetsPath = this->projectLocation.string() + "\\Assets";
-        projectCommonAssetsPath = this->projectLocation.string() + "\\Assets\\Common";
-        projectClientAssetsPath = this->projectLocation.string() + "\\Assets\\Client";
-        projectServerAssetsPath = this->projectLocation.string() + "\\Assets\\Server";
-        projectCommonResourcesPath = this->projectLocation.string() + "\\Resources\\Common";
-        projectClientResourcesPath = this->projectLocation.string() + "\\Resources\\Client";
-        projectServerResourcesPath = this->projectLocation.string() + "\\Resources\\Server";
         projectGameExportPath = this->projectLocation.string() + "\\Build\\GameBuild";
         projectServerExportPath = this->projectLocation.string() + "\\Build\\ServerBuild";
         std::string scriptsDebugDLLPath = "\\scripts\\build\\debug";
@@ -270,29 +158,80 @@ namespace TechEngine {
 
         cmakeListPath = projectAssetsPath.string();
         cmakeBuildPath = projectAssetsPath.string() + "\\cmake-build-debug";
-        clientUserScriptsDebugDLLPath = projectClientResourcesPath.string() + scriptsDebugDLLPath + "\\ClientScripts.dll";
-        clientUserScriptsReleaseDLLPath = projectClientResourcesPath.string() + scriptsReleaseDLLPath + "\\ClientScripts.dll";
-        clientUserScriptsReleaseDebugDLLPath = projectClientResourcesPath.string() + scriptsReleaseDebugDLLPath + "\\ClientScripts.dll";
 #ifdef TE_DEBUG
-        techEngineClientLibPath = projectClientResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineClient.lib";
-        techEngineServerLibPath = projectServerResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineServer.lib";
-        techEngineCoreClientLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCoreClient.lib";
-        techEngineCoreServerLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCoreServer.lib";
+        techEngineClientLibPath = client.project.getResourcesPath().string() + "\\TechEngineAPI\\lib\\debug\\TechEngineClient.lib";
+        techEngineServerLibPath = server.project.getResourcesPath().string() + "\\TechEngineAPI\\lib\\debug\\TechEngineServer.lib";
+        techEngineCoreClientLibPath = client.project.getCommonResourcesPath().string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCoreClient.lib";
+        techEngineCoreServerLibPath = server.project.getCommonResourcesPath().string() + "\\TechEngineAPI\\lib\\debug\\TechEngineCoreServer.lib";
 #elif TE_RELEASEDEBUG
-        techEngineClientLibPath = projectClientResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineClient.lib";
-        techEngineServerLibPath = projectServerResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineServer.lib";
-        techEngineCoreClientLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCoreClient.lib";
-        techEngineCoreServerLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCoreServer.lib";
+        techEngineClientLibPath = client.project.getResourcesPath().string() + "\\TechEngineAPI\\lib\\release\\TechEngineClient.lib";
+        techEngineServerLibPath = server.project.getResourcesPath().string() + "\\TechEngineAPI\\lib\\release\\TechEngineServer.lib";
+        techEngineCoreClientLibPath = client.project.getCommonResourcesPath().string() + "\\TechEngineAPI\\lib\\release\\TechEngineCoreClient.lib";
+        techEngineCoreServerLibPath = server.project.getCommonResourcesPath().string() + "\\TechEngineAPI\\lib\\release\\TechEngineCoreServer.lib";
 #elif TE_RELEASE
-        techEngineClientLibPath = projectClientResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineClient.lib";
-        techEngineServerLibPath = projectServerResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineServer.lib";
-        techEngineCoreClientLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCoreClient.lib";
-        techEngineCoreServerLibPath = projectCommonResourcesPath.string() + "\\TechEngineAPI\\lib\\release\\TechEngineCoreServer.lib";
+        techEngineClientLibPath = client.project.getResourcesPath().string() + "\\TechEngineAPI\\lib\\release\\TechEngineClient.lib";
+        techEngineServerLibPath = server.project.getResourcesPath().string() + "\\TechEngineAPI\\lib\\release\\TechEngineServer.lib";
+        techEngineCoreClientLibPath = client.project.getCommonResourcesPath().string() + "\\TechEngineAPI\\lib\\release\\TechEngineCoreClient.lib";
+        techEngineCoreServerLibPath = server.project.getCommonResourcesPath().string() + "\\TechEngineAPI\\lib\\release\\TechEngineCoreServer.lib";
 #endif
+    }
 
-        serverUserScriptsDebugDLLPath = projectServerResourcesPath.string() + scriptsDebugDLLPath + "\\ServerScripts.dll";
-        serverUserScriptsReleaseDLLPath = projectServerResourcesPath.string() + scriptsReleaseDLLPath + "\\ServerScripts.dll";
-        serverUserScriptsReleaseDebugDLLPath = projectServerResourcesPath.string() + scriptsReleaseDebugDLLPath + "\\ServerScripts.dll";
+    void ProjectManager::exportProject(ProjectType projectType, CompileMode compileMode) {
+        SystemsRegistry& systemsRegistry = projectType == ProjectType::Client ? client.systemsRegistry : server.systemsRegistry;
+        Project& project = projectType == ProjectType::Client ? client.project : server.project;
+        try {
+            std::filesystem::path exportPath;
+            if (compileMode == CompileMode::RELEASE) { // Happens when building the game to build path. If compileMde is in debug engines is in debug mode
+                if (!std::filesystem::exists(projectLocation.string() + "\\Build"))
+                    std::filesystem::create_directory(projectLocation.string() + "\\Build");
+                exportPath = projectType == ProjectType::Client ? getProjectGameExportPath() : getProjectServerExportPath();
+            } else if (compileMode == CompileMode::DEBUG || compileMode == CompileMode::RELEASEDEBUG) { // Happens when editor launches a new process to run the game
+                if (!std::filesystem::exists(projectCachePath)) {
+                    std::filesystem::create_directory(projectCachePath);
+                }
+                exportPath = projectCachePath.string() + "\\Client";
+            } else {
+                TE_LOGGER_ERROR("Export Game: Invalid compile mode");
+                return;
+            }
+            std::filesystem::remove_all(exportPath);
+            std::filesystem::create_directory(exportPath);
+            std::filesystem::create_directory(exportPath.string() + "\\Assets");
+            std::filesystem::create_directory(exportPath.string() + "\\Assets\\Common");
+            std::filesystem::create_directory(exportPath.string() + "\\Assets\\" + (projectType == ProjectType::Client ? "Client" : "Server"));
+            std::filesystem::create_directory(exportPath.string() + "\\Resources");
+            std::filesystem::create_directory(exportPath.string() + "\\Resources\\Common");
+            std::filesystem::create_directory(exportPath.string() + "\\Resources\\" + (projectType == ProjectType::Client ? "Client" : "Server"));
+            systemsRegistry.getSystem<SceneManager>().saveCurrentScene();
+            std::filesystem::copy_options copyOptions = std::filesystem::copy_options::recursive |
+                                                        std::filesystem::copy_options::overwrite_existing;
+
+            if (!FileSystem::getAllFilesWithExtension({getProjectAssetsPath().string() + "\\Client"}, {".cpp", ".hpp"}, true).empty() ||
+                !FileSystem::getAllFilesWithExtension({getProjectAssetsPath().string() + "\\Common"}, {".cpp", ".hpp"}, true).empty()) {
+                // panelsManager.compileClientUserScripts(compileMode);
+            }
+            FileSystem::copyRecursive(project.getCommonAssetsPath().string(), exportPath.string() + "\\Assets\\Common", {".cpp", ".hpp"}, {"cmake"});
+            FileSystem::copyRecursive(project.getAssetsPath().string(), exportPath.string() + "\\Assets\\" + (projectType == ProjectType::Client ? "Client" : "Server"), {".cpp", ".hpp"}, {"cmake"});
+            FileSystem::copyRecursive(project.getCommonResourcesPath(), exportPath.string() + "\\Resources\\Common", {".cpp", ".hpp"}, {"dependencies", "TechEngineAPI"});
+            FileSystem::copyRecursive(project.getResourcesPath(), exportPath.string() + "\\Resources\\" + (projectType == ProjectType::Client ? "Client" : "Server"), {".cpp", ".hpp"}, {"TechEngineAPI"});
+
+            YAML::Emitter out;
+            out << YAML::BeginMap;
+            out << YAML::Key << "Project Name" << YAML::Value << projectName;
+            out << YAML::Key << "Last loaded scene" << YAML::Value << project.lastLoadedScene;
+            out << YAML::EndMap;
+
+            std::ofstream ofs(exportPath.string() + "\\" + projectName + ".teprj");
+            ofs << out.c_str();
+            ofs.close();
+
+
+            std::filesystem::copy(projectType == ProjectType::Client ? FileSystem::clientPath : FileSystem::serverPath, exportPath, copyOptions);
+            TE_LOGGER_INFO("Project exported to: {0}", exportPath.string());
+        } catch (std::filesystem::filesystem_error& e) {
+            TE_LOGGER_ERROR("Error while exporting project: {0}", e.what());
+            return;
+        }
     }
 
     const std::string& ProjectManager::getProjectName() {

@@ -1,13 +1,17 @@
 #include "Client.hpp"
 
+#include "core/FileSystem.hpp"
 #include "core/Logger.hpp"
 #include "script/ScriptRegister.hpp"
 #include "script/ScriptEngine.hpp"
 #include "network/NetworkEngine.hpp"
+#include "texture/TextureManager.hpp"
 
 namespace TechEngine {
     Client::Client(Window& window) : window(window),
-                                     api(systemsRegistry), AppCore() {
+                                     project(systemsRegistry),
+                                     api(systemsRegistry),
+                                     AppCore() {
         systemsRegistry.registerSystem<Renderer>();
         systemsRegistry.registerSystem<NetworkEngine>(systemsRegistry);
     }
@@ -20,12 +24,18 @@ namespace TechEngine {
         systemsRegistry.getSystem<PhysicsEngine>().init();
         ScriptRegister::getInstance()->init(&systemsRegistry.getSystem<ScriptEngine>());
         api.init();
+        std::vector<std::string> paths = {
+            project.getResourcesPath().string(),
+            project.getCommonResourcesPath().string(),
+            project.getAssetsPath().string(),
+            project.getCommonAssetsPath().string()
+        };
+        systemsRegistry.getSystem<TextureManager>().init(FileSystem::getAllFilesWithExtension(paths, {".jpg", ".png"}, true));
+        systemsRegistry.getSystem<MaterialManager>().init(FileSystem::getAllFilesWithExtension(paths, {".mat"}, true));
+        systemsRegistry.getSystem<SceneManager>().init(FileSystem::getAllFilesWithExtension(paths, {".scene"}, true));
         systemsRegistry.getSystem<EventDispatcher>().subscribe(WindowCloseEvent::eventType, [this](Event* event) {
             onWindowCloseEvent((WindowCloseEvent*)(event));
         });
-        //systemsRegistry.getSystem<SceneManager>().init();
-        //systemsRegistry.getSystem<NetworkEngine>().init();
-        //api.init();
     }
 
     void Client::onFixedUpdate() {

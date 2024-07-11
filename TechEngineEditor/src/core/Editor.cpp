@@ -18,17 +18,18 @@ namespace TechEngine {
                        server(),
                        panelsManager(client, server, systemsRegistry) {
         systemsRegistry.registerSystem<ProjectManager>(client, server);
-
         systemsRegistry.getSystem<Logger>().init("TechEngineEditor");
         editorSettings = FileSystem::rootPath.string() + "/EditorSettings.TESettings";
         systemsRegistry.getSystem<ProjectManager>().init();
+        loadEditorSettings();
         client.init();
         server.init();
-        loadEditorSettings();
-        client.systemsRegistry.getSystem<Renderer>().init(client.filePaths);
-        server.systemsRegistry.getSystem<Renderer>().init(server.filePaths);
+        systemsRegistry.getSystem<ProjectManager>().setupPaths();
+        client.systemsRegistry.getSystem<Renderer>().init(client.project.getResourcesPath().string());
+        server.systemsRegistry.getSystem<Renderer>().init(server.project.getResourcesPath().string());
         panelsManager.init();
-
+        client.systemsRegistry.getSystem<SceneManager>().loadScene(client.project.lastLoadedScene);
+        server.systemsRegistry.getSystem<SceneManager>().loadScene(server.project.lastLoadedScene);
         systemsRegistry.getSystem<EventDispatcher>().subscribe(KeyPressedEvent::eventType, [this](Event* event) {
             Key key = ((KeyPressedEvent*)event)->getKey();
             client.systemsRegistry.getSystem<EventDispatcher>().dispatch(new KeyPressedEvent(key));

@@ -2,16 +2,15 @@
 #include <map>
 
 #include "core/ServerExportDll.hpp"
-#include "core/FilePaths.hpp"
 #include "core/AppCore.hpp"
 #include "serialization/Buffer.hpp"
 #include "ClientInfo.hpp"
+#include "communicator/Communicator.hpp"
+#include "project/Project.hpp"
+#include "scriptingAPI/TechEngineServerAPI.hpp"
 
 #include <steam/steamnetworkingsockets.h>
 #include <steam/isteamnetworkingutils.h>
-
-#include "communicator/Communicator.hpp"
-#include "scriptingAPI/TechEngineServerAPI.hpp"
 #ifndef STEAMNETWORKINGSOCKETS_OPENSOURCE
 #include <steam/steam_api.h>
 #endif
@@ -20,7 +19,7 @@
 namespace TechEngine {
     class SERVER_DLL Server : public AppCore {
     public:
-        FilePaths filePaths;
+        Project project;
 
     protected:
         inline static Server* instance;

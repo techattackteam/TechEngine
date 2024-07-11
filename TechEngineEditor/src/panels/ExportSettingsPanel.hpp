@@ -1,13 +1,11 @@
 #pragma once
 
-#include <filesystem>
 #include "Panel.hpp"
 #include "project/ProjectManager.hpp"
-#include "renderer/ShadersManager.hpp"
 
 namespace TechEngine {
+    enum class CompileMode;
     class PanelsManager;
-    enum CompileMode;
 
     class ExportSettingsPanel : public Panel {
     private:
@@ -28,8 +26,8 @@ namespace TechEngine {
 
         void onUpdate() override;
 
-        void exportGameProject(CompileMode compileMode);
+        /*void exportGameProject(CompileMode compileMode);
 
-        void exportServerProject(CompileMode compileMode);
+        void exportServerProject(CompileMode compileMode);*/
     };
 }

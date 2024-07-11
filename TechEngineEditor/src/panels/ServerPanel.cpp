@@ -89,14 +89,14 @@ namespace TechEngine {
 
     void ServerPanel::startRunningScene() {
 #ifdef TE_DEBUG
-        panelsManager.compileUserScripts(DEBUG, CompileProject::PROJECT_SERVER);
+        panelsManager.compileUserScripts(CompileMode::DEBUG, CompileProject::PROJECT_SERVER);
 #else
         panelsManager.compileUserScripts(RELEASEDEBUG, CompileProject::PROJECT_SERVER);
 #endif
         appRegistry.getSystem<SceneManager>().saveSceneAsTemporarily(editorRegistry.getSystem<ProjectManager>().getProjectCachePath().string(), CompileProject::PROJECT_SERVER);
         appRegistry.getSystem<EventDispatcher>().copy();
         appRegistry.getSystem<MaterialManager>().copy();
-        appRegistry.getSystem<ScriptEngine>().init(editorRegistry.getSystem<ProjectManager>().getServerUserScriptsDLLPath().string(), &appRegistry.getSystem<EventDispatcher>());
+        appRegistry.getSystem<ScriptEngine>().init(server.project.getUserScriptsDLLPath().string(), &appRegistry.getSystem<EventDispatcher>());
         appRegistry.getSystem<ScriptEngine>().onStart();
         appRegistry.getSystem<PhysicsEngine>().start();
         m_currentPlaying = true;

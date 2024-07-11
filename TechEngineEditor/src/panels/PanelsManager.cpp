@@ -237,7 +237,7 @@ namespace TechEngine {
                     clientPanel.stopRunningScene();
                 }*/
 #ifdef TE_DEBUG
-                compileUserScripts(DEBUG, CompileProject::PROJECT_CLIENT);
+                compileUserScripts(CompileMode::DEBUG, CompileProject::PROJECT_CLIENT);
 #elif TE_RELEASE
                 compileUserScripts(RELEASE, CompileProject::PROJECT_CLIENT);
 #elif TE_RELEASEDEBUG
@@ -257,7 +257,7 @@ namespace TechEngine {
                     }
                 }
 #ifdef TE_DEBUG
-                compileUserScripts(DEBUG, CompileProject::PROJECT_CLIENT);
+                compileUserScripts(CompileMode::DEBUG, CompileProject::PROJECT_CLIENT);
 #elif TE_RELEASE
                 compileUserScripts(RELEASE, CompileProject::PROJECT_CLIENT);
 #elif TE_RELEASEDEBUG
@@ -358,7 +358,6 @@ namespace TechEngine {
                                       : "ServerScripts") +
                   " --config " + cm + "\"";
         std::system(command.c_str());
-        //TE_LOGGER_INFO("Build finished!");
     }
 
     void closeRunningProcesses(PVOID lpParameter, BOOLEAN TimerOrWaitFiredm) {
@@ -369,7 +368,7 @@ namespace TechEngine {
     void PanelsManager::runServerProcess() {
         ProjectManager& projectManager = systemsRegistry.getSystem<ProjectManager>();
 #ifdef TE_DEBUG
-        exportSettingsPanel.exportServerProject(DEBUG);
+        projectManager.exportProject(ProjectType::Server, CompileMode::DEBUG);
 #else
         exportSettingsPanel.exportServerProject(RELEASEDEBUG);
 #endif
@@ -413,7 +412,7 @@ namespace TechEngine {
     void PanelsManager::runClientProcess() {
         ProjectManager& projectManager = systemsRegistry.getSystem<ProjectManager>();
 #ifdef TE_DEBUG
-        exportSettingsPanel.exportGameProject(DEBUG);
+        projectManager.exportProject(ProjectType::Client, CompileMode::DEBUG);
 #else
         exportSettingsPanel.exportGameProject(RELEASEDEBUG);
 #endif

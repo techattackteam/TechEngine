@@ -7,12 +7,12 @@
 namespace TechEngine {
     class TechEngineRuntime : public Client {
     private:
-        std::string windowName;
-        uint32_t width;
-        uint32_t height;
+        Window window;
 
     public:
         TechEngineRuntime();
+
+        void init();
 
     private:
         void onUpdate() override;

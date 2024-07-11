@@ -4,13 +4,14 @@
 #include "Window.hpp"
 #include "core/AppCore.hpp"
 #include "events/window/WindowCloseEvent.hpp"
+#include "project/Project.hpp"
 #include "scriptingAPI/TechEngineAPIClient.hpp"
 
 namespace TechEngine {
     class CLIENT_DLL Client : public AppCore {
     public:
         Window& window;
-        FilePaths filePaths;
+        Project project;
         TechEngineAPIClient api;
 
         Client(Window& window);
