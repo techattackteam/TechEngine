@@ -1,7 +1,6 @@
 file(GLOB_RECURSE TechEngineClient_Sources CONFIGURE_DEPENDS "src/*.cpp")
 file(GLOB_RECURSE TechEngineClient_Headers "src/*.hpp")
 
-
 foreach (_headerFile ${TechEngineClient_Headers})
     get_filename_component(_dir ${_headerFile} PATH)
     list(APPEND TechEngineClient_Include_Dirs ${_dir})
@@ -11,7 +10,7 @@ list(REMOVE_DUPLICATES TechEngineClient_Include_Dirs)
 add_library(TechEngineClient SHARED ${TechEngineClient_Sources} ${TechEngineClient_Headers})
 #Setup target's output directory
 if (WIN32) # WINDOWS
-    set(TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineClient")
+    set(TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineApp/TechEngineClient")
     set_target_properties(TechEngineClient PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/debug"
             LIBRARY_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/debug"

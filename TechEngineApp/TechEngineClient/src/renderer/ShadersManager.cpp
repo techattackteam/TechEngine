@@ -1,6 +1,6 @@
 #include <filesystem>
 #include "ShadersManager.hpp"
-#include "../../../TechEngineCore/src/core/FileSystem.hpp"
+#include "core/FileSystem.hpp"
 #include "core/Logger.hpp"
 
 namespace TechEngine {
@@ -13,19 +13,19 @@ namespace TechEngine {
         }
     }
 
-    void ShadersManager::init(FilePaths& filePaths) {
+    void ShadersManager::init(const std::string& resourcesPath) {
         shaders = std::unordered_map<std::string, Shader*>();
-        shaders["geometry"] = new Shader("geometry", (filePaths.resourcesPath + "/defaults/shaders/geometryVertex.glsl").c_str(),
-                                         (filePaths.resourcesPath + "/defaults/shaders/geometryFragment.glsl").c_str());
+        shaders["geometry"] = new Shader("geometry", (resourcesPath + "/defaults/shaders/geometryVertex.glsl").c_str(),
+                                         (resourcesPath + "/defaults/shaders/geometryFragment.glsl").c_str());
 
-        shaders["shadowMap"] = new Shader("shadowMap", (filePaths.resourcesPath + "/defaults/shaders/shadowMapVertex.glsl").c_str(),
-                                          (filePaths.resourcesPath + "/defaults/shaders/shadowMapFragment.glsl").c_str());
+        shaders["shadowMap"] = new Shader("shadowMap", (resourcesPath + "/defaults/shaders/shadowMapVertex.glsl").c_str(),
+                                          (resourcesPath + "/defaults/shaders/shadowMapFragment.glsl").c_str());
 
-        shaders["debugDepth"] = new Shader("depthDebug", (filePaths.resourcesPath + "/defaults/shaders/debugDepthVertex.glsl").c_str(),
-                                           (filePaths.resourcesPath + "/defaults/shaders/debugDepthFragment.glsl").c_str());
+        shaders["debugDepth"] = new Shader("depthDebug", (resourcesPath + "/defaults/shaders/debugDepthVertex.glsl").c_str(),
+                                           (resourcesPath + "/defaults/shaders/debugDepthFragment.glsl").c_str());
 
-        shaders["line"] = new Shader("line", (filePaths.resourcesPath + "/defaults/shaders/lineVertex.glsl").c_str(),
-                                     (filePaths.resourcesPath + "/defaults/shaders/lineFragment.glsl").c_str());
+        shaders["line"] = new Shader("line", (resourcesPath + "/defaults/shaders/lineVertex.glsl").c_str(),
+                                     (resourcesPath + "/defaults/shaders/lineFragment.glsl").c_str());
     }
 
     void ShadersManager::changeActiveShader(const std::string& name) {

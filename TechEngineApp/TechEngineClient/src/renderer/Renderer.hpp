@@ -28,7 +28,7 @@ namespace TechEngine {
 
         ~Renderer();
 
-        void init(FilePaths& filePaths);
+        void init(const std::string& resourcesPath);
 
         void renderPipeline(Scene& scene);
 

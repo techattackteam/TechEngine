@@ -12,8 +12,6 @@ namespace TechEngine {
 }
 
 namespace TechEngine {
-    enum CompileMode;
-
     class ClientPanel : public Panel {
     private:
         Client& client;

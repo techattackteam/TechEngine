@@ -4,7 +4,7 @@ file(GLOB_RECURSE TechEngineServer_Headers "src/*.hpp")
 add_library(TechEngineServer ${TechEngineServer_Sources} ${TechEngineServer_Headers})
 #Setup target's output directory
 if (WIN32) # WINDOWS
-    set(TECH_ENGINE_SERVER_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineServer/")
+    set(TECH_ENGINE_SERVER_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/TechEngineApp/TechEngineServer/")
     set_target_properties(TechEngineServer PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_SERVER_OUTPUT_DIRECTORY}/debug"
             LIBRARY_OUTPUT_DIRECTORY_DEBUG "${TECH_ENGINE_SERVER_OUTPUT_DIRECTORY}/debug"

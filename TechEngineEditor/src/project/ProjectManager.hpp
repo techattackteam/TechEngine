@@ -4,7 +4,10 @@
 #include "core/Client.hpp"
 #include <filesystem>
 
+
 namespace TechEngine {
+    enum class CompileMode;
+
     class ProjectManager : public System {
     private:
         Client& client;
@@ -19,26 +22,12 @@ namespace TechEngine {
         std::filesystem::path projectLocation;
         std::filesystem::path projectCachePath;
         std::filesystem::path projectAssetsPath;
-        std::filesystem::path projectCommonAssetsPath;
-        std::filesystem::path projectClientAssetsPath;
-        std::filesystem::path projectServerAssetsPath;
-        std::filesystem::path projectCommonResourcesPath;
-        std::filesystem::path projectClientResourcesPath;
-        std::filesystem::path projectServerResourcesPath;
 
         std::filesystem::path projectGameExportPath;
         std::filesystem::path projectServerExportPath;
 
         std::filesystem::path cmakeBuildPath;
         std::filesystem::path cmakeListPath;
-
-        std::filesystem::path clientUserScriptsDebugDLLPath;
-        std::filesystem::path clientUserScriptsReleaseDLLPath;
-        std::filesystem::path clientUserScriptsReleaseDebugDLLPath;
-
-        std::filesystem::path serverUserScriptsDebugDLLPath;
-        std::filesystem::path serverUserScriptsReleaseDLLPath;
-        std::filesystem::path serverUserScriptsReleaseDebugDLLPath;
 
         std::filesystem::path techEngineCoreClientLibPath;
         std::filesystem::path techEngineCoreServerLibPath;
@@ -56,29 +45,7 @@ namespace TechEngine {
 
         const std::filesystem::path& getProjectAssetsPath();
 
-        const std::filesystem::path& getProjectCommonAssetsPath();
-
-        const std::filesystem::path& getProjectClientAssetsPath();
-
-        const std::filesystem::path& getProjectServerAssetsPath();
-
         const std::filesystem::path& getProjectCachePath();
-
-        const std::filesystem::path& getProjectServerResourcesPath();
-
-        const std::filesystem::path& getProjectCommonResourcesPath();
-
-        const std::filesystem::path& getProjectClientResourcesPath();
-
-        const std::filesystem::path& getClientScriptsDebugDLLPath();
-
-        const std::filesystem::path& getClientScriptsReleaseDLLPath();
-
-        const std::filesystem::path& getClientScriptsReleaseDebugDLLPath();
-
-        const std::filesystem::path& getClientUserScriptsDLLPath();
-
-        const std::filesystem::path& getServerUserScriptsDLLPath();
 
         const std::filesystem::path& getProjectGameExportPath();
 
@@ -104,9 +71,10 @@ namespace TechEngine {
 
         void saveProject();
 
-        void loadEditorProject(const std::string& projectPath);
+        void exportProject(ProjectType projectType, CompileMode compileMode);
 
-    private:
-        void setupPaths(const std::string& projectPath);
+        void setupPaths();
+
+        void loadEditorProject(const std::string& projectPath);
     };
 }

@@ -164,10 +164,8 @@ namespace TechEngine {
         out << YAML::EndMap;
     }
 
-    SceneManager::SceneManager(SystemsRegistry& systemsRegistry,
-                               FilePaths& filePaths) : systemsRegistry(systemsRegistry),
-                                                       filePaths(filePaths),
-                                                       scene(systemsRegistry) {
+    SceneManager::SceneManager(SystemsRegistry& systemsRegistry) : systemsRegistry(systemsRegistry),
+                                                                   scene(systemsRegistry) {
     }
 
     void SceneManager::serialize(const std::string& sceneName, const std::string& filepath) {
@@ -260,7 +258,6 @@ namespace TechEngine {
             }
             */
             Mesh& mesh = systemsRegistry.getSystem<MeshManager>().getMesh(meshName);
-            ScriptRegister::getInstance();
             gameObject.addComponent<MeshRendererComponent>(mesh, &material);
         }
         auto boxColliderNode = gameObjectYAML["BoxColliderComponent"];
@@ -385,8 +382,8 @@ namespace TechEngine {
             deserialize(scenePath);
             m_activeSceneName = sceneName;
         } else {
-            TE_LOGGER_ERROR("Failed to load scene '{0}'.\n Could not find scene. Creating default one", sceneName);
-            scene.clear();
+            TE_LOGGER_CRITICAL("Failed to load scene '{0}'.\n Could not find scene.");
+            /*scene.clear();
             systemsRegistry.getSystem<PhysicsEngine>().clear();
             m_activeSceneName = "DefaultScene";
             GameObject& gameObject = scene.createGameObject("Main Camera");
@@ -398,7 +395,7 @@ namespace TechEngine {
             cube.getComponent<TransformComponent>()->translateTo(glm::vec3(0.0f, 0.0f, 0.0f));
             std::string scenePath = filePaths.commonAssetsPath + "\\Scenes\\" + m_activeSceneName + ".scene";
             registerScene(scenePath);
-            saveScene(m_activeSceneName);
+            saveScene(m_activeSceneName);*/
         }
     }
 

@@ -1,32 +1,23 @@
 #pragma once
 
-
 #include "scene/Scene.hpp"
-
-
-#include <string>
-#include <unordered_map>
-
-#include "core/FilePaths.hpp"
 #include "material/MaterialManager.hpp"
 #include "physics/PhysicsEngine.hpp"
 #include "yaml-cpp/node/node.h"
 #include "core/CompileProject.hpp"
 
-namespace TechEngine {
-    class ProjectManager;
 
+namespace TechEngine {
     class CORE_DLL SceneManager : public System {
     private:
         Scene scene;
         SystemsRegistry& systemsRegistry;
-        FilePaths& filePaths;
         std::unordered_map<std::string, std::string> m_scenesBank;
 
         std::string m_activeSceneName;
 
     public:
-        SceneManager(SystemsRegistry& systemsRegistry, FilePaths& filePaths);
+        SceneManager(SystemsRegistry& systemsRegistry);
 
         void init(const std::vector<std::string>& scenes);
 

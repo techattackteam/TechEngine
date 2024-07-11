@@ -19,7 +19,7 @@ namespace TechEngine {
         systemsRegistry.registerSystem<MaterialManager>(systemsRegistry);
         systemsRegistry.registerSystem<PhysicsEngine>();
         systemsRegistry.registerSystem<ScriptEngine>();
-        systemsRegistry.registerSystem<SceneManager>(systemsRegistry, filePaths);
+        systemsRegistry.registerSystem<SceneManager>(systemsRegistry);
     }
 
     void AppCore::init() {

@@ -9,7 +9,7 @@
 namespace TechEngine {
     class CORE_DLL MeshRendererComponent : public Component {
     private:
-        Mesh& mesh;
+        Mesh* mesh;
         Material* m_material = nullptr;
 
     public:

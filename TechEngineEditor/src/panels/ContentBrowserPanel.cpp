@@ -34,9 +34,9 @@ namespace TechEngine {
 
             ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.f);
-            renderDirectoryHierarchy(editorRegistry.getSystem<ProjectManager>().getProjectCommonAssetsPath().string());
-            renderDirectoryHierarchy(editorRegistry.getSystem<ProjectManager>().getProjectClientAssetsPath().string());
-            renderDirectoryHierarchy(editorRegistry.getSystem<ProjectManager>().getProjectServerAssetsPath().string());
+            renderDirectoryHierarchy(client.project.getCommonAssetsPath().string());
+            renderDirectoryHierarchy(client.project.getAssetsPath().string());
+            renderDirectoryHierarchy(server.project.getAssetsPath().string());
             ImGui::PopStyleVar();
 
             ImGui::EndChild();

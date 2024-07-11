@@ -4,17 +4,14 @@
 
 namespace TechEngine {
     class ServerRuntime : public Server {
-    private:
-
     public:
         ServerRuntime();
 
-        ~ServerRuntime() override;
-
         void init();
 
-        virtual void onUpdate();
+    private:
+        void onUpdate() override;
 
-        virtual void onFixedUpdate();
+        void onFixedUpdate() override;
     };
 }

@@ -1,5 +1,6 @@
 #include "Server.hpp"
 #include "components/render/MeshRendererComponent.hpp"
+#include "core/FileSystem.hpp"
 #include "core/Logger.hpp"
 #include "core/Timer.hpp"
 #include "events/connections/OnClientConnected.hpp"
@@ -10,13 +11,11 @@
 #include "network/SceneSynchronizer.hpp"
 #include "serialization/BufferStream.hpp"
 #include "script/ScriptEngine.hpp"
+#include "texture/TextureManager.hpp"
 
 namespace TechEngine {
-    Server::Server() : m_Communicator(*this), m_serverAPI(systemsRegistry, this, &m_Communicator) {
-        systemsRegistry.getSystem<Logger>().init("TechEngineServer");
+    Server::Server() : project(systemsRegistry), m_Communicator(*this), m_serverAPI(systemsRegistry, this, &m_Communicator) {
         instance = this;
-        systemsRegistry.getSystem<PhysicsEngine>().init();
-        ScriptRegister::getInstance()->init(&systemsRegistry.getSystem<ScriptEngine>());
     }
 
     Server::~Server() {
@@ -38,6 +37,18 @@ namespace TechEngine {
     void Server::init() {
         AppCore::init();
         m_serverAPI.init();
+        systemsRegistry.getSystem<Logger>().init("TechEngineServer");
+        systemsRegistry.getSystem<PhysicsEngine>().init();
+        ScriptRegister::getInstance()->init(&systemsRegistry.getSystem<ScriptEngine>());
+        std::vector<std::string> paths = {
+            project.getResourcesPath().string(),
+            project.getCommonResourcesPath().string(),
+            project.getAssetsPath().string(),
+            project.getCommonAssetsPath().string()
+        };
+        systemsRegistry.getSystem<TextureManager>().init(FileSystem::getAllFilesWithExtension(paths, {".jpg", ".png"}, true));
+        systemsRegistry.getSystem<MaterialManager>().init(FileSystem::getAllFilesWithExtension(paths, {".mat"}, true));
+        systemsRegistry.getSystem<SceneManager>().init(FileSystem::getAllFilesWithExtension(paths, {".scene"}, true));
         running = true;
         m_port = 25565;
         SteamDatagramErrMsg errMsg;
