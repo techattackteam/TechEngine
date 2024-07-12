@@ -27,10 +27,10 @@ function(configure_tech_engine_core target_name)
 
     target_include_directories(${target_name} PUBLIC "src")
     target_link_libraries(${target_name} PUBLIC spdlog::spdlog yaml-cpp::yaml-cpp GameNetworkingSockets::static)
-    target_compile_definitions(${target_name} PUBLIC
+    target_compile_definitions(${target_name} PRIVATE
             $<$<CONFIG:Debug>:TE_DEBUG>
-            $<$<CONFIG:Release>:TE_RELEASEDEBUG>
             $<$<CONFIG:RelWithDebInfo>:TE_DEBUG>
+            $<$<CONFIG:Release>:TE_RELEASEDEBUG>
     )
 
     # Copy API include files to project template

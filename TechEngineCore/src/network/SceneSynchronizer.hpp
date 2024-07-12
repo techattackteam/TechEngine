@@ -35,7 +35,14 @@ namespace TechEngine::SceneSynchronizer {
 
     inline void deserializeScene(BufferStreamReader& stream, SceneManager& sceneManager) {
         size_t size;
-        sceneManager.getScene().clear();
+        for (int i = 0; i < sceneManager.getScene().getGameObjects().size(); i++) {
+            GameObject* gameObject = sceneManager.getScene().getGameObjects().at(i);
+            if (!gameObject->hasComponent<NetworkSync>()) {
+                sceneManager.getScene().deleteGameObject(gameObject);
+                i--;
+            }
+        }
+
         stream.readRaw<size_t>(size);
         for (int i = 0; i < size; i++) {
             deserializeGameObject(stream, sceneManager.getScene());

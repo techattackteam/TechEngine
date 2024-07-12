@@ -3,6 +3,7 @@
 #include "core/Client.hpp"
 #include "PanelsManager.hpp"
 #include "events/scripts/ScriptCrashEvent.hpp"
+#include "project/ProjectManager.hpp"
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
@@ -13,9 +14,9 @@ namespace TechEngine {
                                                             editorRegistry(editorRegistry),
                                                             appRegistry(appRegistry),
                                                             panelsManager(panelsManager),
+                                                            sceneHierarchyPanel("Server Scene Hierarchy", editorRegistry, appRegistry),
                                                             inspectorPanel("Server Inspector", editorRegistry, appRegistry, sceneHierarchyPanel.getSelectedGO()),
                                                             sceneView("Server Scene", editorRegistry, appRegistry, sceneHierarchyPanel.getSelectedGO()),
-                                                            sceneHierarchyPanel("Server Scene Hierarchy", editorRegistry, appRegistry),
                                                             Panel("ServerPanel", editorRegistry) {
         server.systemsRegistry.registerSystem<Renderer>();
     }
@@ -89,11 +90,11 @@ namespace TechEngine {
 
     void ServerPanel::startRunningScene() {
 #ifdef TE_DEBUG
-        panelsManager.compileUserScripts(CompileMode::DEBUG, CompileProject::PROJECT_SERVER);
+        panelsManager.compileUserScripts(CompileMode::DEBUG, ProjectType::Server);
 #else
-        panelsManager.compileUserScripts(RELEASEDEBUG, CompileProject::PROJECT_SERVER);
+        panelsManager.compileUserScripts(CompileMode::RELEASEDEBUG, ProjectType::Server);
 #endif
-        appRegistry.getSystem<SceneManager>().saveSceneAsTemporarily(editorRegistry.getSystem<ProjectManager>().getProjectCachePath().string(), CompileProject::PROJECT_SERVER);
+        appRegistry.getSystem<SceneManager>().saveSceneAsTemporarily(editorRegistry.getSystem<ProjectManager>().getProjectCachePath().string(), ProjectType::Server);
         appRegistry.getSystem<EventDispatcher>().copy();
         appRegistry.getSystem<MaterialManager>().copy();
         appRegistry.getSystem<ScriptEngine>().init(server.project.getUserScriptsDLLPath().string(), &appRegistry.getSystem<EventDispatcher>());
@@ -106,7 +107,7 @@ namespace TechEngine {
         appRegistry.getSystem<PhysicsEngine>().stop();
         appRegistry.getSystem<EventDispatcher>().restoreCopy();
         appRegistry.getSystem<MaterialManager>().restoreCopy();
-        appRegistry.getSystem<SceneManager>().loadSceneFromTemporarily(editorRegistry.getSystem<ProjectManager>().getProjectCachePath().string(), CompileProject::PROJECT_SERVER);
+        appRegistry.getSystem<SceneManager>().loadSceneFromTemporarily(editorRegistry.getSystem<ProjectManager>().getProjectCachePath().string(), ProjectType::Server);
         sceneHierarchyPanel.getSelectedGO().clear();
         for (GameObject* gameObject: appRegistry.getSystem<SceneManager>().getScene().getGameObjects()) {
             if (std::find(sceneHierarchyPanel.getSelectedGO().begin(), sceneHierarchyPanel.getSelectedGO().end(), gameObject) != sceneHierarchyPanel.getSelectedGO().end()) {

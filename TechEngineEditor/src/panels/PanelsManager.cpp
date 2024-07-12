@@ -237,11 +237,11 @@ namespace TechEngine {
                     clientPanel.stopRunningScene();
                 }*/
 #ifdef TE_DEBUG
-                compileUserScripts(CompileMode::DEBUG, CompileProject::PROJECT_CLIENT);
+                compileUserScripts(CompileMode::DEBUG, ProjectType::Client);
 #elif TE_RELEASE
-                compileUserScripts(RELEASE, CompileProject::PROJECT_CLIENT);
+                compileUserScripts(CompileMode::RELEASE, ProjectType::Client);
 #elif TE_RELEASEDEBUG
-                compileUserScripts(RELEASEDEBUG, CompileProject::PROJECT_CLIENT);
+                compileUserScripts(CompileMode::RELEASEDEBUG, ProjectType::Client);
 #endif
             } else if (ImGui::MenuItem("Run")) {
                 runClientProcess();
@@ -257,11 +257,11 @@ namespace TechEngine {
                     }
                 }
 #ifdef TE_DEBUG
-                compileUserScripts(CompileMode::DEBUG, CompileProject::PROJECT_CLIENT);
+                compileUserScripts(CompileMode::DEBUG, ProjectType::Client);
 #elif TE_RELEASE
-                compileUserScripts(RELEASE, CompileProject::PROJECT_CLIENT);
+                compileUserScripts(CompileMode::RELEASE, ProjectType::Client);
 #elif TE_RELEASEDEBUG
-                compileUserScripts(RELEASEDEBUG, CompileProject::PROJECT_CLIENT);
+                compileUserScripts(CompileMode::RELEASEDEBUG, ProjectType::Client);
 #endif*/
             } else if (ImGui::MenuItem("Run")) {
                 runServerProcess();
@@ -327,14 +327,14 @@ namespace TechEngine {
     }
 
 
-    void PanelsManager::compileUserScripts(CompileMode compileMode, CompileProject compileProject) {
+    void PanelsManager::compileUserScripts(CompileMode compileMode, ProjectType projectType) {
         ProjectManager& projectManager = systemsRegistry.getSystem<ProjectManager>();
         std::string cmakeBuildPath = projectManager.getCmakeBuildPath().string();
         std::string cmakeListPath = projectManager.getCmakeListPath().string();
-        std::string techEngineLibPath = compileProject == CompileProject::PROJECT_CLIENT ? projectManager.getTechEngineClientLibPath().string() : projectManager.getTechEngineServerLibPath().string();
-        std::string techEngineCoreLibPath = compileProject == CompileProject::PROJECT_CLIENT ? projectManager.getTechEngineCoreClientLibPath().string() : projectManager.getTechEngineCoreServerLibPath().string();
+        std::string techEngineLibPath = projectType == ProjectType::Client ? projectManager.getTechEngineClientLibPath().string() : projectManager.getTechEngineServerLibPath().string();
+        std::string techEngineCoreLibPath = projectType == ProjectType::Client ? projectManager.getTechEngineCoreClientLibPath().string() : projectManager.getTechEngineCoreServerLibPath().string();
 
-        std::string variable = compileProject == CompileProject::PROJECT_CLIENT ? "TechEngineClientLIB:STRING=\"" : "TechEngineServerLIB:STRING=\"";
+        std::string variable = projectType == ProjectType::Client ? "TechEngineClientLIB:STRING=\"" : "TechEngineServerLIB:STRING=\"";
 
         std::string command = "\"" + projectManager.getCmakePath().string() +
                               " -G \"Visual Studio 17 2022\""
@@ -353,7 +353,7 @@ namespace TechEngine {
         }
         command = "\"" + projectManager.getCmakePath().string() +
                   " --build " + "\"" + cmakeBuildPath + "\"" +
-                  " --target " + (compileProject == CompileProject::PROJECT_CLIENT
+                  " --target " + (projectType == ProjectType::Client
                                       ? "ClientScripts"
                                       : "ServerScripts") +
                   " --config " + cm + "\"";
@@ -370,7 +370,7 @@ namespace TechEngine {
 #ifdef TE_DEBUG
         projectManager.exportProject(ProjectType::Server, CompileMode::DEBUG);
 #else
-        exportSettingsPanel.exportServerProject(RELEASEDEBUG);
+        projectManager.exportProject(ProjectType::Server, CompileMode::RELEASEDEBUG);
 #endif
         STARTUPINFOA si;
         PROCESS_INFORMATION pi;
@@ -414,7 +414,7 @@ namespace TechEngine {
 #ifdef TE_DEBUG
         projectManager.exportProject(ProjectType::Client, CompileMode::DEBUG);
 #else
-        exportSettingsPanel.exportGameProject(RELEASEDEBUG);
+        projectManager.exportProject(ProjectType::Server, CompileMode::RELEASEDEBUG);
 #endif
         STARTUPINFOA si;
         PROCESS_INFORMATION pi;

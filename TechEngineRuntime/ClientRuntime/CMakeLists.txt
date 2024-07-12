@@ -33,6 +33,10 @@ set_target_properties(TechEngineClientRuntime PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/TechEngineClientRuntime/libs"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/TechEngineClientRuntime/runtime"
 )
+target_compile_definitions(TechEngineClientRuntime PUBLIC
+        $<$<CONFIG:Debug>:TE_DEBUG>
+        $<$<CONFIG:Release>:TE_RELEASE>
+)
 
 #Copy dll files to build directory
 add_custom_command(TARGET TechEngineClientRuntime POST_BUILD

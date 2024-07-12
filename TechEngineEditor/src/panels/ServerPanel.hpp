@@ -2,10 +2,7 @@
 #include "InspectorPanel.hpp"
 #include "Panel.hpp"
 #include "SceneHierarchyPanel.hpp"
-#include "SceneView.hpp"
 #include "core/Server.hpp"
-#include "core/Client.hpp"
-#include "project/ProjectManager.hpp"
 
 namespace TechEngine {
     class PanelsManager;
@@ -17,9 +14,9 @@ namespace TechEngine {
         SystemsRegistry& editorRegistry;
         SystemsRegistry& appRegistry;
 
+        SceneHierarchyPanel sceneHierarchyPanel;
         SceneView sceneView;
         InspectorPanel inspectorPanel;
-        SceneHierarchyPanel sceneHierarchyPanel;
         bool m_currentPlaying = false;
         friend class PanelsManager;
 

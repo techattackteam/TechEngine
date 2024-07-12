@@ -5,6 +5,7 @@
 #include "script/ScriptRegister.hpp"
 #include "script/ScriptEngine.hpp"
 #include "network/NetworkEngine.hpp"
+#include "physics/PhysicsEngine.hpp"
 #include "texture/TextureManager.hpp"
 
 namespace TechEngine {

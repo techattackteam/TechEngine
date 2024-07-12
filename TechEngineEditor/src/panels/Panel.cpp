@@ -10,7 +10,8 @@
 #include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngine {
-    Panel::Panel(const std::string& name, SystemsRegistry& editorRegistry) : editorRegistry(editorRegistry), name(name),
+    Panel::Panel(const std::string& name, SystemsRegistry& editorRegistry) : editorRegistry(editorRegistry),
+                                                                             name(name),
                                                                              keysPressed() {
     }
 

@@ -221,7 +221,7 @@ namespace TechEngine {
             } else {
                 static const char* current_item;
                 const char* items[] = {"Cube", "Sphere", "Cylinder", "Capsule", "Plane"};
-                for (auto & item : items) {
+                for (auto& item: items) {
                     if (mesh.getName() == item) {
                         current_item = item;
                         break;

@@ -2,10 +2,8 @@
 
 #include "scene/Scene.hpp"
 #include "material/MaterialManager.hpp"
-#include "physics/PhysicsEngine.hpp"
+#include "project/Project.hpp"
 #include "yaml-cpp/node/node.h"
-#include "core/CompileProject.hpp"
-
 
 namespace TechEngine {
     class CORE_DLL SceneManager : public System {
@@ -35,9 +33,9 @@ namespace TechEngine {
 
         void saveCurrentScene();
 
-        void saveSceneAsTemporarily(const std::string& cachPath, CompileProject compileProject);
+        void saveSceneAsTemporarily(const std::string& cachPath, ProjectType projectType);
 
-        void loadSceneFromTemporarily(const std::string& cachPath, CompileProject compileProject);
+        void loadSceneFromTemporarily(const std::string& cachPath, ProjectType projectType);
 
         const std::string& getActiveSceneName();
 
