@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Panel.hpp"
-#include "project/ProjectManager.hpp"
+#include "core/Client.hpp"
+#include "core/Server.hpp"
 
 namespace TechEngine {
     enum class CompileMode;
@@ -25,9 +26,5 @@ namespace TechEngine {
         void init() override;
 
         void onUpdate() override;
-
-        /*void exportGameProject(CompileMode compileMode);
-
-        void exportServerProject(CompileMode compileMode);*/
     };
 }

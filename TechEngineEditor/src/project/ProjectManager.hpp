@@ -4,6 +4,8 @@
 #include "core/Client.hpp"
 #include <filesystem>
 
+#include "panels/PanelsManager.hpp"
+
 
 namespace TechEngine {
     enum class CompileMode;
@@ -12,6 +14,7 @@ namespace TechEngine {
     private:
         Client& client;
         Server& server;
+        PanelsManager& panelsManager;
 
         std::string projectName = "New Project";
 
@@ -35,7 +38,7 @@ namespace TechEngine {
         std::filesystem::path techEngineServerLibPath;
 
     public:
-        ProjectManager(Client& client, Server& server);
+        ProjectManager(Client& client, Server& server, PanelsManager& panelsManager);
 
         void init();
 

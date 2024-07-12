@@ -1,6 +1,5 @@
 #pragma once
 
-#include "eventSystem/EventDispatcher.hpp"
 #include "GameObject.hpp"
 #include "components/render/CameraComponent.hpp"
 #include "events/material/MaterialUpdateEvent.hpp"

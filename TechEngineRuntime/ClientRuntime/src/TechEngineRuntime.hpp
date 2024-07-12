@@ -12,7 +12,7 @@ namespace TechEngine {
     public:
         TechEngineRuntime();
 
-        void init();
+        void init() override;
 
     private:
         void onUpdate() override;

@@ -9,8 +9,11 @@
 #include "texture/TextureManager.hpp"
 
 namespace TechEngine {
-    ProjectManager::ProjectManager(Client& client, Server& server) : client(client),
-                                                                     server(server) {
+    ProjectManager::ProjectManager(Client& client,
+                                   Server& server,
+                                   PanelsManager& panelsManager) : client(client),
+                                                                   server(server),
+                                                                   panelsManager(panelsManager) {
     }
 
 
@@ -182,8 +185,9 @@ namespace TechEngine {
         try {
             std::filesystem::path exportPath;
             if (compileMode == CompileMode::RELEASE) { // Happens when building the game to build path. If compileMde is in debug engines is in debug mode
-                if (!std::filesystem::exists(projectLocation.string() + "\\Build"))
+                if (!std::filesystem::exists(projectLocation.string() + "\\Build")) {
                     std::filesystem::create_directory(projectLocation.string() + "\\Build");
+                }
                 exportPath = projectType == ProjectType::Client ? getProjectGameExportPath() : getProjectServerExportPath();
             } else if (compileMode == CompileMode::DEBUG || compileMode == CompileMode::RELEASEDEBUG) { // Happens when editor launches a new process to run the game
                 if (!std::filesystem::exists(projectCachePath)) {
@@ -208,7 +212,7 @@ namespace TechEngine {
 
             if (!FileSystem::getAllFilesWithExtension({getProjectAssetsPath().string() + "\\Client"}, {".cpp", ".hpp"}, true).empty() ||
                 !FileSystem::getAllFilesWithExtension({getProjectAssetsPath().string() + "\\Common"}, {".cpp", ".hpp"}, true).empty()) {
-                // panelsManager.compileClientUserScripts(compileMode);
+                panelsManager.compileUserScripts(compileMode, projectType);
             }
             FileSystem::copyRecursive(project.getCommonAssetsPath().string(), exportPath.string() + "\\Assets\\Common", {".cpp", ".hpp"}, {"cmake"});
             FileSystem::copyRecursive(project.getAssetsPath().string(), exportPath.string() + "\\Assets\\" + (projectType == ProjectType::Client ? "Client" : "Server"), {".cpp", ".hpp"}, {"cmake"});

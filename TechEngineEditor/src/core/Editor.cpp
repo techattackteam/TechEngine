@@ -3,13 +3,13 @@
 #include "events/input/KeyPressedEvent.hpp"
 #include "events/input/KeyReleasedEvent.hpp"
 #include "events/input/MouseScrollEvent.hpp"
+#include "events/input/KeyHoldEvent.hpp"
+#include "events/input/MouseMoveEvent.hpp"
 #include "script/ScriptRegister.hpp"
+#include "project/ProjectManager.hpp"
 
 #include "yaml-cpp/yaml.h"
 #include <fstream>
-
-#include "events/input/KeyHoldEvent.hpp"
-#include "events/input/MouseMoveEvent.hpp"
 
 namespace TechEngine {
     Editor::Editor() : AppCore(),
@@ -17,16 +17,18 @@ namespace TechEngine {
                        client(window),
                        server(),
                        panelsManager(client, server, systemsRegistry) {
-        systemsRegistry.registerSystem<ProjectManager>(client, server);
+        systemsRegistry.registerSystem<ProjectManager>(client, server, panelsManager);
         systemsRegistry.getSystem<Logger>().init("TechEngineEditor");
         editorSettings = FileSystem::rootPath.string() + "/EditorSettings.TESettings";
         systemsRegistry.getSystem<ProjectManager>().init();
+        TE_LOGGER_INFO("ProjectManager initialized");
         loadEditorSettings();
+        TE_LOGGER_INFO("Editor settings loaded");
         client.init();
         server.init();
         systemsRegistry.getSystem<ProjectManager>().setupPaths();
         client.systemsRegistry.getSystem<Renderer>().init(client.project.getResourcesPath().string());
-        server.systemsRegistry.getSystem<Renderer>().init(server.project.getResourcesPath().string());
+        server.systemsRegistry.getSystem<Renderer>().init(client.project.getResourcesPath().string());
         panelsManager.init();
         client.systemsRegistry.getSystem<SceneManager>().loadScene(client.project.lastLoadedScene);
         server.systemsRegistry.getSystem<SceneManager>().loadScene(server.project.lastLoadedScene);

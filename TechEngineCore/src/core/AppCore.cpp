@@ -4,8 +4,8 @@
 #include "Timer.hpp"
 #include "events/appManagement/AppCloseRequestEvent.hpp"
 #include "mesh/MeshManager.hpp"
+#include "physics/PhysicsEngine.hpp"
 #include "script/ScriptEngine.hpp"
-#include "scriptingAPI/TechEngineAPI.hpp"
 #include "system/SystemsRegistry.hpp"
 #include "texture/TextureManager.hpp"
 

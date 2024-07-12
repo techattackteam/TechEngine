@@ -1,7 +1,5 @@
 #include "SceneView.hpp"
 
-#include <iostream>
-
 #include "components/physics/BoxColliderComponent.hpp"
 #include "core/Logger.hpp"
 #include "PanelsManager.hpp"

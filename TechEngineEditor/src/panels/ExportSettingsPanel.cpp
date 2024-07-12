@@ -1,12 +1,7 @@
 #include "ExportSettingsPanel.hpp"
-#include "components/network/NetworkSync.hpp"
-#include "core/FileSystem.hpp"
-#include "core/Logger.hpp"
-#include "PanelsManager.hpp"
+#include "project/ProjectManager.hpp"
 #include <imgui.h>
-#include <filesystem>
-#include <yaml-cpp/emitter.h>
-#include <fstream>
+
 
 namespace TechEngine {
     ExportSettingsPanel::ExportSettingsPanel(SystemsRegistry& editorRegistry,

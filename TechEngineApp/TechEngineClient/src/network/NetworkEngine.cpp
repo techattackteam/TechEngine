@@ -168,7 +168,7 @@ namespace TechEngine {
         sockets->CloseConnection(connection, 0, nullptr, false);
         connection = k_HSteamNetConnection_Invalid;
         connectionStatus = ConnectionStatus::Disconnected;
-        systemsRegistry.getSystem<SceneManager>().loadScene(lastLoadedScene);
+        systemsRegistry.getSystem<SceneManager>().loadScene(systemsRegistry.getSystem<SceneManager>().getActiveSceneName());
     }
 
     void NetworkEngine::sendBuffer(Buffer buffer, bool reliable) {

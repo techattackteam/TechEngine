@@ -9,6 +9,7 @@
 #include "events/network/CustomPacketReceived.hpp"
 #include "network/PacketType.hpp"
 #include "network/SceneSynchronizer.hpp"
+#include "physics/PhysicsEngine.hpp"
 #include "serialization/BufferStream.hpp"
 #include "script/ScriptEngine.hpp"
 #include "texture/TextureManager.hpp"

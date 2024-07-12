@@ -19,10 +19,10 @@ namespace TechEngine {
         SystemsRegistry& appRegistry;
         PanelsManager& panelsManager;
 
+        SceneHierarchyPanel sceneHierarchyPanel;
         GameView gameView;
         SceneView sceneView;
         InspectorPanel inspectorPanel;
-        SceneHierarchyPanel sceneHierarchyPanel;
         bool m_currentPlaying = false;
         friend class PanelsManager;
 

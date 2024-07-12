@@ -1,14 +1,14 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <unordered_map>
-#include <typeinfo>
-#include <string>
-
 #include "eventSystem/EventDispatcher.hpp"
 #include "serialization/StreamReader.hpp"
 #include "serialization/StreamWriter.hpp"
 #include "system/SystemsRegistry.hpp"
+
+#include <glm/glm.hpp>
+#include <unordered_map>
+#include <typeinfo>
+#include <string>
 
 namespace TechEngine {
     class Component;

@@ -1,5 +1,6 @@
 #include "ServerRuntime.hpp"
 
+#include <physics/PhysicsEngine.hpp>
 #include "core/Logger.hpp"
 #include "script/ScriptEngine.hpp"
 

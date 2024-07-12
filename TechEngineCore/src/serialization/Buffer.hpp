@@ -3,6 +3,8 @@
 #include <memory>
 #include <string.h>
 
+#include "core/Logger.hpp"
+
 namespace TechEngine {
     class Buffer {
     public:
@@ -55,7 +57,10 @@ namespace TechEngine {
         void resize(uint64_t newSize) {
             void* newData = new uint8_t[newSize];
             if (data) {
-                memcpy(newData, data, newSize);
+                //Add error handling
+                if (memcpy(newData, data, size) == nullptr) {
+                    TE_LOGGER_CRITICAL("Failed to copy data to new buffer")
+                }
                 delete[](uint8_t*)data;
             }
             data = newData;

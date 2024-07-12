@@ -2,6 +2,7 @@
 
 #include "core/Logger.hpp"
 #include "events/appManagement/AppCloseRequestEvent.hpp"
+#include "physics/PhysicsEngine.hpp"
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
@@ -25,9 +26,6 @@ namespace TechEngine {
 #ifdef TE_DEBUG
         systemsRegistry.getSystem<ScriptEngine>().init(project.getUserScriptsDLLPath().string(), &systemsRegistry.getSystem<EventDispatcher>());
         TE_LOGGER_INFO("Debug");
-#elif TE_RELEASEDEBUG
-        systemsRegistry.getSystem<ScriptEngine>().init(project.getUserScriptsDLLPath().string(), &systemsRegistry.getSystem<EventDispatcher>());
-        TE_LOGGER_INFO("ReleaseDebug");
 #elif TE_RELEASE
         systemsRegistry.getSystem<ScriptEngine>().init(project.getUserScriptsDLLPath().string(), &systemsRegistry.getSystem<EventDispatcher>());
         TE_LOGGER_INFO("Release");
