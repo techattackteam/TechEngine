@@ -85,10 +85,10 @@ endforeach ()
 
 
 #Copy .lib to project template
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/lib/debug")
-        file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/lib/debug")
-    endif ()
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR NOT CMAKE_BUILD_TYPE)
+    add_custom_command(TARGET TechEngineClient POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory
+            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/lib/debug")
     add_custom_command(TARGET TechEngineClient POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy
             "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/debug/TechEngineClient.lib"
@@ -100,9 +100,9 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
             "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/lib/debug"
             COMMAND_EXPAND_LISTS)
 elseif (CMAKE_BUILD_TYPE STREQUAL "Release")
-    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/lib/release")
-        file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/lib/release")
-    endif ()
+    add_custom_command(TARGET TechEngineClient POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory
+            "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Client/TechEngineAPI/lib/release")
     add_custom_command(TARGET TechEngineClient POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy
             "${TECH_ENGINE_CLIENT_OUTPUT_DIRECTORY}/release/TechEngineClient.lib"

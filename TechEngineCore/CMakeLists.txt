@@ -48,6 +48,7 @@ function(configure_tech_engine_core target_name)
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/material/Material.hpp"
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/texture"
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/serialization"
+            "${PROJECT_SOURCE_DIR}/TechEngineCore/src/network/NetworkObjectsRegistry.hpp"
             "${PROJECT_SOURCE_DIR}/TechEngineCore/src/scriptingAPI"
     )
 
@@ -73,7 +74,7 @@ function(configure_tech_engine_core target_name)
             if (NOT EXISTS "${TECH_ENGINE_API_DIRECTORY}/${folder_name}")
                 file(MAKE_DIRECTORY "${TECH_ENGINE_API_DIRECTORY}/${folder_name}")
             endif ()
-            add_custom_command(TARGET ${target_name} PRE_BUILD
+            add_custom_command(TARGET ${target_name} POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy "${entry}" "${TECH_ENGINE_API_DIRECTORY}/${folder_name}"
                     COMMAND_EXPAND_LISTS)
         endif ()
@@ -81,9 +82,9 @@ function(configure_tech_engine_core target_name)
 
     # Copy .lib files to project template
     if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR NOT CMAKE_BUILD_TYPE)
-        if (NOT EXISTS "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/debug")
-            file(MAKE_DIRECTORY "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/debug")
-        endif ()
+        add_custom_command(TARGET ${target_name} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E make_directory
+                "${PROJECT_SOURCE_DIR}/TechEngineTemplates/ProjectTemplate/Resources/Common/TechEngineAPI/lib/debug")
         add_custom_command(TARGET ${target_name} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy
                 "${TECH_ENGINE_OUTPUT_DIRECTORY}/debug/${target_name}.lib"
