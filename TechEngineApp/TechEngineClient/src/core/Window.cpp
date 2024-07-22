@@ -4,7 +4,6 @@
 #include "events/input/KeyPressedEvent.hpp"
 #include "events/input/KeyReleasedEvent.hpp"
 #include "events/input/KeyHoldEvent.hpp"
-#include "events/window/WindowCloseEvent.hpp"
 #include "Mouse.hpp"
 #include "events/appManagement/AppCloseRequestEvent.hpp"
 #include "events/input/MouseScrollEvent.hpp"
@@ -39,7 +38,6 @@ namespace TechEngine {
         glfwSetWindowUserPointer(handler, this);
         glfwSetWindowCloseCallback(handler, [](GLFWwindow* handler) {
             Window* window = (Window*)glfwGetWindowUserPointer(handler);
-            window->systemsRegistry.getSystem<EventDispatcher>().dispatch(new WindowCloseEvent());
             window->systemsRegistry.getSystem<EventDispatcher>().dispatch(new AppCloseRequestEvent());
         });
         glfwSetKeyCallback(handler, [](GLFWwindow* handler, int key, int scancode, int action, int mods) {

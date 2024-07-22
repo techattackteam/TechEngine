@@ -5,6 +5,7 @@
 #include "script/ScriptRegister.hpp"
 #include "script/ScriptEngine.hpp"
 #include "network/NetworkEngine.hpp"
+#include "network/NetworkObjectsManager.hpp"
 #include "physics/PhysicsEngine.hpp"
 #include "texture/TextureManager.hpp"
 
@@ -15,6 +16,7 @@ namespace TechEngine {
                                      AppCore() {
         systemsRegistry.registerSystem<Renderer>();
         systemsRegistry.registerSystem<NetworkEngine>(systemsRegistry);
+        systemsRegistry.registerSystem<NetworkObjectsManager>();
     }
 
     Client::~Client() = default;
@@ -34,9 +36,6 @@ namespace TechEngine {
         systemsRegistry.getSystem<TextureManager>().init(FileSystem::getAllFilesWithExtension(paths, {".jpg", ".png"}, true));
         systemsRegistry.getSystem<MaterialManager>().init(FileSystem::getAllFilesWithExtension(paths, {".mat"}, true));
         systemsRegistry.getSystem<SceneManager>().init(FileSystem::getAllFilesWithExtension(paths, {".scene"}, true));
-        systemsRegistry.getSystem<EventDispatcher>().subscribe(WindowCloseEvent::eventType, [this](Event* event) {
-            onWindowCloseEvent((WindowCloseEvent*)(event));
-        });
     }
 
     void Client::onFixedUpdate() {
@@ -44,6 +43,7 @@ namespace TechEngine {
         systemsRegistry.getSystem<ScriptEngine>().onFixedUpdate();
         systemsRegistry.getSystem<SceneManager>().getScene().fixedUpdate();
         systemsRegistry.getSystem<NetworkEngine>().fixedUpdate();
+        systemsRegistry.getSystem<NetworkObjectsManager>().fixedUpdate();
     }
 
     void Client::onUpdate() {
@@ -51,10 +51,7 @@ namespace TechEngine {
         systemsRegistry.getSystem<ScriptEngine>().onUpdate();
         systemsRegistry.getSystem<SceneManager>().getScene().update();
         systemsRegistry.getSystem<NetworkEngine>().update();
+        systemsRegistry.getSystem<NetworkObjectsManager>().update();
         window.onUpdate();
-    }
-
-    void Client::onWindowCloseEvent(WindowCloseEvent* event) {
-        running = false;
     }
 }

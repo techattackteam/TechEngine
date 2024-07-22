@@ -3,22 +3,29 @@
 #include "core/Logger.hpp"
 #include "network/PacketType.hpp"
 #include "serialization/BufferStream.hpp"
+#include "events/network/ClientBanEvent.hpp"
+#include "events/network/ClientKickEvent.hpp"
+#include "events/network/ConnectionEstablishedEvent.hpp"
+#include "events/network/CustomPacketReceived.hpp"
+#include "events/network/NetworkIntValueChanged.hpp"
+#include "events/network/SyncNetworkInt.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "network/SceneSynchronizer.hpp"
+#include "scene/GameObject.hpp"
+#include "network/NetworkObjectsManager.hpp"
 
 #include <steam/steamnetworkingsockets.h>
 #include <steam/ISteamNetworkingUtils.h>
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 
-#include "events/network/ClientBanEvent.hpp"
-#include "events/network/ClientKickEvent.hpp"
-#include "events/network/ConnectionEstablishedEvent.hpp"
-#include "events/network/CustomPacketReceived.hpp"
-#include "eventSystem/EventDispatcher.hpp"
-#include "network/SceneSynchronizer.hpp"
-#include "scene/GameObject.hpp"
 
 namespace TechEngine {
     NetworkEngine::NetworkEngine(SystemsRegistry& systemsRegistry) : systemsRegistry(systemsRegistry) {
+        EventDispatcher& eventDispatcher = systemsRegistry.getSystem<EventDispatcher>();
+        eventDispatcher.subscribe(NetworkIntValueChanged::eventType, [this](Event* event) {
+            onNetworkIntChanged((NetworkIntValueChanged*)event);
+        });
     }
 
     NetworkEngine::~NetworkEngine() {
@@ -156,7 +163,6 @@ namespace TechEngine {
         if (running) {
             pollIncomingMessages();
             pollConnectionStateChanges();
-            //std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }
 
@@ -168,20 +174,8 @@ namespace TechEngine {
         sockets->CloseConnection(connection, 0, nullptr, false);
         connection = k_HSteamNetConnection_Invalid;
         connectionStatus = ConnectionStatus::Disconnected;
+        systemsRegistry.getSystem<NetworkObjectsManager>().onDisconnect();
         systemsRegistry.getSystem<SceneManager>().loadScene(systemsRegistry.getSystem<SceneManager>().getActiveSceneName());
-    }
-
-    void NetworkEngine::sendBuffer(Buffer buffer, bool reliable) {
-        EResult result = sockets->SendMessageToConnection(connection, buffer.data, buffer.GetSize(), reliable ? k_nSteamNetworkingSend_Reliable : k_nSteamNetworkingSend_Unreliable, nullptr);
-        if (result != k_EResultOK) {
-            TE_LOGGER_ERROR("Failed to send message to server. Error: {0}", (int)result);
-        } else {
-            TE_LOGGER_INFO("Sent message to server");
-        }
-    }
-
-    void NetworkEngine::sendString(const std::string& string, bool reliable) {
-        sendBuffer(Buffer(string.c_str(), string.size()), reliable);
     }
 
     bool NetworkEngine::isRunning() {
@@ -194,6 +188,24 @@ namespace TechEngine {
 
     const std::string& NetworkEngine::getConnectionDebugMessage() const {
         return connectionDebugMessage;
+    }
+
+    void NetworkEngine::requestNetworkObject(const std::string& objectType) {
+        Buffer scratchBuffer;
+        scratchBuffer.allocate(1024);
+        BufferStreamWriter stream(scratchBuffer);
+        stream.writeRaw<PacketType>(PacketType::RequestNetworkObject);
+        stream.writeString(objectType);
+        sendBuffer(stream.getBuffer());
+    }
+
+    void NetworkEngine::requestDeleteNetworkObject(NetworkObject* networkObject) {
+        Buffer scratchBuffer;
+        scratchBuffer.allocate(1024);
+        BufferStreamWriter stream(scratchBuffer);
+        stream.writeRaw<PacketType>(PacketType::RequestDeleteNetworkObject);
+        stream.writeString(networkObject->getNetworkUUID());
+        sendBuffer(stream.getBuffer());
     }
 
     void NetworkEngine::pollIncomingMessages() {
@@ -334,12 +346,38 @@ namespace TechEngine {
                 SceneSynchronizer::deserializeScene(stream, systemsRegistry.getSystem<SceneManager>());
                 break;
             }
+            case PacketType::NetworkIntSync: {
+                int value;
+                stream.readRaw<int>(value);
+                systemsRegistry.getSystem<EventDispatcher>().dispatch(new SyncNetworkInt(value));
+                break;
+            }
+            case PacketType::CreateNetworkObject: {
+                std::string objectName;
+                unsigned int objectOwner = 0;
+                std::string networkUUID = "";
+                stream.readString(objectName);
+                stream.readRaw<unsigned int>(objectOwner);
+                stream.readString(networkUUID);
+                systemsRegistry.getSystem<NetworkObjectsManager>().createNetworkObject(objectName, objectOwner, networkUUID);
+                TE_LOGGER_INFO("Created network object {0} with owner {1} and UUID {2}", objectName, objectOwner, networkUUID);
+                break;
+            }
+            case PacketType::DeleteNetworkObject: {
+                std::string networkUUID;
+                stream.readString(networkUUID);
+                systemsRegistry.getSystem<NetworkObjectsManager>().deleteNetworkObject(networkUUID);
+                TE_LOGGER_INFO("Deleted network object with UUID {0}", networkUUID);
+                break;
+            }
+
             case PacketType::CustomPacket: {
                 std::string customPacket;
                 stream.readString(customPacket);
                 if (checkCustomPacketType(customPacket)) {
                     systemsRegistry.getSystem<EventDispatcher>().dispatch(new CustomPacketReceived(customPacket));
                 }
+                break;
             }
 
             default:
@@ -364,5 +402,27 @@ namespace TechEngine {
         stream.writeString(packetType);
         stream.writeBuffer(buffer);
         sendBuffer(stream.getBuffer(), reliable);
+    }
+
+    void NetworkEngine::sendBuffer(Buffer buffer, bool reliable) {
+        EResult result = sockets->SendMessageToConnection(connection, buffer.data, buffer.GetSize(), reliable ? k_nSteamNetworkingSend_Reliable : k_nSteamNetworkingSend_Unreliable, nullptr);
+        if (result != k_EResultOK) {
+            TE_LOGGER_ERROR("Failed to send message to server. Error: {0}", (int)result);
+        }
+    }
+
+    void NetworkEngine::sendString(const std::string& string, bool reliable) {
+        sendBuffer(Buffer(string.c_str(), string.size()), reliable);
+    }
+
+
+    void NetworkEngine::onNetworkIntChanged(NetworkIntValueChanged* event) {
+        int value = event->getValue();
+        Buffer scratchBuffer;
+        scratchBuffer.allocate(sizeof(PacketType::NetworkIntSync) + sizeof(int));
+        BufferStreamWriter stream(scratchBuffer);
+        stream.writeRaw<PacketType>(PacketType::NetworkIntSync);
+        stream.writeRaw<int>(value);
+        sendBuffer(stream.getBuffer());
     }
 }

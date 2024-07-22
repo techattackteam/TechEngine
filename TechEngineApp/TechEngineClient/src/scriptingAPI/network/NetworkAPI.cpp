@@ -14,4 +14,12 @@ namespace TechEngine {
     void NetworkAPI::disconnectFromServer() {
         networkEngine->disconnectServer();
     }
+
+    void NetworkAPI::requestDeleteNetworkObject(NetworkObject* networkObject) {
+        networkEngine->requestDeleteNetworkObject(networkObject);
+    }
+
+    void NetworkAPI::requestNetworkObjectInternal(const std::string& name) {
+        networkEngine->requestNetworkObject(name);
+    }
 }

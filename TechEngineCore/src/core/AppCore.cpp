@@ -52,5 +52,6 @@ namespace TechEngine {
 
     void AppCore::onAppCloseRequestEvent() {
         running = false;
+        TE_LOGGER_INFO("App close request event received");
     }
 }

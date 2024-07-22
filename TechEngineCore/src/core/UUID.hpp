@@ -1,10 +1,11 @@
 #pragma once
+#include "core/CoreExportDll.hpp"
 #include <cstdint>
 #include <string>
 #include <xhash>
 
 namespace TechEngine {
-    class UUID {
+    class CORE_DLL UUID {
     private:
         uint64_t uuid;
 
