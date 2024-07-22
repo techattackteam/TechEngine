@@ -1,16 +1,22 @@
 #pragma once
 
+
 #include "core/ClientExportDll.hpp"
 #include "serialization/Buffer.hpp"
 #include "scene/SceneManager.hpp"
-
+#include "events/network/NetworkIntValueChanged.hpp"
+#include "network/NetworkObjectsRegistry.hpp"
+#include "network/PacketType.hpp"
+#include "scriptingAPI/network/NetworkObject.hpp"
 #include <steam/isteamnetworkingsockets.h>
-#include <filesystem>
 
 namespace TechEngine {
+    enum class PacketType : uint16_t;
+
     class CLIENT_DLL NetworkEngine : public System {
     private:
         SystemsRegistry& systemsRegistry;
+        NetworkObjectsRegistry networkObjectsRegistry;
 
     public:
         enum class ConnectionStatus {
@@ -57,6 +63,10 @@ namespace TechEngine {
 
         const std::string& getConnectionDebugMessage() const;
 
+        void requestNetworkObject(const std::string& objectType);
+
+        void requestDeleteNetworkObject(NetworkObject* networkObject);
+
     private:
         void pollIncomingMessages();
 
@@ -69,5 +79,7 @@ namespace TechEngine {
         void sendMessage(const std::string& message);
 
         void sendCustomPacket(const std::string& packetType, Buffer buffer, bool reliable = true);
+
+        void onNetworkIntChanged(NetworkIntValueChanged* event);
     };
 }

@@ -11,6 +11,8 @@
 #include "yaml-cpp/yaml.h"
 #include <fstream>
 
+#include "events/appManagement/AppCloseRequestEvent.hpp"
+
 namespace TechEngine {
     Editor::Editor() : AppCore(),
                        window(systemsRegistry, "TechEngineEditor", 1600, 900),
@@ -57,6 +59,10 @@ namespace TechEngine {
             glm::vec2 fromPos = ((MouseMoveEvent*)event)->getFromPosition();
             glm::vec2 toPos = ((MouseMoveEvent*)event)->getToPosition();
             client.systemsRegistry.getSystem<EventDispatcher>().dispatch(new MouseMoveEvent(fromPos, toPos));
+        });
+
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(AppCloseRequestEvent::eventType, [this](Event* event) {
+            running = false;
         });
     }
 

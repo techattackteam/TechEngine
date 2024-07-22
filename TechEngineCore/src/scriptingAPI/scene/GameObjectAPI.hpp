@@ -1,5 +1,4 @@
 #pragma once
-#include <string>
 
 #include "components/TransformComponent.hpp"
 
@@ -8,7 +7,7 @@ namespace TechEngine {
 }
 
 namespace TechEngine {
-    class GameObjectAPI {
+    class CORE_DLL GameObjectAPI {
     private:
         GameObject* gameObject;
         friend class SceneAPI;

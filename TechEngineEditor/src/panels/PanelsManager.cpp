@@ -14,7 +14,6 @@
 #include "events/input/KeyPressedEvent.hpp"
 #include "events/OnProcessCloseEvent.hpp"
 #include "events/input/KeyReleasedEvent.hpp"
-#include "events/window/WindowCloseEvent.hpp"
 
 namespace TechEngine {
     PanelsManager::PanelsManager(Client& client,
@@ -35,7 +34,7 @@ namespace TechEngine {
         contentBrowser.init();
         exportSettingsPanel.init();
         materialEditor.init();
-        systemsRegistry.getSystem<EventDispatcher>().subscribe(WindowCloseEvent::eventType, [this](TechEngine::Event* event) {
+        systemsRegistry.getSystem<EventDispatcher>().subscribe(AppCloseRequestEvent::eventType, [this](TechEngine::Event* event) {
             if (clientPanel.isRunning()) {
                 clientPanel.stopRunningScene();
             }
@@ -227,7 +226,7 @@ namespace TechEngine {
                 }
             }
             if (ImGui::MenuItem("Exit")) {
-                client.systemsRegistry.getSystem<EventDispatcher>().dispatch(new AppCloseRequestEvent());
+                systemsRegistry.getSystem<EventDispatcher>().dispatch(new AppCloseRequestEvent());
             }
             ImGui::EndMenu();
         }

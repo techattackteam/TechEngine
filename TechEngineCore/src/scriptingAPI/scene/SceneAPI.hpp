@@ -1,6 +1,4 @@
 #pragma once
-#include <memory>
-#include <string>
 
 #include "GameObjectAPI.hpp"
 
@@ -9,7 +7,7 @@ namespace TechEngine {
 }
 
 namespace TechEngine {
-    class SceneAPI {
+    class CORE_DLL SceneAPI {
     private:
         Scene* scene = nullptr;
 

@@ -141,6 +141,50 @@ namespace TechEngine {
         // 1. GameState
         SyncGameState = 14,
 
+
+        //
+        // -- NetworkIntSync --
+        //
+        // [Server->Client]
+        // Sync network int
+        // 1. SyncNetworkInt
+        // [Client->Server]
+        // Sync network int
+        // 1. SyncNetworkInt
+        NetworkIntSync = 15,
+
+        //
+        // -- RequestNetworkObject --
+        //
+        // [Client->Server]
+        // Request to create a network object
+        // 1. String with network object type
+        RequestNetworkObject = 16,
+
+        //
+        // -- CreateNetworkObject --
+        //
+        // [Server->Client]
+        // Create a network object
+        // 1. NetworkObject
+        CreateNetworkObject = 17,
+
+        //
+        // -- RequestDeleteNetworkObject --
+        //
+        // [Client->Server]
+        // Request to delete a network object
+        // 1. String with network object UUID
+        RequestDeleteNetworkObject = 18,
+
+        //
+        // -- DeleteNetworkObject --
+        //
+        // [Server->Client]
+        // Delete a network object
+        // 1. String with network object UUID
+        DeleteNetworkObject = 19,
+
         //
         // -- CustomPacket --
         //

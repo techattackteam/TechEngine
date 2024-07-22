@@ -3,7 +3,6 @@
 #include "core/ClientExportDll.hpp"
 #include "Window.hpp"
 #include "core/AppCore.hpp"
-#include "events/window/WindowCloseEvent.hpp"
 #include "project/Project.hpp"
 #include "scriptingAPI/TechEngineAPIClient.hpp"
 
@@ -23,8 +22,5 @@ namespace TechEngine {
         void onFixedUpdate() override;
 
         void onUpdate() override;
-
-    private:
-        void onWindowCloseEvent(WindowCloseEvent* event);
     };
 }

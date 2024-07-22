@@ -11,6 +11,8 @@
 
 #include <steam/steamnetworkingsockets.h>
 #include <steam/isteamnetworkingutils.h>
+
+#include "network/NetworkObjectsRegistry.hpp"
 #ifndef STEAMNETWORKINGSOCKETS_OPENSOURCE
 #include <steam/steam_api.h>
 #endif
@@ -20,6 +22,7 @@ namespace TechEngine {
     class SERVER_DLL Server : public AppCore {
     public:
         Project project;
+        NetworkObjectsRegistry networkObjectsRegistry;
 
     protected:
         inline static Server* instance;
@@ -66,5 +69,7 @@ namespace TechEngine {
         void onDataReceivedCallback(const ClientInfo&, Buffer);
 
         void onClientConnected(const ClientInfo& clientInfo);
+
+        void onClientDisconnected(const ClientInfo& clientInfo);
     };
 }

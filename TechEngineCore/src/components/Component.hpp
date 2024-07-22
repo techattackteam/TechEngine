@@ -2,13 +2,12 @@
 
 #include <string>
 
-#include "eventSystem/EventDispatcher.hpp"
 #include "serialization/BufferStream.hpp"
-#include "system/SystemsRegistry.hpp"
 
 namespace TechEngine {
     class GameObject;
     class TransformComponent;
+    class SystemsRegistry;
 
     class CORE_DLL Component {
     protected:

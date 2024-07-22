@@ -3,6 +3,7 @@
 
 #include "core/ClientInfo.hpp"
 #include "serialization/Buffer.hpp"
+#include "scriptingAPI/network/NetworkObject.hpp"
 
 namespace TechEngine {
     class Server;
@@ -31,8 +32,20 @@ namespace TechEngine {
 
         void sendStringToAllClients(const std::string& string, ClientID excludeClientID, bool reliable);
 
+        Buffer createNetworkObjectBuffer(const std::string& objectType, unsigned int owner, const std::string& networkUUID);
+
+        void sendNetworkObject(const ClientInfo& clientInfo, const std::string& objectType, NetworkObject* networkObject);
+
+        void sendNetworkObjectToAllClients(const std::string& objectType, NetworkObject* networkObject);
+
         void syncGameState(const ClientInfo& clientInfo);
 
+        void syncNetworkObjects(const ClientInfo& clientInfo);
+
         void sendCustomPacket(const ClientID& clientID, const std::string& packetType, Buffer buffer, bool reliable);
+
+        void sendNetworkObjectDeleted(const std::string& uuid, ClientID excludeClientID);
+
+        void deleteAllNetworkObjectFromClient(uint32 id);
     };
 }

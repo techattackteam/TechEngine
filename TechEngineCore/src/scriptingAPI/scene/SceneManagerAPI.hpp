@@ -1,16 +1,12 @@
 #pragma once
-#include <memory>
-#include <string>
-
 #include "SceneAPI.hpp"
-
 
 namespace TechEngine {
     class SceneManager;
 }
 
 namespace TechEngine {
-    class SceneManagerAPI {
+    class CORE_DLL SceneManagerAPI {
     private:
         inline static SceneManager* sceneManager = nullptr;
 

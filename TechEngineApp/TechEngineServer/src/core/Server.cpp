@@ -13,10 +13,13 @@
 #include "serialization/BufferStream.hpp"
 #include "script/ScriptEngine.hpp"
 #include "texture/TextureManager.hpp"
+#include "core/UUID.hpp"
+#include "network/NetworkObjectsManager.hpp"
 
 namespace TechEngine {
     Server::Server() : project(systemsRegistry), m_Communicator(*this), m_serverAPI(systemsRegistry, this, &m_Communicator) {
         instance = this;
+        systemsRegistry.registerSystem<NetworkObjectsManager>();
     }
 
     Server::~Server() {
@@ -96,6 +99,8 @@ namespace TechEngine {
         systemsRegistry.getSystem<ScriptEngine>().onUpdate();
         systemsRegistry.getSystem<SceneManager>().getScene().fixedUpdate();
         systemsRegistry.getSystem<SceneManager>().getScene().update();
+        systemsRegistry.getSystem<NetworkObjectsManager>().fixedUpdate();
+        systemsRegistry.getSystem<NetworkObjectsManager>().update();
         PollIncomingMessages();
         m_interface->RunCallbacks();
         syncGameObjects();
@@ -152,12 +157,46 @@ namespace TechEngine {
                 if (!success)
                     return;
 
-                // User callback
                 TE_LOGGER_INFO("Received message from {0}: {1}", clientInfo.ConnectionDesc, message);
                 break;
             }
             case PacketType::ClientConnectionRequest: {
                 systemsRegistry.getSystem<EventDispatcher>().dispatch(new OnClientConnectionRequest());
+                break;
+            }
+            case PacketType::NetworkIntSync: {
+                int value;
+                stream.readRaw<int>(value);
+                Buffer scratchBuffer;
+                scratchBuffer.allocate(sizeof(PacketType::NetworkIntSync) + sizeof(int));
+                BufferStreamWriter stream(scratchBuffer);
+                stream.writeRaw<PacketType>(PacketType::NetworkIntSync);
+                stream.writeRaw<int>(value);
+                m_Communicator.sendBufferToAllClients(scratchBuffer, 0, true);
+                break;
+            }
+            case PacketType::RequestNetworkObject: {
+                std::string objectType;
+                stream.readString(objectType);
+                TE_LOGGER_INFO("Received request for network object: {0}", objectType);
+                UUID uuid;
+                std::string uuidString = std::to_string(uuid);
+                NetworkObject* object = systemsRegistry.getSystem<NetworkObjectsManager>().createNetworkObject(objectType, clientInfo.ID, uuidString);
+                if (object != nullptr) {
+                    m_Communicator.sendNetworkObject(clientInfo, objectType, object);
+                    TE_LOGGER_INFO("Created network object: {0} with UUID: {1}", objectType, uuidString);
+                }
+                break;
+            }
+            case PacketType::RequestDeleteNetworkObject: {
+                std::string uuid;
+                stream.readString(uuid);
+                if (systemsRegistry.getSystem<NetworkObjectsManager>().deleteNetworkObject(uuid)) {
+                    m_Communicator.sendNetworkObjectDeleted(uuid, -1);
+                    TE_LOGGER_INFO("Deleted network object with UUID: {0}", uuid);
+                } else {
+                    TE_LOGGER_WARN("Failed to delete network object with UUID: {0}\n\tObject not found!", uuid);
+                }
                 break;
             }
             case PacketType::CustomPacket: {
@@ -175,7 +214,13 @@ namespace TechEngine {
 
     void Server::onClientConnected(const ClientInfo& clientInfo) {
         m_Communicator.syncGameState(clientInfo);
+        m_Communicator.syncNetworkObjects(clientInfo);
         systemsRegistry.getSystem<EventDispatcher>().dispatch(new OnClientConnected(clientInfo.ID));
+    }
+
+    void Server::onClientDisconnected(const ClientInfo& clientInfo) {
+        m_Communicator.deleteAllNetworkObjectFromClient(clientInfo.ID);
+        systemsRegistry.getSystem<EventDispatcher>().dispatch(new OnClientDisconnected(clientInfo.ID));
     }
 
     void Server::connectionStatusChangedCallback(SteamNetConnectionStatusChangedCallback_t* info) {
@@ -201,6 +246,7 @@ namespace TechEngine {
 
                     // Either ClosedByPeer or ProblemDetectedLocally - should be communicated to user callback
                     // User callback
+                    onClientDisconnected(itClient->second);
                     m_ConnectedClients.erase(itClient);
                 } else {
                     //assert(info->m_eOldState == k_ESteamNetworkingConnectionState_Connecting);
@@ -214,7 +260,6 @@ namespace TechEngine {
                 // so we just pass 0s.
                 TE_LOGGER_INFO("Client disconnected: {0}", status->m_info.m_szEndDebug);
                 m_interface->CloseConnection(status->m_hConn, 0, nullptr, false);
-                systemsRegistry.getSystem<EventDispatcher>().dispatch(new OnClientDisconnected());
                 break;
             }
 
