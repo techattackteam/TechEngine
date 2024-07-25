@@ -1,11 +1,11 @@
 #pragma once
 #include "core/CoreExportDll.hpp"
-#include <string>
-#include <unordered_map>
-
 #include "NetworkVariable.hpp"
 #include "events/network/SyncNetworkInt.hpp"
 #include "network/NetworkObjectsRegistry.hpp"
+
+#include <string>
+#include <unordered_map>
 
 namespace TechEngine {
     class NetworkVariable;

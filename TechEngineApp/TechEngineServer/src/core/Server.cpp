@@ -171,9 +171,12 @@ namespace TechEngine {
                 stream.readString(name);
                 stream.readRaw<int>(value);
                 Buffer scratchBuffer;
-                scratchBuffer.allocate(sizeof(PacketType::NetworkIntSync) + sizeof(int));
+                scratchBuffer.allocate(sizeof(PacketType::NetworkIntSync) + sizeof(unsigned int) + (sizeof(char) * (name.size() + networkUUID.size())) + sizeof(int));
                 BufferStreamWriter stream(scratchBuffer);
                 stream.writeRaw<PacketType>(PacketType::NetworkIntSync);
+                stream.writeRaw<unsigned int>(owner);
+                stream.writeString(networkUUID);
+                stream.writeString(name);
                 stream.writeRaw<int>(value);
                 m_communicator.broadcastBuffer(scratchBuffer, true);
                 systemsRegistry.getSystem<EventDispatcher>().dispatch(new SyncNetworkInt(owner, networkUUID, name, value));

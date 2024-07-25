@@ -13,7 +13,7 @@
 namespace TechEngine {
     NetworkObject::NetworkObject() {
         EventDispatcherAPI::subscribe(SyncNetworkInt::eventType, [this](Event* event) {
-            onSyncNetworkVariable(dynamic_cast<SyncNetworkInt*>(event));
+            onSyncNetworkVariable((SyncNetworkInt*)event);
         });
     }
 
