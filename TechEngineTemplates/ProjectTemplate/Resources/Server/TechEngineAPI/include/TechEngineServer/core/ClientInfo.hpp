@@ -6,7 +6,16 @@ namespace TechEngine {
     using ClientID = HSteamNetConnection;
 
     struct ClientInfo {
-        ClientID ID;
+        ClientID internalID;
+        int networkID;
         std::string ConnectionDesc;
     };
+
+    inline bool operator==(const ClientInfo& lhs, const ClientInfo& rhs) {
+        return lhs.internalID == rhs.internalID;
+    }
+
+    inline bool operator!=(const ClientInfo& lhs, const ClientInfo& rhs) {
+        return !(lhs == rhs);
+    }
 }

@@ -10,6 +10,9 @@
 #include "scriptingAPI/network/NetworkObject.hpp"
 #include <steam/isteamnetworkingsockets.h>
 
+#include "events/network/CustomPacketReceived.hpp"
+#include "events/network/RequestNetworkVariableCreation.hpp"
+
 namespace TechEngine {
     enum class PacketType : uint16_t;
 
@@ -66,6 +69,8 @@ namespace TechEngine {
         void requestNetworkObject(const std::string& objectType);
 
         void requestDeleteNetworkObject(NetworkObject* networkObject);
+
+        void onNetworkVariableCreated(RequestNetworkVariableCreation* event);
 
     private:
         void pollIncomingMessages();

@@ -15,37 +15,40 @@ namespace TechEngine {
         explicit Communicator(Server& server);
 
         template<typename T>
-        void sendDataToClient(ClientID clientID, const T& data, bool reliable = true) {
-            sendBufferToClient(clientID, Buffer(&data, sizeof(T)), reliable);
+        void sendDataToClient(const ClientInfo& clientInfo, const T& data, bool reliable = true) {
+            sendBufferToClient(clientInfo, Buffer(&data, sizeof(T)), reliable);
         }
 
         template<typename T>
         void sendDataToAllClients(const T& data, ClientID excludeClientID = 0, bool reliable = true) {
-            sendBufferToAllClients(Buffer(&data, sizeof(T)), excludeClientID, reliable);
+            broadcastBuffer(Buffer(&data, sizeof(T)), excludeClientID, reliable);
         }
 
-        void sendBufferToClient(ClientID clientID, Buffer buffer, bool reliable);
+        void sendBufferToClient(const ClientInfo& clientInfo, Buffer buffer, bool reliable);
 
-        void sendBufferToAllClients(Buffer buffer, ClientID excludeClientID, bool reliable);
+        void broadcastBuffer(Buffer buffer, bool reliable, std::vector<ClientInfo> excludeClientsInfos = {});
 
-        void sendStringToClient(ClientID clientID, const std::string& string, bool reliable);
-
-        void sendStringToAllClients(const std::string& string, ClientID excludeClientID, bool reliable);
-
-        Buffer createNetworkObjectBuffer(const std::string& objectType, unsigned int owner, const std::string& networkUUID);
-
-        void sendNetworkObject(const ClientInfo& clientInfo, const std::string& objectType, NetworkObject* networkObject);
-
-        void sendNetworkObjectToAllClients(const std::string& objectType, NetworkObject* networkObject);
+        void sendNetworkID(const ClientInfo& clientInfo);
 
         void syncGameState(const ClientInfo& clientInfo);
 
+        void sendNetworkObject(const ClientInfo& clientInfo, NetworkObject* networkObject);
+
+        void broadcastNetworkObject(NetworkObject* networkObject);
+
         void syncNetworkObjects(const ClientInfo& clientInfo);
 
-        void sendCustomPacket(const ClientID& clientID, const std::string& packetType, Buffer buffer, bool reliable);
+        void broadcastNetworkObjectDeleted(const std::string& uuid, std::vector<ClientInfo> excludedClientInfos = {});
 
-        void sendNetworkObjectDeleted(const std::string& uuid, ClientID excludeClientID);
+        void deleteAllNetworkObjectsFromClient(const ClientInfo& clientInfo);
 
-        void deleteAllNetworkObjectFromClient(uint32 id);
+        void broadcastNetworkVariable(unsigned int owner, const std::string& uuid, const std::string& string, int value);
+
+        void sendCustomPacket(const ClientInfo& clientInfo, const std::string& packetType, Buffer buffer, bool reliable);
+
+    private:
+        Buffer createNetworkObjectBuffer(const std::string& objectType, int owner, const std::string& networkUUID);
+
+        Buffer createNetworkVariableBuffer(unsigned int owner, const std::string& uuid, const std::string& name, int value);
     };
 }

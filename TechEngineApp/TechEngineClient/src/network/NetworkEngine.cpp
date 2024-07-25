@@ -19,10 +19,15 @@
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 
+#include "scriptingAPI/network/NetworkData.hpp"
+
 
 namespace TechEngine {
     NetworkEngine::NetworkEngine(SystemsRegistry& systemsRegistry) : systemsRegistry(systemsRegistry) {
         EventDispatcher& eventDispatcher = systemsRegistry.getSystem<EventDispatcher>();
+        eventDispatcher.subscribe(RequestNetworkVariableCreation::eventType, [this](Event* event) {
+            onNetworkVariableCreated((RequestNetworkVariableCreation*)event);
+        });
         eventDispatcher.subscribe(NetworkIntValueChanged::eventType, [this](Event* event) {
             onNetworkIntChanged((NetworkIntValueChanged*)event);
         });
@@ -120,6 +125,9 @@ namespace TechEngine {
     }
 
     void NetworkEngine::connectServer(const std::string& ip, const std::string& port) {
+        if (running && connectionStatus == ConnectionStatus::Connected) {
+            disconnectServer();
+        }
         connectionStatus = ConnectionStatus::Connecting;
 
         SteamDatagramErrMsg errMsg;
@@ -208,6 +216,22 @@ namespace TechEngine {
         sendBuffer(stream.getBuffer());
     }
 
+    void NetworkEngine::onNetworkVariableCreated(RequestNetworkVariableCreation* event) {
+        Buffer scratchBuffer;
+        scratchBuffer.allocate(sizeof(PacketType::RequestNetworkVariable) +
+                               sizeof(unsigned int) +
+                               sizeof(event->getNetworkUUID()) +
+                               sizeof(event->getName()) +
+                               sizeof(int));
+        BufferStreamWriter stream(scratchBuffer);
+        stream.writeRaw<PacketType>(PacketType::RequestNetworkVariable);
+        stream.writeRaw<unsigned int>(event->getOwner());
+        stream.writeString(event->getNetworkUUID());
+        stream.writeString(event->getName());
+        stream.writeRaw<int>(event->getValue());
+        sendBuffer(stream.getBuffer());
+    }
+
     void NetworkEngine::pollIncomingMessages() {
         while (running) {
             ISteamNetworkingMessage* incomingMessage = nullptr;
@@ -274,8 +298,8 @@ namespace TechEngine {
 
             case k_ESteamNetworkingConnectionState_Connected:
                 networkEngine->connectionStatus = ConnectionStatus::Connected;
-                networkEngine->sendMessage("Hello from client");
                 networkEngine->systemsRegistry.getSystem<EventDispatcher>().dispatch(new ConnectionEstablishedEvent());
+                TE_LOGGER_INFO("Connected to remote host with session ID {0}", info->m_hConn);
                 break;
 
             default:
@@ -302,7 +326,13 @@ namespace TechEngine {
                 TE_LOGGER_INFO("Received message from server: {0}", message);
                 break;
             }
-            case PacketType::ClientConnectionRequest: {
+            case PacketType::NetworkID: {
+                int networkID;
+                success = stream.readRaw<int>(networkID);
+                if (!success)
+                    return;
+                NetworkData::networkID = networkID;
+                TE_LOGGER_INFO("Received network ID: {0}", networkID);
                 break;
             }
             case PacketType::ConnectionStatus: {
@@ -347,15 +377,21 @@ namespace TechEngine {
                 break;
             }
             case PacketType::NetworkIntSync: {
+                unsigned int owner;
+                std::string networkUUID;
+                std::string name;
                 int value;
+                stream.readRaw<unsigned int>(owner);
+                stream.readString(networkUUID);
+                stream.readString(name);
                 stream.readRaw<int>(value);
-                systemsRegistry.getSystem<EventDispatcher>().dispatch(new SyncNetworkInt(value));
+                systemsRegistry.getSystem<EventDispatcher>().dispatch(new SyncNetworkInt(owner, networkUUID, name, value));
                 break;
             }
             case PacketType::CreateNetworkObject: {
                 std::string objectName;
                 unsigned int objectOwner = 0;
-                std::string networkUUID = "";
+                std::string networkUUID;
                 stream.readString(objectName);
                 stream.readRaw<unsigned int>(objectOwner);
                 stream.readString(networkUUID);
@@ -370,7 +406,22 @@ namespace TechEngine {
                 TE_LOGGER_INFO("Deleted network object with UUID {0}", networkUUID);
                 break;
             }
-
+            case PacketType::CreateNetworkVariable: {
+                int owner;
+                std::string uuid;
+                std::string variableName;
+                int value;
+                stream.readRaw<int>(owner);
+                stream.readString(uuid);
+                stream.readString(variableName);
+                stream.readRaw<int>(value);
+                if (systemsRegistry.getSystem<NetworkObjectsManager>().registerNetworkVariable(owner, uuid, variableName, value)) {
+                    TE_LOGGER_INFO("Created network variable {0} with owner {1} and UUID {2}", variableName, owner, uuid);
+                } else {
+                    TE_LOGGER_WARN("Failed to create network variable {0} with owner {1} and UUID {2}", variableName, owner, uuid);
+                }
+                break;
+            }
             case PacketType::CustomPacket: {
                 std::string customPacket;
                 stream.readString(customPacket);
@@ -422,6 +473,9 @@ namespace TechEngine {
         scratchBuffer.allocate(sizeof(PacketType::NetworkIntSync) + sizeof(int));
         BufferStreamWriter stream(scratchBuffer);
         stream.writeRaw<PacketType>(PacketType::NetworkIntSync);
+        stream.writeRaw<unsigned int>(event->getOwner());
+        stream.writeString(event->getNetworkUUID());
+        stream.writeString(event->getName());
         stream.writeRaw<int>(value);
         sendBuffer(stream.getBuffer());
     }

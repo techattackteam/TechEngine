@@ -16,7 +16,7 @@ namespace TechEngine {
         switch (type) {
             case PacketType::None: return "PacketType::None";
             case PacketType::Message: return "PacketType::Message";
-            case PacketType::ClientConnectionRequest: return "PacketType::ClientConnectionRequest";
+            case PacketType::NetworkID: return "PacketType::NetworkID";
             case PacketType::ConnectionStatus: return "PacketType::ConnectionStatus";
             case PacketType::ClientList: return "PacketType::ClientList";
             case PacketType::ClientConnect: return "PacketType::ClientConnect";

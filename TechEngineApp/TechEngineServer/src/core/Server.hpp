@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <stack>
 
 #include "core/ServerExportDll.hpp"
 #include "core/AppCore.hpp"
@@ -27,14 +28,16 @@ namespace TechEngine {
     protected:
         inline static Server* instance;
 
-        std::thread networkThread;
+        //std::thread networkThread;
         int m_port = 0;
-        std::map<HSteamNetConnection, ClientInfo> m_ConnectedClients;
+        std::map<ClientID, ClientInfo> m_connectedClients;
+        std::stack<int> m_availableNetworkIDs;
+        int m_nextNetworkID = 1;
 
         ISteamNetworkingSockets* m_interface = nullptr;
         HSteamListenSocket m_ListenSocket = 0u;
         HSteamNetPollGroup m_PollGroup = 0u;
-        Communicator m_Communicator;
+        Communicator m_communicator;
 
         friend class Communicator;
         friend class ServerAPI;
@@ -71,5 +74,7 @@ namespace TechEngine {
         void onClientConnected(const ClientInfo& clientInfo);
 
         void onClientDisconnected(const ClientInfo& clientInfo);
+
+        int getNextAvailableNetworkID();
     };
 }

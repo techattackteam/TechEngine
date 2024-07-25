@@ -3,18 +3,22 @@
 #include "NetworkObject.hpp"
 
 namespace TechEngine {
-    template<typename T>
     class CORE_DLL NetworkVariable {
+        friend class NetworkObject;
+
     private:
-        T value;
+        NetworkObject* networkObject;
         std::string name;
+        int value;
 
     public:
-        explicit NetworkVariable(NetworkObject* networkObject, std::string name, T value);
+        NetworkVariable(NetworkObject* networkObject, const std::string& name, int value);
 
-        T getValue() const;
+        ~NetworkVariable();
 
-        void setValue(T value);
+        int getValue() const;
+
+        void setValue(int value);
 
     private:
         void sync(SyncNetworkInt* event);
@@ -22,6 +26,7 @@ namespace TechEngine {
 }
 
 
+/*
 template class TechEngine::NetworkVariable<int>;
 template class TechEngine::NetworkVariable<float>;
 template class TechEngine::NetworkVariable<double>;
@@ -34,5 +39,6 @@ template class TechEngine::NetworkVariable<long>;
 template class TechEngine::NetworkVariable<unsigned long>;
 template class TechEngine::NetworkVariable<long long>;
 template class TechEngine::NetworkVariable<unsigned long long>;
+*/
 
-#define NetworkVar(NetworkObject, type, name, value) TechEngine::NetworkVariable<type> name{NetworkObject, #name, value}
+#define NetworkVar(name, value) TechEngine::NetworkVariable name{this, #name, value}
