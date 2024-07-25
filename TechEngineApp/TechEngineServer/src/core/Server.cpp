@@ -4,7 +4,6 @@
 #include "core/Logger.hpp"
 #include "core/Timer.hpp"
 #include "events/connections/OnClientConnected.hpp"
-#include "events/connections/OnClientConnectionRequest.hpp"
 #include "events/connections/OnClientDisconnected.hpp"
 #include "events/network/CustomPacketReceived.hpp"
 #include "network/PacketType.hpp"
@@ -15,9 +14,10 @@
 #include "texture/TextureManager.hpp"
 #include "core/UUID.hpp"
 #include "network/NetworkObjectsManager.hpp"
+#include "scriptingAPI/network/NetworkData.hpp"
 
 namespace TechEngine {
-    Server::Server() : project(systemsRegistry), m_Communicator(*this), m_serverAPI(systemsRegistry, this, &m_Communicator) {
+    Server::Server() : project(systemsRegistry), m_communicator(*this), m_serverAPI(systemsRegistry, this, &m_communicator) {
         instance = this;
         systemsRegistry.registerSystem<NetworkObjectsManager>();
     }
@@ -25,11 +25,11 @@ namespace TechEngine {
     Server::~Server() {
         // Close all the connections
         TE_LOGGER_INFO("Closing connections...");
-        for (const auto& [clientID, clientInfo]: m_ConnectedClients) {
+        for (const auto& [clientID, clientInfo]: m_connectedClients) {
             m_interface->CloseConnection(clientID, 0, "Server Shutdown", true);
         }
 
-        m_ConnectedClients.clear();
+        m_connectedClients.clear();
 
         m_interface->CloseListenSocket(m_ListenSocket);
         m_ListenSocket = k_HSteamListenSocket_Invalid;
@@ -84,6 +84,7 @@ namespace TechEngine {
             TE_LOGGER_CRITICAL("Fatal error: Failed to listen on port {0}", m_port);
             return;
         }
+        NetworkData::networkID = 0;
     }
 
     void Server::onUpdate() {
@@ -119,8 +120,8 @@ namespace TechEngine {
                 return;
             }
 
-            auto itClient = m_ConnectedClients.find(incomingMessage->m_conn);
-            if (itClient == m_ConnectedClients.end()) {
+            auto itClient = m_connectedClients.find(incomingMessage->m_conn);
+            if (itClient == m_connectedClients.end()) {
                 TE_LOGGER_ERROR("ERROR: Received data from unregistered client\n");
                 continue;
             }
@@ -137,7 +138,7 @@ namespace TechEngine {
         for (auto& gameObject: systemsRegistry.getSystem<SceneManager>().getScene().getGameObjects()) {
             if (gameObject->hasComponent<NetworkSync>()) {
                 Buffer buffer = SceneSynchronizer::serializeGameObject(*gameObject);
-                m_Communicator.sendBufferToAllClients(buffer, 0, true);
+                m_communicator.broadcastBuffer(buffer, true);
             }
         }
     }
@@ -160,19 +161,22 @@ namespace TechEngine {
                 TE_LOGGER_INFO("Received message from {0}: {1}", clientInfo.ConnectionDesc, message);
                 break;
             }
-            case PacketType::ClientConnectionRequest: {
-                systemsRegistry.getSystem<EventDispatcher>().dispatch(new OnClientConnectionRequest());
-                break;
-            }
             case PacketType::NetworkIntSync: {
+                unsigned int owner;
+                std::string networkUUID;
+                std::string name;
                 int value;
+                stream.readRaw<unsigned int>(owner);
+                stream.readString(networkUUID);
+                stream.readString(name);
                 stream.readRaw<int>(value);
                 Buffer scratchBuffer;
                 scratchBuffer.allocate(sizeof(PacketType::NetworkIntSync) + sizeof(int));
                 BufferStreamWriter stream(scratchBuffer);
                 stream.writeRaw<PacketType>(PacketType::NetworkIntSync);
                 stream.writeRaw<int>(value);
-                m_Communicator.sendBufferToAllClients(scratchBuffer, 0, true);
+                m_communicator.broadcastBuffer(scratchBuffer, true);
+                systemsRegistry.getSystem<EventDispatcher>().dispatch(new SyncNetworkInt(owner, networkUUID, name, value));
                 break;
             }
             case PacketType::RequestNetworkObject: {
@@ -181,9 +185,9 @@ namespace TechEngine {
                 TE_LOGGER_INFO("Received request for network object: {0}", objectType);
                 UUID uuid;
                 std::string uuidString = std::to_string(uuid);
-                NetworkObject* object = systemsRegistry.getSystem<NetworkObjectsManager>().createNetworkObject(objectType, clientInfo.ID, uuidString);
+                NetworkObject* object = systemsRegistry.getSystem<NetworkObjectsManager>().createNetworkObject(objectType, clientInfo.networkID, uuidString);
                 if (object != nullptr) {
-                    m_Communicator.sendNetworkObject(clientInfo, objectType, object);
+                    m_communicator.sendNetworkObject(clientInfo, object);
                     TE_LOGGER_INFO("Created network object: {0} with UUID: {1}", objectType, uuidString);
                 }
                 break;
@@ -192,10 +196,26 @@ namespace TechEngine {
                 std::string uuid;
                 stream.readString(uuid);
                 if (systemsRegistry.getSystem<NetworkObjectsManager>().deleteNetworkObject(uuid)) {
-                    m_Communicator.sendNetworkObjectDeleted(uuid, -1);
+                    m_communicator.broadcastNetworkObjectDeleted(uuid);
                     TE_LOGGER_INFO("Deleted network object with UUID: {0}", uuid);
                 } else {
                     TE_LOGGER_WARN("Failed to delete network object with UUID: {0}\n\tObject not found!", uuid);
+                }
+                break;
+            }
+            case PacketType::RequestNetworkVariable: {
+                unsigned int owner;
+                std::string uuid;
+                std::string variableName;
+                int value;
+                stream.readRaw<unsigned int>(owner);
+                stream.readString(uuid);
+                stream.readString(variableName);
+                stream.readRaw<int>(value);
+                if (systemsRegistry.getSystem<NetworkObjectsManager>().registerNetworkVariable(owner, uuid, variableName, value)) {
+                    m_communicator.broadcastNetworkVariable(owner, uuid, variableName, value);
+                } else {
+                    TE_LOGGER_WARN("Failed to register network variable with UUID: {0}\n\tObject not found!", uuid);
                 }
                 break;
             }
@@ -213,14 +233,26 @@ namespace TechEngine {
     }
 
     void Server::onClientConnected(const ClientInfo& clientInfo) {
-        m_Communicator.syncGameState(clientInfo);
-        m_Communicator.syncNetworkObjects(clientInfo);
-        systemsRegistry.getSystem<EventDispatcher>().dispatch(new OnClientConnected(clientInfo.ID));
+        m_communicator.sendNetworkID(clientInfo);
+        m_communicator.syncGameState(clientInfo);
+        m_communicator.syncNetworkObjects(clientInfo);
+        systemsRegistry.getSystem<EventDispatcher>().dispatch(new OnClientConnected(clientInfo.internalID));
     }
 
     void Server::onClientDisconnected(const ClientInfo& clientInfo) {
-        m_Communicator.deleteAllNetworkObjectFromClient(clientInfo.ID);
-        systemsRegistry.getSystem<EventDispatcher>().dispatch(new OnClientDisconnected(clientInfo.ID));
+        m_communicator.deleteAllNetworkObjectsFromClient(clientInfo);
+        m_availableNetworkIDs.push(clientInfo.networkID);
+        systemsRegistry.getSystem<EventDispatcher>().dispatch(new OnClientDisconnected(clientInfo.internalID));
+    }
+
+    int Server::getNextAvailableNetworkID() {
+        if (m_availableNetworkIDs.empty()) {
+            return m_nextNetworkID++;
+        }
+
+        int networkID = m_availableNetworkIDs.top();
+        m_availableNetworkIDs.pop();
+        return networkID;
     }
 
     void Server::connectionStatusChangedCallback(SteamNetConnectionStatusChangedCallback_t* info) {
@@ -241,13 +273,13 @@ namespace TechEngine {
                     // Locate the client.  Note that it should have been found, because this
                     // is the only codepath where we remove clients (except on shutdown),
                     // and connection change callbacks are dispatched in queue order.
-                    auto itClient = m_ConnectedClients.find(status->m_hConn);
+                    auto itClient = m_connectedClients.find(status->m_hConn);
                     //assert(itClient != m_mapClients.end());
 
                     // Either ClosedByPeer or ProblemDetectedLocally - should be communicated to user callback
                     // User callback
                     onClientDisconnected(itClient->second);
-                    m_ConnectedClients.erase(itClient);
+                    m_connectedClients.erase(itClient);
                 } else {
                     //assert(info->m_eOldState == k_ESteamNetworkingConnectionState_Connecting);
                 }
@@ -286,8 +318,9 @@ namespace TechEngine {
                 m_interface->GetConnectionInfo(status->m_hConn, &connectionInfo);
 
                 // Register connected client
-                auto& client = m_ConnectedClients[status->m_hConn];
-                client.ID = (ClientID)status->m_hConn;
+                ClientInfo& client = m_connectedClients[status->m_hConn];
+                client.internalID = status->m_hConn;
+                client.networkID = getNextAvailableNetworkID();
                 client.ConnectionDesc = connectionInfo.m_szConnectionDescription;
 
                 // User callback

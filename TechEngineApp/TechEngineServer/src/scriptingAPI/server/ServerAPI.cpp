@@ -8,23 +8,23 @@ namespace TechEngine {
         instance = this;
     }
 
-    void ServerAPI::sendCustomPacket(const ClientID& clientID, const std::string& packetType, Buffer buffer, bool reliable) {
-        instance->communicator->sendCustomPacket(clientID, packetType, buffer, reliable);
+    void ServerAPI::sendCustomPacket(const ClientInfo& clientInfo, const std::string& packetType, Buffer buffer, bool reliable) {
+        instance->communicator->sendCustomPacket(clientInfo, packetType, buffer, reliable);
     }
 
-    void ServerAPI::sendCustomPacketToAllClients(const std::string& packetType, Buffer buffer, ClientID excludeClientID, bool reliable) {
-        std::vector<ClientID> connectedClients = getConnectedClients();
-        for (const auto& clientID: connectedClients) {
-            if (clientID != excludeClientID) {
-                sendCustomPacket(clientID, packetType, buffer, reliable);
+    void ServerAPI::broadcastCustomPacket(const std::string& packetType, Buffer buffer, bool reliable, std::vector<ClientInfo> excludedClientsInfos) {
+        std::vector<ClientInfo> connectedClients = getConnectedClients();
+        for (const auto& clientInfo: connectedClients) {
+            if (std::find(excludedClientsInfos.begin(), excludedClientsInfos.end(), clientInfo) == excludedClientsInfos.end()) {
+                sendCustomPacket(clientInfo, packetType, buffer, reliable);
             }
         }
     }
 
-    std::vector<ClientID> ServerAPI::getConnectedClients() {
-        std::vector<ClientID> connectedClients;
-        for (const auto& client: instance->server->m_ConnectedClients) {
-            connectedClients.push_back(client.second.ID);
+    std::vector<ClientInfo> ServerAPI::getConnectedClients() {
+        std::vector<ClientInfo> connectedClients;
+        for (const auto& client: instance->server->m_connectedClients) {
+            connectedClients.push_back(client.second);
         }
         return connectedClients;
     }

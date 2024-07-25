@@ -1,34 +1,28 @@
-#include "NetworkVariable.hpp"
-
-#include <utility>
+#include "scriptingAPI/network/NetworkVariable.hpp"
 
 #include "core/Logger.hpp"
 #include "events/network/NetworkIntValueChanged.hpp"
 #include "events/network/SyncNetworkInt.hpp"
-#include "scriptingAPI/event/EventDispatcherAPI.hpp"
 
 namespace TechEngine {
-    template<typename T>
-    NetworkVariable<T>::NetworkVariable(NetworkObject* networkObject, std::string name, T value) : name(name), value(value) {
-        networkObject->registerVariable(name, value);
-        EventDispatcherAPI::subscribe(SyncNetworkInt::eventType, [this](Event* event) {
-            sync((SyncNetworkInt*)event);
-        });
+    NetworkVariable::NetworkVariable(NetworkObject* networkObject, const std::string& name, int value) : networkObject(networkObject), name(name), value(value) {
+        networkObject->registerVariable(name, this);
     }
 
-    template<typename T>
-    T NetworkVariable<T>::getValue() const {
+    NetworkVariable::~NetworkVariable() {
+        networkObject->unregisterVariable(name);
+    }
+
+    int NetworkVariable::getValue() const {
         return value;
     }
 
-    template<typename T>
-    void NetworkVariable<T>::setValue(T value) {
+    void NetworkVariable::setValue(int value) {
         this->value = value;
-        EventDispatcherAPI::dispatch(new NetworkIntValueChanged(value));
+        networkObject->requestChangeValue(name, value);
     }
 
-    template<typename T>
-    void NetworkVariable<T>::sync(SyncNetworkInt* event) {
+    void NetworkVariable::sync(SyncNetworkInt* event) {
         value = event->getValue();
         TE_LOGGER_INFO("Synced NetworkVariable {0} value: {1}", name, value);
     }

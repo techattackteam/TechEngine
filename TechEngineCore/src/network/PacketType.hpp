@@ -27,14 +27,11 @@ namespace TechEngine {
         Message = 1,
 
         //
-        // -- ClientConnectionRequest --
+        // -- NetworkID --
         //
-        // [Client->Server]
-        // 1. 32-bit int with requested user color (RGB, most significant 8 bits ignored)
-        // 2. Hazel serialized UTF-8 string with requested username
         // [Server->Client]
-        // boolean response indicating acceptance of requested username
-        ClientConnectionRequest = 2,
+        // 1. NetworkID - int
+        NetworkID = 2,
 
         //
         // -- ConnectionStatus --
@@ -186,9 +183,26 @@ namespace TechEngine {
         DeleteNetworkObject = 19,
 
         //
+        // -- RequestNetworkVariableCreation --
+        //
+        // [Client->Server]
+        // Request to create a network variable
+        // 1. String with network object UUID
+        // 2. String with network variable name
+        RequestNetworkVariable = 20,
+
+        //
+        // -- CreateNetworkVariable --
+        //
+        // [Server->Client]
+        // Create a network variable
+        // 1. NetworkVariable
+        CreateNetworkVariable = 21,
+
+        //
         // -- CustomPacket --
         //
-        CustomPacket = 1000
+        CustomPacket = 1000,
     };
 
     std::string_view PacketTypeToString(PacketType type);

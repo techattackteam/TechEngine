@@ -27,6 +27,8 @@ namespace TechEngine {
 
         static void requestDeleteNetworkObject(NetworkObject* networkObject);
 
+        static int getOwner();
+
     private:
         static void requestNetworkObjectInternal(const std::string& name);
     };

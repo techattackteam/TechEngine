@@ -17,10 +17,10 @@ namespace TechEngine {
     public:
         ServerAPI(Server* server, Communicator* communicator);
 
-        static void sendCustomPacket(const ClientID& clientID, const std::string& packetType, Buffer buffer, bool reliable = true);
+        static void sendCustomPacket(const ClientInfo& clientInfo, const std::string& packetType, Buffer buffer, bool reliable = true);
 
-        static void sendCustomPacketToAllClients(const std::string& packetType, Buffer buffer, ClientID excludeClientID = 0, bool reliable = true);
+        static void broadcastCustomPacket(const std::string& packetType, Buffer buffer, bool reliable = true, std::vector<ClientInfo> excludedClientsInfos = {});
 
-        static std::vector<ClientID> getConnectedClients();
+        static std::vector<ClientInfo> getConnectedClients();
     };
 }
