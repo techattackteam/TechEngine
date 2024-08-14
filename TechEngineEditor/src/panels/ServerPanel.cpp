@@ -3,6 +3,7 @@
 #include "core/Client.hpp"
 #include "PanelsManager.hpp"
 #include "events/scripts/ScriptCrashEvent.hpp"
+#include "physics/PhysicsDebugRenderer.hpp"
 #include "project/ProjectManager.hpp"
 #include "script/ScriptEngine.hpp"
 
@@ -19,6 +20,7 @@ namespace TechEngine {
                                                             sceneView("Server Scene", editorRegistry, appRegistry, sceneHierarchyPanel.getSelectedGO()),
                                                             Panel("ServerPanel", editorRegistry) {
         server.systemsRegistry.registerSystem<Renderer>();
+        /*server.systemsRegistry.registerSystem<PhysicsDebugRenderer>(appRegistry);*/
     }
 
     void ServerPanel::init() {

@@ -48,11 +48,9 @@ namespace TechEngine {
 
         double getLastLoopTime();
 
-        static Timer& getInstance();
-
         float getAccumulator();
 
-        const float getTPS();
+        float getTPS() const;
 
         float getInterpolation();
     };

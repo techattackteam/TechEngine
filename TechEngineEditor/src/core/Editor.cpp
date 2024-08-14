@@ -23,9 +23,7 @@ namespace TechEngine {
         systemsRegistry.getSystem<Logger>().init("TechEngineEditor");
         editorSettings = FileSystem::rootPath.string() + "/EditorSettings.TESettings";
         systemsRegistry.getSystem<ProjectManager>().init();
-        TE_LOGGER_INFO("ProjectManager initialized");
         loadEditorSettings();
-        TE_LOGGER_INFO("Editor settings loaded");
         client.init();
         server.init();
         systemsRegistry.getSystem<ProjectManager>().setupPaths();
@@ -77,7 +75,6 @@ namespace TechEngine {
         systemsRegistry.getSystem<EventDispatcher>().fixedSyncEventManager.execute();
         client.onFixedUpdate();
         server.onFixedUpdate();
-        systemsRegistry.getSystem<PhysicsEngine>().onFixedUpdate();
     }
 
     void Editor::loadEditorSettings() {

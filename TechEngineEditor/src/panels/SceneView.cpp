@@ -6,6 +6,7 @@
 #include "components/physics/SphereCollider.hpp"
 #include "components/physics/CylinderCollider.hpp"
 #include "components/physics/RigidBody.hpp"
+#include "physics/PhysicsDebugRenderer.hpp"
 
 namespace TechEngine {
     SceneView::SceneView(const std::string& name,
@@ -102,7 +103,7 @@ namespace TechEngine {
     }
 
     void SceneView::renderColliders() {
-        for (auto& element: appRegistry.getSystem<SceneManager>().getScene().getGameObjects()) {
+        /*for (auto& element: appRegistry.getSystem<SceneManager>().getScene().getGameObjects()) {
             if (element->isEditorOnly()) {
                 continue;
             }
@@ -115,7 +116,8 @@ namespace TechEngine {
             if (element->hasComponent<CylinderCollider>()) {
                 renderCylinderCollier(element);
             }
-        }
+        }*/
+        //appRegistry.getSystem<PhysicsEngine>().drawDebug(appRegistry.getSystem<PhysicsDebugRenderer>());
     }
 
     void SceneView::focusOnGameObject(GameObject* gameObject) {

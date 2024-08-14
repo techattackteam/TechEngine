@@ -116,6 +116,9 @@ namespace TechEngine {
 
     void ProjectManager::loadEditorProject(const std::string& projectLocation) {
         this->projectLocation = projectLocation;
+        std::vector<std::string> files = FileSystem::getAllFilesWithExtension({projectLocation}, {".teprj"}, false);
+        std::string projectFile = files[0];
+        this->projectFilePath = projectFile;
         std::string clientLoadedScene;
         std::string serverLoadedScene;
         if (std::filesystem::exists(this->projectFilePath)) {
@@ -147,9 +150,7 @@ namespace TechEngine {
     }
 
     void ProjectManager::setupPaths() {
-        std::vector<std::string> files = FileSystem::getAllFilesWithExtension({projectLocation.string()}, {".teprj"}, false);
-        std::string projectFile = files[0];
-        this->projectFilePath = projectFile;
+        std::string projectFile = this->projectFilePath.string();
         projectName = projectFile.substr(projectFile.find_last_of("\\") + 1, projectFile.find_last_of(".") - projectFile.find_last_of("\\") - 1);
         projectCachePath = this->projectLocation.string() + "\\Cache";
         projectAssetsPath = this->projectLocation.string() + "\\Assets";

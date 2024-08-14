@@ -17,7 +17,6 @@ namespace TechEngine {
     }
 
     void NetworkVariable::setValue(int value) {
-        //this->value = value;
         networkObject->requestChangeValue(name, value);
     }
 

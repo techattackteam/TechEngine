@@ -115,6 +115,27 @@ namespace TechEngine {
         newCameraComponent->nearPlane = cameraComponent->nearPlane;
         newCameraComponent->farPlane = cameraComponent->farPlane;
         newCameraComponent->orthoSize = cameraComponent->orthoSize;
+        newCameraComponent->mainCamera = cameraComponent->mainCamera;
         return newCameraComponent;
+    }
+
+    void CameraComponent::Serialize(StreamWriter* stream) {
+        Component::Serialize(stream);
+        stream->writeRaw(fov);
+        stream->writeRaw(nearPlane);
+        stream->writeRaw(farPlane);
+        stream->writeRaw(orthoSize);
+        stream->writeRaw(mainCamera);
+        stream->writeRaw(projectionType);
+    }
+
+    void CameraComponent::Deserialize(StreamReader* stream) {
+        Component::Deserialize(stream);
+        stream->readRaw(fov);
+        stream->readRaw(nearPlane);
+        stream->readRaw(farPlane);
+        stream->readRaw(orthoSize);
+        stream->readRaw(mainCamera);
+        stream->readRaw(projectionType);
     }
 }
