@@ -42,7 +42,7 @@ namespace TechEngine {
         AppCore::init();
         m_serverAPI.init();
         systemsRegistry.getSystem<Logger>().init("TechEngineServer");
-        systemsRegistry.getSystem<PhysicsEngine>().init();
+        //systemsRegistry.getSystem<PhysicsEngine>().init();
         ScriptRegister::getInstance()->init(&systemsRegistry.getSystem<ScriptEngine>());
         std::vector<std::string> paths = {
             project.getResourcesPath().string(),

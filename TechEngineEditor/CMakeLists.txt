@@ -27,6 +27,7 @@ target_compile_definitions(TechEngineEditor PRIVATE
         $<$<CONFIG:Debug>:TE_DEBUG>
         $<$<CONFIG:RelWithDebInfo>:TE_DEBUG>
         $<$<CONFIG:Release>:TE_RELEASEDEBUG>
+        JPH_DEBUG_RENDERER
 )
 #Copy project template
 file(GENERATE

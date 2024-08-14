@@ -68,8 +68,7 @@ namespace TechEngine {
         return accumulator;
     }
 
-
-    const float Timer::getTPS() {
+    float Timer::getTPS() const {
         return TPS;
     }
 

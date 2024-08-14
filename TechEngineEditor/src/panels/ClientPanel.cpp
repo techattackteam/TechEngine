@@ -4,6 +4,7 @@
 #include "events/scripts/ScriptCrashEvent.hpp"
 #include "script/ScriptEngine.hpp"
 #include "network/NetworkEngine.hpp"
+#include "physics/PhysicsDebugRenderer.hpp"
 #include "project/ProjectManager.hpp"
 
 namespace TechEngine {
@@ -19,6 +20,7 @@ namespace TechEngine {
                                                              inspectorPanel("Client Inspector", editorRegistry, clientRegistry, sceneHierarchyPanel.getSelectedGO()),
                                                              sceneView("Client Scene", editorRegistry, clientRegistry, sceneHierarchyPanel.getSelectedGO()),
                                                              Panel("ClientPanel", editorRegistry) {
+        /*client.systemsRegistry.registerSystem<PhysicsDebugRenderer>(client.systemsRegistry);*/
     }
 
     void ClientPanel::init() {
@@ -94,7 +96,7 @@ namespace TechEngine {
 
     void ClientPanel::startRunningScene() {
 #ifdef TE_DEBUG
-        panelsManager.compileUserScripts(CompileMode::DEBUG, ProjectType::Client);
+        //panelsManager.compileUserScripts(CompileMode::DEBUG, ProjectType::Client);
 #else
         panelsManager.compileUserScripts(CompileMode::RELEASEDEBUG, ProjectType::Client);
 #endif

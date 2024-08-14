@@ -17,7 +17,7 @@ namespace TechEngine {
         systemsRegistry.registerSystem<MeshManager>();
         systemsRegistry.registerSystem<TextureManager>();
         systemsRegistry.registerSystem<MaterialManager>(systemsRegistry);
-        systemsRegistry.registerSystem<PhysicsEngine>();
+        //systemsRegistry.registerSystem<PhysicsEngine>(systemsRegistry);
         systemsRegistry.registerSystem<ScriptEngine>();
         systemsRegistry.registerSystem<SceneManager>(systemsRegistry);
     }

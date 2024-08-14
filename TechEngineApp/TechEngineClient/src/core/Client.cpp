@@ -17,6 +17,7 @@ namespace TechEngine {
         systemsRegistry.registerSystem<Renderer>();
         systemsRegistry.registerSystem<NetworkEngine>(systemsRegistry);
         systemsRegistry.registerSystem<NetworkObjectsManager>();
+        systemsRegistry.registerSystem<PhysicsEngine>(systemsRegistry);
     }
 
     Client::~Client() = default;
@@ -40,6 +41,7 @@ namespace TechEngine {
 
     void Client::onFixedUpdate() {
         systemsRegistry.getSystem<EventDispatcher>().fixedSyncEventManager.execute();
+        systemsRegistry.getSystem<PhysicsEngine>().onFixedUpdate();
         systemsRegistry.getSystem<ScriptEngine>().onFixedUpdate();
         systemsRegistry.getSystem<SceneManager>().getScene().fixedUpdate();
         systemsRegistry.getSystem<NetworkEngine>().fixedUpdate();

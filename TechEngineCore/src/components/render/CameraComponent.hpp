@@ -66,5 +66,9 @@ namespace TechEngine {
         void setOrthoSize(float orthoSize);
 
         Component* copy(GameObject* gameObjectToAttach, Component* componentToCopy) override;
+
+        void Serialize(StreamWriter* stream);
+
+        void Deserialize(StreamReader* stream);
     };
 }

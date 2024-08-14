@@ -41,7 +41,6 @@ namespace TechEngine {
 
     void TechEngineRuntime::onFixedUpdate() {
         Client::onFixedUpdate();
-        systemsRegistry.getSystem<PhysicsEngine>().onFixedUpdate();
     }
 
     bool TechEngineRuntime::loadRendererSettings() {

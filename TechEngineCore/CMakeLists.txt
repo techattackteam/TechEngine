@@ -26,11 +26,13 @@ function(configure_tech_engine_core target_name)
     endif ()
 
     target_include_directories(${target_name} PUBLIC "src")
-    target_link_libraries(${target_name} PUBLIC spdlog::spdlog yaml-cpp::yaml-cpp GameNetworkingSockets::static)
-    target_compile_definitions(${target_name} PRIVATE
+    target_link_libraries(${target_name} PUBLIC spdlog::spdlog yaml-cpp::yaml-cpp GameNetworkingSockets::static unofficial::joltphysics::Jolt)
+    target_compile_definitions(${target_name} PUBLIC
             $<$<CONFIG:Debug>:TE_DEBUG>
             $<$<CONFIG:RelWithDebInfo>:TE_DEBUG>
             $<$<CONFIG:Release>:TE_RELEASEDEBUG>
+            JPH_DEBUG_RENDERER
+            JPH_PROFILE_ENABLED
     )
 
     # Copy API include files to project template
@@ -107,6 +109,14 @@ endfunction()
 # Create TechEngineCoreClient and TechEngineCoreServer libraries
 find_package(spdlog CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
+find_package(unofficial-joltphysics CONFIG REQUIRED)
+
+# Enable the debug renderer in the Debug and Release builds. Note that DEBUG_RENDERER_IN_DISTRIBUTION will override this setting.
+option(DEBUG_RENDERER_IN_DEBUG_AND_RELEASE "Enable debug renderer in Debug and Release builds" ON)
+
+# Setting to enable the debug renderer in all builds.
+# Note that enabling this reduces the performance of the library even if you're not drawing anything.
+option(DEBUG_RENDERER_IN_DISTRIBUTION "Enable debug renderer in all builds" OFF)
 
 # Configure TechEngineCoreClient
 configure_tech_engine_core(TechEngineCoreClient)
