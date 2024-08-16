@@ -1,6 +1,6 @@
 #include "Client.hpp"
 #include "core/Timer.hpp"
-
+#include "core/Logger.hpp"
 #include <iostream>
 
 namespace TechEngine {
@@ -9,10 +9,13 @@ namespace TechEngine {
 
     void Client::init() {
         Core::init();
+        m_systemManager.registerSystem<Logger>("TechEngineClient");
+        m_systemManager.getSystem<Logger>().init();
     }
 
     void Client::onStart() {
         m_systemManager.getSystem<Timer>().onStart();
+        TE_LOGGER_INFO("Client started");
     }
 
     void Client::onFixedUpdate() {
@@ -21,7 +24,6 @@ namespace TechEngine {
 
     void Client::onUpdate() {
         m_systemManager.getSystem<Timer>().onUpdate();
-        std::cout << m_systemManager.getSystem<Timer>().getTime() << std::endl;
     }
 
     void Client::onStop() {
