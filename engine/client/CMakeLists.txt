@@ -7,7 +7,7 @@ target_compile_definitions(TechEngineClient PUBLIC TECH_ENGINE_CLIENT_EXPORT)
 
 target_include_directories(TechEngineClient PUBLIC src)
 
-target_link_libraries(TechEngineClient PUBLIC TechEngineCore)
+target_link_libraries(TechEngineClient PRIVATE TechEngineCore)
 
 #Setup target's output directory
 if (WIN32) # WINDOWS
@@ -20,6 +20,7 @@ if (WIN32) # WINDOWS
         set_target_properties(TechEngineClient PROPERTIES CLIENT_DLL "${OUTPUT}/release/TechEngineClient.dll")
     endif ()
 
+    # Set the output directory
     set_target_properties(TechEngineClient PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${OUTPUT}/debug"
             LIBRARY_OUTPUT_DIRECTORY_DEBUG "${OUTPUT}/debug"

@@ -1,19 +1,27 @@
 #pragma once
+#include "core/Core.hpp"
 #include "ExportDLL.hpp"
-#include "systems/SystemManager.hpp"
+#include "app/Entry.hpp"
 
 namespace TechEngine {
-    class CLIENT_DLL Client {
-    private:
-        SystemManager systemManager; //?
+    class CLIENT_DLL Client : public Core {
+        Entry m_entry;
+
+        friend class RuntimeClient;
 
     public:
-        void init();
+        Client();
 
-        void onFixedUpdate();
+        void init() override;
 
-        void onUpdate();
+        void onStart() override;
 
-        void destroy();
+        void onFixedUpdate() override;
+
+        void onUpdate() override;
+
+        void onStop() override;
+
+        void destroy() override;
     };
 }

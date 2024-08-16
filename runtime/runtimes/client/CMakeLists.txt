@@ -6,7 +6,7 @@ file(GLOB RUNTIME_CLIENT_HEADERS "src/*.hpp")
 # add the executable
 add_executable(TechEngineRuntimeClient ${RUNTIME_CLIENT_SOURCES} ${RUNTIME_CLIENT_HEADERS})
 target_include_directories(TechEngineRuntimeClient PUBLIC src)
-target_link_libraries(TechEngineRuntimeClient TechEngineApp TechEngineClient)
+target_link_libraries(TechEngineRuntimeClient TechEngineApp TechEngineCore TechEngineClient)
 
 # setup target's output directory
 if (WIN32) # WINDOWS

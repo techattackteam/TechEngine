@@ -1,21 +1,34 @@
 #include "Client.hpp"
+#include "core/Timer.hpp"
 
 #include <iostream>
 
 namespace TechEngine {
+    Client::Client() : Core(), m_entry(m_systemManager) {
+    }
+
     void Client::init() {
-        std::cout << "Client init" << std::endl;
+        Core::init();
+    }
+
+    void Client::onStart() {
+        m_systemManager.getSystem<Timer>().onStart();
     }
 
     void Client::onFixedUpdate() {
-        std::cout << "Client onFixedUpdate" << std::endl;
+        m_systemManager.getSystem<Timer>().onFixedUpdate();
     }
 
     void Client::onUpdate() {
-        std::cout << "Client onUpdate" << std::endl;
+        m_systemManager.getSystem<Timer>().onUpdate();
+        std::cout << m_systemManager.getSystem<Timer>().getTime() << std::endl;
+    }
+
+    void Client::onStop() {
+        m_systemManager.getSystem<Timer>().onStop();
     }
 
     void Client::destroy() {
-        std::cout << "Client destroy" << std::endl;
+        m_systemManager.getSystem<Timer>().destroy();
     }
 }
