@@ -1,5 +1,6 @@
 #include "Editor.hpp"
 
+#include "core/Logger.hpp"
 #include "core/Timer.hpp"
 
 namespace TechEngine {
@@ -8,6 +9,10 @@ namespace TechEngine {
 
     void Editor::init() {
         m_systemRegistry.registerSystem<Timer>();
+        m_systemRegistry.registerSystem<Logger>("TechEngineEditor");
+
+        m_systemRegistry.getSystem<Timer>().init();
+        m_systemRegistry.getSystem<Logger>().init();
         m_runFunction = [this]() {
             m_entry.run([this]() {
                             fixedUpdate();
@@ -21,6 +26,10 @@ namespace TechEngine {
     }
 
     void Editor::start() {
+        m_systemRegistry.getSystem<Timer>().onStart();
+        m_client.onStart();
+        m_server.onStart();
+        TE_LOGGER_INFO("Editor started");
     }
 
     void Editor::update() {
