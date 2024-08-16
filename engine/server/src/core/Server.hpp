@@ -1,19 +1,27 @@
 #pragma once
 #include "ExportDLL.hpp"
-#include "systems/SystemManager.hpp"
+#include "app/Entry.hpp"
+#include "core/Core.hpp"
 
 namespace TechEngine {
-    class SERVER_DLL Server {
+    class SERVER_DLL Server : public Core {
     private:
-        SystemManager systemManager; //?
+        Entry m_entry;
+        friend class RuntimeServer;
 
     public:
-        void init();
+        Server();
 
-        void onFixedUpdate();
+        void init() override;
 
-        void onUpdate();
+        void onStart() override;
 
-        void destroy();
+        void onFixedUpdate() override;
+
+        void onUpdate() override;
+
+        void onStop() override;
+
+        void destroy() override;
     };
 }

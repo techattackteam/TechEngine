@@ -3,19 +3,25 @@
 #include <iostream>
 
 namespace TechEngine {
+    Server::Server() : Core(), m_entry(m_systemManager) {
+    }
+
     void Server::init() {
-        std::cout << "Server init" << std::endl;
+        Core::init();
+    }
+
+    void Server::onStart() {
     }
 
     void Server::onFixedUpdate() {
-        std::cout << "Server onFixedUpdate" << std::endl;
     }
 
     void Server::onUpdate() {
-        //Server does nothing on update
+    }
+
+    void Server::onStop() {
     }
 
     void Server::destroy() {
-        std::cout << "Server destroy" << std::endl;
     }
 }

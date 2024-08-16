@@ -1,30 +1,40 @@
 #include "Editor.hpp"
-#include <iostream>
+
+#include "core/Timer.hpp"
 
 namespace TechEngine {
+    Editor::Editor() : Application(), m_entry(m_systemRegistry) {
+    }
+
     void Editor::init() {
-        std::cout << "Editor init" << std::endl;
-        client.init();
-        server.init();
-        running = true;
+        m_systemRegistry.registerSystem<Timer>();
+        m_runFunction = [this]() {
+            m_entry.run([this]() {
+                            fixedUpdate();
+                        }, [this]() {
+                            update();
+                        });
+        };
+        m_client.init();
+        m_server.init();
+        m_running = true;
+    }
+
+    void Editor::start() {
     }
 
     void Editor::update() {
-        std::cout << "Editor update" << std::endl;
-        client.onUpdate();
-        server.onUpdate();
     }
 
     void Editor::fixedUpdate() {
-        std::cout << "Editor fixedUpdate" << std::endl;
-        client.onFixedUpdate();
-        server.onFixedUpdate();
+    }
+
+    void Editor::stop() {
     }
 
     void Editor::destroy() {
-        std::cout << "Editor destroy" << std::endl;
-        client.destroy();
-        server.destroy();
+        m_client.destroy();
+        m_server.destroy();
     }
 
     Application* createApp() {

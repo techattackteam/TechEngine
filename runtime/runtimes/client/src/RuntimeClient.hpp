@@ -4,14 +4,18 @@
 
 namespace TechEngine {
     class RuntimeClient : public Application {
-        Client client;
+        Client m_client;
 
     public:
         void init() override;
 
+        void start() override;
+
         void fixedUpdate() override;
 
         void update() override;
+
+        void stop() override;
 
         void destroy() override;
     };

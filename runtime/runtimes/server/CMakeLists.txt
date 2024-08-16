@@ -6,7 +6,7 @@ file(GLOB RUNTIME_SERVER_HEADERS "src/*.hpp")
 # add the executable
 add_executable(TechEngineRuntimeServer ${RUNTIME_SERVER_SOURCES} ${RUNTIME_SERVER_HEADERS})
 target_include_directories(TechEngineRuntimeServer PUBLIC src)
-target_link_libraries(TechEngineRuntimeServer TechEngineApp TechEngineServer)
+target_link_libraries(TechEngineRuntimeServer TechEngineApp TechEngineCore TechEngineServer)
 
 # setup target's output directory
 if (WIN32) # WINDOWS

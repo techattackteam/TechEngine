@@ -6,15 +6,23 @@
 namespace TechEngine {
     class Editor : public Application {
     private:
-        Server server;
-        Client client;
+        Entry m_entry;
+        Server m_server;
+        Client m_client;
+        SystemsRegistry m_systemRegistry;
 
     public:
+        Editor();
+
         void init() override;
+
+        void start() override;
 
         void update() override;
 
         void fixedUpdate() override;
+
+        void stop() override;
 
         void destroy() override;
     };

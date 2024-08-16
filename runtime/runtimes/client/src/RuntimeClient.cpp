@@ -2,19 +2,35 @@
 
 namespace TechEngine {
     void RuntimeClient::init() {
-        client.init();
+        m_runFunction = [this]() {
+            m_client.m_entry.run([this]() {
+                                     fixedUpdate();
+                                 }, [this]() {
+                                     update();
+                                 });
+        };
+        m_client.init();
+    }
+
+    void RuntimeClient::start() {
+        m_client.onStart();
+        m_running = true;
     }
 
     void RuntimeClient::fixedUpdate() {
-        client.onFixedUpdate();
+        m_client.onFixedUpdate();
     }
 
     void RuntimeClient::update() {
-        client.onUpdate();
+        m_client.onUpdate();
+    }
+
+    void RuntimeClient::stop() {
+        m_client.onStop();
     }
 
     void RuntimeClient::destroy() {
-        client.destroy();
+        m_client.destroy();
     }
 
     Application* createApp() {

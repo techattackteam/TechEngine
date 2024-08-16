@@ -6,14 +6,18 @@
 namespace TechEngine {
     class RuntimeServer : public Application {
     private:
-        Server server;
+        Server m_server;
 
     public:
         void init() override;
 
+        void start() override;
+
         void update() override;
 
         void fixedUpdate() override;
+
+        void stop() override;
 
         void destroy() override;
     };
