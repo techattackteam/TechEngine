@@ -1,6 +1,0 @@
-[submodule "dependencies/vcpkg"]
-	path = dependencies/vcpkg
-	url = git@github.com:microsoft/vcpkg.git
-[submodule "dependencies/GameNetworkingSockets"]
-	path = dependencies/GameNetworkingSockets
-	url = git@github.com:ValveSoftware/GameNetworkingSockets.git
