@@ -3,11 +3,11 @@ file(GLOB_RECURSE ENGINE_SERVER_HEADERS "src/*.hpp")
 
 add_library(TechEngineServer SHARED ${ENGINE_SERVER_SRC} ${ENGINE_SERVER_HEADERS})
 
-target_compile_definitions(TechEngineServer PRIVATE TECH_ENGINE_SERVER_EXPORT)
+target_compile_definitions(TechEngineServer PRIVATE TECH_ENGINE_SERVER_EXPORT TECH_ENGINE_CORE_EXPORT)
 
 target_include_directories(TechEngineServer PUBLIC src)
 
-target_link_libraries(TechEngineServer PRIVATE TechEngineCore)
+target_link_libraries(TechEngineServer PUBLIC TechEngineCore)
 
 #Setup target's output directory
 if (WIN32) # WINDOWS
