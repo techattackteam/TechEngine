@@ -15,7 +15,7 @@ namespace TechEngine {
     void Timer::onStop() {
     }
 
-    void Timer::destroy() {
+    void Timer::shutdown() {
     }
 
     int Timer::getFPS() const {

@@ -1,10 +1,11 @@
 #pragma once
+#include "CoreExportDLL.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
-    class Core {
+    class CORE_DLL Core {
     protected:
-        SystemsRegistry m_systemManager;
+        SystemsRegistry m_systemRegistry;
 
     public:
         virtual ~Core() = default;

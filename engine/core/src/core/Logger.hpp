@@ -1,16 +1,16 @@
 #pragma once
 
-#include <memory>
-#include <string>
-
-#include "glm/gtx/string_cast.hpp"
-#include "spdlog/spdlog.h"
 #include "systems/System.hpp"
 
+#include <memory>
+#include <string>
+#include "glm/gtx/string_cast.hpp"
+#include "spdlog/spdlog.h"
+
 namespace TechEngine {
-    class Logger : public System {
+    class CORE_DLL Logger : public System {
     private:
-        static std::shared_ptr<spdlog::logger> logger;
+        inline static std::shared_ptr<spdlog::logger> logger;
         inline static bool initialized = false;
         std::string name;
 
@@ -19,7 +19,7 @@ namespace TechEngine {
 
         void init() override;
 
-        void destroy() override;
+        void shutdown() override;
 
         static std::shared_ptr<spdlog::logger>& getLogger();
     };

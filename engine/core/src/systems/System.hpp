@@ -1,7 +1,8 @@
 #pragma once
+#include "core/CoreExportDLL.hpp"
 
 namespace TechEngine {
-    class System {
+    class CORE_DLL System {
     protected:
         System() = default;
 
@@ -24,6 +25,6 @@ namespace TechEngine {
 
         virtual void onStop();
 
-        virtual void destroy() = 0;
+        virtual void shutdown() = 0;
     };
 }

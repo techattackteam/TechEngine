@@ -1,13 +1,11 @@
 #pragma once
+#include "core/CoreExportDLL.hpp"
 #include <functional>
-
 
 namespace TechEngine {
     class SystemsRegistry;
-}
 
-namespace TechEngine {
-    class Entry {
+    class CORE_DLL Entry {
     private:
         SystemsRegistry& m_systemsRegistry;
 
