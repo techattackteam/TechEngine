@@ -10,8 +10,15 @@ target_link_libraries(TechEngineRuntimeClient TechEngineApp TechEngineClient)
 
 # setup target's output directory
 if (WIN32) # WINDOWS
-    set_target_properties(TechEngineRuntimeClient PROPERTIES TECH_ENGINE_RUNTIME_CLIENT_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/runtime/runtimes/client")
-    get_target_property(OUTPUT TechEngineRuntimeClient TECH_ENGINE_RUNTIME_CLIENT_OUTPUT_DIRECTORY)
+    set(OUTPUT "${PROJECT_SOURCE_DIR}/bin/runtime/runtimes/client")
+
+    # Set target property to store the output's path for editor to copy
+    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}" STREQUAL "")
+        set_target_properties(TechEngineRuntimeClient PROPERTIES RUNTIME_CLIENT_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/runtime/runtimes/client/debug")
+    else ()
+        set_target_properties(TechEngineRuntimeClient PROPERTIES RUNTIME_CLIENT_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/runtime/runtimes/client/release")
+    endif ()
+
     set_target_properties(TechEngineRuntimeClient PROPERTIES
             ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${OUTPUT}/debug"
             LIBRARY_OUTPUT_DIRECTORY_DEBUG "${OUTPUT}/debug"
