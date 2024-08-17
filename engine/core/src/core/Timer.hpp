@@ -4,7 +4,7 @@
 #include <chrono>
 
 namespace TechEngine {
-    class Timer : public System {
+    class CORE_DLL Timer : public System {
     private:
         std::chrono::time_point<std::chrono::system_clock> startTime;
 
@@ -29,7 +29,7 @@ namespace TechEngine {
 
         void onStop() override;
 
-        void destroy() override;
+        void shutdown() override;
 
         int getFPS() const;
 

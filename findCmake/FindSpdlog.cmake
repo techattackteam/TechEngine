@@ -16,7 +16,6 @@ find_path(spdlog_INCLUDE_DIR
 find_library(spdlog_LIBRARY
         NAMES spdlog
         PATHS ${CMAKE_SOURCE_DIR}/libs/spdlog/lib
-
 )
 
 include(FindPackageHandleStandardArgs)
@@ -24,17 +23,12 @@ find_package_handle_standard_args(spdlog DEFAULT_MSG spdlog_INCLUDE_DIR spdlog_L
 
 mark_as_advanced(spdlog_INCLUDE_DIR spdlog_LIBRARY)
 
-if (spdlog_FOUND)
-    set(spdlog_FOUND TRUE)
+set(spdlog_FOUND TRUE)
 
-    # Create a normal library target for spdlog
-    add_library(spdlog STATIC IMPORTED)
+# Create a normal library target for spdlog
+add_library(spdlog STATIC IMPORTED)
 
-    # Set the include directories and library for the target
-    set_target_properties(spdlog PROPERTIES
-            IMPORTED_LOCATION ${spdlog_LIBRARY}
-            INTERFACE_INCLUDE_DIRECTORIES ${spdlog_INCLUDE_DIR})
-else ()
-    set(spdlog_FOUND FALSE)
-    message(FATAL_ERROR "Could not find spdlog headers or library")
-endif ()
+# Set the include directories and library for the target
+set_target_properties(spdlog PROPERTIES
+        IMPORTED_LOCATION ${spdlog_LIBRARY}
+        INTERFACE_INCLUDE_DIRECTORIES ${spdlog_INCLUDE_DIR})

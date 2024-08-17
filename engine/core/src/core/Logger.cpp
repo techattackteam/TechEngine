@@ -3,8 +3,6 @@
 #include <spdlog/sinks/basic_file_sink.h>
 
 namespace TechEngine {
-    std::shared_ptr<spdlog::logger> Logger::logger;
-
     Logger::Logger(const std::string& name) {
         this->name = name;
     }
@@ -22,7 +20,7 @@ namespace TechEngine {
         logger->flush_on(spdlog::level::trace);
     }
 
-    void Logger::destroy() {
+    void Logger::shutdown() {
         logger->flush();
     }
 
