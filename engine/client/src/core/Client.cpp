@@ -1,6 +1,8 @@
 #include "Client.hpp"
+
 #include "core/Timer.hpp"
 #include "core/Logger.hpp"
+#include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
     Client::Client() : Core(), m_entry(m_systemRegistry) {
@@ -15,6 +17,8 @@ namespace TechEngine {
     void Client::onStart() {
         m_systemRegistry.getSystem<Timer>().onStart();
         TE_LOGGER_INFO("Client started");
+        m_systemRegistry.getSystem<ScriptEngine>().loadDLL("C:\\dev\\TechEngine\\bin\\runtime\\editor\\debug\\New Project\\resources\\client\\scripts\\build\\debug\\ClientScripts.dll");
+        m_systemRegistry.getSystem<ScriptEngine>().onStart();
     }
 
     void Client::onFixedUpdate() {
@@ -30,6 +34,7 @@ namespace TechEngine {
     }
 
     void Client::destroy() {
+        m_systemRegistry.getSystem<ScriptEngine>().shutdown();
         m_systemRegistry.getSystem<Timer>().shutdown();
     }
 }

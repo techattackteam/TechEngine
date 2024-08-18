@@ -64,6 +64,22 @@ if (WIN32)
             ${ServerRuntime}
             $<TARGET_FILE_DIR:TechEngineEditor>/runtimes/server
     )
-
-
 endif ()
+
+# Create resources folder
+add_custom_command(TARGET TechEngineEditor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+        $<TARGET_FILE_DIR:TechEngineEditor>/resources
+)
+add_custom_command(TARGET TechEngineEditor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+        $<TARGET_FILE_DIR:TechEngineEditor>/resources/project
+)
+
+
+# Copy the libs folder to resources
+add_custom_command(TARGET TechEngineEditor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${PROJECT_SOURCE_DIR}/libs
+        $<TARGET_FILE_DIR:TechEngineEditor>/resources/project/libs
+)
