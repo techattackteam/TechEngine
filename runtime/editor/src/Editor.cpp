@@ -55,7 +55,8 @@ namespace TechEngine {
         m_systemRegistry.getSystem<Timer>().onStart();
         m_client.onStart();
         m_server.onStart();
-        TE_LOGGER_INFO("Editor started");
+        m_systemRegistry.getSystem<ProjectManager>().exportProject("C:\\dev\\TechEngine\\bin\\runtime", ProjectType::CLIENT);
+       // TE_LOGGER_INFO("Editor started");
     }
 
     void Editor::update() {

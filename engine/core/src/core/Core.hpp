@@ -3,7 +3,7 @@
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
-    class CORE_DLL Core {
+    class Core {
     protected:
         SystemsRegistry m_systemRegistry;
 

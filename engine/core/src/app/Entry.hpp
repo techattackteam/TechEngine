@@ -15,3 +15,4 @@ namespace TechEngine {
         void run(const std::function<void()>& onFixedUpdate, const std::function<void()>& onUpdate);
     };
 }
+

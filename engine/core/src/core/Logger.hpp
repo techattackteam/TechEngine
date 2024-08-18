@@ -2,8 +2,6 @@
 
 #include "systems/System.hpp"
 
-#include <memory>
-#include <string>
 #include "glm/gtx/string_cast.hpp"
 #include "spdlog/spdlog.h"
 
@@ -22,6 +20,7 @@ namespace TechEngine {
         void shutdown() override;
 
         static std::shared_ptr<spdlog::logger>& getLogger();
+
     };
 }
 
