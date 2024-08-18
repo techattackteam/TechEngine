@@ -52,6 +52,7 @@ if (WIN32)
     get_target_property(ClientRuntime TechEngineRuntimeClient RUNTIME_CLIENT_OUTPUT_DIRECTORY)
     # Add commands to copy the runtime files to the editor directory
     add_custom_command(TARGET TechEngineEditor POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E remove_directory $<TARGET_FILE_DIR:TechEngineEditor>/runtimes/client
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${ClientRuntime}
             $<TARGET_FILE_DIR:TechEngineEditor>/runtimes/client
@@ -60,6 +61,7 @@ if (WIN32)
     get_target_property(ServerRuntime TechEngineRuntimeServer RUNTIME_SERVER_OUTPUT_DIRECTORY)
     # Add commands to copy the runtime files to the editor directory
     add_custom_command(TARGET TechEngineEditor POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E remove_directory $<TARGET_FILE_DIR:TechEngineEditor>/runtimes/server
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${ServerRuntime}
             $<TARGET_FILE_DIR:TechEngineEditor>/runtimes/server
@@ -68,18 +70,32 @@ endif ()
 
 # Create resources folder
 add_custom_command(TARGET TechEngineEditor POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory
-        $<TARGET_FILE_DIR:TechEngineEditor>/resources
+        COMMAND ${CMAKE_COMMAND} -E remove_directory $<TARGET_FILE_DIR:TechEngineEditor>/resources
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:TechEngineEditor>/resources
+
 )
 add_custom_command(TARGET TechEngineEditor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory
-        $<TARGET_FILE_DIR:TechEngineEditor>/resources/project
+        $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates
 )
 
-
-# Copy the libs folder to resources
+# Copy the project template to the resources templates folder
 add_custom_command(TARGET TechEngineEditor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${PROJECT_SOURCE_DIR}/libs
-        $<TARGET_FILE_DIR:TechEngineEditor>/resources/project/libs
+        ${PROJECT_SOURCE_DIR}/templates/project
+        $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project
 )
+
+# Copy API folder to project template folder
+if (WIN32)
+    add_dependencies(TechEngineEditor TechEngineAPI)
+
+    get_target_property(API TechEngineAPI API_OUTPUT_DIRECTORY)
+
+    add_custom_command(TARGET TechEngineEditor POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${API}
+            $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/common/TechEngineAPI
+    )
+endif ()
+
