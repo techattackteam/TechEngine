@@ -1,7 +1,6 @@
-
 # include all source files from the src directory
-file(GLOB RUNTIME_SERVER_SOURCES "src/*.cpp")
-file(GLOB RUNTIME_SERVER_HEADERS "src/*.hpp")
+file(GLOB_RECURSE RUNTIME_SERVER_SOURCES "src/*.cpp")
+file(GLOB_RECURSE RUNTIME_SERVER_HEADERS "src/*.hpp")
 
 # add the executable
 add_executable(TechEngineRuntimeServer ${RUNTIME_SERVER_SOURCES} ${RUNTIME_SERVER_HEADERS})
