@@ -1,7 +1,7 @@
 
 # include all source files from the src directory
-file(GLOB EDITOR_SOURCES "src/*.cpp")
-file(GLOB EDITOR_HEADERS "src/*.hpp")
+file(GLOB_RECURSE EDITOR_SOURCES "src/*.cpp")
+file(GLOB_RECURSE EDITOR_HEADERS "src/*.hpp")
 
 # add the executable
 add_executable(TechEngineEditor ${EDITOR_SOURCES} ${EDITOR_HEADERS})

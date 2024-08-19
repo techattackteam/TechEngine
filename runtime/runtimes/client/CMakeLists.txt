@@ -1,7 +1,6 @@
-
 # include all source files from the src directory
-file(GLOB RUNTIME_CLIENT_SOURCES "src/*.cpp")
-file(GLOB RUNTIME_CLIENT_HEADERS "src/*.hpp")
+file(GLOB_RECURSE RUNTIME_CLIENT_SOURCES "src/*.cpp")
+file(GLOB_RECURSE RUNTIME_CLIENT_HEADERS "src/*.hpp")
 
 # add the executable
 add_executable(TechEngineRuntimeClient ${RUNTIME_CLIENT_SOURCES} ${RUNTIME_CLIENT_HEADERS})
