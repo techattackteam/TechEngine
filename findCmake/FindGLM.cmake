@@ -12,6 +12,9 @@ find_path(GLM_INCLUDE_DIR
         PATH_SUFFIXES glm
 )
 
+include(FindPackageHandleStandardArgs)
+
+find_package_handle_standard_args(GLM DEFAULT_MSG GLM_INCLUDE_DIR)
 # Check if the include directory was found
 if (GLM_INCLUDE_DIR)
     # Create an interface target for GLM

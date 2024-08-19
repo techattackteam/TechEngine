@@ -1,13 +1,16 @@
 file(GLOB_RECURSE ENGINE_CLIENT_SRC "src/*.cpp")
 file(GLOB_RECURSE ENGINE_CLIENT_HEADERS "src/*.hpp")
 
+find_package(glew REQUIRED)
+find_package(glfw REQUIRED)
+
 add_library(TechEngineClient SHARED ${ENGINE_CLIENT_SRC} ${ENGINE_CLIENT_HEADERS})
 
 target_compile_definitions(TechEngineClient PRIVATE TECH_ENGINE_CLIENT_EXPORT TECH_ENGINE_CORE_EXPORT)
 
 target_include_directories(TechEngineClient PUBLIC src)
 
-target_link_libraries(TechEngineClient PUBLIC TechEngineCore)
+target_link_libraries(TechEngineClient PUBLIC TechEngineCore glew glfw)
 
 #Setup target's output directory
 if (WIN32) # WINDOWS

@@ -9,6 +9,11 @@
 #include <yaml-cpp/yaml.h>
 #include <fstream>
 
+
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
 namespace TechEngine {
     Editor::Editor() : Application(), m_entry(m_systemRegistry) {
     }
@@ -51,6 +56,30 @@ namespace TechEngine {
         m_client.init();
         m_server.init();
         m_running = true;
+
+        glfwInit();
+        handler = glfwCreateWindow(1280, 720, "TechEngine", NULL, NULL);
+        glfwMakeContextCurrent(handler);
+        if (glewInit() != GLEW_OK) {
+            std::cout << "Error!" << std::endl;
+        }
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glfwSwapInterval(1);
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // IF using Docking Branch
+
+        // Setup Platform/Renderer backends
+        ImGui_ImplGlfw_InitForOpenGL(handler, true); // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+        ImGui_ImplOpenGL3_Init();
     }
 
     void Editor::start() {
@@ -62,6 +91,16 @@ namespace TechEngine {
 
     void Editor::update() {
         m_client.onUpdate();
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        ImGui::NewFrame();
+        ImGui::ShowDemoWindow(); // Show demo window! :)
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        glfwSwapBuffers(handler);
+        glfwPollEvents();
     }
 
     void Editor::fixedUpdate() {

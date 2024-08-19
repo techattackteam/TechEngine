@@ -3,6 +3,8 @@
 #include <core/Client.hpp>
 #include <core/Server.hpp>
 #include <filesystem>
+#include <gl/glew.h>
+#include <glfw/glfw3.h>
 
 namespace TechEngine {
     class Editor : public Application {
@@ -13,6 +15,7 @@ namespace TechEngine {
         SystemsRegistry m_systemRegistry;
         std::filesystem::path m_EditorConfigPath;
         std::filesystem::path m_lastProjectLoaded;
+        GLFWwindow* handler;
 
     public:
         Editor();
