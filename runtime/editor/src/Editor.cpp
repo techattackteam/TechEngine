@@ -55,7 +55,6 @@ namespace TechEngine {
 
     void Editor::start() {
         m_systemRegistry.getSystem<Timer>().onStart();
-        ScriptsCompiler::compileUserScripts(m_systemRegistry.getSystem<ProjectManager>(), CompileMode::Debug, ProjectType::Client);
         m_client.onStart();
         m_server.onStart();
         TE_LOGGER_INFO("Editor started");

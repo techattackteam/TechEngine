@@ -2,6 +2,8 @@
 
 #include "core/Timer.hpp"
 #include "core/Logger.hpp"
+#include "events/TestEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
@@ -12,30 +14,38 @@ namespace TechEngine {
         Core::init();
         m_systemRegistry.registerSystem<Logger>("TechEngineClient");
         m_systemRegistry.getSystem<Logger>().init();
+
+        m_systemRegistry.getSystem<EventDispatcher>().subscribe<TestEvent>([this](Event* event) {
+            TE_LOGGER_TRACE("TestEvent received");
+        });
     }
 
     void Client::onStart() {
         m_systemRegistry.getSystem<Timer>().onStart();
-        TE_LOGGER_INFO("Client started");
-        m_systemRegistry.getSystem<ScriptEngine>().loadDLL("C:\\dev\\TechEngine\\bin\\runtime\\editor\\debug\\New Project\\resources\\client\\scripts\\build\\debug\\ClientScripts.dll");
         m_systemRegistry.getSystem<ScriptEngine>().onStart();
+        m_systemRegistry.getSystem<EventDispatcher>().dispatch(new TestEvent());
     }
 
     void Client::onFixedUpdate() {
         m_systemRegistry.getSystem<Timer>().onFixedUpdate();
+        m_systemRegistry.getSystem<EventDispatcher>().onFixedUpdate();
+        m_systemRegistry.getSystem<ScriptEngine>().onFixedUpdate();
     }
 
     void Client::onUpdate() {
         m_systemRegistry.getSystem<Timer>().onUpdate();
+        m_systemRegistry.getSystem<EventDispatcher>().onUpdate();
         m_systemRegistry.getSystem<ScriptEngine>().onUpdate();
     }
 
     void Client::onStop() {
         m_systemRegistry.getSystem<Timer>().onStop();
+        m_systemRegistry.getSystem<ScriptEngine>().onStop();
     }
 
     void Client::destroy() {
-        m_systemRegistry.getSystem<ScriptEngine>().shutdown();
         m_systemRegistry.getSystem<Timer>().shutdown();
+        m_systemRegistry.getSystem<EventDispatcher>().shutdown();
+        m_systemRegistry.getSystem<ScriptEngine>().shutdown();
     }
 }
