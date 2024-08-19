@@ -1,27 +1,27 @@
 #pragma once
 
 
-#include <string>
-#include <vector>
-
 #include "core/ExportDLL.hpp"
-
-namespace TechEngine {
-    class Logger;
-}
+#include <spdlog/logger.h>
 
 namespace TechEngineAPI {
     class API_DLL Logger {
-        inline static Logger* logger = nullptr;
-        TechEngine::Logger* loggerCore;
+        inline static std::shared_ptr<spdlog::logger> logger;
+        inline static bool initialized = false;
+        inline static std::string name;
 
     public:
-        Logger(TechEngine::Logger* loggerCore);
+        static void init(const std::string& name);
 
-        static Logger* getLogger();
+        static void shutdown();
 
-    private:
+        static std::shared_ptr<spdlog::logger>& getLogger();
     };
 }
 
-#define LOGGER_INFO(...) TechEngine::Logger::getLogger()->info(__VA_ARGS__)
+// Core log macros
+#define LOGGER_INFO(...)        TechEngineAPI::Logger::getLogger()->info(__VA_ARGS__)
+#define LOGGER_TRACE(...)       TechEngineAPI::Logger::getLogger()->trace(__VA_ARGS__)
+#define LOGGER_WARN(...)        TechEngineAPI::Logger::getLogger()->warn(__VA_ARGS__)
+#define LOGGER_ERROR(...)       TechEngineAPI::Logger::getLogger()->error(__VA_ARGS__)
+#define LOGGER_CRITICAL(...) {  TechEngineAPI::Logger::getLogger()->critical(__VA_ARGS__); __debugbreak();}
