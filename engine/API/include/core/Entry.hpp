@@ -1,6 +1,5 @@
 #pragma once
 
-#include "core/ExportDLL.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngineAPI {

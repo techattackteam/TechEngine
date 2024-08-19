@@ -8,7 +8,7 @@
 
 find_path(GLM_INCLUDE_DIR
         NAMES glm/glm.hpp
-        PATHS ${CMAKE_SOURCE_DIR}/../libs/glm
+        PATHS ${CMAKE_SOURCE_DIR}/../cache/common/libs/glm
         PATH_SUFFIXES glm
 )
 

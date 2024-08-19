@@ -1,8 +1,10 @@
 #include "ProjectManager.hpp"
 #include "core/Logger.hpp"
+#include "script/ScriptEngine.hpp"
 
 #include <yaml-cpp/yaml.h>
 #include <fstream>
+
 
 namespace TechEngine {
     ProjectManager::ProjectManager(const std::filesystem::path& projectPath) : m_projectPath(projectPath) {
@@ -40,7 +42,7 @@ namespace TechEngine {
         std::filesystem::create_directory(exportPath + "\\resources\\common");
         std::filesystem::copy(m_projectPath.string() + "\\assets\\common", exportPath + "\\assets\\common", std::filesystem::copy_options::recursive);
         std::filesystem::copy(m_projectPath.string() + "\\resources\\common", exportPath + "\\resources\\common", std::filesystem::copy_options::recursive);
-        if (projectType == ProjectType::CLIENT) {
+        if (projectType == ProjectType::Client) {
             std::filesystem::create_directory(exportPath + "\\assets\\client");
             std::filesystem::create_directory(exportPath + "\\resources\\client");
             std::filesystem::copy(m_projectPath.string() + "\\assets\\client", exportPath + "\\assets\\client", std::filesystem::copy_options::recursive);
@@ -48,7 +50,7 @@ namespace TechEngine {
 
             //Copy runtime files to project folder
             std::filesystem::copy(m_clientRuntimePath, exportPath, std::filesystem::copy_options::recursive);
-        } else if (projectType == ProjectType::SERVER) {
+        } else if (projectType == ProjectType::Server) {
             std::filesystem::create_directory(exportPath + "\\assets\\server");
             std::filesystem::create_directory(exportPath + "\\resources\\server");
             std::filesystem::copy(m_projectPath.string() + "\\assets\\server", exportPath + "\\assets\\server", std::filesystem::copy_options::recursive);
@@ -75,6 +77,30 @@ namespace TechEngine {
         fout.close();
     }
 
+    std::filesystem::path ProjectManager::getCmakeListPath() const {
+        return m_assetsPath.string();
+    }
+
+    std::filesystem::path ProjectManager::getCmakeBuildPath(CompileMode compileMode) {
+        std::string buildMode;
+        if (compileMode == CompileMode::Debug) {
+            buildMode = "debug";
+        } else if (compileMode == CompileMode::Release) {
+            buildMode = "release";
+        }
+
+        return m_cachePath.string() + "\\common\\cmake-build-" + buildMode;
+    }
+
+    std::filesystem::path ProjectManager::getCmakePath() const {
+        return m_cmakePath;
+    }
+
+    std::filesystem::path ProjectManager::getTechEngineAPILibPath(CompileMode compileMode, ProjectType type) const {
+        std::string compile = compileMode == CompileMode::Debug ? "debug" : "release";
+        return m_resourcesPath.string() + "\\common\\libs\\" + compile + "\\TechEngineAPI.lib"; //TODO: Change this to server or client based on project type
+    }
+
     void ProjectManager::createDefaultProject() {
         createProject("New Project");
     }
@@ -90,5 +116,8 @@ namespace TechEngine {
             config["Project Name"] = "New Project";
         }
         TE_LOGGER_INFO("Project loaded: " + m_projectName.string());
+        m_assetsPath = m_projectPath.string() + "\\assets";
+        m_resourcesPath = m_projectPath.string() + "\\resources";
+        m_cachePath = m_projectPath.string() + "\\cache";
     }
 }

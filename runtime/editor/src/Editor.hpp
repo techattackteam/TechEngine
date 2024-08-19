@@ -1,8 +1,8 @@
 #pragma once
 #include <Application.hpp>
-#include <filesystem>
 #include <core/Client.hpp>
 #include <core/Server.hpp>
+#include <filesystem>
 
 namespace TechEngine {
     class Editor : public Application {

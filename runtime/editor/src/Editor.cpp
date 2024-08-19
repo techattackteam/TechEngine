@@ -3,6 +3,9 @@
 #include "core/Logger.hpp"
 #include "core/Timer.hpp"
 #include "project/ProjectManager.hpp"
+#include "script/ScriptEngine.hpp"
+#include "scripting/ScriptsCompiler.hpp"
+
 #include <yaml-cpp/yaml.h>
 #include <fstream>
 
@@ -36,7 +39,6 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<Timer>();
         loadEditorConfig();
         m_systemRegistry.registerSystem<ProjectManager>(m_lastProjectLoaded);
-
         m_systemRegistry.getSystem<Timer>().init();
         m_systemRegistry.getSystem<ProjectManager>().init();
         m_runFunction = [this]() {
@@ -53,13 +55,14 @@ namespace TechEngine {
 
     void Editor::start() {
         m_systemRegistry.getSystem<Timer>().onStart();
+        ScriptsCompiler::compileUserScripts(m_systemRegistry.getSystem<ProjectManager>(), CompileMode::Debug, ProjectType::Client);
         m_client.onStart();
         m_server.onStart();
-        m_systemRegistry.getSystem<ProjectManager>().exportProject("C:\\dev\\TechEngine\\bin\\runtime", ProjectType::CLIENT);
-       // TE_LOGGER_INFO("Editor started");
+        TE_LOGGER_INFO("Editor started");
     }
 
     void Editor::update() {
+        m_client.onUpdate();
     }
 
     void Editor::fixedUpdate() {

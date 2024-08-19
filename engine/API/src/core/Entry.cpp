@@ -34,7 +34,6 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVO
 
         case DLL_PROCESS_DETACH:
             // Code to run when the DLL is unloaded from a process's address space
-            MessageBoxA(NULL, "DLL Unloaded!", "DLL Message", MB_OK);
             break;
         default: break;
     }
