@@ -28,6 +28,7 @@ namespace TechEngine {
     }
 
     void ProjectManager::exportProject(const std::filesystem::path& path, ProjectType projectType) {
+        assert(!path.empty() && !m_projectName.empty() && !m_projectPath.empty());
         std::string exportPath = path.string() + "\\" + m_projectName.string();
         if (!std::filesystem::exists(exportPath)) {
             std::filesystem::create_directory(exportPath);
@@ -64,6 +65,7 @@ namespace TechEngine {
     }
 
     void ProjectManager::createProject(const std::string& projectName) {
+        assert(!projectName.empty());
         std::filesystem::create_directory(m_projectPath);
         TE_LOGGER_INFO("New project created at: " + m_projectPath.string());
         std::filesystem::copy(std::filesystem::current_path().string() + "\\resources\\templates\\project", m_projectPath.string(), std::filesystem::copy_options::recursive);
@@ -82,6 +84,7 @@ namespace TechEngine {
     }
 
     std::filesystem::path ProjectManager::getCmakeBuildPath(CompileMode compileMode) {
+        assert(compileMode == CompileMode::Debug || compileMode == CompileMode::Release);
         std::string buildMode;
         if (compileMode == CompileMode::Debug) {
             buildMode = "debug";
@@ -96,16 +99,12 @@ namespace TechEngine {
         return m_cmakePath;
     }
 
-    std::filesystem::path ProjectManager::getTechEngineAPILibPath(CompileMode compileMode, ProjectType type) const {
-        std::string compile = compileMode == CompileMode::Debug ? "debug" : "release";
-        return m_resourcesPath.string() + "\\common\\libs\\" + compile + "\\TechEngineAPI.lib"; //TODO: Change this to server or client based on project type
-    }
-
     void ProjectManager::createDefaultProject() {
         createProject("New Project");
     }
 
     void ProjectManager::loadProject() {
+        assert(!m_projectName.empty());
         if (!std::filesystem::exists(m_projectPath.string() + "\\" + m_projectName.string() + ".teproj")) {
             TE_LOGGER_ERROR("Project config not found: " + m_projectPath.string() + "\\" + m_projectName.string() + ".teproj");
             return;

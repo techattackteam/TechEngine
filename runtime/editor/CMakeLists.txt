@@ -28,15 +28,13 @@ endif ()
 if (WIN32) # WINDOWS
     get_target_property(ClientDLL TechEngineClient CLIENT_DLL)
     get_target_property(ServerDLL TechEngineServer SERVER_DLL)
+    get_target_property(Client_API_DLL TechEngineAPIClient CLIENT_API_DLL)
+    get_target_property(SERVER_API_DLL TechEngineAPIServer SERVER_API_DLL)
     add_custom_command(TARGET TechEngineEditor POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy
-            ${ClientDLL}
-            $<TARGET_FILE_DIR:TechEngineEditor>
-    )
-    add_custom_command(TARGET TechEngineEditor POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy
-            ${ServerDLL}
-            $<TARGET_FILE_DIR:TechEngineEditor>
+            COMMAND ${CMAKE_COMMAND} -E copy ${ClientDLL} $<TARGET_FILE_DIR:TechEngineEditor>
+            COMMAND ${CMAKE_COMMAND} -E copy ${ServerDLL} $<TARGET_FILE_DIR:TechEngineEditor>
+            COMMAND ${CMAKE_COMMAND} -E copy ${Client_API_DLL} $<TARGET_FILE_DIR:TechEngineEditor>
+            #COMMAND ${CMAKE_COMMAND} -E copy ${SERVER_API_DLL} $<TARGET_FILE_DIR:TechEngineEditor>
     )
 endif ()
 
@@ -94,8 +92,18 @@ if (WIN32)
 
     add_custom_command(TARGET TechEngineEditor POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${API}
+            ${API}/client
+            $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/client/TechEngineAPI
+    )
+    add_custom_command(TARGET TechEngineEditor POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${API}/common
             $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/common/TechEngineAPI
+    )
+    add_custom_command(TARGET TechEngineEditor POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${API}/server
+            $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/server/TechEngineAPI
     )
 endif ()
 

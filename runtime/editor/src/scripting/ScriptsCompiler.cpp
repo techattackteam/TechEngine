@@ -7,6 +7,7 @@
 
 namespace TechEngine::ScriptsCompiler {
     std::string execCommand(const std::string& cmd) {
+        assert(!cmd.empty());
         //Pre-allocation of the string
         std::string result;
         result.reserve(1024);
@@ -36,14 +37,12 @@ namespace TechEngine::ScriptsCompiler {
         assert(projectType == ProjectType::Client || projectType == ProjectType::Server);
         std::string cmakeBuildPath = projectManager.getCmakeBuildPath(compileMode).string();
         std::string cmakeListPath = projectManager.getCmakeListPath().string();
-        //std::string techEngineAPILibPath = projectManager.getTechEngineAPILibPath(compileMode, projectType).string();
 
         std::string command = "\"" + projectManager.getCmakePath().string() +
                               " -G \"Visual Studio 17 2022\""
-                              //" -D TechEngineClientLIB:STRING=\"" + techEngineAPILibPath + "\"" +
                               " -S " + "\"" + cmakeListPath + "\"" +
                               " -B " + "\"" + cmakeBuildPath + "\"" + "\"";
-        /*std::system(command.c_str());*/
+
         TE_LOGGER_INFO(execCommand(command));
         std::string cm;
         if (compileMode == CompileMode::Release) {
@@ -57,7 +56,7 @@ namespace TechEngine::ScriptsCompiler {
                                       ? "ClientScripts"
                                       : "ServerScripts") +
                   " --config " + cm + "\"";
-        /*std::system(command.c_str());*/
+
         TE_LOGGER_INFO(execCommand(command));
     }
 }
