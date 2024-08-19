@@ -41,12 +41,13 @@ if (WIN32) # WINDOWS
     )
 endif ()
 target_include_directories(ClientScripts PUBLIC
+        "../../resources/client/TechEngineAPI/include"
         "../../resources/common/TechEngineAPI/include")
 
 # Set variable for TechEngineAPILib
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}" STREQUAL "")
-    set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/common/TechEngineAPI/lib/debug/TechEngineAPI.lib")
+    set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/TechEngineAPI/lib/debug/TechEngineAPIClient.lib")
 else ()
-    set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/common/TechEngineAPI/lib/release/TechEngineAPI.lib")
+    set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/TechEngineAPI/lib/release/TechEngineAPIClient.lib")
 endif ()
 target_link_libraries(ClientScripts PUBLIC ${TECH_ENGINE_API_LIB})
