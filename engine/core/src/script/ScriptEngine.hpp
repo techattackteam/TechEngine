@@ -8,7 +8,14 @@
 #include <list>
 #include <utility>
 
+#include "project/ProjectManager.hpp"
+
 namespace TechEngine {
+    enum class CompileMode {
+        Debug,
+        Release
+    };
+
     class CORE_DLL ScriptEngine : public System {
     private:
         SystemsRegistry& m_systemRegistry;
@@ -16,7 +23,6 @@ namespace TechEngine {
         std::list<Script*> scripts = {};
         bool runtime = false;
         bool dllLoaded = false;
-        bool loadingScripts = false;
 
         HINSTANCE m_userCustomDll = nullptr;
         HANDLE m_dllProcessHandle = nullptr;
@@ -29,7 +35,7 @@ namespace TechEngine {
 
         void init() override;
 
-        void loadDLL(const std::string& dllPath);
+        bool loadDLL(const std::string& dllPath);
 
         void shutdown() override;
 
@@ -46,10 +52,6 @@ namespace TechEngine {
         void registerScript(Script* script);
 
         void deleteScripts();
-
-        bool isLoadingScripts() const {
-            return loadingScripts;
-        }
 
         static void setEntryPoint(std::function<void(SystemsRegistry*)> entryPoint) {
             m_APIEntryPoint = std::move(entryPoint);

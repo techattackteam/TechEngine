@@ -9,13 +9,13 @@
 
 find_path(spdlog_INCLUDE_DIR
         NAMES spdlog/spdlog.h
-        PATHS ${CMAKE_SOURCE_DIR}/../libs/spdlog/include
+        PATHS ${CMAKE_SOURCE_DIR}/../cache/common/libs/spdlog/include
         PATH_SUFFIXES spdlog
 )
 
 find_library(spdlog_LIBRARY
         NAMES spdlog
-        PATHS ${CMAKE_SOURCE_DIR}/../libs/spdlog/lib
+        PATHS ${CMAKE_SOURCE_DIR}/../cache/common/libs/spdlog/lib
 )
 
 include(FindPackageHandleStandardArgs)

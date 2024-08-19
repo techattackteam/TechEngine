@@ -27,6 +27,7 @@ namespace TechEngine {
 
     void Client::onUpdate() {
         m_systemRegistry.getSystem<Timer>().onUpdate();
+        m_systemRegistry.getSystem<ScriptEngine>().onUpdate();
     }
 
     void Client::onStop() {

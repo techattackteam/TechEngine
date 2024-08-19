@@ -8,6 +8,9 @@ namespace TechEngineAPI {
         script->onStartFunc = [this]() {
             onStart();
         };
+        script->onUpdateFunc = [this]() {
+            onUpdate();
+        };
     }
 
     Script::~Script() {

@@ -5,8 +5,8 @@
 #include <windows.h>
 #include <excpt.h>
 #include <dbghelp.h>
-/*#include "events/scripts/ScriptCrashEvent.hpp"
-#include "eventSystem/EventDispatcher.hpp"#1#
+#include "events/scripts/ScriptCrashEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
 #include "script/Script.hpp"
 #pragma comment(lib, "Dbghelp.lib")
 
@@ -71,7 +71,7 @@ namespace TechEngine {
         SymCleanup(process);
     }
 
-    inline int filter(unsigned int code, _EXCEPTION_POINTERS* ep, Script* script/*, EventDispatcher& eventDispatcher#1#) {
+    inline int filter(unsigned int code, _EXCEPTION_POINTERS* ep, Script* script, EventDispatcher& eventDispatcher) {
         std::string name;
         if (script != nullptr) {
             name = script->getName();
@@ -88,20 +88,20 @@ namespace TechEngine {
     }
 
 #define CATCH_EXCEPTION_IN_FUNCTION(callback, eventDispatcher) \
-    [callback](Event* event) {\
-    __try {\
-        callback(event);\
-    } __except (filter(GetExceptionCode(), GetExceptionInformation(), nullptr)) {\
-    }\
-}
+        [callback](Event* event) {\
+        __try {\
+            callback(event);\
+        } __except (filter(GetExceptionCode(), GetExceptionInformation(), nullptr)) {\
+        }\
+    }
 #define RUN_SCRIPT_FUNCTION(script, func) \
-    if (runtime) { \
-        script->func(); \
-    } else { \
-        __try { \
+        if (runtime) { \
             script->func(); \
-        } __except (filter(GetExceptionCode(), GetExceptionInformation(), script)) { \
-    } \
-}
+        } else { \
+            __try { \
+                script->func(); \
+            } __except (filter(GetExceptionCode(), GetExceptionInformation(), script)) { \
+        } \
+    }
 }
 */

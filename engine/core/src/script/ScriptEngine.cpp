@@ -3,6 +3,9 @@
 #include "script/ScriptCrashHandler.hpp"
 #include <filesystem>
 
+#include "project/ProjectManager.hpp"
+#include "systems/SystemsRegistry.hpp"
+
 namespace TechEngine {
     ScriptEngine::ScriptEngine(SystemsRegistry& systemsRegistry) : m_systemRegistry(systemsRegistry) {
     }
@@ -12,23 +15,24 @@ namespace TechEngine {
         scriptRegister->init(this);
     }
 
-    void ScriptEngine::loadDLL(const std::string& dllPath) {
+
+    bool ScriptEngine::loadDLL(const std::string& dllPath) {
         if (std::filesystem::exists(dllPath)) {
-            loadingScripts = true;
             m_userCustomDll = LoadLibraryA(dllPath.c_str());
             if (!m_userCustomDll) {
                 TE_LOGGER_ERROR("Failed to load user scripts dll {0}", GetLastError());
-                return;
+                return false;
             }
             if (m_APIEntryPoint == nullptr) {
                 TE_LOGGER_ERROR("API entry point not set. Cannot load user scripts dll.");
-                return;
+                return false;
             }
             m_APIEntryPoint(&m_systemRegistry);
-            loadingScripts = false;
             dllLoaded = true;
+            return true;
         } else {
-            TE_LOGGER_WARN("User scripts dll not found. Skipping loading.");
+            TE_LOGGER_WARN("User scripts dll not found at {0}. Skipping loading.", dllPath);
+            return false;
         }
     }
 
@@ -61,6 +65,7 @@ namespace TechEngine {
         if (dllLoaded) {
             for (Script* script: scripts) {
                 //RUN_SCRIPT_FUNCTION(script, onUpdate);
+                script->onUpdateFunc();
             }
         }
     }
