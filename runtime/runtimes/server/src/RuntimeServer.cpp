@@ -29,7 +29,7 @@ namespace TechEngine {
     }
 
     void RuntimeServer::shutdown() {
-        m_server.destroy();
+        m_server.shutdown();
     }
 
     Application* createApp() {

@@ -8,25 +8,28 @@ namespace TechEngine {
     }
 
     void Server::init() {
-        Core::init();
         m_systemRegistry.registerSystem<Logger>("TechEngineServer");
         m_systemRegistry.getSystem<Logger>().init();
+        Core::init();
     }
 
     void Server::onStart() {
-        m_systemRegistry.getSystem<Timer>().onStart();
-        TE_LOGGER_INFO("Server started");
+        Core::onStart();
     }
 
     void Server::onFixedUpdate() {
+        Core::onFixedUpdate();
     }
 
     void Server::onUpdate() {
+        Core::onUpdate();
     }
 
     void Server::onStop() {
+        Core::onStop();
     }
 
-    void Server::destroy() {
+    void Server::shutdown() {
+        Core::shutdown();
     }
 }

@@ -11,41 +11,28 @@ namespace TechEngine {
     }
 
     void Client::init() {
-        Core::init();
         m_systemRegistry.registerSystem<Logger>("TechEngineClient");
         m_systemRegistry.getSystem<Logger>().init();
-
-        m_systemRegistry.getSystem<EventDispatcher>().subscribe<TestEvent>([this](Event* event) {
-            TE_LOGGER_TRACE("TestEvent received");
-        });
+        Core::init();
     }
 
     void Client::onStart() {
-        m_systemRegistry.getSystem<Timer>().onStart();
-        m_systemRegistry.getSystem<ScriptEngine>().onStart();
-        m_systemRegistry.getSystem<EventDispatcher>().dispatch(new TestEvent());
+        Core::onStart();
     }
 
     void Client::onFixedUpdate() {
-        m_systemRegistry.getSystem<Timer>().onFixedUpdate();
-        m_systemRegistry.getSystem<EventDispatcher>().onFixedUpdate();
-        m_systemRegistry.getSystem<ScriptEngine>().onFixedUpdate();
+        Core::onFixedUpdate();
     }
 
     void Client::onUpdate() {
-        m_systemRegistry.getSystem<Timer>().onUpdate();
-        m_systemRegistry.getSystem<EventDispatcher>().onUpdate();
-        m_systemRegistry.getSystem<ScriptEngine>().onUpdate();
+        Core::onUpdate();
     }
 
     void Client::onStop() {
-        m_systemRegistry.getSystem<Timer>().onStop();
-        m_systemRegistry.getSystem<ScriptEngine>().onStop();
+        Core::onStop();
     }
 
-    void Client::destroy() {
-        m_systemRegistry.getSystem<Timer>().shutdown();
-        m_systemRegistry.getSystem<EventDispatcher>().shutdown();
-        m_systemRegistry.getSystem<ScriptEngine>().shutdown();
+    void Client::shutdown() {
+        Core::shutdown();
     }
 }

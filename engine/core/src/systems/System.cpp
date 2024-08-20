@@ -15,4 +15,7 @@ namespace TechEngine {
 
     void System::onStop() {
     }
+
+    void System::shutdown() {
+    }
 }

@@ -12,14 +12,14 @@ namespace TechEngine {
 
         virtual void init();
 
-        virtual void onStart() = 0;
+        virtual void onStart();
 
-        virtual void onFixedUpdate() = 0;
+        virtual void onFixedUpdate();
 
-        virtual void onUpdate() = 0;
+        virtual void onUpdate();
 
-        virtual void onStop() = 0;
+        virtual void onStop();
 
-        virtual void destroy() = 0;
+        virtual void shutdown();
     };
 }
