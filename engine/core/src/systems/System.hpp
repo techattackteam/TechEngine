@@ -1,4 +1,6 @@
 #pragma once
+#include <utility>
+
 #include "core/CoreExportDLL.hpp"
 
 namespace TechEngine {
@@ -15,7 +17,8 @@ namespace TechEngine {
 
         virtual ~System() = default;
 
-        virtual void init() = 0;
+
+        virtual void init();
 
         virtual void onStart();
 

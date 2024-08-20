@@ -47,7 +47,9 @@ namespace TechEngine {
 
         std::filesystem::path getCmakePath() const;
 
-        std::filesystem::path getTechEngineAPILibPath(CompileMode compileMode, ProjectType type) const;
+        std::filesystem::path getProjectPath() const;
+
+        std::string getProjectName() const;
 
     private:
         void createDefaultProject();

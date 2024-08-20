@@ -1,6 +1,9 @@
 #include "System.hpp"
 
 namespace TechEngine {
+    void System::init() {
+    }
+
     void System::onStart() {
     }
 

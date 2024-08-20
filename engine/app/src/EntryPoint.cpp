@@ -7,7 +7,7 @@ int main(int argc, char** argv) {
     app->start();
     app->run();
     app->stop();
-    app->destroy();
+    app->shutdown();
     delete app;
     exit(0);
 }

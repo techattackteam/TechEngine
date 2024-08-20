@@ -99,6 +99,15 @@ namespace TechEngine {
         return m_cmakePath;
     }
 
+    std::filesystem::path ProjectManager::getProjectPath() const {
+        return m_projectPath;
+    }
+
+    std::string ProjectManager::getProjectName() const {
+        return m_projectName.string();
+    }
+
+
     void ProjectManager::createDefaultProject() {
         createProject("New Project");
     }

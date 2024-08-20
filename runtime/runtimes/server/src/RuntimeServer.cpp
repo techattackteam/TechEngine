@@ -28,7 +28,7 @@ namespace TechEngine {
     void RuntimeServer::stop() {
     }
 
-    void RuntimeServer::destroy() {
+    void RuntimeServer::shutdown() {
         m_server.destroy();
     }
 
