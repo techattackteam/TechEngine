@@ -28,6 +28,6 @@ namespace TechEngine {
 
         virtual void onStop();
 
-        virtual void shutdown() = 0;
+        virtual void shutdown();
     };
 }

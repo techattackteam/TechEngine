@@ -35,7 +35,7 @@ namespace TechEngine {
     }
 
     void RuntimeClient::shutdown() {
-        m_client.destroy();
+        m_client.shutdown();
     }
 
     Application* createApp() {

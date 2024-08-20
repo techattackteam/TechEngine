@@ -72,25 +72,25 @@ namespace TechEngine {
     }
 
     void Editor::start() {
-        m_systemRegistry.getSystem<Timer>().onStart();
+        m_systemRegistry.onStart();
     }
 
     void Editor::update() {
-        m_client.onUpdate();
-        m_systemRegistry.getSystem<EventDispatcher>().onUpdate();
-        m_systemRegistry.getSystem<Window>().onUpdate();
+        m_systemRegistry.onUpdate();
     }
 
     void Editor::fixedUpdate() {
+        m_systemRegistry.onFixedUpdate();
     }
 
     void Editor::stop() {
-        TE_LOGGER_INFO("Stopping Editor");
+        m_systemRegistry.onStop();
     }
 
     void Editor::shutdown() {
-        m_client.destroy();
-        m_server.destroy();
+        m_systemRegistry.onShutdown();
+        m_client.shutdown();
+        m_server.shutdown();
     }
 
     Application* createApp() {
