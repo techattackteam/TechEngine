@@ -34,7 +34,7 @@ namespace TechEngine {
         m_client.onStop();
     }
 
-    void RuntimeClient::destroy() {
+    void RuntimeClient::shutdown() {
         m_client.destroy();
     }
 

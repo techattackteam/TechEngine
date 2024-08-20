@@ -19,6 +19,6 @@ namespace TechEngine {
 
         void stop() override;
 
-        void destroy() override;
+        void shutdown() override;
     };
 }

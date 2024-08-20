@@ -22,7 +22,7 @@ namespace TechEngine {
 
         virtual void stop() = 0;
 
-        virtual void destroy() = 0;
+        virtual void shutdown() = 0;
     };
 
     Application* createApp();

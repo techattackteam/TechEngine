@@ -3,8 +3,9 @@
 #include <core/Client.hpp>
 #include <core/Server.hpp>
 #include <filesystem>
-#include <gl/glew.h>
-#include <glfw/glfw3.h>
+
+#include "window/Window.hpp"
+
 
 namespace TechEngine {
     class Editor : public Application {
@@ -15,7 +16,6 @@ namespace TechEngine {
         SystemsRegistry m_systemRegistry;
         std::filesystem::path m_EditorConfigPath;
         std::filesystem::path m_lastProjectLoaded;
-        GLFWwindow* handler;
 
     public:
         Editor();
@@ -32,6 +32,6 @@ namespace TechEngine {
 
         void stop() override;
 
-        void destroy() override;
+        void shutdown() override;
     };
 }
