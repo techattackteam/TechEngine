@@ -14,7 +14,7 @@ find_path(GLFW_INCLUDE_DIR
 )
 
 find_library(GLFW_LIBRARY
-        NAMES glfw3
+        NAMES glfw3dll
         PATHS ${CMAKE_SOURCE_DIR}/libs/GLFW/lib
 )
 
