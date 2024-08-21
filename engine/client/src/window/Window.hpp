@@ -42,5 +42,9 @@ namespace TechEngine {
         float getAspect() const {
             return (float)m_width / (float)m_height;
         }
+
+        GLFWwindow* getHandler() const {
+            return m_handler;
+        }
     };
 }
