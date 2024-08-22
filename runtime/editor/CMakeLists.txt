@@ -8,7 +8,9 @@ find_package(ImGui REQUIRED)
 # add the executable
 add_executable(TechEngineEditor ${EDITOR_SOURCES} ${EDITOR_HEADERS})
 target_include_directories(TechEngineEditor PUBLIC src)
-target_link_libraries(TechEngineEditor TechEngineApp TechEngineClient TechEngineServer imgui)
+target_link_libraries(TechEngineEditor TechEngineApp TechEngineCore TechEngineClient TechEngineServer imgui)
+target_compile_definitions(TechEngineEditor PUBLIC TECH_ENGINE_EDITOR)
+target_compile_definitions(TechEngineEditor PUBLIC TECH_ENGINE_CORE_EXPORT=)
 
 # setup target's output directory
 if (WIN32) # WINDOWS
