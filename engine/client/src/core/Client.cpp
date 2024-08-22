@@ -18,6 +18,34 @@ namespace TechEngine {
 
     void Client::onStart() {
         Core::onStart();
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
+        TE_LOGGER_WARN("Client onStart");
     }
 
     void Client::onFixedUpdate() {

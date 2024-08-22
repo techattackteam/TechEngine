@@ -1,9 +1,11 @@
 #pragma once
 
+
 #include "systems/System.hpp"
 
 #include "glm/gtx/string_cast.hpp"
 #include "spdlog/spdlog.h"
+#include <spdlog/sinks/dist_sink.h>
 
 namespace TechEngine {
     class CORE_DLL Logger : public System {
@@ -11,6 +13,7 @@ namespace TechEngine {
         inline static std::shared_ptr<spdlog::logger> logger;
         inline static bool initialized = false;
         std::string name;
+        std::shared_ptr<spdlog::sinks::dist_sink_mt> m_distSinks;
 
     public:
         explicit Logger(const std::string& name);
@@ -19,8 +22,9 @@ namespace TechEngine {
 
         void shutdown() override;
 
-        static std::shared_ptr<spdlog::logger>& getLogger();
+        void addLogSink(const std::shared_ptr<spdlog::sinks::sink>& sink);
 
+        static std::shared_ptr<spdlog::logger>& getLogger();
     };
 }
 

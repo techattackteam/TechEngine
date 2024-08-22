@@ -15,6 +15,7 @@
 #include "imgui_impl_opengl3.h"
 #include "events/application/AppCloseEvent.hpp"
 #include "eventSystem/EventDispatcher.hpp"
+#include "logger/ImGuiSink.hpp"
 #include "panels/PanelsManager.hpp"
 
 namespace TechEngine {
@@ -49,7 +50,11 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<Timer>();
         m_systemRegistry.registerSystem<ProjectManager>(m_lastProjectLoaded);
         m_systemRegistry.registerSystem<Window>(m_systemRegistry);
-        m_systemRegistry.registerSystem<PanelsManager>(m_systemRegistry);
+        m_systemRegistry.registerSystem<PanelsManager>(m_systemRegistry, m_client, m_server);
+
+        m_client.init();
+        m_server.init();
+
         m_systemRegistry.getSystem<Timer>().init();
         m_systemRegistry.getSystem<EventDispatcher>().init();
         m_systemRegistry.getSystem<ProjectManager>().init();
@@ -63,9 +68,8 @@ namespace TechEngine {
                             update();
                         });
         };
-        m_client.init();
-        m_server.init();
 
+        TE_LOGGER_INFO("Editor initialized");
         m_systemRegistry.getSystem<EventDispatcher>().subscribe<AppCloseEvent>([this](Event* event) {
             m_running = false;
         });
@@ -75,6 +79,8 @@ namespace TechEngine {
 
     void Editor::start() {
         m_systemRegistry.onStart();
+        m_client.onStart();
+        m_server.onStart();
     }
 
     void Editor::update() {

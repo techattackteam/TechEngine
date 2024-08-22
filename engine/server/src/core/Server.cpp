@@ -15,6 +15,7 @@ namespace TechEngine {
 
     void Server::onStart() {
         Core::onStart();
+        TE_LOGGER_ERROR("Server onStart");
     }
 
     void Server::onFixedUpdate() {

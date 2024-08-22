@@ -1,10 +1,9 @@
 #pragma once
-#include "CoreExportDLL.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
     class Core {
-    protected:
+    public:
         SystemsRegistry m_systemRegistry;
 
     public:
