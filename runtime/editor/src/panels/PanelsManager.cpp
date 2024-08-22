@@ -1,5 +1,7 @@
 #include "PanelsManager.hpp"
 
+#include <imgui_internal.h>
+
 #include "DockPanel.hpp"
 #include "systems/SystemsRegistry.hpp"
 
@@ -19,6 +21,7 @@ namespace TechEngine {
     PanelsManager::PanelsManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
     }
 
+
     void PanelsManager::init() {
         initImGui();
         m_ClientPanel.init("Client Panel", &m_editorWindowClass);
@@ -29,11 +32,17 @@ namespace TechEngine {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-
+        m_dockSpaceID = ImGui::GetID("EditorDockSpace");
         createDockSpace();
         m_ClientPanel.update();
         m_ServerPanel.update();
-
+        static bool firstTime = true;
+        if (firstTime) {
+            if (!std::filesystem::exists("imgui.ini")) {
+                setupInitialDockingLayout();
+            }
+            firstTime = false;
+        }
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         GLFWwindow* backup_current_context = glfwGetCurrentContext();
@@ -82,7 +91,7 @@ namespace TechEngine {
         colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f); // Gray frame background
         colors[ImGuiCol_FrameBgHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.40f); // Light blue frame background (hovered)
         colors[ImGuiCol_FrameBgActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f); // Light blue frame background (active)
-        colors[ImGuiCol_TitleBg] = ImVec4(0.10f, 0.10f, 0.10f, 1.00f); // Dark gray title background
+        colors[ImGuiCol_TitleBg] = ImVec4(0.13f, 0.13f, 0.13f, 1.00f); // Dark gray title background
         colors[ImGuiCol_TitleBgActive] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f); // Dark gray title background (active)
         colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f); // Dark gray title background (collapsed)
         colors[ImGuiCol_MenuBarBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f); // Gray menu bar background
@@ -123,6 +132,19 @@ namespace TechEngine {
         style.TabRounding = 2.0f;
         style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
     }
+
+    void PanelsManager::setupInitialDockingLayout() {
+        ImGui::DockBuilderRemoveNode(m_dockSpaceID); // Clear any previous layout
+        ImGui::DockBuilderAddNode(m_dockSpaceID, ImGuiDockNodeFlags_DockSpace); // Create a new dockspace node
+
+        ImGuiID dock = ImGui::DockBuilderAddNode(m_dockSpaceID, ImGuiDockNodeFlags_DockSpace);
+
+        ImGui::DockBuilderDockWindow("Client Panel", dock);
+        ImGui::DockBuilderDockWindow("Server Panel", dock);
+
+        ImGui::DockBuilderFinish(m_dockSpaceID); // Finalize the layout
+    }
+
 
     void PanelsManager::createDockSpace() {
         // Note: Switch this to true to enable dockspace

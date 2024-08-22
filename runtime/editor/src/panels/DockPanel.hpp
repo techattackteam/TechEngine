@@ -4,11 +4,20 @@
 
 namespace TechEngine {
     class DockPanel : public Panel {
+    protected:
+        ImGuiID m_dockSpaceID = 0;
+        bool m_firstTime = true;
+
     public:
         ImGuiWindowClass m_dockSpaceWindowClass;
 
-        virtual void onInit() override;
+        void onInit() override;
 
         void update();
+
+    protected:
+        virtual void setupInitialDockingLayout() = 0;
+
+        virtual void createToolBar();
     };
 }

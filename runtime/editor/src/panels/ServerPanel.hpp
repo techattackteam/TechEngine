@@ -12,5 +12,10 @@ namespace TechEngine {
         void onInit() override;
 
         void onUpdate() override;
+
+    protected:
+        void setupInitialDockingLayout() override;
+
+        void createToolBar() override;
     };
 }
