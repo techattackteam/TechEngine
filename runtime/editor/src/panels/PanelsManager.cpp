@@ -1,8 +1,9 @@
 #include "PanelsManager.hpp"
 
-#include <imgui_internal.h>
 
 #include "DockPanel.hpp"
+#include "core/Client.hpp"
+#include "core/Server.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 #include "events/application/AppCloseEvent.hpp"
@@ -16,9 +17,16 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include <imgui_internal.h>
 
 namespace TechEngine {
-    PanelsManager::PanelsManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
+    PanelsManager::PanelsManager(SystemsRegistry& systemsRegistry,
+                                 Client& client,
+                                 Server& server) : m_systemsRegistry(systemsRegistry),
+                                                   m_client(client), m_server(server),
+                                                   m_LoggerPanel(systemsRegistry,
+                                                                 m_client.m_systemRegistry,
+                                                                 m_server.m_systemRegistry) {
     }
 
 
@@ -26,6 +34,7 @@ namespace TechEngine {
         initImGui();
         m_ClientPanel.init("Client Panel", &m_editorWindowClass);
         m_ServerPanel.init("Server Panel", &m_editorWindowClass);
+        m_LoggerPanel.init("Logger Panel", &m_editorWindowClass);
     }
 
     void PanelsManager::onUpdate() {
@@ -36,6 +45,7 @@ namespace TechEngine {
         createDockSpace();
         m_ClientPanel.update();
         m_ServerPanel.update();
+        m_LoggerPanel.update();
         static bool firstTime = true;
         if (firstTime) {
             if (!std::filesystem::exists("imgui.ini")) {

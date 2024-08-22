@@ -1,22 +1,29 @@
 #pragma once
 
 #include "ClientPanel.hpp"
+#include "LoggerPanel.hpp"
 #include "ServerPanel.hpp"
 #include "systems/System.hpp"
 
 namespace TechEngine {
+    class Server;
+    class Client;
     class Window;
 
     class PanelsManager : public System {
     private:
         SystemsRegistry& m_systemsRegistry;
+        Client& m_client;
+        Server& m_server;
+
         ImGuiID m_dockSpaceID;
         ClientPanel m_ClientPanel;
         ServerPanel m_ServerPanel;
-    public:
+        LoggerPanel m_LoggerPanel;
         inline static ImGuiWindowClass m_editorWindowClass;
 
-        PanelsManager(SystemsRegistry& systemsRegistry);
+    public:
+        PanelsManager(SystemsRegistry& systemsRegistry, Client& client, Server& server);
 
         void init() override;
 
