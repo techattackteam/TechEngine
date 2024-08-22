@@ -24,5 +24,9 @@ namespace TechEngine {
         virtual void onInit() = 0;
 
         virtual void onUpdate() = 0;
+
+        const std::string& getName() const {
+            return m_name;
+        }
     };
 }

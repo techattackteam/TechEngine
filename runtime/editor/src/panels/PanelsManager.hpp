@@ -10,10 +10,9 @@ namespace TechEngine {
     class PanelsManager : public System {
     private:
         SystemsRegistry& m_systemsRegistry;
-
+        ImGuiID m_dockSpaceID;
         ClientPanel m_ClientPanel;
         ServerPanel m_ServerPanel;
-
     public:
         inline static ImGuiWindowClass m_editorWindowClass;
 
@@ -29,6 +28,8 @@ namespace TechEngine {
         void initImGui();
 
         void setColorTheme();
+
+        void setupInitialDockingLayout();
 
         void createDockSpace();
 

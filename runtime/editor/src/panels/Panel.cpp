@@ -7,9 +7,7 @@ namespace TechEngine {
         this->m_name = name;
         this->m_parentDockSpaceClass = parentDockSpaceClass;
         this->m_isVisible = isVisible;
-        m_windowFlags = ImGuiWindowFlags_NoCollapse |
-                        ImGuiWindowFlags_NoBringToFrontOnFocus |
-                        ImGuiWindowFlags_NoNavFocus;
+        m_windowFlags |= ImGuiWindowFlags_NoCollapse;
 
         onInit();
     }
@@ -28,8 +26,8 @@ namespace TechEngine {
                 }
             }
         }
-        ImGui::Begin(this->m_name.c_str(), &this->m_isVisible, m_windowFlags);
-        if (m_styleVars.size() > 0) {
+        ImGui::Begin(this->m_name.c_str(), nullptr, m_windowFlags);
+        if (!m_styleVars.empty()) {
             ImGui::PopStyleVar(m_styleVars.size());
         }
         this->onUpdate();

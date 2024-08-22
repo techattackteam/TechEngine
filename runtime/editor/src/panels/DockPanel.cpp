@@ -1,9 +1,11 @@
 #include "DockPanel.hpp"
 
+#include <filesystem>
+#include <imgui_internal.h>
+
 
 namespace TechEngine {
     void DockPanel::onInit() {
-        m_windowFlags |= ImGuiWindowFlags_NoBackground;
     }
 
 
@@ -22,17 +24,31 @@ namespace TechEngine {
             }
         }
         ImGui::SetNextWindowClass(m_parentDockSpaceClass);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
         ImGui::Begin(this->m_name.c_str(), nullptr, m_windowFlags);
         ImGui::PopStyleVar();
         if (m_styleVars.size() > 0) {
             ImGui::PopStyleVar(m_styleVars.size());
         }
         std::string dockSpaceName = this->m_name + "DockSpace";
-        ImGuiID dockSpaceID = ImGui::GetID(dockSpaceName.c_str());
-        m_dockSpaceWindowClass.ClassId = dockSpaceID;
+        m_dockSpaceID = ImGui::GetID(dockSpaceName.c_str());
+        m_dockSpaceWindowClass.ClassId = m_dockSpaceID;
         ImGuiDockNodeFlags dockSpaceFlags = ImGuiDockNodeFlags_PassthruCentralNode;
-        ImGui::DockSpace(dockSpaceID, ImVec2(0.0f, 0.0f), dockSpaceFlags, &m_dockSpaceWindowClass);
+
+        createToolBar();
+
+        ImGui::DockSpace(m_dockSpaceID, ImVec2(0.0f, 0.0f), dockSpaceFlags, &m_dockSpaceWindowClass);
+        ImGui::PopStyleColor();
         this->onUpdate();
+        if (m_firstTime) {
+            if (!std::filesystem::exists("imgui.ini")) {
+                setupInitialDockingLayout();
+            }
+            m_firstTime = false;
+        }
         ImGui::End();
+    }
+
+    void DockPanel::createToolBar() {
     }
 }

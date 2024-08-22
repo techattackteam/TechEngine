@@ -1,7 +1,7 @@
 #pragma once
+
 #include "DockPanel.hpp"
 #include "TestPanel.hpp"
-
 
 namespace TechEngine {
     class ClientPanel : public DockPanel {
@@ -12,5 +12,10 @@ namespace TechEngine {
         void onInit() override;
 
         void onUpdate() override;
+
+    protected:
+        void setupInitialDockingLayout() override;
+
+        void createToolBar() override;
     };
 }
