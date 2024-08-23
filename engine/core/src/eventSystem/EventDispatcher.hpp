@@ -3,20 +3,15 @@
 #include "EventManager.hpp"
 #include "systems/System.hpp"
 
-#include <functional>
-
-#include "core/Logger.hpp"
-
 namespace TechEngine {
     class CORE_DLL EventDispatcher : public System {
     protected:
-        bool isCopy = false;
-        EventDispatcher* m_copy = nullptr;
-
         EventManager m_eventManager;
 
     public:
         EventDispatcher();
+
+        EventDispatcher(const EventDispatcher& other);
 
         void init() override;
 
@@ -27,15 +22,20 @@ namespace TechEngine {
         void shutdown() override;
 
         template<class EventType>
-        void subscribe(const std::function<void(Event*)>& callback) {
+        void subscribe(const Observer& callback) {
             m_eventManager.subscribe<EventType>(callback);
         }
 
         template<typename EventType>
-        void unsubscribe(const std::function<void(Event*)>& callback) {
+        void unsubscribe(const Observer& callback) {
             m_eventManager.unsubscribe<EventType>(callback);
         }
 
-        void dispatch(Event* event);
+        template<typename EventType, typename... Args>
+        void dispatch(Args... args) {
+            m_eventManager.dispatch(std::make_shared<EventType>(args...));
+        }
+
+        std::unique_ptr<System> copy() override;
     };
 }

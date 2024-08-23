@@ -3,6 +3,7 @@
 #include "core/Logger.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 #include "events/application/AppCloseEvent.hpp"
+#include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
     Window::Window(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
@@ -24,7 +25,7 @@ namespace TechEngine {
         glfwSetWindowUserPointer(m_handler, this);
         glfwSetWindowCloseCallback(m_handler, [](GLFWwindow* handler) {
             Window* window = (Window*)glfwGetWindowUserPointer(handler);
-            window->m_systemsRegistry.getSystem<EventDispatcher>().dispatch(new AppCloseEvent());
+            window->m_systemsRegistry.getSystem<EventDispatcher>().dispatch<AppCloseEvent>(10);
         });
     }
 

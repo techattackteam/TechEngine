@@ -1,8 +1,15 @@
 #include "EventDispatcher.hpp"
 
+#include "core/Logger.hpp"
+
 namespace TechEngine {
     EventDispatcher::EventDispatcher() {
     }
+
+    EventDispatcher::EventDispatcher(const EventDispatcher& other) {
+        m_eventManager = other.m_eventManager;
+    }
+
 
     void EventDispatcher::init() {
     }
@@ -19,7 +26,7 @@ namespace TechEngine {
     void EventDispatcher::shutdown() {
     }
 
-    void EventDispatcher::dispatch(Event* event) {
-        m_eventManager.dispatch(event);
+    std::unique_ptr<System> EventDispatcher::copy() {
+        return std::make_unique<EventDispatcher>(*this);
     }
 }

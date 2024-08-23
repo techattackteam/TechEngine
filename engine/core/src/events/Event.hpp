@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/Core.hpp"
+#include "core/CoreExportDLL.hpp"
 
 namespace TechEngine {
     class CORE_DLL Event {
