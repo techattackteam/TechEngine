@@ -19,7 +19,7 @@ namespace TechEngine {
 
         virtual void init(const std::string& name, ImGuiWindowClass* parentDockSpaceClass, bool isVisible = true);
 
-        void update();
+        virtual void update();
 
         virtual void onInit() = 0;
 
