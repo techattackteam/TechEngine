@@ -21,11 +21,17 @@ namespace TechEngine {
     }
 
     void ClientPanel::onInit() {
-        m_TestPanel.init("Client Test Panel", &m_dockSpaceWindowClass);
+        m_sceneView.init("Scene View", &m_dockSpaceWindowClass);
+        m_gameView.init("Game View", &m_dockSpaceWindowClass);
+        m_sceneHierarchyPanel.init("Scene Hierarchy", &m_dockSpaceWindowClass);
+        m_inspectorPanel.init("Inspector", &m_dockSpaceWindowClass);
     }
 
     void ClientPanel::onUpdate() {
-        m_TestPanel.update();
+        m_sceneView.update();
+        m_gameView.update();
+        m_sceneHierarchyPanel.update();
+        m_inspectorPanel.update();
     }
 
     void ClientPanel::setupInitialDockingLayout() {
@@ -34,7 +40,7 @@ namespace TechEngine {
 
         ImGuiID test_A = ImGui::DockBuilderAddNode(m_dockSpaceID, ImGuiDockNodeFlags_DockSpace);
 
-        ImGui::DockBuilderDockWindow(m_TestPanel.getName().c_str(), test_A);
+        ImGui::DockBuilderDockWindow(m_sceneView.getName().c_str(), test_A);
 
         ImGui::DockBuilderFinish(m_dockSpaceID); // Finalize the layout
     }

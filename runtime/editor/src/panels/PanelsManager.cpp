@@ -28,7 +28,8 @@ namespace TechEngine {
                                                    m_ServerPanel(systemsRegistry, m_server.m_systemRegistry, m_LoggerPanel),
                                                    m_LoggerPanel(systemsRegistry,
                                                                  m_client.m_systemRegistry,
-                                                                 m_server.m_systemRegistry) {
+                                                                 m_server.m_systemRegistry),
+                                                   m_ContentBrowserPanel(systemsRegistry, *this) {
     }
 
 
@@ -36,7 +37,8 @@ namespace TechEngine {
         initImGui();
         m_ClientPanel.init("Client Panel", &m_editorWindowClass);
         m_ServerPanel.init("Server Panel", &m_editorWindowClass);
-        m_LoggerPanel.init("Logger Panel", &m_editorWindowClass);
+        m_LoggerPanel.init("Logger", &m_editorWindowClass);
+        m_ContentBrowserPanel.init("Content Browser", &m_editorWindowClass);
     }
 
     void PanelsManager::onUpdate() {
@@ -48,6 +50,7 @@ namespace TechEngine {
         m_ClientPanel.update();
         m_ServerPanel.update();
         m_LoggerPanel.update();
+        m_ContentBrowserPanel.update();
         static bool firstTime = true;
         if (firstTime) {
             if (!std::filesystem::exists("imgui.ini")) {
@@ -148,11 +151,13 @@ namespace TechEngine {
     void PanelsManager::setupInitialDockingLayout() {
         ImGui::DockBuilderRemoveNode(m_dockSpaceID); // Clear any previous layout
         ImGui::DockBuilderAddNode(m_dockSpaceID, ImGuiDockNodeFlags_DockSpace); // Create a new dockspace node
-
-        ImGuiID dock = ImGui::DockBuilderAddNode(m_dockSpaceID, ImGuiDockNodeFlags_DockSpace);
-
-        ImGui::DockBuilderDockWindow("Client Panel", dock);
-        ImGui::DockBuilderDockWindow("Server Panel", dock);
+        ImGuiID lowerPanels;
+        ImGuiID centralPanels;
+        ImGui::DockBuilderSplitNode(m_dockSpaceID, ImGuiDir_Down, 1.0f, &lowerPanels, &centralPanels);
+        ImGui::DockBuilderDockWindow("Client Panel", centralPanels);
+        ImGui::DockBuilderDockWindow("Server Panel", centralPanels);
+        ImGui::DockBuilderDockWindow("Logger", lowerPanels);
+        ImGui::DockBuilderDockWindow("Content Browser", lowerPanels);
 
         ImGui::DockBuilderFinish(m_dockSpaceID); // Finalize the layout
     }
@@ -205,7 +210,7 @@ namespace TechEngine {
             if (ImGui::MenuItem("Open Project", "Ctrl+O")) {
             }
             if (ImGui::MenuItem("Save Project", "Ctrl+S")) {
-                //systemsRegistry.getSystem<ProjectManager>().saveProject();
+                //m_systemsRegistry.getSystem<ProjectManager>().saveProject();
             }
 
             if (ImGui::MenuItem("Export")) {

@@ -1,9 +1,14 @@
 #pragma once
 
 #include "ClientPanel.hpp"
-#include "LoggerPanel.hpp"
 #include "ServerPanel.hpp"
+#include "LoggerPanel.hpp"
+#include "ContentBrowserPanel.hpp"
 #include "systems/System.hpp"
+
+namespace TechEngine {
+    class ContentBrowserPanel;
+}
 
 namespace TechEngine {
     class Server;
@@ -20,6 +25,7 @@ namespace TechEngine {
         ClientPanel m_ClientPanel;
         ServerPanel m_ServerPanel;
         LoggerPanel m_LoggerPanel;
+        ContentBrowserPanel m_ContentBrowserPanel;
         inline static ImGuiWindowClass m_editorWindowClass;
 
     public:
