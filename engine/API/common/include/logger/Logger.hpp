@@ -3,19 +3,23 @@
 
 #include "core/ExportDLL.hpp"
 #include <spdlog/logger.h>
+#include <spdlog/sinks/dist_sink.h>
 
 namespace TechEngineAPI {
     class API_DLL Logger {
         inline static std::shared_ptr<spdlog::logger> logger;
         inline static bool initialized = false;
         inline static std::string name;
+        inline static std::shared_ptr<spdlog::sinks::dist_sink_mt> m_distSinks;
 
     public:
         static void init(const std::string& name);
 
         static void shutdown();
 
-        static std::shared_ptr<spdlog::logger>& getLogger();
+        static std::shared_ptr<spdlog::logger> getLogger();
+
+        static spdlog::sinks::dist_sink_mt* getDistSinks();
     };
 }
 

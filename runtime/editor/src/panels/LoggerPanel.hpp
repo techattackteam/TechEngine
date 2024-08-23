@@ -12,7 +12,6 @@ namespace TechEngine {
         SystemsRegistry& m_editorSystemsRegistry;
         SystemsRegistry& m_clientSystemsRegistry;
         SystemsRegistry& m_serverSystemsRegistry;
-        std::shared_ptr<ImGuiSink<std::mutex>> m_sink;
 
         bool m_showTime = true;
         bool m_showLevel = true;
@@ -23,6 +22,8 @@ namespace TechEngine {
         bool m_serverEnabled = true;
 
     public:
+        std::shared_ptr<ImGuiSink<std::mutex>> m_sink;
+
         LoggerPanel(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& clientSystemsRegistry, SystemsRegistry& serverSystemsRegistry);
 
         void onInit() override;

@@ -49,6 +49,12 @@ namespace TechEngine {
 
         std::filesystem::path getProjectPath() const;
 
+        std::filesystem::path getAssetsPath() const;
+
+        std::filesystem::path getResourcesPath() const;
+
+        std::filesystem::path getCachePath() const;
+
         std::string getProjectName() const;
 
     private:

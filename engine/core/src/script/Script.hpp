@@ -21,13 +21,6 @@ namespace TechEngine {
         std::function<void()> onUpdateFunc;
         std::function<void()> onCloseFunc;
 
-        /*void onStart();*/
-
-        void onFixedUpdate();
-
-        void onUpdate();
-
-        void onClose();
 
         const std::string& getName() const;
 

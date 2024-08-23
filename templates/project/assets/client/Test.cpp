@@ -1,11 +1,10 @@
 #include "Test.hpp"
 
-#include <iostream>
+#include <logger/Logger.hpp>
 
 void Test::onStart() {
-    std::cout << "Hello from Test script!" << std::endl;
+    LOGGER_INFO("Test onStart");
 }
 
 void Test::onUpdate() {
-    std::cout << "Update from Test script!" << std::endl;
 }

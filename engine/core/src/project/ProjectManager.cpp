@@ -103,6 +103,18 @@ namespace TechEngine {
         return m_projectPath;
     }
 
+    std::filesystem::path ProjectManager::getAssetsPath() const {
+        return m_assetsPath;
+    }
+
+    std::filesystem::path ProjectManager::getResourcesPath() const {
+        return m_resourcesPath;
+    }
+
+    std::filesystem::path ProjectManager::getCachePath() const {
+        return m_cachePath;
+    }
+
     std::string ProjectManager::getProjectName() const {
         return m_projectName.string();
     }

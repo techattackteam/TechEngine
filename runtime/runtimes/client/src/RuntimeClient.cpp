@@ -2,6 +2,7 @@
 
 #include "core/Logger.hpp"
 #include "project/ProjectManager.hpp"
+#include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
     void RuntimeClient::init() {
@@ -15,11 +16,13 @@ namespace TechEngine {
                                      update();
                                  });
         };
+        m_client.m_systemRegistry.getSystem<ScriptEngine>().loadDLL(
+            m_client.m_systemRegistry.getSystem<ProjectManager>().getResourcesPath().string() + "\\client\\scripts\\build\\debug\\ClientScripts.dll");
     }
 
     void RuntimeClient::start() {
-        m_client.onStart();
         m_running = true;
+        m_client.onStart();
     }
 
     void RuntimeClient::fixedUpdate() {

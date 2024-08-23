@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include "Script.hpp"
 #include "ScriptRegister.hpp"
 #include "systems/System.hpp"
@@ -7,8 +9,6 @@
 #include <Windows.h>
 #include <list>
 #include <utility>
-
-#include "project/ProjectManager.hpp"
 
 namespace TechEngine {
     enum class CompileMode {
@@ -28,14 +28,16 @@ namespace TechEngine {
         HANDLE m_dllProcessHandle = nullptr;
         HANDLE m_dllThreadHandle = nullptr;
 
-        inline static std::function<void(SystemsRegistry*)> m_APIEntryPoint = nullptr;
+        std::function<spdlog::sinks::dist_sink_mt*(SystemsRegistry*)> m_APIEntryPoint = nullptr;
 
     public:
+        inline static ScriptEngine* instance = nullptr;
+
         explicit ScriptEngine(SystemsRegistry& systemsRegistry);
 
         void init() override;
 
-        bool loadDLL(const std::string& dllPath);
+        std::tuple<bool, spdlog::sinks::dist_sink_mt*> loadDLL(const std::string& dllPath);
 
         void shutdown() override;
 
@@ -53,8 +55,8 @@ namespace TechEngine {
 
         void deleteScripts();
 
-        static void setEntryPoint(std::function<void(SystemsRegistry*)> entryPoint) {
-            m_APIEntryPoint = std::move(entryPoint);
+        static void setEntryPoint(std::function<spdlog::sinks::dist_sink_mt*(SystemsRegistry*)> entryPoint) {
+            instance->m_APIEntryPoint = std::move(entryPoint);
         }
     };
 }

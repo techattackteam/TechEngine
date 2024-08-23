@@ -10,19 +10,6 @@ namespace TechEngine {
     Script::~Script() = default;
 
 
-    /*void Script::onStart() {
-        onStartFunc();
-    }*/
-
-    void Script::onFixedUpdate() {
-    }
-
-    void Script::onUpdate() {
-    }
-
-    void Script::onClose() {
-    }
-
     const std::string& Script::getName() const {
         return name;
     }

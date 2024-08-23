@@ -17,6 +17,7 @@
 #include "eventSystem/EventDispatcher.hpp"
 #include "logger/ImGuiSink.hpp"
 #include "panels/PanelsManager.hpp"
+#include "simulator/RuntimeSimulator.hpp"
 
 namespace TechEngine {
     Editor::Editor() : Application(), m_entry(m_systemRegistry) {
@@ -51,10 +52,11 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<ProjectManager>(m_lastProjectLoaded);
         m_systemRegistry.registerSystem<Window>(m_systemRegistry);
         m_systemRegistry.registerSystem<PanelsManager>(m_systemRegistry, m_client, m_server);
+        m_systemRegistry.registerSystem<RuntimeSimulator<Client>>(m_client, m_systemRegistry);
+        m_systemRegistry.registerSystem<RuntimeSimulator<Server>>(m_server, m_systemRegistry);
 
-        m_client.init();
-        m_server.init();
-
+        m_systemRegistry.getSystem<RuntimeSimulator<Client>>().init();
+        m_systemRegistry.getSystem<RuntimeSimulator<Server>>().init();
         m_systemRegistry.getSystem<Timer>().init();
         m_systemRegistry.getSystem<EventDispatcher>().init();
         m_systemRegistry.getSystem<ProjectManager>().init();
@@ -79,8 +81,6 @@ namespace TechEngine {
 
     void Editor::start() {
         m_systemRegistry.onStart();
-        m_client.onStart();
-        m_server.onStart();
     }
 
     void Editor::update() {
@@ -97,8 +97,6 @@ namespace TechEngine {
 
     void Editor::shutdown() {
         m_systemRegistry.onShutdown();
-        m_client.shutdown();
-        m_server.shutdown();
     }
 
     Application* createApp() {

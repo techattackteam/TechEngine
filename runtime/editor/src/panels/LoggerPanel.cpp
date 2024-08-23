@@ -1,7 +1,8 @@
 #include "LoggerPanel.hpp"
 
 #include "core/Logger.hpp"
-#include"logger/ImGuiSink.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "logger/ImGuiSink.hpp"
 #include "spdlog/spdlog.h"
 
 namespace TechEngine {
@@ -65,16 +66,16 @@ namespace TechEngine {
 
         // Restore the button color
         ImGui::PopStyleColor();
-        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0F, 0.0F, 0.0F, 1.0F));
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1F, 0.1F, 0.1F, 1.0F));
         ImGui::BeginChild("LogMessages", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
         ImGui::Dummy(ImVec2(0, 1.0f)); // Add padding from the child window's border
         for (const auto& message: m_sink->getLogMessages()) {
             spdlog::level::level_enum level = message.level;
             LogOutput logger_name = message.output;
             std::string msg = message.log;
-            if (logger_name == LogOutput::Engine && !m_editorEnabled ||
-                logger_name == LogOutput::Client && !m_clientEnabled ||
-                logger_name == LogOutput::Server && !m_serverEnabled) {
+            if (logger_name == LogOutput::Editor && !m_editorEnabled ||
+                (logger_name == LogOutput::Client || logger_name == LogOutput::EngineClient) && !m_clientEnabled ||
+                (logger_name == LogOutput::Server || logger_name == LogOutput::EngineServer) && !m_serverEnabled) {
                 continue;
             }
             ImVec4 color;
@@ -96,10 +97,10 @@ namespace TechEngine {
                 log += "[" + message.time + "] ";
             }
             if (m_showLogger) {
-                log += "[" +message.logger + "] ";
+                log += "[" + message.logger + "] ";
             }
             if (m_showLevel) {
-                log += "[" +message.levelStr + "] ";
+                log += "[" + message.levelStr + "] ";
             }
             log += message.log;
             ImGui::TextColored(color, log.c_str());

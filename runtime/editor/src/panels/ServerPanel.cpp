@@ -1,8 +1,25 @@
 #include "ServerPanel.hpp"
 
+#include "systems/SystemsRegistry.hpp"
+
+#include "project/ProjectManager.hpp"
+#include "script/ScriptEngine.hpp"
+#include "scripting/ScriptsCompiler.hpp"
+#include "simulator/RuntimeSimulator.hpp"
+#include "LoggerPanel.hpp"
+#include "core/Server.hpp"
+
+#include <filesystem>
 #include <imgui_internal.h>
 
 namespace TechEngine {
+    ServerPanel::ServerPanel(SystemsRegistry& systemsRegistry,
+                             SystemsRegistry& serverSystemsRegistry,
+                             LoggerPanel& loggerPanel) : m_systemRegistry(systemsRegistry),
+                                                         m_serverSystemsRegistry(serverSystemsRegistry),
+                                                         loggerPanel(loggerPanel) {
+    }
+
     void ServerPanel::onInit() {
         m_TestPanel.init("Server Test Panel", &m_dockSpaceWindowClass);
     }
@@ -20,6 +37,26 @@ namespace TechEngine {
         ImGui::DockBuilderDockWindow(m_TestPanel.getName().c_str(), test_A);
 
         ImGui::DockBuilderFinish(m_dockSpaceID); // Finalize the layout
+    }
+
+    void ServerPanel::startRunningScene() {
+        ProjectManager& projectManager = m_systemRegistry.getSystem<ProjectManager>();
+        ScriptsCompiler::compileUserScripts(projectManager, CompileMode::Debug, ProjectType::Server);
+        ScriptEngine& scriptEngine = m_serverSystemsRegistry.getSystem<ScriptEngine>();
+        spdlog::sinks::dist_sink_mt* userDllSink;
+        bool result;
+        std::tie(result, userDllSink) = scriptEngine.loadDLL(projectManager.getResourcesPath().string() + "\\server\\scripts\\build\\debug\\ServerScripts.dll");
+        if (!result) {
+            TE_LOGGER_CRITICAL("Failed to load server scripts dll");
+        }
+        userDllSink->add_sink(loggerPanel.m_sink);
+        m_systemRegistry.getSystem<RuntimeSimulator<Server>>().startSimulation();
+    }
+
+    void ServerPanel::stopRunningScene() {
+        m_systemRegistry.getSystem<RuntimeSimulator<Server>>().stopSimulation();
+        ScriptEngine& scriptEngine = m_serverSystemsRegistry.getSystem<ScriptEngine>();
+        scriptEngine.stop();
     }
 
     void ServerPanel::createToolBar() {
@@ -41,12 +78,18 @@ namespace TechEngine {
         }
         ImGui::SameLine();
         ImGui::SetCursorPosX(pos.x / 2 - (size / 2));
-        if (ImGui::Button("Play", ImVec2(size, 0))) {
-            /*if (!m_currentPlaying) {
+        std::string playStopText;
+        if (m_systemRegistry.getSystem<RuntimeSimulator<Server>>().getSimulationState() == SimulationState::RUNNING) {
+            playStopText = "Stop";
+        } else if (m_systemRegistry.getSystem<RuntimeSimulator<Server>>().getSimulationState() == SimulationState::STOPPED) {
+            playStopText = "Play";
+        }
+        if (ImGui::Button(playStopText.c_str(), ImVec2(size, 0))) {
+            if (m_systemRegistry.getSystem<RuntimeSimulator<Server>>().getSimulationState() == SimulationState::STOPPED) {
                 startRunningScene();
             } else {
                 stopRunningScene();
-            }*/
+            }
         }
         ImGui::PopStyleColor(3);
     }

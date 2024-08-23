@@ -24,6 +24,8 @@ namespace TechEngine {
                                  Client& client,
                                  Server& server) : m_systemsRegistry(systemsRegistry),
                                                    m_client(client), m_server(server),
+                                                   m_ClientPanel(systemsRegistry, m_client.m_systemRegistry, m_LoggerPanel),
+                                                   m_ServerPanel(systemsRegistry, m_server.m_systemRegistry, m_LoggerPanel),
                                                    m_LoggerPanel(systemsRegistry,
                                                                  m_client.m_systemRegistry,
                                                                  m_server.m_systemRegistry) {
