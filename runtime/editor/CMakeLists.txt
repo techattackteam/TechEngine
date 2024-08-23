@@ -38,7 +38,7 @@ if (WIN32) # WINDOWS
             COMMAND ${CMAKE_COMMAND} -E copy ${ClientDLL} $<TARGET_FILE_DIR:TechEngineEditor>
             COMMAND ${CMAKE_COMMAND} -E copy ${ServerDLL} $<TARGET_FILE_DIR:TechEngineEditor>
             COMMAND ${CMAKE_COMMAND} -E copy ${Client_API_DLL} $<TARGET_FILE_DIR:TechEngineEditor>
-            #COMMAND ${CMAKE_COMMAND} -E copy ${SERVER_API_DLL} $<TARGET_FILE_DIR:TechEngineEditor>
+            COMMAND ${CMAKE_COMMAND} -E copy ${SERVER_API_DLL} $<TARGET_FILE_DIR:TechEngineEditor>
     )
 endif ()
 

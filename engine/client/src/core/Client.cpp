@@ -1,10 +1,7 @@
 #include "Client.hpp"
 
-#include "core/Timer.hpp"
 #include "core/Logger.hpp"
-#include "events/TestEvent.hpp"
 #include "eventSystem/EventDispatcher.hpp"
-#include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
     Client::Client() : Core(), m_entry(m_systemRegistry) {
@@ -18,34 +15,6 @@ namespace TechEngine {
 
     void Client::onStart() {
         Core::onStart();
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
-        TE_LOGGER_WARN("Client onStart");
     }
 
     void Client::onFixedUpdate() {

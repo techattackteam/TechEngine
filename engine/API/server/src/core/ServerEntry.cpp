@@ -36,6 +36,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVO
         case DLL_PROCESS_ATTACH:
             TechEngine::ScriptEngine::setEntryPoint([](TechEngine::SystemsRegistry* systemsRegistry) {
                 TechEngineAPI::ServerEntry::getInstance()->init(systemsRegistry);
+                return TechEngineAPI::Logger::getDistSinks();
             });
             break;
         case DLL_THREAD_ATTACH:

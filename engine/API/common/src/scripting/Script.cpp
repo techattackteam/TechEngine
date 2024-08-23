@@ -11,6 +11,12 @@ namespace TechEngineAPI {
         script->onUpdateFunc = [this]() {
             onUpdate();
         };
+        script->onFixedUpdateFunc = [this]() {
+            onFixedUpdate();
+        };
+        script->onCloseFunc = [this]() {
+            onClose();
+        };
     }
 
     Script::~Script() {

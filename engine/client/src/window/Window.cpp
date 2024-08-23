@@ -45,6 +45,7 @@ namespace TechEngine {
 
     void Window::setTitle(const std::string& title) {
         this->m_title = title;
+        glfwSetWindowTitle(m_handler, title.c_str());
     }
 
     void Window::setSize(uint32_t width, uint32_t height) {

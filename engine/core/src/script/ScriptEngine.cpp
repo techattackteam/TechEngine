@@ -1,13 +1,13 @@
 #include "core/Logger.hpp"
 #include "ScriptEngine.hpp"
 #include "script/ScriptCrashHandler.hpp"
+#include "systems/SystemsRegistry.hpp"
 #include <filesystem>
 
-#include "project/ProjectManager.hpp"
-#include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
     ScriptEngine::ScriptEngine(SystemsRegistry& systemsRegistry) : m_systemRegistry(systemsRegistry) {
+        instance = this;
     }
 
     void ScriptEngine::init() {
@@ -16,23 +16,23 @@ namespace TechEngine {
     }
 
 
-    bool ScriptEngine::loadDLL(const std::string& dllPath) {
+    std::tuple<bool, spdlog::sinks::dist_sink_mt*> ScriptEngine::loadDLL(const std::string& dllPath) {
         if (std::filesystem::exists(dllPath)) {
             m_userCustomDll = LoadLibraryA(dllPath.c_str());
             if (!m_userCustomDll) {
                 TE_LOGGER_ERROR("Failed to load user scripts dll {0}", GetLastError());
-                return false;
+                return {false, nullptr};
             }
             if (m_APIEntryPoint == nullptr) {
                 TE_LOGGER_ERROR("API entry point not set. Cannot load user scripts dll.");
-                return false;
+                return {false, nullptr};
             }
-            m_APIEntryPoint(&m_systemRegistry);
+            spdlog::sinks::dist_sink_mt* userDistSink = m_APIEntryPoint(&m_systemRegistry);
             dllLoaded = true;
-            return true;
+            return {true, userDistSink};
         } else {
             TE_LOGGER_WARN("User scripts dll not found at {0}. Skipping loading.", dllPath);
-            return false;
+            return {false, nullptr};
         }
     }
 
@@ -44,6 +44,7 @@ namespace TechEngine {
     void ScriptEngine::stop() {
         if (m_userCustomDll) {
             deleteScripts();
+            m_APIEntryPoint = nullptr;
             bool result = FreeLibrary(m_userCustomDll);
             if (!result) {
                 TE_LOGGER_ERROR("Failed to unload user scripts dll");
@@ -74,7 +75,7 @@ namespace TechEngine {
         if (dllLoaded) {
             for (Script* script: scripts) {
                 //RUN_SCRIPT_FUNCTION(script, onFixedUpdate);
-                script->onFixedUpdate();
+                script->onFixedUpdateFunc();
             }
         }
     }

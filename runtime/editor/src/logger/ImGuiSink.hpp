@@ -4,9 +4,11 @@
 
 namespace TechEngine {
     enum class LogOutput {
-        Engine,
+        Editor,
+        EngineClient,
+        EngineServer,
         Client,
-        Server
+        Server,
     };
 
     struct message {
@@ -26,13 +28,16 @@ namespace TechEngine {
     public:
         void sink_it_(const spdlog::details::log_msg& msg) override {
             message message;
-
             if (msg.logger_name == "TechEngineClient") {
-                message.output = LogOutput::Client;
+                message.output = LogOutput::EngineClient;
             } else if (msg.logger_name == "TechEngineServer") {
+                message.output = LogOutput::EngineServer;
+            } else if (msg.logger_name == "Client") {
+                message.output = LogOutput::Client;
+            } else if (msg.logger_name == "Server") {
                 message.output = LogOutput::Server;
             } else {
-                message.output = LogOutput::Engine;
+                message.output = LogOutput::Editor;
             }
             message.level = msg.level;
             auto now = std::chrono::time_point_cast<std::chrono::seconds>(
