@@ -1,5 +1,5 @@
 #pragma once
-#include <utility>
+#include <memory>
 
 #include "core/CoreExportDLL.hpp"
 
@@ -11,12 +11,7 @@ namespace TechEngine {
         friend class SystemsRegistry;
 
     public:
-        System(const System&) = delete;
-
-        System& operator=(const System&) = delete;
-
         virtual ~System() = default;
-
 
         virtual void init();
 
@@ -29,5 +24,9 @@ namespace TechEngine {
         virtual void onStop();
 
         virtual void shutdown();
+
+        virtual std::unique_ptr<System> copy() {
+            return nullptr;
+        };
     };
 }

@@ -1,26 +1,36 @@
 #include "EventManager.hpp"
 
-#include "core/Logger.hpp"
-
 namespace TechEngine {
-    void EventManager::dispatch(Event* event) {
+    EventManager::EventManager(const EventManager& other) {
+        m_dispatchedEvents = other.m_dispatchedEvents;
+        m_observers = other.m_observers;
+    }
+
+    EventManager& EventManager::operator=(const EventManager& other) {
+        if (this != &other) {
+            m_dispatchedEvents = other.m_dispatchedEvents;
+            m_observers = other.m_observers;
+        }
+        return *this;
+    }
+
+    void EventManager::dispatch(const std::shared_ptr<Event>& event) {
         m_dispatchedEvents.push(event);
     }
 
     void EventManager::execute() {
         uint32_t size = m_dispatchedEvents.size();
         for (uint32_t i = 0; i < size; i++) {
-            Event* event = m_dispatchedEvents.front();
+            std::shared_ptr<Event> event = m_dispatchedEvents.front();
             if (m_observers.count(typeid(*event)) != 0) {
-                std::vector<std::function<void(Event*)>> callbacks = m_observers.at(typeid(*event));
+                ObserversVector callbacks = m_observers.at(typeid(*event));
                 if (!callbacks.empty()) {
                     for (auto& callback: callbacks) {
-                        callback(event);
+                        callback->operator()(event);
                     }
                 }
             }
             m_dispatchedEvents.pop();
-            delete (event);
         }
     }
 }

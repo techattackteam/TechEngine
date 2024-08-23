@@ -7,13 +7,10 @@
 #include "systems/System.hpp"
 
 namespace TechEngine {
-    class ContentBrowserPanel;
-}
-
-namespace TechEngine {
     class Server;
     class Client;
     class Window;
+    class ContentBrowserPanel;
 
     class PanelsManager : public System {
     private:
