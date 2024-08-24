@@ -1,7 +1,6 @@
 #pragma once
 
 #include "DockPanel.hpp"
-#include "TestPanel.hpp"
 
 namespace TechEngine {
     class LoggerPanel;
@@ -9,7 +8,6 @@ namespace TechEngine {
 
     class ServerPanel : public DockPanel {
     private:
-        TestPanel m_TestPanel;
         SystemsRegistry& m_systemRegistry;
         SystemsRegistry& m_serverSystemsRegistry;
         LoggerPanel& loggerPanel;

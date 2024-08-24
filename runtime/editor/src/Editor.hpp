@@ -4,9 +4,6 @@
 #include <core/Server.hpp>
 #include <filesystem>
 
-#include "window/Window.hpp"
-
-
 namespace TechEngine {
     class Editor : public Application {
     private:

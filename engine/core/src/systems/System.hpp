@@ -1,5 +1,4 @@
 #pragma once
-#include <memory>
 
 #include "core/CoreExportDLL.hpp"
 
@@ -24,9 +23,5 @@ namespace TechEngine {
         virtual void onStop();
 
         virtual void shutdown();
-
-        virtual std::unique_ptr<System> copy() {
-            return nullptr;
-        };
     };
 }

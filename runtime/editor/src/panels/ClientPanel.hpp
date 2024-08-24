@@ -5,8 +5,6 @@
 #include "InspectorPanel.hpp"
 #include "SceneHierarchyPanel.hpp"
 #include "SceneView.hpp"
-#include "TestPanel.hpp"
-
 
 namespace TechEngine {
     class LoggerPanel;
@@ -18,14 +16,16 @@ namespace TechEngine {
         SystemsRegistry& m_clientSystemsRegistry;
         LoggerPanel& loggerPanel;
 
-        TestPanel m_TestPanel;
         SceneView m_sceneView;
         GameView m_gameView;
         SceneHierarchyPanel m_sceneHierarchyPanel;
         InspectorPanel m_inspectorPanel;
+        std::vector<Entity> m_selectedEntities;
 
     public:
         ClientPanel(SystemsRegistry& systemsRegistry, SystemsRegistry& clientSystemsRegistry, LoggerPanel& loggerPanel);
+
+        ~ClientPanel() override = default;
 
         void onInit() override;
 

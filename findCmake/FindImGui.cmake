@@ -28,6 +28,7 @@ if (IMGUI_INCLUDE_DIR)
             ${IMGUI_INCLUDE_DIR}/imgui_impl_glfw.cpp
             ${IMGUI_INCLUDE_DIR}/imgui_impl_opengl3.cpp
             ${IMGUI_INCLUDE_DIR}/imgui_tables.cpp
+            ${IMGUI_INCLUDE_DIR}/imgui_stdlib.cpp
     )
 
     # Create an interface target for ImGui

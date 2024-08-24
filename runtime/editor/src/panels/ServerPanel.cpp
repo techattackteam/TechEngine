@@ -21,11 +21,9 @@ namespace TechEngine {
     }
 
     void ServerPanel::onInit() {
-        m_TestPanel.init("Server Test Panel", &m_dockSpaceWindowClass);
     }
 
     void ServerPanel::onUpdate() {
-        m_TestPanel.update();
     }
 
     void ServerPanel::setupInitialDockingLayout() {
@@ -34,7 +32,6 @@ namespace TechEngine {
 
         ImGuiID test_A = ImGui::DockBuilderAddNode(m_dockSpaceID, ImGuiDockNodeFlags_DockSpace);
 
-        ImGui::DockBuilderDockWindow(m_TestPanel.getName().c_str(), test_A);
 
         ImGui::DockBuilderFinish(m_dockSpaceID); // Finalize the layout
     }

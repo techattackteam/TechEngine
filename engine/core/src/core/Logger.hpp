@@ -1,8 +1,6 @@
 #pragma once
 
-
 #include "systems/System.hpp"
-
 #include "glm/gtx/string_cast.hpp"
 #include "spdlog/spdlog.h"
 #include <spdlog/sinks/dist_sink.h>

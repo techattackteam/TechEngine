@@ -1,7 +1,6 @@
 #include "Client.hpp"
 
 #include "core/Logger.hpp"
-#include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngine {
     Client::Client() : Core(), m_entry(m_systemRegistry) {

@@ -35,7 +35,5 @@ namespace TechEngine {
         void dispatch(Args... args) {
             m_eventManager.dispatch(std::make_shared<EventType>(args...));
         }
-
-        std::unique_ptr<System> copy() override;
     };
 }

@@ -4,20 +4,18 @@
 #include "core/Timer.hpp"
 #include "project/ProjectManager.hpp"
 #include "script/ScriptEngine.hpp"
-#include "scripting/ScriptsCompiler.hpp"
 
 #include <yaml-cpp/yaml.h>
 #include <fstream>
 
 
 #include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
 #include "events/application/AppCloseEvent.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 #include "logger/ImGuiSink.hpp"
 #include "panels/PanelsManager.hpp"
 #include "simulator/RuntimeSimulator.hpp"
+#include "window/Window.hpp"
 
 namespace TechEngine {
     Editor::Editor() : Application(), m_entry(m_systemRegistry) {
@@ -72,7 +70,7 @@ namespace TechEngine {
         };
 
         TE_LOGGER_INFO("Editor initialized");
-        m_systemRegistry.getSystem<EventDispatcher>().subscribe<AppCloseEvent>([this](Event* event) {
+        m_systemRegistry.getSystem<EventDispatcher>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
             m_running = false;
         });
 

@@ -219,7 +219,7 @@ namespace TechEngine {
                 }*/
             }
             if (ImGui::MenuItem("Exit")) {
-                m_systemsRegistry.getSystem<EventDispatcher>().dispatch<AppCloseEvent>(10);
+                m_systemsRegistry.getSystem<EventDispatcher>().dispatch<AppCloseEvent>();
             }
             ImGui::EndMenu();
         }
