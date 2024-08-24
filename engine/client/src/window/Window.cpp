@@ -25,7 +25,7 @@ namespace TechEngine {
         glfwSetWindowUserPointer(m_handler, this);
         glfwSetWindowCloseCallback(m_handler, [](GLFWwindow* handler) {
             Window* window = (Window*)glfwGetWindowUserPointer(handler);
-            window->m_systemsRegistry.getSystem<EventDispatcher>().dispatch<AppCloseEvent>(10);
+            window->m_systemsRegistry.getSystem<EventDispatcher>().dispatch<AppCloseEvent>();
         });
     }
 
