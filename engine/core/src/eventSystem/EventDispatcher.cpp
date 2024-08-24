@@ -24,9 +24,6 @@ namespace TechEngine {
     }
 
     void EventDispatcher::shutdown() {
-    }
 
-    std::unique_ptr<System> EventDispatcher::copy() {
-        return std::make_unique<EventDispatcher>(*this);
     }
 }

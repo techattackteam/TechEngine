@@ -1,9 +1,11 @@
 #include "core/Logger.hpp"
+#include "script/Script.hpp"
 #include "ScriptEngine.hpp"
+#include "ScriptRegister.hpp"
 #include "script/ScriptCrashHandler.hpp"
 #include "systems/SystemsRegistry.hpp"
-#include <filesystem>
 
+#include <filesystem>
 
 namespace TechEngine {
     ScriptEngine::ScriptEngine(SystemsRegistry& systemsRegistry) : m_systemRegistry(systemsRegistry) {

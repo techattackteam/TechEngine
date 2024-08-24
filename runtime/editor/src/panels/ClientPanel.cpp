@@ -17,6 +17,8 @@ namespace TechEngine {
                              SystemsRegistry& clientSystemsRegistry,
                              LoggerPanel& loggerPanel): m_systemRegistry(systemsRegistry),
                                                         m_clientSystemsRegistry(clientSystemsRegistry),
+                                                        m_inspectorPanel(systemsRegistry, clientSystemsRegistry, m_selectedEntities),
+                                                        m_sceneHierarchyPanel(systemsRegistry, clientSystemsRegistry, m_selectedEntities),
                                                         loggerPanel(loggerPanel) {
     }
 

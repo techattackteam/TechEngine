@@ -1,16 +1,13 @@
 #pragma once
 
-#include <iostream>
-
-#include "Script.hpp"
-#include "ScriptRegister.hpp"
-#include "systems/System.hpp"
-
 #include <Windows.h>
 #include <list>
 #include <utility>
 
 namespace TechEngine {
+    class Script;
+    class ScriptRegister;
+
     enum class CompileMode {
         Debug,
         Release

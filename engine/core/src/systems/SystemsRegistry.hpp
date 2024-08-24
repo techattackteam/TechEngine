@@ -1,12 +1,11 @@
 #pragma once
 #include "System.hpp"
+#include "core/Logger.hpp"
 
-#include <iostream>
 #include <memory>
 #include <typeindex>
 #include <unordered_map>
 
-#include "core/Logger.hpp"
 
 namespace TechEngine {
     class System;
