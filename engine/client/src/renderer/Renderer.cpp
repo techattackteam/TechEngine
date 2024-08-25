@@ -11,6 +11,7 @@
 #include "core/Logger.hpp"
 #include "material/Material.hpp"
 #include "mesh/Vertex.hpp"
+#include "scene/CameraSystem.hpp"
 #include "scene/Scene.hpp"
 #include "scene/TransformSystem.hpp"
 #include "systems/SystemsRegistry.hpp"
@@ -111,7 +112,6 @@ namespace TechEngine {
         vertexBuffers[BufferGameObjects]->bind();
         vertexArrays[BufferGameObjects]->bind();
         shadersManager.changeActiveShader("geometry");
-        Scene& scene = m_systemsRegistry.getSystem<Scene>();
         shadersManager.getActiveShader()->setUniformMatrix4f("projection", camera.getProjectionMatrix());
         shadersManager.getActiveShader()->setUniformMatrix4f("view", camera.getViewMatrix());
         //shadersManager.getActiveShader()->setUniformVec3("cameraPosition", camera->getTransform().getPosition());
@@ -150,11 +150,11 @@ namespace TechEngine {
         }
     }
 
-    void Renderer::renderPipeline(Scene& scene) {
-        if (!scene.hasMainCamera()) {
+    void Renderer::renderPipeline(CameraSystem& cameraSystem) {
+        if (!cameraSystem.hasMainCamera()) {
             return;
         }
-        Camera& camera = scene.getMainCamera();
+        Camera& camera = cameraSystem.getMainCamera();
         GlCall(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
         GlCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         geometryPass(camera);

@@ -4,6 +4,7 @@
 #include "systems/System.hpp"
 #include "ShadersManager.hpp"
 #include "Line.hpp"
+#include "scene/CameraSystem.hpp"
 
 namespace TechEngine {
     class Scene;
@@ -36,7 +37,7 @@ namespace TechEngine {
 
         void init();
 
-        void renderPipeline(Scene& scene);
+        void renderPipeline(CameraSystem& cameraSystem);
 
         void renderCustomPipeline(Camera* camera, std::vector<int>& entities);
 

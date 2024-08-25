@@ -10,7 +10,7 @@
 #include "systems/System.hpp"
 
 namespace TechEngine {
-    class AssimpLoader : public System { //TODO: Remove from System when Resource Manager is implemented
+    class AssimpLoader : public System { //TODO: Remove System when Resource Manager is implemented
     private:
         struct MeshData {
             std::vector<Vertex> vertices; // Vertices of the mesh from Vertex.hpp Might change to internal format
