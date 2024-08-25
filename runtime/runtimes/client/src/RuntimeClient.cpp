@@ -6,9 +6,9 @@
 
 namespace TechEngine {
     void RuntimeClient::init() {
-        m_client.init();
         m_client.m_systemRegistry.registerSystem<ProjectManager>(std::filesystem::current_path());
         m_client.m_systemRegistry.getSystem<ProjectManager>().init();
+        m_client.init(m_client.m_systemRegistry.getSystem<ProjectManager>().getProjectPath());
         m_runFunction = [this]() {
             m_client.m_entry.run([this]() {
                                      fixedUpdate();

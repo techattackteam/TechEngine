@@ -4,7 +4,7 @@
 #include "core/Logger.hpp"
 #include "material/MaterialManager.hpp"
 #include "Vertex.hpp"
-#include "utils/FileUtils.hpp"
+#include "files/FileUtils.hpp"
 
 #include "assimp/Importer.hpp"
 #include <filesystem>

@@ -12,7 +12,7 @@
 namespace TechEngine {
     using Entity = int;
 
-    class ComponentsManager {
+    class ComponentsManager { //TODO: Add Archetype support and remove the vector<any>
     private:
         // Map from type index (component type) to vector of components
         std::unordered_map<std::type_index, std::vector<std::any>> componentPools;
@@ -20,6 +20,8 @@ namespace TechEngine {
         const std::vector<std::string> registeredComponents = {
             std::type_index(typeid(Tag)).name(),
             std::type_index(typeid(Transform)).name(),
+            std::type_index(typeid(Camera)).name(),
+            std::type_index(typeid(MeshRenderer)).name(),
         };
 
     public:
@@ -41,7 +43,10 @@ namespace TechEngine {
             assert(isComponentRegistered<T>() && "Component type not registered");
             auto& pool = componentPools[typeid(T)];
             auto& entityMap = entityToIndexMap[typeid(T)];
-
+            if(entityMap.find(entity) != entityMap.end()) {
+                TE_LOGGER_WARN("Entity already has this component");
+                return std::any_cast<T&>(pool[entityMap[entity]]);
+            }
             pool.emplace_back(T(args...));
             entityMap[entity] = pool.size() - 1;
             return std::any_cast<T&>(pool.back());

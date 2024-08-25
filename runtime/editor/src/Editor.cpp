@@ -53,12 +53,12 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<RuntimeSimulator<Client>>(m_client, m_systemRegistry);
         m_systemRegistry.registerSystem<RuntimeSimulator<Server>>(m_server, m_systemRegistry);
 
-        m_systemRegistry.getSystem<RuntimeSimulator<Client>>().init();
-        m_systemRegistry.getSystem<RuntimeSimulator<Server>>().init();
-        m_systemRegistry.getSystem<Timer>().init();
-        m_systemRegistry.getSystem<EventDispatcher>().init();
         m_systemRegistry.getSystem<ProjectManager>().init();
         m_systemRegistry.getSystem<Window>().init("TechEngineEditor - " + m_systemRegistry.getSystem<ProjectManager>().getProjectName(), 1280, 720);
+        m_systemRegistry.getSystem<Timer>().init();
+        m_systemRegistry.getSystem<EventDispatcher>().init();
+        m_systemRegistry.getSystem<RuntimeSimulator<Client>>().init();
+        m_systemRegistry.getSystem<RuntimeSimulator<Server>>().init();
         m_systemRegistry.getSystem<PanelsManager>().init();
 
         m_runFunction = [this]() {

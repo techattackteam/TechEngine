@@ -7,10 +7,10 @@ namespace TechEngine {
     Server::Server() : Core(), m_entry(m_systemRegistry) {
     }
 
-    void Server::init() {
+    void Server::init(const std::filesystem::path& rootPath) {
         m_systemRegistry.registerSystem<Logger>("TechEngineServer");
         m_systemRegistry.getSystem<Logger>().init();
-        Core::init();
+        Core::init(rootPath);
     }
 
     void Server::onStart() {

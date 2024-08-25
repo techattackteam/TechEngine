@@ -1,15 +1,20 @@
 #include "Client.hpp"
 
+#include <utility>
+
 #include "core/Logger.hpp"
+#include "renderer/Renderer.hpp"
 
 namespace TechEngine {
     Client::Client() : Core(), m_entry(m_systemRegistry) {
     }
 
-    void Client::init() {
+    void Client::init(const std::filesystem::path& rootPath) {
         m_systemRegistry.registerSystem<Logger>("TechEngineClient");
         m_systemRegistry.getSystem<Logger>().init();
-        Core::init();
+        Core::init( rootPath);
+        m_systemRegistry.registerSystem<Renderer>(m_systemRegistry);
+        m_systemRegistry.getSystem<Renderer>().init();
     }
 
     void Client::onStart() {

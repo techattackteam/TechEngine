@@ -1,5 +1,6 @@
 #include "InspectorPanel.hpp"
 
+#include "scene/CameraSystem.hpp"
 #include "scene/Scene.hpp"
 #include "scene/TransformSystem.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
@@ -25,7 +26,7 @@ namespace TechEngine {
             drawCommonComponents();
             if (ImGui::BeginPopupContextWindow("Add Component", 1)) {
                 if (ImGui::MenuItem("Camera")) {
-                    //addComponent<CameraComponent>();
+                    addComponent<Camera>();
                 }
                 if (ImGui::MenuItem("Mesh Renderer")) {
                     //addComponent<MeshRendererComponent>();
@@ -33,27 +34,27 @@ namespace TechEngine {
                 if (ImGui::BeginMenu("Physics")) {
                     /*if (ImGui::MenuItem("Rigid Body")) {
                         addComponent<RigidBody>();
-                        for (GameObject* gameObject: m_selectedEntities) {
-                            m_appSystemRegistry.getSystem<PhysicsEngine>().addRigidBody(gameObject->getComponent<RigidBody>());
+                        for (GameObject* entity: m_selectedEntities) {
+                            m_appSystemRegistry.getSystem<PhysicsEngine>().addRigidBody(entity->getComponent<RigidBody>());
                         }
                     }
                     if (ImGui::BeginMenu("Colliders")) {
                         if (ImGui::MenuItem("Box Collider")) {
                             addComponent<BoxColliderComponent>();
-                            for (GameObject* gameObject: m_selectedEntities) {
-                                m_appSystemRegistry.getSystem<PhysicsEngine>().addCollider(gameObject->getComponent<BoxColliderComponent>());
+                            for (GameObject* entity: m_selectedEntities) {
+                                m_appSystemRegistry.getSystem<PhysicsEngine>().addCollider(entity->getComponent<BoxColliderComponent>());
                             }
                         }
                         if (ImGui::MenuItem("Sphere Collider")) {
                             addComponent<SphereCollider>();
-                            for (GameObject* gameObject: m_selectedEntities) {
-                                m_appSystemRegistry.getSystem<PhysicsEngine>().addCollider(gameObject->getComponent<SphereCollider>());
+                            for (GameObject* entity: m_selectedEntities) {
+                                m_appSystemRegistry.getSystem<PhysicsEngine>().addCollider(entity->getComponent<SphereCollider>());
                             }
                         }
                         if (ImGui::MenuItem("Cylinder Collider")) {
                             addComponent<CylinderCollider>();
-                            for (GameObject* gameObject: m_selectedEntities) {
-                                m_appSystemRegistry.getSystem<PhysicsEngine>().addCollider(gameObject->getComponent<CylinderCollider>());
+                            for (GameObject* entity: m_selectedEntities) {
+                                m_appSystemRegistry.getSystem<PhysicsEngine>().addCollider(entity->getComponent<CylinderCollider>());
                             }
                         }
                         ImGui::EndMenu();
@@ -127,41 +128,36 @@ namespace TechEngine {
                 }
             });
         }
-        /*if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(CameraComponent).name()) != componentsToDraw.end()) {
-            drawComponent<CameraComponent>(firstEntity, "Camera", [this](auto& component) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(Camera).name()) != componentsToDraw.end()) {
+            drawComponent<Camera>(firstEntity, "Camera", [this](auto& component) {
                 auto& camera = component;
-
+                Scene& scene = m_appSystemRegistry.getSystem<Scene>();
                 const char* projectionTypeStrings[] = {"Perspective", "Orthographic"};
                 bool isProjectionCommon = true;
                 bool isFovCommon = true;
                 bool isNearCommon = true;
                 bool isFarCommon = true;
 
-                CameraComponent::ProjectionType commonProjectionType = camera->getProjectionType();
-                float commonFov = camera->getFov();
-                float commonNear = camera->getNear();
-                float commonFar = camera->getFar();
+                //Camera::ProjectionType commonProjectionType = camera->getProjectionType();
+                float commonFov = camera.fov;
+                float commonNear = camera.nearPlane;
+                float commonFar = camera.farPlane;
 
 
-                for (GameObject* gameObject: m_selectedEntities) {
-                    auto currentCamera = gameObject->getComponent<CameraComponent>();
-
-                    if (currentCamera->getProjectionType() != commonProjectionType) {
-                        isProjectionCommon = false;
-                    }
-
-                    if (currentCamera->getFov() != commonFov) {
+                for (Entity entity: m_selectedEntities) {
+                    if (scene.getComponent<Camera>(entity).fov != commonFov) {
                         isFovCommon = false;
                     }
 
-                    if (currentCamera->getNear() != commonNear) {
+                    if (scene.getComponent<Camera>(entity).nearPlane != commonNear) {
                         isNearCommon = false;
                     }
 
-                    if (currentCamera->getFar() != commonFar) {
+                    if (scene.getComponent<Camera>(entity).farPlane != commonFar) {
                         isFarCommon = false;
                     }
                 }
+                /*
                 const char* currentProjectionTypeString = projectionTypeStrings[(int)camera->getProjectionType()];
                 bool changeProjection = false;
                 if (ImGui::BeginCombo("Projection", isProjectionCommon ? currentProjectionTypeString : "-")) {
@@ -169,7 +165,7 @@ namespace TechEngine {
                         bool isSelected = currentProjectionTypeString == projectionTypeStrings[i];
                         if (ImGui::Selectable(projectionTypeStrings[i], isSelected)) {
                             currentProjectionTypeString = projectionTypeStrings[i];
-                            commonProjectionType = (CameraComponent::ProjectionType)i;
+                            commonProjectionType = (Camera::ProjectionType)i;
                             changeProjection = true;
                         }
 
@@ -178,14 +174,23 @@ namespace TechEngine {
                     }
 
                     ImGui::EndCombo();
-                }
+                }*/
                 const char* fovLabel = isFovCommon ? "Vertical FOV" : "-";
                 const char* nearLabel = isNearCommon ? "Near" : "-";
                 const char* farLabel = isFarCommon ? "Far" : "-";
-                if (camera->getProjectionType() == CameraComponent::ProjectionType::PERSPECTIVE) {
+                if (/*camera->getProjectionType() == Camera::ProjectionType::PERSPECTIVE*/ true) {
                     bool changeFov = false;
                     bool changeNear = false;
                     bool changeFar = false;
+                    if (m_selectedEntities.size() == 1) {
+                        bool isMainCamera = camera.isMainCamera;
+
+                        ImGui::Checkbox("Main Camera", &isMainCamera);
+                        if (isMainCamera != camera.isMainCamera) {
+                            CameraSystem& cameraSystem = m_appSystemRegistry.getSystem<CameraSystem>();
+                            cameraSystem.setMainCamera(m_selectedEntities[0]);
+                        }
+                    }
                     if (ImGui::DragFloat(fovLabel, &commonFov, 0.1f)) {
                         changeFov = true;
                     }
@@ -196,18 +201,19 @@ namespace TechEngine {
                         changeFar = true;
                     }
 
-                    for (GameObject* gameObject: m_selectedEntities) {
-                        if (changeFov) gameObject->getComponent<CameraComponent>()->setFov(commonFov);
-                        if (changeNear) gameObject->getComponent<CameraComponent>()->setNear(commonNear);
-                        if (changeFar) gameObject->getComponent<CameraComponent>()->setFar(commonFar);
-                        if (changeProjection) gameObject->getComponent<CameraComponent>()->changeProjectionType(commonProjectionType);
+                    for (Entity entity: m_selectedEntities) {
+                        CameraSystem& cameraSystem = m_appSystemRegistry.getSystem<CameraSystem>();
+                        if (changeFov) cameraSystem.setFov(entity, commonFov);
+                        if (changeNear) cameraSystem.setNear(entity, commonNear);
+                        if (changeFar) cameraSystem.setFar(entity, commonFar);
+                        //if (changeProjection) cameraSystem.changeProjectionType(entity, commonProjectionType);
                     }
                 }
 
-                const char* orthoSizeLabel = isFovCommon ? "Size" : "-";
+                /*const char* orthoSizeLabel = isFovCommon ? "Size" : "-";
                 const char* orthoNearLabel = isNearCommon ? "Near" : "-";
                 const char* orthoFarLabel = isFarCommon ? "Far" : "-";
-                if (camera->getProjectionType() == CameraComponent::ProjectionType::ORTHOGRAPHIC) {
+                if (camera->getProjectionType() == Camera::ProjectionType::ORTHOGRAPHIC) {
                     bool changeOrthoSize = false;
                     bool changeOrthoNear = false;
                     bool changeOrthoFar = false;
@@ -221,15 +227,15 @@ namespace TechEngine {
                         changeOrthoFar = true;
                     }
 
-                    for (GameObject* gameObject: m_selectedEntities) {
-                        if (changeOrthoSize) gameObject->getComponent<CameraComponent>()->setOrthoSize(commonFov);
-                        if (changeOrthoNear) gameObject->getComponent<CameraComponent>()->setNear(commonNear);
-                        if (changeOrthoFar) gameObject->getComponent<CameraComponent>()->setFar(commonFar);
-                        if (changeProjection) gameObject->getComponent<CameraComponent>()->changeProjectionType(commonProjectionType);
+                    for (GameObject* entity: m_selectedEntities) {
+                        if (changeOrthoSize) entity->getComponent<Camera>()->setOrthoSize(commonFov);
+                        if (changeOrthoNear) entity->getComponent<Camera>()->setNear(commonNear);
+                        if (changeOrthoFar) entity->getComponent<Camera>()->setFar(commonFar);
+                        if (changeProjection) entity->getComponent<Camera>()->changeProjectionType(commonProjectionType);
                     }
-                }
+                }*/
             });
-        }
+        } /*
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(MeshRendererComponent).name()) != componentsToDraw.end()) {
             drawComponent<MeshRendererComponent>(firstEntity, "Mesh Renderer", [this](auto& component) {
                 bool isMeshCommon = true;
@@ -237,8 +243,8 @@ namespace TechEngine {
                 std::string commonMeshName = component->getMesh().getName();
                 std::string commonMaterialName = component->getMaterial().getName();
 
-                for (GameObject* gameObject: m_selectedEntities) {
-                    auto currentMeshRenderer = gameObject->getComponent<MeshRendererComponent>();
+                for (GameObject* entity: m_selectedEntities) {
+                    auto currentMeshRenderer = entity->getComponent<MeshRendererComponent>();
 
                     if (currentMeshRenderer->getMesh().getName() != commonMeshName) {
                         isMeshCommon = false;
@@ -274,8 +280,8 @@ namespace TechEngine {
                         ImGui::EndCombo();
                     }
                     if (current_item != commonMeshName) {
-                        for (GameObject* gameObject: m_selectedEntities) {
-                            gameObject->getComponent<MeshRendererComponent>()->changeMesh(m_appSystemRegistry.getSystem<MeshManager>().getMesh(current_item));
+                        for (GameObject* entity: m_selectedEntities) {
+                            entity->getComponent<MeshRendererComponent>()->changeMesh(m_appSystemRegistry.getSystem<MeshManager>().getMesh(current_item));
                         }
                     }
                 }
@@ -300,8 +306,8 @@ namespace TechEngine {
                         std::string filepath = ofn.lpstrFile;
                         std::string filename = filepath.substr(filepath.find_last_of("/\\") + 1);
                         std::string materialName = filename.substr(0, filename.find_last_of("."));
-                        for (GameObject* gameObject: m_selectedEntities) {
-                            gameObject->getComponent<MeshRendererComponent>()->changeMaterial(m_appSystemRegistry.getSystem<MaterialManager>().getMaterial(materialName));
+                        for (GameObject* entity: m_selectedEntities) {
+                            entity->getComponent<MeshRendererComponent>()->changeMaterial(m_appSystemRegistry.getSystem<MaterialManager>().getMaterial(materialName));
                         }
                     }
                 };
@@ -312,8 +318,8 @@ namespace TechEngine {
                         if (extension != ".mat")
                             return;
                         std::string materialName = filename.substr(0, filename.find_last_of("."));
-                        for (GameObject* gameObject: m_selectedEntities) {
-                            gameObject->getComponent<MeshRendererComponent>()->changeMaterial(m_appSystemRegistry.getSystem<MaterialManager>().getMaterial(materialName));
+                        for (GameObject* entity: m_selectedEntities) {
+                            entity->getComponent<MeshRendererComponent>()->changeMaterial(m_appSystemRegistry.getSystem<MaterialManager>().getMaterial(materialName));
                         }
                         return;
                     }
@@ -330,8 +336,8 @@ namespace TechEngine {
                 bool isMassCommon = true;
                 bool isDensityCommon = true;
 
-                for (GameObject* gameObject: m_selectedEntities) {
-                    auto currentRigidBody = gameObject->getComponent<RigidBody>();
+                for (GameObject* entity: m_selectedEntities) {
+                    auto currentRigidBody = entity->getComponent<RigidBody>();
 
                     if (currentRigidBody->getMass() != commonMass) {
                         isMassCommon = false;
@@ -350,9 +356,9 @@ namespace TechEngine {
                 if (ImGui::DragFloat(isDensityCommon ? "Density" : "-", &commonDensity, 0.1f, 0.1f, 100.0f, "%.2f")) {
                     changeDensity = true;
                 }
-                for (GameObject* gameObject: m_selectedEntities) {
-                    if (changeMass) gameObject->getComponent<RigidBody>()->setMass(commonMass);
-                    if (changeDensity) gameObject->getComponent<RigidBody>()->setDensity(commonDensity);
+                for (GameObject* entity: m_selectedEntities) {
+                    if (changeMass) entity->getComponent<RigidBody>()->setMass(commonMass);
+                    if (changeDensity) entity->getComponent<RigidBody>()->setDensity(commonDensity);
                 }
             });
         }
@@ -363,8 +369,8 @@ namespace TechEngine {
                 bool isSizeCommon = true;
                 bool isOffsetCommon = true;
 
-                for (GameObject* gameObject: m_selectedEntities) {
-                    auto currentBoxCollider = gameObject->getComponent<BoxColliderComponent>();
+                for (GameObject* entity: m_selectedEntities) {
+                    auto currentBoxCollider = entity->getComponent<BoxColliderComponent>();
 
                     if (currentBoxCollider->getSize() != commonSize) {
                         isSizeCommon = false;
@@ -385,9 +391,9 @@ namespace TechEngine {
                 if (commonOffset != component->getOffset()) {
                     changeOffset = true;
                 }
-                for (GameObject* gameObject: m_selectedEntities) {
-                    if (changeSize) gameObject->getComponent<BoxColliderComponent>()->setSize(commonSize);
-                    if (changeOffset) gameObject->getComponent<BoxColliderComponent>()->setOffset(commonOffset);
+                for (GameObject* entity: m_selectedEntities) {
+                    if (changeSize) entity->getComponent<BoxColliderComponent>()->setSize(commonSize);
+                    if (changeOffset) entity->getComponent<BoxColliderComponent>()->setOffset(commonOffset);
                 }
             });
         }
@@ -399,8 +405,8 @@ namespace TechEngine {
                 bool isRadiusCommon = true;
                 bool isOffsetCommon = true;
 
-                for (GameObject* gameObject: m_selectedEntities) {
-                    auto currentSphereCollider = gameObject->getComponent<SphereCollider>();
+                for (GameObject* entity: m_selectedEntities) {
+                    auto currentSphereCollider = entity->getComponent<SphereCollider>();
 
                     if (currentSphereCollider->getRadius() != commonRadius) {
                         isRadiusCommon = false;
@@ -421,9 +427,9 @@ namespace TechEngine {
                 if (commonOffset != component->getOffset()) {
                     changeOffset = true;
                 }
-                for (GameObject* gameObject: m_selectedEntities) {
-                    if (changeRadius) gameObject->getComponent<SphereCollider>()->setRadius(commonRadius);
-                    if (changeOffset) gameObject->getComponent<SphereCollider>()->setOffset(commonOffset);
+                for (GameObject* entity: m_selectedEntities) {
+                    if (changeRadius) entity->getComponent<SphereCollider>()->setRadius(commonRadius);
+                    if (changeOffset) entity->getComponent<SphereCollider>()->setOffset(commonOffset);
                 }
             });
         }
@@ -437,8 +443,8 @@ namespace TechEngine {
                 bool isHeightCommon = true;
                 bool isOffsetCommon = true;
 
-                for (GameObject* gameObject: m_selectedEntities) {
-                    auto currentCylinderCollider = gameObject->getComponent<CylinderCollider>();
+                for (GameObject* entity: m_selectedEntities) {
+                    auto currentCylinderCollider = entity->getComponent<CylinderCollider>();
 
                     if (currentCylinderCollider->getRadius() != commonRadius) {
                         isRadiusCommon = false;
@@ -468,17 +474,17 @@ namespace TechEngine {
                     changeOffset = true;
                 }
 
-                for (GameObject* gameObject: m_selectedEntities) {
-                    if (changeRadius) gameObject->getComponent<CylinderCollider>()->setRadius(commonRadius);
-                    if (changeHeight) gameObject->getComponent<CylinderCollider>()->setHeight(commonHeight);
-                    if (changeOffset) gameObject->getComponent<CylinderCollider>()->setOffset(commonOffset);
+                for (GameObject* entity: m_selectedEntities) {
+                    if (changeRadius) entity->getComponent<CylinderCollider>()->setRadius(commonRadius);
+                    if (changeHeight) entity->getComponent<CylinderCollider>()->setHeight(commonHeight);
+                    if (changeOffset) entity->getComponent<CylinderCollider>()->setOffset(commonOffset);
                 }
             });
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(NetworkSync).name()) != componentsToDraw.end()) {
             bool draw = true;
-            for (GameObject* gameObject: m_selectedEntities) {
-                if (!gameObject->hasComponent<NetworkSync>()) {
+            for (GameObject* entity: m_selectedEntities) {
+                if (!entity->hasComponent<NetworkSync>()) {
                     draw = false;
                     break;
                 }
