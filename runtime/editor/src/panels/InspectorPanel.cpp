@@ -26,7 +26,7 @@ namespace TechEngine {
             drawCommonComponents();
             if (ImGui::BeginPopupContextWindow("Add Component", 1)) {
                 if (ImGui::MenuItem("Camera")) {
-                    addComponent<Camera>();
+                    Camera& camera = addComponent<Camera>();
                 }
                 if (ImGui::MenuItem("Mesh Renderer")) {
                     //addComponent<MeshRendererComponent>();
@@ -184,11 +184,14 @@ namespace TechEngine {
                     bool changeFar = false;
                     if (m_selectedEntities.size() == 1) {
                         bool isMainCamera = camera.isMainCamera;
-
+                        CameraSystem& cameraSystem = m_appSystemRegistry.getSystem<CameraSystem>();
                         ImGui::Checkbox("Main Camera", &isMainCamera);
-                        if (isMainCamera != camera.isMainCamera) {
-                            CameraSystem& cameraSystem = m_appSystemRegistry.getSystem<CameraSystem>();
-                            cameraSystem.setMainCamera(m_selectedEntities[0]);
+                        if (isMainCamera) {
+                            for (Entity entity: m_selectedEntities) {
+                                cameraSystem.setMainCamera(entity);
+                            }
+                        } else if (!isMainCamera && camera.isMainCamera) {
+                            camera.isMainCamera = false;
                         }
                     }
                     if (ImGui::DragFloat(fovLabel, &commonFov, 0.1f)) {

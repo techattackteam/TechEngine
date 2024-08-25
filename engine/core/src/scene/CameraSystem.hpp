@@ -17,5 +17,11 @@ namespace TechEngine {
         void setFar(Entity entity, float common_far);
 
         void setMainCamera(Entity entity);
+
+        bool hasMainCamera();
+
+        Camera& getMainCamera();
+
+        void removeMainCamera();
     };
 }

@@ -54,9 +54,5 @@ namespace TechEngine {
         }
 
         int getEntityFromComponent(Camera* camera);
-
-        bool hasMainCamera();
-
-        Camera& getMainCamera();
     };
 }

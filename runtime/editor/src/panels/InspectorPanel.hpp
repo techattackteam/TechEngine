@@ -60,11 +60,12 @@ namespace TechEngine {
         }
 
         template<class C, class... A>
-        void addComponent(A&... args) {
+        C& addComponent(A&... args) {
             Scene& scene = m_appSystemRegistry.getSystem<Scene>();
             for (const int& entity: m_selectedEntities) {
-                scene.addComponent<C>(entity, args...);
+                return scene.addComponent<C>(entity, args...);
             }
+
         }
     };
 }
