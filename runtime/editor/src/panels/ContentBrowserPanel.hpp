@@ -11,9 +11,9 @@ namespace TechEngine {
     class SystemsRegistry;
 
     enum class FileType {
-        CLIENT_FILE,
-        SERVER_FILE,
-        COMMON_FILE
+        Client,
+        Server,
+        Common
     };
 
     class ContentBrowserPanel : public Panel {
@@ -22,10 +22,15 @@ namespace TechEngine {
         std::filesystem::path m_selectedPath;
 
         SystemsRegistry& m_editorRegistry;
+        SystemsRegistry& m_clientRegistry;
+        SystemsRegistry& m_serverRegistry;
         PanelsManager& m_panelsManager;
 
     public:
-        ContentBrowserPanel(SystemsRegistry& editorRegistry, PanelsManager& panelsManager);
+        ContentBrowserPanel(SystemsRegistry& editorRegistry,
+                            SystemsRegistry& clientRegistry,
+                            SystemsRegistry& serverRegistry,
+                            PanelsManager& panelsManager);
 
         void onInit();
 

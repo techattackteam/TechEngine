@@ -29,7 +29,9 @@ namespace TechEngine {
                                                    m_LoggerPanel(systemsRegistry,
                                                                  m_client.m_systemRegistry,
                                                                  m_server.m_systemRegistry),
-                                                   m_ContentBrowserPanel(systemsRegistry, *this) {
+                                                   m_ContentBrowserPanel(systemsRegistry,
+                                                                         m_client.m_systemRegistry,
+                                                                         m_server.m_systemRegistry, *this) {
     }
 
 

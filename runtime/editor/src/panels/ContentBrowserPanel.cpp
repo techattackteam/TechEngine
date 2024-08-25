@@ -3,11 +3,17 @@
 #include "ContentBrowserPanel.hpp"
 
 #include "core/Logger.hpp"
+#include "mesh/AssimpLoader.hpp"
+#include "mesh/MeshManager.hpp"
 //#include "UIUtils/ImGuiUtils.hpp"
 
 namespace TechEngine {
     ContentBrowserPanel::ContentBrowserPanel(SystemsRegistry& editorRegistry,
+                                             SystemsRegistry& clientRegistry,
+                                             SystemsRegistry& serverRegistry,
                                              PanelsManager& panelsManager) : m_editorRegistry(editorRegistry),
+                                                                             m_clientRegistry(clientRegistry),
+                                                                             m_serverRegistry(serverRegistry),
                                                                              m_panelsManager(panelsManager) {
     }
 
@@ -155,6 +161,22 @@ namespace TechEngine {
             } else if (extension == ".mat") {
                 std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
                 //m_panelsManager.openMaterialEditor(filenameWithoutExtension, path);
+            } else if (extension == ".fbx" || extension == ".obj") {
+                runFunctionBasedOnFileType(path,
+                                           [&] {
+                                               m_clientRegistry.getSystem<AssimpLoader>().createStaticMeshFile(path);
+                                           },
+                                           [&] {
+                                               m_serverRegistry.getSystem<AssimpLoader>().createStaticMeshFile(path);
+                                           });
+            } else if (extension == ".TE_mesh") {
+                runFunctionBasedOnFileType(path,
+                                           [&] {
+                                               m_clientRegistry.getSystem<MeshManager>().registerMesh(path);
+                                           },
+                                           [&] {
+                                               m_serverRegistry.getSystem<MeshManager>().registerMesh(path);
+                                           });
             }
         }
     }
@@ -263,11 +285,11 @@ namespace TechEngine {
 
     void ContentBrowserPanel::runFunctionBasedOnFileType(std::string path, const std::function<void()>& clientFunction, const std::function<void()>& serverFunction) {
         FileType fileType = getFileType(path);
-        if (fileType == FileType::CLIENT_FILE) {
+        if (fileType == FileType::Client) {
             clientFunction();
-        } else if (fileType == FileType::SERVER_FILE) {
+        } else if (fileType == FileType::Server) {
             serverFunction();
-        } else if (fileType == FileType::COMMON_FILE) {
+        } else if (fileType == FileType::Common) {
             clientFunction();
             serverFunction();
         }
@@ -276,15 +298,15 @@ namespace TechEngine {
     FileType ContentBrowserPanel::getFileType(const std::filesystem::path& path) {
         std::string rootFolder = path.string().substr(m_editorRegistry.getSystem<ProjectManager>().getProjectPath().string().size() + std::string("\\Assets\\").size());
         rootFolder = rootFolder.substr(0, rootFolder.find_first_of('\\'));
-        if (rootFolder == "Client") {
-            return FileType::CLIENT_FILE;
-        } else if (rootFolder == "Server") {
-            return FileType::SERVER_FILE;
-        } else if (rootFolder == "Common") {
-            return FileType::COMMON_FILE;
+        if (rootFolder == "client") {
+            return FileType::Client;
+        } else if (rootFolder == "server") {
+            return FileType::Server;
+        } else if (rootFolder == "common") {
+            return FileType::Common;
         } else {
             TE_LOGGER_CRITICAL("Unknown file type: \n\tRoot folder: {0}\n\tPath: {1}", rootFolder, path.string());
-            return FileType::COMMON_FILE;
+            return FileType::Common;
         }
     }
 }
