@@ -63,7 +63,7 @@ namespace TechEngine {
         void addComponent(A&... args) {
             Scene& scene = m_appSystemRegistry.getSystem<Scene>();
             for (const int& entity: m_selectedEntities) {
-                scene.addComponent<C>(entity, args);
+                scene.addComponent<C>(entity, args...);
             }
         }
     };

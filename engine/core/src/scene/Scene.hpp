@@ -52,5 +52,11 @@ namespace TechEngine {
         bool hasComponent(Entity entity) {
             return componentsManager.hasComponent<T>(entity);
         }
+
+        int getEntityFromComponent(Camera* camera);
+
+        bool hasMainCamera();
+
+        Camera& getMainCamera();
     };
 }

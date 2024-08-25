@@ -41,4 +41,13 @@ namespace TechEngine {
         auto& transform = m_systemsRegistry.getSystem<Scene>().getComponent<Transform>(entity);
         transform.scale = vector;
     }
+
+    glm::mat4 TransformSystem::getModelMatrix(int entity) {
+        auto& transform = m_systemsRegistry.getSystem<Scene>().getComponent<Transform>(entity);
+        glm::mat4 model = glm::translate(glm::mat4(1), transform.position) *
+                          glm::mat4_cast(glm::quat(glm::radians(transform.rotation))) *
+                          glm::scale(glm::mat4(1), transform.scale);
+
+        return model;
+    }
 }

@@ -38,7 +38,7 @@ namespace TechEngine {
         }
 
         void init() override {
-            m_runtime.init();
+            m_runtime.init(m_systemRegistry.getSystem<ProjectManager>().getProjectPath());
             m_systemRegistry.getSystem<EventDispatcher>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
                 if (m_simulationState != SimulationState::STOPPED) {
                     stopSimulation();

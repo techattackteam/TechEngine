@@ -19,6 +19,7 @@ namespace TechEngine {
                                                         m_clientSystemsRegistry(clientSystemsRegistry),
                                                         m_inspectorPanel(systemsRegistry, clientSystemsRegistry, m_selectedEntities),
                                                         m_sceneHierarchyPanel(systemsRegistry, clientSystemsRegistry, m_selectedEntities),
+                                                        m_gameView(clientSystemsRegistry),
                                                         loggerPanel(loggerPanel) {
     }
 
