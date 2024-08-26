@@ -1,17 +1,16 @@
 #pragma once
 
 #include "Vertex.hpp"
-#include "assimp/Importer.hpp"
-#include "assimp/scene.h"
-
-#include <filesystem>
 
 #include "serialization/FileStream.hpp"
-#include "systems/System.hpp"
+
+#include "assimp/Importer.hpp"
+#include "assimp/scene.h"
+#include <filesystem>
 
 namespace TechEngine {
-    class AssimpLoader : public System { //TODO: Remove System when Resource Manager is implemented
-    private:
+    class AssimpLoader {
+    public:
         struct MeshData {
             std::vector<Vertex> vertices; // Vertices of the mesh from Vertex.hpp Might change to internal format
             std::vector<int> indices;
@@ -34,13 +33,8 @@ namespace TechEngine {
         };
 
     public:
-        std::filesystem::path createStaticMeshFile(const std::string& path); // Loads model (eg obj, fbx) and creates a static TE_mesh file
-
-        //Create prefab from model
-
+        Node loadModel(const std::string& path);
     private:
-        AssimpLoader::Node loadModel(const std::string& path);
-
         Node processScene(const std::string& modelName, ::aiNode* aiNode, const aiScene* aiScene, bool _return = false);
 
         MeshData processMesh(const std::string& modelName, aiMesh* mesh, const aiScene* scene);

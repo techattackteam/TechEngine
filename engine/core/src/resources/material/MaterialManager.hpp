@@ -7,9 +7,8 @@
 #include <glm/glm.hpp>
 
 namespace TechEngine {
-    class CORE_DLL MaterialManager : public System {
+    class CORE_DLL MaterialManager {
     private:
-        SystemsRegistry& m_systemsRegistry;
         std::unordered_map<std::string, Material> m_materialsBank = std::unordered_map<std::string, Material>();
 
         glm::vec4 m_defaultColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -21,11 +20,11 @@ namespace TechEngine {
         MaterialManager* m_copy = nullptr;
 
     public:
-        explicit MaterialManager(SystemsRegistry& systemsRegistry);
+        explicit MaterialManager();
 
         void init(const std::vector<std::string>& materialsFilePaths);
 
-        void shutdown() override;
+        void shutdown();
 
         Material& createMaterial(const ::std::string& name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
 

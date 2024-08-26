@@ -3,8 +3,9 @@
 #include "ContentBrowserPanel.hpp"
 
 #include "core/Logger.hpp"
-#include "mesh/AssimpLoader.hpp"
-#include "mesh/MeshManager.hpp"
+#include "resources/ResourcesManager.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/MeshManager.hpp"
 //#include "UIUtils/ImGuiUtils.hpp"
 
 namespace TechEngine {
@@ -164,18 +165,18 @@ namespace TechEngine {
             } else if (extension == ".fbx" || extension == ".obj") {
                 runFunctionBasedOnFileType(path,
                                            [&] {
-                                               m_clientRegistry.getSystem<AssimpLoader>().createStaticMeshFile(path);
+                                               m_clientRegistry.getSystem<ResourcesManager>().loadModelFile(path);
                                            },
                                            [&] {
-                                               m_serverRegistry.getSystem<AssimpLoader>().createStaticMeshFile(path);
+                                               m_serverRegistry.getSystem<ResourcesManager>().loadModelFile(path);
                                            });
             } else if (extension == ".TE_mesh") {
                 runFunctionBasedOnFileType(path,
                                            [&] {
-                                               m_clientRegistry.getSystem<MeshManager>().registerMesh(path);
+                                               m_clientRegistry.getSystem<ResourcesManager>().registerStaticMesh(path);
                                            },
                                            [&] {
-                                               m_serverRegistry.getSystem<MeshManager>().registerMesh(path);
+                                               m_serverRegistry.getSystem<ResourcesManager>().registerStaticMesh(path);
                                            });
             }
         }
