@@ -3,8 +3,8 @@
 #include <utility>
 #include <string>
 
-#include "material/Material.hpp"
-#include "mesh/Mesh.hpp"
+#include "resources/material/Material.hpp"
+#include "resources/mesh/Mesh.hpp"
 
 namespace TechEngine {
     class Tag {
@@ -52,12 +52,15 @@ namespace TechEngine {
         Mesh& mesh;
         Material& material;
 
+        explicit MeshRenderer(Mesh& mesh, Material& material) : mesh(mesh), material(material) {
+        }
+
         std::vector<Vertex> getVertices() {
-            return mesh.vertices;
+            return mesh.m_vertices;
         }
 
         std::vector<int> getIndices() {
-            return mesh.indices;
+            return mesh.m_indices;
         }
     };
 }

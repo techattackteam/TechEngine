@@ -2,9 +2,9 @@
 
 
 #include "core/Logger.hpp"
-#include "material/MaterialManager.hpp"
-#include "Vertex.hpp"
+#include "resources/material/MaterialManager.hpp"
 #include "files/FileUtils.hpp"
+#include "Mesh.hpp"
 
 #include "assimp/Importer.hpp"
 #include <filesystem>
@@ -13,52 +13,7 @@
 #include <assimp/postprocess.h>
 #include <yaml-cpp/yaml.h>
 
-#include "Mesh.hpp"
-#include "serialization/FileStream.hpp"
-
 namespace TechEngine {
-    std::filesystem::path AssimpLoader::createStaticMeshFile(const std::string& path) {
-        Node node = loadModel(path);
-        std::string modelName = FileUtils::getFileName(path);
-        std::string parentFolder = std::filesystem::path(path).parent_path().string();
-        std::filesystem::path staticMeshPath = parentFolder + "\\" + modelName + ".TE_mesh";
-        Mesh mesh;
-
-        //BFS to get all meshes from node children
-        // BFS to collect all meshes from node and its children
-        std::queue<Node> nodeQueue;
-        nodeQueue.push(node);
-
-        while (!nodeQueue.empty()) {
-            // Get the current node
-            Node currentNode = nodeQueue.front();
-            nodeQueue.pop();
-
-            // Add current node's meshes to the list
-            for (MeshData& meshData: currentNode.meshes) {
-                mesh.vertices.insert(mesh.vertices.end(), meshData.vertices.begin(), meshData.vertices.end());
-                int lastIndex = mesh.indices.empty() ? 0 : mesh.indices.back();
-                for (int index: meshData.indices) {
-                    mesh.indices.push_back(index + lastIndex);
-                }
-            }
-
-            // Add current node's children to the queue
-            for (const Node& child: currentNode.children) {
-                nodeQueue.push(child);
-            }
-        }
-
-        // Create a FileStreamWriter and pass the static mesh path
-        FileStreamWriter writer(staticMeshPath);
-        writer.writeObject(mesh);
-        // The writer will be used to write the collected mesh data to the file
-        // The implementation of FileStreamWriter will handle the specifics of writing to the file
-
-        return staticMeshPath;
-    }
-
-
     AssimpLoader::Node AssimpLoader::loadModel(const std::string& path) {
         Assimp::Importer importer;
         const aiScene* aiScene = importer.ReadFile(path, aiProcess_Triangulate);

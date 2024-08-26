@@ -7,7 +7,7 @@
 #include <fstream>
 
 namespace TechEngine {
-    MaterialManager::MaterialManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
+    MaterialManager::MaterialManager() {
     }
 
     void MaterialManager::init(const std::vector<std::string>& materialsFilePaths) {

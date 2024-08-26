@@ -4,6 +4,8 @@
 #include "scene/Scene.hpp"
 #include "scene/TransformSystem.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
+#include "windows.h"
+#include "commdlg.h"
 
 namespace TechEngine {
     InspectorPanel::InspectorPanel(SystemsRegistry& systemRegistry,
@@ -29,7 +31,7 @@ namespace TechEngine {
                     Camera& camera = addComponent<Camera>();
                 }
                 if (ImGui::MenuItem("Mesh Renderer")) {
-                    //addComponent<MeshRendererComponent>();
+                    //addComponent<MeshRenderer>();
                 }
                 if (ImGui::BeginMenu("Physics")) {
                     /*if (ImGui::MenuItem("Rigid Body")) {
@@ -238,22 +240,23 @@ namespace TechEngine {
                     }
                 }*/
             });
-        } /*
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(MeshRendererComponent).name()) != componentsToDraw.end()) {
-            drawComponent<MeshRendererComponent>(firstEntity, "Mesh Renderer", [this](auto& component) {
+        }
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(MeshRenderer).name()) != componentsToDraw.end()) {
+            drawComponent<MeshRenderer>(firstEntity, "Mesh Renderer", [this](auto& component) {
+                Scene& scene = m_appSystemRegistry.getSystem<Scene>();
                 bool isMeshCommon = true;
                 bool isMaterialCommon = true;
-                std::string commonMeshName = component->getMesh().getName();
-                std::string commonMaterialName = component->getMaterial().getName();
+                std::string commonMeshName = component.mesh.getName();
+                std::string commonMaterialName = component.material.getName();
 
-                for (GameObject* entity: m_selectedEntities) {
-                    auto currentMeshRenderer = entity->getComponent<MeshRendererComponent>();
+                for (Entity entity: m_selectedEntities) {
+                    auto currentMeshRenderer = scene.getComponent<MeshRenderer>(entity);
 
-                    if (currentMeshRenderer->getMesh().getName() != commonMeshName) {
+                    if (currentMeshRenderer.mesh.getName() != commonMeshName) {
                         isMeshCommon = false;
                     }
 
-                    if (currentMeshRenderer->getMaterial().getName() != commonMaterialName) {
+                    if (currentMeshRenderer.mesh.getMaterial().getName() != commonMaterialName) {
                         isMaterialCommon = false;
                     }
                 }
@@ -283,9 +286,9 @@ namespace TechEngine {
                         ImGui::EndCombo();
                     }
                     if (current_item != commonMeshName) {
-                        for (GameObject* entity: m_selectedEntities) {
-                            entity->getComponent<MeshRendererComponent>()->changeMesh(m_appSystemRegistry.getSystem<MeshManager>().getMesh(current_item));
-                        }
+                        /*for (GameObject* entity: m_selectedEntities) {
+                            entity->getComponent<MeshRenderer>()->changeMesh(m_appSystemRegistry.getSystem<MeshManager>().getMesh(current_item));
+                        }*/
                     }
                 }
                 static bool open = false;
@@ -309,8 +312,8 @@ namespace TechEngine {
                         std::string filepath = ofn.lpstrFile;
                         std::string filename = filepath.substr(filepath.find_last_of("/\\") + 1);
                         std::string materialName = filename.substr(0, filename.find_last_of("."));
-                        for (GameObject* entity: m_selectedEntities) {
-                            entity->getComponent<MeshRendererComponent>()->changeMaterial(m_appSystemRegistry.getSystem<MaterialManager>().getMaterial(materialName));
+                        for (Entity entity: m_selectedEntities) {
+                            //entity->getComponent<MeshRenderer>()->changeMaterial(m_appSystemRegistry.getSystem<MaterialManager>().getMaterial(materialName));
                         }
                     }
                 };
@@ -321,17 +324,17 @@ namespace TechEngine {
                         if (extension != ".mat")
                             return;
                         std::string materialName = filename.substr(0, filename.find_last_of("."));
-                        for (GameObject* entity: m_selectedEntities) {
-                            entity->getComponent<MeshRendererComponent>()->changeMaterial(m_appSystemRegistry.getSystem<MaterialManager>().getMaterial(materialName));
+                        for (Entity entity: m_selectedEntities) {
+                            //entity->getComponent<MeshRenderer>()->changeMaterial(m_appSystemRegistry.getSystem<MaterialManager>().getMaterial(materialName));
                         }
                         return;
                     }
                     ImGui::EndDragDropTarget();
                 }
 
-                component->paintMesh();
+                //component.paintMesh();
             });
-        }
+        } /*
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(RigidBody).name()) != componentsToDraw.end()) {
             drawComponent<RigidBody>(firstEntity, "Rigid Body", [this](auto& component) {
                 float commonMass = component->getMass();

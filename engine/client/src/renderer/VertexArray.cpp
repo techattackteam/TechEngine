@@ -1,7 +1,7 @@
 #include "VertexArray.hpp"
 #include "ErrorCatcher.hpp"
 #include "Line.hpp"
-#include "mesh/Vertex.hpp"
+#include "resources/mesh/Vertex.hpp"
 
 namespace TechEngine {
 
