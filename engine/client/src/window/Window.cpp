@@ -21,11 +21,15 @@ namespace TechEngine {
             TE_LOGGER_CRITICAL("Failed to initialize GLEW");
         }
 
-
         glfwSetWindowUserPointer(m_handler, this);
         glfwSetWindowCloseCallback(m_handler, [](GLFWwindow* handler) {
             Window* window = (Window*)glfwGetWindowUserPointer(handler);
             window->m_systemsRegistry.getSystem<EventDispatcher>().dispatch<AppCloseEvent>();
+        });
+
+        glfwSetFramebufferSizeCallback(m_handler, [](GLFWwindow* handler, int width, int height) {
+            Window* window = (Window*)glfwGetWindowUserPointer(handler);
+            //window->m_systemsRegistry.getSystem<EventDispatcher>().dispatch<WindowRes>(new WindowResizeEvent(width, height));
         });
     }
 
@@ -43,6 +47,7 @@ namespace TechEngine {
     void Window::shutdown() {
         glfwTerminate();
     }
+
 
     void Window::setTitle(const std::string& title) {
         this->m_title = title;
