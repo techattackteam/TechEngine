@@ -3,13 +3,19 @@
 #include <glm/glm.hpp>
 #include <utility>
 #include <string>
+#include <typeindex>
 
 #include "resources/material/Material.hpp"
 #include "resources/mesh/AssimpLoader.hpp"
 #include "resources/mesh/Mesh.hpp"
 
 namespace TechEngine {
-    class Tag {
+    using Entity = uint32_t;
+    using ComponentTypeID = uint32_t;
+    using ArchetypeID = uint32_t;
+
+
+    class CORE_DLL Tag {
     private:
         char* uuid;
         char* name;
@@ -44,14 +50,14 @@ namespace TechEngine {
         }
     };
 
-    class Transform {
+    class CORE_DLL Transform {
     public:
         glm::vec3 position = glm::vec3(0.0f);
         glm::vec3 rotation = glm::vec3(0.0f); // Maybe use quaternions instead
         glm::vec3 scale = glm::vec3(1.0f);
     };
 
-    class Camera {
+    class CORE_DLL Camera {
     private:
         bool mainCamera = false;
         glm::mat4 viewMatrix = glm::mat4(1.0f);
@@ -119,4 +125,45 @@ namespace TechEngine {
             }
         }
     };
+
+
+    class CORE_DLL ComponentType {
+    private:
+        inline static ComponentTypeID counter = 0;
+        inline static std::unordered_map<std::type_index, ComponentTypeID> typeMap;
+        inline static bool initialized = false;
+
+    public:
+        static void init() {
+            registerComponent<Tag>();
+            registerComponent<Transform>();
+            registerComponent<Camera>();
+            registerComponent<MeshRenderer>();
+        }
+
+        template<typename T>
+        static void registerComponent() {
+            if (typeMap.find(typeid(T)) == typeMap.end()) {
+                typeMap[typeid(T)] = counter;
+                counter += 1;
+            }
+        }
+
+        template<typename T>
+        static bool isComponentRegistered() {
+            return typeMap.find(typeid(T)) != typeMap.end();
+        }
+
+        template<typename T>
+        static ComponentTypeID get() {
+            if (!initialized) {
+                init();
+            }
+            if (typeMap.find(typeid(T)) == typeMap.end()) {
+                TE_LOGGER_CRITICAL("Component type {0} not registered, please register it first", typeid(T).name());
+            }
+            return typeMap[typeid(T)];
+        }
+    };
 }
+    

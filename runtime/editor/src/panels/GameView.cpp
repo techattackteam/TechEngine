@@ -23,8 +23,20 @@ namespace TechEngine {
         ImVec2 wsize = ImGui::GetContentRegionAvail();
         frameBuffer.bind();
         frameBuffer.resize(wsize.x, wsize.y);
-        m_appRegistry.getSystem<CameraSystem>().getMainCamera().updateProjectionMatrix(wsize.x / wsize.y);
-        renderer.renderPipeline(m_appRegistry.getSystem<CameraSystem>());
+        Camera* camera = nullptr;
+        std::vector<Camera> cameras = m_appRegistry.getSystem<Scene>().getComponents<Camera>();
+        for (Camera& c: cameras) {
+            if (c.isMainCamera()) {
+                camera = &c;
+                break;
+            }
+        }
+        if (camera == nullptr) {
+            TE_LOGGER_WARN("No main camera found.");
+            return;
+        }
+        camera->updateProjectionMatrix(wsize.x / wsize.y);
+        renderer.renderPipeline(camera);
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
         ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
         frameBuffer.unBind();

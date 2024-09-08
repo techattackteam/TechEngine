@@ -23,11 +23,11 @@ namespace TechEngine {
     public:
         Material(std::string name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
 
-        /*Material(const std::string& name, Texture* diffuse);*/
+        /*Material( std::string& name, Texture* diffuse);*/
 
-        const std::string& getName();
+        std::string& getName();
 
-        glm::vec4 getColor();
+        glm::vec4& getColor();
 
         void setColor(glm::vec4 color);
 
@@ -43,11 +43,11 @@ namespace TechEngine {
 
         void setSpecular(glm::vec3 specular);
 
-        float getShininess() const;
+        float getShininess();
 
         void setShininess(float shininess);
 
-        bool getUseTexture() const;
+        bool getUseTexture();
 
         void setUseTexture(bool useTexture);
 

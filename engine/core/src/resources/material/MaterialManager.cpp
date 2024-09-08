@@ -10,9 +10,9 @@ namespace TechEngine {
     MaterialManager::MaterialManager() {
     }
 
-    void MaterialManager::init(const std::vector<std::string>& materialsFilePaths) {
-        for (const std::string& materialFilePath: materialsFilePaths) {
-            deserializeMaterial(materialFilePath);
+    void MaterialManager::init(const std::vector<std::filesystem::path>& materialsFilePaths) {
+        for (const std::filesystem::path& materialFilePath: materialsFilePaths) {
+            registerMaterial(materialFilePath.string());
         }
     }
 
@@ -98,7 +98,7 @@ namespace TechEngine {
     }
 
 
-    bool MaterialManager::deserializeMaterial(const std::string& filepath) {
+    bool MaterialManager::registerMaterial(const std::string& filepath) {
         YAML::Node data;
         try {
             data = YAML::LoadFile(filepath);

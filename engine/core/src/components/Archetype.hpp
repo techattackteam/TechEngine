@@ -3,27 +3,12 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Components.hpp"
+
 namespace TechEngine {
-    using Entity = uint32_t;
-    using ComponentTypeID = uint32_t;
     using ArchetypeID = uint32_t;
 
-    class Component {
-    public:
-        inline static ComponentTypeID familyCounter = 0;
-    };
-
-
-    template<typename T>
-    class ComponentType {
-    public:
-        static ComponentTypeID get() {
-            static ComponentTypeID typeID = Component::familyCounter++;
-            return typeID;
-        }
-    };
-
-    class Archetype {
+    class CORE_DLL Archetype {
     private:
         friend class ArchetypesManager;
 
@@ -37,7 +22,7 @@ namespace TechEngine {
 
         template<typename T>
         T& getComponent(Entity entity) {
-            ComponentTypeID typeID = ComponentType<T>::get();
+            ComponentTypeID typeID = ComponentType::get<T>();
             auto& dataVector = componentData[typeID];
             size_t index = std::distance(entities.begin(), std::find(entities.begin(), entities.end(), entity));
             size_t componentSize = sizeof(T);
@@ -48,7 +33,7 @@ namespace TechEngine {
         // get a reference to the component array for a specific type
         template<typename T>
         std::vector<T>& getComponentArray() {
-            ComponentTypeID typeID = ComponentType<T>::get();
+            ComponentTypeID typeID = ComponentType::get<T>();
             auto& dataVector = componentData[typeID];
             return *reinterpret_cast<std::vector<T>*>(&dataVector);
         }
@@ -77,7 +62,7 @@ namespace TechEngine {
         // Add component data for a specific component type
         template<typename T>
         void addComponentData(Entity entity, const T& component) {
-            ComponentTypeID typeID = ComponentType<T>::get();
+            ComponentTypeID typeID = ComponentType::get<T>();
             size_t entityIndex = std::distance(entities.begin(), std::find(entities.begin(), entities.end(), entity));
             auto& componentVector = componentData[typeID];
 
@@ -93,7 +78,7 @@ namespace TechEngine {
         // Remove component data for a specific component type
         template<typename T>
         void removeComponentData(Entity entity) {
-            ComponentTypeID typeID = ComponentType<T>::get();
+            ComponentTypeID typeID = ComponentType::get<T>();
             auto& componentVector = componentData[typeID];
 
             auto entityIndex = std::distance(entities.begin(), std::find(entities.begin(), entities.end(), entity));

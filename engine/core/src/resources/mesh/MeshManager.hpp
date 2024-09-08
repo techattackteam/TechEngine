@@ -1,13 +1,9 @@
 #pragma once
 #include "Mesh.hpp"
-#include "systems/System.hpp"
 
 
 #include <filesystem>
 #include <string>
-#include <unordered_map>
-
-#include "AssimpLoader.hpp"
 
 namespace TechEngine {
     class MeshManager {
@@ -15,14 +11,18 @@ namespace TechEngine {
         std::vector<Mesh> m_meshesBank;
 
     public:
-        void init();
+        inline static const std::string DEFAULT_MESH_NAME = "Cube";
+
+        void init(const std::vector<std::filesystem::path>& meshFilePaths);
 
         void shutdown();
 
-        void registerMesh(const std::string& name, AssimpLoader::MeshData& meshData, Material& material);
+        void loadStaticMesh(const std::filesystem::path& path);
 
-        const Mesh& getMesh(const std::string& name);
+        Mesh& getMesh(const std::string& name);
 
-        bool isMeshRegistered(const std::string& name);
+        bool isMeshLoaded(const std::string& name);
+
+    private:
     };
 }

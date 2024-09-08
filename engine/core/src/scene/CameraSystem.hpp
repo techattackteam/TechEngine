@@ -4,7 +4,7 @@
 #include "systems/System.hpp"
 
 namespace TechEngine {
-    class CameraSystem : public System {
+    class CORE_DLL CameraSystem : public System {
     private:
         SystemsRegistry& m_systemsRegistry;
 

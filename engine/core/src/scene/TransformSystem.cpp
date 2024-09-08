@@ -1,6 +1,7 @@
 #include "TransformSystem.hpp"
 
 #include "Scene.hpp"
+#include "components/Components.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {

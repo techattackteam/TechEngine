@@ -11,17 +11,17 @@
 namespace TechEngine {
     class AssimpLoader {
     public:
-        struct MeshData {
+        struct aiMeshData {
             std::vector<Vertex> vertices; // Vertices of the mesh from Vertex.hpp Might change to internal format
             std::vector<int> indices;
             std::string material;
 
-            static void Serialize(StreamWriter* writer, const MeshData& meshData) {
+            static void Serialize(StreamWriter* writer, const aiMeshData& meshData) {
                 writer->writeArray(meshData.vertices);
                 writer->writeArray(meshData.indices);
             }
 
-            static void Deserialize(StreamReader* reader, MeshData& meshData) {
+            static void Deserialize(StreamReader* reader, aiMeshData& meshData) {
                 reader->readArray(meshData.vertices);
                 reader->readArray(meshData.indices);
             }
@@ -29,14 +29,22 @@ namespace TechEngine {
 
         struct Node {
             std::vector<Node> children;
-            std::vector<MeshData> meshes;
+            std::vector<aiMeshData> meshes;
+        };
+
+        struct ModelData {
+            AssimpLoader::Node rootNode;
+            std::vector<std::string> materials;
         };
 
     public:
-        Node loadModel(const std::string& path);
-    private:
-        Node processScene(const std::string& modelName, ::aiNode* aiNode, const aiScene* aiScene, bool _return = false);
+        std::filesystem::path createStaticMeshFile(const Node& node, const std::string& staticMeshPath);
 
-        MeshData processMesh(const std::string& modelName, aiMesh* mesh, const aiScene* scene);
+        AssimpLoader::ModelData loadModel(const std::string& path);
+
+    private:
+        ModelData processScene(const std::string& modelName, aiNode* aiNode, const aiScene* aiScene);
+
+        aiMeshData processMesh(const std::string& modelName, aiMesh* mesh, const aiScene* scene);
     };
 }

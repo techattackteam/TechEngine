@@ -37,7 +37,7 @@ namespace TechEngine {
 
         void init();
 
-        void renderPipeline(CameraSystem& cameraSystem);
+        void renderPipeline(Camera& camera);
 
         void renderCustomPipeline(Camera* camera, std::vector<int>& entities);
 

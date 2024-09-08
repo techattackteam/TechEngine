@@ -1,15 +1,14 @@
 #include "SceneHierarchyPanel.hpp"
 
-#include "components/Components.hpp"
 #include "scene/Scene.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
 
 namespace TechEngine {
     SceneHierarchyPanel::SceneHierarchyPanel(SystemsRegistry& systemRegistry,
                                              SystemsRegistry& appSystemRegistry,
-                                             std::vector<Tag>& selectedEntities) : m_systemRegistry(systemRegistry),
-                                                                                   m_appSystemRegistry(appSystemRegistry),
-                                                                                   m_selectedEntities(selectedEntities) {
+                                             std::vector<Entity>& selectedEntities) : m_systemRegistry(systemRegistry),
+                                                                                      m_appSystemRegistry(appSystemRegistry),
+                                                                                      m_selectedEntities(selectedEntities) {
     }
 
 
@@ -23,7 +22,7 @@ namespace TechEngine {
     void SceneHierarchyPanel::onUpdate() {
         isItemHovered = false;
         Scene& scene = m_appSystemRegistry.getSystem<Scene>();
-        std::vector<Archetype> archetypes = scene.queryArchetypes({ComponentType<Tag>::get(), ComponentType<Transform>::get()});
+        std::vector<Archetype> archetypes = scene.queryArchetypes({ComponentType::get<Tag>(), ComponentType::get<Transform>()});
 
         for (Archetype& archetype: archetypes) {
             std::vector<Tag> tags = archetype.getComponentArray<Tag>();
@@ -60,7 +59,8 @@ namespace TechEngine {
 
     void SceneHierarchyPanel::drawEntityNode(Tag& tag) {
         Scene& scene = m_appSystemRegistry.getSystem<Scene>();
-        ImGuiTreeNodeFlags flags = ((std::find(m_selectedEntities.begin(), m_selectedEntities.end(), tag) != m_selectedEntities.end()) ? ImGuiTreeNodeFlags_Selected : 0) |
+        Entity entity = scene.getEntityByTag(tag);
+        ImGuiTreeNodeFlags flags = ((std::find(m_selectedEntities.begin(), m_selectedEntities.end(), entity) != m_selectedEntities.end()) ? ImGuiTreeNodeFlags_Selected : 0) |
                                    ImGuiTreeNodeFlags_OpenOnArrow |
                                    /*(entity->getChildren().empty() ? ImGuiTreeNodeFlags_Leaf : 0)*/ ImGuiTreeNodeFlags_Leaf |
                                    ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -97,7 +97,7 @@ namespace TechEngine {
             } else {
             }*/
             m_selectedEntities.clear();
-            m_selectedEntities.push_back(tag);
+            m_selectedEntities.push_back(scene.getEntityByTag(tag));
         }
         if (ImGui::IsItemHovered()) {
             isItemHovered = true;

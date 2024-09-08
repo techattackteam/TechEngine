@@ -3,6 +3,7 @@
 #include "Material.hpp"
 
 #include "eventSystem/EventDispatcher.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
 
 namespace TechEngine {
     Material::Material(std::string name,
@@ -19,18 +20,18 @@ namespace TechEngine {
     }
 
     /*Material::Material(EventDispatcher& eventDispatcher,
-                       const std::string& name,
+                        std::string& name,
                        Texture* diffuse) : eventDispatcher(eventDispatcher),
                                            name(name),
                                            diffuseTexture(diffuse) {
         useTexture = true;
     }*/
 
-    const std::string& Material::getName() {
+    std::string& Material::getName() {
         return name;
     }
 
-    glm::vec4 Material::getColor() {
+    glm::vec4& Material::getColor() {
         return color;
     }
 
@@ -66,7 +67,7 @@ namespace TechEngine {
         //eventDispatcher.dispatch(new MaterialUpdateEvent(*this));
     }
 
-    float Material::getShininess() const {
+    float Material::getShininess() {
         return shininess;
     }
 
@@ -76,7 +77,7 @@ namespace TechEngine {
     }
 
 
-    bool Material::getUseTexture() const {
+    bool Material::getUseTexture() {
         return useTexture;
     }
 

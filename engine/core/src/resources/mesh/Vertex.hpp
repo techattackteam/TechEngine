@@ -5,8 +5,6 @@
 #include "serialization/StreamWriter.hpp"
 
 namespace TechEngine {
-    class StreamWriter;
-
     class Vertex {
     public:
         glm::vec3 position;
@@ -22,6 +20,10 @@ namespace TechEngine {
 
         Vertex(const glm::vec3& position, const glm::vec3& normal, const glm::vec2& texCoords, const glm::vec4& color)
             : position(position), normal(normal), texCoords(texCoords), color(color) {
+        }
+
+        void setColor(glm::vec4& color) {
+            this->color = color;
         }
 
         static void Serialize(StreamWriter* stream, const Vertex& vertex) {

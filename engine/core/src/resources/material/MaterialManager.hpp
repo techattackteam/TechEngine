@@ -1,13 +1,17 @@
 #pragma once
 
+#include <filesystem>
+
 #include "Material.hpp"
-#include "systems/System.hpp"
 #include <string>
 #include <unordered_map>
 #include <glm/glm.hpp>
 
 namespace TechEngine {
     class CORE_DLL MaterialManager {
+    public:
+        inline static const std::string DEFAULT_MATERIAL_NAME = "default";
+
     private:
         std::unordered_map<std::string, Material> m_materialsBank = std::unordered_map<std::string, Material>();
 
@@ -22,7 +26,7 @@ namespace TechEngine {
     public:
         explicit MaterialManager();
 
-        void init(const std::vector<std::string>& materialsFilePaths);
+        void init(const std::vector<std::filesystem::path>& materialsFilePaths);
 
         void shutdown();
 
@@ -40,11 +44,9 @@ namespace TechEngine {
 
         std::vector<Material*> getMaterials();
 
-        void serializeMaterial(const std::string& name, const std::string& filepath);
-
-        void clear();
-
     private:
-        bool deserializeMaterial(const std::string& filepath);
+        bool registerMaterial(const std::string& filepath);
+
+        void serializeMaterial(const std::string& name, const std::string& filepath);
     };
 }

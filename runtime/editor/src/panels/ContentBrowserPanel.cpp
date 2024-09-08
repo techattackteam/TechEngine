@@ -6,7 +6,7 @@
 #include "resources/ResourcesManager.hpp"
 #include "resources/mesh/AssimpLoader.hpp"
 #include "resources/mesh/MeshManager.hpp"
-//#include "UIUtils/ImGuiUtils.hpp"
+#include "UIUtils/ImGuiUtils.hpp"
 
 namespace TechEngine {
     ContentBrowserPanel::ContentBrowserPanel(SystemsRegistry& editorRegistry,
@@ -173,10 +173,10 @@ namespace TechEngine {
             } else if (extension == ".TE_mesh") {
                 runFunctionBasedOnFileType(path,
                                            [&] {
-                                               m_clientRegistry.getSystem<ResourcesManager>().registerStaticMesh(path);
+                                               m_clientRegistry.getSystem<ResourcesManager>().loadStaticMesh(path);
                                            },
                                            [&] {
-                                               m_serverRegistry.getSystem<ResourcesManager>().registerStaticMesh(path);
+                                               m_serverRegistry.getSystem<ResourcesManager>().loadStaticMesh(path);
                                            });
             }
         }
@@ -249,9 +249,20 @@ namespace TechEngine {
             opened = true;
             if (ImGui::BeginMenu("New")) {
                 std::string newFolderName;
-                /*if (ImGuiUtils::beginMenuWithInputMenuField("New Folder", "New Folder", newFolderName)) {
+                if (ImGuiUtils::beginMenuWithInputMenuField("New Folder", "New Folder", newFolderName)) {
                     std::filesystem::create_directory(m_currentPath / newFolderName);
                 }
+                std::string newMaterialName;
+                if (ImGuiUtils::beginMenuWithInputMenuField("New Material", "Material name", newMaterialName)) {
+                    runFunctionBasedOnFileType(m_currentPath.string() + "\\" + newMaterialName + ".mat",
+                                               [&] {
+                                                   m_clientRegistry.getSystem<ResourcesManager>().createMaterial(newMaterialName, path.string());
+                                               },
+                                               [&] {
+                                                   m_serverRegistry.getSystem<ResourcesManager>().createMaterial(newMaterialName, path.string());
+                                               });
+                }
+                /*
                 std::string newSceneName;
                 if (ImGuiUtils::beginMenuWithInputMenuField("New Scene", "Scene name", newSceneName)) {
                     std::string scenePath = m_currentPath.string() + "\\" + newSceneName + ".scene";
@@ -267,16 +278,7 @@ namespace TechEngine {
                 if (ImGuiUtils::beginMenuWithInputMenuField("New Script", "Script name", newScriptName)) {
                     TE_LOGGER_INFO("(WIP) New script name: {0}", newScriptName);
                 }
-                std::string newMaterialName;
-                if (ImGuiUtils::beginMenuWithInputMenuField("New Material", "Material name", newMaterialName)) {
-                    runFunctionBasedOnFileType(m_currentPath.string() + "\\" + newMaterialName + ".mat",
-                                               [&] {
-                                                   m_client.systemsRegistry.getSystem<MaterialManager>().createMaterialFile(newMaterialName, path.string());
-                                               },
-                                               [&] {
-                                                   m_server.systemsRegistry.getSystem<MaterialManager>().createMaterialFile(newMaterialName, path.string());
-                                               });
-                }*/
+               */
                 ImGui::EndMenu();
             }
             ImGui::EndPopup();

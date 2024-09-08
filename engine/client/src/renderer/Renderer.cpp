@@ -60,15 +60,18 @@ namespace TechEngine {
         Scene& scene = m_systemsRegistry.getSystem<Scene>();
         TransformSystem& transformSystem = m_systemsRegistry.getSystem<TransformSystem>();
         if (scene.hasComponent<MeshRenderer>(entity)) {
-            shadersManager.getActiveShader()->setUniformMatrix4f("model", transformSystem.getModelMatrix(entity));
+            glm::mat4 model = transformSystem.getModelMatrix(entity);
+            shadersManager.getActiveShader()->setUniformMatrix4f("model", model);
             MeshRenderer* meshRenderer = &scene.getComponent<MeshRenderer>(entity);
             flushMeshData(meshRenderer);
             if (!shadow) {
                 Material& material = meshRenderer->material;
+                /*
                 shadersManager.getActiveShader()->setUniformVec3("material.ambient", material.getAmbient());
                 shadersManager.getActiveShader()->setUniformVec3("material.diffuse", material.getDiffuse());
                 shadersManager.getActiveShader()->setUniformVec3("material.specular", material.getSpecular());
                 shadersManager.getActiveShader()->setUniformFloat("material.shininess", material.getShininess());
+                */
                 shadersManager.getActiveShader()->setUniformBool("material.useTexture", material.getUseTexture());
                 /*if (material.getUseTexture()) {
                     material.getDiffuseTexture()->bind(1);
@@ -150,11 +153,10 @@ namespace TechEngine {
         }
     }
 
-    void Renderer::renderPipeline(CameraSystem& cameraSystem) {
-        if (!cameraSystem.hasMainCamera()) {
+    void Renderer::renderPipeline(Camera& camera) {
+        /*if (!cameraSystem.hasMainCamera()) {
             return;
-        }
-        Camera& camera = cameraSystem.getMainCamera();
+        }*/
         GlCall(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
         GlCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         geometryPass(camera);

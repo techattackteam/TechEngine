@@ -19,11 +19,6 @@ namespace TechEngine {
     }
 
     ArchetypesManager::ArchetypesManager() {
-        Component::familyCounter = 0;
-        registerComponent<Tag>();
-        registerComponent<Transform>();
-        registerComponent<Camera>();
-        registerComponent<MeshRenderer>();
         populateArchetypes();
     }
 
@@ -77,6 +72,16 @@ namespace TechEngine {
             components.insert(components.end(), start, end);
         }
         return components;
+    }
+
+    std::vector<ComponentTypeID> ArchetypesManager::getComponentTypes(Entity entity) {
+        std::vector<ComponentTypeID> componentTypes;
+        size_t index = entityToArchetypeMap[entity];
+        Archetype& archetype = archetypes[index];
+        for (auto& pair: archetype.componentData) {
+            componentTypes.push_back(pair.first);
+        }
+        return componentTypes;
     }
 
     size_t ArchetypesManager::findArchetype(const std::vector<ComponentTypeID>& componentTypes) {
