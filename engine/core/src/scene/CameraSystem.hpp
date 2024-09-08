@@ -1,5 +1,6 @@
 #pragma once
 #include "Scene.hpp"
+#include "components/Components.hpp"
 #include "systems/System.hpp"
 
 namespace TechEngine {

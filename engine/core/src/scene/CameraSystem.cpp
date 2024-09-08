@@ -24,13 +24,13 @@ namespace TechEngine {
     void CameraSystem::setMainCamera(Entity entity) {
         auto& scene = m_systemsRegistry.getSystem<Scene>();
         removeMainCamera();
-        scene.getComponent<Camera>(entity).isMainCamera = true;
+        scene.getComponent<Camera>(entity).mainCamera = true;
     }
 
     bool CameraSystem::hasMainCamera() {
         auto& scene = m_systemsRegistry.getSystem<Scene>();
         for (Camera& camera: scene.getComponents<Camera>()) {
-            if (camera.isMainCamera) {
+            if (camera.isMainCamera()) {
                 return true;
             }
         }
@@ -40,18 +40,20 @@ namespace TechEngine {
     Camera& CameraSystem::getMainCamera() {
         auto& scene = m_systemsRegistry.getSystem<Scene>();
         for (Camera& camera: scene.getComponents<Camera>()) {
-            if (camera.isMainCamera) {
+            if (camera.isMainCamera()) {
+                TE_LOGGER_INFO("CameraSystem: Main Camera fov: {0}, Address: {1}", camera.getFov(), static_cast<void*>(&camera));
                 return camera;
             }
         }
-        throw std::runtime_error("Main camera not found");
+        TE_LOGGER_WARN("No main camera found.");
     }
+
 
     void CameraSystem::removeMainCamera() {
         auto& scene = m_systemsRegistry.getSystem<Scene>();
         for (Camera& camera: scene.getComponents<Camera>()) {
-            if (camera.isMainCamera) {
-                camera.isMainCamera = false;
+            if (camera.isMainCamera()) {
+                camera.mainCamera = false;
                 break;
             }
         }

@@ -1,0 +1,138 @@
+#pragma once
+#include <stdexcept>
+
+#include "Archetype.hpp"
+#include "core/Logger.hpp"
+
+namespace TechEngine {
+    class ArchetypesManager {
+    public:
+        std::vector<ComponentTypeID> componentTypes; // List of component types
+
+        std::vector<Archetype> archetypes; // List of archetypes
+        std::unordered_map<Entity, size_t> entityToArchetypeMap; // Map of entities to their archetypes
+    private:
+        ArchetypeID lastArchetypeID = 0;
+        Entity lastEntityID = 0;
+
+    public:
+        ArchetypesManager();
+
+        template<typename T>
+        bool registerComponent() {
+            ComponentTypeID typeID = ComponentType<T>::get();
+            if (std::find(componentTypes.begin(), componentTypes.end(), typeID) == componentTypes.end()) {
+                componentTypes.push_back(typeID);
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        void populateArchetypes();
+
+        // New query function to find all matching archetypes
+        std::vector<Archetype> queryArchetypes(const std::vector<ComponentTypeID>& requiredComponents);
+
+        // Create a new entity with a set of components
+        Entity createEntity();
+
+        bool removeEntity(Entity entity);
+
+        template<typename T>
+        bool addComponent(Entity entity, const T& component) {
+            if (!isComponentRegistered<T>()) {
+                TE_LOGGER_CRITICAL("Component type not registered");
+                return false;
+            }
+            if (hasComponent<T>(entity)) {
+                TE_LOGGER_WARN("Entity already has component of type {0}", typeid(T).name());
+                return false;
+            }
+            if (!std::is_trivially_copyable<T>::value) {
+                TE_LOGGER_CRITICAL("Component type {0} is not trivial", typeid(T).name());
+                return false;
+            }
+            size_t oldArchetypeIndex = entityToArchetypeMap[entity];
+            // Collect current component types for the entity's old archetype
+            auto componentTypes = archetypes[oldArchetypeIndex].getComponentTypes();
+            componentTypes.push_back(ComponentType<T>::get()); // Add the new component type
+
+            size_t newArchetypeIndex = findArchetype(componentTypes);
+            if (newArchetypeIndex == -1) {
+                archetypes.emplace_back(generateArchetypeID());
+                newArchetypeIndex = archetypes.size() - 1;
+                archetypes[oldArchetypeIndex] = archetypes[oldArchetypeIndex];
+            }
+
+            archetypes[newArchetypeIndex].addEntity(entity);
+            archetypes[oldArchetypeIndex].moveEntityComponents(entity, archetypes[newArchetypeIndex]);
+            archetypes[newArchetypeIndex].addComponentData<T>(entity, component);
+            archetypes[oldArchetypeIndex].removeEntity(entity);
+            entityToArchetypeMap[entity] = newArchetypeIndex;
+            return true;
+        }
+
+        template<typename T>
+        bool removeComponent(Entity entity) {
+            if (!isComponentRegistered<T>()) {
+                //throw std::runtime_error("Component type not registered");
+                return false;
+            }
+            if (!hasComponent<T>(entity)) {
+                //throw std::runtime_error("Entity does not have component of type " + std::string(typeid(T).name()));
+                return false;
+            }
+            size_t oldArchetypeIndex = entityToArchetypeMap[entity];
+            std::vector<ComponentTypeID> componentTypes = archetypes[oldArchetypeIndex].getComponentTypes();
+            componentTypes.erase(std::remove(componentTypes.begin(), componentTypes.end(), ComponentType<T>::get()), componentTypes.end());
+
+            size_t newArchetypeIndex = findArchetype(componentTypes);
+            if (newArchetypeIndex == -1) {
+                archetypes.push_back(Archetype(generateArchetypeID()));
+                newArchetypeIndex = archetypes.size() - 1;
+            }
+            archetypes[newArchetypeIndex].addEntity(entity);
+            archetypes[oldArchetypeIndex].moveEntityComponents(entity, archetypes[newArchetypeIndex], ComponentType<T>::get());
+            archetypes[oldArchetypeIndex].removeEntity(entity);
+            entityToArchetypeMap[entity] = newArchetypeIndex;
+            return true;
+        }
+
+        template<typename T>
+        T& getComponent(Entity entity) {
+            if (hasComponent<T>(entity)) {
+                size_t index = entityToArchetypeMap[entity];
+                Archetype& archetype = archetypes[index];
+                return archetype.getComponent<T>(entity);
+            } else {
+                throw std::runtime_error("Entity does not have component of type " + std::string(typeid(T).name()));
+            }
+        }
+
+        std::vector<char> getEntityComponents(Entity entity);
+
+        template<typename T>
+        bool hasComponent(Entity entity) {
+            size_t index = entityToArchetypeMap[entity];
+            if (index == -1) {
+                return false;
+            }
+            Archetype& archetype = archetypes[index];
+            ComponentTypeID typeID = ComponentType<T>::get();
+            return !archetype.componentData.empty() && archetype.componentData.find(typeID) != archetype.componentData.end();
+        }
+
+    private:
+        size_t findArchetype(const std::vector<ComponentTypeID>& componentTypes);
+
+        template<typename T>
+        bool isComponentRegistered() {
+            return std::find(componentTypes.begin(), componentTypes.end(), ComponentType<T>::get()) != componentTypes.end();
+        }
+
+        uint32_t generateArchetypeID();
+
+        Entity generateEntityID();
+    };
+}

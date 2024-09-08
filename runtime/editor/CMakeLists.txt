@@ -4,11 +4,12 @@ file(GLOB_RECURSE EDITOR_SOURCES "src/*.cpp")
 file(GLOB_RECURSE EDITOR_HEADERS "src/*.hpp")
 
 find_package(ImGui REQUIRED)
+find_package(ImGuizmo REQUIRED)
 
 # add the executable
 add_executable(TechEngineEditor ${EDITOR_SOURCES} ${EDITOR_HEADERS})
 target_include_directories(TechEngineEditor PUBLIC src)
-target_link_libraries(TechEngineEditor TechEngineApp TechEngineCore TechEngineClient TechEngineServer imgui)
+target_link_libraries(TechEngineEditor TechEngineApp TechEngineCore TechEngineClient TechEngineServer imgui imguizmo)
 target_compile_definitions(TechEngineEditor PUBLIC TECH_ENGINE_EDITOR)
 target_compile_definitions(TechEngineEditor PUBLIC TECH_ENGINE_CORE_EXPORT=)
 
@@ -70,9 +71,13 @@ if (WIN32)
     )
 endif ()
 
-# Create resources folder
+# Create folders
 add_custom_command(TARGET TechEngineEditor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E remove_directory $<TARGET_FILE_DIR:TechEngineEditor>/assets
+        COMMAND ${CMAKE_COMMAND} -E remove_directory $<TARGET_FILE_DIR:TechEngineEditor>/cache
         COMMAND ${CMAKE_COMMAND} -E remove_directory $<TARGET_FILE_DIR:TechEngineEditor>/resources
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:TechEngineEditor>/assets
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:TechEngineEditor>/cache
         COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:TechEngineEditor>/resources
 
 )
