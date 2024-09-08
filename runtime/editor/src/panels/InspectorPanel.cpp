@@ -4,8 +4,6 @@
 #include "scene/Scene.hpp"
 #include "scene/TransformSystem.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
-#include "windows.h"
-#include "commdlg.h"
 
 #include "components/Components.hpp"
 #include "resources/ResourcesManager.hpp"
@@ -13,9 +11,9 @@
 namespace TechEngine {
     InspectorPanel::InspectorPanel(SystemsRegistry& systemRegistry,
                                    SystemsRegistry& appSystemRegistry,
-                                   const std::vector<Tag>& selectedEntities) : m_systemRegistry(systemRegistry),
-                                                                               m_appSystemRegistry(appSystemRegistry),
-                                                                               m_selectedEntities(selectedEntities) {
+                                   const std::vector<Entity>& selectedEntities) : m_systemRegistry(systemRegistry),
+                                                                                  m_appSystemRegistry(appSystemRegistry),
+                                                                                  m_selectedEntities(selectedEntities) {
     }
 
     void InspectorPanel::onInit() {
@@ -88,11 +86,12 @@ namespace TechEngine {
         }
 
         ImGui::PopItemWidth();
-        /*
+
         Entity firstEntity = m_selectedEntities.front();
         Scene& scene = m_appSystemRegistry.getSystem<Scene>();
-        std::vector<char> componentsToDraw = scene.getCommonComponents(m_selectedEntities);
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(Tag).name()) != componentsToDraw.end()) {
+        std::vector<ComponentTypeID> componentsToDraw = scene.getCommonComponents(m_selectedEntities);
+
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<Transform>()) != componentsToDraw.end()) {
             drawComponent<Transform>(firstEntity, "Transform", [this](auto& component) {
                 Scene& scene = m_appSystemRegistry.getSystem<Scene>();
                 glm::vec3 position = component.position;
@@ -135,7 +134,7 @@ namespace TechEngine {
                 }
             });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(Camera).name()) != componentsToDraw.end()) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<Camera>()) != componentsToDraw.end()) {
             drawComponent<Camera>(firstEntity, "Camera", [this](auto& component) {
                 auto& camera = component;
                 Scene& scene = m_appSystemRegistry.getSystem<Scene>();
@@ -181,11 +180,11 @@ namespace TechEngine {
                     }
 
                     ImGui::EndCombo();
-                }
+                }*/
                 const char* fovLabel = isFovCommon ? "Vertical FOV" : "-";
                 const char* nearLabel = isNearCommon ? "Near" : "-";
                 const char* farLabel = isFarCommon ? "Far" : "-";
-                if (/*camera->getProjectionType() == Camera::ProjectionType::PERSPECTIVE true) {
+                if (/*camera->getProjectionType() == Camera::ProjectionType::PERSPECTIVE*/ true) {
                     bool changeFov = false;
                     bool changeNear = false;
                     bool changeFar = false;
@@ -221,10 +220,10 @@ namespace TechEngine {
                     }
                 }
 
-                /*const char* orthoSizeLabel = isFovCommon ? "Size" : "-";
+                const char* orthoSizeLabel = isFovCommon ? "Size" : "-";
                 const char* orthoNearLabel = isNearCommon ? "Near" : "-";
                 const char* orthoFarLabel = isFarCommon ? "Far" : "-";
-                if (camera->getProjectionType() == Camera::ProjectionType::ORTHOGRAPHIC) {
+                /*if (camera->getProjectionType() == Camera::ProjectionType::ORTHOGRAPHIC) {
                     bool changeOrthoSize = false;
                     bool changeOrthoNear = false;
                     bool changeOrthoFar = false;
@@ -244,10 +243,10 @@ namespace TechEngine {
                         if (changeOrthoFar) entity->getComponent<Camera>()->setFar(commonFar);
                         if (changeProjection) entity->getComponent<Camera>()->changeProjectionType(commonProjectionType);
                     }
-                }
+                }*/
             });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(MeshRenderer).name()) != componentsToDraw.end()) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<MeshRenderer>()) != componentsToDraw.end()) {
             drawComponent<MeshRenderer>(firstEntity, "Mesh Renderer", [this](auto& component) {
                 Scene& scene = m_appSystemRegistry.getSystem<Scene>();
                 bool isMeshCommon = true;
@@ -267,7 +266,7 @@ namespace TechEngine {
                     }
                 }
 
-
+                /*
                 if (isMeshCommon && commonMeshName == "ImportedMesh") {
                     ImGui::Text("Imported Mesh");
                 } else {
@@ -323,6 +322,7 @@ namespace TechEngine {
                         }
                     }
                 };
+
                 if (ImGui::BeginDragDropTarget()) {
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
                         std::string filename = (const char*)payload->Data;
@@ -337,10 +337,11 @@ namespace TechEngine {
                     }
                     ImGui::EndDragDropTarget();
                 }
-
+                */
                 component.paintMesh();
             });
         }
+        /*
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(RigidBody).name()) != componentsToDraw.end()) {
             drawComponent<RigidBody>(firstEntity, "Rigid Body", [this](auto& component) {
                 float commonMass = component->getMass();

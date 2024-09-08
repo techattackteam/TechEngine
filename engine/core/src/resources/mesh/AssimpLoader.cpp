@@ -14,7 +14,39 @@
 #include <yaml-cpp/yaml.h>
 
 namespace TechEngine {
-    AssimpLoader::Node AssimpLoader::loadModel(const std::string& path) {
+    std::filesystem::path AssimpLoader::createStaticMeshFile(const AssimpLoader::Node& node, const std::string& staticMeshPath) {
+        std::queue<AssimpLoader::Node> nodeQueue;
+        nodeQueue.push(node);
+
+        int lastIndex = 0;
+        FileStreamWriter writer(staticMeshPath);
+        while (!nodeQueue.empty()) {
+            // Get the current node
+            AssimpLoader::Node currentNode = nodeQueue.front();
+            nodeQueue.pop();
+
+            // Add current node's meshes to the list
+            for (AssimpLoader::aiMeshData& meshData: currentNode.meshes) {
+                writer.writeArray(meshData.vertices);
+
+                std::vector<int> indices;
+                for (int index: meshData.indices) {
+                    indices.push_back(index + lastIndex);
+                }
+                writer.writeArray(meshData.indices);
+                lastIndex = meshData.indices.back();
+            }
+
+            // Add current node's children to the queue
+            for (const AssimpLoader::Node& child: currentNode.children) {
+                nodeQueue.push(child);
+            }
+        }
+
+        return staticMeshPath;
+    }
+
+    AssimpLoader::ModelData AssimpLoader::loadModel(const std::string& path) {
         Assimp::Importer importer;
         const aiScene* aiScene = importer.ReadFile(path, aiProcess_Triangulate);
 
@@ -24,31 +56,44 @@ namespace TechEngine {
 
         // Process the scene and create a game object
         TE_LOGGER_INFO("Loaded Model with {0} meshes, {1} materials and {2} textures", aiScene->mNumMeshes, aiScene->mNumMaterials, aiScene->mNumTextures);
-        Node node = processScene(FileUtils::getFileName(path), aiScene->mRootNode, aiScene, false);
-        return node;
+        AssimpLoader::ModelData modelData = processScene(FileUtils::getFileName(path), aiScene->mRootNode, aiScene);
+        return modelData;
     }
 
-    AssimpLoader::Node AssimpLoader::processScene(const std::string& modelName, aiNode* aiNode, const aiScene* aiScene, bool _return) {
+    AssimpLoader::ModelData AssimpLoader::processScene(const std::string& modelName, aiNode* ai_node, const aiScene* aiScene) {
+        ModelData modelData;
         Node node;
-        for (unsigned int i = 0; i < aiNode->mNumMeshes; i++) {
-            aiVector3t<float> scaling;
-            aiVector3t<float> rotation;
-            aiVector3t<float> position;
-            aiNode->mTransformation.Decompose(scaling, rotation, position);
-            aiMesh* aiMesh = aiScene->mMeshes[aiNode->mMeshes[i]];
+        std::queue<std::pair<Node*, aiNode*>> nodeQueue;
+        nodeQueue.emplace(&node, ai_node);
+        while (!nodeQueue.empty()) {
+            Node* currentNode = nodeQueue.front().first;
+            aiNode* currentAINode = nodeQueue.front().second;
+            nodeQueue.pop();
 
-            MeshData processedMesh = processMesh(modelName, aiMesh, aiScene);
-            node.meshes.emplace_back(processedMesh);
+            for (unsigned int i = 0; i < currentAINode->mNumMeshes; i++) {
+                aiVector3t<float> scaling;
+                aiVector3t<float> rotation;
+                aiVector3t<float> position;
+                currentAINode->mTransformation.Decompose(scaling, rotation, position);
+                aiMesh* aiMesh = aiScene->mMeshes[currentAINode->mMeshes[i]];
+
+                aiMeshData processedMesh = processMesh(modelName, aiMesh, aiScene);
+                currentNode->meshes.emplace_back(processedMesh);
+                modelData.materials.push_back(processedMesh.material);
+            }
+            for (unsigned int i = 0; i < currentAINode->mNumChildren; i++) {
+                Node childNode;
+                currentNode->children.emplace_back(childNode);
+                nodeQueue.push({&currentNode->children.back(), currentAINode->mChildren[i]});
+            }
         }
-        for (unsigned int i = 0; i < aiNode->mNumChildren; i++) {
-            Node child = processScene(modelName, aiNode->mChildren[i], aiScene, true);
-            node.children.emplace_back(child);
-        }
-        return node;
+        modelData.rootNode = node;
+
+        return modelData;
     }
 
-    AssimpLoader::MeshData AssimpLoader::processMesh(const std::string& modelName, aiMesh* mesh, const aiScene* scene) {
-        MeshData meshData;
+    AssimpLoader::aiMeshData AssimpLoader::processMesh(const std::string& modelName, aiMesh* mesh, const aiScene* scene) {
+        aiMeshData meshData;
         for (int i = 0; i < mesh->mNumVertices; i++) {
             glm::vec3 position;
             position.x = mesh->mVertices[i].x;
@@ -75,12 +120,8 @@ namespace TechEngine {
             for (int j = 0; j < face.mNumIndices; j++)
                 meshData.indices.push_back(face.mIndices[j]);
         }
-        if (mesh->mMaterialIndex >= 0) {
-            meshData.material = modelName + "-" + scene->mMaterials[mesh->mMaterialIndex]->GetName().C_Str();
-            TE_LOGGER_INFO("Material: {}", meshData.material);
-        } else {
-            meshData.material = modelName + "-default";
-        }
+        meshData.material = scene->mMaterials[mesh->mMaterialIndex]->GetName().C_Str();
+        TE_LOGGER_INFO("Material: {}", meshData.material);
         return meshData;
     }
 }

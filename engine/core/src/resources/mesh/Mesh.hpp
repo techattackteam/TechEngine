@@ -12,27 +12,17 @@ namespace TechEngine {
     class Mesh {
     public:
         std::string m_name;
-        Material& m_material;
 
         std::vector<Vertex> m_vertices;
         std::vector<int> m_indices;
 
         Mesh(std::string name,
-             Material& material,
              std::vector<Vertex> vertices,
              std::vector<int> indices) : m_name(std::move(name)),
-                                         m_material(material),
                                          m_vertices(std::move(vertices)),
                                          m_indices(std::move(indices)) {
         }
 
-        Mesh& operator=(const Mesh& mesh) {
-            m_name = mesh.m_name;
-            m_material = mesh.m_material;
-            m_vertices = mesh.m_vertices;
-            m_indices = mesh.m_indices;
-            return *this;
-        }
 
         /*
         Mesh& operator+=(const Mesh& mesh) {
@@ -54,12 +44,8 @@ namespace TechEngine {
             reader->readArray(mesh.m_indices);
         }
 
-        const std::string& getName() {
+        const std::string& getName() const {
             return m_name;
-        }
-
-        Material& getMaterial() {
-            return m_material;
         }
     };
 }

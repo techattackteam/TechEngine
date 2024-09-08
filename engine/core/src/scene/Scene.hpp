@@ -1,58 +1,61 @@
 #pragma once
-#include <complex.h>
 #include <vector>
 
-#include "components/ComponentsManager.hpp"
+#include "components/ArchetypesManager.hpp"
+#include "components/Components.hpp"
 #include "systems/System.hpp"
 
 namespace TechEngine {
-    using Entity = int;
-
     class Scene : public System {
     private:
-        Entity nextEntityId = 0;
-        std::vector<Entity> freeEntities;
-        std::vector<Entity> entities;
-        ComponentsManager componentsManager;
+        ArchetypesManager archetypesManager;
 
     public:
         void init() override;
 
-        int createEntity(const std::string& name);
+        Entity createEntity(const std::string& name);
 
         void destroyEntity(Entity entity);
 
-        const std::vector<Entity>& getEntities() const;
+        std::vector<Archetype> queryArchetypes(const std::vector<ComponentTypeID>& requiredComponents);
 
-        std::vector<std::any> getEntityComponents(Entity entity);
+        std::vector<Entity> getEntities();
 
-        template<typename T, typename... Args>
-        T& addComponent(Entity entity, Args&&... args) {
-            return componentsManager.addComponent<T>(entity, std::forward<Args>(args)...);
+        std::vector<char> getEntityComponents(Entity entity);
+
+        template<typename T>
+        void addComponent(Entity entity, const T& component) {
+            archetypesManager.addComponent<T>(entity, component);
         }
 
         template<typename T>
         void removeComponent(Entity entity) {
-            componentsManager.removeComponent<T>(entity);
+            archetypesManager.removeComponent<T>(entity);
         }
 
         template<typename T>
         std::vector<T> getComponents() {
-            return componentsManager.getAllComponents<T>();
+            std::vector<Archetype> archetypes = queryArchetypes({ComponentType::get<T>()});
+            std::vector<T> components;
+            for (Archetype& archetype: archetypes) {
+                std::vector<T> archetypeComponents = archetype.getComponentArray<T>();
+                components.insert(components.end(), archetypeComponents.begin(), archetypeComponents.end());
+            }
+            return components;
         }
 
         template<typename T>
         T& getComponent(Entity entity) {
-            return componentsManager.getComponent<T>(entity);
+            return archetypesManager.getComponent<T>(entity);
         }
 
-        std::vector<std::string> getCommonComponents(const std::vector<Entity>& entities);
+        std::vector<ComponentTypeID> getCommonComponents(const std::vector<Entity>& entities);
 
         template<typename T>
         bool hasComponent(Entity entity) {
-            return componentsManager.hasComponent<T>(entity);
+            return archetypesManager.hasComponent<T>(entity);
         }
 
-        int getEntityFromComponent(Camera* camera);
+        Entity getEntityByTag(const Tag& tag);
     };
 }

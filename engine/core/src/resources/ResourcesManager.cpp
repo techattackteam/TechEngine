@@ -1,10 +1,20 @@
 #include "ResourcesManager.hpp"
 
+
+#include "files/PathsBank.hpp"
+#include "project/ProjectManager.hpp"
+#include "systems/SystemsRegistry.hpp"
+
 namespace TechEngine {
+    ResourcesManager::ResourcesManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
+    }
+
     void ResourcesManager::init() {
         System::init();
-        //m_materialManager.init();
-        m_meshManager.init();
+        std::unordered_map<std::string, std::vector<std::filesystem::path>> filesByExtension = getFilesByExtension(AppType::Client); //TODO: Get app type
+
+        m_materialManager.init(filesByExtension[".mat"]);
+        m_meshManager.init(filesByExtension[".tesmesh"]);
     }
 
     void ResourcesManager::shutdown() {
@@ -16,58 +26,59 @@ namespace TechEngine {
     void ResourcesManager::loadModelFile(const std::string& path) {
         std::string modelName = FileUtils::getFileName(path);
         std::string parentFolder = std::filesystem::path(path).parent_path().string();
-        std::string staticMeshPath = parentFolder + "\\" + modelName + ".TE_mesh";
-        AssimpLoader::Node node = m_assimpLoader.loadModel(path);
-        createStaticMeshFile(node, staticMeshPath);
-        registerStaticMesh(staticMeshPath);
+        std::string staticMeshPath = parentFolder + "\\" + modelName + ".tesmesh";
+        AssimpLoader::ModelData modelData = m_assimpLoader.loadModel(path);
+        m_assimpLoader.createStaticMeshFile(modelData.rootNode, staticMeshPath);
+        loadStaticMesh(staticMeshPath);
     }
 
-    void ResourcesManager::registerStaticMesh(const std::string& path) {
+    void ResourcesManager::loadStaticMesh(const std::string& path) {
         std::string modelName = FileUtils::getFileName(path);
-        if (m_meshManager.isMeshRegistered(modelName)) {
+        if (m_meshManager.isMeshLoaded(modelName)) {
             TE_LOGGER_WARN("Mesh already registered: {0}", path);
             return;
         }
-        AssimpLoader::MeshData mesh = loadStaticMesh(path);
-        m_meshManager.registerMesh(modelName, mesh, m_materialManager.createMaterial("default", glm::vec4(1.0f), glm::vec3(0.1f), glm::vec3(0.5f), glm::vec3(0.5f), 32.0f));
+        m_meshManager.loadStaticMesh(path);
     }
 
-    std::filesystem::path ResourcesManager::createStaticMeshFile(const AssimpLoader::Node& node, const std::string& staticMeshPath) {
-        std::queue<AssimpLoader::Node> nodeQueue;
-        nodeQueue.push(node);
+    void ResourcesManager::createMaterial(const std::string& name, const std::string& path) {
+        if (m_materialManager.materialExists(name)) {
+            TE_LOGGER_WARN("Material already registered: {0}", name);
+            return;
+        }
+        m_materialManager.createMaterialFile(name, path);
+    }
 
-        int lastIndex = 0;
-        FileStreamWriter writer(staticMeshPath);
-        while (!nodeQueue.empty()) {
-            // Get the current node
-            AssimpLoader::Node currentNode = nodeQueue.front();
-            nodeQueue.pop();
+    Mesh& ResourcesManager::getDefaultMesh() {
+        return m_meshManager.getMesh(MeshManager::DEFAULT_MESH_NAME);
+    }
 
-            // Add current node's meshes to the list
-            for (AssimpLoader::MeshData& meshData: currentNode.meshes) {
-                writer.writeArray(meshData.vertices);
+    Material& ResourcesManager::getDefaultMaterial() {
+        return m_materialManager.getMaterial(MaterialManager::DEFAULT_MATERIAL_NAME);
+    }
 
-                std::vector<int> indices;
-                for (int index: meshData.indices) {
-                    indices.push_back(index + lastIndex);
+    std::unordered_map<std::string, std::vector<std::filesystem::path>> ResourcesManager::getFilesByExtension(const AppType& appType) {
+        std::unordered_map<std::string, std::vector<std::filesystem::path>> filesByExtension;
+        std::vector<std::filesystem::path> directories = {
+            m_systemsRegistry.getSystem<PathsBank>().getPath(PathType::Assets, AppType::Common).string(),
+            m_systemsRegistry.getSystem<PathsBank>().getPath(PathType::Assets, appType).string(),
+            m_systemsRegistry.getSystem<PathsBank>().getPath(PathType::Resources, AppType::Common).string(),
+            m_systemsRegistry.getSystem<PathsBank>().getPath(PathType::Resources, appType).string(),
+            m_systemsRegistry.getSystem<PathsBank>().getPath(PathType::Cache, AppType::Common).string(),
+            m_systemsRegistry.getSystem<PathsBank>().getPath(PathType::Cache, appType).string(),
+        };
+
+        for (const auto& directory: directories) {
+            for (const auto& entry: std::filesystem::recursive_directory_iterator(directory)) {
+                if (entry.is_regular_file()) {
+                    std::string extension = entry.path().extension().string();
+                    if (filesByExtension.find(extension) == filesByExtension.end()) {
+                        filesByExtension[extension] = std::vector<std::filesystem::path>();
+                    }
+                    filesByExtension[extension].emplace_back(entry.path());
                 }
-                writer.writeArray(meshData.indices);
-                lastIndex = meshData.indices.back();
-            }
-
-            // Add current node's children to the queue
-            for (const AssimpLoader::Node& child: currentNode.children) {
-                nodeQueue.push(child);
             }
         }
-
-        return staticMeshPath;
-    }
-
-    AssimpLoader::MeshData ResourcesManager::loadStaticMesh(const std::filesystem::path& path) {
-        FileStreamReader reader(path);
-        AssimpLoader::MeshData mesh;
-        reader.readObject(mesh);
-        return mesh;
+        return filesByExtension;
     }
 }

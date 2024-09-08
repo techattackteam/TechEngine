@@ -17,7 +17,7 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<Scene>();
         m_systemRegistry.registerSystem<TransformSystem>(m_systemRegistry);
         m_systemRegistry.registerSystem<CameraSystem>(m_systemRegistry);
-        m_systemRegistry.registerSystem<ResourcesManager>(/*m_systemRegistry*/);
+        m_systemRegistry.registerSystem<ResourcesManager>(m_systemRegistry);
         m_systemRegistry.registerSystem<PathsBank>(rootPath);
         m_systemRegistry.getSystem<PathsBank>().init();
         m_systemRegistry.getSystem<EventDispatcher>().init();

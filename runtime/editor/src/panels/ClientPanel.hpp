@@ -7,6 +7,7 @@
 #include "SceneView.hpp"
 
 #include "components/Components.hpp"
+
 namespace TechEngine {
     class LoggerPanel;
     class SystemsRegistry;
@@ -21,7 +22,7 @@ namespace TechEngine {
         GameView m_gameView;
         SceneHierarchyPanel m_sceneHierarchyPanel;
         InspectorPanel m_inspectorPanel;
-        std::vector<Tag> m_selectedEntities;
+        std::vector<Entity> m_selectedEntities;
 
     public:
         ClientPanel(SystemsRegistry& systemsRegistry, SystemsRegistry& clientSystemsRegistry, LoggerPanel& loggerPanel);

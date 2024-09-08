@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Panel.hpp"
+#include "components/Archetype.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
@@ -9,11 +10,11 @@ namespace TechEngine {
     class SceneHierarchyPanel : public Panel {
         SystemsRegistry& m_systemRegistry;
         SystemsRegistry& m_appSystemRegistry;
-        std::vector<Tag>& m_selectedEntities;
+        std::vector<Entity>& m_selectedEntities;
         bool isItemHovered = false;
 
     public:
-        SceneHierarchyPanel(SystemsRegistry& systemRegistry, SystemsRegistry& appSystemRegistry, std::vector<Tag>& selectedEntities);
+        SceneHierarchyPanel(SystemsRegistry& systemRegistry, SystemsRegistry& appSystemRegistry, std::vector<Entity>& selectedEntities);
 
         void onInit() override;
 

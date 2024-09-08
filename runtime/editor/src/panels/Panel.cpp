@@ -31,6 +31,31 @@ namespace TechEngine {
             ImGui::PopStyleVar(m_styleVars.size());
         }
         this->onUpdate();
+        shortcuts();
         ImGui::End();
+    }
+
+    void Panel::onKeyPressedEvent(Key& key) {
+        m_keysPressed.push_back(key);
+    }
+
+    void Panel::onKeyReleasedEvent(Key& key) {
+    }
+
+    void Panel::onMouseScrollEvent(float xOffset, float yOffset) {
+    }
+
+    void Panel::onMouseMoveEvent(glm::vec2 delta) {
+    }
+
+
+    void Panel::shortcuts() {
+        if (ImGui::IsWindowFocused()) {
+            processShortcuts();
+        }
+        m_keysPressed.clear();
+    }
+
+    void Panel::processShortcuts() {
     }
 }

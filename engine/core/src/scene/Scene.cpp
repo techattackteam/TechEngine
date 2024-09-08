@@ -1,55 +1,63 @@
 #include "Scene.hpp"
 
+#include "components/Components.hpp"
 #include "core/Logger.hpp"
 #include "core/UUID.hpp"
 
 namespace TechEngine {
     void Scene::init() {
-        nextEntityId = 0;
-        freeEntities.clear();
     }
 
     Entity Scene::createEntity(const std::string& name) {
-        int id;
-        if (!freeEntities.empty()) {
-            id = freeEntities.back();
-            freeEntities.pop_back();
-        } else {
-            entities.push_back(nextEntityId);
-            id = nextEntityId++;
-        }
+        Entity entity = archetypesManager.createEntity();
         std::string uuid = UUID::generate().toString();
-        addComponent<Tag>(id, name, uuid);
-        addComponent<Transform>(id);
-        return id;
+        archetypesManager.addComponent(entity, Tag(name, uuid));
+        archetypesManager.addComponent(entity, Transform());
+        return entity;
     }
 
     void Scene::destroyEntity(Entity entity) {
-        freeEntities.push_back(entity);
-        componentsManager.removeEntityComponents(entity);
+        archetypesManager.removeEntity(entity);
     }
 
-    const std::vector<Entity>& Scene::getEntities() const {
+    std::vector<Archetype> Scene::queryArchetypes(const std::vector<ComponentTypeID>& requiredComponents) {
+        return archetypesManager.queryArchetypes(requiredComponents);
+    }
+
+    std::vector<Entity> Scene::getEntities() {
+        std::vector<Archetype> archetypes = queryArchetypes({ComponentType::get<Tag>()});
+        std::vector<Entity> entities;
+        for (const Archetype& archetype: archetypes) {
+            for (Entity entity: archetype.getEntities()) {
+                entities.push_back(entity);
+            }
+        }
         return entities;
     }
 
-    std::vector<std::any> Scene::getEntityComponents(Entity entity) {
-        if (entity == -1) {
-            TE_LOGGER_ERROR("Invalid entity id");
-            return {};
-        }
-        return componentsManager.getEntityComponents(entity);
+    std::vector<char> Scene::getEntityComponents(Entity entity) {
+        return archetypesManager.getEntityComponents(entity);
     }
 
-    std::vector<std::string> Scene::getCommonComponents(const std::vector<Entity>& entities) {
-        return componentsManager.getCommonComponents(entities);
-    }
-
-    int Scene::getEntityFromComponent(Camera* camera) {
+    std::vector<ComponentTypeID> Scene::getCommonComponents(const std::vector<Entity>& entities) {
+        std::vector<ComponentTypeID> commonComponents;
         for (Entity entity: entities) {
-            if (hasComponent<Camera>(entity)) {
-                Camera& cameraComponent = getComponent<Camera>(entity);
-                if (&cameraComponent == camera) {
+            std::vector<ComponentTypeID> entityArchetype = archetypesManager.getComponentTypes(entity);
+            for (ComponentTypeID componentType: entityArchetype) {
+                if (std::find(commonComponents.begin(), commonComponents.end(), componentType) == commonComponents.end()) {
+                    commonComponents.push_back(componentType);
+                }
+            }
+        }
+        return commonComponents;
+    }
+
+    Entity Scene::getEntityByTag(const Tag& tag) {
+        std::vector<Archetype> archetypes = queryArchetypes({ComponentType::get<Tag>()});
+        for (const Archetype& archetype: archetypes) {
+            for (Entity entity: archetype.getEntities()) {
+                Tag& entityTag = archetypesManager.getComponent<Tag>(entity);
+                if (entityTag == tag) {
                     return entity;
                 }
             }

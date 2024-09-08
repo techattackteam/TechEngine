@@ -5,10 +5,8 @@
 #include "core/Logger.hpp"
 
 namespace TechEngine {
-    class ArchetypesManager {
+    class CORE_DLL ArchetypesManager {
     public:
-        std::vector<ComponentTypeID> componentTypes; // List of component types
-
         std::vector<Archetype> archetypes; // List of archetypes
         std::unordered_map<Entity, size_t> entityToArchetypeMap; // Map of entities to their archetypes
     private:
@@ -17,17 +15,6 @@ namespace TechEngine {
 
     public:
         ArchetypesManager();
-
-        template<typename T>
-        bool registerComponent() {
-            ComponentTypeID typeID = ComponentType<T>::get();
-            if (std::find(componentTypes.begin(), componentTypes.end(), typeID) == componentTypes.end()) {
-                componentTypes.push_back(typeID);
-                return true;
-            } else {
-                return false;
-            }
-        }
 
         void populateArchetypes();
 
@@ -41,7 +28,7 @@ namespace TechEngine {
 
         template<typename T>
         bool addComponent(Entity entity, const T& component) {
-            if (!isComponentRegistered<T>()) {
+            if (!ComponentType::isComponentRegistered<T>()) {
                 TE_LOGGER_CRITICAL("Component type not registered");
                 return false;
             }
@@ -56,7 +43,7 @@ namespace TechEngine {
             size_t oldArchetypeIndex = entityToArchetypeMap[entity];
             // Collect current component types for the entity's old archetype
             auto componentTypes = archetypes[oldArchetypeIndex].getComponentTypes();
-            componentTypes.push_back(ComponentType<T>::get()); // Add the new component type
+            componentTypes.push_back(ComponentType::get<T>()); // Add the new component type
 
             size_t newArchetypeIndex = findArchetype(componentTypes);
             if (newArchetypeIndex == -1) {
@@ -75,7 +62,7 @@ namespace TechEngine {
 
         template<typename T>
         bool removeComponent(Entity entity) {
-            if (!isComponentRegistered<T>()) {
+            if (!ComponentType::isComponentRegistered<T>()) {
                 //throw std::runtime_error("Component type not registered");
                 return false;
             }
@@ -85,7 +72,7 @@ namespace TechEngine {
             }
             size_t oldArchetypeIndex = entityToArchetypeMap[entity];
             std::vector<ComponentTypeID> componentTypes = archetypes[oldArchetypeIndex].getComponentTypes();
-            componentTypes.erase(std::remove(componentTypes.begin(), componentTypes.end(), ComponentType<T>::get()), componentTypes.end());
+            componentTypes.erase(std::remove(componentTypes.begin(), componentTypes.end(), ComponentType::get<T>()), componentTypes.end());
 
             size_t newArchetypeIndex = findArchetype(componentTypes);
             if (newArchetypeIndex == -1) {
@@ -93,7 +80,7 @@ namespace TechEngine {
                 newArchetypeIndex = archetypes.size() - 1;
             }
             archetypes[newArchetypeIndex].addEntity(entity);
-            archetypes[oldArchetypeIndex].moveEntityComponents(entity, archetypes[newArchetypeIndex], ComponentType<T>::get());
+            archetypes[oldArchetypeIndex].moveEntityComponents(entity, archetypes[newArchetypeIndex], ComponentType::get<T>());
             archetypes[oldArchetypeIndex].removeEntity(entity);
             entityToArchetypeMap[entity] = newArchetypeIndex;
             return true;
@@ -119,17 +106,14 @@ namespace TechEngine {
                 return false;
             }
             Archetype& archetype = archetypes[index];
-            ComponentTypeID typeID = ComponentType<T>::get();
+            ComponentTypeID typeID = ComponentType::get<T>();
             return !archetype.componentData.empty() && archetype.componentData.find(typeID) != archetype.componentData.end();
         }
 
+        std::vector<ComponentTypeID> getComponentTypes(Entity entity);
+
     private:
         size_t findArchetype(const std::vector<ComponentTypeID>& componentTypes);
-
-        template<typename T>
-        bool isComponentRegistered() {
-            return std::find(componentTypes.begin(), componentTypes.end(), ComponentType<T>::get()) != componentTypes.end();
-        }
 
         uint32_t generateArchetypeID();
 
