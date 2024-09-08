@@ -1,18 +1,46 @@
 #pragma once
+#include <iostream>
 #include <glm/glm.hpp>
 #include <utility>
 #include <string>
 
 #include "resources/material/Material.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
 #include "resources/mesh/Mesh.hpp"
 
 namespace TechEngine {
     class Tag {
-    public:
-        const std::string uuid;
-        std::string name;
+    private:
+        char* uuid;
+        char* name;
 
-        explicit Tag(std::string name, std::string tag) : name(std::move(name)), uuid(std::move(tag)) {
+    public:
+        Tag(const std::string& name, const std::string& uuid): name(new char[name.size() + 1]), uuid(new char[uuid.size() + 1]) {
+            strcpy_s(this->name, name.size() + 1, name.c_str());
+            strcpy_s(this->uuid, uuid.size() + 1, uuid.c_str());
+            //Memory leak here because we are not deleting the memory allocated for name and uuid when deleting entity
+        }
+
+        bool operator==(const Tag& lhr) const {
+            if (strcmp(uuid, lhr.uuid) != 0) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+
+        [[nodiscard]] std::string getName() const {
+            return name;
+        }
+
+        [[nodiscard]] std::string getUuid() const {
+            return uuid;
+        }
+
+        void setName(const std::string& name) {
+            delete[] this->name;
+            this->name = new char[name.size() + 1];
+            strcpy_s(this->name, name.size() + 1, name.c_str());
         }
     };
 
@@ -24,8 +52,8 @@ namespace TechEngine {
     };
 
     class Camera {
-    public:
-        bool isMainCamera = false;
+    private:
+        bool mainCamera = false;
         glm::mat4 viewMatrix = glm::mat4(1.0f);
         glm::mat4 projectionMatrix = glm::mat4(1.0f);
 
@@ -33,6 +61,12 @@ namespace TechEngine {
         float nearPlane = 0.1f;
         float farPlane = 100;
         float orthoSize = 5;
+        friend class CameraSystem;
+
+    public:
+        Camera() {
+            std::cout << "Camera created" << std::endl;
+        }
 
         glm::mat4 getProjectionMatrix() const {
             return projectionMatrix;
@@ -44,6 +78,22 @@ namespace TechEngine {
 
         void updateProjectionMatrix(float aspectRatio) {
             projectionMatrix = glm::perspective(glm::radians(fov), aspectRatio, nearPlane, farPlane);
+        }
+
+        bool isMainCamera() const {
+            return mainCamera;
+        }
+
+        float getFov() const {
+            return fov;
+        }
+
+        float getNearPlane() const {
+            return nearPlane;
+        }
+
+        float getFarPlane() const {
+            return farPlane;
         }
     };
 
@@ -61,6 +111,12 @@ namespace TechEngine {
 
         std::vector<int> getIndices() {
             return mesh.m_indices;
+        }
+
+        void paintMesh() {
+            for (Vertex& vertex: mesh.m_vertices) {
+                vertex.setColor(material.getColor());
+            }
         }
     };
 }

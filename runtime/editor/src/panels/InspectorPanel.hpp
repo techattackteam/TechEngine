@@ -1,20 +1,24 @@
 #pragma once
 
-#include <imgui_internal.h>
 
 #include "Panel.hpp"
 #include "scene/Scene.hpp"
 #include "systems/SystemsRegistry.hpp"
+#include <imgui_internal.h>
+
+#include "components/Components.hpp"
 
 namespace TechEngine {
+    class Tag;
+
     class InspectorPanel : public Panel {
     private:
         SystemsRegistry& m_systemRegistry;
         SystemsRegistry& m_appSystemRegistry;
-        const std::vector<Entity>& m_selectedEntities;
+        const std::vector<Tag>& m_selectedEntities;
 
     public:
-        InspectorPanel(SystemsRegistry& systemRegistry, SystemsRegistry& appSystemRegistry, const std::vector<Entity>& selectedEntities);
+        InspectorPanel(SystemsRegistry& systemRegistry, SystemsRegistry& appSystemRegistry, const std::vector<Tag>& selectedEntities);
 
         void onInit() override;
 
@@ -60,12 +64,13 @@ namespace TechEngine {
         }
 
         template<class C, class... A>
-        C& addComponent(A&... args) {
+        void addComponent(A&... args) {
             Scene& scene = m_appSystemRegistry.getSystem<Scene>();
-            for (const int& entity: m_selectedEntities) {
-                return scene.addComponent<C>(entity, args...);
+            for (const Tag& tag: m_selectedEntities) {
+                Entity entity = scene.getEntityByTag(tag);
+                C component = C(args...);
+                scene.addComponent<C>(entity, component);
             }
-
         }
     };
 }

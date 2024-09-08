@@ -7,12 +7,15 @@
 #include "windows.h"
 #include "commdlg.h"
 
+#include "components/Components.hpp"
+#include "resources/ResourcesManager.hpp"
+
 namespace TechEngine {
     InspectorPanel::InspectorPanel(SystemsRegistry& systemRegistry,
                                    SystemsRegistry& appSystemRegistry,
-                                   const std::vector<Entity>& selectedEntities) : m_systemRegistry(systemRegistry),
-                                                                                  m_appSystemRegistry(appSystemRegistry),
-                                                                                  m_selectedEntities(selectedEntities) {
+                                   const std::vector<Tag>& selectedEntities) : m_systemRegistry(systemRegistry),
+                                                                               m_appSystemRegistry(appSystemRegistry),
+                                                                               m_selectedEntities(selectedEntities) {
     }
 
     void InspectorPanel::onInit() {
@@ -28,10 +31,12 @@ namespace TechEngine {
             drawCommonComponents();
             if (ImGui::BeginPopupContextWindow("Add Component", 1)) {
                 if (ImGui::MenuItem("Camera")) {
-                    Camera& camera = addComponent<Camera>();
+                    addComponent<Camera>();
                 }
                 if (ImGui::MenuItem("Mesh Renderer")) {
-                    //addComponent<MeshRenderer>();
+                    Mesh& mesh = m_appSystemRegistry.getSystem<ResourcesManager>().getDefaultMesh();
+                    Material& material = m_appSystemRegistry.getSystem<ResourcesManager>().getDefaultMaterial();
+                    addComponent<MeshRenderer>(mesh, material);
                 }
                 if (ImGui::BeginMenu("Physics")) {
                     /*if (ImGui::MenuItem("Rigid Body")) {
@@ -83,10 +88,10 @@ namespace TechEngine {
         }
 
         ImGui::PopItemWidth();
-
+        /*
         Entity firstEntity = m_selectedEntities.front();
         Scene& scene = m_appSystemRegistry.getSystem<Scene>();
-        std::vector<std::string> componentsToDraw = scene.getCommonComponents(m_selectedEntities);
+        std::vector<char> componentsToDraw = scene.getCommonComponents(m_selectedEntities);
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(Tag).name()) != componentsToDraw.end()) {
             drawComponent<Transform>(firstEntity, "Transform", [this](auto& component) {
                 Scene& scene = m_appSystemRegistry.getSystem<Scene>();
@@ -141,21 +146,21 @@ namespace TechEngine {
                 bool isFarCommon = true;
 
                 //Camera::ProjectionType commonProjectionType = camera->getProjectionType();
-                float commonFov = camera.fov;
-                float commonNear = camera.nearPlane;
-                float commonFar = camera.farPlane;
+                float commonFov = camera.getFov();
+                float commonNear = camera.getNearPlane();
+                float commonFar = camera.getFarPlane();
 
 
                 for (Entity entity: m_selectedEntities) {
-                    if (scene.getComponent<Camera>(entity).fov != commonFov) {
+                    if (scene.getComponent<Camera>(entity).getFov() != commonFov) {
                         isFovCommon = false;
                     }
 
-                    if (scene.getComponent<Camera>(entity).nearPlane != commonNear) {
+                    if (scene.getComponent<Camera>(entity).getNearPlane() != commonNear) {
                         isNearCommon = false;
                     }
 
-                    if (scene.getComponent<Camera>(entity).farPlane != commonFar) {
+                    if (scene.getComponent<Camera>(entity).getFarPlane() != commonFar) {
                         isFarCommon = false;
                     }
                 }
@@ -176,24 +181,25 @@ namespace TechEngine {
                     }
 
                     ImGui::EndCombo();
-                }*/
+                }
                 const char* fovLabel = isFovCommon ? "Vertical FOV" : "-";
                 const char* nearLabel = isNearCommon ? "Near" : "-";
                 const char* farLabel = isFarCommon ? "Far" : "-";
-                if (/*camera->getProjectionType() == Camera::ProjectionType::PERSPECTIVE*/ true) {
+                if (/*camera->getProjectionType() == Camera::ProjectionType::PERSPECTIVE true) {
                     bool changeFov = false;
                     bool changeNear = false;
                     bool changeFar = false;
                     if (m_selectedEntities.size() == 1) {
-                        bool isMainCamera = camera.isMainCamera;
+                        bool isMainCamera = camera.isMainCamera();
                         CameraSystem& cameraSystem = m_appSystemRegistry.getSystem<CameraSystem>();
                         ImGui::Checkbox("Main Camera", &isMainCamera);
                         if (isMainCamera) {
                             for (Entity entity: m_selectedEntities) {
                                 cameraSystem.setMainCamera(entity);
                             }
-                        } else if (!isMainCamera && camera.isMainCamera) {
-                            camera.isMainCamera = false;
+                        } else if (!isMainCamera && camera.isMainCamera()) {
+                            CameraSystem& cameraSystem = m_appSystemRegistry.getSystem<CameraSystem>();
+                            cameraSystem.setMainCamera(m_selectedEntities[0]);
                         }
                     }
                     if (ImGui::DragFloat(fovLabel, &commonFov, 0.1f)) {
@@ -238,7 +244,7 @@ namespace TechEngine {
                         if (changeOrthoFar) entity->getComponent<Camera>()->setFar(commonFar);
                         if (changeProjection) entity->getComponent<Camera>()->changeProjectionType(commonProjectionType);
                     }
-                }*/
+                }
             });
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(MeshRenderer).name()) != componentsToDraw.end()) {
@@ -246,8 +252,8 @@ namespace TechEngine {
                 Scene& scene = m_appSystemRegistry.getSystem<Scene>();
                 bool isMeshCommon = true;
                 bool isMaterialCommon = true;
-                std::string commonMeshName = component.mesh.getName();
-                std::string commonMaterialName = component.material.getName();
+                const std::string commonMeshName = component.mesh.getName();
+                const std::string commonMaterialName = component.material.getName();
 
                 for (Entity entity: m_selectedEntities) {
                     auto currentMeshRenderer = scene.getComponent<MeshRenderer>(entity);
@@ -256,7 +262,7 @@ namespace TechEngine {
                         isMeshCommon = false;
                     }
 
-                    if (currentMeshRenderer.mesh.getMaterial().getName() != commonMaterialName) {
+                    if (currentMeshRenderer.material.getName() != commonMaterialName) {
                         isMaterialCommon = false;
                     }
                 }
@@ -288,7 +294,7 @@ namespace TechEngine {
                     if (current_item != commonMeshName) {
                         /*for (GameObject* entity: m_selectedEntities) {
                             entity->getComponent<MeshRenderer>()->changeMesh(m_appSystemRegistry.getSystem<MeshManager>().getMesh(current_item));
-                        }*/
+                        }
                     }
                 }
                 static bool open = false;
@@ -332,9 +338,9 @@ namespace TechEngine {
                     ImGui::EndDragDropTarget();
                 }
 
-                //component.paintMesh();
+                component.paintMesh();
             });
-        } /*
+        }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(RigidBody).name()) != componentsToDraw.end()) {
             drawComponent<RigidBody>(firstEntity, "Rigid Body", [this](auto& component) {
                 float commonMass = component->getMass();

@@ -7,9 +7,9 @@
 namespace TechEngine {
     SceneHierarchyPanel::SceneHierarchyPanel(SystemsRegistry& systemRegistry,
                                              SystemsRegistry& appSystemRegistry,
-                                             std::vector<Entity>& selectedEntities) : m_systemRegistry(systemRegistry),
-                                                                                      m_appSystemRegistry(appSystemRegistry),
-                                                                                      m_selectedEntities(selectedEntities) {
+                                             std::vector<Tag>& selectedEntities) : m_systemRegistry(systemRegistry),
+                                                                                   m_appSystemRegistry(appSystemRegistry),
+                                                                                   m_selectedEntities(selectedEntities) {
     }
 
 
@@ -23,18 +23,12 @@ namespace TechEngine {
     void SceneHierarchyPanel::onUpdate() {
         isItemHovered = false;
         Scene& scene = m_appSystemRegistry.getSystem<Scene>();
-        if (!scene.getEntities().empty()) {
-            int originalSize = scene.getEntities().size();
-            for (int i = 0; i < scene.getEntities().size(); i++) {
-                Entity entity = scene.getEntities()[i];
-                /*if (element->isEditorOnly() || element->getParent() != nullptr) {
-                    continue;
-                }*/
-                if (originalSize != scene.getEntities().size()) {
-                    i--;
-                    originalSize = scene.getEntities().size();
-                }
-                drawEntityNode(entity);
+        std::vector<Archetype> archetypes = scene.queryArchetypes({ComponentType<Tag>::get(), ComponentType<Transform>::get()});
+
+        for (Archetype& archetype: archetypes) {
+            std::vector<Tag> tags = archetype.getComponentArray<Tag>();
+            for (Tag& tag: tags) {
+                drawEntityNode(tag);
             }
         }
         if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) {
@@ -64,14 +58,13 @@ namespace TechEngine {
         }
     }
 
-    void SceneHierarchyPanel::drawEntityNode(Entity entity) {
+    void SceneHierarchyPanel::drawEntityNode(Tag& tag) {
         Scene& scene = m_appSystemRegistry.getSystem<Scene>();
-        Tag& tag = scene.getComponent<Tag>(entity);
-        ImGuiTreeNodeFlags flags = ((std::find(m_selectedEntities.begin(), m_selectedEntities.end(), entity) != m_selectedEntities.end()) ? ImGuiTreeNodeFlags_Selected : 0) |
+        ImGuiTreeNodeFlags flags = ((std::find(m_selectedEntities.begin(), m_selectedEntities.end(), tag) != m_selectedEntities.end()) ? ImGuiTreeNodeFlags_Selected : 0) |
                                    ImGuiTreeNodeFlags_OpenOnArrow |
                                    /*(entity->getChildren().empty() ? ImGuiTreeNodeFlags_Leaf : 0)*/ ImGuiTreeNodeFlags_Leaf |
                                    ImGuiTreeNodeFlags_SpanAvailWidth;
-        bool opened = ImGui::TreeNodeEx((tag.name + tag.uuid).c_str(), flags, "%s", tag.name.c_str());
+        bool opened = ImGui::TreeNodeEx((tag.getName() + tag.getName()).c_str(), flags, "%s", tag.getName().c_str());
         if (ImGui::IsItemClicked()) {
             /*if (isCtrlPressed) {
                 if (std::find(m_selectedEntities.begin(), m_selectedEntities.end(), gameObject) != m_selectedEntities.end()) {
@@ -104,15 +97,15 @@ namespace TechEngine {
             } else {
             }*/
             m_selectedEntities.clear();
-            m_selectedEntities.push_back(entity);
+            m_selectedEntities.push_back(tag);
         }
         if (ImGui::IsItemHovered()) {
             isItemHovered = true;
         }
         if (ImGui::BeginPopupContextItem()) {
             m_selectedEntities.clear();
-            m_selectedEntities.push_back(entity);
-            std::string name = tag.name;
+            //m_selectedEntities.push_back(entity);
+            std::string name = tag.getName();
             if (ImGuiUtils::beginMenuWithInputMenuField("Rename", "Name", name)) {
                 //gameObject->setName(name);
             }
@@ -124,7 +117,7 @@ namespace TechEngine {
                 /*appRegistry.getSystem<SceneManager>().getScene().duplicateGameObject(gameObject);*/
             }
             if (ImGui::MenuItem("Delete GameObject")) {
-                scene.destroyEntity(entity);
+                //scene.destroyEntity(entity);
             }
             ImGui::EndPopup();
         }
