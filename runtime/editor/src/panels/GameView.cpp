@@ -18,7 +18,7 @@ namespace TechEngine {
 
     void GameView::onUpdate() {
         auto& scene = m_appSystemsRegistry.getSystem<Scene>();
-        scene.archetypesManager.runSystem<Camera>([this](Camera& camera) {
+        scene.runSystem<Camera>([this](Camera& camera) {
             Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
             FrameBuffer& frameBuffer = renderer.getFramebuffer(frameBufferID);
             ImVec2 wsize = ImGui::GetContentRegionAvail();

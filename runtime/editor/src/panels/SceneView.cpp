@@ -133,7 +133,7 @@ namespace TechEngine {
     void SceneView::renderCameraFrustum() {
         Scene& scene = m_appSystemsRegistry.getSystem<Scene>();
         // Define the 8 corners of the frustum in NDC
-        scene.archetypesManager.runSystem<Camera, Transform>([this](Camera& camera, Transform& transform) {
+        scene.runSystem<Camera, Transform>([this](Camera& camera, Transform& transform) {
             std::vector<glm::vec3> frustumPoints;
             std::vector<glm::vec4> ndcPoints = {
                 glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f), // Near bottom left

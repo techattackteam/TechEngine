@@ -1,12 +1,10 @@
 #pragma once
+#include <typeindex>
+
 #include "resources/material/Material.hpp"
 #include "resources/mesh/AssimpLoader.hpp"
 #include "resources/mesh/Mesh.hpp"
 
-#include <iostream>
-#include <glm/glm.hpp>
-#include <string>
-#include <typeindex>
 
 namespace TechEngine {
     using Entity = int32_t;
@@ -203,7 +201,6 @@ namespace TechEngine {
     private:
         inline static ComponentTypeID counter = 0;
         inline static std::unordered_map<std::type_index, ComponentTypeID> typeMap;
-        inline static bool initialized = false;
 
     public:
         static void init() {
@@ -211,7 +208,6 @@ namespace TechEngine {
             registerComponent<Transform>();
             registerComponent<Camera>();
             registerComponent<MeshRenderer>();
-            initialized = true;
         }
 
         template<typename T>
@@ -230,9 +226,6 @@ namespace TechEngine {
 
         template<typename T>
         static ComponentTypeID get() {
-            if (!initialized) {
-                init();
-            }
             if (typeMap.find(typeid(T)) == typeMap.end()) {
                 TE_LOGGER_CRITICAL("Component type {0} not registered, please register it first", typeid(T).name());
             }

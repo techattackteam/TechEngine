@@ -1,62 +1,47 @@
 #pragma once
-#include <vector>
 
 #include "components/ArchetypesManager.hpp"
-#include "components/Components.hpp"
 #include "systems/System.hpp"
 
 namespace TechEngine {
     class CORE_DLL Scene : public System {
     private:
+        ArchetypesManager m_archetypesManager;
 
     public:
-        ArchetypesManager archetypesManager;
-
         void init() override;
 
         Entity createEntity(const std::string& name);
 
         void destroyEntity(Entity entity);
 
-        /*std::vector<Archetype> queryArchetypes(const std::vector<ComponentTypeID>& requiredComponents);*/
-
-        /*std::vector<Entity> getEntities();*/
-
-        std::vector<char> getEntityComponents(Entity entity);
-
         template<typename T>
         void addComponent(Entity entity, const T& component) {
-            archetypesManager.addComponent<T>(entity, component);
+            m_archetypesManager.addComponent<T>(entity, component);
         }
 
         template<typename T>
         void removeComponent(Entity entity) {
-            archetypesManager.removeComponent<T>(entity);
+            m_archetypesManager.removeComponent<T>(entity);
         }
-
-        /*template<typename T>
-        std::vector<std::reference_wrapper<T>> getComponents() {
-            std::vector<Archetype> archetypes = queryArchetypes({ComponentType::get<T>()});
-            std::vector<std::reference_wrapper<T>> components;
-            for (Archetype& archetype: archetypes) {
-                std::vector<T>& archetypeComponents = archetype.getComponentArray<T>();
-                components.emplace_back(archetypeComponents);
-            }
-            return components;
-        }*/
 
         template<typename T>
         T& getComponent(Entity entity) {
-            return archetypesManager.getComponent<T>(entity);
+            return m_archetypesManager.getComponent<T>(entity);
+        }
+
+        template<typename T>
+        bool hasComponent(Entity entity) {
+            return m_archetypesManager.hasComponent<T>(entity);
         }
 
         std::vector<ComponentTypeID> getCommonComponents(const std::vector<Entity>& entities);
 
-        template<typename T>
-        bool hasComponent(Entity entity) {
-            return archetypesManager.hasComponent<T>(entity);
-        }
-
         Entity getEntityByTag(const Tag& tag);
+
+        template<typename... Components, typename Function>
+        void runSystem(Function function) {
+            m_archetypesManager.runSystem<Components...>(function);
+        };
     };
 }

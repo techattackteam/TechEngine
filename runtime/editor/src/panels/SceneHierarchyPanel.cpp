@@ -22,7 +22,7 @@ namespace TechEngine {
     void SceneHierarchyPanel::onUpdate() {
         isItemHovered = false;
         Scene& scene = m_appSystemRegistry.getSystem<Scene>();
-        scene.archetypesManager.runSystem<Tag>([this](Tag& tag) {
+        scene.runSystem<Tag>([this](Tag& tag) {
             drawEntityNode(tag);
         });
         if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) {

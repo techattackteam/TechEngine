@@ -17,7 +17,6 @@ namespace TechEngine {
             }
             std::vector<char> data = pair.second;
             size_t componentSize = getComponentSize(typeID);
-            // Move component data from old to new archetype
             auto start = data.begin() + entityIndex * componentSize;
             auto end = start + componentSize;
             newArchetype.componentData[typeID].insert(newArchetype.componentData[typeID].end(), start, end);
@@ -26,6 +25,7 @@ namespace TechEngine {
 
 
     void ArchetypesManager::populateArchetypes() {
+
     }
 
 
@@ -33,29 +33,29 @@ namespace TechEngine {
         Entity newEntity = generateEntityID();
         size_t index = findArchetype({});
         if (index == -1) {
-            archetypes.push_back(Archetype(generateArchetypeID()));
-            index = archetypes.size() - 1;
+            m_archetypes.push_back(Archetype(generateArchetypeID()));
+            index = m_archetypes.size() - 1;
         }
-        Archetype& newArchetype = archetypes[index];
+        Archetype& newArchetype = m_archetypes[index];
         newArchetype.addEntity(newEntity);
-        entityToArchetypeMap[newEntity] = index;
+        m_entityToArchetypeMap[newEntity] = index;
         return newEntity;
     }
 
     bool ArchetypesManager::removeEntity(Entity entity) {
-        if (entityToArchetypeMap.find(entity) == entityToArchetypeMap.end()) {
+        if (m_entityToArchetypeMap.find(entity) == m_entityToArchetypeMap.end()) {
             return false;
         }
-        size_t index = entityToArchetypeMap[entity];
-        Archetype& archetype = archetypes[index];
+        size_t index = m_entityToArchetypeMap[entity];
+        Archetype& archetype = m_archetypes[index];
         archetype.removeEntity(entity);
         return true;
     }
 
     std::vector<char> ArchetypesManager::getEntityComponents(Entity entity) {
         std::vector<char> components;
-        size_t index = entityToArchetypeMap[entity];
-        Archetype& archetype = archetypes[index];
+        size_t index = m_entityToArchetypeMap[entity];
+        Archetype& archetype = m_archetypes[index];
         for (auto& pair: archetype.componentData) {
             ComponentTypeID typeID = pair.first;
             size_t componentSize = archetype.getComponentSize(typeID);
@@ -69,8 +69,8 @@ namespace TechEngine {
 
     std::vector<ComponentTypeID> ArchetypesManager::getComponentTypes(Entity entity) {
         std::vector<ComponentTypeID> componentTypes;
-        size_t index = entityToArchetypeMap[entity];
-        Archetype& archetype = archetypes[index];
+        size_t index = m_entityToArchetypeMap[entity];
+        Archetype& archetype = m_archetypes[index];
         for (auto& pair: archetype.componentData) {
             componentTypes.push_back(pair.first);
         }
@@ -78,8 +78,8 @@ namespace TechEngine {
     }
 
     size_t ArchetypesManager::findArchetype(const std::vector<ComponentTypeID>& componentTypes) {
-        for (size_t i = 0; i < archetypes.size(); ++i) {
-            if (archetypes[i].hasMatchingComponents(componentTypes)) {
+        for (size_t i = 0; i < m_archetypes.size(); ++i) {
+            if (m_archetypes[i].hasMatchingComponents(componentTypes)) {
                 return i;
             }
         }
@@ -88,7 +88,7 @@ namespace TechEngine {
 
     std::vector<Archetype*> ArchetypesManager::queryArchetypes(const std::vector<ComponentTypeID>& requiredComponents) {
         std::vector<Archetype*> matchingArchetypes;
-        for (auto& archetype: archetypes) {
+        for (auto& archetype: m_archetypes) {
             if (archetype.containsComponents(requiredComponents)) {
                 matchingArchetypes.push_back(&archetype);
             }
@@ -97,10 +97,10 @@ namespace TechEngine {
     }
 
     uint32_t ArchetypesManager::generateArchetypeID() {
-        return lastArchetypeID++;
+        return m_lastArchetypeID++;
     }
 
     Entity ArchetypesManager::generateEntityID() {
-        return lastEntityID++;
+        return m_lastEntityID++;
     }
 }
