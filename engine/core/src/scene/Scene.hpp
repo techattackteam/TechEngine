@@ -6,20 +6,21 @@
 #include "systems/System.hpp"
 
 namespace TechEngine {
-    class Scene : public System {
+    class CORE_DLL Scene : public System {
     private:
-        ArchetypesManager archetypesManager;
 
     public:
+        ArchetypesManager archetypesManager;
+
         void init() override;
 
         Entity createEntity(const std::string& name);
 
         void destroyEntity(Entity entity);
 
-        std::vector<Archetype> queryArchetypes(const std::vector<ComponentTypeID>& requiredComponents);
+        /*std::vector<Archetype> queryArchetypes(const std::vector<ComponentTypeID>& requiredComponents);*/
 
-        std::vector<Entity> getEntities();
+        /*std::vector<Entity> getEntities();*/
 
         std::vector<char> getEntityComponents(Entity entity);
 
@@ -33,16 +34,16 @@ namespace TechEngine {
             archetypesManager.removeComponent<T>(entity);
         }
 
-        template<typename T>
-        std::vector<T> getComponents() {
+        /*template<typename T>
+        std::vector<std::reference_wrapper<T>> getComponents() {
             std::vector<Archetype> archetypes = queryArchetypes({ComponentType::get<T>()});
-            std::vector<T> components;
+            std::vector<std::reference_wrapper<T>> components;
             for (Archetype& archetype: archetypes) {
-                std::vector<T> archetypeComponents = archetype.getComponentArray<T>();
-                components.insert(components.end(), archetypeComponents.begin(), archetypeComponents.end());
+                std::vector<T>& archetypeComponents = archetype.getComponentArray<T>();
+                components.emplace_back(archetypeComponents);
             }
             return components;
-        }
+        }*/
 
         template<typename T>
         T& getComponent(Entity entity) {

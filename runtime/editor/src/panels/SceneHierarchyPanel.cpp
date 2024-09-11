@@ -1,14 +1,14 @@
 #include "SceneHierarchyPanel.hpp"
 
 #include "scene/Scene.hpp"
+#include "systems/SystemsRegistry.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
 
 namespace TechEngine {
-    SceneHierarchyPanel::SceneHierarchyPanel(SystemsRegistry& systemRegistry,
+    SceneHierarchyPanel::SceneHierarchyPanel(SystemsRegistry& editorSystemRegistry,
                                              SystemsRegistry& appSystemRegistry,
-                                             std::vector<Entity>& selectedEntities) : m_systemRegistry(systemRegistry),
-                                                                                      m_appSystemRegistry(appSystemRegistry),
-                                                                                      m_selectedEntities(selectedEntities) {
+                                             std::vector<Entity>& selectedEntities) : m_appSystemRegistry(appSystemRegistry),
+                                                                                      m_selectedEntities(selectedEntities), Panel(editorSystemRegistry) {
     }
 
 
@@ -22,14 +22,9 @@ namespace TechEngine {
     void SceneHierarchyPanel::onUpdate() {
         isItemHovered = false;
         Scene& scene = m_appSystemRegistry.getSystem<Scene>();
-        std::vector<Archetype> archetypes = scene.queryArchetypes({ComponentType::get<Tag>(), ComponentType::get<Transform>()});
-
-        for (Archetype& archetype: archetypes) {
-            std::vector<Tag> tags = archetype.getComponentArray<Tag>();
-            for (Tag& tag: tags) {
-                drawEntityNode(tag);
-            }
-        }
+        scene.archetypesManager.runSystem<Tag>([this](Tag& tag) {
+            drawEntityNode(tag);
+        });
         if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) {
             m_selectedEntities.clear();
         }
@@ -61,9 +56,9 @@ namespace TechEngine {
         Scene& scene = m_appSystemRegistry.getSystem<Scene>();
         Entity entity = scene.getEntityByTag(tag);
         ImGuiTreeNodeFlags flags = ((std::find(m_selectedEntities.begin(), m_selectedEntities.end(), entity) != m_selectedEntities.end()) ? ImGuiTreeNodeFlags_Selected : 0) |
-                                   ImGuiTreeNodeFlags_OpenOnArrow |
-                                   /*(entity->getChildren().empty() ? ImGuiTreeNodeFlags_Leaf : 0)*/ ImGuiTreeNodeFlags_Leaf |
-                                   ImGuiTreeNodeFlags_SpanAvailWidth;
+                ImGuiTreeNodeFlags_OpenOnArrow |
+                /*(entity->getChildren().empty() ? ImGuiTreeNodeFlags_Leaf : 0)*/ ImGuiTreeNodeFlags_Leaf |
+                ImGuiTreeNodeFlags_SpanAvailWidth;
         bool opened = ImGui::TreeNodeEx((tag.getName() + tag.getName()).c_str(), flags, "%s", tag.getName().c_str());
         if (ImGui::IsItemClicked()) {
             /*if (isCtrlPressed) {
@@ -97,7 +92,7 @@ namespace TechEngine {
             } else {
             }*/
             m_selectedEntities.clear();
-            m_selectedEntities.push_back(scene.getEntityByTag(tag));
+            m_selectedEntities.push_back(entity);
         }
         if (ImGui::IsItemHovered()) {
             isItemHovered = true;

@@ -1,5 +1,6 @@
 #include "CameraSystem.hpp"
 
+#include "Scene.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
@@ -8,7 +9,7 @@ namespace TechEngine {
 
     void CameraSystem::setFov(Entity entity, float fov) {
         auto& camera = m_systemsRegistry.getSystem<Scene>().getComponent<Camera>(entity);
-        camera.fov = fov;
+        camera.fov.x = fov;
     }
 
     void CameraSystem::setNear(Entity entity, float nearPlane) {
@@ -21,41 +22,50 @@ namespace TechEngine {
         camera.farPlane = farPlane;
     }
 
-    void CameraSystem::setMainCamera(Entity entity) {
-        auto& scene = m_systemsRegistry.getSystem<Scene>();
+    void CameraSystem::setMainCamera(Camera& camera) {
         removeMainCamera();
-        scene.getComponent<Camera>(entity).mainCamera = true;
+        camera.mainCamera = true;
     }
 
     bool CameraSystem::hasMainCamera() {
-        auto& scene = m_systemsRegistry.getSystem<Scene>();
-        for (Camera& camera: scene.getComponents<Camera>()) {
-            if (camera.isMainCamera()) {
-                return true;
-            }
+        /*auto& scene = m_systemsRegistry.getSystem<Scene>();
+        auto matchingArchetypes = scene.queryArchetypes({ComponentType::get<Camera>()});
+        if (matchingArchetypes.empty()) {
+            return false;
         }
+        for (auto& archetype: matchingArchetypes) {
+            auto& cameras = archetype.getComponentArray<Camera>();
+            for (const auto& camera: cameras) {
+                if (camera.isMainCamera()) {
+                    return true;
+                }
+            }
+        }*/
+
         return false;
     }
 
-    Camera& CameraSystem::getMainCamera() {
-        auto& scene = m_systemsRegistry.getSystem<Scene>();
+    /*Camera& CameraSystem::getMainCamera() {
+        /*auto& scene = m_systemsRegistry.getSystem<Scene>();
         for (Camera& camera: scene.getComponents<Camera>()) {
             if (camera.isMainCamera()) {
-                TE_LOGGER_INFO("CameraSystem: Main Camera fov: {0}, Address: {1}", camera.getFov(), static_cast<void*>(&camera));
                 return camera;
             }
-        }
-        TE_LOGGER_WARN("No main camera found.");
-    }
-
+        }#1#
+        //return m_systemsRegistry.getSystem<Scene>().getComponent<Camera>(m_systemsRegistry.getSystem<Scene>().getEntityByTag(Tag("Main Camera", "")));
+    }*/
 
     void CameraSystem::removeMainCamera() {
-        auto& scene = m_systemsRegistry.getSystem<Scene>();
-        for (Camera& camera: scene.getComponents<Camera>()) {
-            if (camera.isMainCamera()) {
-                camera.mainCamera = false;
-                break;
+        /*auto& scene = m_systemsRegistry.getSystem<Scene>();
+        auto matchingArchetypes = scene.queryArchetypes({ComponentType::get<Camera>()});
+        for (auto& archetype: matchingArchetypes) {
+            auto& cameras = archetype.getComponentArray<Camera>();
+            for (auto& camera: cameras) {
+                if (camera.isMainCamera()) {
+                    camera.mainCamera = false;
+                    break;
+                }
             }
-        }
+        }*/
     }
 }

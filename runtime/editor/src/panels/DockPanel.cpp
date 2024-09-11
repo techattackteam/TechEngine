@@ -5,6 +5,9 @@
 
 
 namespace TechEngine {
+    DockPanel::DockPanel(SystemsRegistry& editorSystemsRegistry) : Panel(editorSystemsRegistry) {
+    }
+
     void DockPanel::onInit() {
     }
 

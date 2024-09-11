@@ -1,19 +1,16 @@
 #pragma once
-#include <iostream>
-#include <glm/glm.hpp>
-#include <utility>
-#include <string>
-#include <typeindex>
-
 #include "resources/material/Material.hpp"
 #include "resources/mesh/AssimpLoader.hpp"
 #include "resources/mesh/Mesh.hpp"
 
-namespace TechEngine {
-    using Entity = uint32_t;
-    using ComponentTypeID = uint32_t;
-    using ArchetypeID = uint32_t;
+#include <iostream>
+#include <glm/glm.hpp>
+#include <string>
+#include <typeindex>
 
+namespace TechEngine {
+    using Entity = int32_t;
+    using ComponentTypeID = uint32_t;
 
     class CORE_DLL Tag {
     private:
@@ -58,20 +55,82 @@ namespace TechEngine {
     };
 
     class CORE_DLL Camera {
-    private:
+    public:
         bool mainCamera = false;
         glm::mat4 viewMatrix = glm::mat4(1.0f);
         glm::mat4 projectionMatrix = glm::mat4(1.0f);
 
-        float fov = 90;
+
+        glm::vec1 fov = glm::vec1(45);
         float nearPlane = 0.1f;
         float farPlane = 100;
         float orthoSize = 5;
+        float aspectRatio = 1;
         friend class CameraSystem;
 
     public:
         Camera() {
-            std::cout << "Camera created" << std::endl;
+            TE_LOGGER_INFO("Camera created");
+        }
+
+        //Copy constructor
+        Camera(const Camera& camera) {
+            mainCamera = camera.mainCamera;
+            viewMatrix = camera.viewMatrix;
+            projectionMatrix = camera.projectionMatrix;
+            fov = camera.fov;
+            nearPlane = camera.nearPlane;
+            farPlane = camera.farPlane;
+            orthoSize = camera.orthoSize;
+            aspectRatio = camera.aspectRatio;
+            TE_LOGGER_INFO("Camera copied");
+        }
+
+        //Move constructor
+        Camera(Camera&& camera) noexcept {
+            mainCamera = camera.mainCamera;
+            viewMatrix = camera.viewMatrix;
+            projectionMatrix = camera.projectionMatrix;
+            fov = camera.fov;
+            nearPlane = camera.nearPlane;
+            farPlane = camera.farPlane;
+            orthoSize = camera.orthoSize;
+            aspectRatio = camera.aspectRatio;
+            TE_LOGGER_INFO("Camera moved");
+        }
+
+        //Copy assignment
+        Camera& operator=(const Camera& camera) {
+            if (this == &camera) {
+                return *this;
+            }
+            mainCamera = camera.mainCamera;
+            viewMatrix = camera.viewMatrix;
+            projectionMatrix = camera.projectionMatrix;
+            fov = camera.fov;
+            nearPlane = camera.nearPlane;
+            farPlane = camera.farPlane;
+            orthoSize = camera.orthoSize;
+            aspectRatio = camera.aspectRatio;
+            TE_LOGGER_INFO("Camera copied");
+            return *this;
+        }
+
+        //Move assignment
+        Camera& operator=(Camera&& camera) noexcept {
+            if (this == &camera) {
+                return *this;
+            }
+            mainCamera = camera.mainCamera;
+            viewMatrix = camera.viewMatrix;
+            projectionMatrix = camera.projectionMatrix;
+            fov = camera.fov;
+            nearPlane = camera.nearPlane;
+            farPlane = camera.farPlane;
+            orthoSize = camera.orthoSize;
+            aspectRatio = camera.aspectRatio;
+            TE_LOGGER_INFO("Camera moved");
+            return *this;
         }
 
         glm::mat4 getProjectionMatrix() const {
@@ -82,8 +141,13 @@ namespace TechEngine {
             return viewMatrix;
         }
 
+        void updateViewMatrix(const glm::mat4& modelMatrix) {
+            viewMatrix = glm::inverse(modelMatrix);
+        }
+
         void updateProjectionMatrix(float aspectRatio) {
-            projectionMatrix = glm::perspective(glm::radians(fov), aspectRatio, nearPlane, farPlane);
+            projectionMatrix = glm::perspective(glm::radians(fov.x), aspectRatio, nearPlane, farPlane);
+            this->aspectRatio = aspectRatio;
         }
 
         bool isMainCamera() const {
@@ -91,7 +155,7 @@ namespace TechEngine {
         }
 
         float getFov() const {
-            return fov;
+            return fov.x;
         }
 
         float getNearPlane() const {
@@ -100,6 +164,14 @@ namespace TechEngine {
 
         float getFarPlane() const {
             return farPlane;
+        }
+
+        float getOrthoSize() const {
+            return orthoSize;
+        }
+
+        float getAspectRatio() const {
+            return aspectRatio;
         }
     };
 
@@ -139,6 +211,7 @@ namespace TechEngine {
             registerComponent<Transform>();
             registerComponent<Camera>();
             registerComponent<MeshRenderer>();
+            initialized = true;
         }
 
         template<typename T>
@@ -146,6 +219,7 @@ namespace TechEngine {
             if (typeMap.find(typeid(T)) == typeMap.end()) {
                 typeMap[typeid(T)] = counter;
                 counter += 1;
+                TE_LOGGER_INFO("Component type {0} registered with ID {1}", typeid(T).name(), counter - 1);
             }
         }
 
@@ -166,4 +240,3 @@ namespace TechEngine {
         }
     };
 }
-    

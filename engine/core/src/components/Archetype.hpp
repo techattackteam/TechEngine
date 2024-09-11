@@ -1,7 +1,4 @@
 #pragma once
-#include <cstdint>
-#include <unordered_map>
-#include <vector>
 
 #include "Components.hpp"
 
@@ -18,6 +15,15 @@ namespace TechEngine {
 
     public:
         explicit Archetype(ArchetypeID id) : id(id) {
+            TE_LOGGER_INFO("Archetype created with ID: {0}", id);
+        }
+
+        //Copy constructor
+        Archetype(const Archetype& archetype) {
+            id = archetype.id;
+            entities = archetype.entities;
+            componentData = archetype.componentData;
+            TE_LOGGER_INFO("Archetype copied with ID: {0}", id);
         }
 
         template<typename T>

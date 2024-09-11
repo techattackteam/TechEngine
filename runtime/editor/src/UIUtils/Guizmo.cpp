@@ -3,6 +3,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include "components/Components.hpp"
+#include "scene/Scene.hpp"
 #include "scene/TransformSystem.hpp"
 #include "systems/SystemsRegistry.hpp"
 
@@ -92,7 +93,7 @@ namespace TechEngine {
         glm::mat4 cameraView = camera->getViewMatrix();
         TransformSystem& transformSystem = m_systemsRegistry.getSystem<TransformSystem>();
         int entity = selectedEntities.front();
-        glm::mat4 transform = transformSystem.getModelMatrix(entity);
+        glm::mat4 transform = transformSystem.getModelMatrix(m_systemsRegistry.getSystem<Scene>().getComponent<Transform>(entity));
         Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
                    (ImGuizmo::OPERATION)operation, (ImGuizmo::MODE)(mode), glm::value_ptr(transform),
                    nullptr, nullptr);

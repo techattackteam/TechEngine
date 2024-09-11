@@ -11,12 +11,11 @@
 namespace TechEngine {
     class InspectorPanel : public Panel {
     private:
-        SystemsRegistry& m_systemRegistry;
         SystemsRegistry& m_appSystemRegistry;
         const std::vector<Entity>& m_selectedEntities;
 
     public:
-        InspectorPanel(SystemsRegistry& systemRegistry, SystemsRegistry& appSystemRegistry, const std::vector<Entity>& selectedEntities);
+        InspectorPanel(SystemsRegistry& editorSystemRegistry, SystemsRegistry& appSystemRegistry, const std::vector<Entity>& selectedEntities);
 
         void onInit() override;
 
@@ -29,7 +28,7 @@ namespace TechEngine {
             const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
             Scene& scene = m_appSystemRegistry.getSystem<Scene>();
             if (scene.hasComponent<T>(entity)) {
-                auto component = scene.getComponent<T>(entity);
+                auto& component = scene.getComponent<T>(entity);
                 ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
 
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});

@@ -13,15 +13,15 @@
 #include <imgui_internal.h>
 
 namespace TechEngine {
-    ClientPanel::ClientPanel(SystemsRegistry& systemsRegistry,
+    ClientPanel::ClientPanel(SystemsRegistry& editorSystemsRegistry,
                              SystemsRegistry& clientSystemsRegistry,
-                             LoggerPanel& loggerPanel): m_systemRegistry(systemsRegistry),
+                             LoggerPanel& loggerPanel): m_systemRegistry(editorSystemsRegistry),
                                                         m_clientSystemsRegistry(clientSystemsRegistry),
-                                                        m_inspectorPanel(systemsRegistry, clientSystemsRegistry, m_selectedEntities),
-                                                        m_sceneHierarchyPanel(systemsRegistry, clientSystemsRegistry, m_selectedEntities),
-                                                        m_gameView(clientSystemsRegistry),
-                                                        m_sceneView(clientSystemsRegistry, m_selectedEntities),
-                                                        loggerPanel(loggerPanel) {
+                                                        m_inspectorPanel(editorSystemsRegistry, clientSystemsRegistry, m_selectedEntities),
+                                                        m_sceneHierarchyPanel(editorSystemsRegistry, clientSystemsRegistry, m_selectedEntities),
+                                                        m_gameView(editorSystemsRegistry, clientSystemsRegistry),
+                                                        m_sceneView(editorSystemsRegistry, clientSystemsRegistry, m_selectedEntities),
+                                                        loggerPanel(loggerPanel), DockPanel(editorSystemsRegistry) {
     }
 
     void ClientPanel::onInit() {

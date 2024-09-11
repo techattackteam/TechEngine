@@ -9,18 +9,17 @@
 #include "resources/ResourcesManager.hpp"
 
 namespace TechEngine {
-    InspectorPanel::InspectorPanel(SystemsRegistry& systemRegistry,
+    InspectorPanel::InspectorPanel(SystemsRegistry& editorSystemRegistry,
                                    SystemsRegistry& appSystemRegistry,
-                                   const std::vector<Entity>& selectedEntities) : m_systemRegistry(systemRegistry),
-                                                                                  m_appSystemRegistry(appSystemRegistry),
-                                                                                  m_selectedEntities(selectedEntities) {
+                                   const std::vector<Entity>& selectedEntities) : m_appSystemRegistry(appSystemRegistry),
+                                                                                  m_selectedEntities(selectedEntities),
+                                                                                  Panel(editorSystemRegistry) {
     }
 
     void InspectorPanel::onInit() {
     }
 
     void InspectorPanel::onUpdate() {
-        Scene& scene = m_appSystemRegistry.getSystem<Scene>();
         if (!m_selectedEntities.empty()) {
             if (m_selectedEntities.size() == 1) {
                 //drawComponents();
@@ -189,16 +188,12 @@ namespace TechEngine {
                     bool changeNear = false;
                     bool changeFar = false;
                     if (m_selectedEntities.size() == 1) {
-                        bool isMainCamera = camera.isMainCamera();
+                        bool mainCamera = camera.isMainCamera();
+
                         CameraSystem& cameraSystem = m_appSystemRegistry.getSystem<CameraSystem>();
-                        ImGui::Checkbox("Main Camera", &isMainCamera);
-                        if (isMainCamera) {
-                            for (Entity entity: m_selectedEntities) {
-                                cameraSystem.setMainCamera(entity);
-                            }
-                        } else if (!isMainCamera && camera.isMainCamera()) {
-                            CameraSystem& cameraSystem = m_appSystemRegistry.getSystem<CameraSystem>();
-                            cameraSystem.setMainCamera(m_selectedEntities[0]);
+                        ImGui::Checkbox("Main Camera", &mainCamera);
+                        if (mainCamera) {
+                            cameraSystem.setMainCamera(camera);
                         }
                     }
                     if (ImGui::DragFloat(fovLabel, &commonFov, 0.1f)) {
@@ -213,7 +208,7 @@ namespace TechEngine {
 
                     for (Entity entity: m_selectedEntities) {
                         CameraSystem& cameraSystem = m_appSystemRegistry.getSystem<CameraSystem>();
-                        if (changeFov) cameraSystem.setFov(entity, commonFov);
+                        if (changeFov) camera.fov.x = commonFov;
                         if (changeNear) cameraSystem.setNear(entity, commonNear);
                         if (changeFar) cameraSystem.setFar(entity, commonFar);
                         //if (changeProjection) cameraSystem.changeProjectionType(entity, commonProjectionType);

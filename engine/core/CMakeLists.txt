@@ -11,4 +11,4 @@ target_include_directories(TechEngineCore PUBLIC src)
 target_link_libraries(TechEngineCore PUBLIC glm spdlog yaml-cpp::yaml-cpp assimp)
 
 target_compile_definitions(TechEngineCore PUBLIC GLM_ENABLE_EXPERIMENTAL)
-TARGET_COMPILE_DEFINITIONS(TechEngineCore PRIVATE TECH_ENGINE_CORE_EXPORT)
+target_compile_definitions(TechEngineCore PRIVATE TECH_ENGINE_CORE_EXPORT)

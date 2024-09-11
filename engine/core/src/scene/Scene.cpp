@@ -20,11 +20,13 @@ namespace TechEngine {
         archetypesManager.removeEntity(entity);
     }
 
+    /*
     std::vector<Archetype> Scene::queryArchetypes(const std::vector<ComponentTypeID>& requiredComponents) {
         return archetypesManager.queryArchetypes(requiredComponents);
     }
+    */
 
-    std::vector<Entity> Scene::getEntities() {
+    /*std::vector<Entity> Scene::getEntities() {
         std::vector<Archetype> archetypes = queryArchetypes({ComponentType::get<Tag>()});
         std::vector<Entity> entities;
         for (const Archetype& archetype: archetypes) {
@@ -33,7 +35,7 @@ namespace TechEngine {
             }
         }
         return entities;
-    }
+    }*/
 
     std::vector<char> Scene::getEntityComponents(Entity entity) {
         return archetypesManager.getEntityComponents(entity);
@@ -53,12 +55,12 @@ namespace TechEngine {
     }
 
     Entity Scene::getEntityByTag(const Tag& tag) {
-        std::vector<Archetype> archetypes = queryArchetypes({ComponentType::get<Tag>()});
-        for (const Archetype& archetype: archetypes) {
-            for (Entity entity: archetype.getEntities()) {
-                Tag& entityTag = archetypesManager.getComponent<Tag>(entity);
-                if (entityTag == tag) {
-                    return entity;
+        std::vector<Archetype*> archetypes = archetypesManager.queryArchetypes({ComponentType::get<Tag>()});
+        for (Archetype* archetype: archetypes) {
+            std::vector<Tag>& tags = archetype->getComponentArray<Tag>();
+            for (Tag& t: tags) {
+                if (t == tag) {
+                    return archetype->getEntities()[&t - &tags[0]];
                 }
             }
         }

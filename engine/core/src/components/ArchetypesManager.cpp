@@ -2,6 +2,12 @@
 #include "Components.hpp"
 
 namespace TechEngine {
+    ArchetypesManager::ArchetypesManager() {
+        TE_LOGGER_INFO("ArchetypesManager created");
+        populateArchetypes();
+        ComponentType::init();
+    }
+
     void Archetype::moveEntityComponents(Entity entity, Archetype& newArchetype, ComponentTypeID excludeComponent) {
         auto entityIndex = std::distance(entities.begin(), std::find(entities.begin(), entities.end(), entity));
         for (auto& pair: componentData) {
@@ -18,23 +24,10 @@ namespace TechEngine {
         }
     }
 
-    ArchetypesManager::ArchetypesManager() {
-        populateArchetypes();
-    }
 
     void ArchetypesManager::populateArchetypes() {
-        //TODO: Implement this function
     }
 
-    std::vector<Archetype> ArchetypesManager::queryArchetypes(const std::vector<ComponentTypeID>& requiredComponents) {
-        std::vector<Archetype> matchingArchetypes;
-        for (auto& archetype: archetypes) {
-            if (archetype.containsComponents(requiredComponents)) {
-                matchingArchetypes.push_back(archetype);
-            }
-        }
-        return matchingArchetypes;
-    }
 
     Entity ArchetypesManager::createEntity() {
         Entity newEntity = generateEntityID();
@@ -91,6 +84,16 @@ namespace TechEngine {
             }
         }
         return -1;
+    }
+
+    std::vector<Archetype*> ArchetypesManager::queryArchetypes(const std::vector<ComponentTypeID>& requiredComponents) {
+        std::vector<Archetype*> matchingArchetypes;
+        for (auto& archetype: archetypes) {
+            if (archetype.containsComponents(requiredComponents)) {
+                matchingArchetypes.push_back(&archetype);
+            }
+        }
+        return matchingArchetypes;
     }
 
     uint32_t ArchetypesManager::generateArchetypeID() {

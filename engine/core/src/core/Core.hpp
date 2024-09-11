@@ -4,7 +4,7 @@
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
-    class Core {
+    class CORE_DLL Core {
     public:
         SystemsRegistry m_systemRegistry;
         std::filesystem::path m_rootPath;

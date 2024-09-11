@@ -11,6 +11,8 @@ namespace TechEngine {
     public:
         ImGuiWindowClass m_dockSpaceWindowClass;
 
+        DockPanel(SystemsRegistry& editorSystemsRegistry);
+
         void onInit() override;
 
         void update();
