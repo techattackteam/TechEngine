@@ -84,7 +84,7 @@ namespace TechEngine {
     }
 
     void Renderer::renderGeometryPass(Scene& scene, bool shadow) {
-        scene.archetypesManager.runSystem<Transform, MeshRenderer>([this, shadow](Transform& transform, MeshRenderer& meshRenderer) {
+        scene.runSystem<Transform, MeshRenderer>([this, shadow](Transform& transform, MeshRenderer& meshRenderer) {
             if (shadow) {
                 shadersManager.changeActiveShader("shadowMap");
             } else {
@@ -165,7 +165,7 @@ namespace TechEngine {
         shadersManager.getActiveShader()->setUniformMatrix4f("view", camera->getViewMatrix());
         //shadersManager.getActiveShader()->setUniformVec3("cameraPosition", camera->getTransform().getPosition());
         auto& scene = m_systemsRegistry.getSystem<Scene>();
-        scene.archetypesManager.runSystem<Transform, MeshRenderer>([this](Transform& transform, MeshRenderer& meshRenderer) {
+        scene.runSystem<Transform, MeshRenderer>([this](Transform& transform, MeshRenderer& meshRenderer) {
             renderMesh(transform, meshRenderer, false);
         });
         vertexBuffers[BufferGameObjects]->unBind();

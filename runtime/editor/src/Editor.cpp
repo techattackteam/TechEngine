@@ -64,6 +64,8 @@ namespace TechEngine {
         m_systemRegistry.getSystem<RuntimeSimulator<Server>>().init();
         m_systemRegistry.getSystem<PanelsManager>().init();
 
+        ComponentType::init(); // Initialize component types for the editor
+
         m_runFunction = [this]() {
             m_entry.run([this]() {
                             fixedUpdate();
