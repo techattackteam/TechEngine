@@ -43,8 +43,6 @@ namespace TechEngine {
 
         void createLine(const glm::vec3& startPosition, const glm::vec3& endPosition, const glm::vec4& color);
 
-        void renderPipeline(Camera* camera);
-
         FrameBuffer& getFramebuffer(uint32_t id);
 
         uint32_t createFramebuffer(uint32_t width, uint32_t height);
@@ -62,7 +60,7 @@ namespace TechEngine {
 
         void renderGeometryPass(Scene& scene, bool shadow);
 
-        void renderGameObject(int entity, bool shadow);
+        void renderMesh(Transform& transform, MeshRenderer& meshRenderer, bool shadow);
 
         void flushMeshData(MeshRenderer* meshRenderer);
 

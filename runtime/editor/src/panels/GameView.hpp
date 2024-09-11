@@ -6,10 +6,11 @@
 namespace TechEngine {
     class GameView : public Panel {
     private:
-        SystemsRegistry& m_appRegistry;
+        SystemsRegistry& m_appSystemsRegistry;
         uint32_t frameBufferID;
+
     public:
-        GameView(SystemsRegistry& appRegistry);
+        GameView(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& appSystemsRegistry);
 
         void onInit() override;
 

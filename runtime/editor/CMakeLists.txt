@@ -45,8 +45,7 @@ endif ()
 
 # Copy runtime to editor
 if (WIN32)
-    add_custom_target(Runtimes ALL
-            DEPENDS TechEngineRuntimeClient TechEngineRuntimeServer
+    add_custom_target(Runtimes ALL DEPENDS TechEngineRuntimeClient TechEngineRuntimeServer
     )
 
     # Add the runtime dependencies to the editor

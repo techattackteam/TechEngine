@@ -21,7 +21,6 @@ namespace TechEngine {
         std::filesystem::path m_currentPath;
         std::filesystem::path m_selectedPath;
 
-        SystemsRegistry& m_editorRegistry;
         SystemsRegistry& m_clientRegistry;
         SystemsRegistry& m_serverRegistry;
         PanelsManager& m_panelsManager;

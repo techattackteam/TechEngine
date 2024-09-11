@@ -1,5 +1,4 @@
 #pragma once
-#include "Scene.hpp"
 #include "components/Components.hpp"
 #include "systems/System.hpp"
 
@@ -17,11 +16,11 @@ namespace TechEngine {
 
         void setFar(Entity entity, float common_far);
 
-        void setMainCamera(Entity entity);
+        void setMainCamera(Camera& camera);
 
         bool hasMainCamera();
 
-        Camera& getMainCamera();
+        /*Camera& getMainCamera();*/
 
         void removeMainCamera();
     };

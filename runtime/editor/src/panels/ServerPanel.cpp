@@ -13,11 +13,12 @@
 #include <imgui_internal.h>
 
 namespace TechEngine {
-    ServerPanel::ServerPanel(SystemsRegistry& systemsRegistry,
+    ServerPanel::ServerPanel(SystemsRegistry& editorSystemsRegistry,
                              SystemsRegistry& serverSystemsRegistry,
-                             LoggerPanel& loggerPanel) : m_systemRegistry(systemsRegistry),
+                             LoggerPanel& loggerPanel) : m_systemRegistry(editorSystemsRegistry),
                                                          m_serverSystemsRegistry(serverSystemsRegistry),
-                                                         loggerPanel(loggerPanel) {
+                                                         loggerPanel(loggerPanel),
+                                                         DockPanel(editorSystemsRegistry) {
     }
 
     void ServerPanel::onInit() {

@@ -8,6 +8,6 @@ int main(int argc, char** argv) {
     app->run();
     app->stop();
     app->shutdown();
-    delete app;
+    //delete app; //This is making in a loop
     exit(0);
 }

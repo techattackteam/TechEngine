@@ -12,15 +12,15 @@ namespace TechEngine {
     ContentBrowserPanel::ContentBrowserPanel(SystemsRegistry& editorRegistry,
                                              SystemsRegistry& clientRegistry,
                                              SystemsRegistry& serverRegistry,
-                                             PanelsManager& panelsManager) : m_editorRegistry(editorRegistry),
-                                                                             m_clientRegistry(clientRegistry),
+                                             PanelsManager& panelsManager) : m_clientRegistry(clientRegistry),
                                                                              m_serverRegistry(serverRegistry),
-                                                                             m_panelsManager(panelsManager) {
+                                                                             m_panelsManager(panelsManager),
+                                                                             Panel(editorRegistry) {
     }
 
 
     void ContentBrowserPanel::onInit() {
-        m_currentPath = m_editorRegistry.getSystem<ProjectManager>().getAssetsPath();
+        m_currentPath = m_editorSystemsRegistry.getSystem<ProjectManager>().getAssetsPath();
     }
 
     void ContentBrowserPanel::onUpdate() {
@@ -35,9 +35,9 @@ namespace TechEngine {
 
             ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.f);
-            renderDirectoryHierarchy(m_editorRegistry.getSystem<ProjectManager>().getAssetsPath().string() + "\\client");
-            renderDirectoryHierarchy(m_editorRegistry.getSystem<ProjectManager>().getAssetsPath().string() + "\\common");
-            renderDirectoryHierarchy(m_editorRegistry.getSystem<ProjectManager>().getAssetsPath().string() + "\\server");
+            renderDirectoryHierarchy(m_editorSystemsRegistry.getSystem<ProjectManager>().getAssetsPath().string() + "\\client");
+            renderDirectoryHierarchy(m_editorSystemsRegistry.getSystem<ProjectManager>().getAssetsPath().string() + "\\common");
+            renderDirectoryHierarchy(m_editorSystemsRegistry.getSystem<ProjectManager>().getAssetsPath().string() + "\\server");
             ImGui::PopStyleVar();
 
             ImGui::EndChild();
@@ -74,7 +74,7 @@ namespace TechEngine {
                 continue;
             }
             const std::filesystem::path& path = directoryEntry.path();
-            auto relativePath = std::filesystem::relative(path, m_editorRegistry.getSystem<ProjectManager>().getProjectPath());
+            auto relativePath = std::filesystem::relative(path, m_editorSystemsRegistry.getSystem<ProjectManager>().getProjectPath());
             std::string filenameString = relativePath.filename().string();
             bool hasSubDirs = false;
 
@@ -108,7 +108,7 @@ namespace TechEngine {
         bool opened = false;
         for (auto& directoryEntry: std::filesystem::directory_iterator(directoryPath)) {
             const auto& path = directoryEntry.path();
-            auto relativePath = std::filesystem::relative(path, m_editorRegistry.getSystem<ProjectManager>().getAssetsPath());
+            auto relativePath = std::filesystem::relative(path, m_editorSystemsRegistry.getSystem<ProjectManager>().getAssetsPath());
             std::string filenameString = relativePath.filename().string();
             if (m_selectedPath == path.string()) {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
@@ -299,7 +299,7 @@ namespace TechEngine {
     }
 
     FileType ContentBrowserPanel::getFileType(const std::filesystem::path& path) {
-        std::string rootFolder = path.string().substr(m_editorRegistry.getSystem<ProjectManager>().getProjectPath().string().size() + std::string("\\Assets\\").size());
+        std::string rootFolder = path.string().substr(m_editorSystemsRegistry.getSystem<ProjectManager>().getProjectPath().string().size() + std::string("\\Assets\\").size());
         rootFolder = rootFolder.substr(0, rootFolder.find_first_of('\\'));
         if (rootFolder == "client") {
             return FileType::Client;

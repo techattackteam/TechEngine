@@ -25,7 +25,7 @@ namespace TechEngine {
         std::vector<Entity> m_selectedEntities;
 
     public:
-        ClientPanel(SystemsRegistry& systemsRegistry, SystemsRegistry& clientSystemsRegistry, LoggerPanel& loggerPanel);
+        ClientPanel(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& clientSystemsRegistry, LoggerPanel& loggerPanel);
 
         ~ClientPanel() override = default;
 

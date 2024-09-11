@@ -9,7 +9,6 @@ namespace TechEngine {
 
     class LoggerPanel : public Panel {
     private:
-        SystemsRegistry& m_editorSystemsRegistry;
         SystemsRegistry& m_clientSystemsRegistry;
         SystemsRegistry& m_serverSystemsRegistry;
 

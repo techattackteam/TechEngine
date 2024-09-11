@@ -1,6 +1,16 @@
 #include "Panel.hpp"
 
+#include "events/input/KeyPressedEvent.hpp"
+#include "events/input/KeyReleasedEvent.hpp"
+#include "events/input/MouseMoveEvent.hpp"
+#include "events/input/MouseScrollEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "systems/SystemsRegistry.hpp"
+
 namespace TechEngine {
+    Panel::Panel(SystemsRegistry& m_systemsRegistry) : m_editorSystemsRegistry(m_systemsRegistry) {
+    }
+
     void Panel::init(const std::string& name, ImGuiWindowClass* parentDockSpaceClass, bool isVisible) {
         assert((!name.empty() && "Panel name is not set") || (parentDockSpaceClass != nullptr && "Parent dock space class is not set"));
 
@@ -8,6 +18,22 @@ namespace TechEngine {
         this->m_parentDockSpaceClass = parentDockSpaceClass;
         this->m_isVisible = isVisible;
         m_windowFlags |= ImGuiWindowFlags_NoCollapse;
+
+        m_editorSystemsRegistry.getSystem<EventDispatcher>().subscribe<MouseScrollEvent>([this](const std::shared_ptr<Event>& event) {
+            this->onMouseScrollEvent(((MouseScrollEvent*)event.get())->getXOffset(), ((MouseScrollEvent*)event.get())->getYOffset());
+        });
+
+        m_editorSystemsRegistry.getSystem<EventDispatcher>().subscribe<MouseMoveEvent>([this](const std::shared_ptr<Event> event) {
+            this->onMouseMoveEvent(((MouseMoveEvent*)event.get())->getDelta());
+        });
+
+        m_editorSystemsRegistry.getSystem<EventDispatcher>().subscribe<KeyPressedEvent>([this](const std::shared_ptr<Event> event) {
+            this->onKeyPressedEvent(((KeyPressedEvent*)event.get())->getKey());
+        });
+
+        m_editorSystemsRegistry.getSystem<EventDispatcher>().subscribe<KeyReleasedEvent>([this](const std::shared_ptr<Event> event) {
+            this->onKeyReleasedEvent(((KeyReleasedEvent*)event.get())->getKey());
+        });
 
         onInit();
     }

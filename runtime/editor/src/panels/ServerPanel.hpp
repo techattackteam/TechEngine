@@ -13,7 +13,7 @@ namespace TechEngine {
         LoggerPanel& loggerPanel;
 
     public:
-        ServerPanel(SystemsRegistry& systemsRegistry, SystemsRegistry& serverSystemsRegistry, LoggerPanel& loggerPanel);
+        ServerPanel(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& serverSystemsRegistry, LoggerPanel& loggerPanel);
 
         void onInit() override;
 

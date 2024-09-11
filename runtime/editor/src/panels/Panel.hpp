@@ -9,6 +9,10 @@
 
 
 namespace TechEngine {
+    class SystemsRegistry;
+}
+
+namespace TechEngine {
     class Panel {
     protected:
         bool m_isVisible = true;
@@ -17,8 +21,11 @@ namespace TechEngine {
         ImGuiWindowFlags m_windowFlags = ImGuiWindowFlags_None;
         std::vector<std::tuple<ImGuiStyleVar, std::variant<ImVec2, float>>> m_styleVars;
         std::vector<Key> m_keysPressed;
+        SystemsRegistry& m_editorSystemsRegistry;
 
     public:
+        Panel(SystemsRegistry& m_systemsRegistry);
+
         virtual ~Panel() = default;
 
         virtual void init(const std::string& name, ImGuiWindowClass* parentDockSpaceClass, bool isVisible = true);

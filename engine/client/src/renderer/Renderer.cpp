@@ -53,43 +53,45 @@ namespace TechEngine {
         }*/
     }
 
-    void Renderer::renderGameObject(int entity, bool shadow) {
+    void Renderer::renderMesh(Transform& transform, MeshRenderer& meshRenderer, bool shadow) {
         /*for (auto& pair: gameObject->getChildren()) {
             renderGameObject(pair.second, shadow);
         }*/
         Scene& scene = m_systemsRegistry.getSystem<Scene>();
         TransformSystem& transformSystem = m_systemsRegistry.getSystem<TransformSystem>();
-        if (scene.hasComponent<MeshRenderer>(entity)) {
-            glm::mat4 model = transformSystem.getModelMatrix(entity);
-            shadersManager.getActiveShader()->setUniformMatrix4f("model", model);
-            MeshRenderer* meshRenderer = &scene.getComponent<MeshRenderer>(entity);
-            flushMeshData(meshRenderer);
-            if (!shadow) {
-                Material& material = meshRenderer->material;
-                /*
-                shadersManager.getActiveShader()->setUniformVec3("material.ambient", material.getAmbient());
-                shadersManager.getActiveShader()->setUniformVec3("material.diffuse", material.getDiffuse());
-                shadersManager.getActiveShader()->setUniformVec3("material.specular", material.getSpecular());
-                shadersManager.getActiveShader()->setUniformFloat("material.shininess", material.getShininess());
-                */
-                shadersManager.getActiveShader()->setUniformBool("material.useTexture", material.getUseTexture());
-                /*if (material.getUseTexture()) {
-                    material.getDiffuseTexture()->bind(1);
-                    shadersManager.getActiveShader()->setUniformInt("diffuseTexture", 1);
-                }*/
-            }
-
-            vertexBuffers[BufferGameObjects]->bind();
-            vertexArrays[BufferGameObjects]->bind();
-            indicesBuffers[BufferGameObjects]->bind();
-            GlCall(glDrawElements(GL_TRIANGLES, meshRenderer->getIndices().size(), GL_UNSIGNED_INT, 0));
+        glm::mat4 model = transformSystem.getModelMatrix(transform);
+        shadersManager.getActiveShader()->setUniformMatrix4f("model", model);
+        flushMeshData(&meshRenderer);
+        if (!shadow) {
+            Material& material = meshRenderer.material;
+            /*
+            shadersManager.getActiveShader()->setUniformVec3("material.ambient", material.getAmbient());
+            shadersManager.getActiveShader()->setUniformVec3("material.diffuse", material.getDiffuse());
+            shadersManager.getActiveShader()->setUniformVec3("material.specular", material.getSpecular());
+            shadersManager.getActiveShader()->setUniformFloat("material.shininess", material.getShininess());
+            */
+            shadersManager.getActiveShader()->setUniformBool("material.useTexture", material.getUseTexture());
+            /*if (material.getUseTexture()) {
+                material.getDiffuseTexture()->bind(1);
+                shadersManager.getActiveShader()->setUniformInt("diffuseTexture", 1);
+            }*/
         }
+
+        vertexBuffers[BufferGameObjects]->bind();
+        vertexArrays[BufferGameObjects]->bind();
+        indicesBuffers[BufferGameObjects]->bind();
+        GlCall(glDrawElements(GL_TRIANGLES, meshRenderer.getIndices().size(), GL_UNSIGNED_INT, 0));
     }
 
     void Renderer::renderGeometryPass(Scene& scene, bool shadow) {
-        for (const int& entity: scene.getEntities()) {
-            renderGameObject(entity, shadow);
-        }
+        scene.archetypesManager.runSystem<Transform, MeshRenderer>([this, shadow](Transform& transform, MeshRenderer& meshRenderer) {
+            if (shadow) {
+                shadersManager.changeActiveShader("shadowMap");
+            } else {
+                shadersManager.changeActiveShader("geometry");
+            }
+            renderMesh(transform, meshRenderer, shadow);
+        });
     }
 
     void Renderer::shadowPass(Scene& scene) {
@@ -144,19 +146,7 @@ namespace TechEngine {
         lines.push_back(line);
     }
 
-    void Renderer::renderPipeline(Camera* camera) {
-        GlCall(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
-        GlCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-        geometryPass(*camera);
-        if (!lines.empty()) {
-            linePass(*camera);
-        }
-    }
-
     void Renderer::renderPipeline(Camera& camera) {
-        /*if (!cameraSystem.hasMainCamera()) {
-            return;
-        }*/
         GlCall(glClearColor(0.2f, 0.2f, 0.2f, 1.0f));
         GlCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
         geometryPass(camera);
@@ -174,9 +164,10 @@ namespace TechEngine {
         shadersManager.getActiveShader()->setUniformMatrix4f("projection", camera->getProjectionMatrix());
         shadersManager.getActiveShader()->setUniformMatrix4f("view", camera->getViewMatrix());
         //shadersManager.getActiveShader()->setUniformVec3("cameraPosition", camera->getTransform().getPosition());
-        for (const int& entity: entities) {
-            renderGameObject(entity, false);
-        }
+        auto& scene = m_systemsRegistry.getSystem<Scene>();
+        scene.archetypesManager.runSystem<Transform, MeshRenderer>([this](Transform& transform, MeshRenderer& meshRenderer) {
+            renderMesh(transform, meshRenderer, false);
+        });
         vertexBuffers[BufferGameObjects]->unBind();
         vertexArrays[BufferGameObjects]->unBind();
     }

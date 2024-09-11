@@ -8,9 +8,9 @@
 namespace TechEngine {
     LoggerPanel::LoggerPanel(SystemsRegistry& editorSystemsRegistry,
                              SystemsRegistry& clientSystemsRegistry,
-                             SystemsRegistry& serverSystemsRegistry) : m_editorSystemsRegistry(editorSystemsRegistry),
-                                                                       m_clientSystemsRegistry(clientSystemsRegistry),
-                                                                       m_serverSystemsRegistry(serverSystemsRegistry) {
+                             SystemsRegistry& serverSystemsRegistry) : m_clientSystemsRegistry(clientSystemsRegistry),
+                                                                       m_serverSystemsRegistry(serverSystemsRegistry),
+                                                                       Panel(editorSystemsRegistry) {
     }
 
     void LoggerPanel::onInit() {

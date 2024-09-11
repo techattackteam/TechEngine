@@ -1,6 +1,8 @@
 #include "TransformSystem.hpp"
 
 #include "Scene.hpp"
+#include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
 #include "components/Components.hpp"
 #include "systems/SystemsRegistry.hpp"
 
@@ -8,8 +10,7 @@ namespace TechEngine {
     TransformSystem::TransformSystem(SystemsRegistry& systemsRegistry): m_systemsRegistry(systemsRegistry) {
     }
 
-    void TransformSystem::translate(Entity entity, glm::vec3 vector) {
-        auto& transform = m_systemsRegistry.getSystem<Scene>().getComponent<Transform>(entity);
+    void TransformSystem::translate(Transform& transform, glm::vec3 vector) {
         transform.position += vector;
     }
 
@@ -28,8 +29,7 @@ namespace TechEngine {
         transform.rotation = rotation;
     }
 
-    void TransformSystem::rotate(Entity entity, glm::vec3 rotation) {
-        auto& transform = m_systemsRegistry.getSystem<Scene>().getComponent<Transform>(entity);
+    void TransformSystem::rotate(Transform& transform, glm::vec3 rotation) {
         transform.rotation += rotation;
     }
 
@@ -43,8 +43,7 @@ namespace TechEngine {
         transform.scale = vector;
     }
 
-    glm::mat4 TransformSystem::getModelMatrix(int entity) {
-        auto& transform = m_systemsRegistry.getSystem<Scene>().getComponent<Transform>(entity);
+    glm::mat4 TransformSystem::getModelMatrix(Transform& transform) {
         glm::mat4 model = glm::translate(glm::mat4(1), transform.position) *
                           glm::mat4_cast(glm::quat(glm::radians(transform.rotation))) *
                           glm::scale(glm::mat4(1), transform.scale);

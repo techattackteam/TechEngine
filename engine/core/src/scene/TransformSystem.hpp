@@ -14,7 +14,7 @@ namespace TechEngine {
     public:
         explicit TransformSystem(SystemsRegistry& systemsRegistry);
 
-        void translate(Entity entity, glm::vec3 vector);
+        void translate(Transform& transform, glm::vec3 vector);
 
         void translateTo(Entity entity, glm::vec3 position);
 
@@ -22,12 +22,12 @@ namespace TechEngine {
 
         void setRotation(Entity entity, glm::vec3 rotation);
 
-        void rotate(Entity entity, glm::vec3 rotation);
+        void rotate(::TechEngine::Transform& transform, glm::vec3 rotation);
 
         void setRotation(Entity entity, glm::quat quaternion);
 
         void setScale(Entity entity, glm::vec3 vector);
 
-        glm::mat4 getModelMatrix(int entity);
+        glm::mat4 getModelMatrix(Transform& transform);
     };
 }
