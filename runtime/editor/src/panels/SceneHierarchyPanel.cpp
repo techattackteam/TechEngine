@@ -1,6 +1,6 @@
 #include "SceneHierarchyPanel.hpp"
 
-#include "scene/Scene.hpp"
+#include "scene/ScenesManager.hpp"
 #include "systems/SystemsRegistry.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
 
@@ -13,7 +13,7 @@ namespace TechEngine {
 
 
     void SceneHierarchyPanel::onInit() {
-        Scene& scene = m_appSystemRegistry.getSystem<Scene>();
+        Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
         int entity;
         /*entity = scene.createEntity();
         scene.addComponent<Transform>(entity);*/
@@ -21,7 +21,7 @@ namespace TechEngine {
 
     void SceneHierarchyPanel::onUpdate() {
         isItemHovered = false;
-        Scene& scene = m_appSystemRegistry.getSystem<Scene>();
+        Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
         scene.runSystem<Tag>([this](Tag& tag) {
             drawEntityNode(tag);
         });
@@ -53,12 +53,12 @@ namespace TechEngine {
     }
 
     void SceneHierarchyPanel::drawEntityNode(Tag& tag) {
-        Scene& scene = m_appSystemRegistry.getSystem<Scene>();
+        Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
         Entity entity = scene.getEntityByTag(tag);
         ImGuiTreeNodeFlags flags = ((std::find(m_selectedEntities.begin(), m_selectedEntities.end(), entity) != m_selectedEntities.end()) ? ImGuiTreeNodeFlags_Selected : 0) |
-                ImGuiTreeNodeFlags_OpenOnArrow |
-                /*(entity->getChildren().empty() ? ImGuiTreeNodeFlags_Leaf : 0)*/ ImGuiTreeNodeFlags_Leaf |
-                ImGuiTreeNodeFlags_SpanAvailWidth;
+                                   ImGuiTreeNodeFlags_OpenOnArrow |
+                                   /*(entity->getChildren().empty() ? ImGuiTreeNodeFlags_Leaf : 0)*/ ImGuiTreeNodeFlags_Leaf |
+                                   ImGuiTreeNodeFlags_SpanAvailWidth;
         bool opened = ImGui::TreeNodeEx((tag.getName() + tag.getName()).c_str(), flags, "%s", tag.getName().c_str());
         if (ImGui::IsItemClicked()) {
             /*if (isCtrlPressed) {

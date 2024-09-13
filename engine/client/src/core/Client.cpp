@@ -6,13 +6,13 @@
 #include "renderer/Renderer.hpp"
 
 namespace TechEngine {
-    Client::Client() : Core(), m_entry(m_systemRegistry) {
+    Client::Client() : Core(AppType::Client), m_entry(m_systemRegistry) {
     }
 
     void Client::init(const std::filesystem::path& rootPath) {
         m_systemRegistry.registerSystem<Logger>("TechEngineClient");
         m_systemRegistry.getSystem<Logger>().init();
-        Core::init( rootPath);
+        Core::init(rootPath);
         m_systemRegistry.registerSystem<Renderer>(m_systemRegistry);
         m_systemRegistry.getSystem<Renderer>().init();
     }

@@ -4,9 +4,6 @@
 #include "core/UUID.hpp"
 
 namespace TechEngine {
-    void Scene::init() {
-    }
-
     Entity Scene::createEntity(const std::string& name) {
         Entity entity = m_archetypesManager.createEntity();
         std::string uuid = UUID::generate().toString();

@@ -1,6 +1,7 @@
 #include "ResourcesManager.hpp"
 
 
+#include "files/FileUtils.hpp"
 #include "files/PathsBank.hpp"
 #include "project/ProjectManager.hpp"
 #include "systems/SystemsRegistry.hpp"
@@ -9,9 +10,8 @@ namespace TechEngine {
     ResourcesManager::ResourcesManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
     }
 
-    void ResourcesManager::init() {
-        System::init();
-        std::unordered_map<std::string, std::vector<std::filesystem::path>> filesByExtension = getFilesByExtension(AppType::Client); //TODO: Get app type
+    void ResourcesManager::init(AppType appType) {
+        std::unordered_map<std::string, std::vector<std::filesystem::path>> filesByExtension = getFilesByExtension(appType);
 
         m_materialManager.init(filesByExtension[".mat"]);
         m_meshManager.init(filesByExtension[".tesmesh"]);

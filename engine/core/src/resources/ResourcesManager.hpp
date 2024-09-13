@@ -2,7 +2,6 @@
 
 #include <queue>
 
-#include "files/FileUtils.hpp"
 #include "systems/System.hpp"
 #include "material/MaterialManager.hpp"
 #include "mesh/AssimpLoader.hpp"
@@ -22,7 +21,7 @@ namespace TechEngine {
     public:
         explicit ResourcesManager(SystemsRegistry& systemsRegistry);
 
-        void init() override;
+        void init(AppType appType);
 
         void shutdown() override;
 

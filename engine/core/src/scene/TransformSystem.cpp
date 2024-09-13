@@ -1,6 +1,7 @@
 #include "TransformSystem.hpp"
 
 #include "Scene.hpp"
+#include "ScenesManager.hpp"
 #include "components/Archetype.hpp"
 #include "components/Archetype.hpp"
 #include "components/Components.hpp"
@@ -15,17 +16,17 @@ namespace TechEngine {
     }
 
     void TransformSystem::translateTo(Entity entity, glm::vec3 position) {
-        auto& transform = m_systemsRegistry.getSystem<Scene>().getComponent<Transform>(entity);
+        auto& transform = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getComponent<Transform>(entity);
         transform.position = position;
     }
 
     void TransformSystem::translateToWorld(Entity entity, glm::vec3 worldPosition) {
-        auto& transform = m_systemsRegistry.getSystem<Scene>().getComponent<Transform>(entity);
+        auto& transform = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getComponent<Transform>(entity);
         transform.position = worldPosition;
     }
 
     void TransformSystem::setRotation(Entity entity, glm::vec3 rotation) {
-        auto& transform = m_systemsRegistry.getSystem<Scene>().getComponent<Transform>(entity);
+        auto& transform = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getComponent<Transform>(entity);
         transform.rotation = rotation;
     }
 
@@ -34,12 +35,12 @@ namespace TechEngine {
     }
 
     void TransformSystem::setRotation(Entity entity, glm::quat quaternion) {
-        auto& transform = m_systemsRegistry.getSystem<Scene>().getComponent<Transform>(entity);
+        auto& transform = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getComponent<Transform>(entity);
         transform.rotation = glm::eulerAngles(quaternion);
     }
 
     void TransformSystem::setScale(Entity entity, glm::vec3 vector) {
-        auto& transform = m_systemsRegistry.getSystem<Scene>().getComponent<Transform>(entity);
+        auto& transform = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getComponent<Transform>(entity);
         transform.scale = vector;
     }
 

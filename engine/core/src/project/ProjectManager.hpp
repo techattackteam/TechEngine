@@ -1,7 +1,7 @@
 #pragma once
 #include "systems/System.hpp"
 #include <filesystem>
-
+#include <unordered_map>
 
 namespace TechEngine {
     enum class CompileMode;
@@ -12,12 +12,21 @@ namespace TechEngine {
         Editor
     };
 
+    enum class ProjectConfig {
+        ProjectName,
+        ProjectPath,
+        ClientScene,
+        ServerScene,
+    };
+
     class CORE_DLL ProjectManager : public System {
     private:
         std::filesystem::path m_cmakePath = "\"C:/Program Files/CMake/bin/cmake.exe\"";;
         std::filesystem::path m_cmakeListPath;
         std::filesystem::path m_techEngineClientLibPath;
         std::filesystem::path m_techEngineServerLibPath;
+
+        std::unordered_map<ProjectConfig, std::string> m_projectConfigs;
 
         std::filesystem::path m_projectPath;
         std::filesystem::path m_projectName;
@@ -37,9 +46,11 @@ namespace TechEngine {
 
         void shutdown() override;
 
+        void createProject(const std::string& projectName);
+
         void exportProject(const std::filesystem::path& path, ProjectType type);
 
-        void createProject(const std::string& projectName);
+        void saveProject();
 
         std::filesystem::path getCmakeListPath() const;
 
@@ -56,6 +67,8 @@ namespace TechEngine {
         std::filesystem::path getCachePath() const;
 
         std::string getProjectName() const;
+
+        std::string getProjectConfig(ProjectConfig config) const;
 
     private:
         void createDefaultProject();

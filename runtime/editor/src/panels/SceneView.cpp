@@ -1,10 +1,9 @@
 #include "SceneView.hpp"
 
 #include "components/Components.hpp"
-
 #include "renderer/FrameBuffer.hpp"
 #include "renderer/Renderer.hpp"
-#include "scene/Scene.hpp"
+#include "scene/ScenesManager.hpp"
 #include "scene/TransformSystem.hpp"
 #include "systems/SystemsRegistry.hpp"
 
@@ -131,7 +130,7 @@ namespace TechEngine {
     }
 
     void SceneView::renderCameraFrustum() {
-        Scene& scene = m_appSystemsRegistry.getSystem<Scene>();
+        Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
         // Define the 8 corners of the frustum in NDC
         scene.runSystem<Camera, Transform>([this](Camera& camera, Transform& transform) {
             std::vector<glm::vec3> frustumPoints;

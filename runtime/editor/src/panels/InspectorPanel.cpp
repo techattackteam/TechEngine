@@ -1,7 +1,7 @@
 #include "InspectorPanel.hpp"
 
 #include "scene/CameraSystem.hpp"
-#include "scene/Scene.hpp"
+#include "scene/ScenesManager.hpp"
 #include "scene/TransformSystem.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
 
@@ -87,12 +87,12 @@ namespace TechEngine {
         ImGui::PopItemWidth();
 
         Entity firstEntity = m_selectedEntities.front();
-        Scene& scene = m_appSystemRegistry.getSystem<Scene>();
+        Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
         std::vector<ComponentTypeID> componentsToDraw = scene.getCommonComponents(m_selectedEntities);
 
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<Transform>()) != componentsToDraw.end()) {
             drawComponent<Transform>(firstEntity, "Transform", [this](auto& component) {
-                Scene& scene = m_appSystemRegistry.getSystem<Scene>();
+                Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                 glm::vec3 position = component.position;
                 glm::vec3 rotation = component.rotation;
                 glm::vec3 scale = component.scale;
@@ -136,7 +136,7 @@ namespace TechEngine {
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<Camera>()) != componentsToDraw.end()) {
             drawComponent<Camera>(firstEntity, "Camera", [this](auto& component) {
                 auto& camera = component;
-                Scene& scene = m_appSystemRegistry.getSystem<Scene>();
+                Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                 const char* projectionTypeStrings[] = {"Perspective", "Orthographic"};
                 bool isProjectionCommon = true;
                 bool isFovCommon = true;
@@ -243,7 +243,7 @@ namespace TechEngine {
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<MeshRenderer>()) != componentsToDraw.end()) {
             drawComponent<MeshRenderer>(firstEntity, "Mesh Renderer", [this](auto& component) {
-                Scene& scene = m_appSystemRegistry.getSystem<Scene>();
+                Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                 bool isMeshCommon = true;
                 bool isMaterialCommon = true;
                 const std::string commonMeshName = component.mesh.getName();

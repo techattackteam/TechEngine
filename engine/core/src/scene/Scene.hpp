@@ -4,12 +4,14 @@
 #include "systems/System.hpp"
 
 namespace TechEngine {
-    class CORE_DLL Scene : public System {
+    class CORE_DLL Scene {
     private:
         ArchetypesManager m_archetypesManager;
 
     public:
-        void init() override;
+        void saveScene();
+
+        void loadScene();
 
         Entity createEntity(const std::string& name);
 

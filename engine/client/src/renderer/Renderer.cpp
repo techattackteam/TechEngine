@@ -11,8 +11,7 @@
 #include "core/Logger.hpp"
 #include "resources/material/Material.hpp"
 #include "resources/mesh/Vertex.hpp"
-#include "scene/CameraSystem.hpp"
-#include "scene/Scene.hpp"
+#include "scene/ScenesManager.hpp"
 #include "scene/TransformSystem.hpp"
 #include "systems/SystemsRegistry.hpp"
 
@@ -57,7 +56,7 @@ namespace TechEngine {
         /*for (auto& pair: gameObject->getChildren()) {
             renderGameObject(pair.second, shadow);
         }*/
-        Scene& scene = m_systemsRegistry.getSystem<Scene>();
+        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
         TransformSystem& transformSystem = m_systemsRegistry.getSystem<TransformSystem>();
         glm::mat4 model = transformSystem.getModelMatrix(transform);
         shadersManager.getActiveShader()->setUniformMatrix4f("model", model);
@@ -121,7 +120,7 @@ namespace TechEngine {
         shadersManager.getActiveShader()->setUniformMatrix4f("view", camera.getViewMatrix());
         //shadersManager.getActiveShader()->setUniformVec3("cameraPosition", camera->getTransform().getPosition());
 
-        renderGeometryPass(m_systemsRegistry.getSystem<Scene>(), false);
+        renderGeometryPass(m_systemsRegistry.getSystem<ScenesManager>().getActiveScene(), false);
         vertexBuffers[BufferGameObjects]->unBind();
         vertexArrays[BufferGameObjects]->unBind();
     }
@@ -164,7 +163,7 @@ namespace TechEngine {
         shadersManager.getActiveShader()->setUniformMatrix4f("projection", camera->getProjectionMatrix());
         shadersManager.getActiveShader()->setUniformMatrix4f("view", camera->getViewMatrix());
         //shadersManager.getActiveShader()->setUniformVec3("cameraPosition", camera->getTransform().getPosition());
-        auto& scene = m_systemsRegistry.getSystem<Scene>();
+        auto& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
         scene.runSystem<Transform, MeshRenderer>([this](Transform& transform, MeshRenderer& meshRenderer) {
             renderMesh(transform, meshRenderer, false);
         });
