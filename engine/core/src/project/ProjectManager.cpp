@@ -27,6 +27,27 @@ namespace TechEngine {
     void ProjectManager::shutdown() {
     }
 
+    void ProjectManager::createProject(const std::string& projectName) {
+        assert(!projectName.empty());
+        std::filesystem::create_directory(m_projectPath);
+        TE_LOGGER_INFO("New project created at: " + m_projectPath.string());
+        std::filesystem::copy(std::filesystem::current_path().string() + "\\resources\\templates\\project", m_projectPath.string(), std::filesystem::copy_options::recursive);
+        std::ofstream fout(m_projectPath.string() + "\\" + projectName + ".teproj");
+        YAML::Node config;
+        config["Project Name"] = projectName;
+
+        YAML::Node client;
+        client["Last Loaded Scene"] = "DefaultScene";
+        config["Client"] = client;
+
+        YAML::Node server;
+        server["Last Loaded Scene"] = "DefaultScene";
+        config["Server"] = server;
+
+        fout << config;
+        fout.close();
+    }
+
     void ProjectManager::exportProject(const std::filesystem::path& path, ProjectType projectType) {
         assert(!path.empty() && !m_projectName.empty() && !m_projectPath.empty());
         std::string exportPath = path.string() + "\\" + m_projectName.string();
@@ -64,19 +85,8 @@ namespace TechEngine {
         TE_LOGGER_INFO("Project exported to: " + exportPath);
     }
 
-    void ProjectManager::createProject(const std::string& projectName) {
-        assert(!projectName.empty());
-        std::filesystem::create_directory(m_projectPath);
-        TE_LOGGER_INFO("New project created at: " + m_projectPath.string());
-        std::filesystem::copy(std::filesystem::current_path().string() + "\\resources\\templates\\project", m_projectPath.string(), std::filesystem::copy_options::recursive);
-        std::ofstream fout(m_projectPath.string() + "\\" + projectName + ".teproj");
-        YAML::Emitter out;
-        out << YAML::BeginMap;
-        out << YAML::Key << "Project Name" << YAML::Value << projectName;
-        out << YAML::EndSeq;
-        out << YAML::EndMap;
-        fout << out.c_str();
-        fout.close();
+    void ProjectManager::saveProject() {
+        TE_LOGGER_INFO("Project saved: " + m_projectName.string());
     }
 
     std::filesystem::path ProjectManager::getCmakeListPath() const {
@@ -119,6 +129,9 @@ namespace TechEngine {
         return m_projectName.string();
     }
 
+    std::string ProjectManager::getProjectConfig(ProjectConfig config) const {
+        return m_projectConfigs.at(config);
+    }
 
     void ProjectManager::createDefaultProject() {
         createProject("New Project");
@@ -135,6 +148,21 @@ namespace TechEngine {
             TE_LOGGER_ERROR("Project Name not found in project config");
             config["Project Name"] = "New Project";
         }
+
+        if (!config["Client"]["Last Loaded Scene"].IsDefined()) {
+            TE_LOGGER_ERROR("Last Loaded Scene not found in project config");
+            config["Client"]["Last Loaded Scene"] = "DefaultScene";
+        }
+
+        if (!config["Server"]["Last Loaded Scene"].IsDefined()) {
+            TE_LOGGER_ERROR("Last Loaded Scene not found in project config");
+            config["Server"]["Last Loaded Scene"] = "DefaultScene";
+        }
+        m_projectConfigs[ProjectConfig::ProjectName] = config["Project Name"].as<std::string>();
+        m_projectConfigs[ProjectConfig::ProjectPath] = m_projectPath.string();
+        m_projectConfigs[ProjectConfig::ClientScene] = config["Client"]["Last Loaded Scene"].as<std::string>();
+        m_projectConfigs[ProjectConfig::ServerScene] = config["Server"]["Last Loaded Scene"].as<std::string>();
+
         TE_LOGGER_INFO("Project loaded: " + m_projectName.string());
         m_assetsPath = m_projectPath.string() + "\\assets";
         m_resourcesPath = m_projectPath.string() + "\\resources";

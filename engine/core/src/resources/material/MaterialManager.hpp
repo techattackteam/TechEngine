@@ -10,7 +10,7 @@
 namespace TechEngine {
     class CORE_DLL MaterialManager {
     public:
-        inline static const std::string DEFAULT_MATERIAL_NAME = "default";
+        inline static const std::string DEFAULT_MATERIAL_NAME = "Default";
 
     private:
         std::unordered_map<std::string, Material> m_materialsBank = std::unordered_map<std::string, Material>();

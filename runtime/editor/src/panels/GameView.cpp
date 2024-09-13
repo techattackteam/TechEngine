@@ -2,7 +2,7 @@
 
 #include "renderer/FrameBuffer.hpp"
 #include "renderer/Renderer.hpp"
-#include "scene/Scene.hpp"
+#include "scene/ScenesManager.hpp"
 
 namespace TechEngine {
     GameView::GameView(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& appSystemsRegistry) : m_appSystemsRegistry(appSystemsRegistry),
@@ -17,7 +17,7 @@ namespace TechEngine {
     }
 
     void GameView::onUpdate() {
-        auto& scene = m_appSystemsRegistry.getSystem<Scene>();
+        auto& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
         scene.runSystem<Camera>([this](Camera& camera) {
             Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
             FrameBuffer& frameBuffer = renderer.getFramebuffer(frameBufferID);

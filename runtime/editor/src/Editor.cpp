@@ -77,6 +77,7 @@ namespace TechEngine {
         TE_LOGGER_INFO("Editor initialized");
         m_systemRegistry.getSystem<EventDispatcher>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
             m_running = false;
+            m_systemRegistry.getSystem<ProjectManager>().saveProject();
         });
 
         m_running = true;

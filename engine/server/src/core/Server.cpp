@@ -4,7 +4,7 @@
 #include "core/Timer.hpp"
 
 namespace TechEngine {
-    Server::Server() : Core(), m_entry(m_systemRegistry) {
+    Server::Server() : Core(AppType::Server), m_entry(m_systemRegistry) {
     }
 
     void Server::init(const std::filesystem::path& rootPath) {

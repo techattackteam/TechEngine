@@ -17,7 +17,6 @@ namespace TechEngine {
         Server,
     };
 
-
     class PathsBank : public System {
     private:
         std::filesystem::path m_rootPath;

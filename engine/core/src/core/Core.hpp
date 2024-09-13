@@ -6,10 +6,13 @@
 namespace TechEngine {
     class CORE_DLL Core {
     public:
+        AppType appType;
         SystemsRegistry m_systemRegistry;
         std::filesystem::path m_rootPath;
 
     public:
+        Core(AppType appType);
+
         virtual ~Core() = default;
 
         virtual void init(const std::filesystem::path& rootPath);

@@ -1,12 +1,11 @@
 #pragma once
 
-
 #include "Panel.hpp"
-#include "scene/Scene.hpp"
 #include "systems/SystemsRegistry.hpp"
-#include <imgui_internal.h>
-
 #include "components/Components.hpp"
+#include "scene/ScenesManager.hpp"
+
+#include <imgui_internal.h>
 
 namespace TechEngine {
     class InspectorPanel : public Panel {
@@ -26,7 +25,7 @@ namespace TechEngine {
         template<typename T, typename UIFunction>
         void drawComponent(Entity entity, const std::string& name, UIFunction uiFunction) {
             const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
-            Scene& scene = m_appSystemRegistry.getSystem<Scene>();
+            Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
             if (scene.hasComponent<T>(entity)) {
                 auto& component = scene.getComponent<T>(entity);
                 ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
@@ -62,7 +61,7 @@ namespace TechEngine {
 
         template<class C, class... A>
         void addComponent(A&... args) {
-            Scene& scene = m_appSystemRegistry.getSystem<Scene>();
+            Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
             for (const Entity& entity: m_selectedEntities) {
                 scene.addComponent<C>(entity, C(args...));
             }

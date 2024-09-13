@@ -9,7 +9,7 @@ namespace TechEngine {
     void PathsBank::init() {
         m_paths[translatePathType(PathType::Assets, AppType::Client)] = m_rootPath / "assets/client";
         m_paths[translatePathType(PathType::Assets, AppType::Common)] = m_rootPath / "assets/common";
-        m_paths[translatePathType(PathType::Assets, AppType::Client)] = m_rootPath / "assets/client";
+        m_paths[translatePathType(PathType::Assets, AppType::Server)] = m_rootPath / "assets/server";
 
         m_paths[translatePathType(PathType::Resources, AppType::Client)] = m_rootPath / "resources/client";
         m_paths[translatePathType(PathType::Resources, AppType::Common)] = m_rootPath / "resources/common";
