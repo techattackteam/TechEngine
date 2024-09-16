@@ -8,29 +8,27 @@ namespace TechEngine {
     class CORE_DLL Archetype {
     private:
         friend class ArchetypesManager;
-
-        ArchetypeID id;
-        std::vector<Entity> entities; // List of entities in this archetype
-        std::unordered_map<ComponentTypeID, std::vector<char>> componentData; // Storage for component data
+        friend class SceneSerializer;
+        ArchetypeID m_id;
+        std::vector<Entity> m_entities; // List of entities in this archetype
+        std::unordered_map<ComponentTypeID, std::vector<char>> m_componentData; // Storage for component data
 
     public:
-        explicit Archetype(ArchetypeID id) : id(id) {
-            TE_LOGGER_INFO("Archetype created with ID: {0}", id);
+        explicit Archetype(ArchetypeID id) : m_id(id) {
         }
 
         //Copy constructor
         Archetype(const Archetype& archetype) {
-            id = archetype.id;
-            entities = archetype.entities;
-            componentData = archetype.componentData;
-            TE_LOGGER_INFO("Archetype copied with ID: {0}", id);
+            m_id = archetype.m_id;
+            m_entities = archetype.m_entities;
+            m_componentData = archetype.m_componentData;
         }
 
         template<typename T>
         T& getComponent(Entity entity) {
             ComponentTypeID typeID = ComponentType::get<T>();
-            auto& dataVector = componentData[typeID];
-            size_t index = std::distance(entities.begin(), std::find(entities.begin(), entities.end(), entity));
+            auto& dataVector = m_componentData[typeID];
+            size_t index = std::distance(m_entities.begin(), std::find(m_entities.begin(), m_entities.end(), entity));
             size_t componentSize = sizeof(T);
             char& component = dataVector[index * componentSize];
             return *reinterpret_cast<T*>(&component);
@@ -40,12 +38,12 @@ namespace TechEngine {
         template<typename T>
         std::vector<T>& getComponentArray() {
             ComponentTypeID typeID = ComponentType::get<T>();
-            auto& dataVector = componentData[typeID];
+            auto& dataVector = m_componentData[typeID];
             return *reinterpret_cast<std::vector<T>*>(&dataVector);
         }
 
         bool operator==(const Archetype& lhr) const {
-            if (id != lhr.id) {
+            if (m_id != lhr.m_id) {
                 return false;
             } else {
                 return true;
@@ -58,6 +56,8 @@ namespace TechEngine {
         // Method to get the entities in this archetype
         std::vector<Entity> getEntities() const;
 
+        void clear();
+
     private:
         void addEntity(Entity entity);
 
@@ -69,8 +69,8 @@ namespace TechEngine {
         template<typename T>
         void addComponentData(Entity entity, const T& component) {
             ComponentTypeID typeID = ComponentType::get<T>();
-            size_t entityIndex = std::distance(entities.begin(), std::find(entities.begin(), entities.end(), entity));
-            auto& componentVector = componentData[typeID];
+            size_t entityIndex = std::distance(m_entities.begin(), std::find(m_entities.begin(), m_entities.end(), entity));
+            auto& componentVector = m_componentData[typeID];
 
             // Ensure there's enough space to store the new component
             if (componentVector.size() < (entityIndex + 1) * sizeof(T)) {
@@ -85,13 +85,13 @@ namespace TechEngine {
         template<typename T>
         void removeComponentData(Entity entity) {
             ComponentTypeID typeID = ComponentType::get<T>();
-            auto& componentVector = componentData[typeID];
+            auto& componentVector = m_componentData[typeID];
 
-            auto entityIndex = std::distance(entities.begin(), std::find(entities.begin(), entities.end(), entity));
+            auto entityIndex = std::distance(m_entities.begin(), std::find(m_entities.begin(), m_entities.end(), entity));
             size_t componentSize = sizeof(T);
 
             // Erase the component data for this entity
-            if (entityIndex == entities.size() - 1) {
+            if (entityIndex == m_entities.size() - 1) {
                 componentVector.erase(componentVector.begin() + entityIndex * componentSize, componentVector.end());
             } else {
                 componentVector.erase(componentVector.begin() + entityIndex * componentSize, componentVector.begin() + (entityIndex + 1) * componentSize);
@@ -99,7 +99,6 @@ namespace TechEngine {
         }
 
         size_t getComponentSize(ComponentTypeID typeID);
-
 
         bool hasMatchingComponents(const std::vector<ComponentTypeID>& requiredComponents);
 

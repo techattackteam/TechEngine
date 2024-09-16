@@ -12,7 +12,7 @@ namespace TechEngine {
     public:
         Server();
 
-        void init(const std::filesystem::path& rootPath) override;
+        void init(const std::filesystem::path& rootPath, std::unordered_map<ProjectConfig, std::string>& projectConfigs);
 
         void onStart() override;
 

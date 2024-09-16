@@ -68,7 +68,7 @@ namespace TechEngine {
 
         std::string getProjectName() const;
 
-        std::string getProjectConfig(ProjectConfig config) const;
+        std::unordered_map<ProjectConfig, std::string>& getProjectConfigs();
 
     private:
         void createDefaultProject();

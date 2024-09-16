@@ -1,11 +1,12 @@
 #include "Core.hpp"
 
+
 #include "Timer.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 #include "files/PathsBank.hpp"
+#include "project/ProjectManager.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "scene/CameraSystem.hpp"
-#include "scene/Scene.hpp"
 #include "scene/ScenesManager.hpp"
 #include "scene/TransformSystem.hpp"
 #include "script/ScriptEngine.hpp"
@@ -14,15 +15,15 @@ namespace TechEngine {
     Core::Core(AppType appType) : appType(appType) {
     }
 
-    void Core::init(const std::filesystem::path& rootPath) {
+    void Core::init(const std::filesystem::path& rootPath, std::unordered_map<ProjectConfig, std::string>& projectConfigs) {
+        m_systemRegistry.registerSystem<PathsBank>(rootPath);
         m_systemRegistry.registerSystem<EventDispatcher>();
         m_systemRegistry.registerSystem<Timer>();
         m_systemRegistry.registerSystem<ScriptEngine>(m_systemRegistry);
         m_systemRegistry.registerSystem<TransformSystem>(m_systemRegistry);
         m_systemRegistry.registerSystem<CameraSystem>(m_systemRegistry);
-        m_systemRegistry.registerSystem<ScenesManager>(m_systemRegistry);
         m_systemRegistry.registerSystem<ResourcesManager>(m_systemRegistry);
-        m_systemRegistry.registerSystem<PathsBank>(rootPath);
+        m_systemRegistry.registerSystem<ScenesManager>(m_systemRegistry);
         m_systemRegistry.getSystem<PathsBank>().init();
         m_systemRegistry.getSystem<EventDispatcher>().init();
         m_systemRegistry.getSystem<Timer>().init();
@@ -30,7 +31,7 @@ namespace TechEngine {
         m_systemRegistry.getSystem<TransformSystem>().init();
         m_systemRegistry.getSystem<CameraSystem>().init();
         m_systemRegistry.getSystem<ResourcesManager>().init(appType);
-        m_systemRegistry.getSystem<ScenesManager>().init(appType);
+        m_systemRegistry.getSystem<ScenesManager>().init(appType, projectConfigs);
     }
 
     void Core::onStart() {

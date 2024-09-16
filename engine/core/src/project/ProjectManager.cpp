@@ -86,7 +86,21 @@ namespace TechEngine {
     }
 
     void ProjectManager::saveProject() {
-        TE_LOGGER_INFO("Project saved: " + m_projectName.string());
+        assert(!m_projectName.empty());
+        std::ofstream fout(m_projectPath.string() + "\\" + m_projectName.string() + ".teproj");
+        YAML::Node config;
+        config["Project Name"] = m_projectConfigs[ProjectConfig::ProjectName];
+
+        YAML::Node client;
+        client["Last Loaded Scene"] = m_projectConfigs[ProjectConfig::ClientScene];
+        config["Client"] = client;
+
+        YAML::Node server;
+        server["Last Loaded Scene"] = m_projectConfigs[ProjectConfig::ServerScene];
+        config["Server"] = server;
+
+        fout << config;
+        fout.close();
     }
 
     std::filesystem::path ProjectManager::getCmakeListPath() const {
@@ -129,9 +143,10 @@ namespace TechEngine {
         return m_projectName.string();
     }
 
-    std::string ProjectManager::getProjectConfig(ProjectConfig config) const {
-        return m_projectConfigs.at(config);
+    std::unordered_map<ProjectConfig, std::string>& ProjectManager::getProjectConfigs() {
+        return m_projectConfigs;
     }
+
 
     void ProjectManager::createDefaultProject() {
         createProject("New Project");

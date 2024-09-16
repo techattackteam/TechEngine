@@ -7,7 +7,7 @@ namespace TechEngine {
     void RuntimeServer::init() {
         m_server.m_systemRegistry.registerSystem<ProjectManager>(std::filesystem::current_path());
         m_server.m_systemRegistry.getSystem<ProjectManager>().init();
-        m_server.init(m_server.m_systemRegistry.getSystem<ProjectManager>().getProjectPath());
+        m_server.init(m_server.m_systemRegistry.getSystem<ProjectManager>().getProjectPath(), m_server.m_systemRegistry.getSystem<ProjectManager>().getProjectConfigs());
 
         m_runFunction = [this]() {
             m_server.m_entry.run([this]() {

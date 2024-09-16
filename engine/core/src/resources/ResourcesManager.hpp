@@ -1,6 +1,7 @@
 #pragma once
 
 #include <queue>
+#include <yaml-cpp/node/node.h>
 
 #include "systems/System.hpp"
 #include "material/MaterialManager.hpp"
@@ -25,14 +26,20 @@ namespace TechEngine {
 
         void shutdown() override;
 
+#pragma region MeshManager
         void loadModelFile(const std::string& path);
 
         void loadStaticMesh(const std::string& path);
 
+        Mesh& getMesh(const std::string& name);
+
+        Mesh& getDefaultMesh();
+#pragma endregion
+
 #pragma region MaterialManager
         void createMaterial(const std::string& name, const std::string& path);
 
-        Mesh& getDefaultMesh();
+        Material& getMaterial(const std::string& name);
 
         Material& getDefaultMaterial();
 #pragma endregion

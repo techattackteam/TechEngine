@@ -22,7 +22,7 @@ namespace TechEngine {
         //m_materialManager.shutdown();
         m_meshManager.shutdown();
     }
-
+#pragma region MeshManager
     void ResourcesManager::loadModelFile(const std::string& path) {
         std::string modelName = FileUtils::getFileName(path);
         std::string parentFolder = std::filesystem::path(path).parent_path().string();
@@ -41,6 +41,20 @@ namespace TechEngine {
         m_meshManager.loadStaticMesh(path);
     }
 
+    Mesh& ResourcesManager::getMesh(const std::string& name) {
+        if (!m_meshManager.isMeshLoaded(name)) {
+            TE_LOGGER_WARN("Mesh not found: {0}", name);
+            return getDefaultMesh();
+        }
+        return m_meshManager.getMesh(name);
+    }
+
+    Mesh& ResourcesManager::getDefaultMesh() {
+        return m_meshManager.getMesh(MeshManager::DEFAULT_MESH_NAME);
+    }
+#pragma endregion
+
+#pragma region MaterialManager
     void ResourcesManager::createMaterial(const std::string& name, const std::string& path) {
         if (m_materialManager.materialExists(name)) {
             TE_LOGGER_WARN("Material already registered: {0}", name);
@@ -49,13 +63,18 @@ namespace TechEngine {
         m_materialManager.createMaterialFile(name, path);
     }
 
-    Mesh& ResourcesManager::getDefaultMesh() {
-        return m_meshManager.getMesh(MeshManager::DEFAULT_MESH_NAME);
+    Material& ResourcesManager::getMaterial(const std::string& name) {
+        if (!m_materialManager.materialExists(name)) {
+            TE_LOGGER_WARN("Material not found: {0}", name);
+            return getDefaultMaterial();
+        }
+        return m_materialManager.getMaterial(name);
     }
 
     Material& ResourcesManager::getDefaultMaterial() {
         return m_materialManager.getMaterial(MaterialManager::DEFAULT_MATERIAL_NAME);
     }
+#pragma endregion
 
     std::unordered_map<std::string, std::vector<std::filesystem::path>> ResourcesManager::getFilesByExtension(const AppType& appType) {
         std::unordered_map<std::string, std::vector<std::filesystem::path>> filesByExtension;

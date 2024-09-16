@@ -7,10 +7,10 @@ namespace TechEngine {
     Server::Server() : Core(AppType::Server), m_entry(m_systemRegistry) {
     }
 
-    void Server::init(const std::filesystem::path& rootPath) {
+    void Server::init(const std::filesystem::path& rootPath, std::unordered_map<ProjectConfig, std::string>& projectConfigs) {
         m_systemRegistry.registerSystem<Logger>("TechEngineServer");
         m_systemRegistry.getSystem<Logger>().init();
-        Core::init(rootPath);
+        Core::init(rootPath, projectConfigs);
     }
 
     void Server::onStart() {

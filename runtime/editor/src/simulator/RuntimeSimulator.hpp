@@ -38,7 +38,8 @@ namespace TechEngine {
         }
 
         void init() override {
-            m_runtime.init(m_systemRegistry.getSystem<ProjectManager>().getProjectPath());
+            ProjectManager& projectManager = m_systemRegistry.getSystem<ProjectManager>();
+            m_runtime.init(projectManager.getProjectPath(), projectManager.getProjectConfigs());
             m_systemRegistry.getSystem<EventDispatcher>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
                 if (m_simulationState != SimulationState::STOPPED) {
                     stopSimulation();
@@ -71,9 +72,9 @@ namespace TechEngine {
         }
 
         void shutdown() override {
-            if (m_simulationState == SimulationState::RUNNING) {
+            /*if (m_simulationState == SimulationState::RUNNING) {
+            }*/
                 m_runtime.shutdown();
-            }
         }
 
         const SimulationState& getSimulationState() const {

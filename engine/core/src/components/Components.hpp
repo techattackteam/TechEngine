@@ -1,12 +1,12 @@
 #pragma once
 #include <typeindex>
+#include <yaml-cpp/emitter.h>
 
 #include "resources/material/Material.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
 #include "resources/mesh/Mesh.hpp"
 
-
 namespace TechEngine {
+    class ResourcesManager;
     using Entity = int32_t;
     using ComponentTypeID = uint32_t;
 
@@ -43,6 +43,10 @@ namespace TechEngine {
             this->name = new char[name.size() + 1];
             strcpy_s(this->name, name.size() + 1, name.c_str());
         }
+
+        static void serialize(const Tag& tag, YAML::Emitter& out);
+
+        static Tag deserialize(const YAML::Node& node);
     };
 
     class CORE_DLL Transform {
@@ -50,6 +54,10 @@ namespace TechEngine {
         glm::vec3 position = glm::vec3(0.0f);
         glm::vec3 rotation = glm::vec3(0.0f); // Maybe use quaternions instead
         glm::vec3 scale = glm::vec3(1.0f);
+
+        static void serialize(const Transform& transform, YAML::Emitter& out);
+
+        static Transform deserialize(const YAML::Node& node);
     };
 
     class CORE_DLL Camera {
@@ -68,7 +76,6 @@ namespace TechEngine {
 
     public:
         Camera() {
-            TE_LOGGER_INFO("Camera created");
         }
 
         //Copy constructor
@@ -171,6 +178,10 @@ namespace TechEngine {
         float getAspectRatio() const {
             return aspectRatio;
         }
+
+        static void serialize(const Camera& camera, YAML::Emitter& out);
+
+        static Camera deserialize(const YAML::Node& node);
     };
 
     class MeshRenderer {
@@ -194,6 +205,10 @@ namespace TechEngine {
                 vertex.setColor(material.getColor());
             }
         }
+
+        static void serialize(const MeshRenderer& meshRenderer, YAML::Emitter& out);
+
+        static MeshRenderer deserialize(const YAML::Node& node, ResourcesManager& resourcesManager);
     };
 
 
@@ -215,7 +230,6 @@ namespace TechEngine {
             if (typeMap.find(typeid(T)) == typeMap.end()) {
                 typeMap[typeid(T)] = counter;
                 counter += 1;
-                TE_LOGGER_INFO("Component type {0} registered with ID {1}", typeid(T).name(), counter - 1);
             }
         }
 
