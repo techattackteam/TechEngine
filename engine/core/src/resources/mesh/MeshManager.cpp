@@ -11,7 +11,7 @@ namespace TechEngine {
     }
 
     void MeshManager::shutdown() {
-        m_meshesBank.clear();
+        //m_meshesBank.clear();
     }
 
     void MeshManager::loadStaticMesh(const std::filesystem::path& path) {

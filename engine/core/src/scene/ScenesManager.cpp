@@ -33,7 +33,6 @@ namespace TechEngine {
 
     void ScenesManager::shutdown() {
         System::shutdown();
-        TE_LOGGER_INFO("Shutting down ScenesManager");
         saveScene(m_scenesBank[m_activeScene.getName()]);
     }
 
@@ -47,11 +46,6 @@ namespace TechEngine {
         m_activeScene.addComponent(cube, MeshRenderer(resourcesManager.getDefaultMesh(), resourcesManager.getDefaultMaterial()));
         MeshRenderer& meshRenderer = m_activeScene.getComponent<MeshRenderer>(cube);
         meshRenderer.paintMesh();
-        cube = m_activeScene.createEntity("Cube");
-        m_activeScene.addComponent(cube, MeshRenderer(resourcesManager.getDefaultMesh(), resourcesManager.getDefaultMaterial()));
-        MeshRenderer& meshRenderer1 = m_activeScene.getComponent<MeshRenderer>(cube);
-        meshRenderer1.paintMesh();
-        registerScene(name, path);
     }
 
     Scene& ScenesManager::getActiveScene() {
@@ -68,7 +62,6 @@ namespace TechEngine {
     }
 
     void ScenesManager::loadScene(const std::string& name) {
-        TE_LOGGER_INFO("Loading scene: {}", name);
         m_activeScene.clear();
         const std::filesystem::path& path = m_scenesBank[name];
         m_sceneSerializer.deserialize(path);
