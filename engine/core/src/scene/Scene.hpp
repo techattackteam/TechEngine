@@ -1,18 +1,15 @@
 #pragma once
 
 #include "components/ArchetypesManager.hpp"
-#include "systems/System.hpp"
 
 namespace TechEngine {
     class CORE_DLL Scene {
     private:
         ArchetypesManager m_archetypesManager;
+        std::string m_name = "Untitled";
+        friend class SceneSerializer;
 
     public:
-        void saveScene();
-
-        void loadScene();
-
         Entity createEntity(const std::string& name);
 
         void destroyEntity(Entity entity);
@@ -44,6 +41,15 @@ namespace TechEngine {
         template<typename... Components, typename Function>
         void runSystem(Function function) {
             m_archetypesManager.runSystem<Components...>(function);
-        };
+        }
+
+        void clear();
+
+        void setName(const std::string& name);
+
+        const std::string& getName() const;
+
+    private:
+        Entity createEntity(const std::string& name, const std::string& uuid);
     };
 }

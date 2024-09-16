@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "Vertex.hpp"
-#include "resources/material/Material.hpp"
 
 namespace TechEngine {
     class Material;

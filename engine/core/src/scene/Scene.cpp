@@ -5,11 +5,8 @@
 
 namespace TechEngine {
     Entity Scene::createEntity(const std::string& name) {
-        Entity entity = m_archetypesManager.createEntity();
         std::string uuid = UUID::generate().toString();
-        m_archetypesManager.addComponent(entity, Tag(name, uuid));
-        m_archetypesManager.addComponent(entity, Transform());
-        return entity;
+        return createEntity(name, uuid);
     }
 
     void Scene::destroyEntity(Entity entity) {
@@ -40,5 +37,24 @@ namespace TechEngine {
             }
         }
         return -1;
+    }
+
+    void Scene::clear() {
+        m_archetypesManager.clear();
+    }
+
+    void Scene::setName(const std::string& name) {
+        this->m_name = name;
+    }
+
+    const std::string& Scene::getName() const {
+        return m_name;
+    }
+
+    Entity Scene::createEntity(const std::string& name, const std::string& uuid) {
+        Entity entity = m_archetypesManager.createEntity();
+        m_archetypesManager.addComponent(entity, Tag(name, uuid));
+        m_archetypesManager.addComponent(entity, Transform());
+        return entity;
     }
 }

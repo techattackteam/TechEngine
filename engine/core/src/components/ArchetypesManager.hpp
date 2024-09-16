@@ -9,6 +9,7 @@ namespace TechEngine {
         std::vector<Archetype> m_archetypes; // List of archetypes
         std::unordered_map<Entity, size_t> m_entityToArchetypeMap; // Map of entities to their archetypes
         friend class Scene;
+        friend class SceneSerializer;
 
     private:
         ArchetypeID m_lastArchetypeID = 0;
@@ -19,6 +20,8 @@ namespace TechEngine {
         void populateArchetypes();
 
         // Create a new entity with a set of components
+        Entity registerEntity(Entity entity);
+
         Entity createEntity();
 
         bool removeEntity(Entity entity);
@@ -104,7 +107,7 @@ namespace TechEngine {
             }
             Archetype& archetype = m_archetypes[index];
             ComponentTypeID typeID = ComponentType::get<T>();
-            return !archetype.componentData.empty() && archetype.componentData.find(typeID) != archetype.componentData.end();
+            return !archetype.m_componentData.empty() && archetype.m_componentData.find(typeID) != archetype.m_componentData.end();
         }
 
         std::vector<ComponentTypeID> getComponentTypes(Entity entity);
@@ -116,13 +119,15 @@ namespace TechEngine {
                     continue;
                 }
                 auto componentArrays = std::make_tuple(&archetype.getComponentArray<Component>()...);
-                for (size_t i = 0; i < archetype.entities.size(); i++) {
+                for (size_t i = 0; i < archetype.m_entities.size(); i++) {
                     function((*std::get<std::vector<std::decay_t<Component>>*>(componentArrays))[i]...);
                 }
             }
         }
 
         std::vector<Archetype*> queryArchetypes(const std::vector<ComponentTypeID>& requiredComponents);
+
+        void clear();
 
     private:
         size_t findArchetype(const std::vector<ComponentTypeID>& componentTypes);
