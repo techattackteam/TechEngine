@@ -28,7 +28,7 @@ namespace TechEngine {
         }
         ImGui::SetNextWindowClass(m_parentDockSpaceClass);
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-        ImGui::Begin(this->m_name.c_str(), nullptr, m_windowFlags);
+        ImGui::Begin((this->m_name + "##" + std::to_string(id)).c_str(), nullptr, m_windowFlags);
         ImGui::PopStyleVar();
         if (m_styleVars.size() > 0) {
             ImGui::PopStyleVar(m_styleVars.size());

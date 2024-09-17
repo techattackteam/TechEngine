@@ -7,6 +7,8 @@
 #include <vector>
 #include <glm/vec2.hpp>
 
+#include "core/UUID.hpp"
+
 
 namespace TechEngine {
     class SystemsRegistry;
@@ -15,6 +17,8 @@ namespace TechEngine {
 namespace TechEngine {
     class Panel {
     protected:
+        inline static int nextID = 0;
+        int id;
         bool m_isVisible = true;
         std::string m_name;
         ImGuiWindowClass* m_parentDockSpaceClass = nullptr; // from parent otherwise editor window
@@ -50,6 +54,10 @@ namespace TechEngine {
 
         const std::string& getName() const {
             return m_name;
+        }
+
+        const int& getId() const {
+            return id;
         }
     };
 }

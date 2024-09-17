@@ -1,6 +1,7 @@
 #pragma once
 #include "events/application/AppCloseEvent.hpp"
 #include "eventSystem/EventDispatcher.hpp"
+#include "renderer/Renderer.hpp"
 #include "systems/System.hpp"
 
 
@@ -40,6 +41,10 @@ namespace TechEngine {
         void init() override {
             ProjectManager& projectManager = m_systemRegistry.getSystem<ProjectManager>();
             m_runtime.init(projectManager.getProjectPath(), projectManager.getProjectConfigs());
+            if (!m_runtime.m_systemRegistry.template hasSystem<Renderer>()) {
+                m_runtime.m_systemRegistry.template registerSystem<Renderer>(m_runtime.m_systemRegistry);
+                m_runtime.m_systemRegistry.template getSystem<Renderer>().init();
+            }
             m_systemRegistry.getSystem<EventDispatcher>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
                 if (m_simulationState != SimulationState::STOPPED) {
                     stopSimulation();
@@ -74,7 +79,7 @@ namespace TechEngine {
         void shutdown() override {
             /*if (m_simulationState == SimulationState::RUNNING) {
             }*/
-                m_runtime.shutdown();
+            m_runtime.shutdown();
         }
 
         const SimulationState& getSimulationState() const {
