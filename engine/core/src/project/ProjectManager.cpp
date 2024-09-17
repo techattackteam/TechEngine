@@ -30,6 +30,21 @@ namespace TechEngine {
     void ProjectManager::createProject(const std::string& projectName) {
         assert(!projectName.empty());
         std::filesystem::create_directory(m_projectPath);
+        std::filesystem::create_directory(m_projectPath.string() + "\\assets");
+        std::filesystem::create_directory(m_projectPath.string() + "\\resources");
+        std::filesystem::create_directory(m_projectPath.string() + "\\cache");
+        std::filesystem::create_directory(m_projectPath.string() + "\\assets\\common");
+        std::filesystem::create_directory(m_projectPath.string() + "\\resources\\common");
+        std::filesystem::create_directory(m_projectPath.string() + "\\cache\\common");
+
+        std::filesystem::create_directory(m_projectPath.string() + "\\assets\\client");
+        std::filesystem::create_directory(m_projectPath.string() + "\\resources\\client");
+        std::filesystem::create_directory(m_projectPath.string() + "\\cache\\client");
+
+        std::filesystem::create_directory(m_projectPath.string() + "\\assets\\server");
+        std::filesystem::create_directory(m_projectPath.string() + "\\resources\\server");
+        std::filesystem::create_directory(m_projectPath.string() + "\\cache\\server");
+
         TE_LOGGER_INFO("New project created at: " + m_projectPath.string());
         std::filesystem::copy(std::filesystem::current_path().string() + "\\resources\\templates\\project", m_projectPath.string(), std::filesystem::copy_options::recursive);
         std::ofstream fout(m_projectPath.string() + "\\" + projectName + ".teproj");
