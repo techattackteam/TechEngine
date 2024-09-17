@@ -34,6 +34,7 @@ namespace TechEngine {
         m_editorSystemsRegistry.getSystem<EventDispatcher>().subscribe<KeyReleasedEvent>([this](const std::shared_ptr<Event> event) {
             this->onKeyReleasedEvent(((KeyReleasedEvent*)event.get())->getKey());
         });
+        id = nextID++;
 
         onInit();
     }
@@ -52,7 +53,8 @@ namespace TechEngine {
                 }
             }
         }
-        ImGui::Begin(this->m_name.c_str(), nullptr, m_windowFlags);
+
+        ImGui::Begin((this->m_name + "##" + std::to_string(id)).c_str(), nullptr, m_windowFlags);
         if (!m_styleVars.empty()) {
             ImGui::PopStyleVar(m_styleVars.size());
         }

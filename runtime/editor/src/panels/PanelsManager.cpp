@@ -24,8 +24,8 @@ namespace TechEngine {
                                  Client& client,
                                  Server& server) : m_systemsRegistry(systemsRegistry),
                                                    m_client(client), m_server(server),
-                                                   m_ClientPanel(systemsRegistry, m_client.m_systemRegistry, m_LoggerPanel),
-                                                   m_ServerPanel(systemsRegistry, m_server.m_systemRegistry, m_LoggerPanel),
+                                                   m_clientPanel(systemsRegistry, m_client.m_systemRegistry, m_LoggerPanel),
+                                                   m_serverPanel(systemsRegistry, m_server.m_systemRegistry, m_LoggerPanel),
                                                    m_LoggerPanel(systemsRegistry,
                                                                  m_client.m_systemRegistry,
                                                                  m_server.m_systemRegistry),
@@ -37,8 +37,8 @@ namespace TechEngine {
 
     void PanelsManager::init() {
         initImGui();
-        m_ClientPanel.init("Client Panel", &m_editorWindowClass);
-        m_ServerPanel.init("Server Panel", &m_editorWindowClass);
+        m_clientPanel.init("Client Panel", &m_editorWindowClass);
+        m_serverPanel.init("Server Panel", &m_editorWindowClass);
         m_LoggerPanel.init("Logger", &m_editorWindowClass);
         m_ContentBrowserPanel.init("Content Browser", &m_editorWindowClass);
     }
@@ -49,8 +49,8 @@ namespace TechEngine {
         ImGui::NewFrame();
         m_dockSpaceID = ImGui::GetID("EditorDockSpace");
         createDockSpace();
-        m_ClientPanel.update();
-        m_ServerPanel.update();
+        m_clientPanel.update();
+        m_serverPanel.update();
         m_LoggerPanel.update();
         m_ContentBrowserPanel.update();
         static bool firstTime = true;
@@ -151,17 +151,19 @@ namespace TechEngine {
     }
 
     void PanelsManager::setupInitialDockingLayout() {
-        ImGui::DockBuilderRemoveNode(m_dockSpaceID); // Clear any previous layout
-        ImGui::DockBuilderAddNode(m_dockSpaceID, ImGuiDockNodeFlags_DockSpace); // Create a new dockspace node
-        ImGuiID lowerPanels;
-        ImGuiID centralPanels;
-        ImGui::DockBuilderSplitNode(m_dockSpaceID, ImGuiDir_Down, 1.0f, &lowerPanels, &centralPanels);
-        ImGui::DockBuilderDockWindow("Client Panel", centralPanels);
-        ImGui::DockBuilderDockWindow("Server Panel", centralPanels);
-        ImGui::DockBuilderDockWindow("Logger", lowerPanels);
-        ImGui::DockBuilderDockWindow("Content Browser", lowerPanels);
+        ImGui::DockBuilderRemoveNode(m_dockSpaceID);
+        ImGui::DockBuilderAddNode(m_dockSpaceID, ImGuiDockNodeFlags_DockSpace);
+        ImGui::DockBuilderSetNodeSize(m_dockSpaceID, ImGui::GetMainViewport()->Size);
 
-        ImGui::DockBuilderFinish(m_dockSpaceID); // Finalize the layout
+        ImGuiID dockMainID = m_dockSpaceID;
+        ImGuiID dockButtonID = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Down, 0.2f, nullptr, &dockMainID);
+
+        ImGui::DockBuilderDockWindow((m_clientPanel.getName() + "##" + std::to_string(m_clientPanel.getId())).c_str(), dockMainID);
+        ImGui::DockBuilderDockWindow((m_serverPanel.getName() + "##" + std::to_string(m_serverPanel.getId())).c_str(), dockMainID);
+        ImGui::DockBuilderDockWindow((m_ContentBrowserPanel.getName() + "##" + std::to_string(m_ContentBrowserPanel.getId())).c_str(), dockButtonID);
+        ImGui::DockBuilderDockWindow((m_LoggerPanel.getName() + "##" + std::to_string(m_LoggerPanel.getId())).c_str(), dockButtonID);
+
+        ImGui::DockBuilderFinish(m_dockSpaceID);
     }
 
 

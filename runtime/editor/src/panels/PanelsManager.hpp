@@ -19,8 +19,8 @@ namespace TechEngine {
         Server& m_server;
 
         ImGuiID m_dockSpaceID;
-        ClientPanel m_ClientPanel;
-        ServerPanel m_ServerPanel;
+        ClientPanel m_clientPanel;
+        ServerPanel m_serverPanel;
         LoggerPanel m_LoggerPanel;
         ContentBrowserPanel m_ContentBrowserPanel;
         inline static ImGuiWindowClass m_editorWindowClass;

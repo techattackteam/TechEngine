@@ -13,7 +13,7 @@ namespace TechEngine {
                          const std::vector<Entity>& selectedEntities) : m_appSystemsRegistry(appSystemsRegistry),
                                                                         m_selectedEntities(selectedEntities),
                                                                         guizmo(id, appSystemsRegistry), Panel(editorSystemsRegistry) {
-        m_styleVars.push_back({ImGuiStyleVar_WindowPadding, ImVec2(0, 0)});
+        m_styleVars.emplace_back(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         totalIds++;
         id = totalIds;
     }
