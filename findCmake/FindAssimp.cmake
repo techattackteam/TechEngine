@@ -15,7 +15,7 @@ find_path(assimp_INCLUDE_DIR
 
 find_library(assimp_LIBRARY
         NAMES assimp-vc143-mt
-        PATHS ${CMAKE_SOURCE_DIR}/libs/assimp/lib/Debug
+        PATHS ${CMAKE_SOURCE_DIR}/libs/assimp/lib/Release
 )
 
 include(FindPackageHandleStandardArgs)
@@ -26,10 +26,6 @@ mark_as_advanced(assimp_INCLUDE_DIR assimp_LIBRARY)
 if (assimp_FOUND)
     # Set the Assimp found flag
     set(assimp_FOUND TRUE)
-
-    # Define necessary macros for static linking
-    add_definitions(-DASSIMP_BUILD_NO_EXPORT)
-    add_definitions(-DASSIMP_BUILD_NO_OWN_ZLIB)  # If Assimp uses its own zlib, adjust this accordingly
 
     # Find OpenGL as it is required by Assimp
     find_package(OpenGL REQUIRED)
@@ -42,16 +38,8 @@ if (assimp_FOUND)
     )
 
     # Assuming Assimp requires zlib and other dependencies; you might need to locate them
-    # For example, if zlib is required:
-    find_package(ZLIB REQUIRED)
-    target_link_libraries(assimp INTERFACE ZLIB::ZLIB OpenGL::GL)  # Link Zlib and OpenGL with Assimp
+    target_link_libraries(assimp INTERFACE OpenGL::GL)  # Link Zlib and OpenGL with Assimp
 
-    # You might need to add other dependencies as well:
-    # find_package(IrrXML REQUIRED)  # If Assimp uses IrrXML
-    # target_link_libraries(assimp INTERFACE IrrXML::IrrXML)
-
-    # Add additional dependencies for Assimp if needed
-    # target_link_libraries(assimp INTERFACE ${ADDITIONAL_LIBRARIES})
 
 else ()
     set(assimp_FOUND FALSE)
