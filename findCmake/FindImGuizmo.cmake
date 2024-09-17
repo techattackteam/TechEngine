@@ -25,7 +25,7 @@ if (IMGUIZMO_INCLUDE_DIR)
     # Create an interface target for ImGui
     add_library(imguizmo STATIC ${IMGUIZMO_SOURCES})
 
-    target_compile_definitions(imguizmo PUBLIC IMGUI_DEFINE_MATH_OPERATORS)
+    #target_compile_definitions(imguizmo PUBLIC IMGUI_DEFINE_MATH_OPERATORS)
 
     target_link_libraries(imguizmo PUBLIC imgui)
 

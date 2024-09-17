@@ -1,9 +1,10 @@
 #pragma once
 
 #include <imGuizmo.h>
+#include <imgui_internal.h>
 #include <vector>
 
-#include "components/Archetype.hpp"
+#include "components/Components.hpp"
 
 namespace TechEngine {
     class SystemsRegistry;
