@@ -18,10 +18,16 @@ find_library(assimp_LIBRARY
         PATHS ${CMAKE_SOURCE_DIR}/libs/assimp/lib/Release
 )
 
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(assimp DEFAULT_MSG assimp_INCLUDE_DIR assimp_LIBRARY)
+get_filename_component(assimp_DLL_DIR ${assimp_LIBRARY} DIRECTORY)
+find_file(assimp_DLL
+        NAMES assimp-vc143-mt.dll
+        PATHS ${CMAKE_SOURCE_DIR}/libs/assimp/bin/Release
+)
 
-mark_as_advanced(assimp_INCLUDE_DIR assimp_LIBRARY)
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(assimp DEFAULT_MSG assimp_INCLUDE_DIR assimp_LIBRARY assimp_DLL)
+
+mark_as_advanced(assimp_INCLUDE_DIR assimp_LIBRARY assimp_DLL)
 
 if (assimp_FOUND)
     # Set the Assimp found flag
@@ -39,7 +45,6 @@ if (assimp_FOUND)
 
     # Assuming Assimp requires zlib and other dependencies; you might need to locate them
     target_link_libraries(assimp INTERFACE OpenGL::GL)  # Link Zlib and OpenGL with Assimp
-
 
 else ()
     set(assimp_FOUND FALSE)

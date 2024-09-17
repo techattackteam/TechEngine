@@ -34,4 +34,10 @@ if (WIN32) # WINDOWS
             LIBRARY_OUTPUT_DIRECTORY_RELEASE "${OUTPUT}/release"
             RUNTIME_OUTPUT_DIRECTORY_RELEASE "${OUTPUT}/release"
     )
+
+    # Copy the glfw dll to the output directory
+    add_custom_command(TARGET TechEngineClient POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${GLFW_DLL}" "${OUTPUT}/$<CONFIG>"
+    )
 endif ()

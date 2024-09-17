@@ -41,6 +41,12 @@ if (WIN32) # WINDOWS
             COMMAND ${CMAKE_COMMAND} -E copy ${Client_API_DLL} $<TARGET_FILE_DIR:TechEngineEditor>
             COMMAND ${CMAKE_COMMAND} -E copy ${SERVER_API_DLL} $<TARGET_FILE_DIR:TechEngineEditor>
     )
+
+    # Copy assimp dll to the output directory
+    add_custom_command(TARGET TechEngineEditor POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy "${GLFW_DLL}" $<TARGET_FILE_DIR:TechEngineEditor>
+            COMMAND ${CMAKE_COMMAND} -E copy "${assimp_DLL}" $<TARGET_FILE_DIR:TechEngineEditor>
+    )
 endif ()
 
 # Copy runtime to editor
