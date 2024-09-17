@@ -18,10 +18,18 @@ find_library(GLFW_LIBRARY
         PATHS ${CMAKE_SOURCE_DIR}/libs/GLFW/lib
 )
 
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(glfw DEFAULT_MSG GLFW_INCLUDE_DIR GLFW_LIBRARY)
+# Assuming the DLL is in the same directory as the library
+get_filename_component(GLFW_DLL_DIR ${GLFW_LIBRARY} DIRECTORY)
+find_file(GLFW_DLL
+        NAMES glfw3.dll
+        PATHS ${GLFW_DLL_DIR}
+)
 
-mark_as_advanced(GLFW_INCLUDE_DIR GLFW_LIBRARY)
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(glfw DEFAULT_MSG GLFW_INCLUDE_DIR GLFW_LIBRARY GLFW_DLL)
+
+
+mark_as_advanced(GLFW_INCLUDE_DIR GLFW_LIBRARY GLFW_DLL)
 
 set(GLFW_FOUND TRUE)
 
