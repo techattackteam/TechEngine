@@ -36,7 +36,6 @@ namespace TechEngine {
         saveScene(m_scenesBank[m_activeScene.getName()]);
     }
 
-
     void ScenesManager::createScene(const std::string& name, const std::filesystem::path& path) {
         m_activeScene.setName(name);
         ResourcesManager& resourcesManager = m_systemsRegistry.getSystem<ResourcesManager>();
@@ -46,6 +45,7 @@ namespace TechEngine {
         m_activeScene.addComponent(cube, MeshRenderer(resourcesManager.getDefaultMesh(), resourcesManager.getDefaultMaterial()));
         MeshRenderer& meshRenderer = m_activeScene.getComponent<MeshRenderer>(cube);
         meshRenderer.paintMesh();
+        registerScene(name, path);
     }
 
     Scene& ScenesManager::getActiveScene() {
