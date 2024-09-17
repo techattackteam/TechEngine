@@ -2,7 +2,6 @@
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
-#include "components/Components.hpp"
 #include "scene/ScenesManager.hpp"
 #include "scene/TransformSystem.hpp"
 #include "systems/SystemsRegistry.hpp"

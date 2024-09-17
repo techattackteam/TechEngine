@@ -14,7 +14,7 @@ find_path(assimp_INCLUDE_DIR
 )
 
 find_library(assimp_LIBRARY
-        NAMES assimp-vc143-mtd
+        NAMES assimp-vc143-mt
         PATHS ${CMAKE_SOURCE_DIR}/libs/assimp/lib/Debug
 )
 
