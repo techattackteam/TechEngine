@@ -34,8 +34,11 @@ endif ()
 if (WIN32) # WINDOWS
     get_target_property(ClientDLL TechEngineClient CLIENT_DLL)
     add_custom_command(TARGET TechEngineRuntimeClient POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy
-            ${ClientDLL}
-            $<TARGET_FILE_DIR:TechEngineRuntimeClient>
+            COMMAND ${CMAKE_COMMAND} -E copy ${ClientDLL} $<TARGET_FILE_DIR:TechEngineRuntimeClient>
+    )
+    # Copy assimp dll to the output directory
+    add_custom_command(TARGET TechEngineRuntimeClient POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy "${GLFW_DLL}" $<TARGET_FILE_DIR:TechEngineRuntimeClient>
+            COMMAND ${CMAKE_COMMAND} -E copy "${assimp_DLL}" $<TARGET_FILE_DIR:TechEngineRuntimeClient>
     )
 endif ()
