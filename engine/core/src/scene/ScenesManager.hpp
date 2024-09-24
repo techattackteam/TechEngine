@@ -3,7 +3,6 @@
 #include "systems/System.hpp"
 #include "Scene.hpp"
 #include "SceneSerializer.hpp"
-#include "project/ProjectManager.hpp"
 
 #include <string>
 #include <filesystem>
@@ -14,7 +13,7 @@ namespace TechEngine {
 }
 
 namespace TechEngine {
-    class ScenesManager : public System {
+    class CORE_DLL ScenesManager : public System {
     private:
         SystemsRegistry& m_systemsRegistry;
         std::unordered_map<std::string, std::filesystem::path> m_scenesBank;
@@ -24,13 +23,15 @@ namespace TechEngine {
     public:
         explicit ScenesManager(SystemsRegistry& systemsRegistry);
 
-        void init(AppType appType, std::unordered_map<ProjectConfig, std::string>& projectConfigs);
+        void init(AppType appType);
 
         void shutdown() override;
 
         void createScene(const std::string& name, const std::filesystem::path& path);
 
         void registerScene(const std::string& name, const std::filesystem::path& scenePath);
+
+        void saveScene();
 
         void saveScene(const std::filesystem::path& path);
 

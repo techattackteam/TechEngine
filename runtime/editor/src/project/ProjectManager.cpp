@@ -5,12 +5,20 @@
 #include <yaml-cpp/yaml.h>
 #include <fstream>
 
+#include "project/Project.hpp"
+#include "scene/ScenesManager.hpp"
+#include "systems/SystemsRegistry.hpp"
+
 
 namespace TechEngine {
-    ProjectManager::ProjectManager(const std::filesystem::path& projectPath) : m_projectPath(projectPath) {
+    ProjectManager::ProjectManager(SystemsRegistry& clientSystemsRegistry,
+                                   SystemsRegistry& serverSystemsRegistry) : m_systemsRegistry(clientSystemsRegistry),
+                                                                             m_clientSystemsRegistry(clientSystemsRegistry),
+                                                                             m_serverSystemsRegistry(serverSystemsRegistry) {
     }
 
-    void ProjectManager::init() {
+    void ProjectManager::init(const std::filesystem::path& projectPath) {
+        m_projectPath = projectPath;
         if (!std::filesystem::exists(m_projectPath)) {
             TE_LOGGER_ERROR("Project not found: " + m_projectPath.string());
             createDefaultProject();
@@ -77,21 +85,28 @@ namespace TechEngine {
         std::filesystem::create_directory(exportPath + "\\assets\\common");
         std::filesystem::create_directory(exportPath + "\\resources");
         std::filesystem::create_directory(exportPath + "\\resources\\common");
+        std::filesystem::create_directory(exportPath + "\\cache");
+        std::filesystem::create_directory(exportPath + "\\cache\\common");
         std::filesystem::copy(m_projectPath.string() + "\\assets\\common", exportPath + "\\assets\\common", std::filesystem::copy_options::recursive);
         std::filesystem::copy(m_projectPath.string() + "\\resources\\common", exportPath + "\\resources\\common", std::filesystem::copy_options::recursive);
+        std::filesystem::copy(m_projectPath.string() + "\\cache\\common", exportPath + "\\cache\\common", std::filesystem::copy_options::recursive);
         if (projectType == ProjectType::Client) {
             std::filesystem::create_directory(exportPath + "\\assets\\client");
             std::filesystem::create_directory(exportPath + "\\resources\\client");
+            std::filesystem::create_directory(exportPath + "\\cache\\client");
             std::filesystem::copy(m_projectPath.string() + "\\assets\\client", exportPath + "\\assets\\client", std::filesystem::copy_options::recursive);
             std::filesystem::copy(m_projectPath.string() + "\\resources\\client", exportPath + "\\resources\\client", std::filesystem::copy_options::recursive);
+            std::filesystem::copy(m_projectPath.string() + "\\cache\\client", exportPath + "\\cache\\client", std::filesystem::copy_options::recursive);
 
             //Copy runtime files to project folder
             std::filesystem::copy(m_clientRuntimePath, exportPath, std::filesystem::copy_options::recursive);
         } else if (projectType == ProjectType::Server) {
             std::filesystem::create_directory(exportPath + "\\assets\\server");
             std::filesystem::create_directory(exportPath + "\\resources\\server");
+            std::filesystem::create_directory(exportPath + "\\cache\\server");
             std::filesystem::copy(m_projectPath.string() + "\\assets\\server", exportPath + "\\assets\\server", std::filesystem::copy_options::recursive);
             std::filesystem::copy(m_projectPath.string() + "\\resources\\server", exportPath + "\\resources\\server", std::filesystem::copy_options::recursive);
+            std::filesystem::copy(m_projectPath.string() + "\\cache\\server", exportPath + "\\cache\\server", std::filesystem::copy_options::recursive);
 
             //Copy runtime files to project folder
             std::filesystem::copy(m_serverRuntimesPath, exportPath, std::filesystem::copy_options::recursive);
@@ -102,16 +117,17 @@ namespace TechEngine {
 
     void ProjectManager::saveProject() {
         assert(!m_projectName.empty());
+        m_clientSystemsRegistry.getSystem<ScenesManager>().saveScene();
+        m_serverSystemsRegistry.getSystem<ScenesManager>().saveScene();
+
         std::ofstream fout(m_projectPath.string() + "\\" + m_projectName.string() + ".teproj");
         YAML::Node config;
-        config["Project Name"] = m_projectConfigs[ProjectConfig::ProjectName];
+        config["Project Name"] = m_projectName.string();
 
-        YAML::Node client;
-        client["Last Loaded Scene"] = m_projectConfigs[ProjectConfig::ClientScene];
+        YAML::Node client = m_clientSystemsRegistry.getSystem<Project>().saveProject();
         config["Client"] = client;
 
-        YAML::Node server;
-        server["Last Loaded Scene"] = m_projectConfigs[ProjectConfig::ServerScene];
+        YAML::Node server = m_serverSystemsRegistry.getSystem<Project>().saveProject();
         config["Server"] = server;
 
         fout << config;
@@ -158,9 +174,9 @@ namespace TechEngine {
         return m_projectName.string();
     }
 
-    std::unordered_map<ProjectConfig, std::string>& ProjectManager::getProjectConfigs() {
+    /*std::unordered_map<ProjectConfig, std::string>& ProjectManager::getProjectConfigs() {
         return m_projectConfigs;
-    }
+    }*/
 
 
     void ProjectManager::createDefaultProject() {
@@ -178,22 +194,13 @@ namespace TechEngine {
             TE_LOGGER_ERROR("Project Name not found in project config");
             config["Project Name"] = "New Project";
         }
+        YAML::Node clientNode = config["Client"];
+        m_clientSystemsRegistry.getSystem<Project>().loadProject(m_projectPath, clientNode);
 
-        if (!config["Client"]["Last Loaded Scene"].IsDefined()) {
-            TE_LOGGER_ERROR("Last Loaded Scene not found in project config");
-            config["Client"]["Last Loaded Scene"] = "DefaultScene";
-        }
+        YAML::Node serverNode = config["Server"];
+        m_serverSystemsRegistry.getSystem<Project>().loadProject(m_projectPath, serverNode);
 
-        if (!config["Server"]["Last Loaded Scene"].IsDefined()) {
-            TE_LOGGER_ERROR("Last Loaded Scene not found in project config");
-            config["Server"]["Last Loaded Scene"] = "DefaultScene";
-        }
-        m_projectConfigs[ProjectConfig::ProjectName] = config["Project Name"].as<std::string>();
-        m_projectConfigs[ProjectConfig::ProjectPath] = m_projectPath.string();
-        m_projectConfigs[ProjectConfig::ClientScene] = config["Client"]["Last Loaded Scene"].as<std::string>();
-        m_projectConfigs[ProjectConfig::ServerScene] = config["Server"]["Last Loaded Scene"].as<std::string>();
-
-        TE_LOGGER_INFO("Project loaded: " + m_projectName.string());
+        //TE_LOGGER_INFO("Project loaded: " + m_projectName.string());
         m_assetsPath = m_projectPath.string() + "\\assets";
         m_resourcesPath = m_projectPath.string() + "\\resources";
         m_cachePath = m_projectPath.string() + "\\cache";

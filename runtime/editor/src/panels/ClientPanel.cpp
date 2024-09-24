@@ -1,5 +1,4 @@
 #include "ClientPanel.hpp"
-
 #include "LoggerPanel.hpp"
 
 namespace TechEngine {

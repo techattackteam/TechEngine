@@ -38,9 +38,12 @@ namespace TechEngine {
             shutdown();
         }
 
+        void registerSystems(const std::filesystem::path& rootPath) {
+            m_runtime.registerSystems(rootPath);
+        }
+
         void init() override {
-            ProjectManager& projectManager = m_systemRegistry.getSystem<ProjectManager>();
-            m_runtime.init(projectManager.getProjectPath(), projectManager.getProjectConfigs());
+            m_runtime.init();
             if (!m_runtime.m_systemRegistry.template hasSystem<Renderer>()) {
                 m_runtime.m_systemRegistry.template registerSystem<Renderer>(m_runtime.m_systemRegistry);
                 m_runtime.m_systemRegistry.template getSystem<Renderer>().init();

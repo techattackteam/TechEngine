@@ -19,6 +19,8 @@ namespace TechEngine {
 
         void loadEditorConfig();
 
+        void registerSystems();
+
         void init() override;
 
         void start() override;

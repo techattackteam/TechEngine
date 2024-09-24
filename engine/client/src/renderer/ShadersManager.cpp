@@ -1,9 +1,8 @@
-#include <filesystem>
+
 #include "ShadersManager.hpp"
 #include "files/FileUtils.hpp"
 #include "core/Logger.hpp"
-#include "files/PathsBank.hpp"
-#include "project/ProjectManager.hpp"
+#include "project/Project.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
@@ -18,7 +17,7 @@ namespace TechEngine {
 
     void ShadersManager::init() {
         shaders = std::unordered_map<std::string, Shader*>();
-        std::string clientPath = m_systemsRegistry.getSystem<PathsBank>().getPath(PathType::Resources, AppType::Client).string();
+        std::string clientPath = m_systemsRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Client).string();
         shaders["geometry"] = new Shader("geometry", (clientPath + "/assets/shaders/geometryVertex.glsl").c_str(),
                                          (clientPath + "/assets/shaders/geometryFragment.glsl").c_str());
         shaders["line"] = new Shader("line", (clientPath + "/assets/shaders/lineVertex.glsl").c_str(),
@@ -46,13 +45,13 @@ namespace TechEngine {
             std::filesystem::create_directory(path);
         }
         for (auto& element: shaders) {
-            std::string newPath = m_systemsRegistry.getSystem<ProjectManager>().getResourcesPath().string() + "/shaders/" + element.first + "Vertex.glsl";
+            std::string newPath = m_systemsRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Client).string() + "/shaders/" + element.first + "Vertex.glsl";
             try {
                 std::filesystem::copy(newPath, path);
             } catch (std::exception& e) {
                 TE_LOGGER_ERROR("Failed to copy Shader {0} into: {1}. \n {2}", element.first + "Vertex.glsl", newPath, e.what());
             }
-            newPath = m_systemsRegistry.getSystem<ProjectManager>().getResourcesPath().string() + "/shaders/" + element.first + "Fragment.glsl";
+            newPath = m_systemsRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Client).string() + "/shaders/" + element.first + "Fragment.glsl";
             try {
                 std::filesystem::copy(newPath, path);
             } catch (std::exception& e) {

@@ -1,13 +1,16 @@
 #include "RuntimeServer.hpp"
 
-#include "project/ProjectManager.hpp"
+#include "project/Project.hpp"
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
+    void RuntimeServer::registerSystems() {
+        m_server.m_systemRegistry.registerSystem<Project>(std::filesystem::current_path());
+    }
+
     void RuntimeServer::init() {
-        m_server.m_systemRegistry.registerSystem<ProjectManager>(std::filesystem::current_path());
-        m_server.m_systemRegistry.getSystem<ProjectManager>().init();
-        m_server.init(m_server.m_systemRegistry.getSystem<ProjectManager>().getProjectPath(), m_server.m_systemRegistry.getSystem<ProjectManager>().getProjectConfigs());
+        m_server.m_systemRegistry.getSystem<Project>().init();
+        m_server.init();
 
         m_runFunction = [this]() {
             m_server.m_entry.run([this]() {
@@ -17,7 +20,7 @@ namespace TechEngine {
                                  });
         };
         m_server.m_systemRegistry.getSystem<ScriptEngine>().loadDLL(
-            m_server.m_systemRegistry.getSystem<ProjectManager>().getResourcesPath().string() + "\\server\\scripts\\build\\debug\\ServerScripts.dll");
+            m_server.m_systemRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Server).string() + "\\server\\scripts\\build\\debug\\ServerScripts.dll");
     }
 
     void RuntimeServer::start() {

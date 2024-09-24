@@ -7,7 +7,7 @@
 #include <glm/gtc/quaternion.hpp>
 
 namespace TechEngine {
-    class TransformSystem : public System {
+    class CORE_DLL TransformSystem : public System {
     private:
         SystemsRegistry& m_systemsRegistry;
 

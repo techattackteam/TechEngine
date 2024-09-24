@@ -5,6 +5,7 @@
 #include "LoggerPanel.hpp"
 #include "SceneHierarchyPanel.hpp"
 #include "SceneView.hpp"
+#include "project/ProjectManager.hpp"
 
 
 namespace TechEngine {

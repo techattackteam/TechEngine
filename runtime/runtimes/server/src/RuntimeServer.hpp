@@ -9,6 +9,8 @@ namespace TechEngine {
         Server m_server;
 
     public:
+        void registerSystems() override;
+
         void init() override;
 
         void start() override;

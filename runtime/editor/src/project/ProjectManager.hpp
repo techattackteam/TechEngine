@@ -12,21 +12,17 @@ namespace TechEngine {
         Editor
     };
 
-    enum class ProjectConfig {
-        ProjectName,
-        ProjectPath,
-        ClientScene,
-        ServerScene,
-    };
-
     class CORE_DLL ProjectManager : public System {
     private:
+        SystemsRegistry& m_systemsRegistry;
+        SystemsRegistry& m_clientSystemsRegistry;
+        SystemsRegistry& m_serverSystemsRegistry;
+
         std::filesystem::path m_cmakePath = "\"C:/Program Files/CMake/bin/cmake.exe\"";;
         std::filesystem::path m_cmakeListPath;
         std::filesystem::path m_techEngineClientLibPath;
         std::filesystem::path m_techEngineServerLibPath;
 
-        std::unordered_map<ProjectConfig, std::string> m_projectConfigs;
 
         std::filesystem::path m_projectPath;
         std::filesystem::path m_projectName;
@@ -40,9 +36,9 @@ namespace TechEngine {
         const std::filesystem::path m_serverRuntimesPath = m_runtimesPath.string() + "\\server";
 
     public:
-        explicit ProjectManager(const std::filesystem::path& projectPath);
+        explicit ProjectManager(SystemsRegistry& clientSystemsRegistry, SystemsRegistry& serverSystemsRegistry);
 
-        void init() override;
+        void init(const std::filesystem::path& projectPath);
 
         void shutdown() override;
 
@@ -68,7 +64,7 @@ namespace TechEngine {
 
         std::string getProjectName() const;
 
-        std::unordered_map<ProjectConfig, std::string>& getProjectConfigs();
+        //std::unordered_map<ProjectConfig, std::string>& getProjectConfigs();
 
     private:
         void createDefaultProject();

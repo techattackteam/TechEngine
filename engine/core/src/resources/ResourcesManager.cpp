@@ -2,8 +2,7 @@
 
 
 #include "files/FileUtils.hpp"
-#include "files/PathsBank.hpp"
-#include "project/ProjectManager.hpp"
+#include "project/Project.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
@@ -79,12 +78,12 @@ namespace TechEngine {
     std::unordered_map<std::string, std::vector<std::filesystem::path>> ResourcesManager::getFilesByExtension(const AppType& appType) {
         std::unordered_map<std::string, std::vector<std::filesystem::path>> filesByExtension;
         std::vector<std::filesystem::path> directories = {
-            m_systemsRegistry.getSystem<PathsBank>().getPath(PathType::Assets, AppType::Common).string(),
-            m_systemsRegistry.getSystem<PathsBank>().getPath(PathType::Assets, appType).string(),
-            m_systemsRegistry.getSystem<PathsBank>().getPath(PathType::Resources, AppType::Common).string(),
-            m_systemsRegistry.getSystem<PathsBank>().getPath(PathType::Resources, appType).string(),
-            m_systemsRegistry.getSystem<PathsBank>().getPath(PathType::Cache, AppType::Common).string(),
-            m_systemsRegistry.getSystem<PathsBank>().getPath(PathType::Cache, appType).string(),
+            m_systemsRegistry.getSystem<Project>().getPath(PathType::Assets, AppType::Common).string(),
+            m_systemsRegistry.getSystem<Project>().getPath(PathType::Assets, appType).string(),
+            m_systemsRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Common).string(),
+            m_systemsRegistry.getSystem<Project>().getPath(PathType::Resources, appType).string(),
+            m_systemsRegistry.getSystem<Project>().getPath(PathType::Cache, AppType::Common).string(),
+            m_systemsRegistry.getSystem<Project>().getPath(PathType::Cache, appType).string(),
         };
 
         for (const auto& directory: directories) {
