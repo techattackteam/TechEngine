@@ -5,9 +5,9 @@
 namespace TechEngine {
     class CORE_DLL System {
     protected:
-        System() = default;
-
         friend class SystemsRegistry;
+
+        System() = default;
 
     public:
         virtual ~System() = default;

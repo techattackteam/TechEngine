@@ -1,16 +1,20 @@
 #include "Server.hpp"
 
 #include "core/Logger.hpp"
-#include "core/Timer.hpp"
+#include "project/Project.hpp"
 
 namespace TechEngine {
-    Server::Server() : Core(AppType::Server), m_entry(m_systemRegistry) {
+    Server::Server() : m_entry(m_systemRegistry) {
     }
 
-    void Server::init(const std::filesystem::path& rootPath, std::unordered_map<ProjectConfig, std::string>& projectConfigs) {
+    void Server::registerSystems(const std::filesystem::path& rootPath) {
         m_systemRegistry.registerSystem<Logger>("TechEngineServer");
         m_systemRegistry.getSystem<Logger>().init();
-        Core::init(rootPath, projectConfigs);
+        Core::registerSystems(rootPath);
+    }
+
+    void Server::init() {
+        Core::init(AppType::Server);
     }
 
     void Server::onStart() {

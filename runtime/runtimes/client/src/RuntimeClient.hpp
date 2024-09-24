@@ -7,6 +7,8 @@ namespace TechEngine {
         Client m_client;
 
     public:
+        void registerSystems() override;
+
         void init() override;
 
         void start() override;

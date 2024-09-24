@@ -3,6 +3,7 @@
 
 int main(int argc, char** argv) {
     auto app = TechEngine::createApp();
+    app->registerSystems();
     app->init();
     app->start();
     app->run();

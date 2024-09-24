@@ -221,6 +221,7 @@ namespace TechEngine {
                 /*if (!exportSettingsPanel.isOpen()) {
                     exportSettingsPanel.open();
                 }*/
+                m_systemsRegistry.getSystem<ProjectManager>().exportProject("C:\\dev\\TechEngine\\bin\\runtime\\editor", ProjectType::Client);
             }
             if (ImGui::MenuItem("Exit")) {
                 m_systemsRegistry.getSystem<EventDispatcher>().dispatch<AppCloseEvent>();

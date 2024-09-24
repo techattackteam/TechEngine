@@ -1,8 +1,7 @@
 #include "ScenesManager.hpp"
 
 #include "files/FileUtils.hpp"
-#include "files/PathsBank.hpp"
-#include "project/ProjectManager.hpp"
+#include "project/Project.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "systems/SystemsRegistry.hpp"
 #include "utils/YAMLUtils.hpp"
@@ -11,22 +10,22 @@ namespace TechEngine {
     ScenesManager::ScenesManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry), m_sceneSerializer(m_activeScene, m_systemsRegistry.getSystem<ResourcesManager>()) {
     }
 
-    void ScenesManager::init(AppType appType, std::unordered_map<ProjectConfig, std::string>& projectConfigs) {
+    void ScenesManager::init(AppType appType) {
         std::vector<std::string> paths = {
-            m_systemsRegistry.getSystem<PathsBank>().getPath(PathType::Assets, AppType::Common).string(),
-            m_systemsRegistry.getSystem<PathsBank>().getPath(PathType::Assets, appType).string()
+            m_systemsRegistry.getSystem<Project>().getPath(PathType::Assets, AppType::Common).string(),
+            m_systemsRegistry.getSystem<Project>().getPath(PathType::Assets, appType).string()
         };
         std::vector<std::string> filesByExtension = FileUtils::getAllFilesWithExtension(paths, {".tescene"}, true);
         for (const std::string& scenePath: filesByExtension) {
             std::string name = m_sceneSerializer.getSceneName(scenePath);
             registerScene(name, scenePath);
         }
-        std::string sceneName = projectConfigs[appType == AppType::Client ? ProjectConfig::ClientScene : ProjectConfig::ServerScene];
+        std::string sceneName = m_systemsRegistry.getSystem<Project>().getProjectConfigs().at(ProjectConfig::Scene);
         if (m_scenesBank.find(sceneName) != m_scenesBank.end()) {
             loadScene(sceneName);
         } else {
             TE_LOGGER_WARN("Scene not found: {}.\tCreating default one.", sceneName);
-            createScene(sceneName, m_systemsRegistry.getSystem<PathsBank>().getPath(PathType::Assets, appType) / (sceneName + ".tescene"));
+            createScene(sceneName, m_systemsRegistry.getSystem<Project>().getPath(PathType::Assets, appType) / (sceneName + ".tescene"));
             saveScene(m_scenesBank[sceneName]);
         }
     }
@@ -54,6 +53,10 @@ namespace TechEngine {
 
     void ScenesManager::registerScene(const std::string& name, const std::filesystem::path& scenePath) {
         m_scenesBank[name] = scenePath;
+    }
+
+    void ScenesManager::saveScene() {
+        saveScene(m_scenesBank[m_activeScene.getName()]);
     }
 
     void ScenesManager::saveScene(const std::filesystem::path& path) {

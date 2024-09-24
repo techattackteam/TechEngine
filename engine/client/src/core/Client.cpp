@@ -1,18 +1,22 @@
 #include "Client.hpp"
 
 #include "core/Logger.hpp"
-#include "project/ProjectManager.hpp"
+#include "project/Project.hpp"
 #include "renderer/Renderer.hpp"
 
 namespace TechEngine {
-    Client::Client() : Core(AppType::Client), m_entry(m_systemRegistry) {
+    Client::Client() : m_entry(m_systemRegistry) {
     }
 
-    void Client::init(const std::filesystem::path& rootPath, std::unordered_map<ProjectConfig, std::string>& projectConfigs) {
+    void Client::registerSystems(const std::filesystem::path& rootPath) {
         m_systemRegistry.registerSystem<Logger>("TechEngineClient");
         m_systemRegistry.getSystem<Logger>().init();
-        Core::init(rootPath, projectConfigs);
+        Core::registerSystems(rootPath);
         m_systemRegistry.registerSystem<Renderer>(m_systemRegistry);
+    }
+
+    void Client::init() {
+        Core::init(AppType::Client);
         m_systemRegistry.getSystem<Renderer>().init();
     }
 

@@ -12,6 +12,8 @@ namespace TechEngine {
 
         void run();
 
+        virtual void registerSystems() = 0;
+
         virtual void init() = 0;
 
         virtual void start() = 0;

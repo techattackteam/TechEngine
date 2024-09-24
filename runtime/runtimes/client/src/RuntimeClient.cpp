@@ -1,14 +1,26 @@
 #include "RuntimeClient.hpp"
 
 #include "core/Logger.hpp"
-#include "project/ProjectManager.hpp"
+#include "events/application/AppCloseEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "project/Project.hpp"
+#include "renderer/Renderer.hpp"
+#include "scene/ScenesManager.hpp"
+#include "scene/TransformSystem.hpp"
 #include "script/ScriptEngine.hpp"
+#include "window/Window.hpp"
 
 namespace TechEngine {
+    void RuntimeClient::registerSystems() {
+        m_client.registerSystems(std::filesystem::current_path());
+        m_client.m_systemRegistry.registerSystem<Window>(m_client.m_systemRegistry);
+    }
+
     void RuntimeClient::init() {
-        m_client.m_systemRegistry.registerSystem<ProjectManager>(std::filesystem::current_path());
-        m_client.m_systemRegistry.getSystem<ProjectManager>().init();
-        m_client.init(m_client.m_systemRegistry.getSystem<ProjectManager>().getProjectPath(), m_client.m_systemRegistry.getSystem<ProjectManager>().getProjectConfigs());
+        m_client.m_systemRegistry.getSystem<Window>().init("TechEngineRuntime", 1280, 720);
+        std::filesystem::path path = std::filesystem::current_path();
+        m_client.m_systemRegistry.getSystem<Project>().loadRuntimeProject(path);
+        m_client.init();
         m_runFunction = [this]() {
             m_client.m_entry.run([this]() {
                                      fixedUpdate();
@@ -17,7 +29,12 @@ namespace TechEngine {
                                  });
         };
         m_client.m_systemRegistry.getSystem<ScriptEngine>().loadDLL(
-            m_client.m_systemRegistry.getSystem<ProjectManager>().getResourcesPath().string() + "\\client\\scripts\\build\\debug\\ClientScripts.dll");
+            m_client.m_systemRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Client).string() + "\\client\\scripts\\build\\debug\\ClientScripts.dll");
+
+        m_client.m_systemRegistry.getSystem<EventDispatcher>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
+            m_running = false;
+            m_client.m_systemRegistry.getSystem<ScenesManager>().saveScene();
+        });
     }
 
     void RuntimeClient::start() {
@@ -31,6 +48,15 @@ namespace TechEngine {
 
     void RuntimeClient::update() {
         m_client.onUpdate();
+        Scene& scene = m_client.m_systemRegistry.getSystem<ScenesManager>().getActiveScene();
+        scene.runSystem<Transform, Camera>([this](Transform& transform, Camera& camera) {
+            Renderer& renderer = m_client.m_systemRegistry.getSystem<Renderer>();
+            TransformSystem& transformSystem = m_client.m_systemRegistry.getSystem<TransformSystem>();
+
+            camera.updateProjectionMatrix(1280.0f / 720.0f);
+            camera.updateViewMatrix(transformSystem.getModelMatrix(transform));
+            renderer.renderPipeline(camera);
+        });
     }
 
     void RuntimeClient::stop() {
