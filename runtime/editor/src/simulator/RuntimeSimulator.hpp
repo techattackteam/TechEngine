@@ -1,5 +1,6 @@
 #pragma once
 #include "events/application/AppCloseEvent.hpp"
+#include "events/scripts/ScriptCrashEvent.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 #include "renderer/Renderer.hpp"
 #include "systems/System.hpp"
@@ -49,6 +50,11 @@ namespace TechEngine {
                 m_runtime.m_systemRegistry.template getSystem<Renderer>().init();
             }
             m_systemRegistry.getSystem<EventDispatcher>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
+                if (m_simulationState != SimulationState::STOPPED) {
+                    stopSimulation();
+                }
+            });
+            m_runtime.m_systemRegistry.getSystem<EventDispatcher>().subscribe<ScriptCrashEvent>([this](const std::shared_ptr<Event>& event) {
                 if (m_simulationState != SimulationState::STOPPED) {
                     stopSimulation();
                 }
