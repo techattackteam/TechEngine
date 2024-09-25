@@ -1,4 +1,3 @@
-/*
 #pragma once
 
 #include "core/Logger.hpp"
@@ -79,7 +78,7 @@ namespace TechEngine {
             name = "";
         }
         logException(ep, name);
-        //eventDispatcher.dispatch(new ScriptCrashEvent());
+        eventDispatcher.dispatch<ScriptCrashEvent>();
         if (code == EXCEPTION_ACCESS_VIOLATION) {
             return EXCEPTION_EXECUTE_HANDLER;
         } else {
@@ -91,17 +90,16 @@ namespace TechEngine {
         [callback](Event* event) {\
         __try {\
             callback(event);\
-        } __except (filter(GetExceptionCode(), GetExceptionInformation(), nullptr)) {\
+        } __except (filter(GetExceptionCode(), GetExceptionInformation(), nullptr, eventDispatcher)) {\
         }\
     }
-#define RUN_SCRIPT_FUNCTION(script, func) \
+#define RUN_SCRIPT_FUNCTION(script, func, eventDispatcher) \
         if (runtime) { \
-            script->func(); \
+            func; \
         } else { \
             __try { \
-                script->func(); \
-            } __except (filter(GetExceptionCode(), GetExceptionInformation(), script)) { \
+                func; \
+            } __except (filter(GetExceptionCode(), GetExceptionInformation(), script, eventDispatcher)) { \
         } \
     }
 }
-*/
