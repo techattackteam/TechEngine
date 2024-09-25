@@ -17,5 +17,9 @@ namespace TechEngineAPI {
         static ClientEntry* getInstance();
 
         static void deleteInstance();
+
+        static void updateComponentAPIsFunction();
+
+        static void updateComponentsFromAPIsFunction();
     };
 }

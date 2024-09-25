@@ -65,12 +65,16 @@ namespace TechEngine {
     }
 
     void ScriptEngine::onUpdate() {
+        //Update Components APIS
+        m_updateComponentAPIsFunction();
         if (dllLoaded) {
             for (Script* script: scripts) {
                 //RUN_SCRIPT_FUNCTION(script, onUpdate);
                 script->onUpdateFunc();
             }
         }
+        //Run Scripts updates
+        m_updateComponentsFromAPIsFunction();
     }
 
     void ScriptEngine::onFixedUpdate() {
