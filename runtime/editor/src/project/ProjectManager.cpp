@@ -76,7 +76,9 @@ namespace TechEngine {
         assert(!path.empty() && !m_projectName.empty() && !m_projectPath.empty());
         std::string exportPath = path.string() + "\\" + m_projectName.string();
         if (!std::filesystem::exists(exportPath)) {
-            std::filesystem::create_directory(exportPath);
+            //Make parent directories
+
+            std::filesystem::create_directories(exportPath);
         } else {
             for (const auto& entry: std::filesystem::directory_iterator(exportPath)) {
                 std::filesystem::remove_all(entry.path());
@@ -124,8 +126,7 @@ namespace TechEngine {
 
             //Copy runtime files to project folder
             std::filesystem::copy(m_serverRuntimesPath, exportPath, std::filesystem::copy_options::recursive);
-            std::filesystem::copy(m_serverRuntimesPath, exportPath, std::filesystem::copy_options::recursive);
-            std::ofstream fout = std::ofstream(m_projectPath.string() + "\\" + m_projectName.string() + ".teproj");
+            std::ofstream fout = std::ofstream(exportPath + "\\" + m_projectName.string() + ".teproj");
             YAML::Node config;
             config[project.projectConfigToString(ProjectConfig::ProjectName)] = m_projectName.string();
             for (const auto& entry: project.getProjectConfigs()) {

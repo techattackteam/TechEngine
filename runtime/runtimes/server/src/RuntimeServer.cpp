@@ -5,10 +5,13 @@
 
 namespace TechEngine {
     void RuntimeServer::registerSystems() {
+        m_server.registerSystems(std::filesystem::current_path());
     }
 
     void RuntimeServer::init() {
         m_server.m_systemRegistry.getSystem<Project>().init();
+        std::filesystem::path path = std::filesystem::current_path();
+        m_server.m_systemRegistry.getSystem<Project>().loadRuntimeProject(path);
         m_server.init();
 
         m_runFunction = [this]() {
