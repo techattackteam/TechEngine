@@ -2,10 +2,12 @@
 
 #include "core/Logger.hpp"
 #include "files/FileUtils.hpp"
+#include "scene/ScenesManager.hpp"
+#include "systems/SystemsRegistry.hpp"
 #include "utils/YAMLUtils.hpp"
 
 namespace TechEngine {
-    Project::Project(const std::filesystem::path& projectPath) {
+    Project::Project(const std::filesystem::path& projectPath, SystemsRegistry& systemsRegistry) : m_projectPath(projectPath), m_systemsRegistry(systemsRegistry) {
         m_projectPath = projectPath;
     }
 
@@ -24,25 +26,25 @@ namespace TechEngine {
     }
 
     void Project::loadProject(std::filesystem::path& projectPath, YAML::Node& config) {
-        if (!config["Last Loaded Scene"].IsDefined()) {
+        if (!config[projectConfigToString(ProjectConfig::Scene)].IsDefined()) {
             TE_LOGGER_ERROR("Last Loaded Scene not found in project config");
-            config["Last Loaded Scene"] = "DefaultScene";
+            config[projectConfigToString(ProjectConfig::Scene)] = "DefaultScene";
         }
-        //m_projectConfigs[ProjectConfig::ProjectName] = config["Project Name"].as<std::string>();
         m_projectConfigs[ProjectConfig::ProjectPath] = projectPath.string();
-        m_projectConfigs[ProjectConfig::Scene] = config["Last Loaded Scene"].as<std::string>();
+        m_projectConfigs[ProjectConfig::Scene] = config[projectConfigToString(ProjectConfig::Scene)].as<std::string>();
     }
 
     void Project::loadRuntimeProject(std::filesystem::path& projectPath) {
         std::vector<std::string> paths = FileUtils::getAllFilesWithExtension({projectPath.string()}, {".teproj"}, true);
         YAML::Node config = YAML::LoadFile(paths[0]);
+        m_projectConfigs[ProjectConfig::ProjectName] = config[projectConfigToString(ProjectConfig::ProjectName)].as<std::string>();
         loadProject(projectPath, config);
     }
 
     YAML::Node Project::saveProject() {
         YAML::Node config;
-        config["Last Loaded Scene"] = m_projectConfigs[ProjectConfig::Scene];
-
+        m_systemsRegistry.getSystem<ScenesManager>().saveScene();
+        config[projectConfigToString(ProjectConfig::Scene)] = m_projectConfigs[ProjectConfig::Scene];
         return config;
     }
 
@@ -56,6 +58,19 @@ namespace TechEngine {
 
     const std::filesystem::path& Project::getPath(PathType pathType, AppType appType) {
         return m_paths.at(translatePathType(pathType, appType));
+    }
+
+    std::string Project::projectConfigToString(ProjectConfig projectConfig) {
+        switch (projectConfig) {
+            case ProjectConfig::ProjectName:
+                return "Project Name";
+            case ProjectConfig::ProjectPath:
+                return "Project Path";
+            case ProjectConfig::Scene:
+                return "Last Loaded Scene";
+            default:
+                return "";
+        }
     }
 
     int Project::translatePathType(PathType pathType, AppType appType) {
