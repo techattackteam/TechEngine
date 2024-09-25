@@ -26,6 +26,8 @@ namespace TechEngine {
         HANDLE m_dllThreadHandle = nullptr;
 
         std::function<spdlog::sinks::dist_sink_mt*(SystemsRegistry*)> m_APIEntryPoint = nullptr;
+        std::function<void()> m_updateComponentAPIsFunction = nullptr;
+        std::function<void()> m_updateComponentsFromAPIsFunction = nullptr;
 
     public:
         inline static ScriptEngine* instance = nullptr;
@@ -42,6 +44,7 @@ namespace TechEngine {
 
         void onStart() override;
 
+
         void onUpdate() override;
 
         void onFixedUpdate() override;
@@ -54,6 +57,14 @@ namespace TechEngine {
 
         static void setEntryPoint(std::function<spdlog::sinks::dist_sink_mt*(SystemsRegistry*)> entryPoint) {
             instance->m_APIEntryPoint = std::move(entryPoint);
+        }
+
+        static void setUpdateComponentAPIsFunction(std::function<void()> updateComponentsFunction) {
+            instance->m_updateComponentAPIsFunction = std::move(updateComponentsFunction);
+        }
+
+        static void setUpdateComponentsFromAPIsFunction(std::function<void()> updateComponentsFromAPIsFunction) {
+            instance->m_updateComponentsFromAPIsFunction = std::move(updateComponentsFromAPIsFunction);
         }
     };
 }

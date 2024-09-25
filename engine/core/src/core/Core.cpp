@@ -15,22 +15,22 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<Project>(rootPath, m_systemRegistry);
         m_systemRegistry.registerSystem<EventDispatcher>();
         m_systemRegistry.registerSystem<Timer>();
-        m_systemRegistry.registerSystem<ScriptEngine>(m_systemRegistry);
         m_systemRegistry.registerSystem<TransformSystem>(m_systemRegistry);
         m_systemRegistry.registerSystem<CameraSystem>(m_systemRegistry);
         m_systemRegistry.registerSystem<ResourcesManager>(m_systemRegistry);
         m_systemRegistry.registerSystem<ScenesManager>(m_systemRegistry);
+        m_systemRegistry.registerSystem<ScriptEngine>(m_systemRegistry);
     }
 
     void Core::init(AppType appType) {
         m_systemRegistry.getSystem<Project>().init();
         m_systemRegistry.getSystem<EventDispatcher>().init();
         m_systemRegistry.getSystem<Timer>().init();
-        m_systemRegistry.getSystem<ScriptEngine>().init();
         m_systemRegistry.getSystem<TransformSystem>().init();
         m_systemRegistry.getSystem<CameraSystem>().init();
         m_systemRegistry.getSystem<ResourcesManager>().init(appType);
         m_systemRegistry.getSystem<ScenesManager>().init(appType);
+        m_systemRegistry.getSystem<ScriptEngine>().init();
     }
 
     void Core::onStart() {

@@ -2,6 +2,7 @@
 #include "core/Entry.hpp"
 
 #include "logger/Logger.hpp"
+#include "scene/Scene.hpp"
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngineAPI {
@@ -28,6 +29,14 @@ namespace TechEngineAPI {
     void ClientEntry::deleteInstance() {
         delete instance;
     }
+
+    void ClientEntry::updateComponentAPIsFunction() {
+        Scene::updateComponents();
+    }
+
+    void ClientEntry::updateComponentsFromAPIsFunction() {
+        Scene::sendUpdatedComponents();
+    }
 }
 
 
@@ -37,6 +46,14 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVO
             TechEngine::ScriptEngine::setEntryPoint([](TechEngine::SystemsRegistry* systemsRegistry) {
                 TechEngineAPI::ClientEntry::getInstance()->init(systemsRegistry);
                 return TechEngineAPI::Logger::getDistSinks();
+            });
+
+            TechEngine::ScriptEngine::setUpdateComponentAPIsFunction([]() {
+                TechEngineAPI::ClientEntry::updateComponentAPIsFunction();
+            });
+
+            TechEngine::ScriptEngine::setUpdateComponentsFromAPIsFunction([] {
+                TechEngineAPI::ClientEntry::updateComponentsFromAPIsFunction();
             });
             break;
         case DLL_THREAD_ATTACH:
