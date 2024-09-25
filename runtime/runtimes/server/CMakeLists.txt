@@ -34,8 +34,10 @@ endif ()
 if (WIN32) # WINDOWS
     get_target_property(ServerDLL TechEngineServer SERVER_DLL)
     add_custom_command(TARGET TechEngineRuntimeServer POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy
-            ${ServerDLL}
-            $<TARGET_FILE_DIR:TechEngineRuntimeServer>
+            COMMAND ${CMAKE_COMMAND} -E copy ${ServerDLL} $<TARGET_FILE_DIR:TechEngineRuntimeServer>
+    )
+    # Copy assimp dll to the output directory
+    add_custom_command(TARGET TechEngineRuntimeServer POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy "${assimp_DLL}" $<TARGET_FILE_DIR:TechEngineRuntimeServer>
     )
 endif ()
