@@ -12,7 +12,7 @@
 
 namespace TechEngine {
     void Core::registerSystems(const std::filesystem::path& rootPath) {
-        m_systemRegistry.registerSystem<Project>(rootPath);
+        m_systemRegistry.registerSystem<Project>(rootPath, m_systemRegistry);
         m_systemRegistry.registerSystem<EventDispatcher>();
         m_systemRegistry.registerSystem<Timer>();
         m_systemRegistry.registerSystem<ScriptEngine>(m_systemRegistry);

@@ -27,12 +27,13 @@ namespace TechEngine {
 
     class CORE_DLL Project : public System {
     private:
+        SystemsRegistry& m_systemsRegistry;
         std::filesystem::path m_projectPath;
         std::unordered_map<ProjectConfig, std::string> m_projectConfigs;
         std::unordered_map<int, std::filesystem::path> m_paths;
 
     public:
-        explicit Project(const std::filesystem::path& projectPath);
+        explicit Project(const std::filesystem::path& projectPath, SystemsRegistry& systemsRegistry);
 
         void init() override;
 
@@ -47,6 +48,8 @@ namespace TechEngine {
         const std::filesystem::path& getRootPath();
 
         const std::filesystem::path& getPath(PathType pathType, AppType appType);
+
+        std::string projectConfigToString(ProjectConfig projectConfig);
 
     private:
         int translatePathType(PathType pathType, AppType appType);

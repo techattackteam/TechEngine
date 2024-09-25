@@ -5,7 +5,6 @@
 
 namespace TechEngine {
     void RuntimeServer::registerSystems() {
-        m_server.m_systemRegistry.registerSystem<Project>(std::filesystem::current_path());
     }
 
     void RuntimeServer::init() {
