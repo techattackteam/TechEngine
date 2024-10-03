@@ -18,12 +18,12 @@ namespace TechEngineAPI {
             component.get()->setEntity(entity);
             if (typeid(*component) == typeid(Tag)) {
                 TechEngine::Tag& tag = scene->getComponent<TechEngine::Tag>(entity);
-                static_cast<Tag*>(component.get())->setName(tag.getName());
+                dynamic_cast<Tag*>(component.get())->setName(tag.getName());
             } else if (typeid(*component) == typeid(Transform)) {
                 TechEngine::Transform& transform = scene->getComponent<TechEngine::Transform>(entity);
-                static_cast<Transform*>(component.get())->setPosition(transform.position);
-                static_cast<Transform*>(component.get())->setRotation(transform.rotation);
-                static_cast<Transform*>(component.get())->setScale(transform.scale);
+                dynamic_cast<Transform*>(component.get())->setPosition(transform.position);
+                dynamic_cast<Transform*>(component.get())->setRotation(transform.rotation);
+                dynamic_cast<Transform*>(component.get())->setScale(transform.scale);
             }
         }
     }
@@ -33,12 +33,12 @@ namespace TechEngineAPI {
         for (auto& [entity, component]: components) {
             if (dynamic_cast<Tag*>(component.get())) {
                 TechEngine::Tag& tag = scene->getComponent<TechEngine::Tag>(entity);
-                tag.setName(static_cast<Tag*>(component.get())->getName());
+                tag.setName(dynamic_cast<Tag*>(component.get())->getName());
             } else if (dynamic_cast<Transform*>(component.get())) {
                 TechEngine::Transform& transform = scene->getComponent<TechEngine::Transform>(entity);
-                transform.position = static_cast<Transform*>(component.get())->getPosition();
-                transform.rotation = static_cast<Transform*>(component.get())->getRotation();
-                transform.scale = static_cast<Transform*>(component.get())->getScale();
+                transform.position = dynamic_cast<Transform*>(component.get())->getPosition();
+                transform.rotation = dynamic_cast<Transform*>(component.get())->getRotation();
+                transform.scale = dynamic_cast<Transform*>(component.get())->getScale();
             }
         }
     }
@@ -58,6 +58,7 @@ namespace TechEngineAPI {
     }
 
     void Scene::destroyEntity(Entity entity) {
+        
         scene->destroyEntity(entity);
     }
 
