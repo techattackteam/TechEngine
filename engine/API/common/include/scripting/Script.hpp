@@ -1,5 +1,7 @@
 #pragma once
 #include <string>
+#include <vcruntime_typeinfo.h>
+
 #include "core/ExportDLL.hpp"
 
 namespace TechEngine {
@@ -25,6 +27,8 @@ namespace TechEngineAPI {
 
         virtual void onClose();
 
+        void setName(const std::string& name);
+
         const std::string& getName() const;
     };
 }
@@ -33,6 +37,7 @@ namespace TechEngineAPI {
 namespace {                                             \
     TechEngineAPI::Script* createScript() {             \
         TechEngineAPI::Script*script = new Type();      \
+        script->setName(#Type);                        \
         return script;                                  \
     }                                                   \
                                                         \

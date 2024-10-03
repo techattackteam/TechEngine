@@ -4,11 +4,16 @@
 #include <functional>
 #include <string>
 
+namespace TechEngineAPI {
+    class Script;
+}
 
 namespace TechEngine {
     class CORE_DLL Script {
     private:
         friend class ScriptEngine;
+        friend class TechEngineAPI::Script;
+
         std::string name;
 
     public:

@@ -34,6 +34,11 @@ namespace TechEngineAPI {
     void Script::onClose() {
     }
 
+    void Script::setName(const std::string& name) {
+        this->name = name;
+        script->name = name;
+    }
+
     const std::string& Script::getName() const {
         return name;
     }
