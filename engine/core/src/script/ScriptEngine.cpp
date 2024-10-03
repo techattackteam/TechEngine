@@ -59,7 +59,7 @@ namespace TechEngine {
         if (dllLoaded) {
             m_updateComponentAPIsFunction();
             for (Script* script: scripts) {
-                RUN_SCRIPT_FUNCTION(script, script->onStartFunc(), m_systemRegistry.getSystem<EventDispatcher>());
+                //RUN_SCRIPT_FUNCTION(script, script->onStartFunc(), m_systemRegistry.getSystem<EventDispatcher>());
             }
             m_updateComponentsFromAPIsFunction();
         }
@@ -69,7 +69,10 @@ namespace TechEngine {
         if (dllLoaded) {
             m_updateComponentAPIsFunction();
             for (Script* script: scripts) {
-                RUN_SCRIPT_FUNCTION(script, script->onUpdateFunc(), m_systemRegistry.getSystem<EventDispatcher>());
+                __try {
+                    script->onUpdateFunc();
+                } __except (filter(GetExceptionCode(), GetExceptionInformation(), script, m_systemRegistry.getSystem<EventDispatcher>())) {
+                }
             }
             m_updateComponentsFromAPIsFunction();
         }
