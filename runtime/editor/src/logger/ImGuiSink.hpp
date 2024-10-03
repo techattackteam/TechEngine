@@ -71,7 +71,7 @@ namespace TechEngine {
                     message.levelStr = "n_levels";
                     break;
             }
-            message.log = std::string(msg.payload.begin());
+            message.log = std::string(msg.payload.begin(), msg.payload.end());
             m_messages.emplace_back(message);
         }
 
