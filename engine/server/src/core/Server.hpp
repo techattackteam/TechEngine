@@ -12,6 +12,8 @@ namespace TechEngine {
     public:
         Server();
 
+        Server& operator=(const Server&);
+
         void registerSystems(const std::filesystem::path& rootPath);
 
         void init();

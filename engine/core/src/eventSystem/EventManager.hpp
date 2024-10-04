@@ -20,9 +20,9 @@ namespace TechEngine {
     public:
         EventManager() = default;
 
-        EventManager(const EventManager& other);
+        EventManager(const EventManager& rhs);
 
-        EventManager& operator=(const EventManager& other);
+        EventManager& operator=(const EventManager& rhs);
 
         template<typename EventType>
         void subscribe(const Observer& callback) {

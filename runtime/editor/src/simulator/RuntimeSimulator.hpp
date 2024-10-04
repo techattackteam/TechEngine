@@ -17,15 +17,18 @@ namespace TechEngine {
     class RuntimeSimulator : public System {
     private:
         T& m_runtime;
+        T m_runtimeCopy;
         SimulationState m_simulationState = SimulationState::STOPPED;
         SystemsRegistry& m_systemRegistry;
 
     public:
-        explicit RuntimeSimulator(T& runtime, SystemsRegistry& m_systemRegistry) : m_runtime(runtime), m_systemRegistry(m_systemRegistry) {
+        explicit RuntimeSimulator(T& runtime, SystemsRegistry& m_systemRegistry) : m_runtime(runtime), m_runtimeCopy(runtime), m_systemRegistry(m_systemRegistry) {
         }
 
         void startSimulation() {
             m_simulationState = SimulationState::RUNNING;
+            //Create a deep copy of the runtime
+            m_runtimeCopy = m_runtime;
             onStart();
         }
 
@@ -36,7 +39,6 @@ namespace TechEngine {
         void stopSimulation() {
             m_simulationState = SimulationState::STOPPED;
             onStop();
-            shutdown();
         }
 
         void registerSystems(const std::filesystem::path& rootPath) {

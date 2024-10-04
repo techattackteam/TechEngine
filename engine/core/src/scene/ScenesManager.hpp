@@ -1,6 +1,6 @@
 #pragma once
 
-#include "systems/System.hpp"
+#include "systems/CopyableSystem.hpp"
 #include "Scene.hpp"
 #include "SceneSerializer.hpp"
 
@@ -8,12 +8,13 @@
 #include <filesystem>
 #include <unordered_map>
 
+
 namespace TechEngine {
     enum class AppType;
 }
 
 namespace TechEngine {
-    class CORE_DLL ScenesManager : public System {
+    class CORE_DLL ScenesManager : public CopyableSystem {
     private:
         SystemsRegistry& m_systemsRegistry;
         std::unordered_map<std::string, std::filesystem::path> m_scenesBank;
@@ -22,6 +23,8 @@ namespace TechEngine {
 
     public:
         explicit ScenesManager(SystemsRegistry& systemsRegistry);
+
+        std::shared_ptr<System> clone() override;
 
         void init(AppType appType);
 

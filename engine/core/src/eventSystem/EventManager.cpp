@@ -1,15 +1,15 @@
 #include "EventManager.hpp"
 
 namespace TechEngine {
-    EventManager::EventManager(const EventManager& other) {
-        m_dispatchedEvents = other.m_dispatchedEvents;
-        m_observers = other.m_observers;
+    EventManager::EventManager(const EventManager& rhs) {
+        m_dispatchedEvents = rhs.m_dispatchedEvents;
+        m_observers = rhs.m_observers;
     }
 
-    EventManager& EventManager::operator=(const EventManager& other) {
-        if (this != &other) {
-            m_dispatchedEvents = other.m_dispatchedEvents;
-            m_observers = other.m_observers;
+    EventManager& EventManager::operator=(const EventManager& rhs) {
+        if (this != &rhs) {
+            m_dispatchedEvents = rhs.m_dispatchedEvents;
+            m_observers = rhs.m_observers;
         }
         return *this;
     }
