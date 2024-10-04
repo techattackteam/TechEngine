@@ -32,6 +32,8 @@ namespace TechEngine {
 
         Material& createMaterial(const ::std::string& name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
 
+        Material& createMaterial(const std::string& name);
+
         /*Material& createMaterial(const std::string& name, Texture* diffuse);*/
 
         Material& createMaterialFile(const std::string& name, const std::string& filepath);

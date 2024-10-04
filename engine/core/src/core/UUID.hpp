@@ -2,12 +2,14 @@
 #include "core/CoreExportDll.hpp"
 #include <cstdint>
 #include <string>
+#include <unordered_set>
 #include <xhash>
 
 namespace TechEngine {
     class CORE_DLL UUID {
     private:
         uint64_t uuid;
+        inline static std::unordered_set<uint64_t> registeredUUIDs;
 
     public:
         UUID();
@@ -28,8 +30,10 @@ namespace TechEngine {
             return uuid;
         }
 
-        static UUID generate() {
-            return UUID();
+        static UUID generate();
+
+        static void registerUUID(uint64_t existingUUID) {
+            registeredUUIDs.insert(existingUUID);
         }
 
         std::string toString() const;

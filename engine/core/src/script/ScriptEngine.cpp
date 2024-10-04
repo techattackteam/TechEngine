@@ -17,8 +17,12 @@ namespace TechEngine {
         scriptRegister->init(this);
     }
 
+    void ScriptEngine::shutdown() {
+        stop();
+        delete scriptRegister;
+    }
 
-    std::tuple<bool, spdlog::sinks::dist_sink_mt*> ScriptEngine::loadDLL(const std::string& dllPath) {
+    std::tuple<bool, spdlog::sinks::dist_sink_mt*> ScriptEngine::start(const std::string& dllPath) {
         if (std::filesystem::exists(dllPath)) {
             m_userCustomDll = LoadLibraryA(dllPath.c_str());
             if (!m_userCustomDll) {
@@ -38,11 +42,6 @@ namespace TechEngine {
         }
     }
 
-    void ScriptEngine::shutdown() {
-        stop();
-        delete scriptRegister;
-    }
-
     void ScriptEngine::stop() {
         if (m_userCustomDll) {
             deleteScripts();
@@ -59,7 +58,7 @@ namespace TechEngine {
         if (dllLoaded) {
             m_updateComponentAPIsFunction();
             for (Script* script: scripts) {
-                //RUN_SCRIPT_FUNCTION(script, script->onStartFunc(), m_systemRegistry.getSystem<EventDispatcher>());
+                RUN_SCRIPT_FUNCTION(script, script->onStartFunc(), m_systemRegistry.getSystem<EventDispatcher>());
             }
             m_updateComponentsFromAPIsFunction();
         }
@@ -69,10 +68,7 @@ namespace TechEngine {
         if (dllLoaded) {
             m_updateComponentAPIsFunction();
             for (Script* script: scripts) {
-                __try {
-                    script->onUpdateFunc();
-                } __except (filter(GetExceptionCode(), GetExceptionInformation(), script, m_systemRegistry.getSystem<EventDispatcher>())) {
-                }
+                RUN_SCRIPT_FUNCTION(script, script->onUpdateFunc(), m_systemRegistry.getSystem<EventDispatcher>());
             }
             m_updateComponentsFromAPIsFunction();
         }

@@ -21,7 +21,7 @@ namespace TechEngine {
                                      update();
                                  });
         };
-        m_server.m_systemRegistry.getSystem<ScriptEngine>().loadDLL(
+        m_server.m_systemRegistry.getSystem<ScriptEngine>().start(
             m_server.m_systemRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Server).string() + "\\server\\scripts\\build\\debug\\ServerScripts.dll");
     }
 

@@ -7,6 +7,7 @@
 #include "simulator/RuntimeSimulator.hpp"
 #include "LoggerPanel.hpp"
 #include "core/Client.hpp"
+#include "core/Server.hpp"
 
 #include <filesystem>
 #include <imgui_internal.h>
@@ -61,12 +62,17 @@ namespace TechEngine {
         spdlog::sinks::dist_sink_mt* userDllSink;
         bool result;
         std::string dllPath = m_projectType == ProjectType::Client ? "\\client\\scripts\\build\\debug\\ClientScripts.dll" : "\\server\\scripts\\build\\debug\\ServerScripts.dll";
-        std::tie(result, userDllSink) = scriptEngine.loadDLL(projectManager.getResourcesPath().string() + dllPath);
+        std::tie(result, userDllSink) = scriptEngine.start(projectManager.getResourcesPath().string() + dllPath);
         if (!result) {
             TE_LOGGER_CRITICAL("Failed to load client scripts dll");
+            return;
         }
         userDllSink->add_sink(loggerPanel.m_sink);
-        m_editorSystemsRegistry.getSystem<RuntimeSimulator<Client>>().startSimulation();
+        if (ProjectType::Client == m_projectType) {
+            m_editorSystemsRegistry.getSystem<RuntimeSimulator<Client>>().startSimulation();
+        } else {
+            m_editorSystemsRegistry.getSystem<RuntimeSimulator<Server>>().startSimulation();
+        }
     }
 
     void RuntimePanel::stopRunningScene() {

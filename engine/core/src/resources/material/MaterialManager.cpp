@@ -29,14 +29,9 @@ namespace TechEngine {
         return iterator->second;
     }
 
-    /*Material& MaterialManager::createMaterial(const std::string& name, Texture* diffuse) {
-        Material material(m_systemsRegistry.getSystem<EventDispatcher>(), name, diffuse);
-        auto iterator = m_materialsBank.find(name);
-        if (iterator == m_materialsBank.end()) {
-            iterator = m_materialsBank.emplace(name, material).first;
-        }
-        return iterator->second;
-    }*/
+    Material& MaterialManager::createMaterial(const std::string& name) {
+        return createMaterial(name, m_defaultColor, m_defaultAmbient, m_defaultDiffuse, m_defaultSpecular, m_defaultShininess);
+    }
 
     Material& MaterialManager::createMaterialFile(const std::string& name, const std::string& folderPath) {
         std::string filepath = folderPath + "/" + name + ".mat";

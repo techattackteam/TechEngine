@@ -5,7 +5,7 @@
 
 
 namespace TechEngineAPI {
-    class Transform : public Component {
+    class API_DLL Transform : public Component {
     private:
         glm::vec3 position;
         glm::vec3 rotation;

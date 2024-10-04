@@ -36,14 +36,13 @@ namespace TechEngine {
 
         void init() override;
 
-        std::tuple<bool, spdlog::sinks::dist_sink_mt*> loadDLL(const std::string& dllPath);
-
         void shutdown() override;
+
+        std::tuple<bool, spdlog::sinks::dist_sink_mt*> start(const std::string& dllPath);
 
         void stop();
 
         void onStart() override;
-
 
         void onUpdate() override;
 

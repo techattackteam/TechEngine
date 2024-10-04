@@ -1,6 +1,7 @@
 #include "SceneSerializer.hpp"
 
 #include "Scene.hpp"
+#include "core/UUID.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "utils/YAMLUtils.hpp"
 
@@ -76,6 +77,7 @@ namespace TechEngine {
     void SceneSerializer::deserializeComponentNode(const Entity& entity, const YAML::Node& componentNode) const {
         if (componentNode["Tag"]) {
             Tag tag = Tag::deserialize(componentNode["Tag"]);
+            UUID::registerUUID(std::stoull(tag.getUuid()));
             m_scene.m_archetypesManager.addComponent(entity, tag);
         }
         if (componentNode["Transform"]) {

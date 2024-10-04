@@ -256,10 +256,10 @@ namespace TechEngine {
                 if (ImGuiUtils::beginMenuWithInputMenuField("New Material", "Material name", newMaterialName)) {
                     runFunctionBasedOnFileType(m_currentPath.string() + "\\" + newMaterialName + ".mat",
                                                [&] {
-                                                   m_clientRegistry.getSystem<ResourcesManager>().createMaterial(newMaterialName, path.string());
+                                                   m_clientRegistry.getSystem<ResourcesManager>().loadMaterial(newMaterialName, path.string());
                                                },
                                                [&] {
-                                                   m_serverRegistry.getSystem<ResourcesManager>().createMaterial(newMaterialName, path.string());
+                                                   m_serverRegistry.getSystem<ResourcesManager>().loadMaterial(newMaterialName, path.string());
                                                });
                 }
                 /*

@@ -1,9 +1,10 @@
 #pragma once
 
 #include "entity/Entity.hpp"
+#include "core/ExportDLL.hpp"
 
 namespace TechEngineAPI {
-    class Component {
+    class API_DLL Component {
     protected:
         TechEngineAPI::Entity entity = 0;
 

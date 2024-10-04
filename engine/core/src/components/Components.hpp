@@ -19,7 +19,7 @@ namespace TechEngine {
         Tag(const std::string& name, const std::string& uuid): name(new char[name.size() + 1]), uuid(new char[uuid.size() + 1]) {
             strcpy_s(this->name, name.size() + 1, name.c_str());
             strcpy_s(this->uuid, uuid.size() + 1, uuid.c_str());
-            //Memory leak here because we are not deleting the memory allocated for name and uuid when deleting entity
+            //Memory leak here because I'm not deleting the memory allocated for name and uuid when deleting entity
         }
 
         bool operator==(const Tag& lhr) const {
@@ -204,6 +204,16 @@ namespace TechEngine {
             for (Vertex& vertex: mesh.m_vertices) {
                 vertex.setColor(material.getColor());
             }
+        }
+
+        void changeMaterial(Material& material) {
+            this->material = material;
+            paintMesh();
+        }
+        
+        void changeMesh(Mesh& mesh) {
+            this->mesh = mesh;
+            paintMesh();
         }
 
         static void serialize(const MeshRenderer& meshRenderer, YAML::Emitter& out);

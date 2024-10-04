@@ -6,7 +6,7 @@
 
 
 namespace TechEngineAPI {
-    class Tag : public Component {
+    class API_DLL Tag : public Component {
     private:
         std::string name;
 
