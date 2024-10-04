@@ -1,7 +1,6 @@
 #include "Timer.hpp"
 
 namespace TechEngine {
-
     void Timer::init() {
         startTime = std::chrono::system_clock::now();
         lastLoopTime = getTime();

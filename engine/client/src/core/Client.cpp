@@ -8,6 +8,19 @@ namespace TechEngine {
     Client::Client() : m_entry(m_systemRegistry) {
     }
 
+    Client::Client(const Client& rhs): m_entry(m_systemRegistry) {
+        m_systemRegistry = rhs.m_systemRegistry;
+    }
+
+    Client& Client::operator=(const Client& rhs) {
+        if (this == &rhs) {
+            return *this;
+        }
+
+        m_systemRegistry = rhs.m_systemRegistry;
+        return *this;
+    }
+
     void Client::registerSystems(const std::filesystem::path& rootPath) {
         m_systemRegistry.registerSystem<Logger>("TechEngineClient");
         m_systemRegistry.getSystem<Logger>().init();

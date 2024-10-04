@@ -7,6 +7,14 @@ namespace TechEngine {
     Server::Server() : m_entry(m_systemRegistry) {
     }
 
+    Server& Server::operator=(const Server& other) {
+        if (this == &other) {
+            return *this;
+        }
+        m_systemRegistry = other.m_systemRegistry;
+        return *this;
+    }
+
     void Server::registerSystems(const std::filesystem::path& rootPath) {
         m_systemRegistry.registerSystem<Logger>("TechEngineServer");
         m_systemRegistry.getSystem<Logger>().init();

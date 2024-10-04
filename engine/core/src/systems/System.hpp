@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include "core/CoreExportDLL.hpp"
 
 namespace TechEngine {

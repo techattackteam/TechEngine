@@ -6,7 +6,6 @@
 namespace TechEngine {
     Entity Scene::createEntity(const std::string& name) {
         std::string uuid = UUID::generate().toString();
-        TE_LOGGER_INFO("Creating entity with name: {0} and uuid: {1}", name, uuid);
         return createEntity(name, uuid);
     }
 

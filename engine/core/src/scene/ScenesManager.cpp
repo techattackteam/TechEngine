@@ -10,6 +10,10 @@ namespace TechEngine {
     ScenesManager::ScenesManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry), m_sceneSerializer(m_activeScene, m_systemsRegistry.getSystem<ResourcesManager>()) {
     }
 
+    std::shared_ptr<System> ScenesManager::clone() {
+        return std::make_shared<ScenesManager>(*this);
+    }
+
     void ScenesManager::init(AppType appType) {
         std::vector<std::string> paths = {
             m_systemsRegistry.getSystem<Project>().getPath(PathType::Assets, AppType::Common).string(),
