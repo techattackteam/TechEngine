@@ -21,7 +21,12 @@ namespace TechEngine {
         //m_materialManager.shutdown();
         m_meshManager.shutdown();
     }
+
 #pragma region MeshManager
+    void ResourcesManager::createMesh(const std::string& name) {
+        m_meshManager.createMesh(name);
+    }
+
     void ResourcesManager::loadModelFile(const std::string& path) {
         std::string modelName = FileUtils::getFileName(path);
         std::string parentFolder = std::filesystem::path(path).parent_path().string();
@@ -40,6 +45,24 @@ namespace TechEngine {
         m_meshManager.loadStaticMesh(path);
     }
 
+    void ResourcesManager::setVertices(const std::string& name, const std::vector<Vertex>& vertices, const std::vector<int>& indices) {
+        if (name == MeshManager::DEFAULT_MESH_NAME) {
+            TE_LOGGER_WARN("Cannot set vertices for default mesh");
+            return;
+        }
+        Mesh& mesh = m_meshManager.getMesh(name);
+        mesh.setVertices(vertices, indices);
+    }
+
+    void ResourcesManager::addVertices(const std::string& name, const std::vector<Vertex>& vertices, const std::vector<int>& indices) {
+        if (name == MeshManager::DEFAULT_MESH_NAME) {
+            TE_LOGGER_WARN("Cannot add vertices for default mesh");
+            return;
+        }
+        Mesh& mesh = m_meshManager.getMesh(name);
+        mesh.addVertices(vertices, indices);
+    }
+
     Mesh& ResourcesManager::getMesh(const std::string& name) {
         if (!m_meshManager.isMeshLoaded(name)) {
             TE_LOGGER_WARN("Mesh not found: {0}", name);
@@ -54,7 +77,11 @@ namespace TechEngine {
 #pragma endregion
 
 #pragma region MaterialManager
-    void ResourcesManager::createMaterial(const std::string& name, const std::string& path) {
+    Material& ResourcesManager::createMaterial(const std::string& name) {
+        return m_materialManager.createMaterial(name);
+    }
+
+    void ResourcesManager::loadMaterial(const std::string& name, const std::string& path) {
         if (m_materialManager.materialExists(name)) {
             TE_LOGGER_WARN("Material already registered: {0}", name);
             return;

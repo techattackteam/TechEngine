@@ -7,9 +7,11 @@
 #include <string>
 #include <unordered_map>
 
+
 namespace TechEngine {
     class Tag;
     class Scene;
+    class ResourcesManager;
 }
 
 namespace TechEngineAPI {
@@ -21,9 +23,10 @@ namespace TechEngineAPI {
 
         inline static std::unordered_map<TechEngineAPI::Entity, std::shared_ptr<Component>> components;
 
-        inline static TechEngine::Scene* scene;
+        inline static TechEngine::Scene* m_scene;
+        inline static TechEngine::ResourcesManager* m_resourcesManager;
 
-        static void init(TechEngine::Scene* scene);
+        static void init(TechEngine::Scene* scene, TechEngine::ResourcesManager* m_resourcesManager);
 
         static void shutdown();
 
@@ -37,6 +40,15 @@ namespace TechEngineAPI {
         static std::vector<Entity> getEntitiesWithName(const std::string& name);
 
         static void destroyEntity(Entity entity);
+
+        template<typename T, typename... Args>
+        static std::shared_ptr<T> addComponent(Entity entity, Args&&... args);
+
+        template<typename T, typename... Args>
+        static std::shared_ptr<T> addComponentInternal(Entity entity, Args&&... args);
+
+        template<typename T>
+        static void removeComponent(Entity entity);
 
         template<typename T>
         static std::shared_ptr<T> getComponent(Entity entity);

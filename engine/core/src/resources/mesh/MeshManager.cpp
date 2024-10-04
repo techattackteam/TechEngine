@@ -5,6 +5,7 @@
 
 namespace TechEngine {
     void MeshManager::init(const std::vector<std::filesystem::path>& meshFilePaths) {
+        m_meshesBank.reserve(10);
         for (const std::filesystem::path& meshFilePath: meshFilePaths) {
             loadStaticMesh(meshFilePath);
         }
@@ -12,6 +13,21 @@ namespace TechEngine {
 
     void MeshManager::shutdown() {
         //m_meshesBank.clear();
+    }
+
+
+    void MeshManager::createMesh(const std::string& name) {
+        if (isMeshLoaded(name)) {
+            return;
+        }
+        m_meshesBank.emplace_back(name, std::vector<Vertex>(), std::vector<int>());
+    }
+
+    void MeshManager::createMesh(const std::string& name, const std::vector<Vertex>& vertices, const std::vector<int>& indices) {
+        if (isMeshLoaded(name)) {
+            return;
+        }
+        m_meshesBank.emplace_back(name, vertices, indices);
     }
 
     void MeshManager::loadStaticMesh(const std::filesystem::path& path) {

@@ -8,7 +8,7 @@
 namespace TechEngine {
     class Material;
 
-    class Mesh {
+    class CORE_DLL Mesh {
     public:
         std::string m_name;
 
@@ -33,6 +33,10 @@ namespace TechEngine {
             return *this;
         }*/
 
+        void setVertices(const std::vector<Vertex>& vector, const std::vector<int>& indices);
+
+        void addVertices(const std::vector<Vertex>& vector, const std::vector<int>& indices);
+
         static void Serialize(StreamWriter* writer, const Mesh& mesh) {
             writer->writeArray(mesh.m_vertices);
             writer->writeArray(mesh.m_indices);
@@ -43,8 +47,6 @@ namespace TechEngine {
             reader->readArray(mesh.m_indices);
         }
 
-        const std::string& getName() const {
-            return m_name;
-        }
+        const std::string& getName() const;
     };
 }

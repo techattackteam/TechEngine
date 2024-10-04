@@ -28,7 +28,7 @@ namespace TechEngine {
                                      update();
                                  });
         };
-        m_client.m_systemRegistry.getSystem<ScriptEngine>().loadDLL(
+        m_client.m_systemRegistry.getSystem<ScriptEngine>().start(
             m_client.m_systemRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Client).string() + "\\client\\scripts\\build\\debug\\ClientScripts.dll");
 
         m_client.m_systemRegistry.getSystem<EventDispatcher>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
