@@ -1,10 +1,7 @@
 #pragma once
-#include "System.hpp"
-#include "core/Logger.hpp"
 
-#include <memory>
+#include "core/Logger.hpp"
 #include <typeindex>
-#include <unordered_map>
 
 
 namespace TechEngine {
@@ -16,10 +13,6 @@ namespace TechEngine {
         std::vector<std::shared_ptr<System>> m_systemsList;
 
     public:
-        SystemsRegistry() = default;
-
-        SystemsRegistry& operator=(const SystemsRegistry&);
-        
         // Create and register a system
         template<typename T, typename... Args>
         T& registerSystem(Args&&... args) {
@@ -45,7 +38,6 @@ namespace TechEngine {
             return m_systems.find(typeid(T)) != m_systems.end();
         }
 
-        
         void onStart();
 
         void onUpdate();

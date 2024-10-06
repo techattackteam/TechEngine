@@ -16,6 +16,8 @@ namespace TechEngine {
     public:
         Mouse(SystemsRegistry& systemsRegistry);
 
+        void init();
+
         void onUpdate();
 
         void onMouseMove(double x, double y);

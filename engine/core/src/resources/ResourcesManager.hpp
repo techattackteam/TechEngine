@@ -1,6 +1,5 @@
 #pragma once
 
-#include "systems/CopyableSystem.hpp"
 #include "material/MaterialManager.hpp"
 #include "mesh/AssimpLoader.hpp"
 #include "mesh/MeshManager.hpp"
@@ -8,7 +7,7 @@
 namespace TechEngine {
     enum class AppType;
 
-    class CORE_DLL ResourcesManager : public CopyableSystem {
+    class CORE_DLL ResourcesManager : public System {
     private:
         SystemsRegistry& m_systemsRegistry;
         MaterialManager m_materialManager;
@@ -17,8 +16,6 @@ namespace TechEngine {
 
     public:
         explicit ResourcesManager(SystemsRegistry& systemsRegistry);
-
-        std::shared_ptr<System> clone() override;
 
         void init(AppType appType);
 

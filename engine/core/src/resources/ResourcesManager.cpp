@@ -9,10 +9,6 @@ namespace TechEngine {
     ResourcesManager::ResourcesManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
     }
 
-    std::shared_ptr<System> ResourcesManager::clone() {
-        return std::make_shared<ResourcesManager>(*this);
-    }
-
     void ResourcesManager::init(AppType appType) {
         std::unordered_map<std::string, std::vector<std::filesystem::path>> filesByExtension = getFilesByExtension(appType);
 
@@ -21,8 +17,7 @@ namespace TechEngine {
     }
 
     void ResourcesManager::shutdown() {
-        System::shutdown();
-        //m_materialManager.shutdown();
+        m_materialManager.shutdown();
         m_meshManager.shutdown();
     }
 

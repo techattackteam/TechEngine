@@ -2,6 +2,7 @@
 #include "events/application/AppCloseEvent.hpp"
 #include "events/scripts/ScriptCrashEvent.hpp"
 #include "eventSystem/EventDispatcher.hpp"
+#include "project/Project.hpp"
 #include "renderer/Renderer.hpp"
 #include "systems/System.hpp"
 
@@ -17,18 +18,18 @@ namespace TechEngine {
     class RuntimeSimulator : public System {
     private:
         T& m_runtime;
-        T m_runtimeCopy;
         SimulationState m_simulationState = SimulationState::STOPPED;
         SystemsRegistry& m_systemRegistry;
 
     public:
-        explicit RuntimeSimulator(T& runtime, SystemsRegistry& m_systemRegistry) : m_runtime(runtime), m_runtimeCopy(runtime), m_systemRegistry(m_systemRegistry) {
+        explicit RuntimeSimulator(T& runtime, SystemsRegistry& m_systemRegistry) : m_runtime(runtime), m_systemRegistry(m_systemRegistry) {
         }
 
         void startSimulation() {
             m_simulationState = SimulationState::RUNNING;
-            //Create a deep copy of the runtime
-            m_runtimeCopy = m_runtime;
+            ScenesManager& scenesManager = m_runtime.m_systemRegistry.template getSystem<ScenesManager>();
+            Project& project = m_runtime.m_systemRegistry.template getSystem<Project>();
+            scenesManager.copyScene(scenesManager.getActiveScene(), project.getPath(PathType::Cache, AppType::Client) / "runtimeScene.tescene");
             onStart();
         }
 
@@ -39,6 +40,10 @@ namespace TechEngine {
         void stopSimulation() {
             m_simulationState = SimulationState::STOPPED;
             onStop();
+            ScenesManager& scenesManager = m_runtime.m_systemRegistry.template getSystem<ScenesManager>();
+            scenesManager.loadScene(scenesManager.getActiveScene().getName());
+            shutdown();
+            init();
         }
 
         void registerSystems(const std::filesystem::path& rootPath) {

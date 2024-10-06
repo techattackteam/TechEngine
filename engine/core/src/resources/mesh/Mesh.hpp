@@ -22,16 +22,11 @@ namespace TechEngine {
                                          m_indices(std::move(indices)) {
         }
 
+        Mesh(const Mesh& rhs);
 
         /*
-        Mesh& operator+=(const Mesh& mesh) {
-            this->vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
-            int lastIndex = indices.back();
-            for (int index: mesh.indices) {
-                this->indices.push_back(index + lastIndex);
-            }
-            return *this;
-        }*/
+        Mesh& operator=(Mesh rhs);
+        */
 
         void setVertices(const std::vector<Vertex>& vector, const std::vector<int>& indices);
 

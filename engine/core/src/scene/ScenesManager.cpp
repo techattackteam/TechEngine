@@ -10,9 +10,6 @@ namespace TechEngine {
     ScenesManager::ScenesManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry), m_sceneSerializer(m_activeScene, m_systemsRegistry.getSystem<ResourcesManager>()) {
     }
 
-    std::shared_ptr<System> ScenesManager::clone() {
-        return std::make_shared<ScenesManager>(*this);
-    }
 
     void ScenesManager::init(AppType appType) {
         std::vector<std::string> paths = {
@@ -35,8 +32,7 @@ namespace TechEngine {
     }
 
     void ScenesManager::shutdown() {
-        System::shutdown();
-        saveScene(m_scenesBank[m_activeScene.getName()]);
+        m_scenesBank.clear();
     }
 
     void ScenesManager::createScene(const std::string& name, const std::filesystem::path& path) {
@@ -53,6 +49,10 @@ namespace TechEngine {
 
     Scene& ScenesManager::getActiveScene() {
         return m_activeScene;
+    }
+
+    void ScenesManager::copyScene(const Scene& scene, std::filesystem::path path) {
+        saveScene(path);
     }
 
     void ScenesManager::registerScene(const std::string& name, const std::filesystem::path& scenePath) {

@@ -18,11 +18,8 @@ namespace TechEngine {
     public:
         ScriptRegister();
 
-        ScriptRegister(const ScriptRegister&) = delete;
 
-        ScriptRegister& operator=(const ScriptRegister&) = delete;
-
-        ~ScriptRegister() = default;
+        ~ScriptRegister();
 
         void init(ScriptEngine* scriptEngine);
 

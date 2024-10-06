@@ -20,6 +20,7 @@ namespace TechEngine {
     void ScriptEngine::shutdown() {
         stop();
         delete scriptRegister;
+        scriptRegister = nullptr;
     }
 
     std::tuple<bool, spdlog::sinks::dist_sink_mt*> ScriptEngine::start(const std::string& dllPath) {
@@ -34,7 +35,6 @@ namespace TechEngine {
                 return {false, nullptr};
             }
             spdlog::sinks::dist_sink_mt* userDistSink = m_APIEntryPoint(&m_systemRegistry);
-            dllLoaded = true;
             return {true, userDistSink};
         } else {
             TE_LOGGER_WARN("User scripts dll not found at {0}. Skipping loading.", dllPath);
@@ -50,12 +50,13 @@ namespace TechEngine {
             if (!result) {
                 TE_LOGGER_ERROR("Failed to unload user scripts dll");
             }
-            dllLoaded = false;
+            m_userCustomDll = nullptr;
         }
     }
 
+
     void ScriptEngine::onStart() {
-        if (dllLoaded) {
+        if (m_userCustomDll) {
             m_updateComponentAPIsFunction();
             for (Script* script: scripts) {
                 RUN_SCRIPT_FUNCTION(script, script->onStartFunc(), m_systemRegistry.getSystem<EventDispatcher>());
@@ -65,7 +66,7 @@ namespace TechEngine {
     }
 
     void ScriptEngine::onUpdate() {
-        if (dllLoaded) {
+        if (m_userCustomDll) {
             m_updateComponentAPIsFunction();
             for (Script* script: scripts) {
                 RUN_SCRIPT_FUNCTION(script, script->onUpdateFunc(), m_systemRegistry.getSystem<EventDispatcher>());
@@ -75,7 +76,7 @@ namespace TechEngine {
     }
 
     void ScriptEngine::onFixedUpdate() {
-        if (dllLoaded) {
+        if (m_userCustomDll) {
             m_updateComponentAPIsFunction();
             for (Script* script: scripts) {
                 RUN_SCRIPT_FUNCTION(script, script->onFixedUpdateFunc(), m_systemRegistry.getSystem<EventDispatcher>());
@@ -84,6 +85,15 @@ namespace TechEngine {
         }
     }
 
+    void ScriptEngine::onStop() {
+        /*if (dllLoaded) {
+            m_updateComponentAPIsFunction();
+            for (Script* script: scripts) {
+                RUN_SCRIPT_FUNCTION(script, script->onStopFunc(), m_systemRegistry.getSystem<EventDispatcher>());
+            }
+            m_updateComponentsFromAPIsFunction();
+        }*/
+    }
 
     Script* ScriptEngine::getScript(const std::string& name) {
         for (Script* script: scripts) {

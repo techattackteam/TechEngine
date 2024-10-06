@@ -4,6 +4,18 @@ namespace TechEngine {
     void Timer::init() {
         startTime = std::chrono::system_clock::now();
         lastLoopTime = getTime();
+        lastLoopTime = 0;
+        timeCount = 0.0f;
+
+        deltaTime = 0.0f;
+        accumulator = 0;
+        interpolation = 0;
+
+        fps = 0;
+        fpsCount = 0;
+
+        ticks = 0;
+        ticksCount = 0;
     }
 
     void Timer::onStart() {

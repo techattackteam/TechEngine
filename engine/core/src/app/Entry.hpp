@@ -12,6 +12,8 @@ namespace TechEngine {
     public:
         explicit Entry(SystemsRegistry& systemsRegistry);
 
+        Entry(const Entry& rhs);
+
         void run(const std::function<void()>& onFixedUpdate, const std::function<void()>& onUpdate);
     };
 }
