@@ -57,31 +57,25 @@ namespace TechEngine {
 
     void ScriptEngine::onStart() {
         if (m_userCustomDll) {
-            m_updateComponentAPIsFunction();
             for (Script* script: scripts) {
                 RUN_SCRIPT_FUNCTION(script, script->onStartFunc(), m_systemRegistry.getSystem<EventDispatcher>());
             }
-            m_updateComponentsFromAPIsFunction();
         }
     }
 
     void ScriptEngine::onUpdate() {
         if (m_userCustomDll) {
-            m_updateComponentAPIsFunction();
             for (Script* script: scripts) {
                 RUN_SCRIPT_FUNCTION(script, script->onUpdateFunc(), m_systemRegistry.getSystem<EventDispatcher>());
             }
-            m_updateComponentsFromAPIsFunction();
         }
     }
 
     void ScriptEngine::onFixedUpdate() {
         if (m_userCustomDll) {
-            m_updateComponentAPIsFunction();
             for (Script* script: scripts) {
                 RUN_SCRIPT_FUNCTION(script, script->onFixedUpdateFunc(), m_systemRegistry.getSystem<EventDispatcher>());
             }
-            m_updateComponentsFromAPIsFunction();
         }
     }
 

@@ -1,5 +1,4 @@
 #pragma once
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -19,9 +18,9 @@ namespace TechEngineAPI {
 
         Mesh() = default;
 
+    public:
         Mesh(const std::string& name, TechEngine::ResourcesManager* resourcesManager);
 
-    public:
         void setVertices(const std::vector<Vertex>& vertices, const std::vector<int>& indices);
 
         void addVertices(const std::vector<Vertex>& vertices, const std::vector<int>& indices);

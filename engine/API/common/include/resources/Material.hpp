@@ -24,11 +24,9 @@ namespace TechEngineAPI {
 
         bool useTexture = false;
 
-        Material() = default;
-
-        Material(const std::string& name, TechEngine::ResourcesManager* resourcesManager);
 
     public:
+        Material(const std::string& name, TechEngine::ResourcesManager* resourcesManager);
         const std::string& getName() const;
 
         const glm::vec4& getColor() const;
