@@ -32,6 +32,7 @@ namespace TechEngine {
     }
 
     void ScenesManager::shutdown() {
+        m_activeScene.clear();
         m_scenesBank.clear();
     }
 

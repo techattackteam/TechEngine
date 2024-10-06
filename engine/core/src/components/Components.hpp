@@ -191,7 +191,7 @@ namespace TechEngine {
 
         explicit MeshRenderer(Mesh& mesh, Material& material) : mesh(mesh), material(material) {
         }
-        
+
 
         std::vector<Vertex> getVertices() const {
             return mesh.m_vertices;

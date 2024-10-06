@@ -1,7 +1,9 @@
 #pragma once
 
+
 #include "resources/Mesh.hpp"
 #include "resources/Material.hpp"
+#include <memory>
 
 namespace TechEngine {
     class ResourcesManager;

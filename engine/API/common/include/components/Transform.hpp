@@ -4,45 +4,31 @@
 #include <glm/vec3.hpp>
 
 
+namespace TechEngine {
+    class Scene;
+    class Transform;
+}
+
 namespace TechEngineAPI {
     class API_DLL Transform : public Component {
-    private:
-        glm::vec3 position;
-        glm::vec3 rotation;
-        glm::vec3 scale;
-
     public:
-        Transform(const glm::vec3& position,
-                  const glm::vec3& rotation,
-                  const glm::vec3& scale): Component(),
-                                           position(position),
-                                           rotation(rotation),
-                                           scale(scale) {
+        TechEngine::Transform* m_transform;
+
+        Transform(Entity entity, TechEngine::Transform* transform): Component(entity), m_transform(transform) {
         }
 
+        void updateInternalPointer(TechEngine::Scene* scene) override;
 
-        void setPosition(const glm::vec3& position) {
-            this->position = position;
-        }
+        void setPosition(const glm::vec3& position);
 
-        void setRotation(const glm::vec3& rotation) {
-            this->rotation = rotation;
-        }
+        void setRotation(const glm::vec3& rotation);
 
-        void setScale(const glm::vec3& scale) {
-            this->scale = scale;
-        }
+        void setScale(const glm::vec3& scale);
 
-        [[nodiscard]] glm::vec3 getPosition() const {
-            return position;
-        }
+        glm::vec3 getPosition();
 
-        [[nodiscard]] glm::vec3 getRotation() const {
-            return rotation;
-        }
+        glm::vec3 getRotation();
 
-        [[nodiscard]] glm::vec3 getScale() const {
-            return scale;
-        }
+        glm::vec3 getScale();
     };
 }

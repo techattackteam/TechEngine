@@ -5,6 +5,7 @@
 #include "core/ExportDLL.hpp"
 #include <memory>
 #include <string>
+#include <typeindex>
 #include <unordered_map>
 
 
@@ -15,13 +16,30 @@ namespace TechEngine {
 }
 
 namespace TechEngineAPI {
+    struct ComponentKey {
+        Entity entity;
+        std::type_index type;
+
+        bool operator==(const ComponentKey& rhs) const {
+            return entity == rhs.entity && type == rhs.type;
+        }
+    };
+
+    struct ComponentKeyHash {
+        std::size_t operator()(const ComponentKey& key) const {
+            std::size_t h1 = std::hash<Entity>()(key.entity);
+            std::size_t h2 = key.type.hash_code();
+            return h1 ^ (h2 << 1); // Shift and XOR combination
+        }
+    };
+
     class API_DLL Scene {
     private:
         friend class Entry;
         friend class ClientEntry;
         friend class ServerEntry;
 
-        inline static std::unordered_map<TechEngineAPI::Entity, std::shared_ptr<Component>> components;
+        inline static std::unordered_map<ComponentKey, std::shared_ptr<Component>, ComponentKeyHash> components;
 
         inline static TechEngine::Scene* m_scene;
         inline static TechEngine::ResourcesManager* m_resourcesManager;
@@ -29,10 +47,6 @@ namespace TechEngineAPI {
         static void init(TechEngine::Scene* scene, TechEngine::ResourcesManager* m_resourcesManager);
 
         static void shutdown();
-
-        static void updateComponents();
-
-        static void sendUpdatedComponents();
 
     public:
         static Entity createEntity(const std::string& name);

@@ -108,6 +108,8 @@ namespace TechEngine {
             archetype.clear();
         }
         m_archetypes.clear();
+        m_lastArchetypeID = 0;
+        m_lastEntityID = 0;
     }
 
     uint32_t ArchetypesManager::generateArchetypeID() {

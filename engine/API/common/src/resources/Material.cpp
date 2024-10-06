@@ -1,5 +1,7 @@
 #include "resources/Material.hpp"
 
+#include "resources/ResourcesManager.hpp"
+
 namespace TechEngineAPI {
     Material::Material(const std::string& name, TechEngine::ResourcesManager* resourcesManager) : m_name(name), m_resourcesManager(resourcesManager) {
     }
@@ -30,6 +32,7 @@ namespace TechEngineAPI {
 
     void Material::setColor(const glm::vec4& color) {
         m_color = color;
+        m_resourcesManager->getMaterial(m_name).setColor(color);
     }
 
     void Material::setAmbient(const glm::vec3& ambient) {

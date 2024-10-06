@@ -31,6 +31,7 @@ namespace TechEngine {
         vertexArrays[BufferLines]->init();
         vertexBuffers[BufferLines]->init(10000000 * sizeof(Line));
         vertexArrays[BufferLines]->addNewLinesBuffer(*vertexBuffers[BufferLines]);
+        glEnable(GL_DEPTH_TEST);
     }
 
     Renderer::Renderer(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry), shadersManager(systemsRegistry) {
