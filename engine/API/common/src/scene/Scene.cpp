@@ -15,7 +15,6 @@ namespace TechEngineAPI {
     }
 
     void Scene::shutdown() {
-        
     }
 
     Entity Scene::createEntity(const std::string& name) {
@@ -62,9 +61,7 @@ namespace TechEngineAPI {
         }
         /*}*/
         for (auto&& component: components) {
-            if (component.first.entity == entity) {
-                component.second->updateInternalPointer(m_scene);
-            }
+            component.second->updateInternalPointer(m_scene);
         }
         return std::static_pointer_cast<T>(components[{entity, typeid(T)}]);
     }

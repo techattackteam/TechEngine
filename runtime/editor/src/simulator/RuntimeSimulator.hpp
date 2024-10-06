@@ -20,6 +20,7 @@ namespace TechEngine {
         T& m_runtime;
         SimulationState m_simulationState = SimulationState::STOPPED;
         SystemsRegistry& m_systemRegistry;
+        bool stopNextUpdate = false;
 
     public:
         explicit RuntimeSimulator(T& runtime, SystemsRegistry& m_systemRegistry) : m_runtime(runtime), m_systemRegistry(m_systemRegistry) {
@@ -63,7 +64,7 @@ namespace TechEngine {
             });
             m_runtime.m_systemRegistry.getSystem<EventDispatcher>().subscribe<ScriptCrashEvent>([this](const std::shared_ptr<Event>& event) {
                 if (m_simulationState != SimulationState::STOPPED) {
-                    stopSimulation();
+                    stopNextUpdate = true;
                 }
             });
         }
@@ -84,6 +85,10 @@ namespace TechEngine {
             if (m_simulationState == SimulationState::RUNNING) {
                 m_runtime.onUpdate();
             }
+            if (stopNextUpdate) {
+                stopSimulation();
+                stopNextUpdate = false;
+            }
         }
 
         void onStop() override {
@@ -93,8 +98,6 @@ namespace TechEngine {
         }
 
         void shutdown() override {
-            /*if (m_simulationState == SimulationState::RUNNING) {
-            }*/
             m_runtime.shutdown();
         }
 
