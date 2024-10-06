@@ -77,8 +77,6 @@ namespace TechEngine {
 
     void RuntimePanel::stopRunningScene() {
         m_editorSystemsRegistry.getSystem<RuntimeSimulator<Client>>().stopSimulation();
-        ScriptEngine& scriptEngine = m_appSystemsRegistry.getSystem<ScriptEngine>();
-        scriptEngine.stop();
     }
 
     void RuntimePanel::createToolBar() {

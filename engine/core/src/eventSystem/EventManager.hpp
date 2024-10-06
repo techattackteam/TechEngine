@@ -44,5 +44,7 @@ namespace TechEngine {
         void dispatch(const std::shared_ptr<Event>& event);
 
         void execute();
+
+        void shutdown();
     };
 }

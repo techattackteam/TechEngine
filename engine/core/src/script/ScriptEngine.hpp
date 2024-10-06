@@ -19,8 +19,7 @@ namespace TechEngine {
         ScriptRegister* scriptRegister = nullptr;
         std::list<Script*> scripts = {};
         bool runtime = false;
-        bool dllLoaded = false;
-
+        
         HINSTANCE m_userCustomDll = nullptr;
         HANDLE m_dllProcessHandle = nullptr;
         HANDLE m_dllThreadHandle = nullptr;
@@ -47,6 +46,8 @@ namespace TechEngine {
         void onUpdate() override;
 
         void onFixedUpdate() override;
+
+        void onStop() override;
 
         Script* getScript(const std::string& name);
 

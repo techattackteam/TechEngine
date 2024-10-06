@@ -1,22 +1,14 @@
 #pragma once
 
 #include "EventManager.hpp"
-#include "systems/CopyableSystem.hpp"
+#include "systems/System.hpp"
 
 namespace TechEngine {
-    class CORE_DLL EventDispatcher : public CopyableSystem {
+    class CORE_DLL EventDispatcher : public System {
     protected:
         EventManager m_eventManager;
 
     public:
-        EventDispatcher();
-
-        EventDispatcher(const EventDispatcher& rhs);
-
-        EventDispatcher& operator=(const EventDispatcher& rhs);
-
-        std::shared_ptr<System> clone() override;
-
         void init() override;
 
         void onUpdate() override;

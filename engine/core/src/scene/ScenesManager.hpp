@@ -1,6 +1,5 @@
 #pragma once
 
-#include "systems/CopyableSystem.hpp"
 #include "Scene.hpp"
 #include "SceneSerializer.hpp"
 
@@ -14,7 +13,7 @@ namespace TechEngine {
 }
 
 namespace TechEngine {
-    class CORE_DLL ScenesManager : public CopyableSystem {
+    class CORE_DLL ScenesManager : public System {
     private:
         SystemsRegistry& m_systemsRegistry;
         std::unordered_map<std::string, std::filesystem::path> m_scenesBank;
@@ -23,8 +22,6 @@ namespace TechEngine {
 
     public:
         explicit ScenesManager(SystemsRegistry& systemsRegistry);
-
-        std::shared_ptr<System> clone() override;
 
         void init(AppType appType);
 
@@ -41,5 +38,7 @@ namespace TechEngine {
         void loadScene(const std::string& string);
 
         Scene& getActiveScene();
+
+        void copyScene(const Scene& scene, std::filesystem::path path);
     };
 }

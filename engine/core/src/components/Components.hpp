@@ -191,12 +191,13 @@ namespace TechEngine {
 
         explicit MeshRenderer(Mesh& mesh, Material& material) : mesh(mesh), material(material) {
         }
+        
 
-        std::vector<Vertex> getVertices() {
+        std::vector<Vertex> getVertices() const {
             return mesh.m_vertices;
         }
 
-        std::vector<int> getIndices() {
+        std::vector<int> getIndices() const {
             return mesh.m_indices;
         }
 
@@ -210,7 +211,7 @@ namespace TechEngine {
             this->material = material;
             paintMesh();
         }
-        
+
         void changeMesh(Mesh& mesh) {
             this->mesh = mesh;
             paintMesh();

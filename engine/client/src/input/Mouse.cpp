@@ -25,6 +25,19 @@ namespace TechEngine {
         });
     }
 
+    void Mouse::init() {
+        m_buttonsPressed[0] = false;
+        m_buttonsPressed[1] = false;
+        m_buttonsPressed[2] = false;
+        m_buttonsPressed[3] = false;
+        m_buttonsPressed[4] = false;
+        m_buttonsPressed[5] = false;
+        m_buttonsPressed[6] = false;
+        m_buttonsPressed[7] = false;
+
+        m_lastPosition = glm::vec2(0, 0);
+    }
+
 
     void Mouse::onUpdate() {
         if (m_buttonsPressed[0]) {

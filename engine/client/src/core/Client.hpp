@@ -12,11 +12,6 @@ namespace TechEngine {
     public:
         Client();
 
-        //Create copy constructor
-        Client(const Client& rhs);
-
-        Client& operator=(const Client& rhs);
-
         void registerSystems(const std::filesystem::path& rootPath) override;
 
         void init();

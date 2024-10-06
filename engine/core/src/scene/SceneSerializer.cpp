@@ -6,9 +6,8 @@
 #include "utils/YAMLUtils.hpp"
 
 namespace TechEngine {
-    SceneSerializer::SceneSerializer(Scene& scene,
-                                     ResourcesManager& resourcesManager) : m_scene(scene),
-                                                                           m_resourcesManager(resourcesManager) {
+    SceneSerializer::SceneSerializer(Scene& scene, ResourcesManager& resourcesManager) : m_scene(scene),
+                                                                                         m_resourcesManager(resourcesManager) {
     }
 
     void SceneSerializer::serialize(std::ofstream& stream) const {

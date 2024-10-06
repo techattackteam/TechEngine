@@ -33,4 +33,9 @@ namespace TechEngine {
             m_dispatchedEvents.pop();
         }
     }
+
+    void EventManager::shutdown() {
+        m_dispatchedEvents = std::queue<std::shared_ptr<Event>>();
+        m_observers.clear();
+    }
 }

@@ -50,6 +50,8 @@ namespace TechEngine {
     }
 
     void Core::shutdown() {
+        ScenesManager& scenesManager = m_systemRegistry.getSystem<ScenesManager>();
+        scenesManager.saveScene();
         m_systemRegistry.onShutdown();
     }
 }

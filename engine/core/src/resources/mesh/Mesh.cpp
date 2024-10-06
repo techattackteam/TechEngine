@@ -1,6 +1,20 @@
 #include "Mesh.hpp"
 
 namespace TechEngine {
+    Mesh::Mesh(const Mesh& rhs) : m_name(rhs.m_name),
+                                  m_vertices(rhs.m_vertices),
+                                  m_indices(rhs.m_indices) {
+        TE_LOGGER_INFO("Mesh copy: {0} {1} {2}", m_name, m_vertices.size(), m_indices.size());
+    }
+
+    /*Mesh& Mesh::operator=(Mesh rhs) {
+        if (this == &rhs) {
+            return *this;
+        }
+        std::swap(*this, rhs);
+        return *this;
+    }*/
+
     void Mesh::setVertices(const std::vector<Vertex>& vector, const std::vector<int>& indices) {
         this->m_vertices = vector;
         this->m_indices = indices;

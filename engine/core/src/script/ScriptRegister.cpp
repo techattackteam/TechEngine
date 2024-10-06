@@ -9,6 +9,11 @@ namespace TechEngine {
         instance = this;
     }
 
+    ScriptRegister::~ScriptRegister() {
+        this->scriptEngine = nullptr;
+        instance = nullptr;
+    }
+
     void ScriptRegister::init(ScriptEngine* scriptEngine) {
         this->scriptEngine = scriptEngine;
     }
