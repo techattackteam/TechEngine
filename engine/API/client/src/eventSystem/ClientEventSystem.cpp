@@ -4,11 +4,15 @@
 #include "events/input/KeyPressedEvent.hpp"
 #include "events/input/KeyReleasedEvent.hpp"
 #include "events/input/KeyHoldEvent.hpp"
+#include "events/input/MouseMoveEvent.hpp"
 
 #include "client/include/events/KeyPressedEvent.hpp"
 #include "client/include/events/KeyReleasedEvent.hpp"
 #include "client/include/events/KeyHoldEvent.hpp"
+#include "client/include/events/MouseMoveEvent.hpp"
+#include "client/include/events/MouseScrollEvent.hpp"
 #include "client/include/input/Key.hpp"
+#include "events/input/MouseScrollEvent.hpp"
 
 namespace TechEngineAPI {
     inline void ClientEventSystem::init(TechEngine::EventDispatcher* dispatcher) {
@@ -30,5 +34,16 @@ namespace TechEngineAPI {
             Key keyAPI(static_cast<KeyCode>(key.getKeyCode()));
             dispatch<KeyHoldEvent>(keyAPI);
         });
+
+        m_dispatcher->subscribe<TechEngine::MouseMoveEvent>([](const std::shared_ptr<TechEngine::Event>& event) {
+            glm::vec2 fromPosition = dynamic_cast<TechEngine::MouseMoveEvent*>(event.get())->getFromPosition();
+            glm::vec2 toPosition = dynamic_cast<TechEngine::MouseMoveEvent*>(event.get())->getToPosition();
+            dispatch<MouseMoveEvent>(fromPosition, toPosition);
+        });
+
+        m_dispatcher->subscribe<TechEngine::MouseScrollEvent>([](const std::shared_ptr<TechEngine::Event>& event) {
+                dispatch<MouseScrollEvent>(dynamic_cast<TechEngine::MouseScrollEvent*>(event.get())->getXOffset(), dynamic_cast<TechEngine::MouseScrollEvent*>(event.get())->getYOffset());
+            }
+        );
     }
 }
