@@ -3,6 +3,8 @@
 #include "events/input/KeyHoldEvent.hpp"
 #include "events/input/KeyPressedEvent.hpp"
 #include "events/input/KeyReleasedEvent.hpp"
+#include "events/input/MouseMoveEvent.hpp"
+#include "events/input/MouseScrollEvent.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngine {
@@ -22,6 +24,14 @@ namespace TechEngine {
         });
         editorSystemsRegistry.getSystem<EventDispatcher>().subscribe<KeyReleasedEvent>([this](const std::shared_ptr<Event>& event) {
             m_appSystemsRegistry.getSystem<EventDispatcher>().dispatch<KeyReleasedEvent>(Key(dynamic_cast<KeyReleasedEvent*>(event.get())->getKey()));
+        });
+        editorSystemsRegistry.getSystem<EventDispatcher>().subscribe<MouseMoveEvent>([this](const std::shared_ptr<Event>& event) {
+            m_appSystemsRegistry.getSystem<EventDispatcher>().dispatch<MouseMoveEvent>(glm::vec2(dynamic_cast<MouseMoveEvent*>(event.get())->getFromPosition()),
+                                                                                       glm::vec2(dynamic_cast<MouseMoveEvent*>(event.get())->getToPosition()));
+        });
+        editorSystemsRegistry.getSystem<EventDispatcher>().subscribe<MouseScrollEvent>([this](const std::shared_ptr<Event>& event) {
+            m_appSystemsRegistry.getSystem<EventDispatcher>().dispatch<MouseScrollEvent>(dynamic_cast<MouseScrollEvent*>(event.get())->getXOffset(),
+                                                                                         dynamic_cast<MouseScrollEvent*>(event.get())->getYOffset());
         });
     }
 }
