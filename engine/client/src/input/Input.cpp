@@ -39,7 +39,7 @@ namespace TechEngine {
     void Input::onKeyInput(int key, int action) {
         switch (action) {
             case GLFW_PRESS: {
-                m_systemsRegistry.getSystem<EventDispatcher>().dispatch<KeyPressedEvent>(Key(key));
+               m_systemsRegistry.getSystem<EventDispatcher>().dispatch<KeyPressedEvent>(Key(key));
                 break;
             }
             case GLFW_RELEASE: {

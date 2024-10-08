@@ -1,4 +1,4 @@
-#include "resources/Material.hpp"
+#include "common/include/resources/Material.hpp"
 
 #include "resources/ResourcesManager.hpp"
 

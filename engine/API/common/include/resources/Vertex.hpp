@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/ExportDLL.hpp"
+#include "common/include/core/ExportDLL.hpp"
 #include "glm/glm.hpp"
 
 namespace TechEngineAPI {

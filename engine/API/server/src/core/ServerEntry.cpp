@@ -1,7 +1,8 @@
-#include "core/ServerEntry.hpp"
-#include "core/Entry.hpp"
+#include "common/include/core/Entry.hpp"
+#include "common/include/logger/Logger.hpp"
 
-#include "logger/Logger.hpp"
+#include "server/include/core/ServerEntry.hpp"
+
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngineAPI {

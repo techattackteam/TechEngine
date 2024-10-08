@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Component.hpp"
-#include "resources/Mesh.hpp"
-#include "resources/Material.hpp"
+#include "common/include/components/Component.hpp"
+#include "common/include/resources/Mesh.hpp"
+#include "common/include/resources/Material.hpp"
 #include <memory>
 
 namespace TechEngine {

@@ -13,10 +13,6 @@ namespace TechEngine {
 
 
     void SceneHierarchyPanel::onInit() {
-        Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
-        int entity;
-        /*entity = scene.createEntity();
-        scene.addComponent<Transform>(entity);*/
     }
 
     void SceneHierarchyPanel::onUpdate() {
@@ -112,7 +108,7 @@ namespace TechEngine {
                 /*appRegistry.getSystem<SceneManager>().getScene().duplicateGameObject(gameObject);*/
             }
             if (ImGui::MenuItem("Delete GameObject")) {
-                //scene.destroyEntity(entity);
+                scene.destroyEntity(entity);
             }
             ImGui::EndPopup();
         }

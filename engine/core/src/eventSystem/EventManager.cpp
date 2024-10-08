@@ -18,6 +18,7 @@ namespace TechEngine {
         m_dispatchedEvents.push(event);
     }
 
+
     void EventManager::execute() {
         uint32_t size = m_dispatchedEvents.size();
         for (uint32_t i = 0; i < size; i++) {
@@ -33,6 +34,7 @@ namespace TechEngine {
             m_dispatchedEvents.pop();
         }
     }
+    
 
     void EventManager::shutdown() {
         m_dispatchedEvents = std::queue<std::shared_ptr<Event>>();

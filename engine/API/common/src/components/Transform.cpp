@@ -1,6 +1,5 @@
-#include "components/Transform.hpp"
-
-#include "../../../core/src/scene/Scene.hpp"
+#include "common/include/components/Transform.hpp"
+#include "scene/Scene.hpp"
 
 namespace TechEngineAPI {
     void Transform::updateInternalPointer(TechEngine::Scene* scene) {

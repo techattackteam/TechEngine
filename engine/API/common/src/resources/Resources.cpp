@@ -1,6 +1,6 @@
-#include "resources/Resources.hpp"
+#include "common/include/resources/Resources.hpp"
+#include "common/include/resources/Mesh.hpp"
 
-#include "resources/Mesh.hpp"
 #include "resources/ResourcesManager.hpp"
 
 namespace TechEngineAPI {
