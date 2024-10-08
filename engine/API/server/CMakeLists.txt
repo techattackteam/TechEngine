@@ -6,9 +6,6 @@ add_library(TechEngineAPIServer SHARED ${ENGINE_API_SERVER_SRC} ${ENGINE_API_SER
 target_link_libraries(TechEngineAPIServer PUBLIC TechEngineAPICommon TechEngineServer)
 #target_compile_definitions(TechEngineAPIServer PRIVATE TECH_ENGINE_CLIENT_API_EXPORT)
 
-target_include_directories(TechEngineAPIServer PUBLIC "src")
-target_include_directories(TechEngineAPIServer PUBLIC "include")
-
 #Setup target's output directory
 if (WIN32) # WINDOWS
     set(OUTPUT "${PROJECT_SOURCE_DIR}/bin/engine/api/server")
