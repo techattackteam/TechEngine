@@ -1,7 +1,7 @@
 #pragma once
 
+#include "common/include/core/ExportDLL.hpp"
 
-#include "core/ExportDLL.hpp"
 #include <spdlog/logger.h>
 #include <spdlog/sinks/dist_sink.h>
 

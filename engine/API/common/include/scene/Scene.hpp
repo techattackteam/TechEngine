@@ -1,13 +1,13 @@
 #pragma once
 
-#include "components/Component.hpp"
-#include "entity/Entity.hpp"
-#include "core/ExportDLL.hpp"
+#include "common/include/core/ExportDLL.hpp"
+#include "common/include/components/Component.hpp"
+#include "common/include/entity/Entity.hpp"
+
 #include <memory>
 #include <string>
 #include <typeindex>
 #include <unordered_map>
-
 
 namespace TechEngine {
     class Tag;

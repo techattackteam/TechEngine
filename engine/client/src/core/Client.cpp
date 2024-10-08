@@ -1,6 +1,7 @@
 #include "Client.hpp"
 
 #include "core/Logger.hpp"
+#include "input/Input.hpp"
 #include "project/Project.hpp"
 #include "renderer/Renderer.hpp"
 

@@ -1,8 +1,9 @@
 #pragma once
+
+#include "common/include/resources/Vertex.hpp"
+
 #include <string>
 #include <vector>
-
-#include "resources/Vertex.hpp"
 
 namespace TechEngine {
     class ResourcesManager;

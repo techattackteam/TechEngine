@@ -1,17 +1,17 @@
-#include "scene/Scene.hpp"
+#include "common/include/components/Tag.hpp"
+#include "common/include/components/Transform.hpp"
+#include "common/include/components/MeshRenderer.hpp"
+#include "common/include/resources/Resources.hpp"
+#include "common/include/scene/Scene.hpp"
 
-#include "../../../core/src/scene/Scene.hpp"
+#include "scene/Scene.hpp"
 #include "components/Components.hpp"
-#include "components/Tag.hpp"
-#include "components/Transform.hpp"
-#include "components/MeshRenderer.hpp"
-#include "resources/Resources.hpp"
 #include "resources/ResourcesManager.hpp"
 
 namespace TechEngineAPI {
     void Scene::init(TechEngine::Scene* scene, TechEngine::ResourcesManager* resourcesManager) {
-        Scene::m_scene = scene;
-        Scene::m_resourcesManager = resourcesManager;
+        m_scene = scene;
+        m_resourcesManager = resourcesManager;
     }
 
     void Scene::shutdown() {

@@ -15,12 +15,14 @@ endforeach ()
 list(REMOVE_DUPLICATES TechEngineAPIInclude_Dirs)
 
 find_package(spdlog REQUIRED)
+find_package(glm REQUIRED)
 
 add_library(ClientScripts SHARED ${ClientScripts_Client_Sources} ${ClientScripts_Client_Headers} ${ClientScripts_Common_Sources} ${ClientScripts_Common_Headers})
 target_compile_definitions(ClientScripts PRIVATE GLM_ENABLE_EXPERIMENTAL)
 target_compile_definitions(ClientScripts PRIVATE TECH_ENGINE_CLIENT_SCRIPTS_EXPORT)
 
 target_link_libraries(ClientScripts PUBLIC spdlog)
+target_link_libraries(ClientScripts PUBLIC glm)
 
 if (WIN32) # WINDOWS
     set(TECH_ENGINE_API_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/../resources/client/scripts/build")
@@ -41,13 +43,13 @@ if (WIN32) # WINDOWS
     )
 endif ()
 target_include_directories(ClientScripts PUBLIC
-        "../../resources/client/TechEngineAPI/include"
-        "../../resources/common/TechEngineAPI/include")
+        "../../resources/client/TechEngineAPI"
+        "../../resources/common/TechEngineAPI")
 
 # Set variable for TechEngineAPILib
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}" STREQUAL "")
-    set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/TechEngineAPI/lib/debug/TechEngineAPIClient.lib")
+    set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/TechEngineAPI/client/lib/debug/TechEngineAPIClient.lib")
 else ()
-    set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/TechEngineAPI/lib/release/TechEngineAPIClient.lib")
+    set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/TechEngineAPI/client/lib/release/TechEngineAPIClient.lib")
 endif ()
 target_link_libraries(ClientScripts PUBLIC ${TECH_ENGINE_API_LIB})

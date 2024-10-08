@@ -1,5 +1,5 @@
 #pragma once
-#include "core/Entry.hpp"
+#include "common/include/core/Entry.hpp"
 
 
 namespace TechEngineAPI {

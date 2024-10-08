@@ -1,7 +1,7 @@
-#include "components/Tag.hpp"
+#include "common/include/components/Tag.hpp"
 
 #include "components/Components.hpp"
-#include "../../../core/src/scene/Scene.hpp"
+#include "scene/Scene.hpp"
 
 namespace TechEngineAPI {
     void Tag::updateInternalPointer(TechEngine::Scene* scene) {

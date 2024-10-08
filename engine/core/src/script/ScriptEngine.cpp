@@ -68,6 +68,7 @@ namespace TechEngine {
             for (Script* script: scripts) {
                 RUN_SCRIPT_FUNCTION(script, script->onUpdateFunc(), m_systemRegistry.getSystem<EventDispatcher>());
             }
+            m_executeExternalEventSystem();
         }
     }
 

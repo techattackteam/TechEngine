@@ -8,6 +8,7 @@
 #include <typeindex>
 #include <unordered_map>
 
+
 namespace TechEngine {
     using Observer = std::function<void(std::shared_ptr<Event>)>;
     using ObserversVector = std::vector<std::shared_ptr<Observer>>;

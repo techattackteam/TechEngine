@@ -1,8 +1,9 @@
 #pragma once
+
+#include "common/include/core/ExportDLL.hpp"
+
 #include <string>
 #include <vcruntime_typeinfo.h>
-
-#include "core/ExportDLL.hpp"
 
 namespace TechEngine {
     class Script;

@@ -1,9 +1,12 @@
-#include "core/ClientEntry.hpp"
-#include "core/Entry.hpp"
+#include "common/include/core/Entry.hpp"
+#include "common/include/logger/Logger.hpp"
 
-#include "logger/Logger.hpp"
+#include "client/include/core/ClientEntry.hpp"
+#include "client/include/eventSystem/ClientEventSystem.hpp"
+
 #include "scene/Scene.hpp"
 #include "script/ScriptEngine.hpp"
+#include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngineAPI {
     ClientEntry::~ClientEntry() {
@@ -12,6 +15,7 @@ namespace TechEngineAPI {
     void ClientEntry::init(TechEngine::SystemsRegistry* systemsRegistry) {
         Entry::init(systemsRegistry);
         Logger::init("Client");
+        ClientEventSystem::init(&systemsRegistry->getSystem<TechEngine::EventDispatcher>());
     }
 
     void ClientEntry::shutdown() {
@@ -38,6 +42,10 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVO
             TechEngine::ScriptEngine::setEntryPoint([](TechEngine::SystemsRegistry* systemsRegistry) {
                 TechEngineAPI::ClientEntry::getInstance()->init(systemsRegistry);
                 return TechEngineAPI::Logger::getDistSinks();
+            });
+
+            TechEngine::ScriptEngine::setExecuteExternalEventSystem([]() {
+                TechEngineAPI::ClientEventSystem::execute();
             });
             break;
         case DLL_THREAD_ATTACH:

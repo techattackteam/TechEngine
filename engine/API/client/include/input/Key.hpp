@@ -1,9 +1,9 @@
 #pragma once
 
-#include "core/ExportDll.hpp"
+#include "common/include/core/ExportDLL.hpp"
 #include <string>
 
-namespace TechEngine {
+namespace TechEngineAPI {
     enum KeyCode {
         None, Q, W, E, R, T, Y, U, I, O, P, A, S, D, F, G, H, J, K, L, Z, X, C, V, B, N, M,
         ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, ZERO,
@@ -16,26 +16,15 @@ namespace TechEngine {
         ESC
     };
 
-    class CLIENT_DLL Key {
-    public:
-        explicit Key(KeyCode keyCode) : keyCode(keyCode) {
-        }
-
-        explicit Key(int key) : keyCode(getKeyCode(key)) {
-        }
-
-        KeyCode& getKeyCode();
-
-        std::string getKeyName() const;
-
-
-        bool operator==(const Key& key) const {
-            return keyCode == key.keyCode;
-        }
-
+    class API_DLL Key {
     private:
         KeyCode keyCode;
 
-        KeyCode getKeyCode(int key) const;
+    public:
+        explicit Key(KeyCode keyCode);
+
+        KeyCode& getKeyCode();
+
+        std::string getKeyName();
     };
 }

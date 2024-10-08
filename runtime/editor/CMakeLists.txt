@@ -11,7 +11,7 @@ add_executable(TechEngineEditor ${EDITOR_SOURCES} ${EDITOR_HEADERS})
 target_include_directories(TechEngineEditor PUBLIC src)
 target_link_libraries(TechEngineEditor TechEngineApp TechEngineCore TechEngineClient TechEngineServer imgui imguizmo)
 target_compile_definitions(TechEngineEditor PUBLIC TECH_ENGINE_EDITOR)
-target_compile_definitions(TechEngineEditor PUBLIC TECH_ENGINE_CORE_EXPORT=)
+target_compile_definitions(TechEngineEditor PUBLIC TECH_ENGINE_CORE_EXPORT)
 
 # setup target's output directory
 if (WIN32) # WINDOWS
@@ -107,17 +107,17 @@ if (WIN32)
     add_custom_command(TARGET TechEngineEditor POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${API}/client
-            $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/client/TechEngineAPI
+            $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/client/TechEngineAPI/client
     )
     add_custom_command(TARGET TechEngineEditor POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${API}/common
-            $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/common/TechEngineAPI
+            $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/common/TechEngineAPI/common
     )
     add_custom_command(TARGET TechEngineEditor POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${API}/server
-            $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/server/TechEngineAPI
+            $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/server/TechEngineAPI/server
     )
 endif ()
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "entity/Entity.hpp"
-#include "core/ExportDLL.hpp"
+#include "common/include/entity/Entity.hpp"
+#include "common/include/core/ExportDLL.hpp"
 
 namespace TechEngine {
     class Scene;
