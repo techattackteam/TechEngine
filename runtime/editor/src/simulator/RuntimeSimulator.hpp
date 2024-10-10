@@ -5,7 +5,8 @@
 #include "project/Project.hpp"
 #include "renderer/Renderer.hpp"
 #include "systems/System.hpp"
-
+#include "physics/PhysicsEngine.hpp"
+#include <Jolt/Jolt.h>
 
 namespace TechEngine {
     enum class SimulationState {
@@ -17,12 +18,13 @@ namespace TechEngine {
     template<typename T>
     class RuntimeSimulator : public System {
     private:
-        T& m_runtime;
         SimulationState m_simulationState = SimulationState::STOPPED;
         SystemsRegistry& m_systemRegistry;
         bool stopNextUpdate = false;
 
     public:
+        T& m_runtime;
+
         explicit RuntimeSimulator(T& runtime, SystemsRegistry& m_systemRegistry) : m_runtime(runtime), m_systemRegistry(m_systemRegistry) {
         }
 
@@ -67,6 +69,12 @@ namespace TechEngine {
                     stopNextUpdate = true;
                 }
             });
+            Renderer& renderer = m_runtime.m_systemRegistry.template getSystem<Renderer>();
+            DebugRenderer* debugRenderer = m_runtime.m_systemRegistry.template getSystem<PhysicsEngine>().debugRenderer;
+            debugRenderer->init([this](const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) {
+                this->m_runtime.m_systemRegistry.template getSystem<Renderer>().createLine(from, to, color);
+            });
+            m_runtime.m_systemRegistry.template getSystem<PhysicsEngine>().debugRenderer = debugRenderer;
         }
 
         void onStart() override {
