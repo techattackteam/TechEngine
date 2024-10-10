@@ -15,6 +15,7 @@
 #include "input/Input.hpp"
 #include "logger/ImGuiSink.hpp"
 #include "panels/PanelsManager.hpp"
+#include "physics/PhysicsEngine.hpp"
 #include "simulator/RuntimeSimulator.hpp"
 #include "window/Window.hpp"
 

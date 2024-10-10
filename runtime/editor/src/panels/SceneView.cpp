@@ -1,5 +1,9 @@
 #include "SceneView.hpp"
 
+#include <Jolt/Jolt.h>
+#include <Jolt/RegisterTypes.h>
+#include <Jolt/Core/Factory.h>
+
 #include "components/Components.hpp"
 #include "renderer/FrameBuffer.hpp"
 #include "renderer/Renderer.hpp"
@@ -12,7 +16,8 @@ namespace TechEngine {
                          SystemsRegistry& appSystemsRegistry,
                          const std::vector<Entity>& selectedEntities) : m_appSystemsRegistry(appSystemsRegistry),
                                                                         m_selectedEntities(selectedEntities),
-                                                                        guizmo(id, appSystemsRegistry), Panel(editorSystemsRegistry) {
+                                                                        guizmo(id, appSystemsRegistry),
+                                                                        Panel(editorSystemsRegistry) {
         m_styleVars.emplace_back(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         totalIds++;
         id = totalIds;

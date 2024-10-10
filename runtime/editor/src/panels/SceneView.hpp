@@ -2,6 +2,7 @@
 #include "Panel.hpp"
 
 #include "components/Components.hpp"
+#include "physics/DebugRenderer.hpp"
 #include "UIUtils/Guizmo.hpp"
 
 namespace TechEngine {
@@ -15,6 +16,7 @@ namespace TechEngine {
         Camera sceneCamera;
         Guizmo guizmo;
         uint32_t frameBufferID;
+
 
         bool mouse2 = false;
         bool mouse3 = false;
@@ -44,6 +46,7 @@ namespace TechEngine {
         void changeGuizmoMode(ImGuizmo::MODE mode);
 
         void processShortcuts() override;
+
     private:
         void renderCameraFrustum();
     };

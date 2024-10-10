@@ -3,6 +3,7 @@
 
 #include "Timer.hpp"
 #include "eventSystem/EventDispatcher.hpp"
+//#include "physics/PhysicsEngine.hpp"
 #include "physics/PhysicsEngine.hpp"
 #include "project/Project.hpp"
 #include "resources/ResourcesManager.hpp"
@@ -21,7 +22,7 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<ResourcesManager>(m_systemRegistry);
         m_systemRegistry.registerSystem<ScenesManager>(m_systemRegistry);
         m_systemRegistry.registerSystem<ScriptEngine>(m_systemRegistry);
-        m_systemRegistry.registerSystem<PhysicsEngine>();
+        m_systemRegistry.registerSystem<PhysicsEngine>(m_systemRegistry);
     }
 
     void Core::init(AppType appType) {
