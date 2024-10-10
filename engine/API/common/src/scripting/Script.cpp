@@ -1,4 +1,4 @@
-#include "scripting/Script.hpp"
+#include "common/include/scripting/Script.hpp"
 #include "script/Script.hpp"
 
 namespace TechEngineAPI {
