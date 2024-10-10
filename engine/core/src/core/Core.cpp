@@ -3,6 +3,7 @@
 
 #include "Timer.hpp"
 #include "eventSystem/EventDispatcher.hpp"
+#include "physics/PhysicsEngine.hpp"
 #include "project/Project.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "scene/CameraSystem.hpp"
@@ -20,6 +21,7 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<ResourcesManager>(m_systemRegistry);
         m_systemRegistry.registerSystem<ScenesManager>(m_systemRegistry);
         m_systemRegistry.registerSystem<ScriptEngine>(m_systemRegistry);
+        m_systemRegistry.registerSystem<PhysicsEngine>();
     }
 
     void Core::init(AppType appType) {
@@ -31,6 +33,7 @@ namespace TechEngine {
         m_systemRegistry.getSystem<ResourcesManager>().init(appType);
         m_systemRegistry.getSystem<ScenesManager>().init(appType);
         m_systemRegistry.getSystem<ScriptEngine>().init();
+        m_systemRegistry.getSystem<PhysicsEngine>().init();
     }
 
     void Core::onStart() {

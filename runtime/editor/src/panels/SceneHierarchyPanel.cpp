@@ -1,5 +1,6 @@
 #include "SceneHierarchyPanel.hpp"
 
+#include "resources/ResourcesManager.hpp"
 #include "scene/ScenesManager.hpp"
 #include "systems/SystemsRegistry.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
@@ -31,8 +32,9 @@ namespace TechEngine {
                     scene.createEntity("New Entity");
                 }
                 if (ImGui::MenuItem("Cube")) {
-                    /*GameObject& gameObject = appRegistry.getSystem<SceneManager>().getScene().createGameObject("Cube");
-                    gameObject.addComponent<MeshRendererComponent>();*/
+                    Entity entity = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene().createEntity("Cube");
+                    ResourcesManager& resourcesManager = m_appSystemRegistry.getSystem<ResourcesManager>();
+                    m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene().addComponent<MeshRenderer>(entity, MeshRenderer(resourcesManager.getDefaultMesh(), resourcesManager.getDefaultMaterial()));
                 }
                 if (ImGui::MenuItem("Sphere")) {
                     /*GameObject& gameObject = appRegistry.getSystem<SceneManager>().getScene().createGameObject("Sphere");
