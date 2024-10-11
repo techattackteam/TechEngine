@@ -45,10 +45,14 @@ static bool AssertFailedImpl(const char* inExpression, const char* inMessage, co
 #endif // JPH_ENABLE_ASSERTS
 
 namespace TechEngine {
+    enum class ColliderType {
+        BOX,
+        SPHERE
+    };
+
     class CORE_DLL PhysicsEngine : public System {
     private:
         JPH::PhysicsSystem* physics_system;
-        JPH::BodyID sphere_id;
         JPH::TempAllocatorImpl* temp_allocator;
         JPH::JobSystemThreadPool* job_system;
         MyContactListener contact_listener;
@@ -77,10 +81,28 @@ namespace TechEngine {
 
         void renderBodies();
 
-        const ::JPH::BodyID& createBody(const Tag& tag, const Transform& transform, glm::vec3 offset, glm::vec3 size);
+        const JPH::BodyID& createBody(const ::TechEngine::ColliderType& type, const ::TechEngine::Transform& transform, glm::vec3 offset, glm::vec3 size);
 
         void updateBodies();
 
         void updateEntities();
+
+    private:
+        template<typename Collider>
+        void updateBodies(Transform& transform, Collider& collider) {
+            JPH::BodyInterface& body_interface = physics_system->GetBodyInterface();
+            JPH::RVec3 position = JPH::RVec3(transform.position.x, transform.position.y, transform.position.z);
+            JPH::Quat quat = JPH::Quat(transform.rotation.x, transform.rotation.y, transform.rotation.z, 1.0f);
+            body_interface.SetPositionAndRotation(collider.bodyID, position, quat, JPH::EActivation::DontActivate);
+        }
+
+        template<typename Collider>
+        void updateEntities(Transform& transform, Collider& collider) {
+            JPH::BodyInterface& bodyInterface = physics_system->GetBodyInterface();
+            JPH::RVec3 position = bodyInterface.GetCenterOfMassPosition(collider.bodyID);
+            JPH::Quat rotation = bodyInterface.GetRotation(collider.bodyID);
+            transform.position = glm::vec3(position.GetX(), position.GetY(), position.GetZ());
+            transform.rotation = glm::vec3(rotation.GetX(), rotation.GetY(), rotation.GetZ());
+        }
     };
 }

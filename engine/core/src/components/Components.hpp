@@ -187,6 +187,23 @@ namespace TechEngine {
         static BoxCollider deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
     };
 
+    class CORE_DLL SphereCollider {
+        friend class ComponentsFactory;
+
+        explicit SphereCollider(const JPH::BodyID& bodyID) : bodyID(bodyID) {
+        };
+
+    public:
+        glm::vec3 center = glm::vec3(0.0f);
+        float radius = 1;
+        const JPH::BodyID& bodyID;
+
+        static void serialize(const SphereCollider& boxCollider, YAML::Emitter& out);
+
+        static SphereCollider deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+    };
+
+
     class CORE_DLL ComponentType {
     private:
         inline static ComponentTypeID counter = 0;
@@ -199,6 +216,7 @@ namespace TechEngine {
             registerComponent<Camera>();
             registerComponent<MeshRenderer>();
             registerComponent<BoxCollider>();
+            registerComponent<SphereCollider>();
         }
 
         template<typename T>
