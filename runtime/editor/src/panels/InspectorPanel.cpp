@@ -49,6 +49,15 @@ namespace TechEngine {
                                 scene.addComponent<BoxCollider>(entity, ComponentsFactory::createBoxCollider(physicsEngine, tag, transform, glm::vec3(0), glm::vec3(1)));
                             }
                         }
+                        if (ImGui::MenuItem("Sphere Collider")) {
+                            Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                            for (const Entity& entity: m_selectedEntities) {
+                                Tag& tag = scene.getComponent<Tag>(entity);
+                                Transform& transform = scene.getComponent<Transform>(entity);
+                                PhysicsEngine& physicsEngine = m_appSystemRegistry.getSystem<PhysicsEngine>();
+                                scene.addComponent<SphereCollider>(entity, ComponentsFactory::createSphereCollider(physicsEngine, tag, transform, glm::vec3(0), 1));
+                            }
+                        }
                         ImGui::EndMenu();
                     }
                     /*if (ImGui::MenuItem("Rigid Body")) {

@@ -47,6 +47,10 @@
 #include "components/Archetype.hpp"
 #include "components/Archetype.hpp"
 #include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
 #include "scene/ScenesManager.hpp"
 
 // Disable common warnings triggered by Jolt, you can use JPH_SUPPRESS_WARNING_PUSH / JPH_SUPPRESS_WARNING_POP to store and restore the warning state
@@ -90,25 +94,7 @@ namespace TechEngine {
         // Registering one is entirely optional.
         physics_system->SetContactListener(&contact_listener);
 
-        // The main way to interact with the bodies in the physics system is through the body interface. There is a locking and a non-locking
-        // variant of this. We're going to use the locking version (even though we're not planning to access bodies from multiple threads)
-        JPH::BodyInterface& body_interface = physics_system->GetBodyInterface();
 
-        // Now create a dynamic body to bounce on the floor
-        // Note that this uses the shorthand version of creating and adding a body to the world
-        JPH::BodyCreationSettings sphere_settings(new JPH::SphereShape(0.5f), JPH::RVec3(0.0, 10.0, 0.0),
-                                                  JPH::Quat::sIdentity(),
-                                                  JPH::EMotionType::Dynamic,
-                                                  Layers::MOVING);
-        sphere_id = body_interface.CreateAndAddBody(sphere_settings, JPH::EActivation::Activate);
-
-        body_interface.SetLinearVelocity(sphere_id, JPH::Vec3(0.0f, 0.0f, 0.0f));
-
-        //createBody();
-        // Optional step: Before starting the physics simulation you can optimize the broad phase. This improves collision detection performance (it's pointless here because we only have 2 bodies).
-        // You should definitely not call this every frame or when e.g. streaming in a new level section as it is an expensive operation.
-        // Instead insert all new objects in batches instead of 1 at a time to keep the broad phase efficient.
-        physics_system->OptimizeBroadPhase();
         TE_LOGGER_INFO("Physics engine initialized");
     }
 
@@ -142,7 +128,7 @@ namespace TechEngine {
         }
     }
 
-    const ::JPH::BodyID& PhysicsEngine::createBody(const Tag& tag, const Transform& transform, glm::vec3 offset, glm::vec3 size) {
+    const JPH::BodyID& PhysicsEngine::createBody(const ColliderType& type, const Transform& transform, glm::vec3 offset, glm::vec3 size) {
         JPH::RegisterDefaultAllocator();
         JPH::BodyInterface& body_interface = physics_system->GetBodyInterface();
         glm::vec3 transformPosition = transform.position;
@@ -156,12 +142,16 @@ namespace TechEngine {
         JPH::Quat quat = JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w);
         JPH::RVec3 scale = JPH::RVec3(size.x * transformScale.x, size.y * transformScale.y, size.z * transformScale.z);
 
-        JPH::BoxShape* box_shape = new JPH::BoxShape(scale);
-        JPH::BodyCreationSettings floor_settings(box_shape,
-                                                 position,
-                                                 quat,
-                                                 JPH::EMotionType::Dynamic,
-                                                 Layers::MOVING);
+        JPH::Shape* shape;
+        if (type == ColliderType::BOX) {
+            shape = new JPH::BoxShape(scale);
+        } else if (type == ColliderType::SPHERE) {
+            shape = new JPH::SphereShape(scale.GetX());
+        } else {
+            TE_LOGGER_CRITICAL("Invalid collider type");
+            return JPH::BodyID();
+        }
+        JPH::BodyCreationSettings floor_settings(shape, position, quat, JPH::EMotionType::Dynamic, Layers::MOVING);
 
         // Create the actual rigid body
         JPH::Body* floor = body_interface.CreateBody(floor_settings); // Note that if we run out of bodies this can return nullptr
@@ -171,19 +161,22 @@ namespace TechEngine {
     }
 
     void PhysicsEngine::updateBodies() {
-        m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().runSystem<Tag, Transform, BoxCollider>([this](Tag& tag, Transform& transform, BoxCollider& boxCollider) {
-            JPH::BodyInterface& body_interface = physics_system->GetBodyInterface();
-            JPH::RVec3 position = JPH::RVec3(transform.position.x, transform.position.y, transform.position.z);
-            JPH::Quat quat = JPH::Quat(transform.rotation.x, transform.rotation.y, transform.rotation.z, 1.0f);
-            body_interface.SetPositionAndRotation(boxCollider.bodyID, position, quat, JPH::EActivation::DontActivate);
+        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        scene.runSystem<Transform, BoxCollider>([this](Transform& transform, BoxCollider& collider) {
+            updateBodies<BoxCollider>(transform, collider);
+        });
+        scene.runSystem<Transform, SphereCollider>([this](Transform& transform, SphereCollider& collider) {
+            updateBodies<SphereCollider>(transform, collider);
         });
     }
 
     void PhysicsEngine::updateEntities() {
-        m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().runSystem<Tag, Transform, BoxCollider>([this](Tag& tag, Transform& transform, BoxCollider& boxCollider) {
-            JPH::BodyInterface& body_interface = physics_system->GetBodyInterface();
-            JPH::RVec3 position = body_interface.GetCenterOfMassPosition(boxCollider.bodyID);
-            transform.position = glm::vec3(position.GetX(), position.GetY(), position.GetZ());
+        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        scene.runSystem<Transform, BoxCollider>([this](Transform& transform, BoxCollider& collider) {
+            updateEntities<BoxCollider>(transform, collider);
+        });
+        scene.runSystem<Transform, SphereCollider>([this](Transform& transform, SphereCollider& collider) {
+            updateEntities<SphereCollider>(transform, collider);
         });
     }
 }

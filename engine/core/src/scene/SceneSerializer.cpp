@@ -204,4 +204,17 @@ namespace TechEngine {
         glm::vec3 center = glm::vec3(node["Center"].as<glm::vec3>());
         return ComponentsFactory::createBoxCollider(m_physicsEngine, tag, transform, center, size);
     }
+
+    void SphereCollider::serialize(const SphereCollider& boxCollider, YAML::Emitter& out) {
+        out << YAML::Key << "SphereCollider" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "Radius" << YAML::Value << boxCollider.radius;
+        out << YAML::Key << "Center" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxCollider.center.x << boxCollider.center.y << boxCollider.center.z << YAML::EndSeq;
+        out << YAML::EndMap;
+    }
+
+    SphereCollider SphereCollider::deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform) {
+        glm::vec3 center = glm::vec3(node["Center"].as<glm::vec3>());
+        float radius = node["Radius"].as<float>();
+        return ComponentsFactory::createSphereCollider(m_physicsEngine, tag, transform, center, radius);
+    }
 }

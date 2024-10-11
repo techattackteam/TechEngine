@@ -14,8 +14,13 @@ namespace TechEngine {
         }
 
         static BoxCollider createBoxCollider(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform, glm::vec3 offset, glm::vec3 size) {
-            const JPH::BodyID& bodyID = physicsEngine.createBody(tag, transform, offset, size);
+            const JPH::BodyID& bodyID = physicsEngine.createBody(ColliderType::BOX, transform, offset, size);
             return BoxCollider(bodyID);
+        }
+
+        static SphereCollider createSphereCollider(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform, glm::vec3 offset, float radius) {
+            const JPH::BodyID& bodyID = physicsEngine.createBody(ColliderType::SPHERE, transform, offset, glm::vec3(radius));
+            return SphereCollider(bodyID);
         }
     };
 }
