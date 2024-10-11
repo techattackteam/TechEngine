@@ -12,11 +12,11 @@
 #include "ObjectVsBroadPhaseLayerFilterImpl.hpp"
 #include "MyBodyActivationListener.hpp"
 #include "MyContactListener.hpp"
+#include "components/Components.hpp"
 
 #include <Jolt/Jolt.h>
 #include <Jolt/Core/JobSystemThreadPool.h>
 #include <Jolt/Physics/PhysicsSystem.h>
-
 
 // Callback for traces, connect this to your own trace function if you have one
 static void TraceImpl(const char* inFMT, ...) {
@@ -60,6 +60,8 @@ namespace TechEngine {
         int step = 0;
         SystemsRegistry& m_systemsRegistry;
 
+        //std::unordered_map<std::string, std::vector<JPH::Body*>> m_bodies;
+
     public:
         DebugRenderer* debugRenderer = nullptr;
 
@@ -72,5 +74,13 @@ namespace TechEngine {
         void onUpdate() override;
 
         void onFixedUpdate() override;
+
+        void renderBodies();
+
+        const ::JPH::BodyID& createBody(const Tag& tag, const Transform& transform, glm::vec3 offset, glm::vec3 size);
+
+        void updateBodies();
+
+        void updateEntities();
     };
 }

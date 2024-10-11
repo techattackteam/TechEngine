@@ -5,6 +5,7 @@
 #include <Jolt/Core/Factory.h>
 
 #include "components/Components.hpp"
+#include "components/ComponentsFactory.hpp"
 #include "renderer/FrameBuffer.hpp"
 #include "renderer/Renderer.hpp"
 #include "scene/ScenesManager.hpp"
@@ -17,6 +18,8 @@ namespace TechEngine {
                          const std::vector<Entity>& selectedEntities) : m_appSystemsRegistry(appSystemsRegistry),
                                                                         m_selectedEntities(selectedEntities),
                                                                         guizmo(id, appSystemsRegistry),
+                                                                        cameraTransform(ComponentsFactory::createTransform(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f))),
+                                                                        /*sceneCamera(ComponentsFactory::createCamera(45.0f, 0.1f, 1000.0f, 1080.0f / 720.0f)),*/
                                                                         Panel(editorSystemsRegistry) {
         m_styleVars.emplace_back(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         totalIds++;
@@ -37,7 +40,9 @@ namespace TechEngine {
         frameBuffer.resize(wsize.x, wsize.y);
         sceneCamera.updateProjectionMatrix(wsize.x / wsize.y);
         sceneCamera.updateViewMatrix(m_appSystemsRegistry.getSystem<TransformSystem>().getModelMatrix(cameraTransform));
-        //renderColliders();
+
+        m_appSystemsRegistry.getSystem<PhysicsEngine>().updateBodies();
+        m_appSystemsRegistry.getSystem<PhysicsEngine>().renderBodies();
         renderCameraFrustum();
         renderer.renderPipeline(sceneCamera);
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();

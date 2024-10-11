@@ -1,13 +1,17 @@
 #include "SceneSerializer.hpp"
 
 #include "Scene.hpp"
+#include "components/ComponentsFactory.hpp"
 #include "core/UUID.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "utils/YAMLUtils.hpp"
 
 namespace TechEngine {
-    SceneSerializer::SceneSerializer(Scene& scene, ResourcesManager& resourcesManager) : m_scene(scene),
-                                                                                         m_resourcesManager(resourcesManager) {
+    SceneSerializer::SceneSerializer(Scene& scene
+                                     , ResourcesManager& resourcesManager
+                                     , PhysicsEngine& physicsEngine) : m_scene(scene),
+                                                                       m_resourcesManager(resourcesManager),
+                                                                       m_physicsEngine(physicsEngine) {
     }
 
     void SceneSerializer::serialize(std::ofstream& stream) const {
@@ -70,6 +74,9 @@ namespace TechEngine {
         } else if (typeID == ComponentType::get<MeshRenderer>()) {
             const MeshRenderer& meshRenderer = archetype.getComponent<MeshRenderer>(entity);
             MeshRenderer::serialize(meshRenderer, out);
+        } else if (typeID == ComponentType::get<BoxCollider>()) {
+            const BoxCollider& boxCollider = archetype.getComponent<BoxCollider>(entity);
+            BoxCollider::serialize(boxCollider, out);
         }
     }
 
@@ -91,6 +98,12 @@ namespace TechEngine {
             MeshRenderer meshRenderer = MeshRenderer::deserialize(componentNode, m_resourcesManager);
             m_scene.m_archetypesManager.addComponent(entity, meshRenderer);
         }
+        if (componentNode["BoxCollider"]) {
+            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
+            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
+            BoxCollider boxCollider = BoxCollider::deserialize(componentNode["BoxCollider"], m_physicsEngine, tag, transform);
+            m_scene.m_archetypesManager.addComponent(entity, boxCollider);
+        }
     }
 
     void Tag::serialize(const Tag& tag, YAML::Emitter& out) {
@@ -101,7 +114,7 @@ namespace TechEngine {
     }
 
     Tag Tag::deserialize(const YAML::Node& node) {
-        return Tag(node["Name"].as<std::string>(), node["UUID"].as<std::string>());
+        return ComponentsFactory::createTag(node["Name"].as<std::string>(), node["UUID"].as<std::string>());
     }
 
     void Transform::serialize(const Transform& transform, YAML::Emitter& out) {
@@ -113,7 +126,7 @@ namespace TechEngine {
     }
 
     Transform Transform::deserialize(const YAML::Node& node) {
-        Transform transform;
+        Transform transform = ComponentsFactory::createTransform(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f));
         transform.position = glm::vec3(node["Position"].as<glm::vec3>());
         transform.rotation = glm::vec3(node["Rotation"].as<glm::vec3>());
         transform.scale = glm::vec3(node["Scale"].as<glm::vec3>());
@@ -177,5 +190,18 @@ namespace TechEngine {
         MeshRenderer meshRenderer(mesh, material);
         meshRenderer.paintMesh();
         return meshRenderer;
+    }
+
+    void BoxCollider::serialize(const BoxCollider& boxCollider, YAML::Emitter& out) {
+        out << YAML::Key << "BoxCollider" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "Size" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxCollider.size.x << boxCollider.size.y << boxCollider.size.z << YAML::EndSeq;
+        out << YAML::Key << "Center" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxCollider.center.x << boxCollider.center.y << boxCollider.center.z << YAML::EndSeq;
+        out << YAML::EndMap;
+    }
+
+    BoxCollider BoxCollider::deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform) {
+        glm::vec3 size = glm::vec3(node["Size"].as<glm::vec3>());
+        glm::vec3 center = glm::vec3(node["Center"].as<glm::vec3>());
+        return ComponentsFactory::createBoxCollider(m_physicsEngine, tag, transform, center, size);
     }
 }

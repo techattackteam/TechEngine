@@ -6,18 +6,21 @@
 
 #include "components/Components.hpp"
 
+
 namespace TechEngine {
     class ResourcesManager;
     class Scene;
     class Archetype;
+    class PhysicsEngine;
 
     class SceneSerializer {
     private:
         Scene& m_scene;
         ResourcesManager& m_resourcesManager;
-
+        PhysicsEngine& m_physicsEngine;
+        
     public:
-        SceneSerializer(Scene& scene, ResourcesManager& resourcesManager);
+        SceneSerializer(Scene& scene, ResourcesManager& resourcesManager, PhysicsEngine& physicsEngine);
 
         void serialize(std::ofstream& stream) const;
 

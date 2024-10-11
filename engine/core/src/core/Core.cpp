@@ -20,9 +20,9 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<TransformSystem>(m_systemRegistry);
         m_systemRegistry.registerSystem<CameraSystem>(m_systemRegistry);
         m_systemRegistry.registerSystem<ResourcesManager>(m_systemRegistry);
+        m_systemRegistry.registerSystem<PhysicsEngine>(m_systemRegistry);
         m_systemRegistry.registerSystem<ScenesManager>(m_systemRegistry);
         m_systemRegistry.registerSystem<ScriptEngine>(m_systemRegistry);
-        m_systemRegistry.registerSystem<PhysicsEngine>(m_systemRegistry);
     }
 
     void Core::init(AppType appType) {
@@ -32,9 +32,9 @@ namespace TechEngine {
         m_systemRegistry.getSystem<TransformSystem>().init();
         m_systemRegistry.getSystem<CameraSystem>().init();
         m_systemRegistry.getSystem<ResourcesManager>().init(appType);
+        m_systemRegistry.getSystem<PhysicsEngine>().init();
         m_systemRegistry.getSystem<ScenesManager>().init(appType);
         m_systemRegistry.getSystem<ScriptEngine>().init();
-        m_systemRegistry.getSystem<PhysicsEngine>().init();
     }
 
     void Core::onStart() {
