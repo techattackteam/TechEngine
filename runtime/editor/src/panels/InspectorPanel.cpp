@@ -3,10 +3,13 @@
 #include "scene/CameraSystem.hpp"
 #include "scene/ScenesManager.hpp"
 #include "scene/TransformSystem.hpp"
-#include "UIUtils/ImGuiUtils.hpp"
-
 #include "components/Components.hpp"
+#include "components/ComponentsFactory.hpp"
+
+#include "physics/PhysicsEngine.hpp"
 #include "resources/ResourcesManager.hpp"
+
+#include "UIUtils/ImGuiUtils.hpp"
 
 namespace TechEngine {
     InspectorPanel::InspectorPanel(SystemsRegistry& editorSystemRegistry,
@@ -36,19 +39,25 @@ namespace TechEngine {
                     addComponent<MeshRenderer>(mesh, material);
                 }
                 if (ImGui::BeginMenu("Physics")) {
+                    if (ImGui::BeginMenu("Colliders")) {
+                        if (ImGui::MenuItem("Box Collider")) {
+                            Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                            for (const Entity& entity: m_selectedEntities) {
+                                Tag& tag = scene.getComponent<Tag>(entity);
+                                Transform& transform = scene.getComponent<Transform>(entity);
+                                PhysicsEngine& physicsEngine = m_appSystemRegistry.getSystem<PhysicsEngine>();
+                                scene.addComponent<BoxCollider>(entity, ComponentsFactory::createBoxCollider(physicsEngine, tag, transform, glm::vec3(0), glm::vec3(1)));
+                            }
+                        }
+                        ImGui::EndMenu();
+                    }
                     /*if (ImGui::MenuItem("Rigid Body")) {
                         addComponent<RigidBody>();
                         for (GameObject* entity: m_selectedEntities) {
                             m_appSystemRegistry.getSystem<PhysicsEngine>().addRigidBody(entity->getComponent<RigidBody>());
                         }
                     }
-                    if (ImGui::BeginMenu("Colliders")) {
-                        if (ImGui::MenuItem("Box Collider")) {
-                            addComponent<BoxColliderComponent>();
-                            for (GameObject* entity: m_selectedEntities) {
-                                m_appSystemRegistry.getSystem<PhysicsEngine>().addCollider(entity->getComponent<BoxColliderComponent>());
-                            }
-                        }
+                    
                         if (ImGui::MenuItem("Sphere Collider")) {
                             addComponent<SphereCollider>();
                             for (GameObject* entity: m_selectedEntities) {
@@ -61,7 +70,6 @@ namespace TechEngine {
                                 m_appSystemRegistry.getSystem<PhysicsEngine>().addCollider(entity->getComponent<CylinderCollider>());
                             }
                         }
-                        ImGui::EndMenu();
                     }*/
                     ImGui::EndMenu();
                 }
@@ -336,6 +344,43 @@ namespace TechEngine {
                 component.paintMesh();
             });
         }
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<BoxCollider>()) != componentsToDraw.end()) {
+            drawComponent<BoxCollider>(firstEntity, "Box Collider", [this](auto& component) {
+                Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                glm::vec3 commonCenter = component.center;
+                glm::vec3 commonSize = component.size;
+                bool isSizeCommon = true;
+                bool isOffsetCommon = true;
+
+                for (Entity entity: m_selectedEntities) {
+                    auto currentBoxCollider = scene.getComponent<BoxCollider>(entity);
+                    if (currentBoxCollider.center != commonCenter) {
+                        isOffsetCommon = false;
+                    }
+                    if (currentBoxCollider.size != commonSize) {
+                        isSizeCommon = false;
+                    }
+                }
+
+                bool changeCenter = false;
+                bool changeSize = false;
+                ImGuiUtils::drawVec3Control("Center", commonCenter, 0, 100.0f, 0, 0, isOffsetCommon);
+                ImGuiUtils::drawVec3Control("Size", commonSize, 1.0f, 100.0f, 0, 0, isSizeCommon);
+                if (commonCenter != component.center) {
+                    changeCenter = true;
+                }
+                if (commonSize != component.size) {
+                    changeSize = true;
+                }
+                /*
+                for (GameObject* entity: m_selectedEntities) {
+                    if (changeSize)
+                        entity->getComponent<BoxCollider>()->setSize(commonSize);
+                    if (changeCenter)
+                        entity->getComponent<BoxCollider>()->setOffset(commonCenter);
+                }*/
+            });
+        }
         /*
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(RigidBody).name()) != componentsToDraw.end()) {
             drawComponent<RigidBody>(firstEntity, "Rigid Body", [this](auto& component) {
@@ -370,41 +415,7 @@ namespace TechEngine {
                 }
             });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(BoxColliderComponent).name()) != componentsToDraw.end()) {
-            drawComponent<BoxColliderComponent>(firstEntity, "Box Collider", [this](auto& component) {
-                glm::vec3 commonSize = component->getSize();
-                glm::vec3 commonOffset = component->getOffset();
-                bool isSizeCommon = true;
-                bool isOffsetCommon = true;
-
-                for (GameObject* entity: m_selectedEntities) {
-                    auto currentBoxCollider = entity->getComponent<BoxColliderComponent>();
-
-                    if (currentBoxCollider->getSize() != commonSize) {
-                        isSizeCommon = false;
-                    }
-
-                    if (currentBoxCollider->getOffset() != commonOffset) {
-                        isOffsetCommon = false;
-                    }
-                }
-
-                bool changeSize = false;
-                bool changeOffset = false;
-                ImGuiUtils::drawVec3Control("Size", commonSize, 1.0f, 100.0f, 0, 0, isSizeCommon);
-                ImGuiUtils::drawVec3Control("Offset", commonOffset, 0, 100.0f, 0, 0, isOffsetCommon);
-                if (commonSize != component->getSize()) {
-                    changeSize = true;
-                }
-                if (commonOffset != component->getOffset()) {
-                    changeOffset = true;
-                }
-                for (GameObject* entity: m_selectedEntities) {
-                    if (changeSize) entity->getComponent<BoxColliderComponent>()->setSize(commonSize);
-                    if (changeOffset) entity->getComponent<BoxColliderComponent>()->setOffset(commonOffset);
-                }
-            });
-        }
+        
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(SphereCollider).name()) != componentsToDraw.end()) {
             drawComponent<SphereCollider>(firstEntity, "Sphere Collider", [this](auto& component) {
                 float commonRadius = component->getRadius();

@@ -12,9 +12,14 @@ namespace TechEngine {
 
 
     void DebugRenderer::DrawLine(JPH::RVec3Arg inFrom, JPH::RVec3Arg inTo, JPH::ColorArg inColor) {
-        glm::vec3 from = glm::vec3(inFrom.GetX(), inFrom.GetY(), inFrom.GetZ());
-        glm::vec3 to = glm::vec3(inTo.GetX(), inTo.GetY(), inTo.GetZ());
-        glm::vec4 color = glm::vec4(inColor.r, inColor.g, inColor.b, inColor.a);
+        float offset = 0.005f;
+        glm::vec3 from = glm::vec3(inFrom.GetX() > 0 ? inFrom.GetX() + offset : inFrom.GetX() - offset,
+                                   inFrom.GetY() > 0 ? inFrom.GetY() + offset : inFrom.GetY() - offset,
+                                   inFrom.GetZ() > 0 ? inFrom.GetZ() + offset : inFrom.GetZ() - offset);
+        glm::vec3 to = glm::vec3(inTo.GetX() > 0 ? inTo.GetX() + offset : inTo.GetX() - offset,
+                                 inTo.GetY() > 0 ? inTo.GetY() + offset : inTo.GetY() - offset,
+                                 inTo.GetZ() > 0 ? inTo.GetZ() + offset : inTo.GetZ() - offset);
+        glm::vec4 color = glm::vec4(1.0f, 0, 0, 0.3f);
         renderLineFunction(from, to, color);
     }
 

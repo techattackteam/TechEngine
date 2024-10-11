@@ -3,11 +3,15 @@
 #include "files/FileUtils.hpp"
 #include "project/Project.hpp"
 #include "resources/ResourcesManager.hpp"
+#include "physics/PhysicsEngine.hpp"
 #include "systems/SystemsRegistry.hpp"
 #include "utils/YAMLUtils.hpp"
 
 namespace TechEngine {
-    ScenesManager::ScenesManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry), m_sceneSerializer(m_activeScene, m_systemsRegistry.getSystem<ResourcesManager>()) {
+    ScenesManager::ScenesManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry),
+                                                                     m_sceneSerializer(m_activeScene,
+                                                                                       m_systemsRegistry.getSystem<ResourcesManager>(),
+                                                                                       m_systemsRegistry.getSystem<PhysicsEngine>()) {
     }
 
 

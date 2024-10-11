@@ -1,6 +1,7 @@
 #include "Scene.hpp"
 
 #include "components/Components.hpp"
+#include "components/ComponentsFactory.hpp"
 #include "core/UUID.hpp"
 
 namespace TechEngine {
@@ -53,8 +54,8 @@ namespace TechEngine {
 
     Entity Scene::createEntity(const std::string& name, const std::string& uuid) {
         Entity entity = m_archetypesManager.createEntity();
-        m_archetypesManager.addComponent(entity, Tag(name, uuid));
-        m_archetypesManager.addComponent(entity, Transform());
+        m_archetypesManager.addComponent(entity, ComponentsFactory::createTag(name, uuid));
+        m_archetypesManager.addComponent(entity, ComponentsFactory::createTransform(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f)));
         return entity;
     }
 }

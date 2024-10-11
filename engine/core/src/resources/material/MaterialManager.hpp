@@ -15,7 +15,7 @@ namespace TechEngine {
     private:
         std::unordered_map<std::string, Material> m_materialsBank = std::unordered_map<std::string, Material>();
 
-        glm::vec4 m_defaultColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+        glm::vec4 m_defaultColor = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
         glm::vec3 m_defaultAmbient = glm::vec3(0.2f, 0.2f, 0.2f);
         glm::vec3 m_defaultDiffuse = glm::vec3(0.5f, 0.5f, 0.5f);
         glm::vec3 m_defaultSpecular = glm::vec3(1.0f, 1.0f, 1.0f);

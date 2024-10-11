@@ -1,27 +1,30 @@
 #pragma once
-#include <typeindex>
-#include <yaml-cpp/emitter.h>
-
 #include "resources/material/Material.hpp"
 #include "resources/mesh/Mesh.hpp"
 
+#include <typeindex>
+#include <yaml-cpp/emitter.h>
+#include <Jolt/Jolt.h>
+#include <Jolt/Physics/Body/BodyID.h>
+
 namespace TechEngine {
     class ResourcesManager;
+    class PhysicsEngine;
     using Entity = int32_t;
     using ComponentTypeID = uint32_t;
 
     class CORE_DLL Tag {
-    private:
+        friend class ComponentsFactory;
         char* uuid;
         char* name;
 
-    public:
         Tag(const std::string& name, const std::string& uuid): name(new char[name.size() + 1]), uuid(new char[uuid.size() + 1]) {
             strcpy_s(this->name, name.size() + 1, name.c_str());
             strcpy_s(this->uuid, uuid.size() + 1, uuid.c_str());
             //Memory leak here because I'm not deleting the memory allocated for name and uuid when deleting entity
         }
 
+    public:
         bool operator==(const Tag& lhr) const {
             if (strcmp(uuid, lhr.uuid) != 0) {
                 return false;
@@ -50,6 +53,11 @@ namespace TechEngine {
     };
 
     class CORE_DLL Transform {
+    private:
+        friend class ComponentsFactory;
+
+        Transform() = default;
+
     public:
         glm::vec3 position = glm::vec3(0.0f);
         glm::vec3 rotation = glm::vec3(0.0f); // Maybe use quaternions instead
@@ -76,66 +84,6 @@ namespace TechEngine {
 
     public:
         Camera() {
-        }
-
-        //Copy constructor
-        Camera(const Camera& camera) {
-            mainCamera = camera.mainCamera;
-            viewMatrix = camera.viewMatrix;
-            projectionMatrix = camera.projectionMatrix;
-            fov = camera.fov;
-            nearPlane = camera.nearPlane;
-            farPlane = camera.farPlane;
-            orthoSize = camera.orthoSize;
-            aspectRatio = camera.aspectRatio;
-            TE_LOGGER_INFO("Camera copied");
-        }
-
-        //Move constructor
-        Camera(Camera&& camera) noexcept {
-            mainCamera = camera.mainCamera;
-            viewMatrix = camera.viewMatrix;
-            projectionMatrix = camera.projectionMatrix;
-            fov = camera.fov;
-            nearPlane = camera.nearPlane;
-            farPlane = camera.farPlane;
-            orthoSize = camera.orthoSize;
-            aspectRatio = camera.aspectRatio;
-            TE_LOGGER_INFO("Camera moved");
-        }
-
-        //Copy assignment
-        Camera& operator=(const Camera& camera) {
-            if (this == &camera) {
-                return *this;
-            }
-            mainCamera = camera.mainCamera;
-            viewMatrix = camera.viewMatrix;
-            projectionMatrix = camera.projectionMatrix;
-            fov = camera.fov;
-            nearPlane = camera.nearPlane;
-            farPlane = camera.farPlane;
-            orthoSize = camera.orthoSize;
-            aspectRatio = camera.aspectRatio;
-            TE_LOGGER_INFO("Camera copied");
-            return *this;
-        }
-
-        //Move assignment
-        Camera& operator=(Camera&& camera) noexcept {
-            if (this == &camera) {
-                return *this;
-            }
-            mainCamera = camera.mainCamera;
-            viewMatrix = camera.viewMatrix;
-            projectionMatrix = camera.projectionMatrix;
-            fov = camera.fov;
-            nearPlane = camera.nearPlane;
-            farPlane = camera.farPlane;
-            orthoSize = camera.orthoSize;
-            aspectRatio = camera.aspectRatio;
-            TE_LOGGER_INFO("Camera moved");
-            return *this;
         }
 
         glm::mat4 getProjectionMatrix() const {
@@ -222,6 +170,22 @@ namespace TechEngine {
         static MeshRenderer deserialize(const YAML::Node& node, ResourcesManager& resourcesManager);
     };
 
+    class CORE_DLL BoxCollider {
+    private:
+        friend class ComponentsFactory;
+
+        explicit BoxCollider(const JPH::BodyID& bodyID) : bodyID(bodyID) {
+        };
+
+    public:
+        glm::vec3 center = glm::vec3(0.0f);
+        glm::vec3 size = glm::vec3(1.0f);
+        const JPH::BodyID& bodyID;
+
+        static void serialize(const BoxCollider& boxCollider, YAML::Emitter& out);
+
+        static BoxCollider deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+    };
 
     class CORE_DLL ComponentType {
     private:
@@ -234,6 +198,7 @@ namespace TechEngine {
             registerComponent<Transform>();
             registerComponent<Camera>();
             registerComponent<MeshRenderer>();
+            registerComponent<BoxCollider>();
         }
 
         template<typename T>
