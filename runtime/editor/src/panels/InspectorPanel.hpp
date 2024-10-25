@@ -22,8 +22,9 @@ namespace TechEngine {
 
         void drawCommonComponents();
 
-        template<typename T, typename UIFunction>
-        void drawComponent(Entity entity, const std::string& name, UIFunction uiFunction) {
+        template<typename T, typename UIFunction, typename RemoveFunction = std::function<void()>>
+        void drawComponent(Entity entity, const std::string& name, UIFunction uiFunction, RemoveFunction removeFunction = [] {
+                           }) {
             const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
             Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
             if (scene.hasComponent<T>(entity)) {
@@ -55,6 +56,7 @@ namespace TechEngine {
 
                 if (removeComponent) {
                     scene.removeComponent<T>(entity);
+                    removeFunction();
                 }
             }
         }

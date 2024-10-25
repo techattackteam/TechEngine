@@ -37,6 +37,8 @@ namespace TechEngine {
 
         void loadScene(const std::string& string);
 
+        void loadScene(const std::filesystem::path& path);
+
         Scene& getActiveScene();
 
         void copyScene(const Scene& scene, std::filesystem::path path);

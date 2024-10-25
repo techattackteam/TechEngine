@@ -13,14 +13,39 @@ namespace TechEngine {
             return Transform();
         }
 
-        static BoxCollider createBoxCollider(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform, glm::vec3 offset, glm::vec3 size) {
-            const JPH::BodyID& bodyID = physicsEngine.createBody(ColliderType::BOX, transform, offset, size);
-            return BoxCollider(bodyID);
+        static BoxCollider createBoxCollider(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 scale) {
+            physicsEngine.createBoxCollider(tag, transform, center, scale);
+            return BoxCollider(center, scale);
         }
 
-        static SphereCollider createSphereCollider(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform, glm::vec3 offset, float radius) {
-            const JPH::BodyID& bodyID = physicsEngine.createBody(ColliderType::SPHERE, transform, offset, glm::vec3(radius));
-            return SphereCollider(bodyID);
+        static SphereCollider createSphereCollider(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform, glm::vec3 center, float radius) {
+            /*const JPH::BodyID& bodyID = */
+            physicsEngine.createSphereCollider(tag, transform, center, radius);
+            return SphereCollider();
         }
+
+        static StaticBody createStaticBody(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform) {
+            const JPH::BodyID& bodyID = physicsEngine.createStaticBody(tag, transform);
+            return StaticBody(bodyID);
+        }
+
+        static KinematicBody createKinematicBody(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform) {
+            const JPH::BodyID& bodyID = physicsEngine.createKinematicBody(tag, transform);
+            return KinematicBody(bodyID);
+        }
+
+        static RigidBody createRigidBody(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform) {
+            const JPH::BodyID& bodyID = physicsEngine.createRigidBody(tag, transform);
+            return RigidBody(bodyID);
+        }
+
+        static void DestroyBoxCollider(PhysicsEngine& physicsEngine, const Tag& tag) {
+            physicsEngine.removeCollider(tag);
+        }
+
+        static void DestroyBody(PhysicsEngine& physicsEngine, const Tag& tag) {
+            physicsEngine.removeBody(tag);
+        }
+        
     };
 }

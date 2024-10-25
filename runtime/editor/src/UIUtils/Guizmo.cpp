@@ -2,6 +2,8 @@
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
+
+#include "physics/PhysicsEngine.hpp"
 #include "scene/ScenesManager.hpp"
 #include "scene/TransformSystem.hpp"
 #include "systems/SystemsRegistry.hpp"
@@ -103,8 +105,10 @@ namespace TechEngine {
             DecomposeTransform(transform, translation, rotation, scale);
 
             transformSystem.translateToWorld(entity, translation);
-            transformSystem.setRotation(entity, glm::degrees(rotation));
+            transformSystem.setRotation(entity, degrees(rotation));
             transformSystem.setScale(entity, scale);
+            Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+            m_systemsRegistry.getSystem<PhysicsEngine>().moveOrRotateBody(scene.getComponent<Tag>(entity), scene.getComponent<Transform>(entity));
         } else {
             lastUsingID = -1;
         }

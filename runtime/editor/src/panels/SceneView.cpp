@@ -41,7 +41,7 @@ namespace TechEngine {
         sceneCamera.updateProjectionMatrix(wsize.x / wsize.y);
         sceneCamera.updateViewMatrix(m_appSystemsRegistry.getSystem<TransformSystem>().getModelMatrix(cameraTransform));
 
-        m_appSystemsRegistry.getSystem<PhysicsEngine>().updateBodies();
+        //m_appSystemsRegistry.getSystem<PhysicsEngine>().updateBodies();
         m_appSystemsRegistry.getSystem<PhysicsEngine>().renderBodies();
         renderCameraFrustum();
         renderer.renderPipeline(sceneCamera);

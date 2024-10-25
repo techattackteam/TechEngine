@@ -39,6 +39,36 @@ namespace TechEngine {
                     addComponent<MeshRenderer>(mesh, material);
                 }
                 if (ImGui::BeginMenu("Physics")) {
+                    if (ImGui::BeginMenu("Bodies")) {
+                        if (ImGui::MenuItem("Static Body")) {
+                            Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                            for (const Entity& entity: m_selectedEntities) {
+                                Tag& tag = scene.getComponent<Tag>(entity);
+                                Transform& transform = scene.getComponent<Transform>(entity);
+                                PhysicsEngine& physicsEngine = m_appSystemRegistry.getSystem<PhysicsEngine>();
+                                scene.addComponent<StaticBody>(entity, ComponentsFactory::createStaticBody(physicsEngine, tag, transform));
+                            }
+                        }
+                        if (ImGui::MenuItem("Kinematic Body")) {
+                            Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                            for (const Entity& entity: m_selectedEntities) {
+                                Tag& tag = scene.getComponent<Tag>(entity);
+                                Transform& transform = scene.getComponent<Transform>(entity);
+                                PhysicsEngine& physicsEngine = m_appSystemRegistry.getSystem<PhysicsEngine>();
+                                scene.addComponent<KinematicBody>(entity, ComponentsFactory::createKinematicBody(physicsEngine, tag, transform));
+                            }
+                        }
+                        if (ImGui::MenuItem("Rigid Body")) {
+                            Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                            for (const Entity& entity: m_selectedEntities) {
+                                Tag& tag = scene.getComponent<Tag>(entity);
+                                Transform& transform = scene.getComponent<Transform>(entity);
+                                PhysicsEngine& physicsEngine = m_appSystemRegistry.getSystem<PhysicsEngine>();
+                                scene.addComponent<RigidBody>(entity, ComponentsFactory::createRigidBody(physicsEngine, tag, transform));
+                            }
+                        }
+                        ImGui::EndMenu();
+                    }
                     if (ImGui::BeginMenu("Colliders")) {
                         if (ImGui::MenuItem("Box Collider")) {
                             Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
@@ -46,7 +76,7 @@ namespace TechEngine {
                                 Tag& tag = scene.getComponent<Tag>(entity);
                                 Transform& transform = scene.getComponent<Transform>(entity);
                                 PhysicsEngine& physicsEngine = m_appSystemRegistry.getSystem<PhysicsEngine>();
-                                scene.addComponent<BoxCollider>(entity, ComponentsFactory::createBoxCollider(physicsEngine, tag, transform, glm::vec3(0), glm::vec3(1)));
+                                scene.addComponent<BoxCollider>(entity, ComponentsFactory::createBoxCollider(physicsEngine, tag, transform, glm::vec3(0, 0, 0), glm::vec3(1)));
                             }
                         }
                         if (ImGui::MenuItem("Sphere Collider")) {
@@ -60,26 +90,6 @@ namespace TechEngine {
                         }
                         ImGui::EndMenu();
                     }
-                    /*if (ImGui::MenuItem("Rigid Body")) {
-                        addComponent<RigidBody>();
-                        for (GameObject* entity: m_selectedEntities) {
-                            m_appSystemRegistry.getSystem<PhysicsEngine>().addRigidBody(entity->getComponent<RigidBody>());
-                        }
-                    }
-                    
-                        if (ImGui::MenuItem("Sphere Collider")) {
-                            addComponent<SphereCollider>();
-                            for (GameObject* entity: m_selectedEntities) {
-                                m_appSystemRegistry.getSystem<PhysicsEngine>().addCollider(entity->getComponent<SphereCollider>());
-                            }
-                        }
-                        if (ImGui::MenuItem("Cylinder Collider")) {
-                            addComponent<CylinderCollider>();
-                            for (GameObject* entity: m_selectedEntities) {
-                                m_appSystemRegistry.getSystem<PhysicsEngine>().addCollider(entity->getComponent<CylinderCollider>());
-                            }
-                        }
-                    }*/
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Network")) {
@@ -137,14 +147,23 @@ namespace TechEngine {
                 for (Entity entity: m_selectedEntities) {
                     if (move || position != component.position) {
                         m_appSystemRegistry.getSystem<TransformSystem>().translateTo(entity, position);
+                        m_appSystemRegistry.getSystem<PhysicsEngine>().moveOrRotateBody(scene.getComponent<Tag>(entity), scene.getComponent<Transform>(entity));
                         move = true;
                     }
                     if (rotate || rotation != component.rotation) {
                         m_appSystemRegistry.getSystem<TransformSystem>().setRotation(entity, rotation);
+                        m_appSystemRegistry.getSystem<PhysicsEngine>().moveOrRotateBody(scene.getComponent<Tag>(entity), scene.getComponent<Transform>(entity));
                         rotate = true;
                     }
                     if (scaling || scale != component.scale) {
                         m_appSystemRegistry.getSystem<TransformSystem>().setScale(entity, scale);
+                        if (scene.hasComponent<BoxCollider>(entity)) {
+                            m_appSystemRegistry.getSystem<PhysicsEngine>().resizeCollider(
+                                scene.getComponent<Tag>(entity),
+                                scene.getComponent<Transform>(entity),
+                                scene.getComponent<BoxCollider>(entity).center,
+                                scene.getComponent<BoxCollider>(entity).scale);
+                        }
                         scaling = true;
                     }
                 }
@@ -355,173 +374,129 @@ namespace TechEngine {
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<BoxCollider>()) != componentsToDraw.end()) {
             drawComponent<BoxCollider>(firstEntity, "Box Collider", [this](auto& component) {
-                Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
-                glm::vec3 commonCenter = component.center;
-                glm::vec3 commonSize = component.size;
-                bool isSizeCommon = true;
-                bool isOffsetCommon = true;
+                                           Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                           glm::vec3 commonCenter = component.center;
+                                           glm::vec3 commonScale = component.scale;
+                                           bool isCenterCommon = true;
+                                           bool isSizeCommon = true;
 
-                for (Entity entity: m_selectedEntities) {
-                    auto currentBoxCollider = scene.getComponent<BoxCollider>(entity);
-                    if (currentBoxCollider.center != commonCenter) {
-                        isOffsetCommon = false;
-                    }
-                    if (currentBoxCollider.size != commonSize) {
-                        isSizeCommon = false;
-                    }
-                }
+                                           for (Entity entity: m_selectedEntities) {
+                                               auto currentBoxCollider = scene.getComponent<BoxCollider>(entity);
+                                               if (currentBoxCollider.center != commonCenter) {
+                                                   isCenterCommon = false;
+                                               }
+                                               if (currentBoxCollider.scale != commonScale) {
+                                                   isSizeCommon = false;
+                                               }
+                                           }
 
-                bool changeCenter = false;
-                bool changeSize = false;
-                ImGuiUtils::drawVec3Control("Center", commonCenter, 0, 100.0f, 0, 0, isOffsetCommon);
-                ImGuiUtils::drawVec3Control("Size", commonSize, 1.0f, 100.0f, 0, 0, isSizeCommon);
-                if (commonCenter != component.center) {
-                    changeCenter = true;
-                }
-                if (commonSize != component.size) {
-                    changeSize = true;
-                }
-                /*
-                for (GameObject* entity: m_selectedEntities) {
-                    if (changeSize)
-                        entity->getComponent<BoxCollider>()->setSize(commonSize);
-                    if (changeCenter)
-                        entity->getComponent<BoxCollider>()->setOffset(commonCenter);
-                }*/
-            });
+                                           bool changeCenter = false;
+                                           bool changeScale = false;
+                                           ImGuiUtils::drawVec3Control("Center", commonCenter, 0, 100.0f, 0, 0, isCenterCommon);
+                                           ImGuiUtils::drawVec3Control("Scale", commonScale, 1.0f, 100.0f, 0, 0, isSizeCommon);
+                                           if (commonCenter != component.center) {
+                                               changeCenter = true;
+                                           }
+                                           if (commonScale != component.scale) {
+                                               changeScale = true;
+                                           }
+
+                                           for (Entity entity: m_selectedEntities) {
+                                               if (changeCenter) {
+                                                   scene.getComponent<BoxCollider>(entity).center = commonCenter;
+                                                   m_appSystemRegistry.getSystem<PhysicsEngine>().recenterCollider(scene.getComponent<Tag>(entity), commonCenter);
+                                               }
+                                               if (changeScale) {
+                                                   scene.getComponent<BoxCollider>(entity).scale = commonScale;
+                                                   m_appSystemRegistry.getSystem<PhysicsEngine>().rescaleCollider(scene.getComponent<Tag>(entity), commonCenter, commonScale);
+                                               }
+                                           }
+                                       }, [this]() {
+                                           Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                           for (Entity entity: m_selectedEntities) {
+                                               m_appSystemRegistry.getSystem<PhysicsEngine>().removeCollider(scene.getComponent<Tag>(entity));
+                                           }
+                                       });
         }
-        /*
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(RigidBody).name()) != componentsToDraw.end()) {
-            drawComponent<RigidBody>(firstEntity, "Rigid Body", [this](auto& component) {
-                float commonMass = component->getMass();
-                float commonDensity = component->getDensity();
-                bool isMassCommon = true;
-                bool isDensityCommon = true;
-
-                for (GameObject* entity: m_selectedEntities) {
-                    auto currentRigidBody = entity->getComponent<RigidBody>();
-
-                    if (currentRigidBody->getMass() != commonMass) {
-                        isMassCommon = false;
-                    }
-
-                    if (currentRigidBody->getDensity() != commonDensity) {
-                        isDensityCommon = false;
-                    }
-                }
-
-                bool changeMass = false;
-                bool changeDensity = false;
-                if (ImGui::DragFloat(isMassCommon ? "Mass" : "-", &commonMass, 0.1f, 0.1f, 100.0f, "%.2f")) {
-                    changeMass = true;
-                }
-                if (ImGui::DragFloat(isDensityCommon ? "Density" : "-", &commonDensity, 0.1f, 0.1f, 100.0f, "%.2f")) {
-                    changeDensity = true;
-                }
-                for (GameObject* entity: m_selectedEntities) {
-                    if (changeMass) entity->getComponent<RigidBody>()->setMass(commonMass);
-                    if (changeDensity) entity->getComponent<RigidBody>()->setDensity(commonDensity);
-                }
-            });
-        }
-        
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(SphereCollider).name()) != componentsToDraw.end()) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<SphereCollider>()) != componentsToDraw.end()) {
             drawComponent<SphereCollider>(firstEntity, "Sphere Collider", [this](auto& component) {
-                float commonRadius = component->getRadius();
-                glm::vec3 commonOffset = component->getOffset();
+                                              Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                              float commonRadius = component.radius;
+                                              glm::vec3 commonOffset = component.center;
 
-                bool isRadiusCommon = true;
-                bool isOffsetCommon = true;
+                                              bool isRadiusCommon = true;
+                                              bool isCenterCommon = true;
 
-                for (GameObject* entity: m_selectedEntities) {
-                    auto currentSphereCollider = entity->getComponent<SphereCollider>();
+                                              for (Entity entity: m_selectedEntities) {
+                                                  auto currentSphereCollider = scene.getComponent<SphereCollider>(entity);
 
-                    if (currentSphereCollider->getRadius() != commonRadius) {
-                        isRadiusCommon = false;
-                    }
+                                                  if (currentSphereCollider.radius != commonRadius) {
+                                                      isRadiusCommon = false;
+                                                  }
 
-                    if (currentSphereCollider->getOffset() != commonOffset) {
-                        isOffsetCommon = false;
-                    }
-                }
+                                                  if (currentSphereCollider.center != commonOffset) {
+                                                      isCenterCommon = false;
+                                                  }
+                                              }
 
-                bool changeRadius = false;
-                bool changeOffset = false;
+                                              bool changeRadius = false;
+                                              bool changeCenter = false;
 
-                if (ImGui::DragFloat("Radius", &commonRadius, 0.1f, 0.1f, 100.0f, "%.2f")) {
-                    changeRadius = true;
-                }
-                ImGuiUtils::drawVec3Control("Offset", commonOffset, 0, 100.0f, 0, 0, isOffsetCommon);
-                if (commonOffset != component->getOffset()) {
-                    changeOffset = true;
-                }
-                for (GameObject* entity: m_selectedEntities) {
-                    if (changeRadius) entity->getComponent<SphereCollider>()->setRadius(commonRadius);
-                    if (changeOffset) entity->getComponent<SphereCollider>()->setOffset(commonOffset);
-                }
-            });
+                                              if (ImGui::DragFloat("Radius", &commonRadius, 0.1f, 0.1f, 100.0f, "%.2f")) {
+                                                  if (commonRadius != component.radius) {
+                                                      changeRadius = true;
+                                                  }
+                                              }
+                                              ImGuiUtils::drawVec3Control("Offset", commonOffset, 0, 100.0f, 0, 0, isCenterCommon);
+                                              if (commonOffset != component.center) {
+                                                  changeCenter = true;
+                                              }
+                                              for (Entity entity: m_selectedEntities) {
+                                                  auto currentSphereCollider = scene.getComponent<SphereCollider>(entity);
+                                                  if (changeRadius)
+                                                      currentSphereCollider.radius = commonRadius;
+                                                  if (changeCenter)
+                                                      currentSphereCollider.center = commonOffset;
+                                              }
+                                          }, [this]() {
+                                              Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                              for (Entity entity: m_selectedEntities) {
+                                                  m_appSystemRegistry.getSystem<PhysicsEngine>().removeCollider(scene.getComponent<Tag>(entity));
+                                              }
+                                          });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(CylinderCollider).name()) != componentsToDraw.end()) {
-            drawComponent<CylinderCollider>(firstEntity, "Cylinder Collider", [this](auto& component) {
-                float commonRadius = component->getRadius();
-                float commonHeight = component->getHeight();
-                glm::vec3 commonOffset = component->getOffset();
-
-                bool isRadiusCommon = true;
-                bool isHeightCommon = true;
-                bool isOffsetCommon = true;
-
-                for (GameObject* entity: m_selectedEntities) {
-                    auto currentCylinderCollider = entity->getComponent<CylinderCollider>();
-
-                    if (currentCylinderCollider->getRadius() != commonRadius) {
-                        isRadiusCommon = false;
-                    }
-
-                    if (currentCylinderCollider->getHeight() != commonHeight) {
-                        isHeightCommon = false;
-                    }
-
-                    if (currentCylinderCollider->getOffset() != commonOffset) {
-                        isOffsetCommon = false;
-                    }
-                }
-
-                bool changeRadius = false;
-                bool changeHeight = false;
-                bool changeOffset = false;
-
-                if (ImGui::DragFloat("Radius", &commonRadius, 0.1f, 0.1f, 100.0f, "%.2f")) {
-                    changeRadius = true;
-                }
-                if (ImGui::DragFloat("Height", &commonHeight, 0.1f, 0.1f, 100.0f, "%.2f")) {
-                    changeHeight = true;
-                }
-                ImGuiUtils::drawVec3Control("Offset", commonOffset, 0, 100.0f, 0, 0, isOffsetCommon);
-                if (commonOffset != component->getOffset()) {
-                    changeOffset = true;
-                }
-
-                for (GameObject* entity: m_selectedEntities) {
-                    if (changeRadius) entity->getComponent<CylinderCollider>()->setRadius(commonRadius);
-                    if (changeHeight) entity->getComponent<CylinderCollider>()->setHeight(commonHeight);
-                    if (changeOffset) entity->getComponent<CylinderCollider>()->setOffset(commonOffset);
-                }
-            });
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<StaticBody>()) != componentsToDraw.end()) {
+            drawComponent<StaticBody>(firstEntity, "Static Body", [this](auto& component) {
+                                          Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                          bool isMassCommon = true;
+                                          bool isDensityCommon = true;
+                                      }, [this]() {
+                                          Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                          for (Entity entity: m_selectedEntities) {
+                                              m_appSystemRegistry.getSystem<PhysicsEngine>().removeBody(scene.getComponent<Tag>(entity));
+                                          }
+                                      });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), typeid(NetworkSync).name()) != componentsToDraw.end()) {
-            bool draw = true;
-            for (GameObject* entity: m_selectedEntities) {
-                if (!entity->hasComponent<NetworkSync>()) {
-                    draw = false;
-                    break;
-                }
-            }
-            if (draw) {
-                drawComponent<NetworkSync>(firstEntity, "Network Sync", [](auto& component) {
-                    ImGui::Text("GameObject is synchronized over network");
-                });
-            }
-        }*/
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<KinematicBody>()) != componentsToDraw.end()) {
+            drawComponent<KinematicBody>(firstEntity, "Kinematic Body", [this](auto& component) {
+                                         }, [this]() {
+                                             Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                             for (Entity entity: m_selectedEntities) {
+                                                 m_appSystemRegistry.getSystem<PhysicsEngine>().removeBody(scene.getComponent<Tag>(entity));
+                                             }
+                                         });
+        }
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<RigidBody>()) != componentsToDraw.end()) {
+            drawComponent<RigidBody>(firstEntity, "Rigid Body", [this](auto& component) {
+                                         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                         bool isMassCommon = true;
+                                         bool isDensityCommon = true;
+                                     }, [this]() {
+                                         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                         for (Entity entity: m_selectedEntities) {
+                                             m_appSystemRegistry.getSystem<PhysicsEngine>().removeBody(scene.getComponent<Tag>(entity));
+                                         }
+                                     });
+        }
     }
 }

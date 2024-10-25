@@ -58,20 +58,15 @@ namespace TechEngine {
     void RuntimePanel::startRunningScene() {
         ProjectManager& projectManager = m_editorSystemsRegistry.getSystem<ProjectManager>();
         ScriptsCompiler::compileUserScripts(projectManager, CompileMode::Debug, m_projectType);
-        ScriptEngine& scriptEngine = m_appSystemsRegistry.getSystem<ScriptEngine>();
-        spdlog::sinks::dist_sink_mt* userDllSink;
-        bool result;
-        std::string dllPath = m_projectType == ProjectType::Client ? "\\client\\scripts\\build\\debug\\ClientScripts.dll" : "\\server\\scripts\\build\\debug\\ServerScripts.dll";
-        std::tie(result, userDllSink) = scriptEngine.start(projectManager.getResourcesPath().string() + dllPath);
-        if (!result) {
-            TE_LOGGER_CRITICAL("Failed to load client scripts dll");
-            return;
-        }
-        userDllSink->add_sink(loggerPanel.m_sink);
+        std::string dllPath = projectManager.getResourcesPath().string() + (m_projectType == ProjectType::Client ? "\\client\\scripts\\build\\debug\\ClientScripts.dll" : "\\server\\scripts\\build\\debug\\ServerScripts.dll");
         if (ProjectType::Client == m_projectType) {
-            m_editorSystemsRegistry.getSystem<RuntimeSimulator<Client>>().startSimulation();
+            if (!m_editorSystemsRegistry.getSystem<RuntimeSimulator<Client>>().startSimulation(dllPath, loggerPanel.m_sink)) {
+                stopRunningScene();
+            }
         } else {
-            m_editorSystemsRegistry.getSystem<RuntimeSimulator<Server>>().startSimulation();
+            if (!m_editorSystemsRegistry.getSystem<RuntimeSimulator<Server>>().startSimulation(dllPath, loggerPanel.m_sink)) {
+                stopRunningScene();
+            }
         }
     }
 
@@ -110,6 +105,19 @@ namespace TechEngine {
             } else {
                 stopRunningScene();
             }
+        }
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(pos.x / 2 + (size / 2));
+        if (ImGui::Button("Add Physics Bodies", ImVec2(size, 0))) {
+            m_appSystemsRegistry.getSystem<PhysicsEngine>().start();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Remove Physics Bodies", ImVec2(size, 0))) {
+            m_appSystemsRegistry.getSystem<PhysicsEngine>().stop();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Update Bodies", ImVec2(size, 0))) {
+            m_appSystemsRegistry.getSystem<PhysicsEngine>().updateBodies();
         }
         ImGui::PopStyleColor(3);
     }

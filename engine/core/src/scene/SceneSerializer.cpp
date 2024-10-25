@@ -74,9 +74,21 @@ namespace TechEngine {
         } else if (typeID == ComponentType::get<MeshRenderer>()) {
             const MeshRenderer& meshRenderer = archetype.getComponent<MeshRenderer>(entity);
             MeshRenderer::serialize(meshRenderer, out);
+        } else if (typeID == ComponentType::get<StaticBody>()) {
+            const StaticBody& staticBody = archetype.getComponent<StaticBody>(entity);
+            StaticBody::serialize(staticBody, out);
+        } else if (typeID == ComponentType::get<KinematicBody>()) {
+            const KinematicBody& kinematicBody = archetype.getComponent<KinematicBody>(entity);
+            KinematicBody::serialize(kinematicBody, out);
+        } else if (typeID == ComponentType::get<RigidBody>()) {
+            const RigidBody& rigidBody = archetype.getComponent<RigidBody>(entity);
+            RigidBody::serialize(rigidBody, out);
         } else if (typeID == ComponentType::get<BoxCollider>()) {
             const BoxCollider& boxCollider = archetype.getComponent<BoxCollider>(entity);
             BoxCollider::serialize(boxCollider, out);
+        } else if (typeID == ComponentType::get<SphereCollider>()) {
+            const SphereCollider& sphereCollider = archetype.getComponent<SphereCollider>(entity);
+            SphereCollider::serialize(sphereCollider, out);
         }
     }
 
@@ -98,11 +110,41 @@ namespace TechEngine {
             MeshRenderer meshRenderer = MeshRenderer::deserialize(componentNode, m_resourcesManager);
             m_scene.m_archetypesManager.addComponent(entity, meshRenderer);
         }
+
+        if (componentNode["StaticBody"]) {
+            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
+            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
+            StaticBody staticBody = StaticBody::deserialize(componentNode["StaticBody"], m_physicsEngine, tag, transform);
+            m_scene.m_archetypesManager.addComponent(entity, staticBody);
+        }
+
+        if (componentNode["KinematicBody"]) {
+            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
+            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
+            KinematicBody kinematicBody = KinematicBody::deserialize(componentNode["KinematicBody"], m_physicsEngine, tag, transform);
+            m_scene.m_archetypesManager.addComponent(entity, kinematicBody);
+        }
+
+        if (componentNode["RigidBody"]) {
+            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
+            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
+            RigidBody rigidBody = RigidBody::deserialize(componentNode["RigidBody"], m_physicsEngine, tag, transform);
+            m_scene.m_archetypesManager.addComponent(entity, rigidBody);
+        }
+
+
         if (componentNode["BoxCollider"]) {
             const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
             const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
             BoxCollider boxCollider = BoxCollider::deserialize(componentNode["BoxCollider"], m_physicsEngine, tag, transform);
             m_scene.m_archetypesManager.addComponent(entity, boxCollider);
+        }
+
+        if (componentNode["SphereCollider"]) {
+            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
+            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
+            SphereCollider sphereCollider = SphereCollider::deserialize(componentNode["SphereCollider"], m_physicsEngine, tag, transform);
+            m_scene.m_archetypesManager.addComponent(entity, sphereCollider);
         }
     }
 
@@ -194,7 +236,7 @@ namespace TechEngine {
 
     void BoxCollider::serialize(const BoxCollider& boxCollider, YAML::Emitter& out) {
         out << YAML::Key << "BoxCollider" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "Size" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxCollider.size.x << boxCollider.size.y << boxCollider.size.z << YAML::EndSeq;
+        out << YAML::Key << "Size" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxCollider.scale.x << boxCollider.scale.y << boxCollider.scale.z << YAML::EndSeq;
         out << YAML::Key << "Center" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxCollider.center.x << boxCollider.center.y << boxCollider.center.z << YAML::EndSeq;
         out << YAML::EndMap;
     }
@@ -216,5 +258,32 @@ namespace TechEngine {
         glm::vec3 center = glm::vec3(node["Center"].as<glm::vec3>());
         float radius = node["Radius"].as<float>();
         return ComponentsFactory::createSphereCollider(m_physicsEngine, tag, transform, center, radius);
+    }
+
+    void StaticBody::serialize(const StaticBody& staticBody, YAML::Emitter& out) {
+        out << YAML::Key << "StaticBody" << YAML::Value << YAML::BeginMap;
+        out << YAML::EndMap;
+    }
+
+    StaticBody StaticBody::deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform) {
+        return ComponentsFactory::createStaticBody(m_physicsEngine, tag, transform);
+    }
+
+    void KinematicBody::serialize(const KinematicBody& kinematicBody, YAML::Emitter& out) {
+        out << YAML::Key << "KinematicBody" << YAML::Value << YAML::BeginMap;
+        out << YAML::EndMap;
+    }
+
+    KinematicBody KinematicBody::deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform) {
+        return ComponentsFactory::createKinematicBody(m_physicsEngine, tag, transform);
+    }
+
+    void RigidBody::serialize(const RigidBody& rigidBody, YAML::Emitter& out) {
+        out << YAML::Key << "RigidBody" << YAML::Value << YAML::BeginMap;
+        out << YAML::EndMap;
+    }
+
+    RigidBody RigidBody::deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform) {
+        return ComponentsFactory::createRigidBody(m_physicsEngine, tag, transform);
     }
 }
