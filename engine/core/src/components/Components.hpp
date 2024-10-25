@@ -174,13 +174,12 @@ namespace TechEngine {
     private:
         friend class ComponentsFactory;
 
-        explicit BoxCollider(const JPH::BodyID& bodyID) : bodyID(bodyID) {
-        };
+        BoxCollider(glm::vec3 center, glm::vec3 scale) : center(center), scale(scale) {
+        }
 
     public:
-        glm::vec3 center = glm::vec3(0.0f);
-        glm::vec3 size = glm::vec3(1.0f);
-        const JPH::BodyID& bodyID;
+        glm::vec3 center = glm::vec3(0.0f, 0, 0);
+        glm::vec3 scale = glm::vec3(1.0f);
 
         static void serialize(const BoxCollider& boxCollider, YAML::Emitter& out);
 
@@ -190,19 +189,58 @@ namespace TechEngine {
     class CORE_DLL SphereCollider {
         friend class ComponentsFactory;
 
-        explicit SphereCollider(const JPH::BodyID& bodyID) : bodyID(bodyID) {
-        };
+        SphereCollider() = default;
 
     public:
         glm::vec3 center = glm::vec3(0.0f);
         float radius = 1;
-        const JPH::BodyID& bodyID;
 
         static void serialize(const SphereCollider& boxCollider, YAML::Emitter& out);
 
         static SphereCollider deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
     };
 
+    class CORE_DLL StaticBody {
+        friend class ComponentsFactory;
+
+        explicit StaticBody(const JPH::BodyID& bodyID) : bodyID(bodyID) {
+        };
+
+    public:
+        const JPH::BodyID& bodyID;
+
+        static void serialize(const StaticBody& staticBody, YAML::Emitter& out);
+
+        static StaticBody deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+    };
+
+    class CORE_DLL KinematicBody {
+        friend class ComponentsFactory;
+
+        explicit KinematicBody(const JPH::BodyID& bodyID) : bodyID(bodyID) {
+        };
+
+    public:
+        const JPH::BodyID& bodyID;
+
+        static void serialize(const KinematicBody& kinematicBody, YAML::Emitter& out);
+
+        static KinematicBody deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+    };
+
+    class CORE_DLL RigidBody {
+        friend class ComponentsFactory;
+
+        explicit RigidBody(const JPH::BodyID& bodyID) : bodyID(bodyID) {
+        };
+
+    public:
+        const JPH::BodyID& bodyID;
+
+        static void serialize(const RigidBody& rigidbody, YAML::Emitter& out);
+
+        static RigidBody deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+    };
 
     class CORE_DLL ComponentType {
     private:
@@ -217,6 +255,9 @@ namespace TechEngine {
             registerComponent<MeshRenderer>();
             registerComponent<BoxCollider>();
             registerComponent<SphereCollider>();
+            registerComponent<StaticBody>();
+            registerComponent<KinematicBody>();
+            registerComponent<RigidBody>();
         }
 
         template<typename T>

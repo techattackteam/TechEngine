@@ -4,7 +4,6 @@
 #include "systems/System.hpp"
 #include "components/Archetype.hpp"
 
-#include <glm/gtc/quaternion.hpp>
 
 namespace TechEngine {
     class CORE_DLL TransformSystem : public System {

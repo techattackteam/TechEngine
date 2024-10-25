@@ -78,4 +78,9 @@ namespace TechEngine {
         const std::filesystem::path& path = m_scenesBank[name];
         m_sceneSerializer.deserialize(path);
     }
+
+    void ScenesManager::loadScene(const std::filesystem::path& path) {
+        m_activeScene.clear();
+        m_sceneSerializer.deserialize(path);
+    }
 }

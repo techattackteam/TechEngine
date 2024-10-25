@@ -17,6 +17,7 @@
 #include <Jolt/Jolt.h>
 #include <Jolt/Core/JobSystemThreadPool.h>
 #include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/Physics/Collision/Shape/MutableCompoundShape.h>
 
 // Callback for traces, connect this to your own trace function if you have one
 static void TraceImpl(const char* inFMT, ...) {
@@ -45,14 +46,14 @@ static bool AssertFailedImpl(const char* inExpression, const char* inMessage, co
 #endif // JPH_ENABLE_ASSERTS
 
 namespace TechEngine {
-    enum class ColliderType {
-        BOX,
-        SPHERE
+    struct ColliderInfo {
+        JPH::Shape* shape;
+        glm::vec3 position;
     };
 
     class CORE_DLL PhysicsEngine : public System {
     private:
-        JPH::PhysicsSystem* physics_system;
+        JPH::PhysicsSystem* m_physicsSystem;
         JPH::TempAllocatorImpl* temp_allocator;
         JPH::JobSystemThreadPool* job_system;
         MyContactListener contact_listener;
@@ -61,10 +62,12 @@ namespace TechEngine {
         BPLayerInterfaceImpl broad_phase_layer_interface;
         ObjectVsBroadPhaseLayerFilterImpl object_vs_broadphase_layer_filter;
         ObjectLayerPairFilterImpl object_vs_object_layer_filter;
-        int step = 0;
         SystemsRegistry& m_systemsRegistry;
+        bool m_running = false;
 
-        //std::unordered_map<std::string, std::vector<JPH::Body*>> m_bodies;
+        std::unordered_map<std::string, JPH::BodyID> m_bodies;
+        std::unordered_map<std::string, JPH::Ref<JPH::MutableCompoundShape>> m_colliders;
+        std::unordered_map<std::string, std::vector<JPH::Shape*>> m_triggers;
 
     public:
         DebugRenderer* debugRenderer = nullptr;
@@ -75,34 +78,63 @@ namespace TechEngine {
 
         void shutdown() override;
 
+        bool start();
+
+        void stop();
+
         void onUpdate() override;
 
         void onFixedUpdate() override;
 
         void renderBodies();
 
-        const JPH::BodyID& createBody(const ::TechEngine::ColliderType& type, const ::TechEngine::Transform& transform, glm::vec3 offset, glm::vec3 size);
+        const JPH::BodyID& createStaticBody(const Tag& tag, const Transform& transform);
+
+        const JPH::BodyID& createKinematicBody(const Tag& tag, const Transform& transform);
+
+        const JPH::BodyID& createRigidBody(const Tag& tag, const Transform& transform);
+
+        const void createBoxCollider(const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 scale);
+
+        const void createSphereCollider(const Tag& tag, const Transform& transform, glm::vec3 center, float radius);
+
+        const void moveOrRotateBody(const Tag& tag, const Transform& transform); //Only to be used by the editor when then simulation is not running
+
+        const void resizeCollider(const Tag& tag, Transform& transform, glm::vec3 center, glm::vec3 size);
+
+        const void recenterCollider(const Tag& tag, glm::vec3 center);
+
+        const void rescaleCollider(const Tag& tag, glm::vec3 center, glm::vec3 scale);
+
+        void removeBody(const Tag& tag);
+
+        void removeCollider(const Tag& tag);
 
         void updateBodies();
 
         void updateEntities();
 
     private:
-        template<typename Collider>
-        void updateBodies(Transform& transform, Collider& collider) {
-            JPH::BodyInterface& body_interface = physics_system->GetBodyInterface();
+        const JPH::BodyID& createBody(JPH::EMotionType eMotionType, const Tag& tag, const Transform& transform);
+
+        template<typename Body>
+        void updateBodies(Transform& transform, Body& body) {
+            JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
             JPH::RVec3 position = JPH::RVec3(transform.position.x, transform.position.y, transform.position.z);
-            JPH::Quat quat = JPH::Quat(transform.rotation.x, transform.rotation.y, transform.rotation.z, 1.0f);
-            body_interface.SetPositionAndRotation(collider.bodyID, position, quat, JPH::EActivation::DontActivate);
+            glm::quat rotation = glm::quat(glm::radians(transform.rotation));
+            JPH::Quat quat = JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w);
+            bodyInterface.SetPositionAndRotation(body.bodyID, position, quat, JPH::EActivation::Activate);
         }
 
-        template<typename Collider>
-        void updateEntities(Transform& transform, Collider& collider) {
-            JPH::BodyInterface& bodyInterface = physics_system->GetBodyInterface();
-            JPH::RVec3 position = bodyInterface.GetCenterOfMassPosition(collider.bodyID);
-            JPH::Quat rotation = bodyInterface.GetRotation(collider.bodyID);
+        template<typename Body>
+        void updateEntities(Transform& transform, Body& body) {
+            JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
+            JPH::RVec3 position = bodyInterface.GetPosition(body.bodyID);
+            JPH::Quat rotation = bodyInterface.GetRotation(body.bodyID);
+            glm::vec3 euler = glm::eulerAngles(glm::quat(rotation.GetW(), rotation.GetX(), rotation.GetY(), rotation.GetZ()));
+
             transform.position = glm::vec3(position.GetX(), position.GetY(), position.GetZ());
-            transform.rotation = glm::vec3(rotation.GetX(), rotation.GetY(), rotation.GetZ());
+            transform.rotation = glm::vec3(glm::degrees(euler.x), glm::degrees(euler.y), glm::degrees(euler.z));
         }
     };
 }

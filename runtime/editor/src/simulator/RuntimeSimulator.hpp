@@ -19,21 +19,35 @@ namespace TechEngine {
     class RuntimeSimulator : public System {
     private:
         SimulationState m_simulationState = SimulationState::STOPPED;
-        SystemsRegistry& m_systemRegistry;
+        SystemsRegistry& m_systemsRegistry;
         bool stopNextUpdate = false;
 
     public:
         T& m_runtime;
 
-        explicit RuntimeSimulator(T& runtime, SystemsRegistry& m_systemRegistry) : m_runtime(runtime), m_systemRegistry(m_systemRegistry) {
+        explicit RuntimeSimulator(T& runtime, SystemsRegistry& m_systemRegistry) : m_runtime(runtime), m_systemsRegistry(m_systemRegistry) {
         }
 
-        void startSimulation() {
-            m_simulationState = SimulationState::RUNNING;
+        bool startSimulation(const std::string& dllPath, const std::shared_ptr<ImGuiSink<std::mutex>>& sink) {
+            ScriptEngine& scriptEngine = m_runtime.m_systemRegistry.template getSystem<ScriptEngine>();
+            PhysicsEngine& physicsEngine = m_runtime.m_systemRegistry.template getSystem<PhysicsEngine>();
             ScenesManager& scenesManager = m_runtime.m_systemRegistry.template getSystem<ScenesManager>();
             Project& project = m_runtime.m_systemRegistry.template getSystem<Project>();
             scenesManager.copyScene(scenesManager.getActiveScene(), project.getPath(PathType::Cache, AppType::Client) / "runtimeScene.tescene");
+            spdlog::sinks::dist_sink_mt* userDllSink;
+            bool result;
+            std::tie(result, userDllSink) = scriptEngine.start(dllPath);
+            if (!result) {
+                TE_LOGGER_ERROR("Failed to load client scripts dll");
+                return false;
+            }
+            if (!physicsEngine.start()) {
+                return false;
+            }
+            userDllSink->add_sink(sink);
+            m_simulationState = SimulationState::RUNNING;
             onStart();
+            return true;
         }
 
         void pauseSimulation() {
@@ -44,7 +58,8 @@ namespace TechEngine {
             m_simulationState = SimulationState::STOPPED;
             onStop();
             ScenesManager& scenesManager = m_runtime.m_systemRegistry.template getSystem<ScenesManager>();
-            scenesManager.loadScene(scenesManager.getActiveScene().getName());
+            Project& project = m_runtime.m_systemRegistry.template getSystem<Project>();
+            scenesManager.loadScene(project.getPath(PathType::Cache, AppType::Client) / "runtimeScene.tescene");
             shutdown();
             init();
         }
@@ -59,7 +74,7 @@ namespace TechEngine {
                 m_runtime.m_systemRegistry.template registerSystem<Renderer>(m_runtime.m_systemRegistry);
                 m_runtime.m_systemRegistry.template getSystem<Renderer>().init();
             }
-            m_systemRegistry.getSystem<EventDispatcher>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
+            m_systemsRegistry.getSystem<EventDispatcher>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
                 if (m_simulationState != SimulationState::STOPPED) {
                     stopSimulation();
                 }
@@ -75,6 +90,7 @@ namespace TechEngine {
                 this->m_runtime.m_systemRegistry.template getSystem<Renderer>().createLine(from, to, color);
             });
             m_runtime.m_systemRegistry.template getSystem<PhysicsEngine>().debugRenderer = debugRenderer;
+            JPH::RegisterDefaultAllocator();
         }
 
         void onStart() override {
