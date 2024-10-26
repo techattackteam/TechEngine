@@ -242,6 +242,22 @@ namespace TechEngine {
         static RigidBody deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
     };
 
+    class CORE_DLL BoxTrigger {
+        friend class ComponentsFactory;
+
+        explicit BoxTrigger(const JPH::BodyID& bodyID) : bodyID(bodyID) {
+        };
+
+    public:
+        const JPH::BodyID& bodyID;
+        glm::vec3 center = glm::vec3(0.0f, 0, 0);
+        glm::vec3 scale = glm::vec3(1.0f);
+
+        static void serialize(const BoxTrigger& boxTrigger, YAML::Emitter& out);
+
+        static BoxTrigger deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+    };
+
     class CORE_DLL ComponentType {
     private:
         inline static ComponentTypeID counter = 0;
@@ -253,11 +269,12 @@ namespace TechEngine {
             registerComponent<Transform>();
             registerComponent<Camera>();
             registerComponent<MeshRenderer>();
-            registerComponent<BoxCollider>();
-            registerComponent<SphereCollider>();
             registerComponent<StaticBody>();
             registerComponent<KinematicBody>();
             registerComponent<RigidBody>();
+            registerComponent<BoxTrigger>();
+            registerComponent<BoxCollider>();
+            registerComponent<SphereCollider>();
         }
 
         template<typename T>

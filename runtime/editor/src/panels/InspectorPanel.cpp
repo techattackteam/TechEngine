@@ -90,6 +90,18 @@ namespace TechEngine {
                         }
                         ImGui::EndMenu();
                     }
+                    if (ImGui::BeginMenu("Triggers")) {
+                        if (ImGui::MenuItem("Box Trigger")) {
+                            Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                            for (const Entity& entity: m_selectedEntities) {
+                                Tag& tag = scene.getComponent<Tag>(entity);
+                                Transform& transform = scene.getComponent<Transform>(entity);
+                                PhysicsEngine& physicsEngine = m_appSystemRegistry.getSystem<PhysicsEngine>();
+                                scene.addComponent<BoxTrigger>(entity, ComponentsFactory::createBoxTrigger(physicsEngine, tag, transform, glm::vec3(0, 0, 0), glm::vec3(1)));
+                            }
+                        }
+                        ImGui::EndMenu();
+                    }
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Network")) {
@@ -163,6 +175,13 @@ namespace TechEngine {
                                 scene.getComponent<Transform>(entity),
                                 scene.getComponent<BoxCollider>(entity).center,
                                 scene.getComponent<BoxCollider>(entity).scale);
+                        }
+                        if (scene.hasComponent<BoxTrigger>(entity)) {
+                            m_appSystemRegistry.getSystem<PhysicsEngine>().resizeTrigger(
+                                scene.getComponent<Tag>(entity),
+                                scene.getComponent<Transform>(entity),
+                                scene.getComponent<BoxTrigger>(entity).center,
+                                scene.getComponent<BoxTrigger>(entity).scale);
                         }
                         scaling = true;
                     }
@@ -372,6 +391,39 @@ namespace TechEngine {
                 component.paintMesh();
             });
         }
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<StaticBody>()) != componentsToDraw.end()) {
+            drawComponent<StaticBody>(firstEntity, "Static Body", [this](auto& component) {
+                                          Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                          bool isMassCommon = true;
+                                          bool isDensityCommon = true;
+                                      }, [this]() {
+                                          Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                          for (Entity entity: m_selectedEntities) {
+                                              m_appSystemRegistry.getSystem<PhysicsEngine>().removeBody(scene.getComponent<Tag>(entity));
+                                          }
+                                      });
+        }
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<KinematicBody>()) != componentsToDraw.end()) {
+            drawComponent<KinematicBody>(firstEntity, "Kinematic Body", [this](auto& component) {
+                                         }, [this]() {
+                                             Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                             for (Entity entity: m_selectedEntities) {
+                                                 m_appSystemRegistry.getSystem<PhysicsEngine>().removeBody(scene.getComponent<Tag>(entity));
+                                             }
+                                         });
+        }
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<RigidBody>()) != componentsToDraw.end()) {
+            drawComponent<RigidBody>(firstEntity, "Rigid Body", [this](auto& component) {
+                                         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                         bool isMassCommon = true;
+                                         bool isDensityCommon = true;
+                                     }, [this]() {
+                                         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                         for (Entity entity: m_selectedEntities) {
+                                             m_appSystemRegistry.getSystem<PhysicsEngine>().removeBody(scene.getComponent<Tag>(entity));
+                                         }
+                                     });
+        }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<BoxCollider>()) != componentsToDraw.end()) {
             drawComponent<BoxCollider>(firstEntity, "Box Collider", [this](auto& component) {
                                            Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
@@ -465,38 +517,51 @@ namespace TechEngine {
                                               }
                                           });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<StaticBody>()) != componentsToDraw.end()) {
-            drawComponent<StaticBody>(firstEntity, "Static Body", [this](auto& component) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<BoxTrigger>()) != componentsToDraw.end()) {
+            drawComponent<BoxTrigger>(firstEntity, "Box Trigger", [this](auto& component) {
                                           Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
-                                          bool isMassCommon = true;
-                                          bool isDensityCommon = true;
-                                      }, [this]() {
+                                          glm::vec3 commonCenter = component.center;
+                                          glm::vec3 commonScale = component.scale;
+                                          bool isCenterCommon = true;
+                                          bool isSizeCommon = true;
+                                          for (Entity entity: m_selectedEntities) {
+                                              auto currentBoxCollider = scene.getComponent<BoxTrigger>(entity);
+                                              if (currentBoxCollider.center != commonCenter) {
+                                                  isCenterCommon = false;
+                                              }
+                                              if (currentBoxCollider.scale != commonScale) {
+                                                  isSizeCommon = false;
+                                              }
+                                          }
+
+                                          bool changeCenter = false;
+                                          bool changeScale = false;
+                                          ImGuiUtils::drawVec3Control("Center", commonCenter, 0, 100.0f, 0, 0, isCenterCommon);
+                                          ImGuiUtils::drawVec3Control("Scale", commonScale, 1.0f, 100.0f, 0, 0, isSizeCommon);
+                                          if (commonCenter != component.center) {
+                                              changeCenter = true;
+                                          }
+                                          if (commonScale != component.scale) {
+                                              changeScale = true;
+                                          }
+
+                                          for (Entity entity: m_selectedEntities) {
+                                              if (changeCenter) {
+                                                  scene.getComponent<BoxTrigger>(entity).center = commonCenter;
+                                                  m_appSystemRegistry.getSystem<PhysicsEngine>().recenterTrigger(scene.getComponent<Tag>(entity), commonCenter);
+                                              }
+                                              if (changeScale) {
+                                                  scene.getComponent<BoxTrigger>(entity).scale = commonScale;
+                                                  m_appSystemRegistry.getSystem<PhysicsEngine>().rescaleTrigger(scene.getComponent<Tag>(entity), commonCenter, commonScale);
+                                              }
+                                          }
+                                      },
+                                      [this]() {
                                           Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                                           for (Entity entity: m_selectedEntities) {
-                                              m_appSystemRegistry.getSystem<PhysicsEngine>().removeBody(scene.getComponent<Tag>(entity));
+                                              m_appSystemRegistry.getSystem<PhysicsEngine>().removeCollider(scene.getComponent<Tag>(entity));
                                           }
                                       });
-        }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<KinematicBody>()) != componentsToDraw.end()) {
-            drawComponent<KinematicBody>(firstEntity, "Kinematic Body", [this](auto& component) {
-                                         }, [this]() {
-                                             Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
-                                             for (Entity entity: m_selectedEntities) {
-                                                 m_appSystemRegistry.getSystem<PhysicsEngine>().removeBody(scene.getComponent<Tag>(entity));
-                                             }
-                                         });
-        }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<RigidBody>()) != componentsToDraw.end()) {
-            drawComponent<RigidBody>(firstEntity, "Rigid Body", [this](auto& component) {
-                                         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
-                                         bool isMassCommon = true;
-                                         bool isDensityCommon = true;
-                                     }, [this]() {
-                                         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
-                                         for (Entity entity: m_selectedEntities) {
-                                             m_appSystemRegistry.getSystem<PhysicsEngine>().removeBody(scene.getComponent<Tag>(entity));
-                                         }
-                                     });
         }
     }
 }
