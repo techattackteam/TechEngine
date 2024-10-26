@@ -46,18 +46,13 @@ static bool AssertFailedImpl(const char* inExpression, const char* inMessage, co
 #endif // JPH_ENABLE_ASSERTS
 
 namespace TechEngine {
-    struct ColliderInfo {
-        JPH::Shape* shape;
-        glm::vec3 position;
-    };
-
     class CORE_DLL PhysicsEngine : public System {
     private:
         JPH::PhysicsSystem* m_physicsSystem;
         JPH::TempAllocatorImpl* temp_allocator;
         JPH::JobSystemThreadPool* job_system;
         MyContactListener contact_listener;
-        MyBodyActivationListener body_activation_listener;
+        //MyBodyActivationListener body_activation_listener;
 
         BPLayerInterfaceImpl broad_phase_layer_interface;
         ObjectVsBroadPhaseLayerFilterImpl object_vs_broadphase_layer_filter;
@@ -66,8 +61,8 @@ namespace TechEngine {
         bool m_running = false;
 
         std::unordered_map<std::string, JPH::BodyID> m_bodies;
+        std::unordered_map<std::string, JPH::BodyID> m_triggers;
         std::unordered_map<std::string, JPH::Ref<JPH::MutableCompoundShape>> m_colliders;
-        std::unordered_map<std::string, std::vector<JPH::Shape*>> m_triggers;
 
     public:
         DebugRenderer* debugRenderer = nullptr;
@@ -94,17 +89,25 @@ namespace TechEngine {
 
         const JPH::BodyID& createRigidBody(const Tag& tag, const Transform& transform);
 
-        const void createBoxCollider(const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 scale);
+        void createBoxCollider(const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 scale);
 
-        const void createSphereCollider(const Tag& tag, const Transform& transform, glm::vec3 center, float radius);
+        void createSphereCollider(const Tag& tag, const Transform& transform, glm::vec3 center, float radius);
 
-        const void moveOrRotateBody(const Tag& tag, const Transform& transform); //Only to be used by the editor when then simulation is not running
+        const JPH::BodyID& createBoxTrigger(const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 scale);
 
-        const void resizeCollider(const Tag& tag, Transform& transform, glm::vec3 center, glm::vec3 size);
+        void moveOrRotateBody(const Tag& tag, const Transform& transform); //Only to be used by the editor when then simulation is not running
 
-        const void recenterCollider(const Tag& tag, glm::vec3 center);
+        void resizeCollider(const Tag& tag, Transform& transform, glm::vec3 center, glm::vec3 size);
 
-        const void rescaleCollider(const Tag& tag, glm::vec3 center, glm::vec3 scale);
+        void resizeTrigger(const Tag& tag, Transform& transform, glm::vec3 center, glm::vec3 size);
+
+        void recenterCollider(const Tag& tag, glm::vec3 center);
+
+        void recenterTrigger(const Tag& tag, glm::vec3 center);
+
+        void rescaleCollider(const Tag& tag, glm::vec3 center, glm::vec3 scale);
+
+        void rescaleTrigger(const Tag& tag, glm::vec3 center, glm::vec3 size);
 
         void removeBody(const Tag& tag);
 
@@ -115,7 +118,9 @@ namespace TechEngine {
         void updateEntities();
 
     private:
-        const JPH::BodyID& createBody(JPH::EMotionType eMotionType, const Tag& tag, const Transform& transform);
+        const JPH::BodyID& createBody(JPH::EMotionType eMotionType, const Tag& tag, const Transform& transform, bool isTrigger);
+
+        JPH::MutableCompoundShape* createBoxShape(const Transform& transform, glm::vec3 center, glm::vec3 scale);
 
         template<typename Body>
         void updateBodies(Transform& transform, Body& body) {

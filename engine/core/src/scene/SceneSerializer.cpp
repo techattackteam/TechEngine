@@ -89,6 +89,9 @@ namespace TechEngine {
         } else if (typeID == ComponentType::get<SphereCollider>()) {
             const SphereCollider& sphereCollider = archetype.getComponent<SphereCollider>(entity);
             SphereCollider::serialize(sphereCollider, out);
+        } else if (typeID == ComponentType::get<BoxTrigger>()) {
+            const BoxTrigger& boxTrigger = archetype.getComponent<BoxTrigger>(entity);
+            BoxTrigger::serialize(boxTrigger, out);
         }
     }
 
@@ -145,6 +148,13 @@ namespace TechEngine {
             const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
             SphereCollider sphereCollider = SphereCollider::deserialize(componentNode["SphereCollider"], m_physicsEngine, tag, transform);
             m_scene.m_archetypesManager.addComponent(entity, sphereCollider);
+        }
+
+        if (componentNode["BoxTrigger"]) {
+            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
+            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
+            BoxTrigger boxTrigger = BoxTrigger::deserialize(componentNode["BoxTrigger"], m_physicsEngine, tag, transform);
+            m_scene.m_archetypesManager.addComponent(entity, boxTrigger);
         }
     }
 
@@ -285,5 +295,18 @@ namespace TechEngine {
 
     RigidBody RigidBody::deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform) {
         return ComponentsFactory::createRigidBody(m_physicsEngine, tag, transform);
+    }
+
+    void BoxTrigger::serialize(const BoxTrigger& boxTrigger, YAML::Emitter& out) {
+        out << YAML::Key << "BoxTrigger" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "Size" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxTrigger.scale.x << boxTrigger.scale.y << boxTrigger.scale.z << YAML::EndSeq;
+        out << YAML::Key << "Center" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxTrigger.center.x << boxTrigger.center.y << boxTrigger.center.z << YAML::EndSeq;
+        out << YAML::EndMap;
+    }
+
+    BoxTrigger BoxTrigger::deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform) {
+        glm::vec3 size = glm::vec3(node["Size"].as<glm::vec3>());
+        glm::vec3 center = glm::vec3(node["Center"].as<glm::vec3>());
+        return ComponentsFactory::createBoxTrigger(m_physicsEngine, tag, transform, center, size);
     }
 }

@@ -13,17 +13,6 @@ namespace TechEngine {
             return Transform();
         }
 
-        static BoxCollider createBoxCollider(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 scale) {
-            physicsEngine.createBoxCollider(tag, transform, center, scale);
-            return BoxCollider(center, scale);
-        }
-
-        static SphereCollider createSphereCollider(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform, glm::vec3 center, float radius) {
-            /*const JPH::BodyID& bodyID = */
-            physicsEngine.createSphereCollider(tag, transform, center, radius);
-            return SphereCollider();
-        }
-
         static StaticBody createStaticBody(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform) {
             const JPH::BodyID& bodyID = physicsEngine.createStaticBody(tag, transform);
             return StaticBody(bodyID);
@@ -39,6 +28,21 @@ namespace TechEngine {
             return RigidBody(bodyID);
         }
 
+        static BoxCollider createBoxCollider(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 scale) {
+            physicsEngine.createBoxCollider(tag, transform, center, scale);
+            return BoxCollider(center, scale);
+        }
+
+        static SphereCollider createSphereCollider(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform, glm::vec3 center, float radius) {
+            physicsEngine.createSphereCollider(tag, transform, center, radius);
+            return SphereCollider();
+        }
+
+        static BoxTrigger createBoxTrigger(PhysicsEngine& physicsEngine, Tag tag, const Transform& transform, glm::vec3 center, glm::vec3 scale) {
+            const JPH::BodyID& bodyID = physicsEngine.createBoxTrigger(tag, transform, center, scale);
+            return BoxTrigger(bodyID);
+        }
+
         static void DestroyBoxCollider(PhysicsEngine& physicsEngine, const Tag& tag) {
             physicsEngine.removeCollider(tag);
         }
@@ -46,6 +50,5 @@ namespace TechEngine {
         static void DestroyBody(PhysicsEngine& physicsEngine, const Tag& tag) {
             physicsEngine.removeBody(tag);
         }
-        
     };
 }

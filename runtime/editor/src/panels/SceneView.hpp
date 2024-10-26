@@ -1,8 +1,6 @@
 #pragma once
 #include "Panel.hpp"
 
-#include "components/Components.hpp"
-#include "physics/DebugRenderer.hpp"
 #include "UIUtils/Guizmo.hpp"
 
 namespace TechEngine {
@@ -49,5 +47,11 @@ namespace TechEngine {
 
     private:
         void renderCameraFrustum();
+
+        void renderColliders();
+
+        void renderBox(Transform& transform, glm::vec3 center, glm::vec3 scale, glm::vec4 color);
+
+        glm::vec4 getColor(const Tag& tag, bool collider) const;
     };
 }

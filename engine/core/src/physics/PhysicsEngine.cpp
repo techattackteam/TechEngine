@@ -15,7 +15,6 @@
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/EmptyShape.h>
 #include <Jolt/Physics/Collision/Shape/MutableCompoundShape.h>
-#include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/ScaledShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Constraints/FixedConstraint.h>
@@ -61,13 +60,12 @@ namespace TechEngine {
         // A body activation listener gets notified when bodies activate and go to sleep
         // Note that this is called from a job so whatever you do here needs to be thread safe.
         // Registering one is entirely optional.
-        m_physicsSystem->SetBodyActivationListener(&body_activation_listener);
+        //m_physicsSystem->SetBodyActivationListener(&body_activation_listener);
 
         // A contact listener gets notified when bodies (are about to) collide, and when they separate again.
         // Note that this is called from a job so whatever you do here needs to be thread safe.
         // Registering one is entirely optional.
         m_physicsSystem->SetContactListener(&contact_listener);
-
 
         TE_LOGGER_INFO("Physics engine initialized");
     }
@@ -88,19 +86,23 @@ namespace TechEngine {
         JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
         m_running = true;
         for (auto& [uuid, body]: m_bodies) {
-            if (m_colliders.find(uuid) == m_colliders.end() && m_triggers.find(uuid) == m_triggers.end()) {
+            if (!m_colliders.contains(uuid) && !m_triggers.contains(uuid)) {
                 TE_LOGGER_ERROR("Body with uuid: {0} has no collider or trigger", uuid.c_str());
                 return false;
             }
-
-            bodyInterface.SetShape(body, m_colliders[uuid], true, JPH::EActivation::DontActivate);
-            bodyInterface.AddBody(body, JPH::EActivation::Activate);
+            if (m_triggers.contains(uuid)) {
+                bodyInterface.AddBody(body, JPH::EActivation::DontActivate);
+                bodyInterface.AddBody(m_triggers[uuid], JPH::EActivation::Activate);
+            }
+            if (m_colliders.contains(uuid)) {
+                bodyInterface.SetShape(body, m_colliders[uuid], true, JPH::EActivation::DontActivate);
+                bodyInterface.AddBody(body, JPH::EActivation::Activate);
+            }
         }
         return true;
     }
 
     void PhysicsEngine::stop() {
-        JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
         m_bodies.clear();
         m_colliders.clear();
         m_running = false;
@@ -125,37 +127,30 @@ namespace TechEngine {
     }
 
     const JPH::BodyID& PhysicsEngine::createStaticBody(const Tag& tag, const Transform& transform) {
-        return createBody(JPH::EMotionType::Static, tag, transform);
+        return createBody(JPH::EMotionType::Static, tag, transform, false);
     }
 
     const JPH::BodyID& PhysicsEngine::createKinematicBody(const Tag& tag, const Transform& transform) {
-        return createBody(JPH::EMotionType::Kinematic, tag, transform);
+        return createBody(JPH::EMotionType::Kinematic, tag, transform, false);
     }
 
     const JPH::BodyID& PhysicsEngine::createRigidBody(const Tag& tag, const Transform& transform) {
-        return createBody(JPH::EMotionType::Dynamic, tag, transform);
+        return createBody(JPH::EMotionType::Dynamic, tag, transform, false);
     }
 
-    const void PhysicsEngine::createBoxCollider(const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 scale) {
+    void PhysicsEngine::createBoxCollider(const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 scale) {
         JPH::RegisterDefaultAllocator();
         JPH::RVec3 size = JPH::RVec3(transform.scale.x, transform.scale.y, transform.scale.z);
-        JPH::MutableCompoundShape* compoundShape;
-        if (m_colliders.find(tag.getUuid()) == m_colliders.end()) {
-            m_colliders[tag.getUuid()] = new JPH::MutableCompoundShape();
-        }
-        compoundShape = m_colliders[tag.getUuid()];
-        JPH::Ref<JPH::BoxShape> shape = new JPH::BoxShape(size);
-        JPH::Ref<JPH::ScaledShape> scaledShape = new JPH::ScaledShape(shape, JPH::RVec3(scale.x, scale.y, scale.z));
-        compoundShape->AddShape(JPH::RVec3(center.x, center.y, center.z), JPH::Quat::sIdentity(), scaledShape);
+        JPH::MutableCompoundShape* compoundShape = createBoxShape(transform, center, scale);
+        m_colliders[tag.getUuid()] = compoundShape;
         if (m_running && m_bodies.find(tag.getUuid()) != m_bodies.end()) {
             JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
             JPH::BodyID body = m_bodies[tag.getUuid()];
             bodyInterface.SetShape(body, compoundShape, true, JPH::EActivation::DontActivate);
-            //bodyInterface.AddBody(body, JPH::EActivation::Activate);
         }
     }
 
-    const void PhysicsEngine::createSphereCollider(const Tag& tag, const Transform& transform, glm::vec3 center, float radius) {
+    void PhysicsEngine::createSphereCollider(const Tag& tag, const Transform& transform, glm::vec3 center, float radius) {
         JPH::RegisterDefaultAllocator();
         JPH::MutableCompoundShape* compoundShape;
         if (m_colliders.find(tag.getUuid()) == m_colliders.end()) {
@@ -168,7 +163,16 @@ namespace TechEngine {
         compoundShape->AddShape(JPH::RVec3(center.x, center.y, center.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), scaledShape);
     }
 
-    const void PhysicsEngine::moveOrRotateBody(const Tag& tag, const Transform& transform) {
+    const JPH::BodyID& PhysicsEngine::createBoxTrigger(const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 scale) {
+        const JPH::BodyID& body = createBody(JPH::EMotionType::Static, tag, transform, true);
+        m_triggers[tag.getUuid()] = body;
+        JPH::MutableCompoundShape* compoundShape = createBoxShape(transform, center, scale);
+        JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
+        bodyInterface.SetShape(body, compoundShape, true, JPH::EActivation::DontActivate);
+        return body;
+    }
+
+    void PhysicsEngine::moveOrRotateBody(const Tag& tag, const Transform& transform) {
         if (m_running) {
             return;
         }
@@ -182,18 +186,43 @@ namespace TechEngine {
         }
     }
 
-    const void PhysicsEngine::resizeCollider(const Tag& tag, Transform& transform, glm::vec3 center, glm::vec3 scale) {
+    void PhysicsEngine::resizeCollider(const Tag& tag, Transform& transform, glm::vec3 center, glm::vec3 scale) {
         JPH::Ref<JPH::MutableCompoundShape> compoundShape = m_colliders[tag.getUuid()];
         compoundShape->RemoveShape(0);
         createBoxCollider(tag, transform, center, scale);
     }
 
-    const void PhysicsEngine::recenterCollider(const Tag& tag, glm::vec3 center) {
+    void PhysicsEngine::resizeTrigger(const Tag& tag, Transform& transform, glm::vec3 center, glm::vec3 scale) {
+        JPH::BodyID& bodyID = m_triggers[tag.getUuid()];
+        JPH::MutableCompoundShape* compoundShape = createBoxShape(transform, center, scale);
+        m_physicsSystem->GetBodyInterface().SetShape(bodyID, compoundShape, true, JPH::EActivation::DontActivate);
+    }
+
+    void PhysicsEngine::recenterCollider(const Tag& tag, glm::vec3 center) {
         JPH::Ref<JPH::MutableCompoundShape> shape = m_colliders[tag.getUuid()];
         shape->ModifyShape(0, JPH::RVec3(center.x, center.y, center.z), shape->GetSubShape(0).GetRotation());
     }
 
-    const void PhysicsEngine::rescaleCollider(const Tag& tag, glm::vec3 center, glm::vec3 size) {
+    void PhysicsEngine::recenterTrigger(const Tag& tag, glm::vec3 center) {
+        JPH::BodyID& bodyID = m_triggers[tag.getUuid()];
+        const JPH::BodyLockInterfaceLocking& lockInterface = m_physicsSystem->GetBodyLockInterface(); // Or GetBodyLockInterfaceNoLock
+        // Scoped lock
+        JPH::Ref<JPH::MutableCompoundShape> shape; //
+        {
+            JPH::BodyLockRead lock(lockInterface, bodyID);
+            if (lock.Succeeded()) {
+                const JPH::Body& body = lock.GetBody();
+                const JPH::MutableCompoundShape* constShape = dynamic_cast<const JPH::MutableCompoundShape*>(body.GetShape());
+                shape = constShape->Clone();
+            } else {
+                return;
+            }
+        }
+        shape->ModifyShape(0, JPH::RVec3(center.x, center.y, center.z), shape->GetSubShape(0).GetRotation());
+        m_physicsSystem->GetBodyInterface().SetShape(bodyID, shape, true, JPH::EActivation::DontActivate);
+    }
+
+    void PhysicsEngine::rescaleCollider(const Tag& tag, glm::vec3 center, glm::vec3 size) {
         JPH::Ref<JPH::MutableCompoundShape> shape = m_colliders[tag.getUuid()];
         JPH::RVec3 scale = JPH::RVec3(size.x, size.y, size.z);
         auto* scaledShape = static_cast<const JPH::ScaledShape*>(shape->GetSubShape(0).mShape.GetPtr());
@@ -201,6 +230,30 @@ namespace TechEngine {
         scaledShape = new JPH::ScaledShape(originalShape, scale);
         shape->RemoveShape(0);
         shape->AddShape(JPH::RVec3(center.x, center.y, center.z), JPH::Quat::sIdentity(), scaledShape);
+    }
+
+    void PhysicsEngine::rescaleTrigger(const Tag& tag, glm::vec3 center, glm::vec3 size) {
+        JPH::BodyID& bodyID = m_triggers[tag.getUuid()];
+        const JPH::BodyLockInterfaceLocking& lockInterface = m_physicsSystem->GetBodyLockInterface(); // Or GetBodyLockInterfaceNoLock
+        // Scoped lock
+        JPH::Ref<JPH::MutableCompoundShape> shape; {
+            JPH::BodyLockRead lock(lockInterface, bodyID);
+            if (lock.Succeeded()) // body_id may no longer be valid
+            {
+                const JPH::Body& body = lock.GetBody();
+                const auto* constShape = dynamic_cast<const JPH::MutableCompoundShape*>(body.GetShape());
+                shape = constShape->Clone();
+            } else {
+                return;
+            }
+        }
+        JPH::RVec3 scale = JPH::RVec3(size.x, size.y, size.z);
+        auto* scaledShape = dynamic_cast<const JPH::ScaledShape*>(shape->GetSubShape(0).mShape.GetPtr());
+        auto* originalShape = (JPH::BoxShape*)scaledShape->GetInnerShape();
+        scaledShape = new JPH::ScaledShape(originalShape, scale);
+        shape->RemoveShape(0);
+        shape->AddShape(JPH::RVec3(center.x, center.y, center.z), JPH::Quat::sIdentity(), scaledShape);
+        m_physicsSystem->GetBodyInterface().SetShape(bodyID, shape, true, JPH::EActivation::DontActivate);
     }
 
     void PhysicsEngine::removeBody(const Tag& tag) {
@@ -233,9 +286,9 @@ namespace TechEngine {
         scene.runSystem<Transform, RigidBody>([this](Transform& transform, RigidBody& body) {
             updateBodies<RigidBody>(transform, body);
         });
-        /*scene.runSystem<Transform, SphereCollider>([this](Transform& transform, SphereCollider& collider) {
-            updateBodies<SphereCollider>(transform, collider);
-        });*/
+        scene.runSystem<Transform, BoxTrigger>([this](Transform& transform, BoxTrigger& trigger) {
+            updateBodies<BoxTrigger>(transform, trigger);
+        });
     }
 
     void PhysicsEngine::updateEntities() {
@@ -243,12 +296,15 @@ namespace TechEngine {
         scene.runSystem<Transform, RigidBody>([this](Transform& transform, RigidBody& body) {
             updateEntities<RigidBody>(transform, body);
         });
+        scene.runSystem<Transform, BoxTrigger>([this](Transform& transform, BoxTrigger& body) {
+            updateEntities<BoxTrigger>(transform, body);
+        });
         /*scene.runSystem<Transform, SphereCollider>([this](Transform& transform, SphereCollider& collider) {
             updateEntities<SphereCollider>(transform, collider);
         });*/
     }
 
-    const JPH::BodyID& PhysicsEngine::createBody(JPH::EMotionType eMotionType, const Tag& tag, const Transform& transform) {
+    const JPH::BodyID& PhysicsEngine::createBody(JPH::EMotionType eMotionType, const Tag& tag, const Transform& transform, bool isTrigger) {
         JPH::RegisterDefaultAllocator();
         JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
 
@@ -260,10 +316,28 @@ namespace TechEngine {
         JPH::BodyCreationSettings settings(shape, position, rotation, eMotionType, Layers::MOVING);
 
         JPH::Body* body = bodyInterface.CreateBody(settings);
-        if (m_bodies.find(tag.getUuid()) == m_bodies.end()) {
-            m_bodies[tag.getUuid()] = {};
+        if (isTrigger) {
+            body->SetIsSensor(isTrigger);
+            if (m_triggers.find(tag.getUuid()) == m_triggers.end()) {
+                m_triggers[tag.getUuid()] = {};
+            }
+            m_triggers[tag.getUuid()] = body->GetID();
+        } else {
+            if (m_bodies.find(tag.getUuid()) == m_bodies.end()) {
+                m_bodies[tag.getUuid()] = {};
+            }
+            m_bodies[tag.getUuid()] = body->GetID();
         }
-        m_bodies[tag.getUuid()] = body->GetID();
         return body->GetID();
+    }
+
+    JPH::MutableCompoundShape* PhysicsEngine::createBoxShape(const Transform& transform, glm::vec3 center, glm::vec3 scale) {
+        JPH::RegisterDefaultAllocator();
+        JPH::RVec3 size = JPH::RVec3(transform.scale.x, transform.scale.y, transform.scale.z);
+        JPH::MutableCompoundShape* compoundShape = new JPH::MutableCompoundShape();
+        JPH::Ref<JPH::BoxShape> shape = new JPH::BoxShape(size / 2);
+        JPH::Ref<JPH::ScaledShape> scaledShape = new JPH::ScaledShape(shape, JPH::RVec3(scale.x, scale.y, scale.z));
+        compoundShape->AddShape(JPH::RVec3(center.x, center.y, center.z), JPH::Quat::sIdentity(), scaledShape);
+        return compoundShape;
     }
 }
