@@ -542,7 +542,6 @@ namespace TechEngine {
                                                   ImGui::Text("Radius");
                                                   ImGui::SameLine();
                                                   ImGui::DragFloat("##X", &commonRadius, 0.1f, 0.1f,FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp);
-                                                  TE_LOGGER_INFO("Common radius: {0}, component radius: {1}", commonRadius, component.radius);
                                                   if (commonRadius != component.radius) {
                                                       changeRadius = true;
                                                   }
