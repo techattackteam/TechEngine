@@ -1,5 +1,11 @@
 #include "SceneView.hpp"
 
+#include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
 #include "components/Components.hpp"
 #include "components/ComponentsFactory.hpp"
 #include "renderer/FrameBuffer.hpp"
@@ -187,18 +193,34 @@ namespace TechEngine {
         Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
         scene.runSystem<Tag, Transform, BoxCollider>([this](Tag& tag, Transform& transform, BoxCollider& collider) {
             glm::vec4 color = getColor(tag, true);
-            renderBox(transform, collider.center, collider.scale, color);
+            renderBox(transform, collider.center, collider.size, color);
         });
 
         scene.runSystem<Tag, Transform, BoxTrigger>([this](Tag& tag, Transform& transform, BoxTrigger& trigger) {
             glm::vec4 color = getColor(tag, false);
             renderBox(transform, trigger.center, trigger.scale, color);
         });
+
+        scene.runSystem<Tag, Transform, SphereCollider>([this](Tag& tag, Transform& transform, SphereCollider& collider) {
+            glm::vec4 color = getColor(tag, true);
+            renderSphere(transform, collider.center, collider.radius, color);
+        });
+
+        scene.runSystem<Tag, Transform, CapsuleCollider>([this](Tag& tag, Transform& transform, CapsuleCollider& collider) {
+            glm::vec4 color = getColor(tag, true);
+            renderCapsule(transform, collider.center, collider.radius, collider.height, color);
+        });
+
+        scene.runSystem<Tag, Transform, CylinderCollider>([this](Tag& tag, Transform& transform, CylinderCollider& collider) {
+            glm::vec4 color = getColor(tag, true);
+            renderCylinder(transform, collider.center, collider.radius, collider.height, color);
+        });
     }
 
-    void SceneView::renderBox(Transform& transform, glm::vec3 center, glm::vec3 scale, glm::vec4 color) {
+    void SceneView::renderBox(Transform& transform, glm::vec3 center, glm::vec3 scale, glm::vec4 color) const {
         // Calculate the world space transformation matrix
         TransformSystem& transformSystem = m_appSystemsRegistry.getSystem<TransformSystem>();
+        Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
         Transform tempTransform = transform;
         tempTransform.position += center;
         glm::mat4 modelMatrix = transformSystem.getModelMatrix(tempTransform);
@@ -228,22 +250,235 @@ namespace TechEngine {
             vertices[i] = glm::vec3(modelMatrix * glm::vec4(vertices[i], 1.0f));
             vertices[i] += offsetVec;
         }
-        m_appSystemsRegistry.getSystem<Renderer>().createLine(vertices[0], vertices[1], color);
-        m_appSystemsRegistry.getSystem<Renderer>().createLine(vertices[1], vertices[2], color);
-        m_appSystemsRegistry.getSystem<Renderer>().createLine(vertices[2], vertices[3], color);
-        m_appSystemsRegistry.getSystem<Renderer>().createLine(vertices[3], vertices[0], color);
+        renderer.createLine(vertices[0], vertices[1], color);
+        renderer.createLine(vertices[1], vertices[2], color);
+        renderer.createLine(vertices[2], vertices[3], color);
+        renderer.createLine(vertices[3], vertices[0], color);
 
         // Render the back face (adjust the Z-coordinate)
-        m_appSystemsRegistry.getSystem<Renderer>().createLine(vertices[0], vertices[4], color);
-        m_appSystemsRegistry.getSystem<Renderer>().createLine(vertices[1], vertices[5], color);
-        m_appSystemsRegistry.getSystem<Renderer>().createLine(vertices[2], vertices[6], color);
-        m_appSystemsRegistry.getSystem<Renderer>().createLine(vertices[3], vertices[7], color);
+        renderer.createLine(vertices[0], vertices[4], color);
+        renderer.createLine(vertices[1], vertices[5], color);
+        renderer.createLine(vertices[2], vertices[6], color);
+        renderer.createLine(vertices[3], vertices[7], color);
 
         // Render the connecting lines between the front and back faces
-        m_appSystemsRegistry.getSystem<Renderer>().createLine(vertices[4], vertices[5], color);
-        m_appSystemsRegistry.getSystem<Renderer>().createLine(vertices[5], vertices[6], color);
-        m_appSystemsRegistry.getSystem<Renderer>().createLine(vertices[6], vertices[7], color);
-        m_appSystemsRegistry.getSystem<Renderer>().createLine(vertices[7], vertices[4], color);
+        renderer.createLine(vertices[4], vertices[5], color);
+        renderer.createLine(vertices[5], vertices[6], color);
+        renderer.createLine(vertices[6], vertices[7], color);
+        renderer.createLine(vertices[7], vertices[4], color);
+    }
+
+    void SceneView::renderSphere(Transform& transform, glm::vec3 center, float radius, glm::vec4 color) const {
+        // Calculate the world space transformation matrix
+        TransformSystem& transformSystem = m_appSystemsRegistry.getSystem<TransformSystem>();
+        Transform tempTransform = transform;
+        tempTransform.position += center;
+        tempTransform.scale = glm::vec3(std::max(tempTransform.scale.x, std::max(tempTransform.scale.y, tempTransform.scale.z)));
+        glm::mat4 modelMatrix = transformSystem.getModelMatrix(tempTransform);
+
+        const int numSegments = 128;
+        const float segmentAngle = glm::two_pi<float>() / static_cast<float>(numSegments);
+        const float offset = 0.005f;
+        radius = radius + offset;
+
+        // Create a circle along the X-axis
+        for (int i = 0; i < numSegments; ++i) {
+            float theta1 = i * segmentAngle;
+            float theta2 = (i + 1) * segmentAngle;
+
+            glm::vec3 point1 = glm::vec3(radius, radius, 0.0f) * glm::vec3(glm::cos(theta1), glm::sin(theta1), 0.0f);
+            glm::vec3 point2 = glm::vec3(radius, radius, 0.0f) * glm::vec3(glm::cos(theta2), glm::sin(theta2), 0.0f);
+            point1 = glm::vec3(modelMatrix * glm::vec4(point1, 1.0f));
+            point2 = glm::vec3(modelMatrix * glm::vec4(point2, 1.0f));
+            // Create a line segment along the X-axis with the specified color
+            m_appSystemsRegistry.getSystem<Renderer>().createLine(point1, point2, color);
+        }
+
+        // Create a circle along the Y-axis
+        for (int i = 0; i < numSegments; ++i) {
+            float theta1 = i * segmentAngle;
+            float theta2 = (i + 1) * segmentAngle;
+
+            glm::vec3 point1 = glm::vec3(0.0f, radius, radius) * glm::vec3(1.0f, glm::cos(theta1), glm::sin(theta1));
+            glm::vec3 point2 = glm::vec3(0.0f, radius, radius) * glm::vec3(1.0f, glm::cos(theta2), glm::sin(theta2));
+            point1 = glm::vec3(modelMatrix * glm::vec4(point1, 1.0f));
+            point2 = glm::vec3(modelMatrix * glm::vec4(point2, 1.0f));
+
+            // Create a line segment along the Y-axis with the specified color
+            m_appSystemsRegistry.getSystem<Renderer>().createLine(point1, point2, color);
+        }
+
+        // Create a circle along the Z-axis
+        for (int i = 0; i < numSegments; ++i) {
+            float theta1 = i * segmentAngle;
+            float theta2 = (i + 1) * segmentAngle;
+
+            glm::vec3 point1 = glm::vec3(radius, 0.0f, radius) * glm::vec3(glm::cos(theta1), 1.0f, glm::sin(theta1));
+            glm::vec3 point2 = glm::vec3(radius, 0.0f, radius) * glm::vec3(glm::cos(theta2), 1.0f, glm::sin(theta2));
+            point1 = glm::vec3(modelMatrix * glm::vec4(point1, 1.0f));
+            point2 = glm::vec3(modelMatrix * glm::vec4(point2, 1.0f));
+
+            // Create a line segment along the Z-axis with the specified color
+            m_appSystemsRegistry.getSystem<Renderer>().createLine(point1, point2, color);
+        }
+    }
+
+    void SceneView::renderCapsule(Transform& transform, glm::vec3 center, float radius, float height, glm::vec4 color) const {
+        const int segments = 32; // Number of segments for circles
+        const float segmentAngle = glm::two_pi<float>() / static_cast<float>(segments) / 2;
+
+        const float halfHeight = height / 2.0f;
+        TransformSystem& transformSystem = m_appSystemsRegistry.getSystem<TransformSystem>();
+        Transform tempTransform = transform;
+        tempTransform.position += center;
+        tempTransform.scale = glm::vec3(std::max(tempTransform.scale.x, std::max(tempTransform.scale.y, tempTransform.scale.z)));
+        glm::mat4 modelMatrix = transformSystem.getModelMatrix(tempTransform);
+        Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
+
+
+        for (int i = 0; i < segments; ++i) {
+            // Draw top half-sphere along the XY plane
+            float theta1 = i * segmentAngle;
+            float theta2 = (i + 1) * segmentAngle;
+
+            glm::vec3 point1 = center + glm::vec3(radius * glm::cos(theta1), halfHeight + radius * glm::sin(theta1), 0.0f);
+            glm::vec3 point2 = center + glm::vec3(radius * glm::cos(theta2), halfHeight + radius * glm::sin(theta2), 0.0f);
+
+            point1 = glm::vec3(modelMatrix * glm::vec4(point1, 1.0f));
+            point2 = glm::vec3(modelMatrix * glm::vec4(point2, 1.0f));
+
+            // Draw top half-sphere along the YZ plane
+            renderer.createLine(point1, point2, color);
+
+            point1 = center + glm::vec3(0.0f, halfHeight + radius * glm::sin(theta1), radius * glm::cos(theta1));
+            point2 = center + glm::vec3(0.0f, halfHeight + radius * glm::sin(theta2), radius * glm::cos(theta2));
+
+            point1 = glm::vec3(modelMatrix * glm::vec4(point1, 1.0f));
+            point2 = glm::vec3(modelMatrix * glm::vec4(point2, 1.0f));
+
+            renderer.createLine(point1, point2, color);
+
+            // Draw bottom half-sphere along the XZ plane
+            theta1 = i * segmentAngle + glm::radians(180.0f);
+            theta2 = (i + 1) * segmentAngle + glm::radians(180.0f);
+
+            point1 = center + glm::vec3(radius * glm::cos(theta1), -halfHeight + radius * glm::sin(theta1), 0.0f);
+            point2 = center + glm::vec3(radius * glm::cos(theta2), -halfHeight + radius * glm::sin(theta2), 0.0f);
+
+            point1 = glm::vec3(modelMatrix * glm::vec4(point1, 1.0f));
+            point2 = glm::vec3(modelMatrix * glm::vec4(point2, 1.0f));
+
+            renderer.createLine(point1, point2, color);
+
+            // Draw bottom half-sphere along the YZ plane
+            point1 = center + glm::vec3(0.0f, -halfHeight + radius * glm::sin(theta1), radius * glm::cos(theta1));
+            point2 = center + glm::vec3(0.0f, -halfHeight + radius * glm::sin(theta2), radius * glm::cos(theta2));
+
+            point1 = glm::vec3(modelMatrix * glm::vec4(point1, 1.0f));
+            point2 = glm::vec3(modelMatrix * glm::vec4(point2, 1.0f));
+
+            renderer.createLine(point1, point2, color);
+
+            // Draw Circles on the top and bottom of the capsule
+            theta1 = i * (segmentAngle * 2);
+            theta2 = (i + 1) * segmentAngle * 2;
+
+            point1 = center + glm::vec3(radius * glm::cos(theta1), halfHeight, radius * glm::sin(theta1));
+            point2 = center + glm::vec3(radius * glm::cos(theta2), halfHeight, radius * glm::sin(theta2));
+
+            point1 = glm::vec3(modelMatrix * glm::vec4(point1, 1.0f));
+            point2 = glm::vec3(modelMatrix * glm::vec4(point2, 1.0f));
+
+            renderer.createLine(point1, point2, color);
+
+            point1 = center + glm::vec3(radius * glm::cos(theta1), -halfHeight, radius * glm::sin(theta1));
+            point2 = center + glm::vec3(radius * glm::cos(theta2), -halfHeight, radius * glm::sin(theta2));
+
+            point1 = glm::vec3(modelMatrix * glm::vec4(point1, 1.0f));
+            point2 = glm::vec3(modelMatrix * glm::vec4(point2, 1.0f));
+
+            renderer.createLine(point1, point2, color);
+        }
+
+
+        // Draw vertical lines connecting the top and bottom circles
+        glm::vec3 topLeft = glm::vec3(modelMatrix * glm::vec4(center + glm::vec3(radius, halfHeight, 0.0f), 1.0f));
+        glm::vec3 bottomLeft = glm::vec3(modelMatrix * glm::vec4(center + glm::vec3(radius, -halfHeight, 0.0f), 1.0f));
+
+        glm::vec3 topRight = glm::vec3(modelMatrix * glm::vec4(center + glm::vec3(-radius, halfHeight, 0.0f), 1.0f));
+        glm::vec3 bottomRight = glm::vec3(modelMatrix * glm::vec4(center + glm::vec3(-radius, -halfHeight, 0.0f), 1.0f));
+
+        // Draw two vertical lines on the sides
+        renderer.createLine(topLeft, bottomLeft, color);
+        renderer.createLine(topRight, bottomRight, color);
+
+        topLeft = glm::vec3(modelMatrix * glm::vec4(center + glm::vec3(0.0f, halfHeight, radius), 1.0f));
+        bottomLeft = glm::vec3(modelMatrix * glm::vec4(center + glm::vec3(0.0f, -halfHeight, radius), 1.0f));
+
+        topRight = glm::vec3(modelMatrix * glm::vec4(center + glm::vec3(0.0f, halfHeight, -radius), 1.0f));
+        bottomRight = glm::vec3(modelMatrix * glm::vec4(center + glm::vec3(0.0f, -halfHeight, -radius), 1.0f));
+
+        renderer.createLine(topLeft, bottomLeft, color);
+        renderer.createLine(topRight, bottomRight, color);
+    }
+
+    void SceneView::renderCylinder(Transform& transform, glm::vec3 center, float radius, float height, glm::vec4 color) const {
+        // Calculate the world space transformation matrix
+        TransformSystem& transformSystem = m_appSystemsRegistry.getSystem<TransformSystem>();
+        Transform tempTransform = transform;
+        tempTransform.position += center;
+        glm::mat4 modelMatrix = transformSystem.getModelMatrix(tempTransform);
+
+        const float offset = 0.005f;
+        float radiusX = radius + offset;
+        float radiusZ = radius + offset;
+        height = (0.5f * height) + offset;
+        // Calculate the vertices to outline the cylinder
+        const int numSegments = 32;
+        std::vector<glm::vec3> vertices;
+        for (int i = 0; i <= numSegments; ++i) {
+            float theta = 2.0f * glm::pi<float>() * static_cast<float>(i) / static_cast<float>(numSegments);
+            float x = radiusX * glm::cos(theta);
+            float z = radiusZ * glm::sin(theta);
+
+            // Calculate top and bottom points
+            glm::vec3 topPoint = glm::vec3(x, height, z);
+            glm::vec3 bottomPoint = glm::vec3(x, -height, z);
+
+            // Apply rotation and translation
+            topPoint = glm::vec3(modelMatrix * glm::vec4(topPoint, 1.0f));
+            bottomPoint = glm::vec3(modelMatrix * glm::vec4(bottomPoint, 1.0f));
+
+            // Add the points to the vertices array
+            vertices.push_back(topPoint);
+            vertices.push_back(bottomPoint);
+
+            // Draw lines to connect the points
+            if (i > 0) {
+                glm::vec3 prevTopPoint = vertices[(i - 1) * 2];
+                glm::vec3 prevBottomPoint = vertices[(i - 1) * 2 + 1];
+
+                // Render lines for the sides of the cylinder
+                m_appSystemsRegistry.getSystem<Renderer>().createLine(prevTopPoint, topPoint, color); // Red lines
+                m_appSystemsRegistry.getSystem<Renderer>().createLine(prevBottomPoint, bottomPoint, color); // Red lines
+
+                // Render lines to connect the top and bottom points
+                m_appSystemsRegistry.getSystem<Renderer>().createLine(prevTopPoint, prevBottomPoint, color); // Red lines
+            }
+        }
+
+        // Connect the first and last points to close the cylinder
+        glm::vec3 firstTopPoint = vertices[0];
+        glm::vec3 firstBottomPoint = vertices[1];
+        glm::vec3 lastTopPoint = vertices[vertices.size() - 2];
+        glm::vec3 lastBottomPoint = vertices[vertices.size() - 1];
+
+        // Render lines for the sides of the cylinder
+        m_appSystemsRegistry.getSystem<Renderer>().createLine(lastTopPoint, firstTopPoint, color); // Red lines
+        m_appSystemsRegistry.getSystem<Renderer>().createLine(lastBottomPoint, firstBottomPoint, color); // Red lines
+
+        // Render lines to connect the top and bottom points
+        m_appSystemsRegistry.getSystem<Renderer>().createLine(lastTopPoint, lastBottomPoint, color); // Red lines
     }
 
     glm::vec4 SceneView::getColor(const Tag& tag, bool collider) const {
