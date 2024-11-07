@@ -241,7 +241,7 @@ namespace TechEngine {
         tempTransform.position += center;
         glm::mat4 modelMatrix = transformSystem.getModelMatrix(tempTransform);
 
-        float offset = 0.05f;
+        float offset = 0.005f;
         // Calculate the half-size of the box based on the scale
         glm::vec3 halfSize = glm::vec3(scale * 0.5f);
 

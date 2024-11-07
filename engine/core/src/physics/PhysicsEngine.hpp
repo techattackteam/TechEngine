@@ -83,7 +83,7 @@ namespace TechEngine {
 
         void onFixedUpdate() override;
 
-        void renderBodies();
+        void renderBodies() const;
 
         const JPH::BodyID& createStaticBody(const Tag& tag, const Transform& transform);
 

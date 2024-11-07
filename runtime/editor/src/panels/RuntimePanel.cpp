@@ -106,19 +106,6 @@ namespace TechEngine {
                 stopRunningScene();
             }
         }
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(pos.x / 2 + (size / 2));
-        if (ImGui::Button("Add Physics Bodies", ImVec2(size, 0))) {
-            m_appSystemsRegistry.getSystem<PhysicsEngine>().start();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Remove Physics Bodies", ImVec2(size, 0))) {
-            m_appSystemsRegistry.getSystem<PhysicsEngine>().stop();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Update Bodies", ImVec2(size, 0))) {
-            m_appSystemsRegistry.getSystem<PhysicsEngine>().updateBodies();
-        }
         ImGui::PopStyleColor(3);
     }
 }
