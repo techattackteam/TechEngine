@@ -89,6 +89,12 @@ namespace TechEngine {
         } else if (typeID == ComponentType::get<SphereCollider>()) {
             const SphereCollider& sphereCollider = archetype.getComponent<SphereCollider>(entity);
             SphereCollider::serialize(sphereCollider, out);
+        } else if (typeID == ComponentType::get<CapsuleCollider>()) {
+            const CapsuleCollider& capsuleCollider = archetype.getComponent<CapsuleCollider>(entity);
+            CapsuleCollider::serialize(capsuleCollider, out);
+        } else if (typeID == ComponentType::get<CylinderCollider>()) {
+            const CylinderCollider& cylinderCollider = archetype.getComponent<CylinderCollider>(entity);
+            CylinderCollider::serialize(cylinderCollider, out);
         } else if (typeID == ComponentType::get<BoxTrigger>()) {
             const BoxTrigger& boxTrigger = archetype.getComponent<BoxTrigger>(entity);
             BoxTrigger::serialize(boxTrigger, out);
@@ -148,6 +154,20 @@ namespace TechEngine {
             const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
             SphereCollider sphereCollider = SphereCollider::deserialize(componentNode["SphereCollider"], m_physicsEngine, tag, transform);
             m_scene.m_archetypesManager.addComponent(entity, sphereCollider);
+        }
+
+        if (componentNode["CapsuleCollider"]) {
+            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
+            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
+            CapsuleCollider capsuleCollider = CapsuleCollider::deserialize(componentNode["CapsuleCollider"], m_physicsEngine, tag, transform);
+            m_scene.m_archetypesManager.addComponent(entity, capsuleCollider);
+        }
+
+        if (componentNode["CylinderCollider"]) {
+            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
+            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
+            CylinderCollider cylinderCollider = CylinderCollider::deserialize(componentNode["CylinderCollider"], m_physicsEngine, tag, transform);
+            m_scene.m_archetypesManager.addComponent(entity, cylinderCollider);
         }
 
         if (componentNode["BoxTrigger"]) {
@@ -246,29 +266,62 @@ namespace TechEngine {
 
     void BoxCollider::serialize(const BoxCollider& boxCollider, YAML::Emitter& out) {
         out << YAML::Key << "BoxCollider" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "Size" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxCollider.scale.x << boxCollider.scale.y << boxCollider.scale.z << YAML::EndSeq;
         out << YAML::Key << "Center" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxCollider.center.x << boxCollider.center.y << boxCollider.center.z << YAML::EndSeq;
+        out << YAML::Key << "Scale" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxCollider.size.x << boxCollider.size.y << boxCollider.size.z << YAML::EndSeq;
         out << YAML::EndMap;
     }
 
     BoxCollider BoxCollider::deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform) {
-        glm::vec3 size = glm::vec3(node["Size"].as<glm::vec3>());
         glm::vec3 center = glm::vec3(node["Center"].as<glm::vec3>());
+        glm::vec3 size = glm::vec3(node["Scale"].as<glm::vec3>());
         return ComponentsFactory::createBoxCollider(m_physicsEngine, tag, transform, center, size);
     }
 
-    void SphereCollider::serialize(const SphereCollider& boxCollider, YAML::Emitter& out) {
+    void SphereCollider::serialize(const SphereCollider& sphereCollider, YAML::Emitter& out) {
         out << YAML::Key << "SphereCollider" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "Radius" << YAML::Value << boxCollider.radius;
-        out << YAML::Key << "Center" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxCollider.center.x << boxCollider.center.y << boxCollider.center.z << YAML::EndSeq;
+        out << YAML::Key << "Center" << YAML::Value << YAML::Flow << YAML::BeginSeq << sphereCollider.center.x << sphereCollider.center.y << sphereCollider.center.z << YAML::EndSeq;
+        out << YAML::Key << "Radius" << YAML::Value << sphereCollider.radius;
         out << YAML::EndMap;
     }
 
     SphereCollider SphereCollider::deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform) {
         glm::vec3 center = glm::vec3(node["Center"].as<glm::vec3>());
         float radius = node["Radius"].as<float>();
+
         return ComponentsFactory::createSphereCollider(m_physicsEngine, tag, transform, center, radius);
     }
+
+    void CapsuleCollider::serialize(const CapsuleCollider& capsuleCollider, YAML::Emitter& out) {
+        out << YAML::Key << "CapsuleCollider" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "Center" << YAML::Value << YAML::Flow << YAML::BeginSeq << capsuleCollider.center.x << capsuleCollider.center.y << capsuleCollider.center.z << YAML::EndSeq;
+        out << YAML::Key << "Height" << YAML::Value << capsuleCollider.height;
+        out << YAML::Key << "Radius" << YAML::Value << capsuleCollider.radius;
+        out << YAML::EndMap;
+    }
+
+    CapsuleCollider CapsuleCollider::deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform) {
+        const glm::vec3 center = glm::vec3(node["Center"].as<glm::vec3>());
+        const float height = node["Height"].as<float>();
+        const float radius = node["Radius"].as<float>();
+        return ComponentsFactory::createCapsuleCollider(m_physicsEngine, tag, transform, center, height, radius);
+    }
+
+    void CylinderCollider::serialize(const CylinderCollider& cylinderCollider, YAML::Emitter& out) {
+        out << YAML::Key << "CylinderCollider" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "Center" << YAML::Value << YAML::Flow << YAML::BeginSeq << cylinderCollider.center.x << cylinderCollider.center.y << cylinderCollider.center.z << YAML::EndSeq;
+        out << YAML::Key << "Height" << YAML::Value << cylinderCollider.height;
+        out << YAML::Key << "Radius" << YAML::Value << cylinderCollider.radius;
+        out << YAML::EndMap;
+    }
+
+    CylinderCollider CylinderCollider::deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform) {
+        const glm::vec3 center = glm::vec3(node["Center"].as<glm::vec3>());
+        const float height = node["Height"].as<float>();
+        const float radius = node["Radius"].as<float>();
+
+        return ComponentsFactory::createCylinderCollider(m_physicsEngine, tag, transform, center, height, radius);
+    }
+
 
     void StaticBody::serialize(const StaticBody& staticBody, YAML::Emitter& out) {
         out << YAML::Key << "StaticBody" << YAML::Value << YAML::BeginMap;
@@ -299,13 +352,13 @@ namespace TechEngine {
 
     void BoxTrigger::serialize(const BoxTrigger& boxTrigger, YAML::Emitter& out) {
         out << YAML::Key << "BoxTrigger" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "Size" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxTrigger.scale.x << boxTrigger.scale.y << boxTrigger.scale.z << YAML::EndSeq;
+        out << YAML::Key << "Scale" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxTrigger.scale.x << boxTrigger.scale.y << boxTrigger.scale.z << YAML::EndSeq;
         out << YAML::Key << "Center" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxTrigger.center.x << boxTrigger.center.y << boxTrigger.center.z << YAML::EndSeq;
         out << YAML::EndMap;
     }
 
     BoxTrigger BoxTrigger::deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform) {
-        glm::vec3 size = glm::vec3(node["Size"].as<glm::vec3>());
+        glm::vec3 size = glm::vec3(node["Scale"].as<glm::vec3>());
         glm::vec3 center = glm::vec3(node["Center"].as<glm::vec3>());
         return ComponentsFactory::createBoxTrigger(m_physicsEngine, tag, transform, center, size);
     }

@@ -46,6 +46,13 @@ static bool AssertFailedImpl(const char* inExpression, const char* inMessage, co
 #endif // JPH_ENABLE_ASSERTS
 
 namespace TechEngine {
+    enum class Shape {
+        Cube,
+        Sphere,
+        Capsule,
+        Cylinder
+    };
+
     class CORE_DLL PhysicsEngine : public System {
     private:
         JPH::PhysicsSystem* m_physicsSystem;
@@ -93,11 +100,13 @@ namespace TechEngine {
 
         void createSphereCollider(const Tag& tag, const Transform& transform, glm::vec3 center, float radius);
 
+        void createCapsuleCollider(Tag tag, const Transform& transform, glm::vec3 vec, float height, float radius);
+
+        void createCylinderCollider(Tag tag, const Transform& transform, glm::vec3 center, float height, float radius);
+
         const JPH::BodyID& createBoxTrigger(const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 scale);
 
-        void moveOrRotateBody(const Tag& tag, const Transform& transform); //Only to be used by the editor when then simulation is not running
-
-        void resizeCollider(const Tag& tag, Transform& transform, glm::vec3 center, glm::vec3 size);
+        void resizeCollider(const Tag& tag, const Transform& transform, const Shape shape, glm::vec3 center, glm::vec3 size);
 
         void resizeTrigger(const Tag& tag, Transform& transform, glm::vec3 center, glm::vec3 size);
 
@@ -105,7 +114,7 @@ namespace TechEngine {
 
         void recenterTrigger(const Tag& tag, glm::vec3 center);
 
-        void rescaleCollider(const Tag& tag, glm::vec3 center, glm::vec3 scale);
+        void rescaleCollider(const Tag& tag, const Transform& transform, glm::vec3 center, bool uniform = false);
 
         void rescaleTrigger(const Tag& tag, glm::vec3 center, glm::vec3 size);
 
@@ -117,10 +126,18 @@ namespace TechEngine {
 
         void updateEntities();
 
+        void moveOrRotateBody(const Tag& tag, const Transform& transform); //Only to be used by the editor when then simulation is not running
+
     private:
         const JPH::BodyID& createBody(JPH::EMotionType eMotionType, const Tag& tag, const Transform& transform, bool isTrigger);
 
         JPH::MutableCompoundShape* createBoxShape(const Transform& transform, glm::vec3 center, glm::vec3 scale);
+
+        JPH::MutableCompoundShape* createSphereShape(const Transform& transform, glm::vec3 center, float radius);
+
+        JPH::MutableCompoundShape* createCapsuleShape(const Transform& transform, glm::vec3 center, const float height, const float radius);
+
+        JPH::MutableCompoundShape* createCylinderShape(const Transform& transform, glm::vec3 center, float height, float radius);
 
         template<typename Body>
         void updateBodies(Transform& transform, Body& body) {

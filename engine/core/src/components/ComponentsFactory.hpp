@@ -38,6 +38,16 @@ namespace TechEngine {
             return SphereCollider();
         }
 
+        static CapsuleCollider createCapsuleCollider(PhysicsEngine& physicsEngine, Tag tag, const Transform& transform, glm::vec3 center, float height, float radius) {
+            physicsEngine.createCapsuleCollider(tag, transform, center, height, radius);
+            return CapsuleCollider();
+        }
+
+        static CylinderCollider createCylinderCollider(PhysicsEngine& physicsEngine, Tag tag, const Transform& transform, glm::vec3 center, float height, float radius) {
+            physicsEngine.createCylinderCollider(tag, transform, center, height, radius);
+            return CylinderCollider();
+        }
+
         static BoxTrigger createBoxTrigger(PhysicsEngine& physicsEngine, Tag tag, const Transform& transform, glm::vec3 center, glm::vec3 scale) {
             const JPH::BodyID& bodyID = physicsEngine.createBoxTrigger(tag, transform, center, scale);
             return BoxTrigger(bodyID);

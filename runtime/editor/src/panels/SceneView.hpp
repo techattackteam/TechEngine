@@ -50,7 +50,13 @@ namespace TechEngine {
 
         void renderColliders();
 
-        void renderBox(Transform& transform, glm::vec3 center, glm::vec3 scale, glm::vec4 color);
+        void renderBox(Transform& transform, glm::vec3 center, glm::vec3 scale, glm::vec4 color) const;
+
+        void renderSphere(Transform& transform, glm::vec3 center, float radius, glm::vec4 color) const;
+
+        void renderCapsule(Transform& transform, glm::vec3 center, float radius, float height, glm::vec4 color) const;
+
+        void renderCylinder(Transform& transform, glm::vec3 center, float radius, float height, glm::vec4 color) const;
 
         glm::vec4 getColor(const Tag& tag, bool collider) const;
     };

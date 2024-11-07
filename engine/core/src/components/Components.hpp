@@ -174,12 +174,12 @@ namespace TechEngine {
     private:
         friend class ComponentsFactory;
 
-        BoxCollider(glm::vec3 center, glm::vec3 scale) : center(center), scale(scale) {
+        BoxCollider(glm::vec3 center, glm::vec3 size) : center(center), size(size) {
         }
 
     public:
         glm::vec3 center = glm::vec3(0.0f, 0, 0);
-        glm::vec3 scale = glm::vec3(1.0f);
+        glm::vec3 size = glm::vec3(1.0f);
 
         static void serialize(const BoxCollider& boxCollider, YAML::Emitter& out);
 
@@ -193,11 +193,41 @@ namespace TechEngine {
 
     public:
         glm::vec3 center = glm::vec3(0.0f);
-        float radius = 1;
+        float radius = 0.5f;
 
-        static void serialize(const SphereCollider& boxCollider, YAML::Emitter& out);
+        static void serialize(const SphereCollider& sphereCollider, YAML::Emitter& out);
 
         static SphereCollider deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+    };
+
+    class CORE_DLL CapsuleCollider {
+        friend class ComponentsFactory;
+
+        CapsuleCollider() = default;
+
+    public:
+        glm::vec3 center = glm::vec3(0.0f);
+        float height = 1.0f;
+        float radius = 0.5f;
+
+        static void serialize(const CapsuleCollider& capsuleCollider, YAML::Emitter& out);
+
+        static CapsuleCollider deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+    };
+
+    class CORE_DLL CylinderCollider {
+        friend class ComponentsFactory;
+
+        CylinderCollider() = default;
+
+    public:
+        glm::vec3 center = glm::vec3(0.0f);
+        float height = 1.0f;
+        float radius = 0.5f;
+
+        static void serialize(const CylinderCollider& cylinderCollider, YAML::Emitter& out);
+
+        static CylinderCollider deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
     };
 
     class CORE_DLL StaticBody {
@@ -275,6 +305,8 @@ namespace TechEngine {
             registerComponent<BoxTrigger>();
             registerComponent<BoxCollider>();
             registerComponent<SphereCollider>();
+            registerComponent<CapsuleCollider>();
+            registerComponent<CylinderCollider>();
         }
 
         template<typename T>
