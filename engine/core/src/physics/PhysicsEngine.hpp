@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "systems/System.hpp"
+#include "ShapeFactory.hpp"
 #include "Layers.hpp"
 #include "BPLayerInterfaceImpl.hpp"
 #include "DebugRenderer.hpp"
@@ -18,6 +19,7 @@
 #include <Jolt/Core/JobSystemThreadPool.h>
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/Collision/Shape/MutableCompoundShape.h>
+
 
 // Callback for traces, connect this to your own trace function if you have one
 static void TraceImpl(const char* inFMT, ...) {
@@ -46,13 +48,6 @@ static bool AssertFailedImpl(const char* inExpression, const char* inMessage, co
 #endif // JPH_ENABLE_ASSERTS
 
 namespace TechEngine {
-    enum class Shape {
-        Cube,
-        Sphere,
-        Capsule,
-        Cylinder
-    };
-
     class CORE_DLL PhysicsEngine : public System {
     private:
         JPH::PhysicsSystem* m_physicsSystem;
@@ -96,19 +91,13 @@ namespace TechEngine {
 
         const JPH::BodyID& createRigidBody(const Tag& tag, const Transform& transform);
 
-        void createBoxCollider(const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 scale);
+        void createCollider(Shape shape, const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 size);
 
-        void createSphereCollider(const Tag& tag, const Transform& transform, glm::vec3 center, float radius);
+        const JPH::BodyID& createTrigger(Shape shape, const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 size);
 
-        void createCapsuleCollider(Tag tag, const Transform& transform, glm::vec3 vec, float height, float radius);
+        void resizeCollider(Shape shape, const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 size);
 
-        void createCylinderCollider(Tag tag, const Transform& transform, glm::vec3 center, float height, float radius);
-
-        const JPH::BodyID& createBoxTrigger(const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 scale);
-
-        void resizeCollider(const Tag& tag, const Transform& transform, const Shape shape, glm::vec3 center, glm::vec3 size);
-
-        void resizeTrigger(const Tag& tag, Transform& transform, glm::vec3 center, glm::vec3 size);
+        void resizeTrigger(Shape shape, const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 size);
 
         void recenterCollider(const Tag& tag, glm::vec3 center);
 
@@ -116,11 +105,13 @@ namespace TechEngine {
 
         void rescaleCollider(const Tag& tag, const Transform& transform, glm::vec3 center, bool uniform = false);
 
-        void rescaleTrigger(const Tag& tag, glm::vec3 center, glm::vec3 size);
+        void rescaleTrigger(const Tag& tag, const Transform& transform, glm::vec3 center, bool uniform = false);
 
         void removeBody(const Tag& tag);
 
         void removeCollider(const Tag& tag);
+
+        void removeTrigger(const Tag& tag);
 
         void updateBodies();
 
@@ -130,14 +121,6 @@ namespace TechEngine {
 
     private:
         const JPH::BodyID& createBody(JPH::EMotionType eMotionType, const Tag& tag, const Transform& transform, bool isTrigger);
-
-        JPH::MutableCompoundShape* createBoxShape(const Transform& transform, glm::vec3 center, glm::vec3 scale);
-
-        JPH::MutableCompoundShape* createSphereShape(const Transform& transform, glm::vec3 center, float radius);
-
-        JPH::MutableCompoundShape* createCapsuleShape(const Transform& transform, glm::vec3 center, const float height, const float radius);
-
-        JPH::MutableCompoundShape* createCylinderShape(const Transform& transform, glm::vec3 center, float height, float radius);
 
         template<typename Body>
         void updateBodies(Transform& transform, Body& body) {

@@ -196,11 +196,6 @@ namespace TechEngine {
             renderBox(transform, collider.center, collider.size, color);
         });
 
-        scene.runSystem<Tag, Transform, BoxTrigger>([this](Tag& tag, Transform& transform, BoxTrigger& trigger) {
-            glm::vec4 color = getColor(tag, false);
-            renderBox(transform, trigger.center, trigger.scale, color);
-        });
-
         scene.runSystem<Tag, Transform, SphereCollider>([this](Tag& tag, Transform& transform, SphereCollider& collider) {
             glm::vec4 color = getColor(tag, true);
             renderSphere(transform, collider.center, collider.radius, color);
@@ -214,6 +209,27 @@ namespace TechEngine {
         scene.runSystem<Tag, Transform, CylinderCollider>([this](Tag& tag, Transform& transform, CylinderCollider& collider) {
             glm::vec4 color = getColor(tag, true);
             renderCylinder(transform, collider.center, collider.radius, collider.height, color);
+        });
+
+
+        scene.runSystem<Tag, Transform, BoxTrigger>([this](Tag& tag, Transform& transform, BoxTrigger& trigger) {
+            glm::vec4 color = getColor(tag, false);
+            renderBox(transform, trigger.center, trigger.size, color);
+        });
+
+        scene.runSystem<Tag, Transform, SphereTrigger>([this](Tag& tag, Transform& transform, SphereTrigger& trigger) {
+            glm::vec4 color = getColor(tag, false);
+            renderSphere(transform, trigger.center, trigger.radius, color);
+        });
+
+        scene.runSystem<Tag, Transform, CapsuleTrigger>([this](Tag& tag, Transform& transform, CapsuleTrigger& trigger) {
+            glm::vec4 color = getColor(tag, false);
+            renderCapsule(transform, trigger.center, trigger.radius, trigger.height, color);
+        });
+
+        scene.runSystem<Tag, Transform, CylinderTrigger>([this](Tag& tag, Transform& transform, CylinderTrigger& trigger) {
+            glm::vec4 color = getColor(tag, false);
+            renderCylinder(transform, trigger.center, trigger.radius, trigger.height, color);
         });
     }
 

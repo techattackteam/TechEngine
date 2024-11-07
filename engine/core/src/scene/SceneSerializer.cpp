@@ -267,13 +267,13 @@ namespace TechEngine {
     void BoxCollider::serialize(const BoxCollider& boxCollider, YAML::Emitter& out) {
         out << YAML::Key << "BoxCollider" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "Center" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxCollider.center.x << boxCollider.center.y << boxCollider.center.z << YAML::EndSeq;
-        out << YAML::Key << "Scale" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxCollider.size.x << boxCollider.size.y << boxCollider.size.z << YAML::EndSeq;
+        out << YAML::Key << "Size" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxCollider.size.x << boxCollider.size.y << boxCollider.size.z << YAML::EndSeq;
         out << YAML::EndMap;
     }
 
     BoxCollider BoxCollider::deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform) {
         glm::vec3 center = glm::vec3(node["Center"].as<glm::vec3>());
-        glm::vec3 size = glm::vec3(node["Scale"].as<glm::vec3>());
+        glm::vec3 size = glm::vec3(node["Size"].as<glm::vec3>());
         return ComponentsFactory::createBoxCollider(m_physicsEngine, tag, transform, center, size);
     }
 
@@ -352,13 +352,13 @@ namespace TechEngine {
 
     void BoxTrigger::serialize(const BoxTrigger& boxTrigger, YAML::Emitter& out) {
         out << YAML::Key << "BoxTrigger" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "Scale" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxTrigger.scale.x << boxTrigger.scale.y << boxTrigger.scale.z << YAML::EndSeq;
+        out << YAML::Key << "Size" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxTrigger.size.x << boxTrigger.size.y << boxTrigger.size.z << YAML::EndSeq;
         out << YAML::Key << "Center" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxTrigger.center.x << boxTrigger.center.y << boxTrigger.center.z << YAML::EndSeq;
         out << YAML::EndMap;
     }
 
     BoxTrigger BoxTrigger::deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform) {
-        glm::vec3 size = glm::vec3(node["Scale"].as<glm::vec3>());
+        glm::vec3 size = glm::vec3(node["Size"].as<glm::vec3>());
         glm::vec3 center = glm::vec3(node["Center"].as<glm::vec3>());
         return ComponentsFactory::createBoxTrigger(m_physicsEngine, tag, transform, center, size);
     }

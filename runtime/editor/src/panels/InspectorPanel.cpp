@@ -118,6 +118,36 @@ namespace TechEngine {
                                 scene.addComponent<BoxTrigger>(entity, ComponentsFactory::createBoxTrigger(physicsEngine, tag, transform, glm::vec3(0, 0, 0), glm::vec3(1)));
                             }
                         }
+
+                        if (ImGui::MenuItem("Sphere Trigger")) {
+                            Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                            for (const Entity& entity: m_selectedEntities) {
+                                Tag& tag = scene.getComponent<Tag>(entity);
+                                Transform& transform = scene.getComponent<Transform>(entity);
+                                PhysicsEngine& physicsEngine = m_appSystemRegistry.getSystem<PhysicsEngine>();
+                                scene.addComponent<SphereTrigger>(entity, ComponentsFactory::createSphereTrigger(physicsEngine, tag, transform, glm::vec3(0), 0.5f));
+                            }
+                        }
+
+                        if (ImGui::MenuItem("Capsule Trigger")) {
+                            Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                            for (const Entity& entity: m_selectedEntities) {
+                                Tag& tag = scene.getComponent<Tag>(entity);
+                                Transform& transform = scene.getComponent<Transform>(entity);
+                                PhysicsEngine& physicsEngine = m_appSystemRegistry.getSystem<PhysicsEngine>();
+                                scene.addComponent<CapsuleTrigger>(entity, ComponentsFactory::createCapsuleTrigger(physicsEngine, tag, transform, glm::vec3(0), 1.0f, 0.5f));
+                            }
+                        }
+                        if (ImGui::MenuItem("Cylinder Trigger")) {
+                            Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                            for (const Entity& entity: m_selectedEntities) {
+                                Tag& tag = scene.getComponent<Tag>(entity);
+                                Transform& transform = scene.getComponent<Transform>(entity);
+                                PhysicsEngine& physicsEngine = m_appSystemRegistry.getSystem<PhysicsEngine>();
+                                scene.addComponent<CylinderTrigger>(entity, ComponentsFactory::createCylinderTrigger(physicsEngine, tag, transform, glm::vec3(0), 1.0f, 0.5f));
+                            }
+                        }
+
                         ImGui::EndMenu();
                     }
                     ImGui::EndMenu();
@@ -216,11 +246,28 @@ namespace TechEngine {
                                 false);
                         }
                         if (scene.hasComponent<BoxTrigger>(entity)) {
-                            m_appSystemRegistry.getSystem<PhysicsEngine>().resizeTrigger(
+                            m_appSystemRegistry.getSystem<PhysicsEngine>().rescaleTrigger(
                                 scene.getComponent<Tag>(entity),
                                 scene.getComponent<Transform>(entity),
-                                scene.getComponent<BoxTrigger>(entity).center,
-                                scene.getComponent<BoxTrigger>(entity).scale);
+                                scene.getComponent<BoxTrigger>(entity).center);
+                        }
+                        if (scene.hasComponent<SphereTrigger>(entity)) {
+                            m_appSystemRegistry.getSystem<PhysicsEngine>().rescaleTrigger(
+                                scene.getComponent<Tag>(entity),
+                                scene.getComponent<Transform>(entity),
+                                scene.getComponent<SphereTrigger>(entity).center);
+                        }
+                        if (scene.hasComponent<CapsuleTrigger>(entity)) {
+                            m_appSystemRegistry.getSystem<PhysicsEngine>().rescaleTrigger(
+                                scene.getComponent<Tag>(entity),
+                                scene.getComponent<Transform>(entity),
+                                scene.getComponent<CapsuleTrigger>(entity).center);
+                        }
+                        if (scene.hasComponent<CylinderTrigger>(entity)) {
+                            m_appSystemRegistry.getSystem<PhysicsEngine>().rescaleTrigger(
+                                scene.getComponent<Tag>(entity),
+                                scene.getComponent<Transform>(entity),
+                                scene.getComponent<CylinderTrigger>(entity).center);
                         }
                         scaling = true;
                     }
@@ -500,9 +547,9 @@ namespace TechEngine {
                                                if (changeSize) {
                                                    scene.getComponent<BoxCollider>(entity).size = commonSize;
                                                    m_appSystemRegistry.getSystem<PhysicsEngine>().resizeCollider(
+                                                       Shape::Cube,
                                                        scene.getComponent<Tag>(entity),
                                                        scene.getComponent<Transform>(entity),
-                                                       Shape::Cube,
                                                        commonCenter,
                                                        commonSize);
                                                }
@@ -553,9 +600,9 @@ namespace TechEngine {
                                                   }
                                                   if (changeRadius) {
                                                       scene.getComponent<SphereCollider>(entity).radius = commonRadius;
-                                                      m_appSystemRegistry.getSystem<PhysicsEngine>().resizeCollider(scene.getComponent<Tag>(entity),
+                                                      m_appSystemRegistry.getSystem<PhysicsEngine>().resizeCollider(Shape::Sphere,
+                                                                                                                    scene.getComponent<Tag>(entity),
                                                                                                                     scene.getComponent<Transform>(entity),
-                                                                                                                    Shape::Sphere,
                                                                                                                     commonCenter,
                                                                                                                     glm::vec3(commonRadius));
                                                   }
@@ -628,9 +675,9 @@ namespace TechEngine {
                     if (changeRadius || changeHeight) {
                         scene.getComponent<CapsuleCollider>(entity).radius = commonRadius;
                         scene.getComponent<CapsuleCollider>(entity).height = commonHeight;
-                        m_appSystemRegistry.getSystem<PhysicsEngine>().resizeCollider(scene.getComponent<Tag>(entity),
+                        m_appSystemRegistry.getSystem<PhysicsEngine>().resizeCollider(Shape::Capsule,
+                                                                                      scene.getComponent<Tag>(entity),
                                                                                       scene.getComponent<Transform>(entity),
-                                                                                      Shape::Capsule,
                                                                                       commonCenter,
                                                                                       glm::vec3(commonRadius, commonHeight, commonRadius));
                     }
@@ -700,9 +747,9 @@ namespace TechEngine {
                     if (changeRadius || changeHeight) {
                         scene.getComponent<CylinderCollider>(entity).radius = commonRadius;
                         scene.getComponent<CylinderCollider>(entity).height = commonHeight;
-                        m_appSystemRegistry.getSystem<PhysicsEngine>().resizeCollider(scene.getComponent<Tag>(entity),
+                        m_appSystemRegistry.getSystem<PhysicsEngine>().resizeCollider(Shape::Cylinder,
+                                                                                      scene.getComponent<Tag>(entity),
                                                                                       scene.getComponent<Transform>(entity),
-                                                                                      Shape::Cylinder,
                                                                                       commonCenter,
                                                                                       glm::vec3(commonRadius, commonHeight, commonRadius));
                     }
@@ -718,28 +765,29 @@ namespace TechEngine {
             drawComponent<BoxTrigger>(firstEntity, "Box Trigger", [this](auto& component) {
                                           Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                                           glm::vec3 commonCenter = component.center;
-                                          glm::vec3 commonScale = component.scale;
+                                          glm::vec3 commonSize = component.size;
                                           bool isCenterCommon = true;
                                           bool isSizeCommon = true;
+
                                           for (Entity entity: m_selectedEntities) {
                                               auto currentBoxCollider = scene.getComponent<BoxTrigger>(entity);
                                               if (currentBoxCollider.center != commonCenter) {
                                                   isCenterCommon = false;
                                               }
-                                              if (currentBoxCollider.scale != commonScale) {
+                                              if (currentBoxCollider.size != commonSize) {
                                                   isSizeCommon = false;
                                               }
                                           }
 
                                           bool changeCenter = false;
-                                          bool changeScale = false;
+                                          bool changeSize = false;
                                           ImGuiUtils::drawVec3Control("Center", commonCenter, 0, 100.0f, 0, 0, isCenterCommon);
-                                          ImGuiUtils::drawVec3Control("Scale", commonScale, 1.0f, 100.0f, 0, 0, isSizeCommon);
+                                          ImGuiUtils::drawVec3Control("Scale", commonSize, 1.0f, 100.0f, 0, 0, isSizeCommon);
                                           if (commonCenter != component.center) {
                                               changeCenter = true;
                                           }
-                                          if (commonScale != component.scale) {
-                                              changeScale = true;
+                                          if (commonSize != component.size) {
+                                              changeSize = true;
                                           }
 
                                           for (Entity entity: m_selectedEntities) {
@@ -747,18 +795,223 @@ namespace TechEngine {
                                                   scene.getComponent<BoxTrigger>(entity).center = commonCenter;
                                                   m_appSystemRegistry.getSystem<PhysicsEngine>().recenterTrigger(scene.getComponent<Tag>(entity), commonCenter);
                                               }
-                                              if (changeScale) {
-                                                  scene.getComponent<BoxTrigger>(entity).scale = commonScale;
-                                                  m_appSystemRegistry.getSystem<PhysicsEngine>().rescaleTrigger(scene.getComponent<Tag>(entity), commonCenter, commonScale);
+                                              if (changeSize) {
+                                                  scene.getComponent<BoxTrigger>(entity).size = commonSize;
+                                                  m_appSystemRegistry.getSystem<PhysicsEngine>().resizeTrigger(
+                                                      Shape::Cube,
+                                                      scene.getComponent<Tag>(entity),
+                                                      scene.getComponent<Transform>(entity),
+                                                      commonCenter,
+                                                      commonSize);
                                               }
                                           }
-                                      },
-                                      [this]() {
+                                      }, [this]() {
                                           Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                                           for (Entity entity: m_selectedEntities) {
-                                              m_appSystemRegistry.getSystem<PhysicsEngine>().removeCollider(scene.getComponent<Tag>(entity));
+                                              m_appSystemRegistry.getSystem<PhysicsEngine>().removeTrigger(scene.getComponent<Tag>(entity));
                                           }
                                       });
+        }
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<SphereTrigger>()) != componentsToDraw.end()) {
+            drawComponent<SphereTrigger>(firstEntity, "Sphere Trigger", [this](auto& component) {
+                                             Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                             glm::vec3 commonCenter = component.center;
+                                             float commonRadius = component.radius;
+                                             bool isRadiusCommon = true;
+                                             bool isCenterCommon = true;
+
+                                             for (Entity entity: m_selectedEntities) {
+                                                 auto currentSphereCollider = scene.getComponent<SphereTrigger>(entity);
+                                                 if (currentSphereCollider.center != commonCenter) {
+                                                     isCenterCommon = false;
+                                                 }
+                                                 if (currentSphereCollider.radius != commonRadius) {
+                                                     isRadiusCommon = false;
+                                                 }
+                                             }
+
+                                             bool changeCenter = false;
+                                             bool changeRadius = false;
+                                             ImGuiUtils::drawVec3Control("Center", commonCenter, 0, 100.0f, 0, 0, isCenterCommon);
+                                             if (commonCenter != component.center) {
+                                                 changeCenter = true;
+                                             }
+                                             if (isRadiusCommon) {
+                                                 ImGui::Text("Radius");
+                                                 ImGui::SameLine();
+                                                 ImGui::DragFloat("##X", &commonRadius, 0.1f, 0.1f,FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+                                                 if (commonRadius != component.radius) {
+                                                     changeRadius = true;
+                                                 }
+                                             }
+                                             for (Entity entity: m_selectedEntities) {
+                                                 if (changeCenter) {
+                                                     scene.getComponent<SphereTrigger>(entity).center = commonCenter;
+                                                     m_appSystemRegistry.getSystem<PhysicsEngine>().recenterTrigger(scene.getComponent<Tag>(entity), commonCenter);
+                                                 }
+                                                 if (changeRadius) {
+                                                     scene.getComponent<SphereTrigger>(entity).radius = commonRadius;
+                                                     m_appSystemRegistry.getSystem<PhysicsEngine>().resizeTrigger(
+                                                         Shape::Sphere,
+                                                         scene.getComponent<Tag>(entity),
+                                                         scene.getComponent<Transform>(entity),
+                                                         commonCenter,
+                                                         glm::vec3(commonRadius));
+                                                 }
+                                             }
+                                         }
+                                         ,
+                                         [this]() {
+                                             Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                             for (Entity entity: m_selectedEntities) {
+                                                 m_appSystemRegistry.getSystem<PhysicsEngine>().removeTrigger(scene.getComponent<Tag>(entity));
+                                             }
+                                         }
+            );
+        }
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<CapsuleTrigger>()) != componentsToDraw.end()) {
+            drawComponent<CapsuleTrigger>(firstEntity, "Capsule Trigger", [this](auto& component) {
+                Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                glm::vec3 commonCenter = component.center;
+                float commonRadius = component.radius;
+                float commonHeight = component.height;
+
+                bool isRadiusCommon = true;
+                bool isCenterCommon = true;
+                bool isHeightCommon = true;
+
+                for (Entity entity: m_selectedEntities) {
+                    auto currentCapsuleCollider = scene.getComponent<CapsuleTrigger>(entity);
+
+                    if (currentCapsuleCollider.center != commonCenter) {
+                        isCenterCommon = false;
+                    }
+                    if (currentCapsuleCollider.radius != commonRadius) {
+                        isRadiusCommon = false;
+                    }
+                    if (currentCapsuleCollider.height != commonHeight) {
+                        isHeightCommon = false;
+                    }
+                }
+
+                bool changeCenter = false;
+                bool changeRadius = false;
+                bool changeHeight = false;
+
+                ImGuiUtils::drawVec3Control("Center", commonCenter, 0, 100.0f, 0, 0, isCenterCommon);
+                if (commonCenter != component.center) {
+                    changeCenter = true;
+                }
+
+                if (isRadiusCommon) {
+                    ImGui::Text("Radius");
+                    ImGui::SameLine();
+                    ImGui::DragFloat("##Radius", &commonRadius, 0.1f, 0.1f, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+                    if (commonRadius != component.radius) {
+                        changeRadius = true;
+                    }
+                }
+                if (isHeightCommon) {
+                    ImGui::Text("Height");
+                    ImGui::SameLine();
+                    ImGui::DragFloat("##Height", &commonHeight, 0.1f, 0.1f, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+                    if (commonHeight != component.height) {
+                        changeHeight = true;
+                    }
+                }
+                for (Entity entity: m_selectedEntities) {
+                    if (changeCenter) {
+                        scene.getComponent<CapsuleTrigger>(entity).center = commonCenter;
+                        m_appSystemRegistry.getSystem<PhysicsEngine>().recenterTrigger(scene.getComponent<Tag>(entity), commonCenter);
+                    }
+                    if (changeRadius || changeHeight) {
+                        scene.getComponent<CapsuleTrigger>(entity).radius = commonRadius;
+                        scene.getComponent<CapsuleTrigger>(entity).height = commonHeight;
+                        m_appSystemRegistry.getSystem<PhysicsEngine>().resizeTrigger(Shape::Capsule,
+                                                                                     scene.getComponent<Tag>(entity),
+                                                                                     scene.getComponent<Transform>(entity),
+                                                                                     commonCenter,
+                                                                                     glm::vec3(commonRadius, commonHeight, commonRadius));
+                    }
+                }
+            }, [this] {
+                Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                for (Entity entity: m_selectedEntities) {
+                    m_appSystemRegistry.getSystem<PhysicsEngine>().removeTrigger(scene.getComponent<Tag>(entity));
+                }
+            });
+        }
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<CylinderTrigger>()) != componentsToDraw.end()) {
+            drawComponent<CylinderTrigger>(firstEntity, "Cylinder Trigger", [this](auto& component) {
+                Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                glm::vec3 commonCenter = component.center;
+                float commonHeight = component.height;
+                float commonRadius = component.radius;
+
+                bool isRadiusCommon = true;
+                bool isCenterCommon = true;
+                bool isHeightCommon = true;
+
+                for (Entity entity: m_selectedEntities) {
+                    auto currentCylinderCollider = scene.getComponent<CylinderTrigger>(entity);
+
+                    if (currentCylinderCollider.center != commonCenter) {
+                        isCenterCommon = false;
+                    }
+                    if (currentCylinderCollider.radius != commonRadius) {
+                        isRadiusCommon = false;
+                    }
+                    if (currentCylinderCollider.height != commonHeight) {
+                        isHeightCommon = false;
+                    }
+                }
+
+                bool changeCenter = false;
+                bool changeRadius = false;
+                bool changeHeight = false;
+
+                ImGuiUtils::drawVec3Control("Center", commonCenter, 0, 100.0f, 0, 0, isCenterCommon);
+                if (commonCenter != component.center) {
+                    changeCenter = true;
+                }
+
+                if (isRadiusCommon) {
+                    ImGui::Text("Radius");
+                    ImGui::SameLine();
+                    ImGui::DragFloat("##Radius", &commonRadius, 0.1f);
+                    if (commonRadius != component.radius) {
+                        changeRadius = true;
+                    }
+                }
+                if (isHeightCommon) {
+                    ImGui::Text("Height");
+                    ImGui::SameLine();
+                    ImGui::DragFloat("##Height", &commonHeight, 0.1f);
+                    if (commonHeight != component.height) {
+                        changeHeight = true;
+                    }
+                }
+                for (Entity entity: m_selectedEntities) {
+                    if (changeCenter) {
+                        scene.getComponent<CylinderTrigger>(entity).center = commonCenter;
+                        m_appSystemRegistry.getSystem<PhysicsEngine>().recenterTrigger(scene.getComponent<Tag>(entity), commonCenter);
+                    }
+                    if (changeRadius || changeHeight) {
+                        scene.getComponent<CylinderTrigger>(entity).radius = commonRadius;
+                        scene.getComponent<CylinderTrigger>(entity).height = commonHeight;
+                        m_appSystemRegistry.getSystem<PhysicsEngine>().resizeTrigger(Shape::Cylinder,
+                                                                                     scene.getComponent<Tag>(entity),
+                                                                                     scene.getComponent<Transform>(entity),
+                                                                                     commonCenter,
+                                                                                     glm::vec3(commonRadius, commonHeight, commonRadius));
+                    }
+                }
+            }, [this] {
+                Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                for (Entity entity: m_selectedEntities) {
+                    m_appSystemRegistry.getSystem<PhysicsEngine>().removeTrigger(scene.getComponent<Tag>(entity));
+                }
+            });
         }
     }
 }
