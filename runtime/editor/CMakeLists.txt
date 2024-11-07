@@ -6,6 +6,7 @@ file(GLOB_RECURSE EDITOR_HEADERS "src/*.hpp")
 find_package(ImGui REQUIRED)
 find_package(ImGuizmo REQUIRED)
 
+
 # add the executable
 add_executable(TechEngineEditor ${EDITOR_SOURCES} ${EDITOR_HEADERS})
 target_include_directories(TechEngineEditor PUBLIC src)

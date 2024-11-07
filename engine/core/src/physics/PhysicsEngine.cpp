@@ -123,10 +123,12 @@ namespace TechEngine {
         updateEntities();
     }
 
-    void PhysicsEngine::renderBodies() {
+    void PhysicsEngine::renderBodies() const {
+#ifdef PHYSICS_DEBUG_RENDERER
         if (debugRenderer != nullptr) {
             m_physicsSystem->DrawBodies(JPH::BodyManager::DrawSettings(), debugRenderer);
         }
+#endif
     }
 
     const JPH::BodyID& PhysicsEngine::createStaticBody(const Tag& tag, const Transform& transform) {
