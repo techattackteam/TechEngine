@@ -29,28 +29,43 @@ namespace TechEngine {
         }
 
         static BoxCollider createBoxCollider(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 scale) {
-            physicsEngine.createBoxCollider(tag, transform, center, scale);
+            physicsEngine.createCollider(Shape::Cube, tag, transform, center, scale);
             return BoxCollider(center, scale);
         }
 
         static SphereCollider createSphereCollider(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform, glm::vec3 center, float radius) {
-            physicsEngine.createSphereCollider(tag, transform, center, radius);
+            physicsEngine.createCollider(Shape::Sphere, tag, transform, center, glm::vec3(radius));
             return SphereCollider();
         }
 
-        static CapsuleCollider createCapsuleCollider(PhysicsEngine& physicsEngine, Tag tag, const Transform& transform, glm::vec3 center, float height, float radius) {
-            physicsEngine.createCapsuleCollider(tag, transform, center, height, radius);
+        static CapsuleCollider createCapsuleCollider(PhysicsEngine& physicsEngine, const Tag tag, const Transform& transform, const glm::vec3 center, const float height, const float radius) {
+            physicsEngine.createCollider(Shape::Capsule, tag, transform, center, glm::vec3(radius, height, radius));
             return CapsuleCollider();
         }
 
-        static CylinderCollider createCylinderCollider(PhysicsEngine& physicsEngine, Tag tag, const Transform& transform, glm::vec3 center, float height, float radius) {
-            physicsEngine.createCylinderCollider(tag, transform, center, height, radius);
+        static CylinderCollider createCylinderCollider(PhysicsEngine& physicsEngine, const Tag tag, const Transform& transform, const glm::vec3 center, const float height, const float radius) {
+            physicsEngine.createCollider(Shape::Cylinder, tag, transform, center, glm::vec3(radius, height, radius));
             return CylinderCollider();
         }
 
-        static BoxTrigger createBoxTrigger(PhysicsEngine& physicsEngine, Tag tag, const Transform& transform, glm::vec3 center, glm::vec3 scale) {
-            const JPH::BodyID& bodyID = physicsEngine.createBoxTrigger(tag, transform, center, scale);
+        static BoxTrigger createBoxTrigger(PhysicsEngine& physicsEngine, const Tag tag, const Transform& transform, const glm::vec3 center, const glm::vec3 scale) {
+            const JPH::BodyID& bodyID = physicsEngine.createTrigger(Shape::Cube, tag, transform, center, scale);
             return BoxTrigger(bodyID);
+        }
+
+        static SphereTrigger createSphereTrigger(PhysicsEngine& physicsEngine, const Tag tag, const Transform& transform, const glm::vec3 center, const float radius) {
+            const JPH::BodyID& bodyID = physicsEngine.createTrigger(Shape::Sphere, tag, transform, center, glm::vec3(radius));
+            return SphereTrigger(bodyID);
+        }
+
+        static CapsuleTrigger createCapsuleTrigger(PhysicsEngine& physicsEngine, const Tag tag, const Transform& transform, const glm::vec3 center, const float height, const float radius) {
+            const JPH::BodyID& bodyID = physicsEngine.createTrigger(Shape::Capsule, tag, transform, center, glm::vec3(radius, height, radius));
+            return CapsuleTrigger(bodyID);
+        }
+
+        static CylinderTrigger createCylinderTrigger(PhysicsEngine& physicsEngine, const Tag tag, const Transform& transform, const glm::vec3 center, const float height, const float radius) {
+            const JPH::BodyID& bodyID = physicsEngine.createTrigger(Shape::Cylinder, tag, transform, center, glm::vec3(radius, height, radius));
+            return CylinderTrigger(bodyID);
         }
 
         static void DestroyBoxCollider(PhysicsEngine& physicsEngine, const Tag& tag) {

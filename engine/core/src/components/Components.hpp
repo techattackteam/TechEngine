@@ -281,11 +281,52 @@ namespace TechEngine {
     public:
         const JPH::BodyID& bodyID;
         glm::vec3 center = glm::vec3(0.0f, 0, 0);
-        glm::vec3 scale = glm::vec3(1.0f);
+        glm::vec3 size = glm::vec3(1.0f);
 
         static void serialize(const BoxTrigger& boxTrigger, YAML::Emitter& out);
 
         static BoxTrigger deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+    };
+
+    class CORE_DLL SphereTrigger {
+        friend class ComponentsFactory;
+
+    public:
+        const JPH::BodyID& bodyID;
+        glm::vec3 center = glm::vec3(0.0f);
+        float radius = 0.5f;
+
+        static void serialize(const SphereTrigger& sphereCollider, YAML::Emitter& out);
+
+        static SphereTrigger deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+    };
+
+    class CORE_DLL CapsuleTrigger {
+        friend class ComponentsFactory;
+
+    public:
+        const JPH::BodyID& bodyID;
+        glm::vec3 center = glm::vec3(0.0f);
+        float height = 1.0f;
+        float radius = 0.5f;
+
+        static void serialize(const CapsuleTrigger& capsuleCollider, YAML::Emitter& out);
+
+        static CapsuleTrigger deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+    };
+
+    class CORE_DLL CylinderTrigger {
+        friend class ComponentsFactory;
+
+    public:
+        const JPH::BodyID& bodyID;
+        glm::vec3 center = glm::vec3(0.0f);
+        float height = 1.0f;
+        float radius = 0.5f;
+
+        static void serialize(const CylinderTrigger& cylinderCollider, YAML::Emitter& out);
+
+        static CylinderTrigger deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
     };
 
     class CORE_DLL ComponentType {
@@ -302,11 +343,14 @@ namespace TechEngine {
             registerComponent<StaticBody>();
             registerComponent<KinematicBody>();
             registerComponent<RigidBody>();
-            registerComponent<BoxTrigger>();
             registerComponent<BoxCollider>();
             registerComponent<SphereCollider>();
             registerComponent<CapsuleCollider>();
             registerComponent<CylinderCollider>();
+            registerComponent<BoxTrigger>();
+            registerComponent<SphereTrigger>();
+            registerComponent<CapsuleTrigger>();
+            registerComponent<CylinderTrigger>();
         }
 
         template<typename T>
