@@ -12,21 +12,12 @@
 #include <thread>
 #include <Jolt/RegisterTypes.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
-#include <Jolt/Physics/Collision/Shape/BoxShape.h>
-#include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
-#include <Jolt/Physics/Collision/Shape/CylinderShape.h>
 #include <Jolt/Physics/Collision/Shape/EmptyShape.h>
 #include <Jolt/Physics/Collision/Shape/MutableCompoundShape.h>
 #include <Jolt/Physics/Collision/Shape/ScaledShape.h>
-#include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Constraints/FixedConstraint.h>
 
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
 #include "scene/ScenesManager.hpp"
 
 // Disable common warnings triggered by Jolt, you can use JPH_SUPPRESS_WARNING_PUSH / JPH_SUPPRESS_WARNING_POP to store and restore the warning state
@@ -34,7 +25,9 @@ JPH_SUPPRESS_WARNINGS
 
 
 namespace TechEngine {
-    PhysicsEngine::PhysicsEngine(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry), System() {
+    PhysicsEngine::PhysicsEngine(SystemsRegistry& systemsRegistry) : System(),
+                                                                     m_systemsRegistry(systemsRegistry),
+                                                                     contact_listener(systemsRegistry) {
     }
 
     void PhysicsEngine::init() {
@@ -59,7 +52,6 @@ namespace TechEngine {
 
         m_physicsSystem = new JPH::PhysicsSystem();
         m_physicsSystem->Init(cMaxBodies, cNumBodyMutexes, cMaxBodyPairs, cMaxContactConstraints, broad_phase_layer_interface, object_vs_broadphase_layer_filter, object_vs_object_layer_filter);
-
         // A body activation listener gets notified when bodies activate and go to sleep
         // Note that this is called from a job so whatever you do here needs to be thread safe.
         // Registering one is entirely optional.
@@ -69,7 +61,9 @@ namespace TechEngine {
         // Note that this is called from a job so whatever you do here needs to be thread safe.
         // Registering one is entirely optional.
         m_physicsSystem->SetContactListener(&contact_listener);
-
+        contact_listener.init(&m_bodies,
+                              &m_triggers,
+                              m_physicsSystem);
         TE_LOGGER_INFO("Physics engine initialized");
     }
 
@@ -211,7 +205,7 @@ namespace TechEngine {
                                transform.scale.z);
         }
         auto* scaledShape = static_cast<const JPH::ScaledShape*>(shape->GetSubShape(0).mShape.GetPtr());
-        auto* originalShape = (JPH::BoxShape*)scaledShape->GetInnerShape();
+        auto* originalShape = scaledShape->GetInnerShape();
         scaledShape = new JPH::ScaledShape(originalShape, scale);
         shape->RemoveShape(0);
         shape->AddShape(JPH::RVec3(center.x, center.y, center.z), JPH::Quat::sIdentity(), scaledShape);
@@ -221,7 +215,8 @@ namespace TechEngine {
         JPH::BodyID& bodyID = m_triggers[tag.getUuid()];
         const JPH::BodyLockInterfaceLocking& lockInterface = m_physicsSystem->GetBodyLockInterface(); // Or GetBodyLockInterfaceNoLock
         // Scoped lock
-        JPH::Ref<JPH::MutableCompoundShape> shape; {
+        JPH::Ref<JPH::MutableCompoundShape> shape; //
+        {
             JPH::BodyLockRead lock(lockInterface, bodyID);
             if (lock.Succeeded()) // body_id may no longer be valid
             {
@@ -242,7 +237,7 @@ namespace TechEngine {
                                transform.scale.z);
         }
         auto* scaledShape = dynamic_cast<const JPH::ScaledShape*>(shape->GetSubShape(0).mShape.GetPtr());
-        auto* originalShape = (JPH::BoxShape*)scaledShape->GetInnerShape();
+        auto* originalShape = scaledShape->GetInnerShape();
         scaledShape = new JPH::ScaledShape(originalShape, scale);
         shape->RemoveShape(0);
         shape->AddShape(JPH::RVec3(center.x, center.y, center.z), JPH::Quat::sIdentity(), scaledShape);

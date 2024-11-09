@@ -89,7 +89,7 @@ namespace TechEngine {
         ImGui::SetCursorPosX(pos.x / 4 - size / 2);
         ImGui::SetCursorPosY(cursor.y + 4);
         if (ImGui::Button("World", ImVec2(size, 0))) {
-            //sceneView.changeGuizmoMode(sceneView.getGuizmoMode() == ImGuizmo::MODE::WORLD ? ImGuizmo::MODE::LOCAL : ImGuizmo::MODE::WORLD);
+            m_sceneView.changeGuizmoMode(m_sceneView.getGuizmoMode() == ImGuizmo::MODE::WORLD ? ImGuizmo::MODE::LOCAL : ImGuizmo::MODE::WORLD);
         }
         ImGui::SameLine();
         ImGui::SetCursorPosX(pos.x / 2 - (size / 2));

@@ -11,7 +11,8 @@
 namespace TechEngine::Layers {
     static constexpr JPH::ObjectLayer NON_MOVING = 0;
     static constexpr JPH::ObjectLayer MOVING = 1;
-    static constexpr JPH::ObjectLayer NUM_LAYERS = 2;
+    static constexpr JPH::ObjectLayer TRIGGER = 2;
+    static constexpr JPH::uint NUM_LAYERS = 3;
 }
 
 // Each broadphase layer results in a separate bounding volume tree in the broad phase. You at least want to have
@@ -23,5 +24,6 @@ namespace TechEngine::Layers {
 namespace TechEngine::BroadPhaseLayers {
     static constexpr JPH::BroadPhaseLayer NON_MOVING(0);
     static constexpr JPH::BroadPhaseLayer MOVING(1);
-    static constexpr JPH::uint NUM_LAYERS(2);
+    static constexpr JPH::BroadPhaseLayer TRIGGER(2);
+    static constexpr JPH::uint NUM_LAYERS(3);
 }

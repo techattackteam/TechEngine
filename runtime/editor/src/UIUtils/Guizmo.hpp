@@ -28,7 +28,7 @@ namespace TechEngine {
 
         void setOperation(int operation);
 
-        int getMode() const;
+        ImGuizmo::MODE getMode() const;
 
         void setMode(int mode);
     };

@@ -123,6 +123,10 @@ namespace TechEngine {
         guizmo.setMode(mode);
     }
 
+    ImGuizmo::MODE SceneView::getGuizmoMode() const {
+        return guizmo.getMode();
+    }
+
     void SceneView::processShortcuts() {
         for (Key& key: m_keysPressed) {
             if (key.getKeyCode() == KeyCode::F) {
