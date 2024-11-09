@@ -43,6 +43,8 @@ namespace TechEngine {
 
         void changeGuizmoMode(ImGuizmo::MODE mode);
 
+        ImGuizmo::MODE getGuizmoMode() const;
+
         void processShortcuts() override;
 
     private:

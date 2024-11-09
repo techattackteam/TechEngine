@@ -38,6 +38,8 @@ namespace TechEngine {
 
         Entity getEntityByTag(const Tag& tag);
 
+        Entity getEntityByUUID(const std::string& uuid);
+        
         template<typename... Components, typename Function>
         void runSystem(Function function) {
             m_archetypesManager.runSystem<Components...>(function);

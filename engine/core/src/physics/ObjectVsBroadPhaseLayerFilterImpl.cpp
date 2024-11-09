@@ -6,7 +6,9 @@ namespace TechEngine {
             case Layers::NON_MOVING:
                 return inLayer2 == BroadPhaseLayers::MOVING;
             case Layers::MOVING:
-                return true;
+                return inLayer2 == BroadPhaseLayers::NON_MOVING || inLayer2 == BroadPhaseLayers::MOVING || inLayer2 == BroadPhaseLayers::TRIGGER; // Moving collides with everything
+            case Layers::TRIGGER:
+                return inLayer2 == BroadPhaseLayers::MOVING;
             default:
                 JPH_ASSERT(false);
                 return false;

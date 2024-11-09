@@ -5,6 +5,7 @@ namespace TechEngine {
         // Create a mapping table from object to broad phase layer
         m_ObjectToBroadPhase[Layers::NON_MOVING] = BroadPhaseLayers::NON_MOVING;
         m_ObjectToBroadPhase[Layers::MOVING] = BroadPhaseLayers::MOVING;
+        m_ObjectToBroadPhase[Layers::TRIGGER] = BroadPhaseLayers::TRIGGER;
     }
 
     JPH::uint BPLayerInterfaceImpl::GetNumBroadPhaseLayers() const {
@@ -17,9 +18,10 @@ namespace TechEngine {
     }
 #if defined(JPH_EXTERNAL_PROFILE) || defined(JPH_PROFILE_ENABLED)
     const char* BPLayerInterfaceImpl::GetBroadPhaseLayerName(JPH::BroadPhaseLayer inLayer) const {
-        switch ((JPH::BroadPhaseLayer::Type)inLayer) {
-            case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::NON_MOVING: return "NON_MOVING";
-            case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::MOVING: return "MOVING";
+        switch (static_cast<JPH::BroadPhaseLayer::Type>(inLayer)) {
+            case static_cast<JPH::BroadPhaseLayer::Type>(BroadPhaseLayers::NON_MOVING): return "NON_MOVING";
+            case static_cast<JPH::BroadPhaseLayer::Type>(BroadPhaseLayers::MOVING): return "MOVING";
+            case static_cast<JPH::BroadPhaseLayer::Type>(BroadPhaseLayers::TRIGGER): return "TRIGGER";
             default: JPH_ASSERT(false);
                 return "INVALID";
         }

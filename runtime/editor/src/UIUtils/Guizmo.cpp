@@ -118,8 +118,8 @@ namespace TechEngine {
         this->operation = operation;
     }
 
-    int Guizmo::getMode() const {
-        return mode;
+    ImGuizmo::MODE Guizmo::getMode() const {
+        return static_cast<ImGuizmo::MODE>(mode);
     }
 
     void Guizmo::setMode(int mode) {

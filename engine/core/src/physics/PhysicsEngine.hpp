@@ -4,14 +4,12 @@
 #include <cstdarg>
 #include <iostream>
 
-#include "systems/System.hpp"
+
 #include "ShapeFactory.hpp"
-#include "Layers.hpp"
 #include "BPLayerInterfaceImpl.hpp"
 #include "DebugRenderer.hpp"
 #include "ObjectLayerPairFilterImpl.hpp"
 #include "ObjectVsBroadPhaseLayerFilterImpl.hpp"
-#include "MyBodyActivationListener.hpp"
 #include "MyContactListener.hpp"
 #include "components/Components.hpp"
 
@@ -49,17 +47,19 @@ static bool AssertFailedImpl(const char* inExpression, const char* inMessage, co
 
 namespace TechEngine {
     class CORE_DLL PhysicsEngine : public System {
+        friend class MyContactListener;
+
     private:
+        SystemsRegistry& m_systemsRegistry;
         JPH::PhysicsSystem* m_physicsSystem;
         JPH::TempAllocatorImpl* temp_allocator;
         JPH::JobSystemThreadPool* job_system;
-        MyContactListener contact_listener;
         //MyBodyActivationListener body_activation_listener;
 
         BPLayerInterfaceImpl broad_phase_layer_interface;
         ObjectVsBroadPhaseLayerFilterImpl object_vs_broadphase_layer_filter;
         ObjectLayerPairFilterImpl object_vs_object_layer_filter;
-        SystemsRegistry& m_systemsRegistry;
+        MyContactListener contact_listener;
         bool m_running = false;
 
         std::unordered_map<std::string, JPH::BodyID> m_bodies;

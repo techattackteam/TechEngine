@@ -40,6 +40,19 @@ namespace TechEngine {
         return -1;
     }
 
+    Entity Scene::getEntityByUUID(const std::string& uuid) {
+        std::vector<Archetype*> archetypes = m_archetypesManager.queryArchetypes({ComponentType::get<Tag>()});
+        for (Archetype* archetype: archetypes) {
+            std::vector<Tag>& tags = archetype->getComponentArray<Tag>();
+            for (Tag& t: tags) {
+                if (t.getUuid() == uuid) {
+                    return archetype->getEntities()[&t - &tags[0]];
+                }
+            }
+        }
+        return -1;
+    }
+
     void Scene::clear() {
         m_archetypesManager.clear();
     }
