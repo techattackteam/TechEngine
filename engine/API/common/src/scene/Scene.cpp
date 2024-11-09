@@ -12,6 +12,24 @@ namespace TechEngineAPI {
     void Scene::init(TechEngine::Scene* scene, TechEngine::ResourcesManager* resourcesManager) {
         m_scene = scene;
         m_resourcesManager = resourcesManager;
+
+        components.clear();
+        m_scene->runSystem<TechEngine::Tag>([&](TechEngine::Tag& tag) {
+            Entity entity = m_scene->getEntityByTag(tag);
+            std::shared_ptr<Tag> tagComponent = std::make_shared<Tag>(entity, m_scene->getComponent<TechEngine::Tag>(entity).getName());
+            components[{entity, typeid(Tag)}] = tagComponent;
+
+            std::shared_ptr<Transform> transformComponent = std::make_shared<Transform>(entity, &m_scene->getComponent<TechEngine::Transform>(entity));
+            components[{entity, typeid(Transform)}] = transformComponent;
+
+            if (m_scene->hasComponent<TechEngine::MeshRenderer>(entity)) {
+                auto& meshRenderer = m_scene->getComponent<TechEngine::MeshRenderer>(entity);
+                std::shared_ptr<Mesh> mesh = Resources::getMesh(meshRenderer.mesh.getName());
+                std::shared_ptr<Material> material = Resources::getMaterial(meshRenderer.material.getName());
+                std::shared_ptr<MeshRenderer> meshRendererComponent = std::make_shared<MeshRenderer>(entity, mesh, material);
+                components[{entity, typeid(MeshRenderer)}] = meshRendererComponent;
+            }
+        });
     }
 
     void Scene::shutdown() {
@@ -68,19 +86,19 @@ namespace TechEngineAPI {
 
     template<typename T>
     std::shared_ptr<T> Scene::getComponent(Entity entity) {
-        if (std::is_same<T, Tag>::value) {
+        if (std::is_same_v<T, Tag>) {
             std::shared_ptr<Tag> component = std::static_pointer_cast<Tag>(components[{entity, typeid(Tag)}]);
             TechEngine::Tag& tag = getComponentInternal<TechEngine::Tag>(entity);
             component->setName(tag.getName());
             return std::static_pointer_cast<T>(components[{entity, typeid(Tag)}]);
-        } else if (std::is_same<T, Transform>::value) {
+        } else if (std::is_same_v<T, Transform>) {
             std::shared_ptr<Transform> component = std::static_pointer_cast<Transform>(components[{entity, typeid(Transform)}]);
             /*TechEngine::Transform& transform = getComponentInternal<TechEngine::Transform>(entity);
             component->setPosition(transform.position);
             component->setRotation(transform.rotation);
             component->setScale(transform.scale);*/
             return std::static_pointer_cast<T>(components[{entity, typeid(Transform)}]);
-        } else if (std::is_same<T, MeshRenderer>::value) {
+        } else if (std::is_same_v<T, MeshRenderer>) {
             std::shared_ptr<MeshRenderer> component = std::static_pointer_cast<MeshRenderer>(components[{entity, typeid(MeshRenderer)}]);
             TechEngine::MeshRenderer& meshRenderer = getComponentInternal<TechEngine::MeshRenderer>(entity);
             std::shared_ptr<Mesh> mesh = Resources::getMesh(meshRenderer.mesh.getName());
