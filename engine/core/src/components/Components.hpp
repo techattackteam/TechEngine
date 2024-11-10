@@ -10,6 +10,7 @@
 namespace TechEngine {
     class ResourcesManager;
     class PhysicsEngine;
+    
     using Entity = int32_t;
     using ComponentTypeID = uint32_t;
 

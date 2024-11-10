@@ -10,7 +10,7 @@ namespace TechEngine {
 }
 
 namespace TechEngineAPI {
-    class API_DLL MeshRenderer : public Component {
+    class API_DLL MeshRenderer final : public Component {
     private:
         friend class Scene;
         TechEngine::MeshRenderer* m_meshRenderer;
@@ -19,7 +19,7 @@ namespace TechEngineAPI {
         bool update;
 
     public:
-        MeshRenderer(Entity entity,
+        MeshRenderer(const Entity entity,
                      const std::shared_ptr<Mesh>& mesh,
                      const std::shared_ptr<Material>& material): Component(entity),
                                                                  m_mesh(mesh),

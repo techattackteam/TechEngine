@@ -13,12 +13,12 @@ namespace TechEngineAPI {
         TechEngineAPI::Entity m_entity = 0;
 
     public:
-        Component(Entity entity): m_entity(entity) {
+        Component(const Entity entity): m_entity(entity) {
         };
 
         virtual ~Component() = default;
 
-        void setEntity(Entity entity) {
+        void setEntity(const Entity entity) {
             this->m_entity = entity;
         }
 

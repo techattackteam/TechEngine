@@ -13,6 +13,7 @@ namespace TechEngine {
     class Tag;
     class Scene;
     class ResourcesManager;
+    class PhysicsEngine;
 }
 
 namespace TechEngineAPI {
@@ -43,8 +44,9 @@ namespace TechEngineAPI {
 
         inline static TechEngine::Scene* m_scene;
         inline static TechEngine::ResourcesManager* m_resourcesManager;
+        inline static TechEngine::PhysicsEngine* m_physicsEngine;
 
-        static void init(TechEngine::Scene* scene, TechEngine::ResourcesManager* m_resourcesManager);
+        static void init(TechEngine::Scene* scene, TechEngine::ResourcesManager* m_resourcesManager, TechEngine::PhysicsEngine* m_physicsEngine);
 
         static void shutdown();
 

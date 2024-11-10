@@ -1,4 +1,4 @@
-#include "common/include/components/MeshRenderer.hpp"
+#include "common/include/components/render/MeshRenderer.hpp"
 
 #include "components/Components.hpp"
 #include "scene/Scene.hpp"
