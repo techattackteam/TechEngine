@@ -14,21 +14,21 @@ namespace TechEngineAPI {
     public:
         TechEngine::Transform* m_transform;
 
-        Transform(Entity entity, TechEngine::Transform* transform): Component(entity), m_transform(transform) {
+        Transform(const Entity entity, TechEngine::Transform* transform): Component(entity), m_transform(transform) {
         }
 
         void updateInternalPointer(TechEngine::Scene* scene) override;
 
-        void setPosition(const glm::vec3& position);
+        void setPosition(const glm::vec3& position) const;
 
-        void setRotation(const glm::vec3& rotation);
+        void setRotation(const glm::vec3& rotation) const;
 
-        void setScale(const glm::vec3& scale);
+        void setScale(const glm::vec3& scale) const;
 
-        glm::vec3 getPosition();
+        glm::vec3 getPosition() const;
 
-        glm::vec3 getRotation();
+        glm::vec3 getRotation() const;
 
-        glm::vec3 getScale();
+        glm::vec3 getScale() const;
     };
 }
