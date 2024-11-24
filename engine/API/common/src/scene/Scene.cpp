@@ -1,15 +1,18 @@
 #include "common/include/components/Tag.hpp"
 #include "common/include/components/Transform.hpp"
 #include "common/include/components/render/MeshRenderer.hpp"
-#include "common/include/components/physics/BoxCollider.hpp"
+#include "common/include/components/physics/bodies/StaticBody.hpp"
+#include "common/include/components/physics/bodies/KinematicBody.hpp"
+#include "common/include/components/physics/bodies/RigidBody.hpp"
+#include "common/include/components/physics/colliders/BoxCollider.hpp"
+#include "common/include/components/physics/colliders/CapsuleCollider.hpp"
+#include "common/include/components/physics/colliders/CylinderCollider.hpp"
+#include "common/include/components/physics/colliders/SphereCollider.hpp"
 #include "common/include/resources/Resources.hpp"
 #include "common/include/scene/Scene.hpp"
 
 #include "scene/Scene.hpp"
 
-#include "common/include/components/physics/CapsuleCollider.hpp"
-#include "common/include/components/physics/CylinderCollider.hpp"
-#include "common/include/components/physics/SphereCollider.hpp"
 #include "components/Components.hpp"
 #include "components/ComponentsFactory.hpp"
 #include "resources/ResourcesManager.hpp"
@@ -36,7 +39,6 @@ namespace TechEngineAPI {
                 std::shared_ptr<MeshRenderer> meshRendererComponent = std::make_shared<MeshRenderer>(entity, mesh, material);
                 components[{entity, typeid(MeshRenderer)}] = meshRendererComponent;
             }
-
             if (m_scene->hasComponent<TechEngine::BoxCollider>(entity)) {
                 const auto& boxCollider = m_scene->getComponent<TechEngine::BoxCollider>(entity);
                 const std::shared_ptr<BoxCollider> boxColliderComponent = std::make_shared<BoxCollider>(entity);
@@ -84,6 +86,7 @@ namespace TechEngineAPI {
 
         std::shared_ptr<Transform> transformComponent = std::make_shared<Transform>(entity, &m_scene->getComponent<TechEngine::Transform>(entity));
         components[{entity, typeid(Transform)}] = transformComponent;
+        transformComponent->updateInternalPointer(m_scene);
         return entity;
     }
 
@@ -118,6 +121,30 @@ namespace TechEngineAPI {
                 TechEngine::MeshRenderer meshRenderer(mesh, material);
                 m_scene->addComponent<TechEngine::MeshRenderer>(entity, meshRenderer);
                 components[{entity, typeid(MeshRenderer)}] = std::make_shared<MeshRenderer>(entity, std::get<0>(t), std::get<1>(t));
+            } else if constexpr (std::is_same_v<T, StaticBody>) {
+                const TechEngine::Tag& tag = m_scene->getComponent<TechEngine::Tag>(entity);
+                const TechEngine::Transform& transform = m_scene->getComponent<TechEngine::Transform>(entity);
+                m_scene->addComponent<TechEngine::StaticBody>(entity,
+                                                              TechEngine::ComponentsFactory::createStaticBody(*m_physicsEngine,
+                                                                                                              tag,
+                                                                                                              transform));
+                components[{entity, typeid(StaticBody)}] = std::make_shared<StaticBody>(entity);
+            } else if constexpr (std::is_same_v<T, KinematicBody>) {
+                const TechEngine::Tag& tag = m_scene->getComponent<TechEngine::Tag>(entity);
+                const TechEngine::Transform& transform = m_scene->getComponent<TechEngine::Transform>(entity);
+                m_scene->addComponent<TechEngine::KinematicBody>(entity,
+                                                                 TechEngine::ComponentsFactory::createKinematicBody(*m_physicsEngine,
+                                                                                                                    tag,
+                                                                                                                    transform));
+                components[{entity, typeid(KinematicBody)}] = std::make_shared<KinematicBody>(entity);
+            } else if constexpr (std::is_same_v<T, RigidBody>) {
+                const TechEngine::Tag& tag = m_scene->getComponent<TechEngine::Tag>(entity);
+                const TechEngine::Transform& transform = m_scene->getComponent<TechEngine::Transform>(entity);
+                m_scene->addComponent<TechEngine::RigidBody>(entity,
+                                                             TechEngine::ComponentsFactory::createRigidBody(*m_physicsEngine,
+                                                                                                            tag,
+                                                                                                            transform));
+                components[{entity, typeid(RigidBody)}] = std::make_shared<RigidBody>(entity);
             } else if constexpr (std::is_same_v<T, BoxCollider>) {
                 const TechEngine::Tag& tag = m_scene->getComponent<TechEngine::Tag>(entity);
                 const TechEngine::Transform& transform = m_scene->getComponent<TechEngine::Transform>(entity);
@@ -146,8 +173,8 @@ namespace TechEngineAPI {
                                                                                                                         tag,
                                                                                                                         transform,
                                                                                                                         glm::vec3(0.0f),
-                                                                                                                        0.5f,
-                                                                                                                        1.0f));
+                                                                                                                        1.0f,
+                                                                                                                        0.5f));
                 components[{entity, typeid(CapsuleCollider)}] = std::make_shared<CapsuleCollider>(entity);
             } else if constexpr (std::is_same_v<T, CylinderCollider>) {
                 const TechEngine::Tag& tag = m_scene->getComponent<TechEngine::Tag>(entity);
@@ -157,8 +184,8 @@ namespace TechEngineAPI {
                                                                                                                           tag,
                                                                                                                           transform,
                                                                                                                           glm::vec3(0.0f),
-                                                                                                                          0.5f,
-                                                                                                                          1.0f));
+                                                                                                                          1.0f,
+                                                                                                                          0.5f));
                 components[{entity, typeid(CylinderCollider)}] = std::make_shared<CylinderCollider>(entity);
             } else {
                 throw std::runtime_error("Component not supported");
@@ -179,6 +206,12 @@ namespace TechEngineAPI {
             return std::static_pointer_cast<T>(components[{entity, typeid(Tag)}]);
         } else if constexpr (std::is_same_v<T, Transform>) {
             std::shared_ptr<Transform> component = std::static_pointer_cast<Transform>(components[{entity, typeid(Transform)}]);
+
+            /*
+             * TODO: Rethink if the internal pointer is worth since it can become invalid if the internal components vector is resized or
+             * One possible solution is the ecs notify the scene when a component vector is resized and then update all the internal pointers for the components
+             */
+            component->updateInternalPointer(m_scene);
             TechEngine::Transform& transform = getComponentInternal<TechEngine::Transform>(entity);
             component->setPosition(transform.position);
             component->setRotation(transform.rotation);
@@ -235,6 +268,18 @@ namespace TechEngineAPI {
     template API_DLL std::shared_ptr<MeshRenderer> Scene::addComponent<MeshRenderer, std::shared_ptr<Mesh>&, std::shared_ptr<Material>&>(Entity, std::shared_ptr<Mesh>&, std::shared_ptr<Material>&);
 
     template API_DLL std::shared_ptr<MeshRenderer> Scene::addComponentInternal<MeshRenderer, std::shared_ptr<Mesh>&, std::shared_ptr<Material>&>(Entity, std::shared_ptr<Mesh>&, std::shared_ptr<Material>&);
+
+    template API_DLL std::shared_ptr<StaticBody> Scene::addComponent<StaticBody>(Entity);
+
+    template API_DLL std::shared_ptr<StaticBody> Scene::addComponentInternal<StaticBody>(Entity);
+
+    template API_DLL std::shared_ptr<KinematicBody> Scene::addComponent<KinematicBody>(Entity);
+
+    template API_DLL std::shared_ptr<KinematicBody> Scene::addComponentInternal<KinematicBody>(Entity);
+
+    template API_DLL std::shared_ptr<RigidBody> Scene::addComponent<RigidBody>(Entity);
+
+    template API_DLL std::shared_ptr<RigidBody> Scene::addComponentInternal<RigidBody>(Entity);
 
     template API_DLL std::shared_ptr<BoxCollider> Scene::addComponent<BoxCollider>(Entity);
 

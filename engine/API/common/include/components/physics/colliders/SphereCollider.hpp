@@ -1,9 +1,7 @@
 #pragma once
 
-
 #include <common/include/components/Component.hpp>
 #include <glm/vec3.hpp>
-
 
 namespace TechEngine {
     class SphereCollider;

@@ -1,4 +1,4 @@
-#include "common/include/components/physics/SphereCollider.hpp"
+#include "common/include/components/physics/colliders/SphereCollider.hpp"
 
 #include "components/Components.hpp"
 #include "scene/Scene.hpp"
