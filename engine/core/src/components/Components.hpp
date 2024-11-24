@@ -10,7 +10,7 @@
 namespace TechEngine {
     class ResourcesManager;
     class PhysicsEngine;
-    
+
     using Entity = int32_t;
     using ComponentTypeID = uint32_t;
 
@@ -170,6 +170,48 @@ namespace TechEngine {
 
         static MeshRenderer deserialize(const YAML::Node& node, ResourcesManager& resourcesManager);
     };
+    
+    class CORE_DLL StaticBody {
+        friend class ComponentsFactory;
+
+        explicit StaticBody(const JPH::BodyID& bodyID) : bodyID(bodyID) {
+        };
+
+    public:
+        const JPH::BodyID& bodyID;
+
+        static void serialize(const StaticBody& staticBody, YAML::Emitter& out);
+
+        static StaticBody deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+    };
+
+    class CORE_DLL KinematicBody {
+        friend class ComponentsFactory;
+
+        explicit KinematicBody(const JPH::BodyID& bodyID) : bodyID(bodyID) {
+        };
+
+    public:
+        const JPH::BodyID& bodyID;
+
+        static void serialize(const KinematicBody& kinematicBody, YAML::Emitter& out);
+
+        static KinematicBody deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+    };
+
+    class CORE_DLL RigidBody {
+        friend class ComponentsFactory;
+
+        explicit RigidBody(const JPH::BodyID& bodyID) : bodyID(bodyID) {
+        };
+
+    public:
+        const JPH::BodyID& bodyID;
+
+        static void serialize(const RigidBody& rigidbody, YAML::Emitter& out);
+
+        static RigidBody deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+    };
 
     class CORE_DLL BoxCollider {
     private:
@@ -229,48 +271,6 @@ namespace TechEngine {
         static void serialize(const CylinderCollider& cylinderCollider, YAML::Emitter& out);
 
         static CylinderCollider deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
-    };
-
-    class CORE_DLL StaticBody {
-        friend class ComponentsFactory;
-
-        explicit StaticBody(const JPH::BodyID& bodyID) : bodyID(bodyID) {
-        };
-
-    public:
-        const JPH::BodyID& bodyID;
-
-        static void serialize(const StaticBody& staticBody, YAML::Emitter& out);
-
-        static StaticBody deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
-    };
-
-    class CORE_DLL KinematicBody {
-        friend class ComponentsFactory;
-
-        explicit KinematicBody(const JPH::BodyID& bodyID) : bodyID(bodyID) {
-        };
-
-    public:
-        const JPH::BodyID& bodyID;
-
-        static void serialize(const KinematicBody& kinematicBody, YAML::Emitter& out);
-
-        static KinematicBody deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
-    };
-
-    class CORE_DLL RigidBody {
-        friend class ComponentsFactory;
-
-        explicit RigidBody(const JPH::BodyID& bodyID) : bodyID(bodyID) {
-        };
-
-    public:
-        const JPH::BodyID& bodyID;
-
-        static void serialize(const RigidBody& rigidbody, YAML::Emitter& out);
-
-        static RigidBody deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
     };
 
     class CORE_DLL BoxTrigger {

@@ -1,4 +1,4 @@
-#include "common/include/components/physics/CylinderCollider.hpp"
+#include "common/include/components/physics/colliders/CylinderCollider.hpp"
 
 #include "components/Components.hpp"
 #include "scene/Scene.hpp"

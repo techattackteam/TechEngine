@@ -110,7 +110,7 @@ namespace TechEngine {
                     break;
                 }
             }
-            m_systemsRegistry.getSystem<EventDispatcher>().dispatch<OnCollisionStay>(entity1, entity2);
+            //m_systemsRegistry.getSystem<EventDispatcher>().dispatch<OnCollisionStay>(entity1, entity2);
         }
     }
 

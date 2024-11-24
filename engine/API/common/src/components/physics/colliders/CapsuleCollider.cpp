@@ -1,4 +1,4 @@
-#include "common/include/components/physics/CapsuleCollider.hpp"
+#include "common/include/components/physics/colliders/CapsuleCollider.hpp"
 
 #include "components/Components.hpp"
 #include "scene/Scene.hpp"

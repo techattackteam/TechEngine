@@ -17,6 +17,7 @@ namespace TechEngine::ShapeFactory {
             compoundShape = createCapsuleShape(transform, center, size.y, size.x);
         } else if (shape == Shape::Cylinder) {
             compoundShape = createCylinderShape(transform, center, size.y, size.x);
+            TE_LOGGER_INFO("Cylinder shape created with height {0} and radius {1}", size.y, size.x);
         } else {
             TE_LOGGER_CRITICAL("Shape not supported");
             return nullptr;

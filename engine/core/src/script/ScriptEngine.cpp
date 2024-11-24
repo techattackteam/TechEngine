@@ -58,7 +58,8 @@ namespace TechEngine {
     void ScriptEngine::onStart() {
         if (m_userCustomDll) {
             for (Script* script: scripts) {
-                RUN_SCRIPT_FUNCTION(script, script->onStartFunc(), m_systemRegistry.getSystem<EventDispatcher>());
+                /*RUN_SCRIPT_FUNCTION();*/
+                script, script->onStartFunc(), m_systemRegistry.getSystem<EventDispatcher>();
             }
         }
     }

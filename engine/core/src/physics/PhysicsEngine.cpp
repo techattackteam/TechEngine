@@ -276,6 +276,12 @@ namespace TechEngine {
         }
     }
 
+    void PhysicsEngine::setVelocity(const Tag& tag, const glm::vec3& velocity) {
+        JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
+        JPH::BodyID body = m_bodies[tag.getUuid()];
+        bodyInterface.SetLinearVelocity(body, JPH::RVec3(velocity.x, velocity.y, velocity.z));
+    }
+
     void PhysicsEngine::updateBodies() {
         Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
         scene.runSystem<Transform, StaticBody>([this](Transform& transform, StaticBody& body) {
@@ -339,6 +345,13 @@ namespace TechEngine {
                 m_bodies[tag.getUuid()] = {};
             }
             m_bodies[tag.getUuid()] = body->GetID();
+        }
+        if (m_running) {
+            bodyInterface.AddBody(body->GetID(), JPH::EActivation::Activate);
+            if (m_bodies.contains(tag.getUuid())) {
+                JPH::Shape* shape = m_colliders[tag.getUuid()];
+                bodyInterface.SetShape(body->GetID(), shape, true, JPH::EActivation::DontActivate);
+            }
         }
         return body->GetID();
     }

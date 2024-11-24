@@ -10,7 +10,7 @@ namespace TechEngine {
 namespace TechEngineAPI {
     class API_DLL Component {
     protected:
-        TechEngineAPI::Entity m_entity = 0;
+        Entity m_entity = 0;
 
     public:
         Component(const Entity entity): m_entity(entity) {

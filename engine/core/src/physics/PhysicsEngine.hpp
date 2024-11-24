@@ -113,9 +113,7 @@ namespace TechEngine {
 
         void removeTrigger(const Tag& tag);
 
-        void updateBodies();
-
-        void updateEntities();
+        void setVelocity(const Tag& tag, const glm::vec3& velocity);
 
         void moveOrRotateBody(const Tag& tag, const Transform& transform); //Only to be used by the editor when then simulation is not running
 
@@ -141,5 +139,9 @@ namespace TechEngine {
             transform.position = glm::vec3(position.GetX(), position.GetY(), position.GetZ());
             transform.rotation = glm::vec3(glm::degrees(euler.x), glm::degrees(euler.y), glm::degrees(euler.z));
         }
+
+        void updateBodies();
+
+        void updateEntities();
     };
 }
