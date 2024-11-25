@@ -51,6 +51,8 @@ namespace TechEngine {
 
         const std::string& getName() const;
 
+        int getTotalEntities();
+
     private:
         Entity createEntity(const std::string& name, const std::string& uuid);
     };

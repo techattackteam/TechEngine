@@ -65,6 +65,14 @@ namespace TechEngine {
         return m_name;
     }
 
+    int Scene::getTotalEntities() {
+        int totalEntities = 0;
+        for (Archetype& archetype: m_archetypesManager.m_archetypes) {
+            totalEntities =+ archetype.getEntities().size();
+        }
+        return totalEntities;
+    }
+
     Entity Scene::createEntity(const std::string& name, const std::string& uuid) {
         Entity entity = m_archetypesManager.createEntity();
         m_archetypesManager.addComponent(entity, ComponentsFactory::createTag(name, uuid));

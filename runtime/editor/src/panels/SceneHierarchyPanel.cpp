@@ -14,14 +14,28 @@ namespace TechEngine {
 
 
     void SceneHierarchyPanel::onInit() {
+        Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+        scene.runSystem<Tag>([this](Tag& tag) {
+            entitiesOrder.emplace_back(tag);
+        });
     }
 
     void SceneHierarchyPanel::onUpdate() {
         isItemHovered = false;
         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
-        scene.runSystem<Tag>([this](Tag& tag) {
-            drawEntityNode(tag);
-        });
+
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 2.0f)); // Adjust spacing between items
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f)); // Compact frame padding
+        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 10.0f); // Reduce indentation
+
+        drawDropZone(0);
+        for (const auto& tag: entitiesOrder) {
+            drawEntityNode(scene.getComponent<Tag>(scene.getEntityByTag(tag)));
+        }
+        drawDropZone(scene.getTotalEntities());
+
+        ImGui::PopStyleVar(3); // Must match the number of PushStyleVar calls
+
         if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) {
             m_selectedEntities.clear();
         }
@@ -29,7 +43,8 @@ namespace TechEngine {
         if (!isItemHovered && ImGui::BeginPopupContextWindow()) {
             if (ImGui::BeginMenu("Create")) {
                 if (ImGui::MenuItem("Empty")) {
-                    scene.createEntity("New Entity");
+                    Entity entity = scene.createEntity("New Entity");
+                    entitiesOrder.emplace_back(scene.getComponent<Tag>(entity));
                 }
                 if (ImGui::MenuItem("Cube")) {
                     Entity entity = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene().createEntity("Cube");
@@ -53,75 +68,103 @@ namespace TechEngine {
     void SceneHierarchyPanel::drawEntityNode(Tag& tag) {
         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
         Entity entity = scene.getEntityByTag(tag);
-        ImGuiTreeNodeFlags flags = ((std::find(m_selectedEntities.begin(), m_selectedEntities.end(), entity) != m_selectedEntities.end()) ? ImGuiTreeNodeFlags_Selected : 0) |
-                                   ImGuiTreeNodeFlags_OpenOnArrow |
-                                   /*(entity->getChildren().empty() ? ImGuiTreeNodeFlags_Leaf : 0)*/ ImGuiTreeNodeFlags_Leaf |
-                                   ImGuiTreeNodeFlags_SpanAvailWidth;
-        bool opened = ImGui::TreeNodeEx((tag.getName() + tag.getName()).c_str(), flags, "%s", tag.getName().c_str());
-        if (ImGui::IsItemClicked()) {
-            /*if (isCtrlPressed) {
-                if (std::find(m_selectedEntities.begin(), m_selectedEntities.end(), gameObject) != m_selectedEntities.end()) {
-                    m_selectedEntities.erase(std::remove(m_selectedEntities.begin(), m_selectedEntities.end(), gameObject), m_selectedEntities.end());
-                } else {
-                    m_selectedEntities.push_back(gameObject);
-                }
-            } else if (isShiftPressed) {
-                if (m_selectedEntities.empty()) {
-                    m_selectedEntities.push_back(gameObject);
-                } else {
-                    GameObject* first = m_selectedEntities.front();
+        bool isSelected = std::find(m_selectedEntities.begin(), m_selectedEntities.end(), entity) != m_selectedEntities.end();
 
-                    bool selecting = false;
-                    for (GameObject* go: appRegistry.getSystem<SceneManager>().getScene().getGameObjects()) {
-                        if (go->isEditorOnly()) {
-                            continue;
-                        }
-                        if (go == first && !selecting || go == gameObject && !selecting) {
-                            selecting = true;
-                            m_selectedEntities.push_back(go);
-                        } else if (go == gameObject && selecting || go == first && selecting) {
-                            selecting = false;
-                            m_selectedEntities.push_back(go);
-                        } else if (selecting) {
-                            m_selectedEntities.push_back(go);
-                        }
-                    }
-                }
-            } else {
-            }*/
+
+        // Draw the entity node
+        ImGuiTreeNodeFlags flags = (isSelected ? ImGuiTreeNodeFlags_Selected : 0) |
+                                   ImGuiTreeNodeFlags_OpenOnArrow |
+                                   ImGuiTreeNodeFlags_SpanAvailWidth |
+                                   ImGuiTreeNodeFlags_Leaf;
+
+        bool opened = ImGui::TreeNodeEx((void*)(intptr_t)entity, flags, "%s", tag.getName().c_str());
+
+        // Selection handling
+        if (ImGui::IsItemClicked()) {
             m_selectedEntities.clear();
             m_selectedEntities.push_back(entity);
         }
-        if (ImGui::IsItemHovered()) {
-            isItemHovered = true;
+
+        // Drag-and-Drop Source
+        if (ImGui::BeginDragDropSource()) {
+            ImGui::SetDragDropPayload("ENTITY_DRAG", &entity, sizeof(Entity)); // Set payload
+            ImGui::Text("%s", tag.getName().c_str()); // Display dragged entity name
+            ImGui::EndDragDropSource();
         }
+
+        // Drag-and-Drop Target (for making this a parent)
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY_DRAG")) {
+                Entity draggedEntity = *(Entity*)payload->Data; // Retrieve dragged entity
+
+                if (draggedEntity != entity) {
+                    // Make draggedEntity a child of the current entity
+                    //scene.makeChild(entity, draggedEntity); // Replace with your hierarchy management logic
+                    TE_LOGGER_INFO("Dropped entity {} onto entity {}", draggedEntity, entity);
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        // Context menu for additional actions
         if (ImGui::BeginPopupContextItem()) {
             m_selectedEntities.clear();
-            //m_selectedEntities.push_back(entity);
+            m_selectedEntities.push_back(entity);
+
             std::string name = tag.getName();
             if (ImGuiUtils::beginMenuWithInputMenuField("Rename", "Name", name)) {
-                //gameObject->setName(name);
+                // Rename entity logic here
             }
-            if (ImGui::MenuItem("Make Child (WIP)")) {
-                /*GameObject& child = appRegistry.getSystem<SceneManager>().getScene().createGameObject(gameObject->getName() + "'s Child");
-                appRegistry.getSystem<SceneManager>().getScene().makeChildTo(gameObject, &child);*/
-            }
-            if (ImGui::MenuItem("Duplicate")) {
-                /*appRegistry.getSystem<SceneManager>().getScene().duplicateGameObject(gameObject);*/
-            }
-            if (ImGui::MenuItem("Delete GameObject")) {
+            if (ImGui::MenuItem("Delete Entity")) {
                 scene.destroyEntity(entity);
             }
             ImGui::EndPopup();
         }
+
+        // Draw child nodes if the node is opened
         if (opened) {
-            //Draw Entity Child Nodes
-            /*if (gameObject != nullptr) {
-                for (const auto& pair: gameObject->getChildren()) {
-                    drawEntityNode(pair.second);
-                }
-            }*/
+            /*for (const auto& child: scene.getChildren(entity)) { // Replace with your child retrieval logic
+                drawEntityNode(scene.getComponent<Tag>(child));
+            }
+            */
             ImGui::TreePop();
         }
+
+        int index = std::ranges::find(entitiesOrder, tag) - entitiesOrder.begin();
+        // Draw a drop zone before the entity (for reordering above it)
+        drawDropZone(index);
+    }
+
+    void SceneHierarchyPanel::reorderEntity(Tag& tag, size_t newPosition) {
+        auto it = std::find(entitiesOrder.begin(), entitiesOrder.end(), tag);
+        if (it != entitiesOrder.end()) {
+            entitiesOrder.erase(it); // Remove the entity from its current position
+        }
+        entitiesOrder.insert(entitiesOrder.begin() + newPosition, tag); // Insert it at the new position
+        TE_LOGGER_INFO("Reordered entity {} to position {}", tag.getName(), newPosition);
+    }
+
+    void SceneHierarchyPanel::drawDropZone(size_t position) {
+        // Use an invisible button as a drop zone
+        ImGui::PushID(position);
+
+        ImGui::InvisibleButton("DropZone", ImVec2(ImGui::GetContentRegionAvail().y, 2.0f));
+        // Highlight the drop zone if it's active
+        if (ImGui::IsItemHovered() && ImGui::IsMouseDragging(0)) {
+            ImGui::GetWindowDrawList()->AddRect(
+                ImGui::GetItemRectMin(), ImGui::GetItemRectMax(),
+                IM_COL32(255, 255, 0, 255)); // Yellow highlight
+        }
+
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY_DRAG")) {
+                Entity draggedEntity = *(Entity*)payload->Data;
+                Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                reorderEntity(scene.getComponent<Tag>(draggedEntity), position);
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        ImGui::PopID();
     }
 }

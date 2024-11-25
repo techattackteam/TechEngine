@@ -60,6 +60,8 @@ namespace TechEngine {
             }
             firstTime = false;
         }
+
+        ImGui::ShowDemoWindow();
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         GLFWwindow* backup_current_context = glfwGetCurrentContext();
