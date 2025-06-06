@@ -24,8 +24,10 @@ namespace TechEngine {
                                  Client& client,
                                  Server& server) : m_systemsRegistry(systemsRegistry),
                                                    m_client(client), m_server(server),
-                                                   m_clientPanel(systemsRegistry, m_client.m_systemRegistry, m_LoggerPanel),
-                                                   m_serverPanel(systemsRegistry, m_server.m_systemRegistry, m_LoggerPanel),
+                                                   m_clientPanel(systemsRegistry, m_client.m_systemRegistry,
+                                                                 m_LoggerPanel),
+                                                   m_serverPanel(systemsRegistry, m_server.m_systemRegistry,
+                                                                 m_LoggerPanel),
                                                    m_LoggerPanel(systemsRegistry,
                                                                  m_client.m_systemRegistry,
                                                                  m_server.m_systemRegistry),
@@ -61,7 +63,6 @@ namespace TechEngine {
             firstTime = false;
         }
 
-        ImGui::ShowDemoWindow();
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         GLFWwindow* backup_current_context = glfwGetCurrentContext();
@@ -112,11 +113,13 @@ namespace TechEngine {
         colors[ImGuiCol_FrameBgActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f); // Light blue frame background (active)
         colors[ImGuiCol_TitleBg] = ImVec4(0.13f, 0.13f, 0.13f, 1.00f); // Dark gray title background
         colors[ImGuiCol_TitleBgActive] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f); // Dark gray title background (active)
-        colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f); // Dark gray title background (collapsed)
+        colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
+        // Dark gray title background (collapsed)
         colors[ImGuiCol_MenuBarBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f); // Gray menu bar background
         colors[ImGuiCol_ScrollbarBg] = ImVec4(0.10f, 0.10f, 0.10f, 1.00f); // Dark gray scrollbar background
         colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.26f, 0.59f, 0.98f, 0.40f); // Light blue scrollbar grab
-        colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f); // Light blue scrollbar grab (hovered)
+        colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
+        // Light blue scrollbar grab (hovered)
         colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f); // Light blue scrollbar grab (active)
         colors[ImGuiCol_CheckMark] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f); // Light blue check mark
         colors[ImGuiCol_SliderGrab] = ImVec4(0.24f, 0.52f, 0.88f, 1.00f); // Blue slider grab
@@ -140,6 +143,7 @@ namespace TechEngine {
         colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f); // Gray tab (unfocused, active)
         colors[ImGuiCol_DockingPreview] = ImVec4(0.26f, 0.59f, 0.98f, 0.70f); // Light blue docking preview
         colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f); // Gray docking empty background
+        colors[ImGuiCol_DragDropTarget] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
 
         style.WindowRounding = 2.0f;
         style.FrameRounding = 2.0f;
@@ -160,10 +164,15 @@ namespace TechEngine {
         ImGuiID dockMainID = m_dockSpaceID;
         ImGuiID dockButtonID = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Down, 0.2f, nullptr, &dockMainID);
 
-        ImGui::DockBuilderDockWindow((m_clientPanel.getName() + "##" + std::to_string(m_clientPanel.getId())).c_str(), dockMainID);
-        ImGui::DockBuilderDockWindow((m_serverPanel.getName() + "##" + std::to_string(m_serverPanel.getId())).c_str(), dockMainID);
-        ImGui::DockBuilderDockWindow((m_ContentBrowserPanel.getName() + "##" + std::to_string(m_ContentBrowserPanel.getId())).c_str(), dockButtonID);
-        ImGui::DockBuilderDockWindow((m_LoggerPanel.getName() + "##" + std::to_string(m_LoggerPanel.getId())).c_str(), dockButtonID);
+        ImGui::DockBuilderDockWindow((m_clientPanel.getName() + "##" + std::to_string(m_clientPanel.getId())).c_str(),
+                                     dockMainID);
+        ImGui::DockBuilderDockWindow((m_serverPanel.getName() + "##" + std::to_string(m_serverPanel.getId())).c_str(),
+                                     dockMainID);
+        ImGui::DockBuilderDockWindow(
+            (m_ContentBrowserPanel.getName() + "##" + std::to_string(m_ContentBrowserPanel.getId())).c_str(),
+            dockButtonID);
+        ImGui::DockBuilderDockWindow((m_LoggerPanel.getName() + "##" + std::to_string(m_LoggerPanel.getId())).c_str(),
+                                     dockButtonID);
 
         ImGui::DockBuilderFinish(m_dockSpaceID);
     }
@@ -181,7 +190,8 @@ namespace TechEngine {
         ImGui::SetNextWindowViewport(viewport->ID);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+                ImGuiWindowFlags_NoMove;
         window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
         if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
@@ -223,8 +233,10 @@ namespace TechEngine {
                 /*if (!exportSettingsPanel.isOpen()) {
                     exportSettingsPanel.open();
                 }*/
-                m_systemsRegistry.getSystem<ProjectManager>().exportProject("C:\\dev\\TechEngine\\bin\\runtime\\editor\\Client", ProjectType::Client);
-                m_systemsRegistry.getSystem<ProjectManager>().exportProject("C:\\dev\\TechEngine\\bin\\runtime\\editor\\Server", ProjectType::Server);
+                m_systemsRegistry.getSystem<ProjectManager>().exportProject(
+                    "C:\\dev\\TechEngine\\bin\\runtime\\editor\\Client", ProjectType::Client);
+                m_systemsRegistry.getSystem<ProjectManager>().exportProject(
+                    "C:\\dev\\TechEngine\\bin\\runtime\\editor\\Server", ProjectType::Server);
             }
             if (ImGui::MenuItem("Exit")) {
                 m_systemsRegistry.getSystem<EventDispatcher>().dispatch<AppCloseEvent>();
@@ -236,7 +248,8 @@ namespace TechEngine {
                 /*if (clientPanel.isRunning()) {
                     clientPanel.stopRunningScene();
                 }*/
-                ScriptsCompiler::compileUserScripts(m_systemsRegistry.getSystem<ProjectManager>(), CompileMode::Debug, ProjectType::Client);
+                ScriptsCompiler::compileUserScripts(m_systemsRegistry.getSystem<ProjectManager>(), CompileMode::Debug,
+                                                    ProjectType::Client);
             } else if (ImGui::MenuItem("Run")) {
                 //runClientProcess();
             }
@@ -250,7 +263,8 @@ namespace TechEngine {
                         onCloseProcessEvent(process.dwProcessId);
                     }
                 }*/
-                ScriptsCompiler::compileUserScripts(m_systemsRegistry.getSystem<ProjectManager>(), CompileMode::Debug, ProjectType::Client);
+                ScriptsCompiler::compileUserScripts(m_systemsRegistry.getSystem<ProjectManager>(), CompileMode::Debug,
+                                                    ProjectType::Client);
             } else if (ImGui::MenuItem("Run")) {
                 //runServerProcess();
             }
