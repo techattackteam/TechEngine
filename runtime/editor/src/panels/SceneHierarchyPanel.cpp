@@ -1,5 +1,6 @@
 #include "SceneHierarchyPanel.hpp"
 
+#include "imgui_internal.h"
 #include "resources/ResourcesManager.hpp"
 #include "scene/ScenesManager.hpp"
 #include "systems/SystemsRegistry.hpp"
@@ -26,7 +27,7 @@ namespace TechEngine {
         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
 
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 2.0f)); // Adjust spacing between items
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 3.0f)); // Compact frame padding
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f)); // Compact frame padding
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 10.0f); // Reduce indentation
 
         std::vector<Tag> entitiesOrderCopy = m_entitiesOrder;
@@ -34,7 +35,7 @@ namespace TechEngine {
             drawEntityNode(scene.getComponent<Tag>(scene.getEntityByTag(entitiesOrderCopy[i])));
         }
 
-        ImGui::PopStyleVar(3); // Must match the number of PushStyleVar calls
+        ImGui::PopStyleVar(3);
 
         if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) {
             m_selectedEntities.clear();
@@ -46,14 +47,11 @@ namespace TechEngine {
         }
         if (!m_entitiesToDelete.empty()) {
             for (auto entity: m_entitiesToDelete) {
-                // If the entity to delete was selected, deselect it
                 std::erase(m_selectedEntities, entity);
                 scene.destroyEntity(entity);
             }
             m_entitiesToDelete.clear();
 
-            // After deleting, the entitiesOrder list is out of sync. Rebuild it.
-            // This is the safest way to ensure correctness.
             m_entitiesOrder.clear();
             scene.runSystem<Tag>([this](Tag& tag) {
                 m_entitiesOrder.emplace_back(tag);
@@ -67,91 +65,82 @@ namespace TechEngine {
     void SceneHierarchyPanel::drawEntityNode(Tag& tag) {
         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
         Entity entity = scene.getEntityByTag(tag);
-        bool isSelected = std::find(m_selectedEntities.begin(), m_selectedEntities.end(), entity) != m_selectedEntities.
-                          end();
+        ImGuiStyle& style = ImGui::GetStyle();
 
+        const float frameHeight = ImGui::GetFrameHeight();
+        const float totalItemHeight = frameHeight + style.ItemSpacing.y;
+        const ImVec2 initialCursorPos = ImGui::GetCursorPos();
 
-        // Draw the entity node
-        ImGuiTreeNodeFlags flags = (isSelected ? ImGuiTreeNodeFlags_Selected : 0) |
-                                   ImGuiTreeNodeFlags_OpenOnArrow |
-                                   ImGuiTreeNodeFlags_SpanAvailWidth |
-                                   ImGuiTreeNodeFlags_FramePadding |
-                                   ImGuiTreeNodeFlags_Leaf;
+        ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, totalItemHeight));
 
-        bool opened = ImGui::TreeNodeEx((void*)(intptr_t)entity, flags, "%s", tag.getName().c_str());
-        isItemHovered |= ImGui::IsItemHovered();
-
-        // Selection handling
-        if (ImGui::IsItemClicked()) {
-            m_selectedEntities.clear();
-            m_selectedEntities.push_back(entity);
-        }
-
-        // Drag-and-Drop Source
-        if (ImGui::BeginDragDropSource()) {
-            ImGui::SetDragDropPayload("ENTITY_DRAG", &entity, sizeof(Entity)); // Set payload
-            ImGui::Text("%s", tag.getName().c_str()); // Display dragged entity name
-            ImGui::EndDragDropSource();
-        }
+        enum class DropAction { None, Reparent, Reorder };
+        DropAction dropAction = DropAction::Reparent;
 
         if (ImGui::BeginDragDropTarget()) {
-            isItemHovered = true; // Dropping onto an item counts as hovering
-
-            // Get the position and size of the tree node item
-            const ImVec2 targetMin = ImGui::GetItemRectMin();
-            const ImVec2 targetMax = ImGui::GetItemRectMax();
+            const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+            const ImRect targetRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
             const ImVec2 mousePos = ImGui::GetMousePos();
-            const float targetHeight = targetMax.y - targetMin.y;
 
-            // Define a threshold for the top/bottom reorder zones (e.g., 25% of the item height)
-            const float reorderThreshold = 0.275f;
+            ImRect reparentRect = targetRect;
+            reparentRect.Min.y += 4; // 4px top reorder zone
+            reparentRect.Max.y -= 4; // 4px bottom reorder zone
 
-            // Determine the drop action based on mouse position
-            enum class DropAction { None, Reparent, ReorderAbove, ReorderBelow };
-            DropAction dropAction = DropAction::None;
+            if (payload && payload->DataSize == sizeof(Entity)) {
+                Entity draggedEntity = *(Entity*)payload->Data;
 
-            if (mousePos.y < targetMin.y + targetHeight * reorderThreshold) {
-                dropAction = DropAction::ReorderAbove;
-            } else if (mousePos.y > targetMax.y - targetHeight * reorderThreshold) {
-                dropAction = DropAction::ReorderBelow;
-            } else {
-                dropAction = DropAction::Reparent;
+                bool isSameEntity = false;
+                if (draggedEntity == entity) {
+                    isSameEntity = true;
+                }
+
+                if (!reparentRect.Contains(mousePos)) {
+                    dropAction = DropAction::Reorder;
+                }
+
+                if (!isSameEntity && dropAction == DropAction::Reorder) {
+                    auto& draggedTag = scene.getComponent<Tag>(draggedEntity);
+                    auto originalEntity = std::find(m_entitiesOrder.begin(), m_entitiesOrder.end(), draggedTag);
+                    auto targetEntity = std::find(m_entitiesOrder.begin(), m_entitiesOrder.end(), tag);
+                    if (originalEntity != m_entitiesOrder.end() && targetEntity != m_entitiesOrder.end()) {
+                        bool isDroppingAbove = (mousePos.y < reparentRect.Min.y);
+                        if (isDroppingAbove) {
+                            if (std::next(originalEntity) == targetEntity) {
+                                isSameEntity = true;
+                            }
+                        } else {
+                            if (targetEntity != m_entitiesOrder.begin() && std::next(targetEntity) == originalEntity) {
+                                isSameEntity = true;
+                            }
+                        }
+                    }
+                }
+
+                if (!isSameEntity) {
+                    ImU32 feedbackColor = ImGui::GetColorU32(ImGuiCol_DragDropTarget);
+                    if (dropAction == DropAction::Reorder) {
+                        float lineY = (mousePos.y < reparentRect.Min.y) ? targetRect.Min.y : targetRect.Max.y;
+                        ImGui::GetWindowDrawList()->AddLine(ImVec2(targetRect.Min.x, lineY),
+                                                            ImVec2(targetRect.Max.x, lineY),
+                                                            feedbackColor, 2.0f);
+                    } else {
+                        ImVec2 visualNodeMin = targetRect.Min;
+                        ImVec2 visualNodeMax = ImVec2(targetRect.Max.x, targetRect.Min.y + frameHeight);
+                        ImGui::GetWindowDrawList()->AddRect(visualNodeMin, visualNodeMax, feedbackColor, 2.0f, 0, 2.0f);
+                    }
+                }
             }
 
-            // Provide visual feedback based on the determined action
-            ImU32 feedbackColor = ImGui::GetColorU32(ImGuiCol_DragDropTarget);
-            switch (dropAction) {
-                case DropAction::ReorderAbove:
-                    ImGui::GetWindowDrawList()->AddLine(targetMin, ImVec2(targetMax.x, targetMin.y), feedbackColor,
-                                                        2.0f);
-                    break;
-                case DropAction::ReorderBelow:
-                    ImGui::GetWindowDrawList()->AddLine(ImVec2(targetMin.x, targetMax.y), targetMax, feedbackColor,
-                                                        2.0f);
-                    break;
-                case DropAction::Reparent:
-                    ImGui::GetWindowDrawList()->AddRect(targetMin, targetMax, feedbackColor, 2.0f, 0, 2.0f);
-                    break;
-                default: break;
-            }
-
-            // Handle the actual drop
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
                 "ENTITY_DRAG", ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
                 Entity draggedEntity = *(Entity*)payload->Data;
                 if (draggedEntity != entity) {
                     int index = std::ranges::find(m_entitiesOrder, tag) - m_entitiesOrder.begin();
-                    switch (dropAction) {
-                        case DropAction::ReorderAbove:
-                            reorderEntity(scene.getComponent<Tag>(draggedEntity), index);
-                            break;
-                        case DropAction::ReorderBelow:
-                            reorderEntity(scene.getComponent<Tag>(draggedEntity), index + 1);
-                            break;
-                        case DropAction::Reparent:
-                            TE_LOGGER_INFO("Parenting entity {} under entity {}", draggedEntity, entity);
-                            break;
-                        default: break;
+
+                    if (dropAction == DropAction::Reorder) {
+                        int newIndex = (mousePos.y < reparentRect.Min.y) ? index : index + 1;
+                        reorderEntity(scene.getComponent<Tag>(draggedEntity), newIndex);
+                    } else {
+                        TE_LOGGER_INFO("Parenting entity {} under entity {}", draggedEntity, entity);
                     }
                 }
             }
@@ -159,14 +148,43 @@ namespace TechEngine {
             ImGui::EndDragDropTarget();
         }
 
+        ImGui::SetCursorPos(initialCursorPos);
 
-        // Context menu for additional actions
+        const float textHeight = ImGui::GetTextLineHeight();
+        const float verticalPadding = (frameHeight - textHeight) * 0.5f;
+        if (verticalPadding > 0) {
+            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + verticalPadding);
+        }
+
+        bool isSelected = std::find(m_selectedEntities.begin(), m_selectedEntities.end(), entity) != m_selectedEntities.
+                          end();
+        ImGuiTreeNodeFlags flags = (isSelected ? ImGuiTreeNodeFlags_Selected : 0) |
+                                   ImGuiTreeNodeFlags_OpenOnArrow |
+                                   ImGuiTreeNodeFlags_SpanAvailWidth |
+                                   ImGuiTreeNodeFlags_Leaf;
+
+        ImGui::PushID((void*)(intptr_t)entity);
+        bool opened = ImGui::TreeNodeEx("##TreeNode", flags, "%s", tag.getName().c_str());
+        isItemHovered |= ImGui::IsItemHovered();
+        ImGui::PopID();
+
+        if (ImGui::BeginDragDropSource()) {
+            ImGui::SetDragDropPayload("ENTITY_DRAG", &entity, sizeof(Entity));
+            ImGui::Text("%s", tag.getName().c_str());
+            ImGui::EndDragDropSource();
+        }
+
+        if (ImGui::IsItemClicked()) {
+            m_selectedEntities.clear();
+            m_selectedEntities.push_back(entity);
+        }
+
         if (ImGui::BeginPopupContextItem()) {
             m_selectedEntities.clear();
             m_selectedEntities.push_back(entity);
 
             std::string name = tag.getName();
-            openCreateMenu("Create Child (WIP)", scene.getEntityByTag(tag));
+            openCreateMenu("Create Child (WIP)", entity);
             if (ImGuiUtils::beginMenuWithInputMenuField("Rename", "Name", name)) {
                 tag.setName(name);
             }
@@ -176,12 +194,9 @@ namespace TechEngine {
             ImGui::EndPopup();
         }
 
-        // Draw child nodes if the node is opened
+        ImGui::SetCursorPosY(initialCursorPos.y + totalItemHeight);
+
         if (opened) {
-            /*for (const auto& child: scene.getChildren(entity)) { // Replace with your child retrieval logic
-                drawEntityNode(scene.getComponent<Tag>(child));
-            }
-            */
             ImGui::TreePop();
         }
     }
@@ -227,19 +242,16 @@ namespace TechEngine {
         if (ImGui::BeginMenu(title.c_str())) {
             if (ImGui::MenuItem("Empty")) {
                 m_entitiesToCreate.push_back({"New Entity", Empty, parent});
-                //Entity entity = scene.createEntity("New Entity");
-                //entitiesOrder.emplace_back(scene.getComponent<Tag>(entity));
             }
+            
             if (ImGui::MenuItem("Cube")) {
                 m_entitiesToCreate.push_back({"Cube", Cube, parent});
             }
+
             if (ImGui::MenuItem("Sphere")) {
-                /*GameObject& gameObject = appRegistry.getSystem<SceneManager>().getScene().createGameObject("Sphere");
-                gameObject.addComponent<MeshRendererComponent>();*/
             }
+
             if (ImGui::MenuItem("Cylinder")) {
-                /*GameObject& gameObject = appRegistry.getSystem<SceneManager>().getScene().createGameObject("Cylinder");
-                gameObject.addComponent<MeshRendererComponent>();*/
             }
             ImGui::EndMenu();
         }
