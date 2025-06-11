@@ -13,10 +13,10 @@
 namespace TechEngineAPI {
     void Entry::init(TechEngine::SystemsRegistry* systemsRegistry) {
         Timer::init(&systemsRegistry->getSystem<TechEngine::Timer>());
+        Resources::init(&systemsRegistry->getSystem<TechEngine::ResourcesManager>());
         Scene::init(&systemsRegistry->getSystem<TechEngine::ScenesManager>().getActiveScene(),
                     &systemsRegistry->getSystem<TechEngine::ResourcesManager>(),
                     &systemsRegistry->getSystem<TechEngine::PhysicsEngine>());
-        Resources::init(&systemsRegistry->getSystem<TechEngine::ResourcesManager>());
     }
 
     void Entry::shutdown() {
