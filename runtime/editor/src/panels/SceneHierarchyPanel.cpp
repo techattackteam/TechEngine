@@ -1,6 +1,7 @@
 #include "SceneHierarchyPanel.hpp"
 
 #include "imgui_internal.h"
+#include "eventSystem/EventDispatcher.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "scene/ScenesManager.hpp"
 #include "systems/SystemsRegistry.hpp"
@@ -26,13 +27,25 @@ namespace TechEngine {
         isItemHovered = false;
         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
 
+        scene.runSystem<Tag>([this](Tag& tag) {
+            if (std::find(m_entitiesOrder.begin(), m_entitiesOrder.end(), tag) == m_entitiesOrder.end()) {
+                m_entitiesOrder.emplace_back(tag);
+            }
+        });
+
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 2.0f)); // Adjust spacing between items
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f)); // Compact frame padding
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 10.0f); // Reduce indentation
 
-        std::vector<Tag> entitiesOrderCopy = m_entitiesOrder;
-        for (size_t i = 0; i < entitiesOrderCopy.size(); i++) {
-            drawEntityNode(scene.getComponent<Tag>(scene.getEntityByTag(entitiesOrderCopy[i])));
+        int size = m_entitiesOrder.size();
+        for (size_t i = 0; i < size; i++) {
+            Entity entity = scene.getEntityByTag(m_entitiesOrder[i]);
+            if (entity == -1) {
+                m_entitiesOrder.erase(m_entitiesOrder.begin() + i);
+                size--;
+                continue;
+            }
+            drawEntityNode(scene.getComponent<Tag>(entity));
         }
 
         ImGui::PopStyleVar(3);
@@ -243,15 +256,17 @@ namespace TechEngine {
             if (ImGui::MenuItem("Empty")) {
                 m_entitiesToCreate.push_back({"New Entity", Empty, parent});
             }
-            
+
             if (ImGui::MenuItem("Cube")) {
                 m_entitiesToCreate.push_back({"Cube", Cube, parent});
             }
 
             if (ImGui::MenuItem("Sphere")) {
+                //m_entitiesToCreate.push_back({"Sphere", Sphere, parent});
             }
 
             if (ImGui::MenuItem("Cylinder")) {
+                //m_entitiesToCreate.push_back({"Cylinder", Cylinder, parent});
             }
             ImGui::EndMenu();
         }
