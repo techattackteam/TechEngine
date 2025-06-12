@@ -38,25 +38,35 @@ namespace TechEngine::ScriptsCompiler {
         std::string cmakeBuildPath = projectManager.getCmakeBuildPath(compileMode).string();
         std::string cmakeListPath = projectManager.getCmakeListPath().string();
 
+        std::string cm;
+        std::string buildType;
+        if (compileMode == CompileMode::Release) {
+            cm = "Release";
+            buildType = " -DCMAKE_BUILD_TYPE=Release";
+        } else if (compileMode == CompileMode::Debug) {
+            cm = "Debug";
+            buildType = " -DCMAKE_BUILD_TYPE=Debug";
+        } else if (compileMode == CompileMode::RelWithDebInfo) {
+            cm = "RelWithDebInfo";
+            buildType = " -DCMAKE_BUILD_TYPE=RelWithDebInfo";
+        } else {
+            TE_LOGGER_ERROR("Unknown compile mode: " + std::to_string(static_cast<int>(compileMode)));
+            return;
+        }
+
         std::string command = "\"" + projectManager.getCmakePath().string() +
                               " -G \"Visual Studio 17 2022\""
                               " -S " + "\"" + cmakeListPath + "\"" +
-                              " -B " + "\"" + cmakeBuildPath + "\"" + "\"";
+                              " -B " + "\"" + cmakeBuildPath + "\"" +
+                              buildType + "\"";
 
         TE_LOGGER_INFO(execCommand(command));
-        std::string cm;
-        if (compileMode == CompileMode::Release) {
-            cm = "Release";
-        } else if (compileMode == CompileMode::Debug) {
-            cm = "Debug";
-        }
         command = "\"" + projectManager.getCmakePath().string() +
                   " --build " + "\"" + cmakeBuildPath + "\"" +
                   " --target " + (projectType == ProjectType::Client
                                       ? "ClientScripts"
                                       : "ServerScripts") +
                   " --config " + cm + "\"";
-
         TE_LOGGER_INFO(execCommand(command));
     }
 }

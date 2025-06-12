@@ -14,8 +14,10 @@
 namespace TechEngine {
     ProjectManager::ProjectManager(SystemsRegistry& clientSystemsRegistry,
                                    SystemsRegistry& serverSystemsRegistry) : m_systemsRegistry(clientSystemsRegistry),
-                                                                             m_clientSystemsRegistry(clientSystemsRegistry),
-                                                                             m_serverSystemsRegistry(serverSystemsRegistry) {
+                                                                             m_clientSystemsRegistry(
+                                                                                 clientSystemsRegistry),
+                                                                             m_serverSystemsRegistry(
+                                                                                 serverSystemsRegistry) {
     }
 
     void ProjectManager::init(const std::filesystem::path& projectPath) {
@@ -55,7 +57,8 @@ namespace TechEngine {
         std::filesystem::create_directory(m_projectPath.string() + "\\cache\\server");
 
         TE_LOGGER_INFO("New project created at: " + m_projectPath.string());
-        std::filesystem::copy(std::filesystem::current_path().string() + "\\resources\\templates\\project", m_projectPath.string(), std::filesystem::copy_options::recursive);
+        std::filesystem::copy(std::filesystem::current_path().string() + "\\resources\\templates\\project",
+                              m_projectPath.string(), std::filesystem::copy_options::recursive);
         std::ofstream fout(m_projectPath.string() + "\\" + projectName + ".teproj");
         YAML::Node config;
         config["Project Name"] = projectName;
@@ -90,9 +93,12 @@ namespace TechEngine {
         std::filesystem::create_directory(exportPath + "\\resources\\common");
         std::filesystem::create_directory(exportPath + "\\cache");
         std::filesystem::create_directory(exportPath + "\\cache\\common");
-        FileUtils::copyRecursive(m_projectPath.string() + "\\assets\\common", exportPath + "\\assets\\common", {".dll", ".exe", ".cpp", ".hpp"}, {});
-        FileUtils::copyRecursive(m_projectPath.string() + "\\resources\\common", exportPath + "\\resources\\common", {}, {"TechEngineAPI"});
-        FileUtils::copyRecursive(m_projectPath.string() + "\\cache\\common", exportPath + "\\cache\\common", {}, {"findCmake", "libs"});
+        FileUtils::copyRecursive(m_projectPath.string() + "\\assets\\common", exportPath + "\\assets\\common",
+                                 {".dll", ".exe", ".cpp", ".hpp"}, {});
+        FileUtils::copyRecursive(m_projectPath.string() + "\\resources\\common", exportPath + "\\resources\\common", {},
+                                 {"TechEngineAPI"});
+        FileUtils::copyRecursive(m_projectPath.string() + "\\cache\\common", exportPath + "\\cache\\common", {},
+                                 {"findCmake", "libs"});
 
         if (projectType == ProjectType::Client) {
             Project& project = m_clientSystemsRegistry.getSystem<Project>();
@@ -100,9 +106,12 @@ namespace TechEngine {
             std::filesystem::create_directory(exportPath + "\\assets\\client");
             std::filesystem::create_directory(exportPath + "\\resources\\client");
             std::filesystem::create_directory(exportPath + "\\cache\\client");
-            FileUtils::copyRecursive(m_projectPath.string() + "\\assets\\client", exportPath + "\\assets\\client", {".dll", ".exe", ".cpp", ".hpp"}, {});
-            FileUtils::copyRecursive(m_projectPath.string() + "\\resources\\client", exportPath + "\\resources\\client", {}, {"TechEngineAPI"});
-            FileUtils::copyRecursive(m_projectPath.string() + "\\cache\\client", exportPath + "\\cache\\client", {}, {});
+            FileUtils::copyRecursive(m_projectPath.string() + "\\assets\\client", exportPath + "\\assets\\client",
+                                     {".dll", ".exe", ".cpp", ".hpp"}, {});
+            FileUtils::copyRecursive(m_projectPath.string() + "\\resources\\client", exportPath + "\\resources\\client",
+                                     {}, {"TechEngineAPI"});
+            FileUtils::copyRecursive(m_projectPath.string() + "\\cache\\client", exportPath + "\\cache\\client", {},
+                                     {});
             //Copy runtime files to project folder
             std::filesystem::copy(m_clientRuntimePath, exportPath, std::filesystem::copy_options::recursive);
             std::ofstream fout = std::ofstream(exportPath + "\\" + m_projectName.string() + ".teproj");
@@ -120,9 +129,12 @@ namespace TechEngine {
             std::filesystem::create_directory(exportPath + "\\assets\\server");
             std::filesystem::create_directory(exportPath + "\\resources\\server");
             std::filesystem::create_directory(exportPath + "\\cache\\server");
-            std::filesystem::copy(m_projectPath.string() + "\\assets\\server", exportPath + "\\assets\\server", std::filesystem::copy_options::recursive);
-            std::filesystem::copy(m_projectPath.string() + "\\resources\\server", exportPath + "\\resources\\server", std::filesystem::copy_options::recursive);
-            std::filesystem::copy(m_projectPath.string() + "\\cache\\server", exportPath + "\\cache\\server", std::filesystem::copy_options::recursive);
+            std::filesystem::copy(m_projectPath.string() + "\\assets\\server", exportPath + "\\assets\\server",
+                                  std::filesystem::copy_options::recursive);
+            std::filesystem::copy(m_projectPath.string() + "\\resources\\server", exportPath + "\\resources\\server",
+                                  std::filesystem::copy_options::recursive);
+            std::filesystem::copy(m_projectPath.string() + "\\cache\\server", exportPath + "\\cache\\server",
+                                  std::filesystem::copy_options::recursive);
 
             //Copy runtime files to project folder
             std::filesystem::copy(m_serverRuntimesPath, exportPath, std::filesystem::copy_options::recursive);
@@ -163,12 +175,19 @@ namespace TechEngine {
     }
 
     std::filesystem::path ProjectManager::getCmakeBuildPath(CompileMode compileMode) {
-        assert(compileMode == CompileMode::Debug || compileMode == CompileMode::Release);
+        assert(compileMode == CompileMode::Debug ||
+            compileMode == CompileMode::Release ||
+            compileMode == CompileMode::RelWithDebInfo);
         std::string buildMode;
         if (compileMode == CompileMode::Debug) {
             buildMode = "debug";
         } else if (compileMode == CompileMode::Release) {
             buildMode = "release";
+        } else if (compileMode == CompileMode::RelWithDebInfo) {
+            buildMode = "relwithdebinfo";
+        } else {
+            TE_LOGGER_ERROR("Unknown compile mode: " + std::to_string(static_cast<int>(compileMode)));
+            return "";
         }
 
         return m_cachePath.string() + "\\common\\cmake-build-" + buildMode;
@@ -205,7 +224,8 @@ namespace TechEngine {
     void ProjectManager::loadProject() {
         assert(!m_projectName.empty());
         if (!std::filesystem::exists(m_projectPath.string() + "\\" + m_projectName.string() + ".teproj")) {
-            TE_LOGGER_ERROR("Project config not found: " + m_projectPath.string() + "\\" + m_projectName.string() + ".teproj");
+            TE_LOGGER_ERROR(
+                "Project config not found: " + m_projectPath.string() + "\\" + m_projectName.string() + ".teproj");
             return;
         }
         YAML::Node config = YAML::LoadFile(m_projectPath.string() + "\\" + m_projectName.string() + ".teproj");

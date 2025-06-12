@@ -3,10 +3,10 @@
 #include <common/include/logger/Logger.hpp>
 #include <common/include/scene/Scene.hpp>
 #include <common/include/components/Transform.hpp>
-#include <common/include/components/MeshRenderer.hpp>
+#include <common/include/components/render/MeshRenderer.hpp>
 #include <common/include/resources/Resources.hpp>
 #include <client/include/eventSystem/ClientEventSystem.hpp>
-#include <client/include/events/Input/KeyPressEvent.hpp>
+#include <client/include/events/KeyPressedEvent.hpp>
 
 void Test::onStart() {
     LOGGER_INFO("Test onStart");
@@ -32,8 +32,8 @@ void Test::onStart() {
     Scene::addComponent<MeshRenderer>(test1, mesh, material);
     Scene::addComponent<MeshRenderer>(test2, mesh, material);
     startTime = std::chrono::high_resolution_clock::now();
-    EventSystem::subscribe<KeyPressEvent>([this](const std::shared_ptr<Event>& event) {
-        KeyPressEvent keyPressEvent = dynamic_cast<KeyPressEvent&>(*event);
+    EventSystem::subscribe<KeyPressedEvent>([this](const std::shared_ptr<Event>& event) {
+        KeyPressedEvent keyPressEvent = dynamic_cast<KeyPressedEvent&>(*event);
         LOGGER_INFO("Key pressed: {0}", keyPressEvent.m_key.getKeyName());
     });
 }

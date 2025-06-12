@@ -42,7 +42,8 @@ namespace TechEngine {
 
         temp_allocator = new JPH::TempAllocatorImpl(10 * 1024 * 1024);
 
-        job_system = new JPH::JobSystemThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, JPH::thread::hardware_concurrency() - 1);
+        job_system = new JPH::JobSystemThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers,
+                                                  JPH::thread::hardware_concurrency() - 1);
 
         const JPH::uint cMaxBodies = 1024;
         const JPH::uint cNumBodyMutexes = 0;
@@ -51,7 +52,9 @@ namespace TechEngine {
 
 
         m_physicsSystem = new JPH::PhysicsSystem();
-        m_physicsSystem->Init(cMaxBodies, cNumBodyMutexes, cMaxBodyPairs, cMaxContactConstraints, broad_phase_layer_interface, object_vs_broadphase_layer_filter, object_vs_object_layer_filter);
+        m_physicsSystem->Init(cMaxBodies, cNumBodyMutexes, cMaxBodyPairs, cMaxContactConstraints,
+                              broad_phase_layer_interface, object_vs_broadphase_layer_filter,
+                              object_vs_object_layer_filter);
         // A body activation listener gets notified when bodies activate and go to sleep
         // Note that this is called from a job so whatever you do here needs to be thread safe.
         // Registering one is entirely optional.
@@ -64,7 +67,6 @@ namespace TechEngine {
         contact_listener.init(&m_bodies,
                               &m_triggers,
                               m_physicsSystem);
-        TE_LOGGER_INFO("Physics engine initialized");
     }
 
     void PhysicsEngine::shutdown() {
@@ -76,7 +78,6 @@ namespace TechEngine {
         delete JPH::Factory::sInstance;
         JPH::Factory::sInstance = nullptr;
         delete m_physicsSystem;
-        TE_LOGGER_INFO("Physics engine shutdown");
     }
 
     bool PhysicsEngine::start() {
@@ -137,7 +138,8 @@ namespace TechEngine {
         return createBody(JPH::EMotionType::Dynamic, tag, transform, false);
     }
 
-    void PhysicsEngine::createCollider(const Shape shape, const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 size) {
+    void PhysicsEngine::createCollider(const Shape shape, const Tag& tag, const Transform& transform, glm::vec3 center,
+                                       glm::vec3 size) {
         JPH::RegisterDefaultAllocator();
         JPH::MutableCompoundShape* compoundShape = ShapeFactory::createShape(shape, transform, center, size);
         m_colliders[tag.getUuid()] = compoundShape;
@@ -148,7 +150,8 @@ namespace TechEngine {
         }
     }
 
-    const JPH::BodyID& PhysicsEngine::createTrigger(const Shape shape, const Tag& tag, const Transform& transform, const glm::vec3 center, const glm::vec3 size) {
+    const JPH::BodyID& PhysicsEngine::createTrigger(const Shape shape, const Tag& tag, const Transform& transform,
+                                                    const glm::vec3 center, const glm::vec3 size) {
         const JPH::BodyID& body = createBody(JPH::EMotionType::Static, tag, transform, true);
         m_triggers[tag.getUuid()] = body;
         JPH::MutableCompoundShape* compoundShape = ShapeFactory::createShape(shape, transform, center, size);
@@ -157,13 +160,15 @@ namespace TechEngine {
         return body;
     }
 
-    void PhysicsEngine::resizeCollider(const Shape shape, const Tag& tag, const Transform& transform, const glm::vec3 center, const glm::vec3 size) { // Size -> (radius, height)
+    void PhysicsEngine::resizeCollider(const Shape shape, const Tag& tag, const Transform& transform,
+                                       const glm::vec3 center, const glm::vec3 size) { // Size -> (radius, height)
         const JPH::Ref<JPH::MutableCompoundShape> compoundShape = m_colliders[tag.getUuid()];
         compoundShape->RemoveShape(0);
         createCollider(shape, tag, transform, center, size);
     }
 
-    void PhysicsEngine::resizeTrigger(const Shape shape, const Tag& tag, const Transform& transform, const glm::vec3 center, const glm::vec3 size) {
+    void PhysicsEngine::resizeTrigger(const Shape shape, const Tag& tag, const Transform& transform,
+                                      const glm::vec3 center, const glm::vec3 size) {
         JPH::BodyID& bodyID = m_triggers[tag.getUuid()];
         JPH::MutableCompoundShape* compoundShape = ShapeFactory::createShape(shape, transform, center, size);
         m_physicsSystem->GetBodyInterface().SetShape(bodyID, compoundShape, true, JPH::EActivation::DontActivate);
@@ -176,14 +181,16 @@ namespace TechEngine {
 
     void PhysicsEngine::recenterTrigger(const Tag& tag, glm::vec3 center) {
         JPH::BodyID& bodyID = m_triggers[tag.getUuid()];
-        const JPH::BodyLockInterfaceLocking& lockInterface = m_physicsSystem->GetBodyLockInterface(); // Or GetBodyLockInterfaceNoLock
+        const JPH::BodyLockInterfaceLocking& lockInterface = m_physicsSystem->GetBodyLockInterface();
+        // Or GetBodyLockInterfaceNoLock
         // Scoped lock
         JPH::Ref<JPH::MutableCompoundShape> shape; //
         {
             JPH::BodyLockRead lock(lockInterface, bodyID);
             if (lock.Succeeded()) {
                 const JPH::Body& body = lock.GetBody();
-                const JPH::MutableCompoundShape* constShape = dynamic_cast<const JPH::MutableCompoundShape*>(body.GetShape());
+                const JPH::MutableCompoundShape* constShape = dynamic_cast<const JPH::MutableCompoundShape*>(body.
+                    GetShape());
                 shape = constShape->Clone();
             } else {
                 return;
@@ -193,7 +200,8 @@ namespace TechEngine {
         m_physicsSystem->GetBodyInterface().SetShape(bodyID, shape, true, JPH::EActivation::DontActivate);
     }
 
-    void PhysicsEngine::rescaleCollider(const Tag& tag, const Transform& transform, const glm::vec3 center, const bool uniform) {
+    void PhysicsEngine::rescaleCollider(const Tag& tag, const Transform& transform, const glm::vec3 center,
+                                        const bool uniform) {
         const JPH::Ref<JPH::MutableCompoundShape> shape = m_colliders[tag.getUuid()];
         JPH::RVec3 scale;
         if (uniform) {
@@ -211,9 +219,11 @@ namespace TechEngine {
         shape->AddShape(JPH::RVec3(center.x, center.y, center.z), JPH::Quat::sIdentity(), scaledShape);
     }
 
-    void PhysicsEngine::rescaleTrigger(const Tag& tag, const Transform& transform, glm::vec3 center, const bool uniform) {
+    void PhysicsEngine::rescaleTrigger(const Tag& tag, const Transform& transform, glm::vec3 center,
+                                       const bool uniform) {
         JPH::BodyID& bodyID = m_triggers[tag.getUuid()];
-        const JPH::BodyLockInterfaceLocking& lockInterface = m_physicsSystem->GetBodyLockInterface(); // Or GetBodyLockInterfaceNoLock
+        const JPH::BodyLockInterfaceLocking& lockInterface = m_physicsSystem->GetBodyLockInterface();
+        // Or GetBodyLockInterfaceNoLock
         // Scoped lock
         JPH::Ref<JPH::MutableCompoundShape> shape; //
         {
@@ -322,7 +332,8 @@ namespace TechEngine {
         }
     }
 
-    const JPH::BodyID& PhysicsEngine::createBody(JPH::EMotionType eMotionType, const Tag& tag, const Transform& transform, bool isTrigger) {
+    const JPH::BodyID& PhysicsEngine::createBody(JPH::EMotionType eMotionType, const Tag& tag,
+                                                 const Transform& transform, bool isTrigger) {
         JPH::RegisterDefaultAllocator();
         JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
 
