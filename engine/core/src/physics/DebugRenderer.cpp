@@ -1,3 +1,4 @@
+/*
 #include "DebugRenderer.hpp"
 
 #include "core/Logger.hpp"
@@ -32,3 +33,4 @@ namespace TechEngine {
         TE_LOGGER_INFO("DrawText3D");
     }
 }
+*/

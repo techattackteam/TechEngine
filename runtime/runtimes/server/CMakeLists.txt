@@ -14,8 +14,12 @@ if (WIN32) # WINDOWS
     # Set target property to store the output's path for editor to copy
     if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}" STREQUAL "")
         set_target_properties(TechEngineRuntimeServer PROPERTIES RUNTIME_SERVER_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/runtime/runtimes/server/debug")
-    else ()
+    elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
+        set_target_properties(TechEngineRuntimeServer PROPERTIES RUNTIME_SERVER_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/runtime/runtimes/server/relwithdebinfo")
+    elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
         set_target_properties(TechEngineRuntimeServer PROPERTIES RUNTIME_SERVER_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/runtime/runtimes/server/release")
+    else ()
+        message(FATAL_ERROR "CMAKE_BUILD_TYPE is not set or is not recognized. Defaulting to Release.")
     endif ()
 
     set_target_properties(TechEngineRuntimeServer PROPERTIES
@@ -27,6 +31,11 @@ if (WIN32) # WINDOWS
             ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${OUTPUT}/release"
             LIBRARY_OUTPUT_DIRECTORY_RELEASE "${OUTPUT}/release"
             RUNTIME_OUTPUT_DIRECTORY_RELEASE "${OUTPUT}/release"
+    )
+    set_target_properties(TechEngineRuntimeServer PROPERTIES
+            ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO "${OUTPUT}/relwithdebinfo"
+            LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${OUTPUT}/relwithdebinfo"
+            RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${OUTPUT}/relwithdebinfo"
     )
 endif ()
 

@@ -47,11 +47,13 @@ target_include_directories(ClientScripts PUBLIC
         "../../resources/common/TechEngineAPI")
 
 # Set variable for TechEngineAPILib
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}" STREQUAL "")
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/TechEngineAPI/client/lib/debug/TechEngineAPIClient.lib")
-elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo" OR "${CMAKE_BUILD_TYPE}" STREQUAL "")
+elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
+    set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/TechEngineAPI/client/lib/relwithdebinfo/TechEngineAPIClient.lib")
+elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/TechEngineAPI/client/lib/release/TechEngineAPIClient.lib")
 else ()
-    set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/TechEngineAPI/client/lib/release/TechEngineAPIClient.lib")
+    message(FATAL_ERROR "CMAKE_BUILD_TYPE is not set or is not recognized. Defaulting to Release.")
 endif ()
 target_link_libraries(ClientScripts PUBLIC ${TECH_ENGINE_API_LIB})

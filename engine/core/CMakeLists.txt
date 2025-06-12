@@ -15,7 +15,10 @@ target_link_libraries(TechEngineCore PUBLIC glm spdlog yaml-cpp::yaml-cpp assimp
 
 target_compile_definitions(TechEngineCore PUBLIC GLM_ENABLE_EXPERIMENTAL)
 target_compile_definitions(TechEngineCore PRIVATE TECH_ENGINE_CORE_EXPORT)
-
+target_compile_definitions(TechEngineCore PUBLIC
+        $<$<CONFIG:DEBUG>:TECH_ENGINE_CORE_DEBUG>
+        $<$<CONFIG:RELEASE>:TECH_ENGINE_CORE_RELEASE>
+        $<$<CONFIG:RelWithDebInfo>:TECH_ENGINE_CORE_RELWITHDEBINFO>)
 if (PHYSICS_DEBUG_RENDERER)
     target_compile_definitions(TechEngineCore PUBLIC PHYSICS_DEBUG_RENDERER)
 endif ()

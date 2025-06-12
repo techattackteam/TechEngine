@@ -17,10 +17,14 @@ if (WIN32) # WINDOWS
     set(OUTPUT "${PROJECT_SOURCE_DIR}/bin/engine/client")
 
     # Set target property to store the dll's path for editor and runtime to copy
-    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}" STREQUAL "")
+    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
         set_target_properties(TechEngineClient PROPERTIES CLIENT_DLL "${OUTPUT}/debug/TechEngineClient.dll")
-    else ()
+    elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
+        set_target_properties(TechEngineClient PROPERTIES CLIENT_DLL "${OUTPUT}/relwithdebinfo/TechEngineClient.dll")
+    elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
         set_target_properties(TechEngineClient PROPERTIES CLIENT_DLL "${OUTPUT}/release/TechEngineClient.dll")
+    else ()
+        message(FATAL_ERROR "CMAKE_BUILD_TYPE is not set or is not recognized. Defaulting to Release.")
     endif ()
 
     # Set the output directory
@@ -33,6 +37,12 @@ if (WIN32) # WINDOWS
             ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${OUTPUT}/release"
             LIBRARY_OUTPUT_DIRECTORY_RELEASE "${OUTPUT}/release"
             RUNTIME_OUTPUT_DIRECTORY_RELEASE "${OUTPUT}/release"
+    )
+
+    set_target_properties(TechEngineClient PROPERTIES
+            ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO "${OUTPUT}/relwithdebinfo"
+            LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${OUTPUT}/relwithdebinfo"
+            RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${OUTPUT}/relwithdebinfo"
     )
 
     # Copy the glfw dll to the output directory

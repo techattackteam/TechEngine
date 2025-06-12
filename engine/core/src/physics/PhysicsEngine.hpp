@@ -7,7 +7,7 @@
 
 #include "ShapeFactory.hpp"
 #include "BPLayerInterfaceImpl.hpp"
-#include "DebugRenderer.hpp"
+//#include "DebugRenderer.hpp"
 #include "ObjectLayerPairFilterImpl.hpp"
 #include "ObjectVsBroadPhaseLayerFilterImpl.hpp"
 #include "MyContactListener.hpp"
@@ -67,7 +67,7 @@ namespace TechEngine {
         std::unordered_map<std::string, JPH::Ref<JPH::MutableCompoundShape>> m_colliders;
 
     public:
-        DebugRenderer* debugRenderer = nullptr;
+        //DebugRenderer* debugRenderer = nullptr;
 
         explicit PhysicsEngine(SystemsRegistry& systemsRegistry);
 
