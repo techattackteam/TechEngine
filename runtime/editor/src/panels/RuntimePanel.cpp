@@ -17,10 +17,15 @@ namespace TechEngine {
                                SystemsRegistry& appSystemsRegistry,
                                LoggerPanel& loggerPanel): m_editorSystemsRegistry(editorSystemsRegistry),
                                                           m_appSystemsRegistry(appSystemsRegistry),
-                                                          m_inspectorPanel(editorSystemsRegistry, appSystemsRegistry, m_selectedEntities),
-                                                          m_sceneHierarchyPanel(editorSystemsRegistry, appSystemsRegistry, m_selectedEntities),
+                                                          m_inspectorPanel(
+                                                              editorSystemsRegistry, appSystemsRegistry,
+                                                              m_selectedEntities),
+                                                          m_sceneHierarchyPanel(
+                                                              editorSystemsRegistry, appSystemsRegistry,
+                                                              m_selectedEntities),
                                                           m_gameView(editorSystemsRegistry, appSystemsRegistry),
-                                                          m_sceneView(editorSystemsRegistry, appSystemsRegistry, m_selectedEntities),
+                                                          m_sceneView(editorSystemsRegistry, appSystemsRegistry,
+                                                                      m_selectedEntities),
                                                           loggerPanel(loggerPanel), DockPanel(editorSystemsRegistry) {
     }
 
@@ -47,24 +52,51 @@ namespace TechEngine {
         ImGuiID dockRightID = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Right, 0.2f, nullptr, &dockMainID);
         ImGuiID dockLeftID = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Left, 0.2f, nullptr, &dockMainID);
 
-        ImGui::DockBuilderDockWindow((m_sceneView.getName() + "##" + std::to_string(m_sceneView.getId())).c_str(), dockMainID);
-        ImGui::DockBuilderDockWindow((m_gameView.getName() + "##" + std::to_string(m_gameView.getId())).c_str(), dockMainID);
-        ImGui::DockBuilderDockWindow((m_sceneHierarchyPanel.getName() + "##" + std::to_string(m_sceneHierarchyPanel.getId())).c_str(), dockRightID);
-        ImGui::DockBuilderDockWindow((m_inspectorPanel.getName() + "##" + std::to_string(m_inspectorPanel.getId())).c_str(), dockLeftID);
+        ImGui::DockBuilderDockWindow((m_sceneView.getName() + "##" + std::to_string(m_sceneView.getId())).c_str(),
+                                     dockMainID);
+        ImGui::DockBuilderDockWindow((m_gameView.getName() + "##" + std::to_string(m_gameView.getId())).c_str(),
+                                     dockMainID);
+        ImGui::DockBuilderDockWindow(
+            (m_sceneHierarchyPanel.getName() + "##" + std::to_string(m_sceneHierarchyPanel.getId())).c_str(),
+            dockRightID);
+        ImGui::DockBuilderDockWindow(
+            (m_inspectorPanel.getName() + "##" + std::to_string(m_inspectorPanel.getId())).c_str(), dockLeftID);
 
         ImGui::DockBuilderFinish(m_dockSpaceID);
     }
 
     void RuntimePanel::startRunningScene() {
+        //If Engine is in debug mode, compile scripts in Debug mode
+        // otherwise compile in RelWithDebInfo mode
         ProjectManager& projectManager = m_editorSystemsRegistry.getSystem<ProjectManager>();
+#ifdef _DEBUG   // MSVC defines this in Debug-mode
         ScriptsCompiler::compileUserScripts(projectManager, CompileMode::Debug, m_projectType);
-        std::string dllPath = projectManager.getResourcesPath().string() + (m_projectType == ProjectType::Client ? "\\client\\scripts\\build\\debug\\ClientScripts.dll" : "\\server\\scripts\\build\\debug\\ServerScripts.dll");
+        
+        std::string dllPath = projectManager.getResourcesPath().string() + (m_projectType == ProjectType::Client
+                                                                                ? "\\client\\scripts\\build\\debug\\ClientScripts.dll"
+                                                                                : "\\server\\scripts\\build\\debug\\ServerScripts.dll");
+#elif defined(NDEBUG)  // Standard C/C++ release flag
+        ScriptsCompiler::compileUserScripts(projectManager, CompileMode::RelWithDebInfo, m_projectType);
+
+        std::string dllPath = projectManager.getResourcesPath().string() + (m_projectType == ProjectType::Client
+                                                                                ? "\\client\\scripts\\build\\releaseWithDebug\\ClientScripts.dll"
+                                                                                : "\\server\\scripts\\build\\releaseWithDebug\\ServerScripts.dll");
+#else
+        TE_LOGGER_TRACE("Unknown build type, compiling scripts in RelWithDebInfo mode");
+        ScriptsCompiler::compileUserScripts(projectManager, CompileMode::RelWithDebInfo, m_projectType);
+        std::string dllPath = projectManager.getResourcesPath().string() + (m_projectType == ProjectType::Client
+                                                                        ? "\\client\\scripts\\build\\releaseWithDebug\\ClientScripts.dll"
+                                                                        : "\\server\\scripts\\build\\releaseWithDebug\\ServerScripts.dll");
+#endif
+        
         if (ProjectType::Client == m_projectType) {
-            if (!m_editorSystemsRegistry.getSystem<RuntimeSimulator<Client>>().startSimulation(dllPath, loggerPanel.m_sink)) {
+            if (!m_editorSystemsRegistry.getSystem<RuntimeSimulator<Client>>().startSimulation(
+                dllPath, loggerPanel.m_sink)) {
                 stopRunningScene();
             }
         } else {
-            if (!m_editorSystemsRegistry.getSystem<RuntimeSimulator<Server>>().startSimulation(dllPath, loggerPanel.m_sink)) {
+            if (!m_editorSystemsRegistry.getSystem<RuntimeSimulator<Server>>().startSimulation(
+                dllPath, loggerPanel.m_sink)) {
                 stopRunningScene();
             }
         }
@@ -89,18 +121,23 @@ namespace TechEngine {
         ImGui::SetCursorPosX(pos.x / 4 - size / 2);
         ImGui::SetCursorPosY(cursor.y + 4);
         if (ImGui::Button("World", ImVec2(size, 0))) {
-            m_sceneView.changeGuizmoMode(m_sceneView.getGuizmoMode() == ImGuizmo::MODE::WORLD ? ImGuizmo::MODE::LOCAL : ImGuizmo::MODE::WORLD);
+            m_sceneView.changeGuizmoMode(m_sceneView.getGuizmoMode() == ImGuizmo::MODE::WORLD
+                                             ? ImGuizmo::MODE::LOCAL
+                                             : ImGuizmo::MODE::WORLD);
         }
         ImGui::SameLine();
         ImGui::SetCursorPosX(pos.x / 2 - (size / 2));
         std::string playStopText;
-        if (m_editorSystemsRegistry.getSystem<RuntimeSimulator<Client>>().getSimulationState() == SimulationState::RUNNING) {
+        if (m_editorSystemsRegistry.getSystem<RuntimeSimulator<Client>>().getSimulationState() ==
+            SimulationState::RUNNING) {
             playStopText = "Stop";
-        } else if (m_editorSystemsRegistry.getSystem<RuntimeSimulator<Client>>().getSimulationState() == SimulationState::STOPPED) {
+        } else if (m_editorSystemsRegistry.getSystem<RuntimeSimulator<Client>>().getSimulationState() ==
+                   SimulationState::STOPPED) {
             playStopText = "Play";
         }
         if (ImGui::Button(playStopText.c_str(), ImVec2(size, 0))) {
-            if (m_editorSystemsRegistry.getSystem<RuntimeSimulator<Client>>().getSimulationState() == SimulationState::STOPPED) {
+            if (m_editorSystemsRegistry.getSystem<RuntimeSimulator<Client>>().getSimulationState() ==
+                SimulationState::STOPPED) {
                 startRunningScene();
             } else {
                 stopRunningScene();

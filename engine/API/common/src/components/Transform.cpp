@@ -8,7 +8,6 @@ namespace TechEngineAPI {
 
     void Transform::setPosition(const glm::vec3& position) const {
         m_transform->position = (position);
-        TE_LOGGER_INFO("M_Transform position {0} {1} {2}", m_transform->position.x, m_transform->position.y, m_transform->position.z);
     }
 
     void Transform::setRotation(const glm::vec3& rotation) const {

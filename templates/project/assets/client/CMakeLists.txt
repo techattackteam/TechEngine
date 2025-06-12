@@ -49,6 +49,8 @@ target_include_directories(ClientScripts PUBLIC
 # Set variable for TechEngineAPILib
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/TechEngineAPI/client/lib/debug/TechEngineAPIClient.lib")
+elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo" OR "${CMAKE_BUILD_TYPE}" STREQUAL "")
+    set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/TechEngineAPI/client/lib/release/TechEngineAPIClient.lib")
 else ()
     set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/TechEngineAPI/client/lib/release/TechEngineAPIClient.lib")
 endif ()

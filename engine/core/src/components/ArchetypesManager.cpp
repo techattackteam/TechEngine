@@ -36,7 +36,6 @@ namespace TechEngine {
             m_lastEntityID = entity;
             m_lastEntityID++;
         }
-        TE_LOGGER_INFO("Registering entity: {0}, Last entity ID {1}", entity, m_lastEntityID);
         Archetype& newArchetype = m_archetypes[index];
         newArchetype.addEntity(entity);
         m_entityToArchetypeMap[entity] = index;
@@ -67,7 +66,9 @@ namespace TechEngine {
         for (auto& pair: archetype.m_componentData) {
             ComponentTypeID typeID = pair.first;
             size_t componentSize = archetype.getComponentSize(typeID);
-            auto entityIndex = std::distance(archetype.m_entities.begin(), std::find(archetype.m_entities.begin(), archetype.m_entities.end(), entity));
+            auto entityIndex = std::distance(archetype.m_entities.begin(),
+                                             std::find(archetype.m_entities.begin(), archetype.m_entities.end(),
+                                                       entity));
             auto start = pair.second.begin() + entityIndex * componentSize;
             auto end = start + componentSize;
             components.insert(components.end(), start, end);

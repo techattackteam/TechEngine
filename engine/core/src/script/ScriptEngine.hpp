@@ -10,6 +10,7 @@ namespace TechEngine {
 
     enum class CompileMode {
         Debug,
+        RelWithDebInfo,
         Release
     };
 

@@ -248,7 +248,7 @@ namespace TechEngine {
                 /*if (clientPanel.isRunning()) {
                     clientPanel.stopRunningScene();
                 }*/
-                ScriptsCompiler::compileUserScripts(m_systemsRegistry.getSystem<ProjectManager>(), CompileMode::Debug,
+                ScriptsCompiler::compileUserScripts(m_systemsRegistry.getSystem<ProjectManager>(), CompileMode::Release,
                                                     ProjectType::Client);
             } else if (ImGui::MenuItem("Run")) {
                 //runClientProcess();
