@@ -28,6 +28,11 @@ if (WIN32) # WINDOWS
             LIBRARY_OUTPUT_DIRECTORY_RELEASE "${OUTPUT}/release"
             RUNTIME_OUTPUT_DIRECTORY_RELEASE "${OUTPUT}/release"
     )
+    set_target_properties(TechEngineEditor PROPERTIES
+            ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO "${OUTPUT}/relwithdebinfo"
+            LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${OUTPUT}/relwithdebinfo"
+            RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${OUTPUT}/relwithdebinfo"
+    )
 endif ()
 
 # Copy the dlls to the output directory

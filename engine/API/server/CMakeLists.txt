@@ -21,10 +21,19 @@ if (WIN32) # WINDOWS
             LIBRARY_OUTPUT_DIRECTORY_RELEASE "${OUTPUT}/lib/release"
             RUNTIME_OUTPUT_DIRECTORY_RELEASE "${OUTPUT}/lib/release"
     )
+    set_target_properties(TechEngineAPIServer PROPERTIES
+            ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO "${OUTPUT}/lib/relwithdebinfo"
+            LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${OUTPUT}/lib/relwithdebinfo"
+            RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${OUTPUT}/lib/relwithdebinfo"
+    )
     # Set target property to store the dll's path for editor and runtime to copy
-    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}" STREQUAL "")
+    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
         set_target_properties(TechEngineAPIServer PROPERTIES SERVER_API_DLL "${OUTPUT}/lib/debug/TechEngineAPIServer.dll")
-    else ()
+    elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
+        set_target_properties(TechEngineAPIServer PROPERTIES SERVER_API_DLL "${OUTPUT}/lib/relwithdebinfo/TechEngineAPIServer.dll")
+    elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
         set_target_properties(TechEngineAPIServer PROPERTIES SERVER_API_DLL "${OUTPUT}/lib/release/TechEngineAPIServer.dll")
+    else ()
+        message(FATAL_ERROR "CMAKE_BUILD_TYPE is not set or is not recognized. Defaulting to Release.")
     endif ()
 endif ()

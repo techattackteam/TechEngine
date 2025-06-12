@@ -69,26 +69,25 @@ namespace TechEngine {
         //If Engine is in debug mode, compile scripts in Debug mode
         // otherwise compile in RelWithDebInfo mode
         ProjectManager& projectManager = m_editorSystemsRegistry.getSystem<ProjectManager>();
-#ifdef _DEBUG   // MSVC defines this in Debug-mode
+#ifdef TECH_ENGINE_CORE_DEBUG   // MSVC defines this in Debug-mode
         ScriptsCompiler::compileUserScripts(projectManager, CompileMode::Debug, m_projectType);
         
         std::string dllPath = projectManager.getResourcesPath().string() + (m_projectType == ProjectType::Client
                                                                                 ? "\\client\\scripts\\build\\debug\\ClientScripts.dll"
                                                                                 : "\\server\\scripts\\build\\debug\\ServerScripts.dll");
-#elif defined(NDEBUG)  // Standard C/C++ release flag
-        ScriptsCompiler::compileUserScripts(projectManager, CompileMode::RelWithDebInfo, m_projectType);
+#elif TECH_ENGINE_CORE_RELEASE  // Standard C/C++ release flag
+        ScriptsCompiler::compileUserScripts(projectManager, CompileMode::Release, m_projectType);
 
         std::string dllPath = projectManager.getResourcesPath().string() + (m_projectType == ProjectType::Client
-                                                                                ? "\\client\\scripts\\build\\releaseWithDebug\\ClientScripts.dll"
-                                                                                : "\\server\\scripts\\build\\releaseWithDebug\\ServerScripts.dll");
-#else
-        TE_LOGGER_TRACE("Unknown build type, compiling scripts in RelWithDebInfo mode");
+                                                                                ? "\\client\\scripts\\build\\release\\ClientScripts.dll"
+                                                                                : "\\server\\scripts\\build\\release\\ServerScripts.dll");
+#elif TECH_ENGINE_CORE_RELWITHDEBINFO  // Standard C/C++ RelWithDebInfo flag
         ScriptsCompiler::compileUserScripts(projectManager, CompileMode::RelWithDebInfo, m_projectType);
         std::string dllPath = projectManager.getResourcesPath().string() + (m_projectType == ProjectType::Client
                                                                         ? "\\client\\scripts\\build\\releaseWithDebug\\ClientScripts.dll"
                                                                         : "\\server\\scripts\\build\\releaseWithDebug\\ServerScripts.dll");
 #endif
-        
+
         if (ProjectType::Client == m_projectType) {
             if (!m_editorSystemsRegistry.getSystem<RuntimeSimulator<Client>>().startSimulation(
                 dllPath, loggerPanel.m_sink)) {

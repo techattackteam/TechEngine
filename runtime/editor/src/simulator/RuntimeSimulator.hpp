@@ -84,12 +84,12 @@ namespace TechEngine {
                     stopNextUpdate = true;
                 }
             });
-            Renderer& renderer = m_runtime.m_systemRegistry.template getSystem<Renderer>();
-            DebugRenderer* debugRenderer = m_runtime.m_systemRegistry.template getSystem<PhysicsEngine>().debugRenderer;
-            debugRenderer->init([this](const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) {
-                this->m_runtime.m_systemRegistry.template getSystem<Renderer>().createLine(from, to, color);
-            });
-            m_runtime.m_systemRegistry.template getSystem<PhysicsEngine>().debugRenderer = debugRenderer;
+            //Renderer& renderer = m_runtime.m_systemRegistry.template getSystem<Renderer>();
+            //DebugRenderer* debugRenderer = m_runtime.m_systemRegistry.template getSystem<PhysicsEngine>().debugRenderer;
+            //debugRenderer->init([this](const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) {
+            //    this->m_runtime.m_systemRegistry.template getSystem<Renderer>().createLine(from, to, color);
+            //});
+            //m_runtime.m_systemRegistry.template getSystem<PhysicsEngine>().debugRenderer = debugRenderer;
             JPH::RegisterDefaultAllocator();
         }
 

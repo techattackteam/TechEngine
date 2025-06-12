@@ -2,7 +2,7 @@
 include(FetchContent)
 
 # The configurations we support
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release;Distribution")
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo;Distribution")
 
 # When turning this option on, the library will be compiled using doubles for positions. This allows for much bigger worlds.
 set(DOUBLE_PRECISION OFF)

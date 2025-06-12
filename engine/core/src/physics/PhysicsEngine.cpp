@@ -5,7 +5,7 @@
 #include "core/Logger.hpp"
 #include "core/Timer.hpp"
 #include "systems/SystemsRegistry.hpp"
-#include "physics/DebugRenderer.hpp"
+//#include "physics/DebugRenderer.hpp"
 
 #include <iostream>
 #include <cstdarg>
@@ -38,7 +38,7 @@ namespace TechEngine {
         JPH::Factory::sInstance = new JPH::Factory();
 
         JPH::RegisterTypes();
-        debugRenderer = new DebugRenderer();
+        //debugRenderer = new DebugRenderer();
 
         temp_allocator = new JPH::TempAllocatorImpl(10 * 1024 * 1024);
 
@@ -74,7 +74,7 @@ namespace TechEngine {
         JPH::UnregisterTypes();
         delete temp_allocator;
         delete job_system;
-        delete debugRenderer;
+        //delete debugRenderer;
         delete JPH::Factory::sInstance;
         JPH::Factory::sInstance = nullptr;
         delete m_physicsSystem;
@@ -120,9 +120,9 @@ namespace TechEngine {
 
     void PhysicsEngine::renderBodies() const {
 #ifdef PHYSICS_DEBUG_RENDERER
-        if (debugRenderer != nullptr) {
-            m_physicsSystem->DrawBodies(JPH::BodyManager::DrawSettings(), debugRenderer);
-        }
+       //if (debugRenderer != nullptr) {
+       //    m_physicsSystem->DrawBodies(JPH::BodyManager::DrawSettings(), debugRenderer);
+       //}
 #endif
     }
 
