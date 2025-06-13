@@ -11,7 +11,7 @@ namespace TechEngineAPI {
     class API_DLL Component {
     protected:
         Entity m_entity = 0;
-
+        
     public:
         Component(const Entity entity): m_entity(entity) {
         };

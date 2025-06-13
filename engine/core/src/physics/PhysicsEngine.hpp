@@ -93,7 +93,8 @@ namespace TechEngine {
 
         void createCollider(Shape shape, const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 size);
 
-        const JPH::BodyID& createTrigger(Shape shape, const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 size);
+        const JPH::BodyID& createTrigger(Shape shape, const Tag& tag, const Transform& transform, glm::vec3 center,
+                                         glm::vec3 size);
 
         void resizeCollider(Shape shape, const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 size);
 
@@ -115,10 +116,16 @@ namespace TechEngine {
 
         void setVelocity(const Tag& tag, const glm::vec3& velocity);
 
-        void moveOrRotateBody(const Tag& tag, const Transform& transform); //Only to be used by the editor when then simulation is not running
+        //Only to be used by the editor when then simulation is not running
+        void moveOrRotateBody(const Tag& tag, const Transform& transform);
+
+        void addVelocity(const Tag& tag, const glm::vec3& velocity);
+
+        void setLinearVelocity(const Tag& tag, const glm::vec3& velocity);
 
     private:
-        const JPH::BodyID& createBody(JPH::EMotionType eMotionType, const Tag& tag, const Transform& transform, bool isTrigger);
+        const JPH::BodyID& createBody(JPH::EMotionType eMotionType, const Tag& tag, const Transform& transform,
+                                      bool isTrigger);
 
         template<typename Body>
         void updateBodies(Transform& transform, Body& body) {
@@ -134,7 +141,8 @@ namespace TechEngine {
             JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
             JPH::RVec3 position = bodyInterface.GetPosition(body.bodyID);
             JPH::Quat rotation = bodyInterface.GetRotation(body.bodyID);
-            glm::vec3 euler = glm::eulerAngles(glm::quat(rotation.GetW(), rotation.GetX(), rotation.GetY(), rotation.GetZ()));
+            glm::vec3 euler = glm::eulerAngles(glm::quat(rotation.GetW(), rotation.GetX(), rotation.GetY(),
+                                                         rotation.GetZ()));
 
             transform.position = glm::vec3(position.GetX(), position.GetY(), position.GetZ());
             transform.rotation = glm::vec3(glm::degrees(euler.x), glm::degrees(euler.y), glm::degrees(euler.z));

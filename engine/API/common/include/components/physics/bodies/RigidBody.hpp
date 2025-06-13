@@ -2,12 +2,28 @@
 
 #include <common/include/components/Component.hpp>
 
-namespace TechEngineAPI {
-    class RigidBody : public Component {
-    public:
-        RigidBody(Entity entity);
+#include "common/include/scene/Scene.hpp"
+#include "glm/vec3.hpp"
 
-        void updateInternalPointer(TechEngine::Scene* scene) override {
-        }
+namespace TechEngine {
+    class Scene;
+    class RigidBody;
+}
+
+namespace TechEngineAPI {
+    class API_DLL RigidBody : public Component {
+    private:
+        TechEngine::RigidBody* m_rigidBody = nullptr;
+        TechEngine::Scene* m_scene = nullptr;
+        TechEngine::PhysicsEngine* m_physicsEngine = nullptr;
+
+    public:
+        RigidBody(Entity entity, TechEngine::PhysicsEngine* physicsEngine, TechEngine::Scene* scene);
+
+        void updateInternalPointer(TechEngine::Scene* scene) override;
+
+        void setVelocity(const glm::vec3& velocity) const;
+
+        void addVelocity(const glm::vec3& velocity) const;
     };
 }
