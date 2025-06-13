@@ -144,7 +144,7 @@ namespace TechEngineAPI {
                                                              TechEngine::ComponentsFactory::createRigidBody(*m_physicsEngine,
                                                                                                             tag,
                                                                                                             transform));
-                components[{entity, typeid(RigidBody)}] = std::make_shared<RigidBody>(entity);
+                components[{entity, typeid(RigidBody)}] = std::make_shared<RigidBody>(entity, m_physicsEngine, m_scene);
             } else if constexpr (std::is_same_v<T, BoxCollider>) {
                 const TechEngine::Tag& tag = m_scene->getComponent<TechEngine::Tag>(entity);
                 const TechEngine::Transform& transform = m_scene->getComponent<TechEngine::Transform>(entity);
@@ -251,6 +251,15 @@ namespace TechEngineAPI {
             component->setHeight(cylinderCollider.height);
             component->setRadius(cylinderCollider.radius);
             return std::static_pointer_cast<T>(components[{entity, typeid(CylinderCollider)}]);
+        } else if constexpr (std::is_same_v<T, RigidBody>) {
+            std::shared_ptr<RigidBody> component = std::static_pointer_cast<RigidBody>(components[{entity, typeid(RigidBody)}]);
+            return std::static_pointer_cast<T>(components[{entity, typeid(RigidBody)}]);
+        } else if constexpr (std::is_same_v<T, StaticBody>) {
+            std::shared_ptr<StaticBody> component = std::static_pointer_cast<StaticBody>(components[{entity, typeid(StaticBody)}]);
+            return std::static_pointer_cast<T>(components[{entity, typeid(StaticBody)}]);
+        } else if constexpr (std::is_same_v<T, KinematicBody>) {
+            std::shared_ptr<KinematicBody> component = std::static_pointer_cast<KinematicBody>(components[{entity, typeid(KinematicBody)}]);
+            return std::static_pointer_cast<T>(components[{entity, typeid(KinematicBody)}]);
         } else {
             throw std::runtime_error("Entity does not have component");
         }
@@ -303,6 +312,12 @@ namespace TechEngineAPI {
 
     template API_DLL std::shared_ptr<MeshRenderer> Scene::getComponent<MeshRenderer>(Entity entity);
 
+    template API_DLL std::shared_ptr<RigidBody> Scene::getComponent<RigidBody>(Entity entity);
+
+    template API_DLL std::shared_ptr<StaticBody> Scene::getComponent<StaticBody>(Entity entity);
+
+    template API_DLL std::shared_ptr<KinematicBody> Scene::getComponent<KinematicBody>(Entity entity);
+
     template API_DLL std::shared_ptr<BoxCollider> Scene::getComponent<BoxCollider>(Entity entity);
 
     template API_DLL std::shared_ptr<SphereCollider> Scene::getComponent<SphereCollider>(Entity entity);
@@ -316,6 +331,12 @@ namespace TechEngineAPI {
     template API_DLL Transform& Scene::getComponentInternal<Transform>(Entity entity);
 
     template API_DLL MeshRenderer& Scene::getComponentInternal<MeshRenderer>(Entity entity);
+
+    template API_DLL RigidBody& Scene::getComponentInternal<RigidBody>(Entity entity);
+
+    template API_DLL StaticBody& Scene::getComponentInternal<StaticBody>(Entity entity);
+
+    template API_DLL KinematicBody& Scene::getComponentInternal<KinematicBody>(Entity entity);
 
     template API_DLL BoxCollider& Scene::getComponentInternal<BoxCollider>(Entity entity);
 

@@ -120,9 +120,9 @@ namespace TechEngine {
 
     void PhysicsEngine::renderBodies() const {
 #ifdef PHYSICS_DEBUG_RENDERER
-       //if (debugRenderer != nullptr) {
-       //    m_physicsSystem->DrawBodies(JPH::BodyManager::DrawSettings(), debugRenderer);
-       //}
+        //if (debugRenderer != nullptr) {
+        //    m_physicsSystem->DrawBodies(JPH::BodyManager::DrawSettings(), debugRenderer);
+        //}
 #endif
     }
 
@@ -329,6 +329,26 @@ namespace TechEngine {
             glm::quat rotation = glm::quat(glm::radians(transform.rotation));
             JPH::Quat quat = JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w);
             bodyInterface.SetPositionAndRotation(body, position, quat, JPH::EActivation::DontActivate);
+        }
+    }
+
+    void PhysicsEngine::addVelocity(const Tag& tag, const glm::vec3& velocity) {
+        JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
+        if (m_bodies.find(tag.getUuid()) != m_bodies.end()) {
+            JPH::BodyID body = m_bodies[tag.getUuid()];
+            JPH::RVec3 currentVelocity = bodyInterface.GetLinearVelocity(body);
+            JPH::RVec3 newVelocity = currentVelocity + JPH::RVec3(velocity.x, velocity.y, velocity.z);
+            bodyInterface.AddLinearVelocity(body, newVelocity);
+        }
+    }
+
+    void PhysicsEngine::setLinearVelocity(const Tag& tag, const glm::vec3& velocity) {
+        JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
+        if (m_bodies.find(tag.getUuid()) != m_bodies.end()) {
+            JPH::BodyID body = m_bodies[tag.getUuid()];
+            JPH::RVec3 currentVelocity = bodyInterface.GetLinearVelocity(body);
+            JPH::RVec3 newVelocity = currentVelocity + JPH::RVec3(velocity.x, velocity.y, velocity.z);
+            bodyInterface.SetLinearVelocity(body, newVelocity);
         }
     }
 
