@@ -2,7 +2,6 @@
 
 #include "scene/CameraSystem.hpp"
 #include "scene/ScenesManager.hpp"
-#include "scene/TransformSystem.hpp"
 #include "components/Components.hpp"
 #include "components/ComponentsFactory.hpp"
 
@@ -180,43 +179,45 @@ namespace TechEngine {
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<Transform>()) != componentsToDraw.end()) {
             drawComponent<Transform>(firstEntity, "Transform", [this](auto& component) {
                 Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
-                glm::vec3 position = component.position;
-                glm::vec3 rotation = component.rotation;
-                glm::vec3 scale = component.scale;
+                glm::vec3 position = component.m_position;
+                glm::vec3 rotation = component.m_rotation;
+                glm::vec3 scale = component.m_scale;
+                
                 bool drawPosition = true;
                 bool drawOrientation = true;
                 bool drawScale = true;
 
                 for (Entity entity: m_selectedEntities) {
-                    if (scene.getComponent<Transform>(entity).position != position) {
+                    if (scene.getComponent<Transform>(entity).m_position != position) {
                         drawPosition = false;
                     }
-                    if (scene.getComponent<Transform>(entity).rotation != rotation) {
+                    if (scene.getComponent<Transform>(entity).m_rotation != rotation) {
                         drawOrientation = false;
                     }
-                    if (scene.getComponent<Transform>(entity).scale != scale) {
+                    if (scene.getComponent<Transform>(entity).m_scale != scale) {
                         drawScale = false;
                     }
                 }
                 ImGuiUtils::drawVec3Control("Translation", position, 0.0f, 100.0f, 0, 0, drawPosition);
                 ImGuiUtils::drawVec3Control("Rotation", rotation, 0.0f, 100.0f, 0, 0, drawOrientation);
                 ImGuiUtils::drawVec3Control("Scale", scale, 1.0f, 100.0f, 0, 0, drawScale);
+                
                 bool move = false;
                 bool rotate = false;
                 bool scaling = false;
                 for (Entity entity: m_selectedEntities) {
-                    if (move || position != component.position) {
-                        m_appSystemRegistry.getSystem<TransformSystem>().translateTo(entity, position);
+                    if (move || position != component.m_position) {
+                        component.translateTo(position);
                         m_appSystemRegistry.getSystem<PhysicsEngine>().moveOrRotateBody(scene.getComponent<Tag>(entity), scene.getComponent<Transform>(entity));
                         move = true;
                     }
-                    if (rotate || rotation != component.rotation) {
-                        m_appSystemRegistry.getSystem<TransformSystem>().setRotation(entity, rotation);
+                    if (rotate || rotation != component.m_rotation) {
+                        component.setRotation(rotation);
                         m_appSystemRegistry.getSystem<PhysicsEngine>().moveOrRotateBody(scene.getComponent<Tag>(entity), scene.getComponent<Transform>(entity));
                         rotate = true;
                     }
-                    if (scaling || scale != component.scale) {
-                        m_appSystemRegistry.getSystem<TransformSystem>().setScale(entity, scale);
+                    if (scaling || scale != component.m_scale) {
+                        component.setScale(scale);
                         if (scene.hasComponent<BoxCollider>(entity)) {
                             m_appSystemRegistry.getSystem<PhysicsEngine>().rescaleCollider(
                                 scene.getComponent<Tag>(entity),

@@ -5,7 +5,6 @@
 
 #include "physics/PhysicsEngine.hpp"
 #include "scene/ScenesManager.hpp"
-#include "scene/TransformSystem.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
@@ -92,21 +91,21 @@ namespace TechEngine {
 
         const glm::mat4& cameraProjection = camera->getProjectionMatrix();
         glm::mat4 cameraView = camera->getViewMatrix();
-        TransformSystem& transformSystem = m_systemsRegistry.getSystem<TransformSystem>();
-        int entity = selectedEntities.front();
-        glm::mat4 transform = transformSystem.getModelMatrix(m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getComponent<Transform>(entity));
+        Entity entity = selectedEntities.front();
+        Transform& transform = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getComponent<Transform>(entity);
+        glm::mat4 modelMatrix = transform.getModelMatrix();
         Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
-                   (ImGuizmo::OPERATION)operation, (ImGuizmo::MODE)(mode), glm::value_ptr(transform),
+                   (ImGuizmo::OPERATION)operation, (ImGuizmo::MODE)(mode), glm::value_ptr(modelMatrix),
                    nullptr, nullptr);
 
         if (ImGuizmo::IsUsing() && (lastUsingID == -1 || lastUsingID == id)) {
             lastUsingID = id;
             glm::vec3 translation, rotation, scale;
-            DecomposeTransform(transform, translation, rotation, scale);
+            DecomposeTransform(modelMatrix, translation, rotation, scale);
 
-            transformSystem.translateToWorld(entity, translation);
-            transformSystem.setRotation(entity, degrees(rotation));
-            transformSystem.setScale(entity, scale);
+            transform.translateToWorld(translation);
+            transform.setRotation(degrees(rotation));
+            transform.setScale(scale);
             Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
             m_systemsRegistry.getSystem<PhysicsEngine>().moveOrRotateBody(scene.getComponent<Tag>(entity), scene.getComponent<Transform>(entity));
         } else {

@@ -191,17 +191,17 @@ namespace TechEngine {
 
     void Transform::serialize(const Transform& transform, YAML::Emitter& out) {
         out << YAML::Key << "Transform" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "Position" << YAML::Value << YAML::Flow << YAML::BeginSeq << transform.position.x << transform.position.y << transform.position.z << YAML::EndSeq;
-        out << YAML::Key << "Rotation" << YAML::Value << YAML::Flow << YAML::BeginSeq << transform.rotation.x << transform.rotation.y << transform.rotation.z << YAML::EndSeq;
-        out << YAML::Key << "Scale" << YAML::Value << YAML::Flow << YAML::BeginSeq << transform.scale.x << transform.scale.y << transform.scale.z << YAML::EndSeq;
+        out << YAML::Key << "Position" << YAML::Value << YAML::Flow << YAML::BeginSeq << transform.m_position.x << transform.m_position.y << transform.m_position.z << YAML::EndSeq;
+        out << YAML::Key << "Rotation" << YAML::Value << YAML::Flow << YAML::BeginSeq << transform.m_rotation.x << transform.m_rotation.y << transform.m_rotation.z << YAML::EndSeq;
+        out << YAML::Key << "Scale" << YAML::Value << YAML::Flow << YAML::BeginSeq << transform.m_scale.x << transform.m_scale.y << transform.m_scale.z << YAML::EndSeq;
         out << YAML::EndMap;
     }
 
     Transform Transform::deserialize(const YAML::Node& node) {
         Transform transform = ComponentsFactory::createTransform(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f));
-        transform.position = glm::vec3(node["Position"].as<glm::vec3>());
-        transform.rotation = glm::vec3(node["Rotation"].as<glm::vec3>());
-        transform.scale = glm::vec3(node["Scale"].as<glm::vec3>());
+        transform.m_position = glm::vec3(node["Position"].as<glm::vec3>());
+        transform.m_rotation = glm::vec3(node["Rotation"].as<glm::vec3>());
+        transform.m_scale = glm::vec3(node["Scale"].as<glm::vec3>());
         return transform;
     }
 

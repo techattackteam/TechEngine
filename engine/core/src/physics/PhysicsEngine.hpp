@@ -130,8 +130,8 @@ namespace TechEngine {
         template<typename Body>
         void updateBodies(Transform& transform, Body& body) {
             JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
-            JPH::RVec3 position = JPH::RVec3(transform.position.x, transform.position.y, transform.position.z);
-            glm::quat rotation = glm::quat(glm::radians(transform.rotation));
+            JPH::RVec3 position = JPH::RVec3(transform.m_position.x, transform.m_position.y, transform.m_position.z);
+            glm::quat rotation = glm::quat(glm::radians(transform.m_rotation));
             JPH::Quat quat = JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w);
             bodyInterface.SetPositionAndRotation(body.bodyID, position, quat, JPH::EActivation::Activate);
         }
@@ -144,8 +144,8 @@ namespace TechEngine {
             glm::vec3 euler = glm::eulerAngles(glm::quat(rotation.GetW(), rotation.GetX(), rotation.GetY(),
                                                          rotation.GetZ()));
 
-            transform.position = glm::vec3(position.GetX(), position.GetY(), position.GetZ());
-            transform.rotation = glm::vec3(glm::degrees(euler.x), glm::degrees(euler.y), glm::degrees(euler.z));
+            transform.m_position = glm::vec3(position.GetX(), position.GetY(), position.GetZ());
+            transform.m_rotation = glm::vec3(glm::degrees(euler.x), glm::degrees(euler.y), glm::degrees(euler.z));
         }
 
         void updateBodies();

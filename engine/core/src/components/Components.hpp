@@ -57,12 +57,69 @@ namespace TechEngine {
     private:
         friend class ComponentsFactory;
 
-        Transform() = default;
+        Transform() {
+            calculateUpForwardRight();
+        }
 
     public:
-        glm::vec3 position = glm::vec3(0.0f);
-        glm::vec3 rotation = glm::vec3(0.0f); // Maybe use quaternions instead
-        glm::vec3 scale = glm::vec3(1.0f);
+        glm::vec3 m_position = glm::vec3(0.0f);
+        glm::vec3 m_rotation = glm::vec3(0.0f); // Maybe use quaternions instead
+        glm::vec3 m_scale = glm::vec3(1.0f);
+        glm::vec3 m_forward = glm::vec3(0.0f, 0.0f, -1.0f);
+        glm::vec3 m_up = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 m_right = glm::vec3(1.0f, 0.0f, 0.0f);
+
+
+        void translate(glm::vec3 vector) {
+            m_position += vector;
+        }
+
+        void translateTo(glm::vec3 position) {
+            m_position = position;
+        }
+
+        void translateToWorld(glm::vec3 worldPosition) {
+            m_position = worldPosition;
+        }
+
+        void setRotation(glm::vec3 rotation) {
+            m_rotation = rotation;
+            calculateUpForwardRight();
+        }
+
+        void rotate(glm::vec3 rotation) {
+            m_rotation += rotation;
+            calculateUpForwardRight();
+        }
+
+        void setRotation(glm::quat quaternion) {
+            m_rotation = glm::eulerAngles(quaternion);
+            calculateUpForwardRight();
+        }
+
+        void setScale(glm::vec3 vector) {
+            m_scale = vector;
+        }
+
+
+        void calculateUpForwardRight() {
+            glm::vec3 forward = glm::normalize(glm::vec3(
+                -sin(glm::radians(m_rotation.y)) * cos(glm::radians(m_rotation.x)),
+                sin(glm::radians(m_rotation.x)),
+                -cos(glm::radians(m_rotation.y)) * cos(glm::radians(m_rotation.x))
+            ));
+            glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f))); // World Up
+            glm::vec3 up = glm::normalize(glm::cross(right, forward ));
+            m_forward = forward;
+            m_up = up;
+            m_right = right;
+        }
+
+        glm::mat4 getModelMatrix() {
+            return glm::translate(glm::mat4(1), m_position) *
+                   glm::mat4_cast(glm::quat(glm::radians(m_rotation))) *
+                   glm::scale(glm::mat4(1), m_scale);
+        }
 
         static void serialize(const Transform& transform, YAML::Emitter& out);
 
@@ -170,7 +227,7 @@ namespace TechEngine {
 
         static MeshRenderer deserialize(const YAML::Node& node, ResourcesManager& resourcesManager);
     };
-    
+
     class CORE_DLL StaticBody {
         friend class ComponentsFactory;
 
