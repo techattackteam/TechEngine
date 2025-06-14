@@ -12,7 +12,6 @@
 #include "resources/material/Material.hpp"
 #include "resources/mesh/Vertex.hpp"
 #include "scene/ScenesManager.hpp"
-#include "scene/TransformSystem.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
@@ -57,9 +56,7 @@ namespace TechEngine {
         /*for (auto& pair: gameObject->getChildren()) {
             renderGameObject(pair.second, shadow);
         }*/
-        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
-        TransformSystem& transformSystem = m_systemsRegistry.getSystem<TransformSystem>();
-        glm::mat4 model = transformSystem.getModelMatrix(transform);
+        glm::mat4 model = transform.getModelMatrix();
         shadersManager.getActiveShader()->setUniformMatrix4f("model", model);
         flushMeshData(&meshRenderer);
         if (!shadow) {

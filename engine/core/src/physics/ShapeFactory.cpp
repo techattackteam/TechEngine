@@ -29,7 +29,7 @@ namespace TechEngine::ShapeFactory {
         JPH::RegisterDefaultAllocator();
         JPH::MutableCompoundShape* compoundShape = new JPH::MutableCompoundShape();
         JPH::Ref<JPH::BoxShape> shape = new JPH::BoxShape(JPH::Vec3(0.5f, 0.5f, 0.5f));
-        JPH::Ref<JPH::ScaledShape> scaledShape = new JPH::ScaledShape(shape, JPH::RVec3(transform.scale.x * scale.x, transform.scale.y * scale.y, transform.scale.z * scale.z));
+        JPH::Ref<JPH::ScaledShape> scaledShape = new JPH::ScaledShape(shape, JPH::RVec3(transform.m_scale.x * scale.x, transform.m_scale.y * scale.y, transform.m_scale.z * scale.z));
         compoundShape->AddShape(JPH::RVec3(center.x, center.y, center.z), JPH::Quat::sIdentity(), scaledShape);
         return compoundShape;
     }
@@ -37,7 +37,7 @@ namespace TechEngine::ShapeFactory {
     JPH::MutableCompoundShape* createSphereShape(const Transform& transform, const glm::vec3 center, const float radius) {
         JPH::RegisterDefaultAllocator();
         JPH::MutableCompoundShape* compoundShape = new JPH::MutableCompoundShape();
-        float transformScale = std::max(transform.scale.x, std::max(transform.scale.y, transform.scale.z));
+        float transformScale = std::max(transform.m_scale.x, std::max(transform.m_scale.y, transform.m_scale.z));
         const JPH::Ref<JPH::SphereShape> shape = new JPH::SphereShape(radius);
         const JPH::Ref<JPH::ScaledShape> scaledShape = new JPH::ScaledShape(shape, JPH::RVec3(transformScale, transformScale, transformScale));
         compoundShape->AddShape(JPH::RVec3(center.x, center.y, center.z), JPH::Quat::sIdentity(), scaledShape);
@@ -47,7 +47,7 @@ namespace TechEngine::ShapeFactory {
     JPH::MutableCompoundShape* createCapsuleShape(const Transform& transform, const glm::vec3 center, const float height, const float radius) {
         JPH::RegisterDefaultAllocator();
         JPH::MutableCompoundShape* compoundShape = new JPH::MutableCompoundShape();
-        float transformScale = std::max(transform.scale.x, std::max(transform.scale.y, transform.scale.z));
+        float transformScale = std::max(transform.m_scale.x, std::max(transform.m_scale.y, transform.m_scale.z));
         JPH::Ref<JPH::CapsuleShape> shape = new JPH::CapsuleShape(height * 0.5f, radius);
         JPH::Ref<JPH::ScaledShape> scaledShape = new JPH::ScaledShape(shape, JPH::RVec3(transformScale, transformScale, transformScale));
         compoundShape->AddShape(JPH::RVec3(center.x, center.y, center.z), JPH::Quat::sIdentity(), scaledShape);
@@ -58,7 +58,7 @@ namespace TechEngine::ShapeFactory {
         JPH::RegisterDefaultAllocator();
         JPH::MutableCompoundShape* compoundShape = new JPH::MutableCompoundShape();
         JPH::Ref<JPH::CylinderShape> shape = new JPH::CylinderShape(height * 0.5f, radius);
-        JPH::Ref<JPH::ScaledShape> scaledShape = new JPH::ScaledShape(shape, JPH::RVec3(transform.scale.x, transform.scale.y, transform.scale.z));
+        JPH::Ref<JPH::ScaledShape> scaledShape = new JPH::ScaledShape(shape, JPH::RVec3(transform.m_scale.x, transform.m_scale.y, transform.m_scale.z));
         compoundShape->AddShape(JPH::RVec3(center.x, center.y, center.z), JPH::Quat::sIdentity(), scaledShape);
         return compoundShape;
     }

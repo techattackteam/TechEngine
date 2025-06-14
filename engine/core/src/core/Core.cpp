@@ -9,7 +9,6 @@
 #include "resources/ResourcesManager.hpp"
 #include "scene/CameraSystem.hpp"
 #include "scene/ScenesManager.hpp"
-#include "scene/TransformSystem.hpp"
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
@@ -17,7 +16,6 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<Project>(rootPath, m_systemRegistry);
         m_systemRegistry.registerSystem<EventDispatcher>();
         m_systemRegistry.registerSystem<Timer>();
-        m_systemRegistry.registerSystem<TransformSystem>(m_systemRegistry);
         m_systemRegistry.registerSystem<CameraSystem>(m_systemRegistry);
         m_systemRegistry.registerSystem<ResourcesManager>(m_systemRegistry);
         m_systemRegistry.registerSystem<PhysicsEngine>(m_systemRegistry);
@@ -29,7 +27,6 @@ namespace TechEngine {
         m_systemRegistry.getSystem<Project>().init();
         m_systemRegistry.getSystem<EventDispatcher>().init();
         m_systemRegistry.getSystem<Timer>().init();
-        m_systemRegistry.getSystem<TransformSystem>().init();
         m_systemRegistry.getSystem<CameraSystem>().init();
         m_systemRegistry.getSystem<ResourcesManager>().init(appType);
         m_systemRegistry.getSystem<PhysicsEngine>().init();

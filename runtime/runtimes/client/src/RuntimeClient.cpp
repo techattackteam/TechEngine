@@ -6,7 +6,6 @@
 #include "project/Project.hpp"
 #include "renderer/Renderer.hpp"
 #include "scene/ScenesManager.hpp"
-#include "scene/TransformSystem.hpp"
 #include "script/ScriptEngine.hpp"
 #include "window/Window.hpp"
 
@@ -51,10 +50,8 @@ namespace TechEngine {
         Scene& scene = m_client.m_systemRegistry.getSystem<ScenesManager>().getActiveScene();
         scene.runSystem<Transform, Camera>([this](Transform& transform, Camera& camera) {
             Renderer& renderer = m_client.m_systemRegistry.getSystem<Renderer>();
-            TransformSystem& transformSystem = m_client.m_systemRegistry.getSystem<TransformSystem>();
-
             camera.updateProjectionMatrix(1280.0f / 720.0f);
-            camera.updateViewMatrix(transformSystem.getModelMatrix(transform));
+            camera.updateViewMatrix(transform.getModelMatrix());
             renderer.renderPipeline(camera);
         });
     }

@@ -43,17 +43,18 @@ namespace TechEngine {
     }
 
     void ScriptEngine::stop() {
-        TE_LOGGER_INFO("Shutting down user scripts dll.");
-        deleteScripts();
-        m_APIEntryPoint = nullptr;
-        m_executeExternalEventSystem = nullptr;
-        bool result = FreeLibrary(m_userCustomDll);
-        if (!result) {
-            TE_LOGGER_ERROR("Failed to unload user scripts dll");
+        if (m_userCustomDll != nullptr) {
+            TE_LOGGER_INFO("Shutting down user scripts dll.");
+            deleteScripts();
+            m_APIEntryPoint = nullptr;
+            m_executeExternalEventSystem = nullptr;
+            bool result = FreeLibrary(m_userCustomDll);
+            if (!result) {
+                TE_LOGGER_ERROR("Failed to unload user scripts dll");
+            }
+            m_userCustomDll = nullptr;
         }
-        m_userCustomDll = nullptr;
     }
-
 
     void ScriptEngine::onStart() {
         if (m_userCustomDll) {

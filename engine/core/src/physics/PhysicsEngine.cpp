@@ -205,12 +205,12 @@ namespace TechEngine {
         const JPH::Ref<JPH::MutableCompoundShape> shape = m_colliders[tag.getUuid()];
         JPH::RVec3 scale;
         if (uniform) {
-            const float maxTransformScale = std::max(std::max(transform.scale.x, transform.scale.y), transform.scale.z);
+            const float maxTransformScale = std::max(std::max(transform.m_scale.x, transform.m_scale.y), transform.m_scale.z);
             scale = JPH::RVec3(maxTransformScale, maxTransformScale, maxTransformScale);
         } else {
-            scale = JPH::RVec3(transform.scale.x,
-                               transform.scale.y,
-                               transform.scale.z);
+            scale = JPH::RVec3(transform.m_scale.x,
+                               transform.m_scale.y,
+                               transform.m_scale.z);
         }
         auto* scaledShape = static_cast<const JPH::ScaledShape*>(shape->GetSubShape(0).mShape.GetPtr());
         auto* originalShape = scaledShape->GetInnerShape();
@@ -239,12 +239,12 @@ namespace TechEngine {
         }
         JPH::RVec3 scale;
         if (uniform) {
-            const float maxTransformScale = std::max(std::max(transform.scale.x, transform.scale.y), transform.scale.z);
+            const float maxTransformScale = std::max(std::max(transform.m_scale.x, transform.m_scale.y), transform.m_scale.z);
             scale = JPH::RVec3(maxTransformScale, maxTransformScale, maxTransformScale);
         } else {
-            scale = JPH::RVec3(transform.scale.x,
-                               transform.scale.y,
-                               transform.scale.z);
+            scale = JPH::RVec3(transform.m_scale.x,
+                               transform.m_scale.y,
+                               transform.m_scale.z);
         }
         auto* scaledShape = dynamic_cast<const JPH::ScaledShape*>(shape->GetSubShape(0).mShape.GetPtr());
         auto* originalShape = scaledShape->GetInnerShape();
@@ -325,8 +325,8 @@ namespace TechEngine {
         if (m_bodies.find(tag.getUuid()) != m_bodies.end()) {
             JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
             JPH::BodyID body = m_bodies[tag.getUuid()];
-            JPH::RVec3 position = JPH::RVec3(transform.position.x, transform.position.y, transform.position.z);
-            glm::quat rotation = glm::quat(glm::radians(transform.rotation));
+            JPH::RVec3 position = JPH::RVec3(transform.m_position.x, transform.m_position.y, transform.m_position.z);
+            glm::quat rotation = glm::quat(glm::radians(transform.m_rotation));
             JPH::Quat quat = JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w);
             bodyInterface.SetPositionAndRotation(body, position, quat, JPH::EActivation::DontActivate);
         }
@@ -357,10 +357,10 @@ namespace TechEngine {
         JPH::RegisterDefaultAllocator();
         JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
 
-        glm::quat quat = glm::quat(glm::radians(transform.rotation));
+        glm::quat quat = glm::quat(glm::radians(transform.m_rotation));
 
         JPH::Shape* shape = new JPH::EmptyShape();
-        JPH::RVec3 position = JPH::RVec3(transform.position.x, transform.position.y, transform.position.z);
+        JPH::RVec3 position = JPH::RVec3(transform.m_position.x, transform.m_position.y, transform.m_position.z);
         JPH::Quat rotation = JPH::Quat(quat.x, quat.y, quat.z, quat.w);
         JPH::BodyCreationSettings settings(shape, position, rotation, eMotionType, Layers::MOVING);
 

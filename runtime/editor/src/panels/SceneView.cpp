@@ -1,17 +1,11 @@
 #include "SceneView.hpp"
 
 #include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
 #include "components/Components.hpp"
 #include "components/ComponentsFactory.hpp"
 #include "renderer/FrameBuffer.hpp"
 #include "renderer/Renderer.hpp"
 #include "scene/ScenesManager.hpp"
-#include "scene/TransformSystem.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
@@ -41,7 +35,7 @@ namespace TechEngine {
         frameBuffer.bind();
         frameBuffer.resize(wsize.x, wsize.y);
         sceneCamera.updateProjectionMatrix(wsize.x / wsize.y);
-        sceneCamera.updateViewMatrix(m_appSystemsRegistry.getSystem<TransformSystem>().getModelMatrix(cameraTransform));
+        sceneCamera.updateViewMatrix(cameraTransform.getModelMatrix());
 
         m_appSystemsRegistry.getSystem<PhysicsEngine>().renderBodies();
         renderCameraFrustum();
@@ -90,9 +84,9 @@ namespace TechEngine {
             const glm::mat4 inverted = glm::inverse(sceneCamera.getViewMatrix());
             const glm::vec3 forward = normalize(glm::vec3(inverted[2]));
             if (yOffset == -1.0f) {
-                m_appSystemsRegistry.getSystem<TransformSystem>().translate(cameraTransform, forward);
+                cameraTransform.translate(forward);
             } else if (yOffset == 1.0f) {
-                m_appSystemsRegistry.getSystem<TransformSystem>().translate(cameraTransform, -forward);
+                cameraTransform.translate(-forward);
             }
         }
     }
@@ -106,11 +100,11 @@ namespace TechEngine {
             const glm::vec3 up = normalize(glm::vec3(inverted[1]));
             if (mouse3) {
                 const glm::vec3 move = -right * delta.x * 0.01f + up * delta.y * 0.01f;
-                m_appSystemsRegistry.getSystem<TransformSystem>().translate(cameraTransform, move);
+                cameraTransform.translate(move);
             }
             if (mouse2) {
                 const glm::vec3 rotate = glm::vec3(-delta.y * 0.5f, -delta.x * 0.5f, 0);
-                m_appSystemsRegistry.getSystem<TransformSystem>().rotate(cameraTransform, rotate);
+                cameraTransform.rotate(rotate);
             }
         }
     }
@@ -160,10 +154,9 @@ namespace TechEngine {
                 glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f), // Far top left
                 glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) // Far top right
             };
-            TransformSystem& transformSystem = m_appSystemsRegistry.getSystem<TransformSystem>();
 
             // Inverse of the combined view-projection matrix
-            glm::mat4 invViewProjection = glm::inverse(camera.getProjectionMatrix() * glm::inverse(transformSystem.getModelMatrix(transform)));
+            glm::mat4 invViewProjection = glm::inverse(camera.getProjectionMatrix() * glm::inverse(transform.getModelMatrix()));
 
             // Transform NDC points to world space
             for (const glm::vec4& ndcPoint: ndcPoints) {
@@ -239,11 +232,10 @@ namespace TechEngine {
 
     void SceneView::renderBox(Transform& transform, glm::vec3 center, glm::vec3 scale, glm::vec4 color) const {
         // Calculate the world space transformation matrix
-        TransformSystem& transformSystem = m_appSystemsRegistry.getSystem<TransformSystem>();
         Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
         Transform tempTransform = transform;
-        tempTransform.position += center;
-        glm::mat4 modelMatrix = transformSystem.getModelMatrix(tempTransform);
+        tempTransform.m_position += center;
+        glm::mat4 modelMatrix = tempTransform.getModelMatrix();
 
         float offset = 0.005f;
         // Calculate the half-size of the box based on the scale
@@ -290,11 +282,10 @@ namespace TechEngine {
 
     void SceneView::renderSphere(Transform& transform, glm::vec3 center, float radius, glm::vec4 color) const {
         // Calculate the world space transformation matrix
-        TransformSystem& transformSystem = m_appSystemsRegistry.getSystem<TransformSystem>();
         Transform tempTransform = transform;
-        tempTransform.position += center;
-        tempTransform.scale = glm::vec3(std::max(tempTransform.scale.x, std::max(tempTransform.scale.y, tempTransform.scale.z)));
-        glm::mat4 modelMatrix = transformSystem.getModelMatrix(tempTransform);
+        tempTransform.m_position += center;
+        tempTransform.m_scale = glm::vec3(std::max(tempTransform.m_scale.x, std::max(tempTransform.m_scale.y, tempTransform.m_scale.z)));
+        glm::mat4 modelMatrix = tempTransform.getModelMatrix();
 
         const int numSegments = 128;
         const float segmentAngle = glm::two_pi<float>() / static_cast<float>(numSegments);
@@ -348,11 +339,10 @@ namespace TechEngine {
         const float segmentAngle = glm::two_pi<float>() / static_cast<float>(segments) / 2;
 
         const float halfHeight = height / 2.0f;
-        TransformSystem& transformSystem = m_appSystemsRegistry.getSystem<TransformSystem>();
         Transform tempTransform = transform;
-        tempTransform.position += center;
-        tempTransform.scale = glm::vec3(std::max(tempTransform.scale.x, std::max(tempTransform.scale.y, tempTransform.scale.z)));
-        glm::mat4 modelMatrix = transformSystem.getModelMatrix(tempTransform);
+        tempTransform.m_position += center;
+        tempTransform.m_scale = glm::vec3(std::max(tempTransform.m_scale.x, std::max(tempTransform.m_scale.y, tempTransform.m_scale.z)));
+        glm::mat4 modelMatrix = tempTransform.getModelMatrix();
         Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
 
 
@@ -444,10 +434,9 @@ namespace TechEngine {
 
     void SceneView::renderCylinder(Transform& transform, glm::vec3 center, float radius, float height, glm::vec4 color) const {
         // Calculate the world space transformation matrix
-        TransformSystem& transformSystem = m_appSystemsRegistry.getSystem<TransformSystem>();
         Transform tempTransform = transform;
-        tempTransform.position += center;
-        glm::mat4 modelMatrix = transformSystem.getModelMatrix(tempTransform);
+        tempTransform.m_position += center;
+        glm::mat4 modelMatrix = tempTransform.getModelMatrix();
 
         const float offset = 0.005f;
         float radiusX = radius + offset;

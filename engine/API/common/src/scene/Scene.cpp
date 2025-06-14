@@ -213,9 +213,9 @@ namespace TechEngineAPI {
              */
             component->updateInternalPointer(m_scene);
             TechEngine::Transform& transform = getComponentInternal<TechEngine::Transform>(entity);
-            component->setPosition(transform.position);
-            component->setRotation(transform.rotation);
-            component->setScale(transform.scale);
+            component->setPosition(transform.m_position);
+            component->setRotation(transform.m_rotation);
+            component->setScale(transform.m_scale);
             return std::static_pointer_cast<T>(components[{entity, typeid(Transform)}]);
         } else if constexpr (std::is_same_v<T, MeshRenderer>) {
             std::shared_ptr<MeshRenderer> component = std::static_pointer_cast<MeshRenderer>(components[{entity, typeid(MeshRenderer)}]);
