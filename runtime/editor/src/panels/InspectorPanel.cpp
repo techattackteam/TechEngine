@@ -151,6 +151,23 @@ namespace TechEngine {
                     }
                     ImGui::EndMenu();
                 }
+                if (ImGui::BeginMenu("Audio")) {
+                    if (ImGui::MenuItem("Listener")) {
+                        Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                        for (const Entity& entity: m_selectedEntities) {
+                            AudioSystem& audioSystem = m_appSystemRegistry.getSystem<AudioSystem>();
+                            scene.addComponent<AudioListenerComponent>(entity, ComponentsFactory::createAudioListener(audioSystem));
+                        }
+                    }
+                    if (ImGui::MenuItem("Emitter")) {
+                        Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                        for (const Entity& entity: m_selectedEntities) {
+                            AudioSystem& audioSystem = m_appSystemRegistry.getSystem<AudioSystem>();
+                            scene.addComponent<AudioEmitterComponent>(entity, ComponentsFactory::createAudioEmitter(audioSystem));
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
                 if (ImGui::BeginMenu("Network")) {
                     /*if (ImGui::MenuItem("Network Handler")) {
                         addComponent<NetworkSync>();
@@ -182,7 +199,7 @@ namespace TechEngine {
                 glm::vec3 position = component.m_position;
                 glm::vec3 rotation = component.m_rotation;
                 glm::vec3 scale = component.m_scale;
-                
+
                 bool drawPosition = true;
                 bool drawOrientation = true;
                 bool drawScale = true;
@@ -201,7 +218,7 @@ namespace TechEngine {
                 ImGuiUtils::drawVec3Control("Translation", position, 0.0f, 100.0f, 0, 0, drawPosition);
                 ImGuiUtils::drawVec3Control("Rotation", rotation, 0.0f, 100.0f, 0, 0, drawOrientation);
                 ImGuiUtils::drawVec3Control("Scale", scale, 1.0f, 100.0f, 0, 0, drawScale);
-                
+
                 bool move = false;
                 bool rotate = false;
                 bool scaling = false;
@@ -1013,6 +1030,26 @@ namespace TechEngine {
                     m_appSystemRegistry.getSystem<PhysicsEngine>().removeTrigger(scene.getComponent<Tag>(entity));
                 }
             });
+        }
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<AudioListenerComponent>()) != componentsToDraw.end()) {
+            drawComponent<AudioListenerComponent>(firstEntity, "Audio Listener", [](auto& component) {
+                                                      // No properties to edit for Audio Listener
+                                                  }, []() {
+                                                      // No action on remove for Audio Listener
+                                                  });
+        }
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<AudioEmitterComponent>()) != componentsToDraw.end()) {
+            drawComponent<AudioEmitterComponent>(firstEntity, "Audio Emitter", [this](auto& component) {
+                                                     Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                                     ImGui::DragFloat("Volume", &component.volume, 0.01f, 0.0f, 1.0f, "%.2f");
+                                                     ImGui::DragFloat("Pitch", &component.pitch, 0.01f, 0.0f, 1.0f);
+                                                     ImGui::Checkbox("Loop", &component.loop);
+                                                 }, [this]() {
+                                                     Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                                     for (Entity entity: m_selectedEntities) {
+                                                         m_appSystemRegistry.getSystem<AudioSystem>().unregisterEmitter(entity);
+                                                     }
+                                                 });
         }
     }
 }

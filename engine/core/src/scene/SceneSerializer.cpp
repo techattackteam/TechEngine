@@ -263,7 +263,7 @@ namespace TechEngine {
         meshRenderer.paintMesh();
         return meshRenderer;
     }
-
+#pragma region Physics Components
     void BoxCollider::serialize(const BoxCollider& boxCollider, YAML::Emitter& out) {
         out << YAML::Key << "BoxCollider" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "Center" << YAML::Value << YAML::Flow << YAML::BeginSeq << boxCollider.center.x << boxCollider.center.y << boxCollider.center.z << YAML::EndSeq;
@@ -362,4 +362,36 @@ namespace TechEngine {
         glm::vec3 center = glm::vec3(node["Center"].as<glm::vec3>());
         return ComponentsFactory::createBoxTrigger(m_physicsEngine, tag, transform, center, size);
     }
+#pragma endregion
+#pragma region Audio Components
+    void AudioListenerComponent::serialize(const AudioListenerComponent& audioListener, YAML::Emitter& out) {
+        out << YAML::Key << "AudioListener" << YAML::Value << YAML::BeginMap;
+        out << YAML::EndMap;
+    }
+
+    AudioListenerComponent AudioListenerComponent::deserialize(const YAML::Node& node) {
+        AudioListenerComponent audioListener;
+        // Currently, no properties to deserialize for AudioListenerComponent
+        return audioListener;
+    }
+
+    void AudioEmitterComponent::serialize(const AudioEmitterComponent& emitter, YAML::Emitter& out) {
+        out << YAML::Key << "AudioEmitter" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "Volume" << YAML::Value << emitter.volume;
+        out << YAML::Key << "Pitch" << YAML::Value << emitter.pitch;
+        out << YAML::Key << "Loop" << YAML::Value << emitter.loop;
+        //out << YAML::Key << "AudioClip" << YAML::Value << emitter.audioClip.getName();
+        out << YAML::EndMap;
+    }
+
+    AudioEmitterComponent AudioEmitterComponent::deserialize(const YAML::Node& node) {
+        AudioEmitterComponent emitter;
+        emitter.volume = node["Volume"].as<float>();
+        emitter.pitch = node["Pitch"].as<float>();
+        emitter.loop = node["Loop"].as<bool>();
+        //emitter.audioClip = m_resourcesManager.getAudioClip(node["AudioClip"].as<std::string>());
+        return emitter;
+    }
+
+#pragma endregion
 }

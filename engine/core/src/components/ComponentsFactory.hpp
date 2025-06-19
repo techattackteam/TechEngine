@@ -1,6 +1,7 @@
 #pragma once
 #include "Components.hpp"
 #include "physics/PhysicsEngine.hpp"
+#include "audio/AudioSystem.hpp"
 
 namespace TechEngine {
     class ComponentsFactory {
@@ -12,7 +13,7 @@ namespace TechEngine {
         static Transform createTransform(const glm::vec3& position, const glm::vec3& rotation, const glm::vec3& scale) {
             return Transform();
         }
-
+#pragma region Physics Components
         static StaticBody createStaticBody(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform) {
             const JPH::BodyID& bodyID = physicsEngine.createStaticBody(tag, transform);
             return StaticBody(bodyID);
@@ -75,5 +76,23 @@ namespace TechEngine {
         static void DestroyBody(PhysicsEngine& physicsEngine, const Tag& tag) {
             physicsEngine.removeBody(tag);
         }
+#pragma endregion
+
+#pragma region Audio Components
+
+        static AudioListenerComponent createAudioListener(AudioSystem& audioSystem) {
+            audioSystem.registerListener(Entity());
+            return AudioListenerComponent();
+        }
+
+        static AudioEmitterComponent createAudioEmitter(AudioSystem& audioSystem/*, const std::string& soundPath*/, float volume = 1.0f, float pitch = 1.0f, bool loop = false) {
+            audioSystem.registerEmitter(Entity());
+            AudioEmitterComponent emitter;
+            emitter.volume = volume;
+            emitter.pitch = pitch;
+            emitter.loop = loop;
+            return emitter;
+        }
+#pragma endregion
     };
 }
