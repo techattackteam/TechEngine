@@ -1,5 +1,6 @@
 #include "Client.hpp"
 
+#include "audio/AudioSystem.hpp"
 #include "core/Logger.hpp"
 #include "input/Input.hpp"
 #include "project/Project.hpp"
@@ -13,12 +14,14 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<Logger>("TechEngineClient");
         m_systemRegistry.getSystem<Logger>().init();
         Core::registerSystems(rootPath);
+        m_systemRegistry.registerSystem<AudioSystem>(m_systemRegistry);
         m_systemRegistry.registerSystem<Renderer>(m_systemRegistry);
     }
 
     void Client::init() {
         Core::init(AppType::Client);
         m_systemRegistry.getSystem<Renderer>().init();
+        m_systemRegistry.getSystem<AudioSystem>().init();
     }
 
     void Client::onStart() {

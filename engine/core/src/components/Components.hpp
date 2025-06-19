@@ -109,7 +109,7 @@ namespace TechEngine {
                 -cos(glm::radians(m_rotation.y)) * cos(glm::radians(m_rotation.x))
             ));
             glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f))); // World Up
-            glm::vec3 up = glm::normalize(glm::cross(right, forward ));
+            glm::vec3 up = glm::normalize(glm::cross(right, forward));
             m_forward = forward;
             m_up = up;
             m_right = right;
@@ -227,7 +227,7 @@ namespace TechEngine {
 
         static MeshRenderer deserialize(const YAML::Node& node, ResourcesManager& resourcesManager);
     };
-
+#pragma region Physics Components
     class CORE_DLL StaticBody {
         friend class ComponentsFactory;
 
@@ -386,7 +386,27 @@ namespace TechEngine {
 
         static CylinderTrigger deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
     };
+#pragma endregion
 
+#pragma region Audio Components
+    class CORE_DLL AudioListenerComponent {
+        static void serialize(const AudioListenerComponent& audioListener, YAML::Emitter& out);
+
+        static AudioListenerComponent deserialize(const YAML::Node& node);
+    };
+
+    class CORE_DLL AudioEmitterComponent {
+    public:
+        float volume = 1.0f; // Volume of the emitter
+        float pitch = 1.0f; // Pitch of the emitter
+        bool loop = false; // Whether the emitter should loop the sound
+        //std::string soundPath; // Path to the sound file
+
+        static void serialize(const AudioEmitterComponent& emitter, YAML::Emitter& out);
+
+        static AudioEmitterComponent deserialize(const YAML::Node& node);
+    };
+#pragma endregion
     class CORE_DLL ComponentType {
     private:
         inline static ComponentTypeID counter = 0;
@@ -409,6 +429,8 @@ namespace TechEngine {
             registerComponent<SphereTrigger>();
             registerComponent<CapsuleTrigger>();
             registerComponent<CylinderTrigger>();
+            registerComponent<AudioEmitterComponent>();
+            registerComponent<AudioListenerComponent>();
         }
 
         template<typename T>
