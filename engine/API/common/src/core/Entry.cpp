@@ -4,6 +4,7 @@
 #include "scene/ScenesManager.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "physics/PhysicsEngine.hpp"
+#include "audio/AudioSystem.hpp"
 
 #include "common/include/resources/Resources.hpp"
 #include "common/include/scene/Scene.hpp"
@@ -16,7 +17,8 @@ namespace TechEngineAPI {
         Resources::init(&systemsRegistry->getSystem<TechEngine::ResourcesManager>());
         Scene::init(&systemsRegistry->getSystem<TechEngine::ScenesManager>().getActiveScene(),
                     &systemsRegistry->getSystem<TechEngine::ResourcesManager>(),
-                    &systemsRegistry->getSystem<TechEngine::PhysicsEngine>());
+                    &systemsRegistry->getSystem<TechEngine::PhysicsEngine>(),
+                    &systemsRegistry->getSystem<TechEngine::AudioSystem>());
     }
 
     void Entry::shutdown() {
