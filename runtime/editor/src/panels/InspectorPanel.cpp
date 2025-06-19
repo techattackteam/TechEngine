@@ -155,15 +155,13 @@ namespace TechEngine {
                     if (ImGui::MenuItem("Listener")) {
                         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                         for (const Entity& entity: m_selectedEntities) {
-                            AudioSystem& audioSystem = m_appSystemRegistry.getSystem<AudioSystem>();
-                            scene.addComponent<AudioListenerComponent>(entity, ComponentsFactory::createAudioListener(audioSystem));
+                            scene.addComponent<AudioListenerComponent>(entity, ComponentsFactory::createAudioListener());
                         }
                     }
                     if (ImGui::MenuItem("Emitter")) {
                         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                         for (const Entity& entity: m_selectedEntities) {
-                            AudioSystem& audioSystem = m_appSystemRegistry.getSystem<AudioSystem>();
-                            scene.addComponent<AudioEmitterComponent>(entity, ComponentsFactory::createAudioEmitter(audioSystem));
+                            scene.addComponent<AudioEmitterComponent>(entity, ComponentsFactory::createAudioEmitter());
                         }
                     }
                     ImGui::EndMenu();
@@ -1044,11 +1042,7 @@ namespace TechEngine {
                                                      ImGui::DragFloat("Volume", &component.volume, 0.01f, 0.0f, 1.0f, "%.2f");
                                                      ImGui::DragFloat("Pitch", &component.pitch, 0.01f, 0.0f, 1.0f);
                                                      ImGui::Checkbox("Loop", &component.loop);
-                                                 }, [this]() {
-                                                     Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
-                                                     for (Entity entity: m_selectedEntities) {
-                                                         m_appSystemRegistry.getSystem<AudioSystem>().unregisterEmitter(entity);
-                                                     }
+                                                 }, []() {
                                                  });
         }
     }

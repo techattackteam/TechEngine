@@ -55,8 +55,8 @@ namespace TechEngine {
         }
 
         void stopSimulation() {
-            m_simulationState = SimulationState::STOPPED;
             onStop();
+            m_simulationState = SimulationState::STOPPED;
             ScenesManager& scenesManager = m_runtime.m_systemRegistry.template getSystem<ScenesManager>();
             Project& project = m_runtime.m_systemRegistry.template getSystem<Project>();
             scenesManager.loadScene(project.getPath(PathType::Cache, AppType::Client) / "runtimeScene.tescene");

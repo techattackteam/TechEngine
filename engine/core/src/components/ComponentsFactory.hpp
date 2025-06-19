@@ -1,7 +1,6 @@
 #pragma once
 #include "Components.hpp"
 #include "physics/PhysicsEngine.hpp"
-#include "audio/AudioSystem.hpp"
 
 namespace TechEngine {
     class ComponentsFactory {
@@ -80,13 +79,11 @@ namespace TechEngine {
 
 #pragma region Audio Components
 
-        static AudioListenerComponent createAudioListener(AudioSystem& audioSystem) {
-            audioSystem.registerListener(Entity());
+        static AudioListenerComponent createAudioListener() {
             return AudioListenerComponent();
         }
 
-        static AudioEmitterComponent createAudioEmitter(AudioSystem& audioSystem/*, const std::string& soundPath*/, float volume = 1.0f, float pitch = 1.0f, bool loop = false) {
-            audioSystem.registerEmitter(Entity());
+        static AudioEmitterComponent createAudioEmitter(float volume = 1.0f, float pitch = 1.0f, bool loop = false) {
             AudioEmitterComponent emitter;
             emitter.volume = volume;
             emitter.pitch = pitch;

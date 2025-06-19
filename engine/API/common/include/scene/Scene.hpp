@@ -14,6 +14,7 @@ namespace TechEngine {
     class Scene;
     class ResourcesManager;
     class PhysicsEngine;
+    class AudioSystem;
 }
 
 namespace TechEngineAPI {
@@ -45,8 +46,9 @@ namespace TechEngineAPI {
         inline static TechEngine::Scene* m_scene;
         inline static TechEngine::ResourcesManager* m_resourcesManager;
         inline static TechEngine::PhysicsEngine* m_physicsEngine;
+        inline static TechEngine::AudioSystem* m_audioSystem;
 
-        static void init(TechEngine::Scene* scene, TechEngine::ResourcesManager* m_resourcesManager, TechEngine::PhysicsEngine* m_physicsEngine);
+        static void init(TechEngine::Scene* scene, TechEngine::ResourcesManager* m_resourcesManager, TechEngine::PhysicsEngine* m_physicsEngine, TechEngine::AudioSystem* m_audioSystem);
 
         static void shutdown();
 

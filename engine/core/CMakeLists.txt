@@ -9,7 +9,7 @@ find_package(JoltPhysics REQUIRED)
 
 option(PHYSICS_DEBUG_RENDERER "Enable the physics debug renderer" OFF)
 
-add_library(TechEngineCore OBJECT ${ENGINE_CORE_SRC} ${ENGINE_CORE_HEADERS})
+add_library(TechEngineCore OBJECT ${ENGINE_CORE_SRC} ${ENGINE_CORE_HEADERS} "src/audio/miniaudio.h")
 target_include_directories(TechEngineCore PUBLIC src)
 target_link_libraries(TechEngineCore PUBLIC glm spdlog yaml-cpp::yaml-cpp assimp Jolt)
 

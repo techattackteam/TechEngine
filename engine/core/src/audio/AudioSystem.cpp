@@ -8,19 +8,20 @@
 #define MA_ENABLE_WAV
 
 #define MA_IMPLEMENTATION
-#include "miniaudio.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
+#include "miniaudio.h"
 #include "scene/ScenesManager.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 
 namespace TechEngine {
     AudioSystem::AudioSystem(SystemsRegistry& systemsRegistry): m_systemsRegistry(systemsRegistry) {
+    }
+
+    AudioSystem::~AudioSystem() {
+    }
+
+    void AudioSystem::init() {
+        System::init();
         m_audioEngine = new ma_engine();
 
         ma_result result = ma_engine_init(nullptr, m_audioEngine);
@@ -30,23 +31,14 @@ namespace TechEngine {
             m_audioEngine = nullptr;
             return;
         }
-        TE_LOGGER_INFO("Audio engine initialized successfully.");
-        playSound("C:\\Users\\Miguel Faria\\Downloads\\UI Soundpack\\UI Soundpack\\MP3\\Wood Block1.mp3");
-        //playSound("C:\\Users\\Miguel Faria\\Downloads\\UI Soundpack\\UI Soundpack\\OGG\\Wood Block1.ogg");
-    }
-
-    AudioSystem::~AudioSystem() {
-    }
-
-    void AudioSystem::init() {
-        System::init();
+        //TE_LOGGER_INFO("Audio engine initialized successfully.");
     }
 
     void AudioSystem::onStart() {
-        System::onStart();
     }
 
     void AudioSystem::onUpdate() {
+        m_frameCount++;
         Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
 
         scene.runSystem<Tag, Transform, AudioListenerComponent>([this, &scene](Tag& tag, Transform& transform, AudioListenerComponent& listener) {
@@ -58,6 +50,9 @@ namespace TechEngine {
                 transform.m_up
             );
         });
+        if (m_frameCount % 60 == 0) {
+            deleteSounds();
+        }
     }
 
     void AudioSystem::onFixedUpdate() {
@@ -65,7 +60,7 @@ namespace TechEngine {
     }
 
     void AudioSystem::onStop() {
-        System::onStop();
+        deleteSounds();
     }
 
     void AudioSystem::shutdown() {
@@ -86,25 +81,25 @@ namespace TechEngine {
 
     void AudioSystem::playSound3D(const std::string& soundPath, glm::vec3 position) {
         if (!m_audioEngine) return;
-        // For 3D sound, it's better to create a ma_sound object to control it.
-        // However, for a simple fire-and-forget 3D sound, this is how you do it:
-        ma_sound sound;
 
-        // Initialize the sound but don't start it yet.
-        // The MA_SOUND_FLAG_NO_PITCH flag is a good default. We don't want spatialization affecting pitch.
-        ma_result result = ma_sound_init_from_file(m_audioEngine, soundPath.c_str(), MA_SOUND_FLAG_NO_PITCH, NULL, NULL, &sound);
+        ma_sound* sound = new ma_sound();
+
+        ma_sound_config config = ma_sound_config_init();
+        config.pFilePath = soundPath.c_str();
+        config.flags = MA_SOUND_FLAG_NO_PITCH;
+        config.pEndCallbackUserData = this;
+        config.endCallback = soundFinishCallback;
+
+        ma_result result = ma_sound_init_ex(m_audioEngine, &config, sound);
+
         if (result != MA_SUCCESS) {
-            TE_LOGGER_ERROR("Failed to load 3D sound: {0}", soundPath);
+            TE_LOGGER_ERROR("Failed to load 3D sound with callback: {0} ({1})", soundPath, translateErrorCodeToString(result));
+            delete sound;
             return;
         }
 
-        // Set its position in 3D space before playing.
-        ma_sound_set_position(&sound, position.x, position.y, position.z);
-        ma_sound_start(&sound);
-
-        // IMPORTANT: miniaudio automatically handles the memory for this `ma_sound`
-        // because it's not set to loop. It will be cleaned up once it finishes playing.
-        // This is an extremely convenient feature for fire-and-forget effects.
+        ma_sound_set_position(sound, position.x, position.y, position.z);
+        ma_sound_start(sound);
     }
 
     void AudioSystem::setListenerPosition(Entity entity, glm::vec3 position, glm::vec3 forward, glm::vec3 up) {
@@ -126,56 +121,6 @@ namespace TechEngine {
             entity,
             up.x, up.y, up.z
         );
-    }
-
-    void AudioSystem::registerListener(Entity listener) {
-        if (!m_audioEngine) {
-            TE_LOGGER_ERROR("Audio engine is not initialized. Cannot register listener.");
-            return;
-        }
-        if (std::find(listeners.begin(), listeners.end(), listener) != listeners.end()) {
-            TE_LOGGER_WARN("Listener already registered: {0}", listener);
-            return;
-        }
-        listeners.push_back(listener);
-    }
-
-    void AudioSystem::registerEmitter(Entity emitter) {
-        if (!m_audioEngine) {
-            TE_LOGGER_ERROR("Audio engine is not initialized. Cannot register emitter.");
-            return;
-        }
-        if (std::find(emitters.begin(), emitters.end(), emitter) != emitters.end()) {
-            TE_LOGGER_WARN("Emitter already registered: {0}", emitter);
-            return;
-        }
-        emitters.push_back(emitter);
-    }
-
-    void AudioSystem::unregisterListener(Entity listener) {
-        if (!m_audioEngine) {
-            TE_LOGGER_ERROR("Audio engine is not initialized. Cannot unregister listener.");
-            return;
-        }
-        auto it = std::find(listeners.begin(), listeners.end(), listener);
-        if (it != listeners.end()) {
-            listeners.erase(it);
-        } else {
-            TE_LOGGER_WARN("Listener not found: {0}", listener);
-        }
-    }
-
-    void AudioSystem::unregisterEmitter(Entity emitter) {
-        if (!m_audioEngine) {
-            TE_LOGGER_ERROR("Audio engine is not initialized. Cannot unregister emitter.");
-            return;
-        }
-        auto it = std::find(emitters.begin(), emitters.end(), emitter);
-        if (it != emitters.end()) {
-            emitters.erase(it);
-        } else {
-            TE_LOGGER_WARN("Emitter not found: {0}", emitter);
-        }
     }
 
     std::string AudioSystem::translateErrorCodeToString(int errorCode) {
@@ -266,6 +211,32 @@ namespace TechEngine {
             // Default case for any unknown codes
             default:
                 return "Unknown or unhandled error code: " + std::to_string(errorCode);
+        }
+    }
+
+    void AudioSystem::soundFinishCallback(void* userData, ma_sound* sound) {
+        AudioSystem* audioSystem = static_cast<AudioSystem*>(userData);
+        if (audioSystem) {
+            std::lock_guard<std::mutex> lock(audioSystem->m_soundsMutex);
+            audioSystem->m_soundsToDelete.emplace_back(sound);
+        } else {
+            TE_LOGGER_ERROR("AudioSystem pointer is null in sound finish callback.");
+        }
+    }
+
+    void AudioSystem::deleteSounds() {
+        std::vector<ma_sound*> soundsToDelete; //
+        {
+            std::lock_guard<std::mutex> lock(m_soundsMutex);
+            if (m_soundsToDelete.empty()) {
+                return;
+            }
+            soundsToDelete.swap(m_soundsToDelete);
+        }
+
+        for (ma_sound* pSound: soundsToDelete) {
+            ma_sound_uninit(pSound);
+            delete pSound;
         }
     }
 }
