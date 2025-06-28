@@ -58,9 +58,9 @@ namespace TechEngine {
                                      dockMainID);
         ImGui::DockBuilderDockWindow(
             (m_sceneHierarchyPanel.getName() + "##" + std::to_string(m_sceneHierarchyPanel.getId())).c_str(),
-            dockRightID);
+            dockLeftID);
         ImGui::DockBuilderDockWindow(
-            (m_inspectorPanel.getName() + "##" + std::to_string(m_inspectorPanel.getId())).c_str(), dockLeftID);
+            (m_inspectorPanel.getName() + "##" + std::to_string(m_inspectorPanel.getId())).c_str(), dockRightID);
 
         ImGui::DockBuilderFinish(m_dockSpaceID);
     }

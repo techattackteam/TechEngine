@@ -15,7 +15,7 @@
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
-    void Renderer::init() {
+    void Renderer::init(bool initGUI) {
         shadersManager.init();
         vertexArrays[BufferGameObjects] = new VertexArray();
         vertexBuffers[BufferGameObjects] = new VertexBuffer();
@@ -31,9 +31,15 @@ namespace TechEngine {
         vertexBuffers[BufferLines]->init(10000000 * sizeof(Line));
         vertexArrays[BufferLines]->addNewLinesBuffer(*vertexBuffers[BufferLines]);
         glEnable(GL_DEPTH_TEST);
+        uiRenderer.init(initGUI);
     }
 
-    Renderer::Renderer(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry), shadersManager(systemsRegistry) {
+    void Renderer::shutdown() {
+        System::shutdown();
+        uiRenderer.shutdown();
+    }
+
+    Renderer::Renderer(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry), shadersManager(systemsRegistry), uiRenderer(m_systemsRegistry) {
     }
 
     Renderer::~Renderer() {
@@ -123,6 +129,10 @@ namespace TechEngine {
         vertexArrays[BufferGameObjects]->unBind();
     }
 
+    void Renderer::uiPass() {
+        uiRenderer.onUpdate();
+    }
+
     void Renderer::linePass(Camera& camera) {
         vertexBuffers[BufferLines]->bind();
         vertexArrays[BufferLines]->bind();
@@ -150,6 +160,7 @@ namespace TechEngine {
         if (!lines.empty()) {
             linePass(camera);
         }
+        uiPass();
     }
 
     void Renderer::renderCustomPipeline(Camera* camera, std::vector<int>& entities) {
@@ -202,5 +213,13 @@ namespace TechEngine {
 
     ShadersManager& Renderer::getShadersManager() {
         return shadersManager;
+    }
+
+    Rml::Context* Renderer::getUIContext() {
+        return uiRenderer.getContext();
+    }
+
+    UIRenderer& Renderer::getUIRenderer() {
+        return uiRenderer;
     }
 }
