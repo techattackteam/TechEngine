@@ -12,7 +12,8 @@ namespace TechEngine {
                              SystemsRegistry& clientSystemsRegistry,
                              LoggerPanel& loggerPanel) : RuntimePanel(editorSystemsRegistry,
                                                                       clientSystemsRegistry,
-                                                                      loggerPanel) {
+                                                                      loggerPanel),
+                                                         m_uiEditor(editorSystemsRegistry, clientSystemsRegistry) {
         m_projectType = ProjectType::Client;
 
         //"Transfer" event from editor to client
@@ -33,5 +34,22 @@ namespace TechEngine {
             m_appSystemsRegistry.getSystem<EventDispatcher>().dispatch<MouseScrollEvent>(dynamic_cast<MouseScrollEvent*>(event.get())->getXOffset(),
                                                                                          dynamic_cast<MouseScrollEvent*>(event.get())->getYOffset());
         });
+    }
+
+    void ClientPanel::onInit() {
+        RuntimePanel::onInit();
+        m_uiEditor.init("UI Editor", &m_dockSpaceWindowClass);
+    }
+
+    void ClientPanel::onUpdate() {
+        RuntimePanel::onUpdate();
+        m_uiEditor.update();
+    }
+
+    void ClientPanel::setupInitialDockingLayout() {
+        RuntimePanel::setupInitialDockingLayout();
+        ImGui::DockBuilderDockWindow((m_uiEditor.getName() + "##" + std::to_string(m_uiEditor.getId())).c_str(),
+                                     m_dockSpaceID);
+        
     }
 }

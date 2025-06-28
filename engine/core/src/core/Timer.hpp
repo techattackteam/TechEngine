@@ -1,6 +1,7 @@
 #pragma once
 
 #include "systems/System.hpp"
+#include "Timer.hpp"
 #include <chrono>
 
 namespace TechEngine {

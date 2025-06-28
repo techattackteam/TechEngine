@@ -51,6 +51,7 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<ProjectManager>(m_client.m_systemRegistry, m_server.m_systemRegistry);
         m_systemRegistry.registerSystem<Window>(m_systemRegistry);
         m_systemRegistry.registerSystem<Input>(m_systemRegistry);
+        //m_systemRegistry.registerSystem<Renderer>(m_systemRegistry);
         m_systemRegistry.registerSystem<PanelsManager>(m_systemRegistry, m_client, m_server);
         m_systemRegistry.registerSystem<RuntimeSimulator<Client>>(m_client, m_systemRegistry);
         m_systemRegistry.registerSystem<RuntimeSimulator<Server>>(m_server, m_systemRegistry);
@@ -66,6 +67,7 @@ namespace TechEngine {
         m_systemRegistry.getSystem<EventDispatcher>().init();
         m_systemRegistry.getSystem<RuntimeSimulator<Client>>().init();
         m_systemRegistry.getSystem<RuntimeSimulator<Server>>().init();
+        //m_systemRegistry.getSystem<Renderer>().init(m_client.m_systemRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Client).string());
         ComponentType::init(); // Initialize component types for the editor
         m_systemRegistry.getSystem<PanelsManager>().init();
 

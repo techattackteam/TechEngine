@@ -168,20 +168,21 @@ namespace TechEngine {
             color = glm::vec4(1.0f, 1.0f, 1.0f, 0.3f);
             // Render the near plane as a square
             camera.updateProjectionMatrix(camera.getAspectRatio());
-            m_appSystemsRegistry.getSystem<Renderer>().createLine(frustumPoints[0], frustumPoints[1], color);
-            m_appSystemsRegistry.getSystem<Renderer>().createLine(frustumPoints[1], frustumPoints[3], color);
-            m_appSystemsRegistry.getSystem<Renderer>().createLine(frustumPoints[2], frustumPoints[3], color);
-            m_appSystemsRegistry.getSystem<Renderer>().createLine(frustumPoints[0], frustumPoints[2], color);
+            Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
+            renderer.createLine(frustumPoints[0], frustumPoints[1], color);
+            renderer.createLine(frustumPoints[1], frustumPoints[3], color);
+            renderer.createLine(frustumPoints[2], frustumPoints[3], color);
+            renderer.createLine(frustumPoints[0], frustumPoints[2], color);
 
             // Render the far plane as a square
-            m_appSystemsRegistry.getSystem<Renderer>().createLine(frustumPoints[4], frustumPoints[5], color);
-            m_appSystemsRegistry.getSystem<Renderer>().createLine(frustumPoints[5], frustumPoints[7], color);
-            m_appSystemsRegistry.getSystem<Renderer>().createLine(frustumPoints[6], frustumPoints[7], color);
-            m_appSystemsRegistry.getSystem<Renderer>().createLine(frustumPoints[4], frustumPoints[6], color);
+            renderer.createLine(frustumPoints[4], frustumPoints[5], color);
+            renderer.createLine(frustumPoints[5], frustumPoints[7], color);
+            renderer.createLine(frustumPoints[6], frustumPoints[7], color);
+            renderer.createLine(frustumPoints[4], frustumPoints[6], color);
 
             // Connect the near and far plane corners to complete the edges
             for (int i = 0; i < 4; ++i) {
-                m_appSystemsRegistry.getSystem<Renderer>().createLine(frustumPoints[i], frustumPoints[i + 4], color);
+                renderer.createLine(frustumPoints[i], frustumPoints[i + 4], color);
             }
         });
     }
@@ -286,7 +287,7 @@ namespace TechEngine {
         tempTransform.m_position += center;
         tempTransform.m_scale = glm::vec3(std::max(tempTransform.m_scale.x, std::max(tempTransform.m_scale.y, tempTransform.m_scale.z)));
         glm::mat4 modelMatrix = tempTransform.getModelMatrix();
-
+        Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
         const int numSegments = 128;
         const float segmentAngle = glm::two_pi<float>() / static_cast<float>(numSegments);
         const float offset = 0.005f;
@@ -302,7 +303,7 @@ namespace TechEngine {
             point1 = glm::vec3(modelMatrix * glm::vec4(point1, 1.0f));
             point2 = glm::vec3(modelMatrix * glm::vec4(point2, 1.0f));
             // Create a line segment along the X-axis with the specified color
-            m_appSystemsRegistry.getSystem<Renderer>().createLine(point1, point2, color);
+            renderer.createLine(point1, point2, color);
         }
 
         // Create a circle along the Y-axis
@@ -316,7 +317,7 @@ namespace TechEngine {
             point2 = glm::vec3(modelMatrix * glm::vec4(point2, 1.0f));
 
             // Create a line segment along the Y-axis with the specified color
-            m_appSystemsRegistry.getSystem<Renderer>().createLine(point1, point2, color);
+            renderer.createLine(point1, point2, color);
         }
 
         // Create a circle along the Z-axis
@@ -330,7 +331,7 @@ namespace TechEngine {
             point2 = glm::vec3(modelMatrix * glm::vec4(point2, 1.0f));
 
             // Create a line segment along the Z-axis with the specified color
-            m_appSystemsRegistry.getSystem<Renderer>().createLine(point1, point2, color);
+            renderer.createLine(point1, point2, color);
         }
     }
 
@@ -437,7 +438,7 @@ namespace TechEngine {
         Transform tempTransform = transform;
         tempTransform.m_position += center;
         glm::mat4 modelMatrix = tempTransform.getModelMatrix();
-
+        Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
         const float offset = 0.005f;
         float radiusX = radius + offset;
         float radiusZ = radius + offset;
@@ -468,11 +469,11 @@ namespace TechEngine {
                 glm::vec3 prevBottomPoint = vertices[(i - 1) * 2 + 1];
 
                 // Render lines for the sides of the cylinder
-                m_appSystemsRegistry.getSystem<Renderer>().createLine(prevTopPoint, topPoint, color); // Red lines
-                m_appSystemsRegistry.getSystem<Renderer>().createLine(prevBottomPoint, bottomPoint, color); // Red lines
+                renderer.createLine(prevTopPoint, topPoint, color); // Red lines
+                renderer.createLine(prevBottomPoint, bottomPoint, color); // Red lines
 
                 // Render lines to connect the top and bottom points
-                m_appSystemsRegistry.getSystem<Renderer>().createLine(prevTopPoint, prevBottomPoint, color); // Red lines
+                renderer.createLine(prevTopPoint, prevBottomPoint, color); // Red lines
             }
         }
 
@@ -483,11 +484,11 @@ namespace TechEngine {
         glm::vec3 lastBottomPoint = vertices[vertices.size() - 1];
 
         // Render lines for the sides of the cylinder
-        m_appSystemsRegistry.getSystem<Renderer>().createLine(lastTopPoint, firstTopPoint, color); // Red lines
-        m_appSystemsRegistry.getSystem<Renderer>().createLine(lastBottomPoint, firstBottomPoint, color); // Red lines
+        renderer.createLine(lastTopPoint, firstTopPoint, color); // Red lines
+        renderer.createLine(lastBottomPoint, firstBottomPoint, color); // Red lines
 
         // Render lines to connect the top and bottom points
-        m_appSystemsRegistry.getSystem<Renderer>().createLine(lastTopPoint, lastBottomPoint, color); // Red lines
+        renderer.createLine(lastTopPoint, lastBottomPoint, color); // Red lines
     }
 
     glm::vec4 SceneView::getColor(const Tag& tag, bool collider) const {

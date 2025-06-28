@@ -5,6 +5,7 @@
 #include "ShadersManager.hpp"
 #include "Line.hpp"
 #include "scene/CameraSystem.hpp"
+#include "ui/UIRenderer.hpp"
 
 namespace TechEngine {
     class Scene;
@@ -29,13 +30,17 @@ namespace TechEngine {
         std::unordered_map<std::string, VertexBuffer*> vertexBuffers;
         std::unordered_map<std::string, IndicesBuffer*> indicesBuffers;
         std::list<FrameBuffer*> frameBuffers;
+        UIRenderer uiRenderer;
 
     public:
-        Renderer(SystemsRegistry& systemsRegistry); //TODO: Complete rewrite after new ecs with archetypes
+
+        Renderer(SystemsRegistry& systemsRegistry);
 
         ~Renderer();
 
-        void init();
+        void init(bool initGUI = true);
+
+        void shutdown() override;
 
         void renderPipeline(Camera& camera);
 
@@ -49,10 +54,16 @@ namespace TechEngine {
 
         ShadersManager& getShadersManager();
 
+        Rml::Context *getUIContext();
+
+        UIRenderer& getUIRenderer();
+
     private:
         void shadowPass(Scene& scene);
 
         void geometryPass(Camera& camera);
+
+        void uiPass();
 
         void linePass(Camera& camera);
 

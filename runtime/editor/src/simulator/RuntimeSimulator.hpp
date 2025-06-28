@@ -72,14 +72,14 @@ namespace TechEngine {
             m_runtime.init();
             if (!m_runtime.m_systemRegistry.template hasSystem<Renderer>()) {
                 m_runtime.m_systemRegistry.template registerSystem<Renderer>(m_runtime.m_systemRegistry);
-                m_runtime.m_systemRegistry.template getSystem<Renderer>().init();
+                m_runtime.m_systemRegistry.template getSystem<Renderer>().init(false);
             }
             m_systemsRegistry.getSystem<EventDispatcher>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
                 if (m_simulationState != SimulationState::STOPPED) {
                     stopSimulation();
                 }
             });
-            m_runtime.m_systemRegistry.getSystem<EventDispatcher>().subscribe<ScriptCrashEvent>([this](const std::shared_ptr<Event>& event) {
+            m_runtime.m_systemRegistry.template getSystem<EventDispatcher>().template subscribe<ScriptCrashEvent>([this](const std::shared_ptr<Event>& event) {
                 if (m_simulationState != SimulationState::STOPPED) {
                     stopNextUpdate = true;
                 }
