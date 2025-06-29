@@ -18,19 +18,17 @@ namespace TechEngine {
     }
 
     void UIView::onUpdate() {
-        ImVec2 rmlViewSize = ImGui::GetContentRegionAvail();
+        ImVec2 wsize = ImGui::GetContentRegionAvail();
         FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(m_frameBufferID);
-        if (rmlViewSize.x <= 0) rmlViewSize.x = 1;
-        if (rmlViewSize.y <= 0) rmlViewSize.y = 1;
-        // Resize FBO if RML View size changed
-        if (m_frameBufferID && (static_cast<int>(rmlViewSize.x) != frameBuffer.width || static_cast<int>(rmlViewSize.y) != frameBuffer.height)) {
-            if (rmlViewSize.x > 0 && rmlViewSize.y > 0) {
-                frameBuffer.resize(rmlViewSize.x, rmlViewSize.y);
-                m_context->SetDimensions(Rml::Vector2i(frameBuffer.width, frameBuffer.height));
-            }
-        }
+        frameBuffer.bind();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        frameBuffer.resize(wsize.x, wsize.y);
+        m_context->SetDimensions(Rml::Vector2i(frameBuffer.width, frameBuffer.height));
+        m_context->Update();
         UIRenderer& uiRenderer = m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer();
         uiRenderer.onUpdate();
-        ImGui::Image((void*)(intptr_t)frameBuffer.colorTexture, ImVec2((float)frameBuffer.width, (float)frameBuffer.height), ImVec2(0, 1), ImVec2(1, 0));
+        uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
+        ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
+        frameBuffer.unBind();
     }
 }

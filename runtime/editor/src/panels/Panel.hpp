@@ -28,7 +28,7 @@ namespace TechEngine {
         SystemsRegistry& m_editorSystemsRegistry;
 
     public:
-        Panel(SystemsRegistry& m_systemsRegistry);
+        Panel(SystemsRegistry& editorSystemsRegistry);
 
         virtual ~Panel() = default;
 

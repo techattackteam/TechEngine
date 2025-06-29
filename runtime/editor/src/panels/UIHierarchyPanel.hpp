@@ -2,12 +2,19 @@
 #include <RmlUi/Core/Context.h>
 
 #include "Panel.hpp"
+#include "renderer/ui/widget/Widget.hpp"
 
 namespace TechEngine {
+    class UIEditor;
+
     class UIHierarchyPanel : public Panel {
     private:
         SystemsRegistry& m_appSystemsRegistry;
         Rml::Context* m_context = nullptr;
+        UIEditor* m_editor = nullptr;
+
+        Widget* m_rootWidget = nullptr;
+        Widget* m_selectedWidget = nullptr;
 
     public:
         UIHierarchyPanel(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& appSystemsRegistry);
@@ -15,5 +22,7 @@ namespace TechEngine {
         void onInit() override;
 
         void onUpdate() override;
+
+        void setEditor(UIEditor* editor);
     };
 }

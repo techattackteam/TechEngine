@@ -8,7 +8,7 @@
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
-    Panel::Panel(SystemsRegistry& m_systemsRegistry) : m_editorSystemsRegistry(m_systemsRegistry) {
+    Panel::Panel(SystemsRegistry& editorSystemsRegistry) : m_editorSystemsRegistry(editorSystemsRegistry) {
     }
 
     void Panel::init(const std::string& name, ImGuiWindowClass* parentDockSpaceClass, bool isVisible) {
