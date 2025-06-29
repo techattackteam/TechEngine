@@ -27,7 +27,6 @@ namespace TechEngine {
 
             // Initialize our custom render interface (which creates shaders, etc.)
             m_renderInterface->Initialize();
-
             // 3. Create a context
             // The context is like a viewport or a "screen" for the UI.
             Rml::Vector2i windowDimensions(1280, 720);
@@ -48,47 +47,17 @@ namespace TechEngine {
 
             // 5. --- THE TEST CASE: Load a document from a string ---
             const Rml::String rml_string = R"(
-    <rml>
-        <head>
-            <title>Sample RML</title>
-            <style>
-                body {
-                    /* Use the font family name that RmlUi reported: 'Lato' */
-                    font-family: "Lato";
-                    background-color: #222222; /* Use full hex for clarity */
-                    color: #ffffff;
-                    margin: 0;
-                    padding: 20px;
-                }
+<rml>
+    <head>
+        <title>Blank Document</title>
+        <link type="text/rcss" href="template.rcss" />
+    </head>
+    <body>
+        
+        <!-- All your UI elements will go here -->
 
-                h1 {
-                    color: #00aaff;
-                }
-
-                p {
-                    color: #dddddd;
-                }
-
-                button {
-                    background-color: #0077cc;
-                    color: white;
-                    padding: 10px 20px;
-                    /* FIX: Replaced 'border: none;' with a compatible property */
-                    border-width: 0;
-                    cursor: pointer;
-                }
-
-                button:hover {
-                    background-color: #0055aa;
-                }
-            </style>
-        </head>
-        <body>
-            <h1>Hello RmlUi!</h1>
-            <p>This is a sample RML document.</p>
-            <button>Click Me</button>
-        </body>
-    </rml>
+    </body>
+</rml>
 )";
 
             Rml::ElementDocument* document = m_context->LoadDocument("C:\\dev\\TechEngine\\bin\\runtime\\editor\\debug\\New Project\\resources\\client\\assets\\ui\\sample.rml");
@@ -96,13 +65,15 @@ namespace TechEngine {
             if (document) {
                 document->Show();
             }
+
+            m_context->Update();
+
             m_initialized = true;
         }
     }
 
     void UIRenderer::onUpdate() {
         if (m_context) {
-            // Update the RmlUi context
             m_context->Update();
             m_context->Render();
         }
