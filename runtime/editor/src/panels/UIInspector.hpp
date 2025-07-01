@@ -1,6 +1,6 @@
 #pragma once
 #include "Panel.hpp"
-#include "renderer/ui/widget/Widget.hpp"
+#include "../ui/Widget.hpp"
 
 
 namespace TechEngine {

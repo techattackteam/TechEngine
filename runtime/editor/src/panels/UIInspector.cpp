@@ -1,9 +1,9 @@
 #include "UIInspector.hpp"
 
 #include <RmlUi/Core/ElementDocument.h>
-
-#include "renderer/ui/widget/Canvas.hpp"
+#include "ui/Widget.hpp"
 #include "imgui_stdlib.h"
+#include "core/Logger.hpp"
 
 namespace TechEngine {
     UIInspector::UIInspector(SystemsRegistry& editorSystemsRegistry) : Panel(editorSystemsRegistry) {
@@ -16,32 +16,31 @@ namespace TechEngine {
     }
 
     void UIInspector::onUpdate() {
-        /*if (m_selectedWidget) {
+        if (m_selectedWidget) {
             ImGui::Text("Type: %s", "Panel");
             ImGui::Separator();
-            Canvas* panel = dynamic_cast<Canvas*>(m_selectedWidget);
+
             // Alignment Inspector
-        
+            bool positionChanged = ImGui::DragFloat2("Center Position (px)", &m_selectedWidget->m_position.x, 1.0f, 0.0f, 10000.0f, "%.1f");
+            bool sizeChanged = ImGui::DragFloat2("Size (px)", &m_selectedWidget->m_size.x, 1.0f, 1.0f, 10000.0f, "%.1f"); // Added min value to avoid zero/negative 
+            if (positionChanged || sizeChanged) {
+                auto* element = m_selectedWidget->m_rmlElement;
 
-            // Position Inspector
-            if (ImGui::DragFloat2("Position (px)", &panel->m_position.x, 1.0f, 0.0f, 10000.0f, "%.1f")) {
-                panel->m_rmlElement->SetProperty(Rml::PropertyId::Left, Rml::Property(panel->m_position.x, Rml::Unit::PX));
-                panel->m_rmlElement->SetProperty(Rml::PropertyId::Top, Rml::Property(panel->m_position.y, Rml::Unit::PX));
+                // Get the center position and size from our widget wrapper
+                const Rml::Vector2f& centerPos = m_selectedWidget->m_position;
+                const Rml::Vector2f& size = m_selectedWidget->m_size;
+
+                // Calculate the top-left corner for RML based on the center and size
+                float left = centerPos.x - (size.x / 2.0f);
+                float top = centerPos.y - (size.y / 2.0f);
+
+                // Set all the relevant properties on the Rml element
+                element->SetProperty(Rml::PropertyId::Left, Rml::Property(left, Rml::Unit::PX));
+                element->SetProperty(Rml::PropertyId::Top, Rml::Property(top, Rml::Unit::PX));
+                element->SetProperty(Rml::PropertyId::Width, Rml::Property(size.x, Rml::Unit::PX));
+                element->SetProperty(Rml::PropertyId::Height, Rml::Property(size.y, Rml::Unit::PX));
             }
-
-            // Size Inspector
-            if (ImGui::DragFloat2("Size (px)", &panel->m_size.x)) {
-                panel->m_rmlElement->SetProperty(Rml::PropertyId::Width, Rml::Property(panel->m_size.x, Rml::Unit::PX));
-                panel->m_rmlElement->SetProperty(Rml::PropertyId::Height, Rml::Property(panel->m_size.y, Rml::Unit::PX));
-            }
-
-
-            float color[4] = {panel->m_backgroundColor.red / 255.f, panel->m_backgroundColor.green / 255.f, panel->m_backgroundColor.blue / 255.f, panel->m_backgroundColor.alpha / 255.f};
-            if (ImGui::ColorEdit4("Background Color", color)) {
-                panel->m_backgroundColor = Rml::Colourb(color[0] * 255, color[1] * 255, color[2] * 255, color[3] * 255);
-                panel->m_rmlElement->SetProperty(Rml::PropertyId::BackgroundColor, Rml::Property(panel->m_backgroundColor, Rml::Unit::COLOUR));
-            }
-        }*/
+        }
 
         if (!m_selectedWidget) {
             return;
@@ -49,6 +48,37 @@ namespace TechEngine {
         auto& properties = m_selectedWidget->getProperties();
         for (auto& property: properties) {
             ImGui::PushID(property.name.c_str());
+            ImGui::Text("%s", property.name.c_str());
+
+            // 3. Use the "type" to decide which ImGui widget to draw.
+            // THIS IS THE DYNAMIC PART!
+            if (property.type == "color") {
+                // Get the property from the element, using the default from the definition
+                Rml::Colourb currentColor = m_selectedWidget->m_rmlElement->GetProperty<Rml::Colourb>(property.rcssProperty);
+
+                float colorsFloat[4] = {
+                    static_cast<float>(currentColor.red) / 255.f,
+                    static_cast<float>(currentColor.green) / 255.f,
+                    static_cast<float>(currentColor.blue) / 255.f,
+                    static_cast<float>(currentColor.alpha) / 255.f
+                };
+                if (ImGui::ColorEdit4("##ColorValue", colorsFloat)) {
+                    std::stringstream ss;
+                    ss << '#' << std::hex << std::setfill('0')
+                            << std::setw(2) << std::lround(colorsFloat[0] * 255.0f)
+                            << std::setw(2) << std::lround(colorsFloat[1] * 255.0f)
+                            << std::setw(2) << std::lround(colorsFloat[2] * 255.0f)
+                            << std::setw(2) << std::lround(colorsFloat[3] * 255.0f);
+                    std::string color = ss.str();
+
+                    TE_LOGGER_INFO("Setting color property '{0}' to '{1}'", property.name, color);
+                    m_selectedWidget->m_rmlElement->SetProperty(property.rcssProperty, color); // Set the color property
+                }
+                ImGui::PopID();
+                break;
+            }
+
+            /*ImGui::PushID(property.name.c_str());
             ImGui::Text("%s", property.name.c_str());
             switch (property.type) {
                 case PropertyType::Vector2f: {
@@ -125,6 +155,7 @@ namespace TechEngine {
                     ImGui::Text("Unsupported property type: %d", static_cast<int>(property.type));
             }
             ImGui::PopID();
+            */
         }
     }
 

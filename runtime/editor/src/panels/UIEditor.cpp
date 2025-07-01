@@ -6,13 +6,12 @@
 
 #include "renderer/FrameBuffer.hpp"
 #include "renderer/Renderer.hpp"
-#include "renderer/ui/widget/Canvas.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
     UIEditor::UIEditor(SystemsRegistry& editorSystemsRegistry,
                        SystemsRegistry& appSystemsRegistry) : DockPanel(editorSystemsRegistry),
-                                                              m_uiView(editorSystemsRegistry, appSystemsRegistry),
+                                                              m_uiView(editorSystemsRegistry, appSystemsRegistry, this),
                                                               m_uiHierarchy(editorSystemsRegistry, appSystemsRegistry),
                                                               m_uiInspector(editorSystemsRegistry),
                                                               m_appSystemsRegistry(appSystemsRegistry),
@@ -35,7 +34,8 @@ namespace TechEngine {
         m_uiHierarchy.init("UI Hierarchy", &m_dockSpaceWindowClass);
         m_uiView.init("UI View", &m_dockSpaceWindowClass);
         m_uiInspector.init("UI Inspector", &m_dockSpaceWindowClass);
-        createWidget<Canvas>(nullptr, "Panel"); // Create a default panel to start with
+        m_widgetsRegistry.load("C:\\dev\\TechEngine\\bin\\runtime\\editor\\debug\\New Project\\resources\\client\\assets\\ui\\widgets.json");
+        //createWidget<Canvas>(nullptr, "Panel"); // Create a default panel to start with
     }
 
     void UIEditor::onUpdate() {
@@ -46,7 +46,6 @@ namespace TechEngine {
 
     void UIEditor::setSelectedWidget(Widget* widget) {
         m_selectedWidget = widget;
-
         m_uiInspector.setSelectedWidget(widget);
     }
 
@@ -127,7 +126,7 @@ namespace TechEngine {
         // Add a right-click menu to create children
         if (ImGui::BeginPopupContextItem()) {
             if (ImGui::MenuItem("Add Panel")) {
-                createWidget<Canvas>(element, "Panel"); // Create a child for the currently right-clicked Rml::Element
+                //createWidget<Canvas>(element, "Panel"); // Create a child for the currently right-clicked Rml::Element
             }
             ImGui::EndPopup();
         }
@@ -141,6 +140,10 @@ namespace TechEngine {
         }
     }
 
+    const std::unordered_map<Rml::Element*, Widget*>& UIEditor::getElementToWidgetMap() {
+        return m_elementToWidgetMap;
+    }
+
     void UIEditor::buildWidgetMapForDocument(Rml::Element* root_element) {
         // Clear old data
         m_topLevelWidgets.clear();
@@ -151,12 +154,12 @@ namespace TechEngine {
         // The hierarchy will still draw everything from the Rml DOM.
         // Let's create a C++ widget for the body to act as our logical root.
 
-        Rml::Element* body = root_element->QuerySelector("body");
-        if (body) {
-            auto canvasWidget = std::make_unique<Canvas>("Body");
-            canvasWidget->setRmlElement(body);
-            m_elementToWidgetMap[body] = canvasWidget.get();
-            m_topLevelWidgets.push_back(std::move(canvasWidget));
-        }
+        //Rml::Element* body = root_element->QuerySelector("body");
+        //if (body) {
+        //    auto canvasWidget = std::make_unique<Canvas>("Body");
+        //    canvasWidget->setRmlElement(body);
+        //    m_elementToWidgetMap[body] = canvasWidget.get();
+        //    m_topLevelWidgets.push_back(std::move(canvasWidget));
+        //}
     }
 }

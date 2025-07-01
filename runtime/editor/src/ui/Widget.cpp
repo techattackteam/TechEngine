@@ -1,13 +1,18 @@
 #include "Widget.hpp"
 
-#include <utility>
-
 namespace TechEngine {
-    Widget::Widget(std::string name) : m_name(std::move(name)) {
-        static uint32_t next_id = 1;
-        m_id = next_id++;
-
-        addProperty<std::string>("Name", PropertyType::String, m_name, [this](auto& value) {
+    Widget::Widget() {
+        //if (m_rmlElement) {
+        /*for (auto& property: m_properties) {
+            property.onChange = [property, this](const WidgetProperty::ProperTyValue& value) {
+                // Default no-op for properties without a specific onChange handler
+                if (property.type == "color") {
+                    m_rmlElement->SetProperty(Rml::PropertyId::BackgroundColor, Rml::Property(std::get<Rml::Colourb>(value), Rml::Unit::COLOUR));
+                }
+            };
+        }*/
+        //}
+        /*addProperty<std::string>("Name", PropertyType::String, m_name, [this](auto& value) {
             m_name = std::get<std::string>(value);
             if (m_rmlElement) {
                 m_rmlElement->SetId(m_name);
@@ -49,10 +54,15 @@ namespace TechEngine {
                 int alignment = std::get<int>(value);
                 switch (alignment) {
                     case 0: // Left
-                        m_rmlElement->SetProperty("self alignment", "flex-start");
+                        if (!m_rmlElement->SetProperty(Rml::PropertyId::AlignItems, Rml::Property("left", Rml::Unit::KEYWORD))) {
+                            TE_LOGGER_CRITICAL("Failed to set self alignment to flex-start for element: {}", m_rmlElement->GetId().c_str());
+                        }
+
                         break;
                     case 1: // Center
-                        m_rmlElement->SetProperty("self alignment", "center");
+                        if (m_rmlElement->SetProperty(Rml::PropertyId::AlignItems, Rml::Property("center", Rml::Unit::KEYWORD))) {
+                            TE_LOGGER_CRITICAL("Failed to set self alignment to center for element: {}", m_rmlElement->GetId().c_str());
+                        }
                         break;
                     case 2: // Right
                         m_rmlElement->SetProperty("self alignment", "flex-end");
@@ -79,6 +89,23 @@ namespace TechEngine {
             if (m_rmlElement) {
                 m_rmlElement->SetProperty(Rml::PropertyId::ZIndex, Rml::Property(std::get<int>(value), Rml::Unit::NUMBER));
             }
-        });
+        });*/
+    }
+
+    Widget::Widget(Widget* widget) {
+        this->m_name = widget->m_name;
+        this->m_category = widget->m_category;
+        this->m_description = widget->m_description;
+        this->m_rmlSnippet = widget->m_rmlSnippet;
+        for (const auto& prop: widget->m_properties) {
+            WidgetProperty property;
+            property.name = prop.name;
+            property.rcssProperty = prop.rcssProperty;
+            property.type = prop.type;
+            property.defaultValue = prop.defaultValue;
+            property.onChange = prop.onChange; // Copy the onChange callback
+            this->m_properties.push_back(property);
+        }
+        this->m_rmlElement = nullptr;
     }
 }
