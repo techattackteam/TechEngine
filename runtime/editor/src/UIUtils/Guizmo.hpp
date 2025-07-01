@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "components/Components.hpp"
+#include "../ui/Widget.hpp"
 
 namespace TechEngine {
     class SystemsRegistry;
@@ -25,6 +26,8 @@ namespace TechEngine {
         Guizmo(int& id, SystemsRegistry& appSystemsRegistry);
 
         void editTransform(Camera* camera, ImGuiContext* context, const std::vector<Entity>& selectedEntities);
+
+        void editUI(ImVec2 position, ImVec2 size, Widget* widget);
 
         void setOperation(int operation);
 

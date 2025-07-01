@@ -3,7 +3,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 
+#include "components/Archetype.hpp"
 #include "physics/PhysicsEngine.hpp"
+#include "../ui/Widget.hpp"
 #include "scene/ScenesManager.hpp"
 #include "systems/SystemsRegistry.hpp"
 
@@ -111,6 +113,73 @@ namespace TechEngine {
         } else {
             lastUsingID = -1;
         }
+    }
+
+    void Guizmo::editUI(ImVec2 viewPosition, ImVec2 viewSize, Widget* widget) {
+        /*if (widget == nullptr || operation == -1) {
+            return;
+        }
+        Rml::Vector2f position;
+        Rml::Vector2f size;
+        std::vector<WidgetProperty> properties = widget->getProperties();
+
+        for (const auto& property: properties) {
+            if (property.name == "Position") {
+                position = std::get<Rml::Vector2f>(property.value);
+            } else if (property.name == "Size") {
+                size = std::get<Rml::Vector2f>(property.value);
+            }
+        }
+
+        glm::mat4 modelMatrix = glm::mat4(1.0f);
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(position.x, position.y, 0.0f));
+        //modelMatrix = glm::scale(modelMatrix, glm::vec3(size.x, size.y, 1.0f));
+
+        glm::mat4 viewMatrix = glm::mat4(1.0f);
+
+        glm::mat4 projectionMatrix = glm::ortho(0.0f, viewSize.x, viewSize.y, 0.f, -1.0f, 1.0f);
+
+        ImGuizmo::SetOrthographic(true);
+        ImGuizmo::AllowAxisFlip(true);
+        ImGuizmo::SetDrawlist();
+        ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
+
+        ImGuizmo::SetRect(viewPosition.x, viewPosition.y, viewSize.x, viewSize.y);
+
+        ImGuizmo::MODE currentMode = (operation == ImGuizmo::OPERATION::SCALE) ? ImGuizmo::MODE::LOCAL : ImGuizmo::MODE::WORLD;
+
+
+        TE_LOGGER_INFO("UI View Position: ({0}, {1}), Size: ({2}, {3})", viewPosition.x, viewPosition.y, viewSize.x, viewSize.y);
+        ImGuizmo::Manipulate(glm::value_ptr(viewMatrix), glm::value_ptr(projectionMatrix),
+                             (ImGuizmo::OPERATION)operation, currentMode, glm::value_ptr(modelMatrix),
+                             nullptr, nullptr);
+        if (ImGuizmo::IsUsing() && (lastUsingID == -1 || lastUsingID == id) && widget) {
+            lastUsingID = id;
+            glm::vec3 translation, rotation, scale;
+            DecomposeTransform(modelMatrix, translation, rotation, scale);
+
+            for (auto& property: widget->getProperties()) {
+                if (property.name == "Position") {
+                    auto& value = std::get<Rml::Vector2f>(property.value);
+                    value.x = translation.x;
+                    value.y = translation.y;
+                    property.onChange(value);
+                } else if (property.name == "Rotation") {
+                    auto& value = std::get<Rml::Vector3f>(property.value);
+                    value.x = rotation.x;
+                    value.y = rotation.y;
+                    value.z = rotation.z;
+                    property.onChange(value);
+                } else if (property.name == "Scale") {
+                    auto& value = std::get<Rml::Vector2f>(property.value);
+                    value.x = scale.x;
+                    value.y = scale.y;
+                    property.onChange(value);
+                }
+            }
+        } else {
+            lastUsingID = -1;
+        }*/
     }
 
     void Guizmo::setOperation(int operation) {
