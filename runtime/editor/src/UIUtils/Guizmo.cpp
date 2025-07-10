@@ -115,7 +115,7 @@ namespace TechEngine {
         }
     }
 
-    void Guizmo::editUI(ImVec2 viewPosition, ImVec2 viewSize, Widget* widget) {
+    void Guizmo::editUI(ImVec2 viewPosition, ImVec2 viewSize, std::shared_ptr<Widget> widget) {
         /*if (widget == nullptr || operation == -1) {
             return;
         }

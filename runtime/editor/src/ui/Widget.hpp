@@ -1,6 +1,4 @@
 #pragma once
-#include <variant>
-
 #include <RmlUi/Core/Element.h>
 
 
@@ -11,10 +9,8 @@ namespace TechEngine {
         std::string type;
         std::string defaultValue;
 
-        using ProperTyValue = std::variant<Rml::Vector2f, Rml::Vector3f, std::string, Rml::Colourb, bool, int, float>;
-        using OnChangeCallback = std::function<void(const ProperTyValue&)>;
+        using OnChangeCallback = std::function<void(const std::string&)>;
         OnChangeCallback onChange;
-
     };
 
     class Widget {
@@ -24,12 +20,12 @@ namespace TechEngine {
         std::string m_name;
         std::string m_category;
         std::string m_description;
-        std::string m_rmlSnippet;
 
         Rml::Vector2f m_position;
         Rml::Vector2f m_size;
         std::vector<WidgetProperty> m_properties;
-
+        std::vector<std::string> m_childrenTypes; // Types of children this widget can have, e.g., "Button", "Text", etc.
+        std::vector<std::shared_ptr<Widget>> m_children; // Children widgets
     public:
         explicit Widget();
 
@@ -59,17 +55,5 @@ namespace TechEngine {
         virtual std::vector<WidgetProperty>& getProperties() {
             return m_properties;
         }
-
-        /*template<typename T>
-        void addProperty(const std::string& name,
-                         PropertyType type,
-                         const T& initialValue,
-                         WidgetProperty::OnChangeCallback onChange = nullptr,
-                         const std::vector<std::string>& enumOptions = {}
-        ) {
-            assert(!name.empty() && "Property name cannot be empty");
-            assert(type != PropertyType::Enum || !enumOptions.empty() && "Enum properties must have options");
-            m_properties.push_back({name, type, initialValue, enumOptions, onChange});
-        }*/
     };
 }

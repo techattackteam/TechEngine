@@ -27,7 +27,7 @@ namespace TechEngine {
 
         void editTransform(Camera* camera, ImGuiContext* context, const std::vector<Entity>& selectedEntities);
 
-        void editUI(ImVec2 position, ImVec2 size, Widget* widget);
+        void editUI(ImVec2 viewPosition, ImVec2 viewSize, std::shared_ptr<Widget> widget);
 
         void setOperation(int operation);
 

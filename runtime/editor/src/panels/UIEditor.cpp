@@ -3,6 +3,8 @@
 #include <imgui_internal.h>
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/ElementDocument.h>
+#include <RmlUi/Core/ElementText.h>
+#include <RmlUi/Core/Factory.h>
 
 #include "renderer/FrameBuffer.hpp"
 #include "renderer/Renderer.hpp"
@@ -29,13 +31,13 @@ namespace TechEngine {
                 return;
             }
         }
-        m_document = m_context->GetDocument(0); // For now lets assume the first document is the one we want to edit
+        m_document = m_context->GetDocument(0);
         m_uiHierarchy.setEditor(this);
         m_uiHierarchy.init("UI Hierarchy", &m_dockSpaceWindowClass);
         m_uiView.init("UI View", &m_dockSpaceWindowClass);
         m_uiInspector.init("UI Inspector", &m_dockSpaceWindowClass);
-        m_widgetsRegistry.load("C:\\dev\\TechEngine\\bin\\runtime\\editor\\debug\\New Project\\resources\\client\\assets\\ui\\widgets.json");
-        //createWidget<Canvas>(nullptr, "Panel"); // Create a default panel to start with
+        m_widgetsRegistry.loadJson("C:\\dev\\TechEngine\\bin\\runtime\\editor\\debug\\New Project\\resources\\client\\assets\\ui\\baseWidgets.json", true);
+        m_widgetsRegistry.loadJson("C:\\dev\\TechEngine\\bin\\runtime\\editor\\debug\\New Project\\resources\\client\\assets\\ui\\widgets.json", false);
     }
 
     void UIEditor::onUpdate() {
@@ -44,7 +46,102 @@ namespace TechEngine {
         m_uiView.update();
     }
 
-    void UIEditor::setSelectedWidget(Widget* widget) {
+    std::shared_ptr<Widget> UIEditor::createWidget(Rml::Element* parent, const std::string& name, bool base) {
+        std::shared_ptr<Widget> widget; // Assuming this function creates a widget and returns a pointer to it
+
+        Rml::ElementPtr elementPtr;
+        if (base) {
+            if (name == "Label") {
+                elementPtr = Rml::Factory::InstanceElement(nullptr, "#text", "div", Rml::XMLAttributes()); //Not sure if this is the right way to create an element
+                elementPtr->SetProperty("color", "#ffffff");
+                elementPtr->SetProperty("font-size", "14px");
+                elementPtr->SetProperty("font-family", "Lato");
+            } else {
+                elementPtr = Rml::Factory::InstanceElement(nullptr, "div", "div", Rml::XMLAttributes());
+                elementPtr->SetProperty("position", "absolute"); // Set the ID of the element to the widget's name
+            }
+            elementPtr->SetProperty("width", "100%");
+            elementPtr->SetProperty("height", "100%");
+        } else {
+            elementPtr = Rml::Factory::InstanceElement(nullptr, "div", "div", Rml::XMLAttributes());
+            elementPtr->SetProperty("position", "absolute"); // Set the ID of the element to the widget's name
+            elementPtr->SetProperty("display", "flex");
+            elementPtr->SetProperty("justify-content", "center"); // horizontal
+            elementPtr->SetProperty("align-items", "center"); // vertical
+        }
+
+        Rml::Element* element = elementPtr.get();
+        if (!elementPtr) {
+            //Rml::Log::Message(Rml::Log::LT_ERROR, "Failed to create Rml::Element for widget: %s", newWidget->getRmlTag());
+            return nullptr; // Handle error if element creation fails
+        }
+
+        if (base) {
+            widget = m_widgetsRegistry.createBaseWidget(name);
+        } else {
+            widget = m_widgetsRegistry.createWidget(name);
+            for (const auto& childType: widget->m_childrenTypes) {
+                std::shared_ptr<Widget> childWidget = createWidget(element, childType, true); // Create child widget
+                if (childWidget) {
+                    widget->m_children.push_back(childWidget);
+                } else {
+                    TE_LOGGER_ERROR("Failed to create child widget of type: {0}", childType.c_str());
+                }
+            }
+        }
+
+        widget->setRmlElement(elementPtr.get());
+        if (parent != nullptr) {
+            element = parent->AppendChild(std::move(elementPtr));
+        } else {
+            element = m_document->AppendChild(std::move(elementPtr));
+        }
+
+        widget->setRmlElement(element);
+        for (auto& property: widget->getProperties()) {
+            property.onChange = [this, &property, widget](const std::string& value) {
+                widget->m_rmlElement->SetProperty(property.rcssProperty, value);
+            };
+        }
+        m_elementToWidgetMap[element] = widget;
+        std::vector<WidgetProperty> properties = widget->getProperties();
+        for (auto& prop: properties) {
+            if (prop.type == "int") {
+                prop.onChange(prop.defaultValue); // Convert string to int
+            } else if (prop.type == "float") {
+                prop.onChange(prop.defaultValue);
+            } else if (prop.type == "bool") {
+                prop.onChange(prop.defaultValue); // Convert string to bool
+            } else if (prop.type == "string") {
+                dynamic_cast<Rml::ElementText*>(element)->SetText(prop.defaultValue);
+            } else if (prop.type == "vector2f") {
+                Rml::Vector2f vec;
+                sscanf_s(prop.defaultValue.c_str(), "%f,%f", &vec.x, &vec.y);
+                //prop.onChange(vec);
+            } else if (prop.type == "vector3f") {
+                Rml::Vector3f vec;
+                sscanf_s(prop.defaultValue.c_str(), "%f,%f,%f", &vec.x, &vec.y, &vec.z);
+                //prop.onChange(vec);
+            } else if (prop.type == "color") {
+                std::stringstream ss;
+                ss << '#' << std::hex << std::setfill('0')
+                        << std::setw(2) << std::lround(255)
+                        << std::setw(2) << std::lround(255)
+                        << std::setw(2) << std::lround(255)
+                        << std::setw(2) << std::lround(255);
+                std::string color = ss.str();
+                prop.onChange(color);
+            }
+        }
+
+        //Set background color to blue
+        m_context->Update();
+        //TE_LOGGER_INFO("Element: {0} created with tag: {1}", newWidget->getName().c_str(), newWidget->getRmlTag());
+        TE_LOGGER_INFO("Element Top: {0}", element->GetAbsoluteTop());
+        return widget;
+    }
+
+    void UIEditor::setSelectedWidget(std::shared_ptr<Widget> widget) {
         m_selectedWidget = widget;
         m_uiInspector.setSelectedWidget(widget);
     }
@@ -92,7 +189,7 @@ namespace TechEngine {
         if (!element) return;
 
         // Find our C++ widget counterpart for this element
-        Widget* widget = nullptr;
+        std::shared_ptr<Widget> widget = nullptr;
         auto it = m_elementToWidgetMap.find(element);
         if (it != m_elementToWidgetMap.end()) {
             widget = it->second;
@@ -140,26 +237,7 @@ namespace TechEngine {
         }
     }
 
-    const std::unordered_map<Rml::Element*, Widget*>& UIEditor::getElementToWidgetMap() {
+    const std::unordered_map<Rml::Element*, std::shared_ptr<Widget>>& UIEditor::getElementToWidgetMap() {
         return m_elementToWidgetMap;
-    }
-
-    void UIEditor::buildWidgetMapForDocument(Rml::Element* root_element) {
-        // Clear old data
-        m_topLevelWidgets.clear();
-        m_elementToWidgetMap.clear();
-
-        // We can't create a C++ widget for every single Rml::Element (like text nodes),
-        // so for now, we only care about the ones we create explicitly.
-        // The hierarchy will still draw everything from the Rml DOM.
-        // Let's create a C++ widget for the body to act as our logical root.
-
-        //Rml::Element* body = root_element->QuerySelector("body");
-        //if (body) {
-        //    auto canvasWidget = std::make_unique<Canvas>("Body");
-        //    canvasWidget->setRmlElement(body);
-        //    m_elementToWidgetMap[body] = canvasWidget.get();
-        //    m_topLevelWidgets.push_back(std::move(canvasWidget));
-        //}
     }
 }
