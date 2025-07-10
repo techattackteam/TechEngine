@@ -96,7 +96,7 @@ namespace TechEngine {
         this->m_name = widget->m_name;
         this->m_category = widget->m_category;
         this->m_description = widget->m_description;
-        this->m_rmlSnippet = widget->m_rmlSnippet;
+        //this->m_rmlSnippet = widget->m_rmlSnippet;
         for (const auto& prop: widget->m_properties) {
             WidgetProperty property;
             property.name = prop.name;
@@ -105,6 +105,10 @@ namespace TechEngine {
             property.defaultValue = prop.defaultValue;
             property.onChange = prop.onChange; // Copy the onChange callback
             this->m_properties.push_back(property);
+        }
+        // Deep Copy children
+        for (const auto& childType: widget->m_childrenTypes) {
+            this->m_childrenTypes.push_back(childType);
         }
         this->m_rmlElement = nullptr;
     }

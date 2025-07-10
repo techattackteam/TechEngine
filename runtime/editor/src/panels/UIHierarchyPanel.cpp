@@ -24,11 +24,23 @@ namespace TechEngine {
                 m_editor->drawRmlElementInHierarchy(doc->GetChild(child_idx));
             }
         }
-        if (!ImGui::IsItemHovered() && ImGui::BeginPopupContextWindow()) {
+        if (!ImGui::IsItemHovered() && ImGui::BeginPopupContextWindow("Widget Creation", 1)) {
+            //if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::BeginMenu("Base Widgets")) {
+                for (const Widget& widget: m_editor->getWidgetsRegistry().getBaseWidgets()) {
+                    if (ImGui::MenuItem(widget.getName().c_str())) {
+                        ImGui::Text("%s", widget.getName().c_str());
+                        m_editor->createWidget(nullptr, widget.getName(), true);
+                    }
+                }
+            ImGui::EndMenu();
+            }
+            //ImGui::EndPopup();
+            //}
             for (const Widget& widget: m_editor->getWidgetsRegistry().getWidgets()) {
                 if (ImGui::MenuItem(widget.getName().c_str())) {
                     ImGui::Text("%s", widget.getName().c_str());
-                    m_editor->createWidget(nullptr, widget.getName());
+                    m_editor->createWidget(nullptr, widget.getName(), false);
                 }
             }
             ImGui::EndPopup();

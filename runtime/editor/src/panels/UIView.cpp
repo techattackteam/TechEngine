@@ -5,11 +5,12 @@
 #include "UIEditor.hpp"
 #include "renderer/FrameBuffer.hpp"
 #include "renderer/Renderer.hpp"
-#include "../ui/Widget.hpp"
+#include "ui/Widget.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 
 namespace TechEngine {
+    // Constructor and onInit() remain the same...
     UIView::UIView(SystemsRegistry& editorSystemsRegistry,
                    SystemsRegistry& appSystemsRegistry,
                    UIEditor* uiEditor) : Panel(editorSystemsRegistry),
@@ -24,42 +25,68 @@ namespace TechEngine {
         m_context = m_appSystemsRegistry.getSystem<Renderer>().getUIContext();
     }
 
+
     void UIView::onUpdate() {
         ImVec2 wsize = ImGui::GetContentRegionAvail();
-        ImVec2 viewPosition = ImGui::GetItemRectMin();
+
+        const float referenceHeight = 1080.0f; // Your UI is designed for a 1080p screen
+        float dp_ratio = (wsize.y > 0) ? (wsize.y / referenceHeight) : 1.0f;
+        m_context->SetDensityIndependentPixelRatio(dp_ratio);
+
         FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(m_frameBufferID);
         frameBuffer.bind();
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         frameBuffer.resize(wsize.x, wsize.y);
+
         m_context->SetDimensions(Rml::Vector2i(frameBuffer.width, frameBuffer.height));
         m_context->Update();
         UIRenderer& uiRenderer = m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer();
         uiRenderer.onUpdate();
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
         ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
-        guizmo.editUI(viewPosition, wsize, m_uiEditor->getSelectedWidget());
-        if (false && ImGui::IsWindowHovered()) {
-            ImVec2 mousePos = ImGui::GetMousePos();
-            ImVec2 imagePosition = ImGui::GetItemRectMin();
-            m_lastMousePosition = ImVec2(mousePos.x - imagePosition.x, mousePos.y - imagePosition.y);
 
-            m_context->ProcessMouseMove((int)m_lastMousePosition.x, (int)m_lastMousePosition.y, 0);
-
-            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver()) {
-                Rml::Element* hoveredElement = m_context->GetHoverElement();
-                if (hoveredElement && m_uiEditor->getElementToWidgetMap().find(hoveredElement) != m_uiEditor->getElementToWidgetMap().end()) {
-                    Widget* widget = m_uiEditor->getElementToWidgetMap().at(hoveredElement);
-                    if (widget) {
-                        m_uiEditor->setSelectedWidget(widget);
-                    }
-                } else {
-                    m_uiEditor->setSelectedWidget(nullptr);
-                    m_uiEditor->setSelectedWidget(nullptr);
-                }
-            }
-        }
-
+        ImVec2 imageTopLeft = ImGui::GetItemRectMin();
+        ImVec2 imageSize = ImGui::GetItemRectSize();
+        guizmo.editUI(imageTopLeft, imageSize, m_uiEditor->getSelectedWidget());
+        drawHelperLines(imageTopLeft);
         frameBuffer.unBind();
+    }
+
+    void UIView::drawHelperLines(ImVec2 imageTopLeft) {
+        for (auto pair: m_uiEditor->getElementToWidgetMap()) {
+            std::shared_ptr<Widget> widget = pair.second;
+            glm::ivec4 color;
+            if (widget == m_uiEditor->getSelectedWidget()) {
+                color = glm::vec4(0, 255, 0, 255); // Green for selected widget
+            } else {
+                color = glm::vec4(255, 0, 0, 255); // Red for other widgets
+            }
+            if (!widget) return;
+            auto* element = widget->getRmlElement();
+            if (!element) return;
+
+            auto rmlPos = element->GetAbsoluteOffset(Rml::BoxArea::Border);
+            auto rmlSize = element->GetBox().GetSize(Rml::BoxArea::Border);
+
+            ImVec2 rectTopLeft = {
+                imageTopLeft.x + rmlPos.x,
+                imageTopLeft.y + (rmlPos.y + rmlSize.y)
+            };
+            ImVec2 rectBottomRight = {
+                rectTopLeft.x + rmlSize.x,
+                imageTopLeft.y + rmlPos.y
+            };
+
+            ImGui::GetForegroundDrawList()->AddRect(
+                rectTopLeft, rectBottomRight,
+                IM_COL32(
+                    color.r,
+                    color.g,
+                    color.b,
+                    color.a
+                ),
+                0.0f, ImDrawFlags_None, 1.0f);
+        }
     }
 }

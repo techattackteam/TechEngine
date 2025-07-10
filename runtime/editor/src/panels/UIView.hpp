@@ -26,5 +26,8 @@ namespace TechEngine {
         void onInit() override;
 
         void onUpdate() override;
+
+    private:
+        void drawHelperLines(ImVec2 imageTopLeft);
     };
 }
