@@ -29,5 +29,7 @@ namespace TechEngine {
 
     private:
         void drawHelperLines(ImVec2 imageTopLeft);
+
+        ImVec2 convertRmlToImGui(const Rml::Vector2f& rmlPos, const ImVec2& imageTopLeft, const ImVec2& imageSize);
     };
 }

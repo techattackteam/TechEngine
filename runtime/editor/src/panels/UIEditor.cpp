@@ -59,8 +59,6 @@ namespace TechEngine {
                 elementPtr = Rml::Factory::InstanceElement(nullptr, "div", "div", Rml::XMLAttributes());
                 elementPtr->SetProperty("position", "absolute"); // Set the ID of the element to the widget's name
             }
-            elementPtr->SetProperty("width", "100%");
-            elementPtr->SetProperty("height", "100%");
         } else {
             elementPtr = Rml::Factory::InstanceElement(nullptr, "div", "div", Rml::XMLAttributes());
             elementPtr->SetProperty("position", "absolute"); // Set the ID of the element to the widget's name
@@ -69,6 +67,8 @@ namespace TechEngine {
             elementPtr->SetProperty("align-items", "center"); // vertical
         }
 
+        elementPtr->SetProperty("width", "100%");
+        elementPtr->SetProperty("height", "100%");
         Rml::Element* element = elementPtr.get();
         if (!elementPtr) {
             //Rml::Log::Message(Rml::Log::LT_ERROR, "Failed to create Rml::Element for widget: %s", newWidget->getRmlTag());
