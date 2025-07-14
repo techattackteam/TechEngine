@@ -24,7 +24,7 @@ namespace TechEngine {
     }
 
     void SceneHierarchyPanel::onUpdate() {
-        isItemHovered = false;
+        m_isItemHovered = false;
         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
 
         scene.runSystem<Tag>([this](Tag& tag) {
@@ -54,7 +54,7 @@ namespace TechEngine {
             m_selectedEntities.clear();
         }
 
-        if (!isItemHovered && ImGui::BeginPopupContextWindow()) {
+        if (!m_isItemHovered && ImGui::BeginPopupContextWindow()) {
             openCreateMenu("Create", -1);
             ImGui::EndPopup();
         }
@@ -178,7 +178,7 @@ namespace TechEngine {
 
         ImGui::PushID((void*)(intptr_t)entity);
         bool opened = ImGui::TreeNodeEx("##TreeNode", flags, "%s", tag.getName().c_str());
-        isItemHovered |= ImGui::IsItemHovered();
+        m_isItemHovered |= ImGui::IsItemHovered();
         ImGui::PopID();
 
         if (ImGui::BeginDragDropSource()) {

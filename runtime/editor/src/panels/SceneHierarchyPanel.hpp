@@ -30,7 +30,7 @@ namespace TechEngine {
         std::vector<Entity> m_entitiesToDelete;
         std::vector<EntityToCreate> m_entitiesToCreate;
         std::vector<Tag> m_entitiesOrder;
-        bool isItemHovered = false;
+        bool m_isItemHovered = false;
 
     public:
         SceneHierarchyPanel(SystemsRegistry& editorSystemRegistry, SystemsRegistry& appSystemRegistry,
