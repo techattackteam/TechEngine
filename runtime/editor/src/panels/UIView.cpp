@@ -54,39 +54,73 @@ namespace TechEngine {
     }
 
     void UIView::drawHelperLines(ImVec2 imageTopLeft) {
-        for (auto pair: m_uiEditor->getElementToWidgetMap()) {
+        ImVec2 imageSize = ImGui::GetItemRectSize();
+
+        for (const auto& pair: m_uiEditor->getElementToWidgetMap()) {
             std::shared_ptr<Widget> widget = pair.second;
-            glm::ivec4 color;
-            if (widget == m_uiEditor->getSelectedWidget()) {
-                color = glm::vec4(0, 255, 0, 255); // Green for selected widget
-            } else {
-                color = glm::vec4(255, 0, 0, 255); // Red for other widgets
-            }
-            if (!widget) return;
-            auto* element = widget->getRmlElement();
-            if (!element) return;
+            if (!widget) continue;
+            Rml::Element* element = widget->getRmlElement();
+            if (!element) continue;
 
-            auto rmlPos = element->GetAbsoluteOffset(Rml::BoxArea::Border);
-            auto rmlSize = element->GetBox().GetSize(Rml::BoxArea::Border);
+            // Color
+            glm::ivec4 color = (widget == m_uiEditor->getSelectedWidget()) ? glm::ivec4(0, 255, 0, 255) : glm::ivec4(255, 0, 0, 255);
 
-            ImVec2 rectTopLeft = {
-                imageTopLeft.x + rmlPos.x,
-                imageTopLeft.y + (rmlPos.y + rmlSize.y)
-            };
-            ImVec2 rectBottomRight = {
-                rectTopLeft.x + rmlSize.x,
-                imageTopLeft.y + rmlPos.y
-            };
+            // Get RML positions
+            Rml::Vector2f rmlPos = element->GetAbsoluteOffset(Rml::BoxArea::Border);
+            Rml::Vector2f rmlSize = element->GetBox().GetSize(Rml::BoxArea::Border);
 
+            // Compute top-left and bottom-right
+            ImVec2 topLeft = convertRmlToImGui(rmlPos, imageTopLeft, imageSize);
+            ImVec2 bottomRight = convertRmlToImGui(rmlPos + rmlSize, imageTopLeft, imageSize);
+            // Draw widget box
             ImGui::GetForegroundDrawList()->AddRect(
-                rectTopLeft, rectBottomRight,
-                IM_COL32(
-                    color.r,
-                    color.g,
-                    color.b,
-                    color.a
-                ),
-                0.0f, ImDrawFlags_None, 1.0f);
+                topLeft, bottomRight,
+                IM_COL32(color.r, color.g, color.b, color.a), 0.0f, ImDrawFlags_None, 1.5f);
+            if (pair.second == m_uiEditor->getSelectedWidget()) {
+
+                // Draw pivot cross
+                Rml::Vector2f pivotOffset = {
+                    rmlPos.x + widget->m_pivot.x * rmlSize.x,
+                    rmlPos.y + widget->m_pivot.y * rmlSize.y
+                };
+                ImVec2 pivotScreen = convertRmlToImGui(pivotOffset, imageTopLeft, imageSize);
+                ImGui::GetForegroundDrawList()->AddLine(
+                    {pivotScreen.x - 5, pivotScreen.y}, {pivotScreen.x + 5, pivotScreen.y}, IM_COL32(255, 255, 0, 255));
+                ImGui::GetForegroundDrawList()->AddLine(
+                    {pivotScreen.x, pivotScreen.y - 5}, {pivotScreen.x, pivotScreen.y + 5}, IM_COL32(255, 255, 0, 255));
+
+                // Draw anchor min/max (optional)
+                Rml::Vector2f parentSize = element->GetParentNode() ? element->GetParentNode()->GetBox().GetSize(Rml::BoxArea::Content) : Rml::Vector2f(1920, 1080); // Fallback
+
+                Rml::Vector2f anchorMinPos = element->GetParentNode()->GetAbsoluteOffset() +
+                                             Rml::Vector2f(widget->m_anchorMin.x * parentSize.x, widget->m_anchorMin.y * parentSize.y);
+                Rml::Vector2f anchorMaxPos = element->GetParentNode()->GetAbsoluteOffset() +
+                                             Rml::Vector2f(widget->m_anchorMax.x * parentSize.x, widget->m_anchorMax.y * parentSize.y);
+
+                ImVec2 anchorMin = convertRmlToImGui(anchorMinPos, imageTopLeft, imageSize);
+                ImVec2 anchorMax = convertRmlToImGui(anchorMaxPos, imageTopLeft, imageSize);
+
+                ImGui::GetForegroundDrawList()->AddRect(
+                    anchorMin, anchorMax, IM_COL32(0, 128, 255, 128), 0.0f, ImDrawFlags_None, 1.0f);
+            }
         }
+    }
+
+
+    ImVec2 UIView::convertRmlToImGui(const Rml::Vector2f& rmlPos, const ImVec2& imageTopLeft, const ImVec2& imageSize) {
+        // Get the context size
+        const Rml::Vector2f contextSize = Rml::Vector2f(m_context->GetDimensions());
+
+        // Normalize RML position to [0, 1] range
+        Rml::Vector2f normalized = {
+            rmlPos.x / contextSize.x,
+            rmlPos.y / contextSize.y
+        };
+
+        // Convert to ImGui space inside image panel
+        return {
+            imageTopLeft.x + normalized.x * imageSize.x,
+            imageTopLeft.y + normalized.y * imageSize.y
+        };
     }
 }

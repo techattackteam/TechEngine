@@ -26,6 +26,10 @@ namespace TechEngine {
         void setEditor(UIEditor* editor);
 
     private:
+        void reorderWidget(const std::shared_ptr<Widget>& shared, int new_index);
+
+        void reparentWidget(const std::shared_ptr<Widget>& childWidget, const std::shared_ptr<Widget>& newParentWidget);
+
         void drawWidgetNode(Rml::Element* element);
     };
 }
