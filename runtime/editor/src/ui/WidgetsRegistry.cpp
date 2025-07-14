@@ -29,7 +29,7 @@ namespace TechEngine {
             TE_LOGGER_ERROR("Widgets registry file is empty or not an array: {}", jsonFile.c_str());
             return false;
         }
-        m_widgets.clear();
+        m_widgetsTemplates.clear();
         if (base) {
             for (const auto& widgetData: widgets_json) {
                 Widget widget;
@@ -54,7 +54,7 @@ namespace TechEngine {
 
                     widget.m_properties.push_back(property);
                 }
-                m_baseWidgets.push_back(widget);
+                m_baseWidgetsTemplates.push_back(widget);
             }
         } else {
             for (const auto& widgetData: widgets_json) {
@@ -71,7 +71,7 @@ namespace TechEngine {
                     std::string childType = child.at("type").get<std::string>();
                     widget.m_childrenTypes.push_back(childType);
                 }
-                m_widgets.push_back(widget);
+                m_widgetsTemplates.push_back(widget);
             }
         }
         return true;
@@ -79,7 +79,7 @@ namespace TechEngine {
 
     std::shared_ptr<Widget> WidgetsRegistry::createBaseWidget(const std::string& name) {
         Widget* widget = nullptr;
-        for (auto& w: m_baseWidgets) {
+        for (auto& w: m_baseWidgetsTemplates) {
             if (w.getName() == name) {
                 widget = &w;
                 break;
@@ -94,7 +94,7 @@ namespace TechEngine {
 
     std::shared_ptr<Widget> WidgetsRegistry::createWidget(const std::string& name) {
         Widget* widget = nullptr;
-        for (auto& w: m_widgets) {
+        for (auto& w: m_widgetsTemplates) {
             if (w.getName() == name) {
                 widget = &w;
                 break;
@@ -108,6 +108,6 @@ namespace TechEngine {
     }
 
     const std::vector<Widget> WidgetsRegistry::getBaseWidgets() const {
-        return m_baseWidgets;
+        return m_baseWidgetsTemplates;
     }
 }

@@ -140,7 +140,39 @@ namespace TechEngine {
         return widget;
     }
 
-    void UIEditor::setSelectedWidget(std::shared_ptr<Widget> widget) {
+    bool UIEditor::deleteWidget(const std::shared_ptr<Widget>& widget) {
+        if (!widget || !widget->getRmlElement()) {
+            TE_LOGGER_ERROR("UIEditor: Cannot delete widget, widget or its Rml element is null.");
+            return false;
+        }
+        Rml::Element* element = widget->getRmlElement();
+        Rml::Element* parent = element->GetParentNode();
+        if (m_elementToWidgetMap.find(parent) == m_elementToWidgetMap.end()) {
+            element->GetParentNode()->RemoveChild(element);
+            m_elementToWidgetMap.erase(element);
+            TE_LOGGER_INFO("UIEditor: Widget '{0}' deleted successfully.", widget->getName());
+            return true;
+        } else {
+            std::shared_ptr<Widget> parentWidget = m_elementToWidgetMap[parent];
+            if (parentWidget) {
+                auto it = std::find(parentWidget->m_children.begin(), parentWidget->m_children.end(), widget);
+                if (it != parentWidget->m_children.end()) {
+                    parentWidget->m_children.erase(it);
+                    m_elementToWidgetMap.erase(element);
+                    TE_LOGGER_INFO("UIEditor: Widget '{0}' deleted successfully.", widget->getName());
+                    return true;
+                } else {
+                    TE_LOGGER_ERROR("UIEditor: Widget '{0}' not found in parent's children.", widget->getName());
+                    return false;
+                }
+            } else {
+                TE_LOGGER_ERROR("UIEditor: Parent widget not found for widget '{0}'.", widget->getName());
+                return false;
+            }
+        }
+    }
+
+    void UIEditor::setSelectedWidget(const std::shared_ptr<Widget>& widget) {
         m_selectedWidget = widget;
         m_uiInspector.setSelectedWidget(widget);
     }
@@ -184,7 +216,7 @@ namespace TechEngine {
         //}
     }
 
-    void UIEditor::drawRmlElementInHierarchy(Rml::Element* element) {
+    /*void UIEditor::drawRmlElementInHierarchy(Rml::Element* element) {
         if (!element) return;
 
         // Find our C++ widget counterpart for this element
@@ -234,7 +266,7 @@ namespace TechEngine {
             }
             ImGui::TreePop();
         }
-    }
+    }*/
 
     const std::unordered_map<Rml::Element*, std::shared_ptr<Widget>>& UIEditor::getElementToWidgetMap() {
         return m_elementToWidgetMap;

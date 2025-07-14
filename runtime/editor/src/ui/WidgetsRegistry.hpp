@@ -13,15 +13,14 @@ namespace TechEngine {
 
         std::shared_ptr<Widget> createWidget(const std::string& name);
 
-
         const std::vector<Widget>& getWidgets() const {
-            return m_widgets;
+            return m_widgetsTemplates;
         }
 
         const std::vector<Widget> getBaseWidgets() const;
 
     private:
-        std::vector<Widget> m_baseWidgets;
-        std::vector<Widget> m_widgets;
+        std::vector<Widget> m_baseWidgetsTemplates;
+        std::vector<Widget> m_widgetsTemplates;
     };
 }

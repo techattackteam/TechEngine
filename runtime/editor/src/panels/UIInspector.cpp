@@ -144,7 +144,7 @@ namespace TechEngine {
                 Rml::ElementText* targetElement = dynamic_cast<Rml::ElementText*>(m_selectedWidget->m_rmlElement);
                 //targetElement = m_selectedWidget->m_rmlElement->GetElementById("label");
                 std::string current = targetElement->GetText();
-                TE_LOGGER_INFO("Current text content: {}", current.c_str());
+                //TE_LOGGER_INFO("Current text content: {}", current.c_str());
                 if (ImGui::InputTextWithHint("Label", current.c_str(), &text)) {
                     //property.onChange(text);
                     TE_LOGGER_INFO("Setting text property '{0}' to '{1}'", property.name, text);

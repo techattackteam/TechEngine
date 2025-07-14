@@ -20,10 +20,11 @@ namespace TechEngine {
         Rml::Context* m_context;
 
         Rml::ElementDocument* m_document;
+
+    public:
         std::shared_ptr<Widget> m_selectedWidget = nullptr;
         std::unordered_map<Rml::Element*, std::shared_ptr<Widget>> m_elementToWidgetMap;
 
-    public:
         UIEditor(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& appSystemsRegistry);
 
         void onInit() override;
@@ -32,13 +33,13 @@ namespace TechEngine {
 
         std::shared_ptr<Widget> createWidget(Rml::Element* parent, const std::string& name, bool base);
 
-        void setSelectedWidget(std::shared_ptr<Widget> widget);
+        bool deleteWidget(const std::shared_ptr<Widget>& widget);
+
+        void setSelectedWidget(const std::shared_ptr<Widget>& widget);
 
         std::shared_ptr<Widget> getSelectedWidget() const {
             return m_selectedWidget;
         }
-
-        void drawRmlElementInHierarchy(Rml::Element* element);
 
         const std::unordered_map<Rml::Element*, std::shared_ptr<Widget>>& getElementToWidgetMap();
 
