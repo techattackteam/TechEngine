@@ -16,5 +16,6 @@ namespace TechEngine {
         void onUpdate() override;
 
         void setSelectedWidget(std::shared_ptr<Widget> widget);
+
     };
 }

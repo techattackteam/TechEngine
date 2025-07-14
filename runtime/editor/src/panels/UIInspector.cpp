@@ -19,32 +19,95 @@ namespace TechEngine {
 
     void UIInspector::onUpdate() {
         if (m_selectedWidget) {
-            ImGui::Text("Widget: %s", m_selectedWidget->getName().c_str());
-            ImGui::Separator();
+            bool changed = false;
 
-            // Alignment Inspector
-            bool positionChanged = ImGui::DragFloat2("Center Position (px)", &m_selectedWidget->m_position.x, 1.0f, 0.0f, 10000.0f, "%.1f");
-            bool sizeChanged = ImGui::DragFloat2("Size (px)", &m_selectedWidget->m_size.x, 1.0f, 1.0f, 10000.0f, "%.1f"); // Added min value to avoid zero/negative 
-            if (positionChanged || sizeChanged) {
-                auto* element = m_selectedWidget->m_rmlElement;
+            // Use a collapsing header for good organization
+            if (ImGui::CollapsingHeader("Position", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::PushID("Position"); // Avoid ID clashes with other inspectors
 
-                const Rml::Vector2f& centerPos = m_selectedWidget->m_position;
-                const Rml::Vector2f& size = m_selectedWidget->m_size;
+                // --- ANCHOR PRESET DROPDOWN ---
+                // An array of names corresponding to your AnchorPreset enum
+                const char* anchorPresetNames[] = {
+                    "Top Left", "Top Center", "Top Right",
+                    "Middle Left", "Middle Center", "Middle Right",
+                    "Bottom Left", "Bottom Center", "Bottom Right",
+                    "Stretch Top", "Stretch Middle", "Stretch Bottom",
+                    "Stretch Left", "Stretch Center", "Stretch Right",
+                    "Stretch Fill"
+                };
+                int currentPreset = static_cast<int>(m_selectedWidget->m_preset);
+                if (ImGui::Combo("Anchor Preset", &currentPreset, anchorPresetNames, IM_ARRAYSIZE(anchorPresetNames))) {
+                    m_selectedWidget->m_preset = static_cast<Widget::AnchorPreset>(currentPreset);
+                    // When the preset changes, we need to update the underlying anchor values
+                    m_selectedWidget->setAnchorsFromPreset();
+                    changed = true;
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("Determines how this UI element attaches to its parent.\nThis changes which position and size fields are available below.");
+                }
 
-                /*
-                float left = centerPos.x - (size.x / 2.0f);
-                float top = centerPos.y - (size.y / 2.0f);
-                */
+                // --- PIVOT SLIDER ---
+                if (ImGui::SliderFloat2("Pivot", &m_selectedWidget->m_pivot.x, 0.0f, 1.0f, "%.2f")) {
+                    changed = true;
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("The element's own origin point for positioning, scaling, and rotation.\n(0, 0) is bottom-left, (0.5, 0.5) is center, (1, 1) is top-right.");
+                }
 
-                float left = centerPos.x;
-                float top = centerPos.y;
+                ImGui::Separator();
 
-                element->SetProperty(Rml::PropertyId::Left, Rml::Property(left, Rml::Unit::PX));
-                element->SetProperty(Rml::PropertyId::Top, Rml::Property(top, Rml::Unit::PX));
-                element->SetProperty(Rml::PropertyId::Width, Rml::Property(size.x, Rml::Unit::PX));
-                element->SetProperty(Rml::PropertyId::Height, Rml::Property(size.y, Rml::Unit::PX));
+                // --- DYNAMIC POSITION & SIZE FIELDS ---
+                // This is the core of the dynamic UI. We check if the anchors are stretched on each axis.
+                bool isStretchingX = m_selectedWidget->m_anchorMax.x - m_selectedWidget->m_anchorMin.x > 0.001f;
+                bool isStretchingY = m_selectedWidget->m_anchorMax.y - m_selectedWidget->m_anchorMin.y > 0.001f;
+
+                // --- X-AXIS CONTROLS ---
+                ImGui::Text("Horizontal Axis");
+                if (isStretchingX) {
+                    // If stretching horizontally, control Left and Right margins
+                    changed |= ImGui::DragFloat("Left", &m_selectedWidget->m_left, 1.0f);
+                    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Distance from the left anchor to the left edge.");
+
+                    changed |= ImGui::DragFloat("Right", &m_selectedWidget->m_right, 1.0f);
+                    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Distance from the right anchor to the right edge.");
+                } else {
+                    // If not stretching, control Position X and a fixed Width
+                    changed |= ImGui::DragFloat("Pos X", &m_selectedWidget->m_anchoredPosition.x, 1.0f);
+                    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Position of the pivot on the X-axis, relative to the anchor point.");
+
+                    changed |= ImGui::DragFloat("Width", &m_selectedWidget->m_size.x, 1.0f);
+                    if (ImGui::IsItemHovered()) ImGui::SetTooltip("The fixed width of the element.");
+                }
+
+                // --- Y-AXIS CONTROLS ---
+                ImGui::Text("Vertical Axis");
+                if (isStretchingY) {
+                    // If stretching vertically, control Top and Bottom margins
+                    changed |= ImGui::DragFloat("Top", &m_selectedWidget->m_top, 1.0f);
+                    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Distance from the top anchor to the top edge.");
+
+                    changed |= ImGui::DragFloat("Bottom", &m_selectedWidget->m_bottom, 1.0f);
+                    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Distance from the bottom anchor to the bottom edge.");
+                } else {
+                    // If not stretching, control Position Y and a fixed Height
+                    changed |= ImGui::DragFloat("Pos Y", &m_selectedWidget->m_anchoredPosition.y, 1.0f);
+                    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Position of the pivot on the Y-axis, relative to the anchor point.");
+
+                    changed |= ImGui::DragFloat("Height", &m_selectedWidget->m_size.y, 1.0f);
+                    if (ImGui::IsItemHovered()) ImGui::SetTooltip("The fixed height of the element.");
+                }
+
+                ImGui::PopID();
+            }
+
+            // --- APPLY CHANGES ---
+            // If any value in the inspector was changed, apply the new styles to the RmlUi element.
+            if (changed) {
+                Rml::Element* parent = m_selectedWidget->m_rmlElement ? m_selectedWidget->m_rmlElement->GetParentNode() : nullptr;
+                m_selectedWidget->applyStyles(m_selectedWidget->m_rmlElement, parent);
             }
         }
+
 
         if (!m_selectedWidget) {
             return;

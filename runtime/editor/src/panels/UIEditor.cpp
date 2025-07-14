@@ -24,7 +24,6 @@ namespace TechEngine {
     void UIEditor::onInit() {
         m_context = m_appSystemsRegistry.getSystem<Renderer>().getUIContext();
         if (m_context) {
-            //loadRmlDocument("C:\\dev\\TechEngine\\bin\\runtime\\editor\\debug\\New Project\\resources\\client\\assets\\ui\\sample.rml"); // m_filePathBuffer defaults to "assets/ui/sample.rml"
             Rml::ElementDocument* doc = m_context->GetDocument(0);
             if (!doc) {
                 TE_LOGGER_ERROR("UIEditor: No RmlUi document found in the context.");
@@ -134,9 +133,9 @@ namespace TechEngine {
             }
         }
 
-        //Set background color to blue
+
+        widget->applyStyles(element, parent);
         m_context->Update();
-        //TE_LOGGER_INFO("Element: {0} created with tag: {1}", newWidget->getName().c_str(), newWidget->getRmlTag());
         TE_LOGGER_INFO("Element Top: {0}", element->GetAbsoluteTop());
         return widget;
     }

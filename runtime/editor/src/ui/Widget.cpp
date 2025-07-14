@@ -1,7 +1,10 @@
 #include "Widget.hpp"
 
+#include "core/Logger.hpp"
+
 namespace TechEngine {
     Widget::Widget() {
+        setAnchorsFromPreset();
         //if (m_rmlElement) {
         /*for (auto& property: m_properties) {
             property.onChange = [property, this](const WidgetProperty::ProperTyValue& value) {
@@ -111,5 +114,129 @@ namespace TechEngine {
             this->m_childrenTypes.push_back(childType);
         }
         this->m_rmlElement = nullptr;
+    }
+
+    void Widget::setAnchorsFromPreset() {
+        switch (m_preset) {
+            case AnchorPreset::TopLeft:
+                m_anchorMin = {0.0f, 0.0f};
+                m_anchorMax = {0.0f, 0.0f};
+                break;
+            case AnchorPreset::TopCenter:
+                m_anchorMin = {0.5f, 0.0f};
+                m_anchorMax = {0.5f, 0.0f};
+                break;
+            case AnchorPreset::TopRight:
+                m_anchorMin = {1.0f, 0.0f};
+                m_anchorMax = {1.0f, 0.0f};
+                break;
+            case AnchorPreset::MiddleLeft:
+                m_anchorMin = {0.0f, 0.5f};
+                m_anchorMax = {0.0f, 0.5f};
+                break;
+            case AnchorPreset::MiddleCenter:
+                m_anchorMin = {0.5f, 0.5f};
+                m_anchorMax = {0.5f, 0.5f};
+                break;
+            case AnchorPreset::MiddleRight:
+                m_anchorMin = {1.0f, 0.5f};
+                m_anchorMax = {1.0f, 0.5f};
+                break;
+            case AnchorPreset::BottomLeft:
+                m_anchorMin = {0.0f, 1.0f};
+                m_anchorMax = {0.0f, 1.0f};
+                break;
+            case AnchorPreset::BottomCenter:
+                m_anchorMin = {0.5f, 1.0f};
+                m_anchorMax = {0.5f, 1.0f};
+                break;
+            case AnchorPreset::BottomRight:
+                m_anchorMin = {1.0f, 1.0f};
+                m_anchorMax = {1.0f, 1.0f};
+                break;
+            // Stretch presets
+            case AnchorPreset::StretchTop:
+                m_anchorMin = {0.0f, 0.0f};
+                m_anchorMax = {1.0f, 0.0f};
+                break;
+            case AnchorPreset::StretchMiddle:
+                m_anchorMin = {0.0f, 0.5f};
+                m_anchorMax = {1.0f, 0.5f};
+                break;
+            case AnchorPreset::StretchBottom:
+                m_anchorMin = {0.0f, 1.0f};
+                m_anchorMax = {1.0f, 1.0f};
+                break;
+            case AnchorPreset::StretchLeft:
+                m_anchorMin = {0.0f, 0.0f};
+                m_anchorMax = {0.0f, 1.0f};
+                break;
+            case AnchorPreset::StretchCenter:
+                m_anchorMin = {0.5f, 0.0f};
+                m_anchorMax = {0.5f, 1.0f};
+                break;
+            case AnchorPreset::StretchRight:
+                m_anchorMin = {1.0f, 0.0f};
+                m_anchorMax = {1.0f, 1.0f};
+                break;
+            case AnchorPreset::StretchFill:
+                m_anchorMin = {0.0f, 0.0f};
+                m_anchorMax = {1.0f, 1.0f};
+                break;
+        }
+    }
+
+    void Widget::applyStyles(Rml::Element* element, Rml::Element* parent) {
+        if (!element) return;
+
+        // 1. Enforce the parent's positioning context
+        if (parent /*&& parent->GetProperty("position")->Get<int>() == Rml::Style::Position::Static*/) {
+            //parent->SetProperty("position", "relative");
+        }
+
+        // 2. Set the element's own pivot
+        element->SetProperty("transform-origin", std::to_string(m_pivot.x * 100) + "% " + std::to_string(m_pivot.y * 100) + "%");
+
+        // 3. Check if we are in a "stretch" mode or a "point" mode
+        bool isStretchingX = m_anchorMax.x - m_anchorMin.x > 0.001f;
+        bool isStretchingY = m_anchorMax.y - m_anchorMin.y > 0.001f;
+
+        // We must be absolutely positioned to use anchors
+        element->SetProperty("position", "absolute");
+
+        // --- Handle X-Axis ---
+        if (isStretchingX) {
+            element->SetProperty("left", std::to_string(m_anchorMin.x * 100) + "%");
+            element->SetProperty("right", std::to_string((1.0f - m_anchorMax.x) * 100) + "%");
+            element->SetProperty("width", "auto");
+            // In this mode, `left` and `right` from the component act as margin/padding
+            element->SetProperty("margin-left", std::to_string(this->m_left) + "px");
+            element->SetProperty("margin-right", std::to_string(this->m_right) + "px");
+        } else {
+            // Not stretching, so we anchor to a single point and set a fixed size
+            element->SetProperty("left", std::to_string(m_anchorMin.x * 100) + "%");
+            element->SetProperty("width", std::to_string(m_size.x) + "px");
+            element->SetProperty("margin-left", std::to_string(m_anchoredPosition.x - (m_size.x * m_pivot.x)) + "px");
+            TE_LOGGER_INFO("Setting X position to: {0}%", std::to_string(m_anchorMin.x * 100));
+            TE_LOGGER_INFO("Setting X size to: {0}px", std::to_string(m_size.x));
+            TE_LOGGER_INFO("Setting X margin to: {0}px", std::to_string(m_anchoredPosition.x - (m_size.x * m_pivot.x)));
+        }
+
+        // --- Handle Y-Axis (similar logic) ---
+        if (isStretchingY) {
+            element->SetProperty("top", std::to_string(m_anchorMin.y * 100) + "%");
+            element->SetProperty("bottom", std::to_string((1.0f - m_anchorMax.y) * 100) + "%");
+            element->SetProperty("height", "auto");
+            element->SetProperty("margin-top", std::to_string(this->m_top) + "px");
+            element->SetProperty("margin-bottom", std::to_string(this->m_bottom) + "px");
+        } else {
+            // Current non–stretch Y–axis code snippet
+            element->SetProperty("top", std::to_string(m_anchorMin.y * 100) + "%");
+            element->SetProperty("height", std::to_string(m_size.y) + "px");
+            element->SetProperty("margin-top", std::to_string(m_anchoredPosition.y - (m_size.y * m_pivot.y)) + "px");
+            TE_LOGGER_INFO("Setting Y position to: {0}%", std::to_string(m_anchorMin.y * 100));
+            TE_LOGGER_INFO("Setting Y size to: {0}px", std::to_string(m_size.y));
+            TE_LOGGER_INFO("Setting Y margin to: {0}px", std::to_string(m_anchoredPosition.y - (m_size.y * m_pivot.y)));
+        }
     }
 }
