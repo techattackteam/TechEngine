@@ -186,6 +186,13 @@ namespace TechEngine {
         }
     }
 
+    void Widget::rename(const std::string& name) {
+        m_name = name;
+        if (m_rmlElement) {
+            m_rmlElement->SetId(name);
+        }
+    }
+
     void Widget::applyStyles(Rml::Element* element, Rml::Element* parent) {
         if (!element) return;
 
@@ -203,6 +210,15 @@ namespace TechEngine {
 
         // We must be absolutely positioned to use anchors
         element->SetProperty("position", "absolute");
+
+
+        if (std::abs(m_rotationZ) > 0.01f) {
+            element->SetProperty("transform", "rotate(30deg)");
+            auto p = Rml::Transform::MakeProperty({Rml::Transforms::Rotate2D{10.f}});
+            element->SetProperty(Rml::PropertyId::Transform, p);
+        }
+        // You can add scaling/skew here later if needed
+
 
         // --- Handle X-Axis ---
         if (isStretchingX) {

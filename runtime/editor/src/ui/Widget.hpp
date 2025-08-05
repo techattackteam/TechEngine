@@ -74,6 +74,7 @@ namespace TechEngine {
         float m_right = 0.0f;
         float m_top = 0.0f;
         float m_bottom = 0.0f;
+        float m_rotationZ = 0.0f;
 
         //Rml::Vector2f m_position;
         //Rml::Vector2f m_size;
@@ -94,6 +95,8 @@ namespace TechEngine {
         void setRmlElement(Rml::Element* element) {
             m_rmlElement = element;
         }
+
+        void rename(const std::string& name);
 
         void applyStyles(Rml::Element* element, Rml::Element* parent);
 

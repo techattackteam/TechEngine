@@ -3,6 +3,7 @@
 #include "UIEditor.hpp"
 #include "renderer/Renderer.hpp"
 #include "systems/SystemsRegistry.hpp"
+#include "UIUtils/ImGuiUtils.hpp"
 
 #include <RmlUi/Core/ElementDocument.h>
 
@@ -30,6 +31,8 @@ namespace TechEngine {
             }
         }
         ImGui::PopStyleVar(3);
+
+        ImGui::Dummy(ImGui::GetContentRegionAvail());
 
         if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) {
             m_editor->setSelectedWidget(nullptr);
@@ -71,85 +74,75 @@ namespace TechEngine {
         m_editor = editor;
     }
 
-    void UIHierarchyPanel::reorderWidget(const std::shared_ptr<Widget>& widget, int new_index) {
-        Rml::Element* element = widget->getRmlElement();
-        Rml::Element* parent = element->GetParentNode();
-
-        if (!parent)
-            return;
-
-        // Remove first
-        Rml::ElementPtr elementPtr = parent->RemoveChild(element);
-
-        // Clamp new_index
-        new_index = std::clamp(new_index, 0, parent->GetNumChildren());
-
-        // Reinsert at new index
-        if (new_index == parent->GetNumChildren()) {
-            parent->AppendChild(std::move(elementPtr));
-        } else {
-            Rml::Element* sibling = parent->GetChild(new_index);
-            parent->InsertBefore(std::move(elementPtr), sibling);
-        }
-
-        m_widgetsOrder.clear();
-        for (int i = 0; i < parent->GetNumChildren(); ++i) {
-            Rml::Element* child = parent->GetChild(i);
-            auto it = m_editor->m_elementToWidgetMap.find(child);
-            if (it != m_editor->m_elementToWidgetMap.end()) {
-                m_widgetsOrder.push_back(it->second);
-            }
-        }
-    }
-
-    void UIHierarchyPanel::reparentWidget(const std::shared_ptr<Widget>& childWidget, const std::shared_ptr<Widget>& newParentWidget) {
-        if (!childWidget || !newParentWidget) return;
-
+    void UIHierarchyPanel::moveWidget(const std::shared_ptr<Widget>& childWidget, Rml::Element* newParent, int newIndex) {
+        if (!childWidget || !newParent) return;
         Rml::Element* childElement = childWidget->getRmlElement();
-        Rml::Element* newParentElement = newParentWidget->getRmlElement();
-        if (!childElement || !newParentElement) return;
-
+        if (!childElement) return;
         Rml::Element* oldParent = childElement->GetParentNode();
-        if (oldParent == newParentElement) return;
+        if (!oldParent) return;
 
-        // Avoid circular parenting
-        Rml::Element* cursor = newParentElement;
-        while (cursor) {
-            if (cursor == childElement) return;
-            cursor = cursor->GetParentNode();
+        if (oldParent != newParent) {
+            Rml::Element* cursor = newParent;
+            while (cursor) {
+                if (cursor == childElement) {
+                    TE_LOGGER_WARN("Cannot reparent a widget to one of its own descendants.");
+                    return;
+                }
+                cursor = cursor->GetParentNode();
+            }
         }
 
         const Rml::Vector2f worldPosBefore = childElement->GetAbsoluteOffset();
         const Rml::Vector2f sizeBefore = childElement->GetBox().GetSize(Rml::BoxArea::Content);
 
         Rml::ElementPtr elementPtr = oldParent->RemoveChild(childElement);
-        newParentElement->AppendChild(std::move(elementPtr));
 
-        const Rml::Vector2f parentWorldPos = newParentElement->GetAbsoluteOffset();
+        if (oldParent == newParent) {
+            int oldIndex = -1;
+            for (int i = 0; i < oldParent->GetNumChildren(); ++i) {
+                if (oldParent->GetChild(i) == elementPtr.get()) {
+                    oldIndex = i;
+                    break;
+                }
+            }
+            if (oldIndex != -1 && oldIndex < newIndex) {
+                newIndex--;
+            }
+        }
 
-        const Rml::Vector2f newLocalPos = worldPosBefore - parentWorldPos;
+        int clampedIndex = std::clamp(newIndex, 0, newParent->GetNumChildren());
 
-        const Rml::Vector2f anchorMin = childWidget->m_anchorMin;
-        const Rml::Vector2f anchorMax = childWidget->m_anchorMax;
-        const Rml::Vector2f pivot = childWidget->m_pivot;
+        if (clampedIndex >= newParent->GetNumChildren()) {
+            newParent->AppendChild(std::move(elementPtr));
+        } else {
+            Rml::Element* sibling = newParent->GetChild(clampedIndex);
+            newParent->InsertBefore(std::move(elementPtr), sibling);
+        }
 
-        Rml::Vector2f parentSize = newParentElement->GetBox().GetSize(Rml::BoxArea::Content);
-        Rml::Vector2f anchorPoint = {
-            parentSize.x * (anchorMin.x + anchorMax.x) * 0.5f,
-            parentSize.y * (anchorMin.y + anchorMax.y) * 0.5f
-        };
+        if (oldParent != newParent) {
+            const Rml::Vector2f parentWorldPos = newParent->GetAbsoluteOffset();
+            const Rml::Vector2f newLocalPos = worldPosBefore - parentWorldPos;
+            const Rml::Vector2f anchorMin = childWidget->m_anchorMin;
+            const Rml::Vector2f anchorMax = childWidget->m_anchorMax;
+            const Rml::Vector2f pivot = childWidget->m_pivot;
 
-        Rml::Vector2f finalPos = newLocalPos - anchorPoint + Rml::Vector2f(pivot.x * sizeBefore.x, pivot.y * sizeBefore.y);
+            Rml::Vector2f parentSize = newParent->GetBox().GetSize(Rml::BoxArea::Content);
+            Rml::Vector2f anchorPoint = {
+                parentSize.x * (anchorMin.x + anchorMax.x) * 0.5f,
+                parentSize.y * (anchorMin.y + anchorMax.y) * 0.5f
+            };
 
-        childWidget->m_anchoredPosition = finalPos;
+            Rml::Vector2f finalPos = newLocalPos - anchorPoint + Rml::Vector2f(pivot.x * sizeBefore.x, pivot.y * sizeBefore.y);
 
-        childElement->SetProperty("left", std::to_string(finalPos.x) + "px");
-        childElement->SetProperty("top", std::to_string(finalPos.y) + "px");
+            childWidget->m_anchoredPosition = finalPos;
+            childElement->SetProperty("left", std::to_string(finalPos.x) + "px");
+            childElement->SetProperty("top", std::to_string(finalPos.y) + "px");
 
-        childWidget->applyStyles(childElement, newParentElement);
-        TE_LOGGER_INFO("Reparented widget '%s' under '%s' preserving layout", childWidget->getName().c_str(), newParentWidget->getName().c_str());
+            childWidget->applyStyles(childElement, newParent);
+        }
+
+        m_widgetsOrder.clear();
     }
-
 
     void UIHierarchyPanel::drawWidgetNode(Rml::Element* element) {
         if (!element) return;
@@ -235,15 +228,26 @@ namespace TechEngine {
                 "WIDGET_DRAG", ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
                 std::shared_ptr<Widget> draggedWidget = *static_cast<std::shared_ptr<Widget>*>(payload->Data);
                 if (draggedWidget != widget) {
-                    int index = std::ranges::find(m_widgetsOrder, widget) - m_widgetsOrder.begin();
-
                     if (dropAction == DropAction::Reorder) {
-                        int newIndex = (mousePos.y < reparentRect.Min.y) ? index : index + 1;
-                        reorderWidget(draggedWidget, newIndex);
-                        TE_LOGGER_INFO("Reordering widget {0} to index {1}", draggedWidget->getName(), newIndex);
+                        Rml::Element* newParent = widget->getRmlElement()->GetParentNode();
+                        if (newParent) {
+                            // Find the index of the target widget within its parent
+                            int targetIndex = 0;
+                            for (int i = 0; i < newParent->GetNumChildren(); ++i) {
+                                if (newParent->GetChild(i) == widget->getRmlElement()) {
+                                    targetIndex = i;
+                                    break;
+                                }
+                            }
+
+                            int newIndex = (mousePos.y < reparentRect.Min.y) ? targetIndex : targetIndex + 1;
+
+                            moveWidget(draggedWidget, newParent, newIndex);
+                            TE_LOGGER_INFO("Moved widget '{0}'", draggedWidget->getName());
+                        }
                     } else {
-                        reparentWidget(draggedWidget, widget);
-                        TE_LOGGER_INFO("Parenting entity {0} under entity {1}", draggedWidget->getName(), widget->getName());
+                        moveWidget(draggedWidget, widget->getRmlElement(), widget->getRmlElement()->GetNumChildren());
+                        TE_LOGGER_INFO("Parented widget '{0}' under '{1}'", draggedWidget->getName(), widget->getName());
                     }
                 }
             }
@@ -286,6 +290,10 @@ namespace TechEngine {
 
         if (ImGui::BeginPopupContextItem()) {
             m_editor->setSelectedWidget(widget);
+            std::string nameBuffer = widget ? widget->getName() : "";
+            if (ImGuiUtils::beginMenuWithInputMenuField("Rename Widget", "Rename", nameBuffer)) {
+                widget->rename(nameBuffer);
+            }
             if (ImGui::MenuItem("Delete Widget")) {
                 m_widgetsToDelete.push_back(widget);
             }
