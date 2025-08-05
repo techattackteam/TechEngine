@@ -1,6 +1,5 @@
 #include "SceneView.hpp"
 
-#include "components/Archetype.hpp"
 #include "components/Components.hpp"
 #include "components/ComponentsFactory.hpp"
 #include "renderer/FrameBuffer.hpp"

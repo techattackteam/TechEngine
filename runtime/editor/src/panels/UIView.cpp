@@ -3,6 +3,8 @@
 #include <imGuizmo.h>
 
 #include "UIEditor.hpp"
+#include "components/Components.hpp"
+#include "components/ComponentsFactory.hpp"
 #include "renderer/FrameBuffer.hpp"
 #include "renderer/Renderer.hpp"
 #include "ui/Widget.hpp"
@@ -10,11 +12,11 @@
 
 
 namespace TechEngine {
-    // Constructor and onInit() remain the same...
     UIView::UIView(SystemsRegistry& editorSystemsRegistry,
                    SystemsRegistry& appSystemsRegistry,
                    UIEditor* uiEditor) : Panel(editorSystemsRegistry),
                                          m_appSystemsRegistry(appSystemsRegistry),
+                                         cameraTransform(ComponentsFactory::createTransform(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f))),
                                          m_uiEditor(uiEditor),
                                          guizmo(id, appSystemsRegistry) {
         m_styleVars.emplace_back(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -53,6 +55,68 @@ namespace TechEngine {
         frameBuffer.unBind();
     }
 
+    void UIView::onKeyPressedEvent(Key& key) {
+        switch (key.getKeyCode()) {
+            case MOUSE_2: {
+                mouse2 = true;
+                break;
+            }
+            case MOUSE_3: {
+                mouse3 = true;
+                break;
+            }
+        }
+        Panel::onKeyPressedEvent(key);
+    }
+
+    void UIView::onKeyReleasedEvent(Key& key) {
+        switch (key.getKeyCode()) {
+            case MOUSE_2: {
+                mouse2 = false;
+                moving = false;
+                lastUsingId = -1;
+                break;
+            }
+            case MOUSE_3: {
+                mouse3 = false;
+                moving = false;
+                lastUsingId = -1;
+                break;
+            }
+        }
+        Panel::onKeyReleasedEvent(key);
+    }
+
+    void UIView::onMouseScrollEvent(float xOffset, float yOffset) {
+        if (isWindowHovered && (lastUsingId == -1 || lastUsingId == id)) {
+            const glm::mat4 inverted = glm::inverse(sceneCamera.getViewMatrix());
+            const glm::vec3 forward = normalize(glm::vec3(inverted[2]));
+            if (yOffset == -1.0f) {
+                cameraTransform.translate(forward);
+            } else if (yOffset == 1.0f) {
+                cameraTransform.translate(-forward);
+            }
+        }
+    }
+
+    void UIView::onMouseMoveEvent(glm::vec2 delta) {
+        if ((lastUsingId == -1 || lastUsingId == id) && (isWindowHovered || moving) && (mouse2 || mouse3)) {
+            moving = true;
+            lastUsingId = id;
+            const glm::mat4 inverted = glm::inverse(sceneCamera.getViewMatrix());
+            const glm::vec3 right = normalize(glm::vec3(inverted[0]));
+            const glm::vec3 up = normalize(glm::vec3(inverted[1]));
+            if (mouse3) {
+                const glm::vec3 move = -right * delta.x * 0.01f + up * delta.y * 0.01f;
+                cameraTransform.translate(move);
+            }
+            if (mouse2) {
+                const glm::vec3 rotate = glm::vec3(-delta.y * 0.5f, -delta.x * 0.5f, 0);
+                cameraTransform.rotate(rotate);
+            }
+        }
+    }
+
     void UIView::drawHelperLines(ImVec2 imageTopLeft) {
         ImVec2 imageSize = ImGui::GetItemRectSize();
 
@@ -62,22 +126,18 @@ namespace TechEngine {
             Rml::Element* element = widget->getRmlElement();
             if (!element) continue;
 
-            // Color
             glm::ivec4 color = (widget == m_uiEditor->getSelectedWidget()) ? glm::ivec4(0, 255, 0, 255) : glm::ivec4(255, 0, 0, 255);
 
-            // Get RML positions
             Rml::Vector2f rmlPos = element->GetAbsoluteOffset(Rml::BoxArea::Border);
             Rml::Vector2f rmlSize = element->GetBox().GetSize(Rml::BoxArea::Border);
 
-            // Compute top-left and bottom-right
             ImVec2 topLeft = convertRmlToImGui(rmlPos, imageTopLeft, imageSize);
             ImVec2 bottomRight = convertRmlToImGui(rmlPos + rmlSize, imageTopLeft, imageSize);
-            // Draw widget box
+
             ImGui::GetForegroundDrawList()->AddRect(
                 topLeft, bottomRight,
                 IM_COL32(color.r, color.g, color.b, color.a), 0.0f, ImDrawFlags_None, 1.5f);
             if (pair.second == m_uiEditor->getSelectedWidget()) {
-
                 // Draw pivot cross
                 Rml::Vector2f pivotOffset = {
                     rmlPos.x + widget->m_pivot.x * rmlSize.x,

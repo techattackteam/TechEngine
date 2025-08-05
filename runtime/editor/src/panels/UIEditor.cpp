@@ -51,16 +51,52 @@ namespace TechEngine {
         Rml::ElementPtr elementPtr;
         if (base) {
             if (name == "Label") {
-                elementPtr = Rml::Factory::InstanceElement(nullptr, "#text", "div", Rml::XMLAttributes()); //Not sure if this is the right way to create an element
-                elementPtr->SetProperty("color", "#ffffff");
-                elementPtr->SetProperty("font-size", "14px");
-                elementPtr->SetProperty("font-family", "Lato");
-            } else {
+                //elementPtr = Rml::Factory::InstanceElement(parent, "div", "div", Rml::XMLAttributes());
+                //elementPtr->SetProperty("position", "absolute");
+                //elementPtr->SetProperty("align-self", "center");
+                //elementPtr->SetProperty("transform-origin-x", "center");
+                //elementPtr->SetProperty("transform-origin-y", "center");
+                //elementPtr->SetProperty("font-size", "18px");
+                //elementPtr->SetProperty("font-weight", "bold");
+                //elementPtr->SetProperty("font-family", "Lato");
+
+                //auto text = Rml::Factory::InstanceElement(parent, "#text", "text", Rml::XMLAttributes());
+                //dynamic_cast<Rml::ElementText*>(elementPtr.get())->SetText("Hello World!");
+                //elementPtr->AppendChild(std::move(text));
                 elementPtr = Rml::Factory::InstanceElement(nullptr, "div", "div", Rml::XMLAttributes());
-                elementPtr->SetProperty("position", "absolute"); // Set the ID of the element to the widget's name
+                elementPtr->SetProperty("position", "absolute");
+                elementPtr->SetProperty("align-self", "center");
+                elementPtr->SetProperty("transform-origin-x", "center");
+                elementPtr->SetProperty("transform-origin-y", "center");
+                elementPtr->SetProperty("background-color", "#ffffffff");
+                elementPtr->SetProperty("color", "#0000ffff");
+                elementPtr->SetProperty("font-size", "18px");
+                elementPtr->SetProperty("font-weight", "bold");
+                elementPtr->SetProperty("font-family", "Lato");
+                elementPtr->SetInnerRML("Hello World!");
+            } else {
+                elementPtr = Rml::Factory::InstanceElement(parent, "div", "div", Rml::XMLAttributes());
+                elementPtr->SetProperty("position", "absolute");
+                elementPtr->SetProperty("align-self", "center");
+                elementPtr->SetProperty("transform-origin-x", "center");
+                elementPtr->SetProperty("transform-origin-y", "center");
+                elementPtr->SetProperty("background-color", "#ffffffff");
+                elementPtr->SetProperty("color", "#0000ffff");
+                elementPtr->SetProperty("font-size", "18px");
+                elementPtr->SetProperty("font-weight", "bold");
+                elementPtr->SetProperty("font-family", "Lato");
+
+
+                /*auto it = m_elementToWidgetMap.begin();
+                auto otherElement = it != m_elementToWidgetMap.end() ? it->first : nullptr;
+                while (otherElement->GetNumChildren() > 0) {
+                    Rml::Element* child = otherElement->GetChild(0);
+                    elementPtr->AppendChild(otherElement->RemoveChild(child));
+                }
+                m_context->Update();*/
             }
         } else {
-            elementPtr = Rml::Factory::InstanceElement(nullptr, "div", "div", Rml::XMLAttributes());
+            elementPtr = Rml::Factory::InstanceElement(parent, "div", "div", Rml::XMLAttributes());
             elementPtr->SetProperty("position", "absolute"); // Set the ID of the element to the widget's name
             elementPtr->SetProperty("display", "flex");
             elementPtr->SetProperty("justify-content", "center"); // horizontal
@@ -112,7 +148,7 @@ namespace TechEngine {
             } else if (prop.type == "bool") {
                 prop.onChange(prop.defaultValue); // Convert string to bool
             } else if (prop.type == "string") {
-                dynamic_cast<Rml::ElementText*>(element)->SetText(prop.defaultValue);
+                //dynamic_cast<Rml::ElementText*>(element)->SetText(prop.defaultValue);
             } else if (prop.type == "vector2f") {
                 Rml::Vector2f vec;
                 sscanf_s(prop.defaultValue.c_str(), "%f,%f", &vec.x, &vec.y);
@@ -129,7 +165,7 @@ namespace TechEngine {
                         << std::setw(2) << std::lround(255)
                         << std::setw(2) << std::lround(255);
                 std::string color = ss.str();
-                prop.onChange(color);
+                //prop.onChange(color);
             }
         }
 

@@ -97,6 +97,14 @@ namespace TechEngine {
                     if (ImGui::IsItemHovered()) ImGui::SetTooltip("The fixed height of the element.");
                 }
 
+                // --- ROTATION Z ---
+                if (ImGui::SliderFloat("Rotation Z", &m_selectedWidget->m_rotationZ, -180.0f, 180.0f, "%.1f°")) {
+                    changed = true;
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("Rotation of the element in degrees around the pivot point.\nPositive values rotate clockwise.");
+                }
+
                 ImGui::PopID();
             }
 
@@ -136,19 +144,19 @@ namespace TechEngine {
                     std::string color = ss.str();
 
                     TE_LOGGER_INFO("Setting color property '{0}' to '{1}'", property.name, color);
-                    m_selectedWidget->m_rmlElement->SetProperty(property.rcssProperty, color);
-                    property.onChange(color);
+                    //m_selectedWidget->m_rmlElement->SetProperty(property.rcssProperty, color);
+                    //property.onChange(color);
                 }
             } else if (property.type == "string" /*&& property.target == "text-content"*/) {
                 std::string text;
                 Rml::ElementText* targetElement = dynamic_cast<Rml::ElementText*>(m_selectedWidget->m_rmlElement);
                 //targetElement = m_selectedWidget->m_rmlElement->GetElementById("label");
-                std::string current = targetElement->GetText();
+                //std::string current = targetElement->GetText();
                 //TE_LOGGER_INFO("Current text content: {}", current.c_str());
-                if (ImGui::InputTextWithHint("Label", current.c_str(), &text)) {
-                    //property.onChange(text);
-                    TE_LOGGER_INFO("Setting text property '{0}' to '{1}'", property.name, text);
-                }
+                //if (ImGui::InputTextWithHint("Label", current.c_str(), &text)) {
+                //    //property.onChange(text);
+                //    TE_LOGGER_INFO("Setting text property '{0}' to '{1}'", property.name, text);
+                //}
             }
             ImGui::PopID();
         }
