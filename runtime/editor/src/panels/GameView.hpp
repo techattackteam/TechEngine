@@ -15,5 +15,7 @@ namespace TechEngine {
         void onInit() override;
 
         void onUpdate() override;
+
+        glm::vec2 getFrameBufferSize();
     };
 }

@@ -239,4 +239,10 @@ namespace TechEngine {
     Rml::Context* UIRenderer::getContext() {
         return m_context;
     }
+
+    void UIRenderer::setViewport(int width, int height) {
+        if (m_renderInterface) {
+            m_renderInterface->SetViewport(width, height);
+        }
+    }
 }

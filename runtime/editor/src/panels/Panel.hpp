@@ -19,12 +19,16 @@ namespace TechEngine {
     protected:
         inline static int nextID = 0;
         int id;
-        bool m_isVisible = true;
         std::string m_name;
+        bool m_isVisible = true;
+        bool m_isWindowHovered = false;
         ImGuiWindowClass* m_parentDockSpaceClass = nullptr; // from parent otherwise editor window
         ImGuiWindowFlags m_windowFlags = ImGuiWindowFlags_None;
+
         std::vector<std::tuple<ImGuiStyleVar, std::variant<ImVec2, float>>> m_styleVars;
+
         std::vector<Key> m_keysPressed;
+
         SystemsRegistry& m_editorSystemsRegistry;
 
     public:

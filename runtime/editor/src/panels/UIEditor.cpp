@@ -1,23 +1,25 @@
 #include "UIEditor.hpp"
 
-#include <imgui_internal.h>
-#include <RmlUi/Core/Context.h>
-#include <RmlUi/Core/ElementDocument.h>
-#include <RmlUi/Core/ElementText.h>
-#include <RmlUi/Core/Factory.h>
 
 #include "renderer/FrameBuffer.hpp"
 #include "renderer/Renderer.hpp"
 #include "systems/SystemsRegistry.hpp"
+#include "sceneView.hpp"
+
+#include <imgui_internal.h>
+#include <RmlUi/Core/Context.h>
+#include <RmlUi/Core/ElementDocument.h>
+#include <RmlUi/Core/Factory.h>
 
 namespace TechEngine {
     UIEditor::UIEditor(SystemsRegistry& editorSystemsRegistry,
-                       SystemsRegistry& appSystemsRegistry) : DockPanel(editorSystemsRegistry),
-                                                              m_uiView(editorSystemsRegistry, appSystemsRegistry, this),
-                                                              m_uiHierarchy(editorSystemsRegistry, appSystemsRegistry),
-                                                              m_uiInspector(editorSystemsRegistry),
-                                                              m_appSystemsRegistry(appSystemsRegistry),
-                                                              m_context(nullptr) {
+                       SystemsRegistry& appSystemsRegistry,
+                       GameView& gameView) : DockPanel(editorSystemsRegistry),
+                                             m_uiView(editorSystemsRegistry, appSystemsRegistry, this),
+                                             m_uiHierarchy(editorSystemsRegistry, appSystemsRegistry),
+                                             m_uiInspector(editorSystemsRegistry), m_gameView(gameView),
+                                             m_appSystemsRegistry(appSystemsRegistry),
+                                             m_context(nullptr) {
         m_styleVars.emplace_back(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     }
 

@@ -4,17 +4,20 @@
 #include "UIHierarchyPanel.hpp"
 #include "UIView.hpp"
 #include "UIInspector.hpp"
-
-#include <RmlUi/Core/Element.h>
 #include "ui/WidgetsRegistry.hpp"
 
+#include <RmlUi/Core/Element.h>
+
 namespace TechEngine {
+    class GameView;
+
     class UIEditor : public DockPanel {
     private:
         UIView m_uiView;
         UIHierarchyPanel m_uiHierarchy;
         UIInspector m_uiInspector;
         WidgetsRegistry m_widgetsRegistry;
+        GameView& m_gameView;
 
         SystemsRegistry& m_appSystemsRegistry;
         Rml::Context* m_context;
@@ -25,7 +28,7 @@ namespace TechEngine {
         std::shared_ptr<Widget> m_selectedWidget = nullptr;
         std::unordered_map<Rml::Element*, std::shared_ptr<Widget>> m_elementToWidgetMap;
 
-        UIEditor(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& appSystemsRegistry);
+        UIEditor(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& appSystemsRegistry, GameView& sceneView);
 
         void onInit() override;
 
@@ -45,6 +48,10 @@ namespace TechEngine {
 
         const WidgetsRegistry& getWidgetsRegistry() const {
             return m_widgetsRegistry;
+        }
+
+        GameView& getGameView() const {
+            return m_gameView;
         }
 
     protected:

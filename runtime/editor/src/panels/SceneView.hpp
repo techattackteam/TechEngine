@@ -47,6 +47,10 @@ namespace TechEngine {
 
         void processShortcuts() override;
 
+        uint32_t getFrameBufferID() const {
+            return frameBufferID;
+        }
+
     private:
         void renderCameraFrustum();
 

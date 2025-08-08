@@ -85,6 +85,8 @@ namespace TechEngine {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glBindTexture(GL_TEXTURE_2D, 0);
+
+        m_projectionMatrix = glm::ortho(0.0f, (float)width, (float)height, 0.0f, -1.0f, 1.0f);
     }
 
     void UIRenderInterface::Shutdown() {
@@ -154,8 +156,7 @@ namespace TechEngine {
         GlCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
         GlCall(glDisable(GL_DEPTH_TEST));
 
-        glm::mat4 projection = glm::ortho(0.0f, (float)width, (float)height, 0.0f, -1.0f, 1.0f);
-        glUniformMatrix4fv(m_transformUniformLoc, 1, GL_FALSE, &projection[0][0]);
+        glUniformMatrix4fv(m_transformUniformLoc, 1, GL_FALSE, &m_projectionMatrix[0][0]);
         glUniform2f(m_translationUniformLoc, translation.x, translation.y);
 
         unsigned int textureId = (unsigned int)(uintptr_t)texture;
@@ -292,7 +293,13 @@ namespace TechEngine {
 
     void UIRenderInterface::SetScissorRegion(Rml::Rectanglei region) {
         int windowHeight = height;
-        // The new API gives a Rectanglei struct. We flip Y as before.
         glScissor(region.p0.x, windowHeight - (region.p0.y + region.Height()), region.Width(), region.Height());
+    }
+
+    void UIRenderInterface::SetViewport(int width, int height) {
+        glViewport(0, 0, width, height);
+        this->width = width;
+        this->height = height;
+        m_projectionMatrix = glm::ortho(0.0f, (float)width, (float)height, 0.0f, -1.0f, 1.0f);
     }
 }

@@ -35,5 +35,7 @@ namespace TechEngine {
         void processKeyChar(unsigned int codepoint);
 
         Rml::Context* getContext();
+
+        void setViewport(int width, int height);
     };
 }

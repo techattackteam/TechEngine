@@ -2,6 +2,7 @@
 
 #include <RmlUi/Core/RenderInterface.h>
 #include <unordered_set>
+#include <glm/glm.hpp>
 
 namespace TechEngine {
     class UIRenderInterface : public Rml::RenderInterface {
@@ -21,6 +22,7 @@ namespace TechEngine {
         std::unordered_set<unsigned int> m_managedTextures;
         uint32_t width = 1280;
         uint32_t height = 720;
+        glm::mat4 m_projectionMatrix;
         unsigned int m_whiteTexture = 0;
 
     public:
@@ -47,5 +49,7 @@ namespace TechEngine {
         void EnableScissorRegion(bool enable) override;
 
         void SetScissorRegion(Rml::Rectanglei region) override;
+
+        void SetViewport(int width, int height);
     };
 }
