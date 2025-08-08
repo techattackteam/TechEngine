@@ -33,8 +33,7 @@ namespace TechEngine {
         FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(m_frameBufferID);
         UIRenderer& uiRenderer = m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer();
 
-        m_isWindowHovered = ImGui::IsWindowHovered();
-        if (m_isWindowHovered && m_pendingScrollY != 0.0f) {
+        if (m_isPanelHovered && m_pendingScrollY != 0.0f) {
             float oldZoom = m_zoom;
 
             m_zoom += m_pendingScrollY * 0.1f * m_zoom;
@@ -97,7 +96,7 @@ namespace TechEngine {
         //drawHelperLines(imageTopLeft);
     }
 
-    void UIView::onKeyPressedEvent(Key& key) {
+    /*void UIView::onKeyPressedEvent(Key& key) {
         switch (key.getKeyCode()) {
             case MOUSE_2: {
                 mouse2 = true;
@@ -108,7 +107,6 @@ namespace TechEngine {
                 break;
             }
         }
-        Panel::onKeyPressedEvent(key);
     }
 
     void UIView::onKeyReleasedEvent(Key& key) {
@@ -126,19 +124,17 @@ namespace TechEngine {
                 break;
             }
         }
-        Panel::onKeyReleasedEvent(key);
-    }
+    }*/
 
-    void UIView::onMouseMoveEvent(glm::vec2 delta) {
-        if (m_isWindowHovered && mouse3) { // Use middle mouse button to pan
+    void UIView::processMouseDragging(glm::vec2 delta, unsigned long long mouseButtons) {
+        if (m_isPanelHovered && mouseButtons & MOUSE_3) { // Use middle mouse button to pan
             m_panOffset.x += delta.x;
             m_panOffset.y += delta.y;
         }
-        Panel::onMouseMoveEvent(delta);
     }
 
-    void UIView::onMouseScrollEvent(float xOffset, float yOffset) {
-        if (m_isWindowHovered) {
+    void UIView::processMouseScroll(float yOffset) {
+        if (m_isPanelHovered) {
             m_pendingScrollY += yOffset;
         }
     }

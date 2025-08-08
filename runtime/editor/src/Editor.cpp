@@ -50,7 +50,7 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<Timer>();
         m_systemRegistry.registerSystem<ProjectManager>(m_client.m_systemRegistry, m_server.m_systemRegistry);
         m_systemRegistry.registerSystem<Window>(m_systemRegistry);
-        m_systemRegistry.registerSystem<Input>(m_systemRegistry);
+        //m_systemRegistry.registerSystem<Input>(m_systemRegistry);
         //m_systemRegistry.registerSystem<Renderer>(m_systemRegistry);
         m_systemRegistry.registerSystem<PanelsManager>(m_systemRegistry, m_client, m_server);
         m_systemRegistry.registerSystem<RuntimeSimulator<Client>>(m_client, m_systemRegistry);
@@ -62,7 +62,7 @@ namespace TechEngine {
     void Editor::init() {
         m_systemRegistry.getSystem<ProjectManager>().init(m_lastProjectLoaded);
         m_systemRegistry.getSystem<Window>().init("TechEngineEditor - " + m_systemRegistry.getSystem<ProjectManager>().getProjectName(), 1280, 720);
-        m_systemRegistry.getSystem<Input>().init();
+        //m_systemRegistry.getSystem<Input>().init();
         m_systemRegistry.getSystem<Timer>().init();
         m_systemRegistry.getSystem<EventDispatcher>().init();
         m_systemRegistry.getSystem<RuntimeSimulator<Client>>().init();

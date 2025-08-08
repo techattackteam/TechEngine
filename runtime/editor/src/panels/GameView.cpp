@@ -18,7 +18,6 @@ namespace TechEngine {
 
     void GameView::onUpdate() {
         auto& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-        TE_LOGGER_INFO("GameView ImGUI want to capture mouse: {0}", ImGui::GetIO().WantCaptureMouse);
         scene.runSystem<Transform, Camera>([this](Transform& transform, Camera& camera) {
             Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
             FrameBuffer& frameBuffer = renderer.getFramebuffer(frameBufferID);

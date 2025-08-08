@@ -34,5 +34,9 @@ namespace TechEngine {
         ImGuizmo::MODE getMode() const;
 
         void setMode(int mode);
+
+        bool isGuizmoInUse() {
+            return ImGuizmo::IsUsing();
+        }
     };
 }
