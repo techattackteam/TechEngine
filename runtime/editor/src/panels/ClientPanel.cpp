@@ -13,7 +13,7 @@ namespace TechEngine {
                              LoggerPanel& loggerPanel) : RuntimePanel(editorSystemsRegistry,
                                                                       clientSystemsRegistry,
                                                                       loggerPanel),
-                                                         m_uiEditor(editorSystemsRegistry, clientSystemsRegistry) {
+                                                         m_uiEditor(editorSystemsRegistry, clientSystemsRegistry, m_gameView) {
         m_projectType = ProjectType::Client;
 
         //"Transfer" event from editor to client
@@ -50,6 +50,5 @@ namespace TechEngine {
         RuntimePanel::setupInitialDockingLayout();
         ImGui::DockBuilderDockWindow((m_uiEditor.getName() + "##" + std::to_string(m_uiEditor.getId())).c_str(),
                                      m_dockSpaceID);
-        
     }
 }

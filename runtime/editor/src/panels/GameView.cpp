@@ -18,6 +18,7 @@ namespace TechEngine {
 
     void GameView::onUpdate() {
         auto& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        TE_LOGGER_INFO("GameView ImGUI want to capture mouse: {0}", ImGui::GetIO().WantCaptureMouse);
         scene.runSystem<Transform, Camera>([this](Transform& transform, Camera& camera) {
             Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
             FrameBuffer& frameBuffer = renderer.getFramebuffer(frameBufferID);
@@ -32,5 +33,11 @@ namespace TechEngine {
             ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
             frameBuffer.unBind();
         });
+
+    }
+
+    glm::vec2 GameView::getFrameBufferSize() {
+        FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
+        return glm::vec2(frameBuffer.width, frameBuffer.height);
     }
 }

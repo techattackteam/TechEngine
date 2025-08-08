@@ -2,8 +2,9 @@
 
 #include <imGuizmo.h>
 
+#include "GameView.hpp"
+#include "SceneView.hpp"
 #include "UIEditor.hpp"
-#include "components/Components.hpp"
 #include "components/ComponentsFactory.hpp"
 #include "renderer/FrameBuffer.hpp"
 #include "renderer/Renderer.hpp"
@@ -16,7 +17,6 @@ namespace TechEngine {
                    SystemsRegistry& appSystemsRegistry,
                    UIEditor* uiEditor) : Panel(editorSystemsRegistry),
                                          m_appSystemsRegistry(appSystemsRegistry),
-                                         cameraTransform(ComponentsFactory::createTransform(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f))),
                                          m_uiEditor(uiEditor),
                                          guizmo(id, appSystemsRegistry) {
         m_styleVars.emplace_back(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -29,30 +29,72 @@ namespace TechEngine {
 
 
     void UIView::onUpdate() {
-        ImVec2 wsize = ImGui::GetContentRegionAvail();
+        glm::vec2 gameViewSize = m_uiEditor->getGameView().getFrameBufferSize();
+        FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(m_frameBufferID);
+        UIRenderer& uiRenderer = m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer();
 
-        const float referenceHeight = 1080.0f; // Your UI is designed for a 1080p screen
-        float dp_ratio = (wsize.y > 0) ? (wsize.y / referenceHeight) : 1.0f;
+        m_isWindowHovered = ImGui::IsWindowHovered();
+        if (m_isWindowHovered && m_pendingScrollY != 0.0f) {
+            float oldZoom = m_zoom;
+
+            m_zoom += m_pendingScrollY * 0.1f * m_zoom;
+            m_zoom = std::max(m_zoom, 0.1f);
+            m_zoom = std::min(m_zoom, 10.0f);
+
+            ImVec2 panelTopLeft = ImGui::GetCursorScreenPos();
+            ImVec2 mousePosInPanel = {ImGui::GetIO().MousePos.x - panelTopLeft.x, ImGui::GetIO().MousePos.y - panelTopLeft.y};
+
+            if (m_pendingScrollY > 0) {
+                m_panOffset.x = mousePosInPanel.x - (mousePosInPanel.x - m_panOffset.x) * (m_zoom / oldZoom);
+                m_panOffset.y = mousePosInPanel.y - (mousePosInPanel.y - m_panOffset.y) * (m_zoom / oldZoom);
+            } else {
+                m_panOffset.x = mousePosInPanel.x - (mousePosInPanel.x - m_panOffset.x) * (m_zoom / oldZoom);
+                m_panOffset.y = mousePosInPanel.y - (mousePosInPanel.y - m_panOffset.y) * (m_zoom / oldZoom);
+            }
+        }
+        m_pendingScrollY = 0.0f;
+
+        if (gameViewSize.x > 0 && gameViewSize.y > 0 &&
+            (frameBuffer.width != gameViewSize.x || frameBuffer.height != gameViewSize.y)) {
+            frameBuffer.resize(gameViewSize.x, gameViewSize.y);
+            uiRenderer.setViewport(gameViewSize.x, gameViewSize.y);
+        }
+        m_context->SetDimensions(Rml::Vector2i(gameViewSize.x, gameViewSize.y));
+
+        const float referenceHeight = 1080.0f;
+        float dp_ratio = (gameViewSize.y > 0) ? (gameViewSize.y / referenceHeight) : 1.0f;
         m_context->SetDensityIndependentPixelRatio(dp_ratio);
 
-        FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(m_frameBufferID);
-        frameBuffer.bind();
+
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        frameBuffer.resize(wsize.x, wsize.y);
 
-        m_context->SetDimensions(Rml::Vector2i(frameBuffer.width, frameBuffer.height));
         m_context->Update();
-        UIRenderer& uiRenderer = m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer();
+        frameBuffer.bind();
         uiRenderer.onUpdate();
+        frameBuffer.unBind();
+
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
-        ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
+        ImVec2 canvasSize = {(float)gameViewSize.x, (float)gameViewSize.y};
+        ImVec2 panelTopLeft = ImGui::GetCursorScreenPos();
+
+        ImVec2 canvasTopLeftOnScreen = {panelTopLeft.x + m_panOffset.x, panelTopLeft.y + m_panOffset.y};
+        ImVec2 canvasBottomRightOnScreen = {canvasTopLeftOnScreen.x + canvasSize.x * m_zoom, canvasTopLeftOnScreen.y + canvasSize.y * m_zoom};
+
+        // Use a draw list to render the image with precise control
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        draw_list->AddImage(
+            reinterpret_cast<void*>(textureID),
+            canvasTopLeftOnScreen,
+            canvasBottomRightOnScreen,
+            ImVec2(0, 1), // UV0 (top-left)
+            ImVec2(1, 0) // UV1 (bottom-right) -> Flipped vertically for OpenGL textures
+        );
 
         ImVec2 imageTopLeft = ImGui::GetItemRectMin();
         ImVec2 imageSize = ImGui::GetItemRectSize();
         guizmo.editUI(imageTopLeft, imageSize, m_uiEditor->getSelectedWidget());
-        drawHelperLines(imageTopLeft);
-        frameBuffer.unBind();
+        //drawHelperLines(imageTopLeft);
     }
 
     void UIView::onKeyPressedEvent(Key& key) {
@@ -87,33 +129,17 @@ namespace TechEngine {
         Panel::onKeyReleasedEvent(key);
     }
 
-    void UIView::onMouseScrollEvent(float xOffset, float yOffset) {
-        if (isWindowHovered && (lastUsingId == -1 || lastUsingId == id)) {
-            const glm::mat4 inverted = glm::inverse(sceneCamera.getViewMatrix());
-            const glm::vec3 forward = normalize(glm::vec3(inverted[2]));
-            if (yOffset == -1.0f) {
-                cameraTransform.translate(forward);
-            } else if (yOffset == 1.0f) {
-                cameraTransform.translate(-forward);
-            }
+    void UIView::onMouseMoveEvent(glm::vec2 delta) {
+        if (m_isWindowHovered && mouse3) { // Use middle mouse button to pan
+            m_panOffset.x += delta.x;
+            m_panOffset.y += delta.y;
         }
+        Panel::onMouseMoveEvent(delta);
     }
 
-    void UIView::onMouseMoveEvent(glm::vec2 delta) {
-        if ((lastUsingId == -1 || lastUsingId == id) && (isWindowHovered || moving) && (mouse2 || mouse3)) {
-            moving = true;
-            lastUsingId = id;
-            const glm::mat4 inverted = glm::inverse(sceneCamera.getViewMatrix());
-            const glm::vec3 right = normalize(glm::vec3(inverted[0]));
-            const glm::vec3 up = normalize(glm::vec3(inverted[1]));
-            if (mouse3) {
-                const glm::vec3 move = -right * delta.x * 0.01f + up * delta.y * 0.01f;
-                cameraTransform.translate(move);
-            }
-            if (mouse2) {
-                const glm::vec3 rotate = glm::vec3(-delta.y * 0.5f, -delta.x * 0.5f, 0);
-                cameraTransform.rotate(rotate);
-            }
+    void UIView::onMouseScrollEvent(float xOffset, float yOffset) {
+        if (m_isWindowHovered) {
+            m_pendingScrollY += yOffset;
         }
     }
 
@@ -181,6 +207,35 @@ namespace TechEngine {
         return {
             imageTopLeft.x + normalized.x * imageSize.x,
             imageTopLeft.y + normalized.y * imageSize.y
+        };
+    }
+
+    ImVec2 UIView::convertRmlToEditorScreen(const Rml::Vector2f& rmlPos, const ImVec2& panelTopLeft) {
+        glm::vec2 gameViewSize = m_uiEditor->getGameView().getFrameBufferSize();
+
+        // 1. Position on the canvas (0 to gameViewSize)
+        float canvasX = rmlPos.x * m_zoom;
+        float canvasY = rmlPos.y * m_zoom;
+
+        // 2. Final screen position including pan and panel offset
+        return {
+            panelTopLeft.x + m_panOffset.x + canvasX,
+            panelTopLeft.y + m_panOffset.y + canvasY
+        };
+    }
+
+    // You will need the inverse for mouse picking (e.g., to select a widget)
+    Rml::Vector2f UIView::convertEditorScreenToRml(const ImVec2& screenPos, const ImVec2& panelTopLeft) {
+        glm::vec2 gameViewSize = m_uiEditor->getGameView().getFrameBufferSize();
+
+        // 1. Position relative to the panned canvas's top-left
+        float canvasX = screenPos.x - panelTopLeft.x - m_panOffset.x;
+        float canvasY = screenPos.y - panelTopLeft.y - m_panOffset.y;
+
+        // 2. Normalize back to RML coordinates
+        return {
+            canvasX / m_zoom,
+            canvasY / m_zoom
         };
     }
 }

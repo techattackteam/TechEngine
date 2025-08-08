@@ -58,6 +58,7 @@ namespace TechEngine {
         if (!m_styleVars.empty()) {
             ImGui::PopStyleVar(m_styleVars.size());
         }
+
         this->onUpdate();
         shortcuts();
         ImGui::End();
