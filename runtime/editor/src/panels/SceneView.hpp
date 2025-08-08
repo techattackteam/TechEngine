@@ -15,13 +15,11 @@ namespace TechEngine {
         Guizmo guizmo;
         uint32_t frameBufferID;
 
-
         bool mouse2 = false;
         bool mouse3 = false;
         bool moving = false;
-        bool isWindowHovered = false;
         int id;
-        inline static int lastUsingId = -1;
+        inline static int lastGuizmoID = -1;
         inline static int totalIds = 0;
 
     public:
@@ -31,13 +29,11 @@ namespace TechEngine {
 
         void onUpdate() override;
 
-        void onKeyPressedEvent(Key& key) override;
+        void processShortcuts() override;
 
-        void onKeyReleasedEvent(Key& key) override;
+        void processMouseDragging(glm::vec2 delta, unsigned long long mouseButtons) override;
 
-        void onMouseScrollEvent(float xOffset, float yOffset) override;
-
-        void onMouseMoveEvent(glm::vec2 delta) override;
+        void processMouseScroll(float yOffset) override;
 
         void changeGuizmoOperation(ImGuizmo::OPERATION operation);
 
@@ -45,7 +41,6 @@ namespace TechEngine {
 
         ImGuizmo::MODE getGuizmoMode() const;
 
-        void processShortcuts() override;
 
         uint32_t getFrameBufferID() const {
             return frameBufferID;

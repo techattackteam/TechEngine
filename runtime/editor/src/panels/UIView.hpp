@@ -37,13 +37,9 @@ namespace TechEngine {
 
         void onUpdate() override;
 
-        void onKeyPressedEvent(Key& key) override;
+        void processMouseDragging(glm::vec2 delta, unsigned long long mouseButtons) override;
 
-        void onKeyReleasedEvent(Key& key) override;
-
-        void onMouseScrollEvent(float xOffset, float yOffset) override;
-
-        void onMouseMoveEvent(glm::vec2 delta) override;
+        void processMouseScroll(float yOffset) override;
 
     private:
         void drawHelperLines(ImVec2 imageTopLeft);

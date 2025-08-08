@@ -14,7 +14,6 @@ namespace TechEngine {
                                                                         m_selectedEntities(selectedEntities),
                                                                         guizmo(id, appSystemsRegistry),
                                                                         cameraTransform(ComponentsFactory::createTransform(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f))),
-                                                                        /*sceneCamera(ComponentsFactory::createCamera(45.0f, 0.1f, 1000.0f, 1080.0f / 720.0f)),*/
                                                                         Panel(editorSystemsRegistry) {
         m_styleVars.emplace_back(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         totalIds++;
@@ -29,7 +28,6 @@ namespace TechEngine {
     void SceneView::onUpdate() {
         Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
         FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
-        isWindowHovered = ImGui::IsWindowHovered();
         ImVec2 wsize = ImGui::GetContentRegionAvail();
         frameBuffer.bind();
         frameBuffer.resize(wsize.x, wsize.y);
@@ -46,40 +44,46 @@ namespace TechEngine {
         frameBuffer.unBind();
     }
 
-    void SceneView::onKeyPressedEvent(Key& key) {
-        switch (key.getKeyCode()) {
-            case MOUSE_2: {
-                mouse2 = true;
-                break;
-            }
-            case MOUSE_3: {
-                mouse3 = true;
-                break;
+    void SceneView::processShortcuts() {
+        if (ImGui::Shortcut(ImGuiKey_F)) {
+            if (m_selectedEntities.size() == 1) {
+                //focusOnGameObject(selectedGO.front());
             }
         }
-        Panel::onKeyPressedEvent(key);
+
+        if (ImGui::Shortcut(ImGuiKey_T)) {
+            changeGuizmoOperation(ImGuizmo::TRANSLATE);
+        }
+        if (ImGui::Shortcut(ImGuiKey_R)) {
+            changeGuizmoOperation(ImGuizmo::ROTATE);
+        }
+        if (ImGui::Shortcut(ImGuiKey_S)) {
+            changeGuizmoOperation(ImGuizmo::SCALE);
+        }
+        if (ImGui::Shortcut(ImGuiKey_C)) {
+            changeGuizmoMode(guizmo.getMode() == ImGuizmo::LOCAL ? ImGuizmo::WORLD : ImGuizmo::LOCAL);
+        }
     }
 
-    void SceneView::onKeyReleasedEvent(Key& key) {
-        switch (key.getKeyCode()) {
-            case MOUSE_2: {
-                mouse2 = false;
-                moving = false;
-                lastUsingId = -1;
-                break;
+    void SceneView::processMouseDragging(glm::vec2 delta, unsigned long long mouseButtons) {
+        if (!guizmo.isGuizmoInUse() && mouseButtons & MOUSE_3 || mouseButtons & MOUSE_2) {
+            moving = true;
+            const glm::mat4 inverted = glm::inverse(sceneCamera.getViewMatrix());
+            const glm::vec3 right = normalize(glm::vec3(inverted[0]));
+            const glm::vec3 up = normalize(glm::vec3(inverted[1]));
+            if ((mouseButtons & MOUSE_3)) {
+                const glm::vec3 move = -right * delta.x * 0.01f + up * delta.y * 0.01f;
+                cameraTransform.translate(move);
             }
-            case MOUSE_3: {
-                mouse3 = false;
-                moving = false;
-                lastUsingId = -1;
-                break;
+            if ((mouseButtons & MOUSE_2)) {
+                const glm::vec3 rotate = glm::vec3(-delta.y * 0.5f, -delta.x * 0.5f, 0);
+                cameraTransform.rotate(rotate);
             }
         }
-        Panel::onKeyReleasedEvent(key);
     }
 
-    void SceneView::onMouseScrollEvent(float xOffset, float yOffset) {
-        if (isWindowHovered && (lastUsingId == -1 || lastUsingId == id)) {
+    void SceneView::processMouseScroll(float yOffset) {
+        if (m_isPanelHovered) {
             const glm::mat4 inverted = glm::inverse(sceneCamera.getViewMatrix());
             const glm::vec3 forward = normalize(glm::vec3(inverted[2]));
             if (yOffset == -1.0f) {
@@ -90,23 +94,6 @@ namespace TechEngine {
         }
     }
 
-    void SceneView::onMouseMoveEvent(glm::vec2 delta) {
-        if ((lastUsingId == -1 || lastUsingId == id) && (isWindowHovered || moving) && (mouse2 || mouse3)) {
-            moving = true;
-            lastUsingId = id;
-            const glm::mat4 inverted = glm::inverse(sceneCamera.getViewMatrix());
-            const glm::vec3 right = normalize(glm::vec3(inverted[0]));
-            const glm::vec3 up = normalize(glm::vec3(inverted[1]));
-            if (mouse3) {
-                const glm::vec3 move = -right * delta.x * 0.01f + up * delta.y * 0.01f;
-                cameraTransform.translate(move);
-            }
-            if (mouse2) {
-                const glm::vec3 rotate = glm::vec3(-delta.y * 0.5f, -delta.x * 0.5f, 0);
-                cameraTransform.rotate(rotate);
-            }
-        }
-    }
 
     void SceneView::changeGuizmoOperation(ImGuizmo::OPERATION operation) {
         guizmo.setOperation(operation);
@@ -118,24 +105,6 @@ namespace TechEngine {
 
     ImGuizmo::MODE SceneView::getGuizmoMode() const {
         return guizmo.getMode();
-    }
-
-    void SceneView::processShortcuts() {
-        for (Key& key: m_keysPressed) {
-            if (key.getKeyCode() == KeyCode::F) {
-                if (m_selectedEntities.size() == 1) {
-                    //focusOnGameObject(selectedGO.front());
-                }
-            } else if (key.getKeyCode() == KeyCode::T) {
-                changeGuizmoOperation(ImGuizmo::TRANSLATE);
-            } else if (key.getKeyCode() == KeyCode::R) {
-                changeGuizmoOperation(ImGuizmo::ROTATE);
-            } else if (key.getKeyCode() == KeyCode::S) {
-                changeGuizmoOperation(ImGuizmo::SCALE);
-            } else if (key.getKeyCode() == KeyCode::C) {
-                changeGuizmoMode(guizmo.getMode() == ImGuizmo::LOCAL ? ImGuizmo::WORLD : ImGuizmo::LOCAL);
-            }
-        }
     }
 
     void SceneView::renderCameraFrustum() {

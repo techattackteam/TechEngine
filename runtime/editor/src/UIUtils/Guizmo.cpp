@@ -5,7 +5,6 @@
 
 #include "components/Archetype.hpp"
 #include "physics/PhysicsEngine.hpp"
-#include "../ui/Widget.hpp"
 #include "scene/ScenesManager.hpp"
 #include "systems/SystemsRegistry.hpp"
 
