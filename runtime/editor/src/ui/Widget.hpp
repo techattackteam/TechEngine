@@ -1,15 +1,14 @@
 #pragma once
 
-#include <RmlUi/Core/Element.h>
 #include <functional>
 #include <memory>
 #include <string>
 #include <vector>
+#include <glm/glm.hpp>
 
 namespace TechEngine {
     struct WidgetProperty {
         std::string name;
-        std::string rcssProperty;
         std::string type;
         std::string defaultValue;
 
@@ -47,7 +46,6 @@ namespace TechEngine {
             StretchFill
         };
 
-        Rml::Element* m_rmlElement = nullptr; // Pointer to the RmlUi element this widget represents
 
         std::string m_name;
         std::string m_category;
@@ -57,17 +55,17 @@ namespace TechEngine {
         AnchorPreset m_preset = AnchorPreset::MiddleCenter;
 
         // AnchorMin/Max range from (0,0) [bottom-left] to (1,1) [top-right] in RmlUi
-        Rml::Vector2f m_anchorMin = {0.0f, 0.0f};
-        Rml::Vector2f m_anchorMax = {0.0f, 0.0f};
+        glm::vec2 m_anchorMin = {0.0f, 0.0f};
+        glm::vec2 m_anchorMax = {0.0f, 0.0f};
 
         // Pivot also ranges from (0,0) to (1,1)
-        Rml::Vector2f m_pivot = {0.5f, 0.5f};
+        glm::vec2 m_pivot = {0.5f, 0.5f};
 
         // This field is used when NOT stretching (e.g. AnchorPreset::TopLeft)
-        Rml::Vector2f m_size = {100.0f, 100.0f};
+        glm::vec2 m_size = {100.0f, 100.0f};
 
         // This field's meaning changes based on the anchor preset
-        Rml::Vector2f m_anchoredPosition = {0.0f, 0.0f};
+        glm::vec2 m_anchoredPosition = {0.0f, 0.0f};
 
         // These fields are used when stretching
         float m_left = 0.0f;
@@ -76,8 +74,8 @@ namespace TechEngine {
         float m_bottom = 0.0f;
         float m_rotationZ = 0.0f;
 
-        //Rml::Vector2f m_position;
-        //Rml::Vector2f m_size;
+        //glm::vec2 m_position;
+        //glm::vec2 m_size;
         std::vector<WidgetProperty> m_properties;
         std::vector<std::string> m_childrenTypes; // Types of children this widget can have, e.g., "Button", "Text", etc.
         std::vector<std::shared_ptr<Widget>> m_children; // Children widgets
@@ -92,17 +90,9 @@ namespace TechEngine {
 
         void setAnchorsFromPreset();
 
-        void setRmlElement(Rml::Element* element) {
-            m_rmlElement = element;
-        }
-
         void rename(const std::string& name);
 
-        void applyStyles(Rml::Element* element, Rml::Element* parent);
-
-        Rml::Element* getRmlElement() const {
-            return m_rmlElement;
-        }
+        void applyStyles(Widget* element, Widget* parent) const;
 
         const std::string& getName() const {
             return m_name;

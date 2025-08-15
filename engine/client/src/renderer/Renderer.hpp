@@ -33,7 +33,6 @@ namespace TechEngine {
         UIRenderer uiRenderer;
 
     public:
-
         Renderer(SystemsRegistry& systemsRegistry);
 
         ~Renderer();
@@ -53,8 +52,6 @@ namespace TechEngine {
         uint32_t createFramebuffer(uint32_t width, uint32_t height);
 
         ShadersManager& getShadersManager();
-
-        Rml::Context *getUIContext();
 
         UIRenderer& getUIRenderer();
 

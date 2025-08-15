@@ -9,7 +9,6 @@ namespace TechEngine {
     class UIHierarchyPanel : public Panel {
     private:
         SystemsRegistry& m_appSystemsRegistry;
-        Rml::Context* m_context = nullptr;
         UIEditor* m_editor = nullptr;
         std::vector<std::shared_ptr<Widget>> m_widgetsToDelete;
         std::vector<std::shared_ptr<Widget>> m_widgetsToCreate;
@@ -26,9 +25,8 @@ namespace TechEngine {
         void setEditor(UIEditor* editor);
 
     private:
+        void moveWidget(const std::shared_ptr<Widget>& childWidget, Widget* newParent, int newIndex);
 
-        void moveWidget(const std::shared_ptr<Widget>& childWidget, Rml::Element* newParent, int newIndex);
-
-        void drawWidgetNode(Rml::Element* element);
+        void drawWidgetNode(Widget* element);
     };
 }

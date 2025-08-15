@@ -99,21 +99,17 @@ namespace TechEngine {
         this->m_name = widget->m_name;
         this->m_category = widget->m_category;
         this->m_description = widget->m_description;
-        //this->m_rmlSnippet = widget->m_rmlSnippet;
         for (const auto& prop: widget->m_properties) {
             WidgetProperty property;
             property.name = prop.name;
-            property.rcssProperty = prop.rcssProperty;
             property.type = prop.type;
             property.defaultValue = prop.defaultValue;
             property.onChange = prop.onChange; // Copy the onChange callback
             this->m_properties.push_back(property);
         }
-        // Deep Copy children
         for (const auto& childType: widget->m_childrenTypes) {
             this->m_childrenTypes.push_back(childType);
         }
-        this->m_rmlElement = nullptr;
     }
 
     void Widget::setAnchorsFromPreset() {
@@ -188,16 +184,13 @@ namespace TechEngine {
 
     void Widget::rename(const std::string& name) {
         m_name = name;
-        if (m_rmlElement) {
-            m_rmlElement->SetId(name);
-        }
     }
 
-    void Widget::applyStyles(Rml::Element* element, Rml::Element* parent) {
-        if (!element) return;
+    void Widget::applyStyles(Widget* element, Widget* parent) const {
+        /*if (!element) return;
 
         // 1. Enforce the parent's positioning context
-        if (parent /*&& parent->GetProperty("position")->Get<int>() == Rml::Style::Position::Static*/) {
+        if (parent /*&& parent->GetProperty("position")->Get<int>() == Rml::Style::Position::Static#1#) {
             //parent->SetProperty("position", "relative");
         }
 
@@ -253,6 +246,6 @@ namespace TechEngine {
             TE_LOGGER_INFO("Setting Y position to: {0}%", std::to_string(m_anchorMin.y * 100));
             TE_LOGGER_INFO("Setting Y size to: {0}px", std::to_string(m_size.y));
             TE_LOGGER_INFO("Setting Y margin to: {0}px", std::to_string(m_anchoredPosition.y - (m_size.y * m_pivot.y)));
-        }
+        }*/
     }
 }

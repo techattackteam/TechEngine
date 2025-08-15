@@ -1,8 +1,6 @@
 #pragma once
 #include "Panel.hpp"
 
-#include <RmlUi/Core/Context.h>
-
 #include "UIUtils/Guizmo.hpp"
 
 
@@ -15,7 +13,6 @@ namespace TechEngine {
         SystemsRegistry& m_appSystemsRegistry;
 
         uint32_t m_frameBufferID = 0;
-        Rml::Context* m_context = nullptr;
         ImVec2 m_lastMousePosition;
         Guizmo guizmo;
 
@@ -44,10 +41,10 @@ namespace TechEngine {
     private:
         void drawHelperLines(ImVec2 imageTopLeft);
 
-        ImVec2 convertRmlToImGui(const Rml::Vector2f& rmlPos, const ImVec2& imageTopLeft, const ImVec2& imageSize);
+        /*ImVec2 convertRmlToImGui(const glm::vec2& rmlPos, const ImVec2& imageTopLeft, const ImVec2& imageSize);
 
-        ImVec2 convertRmlToEditorScreen(const Rml::Vector2f& rmlPos, const ImVec2& canvasTopLeft);
+        ImVec2 convertRmlToEditorScreen(const glm::vec2& rmlPos, const ImVec2& canvasTopLeft);
 
-        Rml::Vector2f convertEditorScreenToRml(const ImVec2& screenPos, const ImVec2& canvasTopLeft);
+        glm::vec2 convertEditorScreenToRml(const ImVec2& screenPos, const ImVec2& canvasTopLeft);*/
     };
 }

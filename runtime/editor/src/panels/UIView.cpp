@@ -24,7 +24,6 @@ namespace TechEngine {
 
     void UIView::onInit() {
         m_frameBufferID = m_appSystemsRegistry.getSystem<Renderer>().createFramebuffer(1080, 720);
-        m_context = m_appSystemsRegistry.getSystem<Renderer>().getUIContext();
     }
 
 
@@ -56,19 +55,19 @@ namespace TechEngine {
         if (gameViewSize.x > 0 && gameViewSize.y > 0 &&
             (frameBuffer.width != gameViewSize.x || frameBuffer.height != gameViewSize.y)) {
             frameBuffer.resize(gameViewSize.x, gameViewSize.y);
-            uiRenderer.setViewport(gameViewSize.x, gameViewSize.y);
+            //uiRenderer.setViewport(gameViewSize.x, gameViewSize.y);
         }
-        m_context->SetDimensions(Rml::Vector2i(gameViewSize.x, gameViewSize.y));
+        //m_context->SetDimensions(Rml::Vector2i(gameViewSize.x, gameViewSize.y));
 
         const float referenceHeight = 1080.0f;
         float dp_ratio = (gameViewSize.y > 0) ? (gameViewSize.y / referenceHeight) : 1.0f;
-        m_context->SetDensityIndependentPixelRatio(dp_ratio);
+        //m_context->SetDensityIndependentPixelRatio(dp_ratio);
 
 
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        m_context->Update();
+        //m_context->Update();
         frameBuffer.bind();
         uiRenderer.onUpdate();
         frameBuffer.unBind();
@@ -140,7 +139,7 @@ namespace TechEngine {
     }
 
     void UIView::drawHelperLines(ImVec2 imageTopLeft) {
-        ImVec2 imageSize = ImGui::GetItemRectSize();
+        /*ImVec2 imageSize = ImGui::GetItemRectSize();
 
         for (const auto& pair: m_uiEditor->getElementToWidgetMap()) {
             std::shared_ptr<Widget> widget = pair.second;
@@ -150,8 +149,8 @@ namespace TechEngine {
 
             glm::ivec4 color = (widget == m_uiEditor->getSelectedWidget()) ? glm::ivec4(0, 255, 0, 255) : glm::ivec4(255, 0, 0, 255);
 
-            Rml::Vector2f rmlPos = element->GetAbsoluteOffset(Rml::BoxArea::Border);
-            Rml::Vector2f rmlSize = element->GetBox().GetSize(Rml::BoxArea::Border);
+            glm::vec2 rmlPos = element->GetAbsoluteOffset(Rml::BoxArea::Border);
+            glm::vec2 rmlSize = element->GetBox().GetSize(Rml::BoxArea::Border);
 
             ImVec2 topLeft = convertRmlToImGui(rmlPos, imageTopLeft, imageSize);
             ImVec2 bottomRight = convertRmlToImGui(rmlPos + rmlSize, imageTopLeft, imageSize);
@@ -161,7 +160,7 @@ namespace TechEngine {
                 IM_COL32(color.r, color.g, color.b, color.a), 0.0f, ImDrawFlags_None, 1.5f);
             if (pair.second == m_uiEditor->getSelectedWidget()) {
                 // Draw pivot cross
-                Rml::Vector2f pivotOffset = {
+                glm::vec2 pivotOffset = {
                     rmlPos.x + widget->m_pivot.x * rmlSize.x,
                     rmlPos.y + widget->m_pivot.y * rmlSize.y
                 };
@@ -172,12 +171,12 @@ namespace TechEngine {
                     {pivotScreen.x, pivotScreen.y - 5}, {pivotScreen.x, pivotScreen.y + 5}, IM_COL32(255, 255, 0, 255));
 
                 // Draw anchor min/max (optional)
-                Rml::Vector2f parentSize = element->GetParentNode() ? element->GetParentNode()->GetBox().GetSize(Rml::BoxArea::Content) : Rml::Vector2f(1920, 1080); // Fallback
+                glm::vec2 parentSize = element->GetParentNode() ? element->GetParentNode()->GetBox().GetSize(Rml::BoxArea::Content) : glm::vec2(1920, 1080); // Fallback
 
-                Rml::Vector2f anchorMinPos = element->GetParentNode()->GetAbsoluteOffset() +
-                                             Rml::Vector2f(widget->m_anchorMin.x * parentSize.x, widget->m_anchorMin.y * parentSize.y);
-                Rml::Vector2f anchorMaxPos = element->GetParentNode()->GetAbsoluteOffset() +
-                                             Rml::Vector2f(widget->m_anchorMax.x * parentSize.x, widget->m_anchorMax.y * parentSize.y);
+                glm::vec2 anchorMinPos = element->GetParentNode()->GetAbsoluteOffset() +
+                                         glm::vec2(widget->m_anchorMin.x * parentSize.x, widget->m_anchorMin.y * parentSize.y);
+                glm::vec2 anchorMaxPos = element->GetParentNode()->GetAbsoluteOffset() +
+                                         glm::vec2(widget->m_anchorMax.x * parentSize.x, widget->m_anchorMax.y * parentSize.y);
 
                 ImVec2 anchorMin = convertRmlToImGui(anchorMinPos, imageTopLeft, imageSize);
                 ImVec2 anchorMax = convertRmlToImGui(anchorMaxPos, imageTopLeft, imageSize);
@@ -185,16 +184,16 @@ namespace TechEngine {
                 ImGui::GetForegroundDrawList()->AddRect(
                     anchorMin, anchorMax, IM_COL32(0, 128, 255, 128), 0.0f, ImDrawFlags_None, 1.0f);
             }
-        }
+        }*/
     }
 
 
-    ImVec2 UIView::convertRmlToImGui(const Rml::Vector2f& rmlPos, const ImVec2& imageTopLeft, const ImVec2& imageSize) {
-        // Get the context size
-        const Rml::Vector2f contextSize = Rml::Vector2f(m_context->GetDimensions());
+    /*ImVec2 UIView::convertRmlToImGui(const glm::vec2& rmlPos, const ImVec2& imageTopLeft, const ImVec2& imageSize) {
+        /#1#/ Get the context size
+        const glm::vec2 contextSize = glm::vec2(m_context->GetDimensions());
 
         // Normalize RML position to [0, 1] range
-        Rml::Vector2f normalized = {
+        glm::vec2 normalized = {
             rmlPos.x / contextSize.x,
             rmlPos.y / contextSize.y
         };
@@ -203,11 +202,11 @@ namespace TechEngine {
         return {
             imageTopLeft.x + normalized.x * imageSize.x,
             imageTopLeft.y + normalized.y * imageSize.y
-        };
+        };#1#
     }
 
-    ImVec2 UIView::convertRmlToEditorScreen(const Rml::Vector2f& rmlPos, const ImVec2& panelTopLeft) {
-        glm::vec2 gameViewSize = m_uiEditor->getGameView().getFrameBufferSize();
+    ImVec2 UIView::convertRmlToEditorScreen(const glm::vec2& rmlPos, const ImVec2& panelTopLeft) {
+        /*glm::vec2 gameViewSize = m_uiEditor->getGameView().getFrameBufferSize();
 
         // 1. Position on the canvas (0 to gameViewSize)
         float canvasX = rmlPos.x * m_zoom;
@@ -217,12 +216,13 @@ namespace TechEngine {
         return {
             panelTopLeft.x + m_panOffset.x + canvasX,
             panelTopLeft.y + m_panOffset.y + canvasY
-        };
+        };#1#
+        return vec2;
     }
 
     // You will need the inverse for mouse picking (e.g., to select a widget)
-    Rml::Vector2f UIView::convertEditorScreenToRml(const ImVec2& screenPos, const ImVec2& panelTopLeft) {
-        glm::vec2 gameViewSize = m_uiEditor->getGameView().getFrameBufferSize();
+    glm::vec2 UIView::convertEditorScreenToRml(const ImVec2& screenPos, const ImVec2& panelTopLeft) {
+        /*glm::vec2 gameViewSize = m_uiEditor->getGameView().getFrameBufferSize();
 
         // 1. Position relative to the panned canvas's top-left
         float canvasX = screenPos.x - panelTopLeft.x - m_panOffset.x;
@@ -232,6 +232,6 @@ namespace TechEngine {
         return {
             canvasX / m_zoom,
             canvasY / m_zoom
-        };
-    }
+        };#1#
+    }*/
 }
