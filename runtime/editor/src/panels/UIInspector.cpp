@@ -1,7 +1,5 @@
 #include "UIInspector.hpp"
 
-#include <RmlUi/Core/ElementDocument.h>
-#include <RmlUi/Core/ElementText.h>
 
 #include "ui/Widget.hpp"
 #include "imgui_stdlib.h"
@@ -108,11 +106,9 @@ namespace TechEngine {
                 ImGui::PopID();
             }
 
-            // --- APPLY CHANGES ---
-            // If any value in the inspector was changed, apply the new styles to the RmlUi element.
             if (changed) {
-                Rml::Element* parent = m_selectedWidget->m_rmlElement ? m_selectedWidget->m_rmlElement->GetParentNode() : nullptr;
-                m_selectedWidget->applyStyles(m_selectedWidget->m_rmlElement, parent);
+                //Widget* parent = m_selectedWidget.get() ? m_selectedWidget. : nullptr;
+                m_selectedWidget->applyStyles(m_selectedWidget.get(), nullptr); // This will bite me later but lets leave it for now to compile
             }
         }
 
@@ -126,7 +122,7 @@ namespace TechEngine {
             ImGui::Text("%s", property.name.c_str());
 
             if (property.type == "color") {
-                Rml::Colourb currentColor = m_selectedWidget->m_rmlElement->GetProperty<Rml::Colourb>(property.rcssProperty);
+                /*//Rml::Colourb currentColor = m_selectedWidget->m_rmlElement->GetProperty<Rml::Colourb>(property.rcssProperty);
 
                 float colorsFloat[4] = {
                     static_cast<float>(currentColor.red) / 255.f,
@@ -146,10 +142,10 @@ namespace TechEngine {
                     TE_LOGGER_INFO("Setting color property '{0}' to '{1}'", property.name, color);
                     //m_selectedWidget->m_rmlElement->SetProperty(property.rcssProperty, color);
                     //property.onChange(color);
-                }
+                }*/
             } else if (property.type == "string" /*&& property.target == "text-content"*/) {
-                std::string text;
-                Rml::ElementText* targetElement = dynamic_cast<Rml::ElementText*>(m_selectedWidget->m_rmlElement);
+                //std::string text;
+                //Rml::ElementText* targetElement = dynamic_cast<Rml::ElementText*>(m_selectedWidget->m_rmlElement);
                 //targetElement = m_selectedWidget->m_rmlElement->GetElementById("label");
                 //std::string current = targetElement->GetText();
                 //TE_LOGGER_INFO("Current text content: {}", current.c_str());

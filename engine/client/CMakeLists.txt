@@ -3,7 +3,6 @@ file(GLOB_RECURSE ENGINE_CLIENT_HEADERS "src/*.hpp")
 
 find_package(glew REQUIRED)
 find_package(glfw REQUIRED)
-find_package(RmlUI REQUIRED)
 
 add_library(TechEngineClient SHARED ${ENGINE_CLIENT_SRC} ${ENGINE_CLIENT_HEADERS} "src/renderer/ui/stb_image.h")
 
@@ -11,8 +10,8 @@ target_compile_definitions(TechEngineClient PRIVATE TECH_ENGINE_CLIENT_EXPORT TE
 
 target_include_directories(TechEngineClient PUBLIC src)
 
-target_link_libraries(TechEngineClient PUBLIC TechEngineCore glew glfw RmlUi::Core)
-#target_compile_definitions(TechEngineClient PUBLIC RMLUI_STATIC_LIB)
+target_link_libraries(TechEngineClient PUBLIC TechEngineCore glew glfw)
+
 #Setup target's output directory
 if (WIN32) # WINDOWS
     set(OUTPUT "${PROJECT_SOURCE_DIR}/bin/engine/client")

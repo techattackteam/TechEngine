@@ -215,10 +215,6 @@ namespace TechEngine {
         return shadersManager;
     }
 
-    Rml::Context* Renderer::getUIContext() {
-        return uiRenderer.getContext();
-    }
-
     UIRenderer& Renderer::getUIRenderer() {
         return uiRenderer;
     }

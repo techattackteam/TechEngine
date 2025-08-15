@@ -44,7 +44,6 @@ namespace TechEngine {
                 for (const auto& prop: properties) {
                     WidgetProperty property;
                     property.name = prop.at("name").get<std::string>();
-                    property.rcssProperty = prop.at("rcss_property").get<std::string>();
                     property.type = prop.at("type").get<std::string>();
                     if (prop.contains("default")) {
                         property.defaultValue = prop.at("default").get<std::string>();

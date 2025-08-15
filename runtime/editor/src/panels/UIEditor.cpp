@@ -1,15 +1,10 @@
 #include "UIEditor.hpp"
 
 
-#include "renderer/FrameBuffer.hpp"
 #include "renderer/Renderer.hpp"
-#include "systems/SystemsRegistry.hpp"
 #include "sceneView.hpp"
 
 #include <imgui_internal.h>
-#include <RmlUi/Core/Context.h>
-#include <RmlUi/Core/ElementDocument.h>
-#include <RmlUi/Core/Factory.h>
 
 namespace TechEngine {
     UIEditor::UIEditor(SystemsRegistry& editorSystemsRegistry,
@@ -18,21 +13,11 @@ namespace TechEngine {
                                              m_uiView(editorSystemsRegistry, appSystemsRegistry, this),
                                              m_uiHierarchy(editorSystemsRegistry, appSystemsRegistry),
                                              m_uiInspector(editorSystemsRegistry), m_gameView(gameView),
-                                             m_appSystemsRegistry(appSystemsRegistry),
-                                             m_context(nullptr) {
+                                             m_appSystemsRegistry(appSystemsRegistry) {
         m_styleVars.emplace_back(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     }
 
     void UIEditor::onInit() {
-        m_context = m_appSystemsRegistry.getSystem<Renderer>().getUIContext();
-        if (m_context) {
-            Rml::ElementDocument* doc = m_context->GetDocument(0);
-            if (!doc) {
-                TE_LOGGER_ERROR("UIEditor: No RmlUi document found in the context.");
-                return;
-            }
-        }
-        m_document = m_context->GetDocument(0);
         m_uiHierarchy.setEditor(this);
         m_uiHierarchy.init("UI Hierarchy", &m_dockSpaceWindowClass);
         m_uiView.init("UI View", &m_dockSpaceWindowClass);
@@ -47,8 +32,9 @@ namespace TechEngine {
         m_uiView.update();
     }
 
-    std::shared_ptr<Widget> UIEditor::createWidget(Rml::Element* parent, const std::string& name, bool base) {
-        std::shared_ptr<Widget> widget; // Assuming this function creates a widget and returns a pointer to it
+    std::shared_ptr<Widget> UIEditor::createWidget(Widget* parent, const std::string& name, bool base) {
+        return nullptr;
+        /*std::shared_ptr<Widget> widget; // Assuming this function creates a widget and returns a pointer to it
 
         Rml::ElementPtr elementPtr;
         if (base) {
@@ -95,7 +81,7 @@ namespace TechEngine {
                     Rml::Element* child = otherElement->GetChild(0);
                     elementPtr->AppendChild(otherElement->RemoveChild(child));
                 }
-                m_context->Update();*/
+                m_context->Update();#1#
             }
         } else {
             elementPtr = Rml::Factory::InstanceElement(parent, "div", "div", Rml::XMLAttributes());
@@ -175,11 +161,12 @@ namespace TechEngine {
         widget->applyStyles(element, parent);
         m_context->Update();
         TE_LOGGER_INFO("Element Top: {0}", element->GetAbsoluteTop());
-        return widget;
+        return widget;*/
     }
 
     bool UIEditor::deleteWidget(const std::shared_ptr<Widget>& widget) {
-        if (!widget || !widget->getRmlElement()) {
+        return false;
+        /*if (!widget || !widget->getRmlElement()) {
             TE_LOGGER_ERROR("UIEditor: Cannot delete widget, widget or its Rml element is null.");
             return false;
         }
@@ -207,7 +194,7 @@ namespace TechEngine {
                 TE_LOGGER_ERROR("UIEditor: Parent widget not found for widget '{0}'.", widget->getName());
                 return false;
             }
-        }
+        }*/
     }
 
     void UIEditor::setSelectedWidget(const std::shared_ptr<Widget>& widget) {
@@ -235,24 +222,6 @@ namespace TechEngine {
         ImGui::DockBuilderFinish(m_dockSpaceID);
     }
 
-
-    void UIEditor::loadRmlDocument(const std::string& path) {
-        if (!m_context) {
-            TE_LOGGER_ERROR("Cannot load RML document: UI Context is null.");
-            return;
-        }
-        //m_context->UnloadAllDocuments(); // Unload previous document if any
-        //Rml::ElementDocument* doc = m_context->LoadDocument(path);
-        //if (doc) {
-        //    doc->Show();
-        //    // doc->RemoveReference(); // Context owns it
-        //    m_currentRmlDocumentPath = path;
-        //    TE_LOGGER_INFO("InteractiveUIEditorPanel: Loaded RML document '%s' into editor context.", path.c_str());
-        //} else {
-        //    TE_LOGGER_ERROR("InteractiveUIEditorPanel: Failed to load RML document '%s'.", path.c_str());
-        //    m_currentRmlDocumentPath.clear();
-        //}
-    }
 
     /*void UIEditor::drawRmlElementInHierarchy(Rml::Element* element) {
         if (!element) return;
@@ -305,8 +274,4 @@ namespace TechEngine {
             ImGui::TreePop();
         }
     }*/
-
-    const std::unordered_map<Rml::Element*, std::shared_ptr<Widget>>& UIEditor::getElementToWidgetMap() {
-        return m_elementToWidgetMap;
-    }
 }

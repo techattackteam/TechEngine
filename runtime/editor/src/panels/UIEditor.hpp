@@ -6,7 +6,6 @@
 #include "UIInspector.hpp"
 #include "ui/WidgetsRegistry.hpp"
 
-#include <RmlUi/Core/Element.h>
 
 namespace TechEngine {
     class GameView;
@@ -20,13 +19,9 @@ namespace TechEngine {
         GameView& m_gameView;
 
         SystemsRegistry& m_appSystemsRegistry;
-        Rml::Context* m_context;
-
-        Rml::ElementDocument* m_document;
 
     public:
         std::shared_ptr<Widget> m_selectedWidget = nullptr;
-        std::unordered_map<Rml::Element*, std::shared_ptr<Widget>> m_elementToWidgetMap;
 
         UIEditor(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& appSystemsRegistry, GameView& sceneView);
 
@@ -34,7 +29,7 @@ namespace TechEngine {
 
         void onUpdate() override;
 
-        std::shared_ptr<Widget> createWidget(Rml::Element* parent, const std::string& name, bool base);
+        std::shared_ptr<Widget> createWidget(Widget* parent, const std::string& name, bool base);
 
         bool deleteWidget(const std::shared_ptr<Widget>& widget);
 
@@ -43,8 +38,6 @@ namespace TechEngine {
         std::shared_ptr<Widget> getSelectedWidget() const {
             return m_selectedWidget;
         }
-
-        const std::unordered_map<Rml::Element*, std::shared_ptr<Widget>>& getElementToWidgetMap();
 
         const WidgetsRegistry& getWidgetsRegistry() const {
             return m_widgetsRegistry;
@@ -58,6 +51,5 @@ namespace TechEngine {
         void setupInitialDockingLayout() override;
 
     private:
-        void loadRmlDocument(const std::string& path);
     };
 }

@@ -5,14 +5,12 @@
 #include "systems/SystemsRegistry.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
 
-#include <RmlUi/Core/ElementDocument.h>
 
 namespace TechEngine {
     UIHierarchyPanel::UIHierarchyPanel(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& appSystemsRegistry) : Panel(editorSystemsRegistry), m_appSystemsRegistry(appSystemsRegistry) {
     }
 
     void UIHierarchyPanel::onInit() {
-        m_context = m_appSystemsRegistry.getSystem<Renderer>().getUIContext();
     }
 
     void UIHierarchyPanel::onUpdate() {
@@ -21,7 +19,7 @@ namespace TechEngine {
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f)); // Compact frame padding
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 10.0f); // Reduce indentation
 
-        for (int i = 0; i < m_context->GetNumDocuments(); ++i) {
+        /*for (int i = 0; i < m_context->GetNumDocuments(); ++i) {
             Rml::ElementDocument* doc = m_context->GetDocument(i);
             if (!doc) {
                 continue;
@@ -29,7 +27,7 @@ namespace TechEngine {
             for (int child_idx = 0; child_idx < doc->GetNumChildren(); ++child_idx) {
                 drawWidgetNode(doc->GetChild(child_idx));
             }
-        }
+        }*/
         ImGui::PopStyleVar(3);
 
         ImGui::Dummy(ImGui::GetContentRegionAvail());
@@ -74,8 +72,8 @@ namespace TechEngine {
         m_editor = editor;
     }
 
-    void UIHierarchyPanel::moveWidget(const std::shared_ptr<Widget>& childWidget, Rml::Element* newParent, int newIndex) {
-        if (!childWidget || !newParent) return;
+    void UIHierarchyPanel::moveWidget(const std::shared_ptr<Widget>& childWidget, Widget* newParent, int newIndex) {
+        /*if (!childWidget || !newParent) return;
         Rml::Element* childElement = childWidget->getRmlElement();
         if (!childElement) return;
         Rml::Element* oldParent = childElement->GetParentNode();
@@ -141,11 +139,11 @@ namespace TechEngine {
             childWidget->applyStyles(childElement, newParent);
         }
 
-        m_widgetsOrder.clear();
+        m_widgetsOrder.clear();*/
     }
 
-    void UIHierarchyPanel::drawWidgetNode(Rml::Element* element) {
-        if (!element) return;
+    void UIHierarchyPanel::drawWidgetNode(Widget* element) {
+        /*if (!element) return;
         ImGuiStyle& style = ImGui::GetStyle();
         std::shared_ptr<Widget> widget = nullptr;
 
@@ -306,6 +304,6 @@ namespace TechEngine {
                 drawWidgetNode(element->GetChild(i));
             }
             ImGui::TreePop();
-        }
+        }*/
     }
 }
