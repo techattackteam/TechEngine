@@ -11,7 +11,8 @@ uniform bool uUseTexture;
 void main()
 {
     if (uUseTexture) {
-        FragColor = texture(uTexture, vTexCoords) * vColor;
+        float alpha = texture(uTexture, vTexCoords).r;
+        FragColor = vec4(vColor.rgb, vColor.a * alpha);
     } else {
         FragColor = vColor;
     }
