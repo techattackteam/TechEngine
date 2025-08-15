@@ -4,7 +4,7 @@ file(GLOB_RECURSE ENGINE_CLIENT_HEADERS "src/*.hpp")
 find_package(glew REQUIRED)
 find_package(glfw REQUIRED)
 
-add_library(TechEngineClient SHARED ${ENGINE_CLIENT_SRC} ${ENGINE_CLIENT_HEADERS} "src/renderer/ui/stb_image.h")
+add_library(TechEngineClient SHARED ${ENGINE_CLIENT_SRC} ${ENGINE_CLIENT_HEADERS} "src/renderer/ui/stb_image.h" "src/renderer/ui/stb_truetype.h")
 
 target_compile_definitions(TechEngineClient PRIVATE TECH_ENGINE_CLIENT_EXPORT TECH_ENGINE_CORE_EXPORT)
 

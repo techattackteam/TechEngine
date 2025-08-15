@@ -130,9 +130,14 @@ namespace TechEngine {
     }
 
     void Renderer::uiPass() {
+        uiRenderer.beginFrame();
         uiRenderer.drawRectangle({100, 100}, {200, 150}, {1.0f, 0.0f, 0.0f, 1.0f});
+        uiRenderer.drawText(uiRenderer.m_defaultFont, "Hello, World!", {110, 150}, {1.0f, 1.0f, 1.0f, 1.0f});
+
         uiRenderer.drawRectangle({400, 200}, {50, 50}, {0.0f, 1.0f, 0.0f, 0.5f});
-        uiRenderer.onUpdate();
+        uiRenderer.drawText(uiRenderer.m_defaultFont, "This is a Test.", {400, 300}, {1.0f, 1.0f, 0.0f, 1.0f});
+
+        uiRenderer.endFrame();
     }
 
     void Renderer::linePass(Camera& camera) {

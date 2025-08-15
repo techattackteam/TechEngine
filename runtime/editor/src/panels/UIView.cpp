@@ -69,7 +69,8 @@ namespace TechEngine {
 
         //m_context->Update();
         frameBuffer.bind();
-        uiRenderer.onUpdate();
+        uiRenderer.beginFrame();
+        uiRenderer.endFrame();
         frameBuffer.unBind();
 
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
