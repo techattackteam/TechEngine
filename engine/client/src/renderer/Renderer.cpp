@@ -15,7 +15,7 @@
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
-    void Renderer::init(bool initGUI) {
+    void Renderer::init() {
         shadersManager.init();
         vertexArrays[BufferGameObjects] = new VertexArray();
         vertexBuffers[BufferGameObjects] = new VertexBuffer();
@@ -31,7 +31,7 @@ namespace TechEngine {
         vertexBuffers[BufferLines]->init(10000000 * sizeof(Line));
         vertexArrays[BufferLines]->addNewLinesBuffer(*vertexBuffers[BufferLines]);
         glEnable(GL_DEPTH_TEST);
-        uiRenderer.init(initGUI);
+        uiRenderer.init();
     }
 
     void Renderer::shutdown() {
@@ -130,6 +130,8 @@ namespace TechEngine {
     }
 
     void Renderer::uiPass() {
+        uiRenderer.drawRectangle({100, 100}, {200, 150}, {1.0f, 0.0f, 0.0f, 1.0f});
+        uiRenderer.drawRectangle({400, 200}, {50, 50}, {0.0f, 1.0f, 0.0f, 0.5f});
         uiRenderer.onUpdate();
     }
 

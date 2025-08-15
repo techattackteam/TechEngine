@@ -1,11 +1,12 @@
 #pragma once
-#include <string>
-#include <vector>
 
 #include "Widget.hpp"
 
+#include <string>
+#include <vector>
+
 namespace TechEngine {
-    class WidgetsRegistry {
+    class CLIENT_DLL WidgetsRegistry {
     public:
         bool loadJson(const std::string& jsonFilePath, bool base);
 

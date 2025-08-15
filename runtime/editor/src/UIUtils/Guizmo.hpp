@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "components/Components.hpp"
-#include "../ui/Widget.hpp"
+#include "ui/Widget.hpp"
 
 namespace TechEngine {
     class SystemsRegistry;

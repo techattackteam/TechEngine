@@ -63,7 +63,6 @@ namespace TechEngine {
     }
 
 
-
     void Panel::processInput() {
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigWindowsMoveFromTitleBarOnly = true;
@@ -77,7 +76,7 @@ namespace TechEngine {
             const float padding = 10.0f;
 
             ImVec2 draggingZoneMin = {window->Pos.x - padding, window->Pos.y + titleBarHeight};
-            ImVec2 draggingZoneMax = {window->Pos.x + window->Size.x - padding, ImGui::GetContentRegionMax().y - padding};
+            ImVec2 draggingZoneMax = {window->Pos.x + ImGui::GetContentRegionMax().x - padding, window->Pos.y + ImGui::GetContentRegionMax().y - padding};
             ImVec2 mousePos = ImGui::GetMousePos();
 
             bool isOnDraggingZone = (mousePos.x >= draggingZoneMin.x && mousePos.x <= draggingZoneMax.x &&
