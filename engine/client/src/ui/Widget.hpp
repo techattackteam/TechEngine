@@ -9,6 +9,8 @@
 #include <glm/glm.hpp>
 
 namespace TechEngine {
+    class UIRenderer;
+
     struct CLIENT_DLL WidgetProperty {
         std::string name;
         std::string type;
@@ -78,11 +80,16 @@ namespace TechEngine {
 
         //glm::vec2 m_position;
         //glm::vec2 m_size;
+        std::shared_ptr<Widget> m_parent;
         std::vector<WidgetProperty> m_properties;
-        std::vector<std::string> m_childrenTypes; // Types of children this widget can have, e.g., "Button", "Text", etc.
+        std::vector<std::string> m_childrenTypes;
         std::vector<std::shared_ptr<Widget>> m_children; // Children widgets
 
+    protected:
+
     public:
+        glm::vec4 m_finalScreenRect = {0.0f, 0.0f, 0.0f, 0.0f};
+
         explicit Widget();
 
         // Copy constructor for Widget, useful for creating a new widget based on an existing one
@@ -90,11 +97,13 @@ namespace TechEngine {
 
         virtual ~Widget() = default;
 
-        void setAnchorsFromPreset();
+        virtual void update(float deltaTime);
+
+        virtual void draw(UIRenderer& renderer);
+
+        void calculateLayout(const glm::vec4& parentScreenRect);
 
         void rename(const std::string& name);
-
-        void applyStyles(Widget* element, Widget* parent) const;
 
         const std::string& getName() const {
             return m_name;
@@ -107,5 +116,8 @@ namespace TechEngine {
         virtual std::vector<WidgetProperty>& getProperties() {
             return m_properties;
         }
+
+    private:
+        void setAnchorsFromPreset();
     };
 }

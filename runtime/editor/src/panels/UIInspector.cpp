@@ -37,7 +37,7 @@ namespace TechEngine {
                 if (ImGui::Combo("Anchor Preset", &currentPreset, anchorPresetNames, IM_ARRAYSIZE(anchorPresetNames))) {
                     m_selectedWidget->m_preset = static_cast<Widget::AnchorPreset>(currentPreset);
                     // When the preset changes, we need to update the underlying anchor values
-                    m_selectedWidget->setAnchorsFromPreset();
+                    //m_selectedWidget->setAnchorsFromPreset();
                     changed = true;
                 }
                 if (ImGui::IsItemHovered()) {
@@ -108,7 +108,7 @@ namespace TechEngine {
 
             if (changed) {
                 //Widget* parent = m_selectedWidget.get() ? m_selectedWidget. : nullptr;
-                m_selectedWidget->applyStyles(m_selectedWidget.get(), nullptr); // This will bite me later but lets leave it for now to compile
+                //m_selectedWidget->applyStyles(m_selectedWidget.get(), nullptr); // This will bite me later but lets leave it for now to compile
             }
         }
 

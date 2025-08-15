@@ -31,10 +31,10 @@ namespace TechEngine {
 
         uint32_t m_maxVertices = 30000; // Ideally is infinit but we limit it for performance
         glm::mat4 m_projection;
-        int m_screenWidth = 0;
-        int m_screenHeight = 0;
 
     public:
+        int m_screenWidth = 0;
+        int m_screenHeight = 0;
         Font* m_defaultFont = nullptr;
 
         UIRenderer(SystemsRegistry& systemsRegistry);
