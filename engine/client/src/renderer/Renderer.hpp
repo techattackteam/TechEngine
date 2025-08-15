@@ -37,7 +37,7 @@ namespace TechEngine {
 
         ~Renderer();
 
-        void init(bool initGUI = true);
+        void init();
 
         void shutdown() override;
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/ExportDLL.hpp"
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -7,7 +9,7 @@
 #include <glm/glm.hpp>
 
 namespace TechEngine {
-    struct WidgetProperty {
+    struct CLIENT_DLL WidgetProperty {
         std::string name;
         std::string type;
         std::string defaultValue;
@@ -16,7 +18,7 @@ namespace TechEngine {
         OnChangeCallback onChange;
     };
 
-    class Widget {
+    class CLIENT_DLL Widget {
     public:
         enum class AnchorPreset {
             // Top Left Corner

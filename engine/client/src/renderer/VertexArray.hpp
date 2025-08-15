@@ -17,6 +17,8 @@ namespace TechEngine {
 
         void addNewLinesBuffer(const VertexBuffer &vertexBuffer) const;
 
+        void addNewUIBuffer(const VertexBuffer& vertexBuffer) const;
+
         void bind() const;
 
         void unBind() const;

@@ -55,7 +55,7 @@ namespace TechEngine {
         if (gameViewSize.x > 0 && gameViewSize.y > 0 &&
             (frameBuffer.width != gameViewSize.x || frameBuffer.height != gameViewSize.y)) {
             frameBuffer.resize(gameViewSize.x, gameViewSize.y);
-            //uiRenderer.setViewport(gameViewSize.x, gameViewSize.y);
+            uiRenderer.setViewport(gameViewSize.x, gameViewSize.y);
         }
         //m_context->SetDimensions(Rml::Vector2i(gameViewSize.x, gameViewSize.y));
 
