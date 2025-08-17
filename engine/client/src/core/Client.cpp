@@ -5,6 +5,7 @@
 #include "input/Input.hpp"
 #include "project/Project.hpp"
 #include "renderer/Renderer.hpp"
+#include "ui/WidgetsRegistry.hpp"
 
 namespace TechEngine {
     Client::Client() : m_entry(m_systemRegistry) {
@@ -16,12 +17,14 @@ namespace TechEngine {
         Core::registerSystems(rootPath);
         m_systemRegistry.registerSystem<AudioSystem>(m_systemRegistry);
         m_systemRegistry.registerSystem<Renderer>(m_systemRegistry);
+        m_systemRegistry.registerSystem<WidgetsRegistry>();
     }
 
     void Client::init() {
         Core::init(AppType::Client);
         m_systemRegistry.getSystem<Renderer>().init();
         m_systemRegistry.getSystem<AudioSystem>().init();
+        m_systemRegistry.getSystem<WidgetsRegistry>().init();
     }
 
     void Client::onStart() {

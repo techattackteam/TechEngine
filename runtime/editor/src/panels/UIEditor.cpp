@@ -1,8 +1,10 @@
 #include "UIEditor.hpp"
 
-
 #include "renderer/Renderer.hpp"
 #include "sceneView.hpp"
+#include "ui/ContainerWidget.hpp"
+#include "ui/PanelWidget.hpp"
+#include "ui/TextWidget.hpp"
 
 #include <imgui_internal.h>
 
@@ -22,8 +24,7 @@ namespace TechEngine {
         m_uiHierarchy.init("UI Hierarchy", &m_dockSpaceWindowClass);
         m_uiView.init("UI View", &m_dockSpaceWindowClass);
         m_uiInspector.init("UI Inspector", &m_dockSpaceWindowClass);
-        m_widgetsRegistry.loadJson("C:\\dev\\TechEngine\\bin\\runtime\\editor\\debug\\New Project\\resources\\client\\assets\\ui\\baseWidgets.json", true);
-        m_widgetsRegistry.loadJson("C:\\dev\\TechEngine\\bin\\runtime\\editor\\debug\\New Project\\resources\\client\\assets\\ui\\widgets.json", false);
+        //m_widgetsRegistry.loadJson("C:\\dev\\TechEngine\\bin\\runtime\\editor\\debug\\New Project\\resources\\client\\assets\\ui\\baseWidgets.json", true);
     }
 
     void UIEditor::onUpdate() {
@@ -32,136 +33,23 @@ namespace TechEngine {
         m_uiView.update();
     }
 
-    std::shared_ptr<Widget> UIEditor::createWidget(Widget* parent, const std::string& name, bool base) {
-        return nullptr;
-        /*std::shared_ptr<Widget> widget; // Assuming this function creates a widget and returns a pointer to it
-
-        Rml::ElementPtr elementPtr;
-        if (base) {
-            if (name == "Label") {
-                //elementPtr = Rml::Factory::InstanceElement(parent, "div", "div", Rml::XMLAttributes());
-                //elementPtr->SetProperty("position", "absolute");
-                //elementPtr->SetProperty("align-self", "center");
-                //elementPtr->SetProperty("transform-origin-x", "center");
-                //elementPtr->SetProperty("transform-origin-y", "center");
-                //elementPtr->SetProperty("font-size", "18px");
-                //elementPtr->SetProperty("font-weight", "bold");
-                //elementPtr->SetProperty("font-family", "Lato");
-
-                //auto text = Rml::Factory::InstanceElement(parent, "#text", "text", Rml::XMLAttributes());
-                //dynamic_cast<Rml::ElementText*>(elementPtr.get())->SetText("Hello World!");
-                //elementPtr->AppendChild(std::move(text));
-                elementPtr = Rml::Factory::InstanceElement(nullptr, "div", "div", Rml::XMLAttributes());
-                elementPtr->SetProperty("position", "absolute");
-                elementPtr->SetProperty("align-self", "center");
-                elementPtr->SetProperty("transform-origin-x", "center");
-                elementPtr->SetProperty("transform-origin-y", "center");
-                elementPtr->SetProperty("background-color", "#ffffffff");
-                elementPtr->SetProperty("color", "#0000ffff");
-                elementPtr->SetProperty("font-size", "18px");
-                elementPtr->SetProperty("font-weight", "bold");
-                elementPtr->SetProperty("font-family", "Lato");
-                elementPtr->SetInnerRML("Hello World!");
-            } else {
-                elementPtr = Rml::Factory::InstanceElement(parent, "div", "div", Rml::XMLAttributes());
-                elementPtr->SetProperty("position", "absolute");
-                elementPtr->SetProperty("align-self", "center");
-                elementPtr->SetProperty("transform-origin-x", "center");
-                elementPtr->SetProperty("transform-origin-y", "center");
-                elementPtr->SetProperty("background-color", "#ffffffff");
-                elementPtr->SetProperty("color", "#0000ffff");
-                elementPtr->SetProperty("font-size", "18px");
-                elementPtr->SetProperty("font-weight", "bold");
-                elementPtr->SetProperty("font-family", "Lato");
-
-
-                /*auto it = m_elementToWidgetMap.begin();
-                auto otherElement = it != m_elementToWidgetMap.end() ? it->first : nullptr;
-                while (otherElement->GetNumChildren() > 0) {
-                    Rml::Element* child = otherElement->GetChild(0);
-                    elementPtr->AppendChild(otherElement->RemoveChild(child));
-                }
-                m_context->Update();#1#
-            }
-        } else {
-            elementPtr = Rml::Factory::InstanceElement(parent, "div", "div", Rml::XMLAttributes());
-            elementPtr->SetProperty("position", "absolute"); // Set the ID of the element to the widget's name
-            elementPtr->SetProperty("display", "flex");
-            elementPtr->SetProperty("justify-content", "center"); // horizontal
-            elementPtr->SetProperty("align-items", "center"); // vertical
-        }
-
-        elementPtr->SetProperty("width", "100%");
-        elementPtr->SetProperty("height", "100%");
-        Rml::Element* element = elementPtr.get();
-        if (!elementPtr) {
-            //Rml::Log::Message(Rml::Log::LT_ERROR, "Failed to create Rml::Element for widget: %s", newWidget->getRmlTag());
-            return nullptr; // Handle error if element creation fails
-        }
-
-        if (base) {
-            widget = m_widgetsRegistry.createBaseWidget(name);
-        } else {
-            widget = m_widgetsRegistry.createWidget(name);
-            for (const auto& childType: widget->m_childrenTypes) {
-                std::shared_ptr<Widget> childWidget = createWidget(element, childType, true); // Create child widget
-                if (childWidget) {
-                    widget->m_children.push_back(childWidget);
-                } else {
-                    TE_LOGGER_ERROR("Failed to create child widget of type: {0}", childType.c_str());
-                }
-            }
-        }
-
-        widget->setRmlElement(elementPtr.get());
-        if (parent != nullptr) {
-            element = parent->AppendChild(std::move(elementPtr));
-        } else {
-            element = m_document->AppendChild(std::move(elementPtr));
-        }
-
-        widget->setRmlElement(element);
-        for (auto& property: widget->getProperties()) {
-            property.onChange = [this, &property, widget](const std::string& value) {
-                widget->m_rmlElement->SetProperty(property.rcssProperty, value);
-            };
-        }
-        m_elementToWidgetMap[element] = widget;
-        std::vector<WidgetProperty> properties = widget->getProperties();
-        for (auto& prop: properties) {
-            if (prop.type == "int") {
-                prop.onChange(prop.defaultValue); // Convert string to int
-            } else if (prop.type == "float") {
-                prop.onChange(prop.defaultValue);
-            } else if (prop.type == "bool") {
-                prop.onChange(prop.defaultValue); // Convert string to bool
-            } else if (prop.type == "string") {
-                //dynamic_cast<Rml::ElementText*>(element)->SetText(prop.defaultValue);
-            } else if (prop.type == "vector2f") {
-                Rml::Vector2f vec;
-                sscanf_s(prop.defaultValue.c_str(), "%f,%f", &vec.x, &vec.y);
-                //prop.onChange(vec);
-            } else if (prop.type == "vector3f") {
-                Rml::Vector3f vec;
-                sscanf_s(prop.defaultValue.c_str(), "%f,%f,%f", &vec.x, &vec.y, &vec.z);
-                //prop.onChange(vec);
-            } else if (prop.type == "color") {
-                std::stringstream ss;
-                ss << '#' << std::hex << std::setfill('0')
-                        << std::setw(2) << std::lround(255)
-                        << std::setw(2) << std::lround(255)
-                        << std::setw(2) << std::lround(255)
-                        << std::setw(2) << std::lround(255);
-                std::string color = ss.str();
-                //prop.onChange(color);
-            }
-        }
-
-
-        widget->applyStyles(element, parent);
-        m_context->Update();
-        TE_LOGGER_INFO("Element Top: {0}", element->GetAbsoluteTop());
-        return widget;*/
+    std::shared_ptr<Widget> UIEditor::createWidget(const std::shared_ptr<Widget>& parent, const std::string& type, const std::string& name) {
+        std::shared_ptr<Widget> widget;
+        if (type == "Container") {
+            widget = std::make_shared<ContainerWidget>();
+        } else if (type == "Panel") {
+            widget = std::make_shared<PanelWidget>();
+        } else if (type == "Text") {
+            widget = std::make_shared<TextWidget>();
+        } /*else if (type == "Button") {
+            widget = std::make_shared<ButtonWidget>();
+        } else if (type == "Image") {
+            widget = std::make_shared<ImageWidget>();
+        }*/
+        widget->m_parent = parent;
+        widget->rename(name);
+        getWidgetsRegistry().getWidgets().emplace_back(widget);
+        return widget;
     }
 
     bool UIEditor::deleteWidget(const std::shared_ptr<Widget>& widget) {

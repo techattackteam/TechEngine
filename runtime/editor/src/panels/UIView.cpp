@@ -29,8 +29,9 @@ namespace TechEngine {
 
     void UIView::onUpdate() {
         glm::vec2 gameViewSize = m_uiEditor->getGameView().getFrameBufferSize();
+        Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
         FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(m_frameBufferID);
-        UIRenderer& uiRenderer = m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer();
+        frameBuffer.bind();
 
         if (m_isPanelHovered && m_pendingScrollY != 0.0f) {
             float oldZoom = m_zoom;
@@ -55,7 +56,7 @@ namespace TechEngine {
         if (gameViewSize.x > 0 && gameViewSize.y > 0 &&
             (frameBuffer.width != gameViewSize.x || frameBuffer.height != gameViewSize.y)) {
             frameBuffer.resize(gameViewSize.x, gameViewSize.y);
-            uiRenderer.setViewport(gameViewSize.x, gameViewSize.y);
+            renderer.getUIRenderer().setViewport(gameViewSize.x, gameViewSize.y);
         }
         //m_context->SetDimensions(Rml::Vector2i(gameViewSize.x, gameViewSize.y));
 
@@ -67,11 +68,8 @@ namespace TechEngine {
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        //m_context->Update();
-        frameBuffer.bind();
-        uiRenderer.beginFrame();
-        uiRenderer.endFrame();
-        frameBuffer.unBind();
+
+        renderer.uiPass();
 
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
         ImVec2 canvasSize = {(float)gameViewSize.x, (float)gameViewSize.y};
@@ -94,6 +92,7 @@ namespace TechEngine {
         ImVec2 imageSize = ImGui::GetItemRectSize();
         guizmo.editUI(imageTopLeft, imageSize, m_uiEditor->getSelectedWidget());
         //drawHelperLines(imageTopLeft);
+        frameBuffer.unBind();
     }
 
     /*void UIView::onKeyPressedEvent(Key& key) {

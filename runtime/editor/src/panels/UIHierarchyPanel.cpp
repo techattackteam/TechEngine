@@ -18,16 +18,17 @@ namespace TechEngine {
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 2.0f)); // Adjust spacing between items
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f)); // Compact frame padding
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 10.0f); // Reduce indentation
-
-        /*for (int i = 0; i < m_context->GetNumDocuments(); ++i) {
-            Rml::ElementDocument* doc = m_context->GetDocument(i);
-            if (!doc) {
-                continue;
+        for (const std::shared_ptr<Widget>& widget: m_editor->getWidgetsRegistry().getWidgets()) {
+            if (widget) {
+                ImGui::PushID(widget.get());
+                drawWidgetNode(widget);
+                if (ImGui::IsItemHovered()) {
+                    m_isWidgetHovered = true;
+                    ImGui::SetTooltip("Widget: %s\nType: %s", widget->m_name.c_str(), widget->m_category.c_str());
+                }
+                ImGui::PopID();
             }
-            for (int child_idx = 0; child_idx < doc->GetNumChildren(); ++child_idx) {
-                drawWidgetNode(doc->GetChild(child_idx));
-            }
-        }*/
+        }
         ImGui::PopStyleVar(3);
 
         ImGui::Dummy(ImGui::GetContentRegionAvail());
@@ -37,21 +38,26 @@ namespace TechEngine {
         }
 
         if (!m_isWidgetHovered && ImGui::BeginPopupContextWindow("Widget Creation", 1)) {
-            if (ImGui::BeginMenu("Base Widgets")) {
-                for (const Widget& widget: m_editor->getWidgetsRegistry().getBaseWidgets()) {
-                    if (ImGui::MenuItem(widget.getName().c_str())) {
-                        ImGui::Text("%s", widget.getName().c_str());
-                        m_editor->createWidget(nullptr, widget.getName(), true);
-                    }
-                }
-                ImGui::EndMenu();
-            }
-            for (const Widget& widget: m_editor->getWidgetsRegistry().getWidgets()) {
-                if (ImGui::MenuItem(widget.getName().c_str())) {
-                    ImGui::Text("%s", widget.getName().c_str());
-                    m_editor->createWidget(nullptr, widget.getName(), false);
-                }
-            }
+            ImGui::Text("BaseWidgets");
+            if (ImGui::MenuItem("Container")) {
+                m_editor->createWidget(nullptr, "Container", "Container");
+            } else if (ImGui::MenuItem("Panel")) {
+                m_editor->createWidget(nullptr, "Panel", "Panel");
+            } else if (ImGui::MenuItem("Text")) {
+                m_editor->createWidget(nullptr, "Text", "Text");
+            } /* else if (ImGui::MenuItem("Button")) {
+                m_editor->createWidget(nullptr, "Button", "Button");
+            } else if (ImGui::MenuItem("Image")) {
+                m_editor->createWidget(nullptr, "Image", "Image");
+            }*/
+            ImGui::Separator();
+            ImGui::Text("Widgets");
+            //for (const Widget& widget: m_editor->getWidgetsRegistry().getWidgetsTemplates()) {
+            //    if (ImGui::MenuItem(widget.getName().c_str())) {
+            //        ImGui::Text("%s", widget.getName().c_str());
+            //        m_editor->createWidget(nullptr, widget.getName(), false);
+            //    }
+            //}
             ImGui::EndPopup();
         }
 
@@ -72,7 +78,7 @@ namespace TechEngine {
         m_editor = editor;
     }
 
-    void UIHierarchyPanel::moveWidget(const std::shared_ptr<Widget>& childWidget, Widget* newParent, int newIndex) {
+    void UIHierarchyPanel::moveWidget(const std::shared_ptr<Widget>& childWidget, const std::shared_ptr<Widget>& newParent, int newIndex) {
         /*if (!childWidget || !newParent) return;
         Rml::Element* childElement = childWidget->getRmlElement();
         if (!childElement) return;
@@ -142,23 +148,11 @@ namespace TechEngine {
         m_widgetsOrder.clear();*/
     }
 
-    void UIHierarchyPanel::drawWidgetNode(Widget* element) {
-        /*if (!element) return;
+    void UIHierarchyPanel::drawWidgetNode(const std::shared_ptr<Widget>& widget) {
+        if (!widget) return;
         ImGuiStyle& style = ImGui::GetStyle();
-        std::shared_ptr<Widget> widget = nullptr;
 
-        auto it = m_editor->m_elementToWidgetMap.find(element);
-        if (it != m_editor->m_elementToWidgetMap.end()) {
-            widget = it->second;
-        }
-
-        std::string label = element->GetTagName();
-        if (!element->GetId().empty()) {
-            label += "#" + element->GetId();
-        }
-        if (widget) {
-            label = widget->getName() + " (" + label + ")";
-        }
+        std::string label = widget->getName();
 
         const float frameHeight = ImGui::GetFrameHeight();
         const float totalItemHeight = frameHeight + style.ItemSpacing.y;
@@ -227,12 +221,12 @@ namespace TechEngine {
                 std::shared_ptr<Widget> draggedWidget = *static_cast<std::shared_ptr<Widget>*>(payload->Data);
                 if (draggedWidget != widget) {
                     if (dropAction == DropAction::Reorder) {
-                        Rml::Element* newParent = widget->getRmlElement()->GetParentNode();
+                        std::shared_ptr<Widget>& newParent = widget->m_parent;
                         if (newParent) {
                             // Find the index of the target widget within its parent
                             int targetIndex = 0;
-                            for (int i = 0; i < newParent->GetNumChildren(); ++i) {
-                                if (newParent->GetChild(i) == widget->getRmlElement()) {
+                            for (int i = 0; i < newParent->m_children.size(); ++i) {
+                                if (newParent->m_children.at(i) == widget) {
                                     targetIndex = i;
                                     break;
                                 }
@@ -244,7 +238,7 @@ namespace TechEngine {
                             TE_LOGGER_INFO("Moved widget '{0}'", draggedWidget->getName());
                         }
                     } else {
-                        moveWidget(draggedWidget, widget->getRmlElement(), widget->getRmlElement()->GetNumChildren());
+                        //moveWidget(draggedWidget, widget->getRmlElement(), widget->getRmlElement()->GetNumChildren());
                         TE_LOGGER_INFO("Parented widget '{0}' under '{1}'", draggedWidget->getName(), widget->getName());
                     }
                 }
@@ -267,11 +261,11 @@ namespace TechEngine {
                                    ImGuiTreeNodeFlags_SpanAvailWidth |
                                    ImGuiTreeNodeFlags_Leaf;
 
-        if (element->GetNumChildren() == 0) {
+        if (widget->m_children.size() == 0) {
             flags |= ImGuiTreeNodeFlags_Leaf;
         }
 
-        ImGui::PushID((void*)(intptr_t)element);
+        ImGui::PushID((void*)(intptr_t)widget->getName().c_str());
         bool opened = ImGui::TreeNodeEx("##TreeNode", flags, "%s", label.c_str());
         m_isWidgetHovered |= ImGui::IsItemHovered();
         ImGui::PopID();
@@ -300,10 +294,10 @@ namespace TechEngine {
 
 
         if (opened) {
-            for (int i = 0; i < element->GetNumChildren(); ++i) {
-                drawWidgetNode(element->GetChild(i));
+            for (int i = 0; i < widget->m_children.size(); ++i) {
+                drawWidgetNode(widget->m_children.at(i));
             }
             ImGui::TreePop();
-        }*/
+        }
     }
 }

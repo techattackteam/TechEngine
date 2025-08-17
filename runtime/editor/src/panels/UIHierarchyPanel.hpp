@@ -25,8 +25,8 @@ namespace TechEngine {
         void setEditor(UIEditor* editor);
 
     private:
-        void moveWidget(const std::shared_ptr<Widget>& childWidget, Widget* newParent, int newIndex);
+        void moveWidget(const std::shared_ptr<Widget>& childWidget, const std::shared_ptr<Widget>& newParent, int newIndex);
 
-        void drawWidgetNode(Widget* element);
+        void drawWidgetNode(const std::shared_ptr<Widget>& widget);
     };
 }

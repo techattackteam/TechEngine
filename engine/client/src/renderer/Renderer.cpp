@@ -15,6 +15,7 @@
 #include "systems/SystemsRegistry.hpp"
 #include "ui/PanelWidget.hpp"
 #include "ui/TextWidget.hpp"
+#include "ui/WidgetsRegistry.hpp"
 
 namespace TechEngine {
     void Renderer::init() {
@@ -137,44 +138,12 @@ namespace TechEngine {
         rootWidget.m_name = "Root";
         // For this test, we'll manually set its screen rect to the full viewport
         rootWidget.m_finalScreenRect = {0.0f, 0.0f, (float)uiRenderer.m_screenWidth, (float)uiRenderer.m_screenHeight};
-
-
-        // 2. Create a Panel to test drawing and absolute positioning
-        PanelWidget myPanel;
-        myPanel.m_backgroundColor = {1.0f, 0.0f, 0.0f, 1.0f}; // Red
-        // Manually set its final rect for this test.
-        // In Milestone 2, calculateLayout() will do this for us.
-        myPanel.m_finalScreenRect = {100.0f, 100.0f, 200.0f, 150.0f};
-
-
-        // 3. Create a Text Widget
-        TextWidget myLabel;
-        myLabel.m_text = "Hello, World!";
-        myLabel.m_textColor = {1.0f, 1.0f, 1.0f, 1.0f}; // White
-        // Manually set its position
-        myLabel.m_finalScreenRect = {110.0f, 150.0f, 180.0f, 30.0f};
-
-
-        // 4. Create another panel to test batching
-        PanelWidget greenPanel;
-        greenPanel.m_backgroundColor = {0.0f, 1.0f, 0.0f, 0.5f}; // Semi-transparent green
-        greenPanel.m_finalScreenRect = {400.0f, 200.0f, 50.0f, 50.0f};
-
-        // 5. Create more text to test font rendering with the same atlas
-        TextWidget anotherLabel;
-        anotherLabel.m_text = "This is a Test.";
-        anotherLabel.m_textColor = {1.0f, 1.0f, 0.0f, 1.0f}; // Yellow
-        anotherLabel.m_finalScreenRect = {400.0f, 300.0f, 150.0f, 30.0f};
-
-
-        // 6. Draw the widgets
-        // We are manually calling draw. In the future, a single call
-        // to rootWidget.draw() will handle the entire hierarchy.
-        myPanel.draw(uiRenderer);
-        myLabel.draw(uiRenderer);
-        greenPanel.draw(uiRenderer);
-        anotherLabel.draw(uiRenderer);
-
+        for (const auto& widget: m_systemsRegistry.getSystem<WidgetsRegistry>().getWidgets()) {
+            if (widget) {
+                widget->calculateLayout(rootWidget.m_finalScreenRect);
+                widget->draw(uiRenderer);
+            }
+        }
         uiRenderer.endFrame();
     }
 
@@ -205,7 +174,9 @@ namespace TechEngine {
         if (!lines.empty()) {
             linePass(camera);
         }
-        uiPass();
+        if (m_systemsRegistry.hasSystem<WidgetsRegistry>()) {
+            uiPass();
+        }
     }
 
     void Renderer::renderCustomPipeline(Camera* camera, std::vector<int>& entities) {
