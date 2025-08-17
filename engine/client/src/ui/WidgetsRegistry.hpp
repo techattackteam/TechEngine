@@ -1,27 +1,29 @@
 #pragma once
 
 #include "Widget.hpp"
+#include "systems/System.hpp"
 
 #include <string>
 #include <vector>
 
-namespace TechEngine {
-    class CLIENT_DLL WidgetsRegistry {
-    public:
-        bool loadJson(const std::string& jsonFilePath, bool base);
 
-        std::shared_ptr<Widget> createBaseWidget(const std::string& name);
+namespace TechEngine {
+    class CLIENT_DLL WidgetsRegistry : public System {
+    private:
+        std::vector<Widget> m_widgetsTemplates;
+        std::vector<std::shared_ptr<Widget>> m_widgets;
+
+    public:
+        WidgetsRegistry();
+
+        void init() override;
+
+        bool loadJson(const std::string& jsonFilePath);
 
         std::shared_ptr<Widget> createWidget(const std::string& name);
 
-        const std::vector<Widget>& getWidgets() const {
-            return m_widgetsTemplates;
-        }
+        const std::vector<Widget>& getWidgetsTemplates() const;
 
-        const std::vector<Widget> getBaseWidgets() const;
-
-    private:
-        std::vector<Widget> m_baseWidgetsTemplates;
-        std::vector<Widget> m_widgetsTemplates;
+        std::vector<std::shared_ptr<Widget>>& getWidgets();
     };
 }

@@ -4,6 +4,7 @@
 #include "UIHierarchyPanel.hpp"
 #include "UIView.hpp"
 #include "UIInspector.hpp"
+#include "systems/SystemsRegistry.hpp"
 #include "ui/WidgetsRegistry.hpp"
 
 
@@ -15,7 +16,6 @@ namespace TechEngine {
         UIView m_uiView;
         UIHierarchyPanel m_uiHierarchy;
         UIInspector m_uiInspector;
-        WidgetsRegistry m_widgetsRegistry;
         GameView& m_gameView;
 
         SystemsRegistry& m_appSystemsRegistry;
@@ -29,7 +29,7 @@ namespace TechEngine {
 
         void onUpdate() override;
 
-        std::shared_ptr<Widget> createWidget(Widget* parent, const std::string& name, bool base);
+        std::shared_ptr<Widget> createWidget(const std::shared_ptr<Widget>& parent, const std::string& type, const std::string& name);
 
         bool deleteWidget(const std::shared_ptr<Widget>& widget);
 
@@ -39,8 +39,8 @@ namespace TechEngine {
             return m_selectedWidget;
         }
 
-        const WidgetsRegistry& getWidgetsRegistry() const {
-            return m_widgetsRegistry;
+        WidgetsRegistry& getWidgetsRegistry() {
+            return m_appSystemsRegistry.getSystem<WidgetsRegistry>();
         }
 
         GameView& getGameView() const {

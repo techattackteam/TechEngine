@@ -45,6 +45,8 @@ namespace TechEngine {
 
         void renderCustomPipeline(Camera* camera, std::vector<int>& entities);
 
+        void uiPass();
+
         void createLine(const glm::vec3& startPosition, const glm::vec3& endPosition, const glm::vec4& color);
 
         FrameBuffer& getFramebuffer(uint32_t id);
@@ -60,7 +62,6 @@ namespace TechEngine {
 
         void geometryPass(Camera& camera);
 
-        void uiPass();
 
         void linePass(Camera& camera);
 
