@@ -140,7 +140,6 @@ namespace TechEngine {
         rootWidget.m_finalScreenRect = {0.0f, 0.0f, (float)uiRenderer.m_screenWidth, (float)uiRenderer.m_screenHeight};
         for (const auto& widget: m_systemsRegistry.getSystem<WidgetsRegistry>().getWidgets()) {
             if (widget) {
-                widget->calculateLayout(rootWidget.m_finalScreenRect);
                 widget->draw(uiRenderer);
             }
         }

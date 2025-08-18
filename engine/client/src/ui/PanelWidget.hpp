@@ -4,7 +4,7 @@
 namespace TechEngine {
     class CLIENT_DLL PanelWidget : public Widget {
     public:
-        glm::vec4 m_backgroundColor = {1.0f, 1.0f, 1.0f, 1.0f};
+        glm::vec4 m_backgroundColor = {.5f, 0.5f, 0.5f, 1.0f};
     public:
         PanelWidget();
 

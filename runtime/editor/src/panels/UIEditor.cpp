@@ -14,7 +14,7 @@ namespace TechEngine {
                        GameView& gameView) : DockPanel(editorSystemsRegistry),
                                              m_uiView(editorSystemsRegistry, appSystemsRegistry, this),
                                              m_uiHierarchy(editorSystemsRegistry, appSystemsRegistry),
-                                             m_uiInspector(editorSystemsRegistry), m_gameView(gameView),
+                                             m_uiInspector(editorSystemsRegistry, appSystemsRegistry), m_gameView(gameView),
                                              m_appSystemsRegistry(appSystemsRegistry) {
         m_styleVars.emplace_back(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     }
@@ -49,6 +49,11 @@ namespace TechEngine {
         widget->m_parent = parent;
         widget->rename(name);
         getWidgetsRegistry().getWidgets().emplace_back(widget);
+        widget->calculateLayout(
+            parent
+                ? parent->m_finalScreenRect
+                : glm::vec4(0.0f, 0.0f, (float)m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer().m_screenWidth,
+                            (float)m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer().m_screenHeight));
         return widget;
     }
 
