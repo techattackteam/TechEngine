@@ -20,7 +20,7 @@ namespace TechEngine {
         OnChangeCallback onChange;
     };
 
-    class CLIENT_DLL Widget {
+    class CLIENT_DLL Widget : public std::enable_shared_from_this<Widget> {
     public:
         enum class AnchorPreset {
             // Top Left Corner
@@ -58,7 +58,7 @@ namespace TechEngine {
         // --- State controlled by the UI Inspector ---
         AnchorPreset m_preset = AnchorPreset::MiddleCenter;
 
-        // AnchorMin/Max range from (0,0) [bottom-left] to (1,1) [top-right] in RmlUi
+        // AnchorMin/Max range from (0,0) [bottom-left] to (1,1) [top-right]
         glm::vec2 m_anchorMin = {0.0f, 0.0f};
         glm::vec2 m_anchorMax = {0.0f, 0.0f};
 
@@ -85,9 +85,11 @@ namespace TechEngine {
         std::vector<std::string> m_childrenTypes;
         std::vector<std::shared_ptr<Widget>> m_children; // Children widgets
 
+
     protected:
 
     public:
+        bool m_isHierarchyOpen = false; // This needs to be moved since the Widget class should not be aware of the UI hierarchy state
         glm::vec4 m_finalScreenRect = {0.0f, 0.0f, 0.0f, 0.0f};
 
         explicit Widget();
@@ -101,7 +103,19 @@ namespace TechEngine {
 
         virtual void draw(UIRenderer& renderer);
 
+        void changeAnchor(AnchorPreset anchorPreset, glm::vec4 parentScreenRect);
+
         void calculateLayout(const glm::vec4& parentScreenRect);
+
+        void addChild(const std::shared_ptr<Widget>& child, int index);
+
+        void removeChild(const std::shared_ptr<Widget>& child);
+
+        bool hasChild(const std::shared_ptr<Widget>& child) const {
+            return std::find(m_children.begin(), m_children.end(), child) != m_children.end();
+        }
+
+        glm::vec2 getAbsoluteOffset() const;
 
         void rename(const std::string& name);
 

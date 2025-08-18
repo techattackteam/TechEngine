@@ -1,50 +1,52 @@
 #include "UIHierarchyPanel.hpp"
 
 #include "UIEditor.hpp"
-#include "renderer/Renderer.hpp"
 #include "systems/SystemsRegistry.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
 
-
 namespace TechEngine {
-    UIHierarchyPanel::UIHierarchyPanel(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& appSystemsRegistry) : Panel(editorSystemsRegistry), m_appSystemsRegistry(appSystemsRegistry) {
+    UIHierarchyPanel::UIHierarchyPanel(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& appSystemsRegistry)
+        : Panel(editorSystemsRegistry), m_appSystemsRegistry(appSystemsRegistry) {
     }
 
     void UIHierarchyPanel::onInit() {
+        // We will populate m_rootWidgetsOrder when the editor is set and widgets are loaded.
     }
 
+
     void UIHierarchyPanel::onUpdate() {
+        if (m_isHierarchyDirty) {
+            rebuildDisplayList();
+        }
+
         m_isWidgetHovered = false;
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 2.0f)); // Adjust spacing between items
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f)); // Compact frame padding
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 10.0f); // Reduce indentation
-        for (const std::shared_ptr<Widget>& widget: m_editor->getWidgetsRegistry().getWidgets()) {
-            if (widget) {
-                ImGui::PushID(widget.get());
-                drawWidgetNode(widget);
-                if (ImGui::IsItemHovered()) {
-                    m_isWidgetHovered = true;
-                    ImGui::SetTooltip("Widget: %s\nType: %s", widget->m_name.c_str(), widget->m_category.c_str());
-                }
-                ImGui::PopID();
-            }
+        for (auto& node: m_displayList) {
+            ImGui::PushID(node.widget.get());
+            drawWidgetNode(node);
+            ImGui::PopID();
         }
         ImGui::PopStyleVar(3);
-
         ImGui::Dummy(ImGui::GetContentRegionAvail());
 
         if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) {
             m_editor->setSelectedWidget(nullptr);
         }
 
+        //TODO: Change this for an action instead changing the panel internal state on the fly
         if (!m_isWidgetHovered && ImGui::BeginPopupContextWindow("Widget Creation", 1)) {
             ImGui::Text("BaseWidgets");
             if (ImGui::MenuItem("Container")) {
                 m_editor->createWidget(nullptr, "Container", "Container");
+                setHierarchyDirty();
             } else if (ImGui::MenuItem("Panel")) {
                 m_editor->createWidget(nullptr, "Panel", "Panel");
+                setHierarchyDirty();
             } else if (ImGui::MenuItem("Text")) {
                 m_editor->createWidget(nullptr, "Text", "Text");
+                setHierarchyDirty();
             } /* else if (ImGui::MenuItem("Button")) {
                 m_editor->createWidget(nullptr, "Button", "Button");
             } else if (ImGui::MenuItem("Image")) {
@@ -61,16 +63,9 @@ namespace TechEngine {
             ImGui::EndPopup();
         }
 
-        if (!m_widgetsToDelete.empty()) {
-            for (const std::shared_ptr<Widget>& widget: m_widgetsToDelete) {
-                m_editor->deleteWidget(widget);
-                if (m_editor->getSelectedWidget() == widget) {
-                    m_editor->setSelectedWidget(nullptr);
-                }
-            }
-            m_widgetsToDelete.clear();
-
-            m_widgetsOrder.clear();
+        if (!m_pendingActions.empty()) {
+            applyPendingActions();
+            m_pendingActions.clear();
         }
     }
 
@@ -78,226 +73,193 @@ namespace TechEngine {
         m_editor = editor;
     }
 
-    void UIHierarchyPanel::moveWidget(const std::shared_ptr<Widget>& childWidget, const std::shared_ptr<Widget>& newParent, int newIndex) {
-        /*if (!childWidget || !newParent) return;
-        Rml::Element* childElement = childWidget->getRmlElement();
-        if (!childElement) return;
-        Rml::Element* oldParent = childElement->GetParentNode();
-        if (!oldParent) return;
-
-        if (oldParent != newParent) {
-            Rml::Element* cursor = newParent;
-            while (cursor) {
-                if (cursor == childElement) {
-                    TE_LOGGER_WARN("Cannot reparent a widget to one of its own descendants.");
-                    return;
-                }
-                cursor = cursor->GetParentNode();
-            }
-        }
-
-        const Rml::Vector2f worldPosBefore = childElement->GetAbsoluteOffset();
-        const Rml::Vector2f sizeBefore = childElement->GetBox().GetSize(Rml::BoxArea::Content);
-
-        Rml::ElementPtr elementPtr = oldParent->RemoveChild(childElement);
-
-        if (oldParent == newParent) {
-            int oldIndex = -1;
-            for (int i = 0; i < oldParent->GetNumChildren(); ++i) {
-                if (oldParent->GetChild(i) == elementPtr.get()) {
-                    oldIndex = i;
-                    break;
-                }
-            }
-            if (oldIndex != -1 && oldIndex < newIndex) {
-                newIndex--;
-            }
-        }
-
-        int clampedIndex = std::clamp(newIndex, 0, newParent->GetNumChildren());
-
-        if (clampedIndex >= newParent->GetNumChildren()) {
-            newParent->AppendChild(std::move(elementPtr));
-        } else {
-            Rml::Element* sibling = newParent->GetChild(clampedIndex);
-            newParent->InsertBefore(std::move(elementPtr), sibling);
-        }
-
-        if (oldParent != newParent) {
-            const Rml::Vector2f parentWorldPos = newParent->GetAbsoluteOffset();
-            const Rml::Vector2f newLocalPos = worldPosBefore - parentWorldPos;
-            const Rml::Vector2f anchorMin = childWidget->m_anchorMin;
-            const Rml::Vector2f anchorMax = childWidget->m_anchorMax;
-            const Rml::Vector2f pivot = childWidget->m_pivot;
-
-            Rml::Vector2f parentSize = newParent->GetBox().GetSize(Rml::BoxArea::Content);
-            Rml::Vector2f anchorPoint = {
-                parentSize.x * (anchorMin.x + anchorMax.x) * 0.5f,
-                parentSize.y * (anchorMin.y + anchorMax.y) * 0.5f
-            };
-
-            Rml::Vector2f finalPos = newLocalPos - anchorPoint + Rml::Vector2f(pivot.x * sizeBefore.x, pivot.y * sizeBefore.y);
-
-            childWidget->m_anchoredPosition = finalPos;
-            childElement->SetProperty("left", std::to_string(finalPos.x) + "px");
-            childElement->SetProperty("top", std::to_string(finalPos.y) + "px");
-
-            childWidget->applyStyles(childElement, newParent);
-        }
-
-        m_widgetsOrder.clear();*/
+    void UIHierarchyPanel::setHierarchyDirty() {
+        m_isHierarchyDirty = true;
     }
 
-    void UIHierarchyPanel::drawWidgetNode(const std::shared_ptr<Widget>& widget) {
-        if (!widget) return;
-        ImGuiStyle& style = ImGui::GetStyle();
-
-        std::string label = widget->getName();
-
-        const float frameHeight = ImGui::GetFrameHeight();
-        const float totalItemHeight = frameHeight + style.ItemSpacing.y;
-        const ImVec2 initialCursorPos = ImGui::GetCursorPos();
-
-        ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, totalItemHeight));
-
-        enum class DropAction { None, Reparent, Reorder };
-        DropAction dropAction = DropAction::Reparent;
-
-        if (ImGui::BeginDragDropTarget()) {
-            const ImGuiPayload* payload = ImGui::GetDragDropPayload();
-            const ImRect targetRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
-            const ImVec2 mousePos = ImGui::GetMousePos();
-
-            ImRect reparentRect = targetRect;
-            reparentRect.Min.y += 4; // 4px top reorder zone
-            reparentRect.Max.y -= 4; // 4px bottom reorder zone
-
-            if (payload && payload->DataSize == sizeof(std::shared_ptr<Widget>)) {
-                std::shared_ptr<Widget> draggedWidget = *static_cast<std::shared_ptr<Widget>*>(payload->Data);
-
-                bool isSameWidget = false;
-                if (draggedWidget == widget) {
-                    isSameWidget = true;
-                }
-
-                if (!reparentRect.Contains(mousePos)) {
-                    dropAction = DropAction::Reorder;
-                }
-
-                if (!isSameWidget && dropAction == DropAction::Reorder) {
-                    auto originalWidget = std::find(m_widgetsOrder.begin(), m_widgetsOrder.end(), draggedWidget);
-                    auto targetWidget = std::find(m_widgetsOrder.begin(), m_widgetsOrder.end(), widget);
-                    if (originalWidget != m_widgetsOrder.end() && targetWidget != m_widgetsOrder.end()) {
-                        bool isDroppingAbove = (mousePos.y < reparentRect.Min.y);
-                        if (isDroppingAbove) {
-                            if (std::next(originalWidget) == targetWidget) {
-                                isSameWidget = true;
-                            }
-                        } else {
-                            if (targetWidget != m_widgetsOrder.begin() && std::next(targetWidget) == originalWidget) {
-                                isSameWidget = true;
-                            }
-                        }
-                    }
-                }
-
-                if (!isSameWidget) {
-                    ImU32 feedbackColor = ImGui::GetColorU32(ImGuiCol_DragDropTarget);
-                    if (dropAction == DropAction::Reorder) {
-                        float lineY = (mousePos.y < reparentRect.Min.y) ? targetRect.Min.y : targetRect.Max.y;
-                        ImGui::GetWindowDrawList()->AddLine(ImVec2(targetRect.Min.x, lineY),
-                                                            ImVec2(targetRect.Max.x, lineY),
-                                                            feedbackColor, 2.0f);
-                    } else {
-                        ImVec2 visualNodeMin = targetRect.Min;
-                        ImVec2 visualNodeMax = ImVec2(targetRect.Max.x, targetRect.Min.y + frameHeight);
-                        ImGui::GetWindowDrawList()->AddRect(visualNodeMin, visualNodeMax, feedbackColor, 2.0f, 0, 2.0f);
-                    }
-                }
+    void UIHierarchyPanel::rebuildDisplayList() {
+        m_displayList.clear();
+        for (const std::shared_ptr<Widget>& widget: m_editor->getWidgetsRegistry().getWidgets()) {
+            if (widget && widget->m_parent == nullptr) {
+                recursiveAddToDisplayList(widget, 0);
             }
+        }
+        m_isHierarchyDirty = false;
+    }
 
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
-                "WIDGET_DRAG", ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
-                std::shared_ptr<Widget> draggedWidget = *static_cast<std::shared_ptr<Widget>*>(payload->Data);
-                if (draggedWidget != widget) {
-                    if (dropAction == DropAction::Reorder) {
-                        std::shared_ptr<Widget>& newParent = widget->m_parent;
-                        if (newParent) {
-                            // Find the index of the target widget within its parent
-                            int targetIndex = 0;
-                            for (int i = 0; i < newParent->m_children.size(); ++i) {
-                                if (newParent->m_children.at(i) == widget) {
-                                    targetIndex = i;
-                                    break;
-                                }
-                            }
+    void UIHierarchyPanel::recursiveAddToDisplayList(const std::shared_ptr<Widget>& widget, int depth) {
+        m_displayList.push_back({widget, depth});
 
-                            int newIndex = (mousePos.y < reparentRect.Min.y) ? targetIndex : targetIndex + 1;
-
-                            moveWidget(draggedWidget, newParent, newIndex);
-                            TE_LOGGER_INFO("Moved widget '{0}'", draggedWidget->getName());
-                        }
-                    } else {
-                        //moveWidget(draggedWidget, widget->getRmlElement(), widget->getRmlElement()->GetNumChildren());
-                        TE_LOGGER_INFO("Parented widget '{0}' under '{1}'", draggedWidget->getName(), widget->getName());
-                    }
-                }
+        if (widget->m_isHierarchyOpen) {
+            for (const auto& child: widget->m_children) {
+                recursiveAddToDisplayList(child, depth + 1);
             }
-
-            ImGui::EndDragDropTarget();
         }
+    }
 
-        ImGui::SetCursorPos(initialCursorPos);
-
-        const float textHeight = ImGui::GetTextLineHeight();
-        const float verticalPadding = (frameHeight - textHeight) * 0.5f;
-        if (verticalPadding > 0) {
-            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + verticalPadding);
+    void UIHierarchyPanel::applyPendingActions() {
+        for (const auto& action: m_pendingActions) {
+            switch (action.type) {
+                case ActionType::Move:
+                    reparentWidget(action.subject, action.destination, action.index);
+                    break;
+            }
         }
+    }
 
-        bool isSelected = m_editor->m_selectedWidget == widget;
-        ImGuiTreeNodeFlags flags = (isSelected ? ImGuiTreeNodeFlags_Selected : 0) |
-                                   ImGuiTreeNodeFlags_OpenOnArrow |
-                                   ImGuiTreeNodeFlags_SpanAvailWidth |
-                                   ImGuiTreeNodeFlags_Leaf;
+    //This should change for a internal class instead of the UI
+    void UIHierarchyPanel::reparentWidget(const std::shared_ptr<Widget>& widgetToMove, const std::shared_ptr<Widget>& newParent, int newIndex) {
+        if (widgetToMove->m_parent != nullptr) {
+            widgetToMove->m_parent->removeChild(widgetToMove);
+        }
+        if (newParent) {
+            // If the new parent is valid, add the widget to its children
+            newParent->addChild(widgetToMove, newIndex);
+        } else {
+            // If the new parent is null, we are moving to the root level
+            std::vector<std::shared_ptr<Widget>>& children = m_editor->getWidgetsRegistry().getWidgets();
+            auto it = std::remove(children.begin(), children.end(), widgetToMove);
+            if (it != children.end()) {
+                children.erase(it, children.end());
+            }
+            children.insert(children.begin() + newIndex, widgetToMove);
+        }
+    }
 
-        if (widget->m_children.size() == 0) {
+    void UIHierarchyPanel::drawWidgetNode(HierarchyNode& node) {
+        if (!node.widget) return;
+
+        bool isFirst = (node.depth == 0 && m_displayList.begin() == std::find(m_displayList.begin(), m_displayList.end(), node));
+
+        ImGui::PushID(node.widget.get());
+
+        // Apply indentation based on the node's depth in the hierarchy
+        ImGui::Indent((node.depth + 1) * ImGui::GetStyle().IndentSpacing);
+
+        // --- Setup TreeNode ---
+        bool isSelected = m_editor->getSelectedWidget() == node.widget;
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+        if (isSelected) {
+            flags |= ImGuiTreeNodeFlags_Selected;
+        }
+        if (node.widget->m_children.empty()) {
             flags |= ImGuiTreeNodeFlags_Leaf;
         }
 
-        ImGui::PushID((void*)(intptr_t)widget->getName().c_str());
-        bool opened = ImGui::TreeNodeEx("##TreeNode", flags, "%s", label.c_str());
+        // --- Draw the actual node ---
+        bool opened = ImGui::TreeNodeEx("##TreeNode", flags, "%s", node.widget->getName().c_str());
         m_isWidgetHovered |= ImGui::IsItemHovered();
-        ImGui::PopID();
 
+        // --- Handle State Changes ---
+        if (ImGui::IsItemClicked(0) && !ImGui::IsItemToggledOpen()) {
+            m_editor->setSelectedWidget(node.widget);
+        }
+
+        // If the open/close state changes, update the widget and rebuild the list next frame
+        if (ImGui::IsItemToggledOpen()) {
+            node.widget->m_isHierarchyOpen = opened;
+            setHierarchyDirty();
+        }
+
+        // --- Drag and Drop Source ---
         if (ImGui::BeginDragDropSource()) {
-            ImGui::SetDragDropPayload("WIDGET_DRAG", &widget, sizeof(std::shared_ptr<Widget>));
-            ImGui::Text("%s", widget ? widget->getName().c_str() : label.c_str());
+            ImGui::SetDragDropPayload("WIDGET_DRAG", &node.widget, sizeof(std::shared_ptr<Widget>));
+            ImGui::Text("%s", node.widget->getName().c_str());
             ImGui::EndDragDropSource();
         }
 
-        if (ImGui::IsItemClicked() && widget) {
-            m_editor->setSelectedWidget(widget);
+        // --- Drag and Drop Target ---
+        if (ImGui::BeginDragDropTarget()) {
+            const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+            if (payload && payload->IsDataType("WIDGET_DRAG") && !node.widget->hasChild(*static_cast<std::shared_ptr<Widget>*>(payload->Data))) {
+                auto draggedWidget = *static_cast<std::shared_ptr<Widget>*>(payload->Data);
+
+                // Determine drop action: Reparent vs. Reorder
+                enum class DropAction { Reparent, Reorder_After, Reorder_Before };
+                DropAction dropAction = DropAction::Reparent;
+                float dropZoneHeight = ImGui::GetItemRectSize().y * 0.35f;
+                ImVec2 dropZoneMin = ImGui::GetItemRectMin();
+                ImVec2 dropZoneMax = ImGui::GetItemRectMax();
+                ImVec2 mousePos = ImGui::GetMousePos();
+                if (mousePos.y < dropZoneMin.y + dropZoneHeight && isFirst) {
+                    dropAction = DropAction::Reorder_Before;
+                } else if (mousePos.y > dropZoneMax.y - dropZoneHeight) {
+                    dropAction = DropAction::Reorder_After;
+                }
+
+                // Draw visual feedback
+                ImU32 feedbackColor = ImGui::GetColorU32(ImGuiCol_DragDropTarget);
+                if (dropAction == DropAction::Reparent) {
+                    ImGui::GetWindowDrawList()->AddRect(dropZoneMin, dropZoneMax, feedbackColor);
+                } else {
+                    float lineY = (dropAction == DropAction::Reorder_Before && isFirst) ? dropZoneMin.y : dropZoneMax.y;
+                    ImGui::GetWindowDrawList()->AddLine({dropZoneMin.x, lineY}, {dropZoneMax.x, lineY}, feedbackColor, 2.5f);
+                }
+
+                if (ImGui::AcceptDragDropPayload("WIDGET_DRAG", ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
+                    std::shared_ptr<Widget> newParent = nullptr;
+                    int newIndex = -1;
+
+                    if (dropAction == DropAction::Reparent) {
+                        newParent = node.widget;
+                        newIndex = newParent->m_children.size();
+                    } else { // Reordering
+                        newParent = node.widget->m_parent;
+
+                        // Find the index of the node we are dropping ON
+                        int targetIndex = 0;
+                        if (newParent) {
+                            std::vector<std::shared_ptr<Widget>>& siblings = newParent->m_children;
+                            auto it = std::find(siblings.begin(), siblings.end(), node.widget);
+                            targetIndex = std::distance(siblings.begin(), it);
+                        } else {
+                            auto it = std::find(m_displayList.begin(), m_displayList.end(), node.widget);
+                            targetIndex = std::distance(m_displayList.begin(), it);
+                        }
+
+                        auto it = std::find(m_displayList.begin(), m_displayList.end(), draggedWidget);
+                        auto itOther = std::find(m_displayList.begin(), m_displayList.end(), node.widget);
+                        // Hackish solution to handle when the dragging and widget from the a lower to higher index it doesn't skip an index
+                        newIndex = (dropAction == DropAction::Reorder_Before && isFirst) ? targetIndex : (itOther > it ? targetIndex : targetIndex + 1);
+                    }
+
+                    // CRITICAL: Instead of modifying the tree directly, we queue an action.
+                    m_pendingActions.push_back({ActionType::Move, draggedWidget, newParent, newIndex});
+                    setHierarchyDirty();
+                }
+            }
+            ImGui::EndDragDropTarget();
         }
 
+        // --- Right-Click Context Menu ---
         if (ImGui::BeginPopupContextItem()) {
-            m_editor->setSelectedWidget(widget);
-            std::string nameBuffer = widget ? widget->getName() : "";
-            if (ImGuiUtils::beginMenuWithInputMenuField("Rename Widget", "Rename", nameBuffer)) {
-                widget->rename(nameBuffer);
+            m_editor->setSelectedWidget(node.widget); // Select the widget when right-clicking
+
+            std::string nameBuffer = node.widget->getName();
+            if (ImGuiUtils::beginMenuWithInputMenuField("Rename", "##Rename", nameBuffer)) {
+                node.widget->rename(nameBuffer);
+                ImGui::CloseCurrentPopup();
             }
-            if (ImGui::MenuItem("Delete Widget")) {
-                m_widgetsToDelete.push_back(widget);
+
+            if (ImGui::MenuItem("Delete")) {
+                //// Queue a "Delete" action (future enhancement) or use a temporary delete list.
+                //// For now, let's assume a delete list processed in applyPendingActions.
+                //m_widgetsToDelete.push_back(node.widget);
+                //setHierarchyDirty();
+                //ImGui::CloseCurrentPopup();
+                TE_LOGGER_WARN("UIHierarchyPanel: Delete action is not implemented yet. Please implement deletion logic.");
             }
             ImGui::EndPopup();
         }
 
-
-        if (opened) {
-            for (int i = 0; i < widget->m_children.size(); ++i) {
-                drawWidgetNode(widget->m_children.at(i));
-            }
+        // If the node was opened, we no longer need to recurse. The flat list handles it.
+        // We just need to pop the tree node.
+        if
+        (opened) {
             ImGui::TreePop();
         }
+
+        ImGui::Unindent((node.depth + 1) * ImGui::GetStyle().IndentSpacing);
+        ImGui::PopID();
     }
 }

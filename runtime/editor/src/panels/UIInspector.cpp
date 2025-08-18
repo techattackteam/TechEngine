@@ -4,9 +4,11 @@
 #include "ui/Widget.hpp"
 #include "imgui_stdlib.h"
 #include "core/Logger.hpp"
+#include "renderer/Renderer.hpp"
+#include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
-    UIInspector::UIInspector(SystemsRegistry& editorSystemsRegistry) : Panel(editorSystemsRegistry) {
+    UIInspector::UIInspector(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& appSystemsRegistry) : m_appSystemsRegistry(appSystemsRegistry), Panel(editorSystemsRegistry) {
         m_styleVars.emplace_back(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         m_styleVars.emplace_back(ImGuiStyleVar_WindowBorderSize, 0.0f);
         m_styleVars.emplace_back(ImGuiStyleVar_WindowRounding, 0.0f);
@@ -35,9 +37,10 @@ namespace TechEngine {
                 };
                 int currentPreset = static_cast<int>(m_selectedWidget->m_preset);
                 if (ImGui::Combo("Anchor Preset", &currentPreset, anchorPresetNames, IM_ARRAYSIZE(anchorPresetNames))) {
-                    m_selectedWidget->m_preset = static_cast<Widget::AnchorPreset>(currentPreset);
-                    // When the preset changes, we need to update the underlying anchor values
-                    //m_selectedWidget->setAnchorsFromPreset();
+                    glm::vec4 rootScreenRect = {0.0f, 0.0f, (float)m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer().m_screenWidth, (float)m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer().m_screenHeight};
+                    glm::vec4 parentScreenRect = m_selectedWidget->m_parent ? m_selectedWidget->m_parent->m_finalScreenRect : rootScreenRect;
+                    m_selectedWidget->changeAnchor(static_cast<Widget::AnchorPreset>(currentPreset), parentScreenRect);
+
                     changed = true;
                 }
                 if (ImGui::IsItemHovered()) {
@@ -107,8 +110,8 @@ namespace TechEngine {
             }
 
             if (changed) {
-                //Widget* parent = m_selectedWidget.get() ? m_selectedWidget. : nullptr;
-                //m_selectedWidget->applyStyles(m_selectedWidget.get(), nullptr); // This will bite me later but lets leave it for now to compile
+                glm::vec4 rootFinalScreenRect = {0.0f, 0.0f, (float)m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer().m_screenWidth, (float)m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer().m_screenHeight};
+                m_selectedWidget->calculateLayout(m_selectedWidget->m_parent ? m_selectedWidget->m_parent->m_finalScreenRect : rootFinalScreenRect);
             }
         }
 
