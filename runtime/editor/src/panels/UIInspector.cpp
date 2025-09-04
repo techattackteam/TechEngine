@@ -6,6 +6,8 @@
 #include "core/Logger.hpp"
 #include "renderer/Renderer.hpp"
 #include "systems/SystemsRegistry.hpp"
+#include "ui/PanelWidget.hpp"
+#include "ui/TextWidget.hpp"
 
 namespace TechEngine {
     UIInspector::UIInspector(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& appSystemsRegistry) : m_appSystemsRegistry(appSystemsRegistry), Panel(editorSystemsRegistry) {
@@ -58,7 +60,6 @@ namespace TechEngine {
                 ImGui::Separator();
 
                 // --- DYNAMIC POSITION & SIZE FIELDS ---
-                // This is the core of the dynamic UI. We check if the anchors are stretched on each axis.
                 bool isStretchingX = m_selectedWidget->m_anchorMax.x - m_selectedWidget->m_anchorMin.x > 0.001f;
                 bool isStretchingY = m_selectedWidget->m_anchorMax.y - m_selectedWidget->m_anchorMin.y > 0.001f;
 
@@ -119,43 +120,31 @@ namespace TechEngine {
         if (!m_selectedWidget) {
             return;
         }
-        auto& properties = m_selectedWidget->getProperties();
-        for (auto& property: properties) {
-            ImGui::PushID(property.name.c_str());
-            ImGui::Text("%s", property.name.c_str());
 
-            if (property.type == "color") {
-                /*//Rml::Colourb currentColor = m_selectedWidget->m_rmlElement->GetProperty<Rml::Colourb>(property.rcssProperty);
+        ImGui::Separator();
+        if (dynamic_cast<PanelWidget*>(m_selectedWidget.get())) {
+            ImGui::Text("Panel:");
+            PanelWidget* widget = dynamic_cast<PanelWidget*>(m_selectedWidget.get());
+            const glm::vec4& currentColor = widget->getBackgroundColor();
 
-                float colorsFloat[4] = {
-                    static_cast<float>(currentColor.red) / 255.f,
-                    static_cast<float>(currentColor.green) / 255.f,
-                    static_cast<float>(currentColor.blue) / 255.f,
-                    static_cast<float>(currentColor.alpha) / 255.f
-                };
-                if (ImGui::ColorEdit4("##ColorValue", colorsFloat)) {
-                    std::stringstream ss;
-                    ss << '#' << std::hex << std::setfill('0')
-                            << std::setw(2) << std::lround(colorsFloat[0] * 255.0f)
-                            << std::setw(2) << std::lround(colorsFloat[1] * 255.0f)
-                            << std::setw(2) << std::lround(colorsFloat[2] * 255.0f)
-                            << std::setw(2) << std::lround(colorsFloat[3] * 255.0f);
-                    std::string color = ss.str();
+            float colorsFloat[4] = {
+                currentColor.x,
+                currentColor.y,
+                currentColor.z,
+                currentColor.a
+            };
+            if (ImGui::ColorPicker4("##ColorValue", colorsFloat)) {
+                TE_LOGGER_INFO("Setting color property '({0} , {1}, {2}, {3})'", colorsFloat[0], colorsFloat[1], colorsFloat[2], colorsFloat[3]);
+                widget->setBackgroundColor({colorsFloat[0], colorsFloat[1], colorsFloat[2], colorsFloat[3]});
+            }
+        } else if (dynamic_cast<TextWidget*>(m_selectedWidget.get())) {
+            ImGui::Text("Text Content:");
+            ImGui::PushID("Text");
+            TextWidget* widget = dynamic_cast<TextWidget*>(m_selectedWidget.get());
+            std::string text = widget->getText();
 
-                    TE_LOGGER_INFO("Setting color property '{0}' to '{1}'", property.name, color);
-                    //m_selectedWidget->m_rmlElement->SetProperty(property.rcssProperty, color);
-                    //property.onChange(color);
-                }*/
-            } else if (property.type == "string" /*&& property.target == "text-content"*/) {
-                //std::string text;
-                //Rml::ElementText* targetElement = dynamic_cast<Rml::ElementText*>(m_selectedWidget->m_rmlElement);
-                //targetElement = m_selectedWidget->m_rmlElement->GetElementById("label");
-                //std::string current = targetElement->GetText();
-                //TE_LOGGER_INFO("Current text content: {}", current.c_str());
-                //if (ImGui::InputTextWithHint("Label", current.c_str(), &text)) {
-                //    //property.onChange(text);
-                //    TE_LOGGER_INFO("Setting text property '{0}' to '{1}'", property.name, text);
-                //}
+            if (ImGui::InputTextMultiline("##Label", &text, ImVec2(-1.0f, ImGui::GetTextLineHeight() * 4))) {
+                widget->setText(text);
             }
             ImGui::PopID();
         }

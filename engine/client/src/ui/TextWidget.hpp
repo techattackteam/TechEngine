@@ -10,6 +10,10 @@ namespace TechEngine {
     public:
         TextWidget();
 
-        void draw(UIRenderer& renderer);
+        void draw(UIRenderer& renderer) override;
+
+        const std::string& getText() const;
+
+        void setText(const std::string& text);
     };
 }
