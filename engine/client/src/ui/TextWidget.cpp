@@ -14,8 +14,8 @@ namespace TechEngine {
         if (renderer.m_defaultFont) {
             renderer.drawText(renderer.m_defaultFont, m_text,
                               {
-                                  m_finalScreenRect.x + m_anchoredPosition.x,
-                                  m_finalScreenRect.y + m_anchoredPosition.y
+                                  m_finalScreenRect.x,
+                                  m_finalScreenRect.y
                               },
                               m_textColor);
         }

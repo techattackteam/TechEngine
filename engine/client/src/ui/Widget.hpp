@@ -78,8 +78,6 @@ namespace TechEngine {
         float m_bottom = 0.0f;
         float m_rotationZ = 0.0f;
 
-        //glm::vec2 m_position;
-        //glm::vec2 m_size;
         std::shared_ptr<Widget> m_parent;
         std::vector<WidgetProperty> m_properties;
         std::vector<std::string> m_childrenTypes;
@@ -106,6 +104,8 @@ namespace TechEngine {
         void changeAnchor(AnchorPreset anchorPreset, glm::vec4 parentScreenRect);
 
         void calculateLayout(const glm::vec4& parentScreenRect);
+
+        glm::vec2 getAbsoluteOffset();
 
         void addChild(const std::shared_ptr<Widget>& child, int index);
 

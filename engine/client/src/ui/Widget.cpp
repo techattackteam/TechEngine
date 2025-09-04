@@ -1,7 +1,5 @@
 #include "Widget.hpp"
 
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
 #include "core/Logger.hpp"
 
 namespace TechEngine {
@@ -206,6 +204,13 @@ namespace TechEngine {
                 child->calculateLayout(m_finalScreenRect);
             }
         }
+    }
+
+    glm::vec2 Widget::getAbsoluteOffset() {
+        if (m_parent) {
+            return m_parent->getAbsoluteOffset() + m_anchoredPosition;
+        }
+        return m_finalScreenRect;
     }
 
     void Widget::addChild(const std::shared_ptr<Widget>& child, int index) {

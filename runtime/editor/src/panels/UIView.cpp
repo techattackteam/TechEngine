@@ -78,7 +78,6 @@ namespace TechEngine {
         ImVec2 canvasTopLeftOnScreen = {panelTopLeft.x + m_panOffset.x, panelTopLeft.y + m_panOffset.y};
         ImVec2 canvasBottomRightOnScreen = {canvasTopLeftOnScreen.x + canvasSize.x * m_zoom, canvasTopLeftOnScreen.y + canvasSize.y * m_zoom};
 
-        // Use a draw list to render the image with precise control
         ImDrawList* draw_list = ImGui::GetWindowDrawList();
         draw_list->AddImage(
             reinterpret_cast<void*>(textureID),
@@ -91,7 +90,7 @@ namespace TechEngine {
         ImVec2 imageTopLeft = ImGui::GetItemRectMin();
         ImVec2 imageSize = ImGui::GetItemRectSize();
         guizmo.editUI(imageTopLeft, imageSize, m_uiEditor->getSelectedWidget());
-        //drawHelperLines(imageTopLeft);
+        drawHelperLines(canvasTopLeftOnScreen);
         frameBuffer.unBind();
     }
 
@@ -138,100 +137,54 @@ namespace TechEngine {
         }
     }
 
-    void UIView::drawHelperLines(ImVec2 imageTopLeft) {
-        /*ImVec2 imageSize = ImGui::GetItemRectSize();
-
-        for (const auto& pair: m_uiEditor->getElementToWidgetMap()) {
-            std::shared_ptr<Widget> widget = pair.second;
-            if (!widget) continue;
-            Rml::Element* element = widget->getRmlElement();
-            if (!element) continue;
-
-            glm::ivec4 color = (widget == m_uiEditor->getSelectedWidget()) ? glm::ivec4(0, 255, 0, 255) : glm::ivec4(255, 0, 0, 255);
-
-            glm::vec2 rmlPos = element->GetAbsoluteOffset(Rml::BoxArea::Border);
-            glm::vec2 rmlSize = element->GetBox().GetSize(Rml::BoxArea::Border);
-
-            ImVec2 topLeft = convertRmlToImGui(rmlPos, imageTopLeft, imageSize);
-            ImVec2 bottomRight = convertRmlToImGui(rmlPos + rmlSize, imageTopLeft, imageSize);
-
-            ImGui::GetForegroundDrawList()->AddRect(
-                topLeft, bottomRight,
-                IM_COL32(color.r, color.g, color.b, color.a), 0.0f, ImDrawFlags_None, 1.5f);
-            if (pair.second == m_uiEditor->getSelectedWidget()) {
-                // Draw pivot cross
-                glm::vec2 pivotOffset = {
-                    rmlPos.x + widget->m_pivot.x * rmlSize.x,
-                    rmlPos.y + widget->m_pivot.y * rmlSize.y
-                };
-                ImVec2 pivotScreen = convertRmlToImGui(pivotOffset, imageTopLeft, imageSize);
-                ImGui::GetForegroundDrawList()->AddLine(
-                    {pivotScreen.x - 5, pivotScreen.y}, {pivotScreen.x + 5, pivotScreen.y}, IM_COL32(255, 255, 0, 255));
-                ImGui::GetForegroundDrawList()->AddLine(
-                    {pivotScreen.x, pivotScreen.y - 5}, {pivotScreen.x, pivotScreen.y + 5}, IM_COL32(255, 255, 0, 255));
-
-                // Draw anchor min/max (optional)
-                glm::vec2 parentSize = element->GetParentNode() ? element->GetParentNode()->GetBox().GetSize(Rml::BoxArea::Content) : glm::vec2(1920, 1080); // Fallback
-
-                glm::vec2 anchorMinPos = element->GetParentNode()->GetAbsoluteOffset() +
-                                         glm::vec2(widget->m_anchorMin.x * parentSize.x, widget->m_anchorMin.y * parentSize.y);
-                glm::vec2 anchorMaxPos = element->GetParentNode()->GetAbsoluteOffset() +
-                                         glm::vec2(widget->m_anchorMax.x * parentSize.x, widget->m_anchorMax.y * parentSize.y);
-
-                ImVec2 anchorMin = convertRmlToImGui(anchorMinPos, imageTopLeft, imageSize);
-                ImVec2 anchorMax = convertRmlToImGui(anchorMaxPos, imageTopLeft, imageSize);
-
-                ImGui::GetForegroundDrawList()->AddRect(
-                    anchorMin, anchorMax, IM_COL32(0, 128, 255, 128), 0.0f, ImDrawFlags_None, 1.0f);
+    void UIView::drawHelperLines(ImVec2 canvasTopLeftOnScreen) {
+        for (auto& widget: m_uiEditor->getWidgetsRegistry().getWidgets()) {
+            if (!widget) {
+                return;
             }
-        }*/
+
+            const glm::vec4& widgetRect = widget->m_finalScreenRect; // {x, y, width, height}
+            const glm::vec2& pivot = widget->m_pivot; // {px, py} normalized
+
+            ImVec2 boxTopLeft = {
+                canvasTopLeftOnScreen.x + (widgetRect.x * m_zoom),
+                canvasTopLeftOnScreen.y + (widgetRect.y * m_zoom)
+            };
+
+            ImVec2 boxBottomRight = {
+                boxTopLeft.x + (widgetRect.z * m_zoom),
+                boxTopLeft.y + (widgetRect.w * m_zoom)
+            };
+
+            float pivotUiX = widgetRect.x + (widgetRect.z * pivot.x);
+            float pivotUiY = widgetRect.y + (widgetRect.w * pivot.y);
+
+            ImVec2 pivotScreenPos = {
+                canvasTopLeftOnScreen.x + (pivotUiX * m_zoom),
+                canvasTopLeftOnScreen.y + (pivotUiY * m_zoom)
+            };
+
+            ImDrawList* drawList = ImGui::GetWindowDrawList();
+            const ImU32 boxColor = widget == m_uiEditor->getSelectedWidget() ? IM_COL32(255, 255, 255, 255) : IM_COL32(150, 150, 150, 100);
+            const ImU32 pivotColor = IM_COL32(255, 255, 0, 255);
+            const float crosshairSize = 6.0f;
+            const float lineThickness = 1.5f;
+
+            drawList->AddRect(boxTopLeft, boxBottomRight, boxColor, 0.0f, ImDrawFlags_None, lineThickness);
+            if (widget == m_uiEditor->getSelectedWidget()) {
+                drawList->AddLine(
+                    {pivotScreenPos.x - crosshairSize, pivotScreenPos.y},
+                    {pivotScreenPos.x + crosshairSize, pivotScreenPos.y},
+                    pivotColor,
+                    lineThickness
+                );
+                drawList->AddLine(
+                    {pivotScreenPos.x, pivotScreenPos.y - crosshairSize},
+                    {pivotScreenPos.x, pivotScreenPos.y + crosshairSize},
+                    pivotColor,
+                    lineThickness
+                );
+            }
+        }
     }
-
-
-    /*ImVec2 UIView::convertRmlToImGui(const glm::vec2& rmlPos, const ImVec2& imageTopLeft, const ImVec2& imageSize) {
-        /#1#/ Get the context size
-        const glm::vec2 contextSize = glm::vec2(m_context->GetDimensions());
-
-        // Normalize RML position to [0, 1] range
-        glm::vec2 normalized = {
-            rmlPos.x / contextSize.x,
-            rmlPos.y / contextSize.y
-        };
-
-        // Convert to ImGui space inside image panel
-        return {
-            imageTopLeft.x + normalized.x * imageSize.x,
-            imageTopLeft.y + normalized.y * imageSize.y
-        };#1#
-    }
-
-    ImVec2 UIView::convertRmlToEditorScreen(const glm::vec2& rmlPos, const ImVec2& panelTopLeft) {
-        /*glm::vec2 gameViewSize = m_uiEditor->getGameView().getFrameBufferSize();
-
-        // 1. Position on the canvas (0 to gameViewSize)
-        float canvasX = rmlPos.x * m_zoom;
-        float canvasY = rmlPos.y * m_zoom;
-
-        // 2. Final screen position including pan and panel offset
-        return {
-            panelTopLeft.x + m_panOffset.x + canvasX,
-            panelTopLeft.y + m_panOffset.y + canvasY
-        };#1#
-        return vec2;
-    }
-
-    // You will need the inverse for mouse picking (e.g., to select a widget)
-    glm::vec2 UIView::convertEditorScreenToRml(const ImVec2& screenPos, const ImVec2& panelTopLeft) {
-        /*glm::vec2 gameViewSize = m_uiEditor->getGameView().getFrameBufferSize();
-
-        // 1. Position relative to the panned canvas's top-left
-        float canvasX = screenPos.x - panelTopLeft.x - m_panOffset.x;
-        float canvasY = screenPos.y - panelTopLeft.y - m_panOffset.y;
-
-        // 2. Normalize back to RML coordinates
-        return {
-            canvasX / m_zoom,
-            canvasY / m_zoom
-        };#1#
-    }*/
 }
