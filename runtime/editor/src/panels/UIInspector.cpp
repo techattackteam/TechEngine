@@ -39,9 +39,10 @@ namespace TechEngine {
                 };
                 int currentPreset = static_cast<int>(m_selectedWidget->m_preset);
                 if (ImGui::Combo("Anchor Preset", &currentPreset, anchorPresetNames, IM_ARRAYSIZE(anchorPresetNames))) {
-                    glm::vec4 rootScreenRect = {0.0f, 0.0f, (float)m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer().m_screenWidth, (float)m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer().m_screenHeight};
+                    UIRenderer& uiRenderer = m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer();
+                    glm::vec4 rootScreenRect = {0.0f, 0.0f, (float)uiRenderer.m_screenWidth, (float)uiRenderer.m_screenHeight};
                     glm::vec4 parentScreenRect = m_selectedWidget->m_parent ? m_selectedWidget->m_parent->m_finalScreenRect : rootScreenRect;
-                    m_selectedWidget->changeAnchor(static_cast<Widget::AnchorPreset>(currentPreset), parentScreenRect);
+                    m_selectedWidget->changeAnchor(static_cast<Widget::AnchorPreset>(currentPreset), parentScreenRect, uiRenderer.getDpiScale());
 
                     changed = true;
                 }
@@ -111,8 +112,9 @@ namespace TechEngine {
             }
 
             if (changed) {
-                glm::vec4 rootFinalScreenRect = {0.0f, 0.0f, (float)m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer().m_screenWidth, (float)m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer().m_screenHeight};
-                m_selectedWidget->calculateLayout(m_selectedWidget->m_parent ? m_selectedWidget->m_parent->m_finalScreenRect : rootFinalScreenRect);
+                UIRenderer& uiRenderer = m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer();
+                glm::vec4 rootFinalScreenRect = {0.0f, 0.0f, (float)uiRenderer.m_screenWidth, (float)uiRenderer.m_screenHeight};
+                m_selectedWidget->calculateLayout(m_selectedWidget->m_parent ? m_selectedWidget->m_parent->m_finalScreenRect : rootFinalScreenRect, uiRenderer.getDpiScale());
             }
         }
 

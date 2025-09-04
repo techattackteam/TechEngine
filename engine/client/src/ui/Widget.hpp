@@ -101,9 +101,9 @@ namespace TechEngine {
 
         virtual void draw(UIRenderer& renderer);
 
-        void changeAnchor(AnchorPreset anchorPreset, glm::vec4 parentScreenRect);
+        void changeAnchor(AnchorPreset anchorPreset, const glm::vec4& parentScreenRect, float dpiScale);
 
-        void calculateLayout(const glm::vec4& parentScreenRect);
+        void calculateLayout(const glm::vec4& parentScreenRect, float dpiScale);
 
         glm::vec2 getAbsoluteOffset();
 

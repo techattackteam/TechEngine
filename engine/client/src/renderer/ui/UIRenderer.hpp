@@ -31,6 +31,7 @@ namespace TechEngine {
 
         uint32_t m_maxVertices = 30000; // Ideally is infinit but we limit it for performance
         glm::mat4 m_projection;
+        float m_dpiScale = 0.0f;
 
     public:
         int m_screenWidth = 0;
@@ -54,6 +55,8 @@ namespace TechEngine {
         void drawRectangle(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color);
 
         void drawText(Font* font, const std::string& text, const glm::vec2& position, const glm::vec4& color);
+
+        const float getDpiScale();
 
     private:
         void flushCommands();

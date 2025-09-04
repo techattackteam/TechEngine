@@ -49,11 +49,11 @@ namespace TechEngine {
         widget->m_parent = parent;
         widget->rename(name);
         getWidgetsRegistry().getWidgets().emplace_back(widget);
+        UIRenderer& uiRenderer = m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer();
         widget->calculateLayout(
             parent
                 ? parent->m_finalScreenRect
-                : glm::vec4(0.0f, 0.0f, (float)m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer().m_screenWidth,
-                            (float)m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer().m_screenHeight));
+                : glm::vec4(0.0f, 0.0f, (float)uiRenderer.m_screenWidth, (float)uiRenderer.m_screenHeight), uiRenderer.getDpiScale());
         return widget;
     }
 
