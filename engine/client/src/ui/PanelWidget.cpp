@@ -14,4 +14,12 @@ namespace TechEngine {
 
         Widget::draw(renderer);
     }
+
+    const glm::vec4& PanelWidget::getBackgroundColor() {
+        return m_backgroundColor;
+    }
+
+    void PanelWidget::setBackgroundColor(const glm::vec4& color) {
+        this->m_backgroundColor = color;
+    }
 }
