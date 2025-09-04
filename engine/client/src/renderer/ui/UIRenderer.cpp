@@ -4,6 +4,7 @@
 #include "project/Project.hpp"
 #include "renderer/ErrorCatcher.hpp"
 #include "systems/SystemsRegistry.hpp"
+#include "ui/WidgetsRegistry.hpp"
 
 namespace TechEngine {
     UIRenderer::UIRenderer(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
@@ -94,12 +95,27 @@ namespace TechEngine {
     }
 
     void UIRenderer::setViewport(int width, int height) {
+        glm::vec2 referenceResolution = {1920.0f, 1080.0f}; // TODO: Make this configurable
+        float m_matchMode = 0.5f;
         if (width == m_screenWidth && height == m_screenHeight) {
             return;
         }
         m_screenWidth = width;
         m_screenHeight = height;
         m_projection = glm::ortho(0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, -1.0f, 1.0f);
+
+        float widthScale = width / referenceResolution.x;
+        float heightScale = height / referenceResolution.y;
+        float logWidth = log(widthScale);
+        float logHeight = log(heightScale);
+        float blend = logWidth * (1.0f - m_matchMode) + logHeight * m_matchMode; // lerp
+
+        m_dpiScale = exp(blend);
+        for (auto& widget: m_systemsRegistry.getSystem<WidgetsRegistry>().getWidgets()) {
+            if (widget && widget->m_parent == nullptr) {
+                widget->calculateLayout(glm::vec4(0.0f, 0.0f, (float)m_screenWidth, (float)m_screenHeight), m_dpiScale);
+            }
+        }
     }
 
     void UIRenderer::drawRectangle(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color) {
@@ -183,5 +199,9 @@ namespace TechEngine {
                 m_drawCommands.back().vertexCount += 6;
             }
         }
+    }
+
+    const float UIRenderer::getDpiScale() {
+        return m_dpiScale;
     }
 }

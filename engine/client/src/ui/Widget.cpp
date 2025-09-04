@@ -1,5 +1,11 @@
 #include "Widget.hpp"
 
+#include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
 #include "core/Logger.hpp"
 
 namespace TechEngine {
@@ -40,15 +46,19 @@ namespace TechEngine {
         }
     }
 
-    void Widget::changeAnchor(AnchorPreset anchorPreset, glm::vec4 parentScreenRect) {
-        if (anchorPreset == m_preset) {
-            return; // No change needed
+    void Widget::changeAnchor(AnchorPreset anchorPreset, const glm::vec4& parentScreenRect, float dpiScale) {
+        if (anchorPreset == m_preset || dpiScale <= 0.0f) {
+            return; // No change needed or invalid scale
         }
 
         // 1. Store the current absolute screen rect. This is the visual state we must preserve.
         const glm::vec4 oldScreenRect = m_finalScreenRect;
 
-        // 2. Update the internal anchor preset and min/max values
+        // Store the old preset's stretching behavior
+        bool wasStretchingX = (m_anchorMax.x - m_anchorMin.x) > 0.001f;
+        bool wasStretchingY = (m_anchorMax.y - m_anchorMin.y) > 0.001f;
+
+        // 2. Update the internal anchor preset and min/max values to the NEW preset
         m_preset = anchorPreset;
         setAnchorsFromPreset();
 
@@ -56,7 +66,7 @@ namespace TechEngine {
         bool isStretchingX = (m_anchorMax.x - m_anchorMin.x) > 0.001f;
         bool isStretchingY = (m_anchorMax.y - m_anchorMin.y) > 0.001f;
 
-        // 4. Perform the "reverse layout" calculation to find the new offset values
+        // 4. Perform the "reverse layout" calculation to find the new unscaled offset values
 
         // --- Calculate new X-axis properties ---
         if (isStretchingX) {
@@ -64,13 +74,26 @@ namespace TechEngine {
             float newAnchorMinX_abs = parentScreenRect.x + parentScreenRect.z * m_anchorMin.x;
             float newAnchorMaxX_abs = parentScreenRect.x + parentScreenRect.z * m_anchorMax.x;
 
-            m_left = oldScreenRect.x - newAnchorMinX_abs;
-            m_right = newAnchorMaxX_abs - (oldScreenRect.x + oldScreenRect.z);
+            float scaledLeft = oldScreenRect.x - newAnchorMinX_abs;
+            float scaledRight = newAnchorMaxX_abs - (oldScreenRect.x + oldScreenRect.z);
+
+            // ** THE FIX **: Un-scale the calculated values before storing them.
+            m_left = scaledLeft / dpiScale;
+            m_right = scaledRight / dpiScale;
         } else {
             // The new mode is POINT. We need to calculate m_anchoredPosition.x.
+            // If we just switched from stretch, we must also update m_size.
+            if (wasStretchingX) {
+                m_size.x = oldScreenRect.z / dpiScale;
+            }
+
             float newAnchorMinX_abs = parentScreenRect.x + parentScreenRect.z * m_anchorMin.x;
 
-            m_anchoredPosition.x = oldScreenRect.x - newAnchorMinX_abs + (m_size.x * m_pivot.x);
+            // Use the new m_size (which might have just been updated) to get the correct scaled size.
+            float scaledPivotOffsetX = (m_size.x * dpiScale) * m_pivot.x;
+            float scaledAnchoredPosX = oldScreenRect.x - newAnchorMinX_abs + scaledPivotOffsetX;
+
+            m_anchoredPosition.x = scaledAnchoredPosX / dpiScale;
         }
 
         // --- Calculate new Y-axis properties ---
@@ -79,13 +102,24 @@ namespace TechEngine {
             float newAnchorMinY_abs = parentScreenRect.y + parentScreenRect.w * m_anchorMin.y;
             float newAnchorMaxY_abs = parentScreenRect.y + parentScreenRect.w * m_anchorMax.y;
 
-            m_top = oldScreenRect.y - newAnchorMinY_abs;
-            m_bottom = newAnchorMaxY_abs - (oldScreenRect.y + oldScreenRect.w);
+            float scaledTop = oldScreenRect.y - newAnchorMinY_abs;
+            float scaledBottom = newAnchorMaxY_abs - (oldScreenRect.y + oldScreenRect.w);
+
+            m_top = scaledTop / dpiScale;
+            m_bottom = scaledBottom / dpiScale;
         } else {
             // The new mode is POINT. We need to calculate m_anchoredPosition.y.
+            // If we just switched from stretch, we must also update m_size.
+            if (wasStretchingY) {
+                m_size.y = oldScreenRect.w / dpiScale;
+            }
+
             float newAnchorMinY_abs = parentScreenRect.y + parentScreenRect.w * m_anchorMin.y;
 
-            m_anchoredPosition.y = oldScreenRect.y - newAnchorMinY_abs + (m_size.y * m_pivot.y);
+            float scaledPivotOffsetY = (m_size.y * dpiScale) * m_pivot.y;
+            float scaledAnchoredPosY = oldScreenRect.y - newAnchorMinY_abs + scaledPivotOffsetY;
+
+            m_anchoredPosition.y = scaledAnchoredPosY / dpiScale;
         }
     }
 
@@ -163,8 +197,16 @@ namespace TechEngine {
         m_name = name;
     }
 
-    void Widget::calculateLayout(const glm::vec4& parentScreenRect) {
+    void Widget::calculateLayout(const glm::vec4& parentScreenRect, float dpiScale) {
         // parentScreenRect is {x, y, width, height}
+
+        // --- Scale all pixel-dependent properties FIRST ---
+        glm::vec2 scaledSize = m_size * dpiScale;
+        glm::vec2 scaledAnchoredPosition = m_anchoredPosition * dpiScale;
+        float scaledLeft = m_left * dpiScale;
+        float scaledRight = m_right * dpiScale;
+        float scaledTop = m_top * dpiScale;
+        float scaledBottom = m_bottom * dpiScale;
 
         // 1. Calculate the absolute screen positions of the anchor points within the parent
         glm::vec2 anchorMinPos = {parentScreenRect.x + parentScreenRect.z * m_anchorMin.x, parentScreenRect.y + parentScreenRect.w * m_anchorMin.y};
@@ -175,33 +217,32 @@ namespace TechEngine {
         bool isStretchingY = (m_anchorMax.y - m_anchorMin.y) > 0.001f;
 
         // 3. Calculate final position and size based on stretch mode
-
         // --- Handle X-Axis ---
         if (isStretchingX) {
-            m_finalScreenRect.x = anchorMinPos.x + m_left;
-            float rightEdge = anchorMaxPos.x - m_right;
+            m_finalScreenRect.x = anchorMinPos.x + scaledLeft;
+            float rightEdge = anchorMaxPos.x - scaledRight;
             m_finalScreenRect.z = rightEdge - m_finalScreenRect.x; // width
         } else {
             // Not stretching, so we anchor to a single point and set a fixed size
-            m_finalScreenRect.z = m_size.x; // width
-            m_finalScreenRect.x = anchorMinPos.x + m_anchoredPosition.x - (m_size.x * m_pivot.x);
+            m_finalScreenRect.z = scaledSize.x; // width
+            m_finalScreenRect.x = anchorMinPos.x + scaledAnchoredPosition.x - (scaledSize.x * m_pivot.x);
         }
 
         // --- Handle Y-Axis ---
         if (isStretchingY) {
-            m_finalScreenRect.y = anchorMinPos.y + m_top;
-            float bottomEdge = anchorMaxPos.y - m_bottom;
+            m_finalScreenRect.y = anchorMinPos.y + scaledTop;
+            float bottomEdge = anchorMaxPos.y - scaledBottom;
             m_finalScreenRect.w = bottomEdge - m_finalScreenRect.y; // height
         } else {
             // Not stretching, so we anchor to a single point and set a fixed size
-            m_finalScreenRect.w = m_size.y; // height
-            m_finalScreenRect.y = anchorMinPos.y + m_anchoredPosition.y - (m_size.y * m_pivot.y);
+            m_finalScreenRect.w = scaledSize.y; // height
+            m_finalScreenRect.y = anchorMinPos.y + scaledAnchoredPosition.y - (scaledSize.y * m_pivot.y);
         }
 
         // 4. After calculating our own layout, recursively call layout calculation for all children
         for (const auto& child: m_children) {
             if (child) {
-                child->calculateLayout(m_finalScreenRect);
+                child->calculateLayout(m_finalScreenRect, dpiScale);
             }
         }
     }
