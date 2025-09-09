@@ -163,7 +163,6 @@ namespace TechEngine {
 
         const float nativeSize = font->m_nativeFontSize;
         const float scale = fontSize / nativeSize;
-        const float baselineY = position.y + (font->getAscent() * scale);
 
         uint32_t textureID = font->getAtlasTextureID();
         if (m_currentTextureID != textureID) {
@@ -178,12 +177,21 @@ namespace TechEngine {
         }
 
         float cursorX = position.x;
-        float cursorY = position.y + font->getAscent();
+        float cursorY = position.y;
         for (char c: text) {
+            if (c == '\n') {
+                cursorY += font->getLineHeight() * scale;
+                cursorX = position.x;
+                continue;
+            }
             CharInfo info;
             if (font->getCharInfo(c, info)) {
+                if (c == '\r') {
+                    continue; // Ignore carriage returns
+                }
                 // All metrics from 'info' are unscaled. We apply the scale to them.
                 // bearing.y (yoff) is the vertical offset FROM THE BASELINE to the top of the glyph.
+                const float baselineY = cursorY + (font->getAscent() * scale);
                 float xpos = cursorX + info.bearing.x * scale;
                 float ypos = baselineY + info.bearing.y * scale; // The top of the quad
                 float w = info.size.x * scale;
@@ -224,6 +232,17 @@ namespace TechEngine {
 
                 // Advance the horizontal cursor position for the next character
                 cursorX += info.advance * scale;
+            } else if (c == ' ') {
+                // Handle space character (no glyph, just advance)
+                cursorX += (info.advance) * scale;
+            } else if (c == '\t') {
+                // Handle tab character (advance by a fixed amount, e.g., 4 spaces)
+                float spaceAdvance = 0.0f;
+                CharInfo spaceInfo;
+                if (font->getCharInfo(' ', spaceInfo)) {
+                    spaceAdvance = spaceInfo.advance * scale;
+                }
+                cursorX += spaceAdvance * 4; // Assuming a tab is 4 spaces
             }
         }
     }

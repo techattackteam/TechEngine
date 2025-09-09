@@ -1,10 +1,15 @@
 #include "InputTextWidget.hpp"
 
 #include "core/Logger.hpp"
+#include "input/Input.hpp"
 #include "input/Key.hpp"
 #include "renderer/ui/UIRenderer.hpp"
+#include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
+    InputTextWidget::InputTextWidget(SystemsRegistry& systemsRegistry) : Widget(), m_systemsRegistry(systemsRegistry) {
+    }
+
     InputTextWidget::~InputTextWidget() = default;
 
     void InputTextWidget::update(float deltaTime) {
@@ -81,8 +86,26 @@ namespace TechEngine {
                 if (!m_text.empty()) {
                     m_text.pop_back();
                 }
+            } else if (key.getKeyCode() == TAB) {
+                m_text += "\t";
+            } else if (key.getKeyCode() == SPACE) {
+                m_text += " ";
+            } else if (key.getKeyCode() == ENTER) {
+                m_text += "\n";
+            } else if (key.getKeyCode() == LEFT_CTRL || key.getKeyCode() == RIGHT_CTRL ||
+                       key.getKeyCode() == LEFT_ALT || key.getKeyCode() == RIGHT_ALT ||
+                       key.getKeyCode() == CAPS_LOCK || key.getKeyCode() == ESC ||
+                       key.getKeyCode() == LEFT_SHIFT || key.getKeyCode() == RIGHT_SHIFT
+            ) {
+                // Ignore these keys for text input
             } else {
-                m_text += key.getKeyName();
+                std::locale locale;
+                Input& input = m_systemsRegistry.getSystem<Input>();
+                if (input.isCapsLockActive() ^ (input.isKeyPressed(LEFT_SHIFT) || input.isKeyPressed(RIGHT_SHIFT))) {
+                    m_text += std::toupper(key.getKeyName()[0], locale);
+                } else {
+                    m_text += std::tolower(key.getKeyName()[0], locale);
+                }
             }
         }
     }

@@ -16,7 +16,6 @@ namespace TechEngine {
         glm::vec2 uv0;
         glm::vec2 uv1;
     };
-    ;
 
     class CLIENT_DLL Font {
     public:
@@ -26,6 +25,7 @@ namespace TechEngine {
 
         std::array<stbtt_packedchar, 95> m_packedChars;
         float m_ascent = 0.0f;
+        float m_lineHeight = 0.0f;
         float m_nativeFontSize = 0.0f;
 
     public:
@@ -35,12 +35,14 @@ namespace TechEngine {
 
         bool load(const std::string& fontPath, int fontSize);
 
-        uint32_t getAtlasTextureID() const;
+        float measureTextWidth(const std::string& text, float fontSize) const;
 
         bool getCharInfo(char character, CharInfo& outInfo) const;
 
         float getAscent() const;
 
-        float measureTextWidth(const std::string& text, float fontSize) const;
+        uint32_t getAtlasTextureID() const;
+
+        float getLineHeight() const;
     };
 }

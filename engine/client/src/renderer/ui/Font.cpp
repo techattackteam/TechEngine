@@ -68,6 +68,7 @@ namespace TechEngine {
         stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, &lineGap);
 
         m_ascent = (float)ascent * scale;
+        m_lineHeight = (float)(ascent - descent + lineGap) * scale;
 
         GlCall(glGenTextures(1, &m_atlasTextureID));
         GlCall(glBindTexture(GL_TEXTURE_2D, m_atlasTextureID));
@@ -81,8 +82,30 @@ namespace TechEngine {
         return true;
     }
 
+    float Font::measureTextWidth(const std::string& text, float fontSize) const {
+        if (text.empty()) {
+            return 0.0f;
+        }
+
+        if (m_nativeFontSize <= 0.0f) return 0.0f;
+        const float scale = fontSize / m_nativeFontSize;
+
+        float width = 0.0f;
+        for (char c: text) {
+            CharInfo info;
+            if (getCharInfo(c, info)) {
+                width += info.advance * scale;
+            }
+        }
+        return width;
+    }
+
     uint32_t Font::getAtlasTextureID() const {
         return m_atlasTextureID;
+    }
+
+    float Font::getLineHeight() const {
+        return m_lineHeight;
     }
 
     bool Font::getCharInfo(char character, CharInfo& outInfo) const {
@@ -103,23 +126,5 @@ namespace TechEngine {
 
     float Font::getAscent() const {
         return m_ascent;
-    }
-
-    float Font::measureTextWidth(const std::string& text, float fontSize) const {
-        if (text.empty()) {
-            return 0.0f;
-        }
-
-        if (m_nativeFontSize <= 0.0f) return 0.0f;
-        const float scale = fontSize / m_nativeFontSize;
-
-        float width = 0.0f;
-        for (char c: text) {
-            CharInfo info;
-            if (getCharInfo(c, info)) {
-                width += info.advance * scale;
-            }
-        }
-        return width;
     }
 }

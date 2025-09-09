@@ -128,6 +128,7 @@ namespace TechEngine {
                 case ImGuiKey_RightCtrl: return KeyCode::RIGHT_CTRL;
                 case ImGuiKey_LeftAlt: return KeyCode::LEFT_ALT;
                 case ImGuiKey_RightAlt: return KeyCode::RIGHT_ALT;
+                case ImGuiKey_CapsLock: return KeyCode::CAPS_LOCK;
 
                 // Mouse Buttons
                 case ImGuiKey_MouseLeft: return KeyCode::MOUSE_1;

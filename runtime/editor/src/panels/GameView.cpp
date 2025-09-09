@@ -75,14 +75,14 @@ namespace TechEngine {
     }
 
     void GameView::processKeyPressed(Key key) {
-        m_appSystemsRegistry.getSystem<Input>().onKeyInput(key.getKeyCode(), 1);
+        m_appSystemsRegistry.getSystem<Input>().onKeyPressed(key.getKeyCode());
     }
 
     void GameView::processKeyReleased(Key key) {
-        m_appSystemsRegistry.getSystem<Input>().onKeyInput(key.getKeyCode(), 0);
+        m_appSystemsRegistry.getSystem<Input>().onKeyReleased(key.getKeyCode());
     }
 
     void GameView::processKeyHold(Key key) {
-        m_appSystemsRegistry.getSystem<Input>().onKeyInput(key.getKeyCode(), 2);
+        m_appSystemsRegistry.getSystem<Input>().onKeyHold(key.getKeyCode());
     }
 }

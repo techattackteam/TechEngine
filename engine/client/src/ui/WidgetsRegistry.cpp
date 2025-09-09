@@ -26,7 +26,7 @@ namespace TechEngine {
         m_widgetsTemplates.push_back(ContainerWidget());
         m_widgetsTemplates.push_back(PanelWidget());
         m_widgetsTemplates.push_back(TextWidget());
-        m_widgetsTemplates.push_back(InputTextWidget());
+        m_widgetsTemplates.push_back(InputTextWidget(m_systemsRegistry));
         //m_widgetsTemplates.push_back(ButtonWidget());
         //m_widgetsTemplates.push_back(ImageWidget());
         loadJson(R"(C:\dev\TechEngine\bin\runtime\editor\debug\New Project\resources\client\assets\ui\widgets.json)");
@@ -120,7 +120,6 @@ namespace TechEngine {
             // Check if the widget is an InputTextWidget and if the click is inside its bounds
             if (auto inputField = std::dynamic_pointer_cast<InputTextWidget>(widget)) {
                 const auto& rect = inputField->getFinalScreenRect(); // This is just the game view in the editor
-                TE_LOGGER_INFO("Widget: {0}, Rect: ({1}, {2}, {3}, {4}), Mouse: ({5}, {6})", inputField->getName(), rect.x, rect.y, rect.z, rect.w, mousePosition.x, mousePosition.y);
                 if (mousePosition.x >= rect.x && mousePosition.x <= rect.x + rect.z &&
                     mousePosition.y >= rect.y && mousePosition.y <= rect.y + rect.w) {
                     clickedWidget = inputField;

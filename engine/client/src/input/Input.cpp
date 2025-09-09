@@ -2,8 +2,6 @@
 
 #include "systems/SystemsRegistry.hpp"
 #include "eventSystem/EventDispatcher.hpp"
-#include "window/Window.hpp"
-
 #include "events/input/MouseScrollEvent.hpp"
 #include "events/input/KeyHoldEvent.hpp"
 #include "events/input/KeyPressedEvent.hpp"
@@ -36,21 +34,26 @@ namespace TechEngine {
         });*/
     }
 
-    void Input::onKeyInput(KeyCode key, int action) {
-        switch (action) {
-            case GLFW_PRESS: {
-                m_systemsRegistry.getSystem<EventDispatcher>().dispatch<KeyPressedEvent>(Key(key));
-                break;
+    void Input::onKeyPressed(KeyCode keyCode) {
+        if (keyCode < m_keyStates.size()) {
+            m_keyStates[keyCode] = true;
+            if (keyCode == CAPS_LOCK) {
+                m_isCapsLockActive = !m_isCapsLockActive;
             }
-            case GLFW_RELEASE: {
-                m_systemsRegistry.getSystem<EventDispatcher>().dispatch<KeyReleasedEvent>(Key(key));
-                break;
-            }
-            case GLFW_REPEAT: {
-                m_systemsRegistry.getSystem<EventDispatcher>().dispatch<KeyHoldEvent>(Key(key));
-                break;
-            }
-            default: ;
+            m_systemsRegistry.getSystem<EventDispatcher>().dispatch<KeyPressedEvent>(Key(keyCode));
+        }
+    }
+
+    void Input::onKeyReleased(KeyCode keyCode) {
+        if (keyCode < m_keyStates.size()) {
+            m_keyStates[keyCode] = false;
+            m_systemsRegistry.getSystem<EventDispatcher>().dispatch<KeyReleasedEvent>(Key(keyCode));
+        }
+    }
+
+    void Input::onKeyHold(KeyCode key) {
+        if (key < m_keyStates.size() && m_keyStates[key]) {
+            m_systemsRegistry.getSystem<EventDispatcher>().dispatch<KeyHoldEvent>(Key(key));
         }
     }
 
@@ -60,6 +63,14 @@ namespace TechEngine {
 
     void Input::onMouseScroll(double xoffset, double yoffset) {
         m_systemsRegistry.getSystem<EventDispatcher>().dispatch<MouseScrollEvent>((float)xoffset, (float)yoffset);
+    }
+
+    bool Input::isKeyPressed(KeyCode key) {
+        return m_keyStates[key];
+    }
+
+    bool Input::isCapsLockActive() {
+        return m_isCapsLockActive;
     }
 
     Mouse& Input::getMouse() {
