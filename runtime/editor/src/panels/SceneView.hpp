@@ -29,7 +29,7 @@ namespace TechEngine {
 
         void onUpdate() override;
 
-        void processShortcuts() override;
+        void processKeyPressed(Key ) override;
 
         void processMouseDragging(glm::vec2 delta, unsigned long long mouseButtons) override;
 

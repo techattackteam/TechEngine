@@ -17,7 +17,7 @@ namespace TechEngine {
                                   m_finalScreenRect.x,
                                   m_finalScreenRect.y
                               },
-                              m_textColor);
+                              m_fontSize * renderer.getDpiScale(), m_textColor);
         }
 
         Widget::draw(renderer);

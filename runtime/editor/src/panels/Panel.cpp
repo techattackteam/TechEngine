@@ -1,6 +1,5 @@
 #include "Panel.hpp"
 
-#include "eventSystem/EventDispatcher.hpp"
 #include "imgui_internal.h"
 #include "core/Logger.hpp"
 
@@ -17,11 +16,7 @@ namespace TechEngine {
         m_windowFlags |= ImGuiWindowFlags_NoCollapse;
 
         id = nextID++;
-        registerShortcuts();
         onInit();
-    }
-
-    void Panel::registerShortcuts() {
     }
 
     void Panel::update() {
@@ -67,8 +62,15 @@ namespace TechEngine {
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigWindowsMoveFromTitleBarOnly = true;
 
-        if (!m_isDragging &&
-            ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) &&
+        m_isPanelHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+        m_isPanelFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows | ImGuiFocusedFlags_RootAndChildWindows);
+
+        if (!m_isPanelHovered && !m_isPanelFocused && !m_isDragging) {
+            return;
+        }
+
+        // Start dragging
+        if (!m_isDragging && m_isPanelHovered &&
             (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right) || ImGui::IsMouseClicked(ImGuiMouseButton_Middle))) {
             ImGuiWindow* window = ImGui::GetCurrentWindow();
 
@@ -104,22 +106,33 @@ namespace TechEngine {
             processMouseDragging(delta, mouseButtons);
         }
 
-        if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem)) {
-            m_isPanelHovered = true;
+        if (m_isPanelHovered /*&& !m_isPanelFocused*/) {
             glm::vec2 delta = glm::vec2(io.MouseDelta.x, io.MouseDelta.y);
             processMouseMoving(delta);
-        } else {
-            m_isPanelHovered = false;
         }
 
-        bool isWindowFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows | ImGuiFocusedFlags_RootAndChildWindows);
         float scrollY = io.MouseWheel;
-        if ((m_isPanelHovered || isWindowFocused) && scrollY != 0.0f) {
+        if ((m_isPanelHovered || m_isPanelFocused) && scrollY != 0.0f) {
             processMouseScroll(scrollY);
         }
-    }
 
-    void Panel::processShortcuts() {
+        if (m_isPanelFocused) {
+            for (int i = ImGuiKey_NamedKey_BEGIN; i < ImGuiKey_NamedKey_END; ++i) {
+                ImGuiKey key = static_cast<ImGuiKey>(i);
+                // Key was just pressed this frame
+                if (ImGui::IsKeyPressed(key)) {
+                    processKeyPressed(Key(ImGuiKeyToEngineKeyCode(key)));
+                }
+                // Key was just released this frame
+                if (ImGui::IsKeyReleased(key)) {
+                    processKeyReleased(Key(ImGuiKeyToEngineKeyCode(key)));
+                }
+                // Key is currently being held down
+                if (ImGui::IsKeyDown(key)) {
+                    processKeyHold(Key(ImGuiKeyToEngineKeyCode(key)));
+                }
+            }
+        }
     }
 
     void Panel::processMouseDragging(glm::vec2 delta, unsigned long long mouseButtons) {
@@ -129,5 +142,14 @@ namespace TechEngine {
     }
 
     void Panel::processMouseScroll(float yOffset) {
+    }
+
+    void Panel::processKeyPressed(Key key) {
+    }
+
+    void Panel::processKeyReleased(Key key) {
+    }
+
+    void Panel::processKeyHold(Key key) {
     }
 }

@@ -16,7 +16,7 @@ namespace TechEngine {
     }
 
     void Input::init() {
-        GLFWwindow* handler = m_systemsRegistry.getSystem<Window>().getHandler();
+        /*GLFWwindow* handler = m_systemsRegistry.getSystem<Window>().getHandler();
         glfwSetWindowUserPointer(handler, this);
         glfwSetKeyCallback(handler, [](GLFWwindow* handler, int key, int scancode, int action, int mods) {
             Input* input = (Input*)glfwGetWindowUserPointer(handler);
@@ -28,18 +28,18 @@ namespace TechEngine {
         });
         glfwSetScrollCallback(handler, [](GLFWwindow* handler, double xoffset, double yoffset) {
             Input* input = (Input*)glfwGetWindowUserPointer(handler);
-            input->m_systemsRegistry.getSystem<EventDispatcher>().dispatch<MouseScrollEvent>((float)xoffset, (float)yoffset);
+            input->onMouseScroll(xoffset, yoffset);
         });
         glfwSetCursorPosCallback(handler, [](GLFWwindow* handler, double xpos, double ypos) {
             Input* input = (Input*)glfwGetWindowUserPointer(handler);
-            input->mouse.onMouseMove(xpos, ypos);
-        });
+            input->onMouseMove(xpos, ypos);
+        });*/
     }
 
-    void Input::onKeyInput(int key, int action) {
+    void Input::onKeyInput(KeyCode key, int action) {
         switch (action) {
             case GLFW_PRESS: {
-               m_systemsRegistry.getSystem<EventDispatcher>().dispatch<KeyPressedEvent>(Key(key));
+                m_systemsRegistry.getSystem<EventDispatcher>().dispatch<KeyPressedEvent>(Key(key));
                 break;
             }
             case GLFW_RELEASE: {
@@ -52,5 +52,17 @@ namespace TechEngine {
             }
             default: ;
         }
+    }
+
+    void Input::onMouseMove(double xpos, double ypos) {
+        mouse.onMouseMove(xpos, ypos);
+    }
+
+    void Input::onMouseScroll(double xoffset, double yoffset) {
+        m_systemsRegistry.getSystem<EventDispatcher>().dispatch<MouseScrollEvent>((float)xoffset, (float)yoffset);
+    }
+
+    Mouse& Input::getMouse() {
+        return mouse;
     }
 }

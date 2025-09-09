@@ -9,7 +9,7 @@
 #include "events/input/MouseMoveEvent.hpp"
 
 namespace TechEngine {
-    Mouse::Mouse(SystemsRegistry& systemsRegistry): m_systemsRegistry(systemsRegistry) {
+    Mouse::Mouse(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
         systemsRegistry.getSystem<EventDispatcher>().subscribe<KeyPressedEvent>([this](const std::shared_ptr<Event>& event) {
             auto* keyPressedEvent = dynamic_cast<KeyPressedEvent*>(event.get());
             if (keyPressedEvent->getKey().getKeyCode() >= MOUSE_1 && keyPressedEvent->getKey().getKeyCode() <= MOUSE_8) {
@@ -71,5 +71,13 @@ namespace TechEngine {
         glm::vec2 toPosition = glm::vec2(x, y);
         m_systemsRegistry.getSystem<EventDispatcher>().dispatch<MouseMoveEvent>(fromPosition, toPosition);
         m_lastPosition = toPosition;
+    }
+
+    const glm::vec2& Mouse::getPosition() {
+        return m_lastPosition;
+    }
+
+    const glm::vec2 Mouse::getDelta() const {
+        return m_currentPosition - m_lastPosition;
     }
 }

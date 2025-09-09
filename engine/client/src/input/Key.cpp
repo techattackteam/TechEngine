@@ -6,6 +6,7 @@ namespace TechEngine {
         return keyCode;
     }
 
+
     std::string Key::getKeyName() const {
         switch (keyCode) {
             case Q:

@@ -17,5 +17,17 @@ namespace TechEngine {
         void onUpdate() override;
 
         glm::vec2 getFrameBufferSize();
+
+        void processMouseMoving(glm::vec2 delta) override;
+
+        void processMouseScroll(float yOffset) override;
+
+        void processMouseDragging(glm::vec2 delta, unsigned long long mouseButtons) override;
+
+        void processKeyPressed(Key key) override;
+
+        void processKeyReleased(Key key) override;
+
+        void processKeyHold(Key key) override;
     };
 }

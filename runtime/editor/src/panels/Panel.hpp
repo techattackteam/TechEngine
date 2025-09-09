@@ -23,6 +23,7 @@ namespace TechEngine {
 
         bool m_isVisible = true;
         bool m_isPanelHovered = false;
+        bool m_isPanelFocused = false;
         bool m_isDragging = false;
         bool m_isResizing = false;
         bool m_isMoving = false;
@@ -43,23 +44,104 @@ namespace TechEngine {
 
         virtual void init(const std::string& name, ImGuiWindowClass* parentDockSpaceClass, bool isVisible = true);
 
-        void registerShortcuts();
-
         virtual void update();
 
         virtual void onInit() = 0;
 
         virtual void onUpdate() = 0;
 
-        void processInput();
 
-        virtual void processShortcuts();
+        void processInput();
 
         virtual void processMouseDragging(glm::vec2 delta, unsigned long long mouseButtons);
 
         virtual void processMouseMoving(glm::vec2 delta);
 
         virtual void processMouseScroll(float yOffset);
+
+        virtual void processKeyPressed(Key key);
+
+        virtual void processKeyReleased(Key key);
+
+        virtual void processKeyHold(Key key);
+
+        static KeyCode ImGuiKeyToEngineKeyCode(ImGuiKey imguiKey) {
+            switch (imguiKey) {
+                // Letters
+                case ImGuiKey_A: return KeyCode::A;
+                case ImGuiKey_B: return KeyCode::B;
+                case ImGuiKey_C: return KeyCode::C;
+                case ImGuiKey_D: return KeyCode::D;
+                case ImGuiKey_E: return KeyCode::E;
+                case ImGuiKey_F: return KeyCode::F;
+                case ImGuiKey_G: return KeyCode::G;
+                case ImGuiKey_H: return KeyCode::H;
+                case ImGuiKey_I: return KeyCode::I;
+                case ImGuiKey_J: return KeyCode::J;
+                case ImGuiKey_K: return KeyCode::K;
+                case ImGuiKey_L: return KeyCode::L;
+                case ImGuiKey_M: return KeyCode::M;
+                case ImGuiKey_N: return KeyCode::N;
+                case ImGuiKey_O: return KeyCode::O;
+                case ImGuiKey_P: return KeyCode::P;
+                case ImGuiKey_Q: return KeyCode::Q;
+                case ImGuiKey_R: return KeyCode::R;
+                case ImGuiKey_S: return KeyCode::S;
+                case ImGuiKey_T: return KeyCode::T;
+                case ImGuiKey_U: return KeyCode::U;
+                case ImGuiKey_V: return KeyCode::V;
+                case ImGuiKey_W: return KeyCode::W;
+                case ImGuiKey_X: return KeyCode::X;
+                case ImGuiKey_Y: return KeyCode::Y;
+                case ImGuiKey_Z: return KeyCode::Z;
+
+                // Numbers
+                case ImGuiKey_1: return KeyCode::ONE;
+                case ImGuiKey_2: return KeyCode::TWO;
+                case ImGuiKey_3: return KeyCode::THREE;
+                case ImGuiKey_4: return KeyCode::FOUR;
+                case ImGuiKey_5: return KeyCode::FIVE;
+                case ImGuiKey_6: return KeyCode::SIX;
+                case ImGuiKey_7: return KeyCode::SEVEN;
+                case ImGuiKey_8: return KeyCode::EIGHT;
+                case ImGuiKey_9: return KeyCode::NINE;
+                case ImGuiKey_0: return KeyCode::ZERO;
+
+                // Arrow Keys
+                case ImGuiKey_UpArrow: return KeyCode::ARROW_UP;
+                case ImGuiKey_DownArrow: return KeyCode::ARROW_DOWN;
+                case ImGuiKey_LeftArrow: return KeyCode::ARROW_LEFT;
+                case ImGuiKey_RightArrow: return KeyCode::ARROW_RIGHT;
+
+                // Function Keys
+                case ImGuiKey_Space: return KeyCode::SPACE;
+                case ImGuiKey_Enter: return KeyCode::ENTER;
+                case ImGuiKey_Tab: return KeyCode::TAB;
+                case ImGuiKey_Backspace: return KeyCode::BACKSPACE;
+                case ImGuiKey_Delete: return KeyCode::DEL;
+                case ImGuiKey_Escape: return KeyCode::ESC;
+
+                // Modifier Keys
+                case ImGuiKey_LeftShift: return KeyCode::LEFT_SHIFT;
+                case ImGuiKey_RightShift: return KeyCode::RIGHT_SHIFT;
+                case ImGuiKey_LeftCtrl: return KeyCode::LEFT_CTRL;
+                case ImGuiKey_RightCtrl: return KeyCode::RIGHT_CTRL;
+                case ImGuiKey_LeftAlt: return KeyCode::LEFT_ALT;
+                case ImGuiKey_RightAlt: return KeyCode::RIGHT_ALT;
+
+                // Mouse Buttons
+                case ImGuiKey_MouseLeft: return KeyCode::MOUSE_1;
+                case ImGuiKey_MouseRight: return KeyCode::MOUSE_2;
+                case ImGuiKey_MouseMiddle: return KeyCode::MOUSE_3;
+                case ImGuiKey_MouseX1: return KeyCode::MOUSE_4; // Corresponds to the 'back' button
+                case ImGuiKey_MouseX2: return KeyCode::MOUSE_5; // Corresponds to the 'forward' button
+
+                // Unmapped keys will fall through to the default
+                default:
+                    return KeyCode::None;
+            }
+        }
+
 
         const std::string& getName() const {
             return m_name;

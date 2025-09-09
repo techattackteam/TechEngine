@@ -13,6 +13,7 @@ namespace TechEngine {
                              LoggerPanel& loggerPanel) : RuntimePanel(editorSystemsRegistry,
                                                                       clientSystemsRegistry,
                                                                       loggerPanel),
+                                                         m_gameView(editorSystemsRegistry, clientSystemsRegistry),
                                                          m_uiEditor(editorSystemsRegistry, clientSystemsRegistry, m_gameView) {
         m_projectType = ProjectType::Client;
 
@@ -39,15 +40,19 @@ namespace TechEngine {
     void ClientPanel::onInit() {
         RuntimePanel::onInit();
         m_uiEditor.init("UI Editor", &m_dockSpaceWindowClass);
+        m_gameView.init("Game View", &m_dockSpaceWindowClass);
     }
 
     void ClientPanel::onUpdate() {
         RuntimePanel::onUpdate();
         m_uiEditor.update();
+        m_gameView.update();
     }
 
     void ClientPanel::setupInitialDockingLayout() {
         RuntimePanel::setupInitialDockingLayout();
+        ImGui::DockBuilderDockWindow((m_gameView.getName() + "##" + std::to_string(m_gameView.getId())).c_str(),
+                                     m_dockSpaceID);
         ImGui::DockBuilderDockWindow((m_uiEditor.getName() + "##" + std::to_string(m_uiEditor.getId())).c_str(),
                                      m_dockSpaceID);
     }

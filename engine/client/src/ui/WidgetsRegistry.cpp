@@ -6,20 +6,47 @@
 #include <memory>
 
 #include "ContainerWidget.hpp"
+#include "InputTextWidget.hpp"
 #include "PanelWidget.hpp"
 #include "TextWidget.hpp"
+#include "core/Timer.hpp"
+#include "events/input/KeyPressedEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "input/Input.hpp"
+#include "input/Mouse.hpp"
+#include "systems/SystemsRegistry.hpp"
 #include "ui/Widget.hpp"
 
 
 namespace TechEngine {
-    WidgetsRegistry::WidgetsRegistry() {
+    WidgetsRegistry::WidgetsRegistry(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
     }
 
     void WidgetsRegistry::init() {
         m_widgetsTemplates.push_back(ContainerWidget());
-        m_widgetsTemplates.push_back(TextWidget());
         m_widgetsTemplates.push_back(PanelWidget());
+        m_widgetsTemplates.push_back(TextWidget());
+        m_widgetsTemplates.push_back(InputTextWidget());
+        //m_widgetsTemplates.push_back(ButtonWidget());
+        //m_widgetsTemplates.push_back(ImageWidget());
         loadJson(R"(C:\dev\TechEngine\bin\runtime\editor\debug\New Project\resources\client\assets\ui\widgets.json)");
+
+        m_systemsRegistry.getSystem<EventDispatcher>().subscribe<KeyPressedEvent>([this](const std::shared_ptr<Event>& event) {
+            auto* keyPressedEvent = dynamic_cast<KeyPressedEvent*>(event.get());
+            if (keyPressedEvent->getKey().getKeyCode() >= MOUSE_1 && keyPressedEvent->getKey().getKeyCode() <= MOUSE_8) {
+                onMousePressedEvent(std::dynamic_pointer_cast<KeyPressedEvent>(event));
+            } else {
+                onKeyPressedEvent(std::dynamic_pointer_cast<KeyPressedEvent>(event));
+            }
+        });
+    }
+
+    void WidgetsRegistry::onUpdate() {
+        for (auto& widget: m_widgets) {
+            if (widget) {
+                widget->update(m_systemsRegistry.getSystem<Timer>().getDeltaTime());
+            }
+        }
     }
 
     bool WidgetsRegistry::loadJson(const std::string& jsonFile) {
@@ -84,5 +111,54 @@ namespace TechEngine {
 
     std::vector<std::shared_ptr<Widget>>& WidgetsRegistry::getWidgets() {
         return m_widgets;
+    }
+
+    void WidgetsRegistry::onMousePressedEvent(const std::shared_ptr<KeyPressedEvent>& event) {
+        std::shared_ptr<Widget> clickedWidget = nullptr;
+        glm::vec2 mousePosition = m_systemsRegistry.getSystem<Input>().getMouse().getPosition(); // This is window related position
+        for (auto& widget: m_widgets) {
+            // Check if the widget is an InputTextWidget and if the click is inside its bounds
+            if (auto inputField = std::dynamic_pointer_cast<InputTextWidget>(widget)) {
+                const auto& rect = inputField->getFinalScreenRect(); // This is just the game view in the editor
+                TE_LOGGER_INFO("Widget: {0}, Rect: ({1}, {2}, {3}, {4}), Mouse: ({5}, {6})", inputField->getName(), rect.x, rect.y, rect.z, rect.w, mousePosition.x, mousePosition.y);
+                if (mousePosition.x >= rect.x && mousePosition.x <= rect.x + rect.z &&
+                    mousePosition.y >= rect.y && mousePosition.y <= rect.y + rect.w) {
+                    clickedWidget = inputField;
+                    break; // Found the top-most widget
+                }
+            }
+        }
+
+        // --- FOCUS MANAGEMENT ---
+        // If we clicked a new widget
+        if (clickedWidget && m_focusedWidget != clickedWidget) {
+            // Lose focus on the old widget, if any
+            if (auto oldFocused = m_focusedWidget) {
+                if (auto oldInput = std::dynamic_pointer_cast<InputTextWidget>(oldFocused)) {
+                    oldInput->loseFocus();
+                }
+            }
+
+            // Gain focus on the new widget
+            std::dynamic_pointer_cast<InputTextWidget>(clickedWidget)->gainFocus();
+            m_focusedWidget = clickedWidget;
+        }
+        // If we clicked outside of any interactable widget
+        else if (!clickedWidget) {
+            if (auto oldFocused = m_focusedWidget) {
+                if (auto oldInput = std::dynamic_pointer_cast<InputTextWidget>(oldFocused)) {
+                    oldInput->loseFocus();
+                }
+            }
+            m_focusedWidget.reset();
+        }
+    }
+
+    void WidgetsRegistry::onKeyPressedEvent(const std::shared_ptr<KeyPressedEvent>& event) {
+        if (auto focused = m_focusedWidget) {
+            if (auto input = std::dynamic_pointer_cast<InputTextWidget>(focused)) {
+                input->onKeyPressed(event->getKey());
+            }
+        }
     }
 }

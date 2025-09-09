@@ -12,9 +12,14 @@ namespace TechEngine {
         bool m_buttonsPressed[8] = {false, false, false, false, false, false, false, false};
 
         glm::vec2 m_lastPosition = glm::vec2(0, 0);
+        glm::vec2 m_currentPosition = glm::vec2(0, 0);
 
     public:
         Mouse(SystemsRegistry& systemsRegistry);
+
+        Mouse(const Mouse&) = delete;
+
+        Mouse& operator=(const Mouse&) = delete;
 
         void init();
 
@@ -22,8 +27,8 @@ namespace TechEngine {
 
         void onMouseMove(double x, double y);
 
-        Mouse(const Mouse&) = delete;
+        const glm::vec2& getPosition();
 
-        Mouse& operator=(const Mouse&) = delete;
+        const glm::vec2 getDelta() const;
     };
 }

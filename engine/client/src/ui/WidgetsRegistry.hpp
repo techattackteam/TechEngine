@@ -8,15 +8,21 @@
 
 
 namespace TechEngine {
+    class KeyPressedEvent;
+
     class CLIENT_DLL WidgetsRegistry : public System {
     private:
         std::vector<Widget> m_widgetsTemplates;
         std::vector<std::shared_ptr<Widget>> m_widgets;
+        SystemsRegistry& m_systemsRegistry;
+        std::shared_ptr<Widget> m_focusedWidget = nullptr;
 
     public:
-        WidgetsRegistry();
+        WidgetsRegistry(SystemsRegistry& systemsRegistry);
 
         void init() override;
+
+        void onUpdate() override;
 
         bool loadJson(const std::string& jsonFilePath);
 
@@ -25,5 +31,10 @@ namespace TechEngine {
         const std::vector<Widget>& getWidgetsTemplates() const;
 
         std::vector<std::shared_ptr<Widget>>& getWidgets();
+
+    private:
+        void onMousePressedEvent(const std::shared_ptr<KeyPressedEvent>& event);
+
+        void onKeyPressedEvent(const std::shared_ptr<KeyPressedEvent>& event);
     };
 }

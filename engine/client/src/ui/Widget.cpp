@@ -1,11 +1,5 @@
 #include "Widget.hpp"
 
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
 #include "core/Logger.hpp"
 
 namespace TechEngine {
@@ -17,14 +11,14 @@ namespace TechEngine {
         this->m_name = widget->m_name;
         this->m_category = widget->m_category;
         this->m_description = widget->m_description;
-        for (const auto& prop: widget->m_properties) {
-            WidgetProperty property;
-            property.name = prop.name;
-            property.type = prop.type;
-            property.defaultValue = prop.defaultValue;
-            property.onChange = prop.onChange; // Copy the onChange callback
-            this->m_properties.push_back(property);
-        }
+        //for (const auto& prop: widget->m_properties) {
+        //    WidgetProperty property;
+        //    property.name = prop.name;
+        //    property.type = prop.type;
+        //    property.defaultValue = prop.defaultValue;
+        //    property.onChange = prop.onChange; // Copy the onChange callback
+        //    this->m_properties.push_back(property);
+        //}
         for (const auto& childType: widget->m_childrenTypes) {
             this->m_childrenTypes.push_back(childType);
         }
@@ -247,12 +241,6 @@ namespace TechEngine {
         }
     }
 
-    glm::vec2 Widget::getAbsoluteOffset() {
-        if (m_parent) {
-            return m_parent->getAbsoluteOffset() + m_anchoredPosition;
-        }
-        return m_finalScreenRect;
-    }
 
     void Widget::addChild(const std::shared_ptr<Widget>& child, int index) {
         if (!child) {
@@ -276,11 +264,27 @@ namespace TechEngine {
         child->m_parent = nullptr;
     }
 
+
+    glm::vec2 Widget::getAbsoluteOffset() {
+        if (m_parent) {
+            return m_parent->getAbsoluteOffset() + m_anchoredPosition;
+        }
+        return m_finalScreenRect;
+    }
+
     // Add this method to the Widget class
     glm::vec2 Widget::getAbsoluteOffset() const {
         if (m_parent) {
             return m_parent->getAbsoluteOffset() + m_anchoredPosition;
         }
         return m_anchoredPosition;
+    }
+
+    glm::vec4 Widget::getFinalScreenRect() {
+        return m_finalScreenRect;
+    }
+
+    glm::vec4 Widget::getFinalScreenRect() const {
+        return m_finalScreenRect;
     }
 }

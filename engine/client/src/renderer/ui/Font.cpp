@@ -20,6 +20,7 @@ namespace TechEngine {
     }
 
     bool Font::load(const std::string& fontPath, int fontSize) {
+        m_nativeFontSize = fontSize;
         std::filesystem::path path(fontPath);
         if (!std::filesystem::exists(path) || std::filesystem::file_size(path) == 0) {
             TE_LOGGER_ERROR("Failed to open or empty font file: {0}", fontPath);
@@ -40,8 +41,8 @@ namespace TechEngine {
             return false;
         }
 
-        m_atlasWidth = 512;
-        m_atlasHeight = 512;
+        m_atlasWidth = 1028;
+        m_atlasHeight = 1028;
         std::vector<unsigned char> atlasBitmap(m_atlasWidth * m_atlasHeight);
         stbtt_packedchar packedChars[95]; // ASCII 32–126
 
@@ -84,25 +85,41 @@ namespace TechEngine {
         return m_atlasTextureID;
     }
 
-    bool Font::getQuad(char character, float& xpos, float& ypos, FontQuad& outQuad) const {
-        // Ensure the character is in the packed range (ASCII 32-126)
+    bool Font::getCharInfo(char character, CharInfo& outInfo) const {
         if (character < 32 || character >= 127) {
             return false;
         }
 
-        stbtt_aligned_quad q;
-        stbtt_GetPackedQuad(m_packedChars.data(), m_atlasWidth, m_atlasHeight, character - 32, &xpos, &ypos, &q, 0);
+        const stbtt_packedchar& pc = m_packedChars[character - 32];
 
-        // Transfer the data to our FontQuad struct
-        outQuad.position0 = {q.x0, q.y0};
-        outQuad.position1 = {q.x1, q.y1};
-        outQuad.uv0 = {q.s0, q.t0};
-        outQuad.uv1 = {q.s1, q.t1};
+        outInfo.advance = pc.xadvance;
+        outInfo.bearing = {pc.xoff, pc.yoff};
+        outInfo.size = {pc.xoff2 - pc.xoff, pc.yoff2 - pc.yoff};
+        outInfo.uv0 = {(float)pc.x0 / m_atlasWidth, (float)pc.y0 / m_atlasHeight};
+        outInfo.uv1 = {(float)pc.x1 / m_atlasWidth, (float)pc.y1 / m_atlasHeight};
 
         return true;
     }
 
     float Font::getAscent() const {
         return m_ascent;
+    }
+
+    float Font::measureTextWidth(const std::string& text, float fontSize) const {
+        if (text.empty()) {
+            return 0.0f;
+        }
+
+        if (m_nativeFontSize <= 0.0f) return 0.0f;
+        const float scale = fontSize / m_nativeFontSize;
+
+        float width = 0.0f;
+        for (char c: text) {
+            CharInfo info;
+            if (getCharInfo(c, info)) {
+                width += info.advance * scale;
+            }
+        }
+        return width;
     }
 }

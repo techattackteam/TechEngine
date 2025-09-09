@@ -15,30 +15,30 @@
 namespace TechEngine {
     RuntimePanel::RuntimePanel(SystemsRegistry& editorSystemsRegistry,
                                SystemsRegistry& appSystemsRegistry,
-                               LoggerPanel& loggerPanel): m_editorSystemsRegistry(editorSystemsRegistry),
-                                                          m_appSystemsRegistry(appSystemsRegistry),
-                                                          m_inspectorPanel(
-                                                              editorSystemsRegistry, appSystemsRegistry,
-                                                              m_selectedEntities),
-                                                          m_sceneHierarchyPanel(
-                                                              editorSystemsRegistry, appSystemsRegistry,
-                                                              m_selectedEntities),
-                                                          m_gameView(editorSystemsRegistry, appSystemsRegistry),
-                                                          m_sceneView(editorSystemsRegistry, appSystemsRegistry,
-                                                                      m_selectedEntities),
-                                                          loggerPanel(loggerPanel), DockPanel(editorSystemsRegistry) {
+                               LoggerPanel& loggerPanel) : m_editorSystemsRegistry(editorSystemsRegistry),
+                                                           m_appSystemsRegistry(appSystemsRegistry),
+                                                           m_inspectorPanel(
+                                                               editorSystemsRegistry, appSystemsRegistry,
+                                                               m_selectedEntities),
+                                                           m_sceneHierarchyPanel(
+                                                               editorSystemsRegistry, appSystemsRegistry,
+                                                               m_selectedEntities),
+
+                                                           m_sceneView(editorSystemsRegistry, appSystemsRegistry,
+                                                                       m_selectedEntities),
+                                                           loggerPanel(loggerPanel), DockPanel(editorSystemsRegistry) {
     }
 
     void RuntimePanel::onInit() {
         m_sceneView.init("Scene View", &m_dockSpaceWindowClass);
-        m_gameView.init("Game View", &m_dockSpaceWindowClass);
+        //m_gameView.init("Game View", &m_dockSpaceWindowClass);
         m_sceneHierarchyPanel.init("Scene Hierarchy", &m_dockSpaceWindowClass);
         m_inspectorPanel.init("Inspector", &m_dockSpaceWindowClass);
     }
 
     void RuntimePanel::onUpdate() {
         m_sceneView.update();
-        m_gameView.update();
+        //m_gameView.update();
         m_sceneHierarchyPanel.update();
         m_inspectorPanel.update();
     }
@@ -54,8 +54,7 @@ namespace TechEngine {
 
         ImGui::DockBuilderDockWindow((m_sceneView.getName() + "##" + std::to_string(m_sceneView.getId())).c_str(),
                                      dockMainID);
-        ImGui::DockBuilderDockWindow((m_gameView.getName() + "##" + std::to_string(m_gameView.getId())).c_str(),
-                                     dockMainID);
+
         ImGui::DockBuilderDockWindow(
             (m_sceneHierarchyPanel.getName() + "##" + std::to_string(m_sceneHierarchyPanel.getId())).c_str(),
             dockLeftID);
@@ -71,7 +70,7 @@ namespace TechEngine {
         ProjectManager& projectManager = m_editorSystemsRegistry.getSystem<ProjectManager>();
 #ifdef TECH_ENGINE_CORE_DEBUG   // MSVC defines this in Debug-mode
         ScriptsCompiler::compileUserScripts(projectManager, CompileMode::Debug, m_projectType);
-        
+
         std::string dllPath = projectManager.getResourcesPath().string() + (m_projectType == ProjectType::Client
                                                                                 ? "\\client\\scripts\\build\\debug\\ClientScripts.dll"
                                                                                 : "\\server\\scripts\\build\\debug\\ServerScripts.dll");
@@ -84,8 +83,8 @@ namespace TechEngine {
 #elif TECH_ENGINE_CORE_RELWITHDEBINFO  // Standard C/C++ RelWithDebInfo flag
         ScriptsCompiler::compileUserScripts(projectManager, CompileMode::RelWithDebInfo, m_projectType);
         std::string dllPath = projectManager.getResourcesPath().string() + (m_projectType == ProjectType::Client
-                                                                        ? "\\client\\scripts\\build\\releaseWithDebug\\ClientScripts.dll"
-                                                                        : "\\server\\scripts\\build\\releaseWithDebug\\ServerScripts.dll");
+                                                                                ? "\\client\\scripts\\build\\releaseWithDebug\\ClientScripts.dll"
+                                                                                : "\\server\\scripts\\build\\releaseWithDebug\\ServerScripts.dll");
 #endif
 
         if (ProjectType::Client == m_projectType) {

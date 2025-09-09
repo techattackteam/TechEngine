@@ -9,10 +9,14 @@
 #include "stb_truetype.h"
 
 namespace TechEngine {
-    struct FontQuad {
-        glm::vec2 position0, position1;
-        glm::vec2 uv0, uv1;
+    struct CharInfo {
+        glm::vec2 size;
+        glm::vec2 bearing;
+        float advance;
+        glm::vec2 uv0;
+        glm::vec2 uv1;
     };
+    ;
 
     class CLIENT_DLL Font {
     public:
@@ -22,6 +26,7 @@ namespace TechEngine {
 
         std::array<stbtt_packedchar, 95> m_packedChars;
         float m_ascent = 0.0f;
+        float m_nativeFontSize = 0.0f;
 
     public:
         Font();
@@ -32,8 +37,10 @@ namespace TechEngine {
 
         uint32_t getAtlasTextureID() const;
 
-        bool getQuad(char character, float& xpos, float& ypos, FontQuad& quad) const;
+        bool getCharInfo(char character, CharInfo& outInfo) const;
 
         float getAscent() const;
+
+        float measureTextWidth(const std::string& text, float fontSize) const;
     };
 }

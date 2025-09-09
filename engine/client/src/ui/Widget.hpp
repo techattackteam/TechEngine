@@ -11,6 +11,7 @@
 namespace TechEngine {
     class UIRenderer;
 
+    /*
     struct CLIENT_DLL WidgetProperty {
         std::string name;
         std::string type;
@@ -19,6 +20,7 @@ namespace TechEngine {
         using OnChangeCallback = std::function<void(const std::string&)>;
         OnChangeCallback onChange;
     };
+    */
 
     class CLIENT_DLL Widget : public std::enable_shared_from_this<Widget> {
     public:
@@ -50,7 +52,6 @@ namespace TechEngine {
             StretchFill
         };
 
-
         std::string m_name;
         std::string m_category;
         std::string m_description;
@@ -79,7 +80,7 @@ namespace TechEngine {
         float m_rotationZ = 0.0f;
 
         std::shared_ptr<Widget> m_parent;
-        std::vector<WidgetProperty> m_properties;
+        //std::vector<WidgetProperty> m_properties;
         std::vector<std::string> m_childrenTypes;
         std::vector<std::shared_ptr<Widget>> m_children; // Children widgets
 
@@ -88,7 +89,7 @@ namespace TechEngine {
 
     public:
         bool m_isHierarchyOpen = false; // This needs to be moved since the Widget class should not be aware of the UI hierarchy state
-        glm::vec4 m_finalScreenRect = {0.0f, 0.0f, 0.0f, 0.0f};
+        glm::vec4 m_finalScreenRect = {0.0f, 0.0f, 0.0f, 0.0f}; // TopLeft X, TopLeft Y, Width, Height
 
         explicit Widget();
 
@@ -105,8 +106,6 @@ namespace TechEngine {
 
         void calculateLayout(const glm::vec4& parentScreenRect, float dpiScale);
 
-        glm::vec2 getAbsoluteOffset();
-
         void addChild(const std::shared_ptr<Widget>& child, int index);
 
         void removeChild(const std::shared_ptr<Widget>& child);
@@ -115,7 +114,13 @@ namespace TechEngine {
             return std::find(m_children.begin(), m_children.end(), child) != m_children.end();
         }
 
+        glm::vec2 getAbsoluteOffset();
+
         glm::vec2 getAbsoluteOffset() const;
+
+        glm::vec4 getFinalScreenRect();
+
+        glm::vec4 getFinalScreenRect() const;
 
         void rename(const std::string& name);
 
@@ -123,13 +128,13 @@ namespace TechEngine {
             return m_name;
         }
 
-        virtual const std::vector<WidgetProperty>& getProperties() const {
-            return m_properties;
-        }
-
-        virtual std::vector<WidgetProperty>& getProperties() {
-            return m_properties;
-        }
+        //virtual const std::vector<WidgetProperty>& getProperties() const {
+        //    return m_properties;
+        //}
+        //
+        //virtual std::vector<WidgetProperty>& getProperties() {
+        //    return m_properties;
+        //}
 
     private:
         void setAnchorsFromPreset();
