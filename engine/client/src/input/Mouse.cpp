@@ -12,15 +12,43 @@ namespace TechEngine {
     Mouse::Mouse(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
         systemsRegistry.getSystem<EventDispatcher>().subscribe<KeyPressedEvent>([this](const std::shared_ptr<Event>& event) {
             auto* keyPressedEvent = dynamic_cast<KeyPressedEvent*>(event.get());
-            if (keyPressedEvent->getKey().getKeyCode() >= MOUSE_1 && keyPressedEvent->getKey().getKeyCode() <= MOUSE_8) {
-                m_buttonsPressed[keyPressedEvent->getKey().getKeyCode() - MOUSE_1] = true;
+            if (keyPressedEvent->getKey().getKeyCode() == MOUSE_1) {
+                m_buttonsPressed[0] = true;
+            } else if (keyPressedEvent->getKey().getKeyCode() == MOUSE_2) {
+                m_buttonsPressed[1] = true;
+            } else if (keyPressedEvent->getKey().getKeyCode() == MOUSE_3) {
+                m_buttonsPressed[2] = true;
+            } else if (keyPressedEvent->getKey().getKeyCode() == MOUSE_4) {
+                m_buttonsPressed[3] = true;
+            } else if (keyPressedEvent->getKey().getKeyCode() == MOUSE_5) {
+                m_buttonsPressed[4] = true;
+            } else if (keyPressedEvent->getKey().getKeyCode() == MOUSE_6) {
+                m_buttonsPressed[5] = true;
+            } else if (keyPressedEvent->getKey().getKeyCode() == MOUSE_7) {
+                m_buttonsPressed[6] = true;
+            } else if (keyPressedEvent->getKey().getKeyCode() == MOUSE_8) {
+                m_buttonsPressed[7] = true;
             }
         });
 
         systemsRegistry.getSystem<EventDispatcher>().subscribe<KeyReleasedEvent>([this](const std::shared_ptr<Event>& event) {
             auto* keyReleasedEvent = dynamic_cast<KeyReleasedEvent*>(event.get());
-            if (keyReleasedEvent->getKey().getKeyCode() >= MOUSE_1 && keyReleasedEvent->getKey().getKeyCode() <= MOUSE_8) {
-                m_buttonsPressed[keyReleasedEvent->getKey().getKeyCode() - MOUSE_1] = false;
+            if (keyReleasedEvent->getKey().getKeyCode() == MOUSE_1) {
+                m_buttonsPressed[0] = false;
+            } else if (keyReleasedEvent->getKey().getKeyCode() == MOUSE_2) {
+                m_buttonsPressed[1] = false;
+            } else if (keyReleasedEvent->getKey().getKeyCode() == MOUSE_3) {
+                m_buttonsPressed[2] = false;
+            } else if (keyReleasedEvent->getKey().getKeyCode() == MOUSE_4) {
+                m_buttonsPressed[3] = false;
+            } else if (keyReleasedEvent->getKey().getKeyCode() == MOUSE_5) {
+                m_buttonsPressed[4] = false;
+            } else if (keyReleasedEvent->getKey().getKeyCode() == MOUSE_6) {
+                m_buttonsPressed[5] = false;
+            } else if (keyReleasedEvent->getKey().getKeyCode() == MOUSE_7) {
+                m_buttonsPressed[6] = false;
+            } else if (keyReleasedEvent->getKey().getKeyCode() == MOUSE_8) {
+                m_buttonsPressed[7] = false;
             }
         });
     }

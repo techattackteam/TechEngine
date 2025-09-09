@@ -120,6 +120,9 @@ namespace TechEngine {
             for (int i = ImGuiKey_NamedKey_BEGIN; i < ImGuiKey_NamedKey_END; ++i) {
                 ImGuiKey key = static_cast<ImGuiKey>(i);
                 // Key was just pressed this frame
+                if (key == ImGuiKey_MouseWheelX || key == ImGuiKey_MouseWheelY) {
+                    continue;
+                }
                 if (ImGui::IsKeyPressed(key)) {
                     processKeyPressed(Key(ImGuiKeyToEngineKeyCode(key)));
                 }
