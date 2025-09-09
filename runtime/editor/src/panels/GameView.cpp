@@ -1,8 +1,13 @@
 #include "GameView.hpp"
 
+#include "events/input/KeyPressedEvent.hpp"
+#include "events/input/MouseMoveEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "input/Input.hpp"
 #include "renderer/FrameBuffer.hpp"
 #include "renderer/Renderer.hpp"
 #include "scene/ScenesManager.hpp"
+#include "window/Viewport.hpp"
 
 namespace TechEngine {
     GameView::GameView(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& appSystemsRegistry) : m_appSystemsRegistry(appSystemsRegistry),
@@ -18,6 +23,14 @@ namespace TechEngine {
 
     void GameView::onUpdate() {
         auto& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        Viewport& clientViewport = m_appSystemsRegistry.getSystem<Viewport>();
+
+        ImVec2 panelPos = ImGui::GetWindowPos();
+        ImVec2 contentStart = ImGui::GetWindowContentRegionMin();
+        clientViewport.position = {panelPos.x + contentStart.x, panelPos.y + contentStart.y};
+        clientViewport.size = glm::vec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
+        clientViewport.isFocused = ImGui::IsWindowFocused() || ImGui::IsWindowHovered();
+
         scene.runSystem<Transform, Camera>([this](Transform& transform, Camera& camera) {
             Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
             FrameBuffer& frameBuffer = renderer.getFramebuffer(frameBufferID);
@@ -32,11 +45,44 @@ namespace TechEngine {
             ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
             frameBuffer.unBind();
         });
-
+        //glm::vec2 mousePos = m_appSystemsRegistry.getSystem<Input>().getMouse().getPosition();
+        //TE_LOGGER_INFO("Panel: {0}, Hovered: {1}, Focused: {2}, Mouse: ({3},{4})", m_name, m_isPanelHovered, m_isPanelFocused, mousePos.x, mousePos.y);
     }
 
     glm::vec2 GameView::getFrameBufferSize() {
         FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
         return glm::vec2(frameBuffer.width, frameBuffer.height);
+    }
+
+    void GameView::processMouseMoving(glm::vec2 delta) {
+        Panel::processMouseMoving(delta);
+        ImGuiIO& io = ImGui::GetIO();
+        Viewport& clientViewport = m_appSystemsRegistry.getSystem<Viewport>();
+
+        ImVec2 mousePosAbs = io.MousePos;
+        double localMouseX = mousePosAbs.x - clientViewport.position.x;
+        double localMouseY = mousePosAbs.y - clientViewport.position.y;
+        m_appSystemsRegistry.getSystem<Input>().onMouseMove(localMouseX, localMouseY);
+    }
+
+    void GameView::processMouseScroll(float yOffset) {
+        Panel::processMouseScroll(yOffset);
+        m_appSystemsRegistry.getSystem<Input>().onMouseScroll(0.0f, yOffset);
+    }
+
+    void GameView::processMouseDragging(glm::vec2 delta, unsigned long long mouseButtons) {
+        Panel::processMouseDragging(delta, mouseButtons);
+    }
+
+    void GameView::processKeyPressed(Key key) {
+        m_appSystemsRegistry.getSystem<Input>().onKeyInput(key.getKeyCode(), 1);
+    }
+
+    void GameView::processKeyReleased(Key key) {
+        m_appSystemsRegistry.getSystem<Input>().onKeyInput(key.getKeyCode(), 0);
+    }
+
+    void GameView::processKeyHold(Key key) {
+        m_appSystemsRegistry.getSystem<Input>().onKeyInput(key.getKeyCode(), 2);
     }
 }

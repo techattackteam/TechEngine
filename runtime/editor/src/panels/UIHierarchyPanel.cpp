@@ -47,6 +47,9 @@ namespace TechEngine {
             } else if (ImGui::MenuItem("Text")) {
                 m_editor->createWidget(nullptr, "Text", "Text");
                 setHierarchyDirty();
+            } else if (ImGui::MenuItem("InputText")) {
+                m_editor->createWidget(nullptr, "InputText", "InputText");
+                setHierarchyDirty();
             } /* else if (ImGui::MenuItem("Button")) {
                 m_editor->createWidget(nullptr, "Button", "Button");
             } else if (ImGui::MenuItem("Image")) {

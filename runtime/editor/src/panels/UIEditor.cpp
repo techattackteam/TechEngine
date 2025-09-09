@@ -8,6 +8,8 @@
 
 #include <imgui_internal.h>
 
+#include "ui/InputTextWidget.hpp"
+
 namespace TechEngine {
     UIEditor::UIEditor(SystemsRegistry& editorSystemsRegistry,
                        SystemsRegistry& appSystemsRegistry,
@@ -41,6 +43,10 @@ namespace TechEngine {
             widget = std::make_shared<PanelWidget>();
         } else if (type == "Text") {
             widget = std::make_shared<TextWidget>();
+        } else if (type == "InputText") {
+            widget = std::make_shared<InputTextWidget>();
+        } else {
+            TE_LOGGER_CRITICAL("UIEditor: Unknown widget type '{0}'. Cannot create widget.", type.c_str());
         } /*else if (type == "Button") {
             widget = std::make_shared<ButtonWidget>();
         } else if (type == "Image") {

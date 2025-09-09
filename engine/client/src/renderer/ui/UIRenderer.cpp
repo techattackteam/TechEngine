@@ -1,6 +1,10 @@
 #include "UIRenderer.hpp"
 
 #include "Font.hpp"
+#include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
+#include "components/Archetype.hpp"
 #include "project/Project.hpp"
 #include "renderer/ErrorCatcher.hpp"
 #include "systems/SystemsRegistry.hpp"
@@ -152,10 +156,14 @@ namespace TechEngine {
         m_drawCommands.back().vertexCount += 6;
     }
 
-    void UIRenderer::drawText(Font* font, const std::string& text, const glm::vec2& position, const glm::vec4& color) {
+    void UIRenderer::drawText(Font* font, const std::string& text, const glm::vec2& position, float fontSize, const glm::vec4& color) {
         if (!font || text.empty() || font->getAtlasTextureID() == (uint32_t)-1) {
             return;
         }
+
+        const float nativeSize = font->m_nativeFontSize;
+        const float scale = fontSize / nativeSize;
+        const float baselineY = position.y + (font->getAscent() * scale);
 
         uint32_t textureID = font->getAtlasTextureID();
         if (m_currentTextureID != textureID) {
@@ -172,31 +180,50 @@ namespace TechEngine {
         float cursorX = position.x;
         float cursorY = position.y + font->getAscent();
         for (char c: text) {
-            FontQuad q;
-            if (font->getQuad(c, cursorX, cursorY, q)) {
+            CharInfo info;
+            if (font->getCharInfo(c, info)) {
+                // All metrics from 'info' are unscaled. We apply the scale to them.
+                // bearing.y (yoff) is the vertical offset FROM THE BASELINE to the top of the glyph.
+                float xpos = cursorX + info.bearing.x * scale;
+                float ypos = baselineY + info.bearing.y * scale; // The top of the quad
+                float w = info.size.x * scale;
+                float h = info.size.y * scale;
+
+                // Define the four corners of the quad for this character.
+                // This assumes a Y-down coordinate system (top-left is 0,0).
+                glm::vec2 topLeft = {xpos, ypos};
+                glm::vec2 bottomLeft = {xpos, ypos + h};
+                glm::vec2 bottomRight = {xpos + w, ypos + h};
+                glm::vec2 topRight = {xpos + w, ypos};
+
+                // Create vertices in the same order as your original code (TL, BL, BR, TR)
                 UIVertex v0, v1, v2, v3;
+                v0.position = topLeft;
+                v1.position = bottomLeft;
+                v2.position = bottomRight;
+                v3.position = topRight;
 
-                v0.position = {q.position0.x, q.position0.y};
-                v1.position = {q.position0.x, q.position1.y};
-                v2.position = {q.position1.x, q.position1.y};
-                v3.position = {q.position1.x, q.position0.y};
-
-                v0.texCoords = {q.uv0.x, q.uv0.y};
-                v1.texCoords = {q.uv0.x, q.uv1.y};
-                v2.texCoords = {q.uv1.x, q.uv1.y};
-                v3.texCoords = {q.uv1.x, q.uv0.y};
+                v0.texCoords = {info.uv0.x, info.uv0.y}; // Top-Left UV
+                v1.texCoords = {info.uv0.x, info.uv1.y}; // Bottom-Left UV
+                v2.texCoords = {info.uv1.x, info.uv1.y}; // Bottom-Right UV
+                v3.texCoords = {info.uv1.x, info.uv0.y}; // Top-Right UV
 
                 v0.color = v1.color = v2.color = v3.color = color;
 
+                // First triangle (TL, BL, BR)
                 m_vertices.push_back(v0);
                 m_vertices.push_back(v1);
                 m_vertices.push_back(v2);
 
+                // Second triangle (BR, TR, TL)
                 m_vertices.push_back(v2);
                 m_vertices.push_back(v3);
                 m_vertices.push_back(v0);
 
                 m_drawCommands.back().vertexCount += 6;
+
+                // Advance the horizontal cursor position for the next character
+                cursorX += info.advance * scale;
             }
         }
     }

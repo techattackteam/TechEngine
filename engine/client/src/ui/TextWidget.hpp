@@ -6,7 +6,7 @@ namespace TechEngine {
     public:
         std::string m_text = "Default Text";
         glm::vec4 m_textColor = {1.0f, 1.0f, 1.0f, 1.0f};
-
+        float m_fontSize = 18.0f; // In reference pixels
     public:
         TextWidget();
 

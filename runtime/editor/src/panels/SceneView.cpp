@@ -44,7 +44,7 @@ namespace TechEngine {
         frameBuffer.unBind();
     }
 
-    void SceneView::processShortcuts() {
+    void SceneView::processKeyPressed(Key key) {
         if (ImGui::Shortcut(ImGuiKey_F)) {
             if (m_selectedEntities.size() == 1) {
                 //focusOnGameObject(selectedGO.front());

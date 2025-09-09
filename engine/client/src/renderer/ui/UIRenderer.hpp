@@ -54,7 +54,7 @@ namespace TechEngine {
 
         void drawRectangle(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color);
 
-        void drawText(Font* font, const std::string& text, const glm::vec2& position, const glm::vec4& color);
+        void drawText(::TechEngine::Font* font, const ::std::string& text, const glm::vec2& position, float fontSize, const glm::vec4& color);
 
         const float getDpiScale();
 

@@ -9,6 +9,7 @@ namespace TechEngine {
     class ClientPanel : public RuntimePanel {
     private:
         UIEditor m_uiEditor;
+        GameView m_gameView;
 
     public:
         ClientPanel(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& clientSystemsRegistry, LoggerPanel& loggerPanel);
