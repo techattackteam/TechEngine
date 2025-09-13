@@ -16,6 +16,7 @@
 #include "eventSystem/EventDispatcher.hpp"
 #include "events/input/KeyPressedEvent.hpp"
 #include "events/input/MouseMoveEvent.hpp"
+#include "renderer/Renderer.hpp"
 #include "ui/Widget.hpp"
 
 
@@ -49,6 +50,12 @@ namespace TechEngine {
     void WidgetsRegistry::onUpdate() {
         for (auto& widget: m_widgets) {
             if (widget) {
+                if (widget->m_isDirty) {
+                    UIRenderer& uiRenderer = m_systemsRegistry.getSystem<Renderer>().getUIRenderer();
+                    glm::vec4 rootFinalScreenRect = {0.0f, 0.0f, (float)uiRenderer.m_screenWidth, (float)uiRenderer.m_screenHeight};
+                    widget->calculateLayout(widget->m_parent ? widget->m_parent->m_finalScreenRect : rootFinalScreenRect, uiRenderer.getDpiScale());
+                    widget->m_isDirty = false;
+                }
                 widget->update(m_systemsRegistry.getSystem<Timer>().getDeltaTime());
             }
         }

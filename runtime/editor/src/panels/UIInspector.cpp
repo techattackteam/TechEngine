@@ -110,9 +110,7 @@ namespace TechEngine {
             }
 
             if (changed) {
-                UIRenderer& uiRenderer = m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer();
-                glm::vec4 rootFinalScreenRect = {0.0f, 0.0f, (float)uiRenderer.m_screenWidth, (float)uiRenderer.m_screenHeight};
-                m_selectedWidget->calculateLayout(m_selectedWidget->m_parent ? m_selectedWidget->m_parent->m_finalScreenRect : rootFinalScreenRect, uiRenderer.getDpiScale());
+                m_selectedWidget->m_isDirty = true;
             }
         }
 

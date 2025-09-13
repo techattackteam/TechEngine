@@ -3,11 +3,12 @@
 #include "common/include/core/ExportDLL.hpp"
 
 #include <memory>
+#include <string>
 #include <unordered_map>
 
-#include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngine {
+    class EventDispatcher;
     class Widget;
     class WidgetsRegistry;
 }
@@ -24,5 +25,8 @@ namespace TechEngineAPI {
         static void init(TechEngine::WidgetsRegistry* widgetsRegistry, TechEngine::EventDispatcher* dispatcher);
 
         static void shutdown();
+
+    public:
+        static const std::shared_ptr<Widget>& getWidget(const std::string& name);
     };
 }
