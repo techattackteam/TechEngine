@@ -26,7 +26,7 @@ namespace TechEngine {
         // m_finalScreenRect is calculated by the layout system
 
         // 1. Draw the background
-        renderer.drawRectangle({m_finalScreenRect.x, m_finalScreenRect.y}, {m_finalScreenRect.z, m_finalScreenRect.w}, m_backgroundColor);
+        //renderer.drawRectangle({m_finalScreenRect.x, m_finalScreenRect.y}, {m_finalScreenRect.z, m_finalScreenRect.w}, m_backgroundColor);
 
         // 2. Draw the border (color changes if focused)
         //glm::vec4 borderColor = m_isFocused ? m_focusedBorderColor : m_borderColor;
@@ -251,5 +251,37 @@ namespace TechEngine {
                 // Do nothing for non-textual keys.
                 break;
         }
+    }
+
+    std::string& InputTextWidget::getText() {
+        return m_text;
+    }
+
+    void InputTextWidget::setText(const std::string& newText) {
+        m_text = newText;
+    }
+
+    glm::vec4& InputTextWidget::getColor() {
+        return m_textColor;
+    }
+
+    float& InputTextWidget::getFontSize() {
+        return m_fontSize;
+    }
+
+    bool& InputTextWidget::isBold() {
+        return m_isBold;
+    }
+
+    bool& InputTextWidget::isItalic() {
+        return m_isItalic;
+    }
+
+    int InputTextWidget::getHorizontalAlign() {
+        return 0;
+    }
+
+    int InputTextWidget::getVerticalAlign() {
+        return 0;
     }
 }

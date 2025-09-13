@@ -23,11 +23,27 @@ namespace TechEngine {
         Widget::draw(renderer);
     }
 
-    const std::string& TextWidget::getText() const {
+    std::string& TextWidget::getText() {
         return m_text;
     }
 
     void TextWidget::setText(const std::string& text) {
         this->m_text = text;
+    }
+
+    glm::vec4& TextWidget::getColor() {
+        return m_textColor;
+    }
+
+    float& TextWidget::getFontSize() {
+        return m_fontSize;
+    }
+
+    bool& TextWidget::isBold() {
+        return m_isBold;
+    }
+
+    bool& TextWidget::isItalic() {
+        return m_isItalic;
     }
 }

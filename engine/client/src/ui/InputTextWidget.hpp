@@ -22,11 +22,12 @@ namespace TechEngine {
 
         glm::vec4 m_textColor = {1.0f, 1.0f, 1.0f, 1.0f};
         glm::vec4 m_placeholderColor = {0.6f, 0.6f, 0.6f, 1.0f};
-        glm::vec4 m_backgroundColor = {0.1f, 0.1f, 0.1f, 1.0f};
-        glm::vec4 m_borderColor = {0.3f, 0.3f, 0.3f, 1.0f};
-        glm::vec4 m_focusedBorderColor = {0.2f, 0.6f, 1.0f, 1.0f};
+        //glm::vec4 m_backgroundColor = {0.1f, 0.1f, 0.1f, 1.0f};
+        //glm::vec4 m_borderColor = {0.3f, 0.3f, 0.3f, 1.0f};
+        //glm::vec4 m_focusedBorderColor = {0.2f, 0.6f, 1.0f, 1.0f};
         float m_fontSize = 18.0f; // In reference pixels
-
+        bool m_isBold = false; // Not implemented yet
+        bool m_isItalic = false; // Not implemented yet
     public:
         InputTextWidget(SystemsRegistry& systemsRegistry);
 
@@ -41,5 +42,21 @@ namespace TechEngine {
         void loseFocus();
 
         void onKeyPressed(Key& keyCode);
+
+        std::string& getText();
+
+        void setText(const std::string& newText);
+
+        glm::vec4& getColor();
+
+        float& getFontSize();
+
+        bool& isBold();
+
+        bool& isItalic();
+
+        int getHorizontalAlign();
+
+        int getVerticalAlign();
     };
 }

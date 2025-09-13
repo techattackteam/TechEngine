@@ -2,7 +2,6 @@
 
 #include "core/ExportDLL.hpp"
 
-#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -10,17 +9,6 @@
 
 namespace TechEngine {
     class UIRenderer;
-
-    /*
-    struct CLIENT_DLL WidgetProperty {
-        std::string name;
-        std::string type;
-        std::string defaultValue;
-
-        using OnChangeCallback = std::function<void(const std::string&)>;
-        OnChangeCallback onChange;
-    };
-    */
 
     class CLIENT_DLL Widget : public std::enable_shared_from_this<Widget> {
     public:

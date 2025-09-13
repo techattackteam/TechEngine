@@ -1,11 +1,11 @@
 #include "UIInspector.hpp"
 
-
 #include "ui/Widget.hpp"
 #include "imgui_stdlib.h"
 #include "core/Logger.hpp"
 #include "renderer/Renderer.hpp"
 #include "systems/SystemsRegistry.hpp"
+#include "ui/InputTextWidget.hpp"
 #include "ui/PanelWidget.hpp"
 #include "ui/TextWidget.hpp"
 
@@ -23,12 +23,10 @@ namespace TechEngine {
         if (m_selectedWidget) {
             bool changed = false;
 
-            // Use a collapsing header for good organization
             if (ImGui::CollapsingHeader("Position", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::PushID("Position"); // Avoid ID clashes with other inspectors
+                ImGui::PushID("Position");
 
                 // --- ANCHOR PRESET DROPDOWN ---
-                // An array of names corresponding to your AnchorPreset enum
                 const char* anchorPresetNames[] = {
                     "Top Left", "Top Center", "Top Right",
                     "Middle Left", "Middle Center", "Middle Right",
@@ -142,17 +140,77 @@ namespace TechEngine {
         } else if (dynamic_cast<TextWidget*>(m_selectedWidget.get())) {
             ImGui::Text("Text Content:");
             ImGui::PushID("Text");
-            TextWidget* widget = dynamic_cast<TextWidget*>(m_selectedWidget.get());
-            std::string text = widget->getText();
-
-            if (ImGui::InputTextMultiline("##Label", &text, ImVec2(-1.0f, ImGui::GetTextLineHeight() * 4))) {
-                widget->setText(text);
-            }
+            inspectTextWidget(dynamic_cast<TextWidget*>(m_selectedWidget.get()));
+            ImGui::PopID();
+        } else if (dynamic_cast<InputTextWidget*>(m_selectedWidget.get())) {
+            ImGui::Text("Input Text:");
+            ImGui::PushID("InputText");
+            inspectTextWidget(dynamic_cast<InputTextWidget*>(m_selectedWidget.get()));
             ImGui::PopID();
         }
     }
 
     void UIInspector::setSelectedWidget(std::shared_ptr<Widget> widget) {
         this->m_selectedWidget = widget;
+    }
+
+    bool UIInspector::resizableInputTextMultiline(const char* label, std::string* text, const ImVec2& initial_size = ImVec2(0, 0), float min_height = 30.0f) {
+        ImGui::PushID(label);
+
+        static std::map<ImGuiID, float> heights;
+        const ImGuiID id = ImGui::GetID("##texteditor");
+
+        if (heights.find(id) == heights.end()) {
+            heights[id] = initial_size.y > 0 ? initial_size.y : ImGui::GetTextLineHeight() * 4;
+        }
+        float& height = heights[id];
+
+        bool changed = ImGui::InputTextMultiline("##editor", text, ImVec2(-FLT_MIN, height));
+
+        const float handle_height = 8.0f; // The thickness of our drag handle
+
+        ImGui::InvisibleButton("##resizer", ImVec2(-FLT_MIN, handle_height));
+
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+        }
+
+        if (ImGui::IsItemActive()) {
+            float drag_delta_y = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f).y;
+
+            height += drag_delta_y;
+
+            if (height < min_height) {
+                height = min_height;
+            }
+
+            ImGui::ResetMouseDragDelta(ImGuiMouseButton_Left);
+        }
+
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        const ImVec2 handle_min = ImGui::GetItemRectMin();
+        const ImVec2 handle_max = ImGui::GetItemRectMax();
+        const float handle_line_y = handle_min.y + handle_height / 2.0f;
+        const float handle_width = ImGui::GetContentRegionAvail().x * 0.25f; // Make the line 25% of the width
+        const float handle_center_x = (handle_min.x + handle_max.x) / 2.0f;
+
+        ImU32 color;
+        if (ImGui::IsItemActive()) {
+            color = ImGui::GetColorU32(ImGuiCol_ButtonActive);
+        } else if (ImGui::IsItemHovered()) {
+            color = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
+        } else {
+            color = ImGui::GetColorU32(ImGuiCol_Button);
+        }
+
+        draw_list->AddLine(
+            ImVec2(handle_center_x - handle_width / 2, handle_line_y),
+            ImVec2(handle_center_x + handle_width / 2, handle_line_y),
+            color,
+            2.0f
+        );
+
+        ImGui::PopID();
+        return changed;
     }
 }
