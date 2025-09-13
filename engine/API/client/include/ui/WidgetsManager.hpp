@@ -27,6 +27,6 @@ namespace TechEngineAPI {
         static void shutdown();
 
     public:
-        static const std::shared_ptr<Widget>& getWidget(const std::string& name);
+        static std::shared_ptr<Widget> getWidget(const std::string& name);
     };
 }
