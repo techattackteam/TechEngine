@@ -7,6 +7,7 @@ namespace TechEngineAPI {
     public:
         friend class ClientEntry;
 
+    private:
         static void init(TechEngine::EventDispatcher* dispatcher);
     };
 }

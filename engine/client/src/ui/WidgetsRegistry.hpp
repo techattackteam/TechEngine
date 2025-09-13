@@ -9,6 +9,7 @@
 
 namespace TechEngine {
     class KeyPressedEvent;
+    class MouseMoveEvent;
 
     class CLIENT_DLL WidgetsRegistry : public System {
     private:
@@ -16,6 +17,7 @@ namespace TechEngine {
         std::vector<std::shared_ptr<Widget>> m_widgets;
         SystemsRegistry& m_systemsRegistry;
         std::shared_ptr<Widget> m_focusedWidget = nullptr;
+        std::shared_ptr<Widget> m_currentlyHoveredWidget = nullptr;
 
     public:
         WidgetsRegistry(SystemsRegistry& systemsRegistry);
@@ -33,6 +35,8 @@ namespace TechEngine {
         std::vector<std::shared_ptr<Widget>>& getWidgets();
 
     private:
+        void onMouseMoveEvent(const ::std::shared_ptr<MouseMoveEvent>& event);
+
         void onMousePressedEvent(const std::shared_ptr<KeyPressedEvent>& event);
 
         void onKeyPressedEvent(const std::shared_ptr<KeyPressedEvent>& event);

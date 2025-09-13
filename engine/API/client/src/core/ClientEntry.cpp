@@ -3,10 +3,12 @@
 
 #include "client/include/core/ClientEntry.hpp"
 #include "client/include/eventSystem/ClientEventSystem.hpp"
+#include "client/include/ui/WidgetsManager.hpp"
 
 #include "scene/Scene.hpp"
 #include "script/ScriptEngine.hpp"
 #include "eventSystem/EventDispatcher.hpp"
+#include "ui/WidgetsRegistry.hpp"
 
 namespace TechEngineAPI {
     ClientEntry::~ClientEntry() {
@@ -16,6 +18,7 @@ namespace TechEngineAPI {
         Entry::init(systemsRegistry);
         Logger::init("Client");
         ClientEventSystem::init(&systemsRegistry->getSystem<TechEngine::EventDispatcher>());
+        WidgetsManager::init(&systemsRegistry->getSystem<TechEngine::WidgetsRegistry>(), &systemsRegistry->getSystem<TechEngine::EventDispatcher>());
     }
 
     void ClientEntry::shutdown() {

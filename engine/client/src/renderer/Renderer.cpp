@@ -138,7 +138,10 @@ namespace TechEngine {
         rootWidget.m_name = "Root";
         // For this test, we'll manually set its screen rect to the full viewport
         rootWidget.m_finalScreenRect = {0.0f, 0.0f, (float)uiRenderer.m_screenWidth, (float)uiRenderer.m_screenHeight};
-        for (const auto& widget: m_systemsRegistry.getSystem<WidgetsRegistry>().getWidgets()) {
+
+        std::vector<std::shared_ptr<Widget>>& widgets = m_systemsRegistry.getSystem<WidgetsRegistry>().getWidgets();
+        for (auto it = widgets.rbegin(); it != widgets.rend(); ++it) {
+            auto& widget = *it;
             if (widget) {
                 widget->draw(uiRenderer);
             }

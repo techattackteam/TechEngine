@@ -1,6 +1,13 @@
 #include "Widget.hpp"
 
 #include "core/Logger.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "events/ui/MouseLeftWidgetRectEvent.hpp"
+#include "events/ui/MouseEnteredWidgetRectEvent.hpp"
+
+namespace TechEngineAPI {
+    class EventSystem;
+}
 
 namespace TechEngine {
     Widget::Widget() {
@@ -11,14 +18,7 @@ namespace TechEngine {
         this->m_name = widget->m_name;
         this->m_category = widget->m_category;
         this->m_description = widget->m_description;
-        //for (const auto& prop: widget->m_properties) {
-        //    WidgetProperty property;
-        //    property.name = prop.name;
-        //    property.type = prop.type;
-        //    property.defaultValue = prop.defaultValue;
-        //    property.onChange = prop.onChange; // Copy the onChange callback
-        //    this->m_properties.push_back(property);
-        //}
+
         for (const auto& childType: widget->m_childrenTypes) {
             this->m_childrenTypes.push_back(childType);
         }
@@ -189,6 +189,16 @@ namespace TechEngine {
 
     void Widget::rename(const std::string& name) {
         m_name = name;
+    }
+
+    void Widget::onMouseEnteredRect(EventDispatcher& eventDispatcher) {
+        m_mouseHovering = true;
+        eventDispatcher.dispatch<MouseEnteredWidgetRectEvent>(shared_from_this());
+    }
+
+    void Widget::onMouseLeftRect(EventDispatcher& eventDispatcher) {
+        m_mouseHovering = false;
+        eventDispatcher.dispatch<MouseLeftWidgetRectEvent>(shared_from_this());
     }
 
     void Widget::calculateLayout(const glm::vec4& parentScreenRect, float dpiScale) {
