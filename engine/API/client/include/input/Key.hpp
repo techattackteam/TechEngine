@@ -46,7 +46,7 @@ namespace TechEngineAPI {
         LEFT_BRACKET, // [
         RIGHT_BRACKET, // ]
         BACKSLASH, // '\;
-            SEMICOLON,      // ;
+        SEMICOLON, // ;
         APOSTROPHE, // '
         COMMA, // ,
         PERIOD, // .
