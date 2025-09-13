@@ -10,11 +10,12 @@
 #include "PanelWidget.hpp"
 #include "TextWidget.hpp"
 #include "core/Timer.hpp"
-#include "events/input/KeyPressedEvent.hpp"
-#include "eventSystem/EventDispatcher.hpp"
+#include "systems/SystemsRegistry.hpp"
 #include "input/Input.hpp"
 #include "input/Mouse.hpp"
-#include "systems/SystemsRegistry.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+#include "events/input/KeyPressedEvent.hpp"
+#include "events/input/MouseMoveEvent.hpp"
 #include "ui/Widget.hpp"
 
 
@@ -38,6 +39,10 @@ namespace TechEngine {
             } else {
                 onKeyPressedEvent(std::dynamic_pointer_cast<KeyPressedEvent>(event));
             }
+        });
+
+        m_systemsRegistry.getSystem<EventDispatcher>().subscribe<MouseMoveEvent>([this](const std::shared_ptr<Event>& event) {
+            onMouseMoveEvent(std::dynamic_pointer_cast<MouseMoveEvent>(event));
         });
     }
 
@@ -111,6 +116,33 @@ namespace TechEngine {
 
     std::vector<std::shared_ptr<Widget>>& WidgetsRegistry::getWidgets() {
         return m_widgets;
+    }
+
+    void WidgetsRegistry::onMouseMoveEvent(const std::shared_ptr<MouseMoveEvent>& event) {
+        EventDispatcher& eventDispatcher = m_systemsRegistry.getSystem<EventDispatcher>();
+        glm::vec2 mousePosition = event->getToPosition();
+        bool found = false;
+        for (auto& widget: m_widgets) {
+            const auto& rect = widget->getFinalScreenRect();
+            if (mousePosition.x >= rect.x && mousePosition.x <= rect.x + rect.z &&
+                mousePosition.y >= rect.y && mousePosition.y <= rect.y + rect.w) {
+                if (m_currentlyHoveredWidget != widget) {
+                    if (m_currentlyHoveredWidget) {
+                        m_currentlyHoveredWidget->onMouseLeftRect(eventDispatcher);
+                    }
+                    if (widget) {
+                        widget->onMouseEnteredRect(eventDispatcher);
+                    }
+                    m_currentlyHoveredWidget = widget;
+                }
+                found = true;
+                break;
+            }
+        }
+        if (!found && m_currentlyHoveredWidget) {
+            m_currentlyHoveredWidget->onMouseLeftRect(eventDispatcher);
+            m_currentlyHoveredWidget.reset();
+        }
     }
 
     void WidgetsRegistry::onMousePressedEvent(const std::shared_ptr<KeyPressedEvent>& event) {

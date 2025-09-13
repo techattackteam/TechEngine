@@ -6,11 +6,11 @@
 #include "events/input/KeyHoldEvent.hpp"
 #include "events/input/MouseMoveEvent.hpp"
 
-#include "client/include/events/KeyPressedEvent.hpp"
-#include "client/include/events/KeyReleasedEvent.hpp"
-#include "client/include/events/KeyHoldEvent.hpp"
-#include "client/include/events/MouseMoveEvent.hpp"
-#include "client/include/events/MouseScrollEvent.hpp"
+#include "client/include/events/input/KeyPressedEvent.hpp"
+#include "client/include/events/input/KeyReleasedEvent.hpp"
+#include "client/include/events/input/KeyHoldEvent.hpp"
+#include "client/include/events/input/MouseMoveEvent.hpp"
+#include "client/include/events/input/MouseScrollEvent.hpp"
 #include "client/include/input/Key.hpp"
 #include "events/input/MouseScrollEvent.hpp"
 

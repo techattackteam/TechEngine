@@ -7,11 +7,15 @@
 #include <vector>
 #include <glm/glm.hpp>
 
+#include "eventSystem/EventDispatcher.hpp"
+
 namespace TechEngine {
     class UIRenderer;
 
     class CLIENT_DLL Widget : public std::enable_shared_from_this<Widget> {
     public:
+        friend class WidgetsRegistry;
+
         enum class AnchorPreset {
             // Top Left Corner
             TopLeft,
@@ -68,10 +72,10 @@ namespace TechEngine {
         float m_rotationZ = 0.0f;
 
         std::shared_ptr<Widget> m_parent;
-        //std::vector<WidgetProperty> m_properties;
         std::vector<std::string> m_childrenTypes;
         std::vector<std::shared_ptr<Widget>> m_children; // Children widgets
 
+        bool m_mouseHovering = false;
 
     protected:
 
@@ -116,13 +120,10 @@ namespace TechEngine {
             return m_name;
         }
 
-        //virtual const std::vector<WidgetProperty>& getProperties() const {
-        //    return m_properties;
-        //}
-        //
-        //virtual std::vector<WidgetProperty>& getProperties() {
-        //    return m_properties;
-        //}
+    protected:
+        void onMouseEnteredRect(EventDispatcher& eventDispatcher);
+
+        void onMouseLeftRect(EventDispatcher& eventDispatcher);
 
     private:
         void setAnchorsFromPreset();

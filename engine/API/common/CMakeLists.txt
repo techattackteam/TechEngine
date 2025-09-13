@@ -3,7 +3,7 @@ file(GLOB_RECURSE ENGINE_API_HEADERS "include/*.hpp")
 
 add_library(TechEngineAPICommon OBJECT ${ENGINE_API_SRC} ${ENGINE_API_HEADERS})
 
-target_include_directories(TechEngineAPICommon PUBLIC "${CMAKE_SOURCE_DIR}/engine/API")
+target_include_directories(TechEngineAPICommon PUBLIC "${CMAKE_SOURCE_DIR}/engine/API/")
 
 target_link_libraries(TechEngineAPICommon PUBLIC TechEngineCore)
 
