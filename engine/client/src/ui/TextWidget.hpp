@@ -17,14 +17,11 @@ namespace TechEngine {
 
         std::string& getText();
 
-
         void setText(const std::string& text);
-
 
         glm::vec4& getColor();
 
         float& getFontSize();
-
 
         bool& isBold();
 

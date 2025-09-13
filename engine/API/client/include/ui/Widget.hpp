@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <memory>
 #include <string>
 #include <vector>
@@ -14,7 +13,7 @@ namespace TechEngine {
 
 namespace TechEngineAPI {
     class API_DLL Widget {
-    private:
+    protected:
         friend class WidgetsManager;
 
         TechEngine::Widget* m_internalWidget = nullptr;
@@ -22,7 +21,9 @@ namespace TechEngineAPI {
         inline static std::vector<std::shared_ptr<Widget>> m_children;
 
     public:
-        explicit Widget(std::shared_ptr<TechEngine::Widget>& widget);
+        explicit Widget(const std::shared_ptr<TechEngine::Widget>& widget);
+
+        virtual ~Widget() = default;
 
         std::shared_ptr<Widget> getParent();
 

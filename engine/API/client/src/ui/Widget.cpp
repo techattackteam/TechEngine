@@ -4,7 +4,7 @@
 #include "core/Logger.hpp"
 
 namespace TechEngineAPI {
-    Widget::Widget(std::shared_ptr<TechEngine::Widget>& widget) : m_internalWidget(widget.get()) {
+    Widget::Widget(const std::shared_ptr<TechEngine::Widget>& widget) : m_internalWidget(widget.get()) {
     }
 
     std::shared_ptr<Widget> Widget::getParent() {
