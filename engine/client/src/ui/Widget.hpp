@@ -76,6 +76,7 @@ namespace TechEngine {
         std::vector<std::shared_ptr<Widget>> m_children; // Children widgets
 
         bool m_mouseHovering = false;
+        bool m_isDirty = false; // Marks if the layout needs to be recalculated
 
     protected:
 
