@@ -35,35 +35,36 @@ namespace TechEngine {
             m_editor->setSelectedWidget(nullptr);
         }
 
-        //TODO: Change this for an action instead changing the panel internal state on the fly
-        if (!m_isWidgetHovered && ImGui::BeginPopupContextWindow("Widget Creation", 1)) {
-            ImGui::Text("BaseWidgets");
-            if (ImGui::MenuItem("Container")) {
-                m_editor->createWidget(nullptr, "Container", "Container");
-                setHierarchyDirty();
-            } else if (ImGui::MenuItem("Panel")) {
-                m_editor->createWidget(nullptr, "Panel", "Panel");
-                setHierarchyDirty();
-            } else if (ImGui::MenuItem("Text")) {
-                m_editor->createWidget(nullptr, "Text", "Text");
-                setHierarchyDirty();
-            } else if (ImGui::MenuItem("InputText")) {
-                m_editor->createWidget(nullptr, "InputText", "InputText");
-                setHierarchyDirty();
-            } /* else if (ImGui::MenuItem("Button")) {
-                m_editor->createWidget(nullptr, "Button", "Button");
-            } else if (ImGui::MenuItem("Image")) {
-                m_editor->createWidget(nullptr, "Image", "Image");
-            }*/
-            ImGui::Separator();
-            ImGui::Text("Widgets");
-            //for (const Widget& widget: m_editor->getWidgetsRegistry().getWidgetsTemplates()) {
-            //    if (ImGui::MenuItem(widget.getName().c_str())) {
-            //        ImGui::Text("%s", widget.getName().c_str());
-            //        m_editor->createWidget(nullptr, widget.getName(), false);
-            //    }
-            //}
+        if (!m_isWidgetHovered && ImGui::BeginPopupContextWindow()) {
+            openCreateWidgetMenu("Create", nullptr);
             ImGui::EndPopup();
+            //ImGui::Text("BaseWidgets");
+            //if (ImGui::MenuItem("Container")) {
+            //    m_editor->createWidget(nullptr, "Container", "Container");
+            //    setHierarchyDirty();
+            //} else if (ImGui::MenuItem("Panel")) {
+            //    m_editor->createWidget(nullptr, "Panel", "Panel");
+            //    setHierarchyDirty();
+            //} else if (ImGui::MenuItem("Text")) {
+            //    m_editor->createWidget(nullptr, "Text", "Text");
+            //    setHierarchyDirty();
+            //} else if (ImGui::MenuItem("InputText")) {
+            //    m_editor->createWidget(nullptr, "InputText", "InputText");
+            //    setHierarchyDirty();
+            //} /* else if (ImGui::MenuItem("Button")) {
+            //    m_editor->createWidget(nullptr, "Button", "Button");
+            //} else if (ImGui::MenuItem("Image")) {
+            //    m_editor->createWidget(nullptr, "Image", "Image");
+            //}*/
+            //ImGui::Separator();
+            //ImGui::Text("Widgets");
+            ////for (const Widget& widget: m_editor->getWidgetsRegistry().getWidgetsTemplates()) {
+            ////    if (ImGui::MenuItem(widget.getName().c_str())) {
+            ////        ImGui::Text("%s", widget.getName().c_str());
+            ////        m_editor->createWidget(nullptr, widget.getName(), false);
+            ////    }
+            ////}
+            //ImGui::EndPopup();
         }
 
         if (!m_pendingActions.empty()) {
@@ -239,6 +240,7 @@ namespace TechEngine {
             m_editor->setSelectedWidget(node.widget); // Select the widget when right-clicking
 
             std::string nameBuffer = node.widget->getName();
+            openCreateWidgetMenu("Create Child", node.widget);
             if (ImGuiUtils::beginMenuWithInputMenuField("Rename", "##Rename", nameBuffer)) {
                 node.widget->rename(nameBuffer);
                 ImGui::CloseCurrentPopup();
@@ -264,5 +266,40 @@ namespace TechEngine {
 
         ImGui::Unindent((node.depth + 1) * ImGui::GetStyle().IndentSpacing);
         ImGui::PopID();
+    }
+
+    void UIHierarchyPanel::openCreateWidgetMenu(const std::string& title, const std::shared_ptr<Widget>& parent) {
+        if (ImGui::BeginMenu(title.c_str())) {
+            //ImGui::OpenPopup("CreateWidgetPopup");
+            ImGui::Text("BaseWidgets");
+            if (ImGui::MenuItem("Container")) {
+                m_editor->createWidget(parent, "Container", "Container");
+                setHierarchyDirty();
+            } else if (ImGui::MenuItem("Panel")) {
+                m_editor->createWidget(parent, "Panel", "Panel");
+                setHierarchyDirty();
+            } else if (ImGui::MenuItem("Text")) {
+                m_editor->createWidget(parent, "Text", "Text");
+                setHierarchyDirty();
+            } else if (ImGui::MenuItem("InputText")) {
+                m_editor->createWidget(parent, "InputText", "InputText");
+                setHierarchyDirty();
+            } else if (ImGui::MenuItem("Interactable")) {
+                m_editor->createWidget(parent, "Interactable", "Interactable");
+                setHierarchyDirty();
+            } /*else if (ImGui::MenuItem("Image")) {
+            m_editor->createWidget(nullptr, "Image", "Image");
+        }*/
+            ImGui::Separator();
+            ImGui::Text("Widgets");
+            //for (const Widget& widget: m_editor->getWidgetsRegistry().getWidgetsTemplates()) {
+            //    if (ImGui::MenuItem(widget.getName().c_str())) {
+            //        ImGui::Text("%s", widget.getName().c_str());
+            //        m_editor->createWidget(nullptr, widget.getName(), false);
+            //    }
+            //}
+            //ImGui::EndPopup();
+            ImGui::EndMenu();
+        }
     }
 }

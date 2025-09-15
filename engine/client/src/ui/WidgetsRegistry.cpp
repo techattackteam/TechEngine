@@ -7,6 +7,7 @@
 
 #include "ContainerWidget.hpp"
 #include "InputTextWidget.hpp"
+#include "InteractableWidget.hpp"
 #include "PanelWidget.hpp"
 #include "TextWidget.hpp"
 #include "core/Timer.hpp"
@@ -51,10 +52,7 @@ namespace TechEngine {
         for (auto& widget: m_widgets) {
             if (widget) {
                 if (widget->m_isDirty) {
-                    UIRenderer& uiRenderer = m_systemsRegistry.getSystem<Renderer>().getUIRenderer();
-                    glm::vec4 rootFinalScreenRect = {0.0f, 0.0f, (float)uiRenderer.m_screenWidth, (float)uiRenderer.m_screenHeight};
-                    widget->calculateLayout(widget->m_parent ? widget->m_parent->m_finalScreenRect : rootFinalScreenRect, uiRenderer.getDpiScale());
-                    widget->m_isDirty = false;
+                    calculateWidgetLayout(widget);
                 }
                 widget->update(m_systemsRegistry.getSystem<Timer>().getDeltaTime());
             }
@@ -125,6 +123,13 @@ namespace TechEngine {
         return m_widgets;
     }
 
+    void WidgetsRegistry::calculateWidgetLayout(const std::shared_ptr<Widget>& widget) {
+        UIRenderer& uiRenderer = m_systemsRegistry.getSystem<Renderer>().getUIRenderer();
+        glm::vec4 rootFinalScreenRect = {0.0f, 0.0f, (float)uiRenderer.m_screenWidth, (float)uiRenderer.m_screenHeight};
+        widget->calculateLayout(widget->m_parent ? widget->m_parent->m_finalScreenRect : rootFinalScreenRect, uiRenderer.getDpiScale());
+        widget->m_isDirty = false;
+    }
+
     void WidgetsRegistry::onMouseMoveEvent(const std::shared_ptr<MouseMoveEvent>& event) {
         EventDispatcher& eventDispatcher = m_systemsRegistry.getSystem<EventDispatcher>();
         glm::vec2 mousePosition = event->getToPosition();
@@ -157,12 +162,13 @@ namespace TechEngine {
         glm::vec2 mousePosition = m_systemsRegistry.getSystem<Input>().getMouse().getPosition(); // This is window related position
         for (auto& widget: m_widgets) {
             // Check if the widget is an InputTextWidget and if the click is inside its bounds
-            if (auto inputField = std::dynamic_pointer_cast<InputTextWidget>(widget)) {
-                const auto& rect = inputField->getFinalScreenRect(); // This is just the game view in the editor
+            if (std::dynamic_pointer_cast<InputTextWidget>(widget) ||
+                std::dynamic_pointer_cast<InteractableWidget>(widget)) {
+                const auto& rect = widget->getFinalScreenRect(); // This is just the game view in the editor
                 if (mousePosition.x >= rect.x && mousePosition.x <= rect.x + rect.z &&
                     mousePosition.y >= rect.y && mousePosition.y <= rect.y + rect.w) {
-                    clickedWidget = inputField;
-                    break; // Found the top-most widget
+                    clickedWidget = widget;
+                    break;
                 }
             }
         }
@@ -177,9 +183,13 @@ namespace TechEngine {
                 }
             }
 
-            // Gain focus on the new widget
-            std::dynamic_pointer_cast<InputTextWidget>(clickedWidget)->gainFocus();
-            m_focusedWidget = clickedWidget;
+            if (std::dynamic_pointer_cast<InputTextWidget>(clickedWidget)) {
+                std::dynamic_pointer_cast<InputTextWidget>(clickedWidget)->gainFocus();
+                m_focusedWidget = clickedWidget;
+            } else if (std::dynamic_pointer_cast<InteractableWidget>(clickedWidget)) {
+                std::dynamic_pointer_cast<InteractableWidget>(clickedWidget)->onMouseClick(m_systemsRegistry.getSystem<EventDispatcher>());
+                m_focusedWidget.reset();
+            }
         }
         // If we clicked outside of any interactable widget
         else if (!clickedWidget) {

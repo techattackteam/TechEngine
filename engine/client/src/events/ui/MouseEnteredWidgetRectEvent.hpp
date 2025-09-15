@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 
 #include "events/Event.hpp"
 #include "ui/Widget.hpp"

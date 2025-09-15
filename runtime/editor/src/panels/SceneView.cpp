@@ -71,11 +71,11 @@ namespace TechEngine {
             const glm::mat4 inverted = glm::inverse(sceneCamera.getViewMatrix());
             const glm::vec3 right = normalize(glm::vec3(inverted[0]));
             const glm::vec3 up = normalize(glm::vec3(inverted[1]));
-            if ((mouseButtons & MOUSE_3)) {
+            if ((mouseButtons == MOUSE_3)) {
                 const glm::vec3 move = -right * delta.x * 0.01f + up * delta.y * 0.01f;
                 cameraTransform.translate(move);
             }
-            if ((mouseButtons & MOUSE_2)) {
+            if ((mouseButtons == MOUSE_1)) {
                 const glm::vec3 rotate = glm::vec3(-delta.y * 0.5f, -delta.x * 0.5f, 0);
                 cameraTransform.rotate(rotate);
             }

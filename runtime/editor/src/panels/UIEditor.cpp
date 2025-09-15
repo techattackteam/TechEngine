@@ -9,6 +9,7 @@
 #include <imgui_internal.h>
 
 #include "ui/InputTextWidget.hpp"
+#include "ui/InteractableWidget.hpp"
 
 namespace TechEngine {
     UIEditor::UIEditor(SystemsRegistry& editorSystemsRegistry,
@@ -45,6 +46,8 @@ namespace TechEngine {
             widget = std::make_shared<TextWidget>();
         } else if (type == "InputText") {
             widget = std::make_shared<InputTextWidget>(m_appSystemsRegistry);
+        } else if (type == "Interactable") {
+            widget = std::make_shared<InteractableWidget>();
         } else {
             TE_LOGGER_CRITICAL("UIEditor: Unknown widget type '{0}'. Cannot create widget.", type.c_str());
         } /*else if (type == "Button") {
@@ -52,7 +55,9 @@ namespace TechEngine {
         } else if (type == "Image") {
             widget = std::make_shared<ImageWidget>();
         }*/
-        widget->m_parent = parent;
+        if (parent != nullptr) {
+            parent->addChild(widget, 0);
+        }
         widget->rename(name);
         getWidgetsRegistry().getWidgets().emplace_back(widget);
         UIRenderer& uiRenderer = m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer();

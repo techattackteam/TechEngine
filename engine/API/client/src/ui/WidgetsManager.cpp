@@ -1,4 +1,6 @@
 #include "client/include/ui/WidgetsManager.hpp"
+
+#include "client/include/events/ui/MouseClickedInteractableWidgetEvent.hpp"
 #include "ui/WidgetsRegistry.hpp"
 
 #include "common/include/eventSystem/EventSystem.hpp"
@@ -7,14 +9,17 @@
 #include "client/include/ui/Widget.hpp"
 #include "client/include/ui/ContainerWidget.hpp"
 #include "client/include/ui/InputTextWidget.hpp"
+#include "client/include/ui/InteractableWidget.hpp"
 #include "client/include/ui/PanelWidget.hpp"
 #include "client/include/ui/TextWidget.hpp"
 #include "core/Logger.hpp"
+#include "events/ui/MouseClickedInteractableWidgetEvent.hpp"
 
 #include "events/ui/MouseEnteredWidgetRectEvent.hpp"
 #include "events/ui/MouseLeftWidgetRectEvent.hpp"
 #include "ui/ContainerWidget.hpp"
 #include "ui/InputTextWidget.hpp"
+#include "ui/InteractableWidget.hpp"
 #include "ui/PanelWidget.hpp"
 #include "ui/TextWidget.hpp"
 
@@ -30,6 +35,8 @@ namespace TechEngineAPI {
                 widgets[internalWidget.get()] = std::make_shared<TextWidget>(container);
             } else if (auto container = std::dynamic_pointer_cast<TechEngine::InputTextWidget>(internalWidget)) {
                 widgets[internalWidget.get()] = std::make_shared<InputTextWidget>(container);
+            } else if (auto container = std::dynamic_pointer_cast<TechEngine::InteractableWidget>(internalWidget)) {
+                widgets[internalWidget.get()] = std::make_shared<InteractableWidget>(container);
             } else {
                 TE_LOGGER_CRITICAL("Internal Widget with name '{0}' has an unknown type.", internalWidget->getName().c_str());
             }
@@ -52,6 +59,11 @@ namespace TechEngineAPI {
         dispatcher->subscribe<TechEngine::MouseLeftWidgetRectEvent>([](const std::shared_ptr<TechEngine::Event>& event) {
             const std::shared_ptr<TechEngine::Widget>& internalWidget = dynamic_cast<TechEngine::MouseLeftWidgetRectEvent*>(event.get())->getWidget();
             EventSystem::dispatch<MouseLeftWidgetRectEvent>(widgets[internalWidget.get()]);
+        });
+
+        dispatcher->subscribe<TechEngine::MouseClickedInteractableWidgetEvent>([](const std::shared_ptr<TechEngine::Event>& event) {
+            const std::shared_ptr<TechEngine::InteractableWidget>& internalWidget = dynamic_cast<TechEngine::MouseClickedInteractableWidgetEvent*>(event.get())->getWidget();
+            EventSystem::dispatch<MouseClickedInteractableWidgetEvent>(std::dynamic_pointer_cast<InteractableWidget>(widgets[internalWidget.get()]));
         });
     }
 
