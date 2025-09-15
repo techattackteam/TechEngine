@@ -25,14 +25,6 @@ namespace TechEngine {
     void InputTextWidget::draw(UIRenderer& renderer) {
         // m_finalScreenRect is calculated by the layout system
 
-        // 1. Draw the background
-        //renderer.drawRectangle({m_finalScreenRect.x, m_finalScreenRect.y}, {m_finalScreenRect.z, m_finalScreenRect.w}, m_backgroundColor);
-
-        // 2. Draw the border (color changes if focused)
-        //glm::vec4 borderColor = m_isFocused ? m_focusedBorderColor : m_borderColor;
-        //renderer.drawBorder(m_finalScreenRect, borderColor, 1.0f); // Assuming a drawBorder function
-
-        // 3. Determine which text and color to use
         std::string textToDraw;
         glm::vec4 colorToUse;
 
@@ -45,9 +37,6 @@ namespace TechEngine {
             colorToUse = m_textColor;
         }
 
-        // 4. Draw the Text
-        // We need some padding. Let's assume 5 pixels.
-        // NOTE: Your renderer will need to know the current dpiScale to draw the font at the correct size!
         float scaledFontSize = m_fontSize * renderer.getDpiScale();
         glm::vec2 textPosition = {m_finalScreenRect.x + 5, m_finalScreenRect.y + 5};
         renderer.drawText(renderer.m_defaultFont, textToDraw,

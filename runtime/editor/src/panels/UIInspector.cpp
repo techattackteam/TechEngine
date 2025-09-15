@@ -6,8 +6,10 @@
 #include "renderer/Renderer.hpp"
 #include "systems/SystemsRegistry.hpp"
 #include "ui/InputTextWidget.hpp"
+#include "ui/InteractableWidget.hpp"
 #include "ui/PanelWidget.hpp"
 #include "ui/TextWidget.hpp"
+#include "ui/WidgetsRegistry.hpp"
 
 namespace TechEngine {
     UIInspector::UIInspector(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& appSystemsRegistry) : m_appSystemsRegistry(appSystemsRegistry), Panel(editorSystemsRegistry) {
@@ -110,7 +112,7 @@ namespace TechEngine {
             }
 
             if (changed) {
-                m_selectedWidget->m_isDirty = true;
+                m_appSystemsRegistry.getSystem<WidgetsRegistry>().calculateWidgetLayout(m_selectedWidget);
             }
         }
 
@@ -145,6 +147,16 @@ namespace TechEngine {
             ImGui::PushID("InputText");
             inspectTextWidget(dynamic_cast<InputTextWidget*>(m_selectedWidget.get()));
             ImGui::PopID();
+        } else if (dynamic_cast<InteractableWidget*>(m_selectedWidget.get())) {
+            ImGui::Text("Interactable Widget:");
+            InteractableWidget* widget = dynamic_cast<InteractableWidget*>(m_selectedWidget.get());
+            bool clickable = widget->isClickable();
+            if (ImGui::Checkbox("Clickable", &clickable)) {
+                widget->setClickable(clickable);
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("If unchecked, this widget will not respond to user interactions.");
+            }
         }
     }
 

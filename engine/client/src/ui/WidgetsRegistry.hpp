@@ -34,6 +34,8 @@ namespace TechEngine {
 
         std::vector<std::shared_ptr<Widget>>& getWidgets();
 
+        void calculateWidgetLayout(const std::shared_ptr<Widget>& widget);
+
     private:
         void onMouseMoveEvent(const ::std::shared_ptr<MouseMoveEvent>& event);
 

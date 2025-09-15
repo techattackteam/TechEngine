@@ -62,5 +62,7 @@ namespace TechEngine {
         void reparentWidget(const std::shared_ptr<Widget>& widgetToMove, const std::shared_ptr<Widget>& newParent, int newIndex);
 
         void drawWidgetNode(HierarchyNode& node);
+
+        void openCreateWidgetMenu(const std::string& title, const std::shared_ptr<Widget>& parent = nullptr);
     };
 }
