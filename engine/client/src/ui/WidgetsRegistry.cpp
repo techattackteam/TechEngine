@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <memory>
+#include <stack>
 
 #include "ContainerWidget.hpp"
 #include "InputTextWidget.hpp"
@@ -18,21 +19,15 @@
 #include "events/input/KeyPressedEvent.hpp"
 #include "events/input/MouseMoveEvent.hpp"
 #include "renderer/Renderer.hpp"
-#include "ui/Widget.hpp"
-
+#include "utils/YAMLUtils.hpp"
 
 namespace TechEngine {
     WidgetsRegistry::WidgetsRegistry(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
     }
 
     void WidgetsRegistry::init() {
-        m_widgetsTemplates.push_back(ContainerWidget());
-        m_widgetsTemplates.push_back(PanelWidget());
-        m_widgetsTemplates.push_back(TextWidget());
-        m_widgetsTemplates.push_back(InputTextWidget(m_systemsRegistry));
-        //m_widgetsTemplates.push_back(ButtonWidget());
-        //m_widgetsTemplates.push_back(ImageWidget());
-        loadJson(R"(C:\dev\TechEngine\bin\runtime\editor\debug\New Project\resources\client\assets\ui\widgets.json)");
+        //createDefaultWidgetYamlFile();
+        loadYaml(R"(C:\dev\TechEngine\bin\runtime\editor\debug\New Project\resources\client\assets\ui\widgets.yaml)");
 
         m_systemsRegistry.getSystem<EventDispatcher>().subscribe<KeyPressedEvent>([this](const std::shared_ptr<Event>& event) {
             auto* keyPressedEvent = dynamic_cast<KeyPressedEvent*>(event.get());
@@ -59,68 +54,95 @@ namespace TechEngine {
         }
     }
 
-    bool WidgetsRegistry::loadJson(const std::string& jsonFile) {
-        std::ifstream stream(jsonFile);
-        if (!stream.is_open()) {
-            TE_LOGGER_CRITICAL("Failed to open widgets registry file: {}", jsonFile.c_str());
-            return false;
-        }
-        nlohmann::json data;
-
+    bool WidgetsRegistry::loadYaml(const std::string& yamlFile) {
         try {
-            data = nlohmann::json::parse(stream);
-        } catch (const nlohmann::json::parse_error& e) {
-            TE_LOGGER_ERROR("Failed to parse widgets registry file: {}. Error: {}", jsonFile.c_str(), e.what());
-            return false;
-        }
-        stream.close();
-        const auto& widgets_json = data["widgets"];
-        if (widgets_json.is_null() || !widgets_json.is_array()) {
-            TE_LOGGER_ERROR("Widgets registry file is empty or not an array: {}", jsonFile.c_str());
-            return false;
-        }
-        m_widgetsTemplates.clear();
+            YAML::Node config = YAML::LoadFile(yamlFile);
+            const YAML::Node& widgetsList = config["Widgets"];
+            if (!widgetsList || !widgetsList.IsSequence()) {
+                return false; // Error: "Widgets" key not found or not a sequence
+            }
 
-        for (const auto& widgetData: widgets_json) {
-            Widget widget;
-            widget.m_name = widgetData.at("name").get<std::string>();
-            widget.m_category = widgetData.at("category").get<std::string>();
-            widget.m_description = widgetData.at("description").get<std::string>();
-            const auto& children = widgetData.at("children");
-            if (!children.is_array()) {
-                TE_LOGGER_ERROR("Properties for widget '{}' are not an array in file: {}", widget.m_name.c_str(), jsonFile.c_str());
-                continue;
+            m_widgetsTemplates.resize(widgetsList.size());
+            std::stack<std::pair<YAML::Node, CustomWidgetTemplate&>> nodeStack;
+
+            // --- 1. Initial Seeding of the Stack ---
+            for (int i = 0; i < widgetsList.size(); i++) {
+                const YAML::Node& topLevelNode = widgetsList[i];
+                CustomWidgetTemplate& rootWidget = m_widgetsTemplates[i];
+
+                // Parse its properties
+                if (topLevelNode["name"]) {
+                    rootWidget.name = topLevelNode["name"].as<std::string>();
+                }
+                if (topLevelNode["category"]) {
+                    rootWidget.category = topLevelNode["category"].as<std::string>();
+                }
+                if (topLevelNode["description"]) {
+                    rootWidget.description = topLevelNode["description"].as<std::string>();
+                }
+
+                // If this top-level widget has children, push them onto the stack to be processed.
+                const YAML::Node& childrenNode = topLevelNode["children"];
+                if (childrenNode && childrenNode.IsSequence()) {
+                    // Push children in reverse order so they are popped in the correct order
+                    for (size_t i = childrenNode.size(); i > 0; i--) {
+                        nodeStack.emplace(childrenNode[i - 1], rootWidget);
+                    }
+                }
             }
-            for (const auto& child: children) {
-                std::string childType = child.at("type").get<std::string>();
-                widget.m_childrenTypes.push_back(childType);
+
+            // --- 2. Main Processing Loop (Iterative DFS) ---
+            while (!nodeStack.empty()) {
+                // Pop the next node to process
+                auto [currentNode, parentWidget] = nodeStack.top();
+                nodeStack.pop();
+
+                // Create the new child widget within its parent's m_children vector
+                CustomWidgetTemplate& newWidget = parentWidget.children.emplace_back();
+                if (currentNode["type"]) {
+                    newWidget.type = currentNode["type"].as<std::string>();
+                }
+                // Parse the new widget's properties
+                if (currentNode["name"]) {
+                    newWidget.name = currentNode["name"].as<std::string>();
+                    //TODO: Confirm that the Widget exists
+                }
+
+                // If this new widget has children of its own, add them to the stack.
+                const YAML::Node& childrenNode = currentNode["children"];
+                if (childrenNode && childrenNode.IsSequence()) {
+                    // Push children in reverse order to maintain original order when processed
+                    for (size_t i = childrenNode.size(); i > 0; i--) {
+                        nodeStack.emplace(childrenNode[i - 1], newWidget);
+                    }
+                }
             }
-            m_widgetsTemplates.push_back(widget);
+        } catch (const YAML::Exception& e) {
+            TE_LOGGER_ERROR("Failed to load widgets from YAML file: {0}", e.what());
+            return false;
         }
         return true;
     }
 
-    std::shared_ptr<Widget> WidgetsRegistry::createWidget(const std::string& name) {
-        Widget* widget = nullptr;
-        for (auto& w: m_widgetsTemplates) {
-            if (w.getName() == name) {
-                widget = &w;
-                break;
-            }
+    std::shared_ptr<Widget> WidgetsRegistry::createWidget(const std::shared_ptr<Widget>& parent, const std::string& name, bool custom) {
+        std::shared_ptr<Widget> widget = custom ? createCustomWidget(m_widgetsTemplates[0], name) : createBaseWidget(name, name);
+        if (!widget) {
+            TE_LOGGER_CRITICAL("WidgetsRegistry::createWidget: Failed to create widget of type '{0}'", name.c_str());
+            return nullptr;
         }
-        if (widget) {
-            return std::make_shared<Widget>(*widget);
+        if (parent) {
+            parent->addChild(widget, parent->m_children.size());
+        } else {
+            m_rootWidgets.emplace_back(widget);
         }
-        TE_LOGGER_ERROR("Widget with name '{0}' not found in registry.", name.c_str());
-        return nullptr;
-    }
-
-    const std::vector<Widget>& WidgetsRegistry::getWidgetsTemplates() const {
-        return m_widgetsTemplates;
-    }
-
-    std::vector<std::shared_ptr<Widget>>& WidgetsRegistry::getWidgets() {
-        return m_widgets;
+        widget->rename(name);
+        UIRenderer& uiRenderer = m_systemsRegistry.getSystem<Renderer>().getUIRenderer();
+        widget->calculateLayout(
+            parent
+                ? parent->m_finalScreenRect
+                : glm::vec4(0.0f, 0.0f, (float)uiRenderer.m_screenWidth, (float)uiRenderer.m_screenHeight), uiRenderer.getDpiScale());
+        rebuildFlattenedList();
+        return widget;
     }
 
     void WidgetsRegistry::calculateWidgetLayout(const std::shared_ptr<Widget>& widget) {
@@ -128,6 +150,149 @@ namespace TechEngine {
         glm::vec4 rootFinalScreenRect = {0.0f, 0.0f, (float)uiRenderer.m_screenWidth, (float)uiRenderer.m_screenHeight};
         widget->calculateLayout(widget->m_parent ? widget->m_parent->m_finalScreenRect : rootFinalScreenRect, uiRenderer.getDpiScale());
         widget->m_isDirty = false;
+    }
+
+    void WidgetsRegistry::queueCommand(std::unique_ptr<ICommand> command) {
+        m_commandQueue.push_back(std::move(command));
+    }
+
+    std::vector<std::shared_ptr<Widget>>& WidgetsRegistry::getWidgets() {
+        return m_widgets;
+    }
+
+
+    const std::vector<WidgetsRegistry::CustomWidgetTemplate>& WidgetsRegistry::getWidgetTemplates() {
+        return m_widgetsTemplates;
+    }
+
+    const std::vector<std::shared_ptr<Widget>>& WidgetsRegistry::getRootWidgets() const {
+        return m_rootWidgets;
+    }
+
+    void WidgetsRegistry::applyCommands() {
+        if (m_commandQueue.empty()) {
+            return;
+        }
+
+        for (const auto& command: m_commandQueue) {
+            command->execute();
+        }
+        m_commandQueue.clear();
+
+        rebuildFlattenedList();
+    }
+
+    void WidgetsRegistry::performWidgetMove(const std::shared_ptr<Widget>& widgetToMove, const std::shared_ptr<Widget>& newParent, int newSiblingIndex) {
+        if (auto oldParent = widgetToMove->m_parent) {
+            widgetToMove->m_parent->removeChild(widgetToMove);
+        } else {
+            std::erase(m_rootWidgets, widgetToMove);
+        }
+
+        // 2. Add to new parent at the correct sibling index
+        if (newParent) {
+            newParent->addChild(widgetToMove, newSiblingIndex);
+        } else {
+            if (newSiblingIndex < 0 || newSiblingIndex > m_rootWidgets.size()) {
+                newSiblingIndex = m_rootWidgets.size();
+            }
+            m_rootWidgets.insert(m_rootWidgets.begin() + newSiblingIndex, widgetToMove);
+            widgetToMove->m_parent = nullptr;
+        }
+    }
+
+    void WidgetsRegistry::rebuildFlattenedList() {
+        m_widgets.clear();
+        std::function<void(const std::shared_ptr<Widget>&)> traverse;
+        traverse = [&](const std::shared_ptr<Widget>& widget) {
+            m_widgets.push_back(widget);
+            for (const auto& child: widget->m_children) {
+                traverse(child);
+            }
+        };
+
+        for (const auto& root: m_rootWidgets) {
+            traverse(root);
+        }
+    }
+
+    void WidgetsRegistry::createDefaultWidgetYamlFile() {
+        std::string path = R"(C:\dev\TechEngine\bin\runtime\editor\debug\New Project\resources\client\assets\ui\widgets.yaml)";
+        std::ofstream file(path);
+        YAML::Emitter out;
+        out << YAML::BeginMap;
+        out << YAML::Key << "Widgets" << YAML::Value << YAML::BeginSeq;
+
+        out << YAML::BeginMap;
+        out << YAML::Key << "name" << YAML::Value << "Button";
+        out << YAML::Key << "category" << YAML::Value << "Interactable";
+        out << YAML::Key << "description" << YAML::Value << "Interactable Button";
+
+        out << YAML::Key << "children" << YAML::Value << YAML::BeginSeq;
+
+        out << YAML::BeginMap;
+        out << YAML::Key << "type" << YAML::Value << "Interactable";
+        out << YAML::Key << "name" << YAML::Value << "Interactable";
+        out << YAML::EndMap;
+        out << YAML::BeginMap;
+        out << YAML::Key << "type" << YAML::Value << "Text";
+        out << YAML::Key << "name" << YAML::Value << "Label";
+        out << YAML::EndMap;
+        out << YAML::BeginMap;
+        out << YAML::Key << "type" << YAML::Value << "Panel";
+        out << YAML::Key << "name" << YAML::Value << "Background";
+        out << YAML::EndMap;
+
+        out << YAML::EndSeq;
+
+        out << YAML::EndMap;
+
+        out << YAML::BeginMap;
+        out << YAML::Key << "name" << YAML::Value << "Text Field";
+
+        out << YAML::Key << "category" << YAML::Value << "Interactable";
+        out << YAML::Key << "description" << YAML::Value << "Interactable Button";
+
+        out << YAML::Key << "children" << YAML::Value << YAML::BeginSeq;
+
+        out << YAML::BeginMap;
+        out << YAML::Key << "type" << YAML::Value << "InputText";
+        out << YAML::Key << "name" << YAML::Value << "Text";
+        out << YAML::EndMap;
+        out << YAML::BeginMap;
+        out << YAML::Key << "type" << YAML::Value << "Panel";
+        out << YAML::Key << "name" << YAML::Value << "Background";
+        out << YAML::EndMap;
+
+
+        out << YAML::EndMap;
+        out << YAML::EndSeq;
+        out << YAML::EndMap;
+        //out << YAML::Key << "name" << YAML::Value << "Test";
+        //out << YAML::Key << "category" << YAML::Value << "TestCategory";
+        //out << YAML::Key << "description" << YAML::Value << "This is a test widget";
+        //out << YAML::Key << "children" << YAML::Value << YAML::BeginMap;
+
+        //out << YAML::Key << "Container" << YAML::Value << YAML::BeginMap;
+        //out << YAML::Key << "name" << YAML::Value << "Name for the widget Container";
+        //out << YAML::EndMap;
+        //
+        //out << YAML::Key << "Panel" << YAML::Value << YAML::BeginMap;
+        //out << YAML::Key << "name" << YAML::Value << "Name for the widget Panel";
+        //out << YAML::EndMap;
+        //
+        //out << YAML::EndMap;
+        //
+        //out << YAML::EndMap;
+        //out << YAML::EndMap;
+
+        //out << YAML::Key << "Another Test" << YAML::Value << YAML::BeginMap;
+        //out << YAML::Key << "name" << YAML::Value << "Another Test";
+        //out << YAML::Key << "category" << YAML::Value << "TestCategory";
+        //out << YAML::Key << "description" << YAML::Value << "This is another test widget";
+
+
+        file << out.c_str();
     }
 
     void WidgetsRegistry::onMouseMoveEvent(const std::shared_ptr<MouseMoveEvent>& event) {
@@ -208,5 +373,45 @@ namespace TechEngine {
                 input->onKeyPressed(event->getKey());
             }
         }
+    }
+
+    std::shared_ptr<Widget> WidgetsRegistry::createBaseWidget(const std::string& typeName, const std::string& name) {
+        std::shared_ptr<Widget> widget;
+        if (name == "Container") {
+            widget = std::make_shared<ContainerWidget>();
+        } else if (name == "Panel") {
+            widget = std::make_shared<PanelWidget>();
+        } else if (name == "Text") {
+            widget = std::make_shared<TextWidget>();
+        } else if (name == "InputText") {
+            widget = std::make_shared<InputTextWidget>(m_systemsRegistry);
+        } else if (name == "Interactable") {
+            widget = std::make_shared<InteractableWidget>();
+            /* else if (type == "Button") {
+            widget = std::make_shared<ButtonWidget>();
+            } else if (type == "Image") {
+            widget = std::make_shared<ImageWidget>();
+            }*/
+        } else {
+            TE_LOGGER_CRITICAL("UIEditor: Unknown widget type '{0}'. Cannot create widget.", name.c_str());
+        }
+
+        //getWidgets().emplace_back(widget);
+        return widget;
+    }
+
+    std::shared_ptr<Widget> WidgetsRegistry::createCustomWidget(const CustomWidgetTemplate& widgetTemplate, const std::string& name) {
+        std::shared_ptr<Widget> widget = std::make_shared<Widget>(name);
+        //m_widgets.emplace_back(widget);
+        for (int i = 0; i < widgetTemplate.children.size(); i++) {
+            const CustomWidgetTemplate& childTemplate = widgetTemplate.children[i];
+            auto childWidget = createBaseWidget(childTemplate.type, childTemplate.type);
+            if (childWidget) {
+                performWidgetMove(childWidget, widget, i);
+            } else {
+                TE_LOGGER_CRITICAL("WidgetsRegistry::createCustomWidget: Failed to create child widget of type '{0}'", childTemplate.name.c_str());
+            }
+        }
+        return widget;
     }
 }

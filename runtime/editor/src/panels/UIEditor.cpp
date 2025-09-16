@@ -36,37 +36,11 @@ namespace TechEngine {
         m_uiView.update();
     }
 
+    /*
     std::shared_ptr<Widget> UIEditor::createWidget(const std::shared_ptr<Widget>& parent, const std::string& type, const std::string& name) {
-        std::shared_ptr<Widget> widget;
-        if (type == "Container") {
-            widget = std::make_shared<ContainerWidget>();
-        } else if (type == "Panel") {
-            widget = std::make_shared<PanelWidget>();
-        } else if (type == "Text") {
-            widget = std::make_shared<TextWidget>();
-        } else if (type == "InputText") {
-            widget = std::make_shared<InputTextWidget>(m_appSystemsRegistry);
-        } else if (type == "Interactable") {
-            widget = std::make_shared<InteractableWidget>();
-        } else {
-            TE_LOGGER_CRITICAL("UIEditor: Unknown widget type '{0}'. Cannot create widget.", type.c_str());
-        } /*else if (type == "Button") {
-            widget = std::make_shared<ButtonWidget>();
-        } else if (type == "Image") {
-            widget = std::make_shared<ImageWidget>();
-        }*/
-        if (parent != nullptr) {
-            parent->addChild(widget, 0);
-        }
-        widget->rename(name);
-        getWidgetsRegistry().getWidgets().emplace_back(widget);
-        UIRenderer& uiRenderer = m_appSystemsRegistry.getSystem<Renderer>().getUIRenderer();
-        widget->calculateLayout(
-            parent
-                ? parent->m_finalScreenRect
-                : glm::vec4(0.0f, 0.0f, (float)uiRenderer.m_screenWidth, (float)uiRenderer.m_screenHeight), uiRenderer.getDpiScale());
-        return widget;
+
     }
+    */
 
     bool UIEditor::deleteWidget(const std::shared_ptr<Widget>& widget) {
         return false;
@@ -125,57 +99,4 @@ namespace TechEngine {
 
         ImGui::DockBuilderFinish(m_dockSpaceID);
     }
-
-
-    /*void UIEditor::drawRmlElementInHierarchy(Rml::Element* element) {
-        if (!element) return;
-
-        // Find our C++ widget counterpart for this element
-        std::shared_ptr<Widget> widget = nullptr;
-        auto it = m_elementToWidgetMap.find(element);
-        if (it != m_elementToWidgetMap.end()) {
-            widget = it->second;
-        }
-
-        // Determine the label for the ImGui node
-        std::string label = element->GetTagName();
-        if (!element->GetId().empty()) {
-            label += "#" + element->GetId();
-        }
-        if (widget) {
-            // If we have a C++ widget, use its name for a friendlier display
-            label = widget->getName() + " (" + label + ")";
-        }
-
-        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
-        if (m_selectedWidget == widget) {
-            flags |= ImGuiTreeNodeFlags_Selected;
-        }
-        // Make leaf nodes (like text) not have an arrow
-        if (element->GetNumChildren() == 0) {
-            flags |= ImGuiTreeNodeFlags_Leaf;
-        }
-
-        bool node_open = ImGui::TreeNodeEx((void*)element, flags, "%s", label.c_str());
-
-        if (ImGui::IsItemClicked() && widget) {
-            setSelectedWidget(widget);
-        }
-
-        // Add a right-click menu to create children
-        if (ImGui::BeginPopupContextItem()) {
-            if (ImGui::MenuItem("Add Panel")) {
-                //createWidget<Canvas>(element, "Panel"); // Create a child for the currently right-clicked Rml::Element
-            }
-            ImGui::EndPopup();
-        }
-
-
-        if (node_open) {
-            for (int i = 0; i < element->GetNumChildren(); ++i) {
-                drawRmlElementInHierarchy(element->GetChild(i));
-            }
-            ImGui::TreePop();
-        }
-    }*/
 }

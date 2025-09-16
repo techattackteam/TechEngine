@@ -22,21 +22,11 @@ namespace TechEngine {
             }
         };
 
-        // A command queue for deferred actions
-        enum class ActionType { Move , Reparent};
-
-        struct PendingAction {
-            ActionType type;
-            std::shared_ptr<Widget> subject; // The widget being moved
-            std::shared_ptr<Widget> destination; // The new parent (nullptr for root)
-            int index; // The new index within the destination
-        };
-
         SystemsRegistry& m_appSystemsRegistry;
         UIEditor* m_editor = nullptr;
 
         std::vector<HierarchyNode> m_displayList;
-        std::vector<PendingAction> m_pendingActions;
+
 
         bool m_isHierarchyDirty = true;
         bool m_isWidgetHovered = false;
@@ -57,9 +47,7 @@ namespace TechEngine {
 
         void recursiveAddToDisplayList(const std::shared_ptr<Widget>& widget, int depth);
 
-        void applyPendingActions();
-
-        void reparentWidget(const std::shared_ptr<Widget>& widgetToMove, const std::shared_ptr<Widget>& newParent, int newIndex);
+        void drawDropZone(const std::shared_ptr<Widget>& parent, const std::shared_ptr<Widget>& targetBefore);
 
         void drawWidgetNode(HierarchyNode& node);
 

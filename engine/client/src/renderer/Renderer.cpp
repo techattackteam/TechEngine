@@ -140,7 +140,7 @@ namespace TechEngine {
         rootWidget.m_finalScreenRect = {0.0f, 0.0f, (float)uiRenderer.m_screenWidth, (float)uiRenderer.m_screenHeight};
 
         std::vector<std::shared_ptr<Widget>>& widgets = m_systemsRegistry.getSystem<WidgetsRegistry>().getWidgets();
-        for (auto it = widgets.rbegin(); it != widgets.rend(); ++it) {
+        for (auto it = widgets.rbegin(); it != widgets.rend(); it++) {
             auto& widget = *it;
             if (widget) {
                 widget->draw(uiRenderer);
