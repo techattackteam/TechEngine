@@ -134,7 +134,6 @@ namespace TechEngine {
                 currentColor.a
             };
             if (ImGui::ColorPicker4("##ColorValue", colorsFloat)) {
-                TE_LOGGER_INFO("Setting color property '({0} , {1}, {2}, {3})'", colorsFloat[0], colorsFloat[1], colorsFloat[2], colorsFloat[3]);
                 widget->setBackgroundColor({colorsFloat[0], colorsFloat[1], colorsFloat[2], colorsFloat[3]});
             }
         } else if (dynamic_cast<TextWidget*>(m_selectedWidget.get())) {
@@ -174,17 +173,14 @@ namespace TechEngine {
             heights[id] = initial_size.y > 0 ? initial_size.y : ImGui::GetTextLineHeight() * 4;
         }
         float& height = heights[id];
-
         bool changed = ImGui::InputTextMultiline("##editor", text, ImVec2(-FLT_MIN, height));
 
         const float handle_height = 8.0f; // The thickness of our drag handle
 
         ImGui::InvisibleButton("##resizer", ImVec2(-FLT_MIN, handle_height));
-
         if (ImGui::IsItemHovered()) {
             ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
         }
-
         if (ImGui::IsItemActive()) {
             float drag_delta_y = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f).y;
 

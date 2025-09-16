@@ -5,6 +5,7 @@
 
 namespace TechEngine {
     InteractableWidget::InteractableWidget() : Widget() {
+        m_name = "Interactable";
         m_category = "Interactable";
         m_description = "Base class for all interactable widgets.";
     }

@@ -5,12 +5,12 @@
 #include "events/ui/MouseLeftWidgetRectEvent.hpp"
 #include "events/ui/MouseEnteredWidgetRectEvent.hpp"
 
-namespace TechEngineAPI {
-    class EventSystem;
-}
-
 namespace TechEngine {
     Widget::Widget() {
+        setAnchorsFromPreset();
+    }
+
+    Widget::Widget(const std::string& name) : m_name(name) {
         setAnchorsFromPreset();
     }
 
@@ -33,11 +33,11 @@ namespace TechEngine {
     }
 
     void Widget::draw(UIRenderer& renderer) {
-        for (const auto& child: m_children) {
-            if (child) {
-                child->draw(renderer);
-            }
-        }
+        //for (const auto& child: m_children) {
+        //    if (child) {
+        //        child->draw(renderer);
+        //    }
+        //}
     }
 
     void Widget::changeAnchor(AnchorPreset anchorPreset, const glm::vec4& parentScreenRect, float dpiScale) {
@@ -191,6 +191,14 @@ namespace TechEngine {
         m_name = name;
     }
 
+    std::string Widget::getPropertyType(const std::string& propertyName) const {
+        if (m_properties.find(propertyName) != m_properties.end()) {
+            return m_properties.at(propertyName);
+        } else {
+            TE_LOGGER_ERROR("Widget::getPropertyType: Property '{0}' not found in widget '{1}'.", propertyName.c_str(), m_name.c_str());
+        }
+    }
+
     void Widget::onMouseEnteredRect(EventDispatcher& eventDispatcher) {
         m_mouseHovering = true;
         eventDispatcher.dispatch<MouseEnteredWidgetRectEvent>(shared_from_this());
@@ -257,8 +265,7 @@ namespace TechEngine {
             TE_LOGGER_ERROR("Widget::addChild: Attempted to add a null child widget.");
             return;
         }
-        if (index < 0 || index > m_children.size()
-        ) {
+        if (index < 0 || index > m_children.size()) {
             TE_LOGGER_ERROR("Widget::addChild: Index out of bounds. Adding child at the end.");
             index = m_children.size(); // Add to the end if index is invalid
         }
@@ -267,11 +274,13 @@ namespace TechEngine {
     }
 
     void Widget::removeChild(const std::shared_ptr<Widget>& child) {
-        auto it = std::ranges::find(m_children, child);
+        auto it = std::find(m_children.begin(), m_children.end(), child);
         if (it != m_children.end()) {
-            m_children.erase(it, m_children.end());
+            m_children.erase(it);
+            child->m_parent = nullptr;
+        } else {
+            TE_LOGGER_ERROR("Widget::removeChild: Child widget not found.");
         }
-        child->m_parent = nullptr;
     }
 
 

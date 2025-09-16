@@ -4,7 +4,11 @@
 
 namespace TechEngine {
     PanelWidget::PanelWidget() {
-        m_name = "PanelWidget";
+        m_name = "Panel";
+        m_category = "Container";
+        m_description = "A simple panel widget that can contain other widgets and has a background color";
+
+        m_properties["BackgroundColor"] = "vec4";
     }
 
     void PanelWidget::draw(UIRenderer& renderer) {

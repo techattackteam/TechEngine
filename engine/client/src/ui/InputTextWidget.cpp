@@ -8,6 +8,16 @@
 
 namespace TechEngine {
     InputTextWidget::InputTextWidget(SystemsRegistry& systemsRegistry) : Widget(), m_systemsRegistry(systemsRegistry) {
+        m_name = "InputText";
+        m_category = "Interactable";
+        m_description = "A simple input text widget that can contain user input text";
+
+        //m_properties["TextColor"] = "vec4";
+        //m_properties["PlaceholderText"] = "string";
+        //m_properties["PlaceholderColor"] = "vec4";
+        //m_properties["FontSize"] = "float";
+        //m_properties["IsBold"] = "bool";
+        //m_properties["IsItalic"] = "bool";
     }
 
     InputTextWidget::~InputTextWidget() = default;

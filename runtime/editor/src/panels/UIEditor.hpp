@@ -29,7 +29,7 @@ namespace TechEngine {
 
         void onUpdate() override;
 
-        std::shared_ptr<Widget> createWidget(const std::shared_ptr<Widget>& parent, const std::string& type, const std::string& name);
+        //std::shared_ptr<Widget> createWidget(const std::shared_ptr<Widget>& parent, const std::string& type, const std::string& name);
 
         bool deleteWidget(const std::shared_ptr<Widget>& widget);
 

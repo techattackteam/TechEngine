@@ -75,16 +75,19 @@ namespace TechEngine {
         std::vector<std::string> m_childrenTypes;
         std::vector<std::shared_ptr<Widget>> m_children; // Children widgets
 
+        std::unordered_map<std::string, std::string> m_properties; // For yaml serialization of properties
+
         bool m_mouseHovering = false;
         bool m_isDirty = false; // Marks if the layout needs to be recalculated
 
-    protected:
 
     public:
         bool m_isHierarchyOpen = false; // This needs to be moved since the Widget class should not be aware of the UI hierarchy state
         glm::vec4 m_finalScreenRect = {0.0f, 0.0f, 0.0f, 0.0f}; // TopLeft X, TopLeft Y, Width, Height
 
         explicit Widget();
+
+        explicit Widget(const std::string& name);
 
         // Copy constructor for Widget, useful for creating a new widget based on an existing one
         Widget(Widget* widget);
@@ -120,6 +123,8 @@ namespace TechEngine {
         const std::string& getName() const {
             return m_name;
         }
+
+        std::string getPropertyType(const std::string& propertyName) const;
 
     protected:
         void onMouseEnteredRect(EventDispatcher& eventDispatcher);

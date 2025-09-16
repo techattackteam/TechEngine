@@ -58,16 +58,9 @@ namespace TechEngine {
             frameBuffer.resize(gameViewSize.x, gameViewSize.y);
             renderer.getUIRenderer().setViewport(gameViewSize.x, gameViewSize.y);
         }
-        //m_context->SetDimensions(Rml::Vector2i(gameViewSize.x, gameViewSize.y));
-
-        const float referenceHeight = 1080.0f;
-        float dp_ratio = (gameViewSize.y > 0) ? (gameViewSize.y / referenceHeight) : 1.0f;
-        //m_context->SetDensityIndependentPixelRatio(dp_ratio);
-
 
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 
         renderer.uiPass();
 

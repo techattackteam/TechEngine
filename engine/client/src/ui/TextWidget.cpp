@@ -4,7 +4,10 @@
 
 namespace TechEngine {
     TextWidget::TextWidget() : Widget() {
-        m_name = "TextWidget";
+        m_name = "Text";
+        m_category = "Interactable";
+        m_description = "A simple text widget that can display text";
+
         m_size = {120.0f, 30.0f};
         m_preset = AnchorPreset::TopLeft;
     }
