@@ -1,13 +1,8 @@
 #pragma once
 
 #include "core/ExportDLL.hpp"
-
-#include <memory>
-#include <string>
-#include <vector>
-#include <glm/glm.hpp>
-
 #include "eventSystem/EventDispatcher.hpp"
+#include "utils/YAMLUtils.hpp"
 
 namespace TechEngine {
     class UIRenderer;
@@ -44,6 +39,7 @@ namespace TechEngine {
             StretchFill
         };
 
+        std::string m_type = "Widget"; // This field is used for serialization to identify the widget type
         std::string m_name;
         std::string m_category;
         std::string m_description;
@@ -79,7 +75,6 @@ namespace TechEngine {
 
         bool m_mouseHovering = false;
         bool m_isDirty = false; // Marks if the layout needs to be recalculated
-
 
     public:
         bool m_isHierarchyOpen = false; // This needs to be moved since the Widget class should not be aware of the UI hierarchy state
@@ -125,6 +120,10 @@ namespace TechEngine {
         }
 
         std::string getPropertyType(const std::string& propertyName) const;
+
+        virtual void serialize(YAML::Emitter& out) const;
+
+        virtual void deserialize(const YAML::Node& node, WidgetsRegistry& registry);
 
     protected:
         void onMouseEnteredRect(EventDispatcher& eventDispatcher);

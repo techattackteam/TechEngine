@@ -1,5 +1,6 @@
 #include "Widget.hpp"
 
+#include "WidgetsRegistry.hpp"
 #include "core/Logger.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 #include "events/ui/MouseLeftWidgetRectEvent.hpp"
@@ -196,6 +197,100 @@ namespace TechEngine {
             return m_properties.at(propertyName);
         } else {
             TE_LOGGER_ERROR("Widget::getPropertyType: Property '{0}' not found in widget '{1}'.", propertyName.c_str(), m_name.c_str());
+        }
+    }
+
+    void Widget::serialize(YAML::Emitter& out) const {
+        out << YAML::Key << "Type" << YAML::Value << m_type;
+        out << YAML::Key << "Name" << YAML::Value << m_name;
+        out << YAML::Key << "Category" << YAML::Value << m_category;
+        out << YAML::Key << "Description" << YAML::Value << m_description;
+        out << YAML::Key << "Preset" << YAML::Value << static_cast<int>(m_preset);
+        out << YAML::Key << "AnchorMin" << YAML::Value << YAML::Flow << YAML::BeginSeq << m_anchorMin.x << m_anchorMin.y << YAML::EndSeq;
+        out << YAML::Key << "AnchorMax" << YAML::Value << YAML::Flow << YAML::BeginSeq << m_anchorMax.x << m_anchorMax.y << YAML::EndSeq;
+        out << YAML::Key << "Pivot" << YAML::Value << YAML::Flow << YAML::BeginSeq << m_pivot.x << m_pivot.y << YAML::EndSeq;
+        out << YAML::Key << "Size" << YAML::Value << YAML::Flow << YAML::BeginSeq << m_size.x << m_size.y << YAML::EndSeq;
+        out << YAML::Key << "AnchoredPosition" << YAML::Value << YAML::Flow << YAML::BeginSeq << m_anchoredPosition.x << m_anchoredPosition.y << YAML::EndSeq;
+        out << YAML::Key << "Left" << YAML::Value << m_left;
+        out << YAML::Key << "Right" << YAML::Value << m_right;
+        out << YAML::Key << "Top" << YAML::Value << m_top;
+        out << YAML::Key << "Bottom" << YAML::Value << m_bottom;
+        out << YAML::Key << "RotationZ" << YAML::Value << m_rotationZ;
+        out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
+        for (const auto& child: m_children) {
+            out << YAML::BeginMap;
+            if (child) {
+                child->serialize(out);
+            }
+            out << YAML::EndMap;
+        }
+        out << YAML::EndSeq;
+    }
+
+    void Widget::deserialize(const YAML::Node& node, WidgetsRegistry& registry) {
+        if (node["Type"].IsDefined()) {
+            m_type = node["Type"].as<std::string>();
+        }
+        if (node["Name"]) {
+            m_name = node["Name"].as<std::string>();
+        }
+        if (node["Category"]) {
+            m_category = node["Category"].as<std::string>();
+        }
+        if (node["Description"]) {
+            m_description = node["Description"].as<std::string>();
+        }
+        if (node["Preset"]) {
+            m_preset = static_cast<AnchorPreset>(node["Preset"].as<int>());
+        }
+        if (node["AnchorMin"]) {
+            m_anchorMin = node["AnchorMin"].as<glm::vec2>();
+        }
+        if (node["AnchorMax"]) {
+            m_anchorMax = node["AnchorMax"].as<glm::vec2>();
+        }
+        if (node["Pivot"]) {
+            m_pivot = node["Pivot"].as<glm::vec2>();
+        }
+        if (node["Size"]) {
+            m_size = node["Size"].as<glm::vec2>();
+        }
+        if (node["AnchoredPosition"]) {
+            m_anchoredPosition = node["AnchoredPosition"].as<glm::vec2>();
+        }
+        if (node["Left"]) {
+            m_left = node["Left"].as<float>();
+        }
+        if (node["Right"]) {
+            m_right = node["Right"].as<float>();
+        }
+        if (node["Top"]) {
+            m_top = node["Top"].as<float>();
+        }
+        if (node["Bottom"]) {
+            m_bottom = node["Bottom"].as<float>();
+        }
+        if (node["RotationZ"]) {
+            m_rotationZ = node["RotationZ"].as<float>();
+        }
+        if (node["Children"] && node["Children"].IsSequence()) {
+            int i = 0;
+            for (const YAML::Node& childNode: node["Children"]) {
+                if (childNode["Type"] && childNode["Name"]) {
+                    std::string childType = childNode["Type"].as<std::string>();
+                    std::string childName = childNode["Name"].as<std::string>();
+                    auto childWidget = registry.createWidget(shared_from_this(), childType, childName, false);
+                    if (childWidget) {
+                        childWidget->deserialize(childNode, registry);
+                        registry.performWidgetMove(childWidget, shared_from_this(), i);
+                        i++;
+                    } else {
+                        TE_LOGGER_ERROR("Widget::deserialize: Failed to create child widget of type '{0}' with name '{1}'.", childType.c_str(), childName.c_str());
+                    }
+                } else {
+                    TE_LOGGER_ERROR("Widget::deserialize: Child widget node is missing 'Type' or 'Name' fields.");
+                }
+            }
         }
     }
 

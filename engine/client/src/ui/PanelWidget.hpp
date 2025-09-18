@@ -14,5 +14,9 @@ namespace TechEngine {
         const glm::vec4& getBackgroundColor();
 
         void setBackgroundColor(const glm::vec4& color);
+
+        void serialize(YAML::Emitter& out) const override;
+
+        void deserialize(const YAML::Node& node, WidgetsRegistry& registry) override;
     };
 }

@@ -19,6 +19,7 @@ namespace TechEngine {
         std::unordered_map<std::string, std::filesystem::path> m_scenesBank;
         Scene m_activeScene;
         SceneSerializer m_sceneSerializer;
+        friend class WidgetsSerializer;
 
     public:
         explicit ScenesManager(SystemsRegistry& systemsRegistry);

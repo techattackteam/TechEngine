@@ -20,5 +20,9 @@ namespace TechEngine {
         bool isClickable() const;
 
         void setClickable(bool clickable);
+
+        void serialize(YAML::Emitter& out) const override;
+
+        void deserialize(const YAML::Node& node, WidgetsRegistry& registry) override;
     };
 }

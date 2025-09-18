@@ -1,6 +1,5 @@
 #include "WidgetsRegistry.hpp"
 #include "core/Logger.hpp"
-#include "json.hpp"
 
 #include <fstream>
 #include <memory>
@@ -19,6 +18,7 @@
 #include "events/input/KeyPressedEvent.hpp"
 #include "events/input/MouseMoveEvent.hpp"
 #include "renderer/Renderer.hpp"
+#include "scene/ScenesManager.hpp"
 #include "utils/YAMLUtils.hpp"
 
 namespace TechEngine {
@@ -41,6 +41,9 @@ namespace TechEngine {
         m_systemsRegistry.getSystem<EventDispatcher>().subscribe<MouseMoveEvent>([this](const std::shared_ptr<Event>& event) {
             onMouseMoveEvent(std::dynamic_pointer_cast<MouseMoveEvent>(event));
         });
+        m_serializer.init(m_systemsRegistry);
+        std::string sceneName = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getName();
+        m_serializer.deserializeUI(sceneName, m_systemsRegistry);
     }
 
     void WidgetsRegistry::onUpdate() {
@@ -124,8 +127,8 @@ namespace TechEngine {
         return true;
     }
 
-    std::shared_ptr<Widget> WidgetsRegistry::createWidget(const std::shared_ptr<Widget>& parent, const std::string& name, bool custom) {
-        std::shared_ptr<Widget> widget = custom ? createCustomWidget(m_widgetsTemplates[0], name) : createBaseWidget(name, name);
+    std::shared_ptr<Widget> WidgetsRegistry::createWidget(const std::shared_ptr<Widget>& parent, const std::string& name, const std::string& type, bool custom) {
+        std::shared_ptr<Widget> widget = custom ? createCustomWidget(m_widgetsTemplates[0], name) : createBaseWidget(type, name);
         if (!widget) {
             TE_LOGGER_CRITICAL("WidgetsRegistry::createWidget: Failed to create widget of type '{0}'", name.c_str());
             return nullptr;
@@ -167,6 +170,10 @@ namespace TechEngine {
 
     const std::vector<std::shared_ptr<Widget>>& WidgetsRegistry::getRootWidgets() const {
         return m_rootWidgets;
+    }
+
+    WidgetsSerializer& WidgetsRegistry::getSerializer() {
+        return m_serializer;
     }
 
     void WidgetsRegistry::applyCommands() {
@@ -375,17 +382,19 @@ namespace TechEngine {
         }
     }
 
-    std::shared_ptr<Widget> WidgetsRegistry::createBaseWidget(const std::string& typeName, const std::string& name) {
+    std::shared_ptr<Widget> WidgetsRegistry::createBaseWidget(const std::string& type, const std::string& name) {
         std::shared_ptr<Widget> widget;
-        if (name == "Container") {
+        if (type == "Widget") {
+            widget = std::make_shared<Widget>();
+        } else if (type == "Container") {
             widget = std::make_shared<ContainerWidget>();
-        } else if (name == "Panel") {
+        } else if (type == "Panel") {
             widget = std::make_shared<PanelWidget>();
-        } else if (name == "Text") {
+        } else if (type == "Text") {
             widget = std::make_shared<TextWidget>();
-        } else if (name == "InputText") {
+        } else if (type == "InputText") {
             widget = std::make_shared<InputTextWidget>(m_systemsRegistry);
-        } else if (name == "Interactable") {
+        } else if (type == "Interactable") {
             widget = std::make_shared<InteractableWidget>();
             /* else if (type == "Button") {
             widget = std::make_shared<ButtonWidget>();
@@ -396,13 +405,11 @@ namespace TechEngine {
             TE_LOGGER_CRITICAL("UIEditor: Unknown widget type '{0}'. Cannot create widget.", name.c_str());
         }
 
-        //getWidgets().emplace_back(widget);
         return widget;
     }
 
     std::shared_ptr<Widget> WidgetsRegistry::createCustomWidget(const CustomWidgetTemplate& widgetTemplate, const std::string& name) {
         std::shared_ptr<Widget> widget = std::make_shared<Widget>(name);
-        //m_widgets.emplace_back(widget);
         for (int i = 0; i < widgetTemplate.children.size(); i++) {
             const CustomWidgetTemplate& childTemplate = widgetTemplate.children[i];
             auto childWidget = createBaseWidget(childTemplate.type, childTemplate.type);

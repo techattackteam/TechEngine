@@ -226,19 +226,19 @@ namespace TechEngine {
         if (ImGui::BeginMenu(title.c_str())) {
             ImGui::Text("BaseWidgets");
             if (ImGui::MenuItem("Container")) {
-                m_editor->getWidgetsRegistry().createWidget(parent, "Container", false);
+                m_editor->getWidgetsRegistry().createWidget(parent, "Container", "Container", false);
                 setHierarchyDirty();
             } else if (ImGui::MenuItem("Panel")) {
-                m_editor->getWidgetsRegistry().createWidget(parent, "Panel", false);
+                m_editor->getWidgetsRegistry().createWidget(parent, "Panel", "Panel", false);
                 setHierarchyDirty();
             } else if (ImGui::MenuItem("Text")) {
-                m_editor->getWidgetsRegistry().createWidget(parent, "Text", false);
+                m_editor->getWidgetsRegistry().createWidget(parent, "Text", "Text", false);
                 setHierarchyDirty();
             } else if (ImGui::MenuItem("InputText")) {
-                m_editor->getWidgetsRegistry().createWidget(parent, "InputText", false);
+                m_editor->getWidgetsRegistry().createWidget(parent, "InputText", "InputText", false);
                 setHierarchyDirty();
             } else if (ImGui::MenuItem("Interactable")) {
-                m_editor->getWidgetsRegistry().createWidget(parent, "Interactable", false);
+                m_editor->getWidgetsRegistry().createWidget(parent, "Interactable", "Interactable", false);
                 setHierarchyDirty();
             } /*else if (ImGui::MenuItem("Image")) {
             m_editor->createWidget(nullptr, "Image", "Image");
@@ -248,7 +248,7 @@ namespace TechEngine {
             for (const WidgetsRegistry::CustomWidgetTemplate& widget: m_editor->getWidgetsRegistry().getWidgetTemplates()) {
                 if (ImGui::MenuItem(widget.name.c_str())) {
                     ImGui::Text("%s", widget.name.c_str());
-                    m_editor->getWidgetsRegistry().createWidget(parent, widget.name, true);
+                    m_editor->getWidgetsRegistry().createWidget(parent, widget.name, widget.type, true);
                     setHierarchyDirty();
                 }
             }
