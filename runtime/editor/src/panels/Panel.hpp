@@ -50,7 +50,6 @@ namespace TechEngine {
 
         virtual void onUpdate() = 0;
 
-
         void processInput();
 
         virtual void processMouseDragging(glm::vec2 delta, unsigned long long mouseButtons);

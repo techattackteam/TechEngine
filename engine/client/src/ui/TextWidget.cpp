@@ -4,6 +4,7 @@
 
 namespace TechEngine {
     TextWidget::TextWidget() : Widget() {
+        m_type = "Text";
         m_name = "Text";
         m_category = "Interactable";
         m_description = "A simple text widget that can display text";
@@ -48,5 +49,33 @@ namespace TechEngine {
 
     bool& TextWidget::isItalic() {
         return m_isItalic;
+    }
+
+    void TextWidget::serialize(YAML::Emitter& out) const {
+        Widget::serialize(out);
+        out << YAML::Key << "Text" << YAML::Value << m_text;
+        out << YAML::Key << "TextColor" << YAML::Value << YAML::Flow << YAML::BeginSeq << m_textColor.x << m_textColor.y << m_textColor.z << m_textColor.w << YAML::EndSeq;
+        out << YAML::Key << "FontSize" << YAML::Value << m_fontSize;
+        out << YAML::Key << "IsBold" << YAML::Value << m_isBold;
+        out << YAML::Key << "IsItalic" << YAML::Value << m_isItalic;
+    }
+
+    void TextWidget::deserialize(const YAML::Node& node, WidgetsRegistry& registry) {
+        Widget::deserialize(node, registry);
+        if (node["Text"]) {
+            this->m_text = node["Text"].as<std::string>();
+        }
+        if (node["TextColor"]) {
+            this->m_textColor = node["TextColor"].as<glm::vec4>();
+        }
+        if (node["FontSize"]) {
+            this->m_fontSize = node["FontSize"].as<float>();
+        }
+        if (node["IsBold"]) {
+            this->m_isBold = node["IsBold"].as<bool>();
+        }
+        if (node["IsItalic"]) {
+            this->m_isItalic = node["IsItalic"].as<bool>();
+        }
     }
 }

@@ -5,6 +5,7 @@
 #include "core/ExportDLL.hpp"
 #include "systems/System.hpp"
 #include "Widget.hpp"
+#include "WidgetsSerializer.hpp"
 #include "commands/ICommand.hpp"
 
 namespace TechEngine {
@@ -22,7 +23,6 @@ namespace TechEngine {
             std::unordered_map<std::string, std::tuple<std::string, std::string>> properties; // Key: property name, Value: (type, default value)
         };
 
-        // A command queue for deferred actions
         enum class ActionType { Move, Reparent };
 
         struct PendingAction {
@@ -43,6 +43,7 @@ namespace TechEngine {
         std::shared_ptr<Widget> m_currentlyHoveredWidget = nullptr;
 
         std::vector<std::unique_ptr<ICommand>> m_commandQueue;
+        WidgetsSerializer m_serializer;
 
     public:
         explicit WidgetsRegistry(SystemsRegistry& systemsRegistry);
@@ -57,7 +58,7 @@ namespace TechEngine {
 
         bool loadYaml(const std::string& jsonFilePath);
 
-        std::shared_ptr<Widget> createWidget(const std::shared_ptr<Widget>& parent, const std::string& name, bool custom);
+        std::shared_ptr<Widget> createWidget(const std::shared_ptr<Widget>& parent, const std::string& name, const std::string& type, bool custom);
 
         void calculateWidgetLayout(const std::shared_ptr<Widget>& widget);
 
@@ -75,6 +76,8 @@ namespace TechEngine {
 
         const std::vector<std::shared_ptr<Widget>>& getRootWidgets() const;
 
+        WidgetsSerializer& getSerializer();
+
     private:
         void createDefaultWidgetYamlFile();
 
@@ -84,7 +87,7 @@ namespace TechEngine {
 
         void onKeyPressedEvent(const std::shared_ptr<KeyPressedEvent>& event);
 
-        std::shared_ptr<Widget> createBaseWidget(const std::string& typeName, const std::string& name);
+        std::shared_ptr<Widget> createBaseWidget(const std::string& type, const std::string& name);
 
         std::shared_ptr<Widget> createCustomWidget(const CustomWidgetTemplate& widgetTemplate, const std::string& name);
     };

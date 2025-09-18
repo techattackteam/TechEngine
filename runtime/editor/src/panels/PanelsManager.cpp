@@ -226,7 +226,7 @@ namespace TechEngine {
             if (ImGui::MenuItem("Open Project", "Ctrl+O")) {
             }
             if (ImGui::MenuItem("Save Project", "Ctrl+S")) {
-                //m_systemsRegistry.getSystem<ProjectManager>().saveProject();
+                m_systemsRegistry.getSystem<ProjectManager>().saveProject();
             }
 
             if (ImGui::MenuItem("Export")) {

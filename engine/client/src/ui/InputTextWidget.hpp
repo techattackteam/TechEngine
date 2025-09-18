@@ -55,5 +55,9 @@ namespace TechEngine {
         int getHorizontalAlign();
 
         int getVerticalAlign();
+
+        void serialize(YAML::Emitter& out) const override;
+
+        void deserialize(const YAML::Node& node, WidgetsRegistry& registry) override;
     };
 }

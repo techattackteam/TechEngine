@@ -1,5 +1,8 @@
 #include "ScenesManager.hpp"
 
+#include "events/scene/SceneLoadEvent.hpp"
+#include "events/scene/SceneSaveEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
 #include "files/FileUtils.hpp"
 #include "project/Project.hpp"
 #include "resources/ResourcesManager.hpp"
@@ -71,16 +74,17 @@ namespace TechEngine {
     void ScenesManager::saveScene(const std::filesystem::path& path) {
         std::ofstream stream(path);
         m_sceneSerializer.serialize(stream);
+        m_systemsRegistry.getSystem<EventDispatcher>().dispatch<SceneSaveEvent>(m_activeScene.getName());
     }
 
     void ScenesManager::loadScene(const std::string& name) {
-        m_activeScene.clear();
         const std::filesystem::path& path = m_scenesBank[name];
-        m_sceneSerializer.deserialize(path);
+        loadScene(path);
     }
 
     void ScenesManager::loadScene(const std::filesystem::path& path) {
         m_activeScene.clear();
         m_sceneSerializer.deserialize(path);
+        m_systemsRegistry.getSystem<EventDispatcher>().dispatch<SceneLoadEvent>(m_activeScene.getName());
     }
 }

@@ -9,6 +9,8 @@
 #include "project/Project.hpp"
 #include "scene/ScenesManager.hpp"
 #include "systems/SystemsRegistry.hpp"
+#include "ui/Widget.hpp"
+#include "ui/WidgetsRegistry.hpp"
 
 
 namespace TechEngine {
@@ -153,14 +155,15 @@ namespace TechEngine {
 
     void ProjectManager::saveProject() {
         assert(!m_projectName.empty());
-        m_clientSystemsRegistry.getSystem<ScenesManager>().saveScene();
-        m_serverSystemsRegistry.getSystem<ScenesManager>().saveScene();
 
         std::ofstream fout(m_projectPath.string() + "\\" + m_projectName.string() + ".teproj");
         YAML::Node config;
         config["Project Name"] = m_projectName.string();
 
         YAML::Node client = m_clientSystemsRegistry.getSystem<Project>().saveProject();
+        WidgetsSerializer& serializer = m_clientSystemsRegistry.getSystem<WidgetsRegistry>().getSerializer();
+        std::string sceneName = m_clientSystemsRegistry.getSystem<ScenesManager>().getActiveScene().getName();
+        serializer.serializeUI(sceneName, m_clientSystemsRegistry);
         config["Client"] = client;
 
         YAML::Node server = m_serverSystemsRegistry.getSystem<Project>().saveProject();
