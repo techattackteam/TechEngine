@@ -1,29 +1,28 @@
-
 #include "VertexBuffer.hpp"
 #include "ErrorCatcher.hpp"
 
 namespace TechEngine {
     VertexBuffer::~VertexBuffer() {
-        GlCall(glDeleteBuffers(1, &id));
+        glDeleteBuffers(1, &id);
     }
 
     void VertexBuffer::init(uint32_t size) {
-        GlCall(glGenBuffers(1, &this->id));
-        GlCall(glBindBuffer(GL_ARRAY_BUFFER, this->id));
-        GlCall(glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW));
+        glGenBuffers(1, &this->id);
+        glBindBuffer(GL_ARRAY_BUFFER, this->id);
+        glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
     }
 
     void VertexBuffer::bind() const {
-        GlCall(glBindBuffer(GL_ARRAY_BUFFER, this->id));
+        glBindBuffer(GL_ARRAY_BUFFER, this->id);
     }
 
     void VertexBuffer::unBind() const {
-        GlCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
-    void VertexBuffer::addData(const void *data, uint32_t size, uint32_t offset) const {
+    void VertexBuffer::addData(const void* data, uint32_t size, uint32_t offset) const {
         bind();
-        GlCall(glBufferSubData(GL_ARRAY_BUFFER, offset, size, data));
+        glBufferSubData(GL_ARRAY_BUFFER, offset, size, data);
         unBind();
     }
 

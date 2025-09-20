@@ -3,6 +3,7 @@
 #include "components/Components.hpp"
 #include "components/ComponentsFactory.hpp"
 #include "renderer/FrameBuffer.hpp"
+#include "renderer/OldRenderer.hpp"
 #include "renderer/Renderer.hpp"
 #include "scene/ScenesManager.hpp"
 #include "systems/SystemsRegistry.hpp"
@@ -37,7 +38,15 @@ namespace TechEngine {
         m_appSystemsRegistry.getSystem<PhysicsEngine>().renderBodies();
         renderCameraFrustum();
         renderColliders();
-        renderer.renderPipeline(sceneCamera);
+        int mask = Renderer::GEOMETRY_PASS | Renderer::LINE_PASS;
+        //renderer.renderCustomPipeline(&sceneCamera, mask);
+#if  1!= 1
+        OldRenderer& oldRenderer = m_appSystemsRegistry.getSystem<OldRenderer>();
+        oldRenderer.renderPipeline(sceneCamera);
+#else
+        renderer.renderCustomPipeline(sceneCamera, mask);
+#endif
+
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
         ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
         guizmo.editTransform(&sceneCamera, ImGui::GetCurrentContext(), m_selectedEntities);
@@ -75,7 +84,7 @@ namespace TechEngine {
                 const glm::vec3 move = -right * delta.x * 0.01f + up * delta.y * 0.01f;
                 cameraTransform.translate(move);
             }
-            if ((mouseButtons == MOUSE_1)) {
+            if ((mouseButtons == MOUSE_2)) {
                 const glm::vec3 rotate = glm::vec3(-delta.y * 0.5f, -delta.x * 0.5f, 0);
                 cameraTransform.rotate(rotate);
             }

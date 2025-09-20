@@ -19,6 +19,6 @@ namespace TechEngine {
 
         void unBind() const;
 
-        void addData(const void* data, uint32_t size) const;
+        void addData(const void* data, uint32_t size, uint32_t offset) const;
     };
 }

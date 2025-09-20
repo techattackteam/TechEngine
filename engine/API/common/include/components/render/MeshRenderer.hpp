@@ -21,9 +21,9 @@ namespace TechEngineAPI {
     public:
         MeshRenderer(const Entity entity,
                      const std::shared_ptr<Mesh>& mesh,
-                     const std::shared_ptr<Material>& material): Component(entity),
-                                                                 m_mesh(mesh),
-                                                                 m_material(material) {
+                     const std::shared_ptr<Material>& material) : Component(entity),
+                                                                  m_mesh(mesh),
+                                                                  m_material(material) {
         }
 
         void updateInternalPointer(TechEngine::Scene* scene) override;
@@ -45,7 +45,5 @@ namespace TechEngineAPI {
         [[nodiscard]] std::shared_ptr<Material> getMaterial() const {
             return m_material;
         }
-
-        void paintMesh();
     };
 }

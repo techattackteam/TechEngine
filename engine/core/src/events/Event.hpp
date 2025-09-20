@@ -6,5 +6,6 @@ namespace TechEngine {
     class CORE_DLL Event {
     public:
         virtual ~Event() = default;
+
     };
 }

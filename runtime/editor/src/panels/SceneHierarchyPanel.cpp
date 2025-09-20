@@ -11,8 +11,8 @@ namespace TechEngine {
     SceneHierarchyPanel::SceneHierarchyPanel(SystemsRegistry& editorSystemRegistry,
                                              SystemsRegistry& appSystemRegistry,
                                              std::vector<Entity>& selectedEntities) : m_appSystemRegistry(
-            appSystemRegistry),
-        m_selectedEntities(selectedEntities), Panel(editorSystemRegistry) {
+                                                                                          appSystemRegistry),
+                                                                                      m_selectedEntities(selectedEntities), Panel(editorSystemRegistry) {
     }
 
 
@@ -223,7 +223,7 @@ namespace TechEngine {
             }
             m_entitiesOrder.erase(it);
             m_entitiesOrder.insert(m_entitiesOrder.begin() + newPosition, tag);
-            TE_LOGGER_INFO("Reordered entity {} to position {}", tag.getName(), newPosition);
+            TE_LOGGER_INFO("Reordered entity {0} to position {1}", tag.getName(), newPosition);
         }
     }
 
@@ -241,6 +241,14 @@ namespace TechEngine {
                     ResourcesManager& resourcesManager = m_appSystemRegistry.getSystem<ResourcesManager>();
                     scene.addComponent<MeshRenderer>(
                         entity, MeshRenderer(resourcesManager.getDefaultMesh(), resourcesManager.getDefaultMaterial()));
+                    m_entitiesOrder.emplace_back(scene.getComponent<Tag>(entity));
+                    break;
+                }
+                case Sphere: {
+                    Entity entity = scene.createEntity("Sphere");
+                    ResourcesManager& resourcesManager = m_appSystemRegistry.getSystem<ResourcesManager>();
+                    scene.addComponent<MeshRenderer>(
+                        entity, MeshRenderer(resourcesManager.getMesh("Sphere"), resourcesManager.getDefaultMaterial()));
                     m_entitiesOrder.emplace_back(scene.getComponent<Tag>(entity));
                     break;
                 }
@@ -262,7 +270,7 @@ namespace TechEngine {
             }
 
             if (ImGui::MenuItem("Sphere")) {
-                //m_entitiesToCreate.push_back({"Sphere", Sphere, parent});
+                m_entitiesToCreate.push_back({"Sphere", Sphere, parent});
             }
 
             if (ImGui::MenuItem("Cylinder")) {

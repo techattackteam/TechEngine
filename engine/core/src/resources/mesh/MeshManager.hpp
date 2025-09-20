@@ -8,27 +8,21 @@
 namespace TechEngine {
     class MeshManager {
     private:
+        //TODO: Change to unordered_map for faster access
         std::vector<Mesh> m_meshesBank;
-        
+        SystemsRegistry& m_systemsRegistry;
+
     public:
         inline static const std::string DEFAULT_MESH_NAME = "Cube";
+
+        MeshManager(SystemsRegistry& systemsRegistry);
 
         void init(const std::vector<std::filesystem::path>& meshFilePaths);
 
         void shutdown();
 
-        /**
-         * Create an empty mesh with the given name without serializing it
-         * @param name
-         */
         void createMesh(const std::string& name);
 
-        /**
-         * Create a mesh with the given name and vertices and indices
-         * @param name
-         * @param vertices
-         * @param indices
-         */
         void createMesh(const std::string& name, const std::vector<Vertex>& vertices, const std::vector<int>& indices);
 
         void loadStaticMesh(const std::filesystem::path& path);
@@ -36,6 +30,10 @@ namespace TechEngine {
         Mesh& getMesh(const std::string& name);
 
         bool isMeshLoaded(const std::string& name);
+
+        const std::vector<Mesh>& getMeshes();
+
+        void deleteMesh(const std::string& name);
 
     private:
     };

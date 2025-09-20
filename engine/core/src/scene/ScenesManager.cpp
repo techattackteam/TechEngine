@@ -51,7 +51,7 @@ namespace TechEngine {
         Entity cube = m_activeScene.createEntity("Cube");
         m_activeScene.addComponent(cube, MeshRenderer(resourcesManager.getDefaultMesh(), resourcesManager.getDefaultMaterial()));
         MeshRenderer& meshRenderer = m_activeScene.getComponent<MeshRenderer>(cube);
-        meshRenderer.paintMesh();
+        //meshRenderer.paintMesh();
         registerScene(name, path);
     }
 

@@ -1,5 +1,4 @@
 #version 460 core
-#extension GL_ARB_shader_draw_parameters: enable
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
@@ -13,35 +12,14 @@ out vec4 fragPosLightSpace;
 out vec2 fragTextCoord;
 
 uniform mat4 lightSpaceMatrix;
+uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-
-struct ObjectData {
-    mat4 modelMatrix;
-    uint materialID;
-};
-
-struct Material {
-    vec4 color;
-};
-
-layout (std430, binding = 1) buffer ObjectBuffer {
-    ObjectData objects[];
-} objectBuffer;
-
-layout (std430, binding = 2) buffer MaterialBuffer {
-    Material materials[];
-} materialBuffer;
-
 uniform bool isLightingActive;
 void main() {
-    int objectIndex = gl_BaseInstance + gl_InstanceID;;
-
-    mat4 model = objectBuffer.objects[objectIndex].modelMatrix;
-    uint v_materialID = objectBuffer.objects[objectIndex].materialID;
     fragPos = vec3(model * vec4(position, 1.0f));
-    vertexColor = materialBuffer.materials[v_materialID].color;
+    vertexColor = color;
     vertexNormal = mat3(transpose(inverse(model))) * normal;
     if (isLightingActive) {
         fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0f);

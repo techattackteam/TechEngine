@@ -17,6 +17,7 @@ namespace TechEngine {
     private:
         std::queue<std::shared_ptr<Event>> m_dispatchedEvents;
         std::unordered_map<std::type_index, ObserversVector> m_observers;
+        std::function<void(std::shared_ptr<Event>)> m_editorWatchDogCallback;
 
     public:
         EventManager() = default;
@@ -35,6 +36,10 @@ namespace TechEngine {
             m_observers[type].emplace_back(std::make_shared<Observer>(callback));
         }
 
+        void registerEditorWatchDog(const std::function<void(std::shared_ptr<Event>)>& editorWatchDogCallback) {
+            m_editorWatchDogCallback = editorWatchDogCallback;
+        }
+
         template<typename EventType>
         void unsubscribe(const EventType& type, const Observer& callback) {
             static_assert(std::is_base_of<Event, EventType>::value, "T must derive from Event");
@@ -45,6 +50,8 @@ namespace TechEngine {
         void dispatch(const std::shared_ptr<Event>& event);
 
         void execute();
+
+        void executeSingleEvent(const std::shared_ptr<Event>& event);
 
         void shutdown();
     };

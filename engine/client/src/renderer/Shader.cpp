@@ -16,40 +16,40 @@ namespace TechEngine {
 
     uint32_t Shader::createShader(const std::string& vertexShader, const std::string& fragmentShader) {
         uint32_t program;
-        GlCall(program = glCreateProgram());
+        program = glCreateProgram();
         uint32_t vs = compileShader(GL_VERTEX_SHADER, vertexShader);
         uint32_t fs = compileShader(GL_FRAGMENT_SHADER, fragmentShader);
         if (vs == -1 || fs == -1) {
             return -1;
         }
-        GlCall(glAttachShader(program, vs));
-        GlCall(glAttachShader(program, fs));
+        glAttachShader(program, vs);
+        glAttachShader(program, fs);
 
-        GlCall(glLinkProgram(program));
-        GlCall(glValidateProgram(program));
+        glLinkProgram(program);
+        glValidateProgram(program);
 
-        GlCall(glDeleteShader(vs));
-        GlCall(glDeleteShader(fs));
+        glDeleteShader(vs);
+        glDeleteShader(fs);
         return program;
     }
 
     uint32_t Shader::compileShader(uint32_t type, const std::string& source) {
         uint32_t shaderID;
-        GlCall(shaderID = glCreateShader(type));
+        shaderID = glCreateShader(type);
         const char* src = source.c_str();
-        GlCall(glShaderSource(shaderID, 1, &src, nullptr));
-        GlCall(glCompileShader(shaderID));
+        glShaderSource(shaderID, 1, &src, nullptr);
+        glCompileShader(shaderID);
 
         int result;
-        GlCall(glGetShaderiv(shaderID, GL_COMPILE_STATUS, &result));
+        glGetShaderiv(shaderID, GL_COMPILE_STATUS, &result);
         if (result == GL_FALSE) {
             int length;
-            GlCall(glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &length));
+            glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &length);
             char* message = new char[length];
-            GlCall(glGetShaderInfoLog(shaderID, length, &length, message));
-            TE_LOGGER_CRITICAL("Failed to compile {0} {1} shader!", (type == GL_VERTEX_SHADER ? "vertices " : "fragment "), shaderName);
+            glGetShaderInfoLog(shaderID, length, &length, message);
+            TE_LOGGER_ERROR("Failed to compile {0} {1} shader!", (type == GL_VERTEX_SHADER ? "vertices " : "fragment "), shaderName);
             TE_LOGGER_CRITICAL(message);
-            GlCall(glDeleteShader(shaderID));
+            glDeleteShader(shaderID);
             delete[] message;
             return -1;
         }
@@ -58,11 +58,11 @@ namespace TechEngine {
     }
 
     void Shader::bind() const {
-        GlCall(glUseProgram(id));
+        glUseProgram(id);
     }
 
     void Shader::unBind() const {
-        GlCall(glUseProgram(0));
+        glUseProgram(0);
     }
 
     ShaderSource Shader::parseShader(const char* vertexShaderPath, const char* fragmentShaderPath) {
@@ -93,28 +93,28 @@ namespace TechEngine {
     }
 
     void Shader::setUniformMatrix4f(const std::string& name, glm::mat4 matrix) {
-        GlCall(glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix)));
+        glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix));
     }
 
     void Shader::setUniformVec3(const std::string& name, glm::vec3 vector) {
-        GlCall(glUniform3fv(getUniformLocation(name), 1, glm::value_ptr(vector)));
+        glUniform3fv(getUniformLocation(name), 1, glm::value_ptr(vector));
     }
 
     void Shader::setUniformVec4(const std::string& name, glm::vec4 vector) {
-        GlCall(glUniform4fv(getUniformLocation(name), 1, glm::value_ptr(vector)));
+        glUniform4fv(getUniformLocation(name), 1, glm::value_ptr(vector));
     }
 
     void Shader::setUniformInt(const std::string& name, int value) {
-        GlCall(glUniform1i(getUniformLocation(name), value));
+        glUniform1i(getUniformLocation(name), value);
     }
 
     void Shader::setUniformBool(const std::string& name, bool value) {
-        GlCall(glUniform1i(getUniformLocation(name), value));
+        glUniform1i(getUniformLocation(name), value);
     }
 
 
     void Shader::setUniformFloat(const std::string& name, float value) {
-        GlCall(glUniform1f(getUniformLocation(name), value));
+        glUniform1f(getUniformLocation(name), value);
     }
 
     uint32_t Shader::getUniformLocation(const std::string& name) {
@@ -122,7 +122,7 @@ namespace TechEngine {
             return uniformLocationCache[name];
         }
         int32_t location;
-        GlCall(location = glGetUniformLocation(id, name.c_str()));
+        location = glGetUniformLocation(id, name.c_str());
         if (location == -1) {
             std::cout << "Warning: uniform '" << name << "' doesn't exist in " << this->shaderName << " shader" << std::endl;
         } else {

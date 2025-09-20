@@ -1,31 +1,31 @@
 #pragma once
 
-#include "core/CoreExportDLL.hpp"
-#include <string>
+#include "resources/IResource.hpp"
+
 #include <glm/glm.hpp>
 
 namespace TechEngine {
-    class CORE_DLL Material {
+    struct MaterialProperties {
+        glm::vec4 color;
+    };
+
+    class CORE_DLL Material : public IResource {
     private:
         std::string name;
+        uint32_t m_gpuID; // ID in the GPU
 
+        MaterialProperties properties;
         glm::vec3 ambient;
         glm::vec3 diffuse;
         glm::vec3 specular;
-
-        glm::vec4 color;
         float shininess;
 
-        bool useTexture = false;
-
-        /*Texture* diffuseTexture = nullptr;*/
-
     public:
-        Material(std::string name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
-
-        /*Material( std::string& name, Texture* diffuse);*/
+        Material(std::string name, uint32_t gpuID, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
 
         std::string& getName();
+
+        uint32_t getGpuID() const;
 
         glm::vec4& getColor();
 
@@ -47,12 +47,6 @@ namespace TechEngine {
 
         void setShininess(float shininess);
 
-        bool getUseTexture();
-
-        void setUseTexture(bool useTexture);
-
-        /*Texture* getDiffuseTexture();
-
-        void setDiffuseTexture(Texture* texture);*/
+        MaterialProperties& getProperties();
     };
 }

@@ -3,6 +3,7 @@
 #include "core/Logger.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 #include "events/application/AppCloseEvent.hpp"
+#include "renderer/ErrorCatcher.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
@@ -15,10 +16,27 @@ namespace TechEngine {
         m_height = height;
 
         glfwInit();
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef TECH_ENGINE_CORE_DEBUG
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE); // Request a debug context!
+#endif
+
         m_handler = glfwCreateWindow(m_width, m_height, m_title.c_str(), NULL, NULL);
         glfwMakeContextCurrent(m_handler);
         if (glewInit() != GLEW_OK) {
             TE_LOGGER_CRITICAL("Failed to initialize GLEW");
+        }
+
+        int flags;
+        glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+        if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) {
+            glEnable(GL_DEBUG_OUTPUT);
+            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); // Makes callbacks synchronous for easier debugging
+            glDebugMessageCallback(DebugMessageCallback, nullptr);
+            glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+            TE_LOGGER_INFO("OpenGL Debug Context Initialized");
         }
 
         glfwSetWindowUserPointer(m_handler, this);
@@ -36,8 +54,8 @@ namespace TechEngine {
     void Window::onUpdate() {
         glfwPollEvents();
         glfwSwapBuffers(m_handler);
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        //glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
     void Window::onFixedUpdate() {

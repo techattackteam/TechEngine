@@ -1,32 +1,25 @@
 #pragma once
-#include <string>
-#include <utility>
-#include <vector>
 
 #include "Vertex.hpp"
+#include "resources/IResource.hpp"
 
 namespace TechEngine {
-    class Material;
-
-    class CORE_DLL Mesh {
+    class CORE_DLL Mesh : public IResource {
     public:
         std::string m_name;
 
         std::vector<Vertex> m_vertices;
         std::vector<int> m_indices;
 
+        uint32_t indexCount = 0; // Number of indices to draw
+        uint32_t firstIndex = 0; // Offset in the main IBO (in number of indices)
+        uint32_t baseVertex = 0; // Offset in the main VBO (in number of vertices)
+
         Mesh(std::string name,
              std::vector<Vertex> vertices,
-             std::vector<int> indices) : m_name(std::move(name)),
-                                         m_vertices(std::move(vertices)),
-                                         m_indices(std::move(indices)) {
-        }
+             std::vector<int> indices);
 
         Mesh(const Mesh& rhs);
-
-        /*
-        Mesh& operator=(Mesh rhs);
-        */
 
         void setVertices(const std::vector<Vertex>& vector, const std::vector<int>& indices);
 

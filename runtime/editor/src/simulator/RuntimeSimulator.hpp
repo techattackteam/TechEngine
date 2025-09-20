@@ -108,6 +108,8 @@ namespace TechEngine {
         void onUpdate() override {
             if (m_simulationState == SimulationState::RUNNING) {
                 m_runtime.onUpdate();
+            } else {
+                m_runtime.m_systemRegistry.template getSystem<EventDispatcher>().onUpdate();
             }
             if (stopNextUpdate) {
                 stopSimulation();

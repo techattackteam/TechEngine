@@ -1,78 +1,86 @@
 #pragma once
 
-#include "core/ExportDll.hpp"
+#include "core/ExportDLL.hpp"
 #include "systems/System.hpp"
+
 #include "ShadersManager.hpp"
+#include "ShaderStorageBuffer.hpp"
+#include "VertexArray.hpp"
+#include "VertexBuffer.hpp"
+#include "IndicesBuffer.hpp"
+#include "FrameBuffer.hpp"
 #include "Line.hpp"
-#include "scene/CameraSystem.hpp"
+#include "components/Components.hpp"
+#include "scene/Scene.hpp"
 #include "ui/UIRenderer.hpp"
 
 namespace TechEngine {
-    class Scene;
-    class FrameBuffer;
-    class IndicesBuffer;
-    class VertexBuffer;
-    class VertexArray;
-    class Camera;
-    class MeshRenderer;
-
     class CLIENT_DLL Renderer : public System {
     private:
-        SystemsRegistry& m_systemsRegistry;
         const std::string BufferGameObjects = "GameObjects";
         const std::string BufferLines = "Lines";
-        uint32_t id = 0;
+
+        SystemsRegistry& m_systemsRegistry;
+        ShadersManager m_shadersManager;
+        std::unordered_map<std::string, VertexArray> m_vertexArrays;
+        std::unordered_map<std::string, VertexBuffer> m_vertexBuffers;
+        std::unordered_map<std::string, IndicesBuffer> m_indicesBuffers;
+
+        ShaderStorageBuffer m_drawCommandBuffer;
+        ShaderStorageBuffer m_objectDataBuffer;
+        ShaderStorageBuffer m_materialsBuffer;
+
+        std::list<FrameBuffer> frameBuffers;
+        UIRenderer m_uiRenderer;
+
+        uint32_t m_currentVertexOffset = 0; // Tracks the end of the VBO data (in vertices)
+        uint32_t m_currentIndexOffset = 0; // Tracks the end of the IBO data (in indices)
+        size_t m_commandToDraw = 0;
 
         std::vector<Line> lines;
 
-        ShadersManager shadersManager;
-        std::unordered_map<std::string, VertexArray*> vertexArrays;
-        std::unordered_map<std::string, VertexBuffer*> vertexBuffers;
-        std::unordered_map<std::string, IndicesBuffer*> indicesBuffers;
-        std::list<FrameBuffer*> frameBuffers;
-        UIRenderer uiRenderer;
-
     public:
+        inline static const int GEOMETRY_PASS = 1 << 0;
+        inline static const int UI_PASS = 1 << 1;
+        inline static const int LINE_PASS = 1 << 2;
+
         Renderer(SystemsRegistry& systemsRegistry);
 
-        ~Renderer();
+        ~Renderer() override;
 
-        void init();
+        void init() override;
+
+        void onStart() override;
 
         void shutdown() override;
 
         void renderPipeline(Camera& camera);
 
-        void renderCustomPipeline(Camera* camera, std::vector<int>& entities);
-
-        void uiPass();
+        void renderCustomPipeline(Camera& camera, int mask);
 
         void createLine(const glm::vec3& startPosition, const glm::vec3& endPosition, const glm::vec4& color);
 
-        FrameBuffer& getFramebuffer(uint32_t id);
-
         uint32_t createFramebuffer(uint32_t width, uint32_t height);
 
-        ShadersManager& getShadersManager();
+        FrameBuffer& getFramebuffer(uint32_t id);
 
         UIRenderer& getUIRenderer();
 
     private:
-        void shadowPass(Scene& scene);
+        void uploadNewMesh(const std::string& name);
+
+        void removeMesh(Mesh& mesh);
+
+        void uploadNewMaterial(const std::string& name);
+
+        void removeMaterial(const std::string& name);
+
+        void populateDataBuffers(Scene& scene);
 
         void geometryPass(Camera& camera);
 
+        void uiPass();
 
         void linePass(Camera& camera);
-
-        void renderWithLightPass(Scene& scene);
-
-        void renderGeometryPass(Scene& scene, bool shadow);
-
-        void renderMesh(Transform& transform, MeshRenderer& meshRenderer, bool shadow);
-
-        void flushMeshData(MeshRenderer* meshRenderer);
-
-        void flushLinesData();
     };
 }

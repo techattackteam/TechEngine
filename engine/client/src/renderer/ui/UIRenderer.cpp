@@ -2,11 +2,9 @@
 
 #include "Font.hpp"
 #include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
-#include "components/Archetype.hpp"
 #include "project/Project.hpp"
 #include "renderer/ErrorCatcher.hpp"
+#include "renderer/VertexBuffer.hpp"
 #include "systems/SystemsRegistry.hpp"
 #include "ui/WidgetsRegistry.hpp"
 
@@ -70,13 +68,13 @@ namespace TechEngine {
                 continue;
             } else if (drawCommand.textureID != 0) {
                 m_uiShader->setUniformBool("uUseTexture", true);
-                GlCall(glBindTexture(GL_TEXTURE_2D, drawCommand.textureID));
+                glBindTexture(GL_TEXTURE_2D, drawCommand.textureID);
             } else {
                 m_uiShader->setUniformBool("uUseTexture", false);
-                GlCall(glBindTexture(GL_TEXTURE_2D, 0));
+                glBindTexture(GL_TEXTURE_2D, 0);
             }
 
-            GlCall(glDrawArrays(GL_TRIANGLES, drawCommand.vertexOffset, drawCommand.vertexCount));
+            glDrawArrays(GL_TRIANGLES, drawCommand.vertexOffset, drawCommand.vertexCount);
         }
 
 

@@ -1,6 +1,7 @@
 #include "UIView.hpp"
 
 #include <imGuizmo.h>
+#include <assimp/camera.h>
 
 #include "GameView.hpp"
 #include "SceneView.hpp"
@@ -62,7 +63,8 @@ namespace TechEngine {
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        renderer.uiPass();
+        int mask = Renderer::UI_PASS;
+        //renderer.renderCustomPipeline(, mask);
 
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
         ImVec2 canvasSize = {(float)gameViewSize.x, (float)gameViewSize.y};

@@ -1,41 +1,63 @@
 #include "VertexArray.hpp"
 #include "ErrorCatcher.hpp"
 #include "Line.hpp"
+#include "VertexBuffer.hpp"
 #include "resources/mesh/Vertex.hpp"
 #include "ui/UIVertex.hpp"
 
 namespace TechEngine {
     void VertexArray::init() {
-        GlCall(glGenVertexArrays(1, &id));
+        glGenVertexArrays(1, &id);
     }
 
 
     VertexArray::~VertexArray() {
-        GlCall(glDeleteVertexArrays(1, &id));
+        glDeleteVertexArrays(1, &id);
     }
 
     void VertexArray::bind() const {
-        GlCall(glBindVertexArray(this->id));
+        glBindVertexArray(this->id);
     }
 
     void VertexArray::unBind() const {
-        GlCall(glBindVertexArray(0));
+        glBindVertexArray(0);
+    }
+
+    void VertexArray::addNewBufferOldFormat(const VertexBuffer& vertexBuffer) const {
+        bind();
+        vertexBuffer.bind();
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)nullptr);
+        glEnableVertexAttribArray(0);
+
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)(6 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)(8 * sizeof(float)));
+        glEnableVertexAttribArray(3);
+
+        vertexBuffer.unBind();
+        unBind();
     }
 
     void VertexArray::addNewBuffer(const VertexBuffer& vertexBuffer) const {
         bind();
         vertexBuffer.bind();
-        GlCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *) nullptr));
-        GlCall(glEnableVertexAttribArray(0));
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)nullptr);
 
-        GlCall(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *) (3 * sizeof(float))));
-        GlCall(glEnableVertexAttribArray(1));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)(3 * sizeof(float)));
 
-        GlCall(glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *) (6 * sizeof(float))));
-        GlCall(glEnableVertexAttribArray(2));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)(6 * sizeof(float)));
 
-        GlCall(glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *) (8 * sizeof(float))));
-        GlCall(glEnableVertexAttribArray(3));
+        /*
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)(8 * sizeof(float)));
+        */
 
         vertexBuffer.unBind();
         unBind();
@@ -44,11 +66,11 @@ namespace TechEngine {
     void VertexArray::addNewLinesBuffer(const VertexBuffer& vertexBuffer) const {
         bind();
         vertexBuffer.bind();
-        GlCall(glEnableVertexAttribArray(0));
-        GlCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(LineVertex), (const void *) nullptr));
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(LineVertex), (const void*)nullptr);
 
-        GlCall(glEnableVertexAttribArray(1));
-        GlCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(LineVertex), (const void *) (3 * sizeof(float))));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(LineVertex), (const void*)(3 * sizeof(float)));
         vertexBuffer.unBind();
         unBind();
     }
@@ -56,14 +78,14 @@ namespace TechEngine {
     void VertexArray::addNewUIBuffer(const VertexBuffer& vertexBuffer) const {
         bind();
         vertexBuffer.bind();
-        GlCall(glEnableVertexAttribArray(0));
-        GlCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(UIVertex), (const void*) nullptr));
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(UIVertex), (const void*)nullptr);
 
-        GlCall(glEnableVertexAttribArray(1));
-        GlCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(UIVertex), (const void*) (2 * sizeof(float))));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(UIVertex), (const void*)(2 * sizeof(float)));
 
-        GlCall(glEnableVertexAttribArray(2));
-        GlCall(glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(UIVertex), (const void*) (6 * sizeof(float))));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(UIVertex), (const void*)(6 * sizeof(float)));
         vertexBuffer.unBind();
         unBind();
     }
