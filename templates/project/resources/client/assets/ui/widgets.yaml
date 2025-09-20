@@ -1,0 +1,19 @@
+Widgets:
+  - name: Button
+    category: Interactable
+    description: Interactable Button
+    children:
+      - type: Interactable
+        name: Interactable
+      - type: Text
+        name: Label
+      - type: Panel
+        name: Background
+  - name: Text Field
+    category: Interactable
+    description: Interactable Button
+    children:
+      - type: InputText
+        name: Text
+      - type: Panel
+        name: Background

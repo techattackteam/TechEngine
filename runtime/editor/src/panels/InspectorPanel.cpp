@@ -400,6 +400,7 @@ namespace TechEngine {
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<MeshRenderer>()) != componentsToDraw.end()) {
             drawComponent<MeshRenderer>(firstEntity, "Mesh Renderer", [this](auto& component) {
+                /*
                 Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                 bool isMeshCommon = true;
                 bool isMaterialCommon = true;
@@ -418,8 +419,8 @@ namespace TechEngine {
                     }
                 }
 
-                /*
-                if (isMeshCommon && commonMeshName == "ImportedMesh") {
+
+                if (isMeshCommon && commonMeshName == "export3dcoat") {
                     ImGui::Text("Imported Mesh");
                 } else {
                     static const char* current_item;
@@ -442,11 +443,7 @@ namespace TechEngine {
                         }
                         ImGui::EndCombo();
                     }
-                    if (current_item != commonMeshName) {
-                        /*for (GameObject* entity: m_selectedEntities) {
-                            entity->getComponent<MeshRenderer>()->changeMesh(m_appSystemRegistry.getSystem<MeshManager>().getMesh(current_item));
-                        }
-                    }
+                    component.changeMesh(m_appSystemRegistry.getSystem<ResourcesManager>().getMesh(current_item));
                 }
                 static bool open = false;
                 if (ImGui::Button(isMaterialCommon ? commonMaterialName.c_str() : "-", ImVec2(ImGui::GetContentRegionAvail().x, 0)) && !open) {
@@ -479,18 +476,19 @@ namespace TechEngine {
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
                         std::string filename = (const char*)payload->Data;
                         std::string extension = filename.substr(filename.find_last_of('.'));
-                        if (extension != ".mat")
-                            return;
-                        std::string materialName = filename.substr(0, filename.find_last_of("."));
-                        for (Entity entity: m_selectedEntities) {
-                            //entity->getComponent<MeshRenderer>()->changeMaterial(m_appSystemRegistry.getSystem<MaterialManager>().getMaterial(materialName));
+                        if (extension == ".mat") {
+                            std::string materialName = filename.substr(0, filename.find_last_of("."));
+                            component.changeMaterial(m_appSystemRegistry.getSystem<ResourcesManager>().getMaterial(materialName));
+                        } else if (extension == ".tesmesh") {
+                            std::string meshName = filename.substr(0, filename.find_last_of("."));
+                            component.changeMesh(m_appSystemRegistry.getSystem<ResourcesManager>().getMesh(meshName));
                         }
                         return;
                     }
                     ImGui::EndDragDropTarget();
                 }
-                */
-                component.paintMesh();
+                    */
+                //component.paintMesh();
             });
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<StaticBody>()) != componentsToDraw.end()) {

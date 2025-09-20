@@ -260,7 +260,7 @@ namespace TechEngine {
         Mesh& mesh = resourcesManager.getMesh(meshName);
         Material& material = resourcesManager.getMaterial(materialName);
         MeshRenderer meshRenderer(mesh, material);
-        meshRenderer.paintMesh();
+        //meshRenderer.paintMesh();
         return meshRenderer;
     }
 #pragma region Physics Components

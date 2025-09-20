@@ -9,7 +9,7 @@ namespace TechEngineAPI {
     void Mesh::setVertices(const std::vector<Vertex>& vertices, const std::vector<int>& indices) {
         std::vector<TechEngine::Vertex> ver;
         for (const Vertex& vertex: vertices) {
-            ver.emplace_back(vertex.position, vertex.normal, vertex.texCoords, vertex.color);
+            ver.emplace_back(vertex.position, vertex.normal, vertex.texCoords);
         }
         m_resourcesManager->setVertices(m_name, ver, indices);
     }
@@ -17,7 +17,7 @@ namespace TechEngineAPI {
     void Mesh::addVertices(const std::vector<Vertex>& vertices, const std::vector<int>& indices) {
         std::vector<TechEngine::Vertex> ver;
         for (const Vertex& vertex: vertices) {
-            ver.emplace_back(vertex.position, vertex.normal, vertex.texCoords, vertex.color);
+            ver.emplace_back(vertex.position, vertex.normal, vertex.texCoords);
         }
         m_resourcesManager->addVertices(m_name, ver, indices);
     }

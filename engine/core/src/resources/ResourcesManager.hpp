@@ -30,23 +30,27 @@ namespace TechEngine {
 
         void setVertices(const std::string& name, const std::vector<Vertex>& vertices, const std::vector<int>& indices);
 
-        void addVertices(const std::string& name, const std::vector<TechEngine::Vertex>& vertices, const std::vector<int>& indices);
+        void addVertices(const std::string& name, const std::vector<Vertex>& vertices, const std::vector<int>& indices);
+
+        void deleteMesh(const std::string& name);
 
         Mesh& getMesh(const std::string& name);
 
         Mesh& getDefaultMesh();
 
-        Material& createMaterial(const std::string& name);
+        const std::vector<Mesh>& getAllMeshes();
 #pragma endregion
 
 #pragma region MaterialManager
         void loadMaterial(const std::string& name, const std::string& path);
 
+        Material& createMaterial(const std::string& name);
+
         Material& getMaterial(const std::string& name);
 
         Material& getDefaultMaterial();
 
-
+        const std::vector<Material*>& getAllMaterials();
 #pragma endregion
 
     private:

@@ -6,6 +6,7 @@
 namespace TechEngine {
     class CORE_DLL EventDispatcher : public System {
     protected:
+        friend class Editor;
         EventManager m_eventManager;
 
     public:
@@ -31,5 +32,12 @@ namespace TechEngine {
         void dispatch(Args... args) {
             m_eventManager.dispatch(std::make_shared<EventType>(args...));
         }
+
+    private:
+#pragma region EditorWatchDog
+        void registerEditorWatchDog(const std::function<void(std::shared_ptr<Event>)>& editorWatchDogCallback);
+
+        void executeSingleEvent(const std::shared_ptr<Event>& event);
+#pragma endregion
     };
 }

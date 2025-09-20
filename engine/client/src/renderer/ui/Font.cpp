@@ -15,7 +15,7 @@ namespace TechEngine {
 
     Font::~Font() {
         if (m_atlasTextureID != 0) {
-            GlCall(glDeleteTextures(1, &m_atlasTextureID));
+            glDeleteTextures(1, &m_atlasTextureID);
         }
     }
 
@@ -70,12 +70,12 @@ namespace TechEngine {
         m_ascent = (float)ascent * scale;
         m_lineHeight = (float)(ascent - descent + lineGap) * scale;
 
-        GlCall(glGenTextures(1, &m_atlasTextureID));
-        GlCall(glBindTexture(GL_TEXTURE_2D, m_atlasTextureID));
-        GlCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, m_atlasWidth, m_atlasHeight, 0, GL_RED, GL_UNSIGNED_BYTE, atlasBitmap.data()));
-        GlCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-        GlCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-        GlCall(glBindTexture(GL_TEXTURE_2D, 0));
+        glGenTextures(1, &m_atlasTextureID);
+        glBindTexture(GL_TEXTURE_2D, m_atlasTextureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, m_atlasWidth, m_atlasHeight, 0, GL_RED, GL_UNSIGNED_BYTE, atlasBitmap.data());
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         std::copy(std::begin(packedChars), std::end(packedChars), m_packedChars.begin());
 

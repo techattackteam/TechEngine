@@ -1,9 +1,9 @@
 #pragma once
+
 #include "core/CoreExportDll.hpp"
-#include <cstdint>
+
 #include <string>
 #include <unordered_set>
-#include <xhash>
 
 namespace TechEngine {
     class CORE_DLL UUID {

@@ -6,7 +6,7 @@
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
-    ResourcesManager::ResourcesManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
+    ResourcesManager::ResourcesManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry), m_meshManager(systemsRegistry), m_materialManager(systemsRegistry) {
     }
 
     void ResourcesManager::init(AppType appType) {
@@ -62,6 +62,14 @@ namespace TechEngine {
         mesh.addVertices(vertices, indices);
     }
 
+    void ResourcesManager::deleteMesh(const std::string& name) {
+        if (name == MeshManager::DEFAULT_MESH_NAME) {
+            TE_LOGGER_WARN("Cannot delete default mesh");
+            return;
+        }
+        m_meshManager.deleteMesh(name);
+    }
+
     Mesh& ResourcesManager::getMesh(const std::string& name) {
         if (!m_meshManager.isMeshLoaded(name)) {
             TE_LOGGER_WARN("Mesh not found: {0}", name);
@@ -73,12 +81,18 @@ namespace TechEngine {
     Mesh& ResourcesManager::getDefaultMesh() {
         return m_meshManager.getMesh(MeshManager::DEFAULT_MESH_NAME);
     }
+
+    const std::vector<Mesh>& ResourcesManager::getAllMeshes() {
+        return m_meshManager.getMeshes();
+    }
 #pragma endregion
 
 #pragma region MaterialManager
+
     Material& ResourcesManager::createMaterial(const std::string& name) {
         return m_materialManager.createMaterial(name);
     }
+
 
     void ResourcesManager::loadMaterial(const std::string& name, const std::string& path) {
         if (m_materialManager.materialExists(name)) {
@@ -98,6 +112,10 @@ namespace TechEngine {
 
     Material& ResourcesManager::getDefaultMaterial() {
         return m_materialManager.getMaterial(MaterialManager::DEFAULT_MATERIAL_NAME);
+    }
+
+    const std::vector<Material*>& ResourcesManager::getAllMaterials() {
+        return m_materialManager.getMaterials();
     }
 #pragma endregion
 

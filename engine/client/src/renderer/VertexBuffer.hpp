@@ -1,9 +1,6 @@
-#include <vector>
-#include <glm/glm.hpp>
-
-#include "GLFW.hpp"
-
 #pragma once
+#include <cstdint>
+
 namespace TechEngine {
     class VertexBuffer {
     private:
@@ -21,7 +18,7 @@ namespace TechEngine {
 
         void unBind() const;
 
-        void addData(const void *data, uint32_t size, uint32_t offset) const;
+        void addData(const void* data, uint32_t size, uint32_t offset) const;
 
         uint32_t getOffset();
 

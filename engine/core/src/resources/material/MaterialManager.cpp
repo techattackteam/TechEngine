@@ -1,13 +1,15 @@
-#include "core/Logger.hpp"
 #include "MaterialManager.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 #include <utils/YAMLUtils.hpp>
-#include <filesystem>
 #include <fstream>
 
+#include "events/resourcersManager/materials/MaterialCreatedEvent.hpp"
+#include "events/resourcersManager/materials/MaterialDeletedEvent.hpp"
+#include "eventSystem/EventDispatcher.hpp"
+
 namespace TechEngine {
-    MaterialManager::MaterialManager() {
+    MaterialManager::MaterialManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
     }
 
     void MaterialManager::init(const std::vector<std::filesystem::path>& materialsFilePaths) {
@@ -21,11 +23,18 @@ namespace TechEngine {
     }
 
     Material& MaterialManager::createMaterial(const std::string& name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess) {
-        Material material(name, color, ambient, diffuse, specular, shininess);
+        if (freeIDs.size() == 0) {
+            gpuID = m_materialsBank.size();
+        } else {
+            gpuID = freeIDs.back();
+            freeIDs.pop_back();
+        }
+        Material material(name, gpuID++, color, ambient, diffuse, specular, shininess);
         auto iterator = m_materialsBank.find(name);
         if (iterator == m_materialsBank.end()) {
             iterator = m_materialsBank.emplace(name, material).first;
         }
+        m_systemsRegistry.getSystem<EventDispatcher>().dispatch<MaterialCreatedEvent>(name);
         return iterator->second;
     }
 
@@ -42,7 +51,10 @@ namespace TechEngine {
 
     bool MaterialManager::deleteMaterial(const std::string& name) {
         if (!m_materialsBank.empty() && materialExists(name)) {
+            Material& material = getMaterial(name);
+            freeIDs.push_back(material.getGpuID());
             m_materialsBank.erase(name);
+            m_systemsRegistry.getSystem<EventDispatcher>().dispatch<MaterialDeletedEvent>(name);
             return true;
         } else {
             TE_LOGGER_WARN("Material {0} does not exist!", name);
@@ -79,12 +91,8 @@ namespace TechEngine {
         out << YAML::Key << "diffuse" << YAML::Value << YAML::Flow << YAML::BeginSeq << material.getDiffuse().x << material.getDiffuse().y << material.getDiffuse().z << YAML::EndSeq;
         out << YAML::Key << "specular" << YAML::Value << YAML::Flow << YAML::BeginSeq << material.getSpecular().x << material.getSpecular().y << material.getSpecular().z << YAML::EndSeq;
         out << YAML::Key << "shininess" << YAML::Value << material.getShininess();
-        out << YAML::Key << "useTexture" << YAML::Value << material.getUseTexture();
-        if (material.getUseTexture()) {
-            //out << YAML::Key << "diffuseTexture" << YAML::Value << material.getDiffuseTexture()->getName();
-        } else {
-            out << YAML::Key << "diffuseTexture" << YAML::Value << "";
-        }
+        out << YAML::Key << "useTexture" << YAML::Value << false;
+        out << YAML::Key << "diffuseTexture" << YAML::Value << "";
         out << YAML::EndMap;
         std::filesystem::path path = filepath;
         create_directories(path.parent_path());
@@ -140,15 +148,15 @@ namespace TechEngine {
         glm::vec3 diffuse = diffuseNode.as<glm::vec3>();
         glm::vec3 specular = specularNode.as<glm::vec3>();
         float shininess = shininessNode.as<float>();
-        Material& material = createMaterial(name.as<std::string>(), color, ambient, diffuse, specular, shininess);
-        material.setUseTexture(useTextureNode.as<bool>());
+        createMaterial(name.as<std::string>(), color, ambient, diffuse, specular, shininess);
+        //material.setUseTexture(useTextureNode.as<bool>());
         std::string diffuseTextureName = diffuseTextureNode.as<std::string>();
         if (!diffuseTextureName.empty()) {
             //Texture& diffuseTexture = m_systemsRegistry.getSystem<TextureManager>().getTexture(diffuseTextureName);
             //material.setDiffuseTexture(&diffuseTexture);
         } else {
             //material.setDiffuseTexture(nullptr);
-            material.setUseTexture(false);
+            //material.setUseTexture(false);
         }
         return true;
     }

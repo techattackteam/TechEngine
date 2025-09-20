@@ -10,8 +10,12 @@
 
 
 #include "imgui.h"
-#include "events/application/AppCloseEvent.hpp"
 #include "eventSystem/EventDispatcher.hpp"
+#include "events/application/AppCloseEvent.hpp"
+#include "events/resourcersManager/materials/MaterialCreatedEvent.hpp"
+#include "events/resourcersManager/materials/MaterialDeletedEvent.hpp"
+#include "events/resourcersManager/meshManager/MeshCreatedEvent.hpp"
+#include "events/resourcersManager/meshManager/MeshDeletedEvent.hpp"
 #include "input/Input.hpp"
 #include "logger/ImGuiSink.hpp"
 #include "panels/PanelsManager.hpp"
@@ -50,8 +54,6 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<Timer>();
         m_systemRegistry.registerSystem<ProjectManager>(m_client.m_systemRegistry, m_server.m_systemRegistry);
         m_systemRegistry.registerSystem<Window>(m_systemRegistry);
-        //m_systemRegistry.registerSystem<Input>(m_systemRegistry);
-        //m_systemRegistry.registerSystem<Renderer>(m_systemRegistry);
         m_systemRegistry.registerSystem<PanelsManager>(m_systemRegistry, m_client, m_server);
         m_systemRegistry.registerSystem<RuntimeSimulator<Client>>(m_client, m_systemRegistry);
         m_systemRegistry.registerSystem<RuntimeSimulator<Server>>(m_server, m_systemRegistry);
@@ -62,12 +64,25 @@ namespace TechEngine {
     void Editor::init() {
         m_systemRegistry.getSystem<ProjectManager>().init(m_lastProjectLoaded);
         m_systemRegistry.getSystem<Window>().init("TechEngineEditor - " + m_systemRegistry.getSystem<ProjectManager>().getProjectName(), 1280, 720);
-        //m_systemRegistry.getSystem<Input>().init();
         m_systemRegistry.getSystem<Timer>().init();
         m_systemRegistry.getSystem<EventDispatcher>().init();
+
+        m_client.m_systemRegistry.getSystem<EventDispatcher>().registerEditorWatchDog([this](const std::shared_ptr<Event>& event) {
+            EventDispatcher& manager = m_systemRegistry.getSystem<EventDispatcher>();
+            if (std::dynamic_pointer_cast<MeshCreatedEvent>(event) ||
+                std::dynamic_pointer_cast<MeshDeletedEvent>(event) ||
+                std::dynamic_pointer_cast<MaterialCreatedEvent>(event) ||
+                std::dynamic_pointer_cast<MaterialDeletedEvent>(event)
+            ) {
+                manager.executeSingleEvent(event);
+            }
+        });
         m_systemRegistry.getSystem<RuntimeSimulator<Client>>().init();
+
+        m_server.m_systemRegistry.getSystem<EventDispatcher>().registerEditorWatchDog([this](const std::shared_ptr<Event>& event) {
+            EventDispatcher& manager = m_systemRegistry.getSystem<EventDispatcher>();
+        });
         m_systemRegistry.getSystem<RuntimeSimulator<Server>>().init();
-        //m_systemRegistry.getSystem<Renderer>().init(m_client.m_systemRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Client).string());
         ComponentType::init(); // Initialize component types for the editor
         m_systemRegistry.getSystem<PanelsManager>().init();
 
