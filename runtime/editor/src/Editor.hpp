@@ -19,7 +19,7 @@ namespace TechEngine {
 
         void loadEditorConfig();
 
-        void registerSystems();
+        void registerSystems() override;
 
         void init() override;
 

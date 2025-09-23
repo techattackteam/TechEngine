@@ -23,7 +23,6 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<Input>(m_systemRegistry);
     }
 
-
     void Client::init() {
         Core::init(AppType::Client);
         m_systemRegistry.getSystem<Renderer>().init();

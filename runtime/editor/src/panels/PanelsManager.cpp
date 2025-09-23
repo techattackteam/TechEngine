@@ -33,7 +33,8 @@ namespace TechEngine {
                                                                  m_server.m_systemRegistry),
                                                    m_ContentBrowserPanel(systemsRegistry,
                                                                          m_client.m_systemRegistry,
-                                                                         m_server.m_systemRegistry, *this) {
+                                                                         m_server.m_systemRegistry, *this),
+                                                   m_ProfilerPanel(systemsRegistry, systemsRegistry) {
     }
 
 
@@ -43,18 +44,23 @@ namespace TechEngine {
         m_serverPanel.init("Server Panel", &m_editorWindowClass);
         m_LoggerPanel.init("Logger", &m_editorWindowClass);
         m_ContentBrowserPanel.init("Content Browser", &m_editorWindowClass);
+        m_ProfilerPanel.init("Profiler", &m_editorWindowClass);
     }
 
-    void PanelsManager::onUpdate() {
+    void PanelsManager::beginFrame() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         m_dockSpaceID = ImGui::GetID("EditorDockSpace");
         createDockSpace();
+    }
+
+    void PanelsManager::onUpdate() {
         m_clientPanel.update();
         m_serverPanel.update();
         m_LoggerPanel.update();
         m_ContentBrowserPanel.update();
+        m_ProfilerPanel.update();
         static bool firstTime = true;
         if (firstTime) {
             if (!std::filesystem::exists("imgui.ini")) {
@@ -62,7 +68,9 @@ namespace TechEngine {
             }
             firstTime = false;
         }
+    }
 
+    void PanelsManager::endFrame() {
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         GLFWwindow* backup_current_context = glfwGetCurrentContext();

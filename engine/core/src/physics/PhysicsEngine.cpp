@@ -111,6 +111,7 @@ namespace TechEngine {
     }
 
     void PhysicsEngine::onFixedUpdate() {
+        System::onFixedUpdate();
         const int cCollisionSteps = 1;
         updateBodies();
         Timer& timer = m_systemsRegistry.getSystem<Timer>();

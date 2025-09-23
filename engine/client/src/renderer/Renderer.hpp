@@ -10,9 +10,12 @@
 #include "IndicesBuffer.hpp"
 #include "FrameBuffer.hpp"
 #include "Line.hpp"
+#include "RenderRequest.hpp"
 #include "components/Components.hpp"
 #include "scene/Scene.hpp"
 #include "ui/UIRenderer.hpp"
+
+#include <queue>
 
 namespace TechEngine {
     class CLIENT_DLL Renderer : public System {
@@ -21,6 +24,9 @@ namespace TechEngine {
         const std::string BufferLines = "Lines";
 
         SystemsRegistry& m_systemsRegistry;
+
+        std::queue<RenderRequest> m_renderQueue;
+
         ShadersManager m_shadersManager;
         std::unordered_map<std::string, VertexArray> m_vertexArrays;
         std::unordered_map<std::string, VertexBuffer> m_vertexBuffers;
@@ -52,9 +58,13 @@ namespace TechEngine {
 
         void onStart() override;
 
+        void onUpdate() override;
+
         void shutdown() override;
 
-        void renderPipeline(Camera& camera);
+        void addRequest(const RenderRequest& request);
+
+        void renderPipeline();
 
         void renderCustomPipeline(Camera& camera, int mask);
 
@@ -77,10 +87,10 @@ namespace TechEngine {
 
         void populateDataBuffers(Scene& scene);
 
-        void geometryPass(Camera& camera);
+        void geometryPass(glm::mat4 viewMatrix, glm::mat4 projectionMatrix);
 
         void uiPass();
 
-        void linePass(Camera& camera);
+        void linePass(glm::mat4 viewMatrix, glm::mat4 projectionMatrix);
     };
 }

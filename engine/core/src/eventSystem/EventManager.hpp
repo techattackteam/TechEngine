@@ -51,8 +51,6 @@ namespace TechEngine {
 
         void execute();
 
-        void executeSingleEvent(const std::shared_ptr<Event>& event);
-
         void shutdown();
     };
 }

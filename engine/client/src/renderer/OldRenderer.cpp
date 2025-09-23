@@ -71,9 +71,9 @@ namespace TechEngine {
     void OldRenderer::renderPipeline(Camera& camera) {
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        //geometryPass(camera);
+        geometryPass(camera);
         //renderIndirect(camera);
-        renderIndirectMultiMesh(camera);
+        //renderIndirectMultiMesh(camera);
         if (!lines.empty()) {
             linePass(camera);
         }

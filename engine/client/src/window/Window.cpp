@@ -49,13 +49,12 @@ namespace TechEngine {
             Window* window = (Window*)glfwGetWindowUserPointer(handler);
             //window->m_systemsRegistry.getSystem<EventDispatcher>().dispatch<WindowRes>(new WindowResizeEvent(width, height));
         });
+        glfwSwapInterval(0);
     }
 
     void Window::onUpdate() {
         glfwPollEvents();
         glfwSwapBuffers(m_handler);
-        //glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
     void Window::onFixedUpdate() {

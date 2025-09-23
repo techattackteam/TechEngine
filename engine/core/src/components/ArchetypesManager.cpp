@@ -119,7 +119,6 @@ namespace TechEngine {
     }
 
     Entity ArchetypesManager::generateEntityID() {
-        TE_LOGGER_INFO("Generating entity ID: {}", m_lastEntityID);
         return m_lastEntityID++;
     }
 }

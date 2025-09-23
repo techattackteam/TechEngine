@@ -22,20 +22,25 @@ namespace TechEngine {
     }
 
     void SceneView::onInit() {
+#if  1 != 1
+        frameBufferID = m_appSystemsRegistry.getSystem<OldRenderer>().createFramebuffer(1080, 720);
+#else
         frameBufferID = m_appSystemsRegistry.getSystem<Renderer>().createFramebuffer(1080, 720);
+#endif
+
         id = totalIds++;
     }
 
     void SceneView::onUpdate() {
-        Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
         FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
+        RenderRequest request;
         ImVec2 wsize = ImGui::GetContentRegionAvail();
         frameBuffer.bind();
-        frameBuffer.resize(wsize.x, wsize.y);
-        sceneCamera.updateProjectionMatrix(wsize.x / wsize.y);
-        sceneCamera.updateViewMatrix(cameraTransform.getModelMatrix());
+        //frameBuffer.resize(wsize.x, wsize.y);
 
         m_appSystemsRegistry.getSystem<PhysicsEngine>().renderBodies();
+        sceneCamera.updateProjectionMatrix(wsize.x / wsize.y);
+        sceneCamera.updateViewMatrix(cameraTransform.getModelMatrix());
         renderCameraFrustum();
         renderColliders();
         int mask = Renderer::GEOMETRY_PASS | Renderer::LINE_PASS;
@@ -44,7 +49,17 @@ namespace TechEngine {
         OldRenderer& oldRenderer = m_appSystemsRegistry.getSystem<OldRenderer>();
         oldRenderer.renderPipeline(sceneCamera);
 #else
-        renderer.renderCustomPipeline(sceneCamera, mask);
+
+        request.viewMatrix = sceneCamera.getViewMatrix(); // This makes a copy
+        request.projectionMatrix = sceneCamera.getProjectionMatrix(); // This makes a copy
+        request.targetFramebufferId = this->frameBufferID;
+        request.viewportSize = {wsize.x, wsize.y};
+        request.renderMask = Renderer::GEOMETRY_PASS | Renderer::LINE_PASS;
+
+        // 3. Submit the request to the renderer.
+        m_appSystemsRegistry.getSystem<Renderer>().addRequest(request);
+       //m_appSystemsRegistry.getSystem<Renderer>().renderPipeline();
+       //m_appSystemsRegistry.getSystem<Renderer>().addRequest(request);
 #endif
 
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
