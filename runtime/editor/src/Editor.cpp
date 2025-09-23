@@ -5,23 +5,19 @@
 #include "project/ProjectManager.hpp"
 #include "script/ScriptEngine.hpp"
 
-#include <yaml-cpp/yaml.h>
-#include <fstream>
-
-
-#include "imgui.h"
 #include "eventSystem/EventDispatcher.hpp"
 #include "events/application/AppCloseEvent.hpp"
-#include "events/resourcersManager/materials/MaterialCreatedEvent.hpp"
-#include "events/resourcersManager/materials/MaterialDeletedEvent.hpp"
-#include "events/resourcersManager/meshManager/MeshCreatedEvent.hpp"
-#include "events/resourcersManager/meshManager/MeshDeletedEvent.hpp"
 #include "input/Input.hpp"
 #include "logger/ImGuiSink.hpp"
 #include "panels/PanelsManager.hpp"
 #include "physics/PhysicsEngine.hpp"
 #include "simulator/RuntimeSimulator.hpp"
 #include "window/Window.hpp"
+
+#include <yaml-cpp/yaml.h>
+#include <fstream>
+
+#include "profiling/Profiler.hpp"
 
 namespace TechEngine {
     Editor::Editor() : Application(), m_entry(m_systemRegistry) {
@@ -55,10 +51,13 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<ProjectManager>(m_client.m_systemRegistry, m_server.m_systemRegistry);
         m_systemRegistry.registerSystem<Window>(m_systemRegistry);
         m_systemRegistry.registerSystem<PanelsManager>(m_systemRegistry, m_client, m_server);
+        m_systemRegistry.registerSystem<Profiler>();
         m_systemRegistry.registerSystem<RuntimeSimulator<Client>>(m_client, m_systemRegistry);
         m_systemRegistry.registerSystem<RuntimeSimulator<Server>>(m_server, m_systemRegistry);
         m_systemRegistry.getSystem<RuntimeSimulator<Client>>().registerSystems(m_lastProjectLoaded);
+        m_systemRegistry.getSystem<RuntimeSimulator<Client>>().m_runtime.m_systemRegistry.registerSystem<Profiler>();
         m_systemRegistry.getSystem<RuntimeSimulator<Server>>().registerSystems(m_lastProjectLoaded);
+        m_systemRegistry.getSystem<RuntimeSimulator<Server>>().m_runtime.m_systemRegistry.registerSystem<Profiler>();
     }
 
     void Editor::init() {
@@ -66,26 +65,10 @@ namespace TechEngine {
         m_systemRegistry.getSystem<Window>().init("TechEngineEditor - " + m_systemRegistry.getSystem<ProjectManager>().getProjectName(), 1280, 720);
         m_systemRegistry.getSystem<Timer>().init();
         m_systemRegistry.getSystem<EventDispatcher>().init();
-
-        m_client.m_systemRegistry.getSystem<EventDispatcher>().registerEditorWatchDog([this](const std::shared_ptr<Event>& event) {
-            EventDispatcher& manager = m_systemRegistry.getSystem<EventDispatcher>();
-            if (std::dynamic_pointer_cast<MeshCreatedEvent>(event) ||
-                std::dynamic_pointer_cast<MeshDeletedEvent>(event) ||
-                std::dynamic_pointer_cast<MaterialCreatedEvent>(event) ||
-                std::dynamic_pointer_cast<MaterialDeletedEvent>(event)
-            ) {
-                manager.executeSingleEvent(event);
-            }
-        });
         m_systemRegistry.getSystem<RuntimeSimulator<Client>>().init();
-
-        m_server.m_systemRegistry.getSystem<EventDispatcher>().registerEditorWatchDog([this](const std::shared_ptr<Event>& event) {
-            EventDispatcher& manager = m_systemRegistry.getSystem<EventDispatcher>();
-        });
         m_systemRegistry.getSystem<RuntimeSimulator<Server>>().init();
         ComponentType::init(); // Initialize component types for the editor
         m_systemRegistry.getSystem<PanelsManager>().init();
-
 
         m_runFunction = [this]() {
             m_entry.run([this]() {
@@ -109,15 +92,25 @@ namespace TechEngine {
     }
 
     void Editor::update() {
+        m_systemRegistry.getSystem<PanelsManager>().beginFrame();
+        float deltaTime = m_systemRegistry.getSystem<Timer>().getDeltaTime();
+
         m_systemRegistry.onUpdate();
+
+        auto& client = m_systemRegistry.getSystem<RuntimeSimulator<Client>>();
+        auto& server = m_systemRegistry.getSystem<RuntimeSimulator<Server>>();
+        client.tick(deltaTime);
+        server.tick(deltaTime);
+
+        m_systemRegistry.getSystem<PanelsManager>().endFrame();
     }
 
     void Editor::fixedUpdate() {
-        m_systemRegistry.onFixedUpdate();
+        //m_systemRegistry.onFixedUpdate();
     }
 
     void Editor::stop() {
-        m_systemRegistry.onStop();
+        //m_systemRegistry.onStop();
     }
 
     void Editor::shutdown() {

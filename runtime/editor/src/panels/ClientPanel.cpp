@@ -14,7 +14,8 @@ namespace TechEngine {
                                                                       clientSystemsRegistry,
                                                                       loggerPanel),
                                                          m_gameView(editorSystemsRegistry, clientSystemsRegistry),
-                                                         m_uiEditor(editorSystemsRegistry, clientSystemsRegistry, m_gameView) {
+                                                         m_uiEditor(editorSystemsRegistry, clientSystemsRegistry, m_gameView),
+                                                         m_profiler(editorSystemsRegistry, clientSystemsRegistry) {
         m_projectType = ProjectType::Client;
 
         //"Transfer" event from editor to client
@@ -41,12 +42,14 @@ namespace TechEngine {
         RuntimePanel::onInit();
         m_uiEditor.init("UI Editor", &m_dockSpaceWindowClass);
         m_gameView.init("Game View", &m_dockSpaceWindowClass);
+        m_profiler.init("Profiler", &m_dockSpaceWindowClass);
     }
 
     void ClientPanel::onUpdate() {
         RuntimePanel::onUpdate();
         m_uiEditor.update();
         m_gameView.update();
+        m_profiler.update();
     }
 
     void ClientPanel::setupInitialDockingLayout() {
@@ -54,6 +57,8 @@ namespace TechEngine {
         ImGui::DockBuilderDockWindow((m_gameView.getName() + "##" + std::to_string(m_gameView.getId())).c_str(),
                                      m_dockSpaceID);
         ImGui::DockBuilderDockWindow((m_uiEditor.getName() + "##" + std::to_string(m_uiEditor.getId())).c_str(),
+                                     m_dockSpaceID);
+        ImGui::DockBuilderDockWindow((m_profiler.getName() + "##" + std::to_string(m_profiler.getId())).c_str(),
                                      m_dockSpaceID);
     }
 }

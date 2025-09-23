@@ -34,10 +34,5 @@ namespace TechEngine {
         }
 
     private:
-#pragma region EditorWatchDog
-        void registerEditorWatchDog(const std::function<void(std::shared_ptr<Event>)>& editorWatchDogCallback);
-
-        void executeSingleEvent(const std::shared_ptr<Event>& event);
-#pragma endregion
     };
 }

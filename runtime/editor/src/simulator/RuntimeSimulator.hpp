@@ -6,7 +6,10 @@
 #include "renderer/Renderer.hpp"
 #include "systems/System.hpp"
 #include "physics/PhysicsEngine.hpp"
+#include "core/timer.hpp"
 #include <Jolt/Jolt.h>
+
+#include "renderer/OldRenderer.hpp"
 
 namespace TechEngine {
     enum class SimulationState {
@@ -20,7 +23,7 @@ namespace TechEngine {
     private:
         SimulationState m_simulationState = SimulationState::STOPPED;
         SystemsRegistry& m_systemsRegistry;
-        bool stopNextUpdate = false;
+        bool m_stopNextUpdate = false;
 
     public:
         T& m_runtime;
@@ -81,7 +84,7 @@ namespace TechEngine {
             });
             m_runtime.m_systemRegistry.template getSystem<EventDispatcher>().template subscribe<ScriptCrashEvent>([this](const std::shared_ptr<Event>& event) {
                 if (m_simulationState != SimulationState::STOPPED) {
-                    stopNextUpdate = true;
+                    m_stopNextUpdate = true;
                 }
             });
             //Renderer& renderer = m_runtime.m_systemRegistry.template getSystem<Renderer>();
@@ -100,21 +103,15 @@ namespace TechEngine {
         }
 
         void onFixedUpdate() override {
-            if (m_simulationState == SimulationState::RUNNING) {
-                m_runtime.onFixedUpdate();
-            }
+            //if (m_simulationState == SimulationState::RUNNING) {
+            //    m_runtime.onFixedUpdate();
+            //}
         }
 
         void onUpdate() override {
-            if (m_simulationState == SimulationState::RUNNING) {
-                m_runtime.onUpdate();
-            } else {
-                m_runtime.m_systemRegistry.template getSystem<EventDispatcher>().onUpdate();
-            }
-            if (stopNextUpdate) {
-                stopSimulation();
-                stopNextUpdate = false;
-            }
+            //if (m_simulationState == SimulationState::RUNNING) {
+            //    m_runtime.onUpdate();
+            //}
         }
 
         void onStop() override {
@@ -125,6 +122,27 @@ namespace TechEngine {
 
         void shutdown() override {
             m_runtime.shutdown();
+        }
+
+        void tick(float deltaTime) {
+            if (m_simulationState != SimulationState::RUNNING) {
+                m_runtime.m_systemRegistry.template getSystem<EventDispatcher>().onUpdate();
+            } else {
+                Timer& timer = m_runtime.m_systemRegistry.template getSystem<Timer>();
+                timer.tick(deltaTime);
+                m_runtime.onUpdate();
+                timer.addAccumulator(deltaTime);
+                while (timer.getAccumulator() >= timer.getTPS()) {
+                    timer.updateTicks();
+                    m_runtime.onFixedUpdate();
+                    timer.addAccumulator(-timer.getTPS());
+                }
+                timer.updateInterpolation();
+                if (m_stopNextUpdate) {
+                    stopSimulation();
+                    m_stopNextUpdate = false;
+                }
+            }
         }
 
         const SimulationState& getSimulationState() const {

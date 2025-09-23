@@ -20,8 +20,8 @@ namespace TechEngine {
 
         SceneView m_sceneView;
         //GameView m_gameView;
-        SceneHierarchyPanel m_sceneHierarchyPanel;
-        InspectorPanel m_inspectorPanel;
+        //SceneHierarchyPanel m_sceneHierarchyPanel;
+        //InspectorPanel m_inspectorPanel;
         std::vector<Entity> m_selectedEntities;
 
         ProjectType m_projectType;

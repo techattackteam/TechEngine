@@ -31,20 +31,30 @@ namespace TechEngine {
         clientViewport.size = glm::vec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
         clientViewport.isFocused = ImGui::IsWindowFocused() || ImGui::IsWindowHovered();
 
-        scene.runSystem<Transform, Camera>([this](Transform& transform, Camera& camera) {
-            Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
-            FrameBuffer& frameBuffer = renderer.getFramebuffer(frameBufferID);
-            ImVec2 wsize = ImGui::GetContentRegionAvail();
-            frameBuffer.bind();
-            frameBuffer.resize(wsize.x, wsize.y);
+        //scene.runSystem<Transform, Camera>([this](Transform& transform, Camera& camera) {
+        //    FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
+        //    ImVec2 wsize = ImGui::GetContentRegionAvail();
+        //    frameBuffer.bind();
+        //    frameBuffer.resize(wsize.x, wsize.y);
+        //    camera.updateProjectionMatrix(wsize.x / wsize.y);
+        //    camera.updateViewMatrix(transform.getModelMatrix());
+//
+        //    RenderRequest request;
+        //    request.viewMatrix = camera.getViewMatrix(); // This makes a copy
+        //    request.projectionMatrix = camera.getProjectionMatrix(); // This makes a copy
+        //    request.targetFramebufferId = this->frameBufferID;
+        //    request.viewportSize = {wsize.x, wsize.y};
+        //    request.renderMask = Renderer::GEOMETRY_PASS | Renderer::LINE_PASS;
+//
+        //    // 3. Submit the request to the renderer.
+        //    m_appSystemsRegistry.getSystem<Renderer>().addRequest(request);
+        //});
 
-            camera.updateProjectionMatrix(wsize.x / wsize.y);
-            camera.updateViewMatrix(transform.getModelMatrix());
-            renderer.renderPipeline(camera);
-            uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
-            ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
-            frameBuffer.unBind();
-        });
+        ImVec2 wsize = ImGui::GetContentRegionAvail();
+        FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
+        uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
+        ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
+        frameBuffer.unBind();
         //glm::vec2 mousePos = m_appSystemsRegistry.getSystem<Input>().getMouse().getPosition();
         //TE_LOGGER_INFO("Panel: {0}, Hovered: {1}, Focused: {2}, Mouse: ({3},{4})", m_name, m_isPanelHovered, m_isPanelFocused, mousePos.x, mousePos.y);
     }

@@ -6,6 +6,7 @@
 #include "events/resourcersManager/materials/MaterialDeletedEvent.hpp"
 #include "events/resourcersManager/meshManager/MeshCreatedEvent.hpp"
 #include "events/resourcersManager/meshManager/MeshDeletedEvent.hpp"
+#include "profiling/ProfiledScope.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "resources/material/Material.hpp"
 #include "resources/mesh/Vertex.hpp"
@@ -36,11 +37,17 @@ namespace TechEngine {
         m_vertexArrays[BufferGameObjects].addNewBuffer(m_vertexBuffers[BufferGameObjects]);
 
         m_drawCommandBuffer = ShaderStorageBuffer();
-        m_drawCommandBuffer.init(1000 * sizeof(DrawCommand));
+        m_drawCommandBuffer.init(10000000 * sizeof(DrawCommand));
         m_objectDataBuffer = ShaderStorageBuffer();
-        m_objectDataBuffer.init(1000 * sizeof(ObjectData));
+        m_objectDataBuffer.init(10000000 * sizeof(ObjectData));
         m_materialsBuffer = ShaderStorageBuffer();
         m_materialsBuffer.init(100 * sizeof(MaterialProperties));
+
+        m_vertexArrays[BufferLines] = VertexArray();
+        m_vertexBuffers[BufferLines] = VertexBuffer();
+        m_vertexArrays[BufferLines].init();
+        m_vertexBuffers[BufferLines].init(10000000 * sizeof(Line));
+        m_vertexArrays[BufferLines].addNewLinesBuffer(m_vertexBuffers[BufferLines]);
 
         m_uiRenderer.init();
         EventDispatcher& eventDispatcher = m_systemsRegistry.getSystem<EventDispatcher>();
@@ -67,6 +74,10 @@ namespace TechEngine {
         System::onStart();
     }
 
+    void Renderer::onUpdate() {
+        renderPipeline();
+    }
+
     void Renderer::shutdown() {
         System::shutdown();
         m_currentIndexOffset = 0;
@@ -77,17 +88,38 @@ namespace TechEngine {
         m_indicesBuffers.clear();
     }
 
-    void Renderer::renderPipeline(Camera& camera) {
-        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
+    void Renderer::addRequest(const RenderRequest& request) {
+        m_renderQueue.emplace(request);
+    }
+
+    void Renderer::renderPipeline() {
         populateDataBuffers(m_systemsRegistry.getSystem<ScenesManager>().getActiveScene());
-        geometryPass(camera);
-        if (m_systemsRegistry.hasSystem<WidgetsRegistry>()) {
-            uiPass();
-        }
-        if (!lines.empty()) {
-            linePass(camera);
+        const uint32_t size = m_renderQueue.size();
+
+        for (uint32_t i = 0; i < size; i++) {
+            RenderRequest& request = m_renderQueue.front();
+
+            // 1. Get and bind the target framebuffer.
+            FrameBuffer& framebuffer = getFramebuffer(request.targetFramebufferId);
+            framebuffer.bind();
+            framebuffer.resize(request.viewportSize.x, request.viewportSize.y);
+
+            glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+            glEnable(GL_CULL_FACE);
+
+            if (request.renderMask & GEOMETRY_PASS) {
+                geometryPass(request.viewMatrix, request.projectionMatrix);
+            }
+            if (request.renderMask & UI_PASS && m_systemsRegistry.hasSystem<WidgetsRegistry>()) {
+                uiPass();
+            }
+            if (request.renderMask & LINE_PASS && !lines.empty()) {
+                linePass(request.viewMatrix, request.projectionMatrix);
+            }
+            framebuffer.unBind();
+            m_renderQueue.pop();
         }
     }
 
@@ -98,13 +130,13 @@ namespace TechEngine {
         glEnable(GL_CULL_FACE);
         populateDataBuffers(m_systemsRegistry.getSystem<ScenesManager>().getActiveScene());
         if (mask & GEOMETRY_PASS) {
-            geometryPass(camera);
+            geometryPass(camera.getViewMatrix(), camera.getProjectionMatrix());
         }
         if (mask & UI_PASS && m_systemsRegistry.hasSystem<WidgetsRegistry>()) {
             uiPass();
         }
         if (mask & LINE_PASS && !lines.empty()) {
-            linePass(camera);
+            linePass(camera.getViewMatrix(), camera.getProjectionMatrix());
         }
     }
 
@@ -133,6 +165,7 @@ namespace TechEngine {
     void Renderer::uploadNewMesh(const std::string& name) {
         Mesh& mesh = m_systemsRegistry.getSystem<ResourcesManager>().getMesh(name);
         std::vector<Vertex>& vertices = mesh.m_vertices;
+
         std::vector<int>& indices = mesh.m_indices;
         m_vertexBuffers[BufferGameObjects].addData(vertices.data(), vertices.size() * sizeof(Vertex), m_currentVertexOffset * sizeof(Vertex));
         m_indicesBuffers[BufferGameObjects].addData(indices.data(), indices.size() * sizeof(uint32_t), m_currentIndexOffset * sizeof(uint32_t));
@@ -231,11 +264,11 @@ namespace TechEngine {
         this->m_commandToDraw = commands.size();
     }
 
-    void Renderer::geometryPass(Camera& camera) {
+    void Renderer::geometryPass(glm::mat4 viewMatrix, glm::mat4 projectionMatrix) {
         //TODO: Implement Uniform Buffer Objects
         m_shadersManager.changeActiveShader("geometry");
-        m_shadersManager.getActiveShader()->setUniformMatrix4f("projection", camera.getProjectionMatrix());
-        m_shadersManager.getActiveShader()->setUniformMatrix4f("view", camera.getViewMatrix());
+        m_shadersManager.getActiveShader()->setUniformMatrix4f("projection", projectionMatrix);
+        m_shadersManager.getActiveShader()->setUniformMatrix4f("view", viewMatrix);
 
         m_drawCommandBuffer.setBindingPoint(0);
         m_objectDataBuffer.setBindingPoint(1);
@@ -279,13 +312,10 @@ namespace TechEngine {
         m_uiRenderer.endFrame();
     }
 
-    void Renderer::linePass(Camera& camera) {
-        m_vertexBuffers[BufferLines].bind();
-        m_vertexArrays[BufferLines].bind();
-
+    void Renderer::linePass(glm::mat4 viewMatrix, glm::mat4 projectionMatrix) {
         m_shadersManager.changeActiveShader("line");
-        m_shadersManager.getActiveShader()->setUniformMatrix4f("projection", camera.getProjectionMatrix());
-        m_shadersManager.getActiveShader()->setUniformMatrix4f("view", camera.getViewMatrix());
+        m_shadersManager.getActiveShader()->setUniformMatrix4f("projection", projectionMatrix);
+        m_shadersManager.getActiveShader()->setUniformMatrix4f("view", viewMatrix);
 
         // This needs to change and only do if the data has changed
         std::vector<LineVertex> vertices;
@@ -294,7 +324,6 @@ namespace TechEngine {
             vertices.push_back(line.getEnd());
         }
         m_vertexBuffers[BufferLines].addData(vertices.data(), vertices.size() * sizeof(LineVertex), 0);
-
         m_vertexBuffers[BufferLines].bind();
         m_vertexArrays[BufferLines].bind();
 

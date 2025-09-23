@@ -26,20 +26,15 @@ namespace TechEngine {
         uint32_t size = m_dispatchedEvents.size();
         for (uint32_t i = 0; i < size; i++) {
             std::shared_ptr<Event> event = m_dispatchedEvents.front();
-            executeSingleEvent(event);
+            if (m_observers.count(typeid(*event)) != 0) {
+                ObserversVector& callbacks = m_observers.at(typeid(*event));
+                for (auto& callback: callbacks) {
+                    (*callback)(event);
+                }
+            }
             m_dispatchedEvents.pop();
         }
     }
-
-    void EventManager::executeSingleEvent(const std::shared_ptr<Event>& event) {
-        if (m_observers.count(typeid(*event)) != 0) {
-            ObserversVector& callbacks = m_observers.at(typeid(*event));
-            for (auto& callback: callbacks) {
-                (*callback)(event);
-            }
-        }
-    }
-
 
     void EventManager::shutdown() {
         m_dispatchedEvents = std::queue<std::shared_ptr<Event>>();

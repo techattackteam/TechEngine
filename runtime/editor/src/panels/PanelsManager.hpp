@@ -23,6 +23,7 @@ namespace TechEngine {
         ServerPanel m_serverPanel;
         LoggerPanel m_LoggerPanel;
         ContentBrowserPanel m_ContentBrowserPanel;
+        ProfilerPanel m_ProfilerPanel;
         inline static ImGuiWindowClass m_editorWindowClass;
 
     public:
@@ -30,7 +31,11 @@ namespace TechEngine {
 
         void init() override;
 
+        void beginFrame();
+
         void onUpdate() override;
+
+        void endFrame();
 
         void shutdown() override;
 

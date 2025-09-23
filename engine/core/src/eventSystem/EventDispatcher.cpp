@@ -18,12 +18,4 @@ namespace TechEngine {
     void EventDispatcher::shutdown() {
         m_eventManager.shutdown();
     }
-
-    void EventDispatcher::registerEditorWatchDog(const std::function<void(std::shared_ptr<Event>)>& editorWatchDogCallback) {
-        m_eventManager.registerEditorWatchDog(editorWatchDogCallback);
-    }
-
-    void EventDispatcher::executeSingleEvent(const std::shared_ptr<Event>& event) {
-        m_eventManager.executeSingleEvent(event);
-    }
 }

@@ -34,29 +34,30 @@ namespace TechEngine {
             }
         }
 
-        ImGui::Begin((this->m_name + "##" + std::to_string(id)).c_str(), nullptr, m_windowFlags);
-        ImVec2 currentSize = ImGui::GetContentRegionAvail();
-        m_isResizing = (currentSize.x != m_lastSize.x || currentSize.y != m_lastSize.y);
-        m_lastSize = currentSize;
 
-        ImVec2 windowPos = ImGui::GetWindowPos();
-        m_isMoving = (windowPos.x != m_lastPosition.x || windowPos.y != m_lastPosition.y);
-        m_lastPosition = windowPos;
+        if ((m_isVisible = ImGui::Begin((this->m_name + "##" + std::to_string(id)).c_str(), nullptr, m_windowFlags))) {
+            ImVec2 currentSize = ImGui::GetContentRegionAvail();
+            m_isResizing = (currentSize.x != m_lastSize.x || currentSize.y != m_lastSize.y);
+            m_lastSize = currentSize;
 
-        this->onUpdate();
-        processInput();
-        if (m_isDragging) {
-            m_windowFlags |= ImGuiWindowFlags_NoMove;
-        } else {
-            m_windowFlags &= ~ImGuiWindowFlags_NoMove;
+            ImVec2 windowPos = ImGui::GetWindowPos();
+            m_isMoving = (windowPos.x != m_lastPosition.x || windowPos.y != m_lastPosition.y);
+            m_lastPosition = windowPos;
+
+            this->onUpdate();
+            processInput();
+            if (m_isDragging) {
+                m_windowFlags |= ImGuiWindowFlags_NoMove;
+            } else {
+                m_windowFlags &= ~ImGuiWindowFlags_NoMove;
+            }
+
         }
-
         if (!m_styleVars.empty()) {
             ImGui::PopStyleVar(m_styleVars.size());
         }
         ImGui::End();
     }
-
 
     void Panel::processInput() {
         ImGuiIO& io = ImGui::GetIO();

@@ -52,7 +52,7 @@ namespace TechEngine {
             Renderer& renderer = m_client.m_systemRegistry.getSystem<Renderer>();
             camera.updateProjectionMatrix(1280.0f / 720.0f);
             camera.updateViewMatrix(transform.getModelMatrix());
-            renderer.renderPipeline(camera);
+            //renderer.renderPipeline(camera);
         });
     }
 
