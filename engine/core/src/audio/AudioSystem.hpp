@@ -1,12 +1,10 @@
 #pragma once
-#include "systems/System.hpp"
+
 #include "core/CoreExportDLL.hpp"
-
-#include <string>
-
+#include "systems/System.hpp"
 #include "components/Components.hpp"
-#include "glm/fwd.hpp"
-#include <list>
+#include "components/Entity.hpp"
+
 
 struct ma_engine;
 struct ma_sound;
@@ -41,7 +39,7 @@ namespace TechEngine {
 
         void playSound3D(const std::string& soundPath, glm::vec3 position);
 
-        void setListenerPosition(int entity, glm::vec3 position, glm::vec3 forward, glm::vec3 up);
+        void setListenerPosition(Entity entity, glm::vec3 position, glm::vec3 forward, glm::vec3 up);
 
     private:
         std::string translateErrorCodeToString(int errorCode);

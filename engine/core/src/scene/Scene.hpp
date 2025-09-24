@@ -1,6 +1,7 @@
 #pragma once
 
 #include "components/ArchetypesManager.hpp"
+#include "components/Components.hpp"
 
 namespace TechEngine {
     class CORE_DLL Scene {
@@ -36,13 +37,13 @@ namespace TechEngine {
 
         std::vector<ComponentTypeID> getCommonComponents(const std::vector<Entity>& entities);
 
-        Entity getEntityByTag(const Tag& tag);
+        Entity getEntity(const Tag& tag);
 
-        Entity getEntityByUUID(const std::string& uuid);
-        
+        Entity getEntity(const std::string& uuid);
+
         template<typename... Components, typename Function>
         void runSystem(Function function) {
-            m_archetypesManager.runSystem<Components...>(function);
+            m_archetypesManager.query<Components...>().each(function);
         }
 
         void clear();
@@ -52,8 +53,5 @@ namespace TechEngine {
         const std::string& getName() const;
 
         int getTotalEntities();
-
-    private:
-        Entity createEntity(const std::string& name, const std::string& uuid);
     };
 }

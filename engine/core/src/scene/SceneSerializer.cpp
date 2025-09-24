@@ -19,16 +19,16 @@ namespace TechEngine {
         out << YAML::BeginMap;
         out << YAML::Key << "Name" << YAML::Value << m_scene.getName();
         out << YAML::Key << "Archetypes" << YAML::Value << YAML::BeginSeq;
-        for (Archetype& archetype: m_scene.m_archetypesManager.m_archetypes) {
+        for (std::unique_ptr<Archetype>& archetype: m_scene.m_archetypesManager.m_archetypes) {
             out << YAML::BeginMap;
-            out << YAML::Key << "ID" << YAML::Value << archetype.m_id;
+            out << YAML::Key << "ID" << YAML::Value << archetype->m_id;
             out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
-            for (Entity& entity: archetype.m_entities) {
+            for (Entity& entity: archetype->m_entities) {
                 out << YAML::BeginMap;
                 out << YAML::Key << "ID" << YAML::Value << entity;
                 out << YAML::Key << "Components" << YAML::Value << YAML::BeginMap;
-                for (const auto& pair: archetype.m_componentData) {
-                    serializeComponent(archetype, entity, pair.first, out);
+                for (const auto& pair: archetype->m_componentData) {
+                    serializeComponent(entity, pair.first, out);
                 }
                 out << YAML::EndMap;
                 out << YAML::EndMap;
@@ -61,42 +61,42 @@ namespace TechEngine {
         }
     }
 
-    void SceneSerializer::serializeComponent(Archetype& archetype, const Entity& entity, const ComponentTypeID& typeID, YAML::Emitter& out) const {
-        if (typeID == ComponentType::get<Transform>()) {
-            const Transform& transform = archetype.getComponent<Transform>(entity);
+    void SceneSerializer::serializeComponent(const Entity& entity, const ComponentTypeID& typeID, YAML::Emitter& out) const {
+        if (typeID == ComponentType<Transform>::get()) {
+            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
             Transform::serialize(transform, out);
-        } else if (typeID == ComponentType::get<Tag>()) {
-            const Tag& tag = archetype.getComponent<Tag>(entity);
+        } else if (typeID == ComponentType<Tag>::get()) {
+            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
             Tag::serialize(tag, out);
-        } else if (typeID == ComponentType::get<Camera>()) {
-            const Camera& camera = archetype.getComponent<Camera>(entity);
+        } else if (typeID == ComponentType<Camera>::get()) {
+            const Camera& camera = m_scene.m_archetypesManager.getComponent<Camera>(entity);
             Camera::serialize(camera, out);
-        } else if (typeID == ComponentType::get<MeshRenderer>()) {
-            const MeshRenderer& meshRenderer = archetype.getComponent<MeshRenderer>(entity);
+        } else if (typeID == ComponentType<MeshRenderer>::get()) {
+            const MeshRenderer& meshRenderer = m_scene.m_archetypesManager.getComponent<MeshRenderer>(entity);
             MeshRenderer::serialize(meshRenderer, out);
-        } else if (typeID == ComponentType::get<StaticBody>()) {
-            const StaticBody& staticBody = archetype.getComponent<StaticBody>(entity);
+        } else if (typeID == ComponentType<StaticBody>::get()) {
+            const StaticBody& staticBody = m_scene.m_archetypesManager.getComponent<StaticBody>(entity);
             StaticBody::serialize(staticBody, out);
-        } else if (typeID == ComponentType::get<KinematicBody>()) {
-            const KinematicBody& kinematicBody = archetype.getComponent<KinematicBody>(entity);
+        } else if (typeID == ComponentType<KinematicBody>::get()) {
+            const KinematicBody& kinematicBody = m_scene.m_archetypesManager.getComponent<KinematicBody>(entity);
             KinematicBody::serialize(kinematicBody, out);
-        } else if (typeID == ComponentType::get<RigidBody>()) {
-            const RigidBody& rigidBody = archetype.getComponent<RigidBody>(entity);
+        } else if (typeID == ComponentType<RigidBody>::get()) {
+            const RigidBody& rigidBody = m_scene.m_archetypesManager.getComponent<RigidBody>(entity);
             RigidBody::serialize(rigidBody, out);
-        } else if (typeID == ComponentType::get<BoxCollider>()) {
-            const BoxCollider& boxCollider = archetype.getComponent<BoxCollider>(entity);
+        } else if (typeID == ComponentType<BoxCollider>::get()) {
+            const BoxCollider& boxCollider = m_scene.m_archetypesManager.getComponent<BoxCollider>(entity);
             BoxCollider::serialize(boxCollider, out);
-        } else if (typeID == ComponentType::get<SphereCollider>()) {
-            const SphereCollider& sphereCollider = archetype.getComponent<SphereCollider>(entity);
+        } else if (typeID == ComponentType<SphereCollider>::get()) {
+            const SphereCollider& sphereCollider = m_scene.m_archetypesManager.getComponent<SphereCollider>(entity);
             SphereCollider::serialize(sphereCollider, out);
-        } else if (typeID == ComponentType::get<CapsuleCollider>()) {
-            const CapsuleCollider& capsuleCollider = archetype.getComponent<CapsuleCollider>(entity);
+        } else if (typeID == ComponentType<CapsuleCollider>::get()) {
+            const CapsuleCollider& capsuleCollider = m_scene.m_archetypesManager.getComponent<CapsuleCollider>(entity);
             CapsuleCollider::serialize(capsuleCollider, out);
-        } else if (typeID == ComponentType::get<CylinderCollider>()) {
-            const CylinderCollider& cylinderCollider = archetype.getComponent<CylinderCollider>(entity);
+        } else if (typeID == ComponentType<CylinderCollider>::get()) {
+            const CylinderCollider& cylinderCollider = m_scene.m_archetypesManager.getComponent<CylinderCollider>(entity);
             CylinderCollider::serialize(cylinderCollider, out);
-        } else if (typeID == ComponentType::get<BoxTrigger>()) {
-            const BoxTrigger& boxTrigger = archetype.getComponent<BoxTrigger>(entity);
+        } else if (typeID == ComponentType<BoxTrigger>::get()) {
+            const BoxTrigger& boxTrigger = m_scene.m_archetypesManager.getComponent<BoxTrigger>(entity);
             BoxTrigger::serialize(boxTrigger, out);
         }
     }
@@ -249,8 +249,8 @@ namespace TechEngine {
 
     void MeshRenderer::serialize(const MeshRenderer& meshRenderer, YAML::Emitter& out) {
         out << YAML::Key << "MeshRenderer" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "Mesh" << YAML::Value << meshRenderer.mesh.getName();
-        out << YAML::Key << "Material" << YAML::Value << meshRenderer.material.getName();
+        out << YAML::Key << "Mesh" << YAML::Value << meshRenderer.mesh->getName();
+        out << YAML::Key << "Material" << YAML::Value << meshRenderer.material->getName();
         out << YAML::EndMap;
     }
 
@@ -259,7 +259,7 @@ namespace TechEngine {
         std::string materialName = node["MeshRenderer"]["Material"].as<std::string>();
         Mesh& mesh = resourcesManager.getMesh(meshName);
         Material& material = resourcesManager.getMaterial(materialName);
-        MeshRenderer meshRenderer(mesh, material);
+        MeshRenderer meshRenderer(&mesh, &material);
         //meshRenderer.paintMesh();
         return meshRenderer;
     }
@@ -364,18 +364,18 @@ namespace TechEngine {
     }
 #pragma endregion
 #pragma region Audio Components
-    void AudioListenerComponent::serialize(const AudioListenerComponent& audioListener, YAML::Emitter& out) {
+    void AudioListener::serialize(const AudioListener& audioListener, YAML::Emitter& out) {
         out << YAML::Key << "AudioListener" << YAML::Value << YAML::BeginMap;
         out << YAML::EndMap;
     }
 
-    AudioListenerComponent AudioListenerComponent::deserialize(const YAML::Node& node) {
-        AudioListenerComponent audioListener;
+    AudioListener AudioListener::deserialize(const YAML::Node& node) {
+        AudioListener audioListener;
         // Currently, no properties to deserialize for AudioListenerComponent
         return audioListener;
     }
 
-    void AudioEmitterComponent::serialize(const AudioEmitterComponent& emitter, YAML::Emitter& out) {
+    void AudioEmitter::serialize(const AudioEmitter& emitter, YAML::Emitter& out) {
         out << YAML::Key << "AudioEmitter" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "Volume" << YAML::Value << emitter.volume;
         out << YAML::Key << "Pitch" << YAML::Value << emitter.pitch;
@@ -384,8 +384,8 @@ namespace TechEngine {
         out << YAML::EndMap;
     }
 
-    AudioEmitterComponent AudioEmitterComponent::deserialize(const YAML::Node& node) {
-        AudioEmitterComponent emitter;
+    AudioEmitter AudioEmitter::deserialize(const YAML::Node& node) {
+        AudioEmitter emitter;
         emitter.volume = node["Volume"].as<float>();
         emitter.pitch = node["Pitch"].as<float>();
         emitter.loop = node["Loop"].as<bool>();

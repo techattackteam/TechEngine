@@ -48,7 +48,10 @@ namespace TechEngineAPI {
         inline static TechEngine::PhysicsEngine* m_physicsEngine;
         inline static TechEngine::AudioSystem* m_audioSystem;
 
-        static void init(TechEngine::Scene* scene, TechEngine::ResourcesManager* m_resourcesManager, TechEngine::PhysicsEngine* m_physicsEngine, TechEngine::AudioSystem* m_audioSystem);
+        static void init(TechEngine::Scene* scene,
+                         TechEngine::ResourcesManager* m_resourcesManager,
+                         TechEngine::PhysicsEngine* m_physicsEngine,
+                         TechEngine::AudioSystem* m_audioSystem);
 
         static void shutdown();
 
@@ -73,5 +76,10 @@ namespace TechEngineAPI {
 
         template<typename T>
         static T& getComponentInternal(Entity entity);
+
+        template<typename... Components, typename Function>
+        static void runSystem(Function systemFunction) {
+            m_scene->runSystem<Components...>(systemFunction);
+        }
     };
 }

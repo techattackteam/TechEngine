@@ -5,25 +5,22 @@
 #include <typeindex>
 #include <yaml-cpp/emitter.h>
 #include <Jolt/Jolt.h>
-#include <Jolt/Physics/Body/BodyID.h>
 
 namespace TechEngine {
     class ResourcesManager;
     class PhysicsEngine;
 
-    using Entity = int32_t;
-    using ComponentTypeID = uint32_t;
 
     class CORE_DLL Tag {
         friend class ComponentsFactory;
         char* uuid;
         char* name;
 
-        Tag(const std::string& name, const std::string& uuid) : name(new char[name.size() + 1]), uuid(new char[uuid.size() + 1]) {
+        /*Tag(const std::string& name, const std::string& uuid) : name(new char[name.size() + 1]), uuid(new char[uuid.size() + 1]) {
             strcpy_s(this->name, name.size() + 1, name.c_str());
             strcpy_s(this->uuid, uuid.size() + 1, uuid.c_str());
             //Memory leak here because I'm not deleting the memory allocated for name and uuid when deleting entity
-        }
+        }*/
 
     public:
         bool operator==(const Tag& lhr) const {
@@ -140,10 +137,6 @@ namespace TechEngine {
         float aspectRatio = 1;
         friend class CameraSystem;
 
-    public:
-        Camera() {
-        }
-
         glm::mat4 getProjectionMatrix() const {
             return projectionMatrix;
         }
@@ -192,26 +185,25 @@ namespace TechEngine {
 
     class CORE_DLL MeshRenderer {
     public:
-        Mesh& mesh;
-        Material& material;
+        //TODO: Change to mesh and material IDs and get them from ResourcesManager
+        Mesh* mesh;
+        Material* material;
 
-        explicit MeshRenderer(Mesh& mesh, Material& material) : mesh(mesh), material(material) {
-        }
 
         std::vector<Vertex> getVertices() const {
-            return mesh.m_vertices;
+            return mesh->m_vertices;
         }
 
         std::vector<int> getIndices() const {
-            return mesh.m_indices;
+            return mesh->m_indices;
         }
 
         void changeMaterial(Material& material) {
-            this->material = material;
+            this->material = &material;
         }
 
         void changeMesh(Mesh& mesh) {
-            this->mesh = mesh;
+            this->mesh = &mesh;
         }
 
         static void serialize(const MeshRenderer& meshRenderer, YAML::Emitter& out);
@@ -222,11 +214,8 @@ namespace TechEngine {
     class CORE_DLL StaticBody {
         friend class ComponentsFactory;
 
-        explicit StaticBody(const JPH::BodyID& bodyID) : bodyID(bodyID) {
-        };
-
     public:
-        const JPH::BodyID& bodyID;
+        JPH::uint32 index;
 
         static void serialize(const StaticBody& staticBody, YAML::Emitter& out);
 
@@ -236,11 +225,8 @@ namespace TechEngine {
     class CORE_DLL KinematicBody {
         friend class ComponentsFactory;
 
-        explicit KinematicBody(const JPH::BodyID& bodyID) : bodyID(bodyID) {
-        };
-
     public:
-        const JPH::BodyID& bodyID;
+        JPH::uint32 index;
 
         static void serialize(const KinematicBody& kinematicBody, YAML::Emitter& out);
 
@@ -250,11 +236,8 @@ namespace TechEngine {
     class CORE_DLL RigidBody {
         friend class ComponentsFactory;
 
-        explicit RigidBody(const JPH::BodyID& bodyID) : bodyID(bodyID) {
-        };
-
     public:
-        const JPH::BodyID& bodyID;
+        JPH::uint32 index;
 
         static void serialize(const RigidBody& rigidbody, YAML::Emitter& out);
 
@@ -264,9 +247,6 @@ namespace TechEngine {
     class CORE_DLL BoxCollider {
     private:
         friend class ComponentsFactory;
-
-        BoxCollider(glm::vec3 center, glm::vec3 size) : center(center), size(size) {
-        }
 
     public:
         glm::vec3 center = glm::vec3(0.0f, 0, 0);
@@ -280,8 +260,6 @@ namespace TechEngine {
     class CORE_DLL SphereCollider {
         friend class ComponentsFactory;
 
-        SphereCollider() = default;
-
     public:
         glm::vec3 center = glm::vec3(0.0f);
         float radius = 0.5f;
@@ -293,8 +271,6 @@ namespace TechEngine {
 
     class CORE_DLL CapsuleCollider {
         friend class ComponentsFactory;
-
-        CapsuleCollider() = default;
 
     public:
         glm::vec3 center = glm::vec3(0.0f);
@@ -309,8 +285,6 @@ namespace TechEngine {
     class CORE_DLL CylinderCollider {
         friend class ComponentsFactory;
 
-        CylinderCollider() = default;
-
     public:
         glm::vec3 center = glm::vec3(0.0f);
         float height = 1.0f;
@@ -324,11 +298,8 @@ namespace TechEngine {
     class CORE_DLL BoxTrigger {
         friend class ComponentsFactory;
 
-        explicit BoxTrigger(const JPH::BodyID& bodyID) : bodyID(bodyID) {
-        };
-
     public:
-        const JPH::BodyID& bodyID;
+        JPH::uint32 index;
         glm::vec3 center = glm::vec3(0.0f, 0, 0);
         glm::vec3 size = glm::vec3(1.0f);
 
@@ -341,7 +312,7 @@ namespace TechEngine {
         friend class ComponentsFactory;
 
     public:
-        const JPH::BodyID& bodyID;
+        JPH::uint32 index;
         glm::vec3 center = glm::vec3(0.0f);
         float radius = 0.5f;
 
@@ -354,7 +325,7 @@ namespace TechEngine {
         friend class ComponentsFactory;
 
     public:
-        const JPH::BodyID& bodyID;
+        JPH::uint32 index;
         glm::vec3 center = glm::vec3(0.0f);
         float height = 1.0f;
         float radius = 0.5f;
@@ -368,7 +339,7 @@ namespace TechEngine {
         friend class ComponentsFactory;
 
     public:
-        const JPH::BodyID& bodyID;
+        JPH::uint32 index;
         glm::vec3 center = glm::vec3(0.0f);
         float height = 1.0f;
         float radius = 0.5f;
@@ -380,25 +351,25 @@ namespace TechEngine {
 #pragma endregion
 
 #pragma region Audio Components
-    class CORE_DLL AudioListenerComponent {
-        static void serialize(const AudioListenerComponent& audioListener, YAML::Emitter& out);
+    class CORE_DLL AudioListener {
+        static void serialize(const AudioListener& audioListener, YAML::Emitter& out);
 
-        static AudioListenerComponent deserialize(const YAML::Node& node);
+        static AudioListener deserialize(const YAML::Node& node);
     };
 
-    class CORE_DLL AudioEmitterComponent {
+    class CORE_DLL AudioEmitter {
     public:
         float volume = 1.0f; // Volume of the emitter
         float pitch = 1.0f; // Pitch of the emitter
         bool loop = false; // Whether the emitter should loop the sound
         //std::string soundPath; // Path to the sound file
 
-        static void serialize(const AudioEmitterComponent& emitter, YAML::Emitter& out);
+        static void serialize(const AudioEmitter& emitter, YAML::Emitter& out);
 
-        static AudioEmitterComponent deserialize(const YAML::Node& node);
+        static AudioEmitter deserialize(const YAML::Node& node);
     };
 #pragma endregion
-    class CORE_DLL ComponentType {
+    /*class CORE_DLL ComponentType {
     private:
         inline static ComponentTypeID counter = 0;
         inline static std::unordered_map<std::type_index, ComponentTypeID> typeMap;
@@ -444,5 +415,5 @@ namespace TechEngine {
             }
             return typeMap[typeid(T)];
         }
-    };
+    };*/
 }

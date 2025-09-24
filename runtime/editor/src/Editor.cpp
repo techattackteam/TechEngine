@@ -67,7 +67,10 @@ namespace TechEngine {
         m_systemRegistry.getSystem<EventDispatcher>().init();
         m_systemRegistry.getSystem<RuntimeSimulator<Client>>().init();
         m_systemRegistry.getSystem<RuntimeSimulator<Server>>().init();
-        ComponentType::init(); // Initialize component types for the editor
+        ComponentType<Tag>::get();
+        ComponentType<Transform>::get();
+        ComponentType<Camera>::get();
+        ComponentType<MeshRenderer>::get();
         m_systemRegistry.getSystem<PanelsManager>().init();
 
         m_runFunction = [this]() {

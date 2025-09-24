@@ -5,6 +5,7 @@
 #include "resources/ResourcesManager.hpp"
 #include "physics/PhysicsEngine.hpp"
 #include "audio/AudioSystem.hpp"
+#include "components/Components.hpp"
 
 #include "common/include/resources/Resources.hpp"
 #include "common/include/scene/Scene.hpp"
@@ -13,6 +14,10 @@
 
 namespace TechEngineAPI {
     void Entry::init(TechEngine::SystemsRegistry* systemsRegistry) {
+        TechEngine::ComponentType<TechEngine::Tag>::get();
+        TechEngine::ComponentType<TechEngine::Transform>::get();
+        TechEngine::ComponentType<TechEngine::Camera>::get();
+        TechEngine::ComponentType<TechEngine::MeshRenderer>::get();
         Timer::init(&systemsRegistry->getSystem<TechEngine::Timer>());
         Resources::init(&systemsRegistry->getSystem<TechEngine::ResourcesManager>());
         Scene::init(&systemsRegistry->getSystem<TechEngine::ScenesManager>().getActiveScene(),

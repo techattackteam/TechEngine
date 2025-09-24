@@ -1,46 +1,73 @@
 #pragma once
-
-#include "Components.hpp"
+#include "core/CoreExportDLL.hpp"
+#include "ComponentStorage.hpp"
+#include "components/Entity.hpp"
+#include <functional>
+#include <memory>
+#include <span>
 
 namespace TechEngine {
+    class Archetype;
+    using ComponentTypeID = uint32_t;
     using ArchetypeID = uint32_t;
+
+    class Component {
+    public:
+        inline static ComponentTypeID familyCounter = 0;
+    };
+
+    struct ComponentInfo {
+        size_t size;
+        size_t alignment;
+        std::function<std::unique_ptr<IComponentStorage>()> createStorage;
+    };
+
+    template<typename T>
+    class ComponentType {
+    public:
+        static ComponentTypeID get() {
+            static ComponentTypeID typeID = Component::familyCounter++;
+            return typeID;
+        }
+    };
+
+    struct ComponentMapping {
+        IComponentStorage* source_storage;
+        IComponentStorage* destination_storage;
+    };
+
+    struct ArchetypeEdge {
+        Archetype* destinationArchetype;
+        std::vector<ComponentMapping> componentMappings;
+    };
 
     class CORE_DLL Archetype {
     private:
         friend class ArchetypesManager;
         friend class SceneSerializer;
         ArchetypeID m_id;
+        size_t m_indexInECS;
         std::vector<Entity> m_entities; // List of entities in this archetype
-        std::unordered_map<ComponentTypeID, std::vector<char>> m_componentData; // Storage for component data
+        std::vector<ComponentTypeID> m_componentTypes;
+        std::unordered_map<ComponentTypeID, std::unique_ptr<IComponentStorage>> m_componentData; // Storage for component data
+
+        std::unordered_map<ComponentTypeID, ArchetypeEdge> m_addTransition;
+        std::unordered_map<ComponentTypeID, ArchetypeEdge> m_removeTransition;
 
     public:
-        explicit Archetype(ArchetypeID id) : m_id(id) {
+        explicit Archetype(ArchetypeID id, size_t index, const std::vector<ComponentTypeID>& types) : m_id(id), m_indexInECS(index), m_componentTypes(types) {
+            m_componentTypes = types;
         }
 
-        //Copy constructor
-        Archetype(const Archetype& archetype) {
-            m_id = archetype.m_id;
-            m_entities = archetype.m_entities;
-            m_componentData = archetype.m_componentData;
-        }
+        Archetype(const Archetype&) = delete;
 
-        template<typename T>
-        T& getComponent(Entity entity) {
-            ComponentTypeID typeID = ComponentType::get<T>();
-            auto& dataVector = m_componentData[typeID];
-            size_t index = std::distance(m_entities.begin(), std::find(m_entities.begin(), m_entities.end(), entity));
-            size_t componentSize = sizeof(T);
-            char& component = dataVector[index * componentSize];
-            return *reinterpret_cast<T*>(&component);
-        }
+        Archetype& operator=(const Archetype&) = delete;
 
-        // get a reference to the component array for a specific type
-        template<typename T>
-        std::vector<T>& getComponentArray() {
-            ComponentTypeID typeID = ComponentType::get<T>();
-            auto& dataVector = m_componentData[typeID];
-            return *reinterpret_cast<std::vector<T>*>(&dataVector);
-        }
+        // You should still define move operations if moving is allowed
+        Archetype(Archetype&&) noexcept = default;
+
+        Archetype& operator=(Archetype&&) noexcept = default;
+
 
         bool operator==(const Archetype& lhr) const {
             if (m_id != lhr.m_id) {
@@ -53,55 +80,45 @@ namespace TechEngine {
         // Method to get the component types for this archetype
         std::vector<ComponentTypeID> getComponentTypes() const;
 
-        // Method to get the entities in this archetype
-        std::vector<Entity> getEntities() const;
+        template<typename T>
+        std::span<T> getComponentArrayAsRawPtr() {
+            ComponentTypeID typeID = ComponentType<T>::get();
+            auto* storagePtr = m_componentData.at(typeID).get();
+            void* rawData = storagePtr->getData();
+            T* typed_data = static_cast<T*>(rawData);
 
-        void clear();
+            // Return a span covering the entire array of components.
+            return std::span<T>(typed_data, m_entities.size());
+        }
+
+        const std::vector<Entity>& getEntities() const;
+
+        void reserve(size_t count);
 
     private:
         void addEntity(Entity entity);
 
-        void removeEntity(Entity entity);
+        Entity removeEntity(size_t index);
 
-        void moveEntityComponents(Entity entity, Archetype& newArchetype, ComponentTypeID excludeComponent = -1);
-
-        // Add component data for a specific component type
         template<typename T>
-        void addComponentData(Entity entity, const T& component) {
-            ComponentTypeID typeID = ComponentType::get<T>();
-            size_t entityIndex = std::distance(m_entities.begin(), std::find(m_entities.begin(), m_entities.end(), entity));
-            auto& componentVector = m_componentData[typeID];
-
-            // Ensure there's enough space to store the new component
-            if (componentVector.size() < (entityIndex + 1) * sizeof(T)) {
-                componentVector.resize((entityIndex + 1) * sizeof(T));
-            }
-
-            // Copy the component data to the correct position
-            std::memcpy(&componentVector[entityIndex * sizeof(T)], &component, sizeof(T));
+        T& getComponent(size_t index) {
+            ComponentTypeID typeID = ComponentType<T>::get();
+            auto* componentStorage = static_cast<ComponentStorage<T>*>(m_componentData.at(typeID).get());
+            return componentStorage->get(index);
         }
 
-        // Remove component data for a specific component type
-        template<typename T>
-        void removeComponentData(Entity entity) {
-            ComponentTypeID typeID = ComponentType::get<T>();
-            auto& componentVector = m_componentData[typeID];
-
-            auto entityIndex = std::distance(m_entities.begin(), std::find(m_entities.begin(), m_entities.end(), entity));
-            size_t componentSize = sizeof(T);
-
-            // Erase the component data for this entity
-            if (entityIndex == m_entities.size() - 1) {
-                componentVector.erase(componentVector.begin() + entityIndex * componentSize, componentVector.end());
-            } else {
-                componentVector.erase(componentVector.begin() + entityIndex * componentSize, componentVector.begin() + (entityIndex + 1) * componentSize);
-            }
-        }
 
         size_t getComponentSize(ComponentTypeID typeID);
 
-        bool hasMatchingComponents(const std::vector<ComponentTypeID>& requiredComponents);
-
         bool containsComponents(const std::vector<ComponentTypeID>& componentTypes);
+
+        size_t reserveSlotFor(Entity entity);
+
+        template<typename T>
+        void setComponentData(size_t index, const T& component) {
+            ComponentTypeID typeID = ComponentType<T>::get();
+            auto* storage = static_cast<ComponentStorage<T>*>(m_componentData.at(typeID).get());
+            storage->set(index, component);
+        }
     };
 }

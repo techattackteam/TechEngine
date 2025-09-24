@@ -1,6 +1,7 @@
 #pragma once
 #include "Panel.hpp"
 
+#include"components/Components.hpp"
 #include "UIUtils/Guizmo.hpp"
 
 namespace TechEngine {
@@ -29,7 +30,7 @@ namespace TechEngine {
 
         void onUpdate() override;
 
-        void processKeyPressed(Key ) override;
+        void processKeyPressed(Key) override;
 
         void processMouseDragging(glm::vec2 delta, unsigned long long mouseButtons) override;
 

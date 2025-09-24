@@ -218,7 +218,7 @@ namespace TechEngine {
         uint32_t globalInstanceOffset = 0;
 
         scene.runSystem<Transform, MeshRenderer>([&](Transform& transform, MeshRenderer& meshRenderer) {
-            groupedInstances[&meshRenderer.mesh].emplace_back(&transform, meshRenderer.material.getGpuID());
+            groupedInstances[meshRenderer.mesh].emplace_back(&transform, meshRenderer.material->getGpuID());
         });
         for (const auto& pair: groupedInstances) {
             Mesh* mesh = pair.first;
