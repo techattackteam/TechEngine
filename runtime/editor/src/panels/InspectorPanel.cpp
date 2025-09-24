@@ -35,7 +35,9 @@ namespace TechEngine {
                 if (ImGui::MenuItem("Mesh Renderer")) {
                     Mesh& mesh = m_appSystemRegistry.getSystem<ResourcesManager>().getDefaultMesh();
                     Material& material = m_appSystemRegistry.getSystem<ResourcesManager>().getDefaultMaterial();
-                    addComponent<MeshRenderer>(mesh, material);
+                    MeshRenderer& meshRenderer = addComponent<MeshRenderer>();
+                    meshRenderer.changeMaterial(material);
+                    meshRenderer.changeMesh(mesh);
                 }
                 if (ImGui::BeginMenu("Physics")) {
                     if (ImGui::BeginMenu("Bodies")) {
@@ -155,13 +157,13 @@ namespace TechEngine {
                     if (ImGui::MenuItem("Listener")) {
                         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                         for (const Entity& entity: m_selectedEntities) {
-                            scene.addComponent<AudioListenerComponent>(entity, ComponentsFactory::createAudioListener());
+                            scene.addComponent<AudioListener>(entity, ComponentsFactory::createAudioListener());
                         }
                     }
                     if (ImGui::MenuItem("Emitter")) {
                         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                         for (const Entity& entity: m_selectedEntities) {
-                            scene.addComponent<AudioEmitterComponent>(entity, ComponentsFactory::createAudioEmitter());
+                            scene.addComponent<AudioEmitter>(entity, ComponentsFactory::createAudioEmitter());
                         }
                     }
                     ImGui::EndMenu();
@@ -191,7 +193,7 @@ namespace TechEngine {
         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
         std::vector<ComponentTypeID> componentsToDraw = scene.getCommonComponents(m_selectedEntities);
 
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<Transform>()) != componentsToDraw.end()) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<Transform>::get()) != componentsToDraw.end()) {
             drawComponent<Transform>(firstEntity, "Transform", [this](auto& component) {
                 Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                 glm::vec3 position = component.m_position;
@@ -290,7 +292,7 @@ namespace TechEngine {
                 }
             });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<Camera>()) != componentsToDraw.end()) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<Camera>::get()) != componentsToDraw.end()) {
             drawComponent<Camera>(firstEntity, "Camera", [this](auto& component) {
                 auto& camera = component;
                 Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
@@ -398,7 +400,7 @@ namespace TechEngine {
                 }*/
             });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<MeshRenderer>()) != componentsToDraw.end()) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<MeshRenderer>::get()) != componentsToDraw.end()) {
             drawComponent<MeshRenderer>(firstEntity, "Mesh Renderer", [this](auto& component) {
                 /*
                 Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
@@ -491,7 +493,7 @@ namespace TechEngine {
                 //component.paintMesh();
             });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<StaticBody>()) != componentsToDraw.end()) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<StaticBody>::get()) != componentsToDraw.end()) {
             drawComponent<StaticBody>(firstEntity, "Static Body", [this](auto& component) {
                                           Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                                           bool isMassCommon = true;
@@ -503,7 +505,7 @@ namespace TechEngine {
                                           }
                                       });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<KinematicBody>()) != componentsToDraw.end()) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<KinematicBody>::get()) != componentsToDraw.end()) {
             drawComponent<KinematicBody>(firstEntity, "Kinematic Body", [this](auto& component) {
                                          }, [this]() {
                                              Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
@@ -512,7 +514,7 @@ namespace TechEngine {
                                              }
                                          });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<RigidBody>()) != componentsToDraw.end()) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<RigidBody>::get()) != componentsToDraw.end()) {
             drawComponent<RigidBody>(firstEntity, "Rigid Body", [this](auto& component) {
                                          Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                                          bool isMassCommon = true;
@@ -524,7 +526,7 @@ namespace TechEngine {
                                          }
                                      });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<BoxCollider>()) != componentsToDraw.end()) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<BoxCollider>::get()) != componentsToDraw.end()) {
             drawComponent<BoxCollider>(firstEntity, "Box Collider", [this](auto& component) {
                                            Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                                            glm::vec3 commonCenter = component.center;
@@ -575,7 +577,7 @@ namespace TechEngine {
                                            }
                                        });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<SphereCollider>()) != componentsToDraw.end()) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<SphereCollider>::get()) != componentsToDraw.end()) {
             drawComponent<SphereCollider>(firstEntity, "Sphere Collider", [this](auto& component) {
                                               Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                                               glm::vec3 commonCenter = component.center;
@@ -631,7 +633,7 @@ namespace TechEngine {
                                           }
             );
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<CapsuleCollider>()) != componentsToDraw.end()) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<CapsuleCollider>::get()) != componentsToDraw.end()) {
             drawComponent<CapsuleCollider>(firstEntity, "Capsule Collider", [this](auto& component) {
                 Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                 glm::vec3 commonCenter = component.center;
@@ -703,7 +705,7 @@ namespace TechEngine {
                 }
             });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<CylinderCollider>()) != componentsToDraw.end()) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<CylinderCollider>::get()) != componentsToDraw.end()) {
             drawComponent<CylinderCollider>(firstEntity, "Cylinder Collider", [this](auto& component) {
                 Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                 glm::vec3 commonCenter = component.center;
@@ -775,7 +777,7 @@ namespace TechEngine {
                 }
             });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<BoxTrigger>()) != componentsToDraw.end()) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<BoxTrigger>::get()) != componentsToDraw.end()) {
             drawComponent<BoxTrigger>(firstEntity, "Box Trigger", [this](auto& component) {
                                           Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                                           glm::vec3 commonCenter = component.center;
@@ -826,7 +828,7 @@ namespace TechEngine {
                                           }
                                       });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<SphereTrigger>()) != componentsToDraw.end()) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<SphereTrigger>::get()) != componentsToDraw.end()) {
             drawComponent<SphereTrigger>(firstEntity, "Sphere Trigger", [this](auto& component) {
                                              Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                                              glm::vec3 commonCenter = component.center;
@@ -883,7 +885,7 @@ namespace TechEngine {
                                          }
             );
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<CapsuleTrigger>()) != componentsToDraw.end()) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<CapsuleTrigger>::get()) != componentsToDraw.end()) {
             drawComponent<CapsuleTrigger>(firstEntity, "Capsule Trigger", [this](auto& component) {
                 Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                 glm::vec3 commonCenter = component.center;
@@ -955,7 +957,7 @@ namespace TechEngine {
                 }
             });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<CylinderTrigger>()) != componentsToDraw.end()) {
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<CylinderTrigger>::get()) != componentsToDraw.end()) {
             drawComponent<CylinderTrigger>(firstEntity, "Cylinder Trigger", [this](auto& component) {
                 Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
                 glm::vec3 commonCenter = component.center;
@@ -1027,21 +1029,21 @@ namespace TechEngine {
                 }
             });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<AudioListenerComponent>()) != componentsToDraw.end()) {
-            drawComponent<AudioListenerComponent>(firstEntity, "Audio Listener", [](auto& component) {
-                                                      // No properties to edit for Audio Listener
-                                                  }, []() {
-                                                      // No action on remove for Audio Listener
-                                                  });
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<AudioListener>::get()) != componentsToDraw.end()) {
+            drawComponent<AudioListener>(firstEntity, "Audio Listener", [](auto& component) {
+                                             // No properties to edit for Audio Listener
+                                         }, []() {
+                                             // No action on remove for Audio Listener
+                                         });
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType::get<AudioEmitterComponent>()) != componentsToDraw.end()) {
-            drawComponent<AudioEmitterComponent>(firstEntity, "Audio Emitter", [this](auto& component) {
-                                                     Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
-                                                     ImGui::DragFloat("Volume", &component.volume, 0.01f, 0.0f, 1.0f, "%.2f");
-                                                     ImGui::DragFloat("Pitch", &component.pitch, 0.01f, 0.0f, 1.0f);
-                                                     ImGui::Checkbox("Loop", &component.loop);
-                                                 }, []() {
-                                                 });
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<AudioEmitter>::get()) != componentsToDraw.end()) {
+            drawComponent<AudioEmitter>(firstEntity, "Audio Emitter", [this](auto& component) {
+                                            Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                                            ImGui::DragFloat("Volume", &component.volume, 0.01f, 0.0f, 1.0f, "%.2f");
+                                            ImGui::DragFloat("Pitch", &component.pitch, 0.01f, 0.0f, 1.0f);
+                                            ImGui::Checkbox("Loop", &component.loop);
+                                        }, []() {
+                                        });
         }
     }
 }

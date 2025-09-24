@@ -14,7 +14,7 @@
 
 
 namespace TechEngine {
-    AudioSystem::AudioSystem(SystemsRegistry& systemsRegistry): m_systemsRegistry(systemsRegistry) {
+    AudioSystem::AudioSystem(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
     }
 
     AudioSystem::~AudioSystem() {
@@ -41,8 +41,8 @@ namespace TechEngine {
         m_frameCount++;
         Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
 
-        scene.runSystem<Tag, Transform, AudioListenerComponent>([this, &scene](Tag& tag, Transform& transform, AudioListenerComponent& listener) {
-            Entity entity = scene.getEntityByTag(tag);
+        scene.runSystem<Tag, Transform, AudioListener>([this, &scene](Tag& tag, Transform& transform, AudioListener& listener) {
+            Entity entity = scene.getEntity(tag);
             setListenerPosition(
                 entity,
                 transform.m_position,

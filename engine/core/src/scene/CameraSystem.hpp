@@ -1,5 +1,6 @@
 #pragma once
 #include "components/Components.hpp"
+#include "components/Entity.hpp"
 #include "systems/System.hpp"
 
 namespace TechEngine {

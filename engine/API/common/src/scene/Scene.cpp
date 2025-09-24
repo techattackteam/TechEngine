@@ -17,6 +17,7 @@
 
 #include "components/Components.hpp"
 #include "components/ComponentsFactory.hpp"
+#include "profiling/ProfiledScope.hpp"
 #include "resources/ResourcesManager.hpp"
 
 namespace TechEngineAPI {
@@ -28,7 +29,7 @@ namespace TechEngineAPI {
 
         components.clear();
         m_scene->runSystem<TechEngine::Tag>([&](TechEngine::Tag& tag) {
-            Entity entity = m_scene->getEntityByTag(tag);
+            Entity entity = m_scene->getEntity(tag);
             std::shared_ptr<Tag> tagComponent = std::make_shared<Tag>(entity, m_scene->getComponent<TechEngine::Tag>(entity).getName());
             components[{entity, typeid(Tag)}] = tagComponent;
 
@@ -37,8 +38,8 @@ namespace TechEngineAPI {
 
             if (m_scene->hasComponent<TechEngine::MeshRenderer>(entity)) {
                 const auto& meshRenderer = m_scene->getComponent<TechEngine::MeshRenderer>(entity);
-                std::shared_ptr<Mesh> mesh = Resources::getMesh(meshRenderer.mesh.getName());
-                std::shared_ptr<Material> material = Resources::getMaterial(meshRenderer.material.getName());
+                std::shared_ptr<Mesh> mesh = Resources::getMesh(meshRenderer.mesh->getName());
+                std::shared_ptr<Material> material = Resources::getMaterial(meshRenderer.material->getName());
                 std::shared_ptr<MeshRenderer> meshRendererComponent = std::make_shared<MeshRenderer>(entity, mesh, material);
                 components[{entity, typeid(MeshRenderer)}] = meshRendererComponent;
             }
@@ -79,13 +80,13 @@ namespace TechEngineAPI {
             }
 #pragma endregion
 #pragma region Audio Components
-            if (m_scene->hasComponent<TechEngine::AudioListenerComponent>(entity)) {
-                const auto& audioListener = m_scene->getComponent<TechEngine::AudioListenerComponent>(entity);
+            if (m_scene->hasComponent<TechEngine::AudioListener>(entity)) {
+                const auto& audioListener = m_scene->getComponent<TechEngine::AudioListener>(entity);
                 std::shared_ptr<Listener> audioListenerComponent = std::make_shared<Listener>(entity);
                 components[{entity, typeid(Listener)}] = audioListenerComponent;
             }
-            if (m_scene->hasComponent<TechEngine::AudioEmitterComponent>(entity)) {
-                const auto& audioEmitter = m_scene->getComponent<TechEngine::AudioEmitterComponent>(entity);
+            if (m_scene->hasComponent<TechEngine::AudioEmitter>(entity)) {
+                const auto& audioEmitter = m_scene->getComponent<TechEngine::AudioEmitter>(entity);
                 std::shared_ptr<Emitter> emitterComponent = std::make_shared<Emitter>(entity, audioSystem, m_scene);
                 components[{entity, typeid(Emitter)}] = emitterComponent;
             }
@@ -111,7 +112,7 @@ namespace TechEngineAPI {
         std::vector<Entity> entities;
         m_scene->runSystem<TechEngine::Tag>([&entities, name](TechEngine::Tag& tag) {
             if (tag.getName() == name) {
-                entities.push_back(m_scene->getEntityByTag(tag));
+                entities.push_back(m_scene->getEntity(tag));
             }
         });
         return entities;
@@ -132,12 +133,20 @@ namespace TechEngineAPI {
             TE_LOGGER_WARN("Entity already has component");
         } else {
             if constexpr (std::is_same_v<T, MeshRenderer>) {
+                // Add timer to mease performance
+                std::chrono::time_point start = std::chrono::high_resolution_clock::now();
+
                 auto&& t = std::forward_as_tuple(args...);
                 TechEngine::Mesh& mesh = m_resourcesManager->getMesh(std::get<0>(t)->getName());
                 TechEngine::Material& material = m_resourcesManager->getMaterial(std::get<1>(t)->getName());
-                TechEngine::MeshRenderer meshRenderer(mesh, material);
+                TechEngine::MeshRenderer meshRenderer;
+                meshRenderer.mesh = &mesh;
+                meshRenderer.material = &material;
                 m_scene->addComponent<TechEngine::MeshRenderer>(entity, meshRenderer);
                 components[{entity, typeid(MeshRenderer)}] = std::make_shared<MeshRenderer>(entity, std::get<0>(t), std::get<1>(t));
+                std::chrono::time_point end = std::chrono::high_resolution_clock::now();
+                float duration = std::chrono::duration<float, std::milli>(end - start).count();
+                //TE_LOGGER_INFO("MeshRenderer component added in {0} ms", duration);
             } else if constexpr (std::is_same_v<T, StaticBody>) {
                 const TechEngine::Tag& tag = m_scene->getComponent<TechEngine::Tag>(entity);
                 const TechEngine::Transform& transform = m_scene->getComponent<TechEngine::Transform>(entity);
@@ -205,18 +214,23 @@ namespace TechEngineAPI {
                                                                                                                           0.5f));
                 components[{entity, typeid(CylinderCollider)}] = std::make_shared<CylinderCollider>(entity);
             } else if constexpr (std::is_same_v<T, Listener>) {
-                m_scene->addComponent<TechEngine::AudioListenerComponent>(entity, TechEngine::AudioListenerComponent());
+                m_scene->addComponent<TechEngine::AudioListener>(entity, TechEngine::AudioListener());
                 components[{entity, typeid(Listener)}] = std::make_shared<Listener>(entity);
             } else if constexpr (std::is_same_v<T, Emitter>) {
-                m_scene->addComponent<TechEngine::AudioEmitterComponent>(entity, TechEngine::AudioEmitterComponent());
+                m_scene->addComponent<TechEngine::AudioEmitter>(entity, TechEngine::AudioEmitter());
                 components[{entity, typeid(Emitter)}] = std::make_shared<Emitter>(entity, m_audioSystem, m_scene);
             } else {
                 throw std::runtime_error("Component not supported");
             }
         }
-        for (auto&& component: components) {
-            component.second->updateInternalPointer(m_scene);
-        }
+        // Update internal pointer for all components
+        std::chrono::time_point start = std::chrono::high_resolution_clock::now();
+        //for (auto&& component: components) {
+        //    component.second->updateInternalPointer(m_scene);
+        //}
+        std::chrono::time_point end = std::chrono::high_resolution_clock::now();
+        float duration = std::chrono::duration<float, std::milli>(end - start).count();
+        //TE_LOGGER_INFO("Internal Pointer updated in {0} ms", duration);
         return std::static_pointer_cast<T>(components[{entity, typeid(T)}]);
     }
 
@@ -243,8 +257,8 @@ namespace TechEngineAPI {
         } else if constexpr (std::is_same_v<T, MeshRenderer>) {
             std::shared_ptr<MeshRenderer> component = std::static_pointer_cast<MeshRenderer>(components[{entity, typeid(MeshRenderer)}]);
             TechEngine::MeshRenderer& meshRenderer = getComponentInternal<TechEngine::MeshRenderer>(entity);
-            std::shared_ptr<Mesh> mesh = Resources::getMesh(meshRenderer.mesh.getName());
-            std::shared_ptr<Material> material = Resources::getMaterial(meshRenderer.material.getName());
+            std::shared_ptr<Mesh> mesh = Resources::getMesh(meshRenderer.mesh->getName());
+            std::shared_ptr<Material> material = Resources::getMaterial(meshRenderer.material->getName());
             component->setMesh(mesh);
             component->setMaterial(material);
             return std::static_pointer_cast<T>(components[{entity, typeid(MeshRenderer)}]);
@@ -350,53 +364,53 @@ namespace TechEngineAPI {
 
     template API_DLL std::shared_ptr<Tag> Scene::getComponent<Tag>(Entity entity);
 
-    template API_DLL Tag& Scene::getComponentInternal<Tag>(Entity entity);
+    template API_DLL TechEngine::Tag& Scene::getComponentInternal<TechEngine::Tag>(Entity entity);
 
     template API_DLL std::shared_ptr<Transform> Scene::getComponent<Transform>(Entity entity);
 
-    template API_DLL Transform& Scene::getComponentInternal<Transform>(Entity entity);
+    template API_DLL TechEngine::Transform& Scene::getComponentInternal<TechEngine::Transform>(Entity entity);
 
-    template API_DLL std::shared_ptr<MeshRenderer> Scene::getComponent<MeshRenderer>(Entity entity);
+    template API_DLL std::shared_ptr<TechEngine::MeshRenderer> Scene::getComponent<TechEngine::MeshRenderer>(Entity entity);
 
-    template API_DLL MeshRenderer& Scene::getComponentInternal<MeshRenderer>(Entity entity);
+    template API_DLL TechEngine::MeshRenderer& Scene::getComponentInternal<TechEngine::MeshRenderer>(Entity entity);
 
 #pragma region Physics Components
     template API_DLL std::shared_ptr<RigidBody> Scene::getComponent<RigidBody>(Entity entity);
 
-    template API_DLL RigidBody& Scene::getComponentInternal<RigidBody>(Entity entity);
+    template API_DLL TechEngine::RigidBody& Scene::getComponentInternal<TechEngine::RigidBody>(Entity entity);
 
     template API_DLL std::shared_ptr<StaticBody> Scene::getComponent<StaticBody>(Entity entity);
 
-    template API_DLL StaticBody& Scene::getComponentInternal<StaticBody>(Entity entity);
+    template API_DLL TechEngine::StaticBody& Scene::getComponentInternal<TechEngine::StaticBody>(Entity entity);
 
     template API_DLL std::shared_ptr<KinematicBody> Scene::getComponent<KinematicBody>(Entity entity);
 
-    template API_DLL KinematicBody& Scene::getComponentInternal<KinematicBody>(Entity entity);
+    template API_DLL TechEngine::KinematicBody& Scene::getComponentInternal<TechEngine::KinematicBody>(Entity entity);
 
     template API_DLL std::shared_ptr<BoxCollider> Scene::getComponent<BoxCollider>(Entity entity);
 
-    template API_DLL BoxCollider& Scene::getComponentInternal<BoxCollider>(Entity entity);
+    template API_DLL TechEngine::BoxCollider& Scene::getComponentInternal<TechEngine::BoxCollider>(Entity entity);
 
     template API_DLL std::shared_ptr<SphereCollider> Scene::getComponent<SphereCollider>(Entity entity);
 
-    template API_DLL SphereCollider& Scene::getComponentInternal<SphereCollider>(Entity entity);
+    template API_DLL TechEngine::SphereCollider& Scene::getComponentInternal<TechEngine::SphereCollider>(Entity entity);
 
     template API_DLL std::shared_ptr<CapsuleCollider> Scene::getComponent<CapsuleCollider>(Entity entity);
 
-    template API_DLL CapsuleCollider& Scene::getComponentInternal<CapsuleCollider>(Entity entity);
+    template API_DLL TechEngine::CapsuleCollider& Scene::getComponentInternal<TechEngine::CapsuleCollider>(Entity entity);
 
     template API_DLL std::shared_ptr<CylinderCollider> Scene::getComponent<CylinderCollider>(Entity entity);
 
-    template API_DLL CylinderCollider& Scene::getComponentInternal<CylinderCollider>(Entity entity);
+    template API_DLL TechEngine::CylinderCollider& Scene::getComponentInternal<TechEngine::CylinderCollider>(Entity entity);
 #pragma endregion
 
 #pragma region Audio Components
     template API_DLL std::shared_ptr<Listener> Scene::getComponent<Listener>(Entity entity);
 
-    template API_DLL Listener& Scene::getComponentInternal<Listener>(Entity entity);
+    template API_DLL TechEngine::AudioListener& Scene::getComponentInternal<TechEngine::AudioListener>(Entity entity);
 
     template API_DLL std::shared_ptr<Emitter> Scene::getComponent<Emitter>(Entity entity);
 
-    template API_DLL Emitter& Scene::getComponentInternal<Emitter>(Entity entity);
+    template API_DLL TechEngine::AudioEmitter& Scene::getComponentInternal<TechEngine::AudioEmitter>(Entity entity);
 #pragma endregion
 }

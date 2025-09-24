@@ -4,7 +4,7 @@
 #include <imgui_internal.h>
 #include <vector>
 
-#include "components/Components.hpp"
+#include "components/Entity.hpp"
 #include "ui/Widget.hpp"
 
 namespace TechEngine {

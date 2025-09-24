@@ -85,16 +85,16 @@ namespace TechEngine {
 
         void renderBodies() const;
 
-        const JPH::BodyID& createStaticBody(const Tag& tag, const Transform& transform);
+        const JPH::uint32 createStaticBody(const Tag& tag, const Transform& transform);
 
-        const JPH::BodyID& createKinematicBody(const Tag& tag, const Transform& transform);
+        const JPH::uint32 createKinematicBody(const Tag& tag, const Transform& transform);
 
-        const JPH::BodyID& createRigidBody(const Tag& tag, const Transform& transform);
+        const JPH::uint32 createRigidBody(const Tag& tag, const Transform& transform);
 
         void createCollider(Shape shape, const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 size);
 
-        const JPH::BodyID& createTrigger(Shape shape, const Tag& tag, const Transform& transform, glm::vec3 center,
-                                         glm::vec3 size);
+        JPH::uint32 createTrigger(Shape shape, const Tag& tag, const Transform& transform, glm::vec3 center,
+                                  glm::vec3 size);
 
         void resizeCollider(Shape shape, const Tag& tag, const Transform& transform, glm::vec3 center, glm::vec3 size);
 
@@ -124,8 +124,8 @@ namespace TechEngine {
         void setLinearVelocity(const Tag& tag, const glm::vec3& velocity);
 
     private:
-        const JPH::BodyID& createBody(JPH::EMotionType eMotionType, const Tag& tag, const Transform& transform,
-                                      bool isTrigger);
+        JPH::uint32 createBody(JPH::EMotionType eMotionType, const Tag& tag, const Transform& transform,
+                               bool isTrigger);
 
         template<typename Body>
         void updateBodies(Transform& transform, Body& body) {
@@ -133,14 +133,16 @@ namespace TechEngine {
             JPH::RVec3 position = JPH::RVec3(transform.m_position.x, transform.m_position.y, transform.m_position.z);
             glm::quat rotation = glm::quat(glm::radians(transform.m_rotation));
             JPH::Quat quat = JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w);
-            bodyInterface.SetPositionAndRotation(body.bodyID, position, quat, JPH::EActivation::Activate);
+            const JPH::BodyID& bodyID = getBodyID(body.index);
+            bodyInterface.SetPositionAndRotation(bodyID, position, quat, JPH::EActivation::Activate);
         }
 
         template<typename Body>
         void updateEntities(Transform& transform, Body& body) {
             JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
-            JPH::RVec3 position = bodyInterface.GetPosition(body.bodyID);
-            JPH::Quat rotation = bodyInterface.GetRotation(body.bodyID);
+            const JPH::BodyID& bodyID = getBodyID(body.index);
+            JPH::RVec3 position = bodyInterface.GetPosition(bodyID);
+            JPH::Quat rotation = bodyInterface.GetRotation(bodyID);
             glm::vec3 euler = glm::eulerAngles(glm::quat(rotation.GetW(), rotation.GetX(), rotation.GetY(),
                                                          rotation.GetZ()));
 
@@ -151,5 +153,7 @@ namespace TechEngine {
         void updateBodies();
 
         void updateEntities();
+
+        const JPH::BodyID& getBodyID(const JPH::uint32& index);
     };
 }

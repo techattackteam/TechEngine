@@ -6,8 +6,11 @@
 
 namespace TechEngine {
     Entity Scene::createEntity(const std::string& name) {
-        std::string uuid = UUID::generate().toString();
-        return createEntity(name, uuid);
+        UUID uuid = UUID::generate();
+        Entity entity = m_archetypesManager.createEntity();
+        m_archetypesManager.addComponent(entity, ComponentsFactory::createTag(name, uuid.toString()));
+        m_archetypesManager.addComponent(entity, ComponentsFactory::createTransform(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f)));
+        return entity;
     }
 
     void Scene::destroyEntity(Entity entity) {
@@ -15,42 +18,59 @@ namespace TechEngine {
     }
 
     std::vector<ComponentTypeID> Scene::getCommonComponents(const std::vector<Entity>& entities) {
-        std::vector<ComponentTypeID> commonComponents;
-        for (Entity entity: entities) {
-            std::vector<ComponentTypeID> entityArchetype = m_archetypesManager.getComponentTypes(entity);
-            for (ComponentTypeID componentType: entityArchetype) {
-                if (std::find(commonComponents.begin(), commonComponents.end(), componentType) == commonComponents.end()) {
-                    commonComponents.push_back(componentType);
-                }
+        if (entities.empty()) {
+            return {};
+        }
+
+        // Get the component types of the first entity
+        std::vector<ComponentTypeID> commonComponents; {
+            auto it = m_archetypesManager.m_entityToArchetypeMap.find(entities[0]);
+            if (it == m_archetypesManager.m_entityToArchetypeMap.end()) {
+                return {};
+            }
+            size_t archetypeIndex = it->second.m_archetypeIndex;
+            Archetype* archetype = m_archetypesManager.m_archetypes[archetypeIndex].get();
+            commonComponents = archetype->getComponentTypes();
+        }
+
+        // Intersect with the component types of the remaining entities
+        for (size_t i = 1; i < entities.size(); ++i) {
+            auto it = m_archetypesManager.m_entityToArchetypeMap.find(entities[i]);
+            if (it == m_archetypesManager.m_entityToArchetypeMap.end()) {
+                return {};
+            }
+            size_t archetypeIndex = it->second.m_archetypeIndex;
+            Archetype* archetype = m_archetypesManager.m_archetypes[archetypeIndex].get();
+            const std::vector<ComponentTypeID>& entityComponents = archetype->getComponentTypes();
+
+            std::vector<ComponentTypeID> intersection;
+            std::set_intersection(
+                commonComponents.begin(), commonComponents.end(),
+                entityComponents.begin(), entityComponents.end(),
+                std::back_inserter(intersection)
+            );
+            commonComponents = intersection;
+
+            if (commonComponents.empty()) {
+                break; // No common components, exit early
             }
         }
+
         return commonComponents;
     }
 
-    Entity Scene::getEntityByTag(const Tag& tag) {
-        std::vector<Archetype*> archetypes = m_archetypesManager.queryArchetypes({ComponentType::get<Tag>()});
-        for (Archetype* archetype: archetypes) {
-            std::vector<Tag>& tags = archetype->getComponentArray<Tag>();
-            for (Tag& t: tags) {
-                if (t == tag) {
-                    return archetype->getEntities()[&t - &tags[0]];
-                }
-            }
-        }
-        return -1;
+    Entity Scene::getEntity(const Tag& tag) {
+        return getEntity(tag.getUuid());
     }
 
-    Entity Scene::getEntityByUUID(const std::string& uuid) {
-        std::vector<Archetype*> archetypes = m_archetypesManager.queryArchetypes({ComponentType::get<Tag>()});
-        for (Archetype* archetype: archetypes) {
-            std::vector<Tag>& tags = archetype->getComponentArray<Tag>();
-            for (Tag& t: tags) {
-                if (t.getUuid() == uuid) {
-                    return archetype->getEntities()[&t - &tags[0]];
-                }
+    Entity Scene::getEntity(const std::string& uuid) {
+        Entity entity = -1;
+        m_archetypesManager.query<Entity, Tag>().each([&](Entity& e, Tag& tag) {
+            if (tag.getUuid() == uuid) {
+                entity = e;
             }
-        }
-        return -1;
+        });
+        return entity;
     }
 
     void Scene::clear() {
@@ -66,17 +86,10 @@ namespace TechEngine {
     }
 
     int Scene::getTotalEntities() {
-        int totalEntities = 0;
-        for (Archetype& archetype: m_archetypesManager.m_archetypes) {
-            totalEntities =+ archetype.getEntities().size();
+        size_t totalEntities = 0;
+        for (std::unique_ptr<Archetype>& archetype: m_archetypesManager.m_archetypes) {
+            totalEntities += archetype->getEntities().size();
         }
         return totalEntities;
-    }
-
-    Entity Scene::createEntity(const std::string& name, const std::string& uuid) {
-        Entity entity = m_archetypesManager.createEntity();
-        m_archetypesManager.addComponent(entity, ComponentsFactory::createTag(name, uuid));
-        m_archetypesManager.addComponent(entity, ComponentsFactory::createTransform(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f)));
-        return entity;
     }
 }

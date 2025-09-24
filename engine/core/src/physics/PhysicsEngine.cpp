@@ -18,6 +18,22 @@
 #include <Jolt/Physics/Collision/Shape/ScaledShape.h>
 #include <Jolt/Physics/Constraints/FixedConstraint.h>
 
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
 #include "scene/ScenesManager.hpp"
 
 // Disable common warnings triggered by Jolt, you can use JPH_SUPPRESS_WARNING_PUSH / JPH_SUPPRESS_WARNING_POP to store and restore the warning state
@@ -127,15 +143,15 @@ namespace TechEngine {
 #endif
     }
 
-    const JPH::BodyID& PhysicsEngine::createStaticBody(const Tag& tag, const Transform& transform) {
+    const JPH::uint32 PhysicsEngine::createStaticBody(const Tag& tag, const Transform& transform) {
         return createBody(JPH::EMotionType::Static, tag, transform, false);
     }
 
-    const JPH::BodyID& PhysicsEngine::createKinematicBody(const Tag& tag, const Transform& transform) {
+    const JPH::uint32 PhysicsEngine::createKinematicBody(const Tag& tag, const Transform& transform) {
         return createBody(JPH::EMotionType::Kinematic, tag, transform, false);
     }
 
-    const JPH::BodyID& PhysicsEngine::createRigidBody(const Tag& tag, const Transform& transform) {
+    const JPH::uint32 PhysicsEngine::createRigidBody(const Tag& tag, const Transform& transform) {
         return createBody(JPH::EMotionType::Dynamic, tag, transform, false);
     }
 
@@ -151,14 +167,15 @@ namespace TechEngine {
         }
     }
 
-    const JPH::BodyID& PhysicsEngine::createTrigger(const Shape shape, const Tag& tag, const Transform& transform,
-                                                    const glm::vec3 center, const glm::vec3 size) {
-        const JPH::BodyID& body = createBody(JPH::EMotionType::Static, tag, transform, true);
+    JPH::uint32 PhysicsEngine::createTrigger(const Shape shape, const Tag& tag, const Transform& transform,
+                                             const glm::vec3 center, const glm::vec3 size) {
+        const JPH::uint32& index = createBody(JPH::EMotionType::Static, tag, transform, true);
+        const JPH::BodyID body = getBodyID(index);
         m_triggers[tag.getUuid()] = body;
         JPH::MutableCompoundShape* compoundShape = ShapeFactory::createShape(shape, transform, center, size);
         JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
         bodyInterface.SetShape(body, compoundShape, true, JPH::EActivation::DontActivate);
-        return body;
+        return body.GetIndex();
     }
 
     void PhysicsEngine::resizeCollider(const Shape shape, const Tag& tag, const Transform& transform,
@@ -319,6 +336,20 @@ namespace TechEngine {
         });*/
     }
 
+    const JPH::BodyID& PhysicsEngine::getBodyID(const JPH::uint32& index) {
+        JPH::BodyIDVector bodyIds;
+        m_physicsSystem->GetBodies(bodyIds);
+        JPH::BodyID foundBodyId;
+        for (const JPH::BodyID& bodyId: bodyIds) {
+            if (bodyId.GetIndex() == index) {
+                foundBodyId = bodyId;
+                break;
+            }
+        }
+        TE_LOGGER_CRITICAL("Body with index: {0} not found", index);
+        return foundBodyId;
+    }
+
     void PhysicsEngine::moveOrRotateBody(const Tag& tag, const Transform& transform) {
         if (m_running) {
             return;
@@ -353,8 +384,8 @@ namespace TechEngine {
         }
     }
 
-    const JPH::BodyID& PhysicsEngine::createBody(JPH::EMotionType eMotionType, const Tag& tag,
-                                                 const Transform& transform, bool isTrigger) {
+    JPH::uint32 PhysicsEngine::createBody(JPH::EMotionType eMotionType, const Tag& tag,
+                                          const Transform& transform, bool isTrigger) {
         JPH::RegisterDefaultAllocator();
         JPH::BodyInterface& bodyInterface = m_physicsSystem->GetBodyInterface();
 
@@ -385,6 +416,6 @@ namespace TechEngine {
                 bodyInterface.SetShape(body->GetID(), shape, true, JPH::EActivation::DontActivate);
             }
         }
-        return body->GetID();
+        return body->GetID().GetIndex();
     }
 }

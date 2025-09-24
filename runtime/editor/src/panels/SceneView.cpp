@@ -41,8 +41,8 @@ namespace TechEngine {
         m_appSystemsRegistry.getSystem<PhysicsEngine>().renderBodies();
         sceneCamera.updateProjectionMatrix(wsize.x / wsize.y);
         sceneCamera.updateViewMatrix(cameraTransform.getModelMatrix());
-        renderCameraFrustum();
-        renderColliders();
+        //renderCameraFrustum();
+        //renderColliders();
         int mask = Renderer::GEOMETRY_PASS | Renderer::LINE_PASS;
         //renderer.renderCustomPipeline(&sceneCamera, mask);
 #if  1!= 1
@@ -485,7 +485,7 @@ namespace TechEngine {
 
     glm::vec4 SceneView::getColor(const Tag& tag, bool collider) const {
         Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-        const Entity entity = scene.getEntityByTag(tag);
+        const Entity entity = scene.getEntity(tag);
 
         // Check if entity is selected
         bool isSelected = std::find(m_selectedEntities.begin(), m_selectedEntities.end(), entity) != m_selectedEntities.end();

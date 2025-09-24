@@ -117,7 +117,7 @@ namespace TechEngine {
         shadersManager.getActiveShader()->setUniformMatrix4f("model", model);
         flushMeshData(&MeshRenderer);
         if (!shadow) {
-            Material& material = MeshRenderer.material;
+            Material* material = MeshRenderer.material;
             /*
             shadersManager.getActiveShader()->setUniformVec3("material.ambient", material.getAmbient());
             shadersManager.getActiveShader()->setUniformVec3("material.diffuse", material.getDiffuse());
@@ -354,10 +354,10 @@ namespace TechEngine {
 
         loadMaterials();
         m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().runSystem<Transform, MeshRenderer>([&](Transform& transform, MeshRenderer& meshRenderer) {
-            groupedInstances[&meshRenderer.mesh].push_back(&transform);
-            if (materialToIDMap.find(&meshRenderer.material) == materialToIDMap.end()) {
+            groupedInstances[meshRenderer.mesh].push_back(&transform);
+            if (materialToIDMap.find(meshRenderer.material) == materialToIDMap.end()) {
                 uint32_t newID = materialToIDMap.size();
-                materialToIDMap[&meshRenderer.material] = newID;
+                materialToIDMap[meshRenderer.material] = newID;
             }
         });
         // Iterate over each group (e.g., all trees, then all rocks)

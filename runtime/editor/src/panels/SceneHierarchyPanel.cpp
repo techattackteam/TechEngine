@@ -1,6 +1,7 @@
 #include "SceneHierarchyPanel.hpp"
 
 #include "imgui_internal.h"
+#include "components/ComponentsFactory.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "scene/ScenesManager.hpp"
@@ -39,7 +40,7 @@ namespace TechEngine {
 
         int size = m_entitiesOrder.size();
         for (size_t i = 0; i < size; i++) {
-            Entity entity = scene.getEntityByTag(m_entitiesOrder[i]);
+            Entity entity = scene.getEntity(m_entitiesOrder[i]);
             if (entity == -1) {
                 m_entitiesOrder.erase(m_entitiesOrder.begin() + i);
                 size--;
@@ -77,7 +78,7 @@ namespace TechEngine {
 
     void SceneHierarchyPanel::drawEntityNode(Tag& tag) {
         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
-        Entity entity = scene.getEntityByTag(tag);
+        Entity entity = scene.getEntity(tag);
         ImGuiStyle& style = ImGui::GetStyle();
 
         const float frameHeight = ImGui::GetFrameHeight();
@@ -239,8 +240,7 @@ namespace TechEngine {
                 case Cube: {
                     Entity entity = scene.createEntity("Cube");
                     ResourcesManager& resourcesManager = m_appSystemRegistry.getSystem<ResourcesManager>();
-                    scene.addComponent<MeshRenderer>(
-                        entity, MeshRenderer(resourcesManager.getDefaultMesh(), resourcesManager.getDefaultMaterial()));
+                    scene.addComponent<MeshRenderer>(entity, ComponentsFactory::createMeshRenderer(&resourcesManager.getDefaultMesh(), &resourcesManager.getDefaultMaterial()));
                     m_entitiesOrder.emplace_back(scene.getComponent<Tag>(entity));
                     break;
                 }
@@ -248,7 +248,7 @@ namespace TechEngine {
                     Entity entity = scene.createEntity("Sphere");
                     ResourcesManager& resourcesManager = m_appSystemRegistry.getSystem<ResourcesManager>();
                     scene.addComponent<MeshRenderer>(
-                        entity, MeshRenderer(resourcesManager.getMesh("Sphere"), resourcesManager.getDefaultMaterial()));
+                        entity, ComponentsFactory::createMeshRenderer(&resourcesManager.getMesh("Sphere"), &resourcesManager.getDefaultMaterial()));
                     m_entitiesOrder.emplace_back(scene.getComponent<Tag>(entity));
                     break;
                 }

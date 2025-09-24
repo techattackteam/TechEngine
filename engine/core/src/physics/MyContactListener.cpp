@@ -39,30 +39,30 @@ namespace TechEngine {
             auto getEntity = [&](const JPH::BodyID& bodyID) {
                 for (auto& [uuid, body]: *m_triggers) {
                     if (body == bodyID) {
-                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntityByUUID(uuid);
+                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
                     }
                 }
                 for (auto& [uuid, body]: *m_bodies) {
                     if (body == bodyID) {
-                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntityByUUID(uuid);
+                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
                     }
                 }
-                return int32_t(-2);
+                return Entity(-2);
             };
 
-            const int32_t entity1 = getEntity(inBody1.GetID());
-            const int32_t entity2 = getEntity(inBody2.GetID());
+            const Entity entity1 = getEntity(inBody1.GetID());
+            const Entity entity2 = getEntity(inBody2.GetID());
 
             m_systemsRegistry.getSystem<EventDispatcher>().dispatch<OnTriggerEnter>(entity1, entity2);
         } else {
-            int32_t entity1 = -2;
-            int32_t entity2 = -2;
+            Entity entity1 = -2;
+            Entity entity2 = -2;
             for (auto& [uuid, body]: *m_bodies) {
                 if (body == inBody1.GetID()) {
-                    entity1 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntityByUUID(uuid);
+                    entity1 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
                 }
                 if (body == inBody2.GetID()) {
-                    entity2 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntityByUUID(uuid);
+                    entity2 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
                 }
                 if (entity1 != -2 && entity2 != -2) {
                     break;
@@ -81,30 +81,30 @@ namespace TechEngine {
             auto getEntity = [&](const JPH::BodyID& bodyID) {
                 for (auto& [uuid, body]: *m_triggers) {
                     if (body == bodyID) {
-                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntityByUUID(uuid);
+                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
                     }
                 }
                 for (auto& [uuid, body]: *m_bodies) {
                     if (body == bodyID) {
-                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntityByUUID(uuid);
+                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
                     }
                 }
-                return int32_t(-2);
+                return Entity(-2);
             };
 
-            const int32_t entity1 = getEntity(inBody1.GetID());
-            const int32_t entity2 = getEntity(inBody2.GetID());
+            const Entity entity1 = getEntity(inBody1.GetID());
+            const Entity entity2 = getEntity(inBody2.GetID());
 
             m_systemsRegistry.getSystem<EventDispatcher>().dispatch<OnTriggerStay>(entity1, entity2);
         } else {
-            int32_t entity1 = -2;
-            int32_t entity2 = -2;
+            Entity entity1 = -2;
+            Entity entity2 = -2;
             for (auto& [uuid, body]: *m_bodies) {
                 if (body == inBody1.GetID()) {
-                    entity1 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntityByUUID(uuid);
+                    entity1 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
                 }
                 if (body == inBody2.GetID()) {
-                    entity2 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntityByUUID(uuid);
+                    entity2 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
                 }
                 if (entity1 != -2 && entity2 != -2) {
                     break;
@@ -137,30 +137,30 @@ namespace TechEngine {
             auto getEntity = [&](const JPH::BodyID& bodyID) {
                 for (auto& [uuid, body]: *m_triggers) {
                     if (body == bodyID) {
-                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntityByUUID(uuid);
+                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
                     }
                 }
                 for (auto& [uuid, body]: *m_bodies) {
                     if (body == bodyID) {
-                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntityByUUID(uuid);
+                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
                     }
                 }
-                return int32_t(-2);
+                return Entity(-2);
             };
 
-            const int32_t entity1 = getEntity(body1ID);
-            const int32_t entity2 = getEntity(body2ID);
+            const Entity entity1 = getEntity(body1ID);
+            const Entity entity2 = getEntity(body2ID);
 
             m_systemsRegistry.getSystem<EventDispatcher>().dispatch<OnTriggerLeave>(entity1, entity2);
         } else {
-            int32_t entity1 = -2;
-            int32_t entity2 = -2;
+            Entity entity1 = -2;
+            Entity entity2 = -2;
             for (auto& [uuid, body]: *m_bodies) {
                 if (body == body1ID) {
-                    entity1 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntityByUUID(uuid);
+                    entity1 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
                 }
                 if (body == body2ID) {
-                    entity2 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntityByUUID(uuid);
+                    entity2 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
                 }
                 if (entity1 != -2 && entity2 != -2) {
                     break;
