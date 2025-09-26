@@ -4,8 +4,17 @@ file(GLOB_RECURSE RUNTIME_SERVER_HEADERS "src/*.hpp")
 
 # add the executable
 add_executable(TechEngineRuntimeServer ${RUNTIME_SERVER_SOURCES} ${RUNTIME_SERVER_HEADERS})
-target_include_directories(TechEngineRuntimeServer PUBLIC src)
-target_link_libraries(TechEngineRuntimeServer TechEngineApp TechEngineServer)
+
+target_include_directories(TechEngineRuntimeServer PRIVATE
+        src
+        "${CMAKE_SOURCE_DIR}/engine/core/include"
+        "${CMAKE_SOURCE_DIR}/engine/core/src"
+        "${CMAKE_SOURCE_DIR}/engine/server/include"
+        "${CMAKE_SOURCE_DIR}/engine/server/src"
+        "${CMAKE_SOURCE_DIR}/engine/app/src"
+)
+
+target_link_libraries(TechEngineRuntimeServer PRIVATE TechEngineApp TechEngineServer)
 
 # setup target's output directory
 if (WIN32) # WINDOWS

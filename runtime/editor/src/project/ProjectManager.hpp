@@ -1,7 +1,6 @@
 #pragma once
 #include "systems/System.hpp"
 #include <filesystem>
-#include <unordered_map>
 
 namespace TechEngine {
     enum class CompileMode;
@@ -12,7 +11,7 @@ namespace TechEngine {
         Editor
     };
 
-    class CORE_DLL ProjectManager : public System {
+    class ProjectManager : public System {
     private:
         SystemsRegistry& m_systemsRegistry;
         SystemsRegistry& m_clientSystemsRegistry;

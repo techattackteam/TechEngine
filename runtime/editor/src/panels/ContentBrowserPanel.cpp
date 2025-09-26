@@ -5,7 +5,7 @@
 #include "core/Logger.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/MeshManager.hpp"
+#include "../../../../engine/core/include/TechEngine/core/resources/mesh/MeshManager.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
 
 namespace TechEngine {

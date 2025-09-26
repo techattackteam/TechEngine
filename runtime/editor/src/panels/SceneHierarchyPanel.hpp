@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Panel.hpp"
-#include "components/Archetype.hpp"
-#include "scene/Scene.hpp"
+#include "../../../../engine/core/include/TechEngine/core/components/Archetype.hpp"
+#include "TechEngine/core/scene/Scene.hpp"
 
 namespace TechEngine {
     class Tag;

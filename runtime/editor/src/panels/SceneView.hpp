@@ -1,7 +1,7 @@
 #pragma once
 #include "Panel.hpp"
 
-#include"components/Components.hpp"
+#include "TechEngine/core/components/Components.hpp"
 #include "UIUtils/Guizmo.hpp"
 
 namespace TechEngine {

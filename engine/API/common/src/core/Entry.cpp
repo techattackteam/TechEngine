@@ -5,7 +5,7 @@
 #include "resources/ResourcesManager.hpp"
 #include "physics/PhysicsEngine.hpp"
 #include "audio/AudioSystem.hpp"
-#include "components/Components.hpp"
+#include "../../../../core/include/components/Components.hpp"
 
 #include "common/include/resources/Resources.hpp"
 #include "common/include/scene/Scene.hpp"

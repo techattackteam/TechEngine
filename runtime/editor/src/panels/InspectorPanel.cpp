@@ -2,11 +2,12 @@
 
 #include "scene/CameraSystem.hpp"
 #include "scene/ScenesManager.hpp"
-#include "components/Components.hpp"
-#include "components/ComponentsFactory.hpp"
+#include "TechEngine/core/components/Components.hpp"
+#include "../../../../engine/core/include/TechEngine/core/components/ComponentsFactory.hpp"
 
 #include "physics/PhysicsEngine.hpp"
 #include "resources/ResourcesManager.hpp"
+#include "scene/SceneInternal.hpp"
 
 #include "UIUtils/ImGuiUtils.hpp"
 
@@ -36,8 +37,8 @@ namespace TechEngine {
                     Mesh& mesh = m_appSystemRegistry.getSystem<ResourcesManager>().getDefaultMesh();
                     Material& material = m_appSystemRegistry.getSystem<ResourcesManager>().getDefaultMaterial();
                     MeshRenderer& meshRenderer = addComponent<MeshRenderer>();
-                    meshRenderer.changeMaterial(material);
-                    meshRenderer.changeMesh(mesh);
+                    /*meshRenderer.changeMaterial(material);
+                    meshRenderer.changeMesh(mesh);*/
                 }
                 if (ImGui::BeginMenu("Physics")) {
                     if (ImGui::BeginMenu("Bodies")) {
@@ -191,7 +192,7 @@ namespace TechEngine {
 
         Entity firstEntity = m_selectedEntities.front();
         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
-        std::vector<ComponentTypeID> componentsToDraw = scene.getCommonComponents(m_selectedEntities);
+        std::vector<ComponentTypeID> componentsToDraw = scene.getInternal()->getCommonComponents(m_selectedEntities);
 
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<Transform>::get()) != componentsToDraw.end()) {
             drawComponent<Transform>(firstEntity, "Transform", [this](auto& component) {

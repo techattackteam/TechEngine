@@ -5,7 +5,7 @@
 #include <string>
 #include <map>
 #include <unordered_map>
-#include "core/CoreExportDll.hpp"
+#include "TechEngine/core/core/CoreExportDLL.hpp"
 
 namespace TechEngine {
     class CORE_DLL StreamReader {

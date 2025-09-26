@@ -1,5 +1,5 @@
 #include "common/include/scripting/Script.hpp"
-#include "script/Script.hpp"
+#include "../../../../core/include/TechEngine/core/script/Script.hpp"
 
 namespace TechEngineAPI {
     Script::Script() {

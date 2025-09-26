@@ -5,7 +5,11 @@ add_library(TechEngineServer SHARED ${ENGINE_SERVER_SRC} ${ENGINE_SERVER_HEADERS
 
 target_compile_definitions(TechEngineServer PRIVATE TECH_ENGINE_SERVER_EXPORT TECH_ENGINE_CORE_EXPORT)
 
-target_include_directories(TechEngineServer PUBLIC src)
+target_include_directories(TechEngineServer
+        PUBLIC
+        include
+        src
+)
 
 target_link_libraries(TechEngineServer PUBLIC TechEngineCore)
 
@@ -14,11 +18,15 @@ if (WIN32) # WINDOWS
     set(OUTPUT "${PROJECT_SOURCE_DIR}/bin/engine/server")
 
     # Set target property to store the dll's path for editor and runtime to copy
+
     if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+        set_target_properties(TechEngineServer PROPERTIES SERVER_LIB "${OUTPUT}/debug")
         set_target_properties(TechEngineServer PROPERTIES SERVER_DLL "${OUTPUT}/debug/TechEngineServer.dll")
     elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
+        set_target_properties(TechEngineServer PROPERTIES SERVER_LIB "${OUTPUT}/relwithdebinfo")
         set_target_properties(TechEngineServer PROPERTIES SERVER_DLL "${OUTPUT}/relwithdebinfo/TechEngineServer.dll")
     elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+        set_target_properties(TechEngineServer PROPERTIES SERVER_LIB "${OUTPUT}/release")
         set_target_properties(TechEngineServer PROPERTIES SERVER_DLL "${OUTPUT}/release/TechEngineServer.dll")
     else ()
         message(FATAL_ERROR "CMAKE_BUILD_TYPE is not set or is not recognized. Defaulting to Release.")
@@ -41,4 +49,13 @@ if (WIN32) # WINDOWS
             RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${OUTPUT}/relwithdebinfo"
     )
 endif ()
+
+# Copy the include files to the output directory
+add_custom_command(TARGET TechEngineServer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${PROJECT_SOURCE_DIR}/engine/server/include"
+        "${OUTPUT}/include"
+)
+
+
 

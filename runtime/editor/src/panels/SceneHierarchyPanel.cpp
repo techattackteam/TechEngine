@@ -1,7 +1,7 @@
 #include "SceneHierarchyPanel.hpp"
 
 #include "imgui_internal.h"
-#include "components/ComponentsFactory.hpp"
+#include "../../../../engine/core/include/TechEngine/core/components/ComponentsFactory.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "scene/ScenesManager.hpp"

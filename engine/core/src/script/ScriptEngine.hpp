@@ -27,7 +27,7 @@ namespace TechEngine {
 
         std::function<spdlog::sinks::dist_sink_mt*(SystemsRegistry*)> m_APIEntryPoint = nullptr;
 
-        std::function<void()> m_executeExternalEventSystem = nullptr;
+        //std::function<void()> m_executeExternalEventSystem = nullptr;
 
     public:
         inline static ScriptEngine* instance = nullptr;
@@ -56,12 +56,10 @@ namespace TechEngine {
 
         void deleteScripts();
 
+        SystemsRegistry& getSystemsRegistry();
+
         static void setEntryPoint(std::function<spdlog::sinks::dist_sink_mt*(SystemsRegistry*)> entryPoint) {
             instance->m_APIEntryPoint = std::move(entryPoint);
-        }
-
-        static void setExecuteExternalEventSystem(std::function<void()> executeExternalEventSystem) {
-            instance->m_executeExternalEventSystem = std::move(executeExternalEventSystem);
         }
     };
 }

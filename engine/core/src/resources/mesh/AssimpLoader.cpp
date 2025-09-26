@@ -2,9 +2,8 @@
 
 
 #include "core/Logger.hpp"
-#include "resources/material/MaterialManager.hpp"
+#include "../../../include/TechEngine/core/resources/material/MaterialManager.hpp"
 #include "files/FileUtils.hpp"
-#include "Mesh.hpp"
 
 #include "assimp/Importer.hpp"
 #include <filesystem>

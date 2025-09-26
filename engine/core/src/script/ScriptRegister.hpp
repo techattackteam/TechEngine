@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/CoreExportDll.hpp"
+#include "TechEngine/core/core/CoreExportDLL.hpp"
 #include <list>
 #include <string>
 
@@ -17,7 +17,6 @@ namespace TechEngine {
 
     public:
         ScriptRegister();
-
 
         ~ScriptRegister();
 

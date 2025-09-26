@@ -3,10 +3,10 @@
 #include "systems/SystemsRegistry.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 #include "Key.hpp"
-#include "events/input/KeyHoldEvent.hpp"
-#include "events/input/KeyPressedEvent.hpp"
-#include "events/input/KeyReleasedEvent.hpp"
-#include "events/input/MouseMoveEvent.hpp"
+#include "TechEngine/client/events/input/KeyHoldEvent.hpp"
+#include "TechEngine/client/events/input/KeyPressedEvent.hpp"
+#include "TechEngine/client/events/input/KeyReleasedEvent.hpp"
+#include "TechEngine/client/events/input/MouseMoveEvent.hpp"
 
 namespace TechEngine {
     Mouse::Mouse(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {

@@ -1,7 +1,7 @@
 #include "SceneView.hpp"
 
-#include "components/Components.hpp"
-#include "components/ComponentsFactory.hpp"
+#include "TechEngine/core/components/Components.hpp"
+#include "../../../../engine/core/include/TechEngine/core/components/ComponentsFactory.hpp"
 #include "renderer/FrameBuffer.hpp"
 #include "renderer/OldRenderer.hpp"
 #include "renderer/Renderer.hpp"

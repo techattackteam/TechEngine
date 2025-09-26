@@ -1,16 +1,18 @@
 #include "Renderer.hpp"
 
+#include <future>
+
 #include "DrawCommand.hpp"
-#include "components/Components.hpp"
+#include "TechEngine/core/components/Components.hpp"
 #include "events/resourcersManager/materials/MaterialCreatedEvent.hpp"
 #include "events/resourcersManager/materials/MaterialDeletedEvent.hpp"
 #include "events/resourcersManager/meshManager/MeshCreatedEvent.hpp"
 #include "events/resourcersManager/meshManager/MeshDeletedEvent.hpp"
 #include "profiling/ProfiledScope.hpp"
 #include "resources/ResourcesManager.hpp"
-#include "resources/material/Material.hpp"
-#include "resources/mesh/Vertex.hpp"
-#include "scene/Scene.hpp"
+#include "TechEngine/core/resources/material/Material.hpp"
+#include "TechEngine/core/resources/mesh/Vertex.hpp"
+#include "TechEngine/core/scene/Scene.hpp"
 #include "scene/ScenesManager.hpp"
 #include "ui/PanelWidget.hpp"
 #include "ui/WidgetsRegistry.hpp"
@@ -50,6 +52,8 @@ namespace TechEngine {
         m_vertexArrays[BufferLines].addNewLinesBuffer(m_vertexBuffers[BufferLines]);
 
         m_uiRenderer.init();
+
+
         EventDispatcher& eventDispatcher = m_systemsRegistry.getSystem<EventDispatcher>();
 
         eventDispatcher.subscribe<MeshCreatedEvent>([this](const std::shared_ptr<Event>& event) {
@@ -72,6 +76,52 @@ namespace TechEngine {
     // Might upload data to GPU or prepare some resources
     void Renderer::onStart() {
         System::onStart();
+        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+
+        scene.runSystem<Transform, MeshRenderer>([&](Transform& transform, MeshRenderer& meshRenderer) {
+            m_renderables.emplace_back(&transform, &meshRenderer);
+        });
+        std::sort(m_renderables.begin(), m_renderables.end());
+
+        std::vector<DrawCommand> commands;
+        std::vector<ObjectData> objectData;
+
+        //std::map<Mesh*, std::vector<std::tuple<Transform*, uint32_t>>> groupedInstances; // Mesh to list of (Transform, MaterialID)
+
+        commands.reserve(128);
+        Mesh* mesh = m_renderables[0].meshRenderer->mesh;
+        DrawCommand cmd = {};
+
+        cmd.firstIndex = mesh->firstIndex;
+        cmd.count = mesh->m_indices.size();
+        cmd.baseVertex = mesh->baseVertex;
+
+        cmd.baseInstance = 0;
+        cmd.instanceCount = 0;
+
+        uint32_t i = 0;
+        for (const auto& renderable: m_renderables) {
+            if (renderable.meshRenderer->mesh != mesh) {
+                commands.push_back(cmd);
+                mesh = renderable.meshRenderer->mesh;
+                cmd.count = mesh->m_indices.size();
+                cmd.firstIndex = mesh->firstIndex;
+                cmd.baseVertex = mesh->baseVertex;
+
+                cmd.baseInstance = i;
+                i++;
+            }
+            cmd.instanceCount++;
+        }
+        if (cmd.instanceCount > 0) {
+            commands.push_back(cmd);
+        }
+
+        if (!commands.empty()) {
+            m_drawCommandBuffer.addData(commands.data(), commands.size() * sizeof(DrawCommand));
+        }
+
+        this->m_commandToDraw = commands.size();
     }
 
     void Renderer::onUpdate() {
@@ -210,58 +260,39 @@ namespace TechEngine {
     }
 
     void Renderer::populateDataBuffers(Scene& scene) {
-        std::vector<DrawCommand> commands;
-        std::vector<ObjectData> objectData;
+        Profiler& profiler = m_systemsRegistry.getSystem<Profiler>();
+        ProfiledScope scope(profiler, "Renderer: PopulateDataBuffers");
+        size_t totalSize = m_renderables.size();
+        if (totalSize == 0) {
+            return;
+        }
+        std::vector<ObjectData> objectData = std::vector<ObjectData>(totalSize);
 
-        // This variable will track our position in the global objectData buffer.
-        std::map<Mesh*, std::vector<std::tuple<Transform*, uint32_t>>> groupedInstances; // Mesh to list of (Transform, MaterialID)
-        uint32_t globalInstanceOffset = 0;
+        uint32_t numThreads = std::thread::hardware_concurrency();
+        std::vector<std::thread> threads;
+        threads.reserve(numThreads);
+        size_t chunkSize = (totalSize + numThreads - 1) / numThreads;
+        for (size_t i = 0; i < numThreads; i++) {
+            size_t start = i * chunkSize;
+            size_t end = std::min(start + chunkSize, totalSize);
 
-        scene.runSystem<Transform, MeshRenderer>([&](Transform& transform, MeshRenderer& meshRenderer) {
-            groupedInstances[meshRenderer.mesh].emplace_back(&transform, meshRenderer.material->getGpuID());
-        });
-        for (const auto& pair: groupedInstances) {
-            Mesh* mesh = pair.first;
-            const std::vector<std::tuple<Transform*, uint32_t>>& properties = pair.second;
-
-            if (properties.empty()) {
+            if (start >= end) {
                 continue;
             }
-
-            // --- Create ONE DrawCommand for the entire group ---
-            DrawCommand cmd = {};
-            cmd.instanceCount = properties.size(); // e.g., 1000 for the cubes
-            cmd.count = mesh->m_indices.size();
-
-            // Assuming your Mesh object now stores its location in the mega-buffer
-            cmd.firstIndex = mesh->firstIndex;
-            cmd.baseVertex = mesh->baseVertex;
-
-            // CRITICAL: This command's instance data starts at the current
-            // end of the objectData buffer.
-            cmd.baseInstance = globalInstanceOffset;
-            commands.push_back(cmd);
-
-            // --- Add all object data for this group ---
-            for (int i = 0; i < properties.size(); i++) {
-                Transform* transform = std::get<0>(properties[i]);
-                ObjectData data;
-                data.modelMatrix = transform->getModelMatrix();
-                data.materialIndex = std::get<1>(properties[i]);
-                objectData.push_back(data);
+            threads.emplace_back([this, &objectData, start, end]() {
+                for (size_t j = start; j < end; j++) {
+                    const Renderable& renderable = m_renderables[j];
+                    objectData[j].modelMatrix = renderable.transform->getModelMatrix();
+                    objectData[j].materialIndex = renderable.meshRenderer->material->getGpuID();
+                }
+            });
+        }
+        for (auto& thread: threads) {
+            if (thread.joinable()) {
+                thread.join();
             }
-
-            // --- Update the global offset for the next group ---
-            globalInstanceOffset += properties.size();
         }
-
-        if (!commands.empty()) {
-            m_drawCommandBuffer.addData(commands.data(), commands.size() * sizeof(DrawCommand));
-            m_objectDataBuffer.addData(objectData.data(), objectData.size() * sizeof(ObjectData));
-        }
-
-        // Store the number of commands to draw
-        this->m_commandToDraw = commands.size();
+        m_objectDataBuffer.addData(objectData.data(), objectData.size() * sizeof(ObjectData));
     }
 
     void Renderer::geometryPass(glm::mat4 viewMatrix, glm::mat4 projectionMatrix) {

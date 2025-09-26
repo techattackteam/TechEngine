@@ -1,7 +1,7 @@
 #include "UIRenderer.hpp"
 
 #include "Font.hpp"
-#include "components/Archetype.hpp"
+#include "../../../../core/include/TechEngine/core/components/Archetype.hpp"
 #include "project/Project.hpp"
 #include "renderer/ErrorCatcher.hpp"
 #include "renderer/VertexBuffer.hpp"

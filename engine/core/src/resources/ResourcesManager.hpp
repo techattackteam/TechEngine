@@ -1,8 +1,8 @@
 #pragma once
 
-#include "material/MaterialManager.hpp"
+#include "TechEngine/core/resources/material/MaterialManager.hpp"
 #include "mesh/AssimpLoader.hpp"
-#include "mesh/MeshManager.hpp"
+#include "TechEngine/core/resources/mesh/MeshManager.hpp"
 
 namespace TechEngine {
     enum class AppType;
@@ -10,11 +10,12 @@ namespace TechEngine {
     class CORE_DLL ResourcesManager : public System {
     private:
         SystemsRegistry& m_systemsRegistry;
-        MaterialManager m_materialManager;
-        MeshManager m_meshManager;
         AssimpLoader m_assimpLoader;
 
     public:
+        MeshManager m_meshManager;
+        MaterialManager m_materialManager;
+
         explicit ResourcesManager(SystemsRegistry& systemsRegistry);
 
         void init(AppType appType);

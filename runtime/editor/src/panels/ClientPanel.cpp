@@ -1,10 +1,10 @@
 #include "ClientPanel.hpp"
 #include "LoggerPanel.hpp"
-#include "events/input/KeyHoldEvent.hpp"
-#include "events/input/KeyPressedEvent.hpp"
-#include "events/input/KeyReleasedEvent.hpp"
-#include "events/input/MouseMoveEvent.hpp"
-#include "events/input/MouseScrollEvent.hpp"
+#include "TechEngine/client/events/input/KeyHoldEvent.hpp"
+#include "TechEngine/client/events/input/KeyPressedEvent.hpp"
+#include "TechEngine/client/events/input/KeyReleasedEvent.hpp"
+#include "TechEngine/client/events/input/MouseMoveEvent.hpp"
+#include "TechEngine/client/events/input/MouseScrollEvent.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngine {

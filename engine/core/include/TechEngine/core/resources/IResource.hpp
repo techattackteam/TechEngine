@@ -1,8 +1,9 @@
 #pragma once
 
-#include "core/CoreExportDLL.hpp"
-#include "core/UUID.hpp"
+#include "TechEngine/core/core/CoreExportDLL.hpp"
+#include "TechEngine/core/core/UUID.hpp"
 
+//TODO: Make this private
 namespace TechEngine {
     class CORE_DLL IResource {
     protected:

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vertex.hpp"
+#include "../../../include/TechEngine/core/resources/mesh/Vertex.hpp"
 
 #include "serialization/FileStream.hpp"
 

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Scene.hpp"
+#include "TechEngine/core/scene/Scene.hpp"
 #include "SceneSerializer.hpp"
+#include "systems/System.hpp"
 
 #include <string>
 #include <filesystem>

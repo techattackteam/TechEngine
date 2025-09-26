@@ -1,8 +1,8 @@
 #include "SceneSerializer.hpp"
 
-#include "Scene.hpp"
-#include "components/ComponentsFactory.hpp"
-#include "core/UUID.hpp"
+#include "SceneInternal.hpp"
+#include "TechEngine/core/components/ComponentsFactory.hpp"
+#include "TechEngine/core/core/UUID.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "utils/YAMLUtils.hpp"
 
@@ -48,7 +48,7 @@ namespace TechEngine {
 
     void SceneSerializer::deserialize(const std::filesystem::path& path) const {
         YAML::Node node = YAML::LoadFile(path.string());
-        m_scene.setName(node["Name"].as<std::string>());
+        m_scene.m_internal->setName(node["Name"].as<std::string>());
         for (const YAML::Node& archetypeNode: node["Archetypes"]) {
             for (const YAML::Node& entityNode: archetypeNode["Entities"]) {
                 Entity entity = entityNode["ID"].as<Entity>();
@@ -249,8 +249,8 @@ namespace TechEngine {
 
     void MeshRenderer::serialize(const MeshRenderer& meshRenderer, YAML::Emitter& out) {
         out << YAML::Key << "MeshRenderer" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "Mesh" << YAML::Value << meshRenderer.mesh->getName();
-        out << YAML::Key << "Material" << YAML::Value << meshRenderer.material->getName();
+        /*out << YAML::Key << "Mesh" << YAML::Value << meshRenderer.mesh->getName();
+        out << YAML::Key << "Material" << YAML::Value << meshRenderer.material->getName();*/
         out << YAML::EndMap;
     }
 
@@ -260,7 +260,6 @@ namespace TechEngine {
         Mesh& mesh = resourcesManager.getMesh(meshName);
         Material& material = resourcesManager.getMaterial(materialName);
         MeshRenderer meshRenderer(&mesh, &material);
-        //meshRenderer.paintMesh();
         return meshRenderer;
     }
 #pragma region Physics Components

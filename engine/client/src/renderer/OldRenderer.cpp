@@ -10,11 +10,11 @@
 #include "Line.hpp"
 #include "VertexArray.hpp"
 #include "VertexBuffer.hpp"
-#include "components/ComponentsFactory.hpp"
+#include "../../../core/include/TechEngine/core/components/ComponentsFactory.hpp"
 #include "core/Logger.hpp"
 #include "resources/ResourcesManager.hpp"
-#include "resources/material/Material.hpp"
-#include "resources/mesh/Vertex.hpp"
+#include "../../../core/include/TechEngine/core/resources/material/Material.hpp"
+#include "../../../core/include/TechEngine/core/resources/mesh/Vertex.hpp"
 #include "scene/ScenesManager.hpp"
 #include "systems/SystemsRegistry.hpp"
 #include "ui/PanelWidget.hpp"
@@ -117,7 +117,7 @@ namespace TechEngine {
         shadersManager.getActiveShader()->setUniformMatrix4f("model", model);
         flushMeshData(&MeshRenderer);
         if (!shadow) {
-            Material* material = MeshRenderer.material;
+            //Material* material = MeshRenderer.material;
             /*
             shadersManager.getActiveShader()->setUniformVec3("material.ambient", material.getAmbient());
             shadersManager.getActiveShader()->setUniformVec3("material.diffuse", material.getDiffuse());
@@ -134,7 +134,7 @@ namespace TechEngine {
         vertexBuffers[BufferGameObjects]->bind();
         vertexArrays[BufferGameObjects]->bind();
         indicesBuffers[BufferGameObjects]->bind();
-        glDrawElements(GL_TRIANGLES, MeshRenderer.getIndices().size(), GL_UNSIGNED_INT, 0);
+        //glDrawElements(GL_TRIANGLES, MeshRenderer.getIndices().size(), GL_UNSIGNED_INT, 0);
     }
 
     void OldRenderer::renderGeometryPass(Scene& scene, bool shadow) {
@@ -354,11 +354,11 @@ namespace TechEngine {
 
         loadMaterials();
         m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().runSystem<Transform, MeshRenderer>([&](Transform& transform, MeshRenderer& meshRenderer) {
-            groupedInstances[meshRenderer.mesh].push_back(&transform);
-            if (materialToIDMap.find(meshRenderer.material) == materialToIDMap.end()) {
-                uint32_t newID = materialToIDMap.size();
-                materialToIDMap[meshRenderer.material] = newID;
-            }
+            //groupedInstances[meshRenderer.mesh].push_back(&transform);
+            //if (materialToIDMap.find(meshRenderer.material) == materialToIDMap.end()) {
+            //    uint32_t newID = materialToIDMap.size();
+            //    materialToIDMap[meshRenderer.material] = newID;
+            //}
         });
         // Iterate over each group (e.g., all trees, then all rocks)
         for (const auto& pair: groupedInstances) {
@@ -453,8 +453,8 @@ namespace TechEngine {
     }
 
     void OldRenderer::flushMeshData(MeshRenderer* MeshRenderer) {
-        vertexBuffers[BufferGameObjects]->addData(MeshRenderer->getVertices().data(), MeshRenderer->getVertices().size() * sizeof(Vertex), 0);
-        indicesBuffers[BufferGameObjects]->addData(MeshRenderer->getIndices().data(), 0, MeshRenderer->getIndices().size() * sizeof(uint32_t));
+        //vertexBuffers[BufferGameObjects]->addData(MeshRenderer->getVertices().data(), MeshRenderer->getVertices().size() * sizeof(Vertex), 0);
+        //indicesBuffers[BufferGameObjects]->addData(MeshRenderer->getIndices().data(), 0, MeshRenderer->getIndices().size() * sizeof(uint32_t));
     }
 
     void OldRenderer::flushLinesData() {

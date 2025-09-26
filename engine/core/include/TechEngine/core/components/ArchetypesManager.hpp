@@ -1,7 +1,9 @@
 #pragma once
-#include "core/CoreExportDLL.hpp"
-#include "Archetype.hpp"
-#include "Query.hpp"
+#include <shared_mutex>
+
+#include "TechEngine/core/core/CoreExportDLL.hpp"
+#include "TechEngine/core/components/Archetype.hpp"
+#include "TechEngine/core/components/Query.hpp"
 
 namespace TechEngine {
     class CORE_DLL ArchetypesManager {
@@ -22,7 +24,7 @@ namespace TechEngine {
 
         ArchetypeID m_lastArchetypeID = 0;
         Entity m_lastEntityID = 0;
-
+        mutable std::shared_mutex m_mutex;
     public:
         ArchetypesManager();
 

@@ -1,9 +1,12 @@
 #pragma once
 
-#include "Vertex.hpp"
-#include "resources/IResource.hpp"
+#include "TechEngine/core/resources/mesh/Vertex.hpp"
+#include "TechEngine/core/resources/IResource.hpp"
 
 namespace TechEngine {
+    class StreamReader;
+    class StreamWriter;
+
     class CORE_DLL Mesh : public IResource {
     public:
         std::string m_name;
@@ -25,15 +28,9 @@ namespace TechEngine {
 
         void addVertices(const std::vector<Vertex>& vector, const std::vector<int>& indices);
 
-        static void Serialize(StreamWriter* writer, const Mesh& mesh) {
-            writer->writeArray(mesh.m_vertices);
-            writer->writeArray(mesh.m_indices);
-        }
+        static void Serialize(StreamWriter* writer, const Mesh& mesh);
 
-        static void Deserialize(StreamReader* reader, Mesh& mesh) {
-            reader->readArray(mesh.m_vertices);
-            reader->readArray(mesh.m_indices);
-        }
+        static void Deserialize(StreamReader* reader, Mesh& mesh);
 
         const std::string& getName() const;
     };

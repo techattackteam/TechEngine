@@ -6,7 +6,7 @@
 #include <dbghelp.h>
 #include "events/scripts/ScriptCrashEvent.hpp"
 #include "eventSystem/EventDispatcher.hpp"
-#include "script/Script.hpp"
+#include "../../include/TechEngine/core/script/Script.hpp"
 #pragma comment(lib, "Dbghelp.lib")
 
 namespace TechEngine {

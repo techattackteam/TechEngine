@@ -1,13 +1,14 @@
 #pragma once
 
-#include "Material.hpp"
+#include "TechEngine/core/resources/material/Material.hpp"
 
 #include <filesystem>
 #include <unordered_map>
 
-#include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
+    class SystemsRegistry;
+
     class CORE_DLL MaterialManager {
     public:
         inline static const std::string DEFAULT_MATERIAL_NAME = "Default";

@@ -3,11 +3,14 @@
 #include "events/scene/SceneLoadEvent.hpp"
 #include "events/scene/SceneSaveEvent.hpp"
 #include "eventSystem/EventDispatcher.hpp"
+
 #include "files/FileUtils.hpp"
 #include "project/Project.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "physics/PhysicsEngine.hpp"
-#include "systems/SystemsRegistry.hpp"
+
+#include "scene/SceneInternal.hpp"
+
 #include "utils/YAMLUtils.hpp"
 
 namespace TechEngine {
@@ -44,12 +47,12 @@ namespace TechEngine {
     }
 
     void ScenesManager::createScene(const std::string& name, const std::filesystem::path& path) {
-        m_activeScene.setName(name);
+        m_activeScene.getInternal()->setName(name);
         ResourcesManager& resourcesManager = m_systemsRegistry.getSystem<ResourcesManager>();
         Entity mainCamera = m_activeScene.createEntity("Main Camera");
         m_activeScene.addComponent(mainCamera, Camera());
         Entity cube = m_activeScene.createEntity("Cube");
-        m_activeScene.addComponent(cube, MeshRenderer(&resourcesManager.getDefaultMesh(), &resourcesManager.getDefaultMaterial()));
+        m_activeScene.addComponent(cube, MeshRenderer(/*&resourcesManager.getDefaultMesh(), &resourcesManager.getDefaultMaterial()*/));
         registerScene(name, path);
     }
 

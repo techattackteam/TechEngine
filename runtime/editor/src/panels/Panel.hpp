@@ -7,7 +7,7 @@
 #include <vector>
 #include <glm/vec2.hpp>
 
-#include "core/UUID.hpp"
+#include "../../../../engine/core/include/TechEngine/core/core/UUID.hpp"
 
 
 namespace TechEngine {

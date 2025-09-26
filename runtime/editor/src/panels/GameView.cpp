@@ -1,7 +1,7 @@
 #include "GameView.hpp"
 
-#include "events/input/KeyPressedEvent.hpp"
-#include "events/input/MouseMoveEvent.hpp"
+#include "TechEngine/client/events/input/KeyPressedEvent.hpp"
+#include "TechEngine/client/events/input/MouseMoveEvent.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 #include "input/Input.hpp"
 #include "renderer/FrameBuffer.hpp"
