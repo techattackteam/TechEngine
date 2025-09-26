@@ -15,7 +15,7 @@
 
 #include "scene/Scene.hpp"
 
-#include "components/Components.hpp"
+#include "../../../../core/include/components/Components.hpp"
 #include "components/ComponentsFactory.hpp"
 #include "profiling/ProfiledScope.hpp"
 #include "resources/ResourcesManager.hpp"

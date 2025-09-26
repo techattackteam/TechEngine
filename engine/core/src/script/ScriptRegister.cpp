@@ -2,7 +2,13 @@
 
 #include "core/Logger.hpp"
 #include "script/ScriptEngine.hpp"
+#include "scene/ScenesManager.hpp"
+#include "systems/SystemsRegistry.hpp"
+#include "TechEngine/core/script/Script.hpp"
+
 #include <iostream>
+
+#include "resources/ResourcesManager.hpp"
 
 namespace TechEngine {
     ScriptRegister::ScriptRegister() {
@@ -27,5 +33,8 @@ namespace TechEngine {
 
     void ScriptRegister::registerScript(Script* script) {
         getInstance()->scriptEngine->registerScript(script);
+        script->m_scene = &getInstance()->scriptEngine->getSystemsRegistry().getSystem<ScenesManager>().getActiveScene();
+        script->m_materialManager = &getInstance()->scriptEngine->getSystemsRegistry().getSystem<ResourcesManager>().m_materialManager;
+        script->m_meshManager = &getInstance()->scriptEngine->getSystemsRegistry().getSystem<ResourcesManager>().m_meshManager;
     }
 }

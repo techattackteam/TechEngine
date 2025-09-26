@@ -42,17 +42,18 @@ if (WIN32) # WINDOWS
             RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${TECH_ENGINE_API_OUTPUT_DIRECTORY}/releaseWithDebug"
     )
 endif ()
+
 target_include_directories(ClientScripts PUBLIC
-        "../../resources/client/TechEngineAPI"
-        "../../resources/common/TechEngineAPI")
+        "../../resources/client/include"
+        "../../resources/core/include")
 
 # Set variable for TechEngineAPILib
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/TechEngineAPI/client/lib/debug/TechEngineAPIClient.lib")
+    set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/lib/TechEngineClient.lib")
 elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
-    set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/TechEngineAPI/client/lib/relwithdebinfo/TechEngineAPIClient.lib")
+    set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/lib/TechEngineClient.lib")
 elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
-    set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/TechEngineAPI/client/lib/release/TechEngineAPIClient.lib")
+    set(TECH_ENGINE_API_LIB "${CMAKE_SOURCE_DIR}/../resources/client/lib/TechEngineClient.lib")
 else ()
     message(FATAL_ERROR "CMAKE_BUILD_TYPE is not set or is not recognized. Defaulting to Release.")
 endif ()

@@ -1,6 +1,6 @@
 #include "common/include/components/physics/triggers/BoxTrigger.hpp"
 
-#include "components/Components.hpp"
+#include "../../../../../../core/include/components/Components.hpp"
 #include "scene/Scene.hpp"
 
 

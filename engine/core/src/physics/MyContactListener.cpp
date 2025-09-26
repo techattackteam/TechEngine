@@ -5,7 +5,7 @@
 
 #include "core/Logger.hpp"
 #include "eventSystem/EventDispatcher.hpp"
-#include "scene/Scene.hpp"
+#include "TechEngine/core/scene/Scene.hpp"
 #include "scene/ScenesManager.hpp"
 
 #include "events/physics/OnTriggerEnter.hpp"

@@ -1,16 +1,24 @@
 #pragma once
 
-#include "components/ArchetypesManager.hpp"
-#include "components/Components.hpp"
+#include "TechEngine/core/components/ArchetypesManager.hpp"
+#include "TechEngine/core/components/Components.hpp"
 
 namespace TechEngine {
     class CORE_DLL Scene {
     private:
-        ArchetypesManager m_archetypesManager;
-        std::string m_name = "Untitled";
+        class Internal;
+        friend class Internal;
         friend class SceneSerializer;
 
-    public:
+        std::unique_ptr<Internal> m_internal;
+
+        ArchetypesManager m_archetypesManager;
+
+    public :
+        Scene();
+
+        ~Scene();
+
         Entity createEntity(const std::string& name);
 
         void destroyEntity(Entity entity);
@@ -35,8 +43,6 @@ namespace TechEngine {
             return m_archetypesManager.hasComponent<T>(entity);
         }
 
-        std::vector<ComponentTypeID> getCommonComponents(const std::vector<Entity>& entities);
-
         Entity getEntity(const Tag& tag);
 
         Entity getEntity(const std::string& uuid);
@@ -46,12 +52,15 @@ namespace TechEngine {
             m_archetypesManager.query<Components...>().each(function);
         }
 
-        void clear();
+        template<typename... Components, typename Function>
+        void runParallelSystem(Function function) {
+            m_archetypesManager.query<Components...>().parallelEach(function);
+        }
 
-        void setName(const std::string& name);
+        void clear();
 
         const std::string& getName() const;
 
-        int getTotalEntities();
+        std::unique_ptr<Internal>& getInternal();
     };
 }

@@ -3,8 +3,8 @@
 #include "WidgetsRegistry.hpp"
 #include "core/Logger.hpp"
 #include "eventSystem/EventDispatcher.hpp"
-#include "events/ui/MouseLeftWidgetRectEvent.hpp"
-#include "events/ui/MouseEnteredWidgetRectEvent.hpp"
+#include "TechEngine/client/events/ui/MouseLeftWidgetRectEvent.hpp"
+#include "TechEngine/client/events/ui/MouseEnteredWidgetRectEvent.hpp"
 
 namespace TechEngine {
     Widget::Widget() {

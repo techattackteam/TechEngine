@@ -1,5 +1,5 @@
 #pragma once
-#include "Components.hpp"
+#include "TechEngine/core/components/Components.hpp"
 #include "physics/PhysicsEngine.hpp"
 
 namespace TechEngine {

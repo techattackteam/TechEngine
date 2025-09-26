@@ -2,10 +2,10 @@
 
 #include "systems/SystemsRegistry.hpp"
 #include "eventSystem/EventDispatcher.hpp"
-#include "events/input/MouseScrollEvent.hpp"
-#include "events/input/KeyHoldEvent.hpp"
-#include "events/input/KeyPressedEvent.hpp"
-#include "events/input/KeyReleasedEvent.hpp"
+#include "TechEngine/client/events/input/MouseScrollEvent.hpp"
+#include "TechEngine/client/events/input/KeyHoldEvent.hpp"
+#include "TechEngine/client/events/input/KeyPressedEvent.hpp"
+#include "TechEngine/client/events/input/KeyReleasedEvent.hpp"
 
 #include <glfw/glfw3.h>
 

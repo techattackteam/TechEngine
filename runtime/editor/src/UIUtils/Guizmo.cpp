@@ -3,7 +3,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 
-#include "components/Archetype.hpp"
+#include "../../../../engine/core/include/TechEngine/core/components/Archetype.hpp"
 #include "physics/PhysicsEngine.hpp"
 #include "scene/ScenesManager.hpp"
 #include "systems/SystemsRegistry.hpp"

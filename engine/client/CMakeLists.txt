@@ -1,14 +1,25 @@
 file(GLOB_RECURSE ENGINE_CLIENT_SRC "src/*.cpp")
-file(GLOB_RECURSE ENGINE_CLIENT_HEADERS "src/*.hpp")
+file(GLOB_RECURSE ENGINE_CLIENT_PUBLIC_HEADERS "include/**/*.hpp")
+file(GLOB_RECURSE ENGINE_CLIENT_PRIVATE_HEADERS "src/*.hpp")
 
 find_package(glew REQUIRED)
 find_package(glfw REQUIRED)
 
-add_library(TechEngineClient SHARED ${ENGINE_CLIENT_SRC} ${ENGINE_CLIENT_HEADERS} "src/renderer/ui/stb_image.h" "src/renderer/ui/stb_truetype.h")
+add_library(TechEngineClient SHARED
+        ${ENGINE_CLIENT_SRC}
+        ${ENGINE_CLIENT_HEADERS}
+        "src/renderer/ui/stb_image.h"
+        "src/renderer/ui/stb_truetype.h")
 
+# Define export macros (Client and Core need to be exported)
 target_compile_definitions(TechEngineClient PRIVATE TECH_ENGINE_CLIENT_EXPORT TECH_ENGINE_CORE_EXPORT)
 
-target_include_directories(TechEngineClient PUBLIC src)
+# Include directories
+target_include_directories(TechEngineClient
+        PUBLIC
+        include
+        src
+)
 
 target_link_libraries(TechEngineClient PUBLIC TechEngineCore glew glfw)
 
@@ -18,10 +29,13 @@ if (WIN32) # WINDOWS
 
     # Set target property to store the dll's path for editor and runtime to copy
     if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+        set_target_properties(TechEngineClient PROPERTIES CLIENT_LIB "${OUTPUT}/debug")
         set_target_properties(TechEngineClient PROPERTIES CLIENT_DLL "${OUTPUT}/debug/TechEngineClient.dll")
     elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
+        set_target_properties(TechEngineClient PROPERTIES CLIENT_LIB "${OUTPUT}/relwithdebinfo")
         set_target_properties(TechEngineClient PROPERTIES CLIENT_DLL "${OUTPUT}/relwithdebinfo/TechEngineClient.dll")
     elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+        set_target_properties(TechEngineClient PROPERTIES CLIENT_LIB "${OUTPUT}/release")
         set_target_properties(TechEngineClient PROPERTIES CLIENT_DLL "${OUTPUT}/release/TechEngineClient.dll")
     else ()
         message(FATAL_ERROR "CMAKE_BUILD_TYPE is not set or is not recognized. Defaulting to Release.")
@@ -51,3 +65,10 @@ if (WIN32) # WINDOWS
             "${GLFW_DLL}" "${OUTPUT}/$<CONFIG>"
     )
 endif ()
+
+# Copy the include files to the output directory
+add_custom_command(TARGET TechEngineClient POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${PROJECT_SOURCE_DIR}/engine/client/include"
+        "${OUTPUT}/include"
+)

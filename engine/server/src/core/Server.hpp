@@ -14,7 +14,7 @@ namespace TechEngine {
 
         Server& operator=(const Server&);
 
-        void registerSystems(const std::filesystem::path& rootPath);
+        void registerSystems(const std::filesystem::path& rootPath) override;
 
         void init();
 

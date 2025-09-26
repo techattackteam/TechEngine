@@ -1,4 +1,8 @@
-#include "Mesh.hpp"
+#include "TechEngine/core/resources/mesh/Mesh.hpp"
+#include "TechEngine/core/resources/mesh/Vertex.hpp"
+#include "core/Logger.hpp"
+#include "serialization/StreamReader.hpp"
+#include "serialization/StreamWriter.hpp"
 
 namespace TechEngine {
     Mesh::Mesh(std::string name,
@@ -26,6 +30,16 @@ namespace TechEngine {
         for (int index: indices) {
             this->m_indices.emplace_back(index);
         }
+    }
+
+    void Mesh::Serialize(StreamWriter* writer, const Mesh& mesh) {
+        writer->writeArray(mesh.m_vertices);
+        writer->writeArray(mesh.m_indices);
+    }
+
+    void Mesh::Deserialize(StreamReader* reader, Mesh& mesh) {
+        reader->readArray(mesh.m_vertices);
+        reader->readArray(mesh.m_indices);
     }
 
     const std::string& Mesh::getName() const {

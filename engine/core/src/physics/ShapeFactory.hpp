@@ -1,8 +1,10 @@
 #pragma once
 
-#include "components/Components.hpp"
+#include "../../include/TechEngine/core/components/Components.hpp"
 
+#include <Jolt/Jolt.h>
 #include <Jolt/Physics/Collision/Shape/MutableCompoundShape.h>
+
 
 namespace TechEngine {
     enum class Shape {

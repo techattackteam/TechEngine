@@ -1,12 +1,14 @@
 #pragma once
-#include "Mesh.hpp"
 
+#include "TechEngine/core/resources/mesh/Mesh.hpp"
 
 #include <filesystem>
-#include <string>
+
 
 namespace TechEngine {
-    class MeshManager {
+    class SystemsRegistry;
+
+    class CORE_DLL MeshManager {
     private:
         //TODO: Change to unordered_map for faster access
         std::vector<Mesh> m_meshesBank;

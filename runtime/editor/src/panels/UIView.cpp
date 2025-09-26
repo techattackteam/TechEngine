@@ -6,7 +6,7 @@
 #include "GameView.hpp"
 #include "SceneView.hpp"
 #include "UIEditor.hpp"
-#include "components/ComponentsFactory.hpp"
+#include "../../../../engine/core/include/TechEngine/core/components/ComponentsFactory.hpp"
 #include "renderer/FrameBuffer.hpp"
 #include "renderer/Renderer.hpp"
 #include "ui/Widget.hpp"

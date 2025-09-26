@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/CoreExportDll.hpp"
+#include "CoreExportDLL.hpp"
 
 #include <string>
 #include <unordered_set>

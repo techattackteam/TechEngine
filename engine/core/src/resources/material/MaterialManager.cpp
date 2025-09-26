@@ -1,4 +1,4 @@
-#include "MaterialManager.hpp"
+#include "../../../include/TechEngine/core/resources/material/MaterialManager.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 #include <utils/YAMLUtils.hpp>

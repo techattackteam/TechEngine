@@ -1,4 +1,3 @@
-
 # include all source files from the src directory
 file(GLOB_RECURSE EDITOR_SOURCES "src/*.cpp")
 file(GLOB_RECURSE EDITOR_HEADERS "src/*.hpp")
@@ -6,13 +5,28 @@ file(GLOB_RECURSE EDITOR_HEADERS "src/*.hpp")
 find_package(ImGui REQUIRED)
 find_package(ImGuizmo REQUIRED)
 
-
 # add the executable
 add_executable(TechEngineEditor ${EDITOR_SOURCES} ${EDITOR_HEADERS})
-target_include_directories(TechEngineEditor PUBLIC src)
-target_link_libraries(TechEngineEditor TechEngineApp TechEngineCore TechEngineClient TechEngineServer imgui imguizmo)
-target_compile_definitions(TechEngineEditor PUBLIC TECH_ENGINE_EDITOR)
-target_compile_definitions(TechEngineEditor PUBLIC TECH_ENGINE_CORE_EXPORT)
+
+target_include_directories(TechEngineEditor PRIVATE
+        src
+        "${CMAKE_SOURCE_DIR}/engine/core/include"
+        "${CMAKE_SOURCE_DIR}/engine/core/src"
+        "${CMAKE_SOURCE_DIR}/engine/client/include"
+        "${CMAKE_SOURCE_DIR}/engine/client/src"
+        "${CMAKE_SOURCE_DIR}/engine/server/include"
+        "${CMAKE_SOURCE_DIR}/engine/server/src"
+        "${CMAKE_SOURCE_DIR}/engine/app/src"
+)
+
+# include directories
+target_link_libraries(TechEngineEditor
+        PRIVATE
+        TechEngineApp
+        TechEngineClient
+        TechEngineServer
+        imgui imguizmo
+)
 
 # setup target's output directory
 if (WIN32) # WINDOWS
@@ -39,13 +53,10 @@ endif ()
 if (WIN32) # WINDOWS
     get_target_property(ClientDLL TechEngineClient CLIENT_DLL)
     get_target_property(ServerDLL TechEngineServer SERVER_DLL)
-    get_target_property(Client_API_DLL TechEngineAPIClient CLIENT_API_DLL)
-    get_target_property(SERVER_API_DLL TechEngineAPIServer SERVER_API_DLL)
+
     add_custom_command(TARGET TechEngineEditor POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy ${ClientDLL} $<TARGET_FILE_DIR:TechEngineEditor>
             COMMAND ${CMAKE_COMMAND} -E copy ${ServerDLL} $<TARGET_FILE_DIR:TechEngineEditor>
-            COMMAND ${CMAKE_COMMAND} -E copy ${Client_API_DLL} $<TARGET_FILE_DIR:TechEngineEditor>
-            COMMAND ${CMAKE_COMMAND} -E copy ${SERVER_API_DLL} $<TARGET_FILE_DIR:TechEngineEditor>
     )
 
     # Copy assimp dll to the output directory
@@ -53,12 +64,9 @@ if (WIN32) # WINDOWS
             COMMAND ${CMAKE_COMMAND} -E copy "${GLFW_DLL}" $<TARGET_FILE_DIR:TechEngineEditor>
             COMMAND ${CMAKE_COMMAND} -E copy "${assimp_DLL}" $<TARGET_FILE_DIR:TechEngineEditor>
     )
-endif ()
 
-# Copy runtime to editor
-if (WIN32)
-    add_custom_target(Runtimes ALL DEPENDS TechEngineRuntimeClient TechEngineRuntimeServer
-    )
+    # Copy runtime to editor
+    add_custom_target(Runtimes ALL DEPENDS TechEngineRuntimeClient TechEngineRuntimeServer)
 
     # Add the runtime dependencies to the editor
     add_dependencies(TechEngineEditor Runtimes)
@@ -104,26 +112,36 @@ add_custom_command(TARGET TechEngineEditor POST_BUILD
         $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project
 )
 
-# Copy API folder to project template folder
+# Copy API to project template folder
 if (WIN32)
-    add_dependencies(TechEngineEditor TechEngineAPI)
-
-    get_target_property(API TechEngineAPI API_OUTPUT_DIRECTORY)
-
+    get_target_property(CLIENTLIB TechEngineClient CLIENT_LIB)
     add_custom_command(TARGET TechEngineEditor POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${API}/client
-            $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/client/TechEngineAPI/client
+            ${CLIENTLIB}
+            $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/client/lib
     )
     add_custom_command(TARGET TechEngineEditor POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${API}/common
-            $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/common/TechEngineAPI/common
+            ${PROJECT_SOURCE_DIR}/engine/client/include
+            $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/client/include
+    )
+
+    add_custom_command(TARGET TechEngineEditor POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${PROJECT_SOURCE_DIR}/engine/core/include
+            $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/core/include
+    )
+
+    get_target_property(SERVERLIB TechEngineServer SERVER_LIB)
+    add_custom_command(TARGET TechEngineEditor POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${SERVERLIB}
+            $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/server/lib
     )
     add_custom_command(TARGET TechEngineEditor POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${API}/server
-            $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/server/TechEngineAPI/server
+            ${PROJECT_SOURCE_DIR}/engine/server/include
+            $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/server/include
     )
 endif ()
 

@@ -1,8 +1,9 @@
 #pragma once
-#include "core/CoreExportDLL.hpp"
-#include "ComponentStorage.hpp"
-#include "components/Entity.hpp"
+#include "TechEngine/core/core/CoreExportDLL.hpp"
+#include "TechEngine/core/components/ComponentStorage.hpp"
+#include "TechEngine/core/components/Entity.hpp"
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <span>
 

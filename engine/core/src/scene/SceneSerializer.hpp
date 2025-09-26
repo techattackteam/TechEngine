@@ -1,6 +1,6 @@
 #pragma once
 
-#include "components/Archetype.hpp"
+#include "../../include/TechEngine/core/components/Archetype.hpp"
 #include <filesystem>
 #include <yaml-cpp/emitter.h>
 

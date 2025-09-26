@@ -1,7 +1,7 @@
 #include "InteractableWidget.hpp"
 
 #include "core/Logger.hpp"
-#include "events/ui/MouseClickedInteractableWidgetEvent.hpp"
+#include "TechEngine/client/events/ui/MouseClickedInteractableWidgetEvent.hpp"
 
 namespace TechEngine {
     InteractableWidget::InteractableWidget() : Widget() {

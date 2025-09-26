@@ -1,6 +1,6 @@
-#include "MeshManager.hpp"
+#include "../../../include/TechEngine/core/resources/mesh/MeshManager.hpp"
 
-#include "Mesh.hpp"
+#include "TechEngine/core/resources/mesh/Mesh.hpp"
 #include "AssimpLoader.hpp"
 #include "eventSystem/EventDispatcher.hpp"
 #include "systems/SystemsRegistry.hpp"

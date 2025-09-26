@@ -2,7 +2,7 @@
 
 #include "Panel.hpp"
 #include "systems/SystemsRegistry.hpp"
-#include "components/Components.hpp"
+#include "TechEngine/core/components/Components.hpp"
 #include "scene/ScenesManager.hpp"
 
 #include <imgui_internal.h>

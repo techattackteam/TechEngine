@@ -1,10 +1,19 @@
 #pragma once
-#include "resources/material/Material.hpp"
-#include "resources/mesh/Mesh.hpp"
+#include "TechEngine/core/resources/material/Material.hpp"
+#include "TechEngine/core/resources/mesh/Mesh.hpp"
+
+
+#include "TechEngine/core/core/CoreExportDLL.hpp"
 
 #include <typeindex>
-#include <yaml-cpp/emitter.h>
-#include <Jolt/Jolt.h>
+#include <glm/glm.hpp>
+#include <glm/detail/type_quat.hpp>
+#include <glm/gtc/quaternion.hpp>
+
+namespace YAML {
+    class Emitter;
+    class Node;
+}
 
 namespace TechEngine {
     class ResourcesManager;
@@ -215,7 +224,7 @@ namespace TechEngine {
         friend class ComponentsFactory;
 
     public:
-        JPH::uint32 index;
+        std::uint32_t index;
 
         static void serialize(const StaticBody& staticBody, YAML::Emitter& out);
 
@@ -226,7 +235,7 @@ namespace TechEngine {
         friend class ComponentsFactory;
 
     public:
-        JPH::uint32 index;
+        std::uint32_t index;
 
         static void serialize(const KinematicBody& kinematicBody, YAML::Emitter& out);
 
@@ -237,7 +246,7 @@ namespace TechEngine {
         friend class ComponentsFactory;
 
     public:
-        JPH::uint32 index;
+        std::uint32_t index;
 
         static void serialize(const RigidBody& rigidbody, YAML::Emitter& out);
 
@@ -299,7 +308,7 @@ namespace TechEngine {
         friend class ComponentsFactory;
 
     public:
-        JPH::uint32 index;
+        std::uint32_t index;
         glm::vec3 center = glm::vec3(0.0f, 0, 0);
         glm::vec3 size = glm::vec3(1.0f);
 
@@ -312,7 +321,7 @@ namespace TechEngine {
         friend class ComponentsFactory;
 
     public:
-        JPH::uint32 index;
+        std::uint32_t index;
         glm::vec3 center = glm::vec3(0.0f);
         float radius = 0.5f;
 
@@ -325,7 +334,7 @@ namespace TechEngine {
         friend class ComponentsFactory;
 
     public:
-        JPH::uint32 index;
+        std::uint32_t index;
         glm::vec3 center = glm::vec3(0.0f);
         float height = 1.0f;
         float radius = 0.5f;
@@ -339,7 +348,7 @@ namespace TechEngine {
         friend class ComponentsFactory;
 
     public:
-        JPH::uint32 index;
+        std::uint32_t index;
         glm::vec3 center = glm::vec3(0.0f);
         float height = 1.0f;
         float radius = 0.5f;
@@ -369,51 +378,4 @@ namespace TechEngine {
         static AudioEmitter deserialize(const YAML::Node& node);
     };
 #pragma endregion
-    /*class CORE_DLL ComponentType {
-    private:
-        inline static ComponentTypeID counter = 0;
-        inline static std::unordered_map<std::type_index, ComponentTypeID> typeMap;
-
-    public:
-        static void init() {
-            registerComponent<Tag>();
-            registerComponent<Transform>();
-            registerComponent<Camera>();
-            registerComponent<MeshRenderer>();
-            registerComponent<StaticBody>();
-            registerComponent<KinematicBody>();
-            registerComponent<RigidBody>();
-            registerComponent<BoxCollider>();
-            registerComponent<SphereCollider>();
-            registerComponent<CapsuleCollider>();
-            registerComponent<CylinderCollider>();
-            registerComponent<BoxTrigger>();
-            registerComponent<SphereTrigger>();
-            registerComponent<CapsuleTrigger>();
-            registerComponent<CylinderTrigger>();
-            registerComponent<AudioEmitterComponent>();
-            registerComponent<AudioListenerComponent>();
-        }
-
-        template<typename T>
-        static void registerComponent() {
-            if (typeMap.find(typeid(T)) == typeMap.end()) {
-                typeMap[typeid(T)] = counter;
-                counter += 1;
-            }
-        }
-
-        template<typename T>
-        static bool isComponentRegistered() {
-            return typeMap.find(typeid(T)) != typeMap.end();
-        }
-
-        template<typename T>
-        static ComponentTypeID get() {
-            if (typeMap.find(typeid(T)) == typeMap.end()) {
-                TE_LOGGER_CRITICAL("Component type {0} not registered, please register it first", typeid(T).name());
-            }
-            return typeMap[typeid(T)];
-        }
-    };*/
 }

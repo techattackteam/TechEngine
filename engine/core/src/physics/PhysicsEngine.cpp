@@ -19,21 +19,6 @@
 #include <Jolt/Physics/Constraints/FixedConstraint.h>
 
 #include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
 #include "scene/ScenesManager.hpp"
 
 // Disable common warnings triggered by Jolt, you can use JPH_SUPPRESS_WARNING_PUSH / JPH_SUPPRESS_WARNING_POP to store and restore the warning state

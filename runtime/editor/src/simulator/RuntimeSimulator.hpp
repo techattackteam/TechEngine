@@ -47,7 +47,7 @@ namespace TechEngine {
             if (!physicsEngine.start()) {
                 return false;
             }
-            userDllSink->add_sink(sink);
+            //userDllSink->add_sink(sink);
             m_simulationState = SimulationState::RUNNING;
             onStart();
             return true;
@@ -126,7 +126,8 @@ namespace TechEngine {
 
         void tick(float deltaTime) {
             if (m_simulationState != SimulationState::RUNNING) {
-                //m_runtime.m_systemRegistry.template getSystem<EventDispatcher>().onUpdate();
+                m_runtime.m_systemRegistry.template getSystem<EventDispatcher>().onUpdate();
+                m_runtime.m_systemRegistry.template getSystem<Renderer>().onUpdate();
             } else {
                 Timer& timer = m_runtime.m_systemRegistry.template getSystem<Timer>();
                 timer.tick(deltaTime);

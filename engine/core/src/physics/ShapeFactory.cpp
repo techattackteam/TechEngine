@@ -1,5 +1,7 @@
 #include "ShapeFactory.hpp"
 
+#include "core/Logger.hpp"
+
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/CylinderShape.h>

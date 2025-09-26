@@ -4,8 +4,17 @@ file(GLOB_RECURSE RUNTIME_CLIENT_HEADERS "src/*.hpp")
 
 # add the executable
 add_executable(TechEngineRuntimeClient ${RUNTIME_CLIENT_SOURCES} ${RUNTIME_CLIENT_HEADERS})
-target_include_directories(TechEngineRuntimeClient PUBLIC src)
-target_link_libraries(TechEngineRuntimeClient TechEngineApp TechEngineClient)
+
+target_include_directories(TechEngineRuntimeClient PRIVATE
+        src
+        "${CMAKE_SOURCE_DIR}/engine/core/include"
+        "${CMAKE_SOURCE_DIR}/engine/core/src"
+        "${CMAKE_SOURCE_DIR}/engine/client/include"
+        "${CMAKE_SOURCE_DIR}/engine/client/src"
+        "${CMAKE_SOURCE_DIR}/engine/app/src"
+)
+
+target_link_libraries(TechEngineRuntimeClient PRIVATE TechEngineApp TechEngineClient)
 
 # setup target's output directory
 if (WIN32) # WINDOWS
@@ -13,11 +22,11 @@ if (WIN32) # WINDOWS
 
     # Set target property to store the output's path for editor to copy
     if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}" STREQUAL "")
-        set_target_properties(TechEngineRuntimeClient PROPERTIES RUNTIME_CLIENT_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/runtime/runtimes/client/debug")
+        set_target_properties(TechEngineRuntimeClient PROPERTIES RUNTIME_CLIENT_OUTPUT_DIRECTORY "${OUTPUT}/debug")
     elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
-        set_target_properties(TechEngineRuntimeClient PROPERTIES RUNTIME_CLIENT_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/runtime/runtimes/client/relwithdebinfo")
+        set_target_properties(TechEngineRuntimeClient PROPERTIES RUNTIME_CLIENT_OUTPUT_DIRECTORY "${OUTPUT}/relwithdebinfo")
     elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
-        set_target_properties(TechEngineRuntimeClient PROPERTIES RUNTIME_CLIENT_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/runtime/runtimes/client/release")
+        set_target_properties(TechEngineRuntimeClient PROPERTIES RUNTIME_CLIENT_OUTPUT_DIRECTORY "${OUTPUT}/release")
     else ()
         message(FATAL_ERROR "CMAKE_BUILD_TYPE is not set or is not recognized. Defaulting to Release.")
     endif ()

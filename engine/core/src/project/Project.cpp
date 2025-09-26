@@ -17,7 +17,7 @@ namespace TechEngine {
         m_paths[translatePathType(PathType::Assets, AppType::Server)] = m_projectPath / "assets/server";
 
         m_paths[translatePathType(PathType::Resources, AppType::Client)] = m_projectPath / "resources/client";
-        m_paths[translatePathType(PathType::Resources, AppType::Common)] = m_projectPath / "resources/common";
+        m_paths[translatePathType(PathType::Resources, AppType::Common)] = m_projectPath / "resources/core";
         m_paths[translatePathType(PathType::Resources, AppType::Server)] = m_projectPath / "resources/server";
 
         m_paths[translatePathType(PathType::Cache, AppType::Client)] = m_projectPath / "cache/client";

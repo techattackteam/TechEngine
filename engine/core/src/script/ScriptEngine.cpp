@@ -1,5 +1,5 @@
 #include "core/Logger.hpp"
-#include "script/Script.hpp"
+#include "../../include/TechEngine/core/script/Script.hpp"
 #include "ScriptEngine.hpp"
 #include "ScriptRegister.hpp"
 #include "script/ScriptCrashHandler.hpp"
@@ -30,11 +30,11 @@ namespace TechEngine {
                 TE_LOGGER_ERROR("Failed to load user scripts dll {0}", GetLastError());
                 return {false, nullptr};
             }
-            if (m_APIEntryPoint == nullptr) {
-                TE_LOGGER_ERROR("API entry point not set. Cannot load user scripts dll.");
-                return {false, nullptr};
-            }
-            spdlog::sinks::dist_sink_mt* userDistSink = m_APIEntryPoint(&m_systemRegistry);
+            //if (m_APIEntryPoint == nullptr) {
+            //    TE_LOGGER_ERROR("API entry point not set. Cannot load user scripts dll.");
+            //    return {false, nullptr};
+            //}
+            spdlog::sinks::dist_sink_mt* userDistSink = nullptr;
             return {true, userDistSink};
         } else {
             TE_LOGGER_WARN("User scripts dll not found at {0}. Skipping loading.", dllPath);
@@ -47,7 +47,7 @@ namespace TechEngine {
             TE_LOGGER_INFO("Shutting down user scripts dll.");
             deleteScripts();
             m_APIEntryPoint = nullptr;
-            m_executeExternalEventSystem = nullptr;
+            //m_executeExternalEventSystem = nullptr;
             bool result = FreeLibrary(m_userCustomDll);
             if (!result) {
                 TE_LOGGER_ERROR("Failed to unload user scripts dll");
@@ -59,7 +59,7 @@ namespace TechEngine {
     void ScriptEngine::onStart() {
         if (m_userCustomDll) {
             for (Script* script: scripts) {
-                RUN_SCRIPT_FUNCTION(script, script->onStartFunc(), m_systemRegistry.getSystem<EventDispatcher>());
+                RUN_SCRIPT_FUNCTION(script, script->onStart(), m_systemRegistry.getSystem<EventDispatcher>());
             }
         }
     }
@@ -67,16 +67,16 @@ namespace TechEngine {
     void ScriptEngine::onUpdate() {
         if (m_userCustomDll) {
             for (Script* script: scripts) {
-                RUN_SCRIPT_FUNCTION(script, script->onUpdateFunc(), m_systemRegistry.getSystem<EventDispatcher>());
+                RUN_SCRIPT_FUNCTION(script, script->onUpdate(), m_systemRegistry.getSystem<EventDispatcher>());
             }
-            m_executeExternalEventSystem();
+            //m_executeExternalEventSystem();
         }
     }
 
     void ScriptEngine::onFixedUpdate() {
         if (m_userCustomDll) {
             for (Script* script: scripts) {
-                RUN_SCRIPT_FUNCTION(script, script->onFixedUpdateFunc(), m_systemRegistry.getSystem<EventDispatcher>());
+                RUN_SCRIPT_FUNCTION(script, script->onFixedUpdate(), m_systemRegistry.getSystem<EventDispatcher>());
             }
         }
     }
@@ -87,7 +87,7 @@ namespace TechEngine {
             for (Script* script: scripts) {
                 RUN_SCRIPT_FUNCTION(script, script->onStopFunc(), m_systemRegistry.getSystem<EventDispatcher>());
             }
-            m_updateComponentsFromAPIsFunction();
+            //m_updateComponentsFromAPIsFunction();
         }*/
     }
 
@@ -103,8 +103,8 @@ namespace TechEngine {
 
 
     void ScriptEngine::registerScript(Script* script) {
-        script->name = typeid(*script).name();
-        script->name.replace(0, 6, "");
+        script->setName(typeid(*script).name());
+        script->setName(script->getName().substr(6));
         scripts.push_back(script);
     }
 
@@ -113,5 +113,9 @@ namespace TechEngine {
             delete script;
         }
         scripts.clear();
+    }
+
+    SystemsRegistry& ScriptEngine::getSystemsRegistry() {
+        return m_systemRegistry;
     }
 }

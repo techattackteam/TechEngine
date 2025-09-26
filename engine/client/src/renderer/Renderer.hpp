@@ -11,14 +11,28 @@
 #include "FrameBuffer.hpp"
 #include "Line.hpp"
 #include "RenderRequest.hpp"
-#include "components/Components.hpp"
-#include "scene/Scene.hpp"
+#include "TechEngine/core/components/Components.hpp"
+#include "TechEngine/core/scene/Scene.hpp"
 #include "ui/UIRenderer.hpp"
 
 #include <queue>
 
 namespace TechEngine {
     class CLIENT_DLL Renderer : public System {
+        struct Renderable {
+            Transform* transform;
+            MeshRenderer* meshRenderer;
+
+            // A comparison operator for std::sort
+            bool operator<(const Renderable& other) const {
+                // Sort primarily by mesh, then by material, for maximum batching.
+                if (meshRenderer->mesh < other.meshRenderer->mesh) return true;
+                if (meshRenderer->mesh > other.meshRenderer->mesh) return false;
+                // If meshes are the same, you could optionally sort by material as a secondary key.
+                return meshRenderer->material->getGpuID() < other.meshRenderer->material->getGpuID();
+            }
+        };
+
     private:
         const std::string BufferGameObjects = "GameObjects";
         const std::string BufferLines = "Lines";
@@ -43,7 +57,12 @@ namespace TechEngine {
         uint32_t m_currentIndexOffset = 0; // Tracks the end of the IBO data (in indices)
         size_t m_commandToDraw = 0;
 
+        //TEMP
+        std::vector<Renderable> m_renderables;
+
         std::vector<Line> lines;
+
+        std::unordered_map<Mesh*, std::vector<std::tuple<Transform*, uint32_t>>> groupedInstances;
 
     public:
         inline static const int GEOMETRY_PASS = 1 << 0;

@@ -1,6 +1,6 @@
 #include "CameraSystem.hpp"
 
-#include "Scene.hpp"
+#include "TechEngine/core/scene/Scene.hpp"
 #include "ScenesManager.hpp"
 #include "systems/SystemsRegistry.hpp"
 

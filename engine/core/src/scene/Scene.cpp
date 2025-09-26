@@ -1,10 +1,16 @@
-#include "Scene.hpp"
+#include "SceneInternal.hpp"
 
-#include "components/Components.hpp"
-#include "components/ComponentsFactory.hpp"
-#include "core/UUID.hpp"
+#include "TechEngine/core/components/Components.hpp"
+#include "TechEngine/core/components/ComponentsFactory.hpp"
+#include "TechEngine/core/core/UUID.hpp"
 
 namespace TechEngine {
+    Scene::Scene() : m_archetypesManager(), m_internal(std::make_unique<Internal>(m_archetypesManager)) {
+    }
+
+    Scene::~Scene() {
+    }
+
     Entity Scene::createEntity(const std::string& name) {
         UUID uuid = UUID::generate();
         Entity entity = m_archetypesManager.createEntity();
@@ -17,7 +23,7 @@ namespace TechEngine {
         m_archetypesManager.removeEntity(entity);
     }
 
-    std::vector<ComponentTypeID> Scene::getCommonComponents(const std::vector<Entity>& entities) {
+    std::vector<ComponentTypeID> Scene::Internal::getCommonComponents(const std::vector<Entity>& entities) {
         if (entities.empty()) {
             return {};
         }
@@ -77,15 +83,22 @@ namespace TechEngine {
         m_archetypesManager.clear();
     }
 
-    void Scene::setName(const std::string& name) {
+    void Scene::Internal::setName(const std::string& name) {
         this->m_name = name;
     }
 
     const std::string& Scene::getName() const {
-        return m_name;
+        return m_internal->m_name;
     }
 
-    int Scene::getTotalEntities() {
+    std::unique_ptr<Scene::Internal>& Scene::getInternal() {
+        return m_internal;
+    }
+
+    Scene::Internal::Internal(ArchetypesManager& archetypesManager) : m_archetypesManager(archetypesManager) {
+    }
+
+    int Scene::Internal::getTotalEntities() {
         size_t totalEntities = 0;
         for (std::unique_ptr<Archetype>& archetype: m_archetypesManager.m_archetypes) {
             totalEntities += archetype->getEntities().size();

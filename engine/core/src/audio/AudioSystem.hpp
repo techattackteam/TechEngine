@@ -1,10 +1,12 @@
 #pragma once
 
-#include "core/CoreExportDLL.hpp"
-#include "systems/System.hpp"
-#include "components/Components.hpp"
-#include "components/Entity.hpp"
 
+#include "TechEngine/core/core/CoreExportDLL.hpp"
+#include "systems/System.hpp"
+#include "TechEngine/core/components/Components.hpp"
+#include "TechEngine/core/components/Entity.hpp"
+
+#include <mutex>
 
 struct ma_engine;
 struct ma_sound;

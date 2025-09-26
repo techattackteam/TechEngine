@@ -4,19 +4,16 @@
 #include <cstdarg>
 #include <iostream>
 
-
 #include "ShapeFactory.hpp"
 #include "BPLayerInterfaceImpl.hpp"
-//#include "DebugRenderer.hpp"
 #include "ObjectLayerPairFilterImpl.hpp"
 #include "ObjectVsBroadPhaseLayerFilterImpl.hpp"
 #include "MyContactListener.hpp"
-#include "components/Components.hpp"
 
-#include <Jolt/Jolt.h>
-#include <Jolt/Core/JobSystemThreadPool.h>
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/Collision/Shape/MutableCompoundShape.h>
+#include <Jolt/Core/JobSystemThreadPool.h>
+#include <Jolt/Core/Reference.h>
 
 
 // Callback for traces, connect this to your own trace function if you have one

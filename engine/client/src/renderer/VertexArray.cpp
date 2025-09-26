@@ -2,7 +2,7 @@
 #include "ErrorCatcher.hpp"
 #include "Line.hpp"
 #include "VertexBuffer.hpp"
-#include "resources/mesh/Vertex.hpp"
+#include "../../../core/include/TechEngine/core/resources/mesh/Vertex.hpp"
 #include "ui/UIVertex.hpp"
 
 namespace TechEngine {

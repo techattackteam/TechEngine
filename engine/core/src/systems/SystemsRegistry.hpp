@@ -2,7 +2,6 @@
 
 #include "core/Logger.hpp"
 #include <typeindex>
-#include "profiling/ProfilerData.hpp"
 
 namespace TechEngine {
     class System;

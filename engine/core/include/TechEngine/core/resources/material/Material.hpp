@@ -1,6 +1,6 @@
 #pragma once
 
-#include "resources/IResource.hpp"
+#include "TechEngine/core/resources/IResource.hpp"
 
 #include <glm/glm.hpp>
 
