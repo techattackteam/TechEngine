@@ -31,24 +31,21 @@ namespace TechEngine {
         clientViewport.size = glm::vec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
         clientViewport.isFocused = ImGui::IsWindowFocused() || ImGui::IsWindowHovered();
 
-        //scene.runSystem<Transform, Camera>([this](Transform& transform, Camera& camera) {
-        //    FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
-        //    ImVec2 wsize = ImGui::GetContentRegionAvail();
-        //    frameBuffer.bind();
-        //    frameBuffer.resize(wsize.x, wsize.y);
-        //    camera.updateProjectionMatrix(wsize.x / wsize.y);
-        //    camera.updateViewMatrix(transform.getModelMatrix());
-//
-        //    RenderRequest request;
-        //    request.viewMatrix = camera.getViewMatrix(); // This makes a copy
-        //    request.projectionMatrix = camera.getProjectionMatrix(); // This makes a copy
-        //    request.targetFramebufferId = this->frameBufferID;
-        //    request.viewportSize = {wsize.x, wsize.y};
-        //    request.renderMask = Renderer::GEOMETRY_PASS | Renderer::LINE_PASS;
-//
-        //    // 3. Submit the request to the renderer.
-        //    m_appSystemsRegistry.getSystem<Renderer>().addRequest(request);
-        //});
+        scene.runSystem<Transform, Camera>([this](Transform& transform, Camera& camera) {
+            FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
+            ImVec2 wsize = ImGui::GetContentRegionAvail();
+            frameBuffer.bind();
+            frameBuffer.resize(wsize.x, wsize.y);
+            camera.updateProjectionMatrix(wsize.x / wsize.y);
+            camera.updateViewMatrix(transform.getModelMatrix());
+            RenderRequest request;
+            request.viewMatrix = camera.getViewMatrix(); // This makes a copy
+            request.projectionMatrix = camera.getProjectionMatrix(); // This makes a copy
+            request.targetFramebufferId = this->frameBufferID;
+            request.viewportSize = {wsize.x, wsize.y};
+            request.renderMask = Renderer::GEOMETRY_PASS | Renderer::LINE_PASS;
+            m_appSystemsRegistry.getSystem<Renderer>().addRequest(request);
+        });
 
         ImVec2 wsize = ImGui::GetContentRegionAvail();
         FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);

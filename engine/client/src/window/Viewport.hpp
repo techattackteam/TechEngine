@@ -4,7 +4,7 @@
 
 
 namespace TechEngine {
-    struct Viewport : public System {
+    struct CORE_DLL Viewport : public System {
         glm::vec2 position;
         glm::vec2 size;
         bool isFocused = false;

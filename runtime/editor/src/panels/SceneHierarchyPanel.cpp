@@ -1,8 +1,10 @@
 #include "SceneHierarchyPanel.hpp"
 
 #include "imgui_internal.h"
-#include "../../../../engine/core/include/TechEngine/core/components/ComponentsFactory.hpp"
+#include "TechEngine/core/components/ComponentsFactory.hpp"
 #include "eventSystem/EventDispatcher.hpp"
+#include "profiling/ProfiledScope.hpp"
+#include "profiling/Profiler.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "scene/ScenesManager.hpp"
 #include "systems/SystemsRegistry.hpp"
@@ -19,36 +21,45 @@ namespace TechEngine {
 
     void SceneHierarchyPanel::onInit() {
         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
-        scene.runSystem<Tag>([this](Tag& tag) {
-            m_entitiesOrder.emplace_back(tag);
+        scene.runSystem<Entity, Tag>([this](Entity& entity, Tag& tag) {
+            if (std::find(m_entitiesOrder.begin(), m_entitiesOrder.end(), entity) == m_entitiesOrder.end()) {
+                m_entitiesOrder.emplace_back(entity);
+            }
         });
     }
 
     void SceneHierarchyPanel::onUpdate() {
         m_isItemHovered = false;
-        Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
-
-        scene.runSystem<Tag>([this](Tag& tag) {
-            if (std::find(m_entitiesOrder.begin(), m_entitiesOrder.end(), tag) == m_entitiesOrder.end()) {
-                m_entitiesOrder.emplace_back(tag);
-            }
-        });
+        Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene(); {
+            ProfiledScope profiler(m_editorSystemsRegistry.getSystem<Profiler>(), "SceneHierarchyPanel::drawEntityNode gather");
+            scene.runSystem<Entity, Tag>([this](Entity& entity, Tag& tag) {
+                if (std::find(m_entitiesOrder.begin(), m_entitiesOrder.end(), entity) == m_entitiesOrder.end()) {
+                    m_entitiesOrder.emplace_back(entity);
+                }
+            });
+        }
 
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 2.0f)); // Adjust spacing between items
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f)); // Compact frame padding
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 10.0f); // Reduce indentation
+        ImGuiListClipper clipper;
+        clipper.Begin(static_cast<int>(m_entitiesOrder.size())); {
+            ProfiledScope profiler(m_editorSystemsRegistry.getSystem<Profiler>(), "SceneHierarchyPanel::drawEntityNode loop");
+            while (clipper.Step()) {
+                for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
+                    if (i < 0 || i >= m_entitiesOrder.size()) {
+                        continue;
+                    }
 
-        int size = m_entitiesOrder.size();
-        for (size_t i = 0; i < size; i++) {
-            Entity entity = scene.getEntity(m_entitiesOrder[i]);
-            if (entity == -1) {
-                m_entitiesOrder.erase(m_entitiesOrder.begin() + i);
-                size--;
-                continue;
+                    Entity entity = m_entitiesOrder[i];
+                    if (entity == -1) {
+                        continue;
+                    }
+                    drawEntityNode(entity, i);
+                }
+                TE_LOGGER_INFO("Entities drawn: {0}", clipper.DisplayEnd - clipper.DisplayStart);
             }
-            drawEntityNode(scene.getComponent<Tag>(entity));
         }
-
         ImGui::PopStyleVar(3);
 
         if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) {
@@ -67,8 +78,8 @@ namespace TechEngine {
             m_entitiesToDelete.clear();
 
             m_entitiesOrder.clear();
-            scene.runSystem<Tag>([this](Tag& tag) {
-                m_entitiesOrder.emplace_back(tag);
+            scene.runSystem<Entity, Tag>([this](Entity entity, Tag& tag) {
+                m_entitiesOrder.emplace_back(entity);
             });
         }
         if (!m_entitiesToCreate.empty()) {
@@ -76,10 +87,10 @@ namespace TechEngine {
         }
     }
 
-    void SceneHierarchyPanel::drawEntityNode(Tag& tag) {
+    void SceneHierarchyPanel::drawEntityNode(Entity& entity, int i) {
         Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
-        Entity entity = scene.getEntity(tag);
         ImGuiStyle& style = ImGui::GetStyle();
+        Tag& tag = scene.getComponent<Tag>(entity);
 
         const float frameHeight = ImGui::GetFrameHeight();
         const float totalItemHeight = frameHeight + style.ItemSpacing.y;
@@ -112,9 +123,8 @@ namespace TechEngine {
                 }
 
                 if (!isSameEntity && dropAction == DropAction::Reorder) {
-                    auto& draggedTag = scene.getComponent<Tag>(draggedEntity);
-                    auto originalEntity = std::find(m_entitiesOrder.begin(), m_entitiesOrder.end(), draggedTag);
-                    auto targetEntity = std::find(m_entitiesOrder.begin(), m_entitiesOrder.end(), tag);
+                    auto originalEntity = std::find(m_entitiesOrder.begin(), m_entitiesOrder.end(), draggedEntity);
+                    auto targetEntity = std::find(m_entitiesOrder.begin(), m_entitiesOrder.end(), entity);
                     if (originalEntity != m_entitiesOrder.end() && targetEntity != m_entitiesOrder.end()) {
                         bool isDroppingAbove = (mousePos.y < reparentRect.Min.y);
                         if (isDroppingAbove) {
@@ -146,15 +156,13 @@ namespace TechEngine {
 
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
                 "ENTITY_DRAG", ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
-                Entity draggedEntity = *(Entity*)payload->Data;
-                if (draggedEntity != entity) {
-                    int index = std::ranges::find(m_entitiesOrder, tag) - m_entitiesOrder.begin();
-
+                int index = *(Entity*)payload->Data;
+                if (index != entity) {
                     if (dropAction == DropAction::Reorder) {
                         int newIndex = (mousePos.y < reparentRect.Min.y) ? index : index + 1;
-                        reorderEntity(scene.getComponent<Tag>(draggedEntity), newIndex);
+                        reorderEntity(entity, newIndex);
                     } else {
-                        TE_LOGGER_INFO("Parenting entity {} under entity {}", draggedEntity, entity);
+                        TE_LOGGER_INFO("Parenting entity {} under entity {}", index, entity);
                     }
                 }
             }
@@ -183,8 +191,8 @@ namespace TechEngine {
         ImGui::PopID();
 
         if (ImGui::BeginDragDropSource()) {
-            ImGui::SetDragDropPayload("ENTITY_DRAG", &entity, sizeof(Entity));
-            ImGui::Text("%s", tag.getName().c_str());
+            ImGui::SetDragDropPayload("ENTITY_DRAG", &i, sizeof(int));
+            ImGui::Text("%s", tag.getName());
             ImGui::EndDragDropSource();
         }
 
@@ -215,16 +223,15 @@ namespace TechEngine {
         }
     }
 
-    void SceneHierarchyPanel::reorderEntity(Tag& tag, size_t newPosition) {
-        auto it = std::find(m_entitiesOrder.begin(), m_entitiesOrder.end(), tag);
+    void SceneHierarchyPanel::reorderEntity(Entity& entity, size_t newPosition) {
+        auto it = std::find(m_entitiesOrder.begin(), m_entitiesOrder.end(), entity);
         if (it != m_entitiesOrder.end()) {
             // Adjust newPosition if the item is moved downwards
             if (std::distance(m_entitiesOrder.begin(), it) < newPosition) {
                 newPosition--;
             }
             m_entitiesOrder.erase(it);
-            m_entitiesOrder.insert(m_entitiesOrder.begin() + newPosition, tag);
-            TE_LOGGER_INFO("Reordered entity {0} to position {1}", tag.getName(), newPosition);
+            m_entitiesOrder.insert(m_entitiesOrder.begin() + newPosition, entity);
         }
     }
 
@@ -234,14 +241,14 @@ namespace TechEngine {
             switch (entityType.type) {
                 case Empty: {
                     Entity entity = scene.createEntity("New Entity");
-                    m_entitiesOrder.emplace_back(scene.getComponent<Tag>(entity));
+                    m_entitiesOrder.emplace_back(entity);
                     break;
                 }
                 case Cube: {
                     Entity entity = scene.createEntity("Cube");
                     ResourcesManager& resourcesManager = m_appSystemRegistry.getSystem<ResourcesManager>();
                     scene.addComponent<MeshRenderer>(entity, ComponentsFactory::createMeshRenderer(&resourcesManager.getDefaultMesh(), &resourcesManager.getDefaultMaterial()));
-                    m_entitiesOrder.emplace_back(scene.getComponent<Tag>(entity));
+                    m_entitiesOrder.emplace_back(entity);
                     break;
                 }
                 case Sphere: {
@@ -249,7 +256,7 @@ namespace TechEngine {
                     ResourcesManager& resourcesManager = m_appSystemRegistry.getSystem<ResourcesManager>();
                     scene.addComponent<MeshRenderer>(
                         entity, ComponentsFactory::createMeshRenderer(&resourcesManager.getMesh("Sphere"), &resourcesManager.getDefaultMaterial()));
-                    m_entitiesOrder.emplace_back(scene.getComponent<Tag>(entity));
+                    m_entitiesOrder.emplace_back(entity);
                     break;
                 }
                 default:

@@ -17,29 +17,24 @@ namespace TechEngine {
                                SystemsRegistry& appSystemsRegistry,
                                LoggerPanel& loggerPanel) : m_editorSystemsRegistry(editorSystemsRegistry),
                                                            m_appSystemsRegistry(appSystemsRegistry),
-                                                           //m_inspectorPanel(
-                                                           //    editorSystemsRegistry, appSystemsRegistry,
-                                                           //    m_selectedEntities),
-                                                           //m_sceneHierarchyPanel(
-                                                           //    editorSystemsRegistry, appSystemsRegistry,
-                                                           //    m_selectedEntities),
-
-                                                           m_sceneView(editorSystemsRegistry, appSystemsRegistry,
-                                                                       m_selectedEntities),
+                                                           //m_inspectorPanel(editorSystemsRegistry, appSystemsRegistry, m_selectedEntities),
+                                                           m_sceneHierarchyPanel(editorSystemsRegistry, appSystemsRegistry, m_selectedEntities),
+                                                           m_sceneView(editorSystemsRegistry, appSystemsRegistry, m_selectedEntities),
+                                                           //m_gameView(editorSystemsRegistry, appSystemsRegistry),
                                                            loggerPanel(loggerPanel), DockPanel(editorSystemsRegistry) {
     }
 
     void RuntimePanel::onInit() {
         m_sceneView.init("Scene View", &m_dockSpaceWindowClass);
         //m_gameView.init("Game View", &m_dockSpaceWindowClass);
-        //m_sceneHierarchyPanel.init("Scene Hierarchy", &m_dockSpaceWindowClass);
+        m_sceneHierarchyPanel.init("Scene Hierarchy", &m_dockSpaceWindowClass);
         //m_inspectorPanel.init("Inspector", &m_dockSpaceWindowClass);
     }
 
     void RuntimePanel::onUpdate() {
         m_sceneView.update();
         //m_gameView.update();
-        //m_sceneHierarchyPanel.update();
+        m_sceneHierarchyPanel.update();
         //m_inspectorPanel.update();
     }
 
@@ -53,7 +48,7 @@ namespace TechEngine {
         ImGuiID dockLeftID = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Left, 0.2f, nullptr, &dockMainID);
 
         ImGui::DockBuilderDockWindow((m_sceneView.getName() + "##" + std::to_string(m_sceneView.getId())).c_str(), dockMainID);
-        //ImGui::DockBuilderDockWindow((m_sceneHierarchyPanel.getName() + "##" + std::to_string(m_sceneHierarchyPanel.getId())).c_str(), dockLeftID);
+        ImGui::DockBuilderDockWindow((m_sceneHierarchyPanel.getName() + "##" + std::to_string(m_sceneHierarchyPanel.getId())).c_str(), dockLeftID);
         //ImGui::DockBuilderDockWindow((m_inspectorPanel.getName() + "##" + std::to_string(m_inspectorPanel.getId())).c_str(), dockRightID);
 
         ImGui::DockBuilderFinish(m_dockSpaceID);
