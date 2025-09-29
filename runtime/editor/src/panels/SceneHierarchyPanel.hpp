@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Panel.hpp"
-#include "../../../../engine/core/include/TechEngine/core/components/Archetype.hpp"
+#include "TechEngine/core/components/Archetype.hpp"
 #include "TechEngine/core/scene/Scene.hpp"
 
 namespace TechEngine {
@@ -29,7 +29,7 @@ namespace TechEngine {
         std::vector<Entity>& m_selectedEntities;
         std::vector<Entity> m_entitiesToDelete;
         std::vector<EntityToCreate> m_entitiesToCreate;
-        std::vector<Tag> m_entitiesOrder;
+        std::vector<Entity> m_entitiesOrder;
         bool m_isItemHovered = false;
 
     public:
@@ -40,13 +40,13 @@ namespace TechEngine {
 
         void onUpdate() override;
 
-        void drawEntityNode(Tag& tag);
+        void drawEntityNode(Entity& entity, int i);
 
     private:
         void requestEntitiesCreation();
 
         void openCreateMenu(std::string title, Entity parent);
 
-        void reorderEntity(Tag& tag, size_t newPosition);
+        void reorderEntity(Entity& entity, size_t newPosition);
     };
 }

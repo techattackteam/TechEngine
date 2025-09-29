@@ -41,8 +41,8 @@ namespace TechEngine {
         m_appSystemsRegistry.getSystem<PhysicsEngine>().renderBodies();
         sceneCamera.updateProjectionMatrix(wsize.x / wsize.y);
         sceneCamera.updateViewMatrix(cameraTransform.getModelMatrix());
-        //renderCameraFrustum();
-        //renderColliders();
+        renderCameraFrustum();
+        renderColliders();
         int mask = Renderer::GEOMETRY_PASS | Renderer::LINE_PASS;
         //renderer.renderCustomPipeline(&sceneCamera, mask);
 #if  1!= 1
