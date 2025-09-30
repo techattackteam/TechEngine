@@ -2,7 +2,6 @@
 
 #include "imgui_internal.h"
 #include "TechEngine/core/components/ComponentsFactory.hpp"
-#include "eventSystem/EventDispatcher.hpp"
 #include "profiling/ProfiledScope.hpp"
 #include "profiling/Profiler.hpp"
 #include "resources/ResourcesManager.hpp"
@@ -57,7 +56,6 @@ namespace TechEngine {
                     }
                     drawEntityNode(entity, i);
                 }
-                TE_LOGGER_INFO("Entities drawn: {0}", clipper.DisplayEnd - clipper.DisplayStart);
             }
         }
         ImGui::PopStyleVar(3);

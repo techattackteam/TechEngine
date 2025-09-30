@@ -13,8 +13,8 @@
 #include "core/Timer.hpp"
 #include "systems/SystemsRegistry.hpp"
 #include "input/Input.hpp"
-#include "input/Mouse.hpp"
-#include "eventSystem/EventDispatcher.hpp"
+#include "../../include/TechEngine/client/input/Mouse.hpp"
+#include "eventSystem/EventManager.hpp"
 #include "TechEngine/client/events/input/KeyPressedEvent.hpp"
 #include "TechEngine/client/events/input/MouseMoveEvent.hpp"
 #include "renderer/OldRenderer.hpp"
@@ -29,7 +29,7 @@ namespace TechEngine {
         //createDefaultWidgetYamlFile();
         loadYaml(R"(C:\dev\TechEngine\bin\runtime\editor\debug\New Project\resources\client\assets\ui\widgets.yaml)");
 
-        m_systemsRegistry.getSystem<EventDispatcher>().subscribe<KeyPressedEvent>([this](const std::shared_ptr<Event>& event) {
+        m_systemsRegistry.getSystem<EventManager>().subscribe<KeyPressedEvent>([this](const std::shared_ptr<Event>& event) {
             auto* keyPressedEvent = dynamic_cast<KeyPressedEvent*>(event.get());
             if (keyPressedEvent->getKey().getKeyCode() >= MOUSE_1 && keyPressedEvent->getKey().getKeyCode() <= MOUSE_8) {
                 onMousePressedEvent(std::dynamic_pointer_cast<KeyPressedEvent>(event));
@@ -38,7 +38,7 @@ namespace TechEngine {
             }
         });
 
-        m_systemsRegistry.getSystem<EventDispatcher>().subscribe<MouseMoveEvent>([this](const std::shared_ptr<Event>& event) {
+        m_systemsRegistry.getSystem<EventManager>().subscribe<MouseMoveEvent>([this](const std::shared_ptr<Event>& event) {
             onMouseMoveEvent(std::dynamic_pointer_cast<MouseMoveEvent>(event));
         });
         m_serializer.init(m_systemsRegistry);
@@ -303,7 +303,7 @@ namespace TechEngine {
     }
 
     void WidgetsRegistry::onMouseMoveEvent(const std::shared_ptr<MouseMoveEvent>& event) {
-        EventDispatcher& eventDispatcher = m_systemsRegistry.getSystem<EventDispatcher>();
+        EventManager& eventDispatcher = m_systemsRegistry.getSystem<EventManager>();
         glm::vec2 mousePosition = event->getToPosition();
         bool found = false;
         for (auto& widget: m_widgets) {
@@ -359,7 +359,7 @@ namespace TechEngine {
                 std::dynamic_pointer_cast<InputTextWidget>(clickedWidget)->gainFocus();
                 m_focusedWidget = clickedWidget;
             } else if (std::dynamic_pointer_cast<InteractableWidget>(clickedWidget)) {
-                std::dynamic_pointer_cast<InteractableWidget>(clickedWidget)->onMouseClick(m_systemsRegistry.getSystem<EventDispatcher>());
+                std::dynamic_pointer_cast<InteractableWidget>(clickedWidget)->onMouseClick(m_systemsRegistry.getSystem<EventManager>());
                 m_focusedWidget.reset();
             }
         }

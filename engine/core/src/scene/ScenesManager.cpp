@@ -1,8 +1,8 @@
 #include "ScenesManager.hpp"
 
-#include "events/scene/SceneLoadEvent.hpp"
-#include "events/scene/SceneSaveEvent.hpp"
-#include "eventSystem/EventDispatcher.hpp"
+#include "eventSystem/EventManager.hpp"
+#include "TechEngine/core/events/scene/SceneLoadEvent.hpp"
+#include "TechEngine/core/events/scene/SceneSaveEvent.hpp"
 
 #include "files/FileUtils.hpp"
 #include "project/Project.hpp"
@@ -15,6 +15,7 @@
 
 namespace TechEngine {
     ScenesManager::ScenesManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry),
+                                                                     m_activeScene(systemsRegistry),
                                                                      m_sceneSerializer(m_activeScene,
                                                                                        m_systemsRegistry.getSystem<ResourcesManager>(),
                                                                                        m_systemsRegistry.getSystem<PhysicsEngine>()) {
@@ -75,7 +76,7 @@ namespace TechEngine {
     void ScenesManager::saveScene(const std::filesystem::path& path) {
         std::ofstream stream(path);
         m_sceneSerializer.serialize(stream);
-        m_systemsRegistry.getSystem<EventDispatcher>().dispatch<SceneSaveEvent>(m_activeScene.getName());
+        m_systemsRegistry.getSystem<EventManager>().dispatch<SceneSaveEvent>(m_activeScene.getName());
     }
 
     void ScenesManager::loadScene(const std::string& name) {
@@ -86,6 +87,6 @@ namespace TechEngine {
     void ScenesManager::loadScene(const std::filesystem::path& path) {
         m_activeScene.clear();
         m_sceneSerializer.deserialize(path);
-        m_systemsRegistry.getSystem<EventDispatcher>().dispatch<SceneLoadEvent>(m_activeScene.getName());
+        m_systemsRegistry.getSystem<EventManager>().dispatch<SceneLoadEvent>(m_activeScene.getName());
     }
 }

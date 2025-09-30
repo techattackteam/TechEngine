@@ -1,11 +1,16 @@
 #include "SceneInternal.hpp"
+#include "eventSystem/EventManager.hpp"
+#include "TechEngine/core/events/scene/ComponentAddedEvent.hpp"
+#include "TechEngine/core/events/scene/ComponentRemovedEvent.hpp"
+#include "TechEngine/core/events/scene/EntityCreatedEvent.hpp"
+#include "TechEngine/core/events/scene/EntityDeletedEvent.hpp"
 
 #include "TechEngine/core/components/Components.hpp"
 #include "TechEngine/core/components/ComponentsFactory.hpp"
 #include "TechEngine/core/core/UUID.hpp"
 
 namespace TechEngine {
-    Scene::Scene() : m_archetypesManager(), m_internal(std::make_unique<Internal>(m_archetypesManager)) {
+    Scene::Scene(SystemsRegistry& systemsRegistry) : m_archetypesManager(), m_systemsRegistry(systemsRegistry), m_internal(std::make_unique<Internal>(m_archetypesManager)) {
     }
 
     Scene::~Scene() {
@@ -14,13 +19,15 @@ namespace TechEngine {
     Entity Scene::createEntity(const std::string& name) {
         UUID uuid = UUID::generate();
         Entity entity = m_archetypesManager.createEntity();
-        m_archetypesManager.addComponent(entity, ComponentsFactory::createTag(name, uuid.toString()));
-        m_archetypesManager.addComponent(entity, ComponentsFactory::createTransform(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f)));
+        addComponent(entity, ComponentsFactory::createTag(name, uuid.toString()));
+        addComponent(entity, ComponentsFactory::createTransform(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f)));
+        m_systemsRegistry.getSystem<EventManager>().dispatch<EntityCreatedEvent>(entity);
         return entity;
     }
 
     void Scene::destroyEntity(Entity entity) {
         m_archetypesManager.removeEntity(entity);
+        m_systemsRegistry.getSystem<EventManager>().dispatch<EntityDeletedEvent>(entity);
     }
 
     std::vector<ComponentTypeID> Scene::Internal::getCommonComponents(const std::vector<Entity>& entities) {
@@ -93,6 +100,14 @@ namespace TechEngine {
 
     std::unique_ptr<Scene::Internal>& Scene::getInternal() {
         return m_internal;
+    }
+
+    void Scene::addComponentInternal(Entity entity, ComponentTypeID componentTypeID) {
+        m_systemsRegistry.getSystem<EventManager>().dispatch<ComponentAddedEvent>(entity, componentTypeID);
+    }
+
+    void Scene::removeComponentInternal(Entity entity, ComponentTypeID componentTypeID) {
+        m_systemsRegistry.getSystem<EventManager>().dispatch<ComponentRemovedEvent>(entity, componentTypeID);
     }
 
     Scene::Internal::Internal(ArchetypesManager& archetypesManager) : m_archetypesManager(archetypesManager) {

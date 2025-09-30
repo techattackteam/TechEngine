@@ -1,5 +1,5 @@
 #pragma once
-#include "events/Event.hpp"
+#include "TechEngine/core/events/Event.hpp"
 
 namespace TechEngine {
     class ScriptCrashEvent : public Event {

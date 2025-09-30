@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/ExportDLL.hpp"
-#include "eventSystem/EventDispatcher.hpp"
+#include "../../include/TechEngine/client/core/ExportDLL.hpp"
+#include "../../../core/include/TechEngine/core/eventSystem/EventDispatcher.hpp"
 #include "utils/YAMLUtils.hpp"
 
 namespace TechEngine {
@@ -126,9 +126,9 @@ namespace TechEngine {
         virtual void deserialize(const YAML::Node& node, WidgetsRegistry& registry);
 
     protected:
-        void onMouseEnteredRect(EventDispatcher& eventDispatcher);
+        void onMouseEnteredRect(EventManager& eventDispatcher);
 
-        void onMouseLeftRect(EventDispatcher& eventDispatcher);
+        void onMouseLeftRect(EventManager& eventDispatcher);
 
     private:
         void setAnchorsFromPreset();

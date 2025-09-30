@@ -63,40 +63,40 @@ namespace TechEngine {
 
     void SceneSerializer::serializeComponent(const Entity& entity, const ComponentTypeID& typeID, YAML::Emitter& out) const {
         if (typeID == ComponentType<Transform>::get()) {
-            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
+            const Transform& transform = m_scene.getComponent<Transform>(entity);
             Transform::serialize(transform, out);
         } else if (typeID == ComponentType<Tag>::get()) {
-            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
+            const Tag& tag = m_scene.getComponent<Tag>(entity);
             Tag::serialize(tag, out);
         } else if (typeID == ComponentType<Camera>::get()) {
-            const Camera& camera = m_scene.m_archetypesManager.getComponent<Camera>(entity);
+            const Camera& camera = m_scene.getComponent<Camera>(entity);
             Camera::serialize(camera, out);
         } else if (typeID == ComponentType<MeshRenderer>::get()) {
-            const MeshRenderer& meshRenderer = m_scene.m_archetypesManager.getComponent<MeshRenderer>(entity);
+            const MeshRenderer& meshRenderer = m_scene.getComponent<MeshRenderer>(entity);
             MeshRenderer::serialize(meshRenderer, out);
         } else if (typeID == ComponentType<StaticBody>::get()) {
-            const StaticBody& staticBody = m_scene.m_archetypesManager.getComponent<StaticBody>(entity);
+            const StaticBody& staticBody = m_scene.getComponent<StaticBody>(entity);
             StaticBody::serialize(staticBody, out);
         } else if (typeID == ComponentType<KinematicBody>::get()) {
-            const KinematicBody& kinematicBody = m_scene.m_archetypesManager.getComponent<KinematicBody>(entity);
+            const KinematicBody& kinematicBody = m_scene.getComponent<KinematicBody>(entity);
             KinematicBody::serialize(kinematicBody, out);
         } else if (typeID == ComponentType<RigidBody>::get()) {
-            const RigidBody& rigidBody = m_scene.m_archetypesManager.getComponent<RigidBody>(entity);
+            const RigidBody& rigidBody = m_scene.getComponent<RigidBody>(entity);
             RigidBody::serialize(rigidBody, out);
         } else if (typeID == ComponentType<BoxCollider>::get()) {
-            const BoxCollider& boxCollider = m_scene.m_archetypesManager.getComponent<BoxCollider>(entity);
+            const BoxCollider& boxCollider = m_scene.getComponent<BoxCollider>(entity);
             BoxCollider::serialize(boxCollider, out);
         } else if (typeID == ComponentType<SphereCollider>::get()) {
-            const SphereCollider& sphereCollider = m_scene.m_archetypesManager.getComponent<SphereCollider>(entity);
+            const SphereCollider& sphereCollider = m_scene.getComponent<SphereCollider>(entity);
             SphereCollider::serialize(sphereCollider, out);
         } else if (typeID == ComponentType<CapsuleCollider>::get()) {
-            const CapsuleCollider& capsuleCollider = m_scene.m_archetypesManager.getComponent<CapsuleCollider>(entity);
+            const CapsuleCollider& capsuleCollider = m_scene.getComponent<CapsuleCollider>(entity);
             CapsuleCollider::serialize(capsuleCollider, out);
         } else if (typeID == ComponentType<CylinderCollider>::get()) {
-            const CylinderCollider& cylinderCollider = m_scene.m_archetypesManager.getComponent<CylinderCollider>(entity);
+            const CylinderCollider& cylinderCollider = m_scene.getComponent<CylinderCollider>(entity);
             CylinderCollider::serialize(cylinderCollider, out);
         } else if (typeID == ComponentType<BoxTrigger>::get()) {
-            const BoxTrigger& boxTrigger = m_scene.m_archetypesManager.getComponent<BoxTrigger>(entity);
+            const BoxTrigger& boxTrigger = m_scene.getComponent<BoxTrigger>(entity);
             BoxTrigger::serialize(boxTrigger, out);
         }
     }
@@ -105,76 +105,76 @@ namespace TechEngine {
         if (componentNode["Tag"]) {
             Tag tag = Tag::deserialize(componentNode["Tag"]);
             UUID::registerUUID(std::stoull(tag.getUuid()));
-            m_scene.m_archetypesManager.addComponent(entity, tag);
+            m_scene.addComponent(entity, tag);
         }
         if (componentNode["Transform"]) {
             Transform transform = Transform::deserialize(componentNode["Transform"]);
-            m_scene.m_archetypesManager.addComponent(entity, transform);
+            m_scene.addComponent(entity, transform);
         }
         if (componentNode["Camera"]) {
             Camera camera = Camera::deserialize(componentNode["Camera"]);
-            m_scene.m_archetypesManager.addComponent(entity, camera);
+            m_scene.addComponent(entity, camera);
         }
         if (componentNode["MeshRenderer"]) {
             MeshRenderer meshRenderer = MeshRenderer::deserialize(componentNode, m_resourcesManager);
-            m_scene.m_archetypesManager.addComponent(entity, meshRenderer);
+            m_scene.addComponent(entity, meshRenderer);
         }
 
         if (componentNode["StaticBody"]) {
-            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
-            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
+            const Tag& tag = m_scene.getComponent<Tag>(entity);
+            const Transform& transform = m_scene.getComponent<Transform>(entity);
             StaticBody staticBody = StaticBody::deserialize(componentNode["StaticBody"], m_physicsEngine, tag, transform);
-            m_scene.m_archetypesManager.addComponent(entity, staticBody);
+            m_scene.addComponent(entity, staticBody);
         }
 
         if (componentNode["KinematicBody"]) {
-            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
-            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
+            const Tag& tag = m_scene.getComponent<Tag>(entity);
+            const Transform& transform = m_scene.getComponent<Transform>(entity);
             KinematicBody kinematicBody = KinematicBody::deserialize(componentNode["KinematicBody"], m_physicsEngine, tag, transform);
-            m_scene.m_archetypesManager.addComponent(entity, kinematicBody);
+            m_scene.addComponent(entity, kinematicBody);
         }
 
         if (componentNode["RigidBody"]) {
-            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
-            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
+            const Tag& tag = m_scene.getComponent<Tag>(entity);
+            const Transform& transform = m_scene.getComponent<Transform>(entity);
             RigidBody rigidBody = RigidBody::deserialize(componentNode["RigidBody"], m_physicsEngine, tag, transform);
-            m_scene.m_archetypesManager.addComponent(entity, rigidBody);
+            m_scene.addComponent(entity, rigidBody);
         }
 
 
         if (componentNode["BoxCollider"]) {
-            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
-            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
+            const Tag& tag = m_scene.getComponent<Tag>(entity);
+            const Transform& transform = m_scene.getComponent<Transform>(entity);
             BoxCollider boxCollider = BoxCollider::deserialize(componentNode["BoxCollider"], m_physicsEngine, tag, transform);
-            m_scene.m_archetypesManager.addComponent(entity, boxCollider);
+            m_scene.addComponent(entity, boxCollider);
         }
 
         if (componentNode["SphereCollider"]) {
-            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
-            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
+            const Tag& tag = m_scene.getComponent<Tag>(entity);
+            const Transform& transform = m_scene.getComponent<Transform>(entity);
             SphereCollider sphereCollider = SphereCollider::deserialize(componentNode["SphereCollider"], m_physicsEngine, tag, transform);
-            m_scene.m_archetypesManager.addComponent(entity, sphereCollider);
+            m_scene.addComponent(entity, sphereCollider);
         }
 
         if (componentNode["CapsuleCollider"]) {
-            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
-            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
+            const Tag& tag = m_scene.getComponent<Tag>(entity);
+            const Transform& transform = m_scene.getComponent<Transform>(entity);
             CapsuleCollider capsuleCollider = CapsuleCollider::deserialize(componentNode["CapsuleCollider"], m_physicsEngine, tag, transform);
-            m_scene.m_archetypesManager.addComponent(entity, capsuleCollider);
+            m_scene.addComponent(entity, capsuleCollider);
         }
 
         if (componentNode["CylinderCollider"]) {
-            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
-            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
+            const Tag& tag = m_scene.getComponent<Tag>(entity);
+            const Transform& transform = m_scene.getComponent<Transform>(entity);
             CylinderCollider cylinderCollider = CylinderCollider::deserialize(componentNode["CylinderCollider"], m_physicsEngine, tag, transform);
-            m_scene.m_archetypesManager.addComponent(entity, cylinderCollider);
+            m_scene.addComponent(entity, cylinderCollider);
         }
 
         if (componentNode["BoxTrigger"]) {
-            const Tag& tag = m_scene.m_archetypesManager.getComponent<Tag>(entity);
-            const Transform& transform = m_scene.m_archetypesManager.getComponent<Transform>(entity);
+            const Tag& tag = m_scene.getComponent<Tag>(entity);
+            const Transform& transform = m_scene.getComponent<Transform>(entity);
             BoxTrigger boxTrigger = BoxTrigger::deserialize(componentNode["BoxTrigger"], m_physicsEngine, tag, transform);
-            m_scene.m_archetypesManager.addComponent(entity, boxTrigger);
+            m_scene.addComponent(entity, boxTrigger);
         }
     }
 

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "TechEngine/core/resources/material/MaterialManager.hpp"
-#include "mesh/AssimpLoader.hpp"
 #include "TechEngine/core/resources/mesh/MeshManager.hpp"
+#include "mesh/AssimpLoader.hpp"
 
 namespace TechEngine {
     enum class AppType;

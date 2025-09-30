@@ -1,7 +1,7 @@
 #include "Input.hpp"
 
 #include "systems/SystemsRegistry.hpp"
-#include "eventSystem/EventDispatcher.hpp"
+#include "eventSystem/EventManager.hpp"
 #include "TechEngine/client/events/input/MouseScrollEvent.hpp"
 #include "TechEngine/client/events/input/KeyHoldEvent.hpp"
 #include "TechEngine/client/events/input/KeyPressedEvent.hpp"
@@ -40,20 +40,20 @@ namespace TechEngine {
             if (keyCode == CAPS_LOCK) {
                 m_isCapsLockActive = !m_isCapsLockActive;
             }
-            m_systemsRegistry.getSystem<EventDispatcher>().dispatch<KeyPressedEvent>(Key(keyCode));
+            m_systemsRegistry.getSystem<EventManager>().dispatch<KeyPressedEvent>(Key(keyCode));
         }
     }
 
     void Input::onKeyReleased(KeyCode keyCode) {
         if (keyCode < m_keyStates.size()) {
             m_keyStates[keyCode] = false;
-            m_systemsRegistry.getSystem<EventDispatcher>().dispatch<KeyReleasedEvent>(Key(keyCode));
+            m_systemsRegistry.getSystem<EventManager>().dispatch<KeyReleasedEvent>(Key(keyCode));
         }
     }
 
     void Input::onKeyHold(KeyCode key) {
         if (key < m_keyStates.size() && m_keyStates[key]) {
-            m_systemsRegistry.getSystem<EventDispatcher>().dispatch<KeyHoldEvent>(Key(key));
+            m_systemsRegistry.getSystem<EventManager>().dispatch<KeyHoldEvent>(Key(key));
         }
     }
 
@@ -62,7 +62,7 @@ namespace TechEngine {
     }
 
     void Input::onMouseScroll(double xoffset, double yoffset) {
-        m_systemsRegistry.getSystem<EventDispatcher>().dispatch<MouseScrollEvent>((float)xoffset, (float)yoffset);
+        m_systemsRegistry.getSystem<EventManager>().dispatch<MouseScrollEvent>((float)xoffset, (float)yoffset);
     }
 
     bool Input::isKeyPressed(KeyCode key) {

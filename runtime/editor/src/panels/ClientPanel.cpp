@@ -5,7 +5,7 @@
 #include "TechEngine/client/events/input/KeyReleasedEvent.hpp"
 #include "TechEngine/client/events/input/MouseMoveEvent.hpp"
 #include "TechEngine/client/events/input/MouseScrollEvent.hpp"
-#include "eventSystem/EventDispatcher.hpp"
+#include "eventSystem/EventManager.hpp"
 
 namespace TechEngine {
     ClientPanel::ClientPanel(SystemsRegistry& editorSystemsRegistry,
@@ -19,21 +19,21 @@ namespace TechEngine {
         m_projectType = ProjectType::Client;
 
         //"Transfer" event from editor to client
-        editorSystemsRegistry.getSystem<EventDispatcher>().subscribe<KeyPressedEvent>([this](const std::shared_ptr<Event>& event) {
-            m_appSystemsRegistry.getSystem<EventDispatcher>().dispatch<KeyPressedEvent>(Key(dynamic_cast<KeyPressedEvent*>(event.get())->getKey()));
+        editorSystemsRegistry.getSystem<EventManager>().subscribe<KeyPressedEvent>([this](const std::shared_ptr<Event>& event) {
+            m_appSystemsRegistry.getSystem<EventManager>().dispatch<KeyPressedEvent>(Key(dynamic_cast<KeyPressedEvent*>(event.get())->getKey()));
         });
-        editorSystemsRegistry.getSystem<EventDispatcher>().subscribe<KeyHoldEvent>([this](const std::shared_ptr<Event>& event) {
-            m_appSystemsRegistry.getSystem<EventDispatcher>().dispatch<KeyHoldEvent>(Key(dynamic_cast<KeyHoldEvent*>(event.get())->getKey()));
+        editorSystemsRegistry.getSystem<EventManager>().subscribe<KeyHoldEvent>([this](const std::shared_ptr<Event>& event) {
+            m_appSystemsRegistry.getSystem<EventManager>().dispatch<KeyHoldEvent>(Key(dynamic_cast<KeyHoldEvent*>(event.get())->getKey()));
         });
-        editorSystemsRegistry.getSystem<EventDispatcher>().subscribe<KeyReleasedEvent>([this](const std::shared_ptr<Event>& event) {
-            m_appSystemsRegistry.getSystem<EventDispatcher>().dispatch<KeyReleasedEvent>(Key(dynamic_cast<KeyReleasedEvent*>(event.get())->getKey()));
+        editorSystemsRegistry.getSystem<EventManager>().subscribe<KeyReleasedEvent>([this](const std::shared_ptr<Event>& event) {
+            m_appSystemsRegistry.getSystem<EventManager>().dispatch<KeyReleasedEvent>(Key(dynamic_cast<KeyReleasedEvent*>(event.get())->getKey()));
         });
-        editorSystemsRegistry.getSystem<EventDispatcher>().subscribe<MouseMoveEvent>([this](const std::shared_ptr<Event>& event) {
-            m_appSystemsRegistry.getSystem<EventDispatcher>().dispatch<MouseMoveEvent>(glm::vec2(dynamic_cast<MouseMoveEvent*>(event.get())->getFromPosition()),
+        editorSystemsRegistry.getSystem<EventManager>().subscribe<MouseMoveEvent>([this](const std::shared_ptr<Event>& event) {
+            m_appSystemsRegistry.getSystem<EventManager>().dispatch<MouseMoveEvent>(glm::vec2(dynamic_cast<MouseMoveEvent*>(event.get())->getFromPosition()),
                                                                                        glm::vec2(dynamic_cast<MouseMoveEvent*>(event.get())->getToPosition()));
         });
-        editorSystemsRegistry.getSystem<EventDispatcher>().subscribe<MouseScrollEvent>([this](const std::shared_ptr<Event>& event) {
-            m_appSystemsRegistry.getSystem<EventDispatcher>().dispatch<MouseScrollEvent>(dynamic_cast<MouseScrollEvent*>(event.get())->getXOffset(),
+        editorSystemsRegistry.getSystem<EventManager>().subscribe<MouseScrollEvent>([this](const std::shared_ptr<Event>& event) {
+            m_appSystemsRegistry.getSystem<EventManager>().dispatch<MouseScrollEvent>(dynamic_cast<MouseScrollEvent*>(event.get())->getXOffset(),
                                                                                          dynamic_cast<MouseScrollEvent*>(event.get())->getYOffset());
         });
     }

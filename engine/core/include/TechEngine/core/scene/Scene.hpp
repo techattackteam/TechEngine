@@ -4,19 +4,24 @@
 #include "TechEngine/core/components/Components.hpp"
 
 namespace TechEngine {
+    class SystemsRegistry;
+
     class CORE_DLL Scene {
     private:
         class Internal;
         friend class Internal;
         friend class SceneSerializer;
+        friend class ScenesManager;
 
         std::unique_ptr<Internal> m_internal;
 
         ArchetypesManager m_archetypesManager;
 
-    public :
-        Scene();
+        SystemsRegistry& m_systemsRegistry;
 
+        Scene(SystemsRegistry& systemsRegistry);
+
+    public :
         ~Scene();
 
         Entity createEntity(const std::string& name);
@@ -26,11 +31,13 @@ namespace TechEngine {
         template<typename T>
         void addComponent(Entity entity, const T& component) {
             m_archetypesManager.addComponent<T>(entity, component);
+            addComponentInternal(entity, ComponentType<T>::get());
         }
 
         template<typename T>
         void removeComponent(Entity entity) {
             m_archetypesManager.removeComponent<T>(entity);
+            removeComponentInternal(entity, ComponentType<T>::get());
         }
 
         template<typename T>
@@ -62,5 +69,10 @@ namespace TechEngine {
         const std::string& getName() const;
 
         std::unique_ptr<Internal>& getInternal();
+
+    private:
+        void addComponentInternal(Entity entity, ComponentTypeID componentTypeID);
+
+        void removeComponentInternal(Entity entity, ComponentTypeID componentTypeID);
     };
 }

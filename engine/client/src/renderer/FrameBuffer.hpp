@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/ExportDLL.hpp"
+#include "../../include/TechEngine/client/core/ExportDLL.hpp"
 
 #include <cstdint>
 #include "GLFW.hpp"

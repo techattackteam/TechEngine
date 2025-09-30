@@ -8,6 +8,7 @@ find_package(ImGuizmo REQUIRED)
 # add the executable
 add_executable(TechEngineEditor ${EDITOR_SOURCES} ${EDITOR_HEADERS})
 
+
 target_include_directories(TechEngineEditor PRIVATE
         src
         "${CMAKE_SOURCE_DIR}/engine/core/include"

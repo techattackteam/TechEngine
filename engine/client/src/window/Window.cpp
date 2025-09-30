@@ -1,7 +1,7 @@
 #include "Window.hpp"
 
 #include "core/Logger.hpp"
-#include "eventSystem/EventDispatcher.hpp"
+#include "eventSystem/EventManager.hpp"
 #include "events/application/AppCloseEvent.hpp"
 #include "renderer/ErrorCatcher.hpp"
 #include "systems/SystemsRegistry.hpp"
@@ -42,12 +42,12 @@ namespace TechEngine {
         glfwSetWindowUserPointer(m_handler, this);
         glfwSetWindowCloseCallback(m_handler, [](GLFWwindow* handler) {
             Window* window = (Window*)glfwGetWindowUserPointer(handler);
-            window->m_systemsRegistry.getSystem<EventDispatcher>().dispatch<AppCloseEvent>();
+            window->m_systemsRegistry.getSystem<EventManager>().dispatch<AppCloseEvent>();
         });
 
         glfwSetFramebufferSizeCallback(m_handler, [](GLFWwindow* handler, int width, int height) {
             Window* window = (Window*)glfwGetWindowUserPointer(handler);
-            //window->m_systemsRegistry.getSystem<EventDispatcher>().dispatch<WindowRes>(new WindowResizeEvent(width, height));
+            //window->m_systemsRegistry.getSystem<EventManager>().dispatch<WindowRes>(new WindowResizeEvent(width, height));
         });
         glfwSwapInterval(0);
     }

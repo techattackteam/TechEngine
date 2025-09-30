@@ -2,7 +2,7 @@
 
 #include "WidgetsRegistry.hpp"
 #include "core/Logger.hpp"
-#include "eventSystem/EventDispatcher.hpp"
+#include "eventSystem/EventManager.hpp"
 #include "TechEngine/client/events/ui/MouseLeftWidgetRectEvent.hpp"
 #include "TechEngine/client/events/ui/MouseEnteredWidgetRectEvent.hpp"
 
@@ -294,12 +294,12 @@ namespace TechEngine {
         }
     }
 
-    void Widget::onMouseEnteredRect(EventDispatcher& eventDispatcher) {
+    void Widget::onMouseEnteredRect(EventManager& eventDispatcher) {
         m_mouseHovering = true;
         eventDispatcher.dispatch<MouseEnteredWidgetRectEvent>(shared_from_this());
     }
 
-    void Widget::onMouseLeftRect(EventDispatcher& eventDispatcher) {
+    void Widget::onMouseLeftRect(EventManager& eventDispatcher) {
         m_mouseHovering = false;
         eventDispatcher.dispatch<MouseLeftWidgetRectEvent>(shared_from_this());
     }

@@ -2,7 +2,7 @@
 
 
 #include "Timer.hpp"
-#include "eventSystem/EventDispatcher.hpp"
+#include "eventSystem/EventManager.hpp"
 //#include "physics/PhysicsEngine.hpp"
 #include "physics/PhysicsEngine.hpp"
 #include "project/Project.hpp"
@@ -14,7 +14,7 @@
 namespace TechEngine {
     void Core::registerSystems(const std::filesystem::path& rootPath) {
         m_systemRegistry.registerSystem<Project>(rootPath, m_systemRegistry);
-        m_systemRegistry.registerSystem<EventDispatcher>();
+        m_systemRegistry.registerSystem<EventManager>();
         m_systemRegistry.registerSystem<Timer>();
         m_systemRegistry.registerSystem<CameraSystem>(m_systemRegistry);
         m_systemRegistry.registerSystem<ResourcesManager>(m_systemRegistry);
@@ -25,7 +25,7 @@ namespace TechEngine {
 
     void Core::init(AppType appType) {
         m_systemRegistry.getSystem<Project>().init();
-        m_systemRegistry.getSystem<EventDispatcher>().init();
+        m_systemRegistry.getSystem<EventManager>().init();
         m_systemRegistry.getSystem<Timer>().init();
         m_systemRegistry.getSystem<CameraSystem>().init();
         m_systemRegistry.getSystem<ResourcesManager>().init(appType);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/ExportDLL.hpp"
+#include "../../include/TechEngine/client/core/ExportDLL.hpp"
 #include "systems/System.hpp"
 
 #include "ShadersManager.hpp"
@@ -62,8 +62,6 @@ namespace TechEngine {
 
         std::vector<Line> lines;
 
-        std::unordered_map<Mesh*, std::vector<std::tuple<Transform*, uint32_t>>> groupedInstances;
-
     public:
         inline static const int GEOMETRY_PASS = 1 << 0;
         inline static const int UI_PASS = 1 << 1;
@@ -104,7 +102,9 @@ namespace TechEngine {
 
         void removeMaterial(const std::string& name);
 
-        void populateDataBuffers(Scene& scene);
+        void createRenderables();
+
+        void populateObjectDataBuffers() const;
 
         void geometryPass(glm::mat4 viewMatrix, glm::mat4 projectionMatrix);
 

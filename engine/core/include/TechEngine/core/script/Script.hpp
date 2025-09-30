@@ -6,9 +6,10 @@
 
 
 namespace TechEngine {
+    class Scene;
+    class EventDispatcher;
     class MeshManager;
     class MaterialManager;
-    class Scene;
 
     class CORE_DLL Script {
     private:
@@ -17,6 +18,7 @@ namespace TechEngine {
 
     protected:
         Scene* m_scene;
+        EventDispatcher* m_eventDispatcher;
         MaterialManager* m_materialManager;
         MeshManager* m_meshManager;
 

@@ -1,8 +1,7 @@
 #pragma once
 
-#include "../../../../include/TechEngine/core/core/CoreExportDLL.hpp"
-#include "events/Event.hpp"
-#include "../../../../include/TechEngine/core/resources/mesh/Mesh.hpp"
+#include "TechEngine/core/events/Event.hpp"
+#include "TechEngine/core/core/CoreExportDLL.hpp"
 
 namespace TechEngine {
     class CORE_DLL MeshCreatedEvent : public Event {

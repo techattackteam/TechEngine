@@ -1,4 +1,4 @@
-#include "../../include/TechEngine/core/script/Script.hpp"
+#include "TechEngine/core/script/Script.hpp"
 
 #include "ScriptRegister.hpp"
 

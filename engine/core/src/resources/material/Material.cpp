@@ -1,4 +1,4 @@
-#include "../../../include/TechEngine/core/resources/material/Material.hpp"
+#include "TechEngine/core/resources/material/Material.hpp"
 
 #include <glm/glm.hpp>
 

@@ -1,7 +1,7 @@
 #pragma once
 #include <yaml-cpp/emitter.h>
 
-#include "core/ExportDLL.hpp"
+#include "../../include/TechEngine/client/core/ExportDLL.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {

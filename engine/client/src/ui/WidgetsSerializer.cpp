@@ -2,9 +2,9 @@
 
 
 #include "WidgetsRegistry.hpp"
-#include "events/scene/SceneLoadEvent.hpp"
-#include "events/scene/SceneSaveEvent.hpp"
-#include "eventSystem/EventDispatcher.hpp"
+#include "TechEngine/core/events/scene/SceneLoadEvent.hpp"
+#include "TechEngine/core/events/scene/SceneSaveEvent.hpp"
+#include "eventSystem/EventManager.hpp"
 #include "scene/ScenesManager.hpp"
 #include "systems/SystemsRegistry.hpp"
 #include "utils/YAMLUtils.hpp"
@@ -13,14 +13,14 @@
 
 namespace TechEngine {
     void WidgetsSerializer::init(SystemsRegistry& systemsRegistry) {
-        EventDispatcher& eventDispatcher = systemsRegistry.getSystem<EventDispatcher>();
-        eventDispatcher.subscribe<SceneLoadEvent>([&](const std::shared_ptr<Event>& event) {
+        EventManager& eventManager = systemsRegistry.getSystem<EventManager>();
+        eventManager.subscribe<SceneLoadEvent>([&](const std::shared_ptr<Event>& event) {
             const auto* sceneLoadEvent = dynamic_cast<SceneLoadEvent*>(event.get());
             if (sceneLoadEvent) {
                 deserializeUI(sceneLoadEvent->getSceneName(), systemsRegistry);
             }
         });
-        eventDispatcher.subscribe<SceneSaveEvent>([&](const std::shared_ptr<Event>& event) {
+        eventManager.subscribe<SceneSaveEvent>([&](const std::shared_ptr<Event>& event) {
             TE_LOGGER_INFO("SceneSaveEvent received in WidgetsSerializer");
             const auto* sceneSaveEvent = dynamic_cast<SceneSaveEvent*>(event.get());
             if (sceneSaveEvent) {

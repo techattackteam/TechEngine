@@ -1,12 +1,12 @@
-#include "../../../include/TechEngine/core/resources/material/MaterialManager.hpp"
 #include "systems/SystemsRegistry.hpp"
+#include "TechEngine/core/resources/material/MaterialManager.hpp"
+#include "events/resourcersManager/materials/MaterialCreatedEvent.hpp"
+#include "events/resourcersManager/materials/MaterialDeletedEvent.hpp"
+#include "eventSystem/EventManager.hpp"
 
 #include <utils/YAMLUtils.hpp>
 #include <fstream>
 
-#include "events/resourcersManager/materials/MaterialCreatedEvent.hpp"
-#include "events/resourcersManager/materials/MaterialDeletedEvent.hpp"
-#include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngine {
     MaterialManager::MaterialManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
@@ -34,7 +34,7 @@ namespace TechEngine {
         if (iterator == m_materialsBank.end()) {
             iterator = m_materialsBank.emplace(name, material).first;
         }
-        m_systemsRegistry.getSystem<EventDispatcher>().dispatch<MaterialCreatedEvent>(name);
+        m_systemsRegistry.getSystem<EventManager>().dispatch<MaterialCreatedEvent>(name);
         return iterator->second;
     }
 
@@ -54,7 +54,7 @@ namespace TechEngine {
             Material& material = getMaterial(name);
             freeIDs.push_back(material.getGpuID());
             m_materialsBank.erase(name);
-            m_systemsRegistry.getSystem<EventDispatcher>().dispatch<MaterialDeletedEvent>(name);
+            m_systemsRegistry.getSystem<EventManager>().dispatch<MaterialDeletedEvent>(name);
             return true;
         } else {
             TE_LOGGER_WARN("Material {0} does not exist!", name);

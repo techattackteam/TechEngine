@@ -1,6 +1,4 @@
 #include "FrameBuffer.hpp"
-#include "ErrorCatcher.hpp"
-#include "eventSystem/EventDispatcher.hpp"
 
 namespace TechEngine {
     void FrameBuffer::init(uint32_t id, uint32_t width, uint32_t height) {

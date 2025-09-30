@@ -1,11 +1,10 @@
-#include "../../../include/TechEngine/core/resources/mesh/MeshManager.hpp"
-
+#include "TechEngine/core/resources/mesh/MeshManager.hpp"
 #include "TechEngine/core/resources/mesh/Mesh.hpp"
 #include "AssimpLoader.hpp"
-#include "eventSystem/EventDispatcher.hpp"
 #include "systems/SystemsRegistry.hpp"
 #include "events/resourcersManager/meshManager/MeshCreatedEvent.hpp"
 #include "events/resourcersManager/meshManager/MeshDeletedEvent.hpp"
+#include "eventSystem/EventManager.hpp"
 
 namespace TechEngine {
     MeshManager::MeshManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
@@ -35,7 +34,7 @@ namespace TechEngine {
             return;
         }
         m_meshesBank.emplace_back(name, vertices, indices);
-        m_systemsRegistry.getSystem<EventDispatcher>().dispatch<MeshCreatedEvent>(name);
+        m_systemsRegistry.getSystem<EventManager>().dispatch<MeshCreatedEvent>(name);
     }
 
     void MeshManager::loadStaticMesh(const std::filesystem::path& path) {
@@ -76,6 +75,6 @@ namespace TechEngine {
                 break;
             }
         }
-        m_systemsRegistry.getSystem<EventDispatcher>().dispatch<MeshDeletedEvent>(m_meshesBank.back());
+        m_systemsRegistry.getSystem<EventManager>().dispatch<MeshDeletedEvent>(m_meshesBank.back());
     }
 }

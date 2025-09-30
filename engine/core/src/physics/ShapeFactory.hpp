@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../include/TechEngine/core/components/Components.hpp"
+#include "TechEngine/core/components/Components.hpp"
 
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Collision/Shape/MutableCompoundShape.h>

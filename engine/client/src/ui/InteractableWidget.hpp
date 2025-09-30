@@ -15,7 +15,7 @@ namespace TechEngine {
 
         //void draw(UIRenderer& renderer) override;
 
-        virtual void onMouseClick(EventDispatcher& eventDispatcher);
+        virtual void onMouseClick(EventManager& eventManager);
 
         bool isClickable() const;
 

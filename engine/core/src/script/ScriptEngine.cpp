@@ -1,5 +1,5 @@
 #include "core/Logger.hpp"
-#include "../../include/TechEngine/core/script/Script.hpp"
+#include "TechEngine/core/script/Script.hpp"
 #include "ScriptEngine.hpp"
 #include "ScriptRegister.hpp"
 #include "script/ScriptCrashHandler.hpp"
@@ -59,7 +59,7 @@ namespace TechEngine {
     void ScriptEngine::onStart() {
         if (m_userCustomDll) {
             for (Script* script: scripts) {
-                RUN_SCRIPT_FUNCTION(script, script->onStart(), m_systemRegistry.getSystem<EventDispatcher>());
+                RUN_SCRIPT_FUNCTION(script, script->onStart(), m_systemRegistry.getSystem<EventManager>());
             }
         }
     }
@@ -67,7 +67,7 @@ namespace TechEngine {
     void ScriptEngine::onUpdate() {
         if (m_userCustomDll) {
             for (Script* script: scripts) {
-                RUN_SCRIPT_FUNCTION(script, script->onUpdate(), m_systemRegistry.getSystem<EventDispatcher>());
+                RUN_SCRIPT_FUNCTION(script, script->onUpdate(), m_systemRegistry.getSystem<EventManager>());
             }
             //m_executeExternalEventSystem();
         }
@@ -76,7 +76,7 @@ namespace TechEngine {
     void ScriptEngine::onFixedUpdate() {
         if (m_userCustomDll) {
             for (Script* script: scripts) {
-                RUN_SCRIPT_FUNCTION(script, script->onFixedUpdate(), m_systemRegistry.getSystem<EventDispatcher>());
+                RUN_SCRIPT_FUNCTION(script, script->onFixedUpdate(), m_systemRegistry.getSystem<EventManager>());
             }
         }
     }
@@ -85,7 +85,7 @@ namespace TechEngine {
         /*if (dllLoaded) {
             m_updateComponentAPIsFunction();
             for (Script* script: scripts) {
-                RUN_SCRIPT_FUNCTION(script, script->onStopFunc(), m_systemRegistry.getSystem<EventDispatcher>());
+                RUN_SCRIPT_FUNCTION(script, script->onStopFunc(), m_systemRegistry.getSystem<EventManager>());
             }
             //m_updateComponentsFromAPIsFunction();
         }*/

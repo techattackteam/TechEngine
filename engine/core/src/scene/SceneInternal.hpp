@@ -2,7 +2,6 @@
 
 #include "TechEngine/core/scene/Scene.hpp"
 #include "TechEngine/core/components/ArchetypesManager.hpp"
-#include "TechEngine/core/components/Components.hpp"
 
 namespace TechEngine {
     class CORE_DLL Scene::Internal {
