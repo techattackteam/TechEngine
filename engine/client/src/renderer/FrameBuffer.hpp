@@ -1,8 +1,7 @@
 #pragma once
 
-#include "../../include/TechEngine/client/core/ExportDLL.hpp"
+#include "TechEngine/client/core/ExportDLL.hpp"
 
-#include <cstdint>
 #include "GLFW.hpp"
 
 namespace TechEngine {

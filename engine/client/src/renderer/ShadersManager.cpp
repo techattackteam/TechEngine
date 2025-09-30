@@ -27,6 +27,7 @@ namespace TechEngine {
                                          ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/geometryFragment.glsl"));
         shaders["geometryOld"] = new Shader("geometryOld", ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/geometryOldVertex.glsl"),
                                             ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/geometryOldFragment.glsl"));
+
     }
 
     void ShadersManager::changeActiveShader(const std::string& name) {

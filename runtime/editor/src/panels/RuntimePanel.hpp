@@ -20,7 +20,7 @@ namespace TechEngine {
 
         SceneView m_sceneView;
         SceneHierarchyPanel m_sceneHierarchyPanel;
-        //InspectorPanel m_inspectorPanel;
+        InspectorPanel m_inspectorPanel;
         std::vector<Entity> m_selectedEntities;
 
         ProjectType m_projectType;
