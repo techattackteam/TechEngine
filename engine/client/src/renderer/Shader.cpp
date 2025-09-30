@@ -3,6 +3,9 @@
 #include <sstream>
 #include <iostream>
 #include "Shader.hpp"
+
+#include <glm/gtc/type_ptr.hpp>
+
 #include "GLFW.hpp"
 #include "ErrorCatcher.hpp"
 #include "core/Logger.hpp"
@@ -11,26 +14,13 @@ namespace TechEngine {
     Shader::Shader(const std::string& name, const char* vertexShaderPath, const char* fragmentShaderPath) {
         this->shaderName = name;
         ShaderSource shaderSource = parseShader(vertexShaderPath, fragmentShaderPath);
-        id = createShader(shaderSource.vertexShader, shaderSource.fragmentShader);
+        id = createGraphicsProgram(shaderSource.vertexShader, shaderSource.fragmentShader);
     }
 
-    uint32_t Shader::createShader(const std::string& vertexShader, const std::string& fragmentShader) {
-        uint32_t program;
-        program = glCreateProgram();
-        uint32_t vs = compileShader(GL_VERTEX_SHADER, vertexShader);
-        uint32_t fs = compileShader(GL_FRAGMENT_SHADER, fragmentShader);
-        if (vs == -1 || fs == -1) {
-            return -1;
-        }
-        glAttachShader(program, vs);
-        glAttachShader(program, fs);
-
-        glLinkProgram(program);
-        glValidateProgram(program);
-
-        glDeleteShader(vs);
-        glDeleteShader(fs);
-        return program;
+    Shader::Shader(const std::string& name, const char* computeShaderPath) {
+        this->shaderName = name;
+        std::string source = parseSingleShader(computeShaderPath);
+        id = createComputeProgram(source);
     }
 
     uint32_t Shader::compileShader(uint32_t type, const std::string& source) {
@@ -56,6 +46,40 @@ namespace TechEngine {
 
         return shaderID;
     }
+
+    uint32_t Shader::createGraphicsProgram(const std::string& vertexShader, const std::string& fragmentShader) {
+        uint32_t program;
+        program = glCreateProgram();
+        uint32_t vs = compileShader(GL_VERTEX_SHADER, vertexShader);
+        uint32_t fs = compileShader(GL_FRAGMENT_SHADER, fragmentShader);
+        if (vs == -1 || fs == -1) {
+            return -1;
+        }
+        glAttachShader(program, vs);
+        glAttachShader(program, fs);
+
+        glLinkProgram(program);
+        glValidateProgram(program);
+
+        glDeleteShader(vs);
+        glDeleteShader(fs);
+        return program;
+    }
+
+    uint32_t Shader::createComputeProgram(const std::string& computeShader) {
+        uint32_t program = glCreateProgram();
+        uint32_t c = compileShader(GL_COMPUTE_SHADER, computeShader);
+        if (c == -1) {
+            glDeleteProgram(program);
+            return -1;
+        }
+        glAttachShader(program, c);
+        glLinkProgram(program);
+        glValidateProgram(program);
+        glDeleteShader(c);
+        return program;
+    }
+
 
     void Shader::bind() const {
         glUseProgram(id);
@@ -92,8 +116,15 @@ namespace TechEngine {
         return ShaderSource({shaderCode[0], shaderCode[1]});
     }
 
+    std::string Shader::parseSingleShader(const std::string& sources) {
+    }
+
     void Shader::setUniformMatrix4f(const std::string& name, glm::mat4 matrix) {
         glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix));
+    }
+
+    void Shader::setUniformVec2(const std::string& name, glm::vec2 vector) {
+        glUniform2fv(getUniformLocation(name), 1, glm::value_ptr(vector));
     }
 
     void Shader::setUniformVec3(const std::string& name, glm::vec3 vector) {

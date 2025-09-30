@@ -23,11 +23,17 @@ namespace TechEngine {
         //                                 (clientPath + "/assets/shaders/geometryFragment.glsl").c_str());
         //shaders["geometryOld"] = new Shader("line", (clientPath + "/assets/shaders/geometryOldVertex.glsl").c_str(),
         //                             (clientPath + "/assets/shaders/geometryOldFragment.glsl").c_str());
+        //shaders["depthPrePass"] = new Shader("depthPrePass", (clientPath + "/assets/shaders/depthPrePassVertex.glsl").c_str(),
+        //                                     (clientPath + "/assets/shaders/depthPrePassFragment.glsl").c_str());
+        //shaders["lightCull"] = new Shader("lightCull", (clientPath + "/assets/shaders/lightCullingCompute.glsl").c_str());
+
         shaders["geometry"] = new Shader("geometry", ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/geometryVertex.glsl"),
                                          ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/geometryFragment.glsl"));
         shaders["geometryOld"] = new Shader("geometryOld", ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/geometryOldVertex.glsl"),
                                             ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/geometryOldFragment.glsl"));
-
+        shaders["depthPrePass"] = new Shader("depthPrePass", ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/depthPrePassVertex.glsl"),
+                                             ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/depthPrePassFragment.glsl"));
+        shaders["lightCulling"] = new Shader("lightCulling", ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/lightCullingCompute.glsl"));
     }
 
     void ShadersManager::changeActiveShader(const std::string& name) {
