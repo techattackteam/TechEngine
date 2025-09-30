@@ -2,7 +2,6 @@
 
 #include "TechEngine/client/events/input/KeyPressedEvent.hpp"
 #include "TechEngine/client/events/input/MouseMoveEvent.hpp"
-#include "eventSystem/EventDispatcher.hpp"
 #include "input/Input.hpp"
 #include "renderer/FrameBuffer.hpp"
 #include "renderer/Renderer.hpp"

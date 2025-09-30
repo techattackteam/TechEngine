@@ -3,7 +3,7 @@
 #include <map>
 #include <string>
 
-#include "core/ExportDLL.hpp"
+#include "../../../include/TechEngine/client/core/ExportDLL.hpp"
 #include <glm/glm.hpp>
 
 #include "stb_truetype.h"

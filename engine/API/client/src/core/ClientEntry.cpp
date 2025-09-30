@@ -7,7 +7,7 @@
 
 #include "scene/Scene.hpp"
 #include "script/ScriptEngine.hpp"
-#include "eventSystem/EventDispatcher.hpp"
+#include "../../../../core/include/TechEngine/core/eventSystem/EventDispatcher.hpp"
 #include "ui/WidgetsRegistry.hpp"
 
 namespace TechEngineAPI {

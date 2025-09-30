@@ -1,6 +1,6 @@
 #include "client/include/eventSystem/ClientEventSystem.hpp"
 
-#include "eventSystem/EventDispatcher.hpp"
+#include "../../../../core/include/TechEngine/core/eventSystem/EventDispatcher.hpp"
 #include "events/input/KeyPressedEvent.hpp"
 #include "events/input/KeyReleasedEvent.hpp"
 #include "events/input/KeyHoldEvent.hpp"

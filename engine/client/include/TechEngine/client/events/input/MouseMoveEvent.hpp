@@ -1,6 +1,6 @@
 #pragma once
 
-#include "events/Event.hpp"
+#include "TechEngine/core/events/Event.hpp"
 #include <glm/vec2.hpp>
 
 

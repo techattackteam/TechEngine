@@ -4,7 +4,7 @@
 
 
 #include "core/Logger.hpp"
-#include "eventSystem/EventDispatcher.hpp"
+#include "eventSystem/EventManager.hpp"
 #include "TechEngine/core/scene/Scene.hpp"
 #include "scene/ScenesManager.hpp"
 
@@ -53,7 +53,7 @@ namespace TechEngine {
             const Entity entity1 = getEntity(inBody1.GetID());
             const Entity entity2 = getEntity(inBody2.GetID());
 
-            m_systemsRegistry.getSystem<EventDispatcher>().dispatch<OnTriggerEnter>(entity1, entity2);
+            m_systemsRegistry.getSystem<EventManager>().dispatch<OnTriggerEnter>(entity1, entity2);
         } else {
             Entity entity1 = -2;
             Entity entity2 = -2;
@@ -68,7 +68,7 @@ namespace TechEngine {
                     break;
                 }
             }
-            m_systemsRegistry.getSystem<EventDispatcher>().dispatch<OnCollisionEnter>(entity1, entity2);
+            m_systemsRegistry.getSystem<EventManager>().dispatch<OnCollisionEnter>(entity1, entity2);
         }
     }
 
@@ -95,7 +95,7 @@ namespace TechEngine {
             const Entity entity1 = getEntity(inBody1.GetID());
             const Entity entity2 = getEntity(inBody2.GetID());
 
-            m_systemsRegistry.getSystem<EventDispatcher>().dispatch<OnTriggerStay>(entity1, entity2);
+            m_systemsRegistry.getSystem<EventManager>().dispatch<OnTriggerStay>(entity1, entity2);
         } else {
             Entity entity1 = -2;
             Entity entity2 = -2;
@@ -110,7 +110,7 @@ namespace TechEngine {
                     break;
                 }
             }
-            //m_systemsRegistry.getSystem<EventDispatcher>().dispatch<OnCollisionStay>(entity1, entity2);
+            //m_systemsRegistry.getSystem<EventManager>().dispatch<OnCollisionStay>(entity1, entity2);
         }
     }
 
@@ -151,7 +151,7 @@ namespace TechEngine {
             const Entity entity1 = getEntity(body1ID);
             const Entity entity2 = getEntity(body2ID);
 
-            m_systemsRegistry.getSystem<EventDispatcher>().dispatch<OnTriggerLeave>(entity1, entity2);
+            m_systemsRegistry.getSystem<EventManager>().dispatch<OnTriggerLeave>(entity1, entity2);
         } else {
             Entity entity1 = -2;
             Entity entity2 = -2;
@@ -166,7 +166,7 @@ namespace TechEngine {
                     break;
                 }
             }
-            m_systemsRegistry.getSystem<EventDispatcher>().dispatch<OnCollisionLeave>(entity1, entity2);
+            m_systemsRegistry.getSystem<EventManager>().dispatch<OnCollisionLeave>(entity1, entity2);
         }
     }
 

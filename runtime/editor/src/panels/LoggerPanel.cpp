@@ -1,7 +1,6 @@
 #include "LoggerPanel.hpp"
 
 #include "core/Logger.hpp"
-#include "eventSystem/EventDispatcher.hpp"
 #include "logger/ImGuiSink.hpp"
 #include "spdlog/spdlog.h"
 

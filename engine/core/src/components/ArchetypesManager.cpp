@@ -1,5 +1,5 @@
-#include "../../include/TechEngine/core/components/ArchetypesManager.hpp"
-#include "../../include/TechEngine/core/components/Components.hpp"
+#include "TechEngine/core/components/ArchetypesManager.hpp"
+#include "TechEngine/core/components/Components.hpp"
 #include <algorithm>
 
 namespace TechEngine {

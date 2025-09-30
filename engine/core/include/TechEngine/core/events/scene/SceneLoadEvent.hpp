@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "events/Event.hpp"
+#include "TechEngine/core/events/Event.hpp"
 
 namespace TechEngine {
     class CORE_DLL SceneLoadEvent : public Event {

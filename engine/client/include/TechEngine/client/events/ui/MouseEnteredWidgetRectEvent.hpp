@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include "events/Event.hpp"
+#include "TechEngine/core/events/Event.hpp"
 #include "ui/Widget.hpp"
 
 namespace TechEngine {

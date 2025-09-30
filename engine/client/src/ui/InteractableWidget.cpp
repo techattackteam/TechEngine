@@ -1,6 +1,7 @@
 #include "InteractableWidget.hpp"
 
 #include "core/Logger.hpp"
+#include "eventSystem/EventManager.hpp"
 #include "TechEngine/client/events/ui/MouseClickedInteractableWidgetEvent.hpp"
 
 namespace TechEngine {
@@ -13,9 +14,9 @@ namespace TechEngine {
 
     InteractableWidget::~InteractableWidget() = default;
 
-    void InteractableWidget::onMouseClick(EventDispatcher& eventDispatcher) {
+    void InteractableWidget::onMouseClick(EventManager& eventManager) {
         if (m_isClickable) {
-            eventDispatcher.dispatch<MouseClickedInteractableWidgetEvent>(std::dynamic_pointer_cast<InteractableWidget>(shared_from_this()));
+            eventManager.dispatch<MouseClickedInteractableWidgetEvent>(std::dynamic_pointer_cast<InteractableWidget>(shared_from_this()));
             TE_LOGGER_INFO("InteractableWidget::onMouseClick: Widget '{0}' was clicked.", m_name);
         }
     }

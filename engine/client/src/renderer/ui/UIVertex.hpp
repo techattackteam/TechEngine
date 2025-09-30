@@ -1,5 +1,5 @@
 #pragma once
-#include "core/ExportDLL.hpp"
+#include "../../../include/TechEngine/client/core/ExportDLL.hpp"
 #include <glm/glm.hpp>
 
 struct CLIENT_DLL UIVertex {

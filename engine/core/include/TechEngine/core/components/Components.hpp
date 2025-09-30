@@ -198,7 +198,6 @@ namespace TechEngine {
         Mesh* mesh;
         Material* material;
 
-
         std::vector<Vertex> getVertices() const {
             return mesh->m_vertices;
         }
@@ -211,6 +210,7 @@ namespace TechEngine {
             this->material = &material;
         }
 
+        // This changes the mesh but does not notify the Renderer about this change since it does not have access to the Event System
         void changeMesh(Mesh& mesh) {
             this->mesh = &mesh;
         }

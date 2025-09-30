@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../../../include/TechEngine/core/core/CoreExportDLL.hpp"
-#include "events/Event.hpp"
+#include "TechEngine/core/core/CoreExportDLL.hpp"
+#include "TechEngine/core/events/Event.hpp"
 
 namespace TechEngine {
     class Mesh;

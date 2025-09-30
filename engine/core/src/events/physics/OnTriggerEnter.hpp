@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "events/Event.hpp"
+#include "TechEngine/core/events/Event.hpp"
 
 namespace TechEngine {
     class OnTriggerEnter final : public Event {

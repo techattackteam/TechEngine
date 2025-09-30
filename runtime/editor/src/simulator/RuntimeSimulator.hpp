@@ -1,7 +1,7 @@
 #pragma once
 #include "events/application/AppCloseEvent.hpp"
 #include "events/scripts/ScriptCrashEvent.hpp"
-#include "eventSystem/EventDispatcher.hpp"
+#include "eventSystem/EventManager.hpp"
 #include "project/Project.hpp"
 #include "renderer/Renderer.hpp"
 #include "systems/System.hpp"
@@ -77,12 +77,12 @@ namespace TechEngine {
                 m_runtime.m_systemRegistry.template registerSystem<Renderer>(m_runtime.m_systemRegistry);
                 m_runtime.m_systemRegistry.template getSystem<Renderer>().init();
             }
-            m_systemsRegistry.getSystem<EventDispatcher>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
+            m_systemsRegistry.getSystem<EventManager>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
                 if (m_simulationState != SimulationState::STOPPED) {
                     stopSimulation();
                 }
             });
-            m_runtime.m_systemRegistry.template getSystem<EventDispatcher>().template subscribe<ScriptCrashEvent>([this](const std::shared_ptr<Event>& event) {
+            m_runtime.m_systemRegistry.template getSystem<EventManager>().template subscribe<ScriptCrashEvent>([this](const std::shared_ptr<Event>& event) {
                 if (m_simulationState != SimulationState::STOPPED) {
                     m_stopNextUpdate = true;
                 }
@@ -126,7 +126,7 @@ namespace TechEngine {
 
         void tick(float deltaTime) {
             if (m_simulationState != SimulationState::RUNNING) {
-                m_runtime.m_systemRegistry.template getSystem<EventDispatcher>().onUpdate();
+                m_runtime.m_systemRegistry.template getSystem<EventManager>().onUpdate();
                 m_runtime.m_systemRegistry.template getSystem<Renderer>().onUpdate();
             } else {
                 Timer& timer = m_runtime.m_systemRegistry.template getSystem<Timer>();

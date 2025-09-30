@@ -8,12 +8,17 @@
 #include "events/resourcersManager/materials/MaterialDeletedEvent.hpp"
 #include "events/resourcersManager/meshManager/MeshCreatedEvent.hpp"
 #include "events/resourcersManager/meshManager/MeshDeletedEvent.hpp"
+#include "eventSystem/EventManager.hpp"
+#include "TechEngine/core/events/scene/ComponentAddedEvent.hpp"
+#include "TechEngine/core/events/scene/EntityCreatedEvent.hpp"
+#include "TechEngine/core/events/scene/EntityDeletedEvent.hpp"
 #include "profiling/ProfiledScope.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "TechEngine/core/resources/material/Material.hpp"
 #include "TechEngine/core/resources/mesh/Vertex.hpp"
 #include "TechEngine/core/scene/Scene.hpp"
 #include "scene/ScenesManager.hpp"
+#include "TechEngine/core/events/scene/meshRenderer/ChangeMeshEvent.hpp"
 #include "ui/PanelWidget.hpp"
 #include "ui/WidgetsRegistry.hpp"
 
@@ -54,21 +59,49 @@ namespace TechEngine {
         m_uiRenderer.init();
 
 
-        EventDispatcher& eventDispatcher = m_systemsRegistry.getSystem<EventDispatcher>();
+        EventManager& eventManager = m_systemsRegistry.getSystem<EventManager>();
 
-        eventDispatcher.subscribe<MeshCreatedEvent>([this](const std::shared_ptr<Event>& event) {
+
+        eventManager.subscribe<EntityCreatedEvent>([this](const std::shared_ptr<Event>& event) {
+            // Internal Renderables pointers may have changed, so I need to reconstruct the list
+            this->createRenderables();
+        });
+        eventManager.subscribe<EntityDeletedEvent>([this](const std::shared_ptr<Event>& event) {
+            // Internal Renderables pointers may have changed, so I need to reconstruct the list
+            this->createRenderables();
+        });
+
+        eventManager.subscribe<ComponentAddedEvent>([this](const std::shared_ptr<Event>& event) {
+            if (dynamic_cast<const ComponentAddedEvent*>(event.get())->getComponentTypeID() == ComponentType<MeshRenderer>::get()) {
+                // Internal Renderables pointers may have changed, so I need to reconstruct the list
+                this->createRenderables();
+            }
+        });
+
+        eventManager.subscribe<ComponentAddedEvent>([this](const std::shared_ptr<Event>& event) {
+            if (dynamic_cast<const ComponentAddedEvent*>(event.get())->getComponentTypeID() == ComponentType<Material>::get()) {
+                // Internal Renderables pointers may have changed, so I need to reconstruct the list
+                this->createRenderables();
+            }
+        });
+
+        eventManager.subscribe<ChangeMeshEvent>([this](const std::shared_ptr<Event>& event) {
+            this->createRenderables();
+        });
+
+        eventManager.subscribe<MeshCreatedEvent>([this](const std::shared_ptr<Event>& event) {
             this->uploadNewMesh(dynamic_cast<const MeshCreatedEvent*>(event.get())->m_name);
         });
 
-        eventDispatcher.subscribe<MeshDeletedEvent>([this](const std::shared_ptr<Event>& event) {
+        eventManager.subscribe<MeshDeletedEvent>([this](const std::shared_ptr<Event>& event) {
             this->removeMesh(dynamic_cast<const MeshDeletedEvent*>(event.get())->mesh);
         });
 
-        eventDispatcher.subscribe<MaterialCreatedEvent>([this](const std::shared_ptr<Event>& event) {
+        eventManager.subscribe<MaterialCreatedEvent>([this](const std::shared_ptr<Event>& event) {
             this->uploadNewMaterial(dynamic_cast<const MaterialCreatedEvent*>(event.get())->getName());
         });
 
-        eventDispatcher.subscribe<MaterialDeletedEvent>([this](const std::shared_ptr<Event>& event) {
+        eventManager.subscribe<MaterialDeletedEvent>([this](const std::shared_ptr<Event>& event) {
             this->removeMaterial(dynamic_cast<const MaterialDeletedEvent*>(event.get())->getName());
         });
     }
@@ -76,52 +109,6 @@ namespace TechEngine {
     // Might upload data to GPU or prepare some resources
     void Renderer::onStart() {
         System::onStart();
-        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
-
-        scene.runSystem<Transform, MeshRenderer>([&](Transform& transform, MeshRenderer& meshRenderer) {
-            m_renderables.emplace_back(&transform, &meshRenderer);
-        });
-        std::sort(m_renderables.begin(), m_renderables.end());
-
-        std::vector<DrawCommand> commands;
-        std::vector<ObjectData> objectData;
-
-        //std::map<Mesh*, std::vector<std::tuple<Transform*, uint32_t>>> groupedInstances; // Mesh to list of (Transform, MaterialID)
-
-        commands.reserve(128);
-        Mesh* mesh = m_renderables[0].meshRenderer->mesh;
-        DrawCommand cmd = {};
-
-        cmd.firstIndex = mesh->firstIndex;
-        cmd.count = mesh->m_indices.size();
-        cmd.baseVertex = mesh->baseVertex;
-
-        cmd.baseInstance = 0;
-        cmd.instanceCount = 0;
-
-        uint32_t i = 0;
-        for (const auto& renderable: m_renderables) {
-            if (renderable.meshRenderer->mesh != mesh) {
-                commands.push_back(cmd);
-                mesh = renderable.meshRenderer->mesh;
-                cmd.count = mesh->m_indices.size();
-                cmd.firstIndex = mesh->firstIndex;
-                cmd.baseVertex = mesh->baseVertex;
-
-                cmd.baseInstance = i;
-                i++;
-            }
-            cmd.instanceCount++;
-        }
-        if (cmd.instanceCount > 0) {
-            commands.push_back(cmd);
-        }
-
-        if (!commands.empty()) {
-            m_drawCommandBuffer.addData(commands.data(), commands.size() * sizeof(DrawCommand));
-        }
-
-        this->m_commandToDraw = commands.size();
     }
 
     void Renderer::onUpdate() {
@@ -143,7 +130,7 @@ namespace TechEngine {
     }
 
     void Renderer::renderPipeline() {
-        populateDataBuffers(m_systemsRegistry.getSystem<ScenesManager>().getActiveScene());
+        populateObjectDataBuffers();
         const uint32_t size = m_renderQueue.size();
 
         for (uint32_t i = 0; i < size; i++) {
@@ -178,7 +165,7 @@ namespace TechEngine {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
-        populateDataBuffers(m_systemsRegistry.getSystem<ScenesManager>().getActiveScene());
+        populateObjectDataBuffers();
         if (mask & GEOMETRY_PASS) {
             geometryPass(camera.getViewMatrix(), camera.getProjectionMatrix());
         }
@@ -259,7 +246,59 @@ namespace TechEngine {
         }
     }
 
-    void Renderer::populateDataBuffers(Scene& scene) {
+    void Renderer::createRenderables() {
+        m_renderables.clear();
+        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+
+        scene.runSystem<Transform, MeshRenderer>([&](Transform& transform, MeshRenderer& meshRenderer) {
+            m_renderables.emplace_back(&transform, &meshRenderer);
+        });
+        if (m_renderables.empty()) {
+            m_commandToDraw = 0;
+            return;
+        }
+        std::sort(m_renderables.begin(), m_renderables.end());
+
+        std::vector<DrawCommand> commands;
+        std::vector<ObjectData> objectData;
+
+        commands.reserve(128);
+        Mesh* mesh = m_renderables[0].meshRenderer->mesh;
+        DrawCommand cmd = {};
+
+        cmd.firstIndex = mesh->firstIndex;
+        cmd.count = mesh->m_indices.size();
+        cmd.baseVertex = mesh->baseVertex;
+
+        cmd.baseInstance = 0;
+        cmd.instanceCount = 0;
+
+        uint32_t i = 0;
+        for (const auto& renderable: m_renderables) {
+            if (renderable.meshRenderer->mesh != mesh) {
+                commands.push_back(cmd);
+                mesh = renderable.meshRenderer->mesh;
+                cmd.count = mesh->m_indices.size();
+                cmd.firstIndex = mesh->firstIndex;
+                cmd.baseVertex = mesh->baseVertex;
+
+                cmd.baseInstance = i;
+                i++;
+            }
+            cmd.instanceCount++;
+        }
+        if (cmd.instanceCount > 0) {
+            commands.push_back(cmd);
+        }
+
+        if (!commands.empty()) {
+            m_drawCommandBuffer.addData(commands.data(), commands.size() * sizeof(DrawCommand));
+        }
+
+        this->m_commandToDraw = commands.size();
+    }
+
+    void Renderer::populateObjectDataBuffers() const {
         Profiler& profiler = m_systemsRegistry.getSystem<Profiler>();
         ProfiledScope scope(profiler, "Renderer: PopulateDataBuffers");
         size_t totalSize = m_renderables.size();

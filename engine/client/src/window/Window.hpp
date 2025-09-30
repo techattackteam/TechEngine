@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "core/ExportDLL.hpp"
+#include "../../include/TechEngine/client/core/ExportDLL.hpp"
 #include "systems/System.hpp"
 #include <gl/glew.h>
 #include <glfw/glfw3.h>

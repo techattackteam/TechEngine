@@ -1,4 +1,4 @@
-#include "../../include/TechEngine/core/components/Archetype.hpp"
+#include "TechEngine/core/components/Archetype.hpp"
 #include <cassert>
 
 namespace TechEngine {

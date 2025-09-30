@@ -1,4 +1,4 @@
-#include "Key.hpp"
+#include "../../include/TechEngine/client/input/Key.hpp"
 #include <GLFW/glfw3.h>
 
 namespace TechEngine {

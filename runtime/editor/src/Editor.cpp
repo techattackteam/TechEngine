@@ -5,7 +5,7 @@
 #include "project/ProjectManager.hpp"
 #include "script/ScriptEngine.hpp"
 
-#include "eventSystem/EventDispatcher.hpp"
+#include "eventSystem/EventManager.hpp"
 #include "events/application/AppCloseEvent.hpp"
 #include "input/Input.hpp"
 #include "logger/ImGuiSink.hpp"
@@ -46,7 +46,7 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<Logger>("TechEngineEditor");
         m_systemRegistry.getSystem<Logger>().init();
         loadEditorConfig();
-        m_systemRegistry.registerSystem<EventDispatcher>();
+        m_systemRegistry.registerSystem<EventManager>();
         m_systemRegistry.registerSystem<Timer>();
         m_systemRegistry.registerSystem<ProjectManager>(m_client.m_systemRegistry, m_server.m_systemRegistry);
         m_systemRegistry.registerSystem<Window>(m_systemRegistry);
@@ -64,7 +64,7 @@ namespace TechEngine {
         m_systemRegistry.getSystem<ProjectManager>().init(m_lastProjectLoaded);
         m_systemRegistry.getSystem<Window>().init("TechEngineEditor - " + m_systemRegistry.getSystem<ProjectManager>().getProjectName(), 1280, 720);
         m_systemRegistry.getSystem<Timer>().init();
-        m_systemRegistry.getSystem<EventDispatcher>().init();
+        m_systemRegistry.getSystem<EventManager>().init();
         m_systemRegistry.getSystem<RuntimeSimulator<Client>>().init();
         m_systemRegistry.getSystem<RuntimeSimulator<Server>>().init();
         ComponentType<Tag>::get();
@@ -82,7 +82,7 @@ namespace TechEngine {
         };
 
         TE_LOGGER_INFO("Editor initialized");
-        m_systemRegistry.getSystem<EventDispatcher>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
+        m_systemRegistry.getSystem<EventManager>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
             m_running = false;
             m_systemRegistry.getSystem<ProjectManager>().saveProject();
         });

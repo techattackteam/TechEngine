@@ -2,8 +2,8 @@
 
 #include <vector>
 
-#include "Key.hpp"
-#include "Mouse.hpp"
+#include "TechEngine/client/input/Key.hpp"
+#include "TechEngine/client/input/Mouse.hpp"
 #include "systems/System.hpp"
 
 namespace TechEngine {

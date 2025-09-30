@@ -1,13 +1,12 @@
 #include "PanelsManager.hpp"
 
-
 #include "DockPanel.hpp"
 #include "core/Client.hpp"
 #include "core/Server.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 #include "events/application/AppCloseEvent.hpp"
-#include "eventSystem/EventDispatcher.hpp"
+#include "eventSystem/EventManager.hpp"
 
 #include "script/ScriptEngine.hpp"
 #include "scripting/ScriptsCompiler.hpp"
@@ -247,7 +246,7 @@ namespace TechEngine {
                     "C:\\dev\\TechEngine\\bin\\runtime\\editor\\Server", ProjectType::Server);
             }
             if (ImGui::MenuItem("Exit")) {
-                m_systemsRegistry.getSystem<EventDispatcher>().dispatch<AppCloseEvent>();
+                m_systemsRegistry.getSystem<EventManager>().dispatch<AppCloseEvent>();
             }
             ImGui::EndMenu();
         }

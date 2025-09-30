@@ -1,7 +1,7 @@
 #pragma once
 
-#include "events/Event.hpp"
-#include "input/Key.hpp"
+#include "TechEngine/core/events/Event.hpp"
+#include "TechEngine/client/input/Key.hpp"
 
 namespace TechEngine {
     class KeyPressedEvent : public Event {

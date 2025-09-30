@@ -3,8 +3,11 @@ cmake_minimum_required(VERSION 3.20)
 project(TechEngine)
 
 set(CMAKE_CXX_STANDARD 20)
-
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/findCmake")
+
+if (MSVC)
+    add_compile_options("/MP")
+endif ()
 
 add_subdirectory(engine)
 add_subdirectory(runtime)

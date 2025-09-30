@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/ExportDll.hpp"
+#include "../../include/TechEngine/client/core/ExportDLL.hpp"
 #include "systems/System.hpp"
 #include "ShadersManager.hpp"
 #include "Line.hpp"

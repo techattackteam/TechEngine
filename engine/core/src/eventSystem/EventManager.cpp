@@ -1,7 +1,10 @@
 #include "EventManager.hpp"
 
 namespace TechEngine {
-    EventManager::EventManager(const EventManager& rhs) {
+    EventManager::EventManager() : System(), m_eventDispatcher(this) {
+    }
+
+    EventManager::EventManager(const EventManager& rhs) : System(), m_eventDispatcher(this) {
         m_dispatchedEvents = rhs.m_dispatchedEvents;
         m_observers = rhs.m_observers;
     }
@@ -12,6 +15,32 @@ namespace TechEngine {
             m_observers = rhs.m_observers;
         }
         return *this;
+    }
+
+    void EventManager::onUpdate() {
+        execute();
+    }
+
+    void EventManager::shutdown() {
+        m_dispatchedEvents = std::queue<std::shared_ptr<Event>>();
+        m_observers.clear();
+    }
+
+
+    void EventManager::registerEditorWatchDog(const std::function<void(std::shared_ptr<Event>)>& editorWatchDogCallback) {
+        m_editorWatchDogCallback = editorWatchDogCallback;
+    }
+
+    void EventManager::subscribe(const std::type_index& type, const Observer& callback) {
+        if (m_observers.count(type) == 0) {
+            m_observers[type] = ObserversVector();
+        }
+        m_observers[type].emplace_back(std::make_shared<Observer>(callback));
+    }
+
+    void EventManager::unsubscribe(const std::type_index& type, const Observer& callback) {
+        auto& callbacks = m_observers[type];
+        //callbacks.erase(std::remove(callbacks.begin(), callbacks.end(), callback), callbacks.end());
     }
 
     void EventManager::dispatch(const std::shared_ptr<Event>& event) {
@@ -36,8 +65,7 @@ namespace TechEngine {
         }
     }
 
-    void EventManager::shutdown() {
-        m_dispatchedEvents = std::queue<std::shared_ptr<Event>>();
-        m_observers.clear();
+    EventDispatcher& EventManager::getEventDispatcher() {
+        return m_eventDispatcher;
     }
 }

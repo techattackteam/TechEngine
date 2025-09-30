@@ -2,7 +2,7 @@
 
 #include "core/Logger.hpp"
 #include "events/application/AppCloseEvent.hpp"
-#include "eventSystem/EventDispatcher.hpp"
+#include "eventSystem/EventManager.hpp"
 #include "project/Project.hpp"
 #include "renderer/Renderer.hpp"
 #include "scene/ScenesManager.hpp"
@@ -30,7 +30,7 @@ namespace TechEngine {
         m_client.m_systemRegistry.getSystem<ScriptEngine>().start(
             m_client.m_systemRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Client).string() + "\\client\\scripts\\build\\debug\\ClientScripts.dll");
 
-        m_client.m_systemRegistry.getSystem<EventDispatcher>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
+        m_client.m_systemRegistry.getSystem<EventManager>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
             m_running = false;
             m_client.m_systemRegistry.getSystem<ScenesManager>().saveScene();
         });

@@ -2,7 +2,7 @@
 
 #include "core/Logger.hpp"
 #include "input/Input.hpp"
-#include "input/Key.hpp"
+#include "../../include/TechEngine/client/input/Key.hpp"
 #include "renderer/ui/UIRenderer.hpp"
 #include "systems/SystemsRegistry.hpp"
 

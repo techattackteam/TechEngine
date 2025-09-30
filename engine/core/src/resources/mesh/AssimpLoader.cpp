@@ -2,7 +2,7 @@
 
 
 #include "core/Logger.hpp"
-#include "../../../include/TechEngine/core/resources/material/MaterialManager.hpp"
+#include "TechEngine/core/resources/material/MaterialManager.hpp"
 #include "files/FileUtils.hpp"
 
 #include "assimp/Importer.hpp"

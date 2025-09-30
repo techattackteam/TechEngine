@@ -5,8 +5,8 @@
 #include <excpt.h>
 #include <dbghelp.h>
 #include "events/scripts/ScriptCrashEvent.hpp"
-#include "eventSystem/EventDispatcher.hpp"
-#include "../../include/TechEngine/core/script/Script.hpp"
+#include "eventSystem/EventManager.hpp"
+#include "TechEngine/core/script/Script.hpp"
 #pragma comment(lib, "Dbghelp.lib")
 
 namespace TechEngine {
@@ -70,7 +70,7 @@ namespace TechEngine {
         SymCleanup(process);
     }
 
-    inline int filter(unsigned int code, _EXCEPTION_POINTERS* ep, Script* script, EventDispatcher& eventDispatcher) {
+    inline int filter(unsigned int code, _EXCEPTION_POINTERS* ep, Script* script, EventManager& eventManager) {
         std::string name;
         if (script != nullptr) {
             name = script->getName();
@@ -78,7 +78,7 @@ namespace TechEngine {
             name = "";
         }
         logException(ep, name);
-        eventDispatcher.dispatch<ScriptCrashEvent>();
+        eventManager.dispatch<ScriptCrashEvent>();
         if (code == EXCEPTION_ACCESS_VIOLATION) {
             return EXCEPTION_EXECUTE_HANDLER;
         } else {
@@ -86,20 +86,20 @@ namespace TechEngine {
         };
     }
 
-#define CATCH_EXCEPTION_IN_FUNCTION(callback, eventDispatcher) \
+#define CATCH_EXCEPTION_IN_FUNCTION(callback, eventManager) \
         [callback](Event* event) {\
         __try {\
             callback(event);\
-        } __except (filter(GetExceptionCode(), GetExceptionInformation(), nullptr, eventDispatcher)) {\
+        } __except (filter(GetExceptionCode(), GetExceptionInformation(), nullptr, eventManager)) {\
         }\
     }
-#define RUN_SCRIPT_FUNCTION(script, func, eventDispatcher) \
+#define RUN_SCRIPT_FUNCTION(script, func, eventManager) \
         if (runtime) { \
             func; \
         } else { \
             __try { \
                 func; \
-            } __except (filter(GetExceptionCode(), GetExceptionInformation(), script, eventDispatcher)) { \
+            } __except (filter(GetExceptionCode(), GetExceptionInformation(), script, eventManager)) { \
         } \
     }
 }

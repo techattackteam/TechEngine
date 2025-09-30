@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/ExportDll.hpp"
+#include "TechEngine/client/core/ExportDLL.hpp"
 #include <string>
 
 namespace TechEngine {
