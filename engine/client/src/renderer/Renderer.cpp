@@ -183,14 +183,14 @@ namespace TechEngine {
     }
 
     uint32_t Renderer::createFramebuffer(uint32_t width, uint32_t height) {
-        frameBuffers.emplace_back();
-        FrameBuffer& frameBuffer = frameBuffers.back();
-        frameBuffer.init(frameBuffers.size() + 1, width, height);
+        m_frameBuffers.emplace_back();
+        FrameBuffer& frameBuffer = m_frameBuffers.back();
+        frameBuffer.init(m_frameBuffers.size() + 1, width, height);
         return frameBuffer.getID();
     }
 
     FrameBuffer& Renderer::getFramebuffer(uint32_t id) {
-        return *std::find_if(frameBuffers.begin(), frameBuffers.end(), [id](FrameBuffer& fb) {
+        return *std::find_if(m_frameBuffers.begin(), m_frameBuffers.end(), [id](FrameBuffer& fb) {
             return fb.getID() == id;
         });
     }
@@ -337,8 +337,10 @@ namespace TechEngine {
     void Renderer::geometryPass(glm::mat4 viewMatrix, glm::mat4 projectionMatrix) {
         //TODO: Implement Uniform Buffer Objects
         m_shadersManager.changeActiveShader("geometry");
-        m_shadersManager.getActiveShader()->setUniformMatrix4f("projection", projectionMatrix);
-        m_shadersManager.getActiveShader()->setUniformMatrix4f("view", viewMatrix);
+        m_shadersManager.getActiveShader()->setUniformMatrix4f("u_projection", projectionMatrix);
+        m_shadersManager.getActiveShader()->setUniformMatrix4f("u_view", viewMatrix);
+        glm::vec3 cameraPosition = glm::inverse(viewMatrix)[3];
+        //m_shadersManager.getActiveShader()->setUniformVec3("u_cameraPos", cameraPosition);
 
         m_drawCommandBuffer.setBindingPoint(0);
         m_objectDataBuffer.setBindingPoint(1);

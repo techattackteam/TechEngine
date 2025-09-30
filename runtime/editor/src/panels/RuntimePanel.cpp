@@ -17,7 +17,7 @@ namespace TechEngine {
                                SystemsRegistry& appSystemsRegistry,
                                LoggerPanel& loggerPanel) : m_editorSystemsRegistry(editorSystemsRegistry),
                                                            m_appSystemsRegistry(appSystemsRegistry),
-                                                           //m_inspectorPanel(editorSystemsRegistry, appSystemsRegistry, m_selectedEntities),
+                                                           m_inspectorPanel(editorSystemsRegistry, appSystemsRegistry, m_selectedEntities),
                                                            m_sceneHierarchyPanel(editorSystemsRegistry, appSystemsRegistry, m_selectedEntities),
                                                            m_sceneView(editorSystemsRegistry, appSystemsRegistry, m_selectedEntities),
                                                            //m_gameView(editorSystemsRegistry, appSystemsRegistry),
@@ -28,14 +28,14 @@ namespace TechEngine {
         m_sceneView.init("Scene View", &m_dockSpaceWindowClass);
         //m_gameView.init("Game View", &m_dockSpaceWindowClass);
         m_sceneHierarchyPanel.init("Scene Hierarchy", &m_dockSpaceWindowClass);
-        //m_inspectorPanel.init("Inspector", &m_dockSpaceWindowClass);
+        m_inspectorPanel.init("Inspector", &m_dockSpaceWindowClass);
     }
 
     void RuntimePanel::onUpdate() {
         m_sceneView.update();
         //m_gameView.update();
         m_sceneHierarchyPanel.update();
-        //m_inspectorPanel.update();
+        m_inspectorPanel.update();
     }
 
     void RuntimePanel::setupInitialDockingLayout() {

@@ -47,7 +47,7 @@ namespace TechEngine {
             glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &length);
             char* message = new char[length];
             glGetShaderInfoLog(shaderID, length, &length, message);
-            TE_LOGGER_ERROR("Failed to compile {0} {1} shader!", (type == GL_VERTEX_SHADER ? "vertices " : "fragment "), shaderName);
+            TE_LOGGER_ERROR("Failed to compile {0} {1} shader!", (type == GL_VERTEX_SHADER ? "vertices" : "fragment"), shaderName);
             TE_LOGGER_CRITICAL(message);
             glDeleteShader(shaderID);
             delete[] message;

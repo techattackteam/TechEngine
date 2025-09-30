@@ -4,48 +4,36 @@
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
 layout (location = 2) in vec2 textCoord;
-layout (location = 3) in vec4 color;
 
-out vec4 vertexColor;
-out vec3 vertexNormal;
-out vec3 fragPos;
-out vec4 fragPosLightSpace;
-out vec2 fragTextCoord;
+out vec3 v_worldPos;
+out vec3 v_normal;
+out flat uint f_materialID;
 
-uniform mat4 lightSpaceMatrix;
-uniform mat4 view;
-uniform mat4 projection;
-
+uniform mat4 u_view;
+uniform mat4 u_projection;
 
 struct ObjectData {
     mat4 modelMatrix;
     uint materialID;
 };
 
-struct Material {
-    vec4 color;
-};
 
 layout (std430, binding = 1) buffer ObjectBuffer {
     ObjectData objects[];
 } objectBuffer;
 
-layout (std430, binding = 2) buffer MaterialBuffer {
-    Material materials[];
-} materialBuffer;
 
 uniform bool isLightingActive;
 void main() {
     int objectIndex = gl_BaseInstance + gl_InstanceID;;
 
     mat4 model = objectBuffer.objects[objectIndex].modelMatrix;
-    uint v_materialID = objectBuffer.objects[objectIndex].materialID;
-    fragPos = vec3(model * vec4(position, 1.0f));
-    vertexColor = materialBuffer.materials[v_materialID].color;
-    vertexNormal = mat3(transpose(inverse(model))) * normal;
-    if (isLightingActive) {
-        fragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0f);
-    }
-    fragTextCoord = textCoord;
-    gl_Position = projection * view * model * vec4(position, 1.0f);
+    vec4 worldPos = model * vec4(position, 1.0f);
+    v_worldPos = worldPos.xyz;
+
+    v_normal = mat3(model) * normal;
+
+    f_materialID = objectBuffer.objects[objectIndex].materialID;
+
+    gl_Position = u_projection * u_view * model * vec4(position, 1.0f);
 }

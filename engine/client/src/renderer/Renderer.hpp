@@ -50,14 +50,13 @@ namespace TechEngine {
         ShaderStorageBuffer m_objectDataBuffer;
         ShaderStorageBuffer m_materialsBuffer;
 
-        std::list<FrameBuffer> frameBuffers;
+        std::vector<FrameBuffer> m_frameBuffers;
         UIRenderer m_uiRenderer;
 
         uint32_t m_currentVertexOffset = 0; // Tracks the end of the VBO data (in vertices)
         uint32_t m_currentIndexOffset = 0; // Tracks the end of the IBO data (in indices)
         size_t m_commandToDraw = 0;
 
-        //TEMP
         std::vector<Renderable> m_renderables;
 
         std::vector<Line> lines;

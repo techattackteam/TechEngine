@@ -35,7 +35,7 @@ namespace TechEngine {
 
         void shutdown();
 
-        Material& createMaterial(const std::string& name, glm::vec4 color, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess);
+        Material& createMaterial(const ::std::string& name, glm::vec4 color);
 
         Material& createMaterial(const std::string& name);
 
