@@ -2,6 +2,8 @@
 
 #include "Shader.hpp"
 
+#include <string>
+
 namespace TechEngine {
     class SystemsRegistry;
 }
