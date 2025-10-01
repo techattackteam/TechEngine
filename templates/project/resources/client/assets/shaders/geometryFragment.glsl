@@ -19,8 +19,10 @@ layout (std430, binding = 2) buffer MaterialBuffer {
 
 // Hardcoded camera and light positions for simplicity
 uniform vec3 u_cameraPos;
-uniform vec3 u_lightPos = vec3(5.0, 5.0, 5.0);
-uniform vec3 u_lightColor = vec3(150.0, 150.0, 150.0); // A very bright light!
+uniform vec3 u_lightPos = vec3(0, 0, 0); // A light positioned above the scene
+uniform vec3 u_lightColor = vec3(1.0, 1.0, 1.0); // A very bright light!
+uniform float u_lightIntensity = 100.0;
+uniform float u_lightRadius = 10.0;
 
 float distributionGGX(vec3 N, vec3 H, float roughness) {
     float a = roughness * roughness;
@@ -53,24 +55,27 @@ void main() {
     Material material = materialBuffer.materials[f_materialID];
 
     vec3 normal = normalize(v_normal);
-    vec3 view = normalize(u_cameraPos - v_worldPos);
+    vec3 view = normalize(u_cameraPos - v_worldPos); //
 
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, material.albedo.rgb, material.albedo.a);
 
     // Light calculations
+    vec3 lightView = u_lightPos - v_worldPos;
 
-    vec3 lightView = normalize(u_lightPos - v_worldPos);
+    float distance = length(lightView);
+    lightView = normalize(lightView);
     vec3 halfDir = normalize(view + lightView);
 
     // Attenuation
+    float attenuation = 1.0 / (distance * distance + 1.0);
+    float falloff = clamp(1.0 - pow(distance / u_lightRadius, 4.0), 0.0, 1.0);
+    falloff *= falloff;
+    attenuation *= falloff;
 
-    float distance = length(u_lightPos - v_worldPos);
-    float attenuation = 1.0 / (distance * distance);
-    vec3 radiance = u_lightColor * attenuation;
+    vec3 radiance = u_lightColor * u_lightIntensity * attenuation;
 
     // Cook-Torrance BRDF
-
     float NDF = distributionGGX(normal, halfDir, material.roughness); // Normal Distribution Function
     float NdotV = max(dot(normal, lightView), 0.0);
     float geometryFunction = geometrySchlickGGX(NdotV, material.roughness); // Geometry Function
@@ -84,7 +89,7 @@ void main() {
     vec3 specular = numerator / denominator;
 
     // Final Color
-    float NdotL = max(dot(normal, view), 0.0);
+    float NdotL = max(dot(normal, lightView), 0.0);
     vec3 Lo = (kD * material.albedo.rgb / 3.141592653 + specular) * radiance * NdotL; // Outgoing Radiance
 
     vec3 ambient = vec3(0.03) * material.albedo.rgb * material.ao;
