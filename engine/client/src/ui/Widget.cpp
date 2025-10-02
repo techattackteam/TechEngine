@@ -46,7 +46,7 @@ namespace TechEngine {
             return; // No change needed or invalid scale
         }
 
-        // 1. Store the current absolute screen rect. This is the visual state we must preserve.
+        // 1. Store the current absolute screen rect. This is the visual state I must preserve.
         const glm::vec4 oldScreenRect = m_finalScreenRect;
 
         // Store the old preset's stretching behavior
@@ -65,7 +65,7 @@ namespace TechEngine {
 
         // --- Calculate new X-axis properties ---
         if (isStretchingX) {
-            // The new mode is STRETCH. We need to calculate m_left and m_right.
+            // The new mode is STRETCH. I need to calculate m_left and m_right.
             float newAnchorMinX_abs = parentScreenRect.x + parentScreenRect.z * m_anchorMin.x;
             float newAnchorMaxX_abs = parentScreenRect.x + parentScreenRect.z * m_anchorMax.x;
 
@@ -76,8 +76,8 @@ namespace TechEngine {
             m_left = scaledLeft / dpiScale;
             m_right = scaledRight / dpiScale;
         } else {
-            // The new mode is POINT. We need to calculate m_anchoredPosition.x.
-            // If we just switched from stretch, we must also update m_size.
+            // The new mode is POINT. I need to calculate m_anchoredPosition.x.
+            // If I just switched from stretch, I must also update m_size.
             if (wasStretchingX) {
                 m_size.x = oldScreenRect.z / dpiScale;
             }
@@ -93,7 +93,7 @@ namespace TechEngine {
 
         // --- Calculate new Y-axis properties ---
         if (isStretchingY) {
-            // The new mode is STRETCH. We need to calculate m_top and m_bottom.
+            // The new mode is STRETCH. I need to calculate m_top and m_bottom.
             float newAnchorMinY_abs = parentScreenRect.y + parentScreenRect.w * m_anchorMin.y;
             float newAnchorMaxY_abs = parentScreenRect.y + parentScreenRect.w * m_anchorMax.y;
 
@@ -103,8 +103,8 @@ namespace TechEngine {
             m_top = scaledTop / dpiScale;
             m_bottom = scaledBottom / dpiScale;
         } else {
-            // The new mode is POINT. We need to calculate m_anchoredPosition.y.
-            // If we just switched from stretch, we must also update m_size.
+            // The new mode is POINT. I need to calculate m_anchoredPosition.y.
+            // If I just switched from stretch, I must also update m_size.
             if (wasStretchingY) {
                 m_size.y = oldScreenRect.w / dpiScale;
             }
@@ -319,7 +319,7 @@ namespace TechEngine {
         glm::vec2 anchorMinPos = {parentScreenRect.x + parentScreenRect.z * m_anchorMin.x, parentScreenRect.y + parentScreenRect.w * m_anchorMin.y};
         glm::vec2 anchorMaxPos = {parentScreenRect.x + parentScreenRect.z * m_anchorMax.x, parentScreenRect.y + parentScreenRect.w * m_anchorMax.y};
 
-        // 2. Determine if we are stretching on each axis
+        // 2. Determine if I are stretching on each axis
         bool isStretchingX = (m_anchorMax.x - m_anchorMin.x) > 0.001f;
         bool isStretchingY = (m_anchorMax.y - m_anchorMin.y) > 0.001f;
 
@@ -330,7 +330,7 @@ namespace TechEngine {
             float rightEdge = anchorMaxPos.x - scaledRight;
             m_finalScreenRect.z = rightEdge - m_finalScreenRect.x; // width
         } else {
-            // Not stretching, so we anchor to a single point and set a fixed size
+            // Not stretching, so I anchor to a single point and set a fixed size
             m_finalScreenRect.z = scaledSize.x; // width
             m_finalScreenRect.x = anchorMinPos.x + scaledAnchoredPosition.x - (scaledSize.x * m_pivot.x);
         }
@@ -341,7 +341,7 @@ namespace TechEngine {
             float bottomEdge = anchorMaxPos.y - scaledBottom;
             m_finalScreenRect.w = bottomEdge - m_finalScreenRect.y; // height
         } else {
-            // Not stretching, so we anchor to a single point and set a fixed size
+            // Not stretching, so I anchor to a single point and set a fixed size
             m_finalScreenRect.w = scaledSize.y; // height
             m_finalScreenRect.y = anchorMinPos.y + scaledAnchoredPosition.y - (scaledSize.y * m_pivot.y);
         }

@@ -346,7 +346,7 @@ namespace TechEngine {
         }
 
         // --- FOCUS MANAGEMENT ---
-        // If we clicked a new widget
+        // If I clicked a new widget
         if (clickedWidget && m_focusedWidget != clickedWidget) {
             // Lose focus on the old widget, if any
             if (auto oldFocused = m_focusedWidget) {
@@ -363,7 +363,7 @@ namespace TechEngine {
                 m_focusedWidget.reset();
             }
         }
-        // If we clicked outside of any interactable widget
+        // If I clicked outside of any interactable widget
         else if (!clickedWidget) {
             if (auto oldFocused = m_focusedWidget) {
                 if (auto oldInput = std::dynamic_pointer_cast<InputTextWidget>(oldFocused)) {

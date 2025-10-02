@@ -13,16 +13,38 @@ struct Material {
     float ao;
 };
 
+struct Light {
+    vec3 position;
+    vec3 color;
+    float radius;
+    float intensity;
+};
+
+struct TileInfo {
+    uint offset; // Offset into the light index buffer
+    uint lightsCount; // Number of lights affecting this tile
+};
+
 layout (std430, binding = 2) buffer MaterialBuffer {
     Material materials[];
 } materialBuffer;
 
-// Hardcoded camera and light positions for simplicity
+layout (std430, binding = 3) readonly buffer LightBuffer {
+    Light lights[];
+};
+
+layout (std430, binding = 4) readonly buffer LightIndexBuffer {
+    uint lightIndices[];
+};
+
+layout (std430, binding = 5) readonly buffer TileInfoBuffer {
+    TileInfo tiles[];
+};
+
+uniform ivec2 u_screenSize;
 uniform vec3 u_cameraPos;
-uniform vec3 u_lightPos = vec3(0, 0, 0); // A light positioned above the scene
-uniform vec3 u_lightColor = vec3(1.0, 1.0, 1.0); // A very bright light!
-uniform float u_lightIntensity = 100.0;
-uniform float u_lightRadius = 10.0;
+
+const int TILE_SIZE = 16;
 
 float distributionGGX(vec3 N, vec3 H, float roughness) {
     float a = roughness * roughness;
@@ -55,45 +77,71 @@ void main() {
     Material material = materialBuffer.materials[f_materialID];
 
     vec3 normal = normalize(v_normal);
-    vec3 view = normalize(u_cameraPos - v_worldPos); //
+    vec3 view = normalize(u_cameraPos - v_worldPos);
 
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, material.albedo.rgb, material.albedo.a);
 
-    // Light calculations
-    vec3 lightView = u_lightPos - v_worldPos;
+    ivec2 pixelCoord = ivec2(floor(gl_FragCoord.xy));
+    pixelCoord = clamp(pixelCoord, ivec2(0), u_screenSize - ivec2(1));
 
-    float distance = length(lightView);
-    lightView = normalize(lightView);
-    vec3 halfDir = normalize(view + lightView);
+    ivec2 tileCoords = ivec2(pixelCoord) / TILE_SIZE;
 
-    // Attenuation
-    float attenuation = 1.0 / (distance * distance + 1.0);
-    float falloff = clamp(1.0 - pow(distance / u_lightRadius, 4.0), 0.0, 1.0);
-    falloff *= falloff;
-    attenuation *= falloff;
+    int tilesX = (u_screenSize.x + TILE_SIZE - 1) / TILE_SIZE;
+    int tilesY = (u_screenSize.y + TILE_SIZE - 1) / TILE_SIZE;
 
-    vec3 radiance = u_lightColor * u_lightIntensity * attenuation;
+    tileCoords = clamp(tileCoords, ivec2(0), ivec2(tilesX - 1, tilesY - 1));
 
-    // Cook-Torrance BRDF
-    float NDF = distributionGGX(normal, halfDir, material.roughness); // Normal Distribution Function
-    float NdotV = max(dot(normal, lightView), 0.0);
-    float geometryFunction = geometrySchlickGGX(NdotV, material.roughness); // Geometry Function
-    vec3 fresnel = frenelSchlick(max(dot(halfDir, lightView), 0.0), F0); // Fresnel
+    int tileIndex = tileCoords.y * tilesX + tileCoords.x;
+    TileInfo tile = tiles[tileIndex];
 
-    vec3 kD = vec3(1.0) - fresnel; // Diffuse component
-    kD *= 1.0 - material.metallic; // Metals have no diffuse component
+    vec3 totalLigth = vec3(0.0);
+    uint offset = tile.offset;
 
-    vec3 numerator = NDF * geometryFunction * fresnel;
-    float denominator = 4.0 * max(dot(normal, lightView), 0.0) * max(dot(normal, view), 0.0) + 0.001; // Prevent divide by zero
-    vec3 specular = numerator / denominator;
+    for (uint i = 0; i < tile.lightsCount; i++) {
+        // Light calculations
+        uint lightIndex = lightIndices[offset + i];
+        vec3 lightPos = lights[lightIndex].position;
+        vec3 lightColor = lights[lightIndex].color;
+        float lightIntensity = lights[lightIndex].intensity;
+        float lightRadius = lights[lightIndex].radius;
 
-    // Final Color
-    float NdotL = max(dot(normal, lightView), 0.0);
-    vec3 Lo = (kD * material.albedo.rgb / 3.141592653 + specular) * radiance * NdotL; // Outgoing Radiance
+        vec3 lightView = lightPos - v_worldPos;
+
+        float distance = length(lightView);
+        lightView = normalize(lightView);
+        vec3 halfDir = normalize(view + lightView);
+
+        // Attenuation
+        float attenuation = 1.0 / (distance * distance + 1.0);
+        float falloff = clamp(1.0 - pow(distance / lightRadius, 4.0), 0.0, 1.0);
+        falloff *= falloff;
+        attenuation *= falloff;
+
+        vec3 radiance = lightColor * lightIntensity * attenuation;
+
+        // Cook-Torrance BRDF
+        float NDF = distributionGGX(normal, halfDir, material.roughness); // Normal Distribution Function
+        float NdotV = max(dot(normal, view), 0.0);
+        float NdotL = max(dot(normal, lightView), 0.0);
+        float G = geometrySchlickGGX(NdotV, material.roughness) * geometrySchlickGGX(NdotL, material.roughness); // Geometry Function
+        vec3 fresnel = frenelSchlick(max(dot(halfDir, lightView), 0.0), F0); // Fresnel
+
+        vec3 kD = vec3(1.0) - fresnel; // Diffuse component
+        kD *= 1.0 - material.metallic; // Metals have no diffuse component
+
+        vec3 numerator = NDF * G * fresnel;
+        float denominator = 4.0 * max(dot(normal, lightView), 0.0) * max(dot(normal, view), 0.0) + 0.001; // Prevent divide by zero
+        vec3 specular = numerator / denominator;
+
+        // Final Color
+        vec3 Lo = (kD * material.albedo.rgb / 3.141592653 + specular) * radiance * NdotL; // Outgoing Radiance
+
+        totalLigth += Lo;
+    }
 
     vec3 ambient = vec3(0.03) * material.albedo.rgb * material.ao;
-    vec3 color = ambient + Lo;
+    vec3 color = ambient + totalLigth;
 
     // HDR tonemapping and gamma correction
     float gamma = 2.2;

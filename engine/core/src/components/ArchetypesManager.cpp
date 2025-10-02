@@ -11,7 +11,6 @@ namespace TechEngine {
         registerComponent<MeshRenderer>();
     }
 
-
     Archetype* ArchetypesManager::getArchetype(const std::vector<ComponentTypeID>& componentTypes) {
         std::vector<ComponentTypeID> sortedTypes = componentTypes;
         std::sort(sortedTypes.begin(), sortedTypes.end());
@@ -59,7 +58,6 @@ namespace TechEngine {
         }
         size_t indexInArchetype = archetype->reserveSlotFor(newEntity);
 
-        // 4. Store the entity's direct location in our map.
         m_entityToArchetypeMap[newEntity] = {archetype->m_indexInECS, indexInArchetype};
         return newEntity;
     }
@@ -146,23 +144,18 @@ namespace TechEngine {
         ArchetypeEdge edge;
         edge.destinationArchetype = destinationArchetype;
 
-        // Iterate through the source archetype's components.
         for (auto& pair: sourceArchetype->m_componentData) {
             ComponentTypeID typeID = pair.first;
             IComponentStorage* sourceStorage = pair.second.get();
 
-            // Check if the destination also has this component.
-            // This is the ONLY hash lookup we do, and we do it once per component type.
             auto it = destinationArchetype->m_componentData.find(typeID);
             if (it != destinationArchetype->m_componentData.end()) {
                 IComponentStorage* destStorage = it->second.get();
-                // If it matches, add the direct storage pointers to our move plan.
                 edge.componentMappings.push_back({sourceStorage, destStorage});
             }
         }
         return edge;
     }
-
 
     const ArchetypeEdge& ArchetypesManager::findEdgeAdd(Archetype* sourceArchetype, ComponentTypeID componentToAdd) {
         auto it = sourceArchetype->m_addTransition.find(componentToAdd);

@@ -1,7 +1,7 @@
 #include "UIRenderer.hpp"
 
 #include "Font.hpp"
-#include "../../../../core/include/TechEngine/core/components/Archetype.hpp"
+#include "TechEngine/core/components/Archetype.hpp"
 #include "project/Project.hpp"
 #include "renderer/ErrorCatcher.hpp"
 #include "renderer/VertexBuffer.hpp"
@@ -187,7 +187,7 @@ namespace TechEngine {
                 if (c == '\r') {
                     continue; // Ignore carriage returns
                 }
-                // All metrics from 'info' are unscaled. We apply the scale to them.
+                // All metrics from 'info' are unscaled. I apply the scale to them.
                 // bearing.y (yoff) is the vertical offset FROM THE BASELINE to the top of the glyph.
                 const float baselineY = cursorY + (font->getAscent() * scale);
                 float xpos = cursorX + info.bearing.x * scale;

@@ -37,7 +37,7 @@ namespace TechEngine {
         assert(index < m_entities.size() && "Index out of bounds");
 
         Entity swappedEntity = m_entities.back();
-        size_t entityCount = m_entities.size(); // The size BEFORE we pop.
+        size_t entityCount = m_entities.size();
 
         if (index < entityCount - 1) {
             m_entities[index] = swappedEntity;

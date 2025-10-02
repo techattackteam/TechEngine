@@ -116,7 +116,26 @@ namespace TechEngine {
         return ShaderSource({shaderCode[0], shaderCode[1]});
     }
 
-    std::string Shader::parseSingleShader(const std::string& sources) {
+    std::string Shader::parseSingleShader(const std::string& source) {
+        //0 = vertices. 1 = fragment
+        std::string shaderCode;
+        std::ifstream shaderFile;
+        shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+        try {
+            // open files
+            shaderFile.open(source);
+            std::stringstream shaderStream;
+            // read file's inBuffer contents into streams
+            shaderStream << shaderFile.rdbuf();
+            // close file handlers
+            shaderFile.close();
+            // convert stream into string
+            shaderCode = shaderStream.str();
+        } catch (std::ifstream::failure& e) {
+            TE_LOGGER_CRITICAL("Error while reading shader file at path: {0}.", source);
+            TE_LOGGER_CRITICAL(e.what());
+        }
+        return shaderCode;
     }
 
     void Shader::setUniformMatrix4f(const std::string& name, glm::mat4 matrix) {
@@ -125,6 +144,14 @@ namespace TechEngine {
 
     void Shader::setUniformVec2(const std::string& name, glm::vec2 vector) {
         glUniform2fv(getUniformLocation(name), 1, glm::value_ptr(vector));
+    }
+
+    void Shader::setUniformUVec2(const std::string& name, glm::uvec2 vector) {
+        glUniform2uiv(getUniformLocation(name), 1, glm::value_ptr(vector));
+    }
+
+    void Shader::setUniformIVec2(const std::string& name, glm::ivec2 vector) {
+        glUniform2iv(getUniformLocation(name), 1, glm::value_ptr(vector));
     }
 
     void Shader::setUniformVec3(const std::string& name, glm::vec3 vector) {
@@ -155,7 +182,7 @@ namespace TechEngine {
         int32_t location;
         location = glGetUniformLocation(id, name.c_str());
         if (location == -1) {
-            std::cout << "Warning: uniform '" << name << "' doesn't exist in " << this->shaderName << " shader" << std::endl;
+            TE_LOGGER_WARN("Warning: uniform '{0}' doesn't exist in {1} shader", name, this->shaderName);
         } else {
             uniformLocationCache[name] = location;
         }

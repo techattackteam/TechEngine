@@ -45,9 +45,9 @@ namespace TechEngine {
             for (Archetype* archetype: m_matchingArchetypes) {
                 // This is the special case: user wants the Entity ID.
                 if constexpr (std::is_same_v<std::tuple_element_t<0, std::tuple<Components...>>, Entity>) {
-                    // We use our helper to get a type_pack of all components *except* the first one (Entity).
+                    // I use our helper to get a type_pack of all components *except* the first one (Entity).
                     using SlicedComponents = pop_front<type_pack<Components...>>::type;
-                    // Now, we execute the loop with this sliced pack.
+                    // Now, I execute the loop with this sliced pack.
                     eachImpl(archetype, function, SlicedComponents{});
                 } else {
                     // Normal case: user just wants components.
@@ -61,9 +61,9 @@ namespace TechEngine {
             for (Archetype* archetype: m_matchingArchetypes) {
                 // This is the special case: user wants the Entity ID.
                 if constexpr (std::is_same_v<std::tuple_element_t<0, std::tuple<Components...>>, Entity>) {
-                    // We use our helper to get a type_pack of all components *except* the first one (Entity).
+                    // I use our helper to get a type_pack of all components *except* the first one (Entity).
                     using SlicedComponents = pop_front<type_pack<Components...>>::type;
-                    // Now, we execute the loop with this sliced pack.
+                    // Now, I execute the loop with this sliced pack.
                     parallel_each_impl(archetype, function, SlicedComponents{});
                 } else {
                     // Normal case: user just wants components.
@@ -81,7 +81,7 @@ namespace TechEngine {
             size_t entityCount = archetype->getEntities().size();
 
             for (size_t i = 0; i < entityCount; ++i) {
-                // We use another helper to correctly unpack and call.
+                // I use another helper to correctly unpack and call.
                 callWithComponents(function, componentArrays, archetype->getEntities()[i], i, std::index_sequence_for<ComponentTypes...>{});
             }
         }

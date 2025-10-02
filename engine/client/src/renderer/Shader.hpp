@@ -1,6 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include <glm/fwd.hpp>
+#include <string>
 
 enum class ShaderType {
     NONE = -1, VERTEX = 0, FRAGMENT = 1, COMPUTE = 2
@@ -42,7 +43,11 @@ namespace TechEngine {
 
         void setUniformMatrix4f(const std::string& name, glm::mat4 matrix);
 
-        void Shader::setUniformVec2(const std::string& name, glm::vec2 vector);
+        void setUniformVec2(const std::string& name, glm::vec2 vector);
+
+        void setUniformUVec2(const std::string& name, glm::uvec2 vector);
+
+        void setUniformIVec2(const std::string& name, glm::ivec2 vector);
 
         void setUniformVec3(const std::string& name, glm::vec3 vector);
 

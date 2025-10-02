@@ -6,10 +6,10 @@
 
 namespace TechEngine {
     struct MaterialProperties {
-        glm::vec4 albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-        float metallic = 0.0f;
-        float roughness = 0.1f;
-        float ambientOcclusion = 1.0f;
+        glm::vec4 albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f); // 16 bytes
+        float metallic = 0.0f; // 4 byte
+        float roughness = 0.5f; // 4 byte
+        float ambientOcclusion = 1.0f; // 4 byte
         float _padding; // Padding to align to 16 bytes
     };
 

@@ -43,7 +43,7 @@ namespace TechEngine {
         sceneCamera.updateViewMatrix(cameraTransform.getModelMatrix());
         renderCameraFrustum();
         renderColliders();
-        int mask = Renderer::GEOMETRY_PASS | Renderer::LINE_PASS;
+        int mask = Renderer::SCENE_PASS | Renderer::LINE_PASS;
         //renderer.renderCustomPipeline(&sceneCamera, mask);
 #if  1!= 1
         OldRenderer& oldRenderer = m_appSystemsRegistry.getSystem<OldRenderer>();
@@ -54,7 +54,7 @@ namespace TechEngine {
         request.projectionMatrix = sceneCamera.getProjectionMatrix(); // This makes a copy
         request.targetFramebufferId = this->frameBufferID;
         request.viewportSize = {wsize.x, wsize.y};
-        request.renderMask = Renderer::GEOMETRY_PASS | Renderer::LINE_PASS;
+        request.renderMask = Renderer::SCENE_PASS | Renderer::LINE_PASS;
 
         // 3. Submit the request to the renderer.
         m_appSystemsRegistry.getSystem<Renderer>().addRequest(request);

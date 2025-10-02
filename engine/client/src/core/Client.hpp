@@ -1,7 +1,7 @@
 #pragma once
 #include "core/Core.hpp"
 #include "app/Entry.hpp"
-#include "../../include/TechEngine/client/core/ExportDLL.hpp"
+#include "TechEngine/client/core/ExportDLL.hpp"
 
 namespace TechEngine {
     class CLIENT_DLL Client : public Core {

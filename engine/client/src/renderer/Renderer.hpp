@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../include/TechEngine/client/core/ExportDLL.hpp"
+#include "TechEngine/client/core/ExportDLL.hpp"
 #include "systems/System.hpp"
 
 #include "ShadersManager.hpp"
@@ -19,6 +19,22 @@
 
 namespace TechEngine {
     class CLIENT_DLL Renderer : public System {
+        // Temp before creating the light component
+        struct Light {
+            glm::vec3 position; // 12 bytes
+            float padding1; // 4 byte to align to 16 bytes match std430 layout
+            glm::vec3 color; // 12 bytes
+            float radius; // 4 byte
+            float intensity; // 4 byte
+            float padding3[3]; // Padding to align to 16 bytes
+        };
+
+        struct TileInfo {
+            uint32_t offset;
+            uint32_t lightCount;
+        };
+
+
         struct Renderable {
             Transform* transform;
             MeshRenderer* meshRenderer;
@@ -49,6 +65,16 @@ namespace TechEngine {
         ShaderStorageBuffer m_drawCommandBuffer;
         ShaderStorageBuffer m_objectDataBuffer;
         ShaderStorageBuffer m_materialsBuffer;
+        ShaderStorageBuffer m_lightsBuffer;
+
+        // Buffers for light culling
+        ShaderStorageBuffer m_lightsIndexBuffer;
+        ShaderStorageBuffer m_tileInfoBuffer;
+        ShaderStorageBuffer m_atomicCounterBuffer;
+
+        const int32_t TILE_SIZE = 16;
+
+        uint32_t m_depthPrePassFBO = 0;
 
         std::vector<FrameBuffer> m_frameBuffers;
         UIRenderer m_uiRenderer;
@@ -61,8 +87,12 @@ namespace TechEngine {
 
         std::vector<Line> lines;
 
+
+        std::vector<Light> lights; // Temp before creating the light component
+        GLsync m_renderFence = nullptr;
+
     public:
-        inline static const int GEOMETRY_PASS = 1 << 0;
+        inline static const int SCENE_PASS = 1 << 0;
         inline static const int UI_PASS = 1 << 1;
         inline static const int LINE_PASS = 1 << 2;
 
@@ -81,8 +111,6 @@ namespace TechEngine {
         void addRequest(const RenderRequest& request);
 
         void renderPipeline();
-
-        void renderCustomPipeline(Camera& camera, int mask);
 
         void createLine(const glm::vec3& startPosition, const glm::vec3& endPosition, const glm::vec4& color);
 
@@ -105,7 +133,13 @@ namespace TechEngine {
 
         void populateObjectDataBuffers() const;
 
-        void geometryPass(glm::mat4 viewMatrix, glm::mat4 projectionMatrix);
+        void scenePass(const RenderRequest& request);
+
+        void depthPrePass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
+
+        void lightCulling(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
+
+        void geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
 
         void uiPass();
 
