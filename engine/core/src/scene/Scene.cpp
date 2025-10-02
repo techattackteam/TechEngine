@@ -11,6 +11,7 @@
 
 namespace TechEngine {
     Scene::Scene(SystemsRegistry& systemsRegistry) : m_archetypesManager(), m_systemsRegistry(systemsRegistry), m_internal(std::make_unique<Internal>(m_archetypesManager)) {
+        ComponentsFactory::eventManager = &systemsRegistry.getSystem<EventManager>();
     }
 
     Scene::~Scene() {

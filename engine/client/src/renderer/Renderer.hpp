@@ -20,20 +20,10 @@
 namespace TechEngine {
     class CLIENT_DLL Renderer : public System {
         // Temp before creating the light component
-        struct Light {
-            glm::vec3 position; // 12 bytes
-            float padding1; // 4 byte to align to 16 bytes match std430 layout
-            glm::vec3 color; // 12 bytes
-            float radius; // 4 byte
-            float intensity; // 4 byte
-            float padding3[3]; // Padding to align to 16 bytes
-        };
-
         struct TileInfo {
             uint32_t offset;
             uint32_t lightCount;
         };
-
 
         struct Renderable {
             Transform* transform;
@@ -75,7 +65,6 @@ namespace TechEngine {
         const int32_t TILE_SIZE = 16;
 
         uint32_t m_depthPrePassFBO = 0;
-
         std::vector<FrameBuffer> m_frameBuffers;
         UIRenderer m_uiRenderer;
 
@@ -86,10 +75,6 @@ namespace TechEngine {
         std::vector<Renderable> m_renderables;
 
         std::vector<Line> lines;
-
-
-        std::vector<Light> lights; // Temp before creating the light component
-        GLsync m_renderFence = nullptr;
 
     public:
         inline static const int SCENE_PASS = 1 << 0;
@@ -130,6 +115,8 @@ namespace TechEngine {
         void removeMaterial(const std::string& name);
 
         void createRenderables();
+
+        void populateLightDataBuffers();
 
         void populateObjectDataBuffers() const;
 

@@ -3,7 +3,7 @@
 #include "scene/CameraSystem.hpp"
 #include "scene/ScenesManager.hpp"
 #include "TechEngine/core/components/Components.hpp"
-#include "../../../../engine/core/include/TechEngine/core/components/ComponentsFactory.hpp"
+#include "TechEngine/core/components/ComponentsFactory.hpp"
 
 #include "physics/PhysicsEngine.hpp"
 #include "resources/ResourcesManager.hpp"
@@ -39,6 +39,15 @@ namespace TechEngine {
                     MeshRenderer& meshRenderer = addComponent<MeshRenderer>();
                     /*meshRenderer.changeMaterial(material);
                     meshRenderer.changeMesh(mesh);*/
+                }
+                if (ImGui::BeginMenu("Light")) {
+                    if (ImGui::MenuItem("Point Light")) {
+                        Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                        for (const Entity& entity: m_selectedEntities) {
+                            scene.addComponent<PointLight>(entity, ComponentsFactory::createPointLight());
+                        }
+                    }
+                    ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Physics")) {
                     if (ImGui::BeginMenu("Bodies")) {
@@ -492,6 +501,30 @@ namespace TechEngine {
                 }
                     */
                 //component.paintMesh();
+            });
+        }
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<PointLight>::get()) != componentsToDraw.end()) {
+            drawComponent<PointLight>(firstEntity, "Mesh Renderer", [this](auto& component) {
+                glm::vec3 color = component.properties.color;
+                float intensity = component.properties.intensity;
+                float radius = component.properties.radius;
+
+                glm::vec3 newColor = color;
+                float newIntensity = intensity;
+                float newRadius = radius;
+                ImGui::ColorEdit3("Color", (float*)&newColor, ImGuiColorEditFlags_Float);
+                ImGui::DragFloat("Intensity", &newIntensity);
+                ImGui::DragFloat("Radius", &newRadius);
+
+                if (color != newColor) {
+                    component.properties.color = newColor;
+                }
+                if (intensity != newIntensity) {
+                    component.properties.intensity = newIntensity;
+                }
+                if (radius != newRadius) {
+                    component.properties.radius = newRadius;
+                }
             });
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<StaticBody>::get()) != componentsToDraw.end()) {

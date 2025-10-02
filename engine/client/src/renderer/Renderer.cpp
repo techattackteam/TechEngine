@@ -52,7 +52,7 @@ namespace TechEngine {
         m_materialsBuffer.init(100 * sizeof(MaterialProperties));
 
         m_lightsBuffer = ShaderStorageBuffer();
-        m_lightsBuffer.init(1024 * sizeof(Light));
+        m_lightsBuffer.init(1024 * sizeof(PointLight));
         m_lightsIndexBuffer = ShaderStorageBuffer();
         m_lightsIndexBuffer.init(3500000 * sizeof(uint32_t));
         m_tileInfoBuffer = ShaderStorageBuffer();
@@ -90,14 +90,10 @@ namespace TechEngine {
         });
 
         eventManager.subscribe<ComponentAddedEvent>([this](const std::shared_ptr<Event>& event) {
-            if (dynamic_cast<const ComponentAddedEvent*>(event.get())->getComponentTypeID() == ComponentType<MeshRenderer>::get()) {
+            if (dynamic_cast<const ComponentAddedEvent*>(event.get())->getComponentTypeID() == ComponentType<Material>::get()) {
                 // Internal Renderables pointers may have changed, so I need to reconstruct the list
                 this->createRenderables();
-            }
-        });
-
-        eventManager.subscribe<ComponentAddedEvent>([this](const std::shared_ptr<Event>& event) {
-            if (dynamic_cast<const ComponentAddedEvent*>(event.get())->getComponentTypeID() == ComponentType<Material>::get()) {
+            } else if (dynamic_cast<const ComponentAddedEvent*>(event.get())->getComponentTypeID() == ComponentType<MeshRenderer>::get()) {
                 // Internal Renderables pointers may have changed, so I need to reconstruct the list
                 this->createRenderables();
             }
@@ -122,20 +118,6 @@ namespace TechEngine {
         eventManager.subscribe<MaterialDeletedEvent>([this](const std::shared_ptr<Event>& event) {
             this->removeMaterial(dynamic_cast<const MaterialDeletedEvent*>(event.get())->getName());
         });
-
-        lights.reserve(100);
-        for (int i = 0; i < 10; i++) {
-            Light light;
-            float x = static_cast<float>(rand()) / RAND_MAX * 50.0f - 25.0f;
-            float z = static_cast<float>(rand()) / RAND_MAX * 50.0f - 25.0f;
-            light.position = glm::vec3(x, 10.0f, z);
-            light.color = glm::vec3(1.0f, 1.0f, 1.0f); // Bright white lights
-            light.radius = 10 + static_cast<float>(rand()) / RAND_MAX * 30.0f; // Radius between 10 and 30
-            light.intensity = 1 + static_cast<float>(rand()) / RAND_MAX * 50.0f; // Intensity between 1 and 5
-            lights.push_back(light);
-        }
-
-        m_lightsBuffer.addData(lights.data(), lights.size() * sizeof(Light));
     }
 
     void Renderer::onStart() {
@@ -161,6 +143,7 @@ namespace TechEngine {
     }
 
     void Renderer::renderPipeline() {
+        populateLightDataBuffers();
         populateObjectDataBuffers();
         const uint32_t size = m_renderQueue.size();
 
@@ -259,6 +242,7 @@ namespace TechEngine {
         }
     }
 
+
     void Renderer::createRenderables() {
         m_renderables.clear();
         Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
@@ -309,6 +293,24 @@ namespace TechEngine {
         }
 
         this->m_commandToDraw = commands.size();
+    }
+
+    void Renderer::populateLightDataBuffers() {
+        //For now upload all lights again
+        struct LightData {
+            glm::vec3 position;
+            float padding1;
+            glm::vec3 color = glm::vec3(1.0); // 12 bytes
+            float radius = 10; // 4 byte
+            float intensity = 1; // 4 byte
+            float padding3[3] = {0.0f}; // Padding to align to 16 bytes
+        };
+        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        std::vector<LightData> lights;
+        scene.runSystem<Transform, PointLight>([&](Transform& transform, PointLight& pointLight) {
+            lights.push_back({transform.m_position, 0.0f, pointLight.properties.color, pointLight.properties.radius, pointLight.properties.intensity, {0.0f, 0.0f, 0.0f}});
+        });
+        m_lightsBuffer.addData(lights.data(), lights.size() * sizeof(PointLight), 0);
     }
 
     void Renderer::populateObjectDataBuffers() const {

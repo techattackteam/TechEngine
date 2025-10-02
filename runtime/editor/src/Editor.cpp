@@ -70,6 +70,7 @@ namespace TechEngine {
         ComponentType<Tag>::get();
         ComponentType<Transform>::get();
         ComponentType<Camera>::get();
+        ComponentType<PointLight>::get();
         ComponentType<MeshRenderer>::get();
         m_systemRegistry.getSystem<PanelsManager>().init();
 

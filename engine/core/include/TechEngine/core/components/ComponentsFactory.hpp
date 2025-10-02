@@ -1,10 +1,14 @@
 #pragma once
+#include "eventSystem/EventManager.hpp"
 #include "TechEngine/core/components/Components.hpp"
 #include "physics/PhysicsEngine.hpp"
+#include "TechEngine/core/events/scene/meshRenderer/ChangeMeshEvent.hpp"
 
 namespace TechEngine {
     class ComponentsFactory {
     public:
+        inline static EventManager* eventManager;
+
         static Tag createTag(const std::string& name, const std::string& uuid) {
             Tag tag = Tag();
             tag.setName(name);
@@ -22,9 +26,18 @@ namespace TechEngine {
             MeshRenderer meshRenderer;
             meshRenderer.mesh = mesh;
             meshRenderer.material = material;
+            eventManager->dispatch<ChangeMeshEvent>();
             return meshRenderer;
         }
 #pragma endregion
+
+        static PointLight createPointLight(const glm::vec3& color = glm::vec3(1.0f), float intensity = 1.0f, float radius = 10.0f) {
+            PointLight light;
+            light.properties.color = color;
+            light.properties.intensity = intensity;
+            light.properties.radius = radius;
+            return light;
+        }
 
 #pragma region Physics Components
         static StaticBody createStaticBody(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform) {
