@@ -8,6 +8,7 @@ namespace TechEngine {
         registerComponent<Tag>();
         registerComponent<Transform>();
         registerComponent<Camera>();
+        registerComponent<PointLight>();
         registerComponent<MeshRenderer>();
     }
 

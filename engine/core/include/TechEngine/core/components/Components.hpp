@@ -219,6 +219,22 @@ namespace TechEngine {
 
         static MeshRenderer deserialize(const YAML::Node& node, ResourcesManager& resourcesManager);
     };
+
+#pragma region Light Components
+    class CORE_DLL PointLight {
+    public:
+        struct Properties {
+            glm::vec3 color = glm::vec3(1.0); // 12 bytes
+            float radius = 10; // 4 byte
+            float intensity = 1; // 4 byte
+            float padding3[3] = {0.0f}; // Padding to align to 16 bytes
+        };
+        Properties properties;
+
+        uint32_t gpuID = -1; // ID in the GPU
+    };
+#pragma endregion
+
 #pragma region Physics Components
     class CORE_DLL StaticBody {
         friend class ComponentsFactory;

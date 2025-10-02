@@ -252,8 +252,7 @@ namespace TechEngine {
                 case Sphere: {
                     Entity entity = scene.createEntity("Sphere");
                     ResourcesManager& resourcesManager = m_appSystemRegistry.getSystem<ResourcesManager>();
-                    scene.addComponent<MeshRenderer>(
-                        entity, ComponentsFactory::createMeshRenderer(&resourcesManager.getMesh("Sphere"), &resourcesManager.getDefaultMaterial()));
+                    scene.addComponent<MeshRenderer>(entity, ComponentsFactory::createMeshRenderer(&resourcesManager.getMesh("Sphere"), &resourcesManager.getDefaultMaterial()));
                     m_entitiesOrder.emplace_back(entity);
                     break;
                 }
