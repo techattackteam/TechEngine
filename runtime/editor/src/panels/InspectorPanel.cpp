@@ -505,9 +505,9 @@ namespace TechEngine {
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<PointLight>::get()) != componentsToDraw.end()) {
             drawComponent<PointLight>(firstEntity, "Mesh Renderer", [this](auto& component) {
-                glm::vec3 color = component.properties.color;
-                float intensity = component.properties.intensity;
-                float radius = component.properties.radius;
+                glm::vec3 color = component.color;
+                float intensity = component.intensity;
+                float radius = component.radius;
 
                 glm::vec3 newColor = color;
                 float newIntensity = intensity;
@@ -517,13 +517,13 @@ namespace TechEngine {
                 ImGui::DragFloat("Radius", &newRadius);
 
                 if (color != newColor) {
-                    component.properties.color = newColor;
+                    component.color = newColor;
                 }
                 if (intensity != newIntensity) {
-                    component.properties.intensity = newIntensity;
+                    component.intensity = newIntensity;
                 }
                 if (radius != newRadius) {
-                    component.properties.radius = newRadius;
+                    component.radius = newRadius;
                 }
             });
         }

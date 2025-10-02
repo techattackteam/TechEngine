@@ -33,9 +33,9 @@ namespace TechEngine {
 
         static PointLight createPointLight(const glm::vec3& color = glm::vec3(1.0f), float intensity = 1.0f, float radius = 10.0f) {
             PointLight light;
-            light.properties.color = color;
-            light.properties.intensity = intensity;
-            light.properties.radius = radius;
+            light.color = color;
+            light.intensity = intensity;
+            light.radius = radius;
             return light;
         }
 
