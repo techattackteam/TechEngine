@@ -308,7 +308,7 @@ namespace TechEngine {
         Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
         std::vector<LightData> lights;
         scene.runSystem<Transform, PointLight>([&](Transform& transform, PointLight& pointLight) {
-            lights.push_back({transform.m_position, 0.0f, pointLight.properties.color, pointLight.properties.radius, pointLight.properties.intensity, {0.0f, 0.0f, 0.0f}});
+            lights.push_back({transform.m_position, 0.0f, pointLight.color, pointLight.radius, pointLight.intensity, {0.0f, 0.0f, 0.0f}});
         });
         m_lightsBuffer.addData(lights.data(), lights.size() * sizeof(PointLight), 0);
     }

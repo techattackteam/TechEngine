@@ -74,6 +74,9 @@ namespace TechEngine {
         } else if (typeID == ComponentType<MeshRenderer>::get()) {
             const MeshRenderer& meshRenderer = m_scene.getComponent<MeshRenderer>(entity);
             MeshRenderer::serialize(meshRenderer, out);
+        } else if (typeID == ComponentType<PointLight>::get()) {
+            const PointLight& pointLight = m_scene.getComponent<PointLight>(entity);
+            PointLight::serialize(pointLight, out);
         } else if (typeID == ComponentType<StaticBody>::get()) {
             const StaticBody& staticBody = m_scene.getComponent<StaticBody>(entity);
             StaticBody::serialize(staticBody, out);
@@ -116,8 +119,13 @@ namespace TechEngine {
             m_scene.addComponent(entity, camera);
         }
         if (componentNode["MeshRenderer"]) {
-            MeshRenderer meshRenderer = MeshRenderer::deserialize(componentNode, m_resourcesManager);
+            MeshRenderer meshRenderer = MeshRenderer::deserialize(componentNode["MeshRenderer"], m_resourcesManager);
             m_scene.addComponent(entity, meshRenderer);
+        }
+
+        if (componentNode["PointLight"]) {
+            PointLight pointLight = PointLight::deserialize(componentNode["PointLight"]);
+            m_scene.addComponent(entity, pointLight);
         }
 
         if (componentNode["StaticBody"]) {
@@ -255,13 +263,30 @@ namespace TechEngine {
     }
 
     MeshRenderer MeshRenderer::deserialize(const YAML::Node& node, ResourcesManager& resourcesManager) {
-        std::string meshName = node["MeshRenderer"]["Mesh"].as<std::string>();
-        std::string materialName = node["MeshRenderer"]["Material"].as<std::string>();
+        std::string meshName = node["Mesh"].as<std::string>();
+        std::string materialName = node["Material"].as<std::string>();
         Mesh& mesh = resourcesManager.getMesh(meshName);
         Material& material = resourcesManager.getMaterial(materialName);
         MeshRenderer meshRenderer(&mesh, &material);
         return meshRenderer;
     }
+
+    void PointLight::serialize(const PointLight& pointLight, YAML::Emitter& out) {
+        out << YAML::Key << "PointLight" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "Color" << YAML::Value << YAML::Flow << YAML::BeginSeq << pointLight.color.x << pointLight.color.y << pointLight.color.z << YAML::EndSeq;
+        out << YAML::Key << "Intensity" << YAML::Value << pointLight.intensity;
+        out << YAML::Key << "Radius" << YAML::Value << pointLight.radius;
+        out << YAML::EndMap;
+    }
+
+    PointLight PointLight::deserialize(const YAML::Node& node) {
+        PointLight pointLight;
+        pointLight.color = glm::vec3(node["Color"].as<glm::vec3>());
+        pointLight.intensity = node["Intensity"].as<float>();
+        pointLight.radius = node["Radius"].as<float>();
+        return pointLight;
+    }
+
 #pragma region Physics Components
     void BoxCollider::serialize(const BoxCollider& boxCollider, YAML::Emitter& out) {
         out << YAML::Key << "BoxCollider" << YAML::Value << YAML::BeginMap;

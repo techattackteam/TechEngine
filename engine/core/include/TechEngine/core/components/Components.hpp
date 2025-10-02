@@ -223,15 +223,15 @@ namespace TechEngine {
 #pragma region Light Components
     class CORE_DLL PointLight {
     public:
-        struct Properties {
-            glm::vec3 color = glm::vec3(1.0); // 12 bytes
-            float radius = 10; // 4 byte
-            float intensity = 1; // 4 byte
-            float padding3[3] = {0.0f}; // Padding to align to 16 bytes
-        };
-        Properties properties;
+        glm::vec3 color = glm::vec3(1.0); // 12 bytes
+        float radius = 10; // 4 byte
+        float intensity = 1; // 4 byte
+        float padding3[3] = {0.0f}; // Padding to align to 16 bytes
 
         uint32_t gpuID = -1; // ID in the GPU
+        static void serialize(const PointLight& staticBody, YAML::Emitter& out);
+
+        static PointLight deserialize(const YAML::Node& node);
     };
 #pragma endregion
 
