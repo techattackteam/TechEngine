@@ -103,7 +103,7 @@ public:
         m_data[index] = typedSource.m_data[sourceIndex];
     }
 
-    // We also need a way to set the new component's value directly
+    // I also need a way to set the new component's value directly
     void set(size_t index, const T& value) {
         // This is the safety check.
         if (index >= m_data.size()) {

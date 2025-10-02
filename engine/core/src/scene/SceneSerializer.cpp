@@ -249,8 +249,8 @@ namespace TechEngine {
 
     void MeshRenderer::serialize(const MeshRenderer& meshRenderer, YAML::Emitter& out) {
         out << YAML::Key << "MeshRenderer" << YAML::Value << YAML::BeginMap;
-        /*out << YAML::Key << "Mesh" << YAML::Value << meshRenderer.mesh->getName();
-        out << YAML::Key << "Material" << YAML::Value << meshRenderer.material->getName();*/
+        out << YAML::Key << "Mesh" << YAML::Value << meshRenderer.mesh->getName();
+        out << YAML::Key << "Material" << YAML::Value << meshRenderer.material->getName();
         out << YAML::EndMap;
     }
 

@@ -21,6 +21,7 @@
 #include "TechEngine/core/events/scene/meshRenderer/ChangeMeshEvent.hpp"
 #include "ui/PanelWidget.hpp"
 #include "ui/WidgetsRegistry.hpp"
+#include "window/Viewport.hpp"
 
 
 namespace TechEngine {
@@ -50,6 +51,25 @@ namespace TechEngine {
         m_materialsBuffer = ShaderStorageBuffer();
         m_materialsBuffer.init(100 * sizeof(MaterialProperties));
 
+        m_lightsBuffer = ShaderStorageBuffer();
+        m_lightsBuffer.init(1024 * sizeof(Light));
+        m_lightsIndexBuffer = ShaderStorageBuffer();
+        m_lightsIndexBuffer.init(3500000 * sizeof(uint32_t));
+        m_tileInfoBuffer = ShaderStorageBuffer();
+
+        uint32_t maxWidth = 3840; // 4K
+        uint32_t maxHeight = 2160;
+        uint32_t maxTilesX = (maxWidth + TILE_SIZE - 1) / TILE_SIZE;
+        uint32_t maxTilesY = (maxHeight + TILE_SIZE - 1) / TILE_SIZE;
+        uint32_t totalMaxTiles = maxTilesX * maxTilesY;
+
+        m_tileInfoBuffer.init(totalMaxTiles * sizeof(TileInfo));
+
+        m_atomicCounterBuffer = ShaderStorageBuffer();
+        m_atomicCounterBuffer.init(sizeof(uint32_t));
+
+        m_depthPrePassFBO = createFramebuffer(800, 600);
+
         m_vertexArrays[BufferLines] = VertexArray();
         m_vertexBuffers[BufferLines] = VertexBuffer();
         m_vertexArrays[BufferLines].init();
@@ -58,9 +78,7 @@ namespace TechEngine {
 
         m_uiRenderer.init();
 
-
         EventManager& eventManager = m_systemsRegistry.getSystem<EventManager>();
-
 
         eventManager.subscribe<EntityCreatedEvent>([this](const std::shared_ptr<Event>& event) {
             // Internal Renderables pointers may have changed, so I need to reconstruct the list
@@ -104,9 +122,22 @@ namespace TechEngine {
         eventManager.subscribe<MaterialDeletedEvent>([this](const std::shared_ptr<Event>& event) {
             this->removeMaterial(dynamic_cast<const MaterialDeletedEvent*>(event.get())->getName());
         });
+
+        lights.reserve(100);
+        for (int i = 0; i < 10; i++) {
+            Light light;
+            float x = static_cast<float>(rand()) / RAND_MAX * 50.0f - 25.0f;
+            float z = static_cast<float>(rand()) / RAND_MAX * 50.0f - 25.0f;
+            light.position = glm::vec3(x, 10.0f, z);
+            light.color = glm::vec3(1.0f, 1.0f, 1.0f); // Bright white lights
+            light.radius = 10 + static_cast<float>(rand()) / RAND_MAX * 30.0f; // Radius between 10 and 30
+            light.intensity = 1 + static_cast<float>(rand()) / RAND_MAX * 50.0f; // Intensity between 1 and 5
+            lights.push_back(light);
+        }
+
+        m_lightsBuffer.addData(lights.data(), lights.size() * sizeof(Light));
     }
 
-    // Might upload data to GPU or prepare some resources
     void Renderer::onStart() {
         System::onStart();
     }
@@ -136,7 +167,6 @@ namespace TechEngine {
         for (uint32_t i = 0; i < size; i++) {
             RenderRequest& request = m_renderQueue.front();
 
-            // 1. Get and bind the target framebuffer.
             FrameBuffer& framebuffer = getFramebuffer(request.targetFramebufferId);
             framebuffer.bind();
             framebuffer.resize(request.viewportSize.x, request.viewportSize.y);
@@ -146,8 +176,8 @@ namespace TechEngine {
             glEnable(GL_DEPTH_TEST);
             glEnable(GL_CULL_FACE);
 
-            if (request.renderMask & GEOMETRY_PASS) {
-                geometryPass(request.viewMatrix, request.projectionMatrix);
+            if (request.renderMask & SCENE_PASS) {
+                scenePass(request);
             }
             if (request.renderMask & UI_PASS && m_systemsRegistry.hasSystem<WidgetsRegistry>()) {
                 uiPass();
@@ -157,23 +187,6 @@ namespace TechEngine {
             }
             framebuffer.unBind();
             m_renderQueue.pop();
-        }
-    }
-
-    void Renderer::renderCustomPipeline(Camera& camera, int mask) {
-        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-        populateObjectDataBuffers();
-        if (mask & GEOMETRY_PASS) {
-            geometryPass(camera.getViewMatrix(), camera.getProjectionMatrix());
-        }
-        if (mask & UI_PASS && m_systemsRegistry.hasSystem<WidgetsRegistry>()) {
-            uiPass();
-        }
-        if (mask & LINE_PASS && !lines.empty()) {
-            linePass(camera.getViewMatrix(), camera.getProjectionMatrix());
         }
     }
 
@@ -334,17 +347,99 @@ namespace TechEngine {
         m_objectDataBuffer.addData(objectData.data(), objectData.size() * sizeof(ObjectData));
     }
 
-    void Renderer::geometryPass(glm::mat4 viewMatrix, glm::mat4 projectionMatrix) {
+    void Renderer::scenePass(const RenderRequest& request) {
+        glm::mat4 viewMatrix = request.viewMatrix;
+        glm::mat4 projectionMatrix = request.projectionMatrix;
+        glm::vec2 viewport = request.viewportSize;
+        depthPrePass(viewMatrix, projectionMatrix, viewport);
+        lightCulling(viewMatrix, projectionMatrix, viewport);
+
+        FrameBuffer& frameBuffer = getFramebuffer(request.targetFramebufferId);
+        frameBuffer.bind();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        geometryPass(viewMatrix, projectionMatrix, viewport);
+    }
+
+    void Renderer::depthPrePass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport) {
+        FrameBuffer& frameBuffer = getFramebuffer(m_depthPrePassFBO);
+        frameBuffer.resize(viewport.x, viewport.y);
+        frameBuffer.bind();
+
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Disable color writes
+
+        m_shadersManager.changeActiveShader("depthPrePass");
+        m_shadersManager.getActiveShader()->setUniformMatrix4f("u_projection", projectionMatrix);
+        m_shadersManager.getActiveShader()->setUniformMatrix4f("u_view", viewMatrix);
+
+        m_drawCommandBuffer.setBindingPoint(0);
+        m_objectDataBuffer.setBindingPoint(1);
+        m_objectDataBuffer.bind();
+        m_vertexArrays[BufferGameObjects].bind();
+        m_indicesBuffers[BufferGameObjects].bind();
+        m_drawCommandBuffer.bind();
+
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_drawCommandBuffer.getID());
+
+        glMultiDrawElementsIndirect(
+            GL_TRIANGLES,
+            GL_UNSIGNED_INT,
+            (void*)0,
+            m_commandToDraw,
+            0
+        );
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        frameBuffer.unBind();
+    }
+
+    void Renderer::lightCulling(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport) {
+        m_shadersManager.changeActiveShader("lightCulling");
+        Shader* cullShader = m_shadersManager.getActiveShader();
+        cullShader->bind();
+
+        cullShader->setUniformMatrix4f("u_view", viewMatrix);
+        cullShader->setUniformMatrix4f("u_inverseProjection", glm::inverse(projectionMatrix));
+        cullShader->setUniformIVec2("u_screenSize", viewport);
+
+
+        glActiveTexture(GL_TEXTURE0);
+        FrameBuffer& frameBuffer = getFramebuffer(m_depthPrePassFBO);
+        glBindTexture(GL_TEXTURE_2D, frameBuffer.depthTexture);
+        cullShader->setUniformInt("u_depthMap", 0);
+
+        m_lightsBuffer.setBindingPoint(0);
+        m_lightsIndexBuffer.setBindingPoint(1);
+        m_tileInfoBuffer.setBindingPoint(2);
+        m_atomicCounterBuffer.setBindingPoint(3);
+
+        uint32_t zero = 0;
+        glClearNamedBufferData(m_atomicCounterBuffer.getID(), GL_R32UI, GL_RED, GL_UNSIGNED_INT, &zero);
+
+        int32_t numGroupsX = (viewport.x + TILE_SIZE - 1) / TILE_SIZE;
+        int32_t numGroupsY = (viewport.y + TILE_SIZE - 1) / TILE_SIZE;
+        glDispatchCompute(numGroupsX, numGroupsY, 1);
+
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    }
+
+    void Renderer::geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport) {
         //TODO: Implement Uniform Buffer Objects
         m_shadersManager.changeActiveShader("geometry");
         m_shadersManager.getActiveShader()->setUniformMatrix4f("u_projection", projectionMatrix);
         m_shadersManager.getActiveShader()->setUniformMatrix4f("u_view", viewMatrix);
         glm::vec3 cameraPosition = glm::inverse(viewMatrix)[3];
-        //m_shadersManager.getActiveShader()->setUniformVec3("u_cameraPos", cameraPosition);
+        m_shadersManager.getActiveShader()->setUniformVec3("u_cameraPos", cameraPosition);
+        m_shadersManager.getActiveShader()->setUniformIVec2("u_screenSize", viewport);
 
         m_drawCommandBuffer.setBindingPoint(0);
         m_objectDataBuffer.setBindingPoint(1);
         m_materialsBuffer.setBindingPoint(2);
+        m_lightsBuffer.setBindingPoint(3);
+        m_lightsIndexBuffer.setBindingPoint(4);
+        m_tileInfoBuffer.setBindingPoint(5);
 
         m_objectDataBuffer.bind();
         m_vertexArrays[BufferGameObjects].bind();

@@ -42,7 +42,7 @@ namespace TechEngine {
             request.projectionMatrix = camera.getProjectionMatrix(); // This makes a copy
             request.targetFramebufferId = this->frameBufferID;
             request.viewportSize = {wsize.x, wsize.y};
-            request.renderMask = Renderer::GEOMETRY_PASS | Renderer::LINE_PASS;
+            request.renderMask = Renderer::SCENE_PASS | Renderer::LINE_PASS;
             m_appSystemsRegistry.getSystem<Renderer>().addRequest(request);
         });
 

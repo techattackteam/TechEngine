@@ -76,8 +76,8 @@ namespace TechEngine {
             // Centralize the move logic.
             moveEntityToArchetype(entity, sourceArchetype, edge);
 
-            // After the move, the entity is in its new slot. Now we just need to
-            // set the data for the component we just added.
+            // After the move, the entity is in its new slot. Now I just need to
+            // set the data for the component I just added.
             const auto newLocation = m_entityToArchetypeMap.at(entity);
             edge.destinationArchetype->setComponentData<T>(newLocation.m_indexInArchetype, component);
 

@@ -29,7 +29,7 @@ namespace TechEngine {
         std::vector<UIDrawCommand> m_drawCommands;
         uint32_t m_currentTextureID = 0;
 
-        uint32_t m_maxVertices = 30000; // Ideally is infinit but we limit it for performance
+        uint32_t m_maxVertices = 30000; // Ideally is infinit but I limit it for performance
         glm::mat4 m_projection;
         float m_dpiScale = 0.0f;
 
