@@ -24,7 +24,7 @@ layout (std430, binding = 1) buffer ObjectBuffer {
 
 uniform bool isLightingActive;
 void main() {
-    int objectIndex = gl_BaseInstance + gl_InstanceID;;
+    int objectIndex = gl_BaseInstance + gl_InstanceID;
 
     mat4 model = objects[objectIndex].modelMatrix;
     vec4 worldPos = model * vec4(position, 1.0f);

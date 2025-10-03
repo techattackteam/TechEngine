@@ -1,21 +1,17 @@
 #include "FrameBuffer.hpp"
 
+#include "core/Logger.hpp"
+
 namespace TechEngine {
     void FrameBuffer::init(uint32_t id, uint32_t width, uint32_t height) {
         this->width = width;
         this->height = height;
-        if (this->id == id) {
+        if (this->id != 0) {
             glDeleteFramebuffers(1, &id);
-            glDeleteTextures(1, &colorTexture);
-            glDeleteTextures(1, &depthTexture);
         }
         this->id = id;
         glGenFramebuffers(1, &this->id);
         glViewport(0, 0, width, height);
-        bind();
-        //Todo: Transfer this to the renderer init without for some reason crashing
-        attachDepthTexture();
-        attachColorTexture();
     }
 
 
@@ -35,14 +31,49 @@ namespace TechEngine {
     }
 
     void FrameBuffer::unBind() {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0); // Bind to default framebuffer
     }
 
-    void FrameBuffer::resize(uint32_t width, uint32_t height) {
-        if (width == 0 && height == 0) {
+    void FrameBuffer::resize(uint32_t newWidth, uint32_t newHeight) {
+        if (newWidth == 0 || newHeight == 0) {
             return;
         }
-        init(id, width, height);
+
+        // Store which attachments we had
+        bool hadColorTexture = (colorTexture != 0);
+        bool hadDepthTexture = (depthTexture != 0);
+        bool hadDepthCubeMap = (depthCubeMapTexture != 0);
+
+        // Delete existing textures
+        if (colorTexture != 0) {
+            glDeleteTextures(1, &colorTexture);
+            colorTexture = 0;
+        }
+        if (depthTexture != 0) {
+            glDeleteTextures(1, &depthTexture);
+            depthTexture = 0;
+        }
+        if (depthCubeMapTexture != 0) {
+            glDeleteTextures(1, &depthCubeMapTexture);
+            depthCubeMapTexture = 0;
+        }
+
+        width = newWidth;
+        height = newHeight;
+
+        glBindFramebuffer(GL_FRAMEBUFFER, id);
+
+        if (hadColorTexture) {
+            attachColorTexture(width, height);
+        }
+        if (hadDepthTexture) {
+            attachDepthTexture(width, height);
+        }
+        if (hadDepthCubeMap) {
+            attachDepthCubeMapTexture(width, height);
+        }
+
+        glViewport(0, 0, width, height);
     }
 
     void FrameBuffer::attachColorTexture() {
@@ -64,6 +95,27 @@ namespace TechEngine {
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
     }
 
+    void FrameBuffer::attachDepthCubeMapTexture(uint32_t width, uint32_t height) {
+        glGenTextures(1, &depthCubeMapTexture);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubeMapTexture);
+        for (unsigned int i = 0; i < 6; ++i) {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        }
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubeMapTexture, 0);
+        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            // Log error with status code
+            TE_LOGGER_CRITICAL("Framebuffer not complete after attaching depth cube map! Status: 0x%x", status);
+            throw std::runtime_error("Framebuffer not complete after attaching depth cube map!");
+        }
+    }
+
 
     void FrameBuffer::attachDepthTexture() {
         attachDepthTexture(width, height);
@@ -80,8 +132,6 @@ namespace TechEngine {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
     }
 
     void FrameBuffer::clear() {

@@ -3,43 +3,40 @@
 #include <glm/fwd.hpp>
 #include <string>
 
-enum class ShaderType {
-    NONE = -1, VERTEX = 0, FRAGMENT = 1, COMPUTE = 2
-};
-
-struct ShaderSource {
-    std::string vertexShader;
-    std::string fragmentShader;
-};
 
 namespace TechEngine {
+    enum class ShaderType {
+        Vertex,
+        Fragment,
+        Geometry,
+        Compute,
+        TessellationControl,
+        TessellationEvaluation
+    };
+
+    /*struct ShaderSource {
+        std::string vertexShader;
+        std::string fragmentShader;
+    };*/
+
     class Shader {
     private:
-        std::string shaderName;
+        uint32_t m_id;
+        std::string m_shaderName;
         std::unordered_map<std::string, int32_t> uniformLocationCache;
 
-        uint32_t compileShader(uint32_t type, const std::string& source);
-
-        uint32_t createGraphicsProgram(const std::string& vertexShader, const std::string& fragmentShader);
-
-        uint32_t createComputeProgram(const std::string& computeShader);
-
-        ShaderSource parseShader(const char* vertexShaderPath, const char* fragmentShaderPath);
-
-        std::string parseSingleShader(const std::string& sources);
+        std::unordered_map<ShaderType, std::string> m_sources;
 
     public:
-        uint32_t id;
+        Shader(const std::string& name);
 
-        Shader(const std::string& name, const char* vertexShaderPath, const char* fragmentShaderPath);
+        void attachSourceFile(ShaderType shaderType, const std::string& path);
 
-        Shader(const std::string& name, const char* computeShaderPath);
+        bool link();
 
         void bind() const;
 
         void unBind() const;
-
-        uint32_t getUniformLocation(const std::string& name);
 
         void setUniformMatrix4f(const std::string& name, glm::mat4 matrix);
 
@@ -58,5 +55,12 @@ namespace TechEngine {
         void setUniformBool(const std::string& name, bool value);
 
         void setUniformFloat(const std::string& name, float value);
+
+    private:
+        std::string parseShader(const std::string& source);
+
+        uint32_t compileShader(ShaderType type, const std::string& source);
+
+        uint32_t getUniformLocation(const std::string& name);
     };
 }

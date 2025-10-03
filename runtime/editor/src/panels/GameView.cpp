@@ -17,6 +17,9 @@ namespace TechEngine {
     void GameView::onInit() {
         frameBufferID = m_appSystemsRegistry.getSystem<Renderer>().createFramebuffer(1080, 720);
         FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
+        frameBuffer.bind();
+        frameBuffer.attachColorTexture();
+        frameBuffer.attachDepthTexture();
         frameBuffer.unBind();
     }
 
@@ -38,8 +41,10 @@ namespace TechEngine {
             camera.updateProjectionMatrix(wsize.x / wsize.y);
             camera.updateViewMatrix(transform.getModelMatrix());
             RenderRequest request;
-            request.viewMatrix = camera.getViewMatrix(); // This makes a copy
-            request.projectionMatrix = camera.getProjectionMatrix(); // This makes a copy
+            request.viewMatrix = camera.getViewMatrix();
+            request.projectionMatrix = camera.getProjectionMatrix();
+            request.nearPlane = camera.nearPlane;
+            request.farPlane = camera.farPlane;
             request.targetFramebufferId = this->frameBufferID;
             request.viewportSize = {wsize.x, wsize.y};
             request.renderMask = Renderer::SCENE_PASS | Renderer::LINE_PASS;
@@ -51,8 +56,6 @@ namespace TechEngine {
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
         ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
         frameBuffer.unBind();
-        //glm::vec2 mousePos = m_appSystemsRegistry.getSystem<Input>().getMouse().getPosition();
-        //TE_LOGGER_INFO("Panel: {0}, Hovered: {1}, Focused: {2}, Mouse: ({3},{4})", m_name, m_isPanelHovered, m_isPanelFocused, mousePos.x, mousePos.y);
     }
 
     glm::vec2 GameView::getFrameBufferSize() {

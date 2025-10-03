@@ -5,17 +5,14 @@
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
-    ShadersManager::ShadersManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
+    ShadersManager::ShadersManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry), activeShader(nullptr) {
     }
 
     ShadersManager::~ShadersManager() {
-        for (auto& element: shaders) {
-            delete (element.second);
-        }
     }
 
     void ShadersManager::init() {
-        shaders = std::unordered_map<std::string, Shader*>();
+        /*shaders = std::unordered_map<std::string, Shader*>();
         std::string clientPath = m_systemsRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Client).string();
         shaders["line"] = new Shader("line", (clientPath + "/assets/shaders/lineVertex.glsl").c_str(),
                                      (clientPath + "/assets/shaders/lineFragment.glsl").c_str());
@@ -29,11 +26,53 @@ namespace TechEngine {
 
         shaders["geometry"] = new Shader("geometry", ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/geometryVertex.glsl"),
                                          ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/geometryFragment.glsl"));
-        shaders["geometryOld"] = new Shader("geometryOld", ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/geometryOldVertex.glsl"),
-                                            ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/geometryOldFragment.glsl"));
         shaders["depthPrePass"] = new Shader("depthPrePass", ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/depthPrePassVertex.glsl"),
                                              ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/depthPrePassFragment.glsl"));
-        shaders["lightCulling"] = new Shader("lightCulling", ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/lightCullingCompute.glsl"));
+        shaders["lightCulling"] = new Shader("lightCulling", ("C:/dev/TechEngine/templates/project/resources/client/assets/shaders/lightCullingCompute.glsl"));*/
+
+        shaders.clear();
+        std::string shaderBasePath = "C:/dev/TechEngine/templates/project/resources/client/assets/shaders/";
+
+        std::vector<ShaderInfo> shadersToBuild = {
+            {
+                "geometry", {
+                    {ShaderType::Vertex, shaderBasePath + "geometryVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "geometryFragment.glsl"}
+                }
+            },
+            {
+                "depthPrePass", {
+                    {ShaderType::Vertex, shaderBasePath + "depthPrePassVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "depthPrePassFragment.glsl"}
+                }
+            },
+            {
+                "lightCulling", {
+                    {ShaderType::Compute, shaderBasePath + "lightCullingCompute.glsl"}
+                }
+            },
+            {
+                "omniShadowMap", {
+                    {ShaderType::Vertex, shaderBasePath + "shadowCubeVertex.glsl"},
+                    {ShaderType::Geometry, shaderBasePath + "shadowCubeGeometry.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "shadowCubeFragment.glsl"}
+                }
+            },
+        };
+
+        for (const auto& info: shadersToBuild) {
+            Shader* shader = new Shader(info.name);
+            for (const auto& stage: info.stages) {
+                shader->attachSourceFile(stage.m_type, stage.m_path.string());
+            }
+
+            if (shader->link()) {
+                shaders[info.name] = shader;
+            } else {
+                TE_LOGGER_ERROR("Failed to build shader '{0}'. It will be unavailable.", info.name);
+                delete shader;
+            }
+        }
     }
 
     void ShadersManager::changeActiveShader(const std::string& name) {

@@ -7,11 +7,12 @@
 namespace TechEngine {
     class CLIENT_DLL FrameBuffer {
     private:
-        uint32_t id = 1;
+        uint32_t id = 0;
 
     public:
-        uint32_t depthTexture = 0;
         uint32_t colorTexture = 0;
+        uint32_t depthTexture = 0;
+        uint32_t depthCubeMapTexture = 0;
         uint32_t width = 0;
         uint32_t height = 0;
 
@@ -40,6 +41,8 @@ namespace TechEngine {
         void attachColorTexture();
 
         void attachColorTexture(uint32_t width, uint32_t height);
+
+        void attachDepthCubeMapTexture(uint32_t width, uint32_t height);
 
         uint32_t getID();
     };

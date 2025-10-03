@@ -24,11 +24,18 @@ namespace TechEngine {
     }
 
     void UIView::onInit() {
+        return;
         m_frameBufferID = m_appSystemsRegistry.getSystem<Renderer>().createFramebuffer(1080, 720);
+        FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(m_frameBufferID);
+        frameBuffer.bind();
+        frameBuffer.attachColorTexture();
+        frameBuffer.attachDepthTexture();
+        frameBuffer.unBind();
     }
 
 
     void UIView::onUpdate() {
+        return;
         glm::vec2 gameViewSize = m_uiEditor->getGameView().getFrameBufferSize();
         Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
         FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(m_frameBufferID);

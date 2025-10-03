@@ -65,7 +65,10 @@ namespace TechEngine {
         const int32_t TILE_SIZE = 16;
 
         uint32_t m_depthPrePassFBO = 0;
-        std::vector<FrameBuffer> m_frameBuffers;
+        uint32_t m_omniShadowFBO = 0;
+
+        std::vector<FrameBuffer*> m_frameBuffers;
+
         UIRenderer m_uiRenderer;
 
         uint32_t m_currentVertexOffset = 0; // Tracks the end of the VBO data (in vertices)
@@ -84,6 +87,18 @@ namespace TechEngine {
         Renderer(SystemsRegistry& systemsRegistry);
 
         ~Renderer() override;
+
+        // 2. Disable Copying
+        // This will prevent anyone from accidentally copying the renderer
+        Renderer(const Renderer&) = delete;
+
+        Renderer& operator=(const Renderer&) = delete;
+
+        // 3. Enable Moving (Good Practice)
+        // This allows you to, for example, return a Renderer from a factory function
+        Renderer(Renderer&&) noexcept = default;
+
+        Renderer& operator=(Renderer&&) noexcept = delete;
 
         void init() override;
 
@@ -124,9 +139,11 @@ namespace TechEngine {
 
         void depthPrePass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
 
+        void omniShadowPass(float nearPlane, float farPlane, const glm::ivec2& viewport);
+
         void lightCulling(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
 
-        void geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
+        void geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport, float farPlane);
 
         void uiPass();
 
