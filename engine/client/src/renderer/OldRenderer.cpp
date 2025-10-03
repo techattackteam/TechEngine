@@ -477,10 +477,11 @@ namespace TechEngine {
     }
 
     uint32_t OldRenderer::createFramebuffer(uint32_t width, uint32_t height) {
-        FrameBuffer* frameBuffer = new FrameBuffer();
+        /*FrameBuffer* frameBuffer = new FrameBuffer();
         frameBuffer->init(frameBuffers.size() + 1, width, height);
         frameBuffers.emplace_back(frameBuffer);
-        return frameBuffer->getID();
+        return frameBuffer->getID();*/
+        return 0;
     }
 
     ShadersManager& OldRenderer::getShadersManager() {

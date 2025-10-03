@@ -22,12 +22,12 @@ namespace TechEngine {
     }
 
     void SceneView::onInit() {
-#if  1 != 1
-        frameBufferID = m_appSystemsRegistry.getSystem<OldRenderer>().createFramebuffer(1080, 720);
-#else
         frameBufferID = m_appSystemsRegistry.getSystem<Renderer>().createFramebuffer(1080, 720);
-#endif
-
+        FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
+        frameBuffer.bind();
+        frameBuffer.attachColorTexture();
+        frameBuffer.attachDepthTexture();
+        frameBuffer.unBind();
         id = totalIds++;
     }
 
@@ -36,32 +36,23 @@ namespace TechEngine {
         RenderRequest request;
         ImVec2 wsize = ImGui::GetContentRegionAvail();
         frameBuffer.bind();
-        //frameBuffer.resize(wsize.x, wsize.y);
+        frameBuffer.resize(wsize.x, wsize.y);
 
         m_appSystemsRegistry.getSystem<PhysicsEngine>().renderBodies();
         sceneCamera.updateProjectionMatrix(wsize.x / wsize.y);
         sceneCamera.updateViewMatrix(cameraTransform.getModelMatrix());
         renderCameraFrustum();
         renderColliders();
-        int mask = Renderer::SCENE_PASS | Renderer::LINE_PASS;
-        //renderer.renderCustomPipeline(&sceneCamera, mask);
-#if  1!= 1
-        OldRenderer& oldRenderer = m_appSystemsRegistry.getSystem<OldRenderer>();
-        oldRenderer.renderPipeline(sceneCamera);
-#else
 
-        request.viewMatrix = sceneCamera.getViewMatrix(); // This makes a copy
-        request.projectionMatrix = sceneCamera.getProjectionMatrix(); // This makes a copy
+        request.viewMatrix = sceneCamera.getViewMatrix();
+        request.projectionMatrix = sceneCamera.getProjectionMatrix();
+        request.nearPlane = sceneCamera.nearPlane;
+        request.farPlane = sceneCamera.farPlane;
         request.targetFramebufferId = this->frameBufferID;
         request.viewportSize = {wsize.x, wsize.y};
         request.renderMask = Renderer::SCENE_PASS | Renderer::LINE_PASS;
 
-        // 3. Submit the request to the renderer.
         m_appSystemsRegistry.getSystem<Renderer>().addRequest(request);
-       //m_appSystemsRegistry.getSystem<Renderer>().renderPipeline();
-       //m_appSystemsRegistry.getSystem<Renderer>().addRequest(request);
-#endif
-
         uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
         ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
         guizmo.editTransform(&sceneCamera, ImGui::GetCurrentContext(), m_selectedEntities);

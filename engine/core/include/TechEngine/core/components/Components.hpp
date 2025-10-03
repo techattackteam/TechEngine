@@ -141,7 +141,7 @@ namespace TechEngine {
 
         glm::vec1 fov = glm::vec1(45);
         float nearPlane = 0.1f;
-        float farPlane = 10000;
+        float farPlane = 100;
         float orthoSize = 5;
         float aspectRatio = 1;
         friend class CameraSystem;

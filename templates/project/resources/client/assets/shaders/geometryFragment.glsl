@@ -41,8 +41,10 @@ layout (std430, binding = 5) readonly buffer TileInfoBuffer {
     TileInfo tiles[];
 };
 
+uniform samplerCube u_shadowCubeMap;
 uniform ivec2 u_screenSize;
 uniform vec3 u_cameraPos;
+uniform float u_farPlane;
 
 const int TILE_SIZE = 16;
 
@@ -52,11 +54,11 @@ float distributionGGX(vec3 N, vec3 H, float roughness) {
     float NdotH = max(dot(N, H), 0.0);
     float NdotH2 = NdotH * NdotH;
 
-    float num = a2;
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom = 3.14159265359 * denom * denom;
+    float numinator = a2;
+    float denominator = (NdotH2 * (a2 - 1.0) + 1.0);
+    denominator = 3.14159265359 * denominator * denominator;
 
-    return num / denom;
+    return numinator / denominator;
 }
 
 float geometrySchlickGGX(float NdotV, float roughness) {
@@ -71,6 +73,35 @@ float geometrySchlickGGX(float NdotV, float roughness) {
 
 vec3 frenelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+float calculateOmniShadow(vec3 lightPos) {
+    // get vector between fragment position and light position
+    vec3 fragToLight = v_worldPos - lightPos;
+    // use the light to fragment vector to sample from the depth map
+    float closestDepth = texture(u_shadowCubeMap, fragToLight).r;
+    // it is currently in linear range between [0,1]. Re-transform back to original value
+    closestDepth *= u_farPlane;
+    // now get current linear depth as the length between the fragment and light position
+    float currentDepth = length(fragToLight);
+    // now test for shadows
+    float bias = 0.05;
+
+    float shadow = 0.0;
+    float samples = 4.0;
+    float offset = 0.1;
+    for (float x = -offset; x < offset; x += offset / (samples * 0.5)) {
+        for (float y = -offset; y < offset; y += offset / (samples * 0.5)) {
+            for (float z = -offset; z < offset; z += offset / (samples * 0.5)) {
+                float closestDepth = texture(u_shadowCubeMap, fragToLight + vec3(x, y, z)).r;
+                closestDepth *= u_farPlane;   // undo mapping [0;1]
+                if (currentDepth - bias > closestDepth)
+                shadow += 1.0;
+            }
+        }
+    }
+    shadow /= (samples * samples * samples);
+    return 1.0f - shadow;
 }
 
 void main() {
@@ -106,38 +137,43 @@ void main() {
         float lightIntensity = lights[lightIndex].intensity;
         float lightRadius = lights[lightIndex].radius;
 
-        vec3 lightView = lightPos - v_worldPos;
+        // Shadow
+        float shadow = calculateOmniShadow(lightPos);
 
-        float distance = length(lightView);
-        lightView = normalize(lightView);
-        vec3 halfDir = normalize(view + lightView);
+        if (shadow > 0.0f) {
+            vec3 lightView = lightPos - v_worldPos;
 
-        // Attenuation
-        float attenuation = 1.0 / (distance * distance + 1.0);
-        float falloff = clamp(1.0 - pow(distance / lightRadius, 4.0), 0.0, 1.0);
-        falloff *= falloff;
-        attenuation *= falloff;
+            float distance = length(lightView);
+            lightView = normalize(lightView);
+            vec3 halfDir = normalize(view + lightView);
 
-        vec3 radiance = lightColor * lightIntensity * attenuation;
+            // Attenuation
+            float attenuation = 1.0 / (distance * distance + 1.0);
+            float falloff = clamp(1.0 - pow(distance / lightRadius, 4.0), 0.0, 1.0);
+            falloff *= falloff;
+            attenuation *= falloff;
 
-        // Cook-Torrance BRDF
-        float NDF = distributionGGX(normal, halfDir, material.roughness); // Normal Distribution Function
-        float NdotV = max(dot(normal, view), 0.0);
-        float NdotL = max(dot(normal, lightView), 0.0);
-        float G = geometrySchlickGGX(NdotV, material.roughness) * geometrySchlickGGX(NdotL, material.roughness); // Geometry Function
-        vec3 fresnel = frenelSchlick(max(dot(halfDir, lightView), 0.0), F0); // Fresnel
+            vec3 radiance = lightColor * lightIntensity * attenuation;
 
-        vec3 kD = vec3(1.0) - fresnel; // Diffuse component
-        kD *= 1.0 - material.metallic; // Metals have no diffuse component
+            // Cook-Torrance BRDF
+            float NDF = distributionGGX(normal, halfDir, material.roughness); // Normal Distribution Function
+            float NdotV = max(dot(normal, view), 0.0);
+            float NdotL = max(dot(normal, lightView), 0.0);
+            float G = geometrySchlickGGX(NdotV, material.roughness) * geometrySchlickGGX(NdotL, material.roughness); // Geometry Function
+            vec3 fresnel = frenelSchlick(max(dot(halfDir, lightView), 0.0), F0); // Fresnel
 
-        vec3 numerator = NDF * G * fresnel;
-        float denominator = 4.0 * max(dot(normal, lightView), 0.0) * max(dot(normal, view), 0.0) + 0.001; // Prevent divide by zero
-        vec3 specular = numerator / denominator;
+            vec3 kD = vec3(1.0) - fresnel; // Diffuse component
+            kD *= 1.0 - material.metallic; // Metals have no diffuse component
 
-        // Final Color
-        vec3 Lo = (kD * material.albedo.rgb / 3.141592653 + specular) * radiance * NdotL; // Outgoing Radiance
+            vec3 numerator = NDF * G * fresnel;
+            float denominator = 4.0 * max(dot(normal, lightView), 0.0) * max(dot(normal, view), 0.0) + 0.001; // Prevent divide by zero
+            vec3 specular = numerator / denominator;
 
-        totalLigth += Lo;
+            // Final Color
+            vec3 Lo = (kD * material.albedo.rgb / 3.141592653 + specular) * radiance * NdotL; // Outgoing Radiance
+
+            totalLigth += Lo * shadow;
+        }
     }
 
     vec3 ambient = vec3(0.03) * material.albedo.rgb * material.ao;

@@ -17,8 +17,12 @@ namespace TechEngine {
 
     void UIRenderer::init() {
         std::string clientPath = m_systemsRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Client).string();
-        m_uiShader = m_uiShader = new Shader("ui", (clientPath + "/assets/shaders/uiVertex.glsl").c_str(),
-                                             (clientPath + "/assets/shaders/uiFragment.glsl").c_str());
+       //m_uiShader = m_uiShader = new Shader("ui");
+       //m_uiShader->attachSourceFile(ShaderType::Vertex, clientPath + "/assets/shaders/uiVertex.glsl");
+       //m_uiShader->attachSourceFile(ShaderType::Fragment, clientPath + "/assets/shaders/uiFragment.glsl");
+       //if (!m_uiShader->link()) {
+       //    TE_LOGGER_ERROR("Failed to link UI shader");
+       //}
         m_vertexArray = new VertexArray();
         m_vertexArray->init();
 

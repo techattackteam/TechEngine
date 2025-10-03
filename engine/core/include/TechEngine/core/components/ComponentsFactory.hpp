@@ -26,7 +26,7 @@ namespace TechEngine {
             MeshRenderer meshRenderer;
             meshRenderer.mesh = mesh;
             meshRenderer.material = material;
-            eventManager->dispatch<ChangeMeshEvent>();
+            //eventManager->dispatch<ChangeMeshEvent>();
             return meshRenderer;
         }
 #pragma endregion

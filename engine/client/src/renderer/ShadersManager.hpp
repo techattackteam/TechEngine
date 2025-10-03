@@ -1,5 +1,7 @@
 #pragma once
 
+#include <filesystem>
+
 #include "Shader.hpp"
 
 namespace TechEngine {
@@ -7,6 +9,16 @@ namespace TechEngine {
 }
 
 namespace TechEngine {
+    struct ShaderStageInfo {
+        ShaderType m_type;
+        std::filesystem::path m_path;
+    };
+
+    struct ShaderInfo {
+        std::string name;
+        std::vector<ShaderStageInfo> stages;
+    };
+
     class ShadersManager {
     private:
         SystemsRegistry& m_systemsRegistry;
@@ -26,7 +38,6 @@ namespace TechEngine {
         Shader* getActiveShader();
 
         void unBindShader();
-
 
         void exportShaderFiles(const std::string& path);
     };

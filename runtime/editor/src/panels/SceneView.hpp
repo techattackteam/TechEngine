@@ -42,7 +42,6 @@ namespace TechEngine {
 
         ImGuizmo::MODE getGuizmoMode() const;
 
-
         uint32_t getFrameBufferID() const {
             return frameBufferID;
         }

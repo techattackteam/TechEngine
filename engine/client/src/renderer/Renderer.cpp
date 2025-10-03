@@ -14,6 +14,7 @@
 #include "TechEngine/core/events/scene/EntityDeletedEvent.hpp"
 #include "profiling/ProfiledScope.hpp"
 #include "resources/ResourcesManager.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
 #include "TechEngine/core/resources/material/Material.hpp"
 #include "TechEngine/core/resources/mesh/Vertex.hpp"
 #include "TechEngine/core/scene/Scene.hpp"
@@ -69,6 +70,17 @@ namespace TechEngine {
         m_atomicCounterBuffer.init(sizeof(uint32_t));
 
         m_depthPrePassFBO = createFramebuffer(800, 600);
+        FrameBuffer& depthPrePassFBO = getFramebuffer(m_depthPrePassFBO);
+        depthPrePassFBO.bind();
+        depthPrePassFBO.attachColorTexture();
+        depthPrePassFBO.attachDepthTexture();
+        depthPrePassFBO.unBind();
+
+        m_omniShadowFBO = createFramebuffer(1024, 1024);
+        FrameBuffer& omniShadowFBO = getFramebuffer(m_omniShadowFBO);
+        omniShadowFBO.bind();
+        omniShadowFBO.attachDepthCubeMapTexture(1024, 1024);
+        omniShadowFBO.unBind();
 
         m_vertexArrays[BufferLines] = VertexArray();
         m_vertexBuffers[BufferLines] = VertexBuffer();
@@ -163,10 +175,10 @@ namespace TechEngine {
                 scenePass(request);
             }
             if (request.renderMask & UI_PASS && m_systemsRegistry.hasSystem<WidgetsRegistry>()) {
-                uiPass();
+                //uiPass();
             }
             if (request.renderMask & LINE_PASS && !lines.empty()) {
-                linePass(request.viewMatrix, request.projectionMatrix);
+                //linePass(request.viewMatrix, request.projectionMatrix);
             }
             framebuffer.unBind();
             m_renderQueue.pop();
@@ -179,16 +191,21 @@ namespace TechEngine {
     }
 
     uint32_t Renderer::createFramebuffer(uint32_t width, uint32_t height) {
-        m_frameBuffers.emplace_back();
-        FrameBuffer& frameBuffer = m_frameBuffers.back();
-        frameBuffer.init(m_frameBuffers.size() + 1, width, height);
-        return frameBuffer.getID();
+        static uint32_t id = 1;
+        FrameBuffer* frameBuffer = new FrameBuffer();
+        frameBuffer->init(id++, width, height);
+        m_frameBuffers.emplace_back(frameBuffer);
+        return frameBuffer->getID();
     }
 
     FrameBuffer& Renderer::getFramebuffer(uint32_t id) {
-        return *std::find_if(m_frameBuffers.begin(), m_frameBuffers.end(), [id](FrameBuffer& fb) {
-            return fb.getID() == id;
-        });
+        for (auto& frameBuffer: m_frameBuffers) {
+            if (frameBuffer->getID() == id) {
+                return *frameBuffer;
+            }
+        }
+        TE_LOGGER_CRITICAL("Framebuffer with id: %d not found", id);
+        throw std::runtime_error("Framebuffer not found");
     }
 
     UIRenderer& Renderer::getUIRenderer() {
@@ -278,10 +295,10 @@ namespace TechEngine {
                 cmd.count = mesh->m_indices.size();
                 cmd.firstIndex = mesh->firstIndex;
                 cmd.baseVertex = mesh->baseVertex;
-
+                cmd.instanceCount = 0;
                 cmd.baseInstance = i;
-                i++;
             }
+            i++;
             cmd.instanceCount++;
         }
         if (cmd.instanceCount > 0) {
@@ -353,13 +370,25 @@ namespace TechEngine {
         glm::mat4 viewMatrix = request.viewMatrix;
         glm::mat4 projectionMatrix = request.projectionMatrix;
         glm::vec2 viewport = request.viewportSize;
+        float nearPlane = request.nearPlane;
+        float farPlane = request.farPlane;
         depthPrePass(viewMatrix, projectionMatrix, viewport);
         lightCulling(viewMatrix, projectionMatrix, viewport);
+
+        bool hasLight = false;
+        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        scene.runSystem<PointLight>([&](PointLight& pointLight) {
+            hasLight = true;
+        });
+        if (hasLight) {
+            omniShadowPass(nearPlane, farPlane, viewport);
+        }
 
         FrameBuffer& frameBuffer = getFramebuffer(request.targetFramebufferId);
         frameBuffer.bind();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        geometryPass(viewMatrix, projectionMatrix, viewport);
+        geometryPass(viewMatrix, projectionMatrix, viewport, farPlane);
+        frameBuffer.unBind();
     }
 
     void Renderer::depthPrePass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport) {
@@ -397,6 +426,79 @@ namespace TechEngine {
         frameBuffer.unBind();
     }
 
+    void Renderer::omniShadowPass(const float nearPlane, const float farPlane, const glm::ivec2& viewport) {
+        glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, nearPlane, farPlane);
+
+        std::vector<glm::mat4> shadowTransforms;
+        glm::vec3 lightPos = glm::vec3(0.0f, 4.0f, 0.0f);
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+
+        glViewport(0, 0, 1024, 1024);
+
+        FrameBuffer& frameBuffer = getFramebuffer(m_omniShadowFBO);
+        frameBuffer.bind();
+        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            TE_LOGGER_ERROR("Framebuffer not complete: {0}", status);
+        }
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Disable color writes
+
+        m_shadersManager.changeActiveShader("omniShadowMap");
+        Shader* shadowShader = m_shadersManager.getActiveShader();
+        shadowShader->bind();
+        for (uint32_t i = 0; i < 6; i++) {
+            shadowShader->setUniformMatrix4f("u_shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
+        }
+        shadowShader->setUniformFloat("u_farPlane", farPlane);
+
+        m_drawCommandBuffer.setBindingPoint(0);
+        m_objectDataBuffer.setBindingPoint(1);
+        m_objectDataBuffer.bind();
+        m_vertexArrays[BufferGameObjects].bind();
+        m_indicesBuffers[BufferGameObjects].bind();
+        m_drawCommandBuffer.bind();
+
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_drawCommandBuffer.getID());
+
+        glMultiDrawElementsIndirect(
+            GL_TRIANGLES,
+            GL_UNSIGNED_INT,
+            (void*)0,
+            m_commandToDraw,
+            0
+        );
+        GLenum err = glGetError();
+        if (err != GL_NO_ERROR) {
+            if (err == GL_INVALID_OPERATION) {
+                TE_LOGGER_ERROR("OpenGL Error: GL_INVALID_OPERATION in omniShadowPass");
+            } else if (err == GL_INVALID_ENUM) {
+                TE_LOGGER_ERROR("OpenGL Error: GL_INVALID_ENUM in omniShadowPass");
+            } else if (err == GL_INVALID_VALUE) {
+                TE_LOGGER_ERROR("OpenGL Error: GL_INVALID_VALUE in omniShadowPass");
+            } else if (err == GL_INVALID_FRAMEBUFFER_OPERATION) {
+                TE_LOGGER_ERROR("OpenGL Error: GL_INVALID_FRAMEBUFFER_OPERATION in omniShadowPass");
+            } else {
+                TE_LOGGER_ERROR("OpenGL Error: {0} in omniShadowPass", err);
+            }
+        }
+        frameBuffer.unBind();
+        glViewport(0, 0, viewport.x, viewport.y);
+        glDrawBuffer(GL_BACK);
+        glReadBuffer(GL_BACK);
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    }
+
     void Renderer::lightCulling(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport) {
         m_shadersManager.changeActiveShader("lightCulling");
         Shader* cullShader = m_shadersManager.getActiveShader();
@@ -427,14 +529,19 @@ namespace TechEngine {
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
-    void Renderer::geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport) {
-        //TODO: Implement Uniform Buffer Objects
+    void Renderer::geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport, const float farPlane) {
         m_shadersManager.changeActiveShader("geometry");
         m_shadersManager.getActiveShader()->setUniformMatrix4f("u_projection", projectionMatrix);
         m_shadersManager.getActiveShader()->setUniformMatrix4f("u_view", viewMatrix);
         glm::vec3 cameraPosition = glm::inverse(viewMatrix)[3];
         m_shadersManager.getActiveShader()->setUniformVec3("u_cameraPos", cameraPosition);
         m_shadersManager.getActiveShader()->setUniformIVec2("u_screenSize", viewport);
+
+        FrameBuffer& shadowFB = getFramebuffer(m_omniShadowFBO);
+        m_shadersManager.getActiveShader()->setUniformFloat("u_farPlane", farPlane);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, shadowFB.depthCubeMapTexture);
+        m_shadersManager.getActiveShader()->setUniformInt("u_shadowCubeMap", 0);
 
         m_drawCommandBuffer.setBindingPoint(0);
         m_objectDataBuffer.setBindingPoint(1);
