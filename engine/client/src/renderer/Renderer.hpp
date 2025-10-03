@@ -20,6 +20,15 @@
 namespace TechEngine {
     class CLIENT_DLL Renderer : public System {
         // Temp before creating the light component
+        struct Light {
+            glm::vec3 position; // 12 bytes
+            float padding1; // 4 byte to align to 16 bytes match std430 layout
+            glm::vec3 color; // 12 bytes
+            float radius; // 4 byte
+            float intensity; // 4 byte
+            float padding3[3]; // Padding to align to 16 bytes
+        };
+
         struct TileInfo {
             uint32_t offset;
             uint32_t lightCount;
@@ -139,9 +148,9 @@ namespace TechEngine {
 
         void depthPrePass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
 
-        void omniShadowPass(float nearPlane, float farPlane, const glm::ivec2& viewport);
-
         void lightCulling(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
+
+        void omniShadowPass(float nearPlane, float farPlane, const glm::ivec2& viewport);
 
         void geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport, float farPlane);
 

@@ -24,6 +24,8 @@ namespace TechEngine {
 
         void addData(const void* data, uint32_t size, uint32_t offset) const;
 
+        void clear() const;
+
         GLuint getID();
     };
 }
