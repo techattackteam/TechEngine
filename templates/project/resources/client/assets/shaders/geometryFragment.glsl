@@ -76,15 +76,9 @@ vec3 frenelSchlick(float cosTheta, vec3 F0) {
 }
 
 float calculateOmniShadow(vec3 lightPos) {
-    // get vector between fragment position and light position
     vec3 fragToLight = v_worldPos - lightPos;
-    // use the light to fragment vector to sample from the depth map
-    float closestDepth = texture(u_shadowCubeMap, fragToLight).r;
-    // it is currently in linear range between [0,1]. Re-transform back to original value
-    closestDepth *= u_farPlane;
-    // now get current linear depth as the length between the fragment and light position
+    float closestDepth = texture(u_shadowCubeMap, fragToLight).r * u_farPlane;
     float currentDepth = length(fragToLight);
-    // now test for shadows
     float bias = 0.05;
 
     float shadow = 0.0;
@@ -111,7 +105,7 @@ void main() {
     vec3 view = normalize(u_cameraPos - v_worldPos);
 
     vec3 F0 = vec3(0.04);
-    F0 = mix(F0, material.albedo.rgb, material.albedo.a);
+    F0 = mix(F0, material.albedo.rgb, material.metallic);
 
     ivec2 pixelCoord = ivec2(floor(gl_FragCoord.xy));
     pixelCoord = clamp(pixelCoord, ivec2(0), u_screenSize - ivec2(1));

@@ -295,10 +295,10 @@ namespace TechEngine {
                 cmd.count = mesh->m_indices.size();
                 cmd.firstIndex = mesh->firstIndex;
                 cmd.baseVertex = mesh->baseVertex;
-                cmd.instanceCount = 0;
+
                 cmd.baseInstance = i;
+                i++;
             }
-            i++;
             cmd.instanceCount++;
         }
         if (cmd.instanceCount > 0) {
@@ -313,7 +313,6 @@ namespace TechEngine {
     }
 
     void Renderer::populateLightDataBuffers() {
-        //For now upload all lights again
         struct LightData {
             glm::vec3 position;
             float padding1;
@@ -322,12 +321,14 @@ namespace TechEngine {
             float intensity = 1; // 4 byte
             float padding3[3] = {0.0f}; // Padding to align to 16 bytes
         };
+
         Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        m_lightsBuffer.clear();
         std::vector<LightData> lights;
         scene.runSystem<Transform, PointLight>([&](Transform& transform, PointLight& pointLight) {
             lights.push_back({transform.m_position, 0.0f, pointLight.color, pointLight.radius, pointLight.intensity, {0.0f, 0.0f, 0.0f}});
         });
-        m_lightsBuffer.addData(lights.data(), lights.size() * sizeof(PointLight), 0);
+        m_lightsBuffer.addData(lights.data(), lights.size() * sizeof(LightData), 0);
     }
 
     void Renderer::populateObjectDataBuffers() const {
@@ -399,7 +400,8 @@ namespace TechEngine {
         glClear(GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
-
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Disable color writes
 
         m_shadersManager.changeActiveShader("depthPrePass");
@@ -422,15 +424,52 @@ namespace TechEngine {
             m_commandToDraw,
             0
         );
+        glDrawBuffer(GL_BACK);
+        glReadBuffer(GL_BACK);
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         frameBuffer.unBind();
+    }
+
+    void Renderer::lightCulling(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport) {
+        m_shadersManager.changeActiveShader("lightCulling");
+        Shader* cullShader = m_shadersManager.getActiveShader();
+        cullShader->bind();
+
+        cullShader->setUniformMatrix4f("u_view", viewMatrix);
+        cullShader->setUniformMatrix4f("u_inverseProjection", glm::inverse(projectionMatrix));
+        cullShader->setUniformIVec2("u_screenSize", viewport);
+
+        glActiveTexture(GL_TEXTURE0);
+        FrameBuffer& frameBuffer = getFramebuffer(m_depthPrePassFBO);
+        glBindTexture(GL_TEXTURE_2D, frameBuffer.depthTexture);
+        cullShader->setUniformInt("u_depthMap", 0);
+
+        m_lightsBuffer.setBindingPoint(0);
+        m_lightsIndexBuffer.setBindingPoint(1);
+        m_tileInfoBuffer.setBindingPoint(2);
+        m_atomicCounterBuffer.setBindingPoint(3);
+
+        uint32_t zero = 0;
+        glClearNamedBufferData(m_atomicCounterBuffer.getID(), GL_R32UI, GL_RED, GL_UNSIGNED_INT, &zero);
+
+        int32_t numGroupsX = (viewport.x + TILE_SIZE - 1) / TILE_SIZE;
+        int32_t numGroupsY = (viewport.y + TILE_SIZE - 1) / TILE_SIZE;
+        glDispatchCompute(numGroupsX, numGroupsY, 1);
+
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
     void Renderer::omniShadowPass(const float nearPlane, const float farPlane, const glm::ivec2& viewport) {
         glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, nearPlane, farPlane);
 
         std::vector<glm::mat4> shadowTransforms;
-        glm::vec3 lightPos = glm::vec3(0.0f, 4.0f, 0.0f);
+        PointLight* light;
+        glm::vec3 lightPos;
+        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        scene.runSystem<Transform, PointLight>([&](Transform& transform, PointLight& pointLight) {
+            light = &pointLight;
+            lightPos = transform.m_position;
+        });
         shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
         shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
         shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
@@ -461,6 +500,7 @@ namespace TechEngine {
             shadowShader->setUniformMatrix4f("u_shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
         }
         shadowShader->setUniformFloat("u_farPlane", farPlane);
+        shadowShader->setUniformVec3("u_lightPos", lightPos);
 
         m_drawCommandBuffer.setBindingPoint(0);
         m_objectDataBuffer.setBindingPoint(1);
@@ -478,55 +518,27 @@ namespace TechEngine {
             m_commandToDraw,
             0
         );
-        GLenum err = glGetError();
-        if (err != GL_NO_ERROR) {
-            if (err == GL_INVALID_OPERATION) {
-                TE_LOGGER_ERROR("OpenGL Error: GL_INVALID_OPERATION in omniShadowPass");
-            } else if (err == GL_INVALID_ENUM) {
-                TE_LOGGER_ERROR("OpenGL Error: GL_INVALID_ENUM in omniShadowPass");
-            } else if (err == GL_INVALID_VALUE) {
-                TE_LOGGER_ERROR("OpenGL Error: GL_INVALID_VALUE in omniShadowPass");
-            } else if (err == GL_INVALID_FRAMEBUFFER_OPERATION) {
-                TE_LOGGER_ERROR("OpenGL Error: GL_INVALID_FRAMEBUFFER_OPERATION in omniShadowPass");
-            } else {
-                TE_LOGGER_ERROR("OpenGL Error: {0} in omniShadowPass", err);
-            }
-        }
+
         frameBuffer.unBind();
-        glViewport(0, 0, viewport.x, viewport.y);
-        glDrawBuffer(GL_BACK);
-        glReadBuffer(GL_BACK);
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    }
+        glViewport(0, 0, viewport.x, viewport
+                   .
+                   y
+        );
+        glDrawBuffer(GL_BACK
 
-    void Renderer::lightCulling(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport) {
-        m_shadersManager.changeActiveShader("lightCulling");
-        Shader* cullShader = m_shadersManager.getActiveShader();
-        cullShader->bind();
+        );
+        glReadBuffer(GL_BACK
 
-        cullShader->setUniformMatrix4f("u_view", viewMatrix);
-        cullShader->setUniformMatrix4f("u_inverseProjection", glm::inverse(projectionMatrix));
-        cullShader->setUniformIVec2("u_screenSize", viewport);
+        );
+        glColorMask(GL_TRUE
 
-
-        glActiveTexture(GL_TEXTURE0);
-        FrameBuffer& frameBuffer = getFramebuffer(m_depthPrePassFBO);
-        glBindTexture(GL_TEXTURE_2D, frameBuffer.depthTexture);
-        cullShader->setUniformInt("u_depthMap", 0);
-
-        m_lightsBuffer.setBindingPoint(0);
-        m_lightsIndexBuffer.setBindingPoint(1);
-        m_tileInfoBuffer.setBindingPoint(2);
-        m_atomicCounterBuffer.setBindingPoint(3);
-
-        uint32_t zero = 0;
-        glClearNamedBufferData(m_atomicCounterBuffer.getID(), GL_R32UI, GL_RED, GL_UNSIGNED_INT, &zero);
-
-        int32_t numGroupsX = (viewport.x + TILE_SIZE - 1) / TILE_SIZE;
-        int32_t numGroupsY = (viewport.y + TILE_SIZE - 1) / TILE_SIZE;
-        glDispatchCompute(numGroupsX, numGroupsY, 1);
-
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+                    ,
+                    GL_TRUE
+                    ,
+                    GL_TRUE
+                    ,
+                    GL_TRUE
+        );
     }
 
     void Renderer::geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport, const float farPlane) {

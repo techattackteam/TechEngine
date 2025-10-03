@@ -40,6 +40,12 @@ namespace TechEngine {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
+    void ShaderStorageBuffer::clear() const {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
+        glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R8, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
+
     GLuint ShaderStorageBuffer::getID() {
         return id;
     }
