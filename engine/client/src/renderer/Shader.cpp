@@ -129,6 +129,94 @@ namespace TechEngine {
         glUniform1f(getUniformLocation(name), value);
     }
 
+    void Shader::setUniformUInt(const std::string& name, unsigned int value) {
+        glUniform1ui(getUniformLocation(name), value);
+    }
+
+    void Shader::setUniformDouble(const std::string& name, double value) {
+        glUniform1d(getUniformLocation(name), value);
+    }
+
+    void Shader::setUniformIVec3(const std::string& name, glm::ivec3 vector) {
+        glUniform3iv(getUniformLocation(name), 1, glm::value_ptr(vector));
+    }
+
+    void Shader::setUniformIVec4(const std::string& name, glm::ivec4 vector) {
+        glUniform4iv(getUniformLocation(name), 1, glm::value_ptr(vector));
+    }
+
+    void Shader::setUniformUVec3(const std::string& name, glm::uvec3 vector) {
+        glUniform3uiv(getUniformLocation(name), 1, glm::value_ptr(vector));
+    }
+
+    void Shader::setUniformUVec4(const std::string& name, glm::uvec4 vector) {
+        glUniform4uiv(getUniformLocation(name), 1, glm::value_ptr(vector));
+    }
+
+    void Shader::setUniformDVec2(const std::string& name, glm::dvec2 vector) {
+        glUniform2dv(getUniformLocation(name), 1, glm::value_ptr(vector));
+    }
+
+    void Shader::setUniformDVec3(const std::string& name, glm::dvec3 vector) {
+        glUniform3dv(getUniformLocation(name), 1, glm::value_ptr(vector));
+    }
+
+    void Shader::setUniformDVec4(const std::string& name, glm::dvec4 vector) {
+        glUniform4dv(getUniformLocation(name), 1, glm::value_ptr(vector));
+    }
+
+    void Shader::setUniformMatrix2f(const std::string& name, glm::mat2 matrix) {
+        glUniformMatrix2fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix));
+    }
+
+    void Shader::setUniformMatrix3f(const std::string& name, glm::mat3 matrix) {
+        glUniformMatrix3fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix));
+    }
+
+    void Shader::setUniformMatrix2x3f(const std::string& name, glm::mat2x3 matrix) {
+        glUniformMatrix2x3fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix));
+    }
+
+    void Shader::setUniformMatrix3x2f(const std::string& name, glm::mat3x2 matrix) {
+        glUniformMatrix3x2fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix));
+    }
+
+    void Shader::setUniformMatrix2x4f(const std::string& name, glm::mat2x4 matrix) {
+        glUniformMatrix2x4fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix));
+    }
+
+    void Shader::setUniformMatrix4x2f(const std::string& name, glm::mat4x2 matrix) {
+        glUniformMatrix4x2fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix));
+    }
+
+    void Shader::setUniformMatrix3x4f(const std::string& name, glm::mat3x4 matrix) {
+        glUniformMatrix3x4fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix));
+    }
+
+    void Shader::setUniformMatrix4x3f(const std::string& name, glm::mat4x3 matrix) {
+        glUniformMatrix4x3fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix));
+    }
+
+    void Shader::setUniformIntArray(const std::string& name, int* values, uint32_t count) {
+        glUniform1iv(getUniformLocation(name), count, values);
+    }
+
+    void Shader::setUniformFloatArray(const std::string& name, float* values, uint32_t count) {
+        glUniform1fv(getUniformLocation(name), count, values);
+    }
+
+    void Shader::setUniformVec2Array(const std::string& name, const std::vector<glm::vec2>& values) {
+        glUniform2fv(getUniformLocation(name), values.size(), glm::value_ptr(values[0]));
+    }
+
+    void Shader::setUniformVec3Array(const std::string& name, const std::vector<glm::vec3>& values) {
+        glUniform3fv(getUniformLocation(name), values.size(), glm::value_ptr(values[0]));
+    }
+
+    void Shader::setUniformVec4Array(const std::string& name, const std::vector<glm::vec4>& values) {
+        glUniform4fv(getUniformLocation(name), values.size(), glm::value_ptr(values[0]));
+    }
+
     std::string Shader::parseShader(const std::string& source) {
         std::string shaderCode;
         std::ifstream shaderFile;
