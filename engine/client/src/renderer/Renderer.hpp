@@ -3,11 +3,11 @@
 #include "TechEngine/client/core/ExportDLL.hpp"
 #include "systems/System.hpp"
 
-#include "ShadersManager.hpp"
-#include "ShaderStorageBuffer.hpp"
-#include "VertexArray.hpp"
-#include "VertexBuffer.hpp"
-#include "IndicesBuffer.hpp"
+#include "shaders/ShadersManager.hpp"
+#include "shaders/ShaderStorageBuffer.hpp"
+#include "mesh/VertexArray.hpp"
+#include "mesh/VertexBuffer.hpp"
+#include "mesh/IndicesBuffer.hpp"
 #include "FrameBuffer.hpp"
 #include "Line.hpp"
 #include "RenderRequest.hpp"
@@ -16,6 +16,8 @@
 #include "ui/UIRenderer.hpp"
 
 #include <queue>
+
+#include "texture/Texture.hpp"
 
 namespace TechEngine {
     class CLIENT_DLL Renderer : public System {
@@ -86,6 +88,8 @@ namespace TechEngine {
 
         std::vector<Renderable> m_renderables;
 
+        std::vector<Texture> m_textures;
+
         std::vector<Line> lines;
 
     public:
@@ -97,14 +101,10 @@ namespace TechEngine {
 
         ~Renderer() override;
 
-        // 2. Disable Copying
-        // This will prevent anyone from accidentally copying the renderer
         Renderer(const Renderer&) = delete;
 
         Renderer& operator=(const Renderer&) = delete;
 
-        // 3. Enable Moving (Good Practice)
-        // This allows you to, for example, return a Renderer from a factory function
         Renderer(Renderer&&) noexcept = default;
 
         Renderer& operator=(Renderer&&) noexcept = delete;
@@ -140,9 +140,11 @@ namespace TechEngine {
 
         void createRenderables();
 
-        void populateLightDataBuffers();
+        void populateLightDataBuffers() const;
 
         void populateObjectDataBuffers() const;
+
+        void checkTexturesIntegrity();
 
         void scenePass(const RenderRequest& request);
 

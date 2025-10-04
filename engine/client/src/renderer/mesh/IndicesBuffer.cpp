@@ -1,5 +1,5 @@
 #include "IndicesBuffer.hpp"
-#include "ErrorCatcher.hpp"
+#include "../ErrorCatcher.hpp"
 
 
 namespace TechEngine {

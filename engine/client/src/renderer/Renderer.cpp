@@ -157,6 +157,7 @@ namespace TechEngine {
     void Renderer::renderPipeline() {
         populateLightDataBuffers();
         populateObjectDataBuffers();
+        checkTexturesIntegrity();
         const uint32_t size = m_renderQueue.size();
 
         for (uint32_t i = 0; i < size; i++) {
@@ -254,11 +255,11 @@ namespace TechEngine {
     }
 
     void Renderer::removeMaterial(const std::string& name) {
-        for (Material* m: m_systemsRegistry.getSystem<ResourcesManager>().getAllMaterials()) {
+        const std::vector<Material*>& materials = m_systemsRegistry.getSystem<ResourcesManager>().getAllMaterials();
+        for (Material* m: materials) {
             uploadNewMaterial(m->getName());
         }
     }
-
 
     void Renderer::createRenderables() {
         m_renderables.clear();
@@ -312,7 +313,7 @@ namespace TechEngine {
         this->m_commandToDraw = commands.size();
     }
 
-    void Renderer::populateLightDataBuffers() {
+    void Renderer::populateLightDataBuffers() const {
         struct LightData {
             glm::vec3 position;
             float padding1;
@@ -367,6 +368,25 @@ namespace TechEngine {
         m_objectDataBuffer.addData(objectData.data(), objectData.size() * sizeof(ObjectData));
     }
 
+    void Renderer::checkTexturesIntegrity() {
+        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        scene.runSystem<MeshRenderer>([this](MeshRenderer& meshRenderer) {
+            Material& material = *meshRenderer.material;
+
+            if (m_textures.empty()) {
+                TextureResource& resource = m_systemsRegistry.getSystem<ResourcesManager>().getTexture(0);
+
+                m_textures.resize(1);
+                m_textures[0] = Texture();
+                m_textures[0].uploadFromResource(resource);
+                m_textures[0].makeResident();
+                material.getProperties().albedoMapHandle = m_textures[0].getHandle();
+                //removeMaterial(material.getName());
+                uploadNewMaterial(material.getName());
+            }
+        });
+    }
+
     void Renderer::scenePass(const RenderRequest& request) {
         glm::mat4 viewMatrix = request.viewMatrix;
         glm::mat4 projectionMatrix = request.projectionMatrix;
@@ -400,9 +420,12 @@ namespace TechEngine {
         glClear(GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
+
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Disable color writes
+
+        glCullFace(GL_FRONT);
 
         m_shadersManager.changeActiveShader("depthPrePass");
         m_shadersManager.getActiveShader()->setUniformMatrix4f("u_projection", projectionMatrix);
@@ -424,10 +447,11 @@ namespace TechEngine {
             m_commandToDraw,
             0
         );
+        frameBuffer.unBind();
         glDrawBuffer(GL_BACK);
         glReadBuffer(GL_BACK);
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        frameBuffer.unBind();
+        glCullFace(GL_BACK);
     }
 
     void Renderer::lightCulling(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport) {

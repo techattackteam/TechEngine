@@ -8,7 +8,6 @@ find_package(glfw REQUIRED)
 add_library(TechEngineClient SHARED
         ${ENGINE_CLIENT_SRC}
         ${ENGINE_CLIENT_HEADERS}
-        "src/renderer/ui/stb_image.h"
         "src/renderer/ui/stb_truetype.h")
 
 # Define export macros (Client and Core need to be exported)

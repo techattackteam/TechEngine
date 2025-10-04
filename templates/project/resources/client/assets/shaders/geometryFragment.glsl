@@ -1,9 +1,11 @@
 #version 460 core
+#extension GL_ARB_bindless_texture: enable
 
 out vec4 fragColor;
 
 in vec3 v_worldPos;
 in vec3 v_normal;
+in vec2 v_textCoord;
 in flat uint f_materialID;
 
 struct Material {
@@ -11,6 +13,10 @@ struct Material {
     float metallic;
     float roughness;
     float ao;
+    uvec2 albedoHandle;
+    uvec2 normalHandle;
+    uvec2 metallicHandle;
+    uvec2 roughnessHandle;
 };
 
 struct Light {
@@ -79,7 +85,7 @@ float calculateOmniShadow(vec3 lightPos) {
     vec3 fragToLight = v_worldPos - lightPos;
     float closestDepth = texture(u_shadowCubeMap, fragToLight).r * u_farPlane;
     float currentDepth = length(fragToLight);
-    float bias = 0.05;
+    float bias = max(0.05 * (1.0 - dot(v_normal, normalize(lightPos - v_worldPos))), 0.005);
 
     float shadow = 0.0;
     float samples = 4.0;
@@ -100,7 +106,11 @@ float calculateOmniShadow(vec3 lightPos) {
 
 void main() {
     Material material = materialBuffer.materials[f_materialID];
-
+    if (material.albedoHandle != uvec2(0)) {
+        sampler2D albedoSampler = sampler2D(material.albedoHandle);
+        vec4 albedoTex = texture(albedoSampler, v_textCoord);
+        material.albedo *= albedoTex;
+    }
     vec3 normal = normalize(v_normal);
     vec3 view = normalize(u_cameraPos - v_worldPos);
 
@@ -122,6 +132,8 @@ void main() {
 
     vec3 totalLigth = vec3(0.0);
     uint offset = tile.offset;
+
+
 
     for (uint i = 0; i < tile.lightsCount; i++) {
         // Light calculations
@@ -164,6 +176,7 @@ void main() {
             vec3 specular = numerator / denominator;
 
             // Final Color
+
             vec3 Lo = (kD * material.albedo.rgb / 3.141592653 + specular) * radiance * NdotL; // Outgoing Radiance
 
             totalLigth += Lo * shadow;

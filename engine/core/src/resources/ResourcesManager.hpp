@@ -2,6 +2,7 @@
 
 #include "TechEngine/core/resources/material/MaterialManager.hpp"
 #include "TechEngine/core/resources/mesh/MeshManager.hpp"
+#include "TechEngine/core/resources/texture/TextureManager.hpp"
 #include "mesh/AssimpLoader.hpp"
 
 namespace TechEngine {
@@ -15,6 +16,7 @@ namespace TechEngine {
     public:
         MeshManager m_meshManager;
         MaterialManager m_materialManager;
+        TextureManager m_textureManager;
 
         explicit ResourcesManager(SystemsRegistry& systemsRegistry);
 
@@ -51,7 +53,17 @@ namespace TechEngine {
 
         Material& getDefaultMaterial();
 
+        void assignTextureToMaterial(const std::string& materialName, const std::string& textureName, const std::string& textureType);
+
         const std::vector<Material*>& getAllMaterials();
+#pragma endregion
+
+#pragma region TextureManager
+        void loadTexture(const std::string& name, const std::string& path);
+
+        TextureResource& getTexture(const std::string& name);
+
+        TextureResource& getTexture(const int id);
 #pragma endregion
 
     private:
