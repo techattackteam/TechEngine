@@ -6,14 +6,19 @@
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
-    ResourcesManager::ResourcesManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry), m_meshManager(systemsRegistry), m_materialManager(systemsRegistry) {
+    ResourcesManager::ResourcesManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry),
+                                                                           m_meshManager(systemsRegistry),
+                                                                           m_materialManager(systemsRegistry),
+                                                                           m_textureManager(systemsRegistry) {
     }
 
     void ResourcesManager::init(AppType appType) {
         std::unordered_map<std::string, std::vector<std::filesystem::path>> filesByExtension = getFilesByExtension(appType);
 
+        m_textureManager.init(filesByExtension[".png"]);
         m_materialManager.init(filesByExtension[".mat"]);
         m_meshManager.init(filesByExtension[".tesmesh"]);
+        assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "Rock_Albedo", "albedo");
     }
 
     void ResourcesManager::shutdown() {
@@ -93,7 +98,6 @@ namespace TechEngine {
         return m_materialManager.createMaterial(name);
     }
 
-
     void ResourcesManager::loadMaterial(const std::string& name, const std::string& path) {
         if (m_materialManager.materialExists(name)) {
             TE_LOGGER_WARN("Material already registered: {0}", name);
@@ -114,9 +118,58 @@ namespace TechEngine {
         return m_materialManager.getMaterial(MaterialManager::DEFAULT_MATERIAL_NAME);
     }
 
+    void ResourcesManager::assignTextureToMaterial(const std::string& materialName, const std::string& textureName, const std::string& textureType) {
+        if (!m_materialManager.materialExists(materialName)) {
+            TE_LOGGER_WARN("Material not found: {0}", materialName);
+            return;
+        }
+        if (!m_textureManager.textureExists(textureName)) {
+            TE_LOGGER_WARN("Texture not found: {0}", textureName);
+            return;
+        }
+        Material& material = m_materialManager.getMaterial(materialName);
+        TextureResource& texture = m_textureManager.getTexture(textureName);
+        if (textureType == "albedo") {
+            material.getAlbedoMapID() = texture.getID();
+        } else if (textureType == "normal") {
+            material.getNormalMapID() = texture.getID();
+        } else if (textureType == "metallic") {
+            material.getMetallicMapID() = texture.getID();
+        } else if (textureType == "roughness") {
+            material.getRoughnessMapID() = texture.getID();
+        } else {
+            TE_LOGGER_WARN("Unknown texture type: {0}", textureType);
+        }
+    }
+
     const std::vector<Material*>& ResourcesManager::getAllMaterials() {
         return m_materialManager.getMaterials();
     }
+
+#pragma endregion
+
+#pragma region TextureManager
+    void ResourcesManager::loadTexture(const std::string& name, const std::string& path) {
+        if (m_textureManager.textureExists(name)) {
+            TE_LOGGER_WARN("Texture already registered: {0}", name);
+            return;
+        }
+        m_textureManager.loadFromFile(name, path);
+    }
+
+    TextureResource& ResourcesManager::getTexture(const std::string& name) {
+        if (!m_textureManager.textureExists(name)) {
+            TE_LOGGER_WARN("Texture not found: {0}", name);
+            throw std::runtime_error("Texture not found");
+        }
+        return m_textureManager.getTexture(name);
+    }
+
+    TextureResource& ResourcesManager::getTexture(const int id) {
+        return m_textureManager.getTexture(id);
+    }
+
+
 #pragma endregion
 
     std::unordered_map<std::string, std::vector<std::filesystem::path>> ResourcesManager::getFilesByExtension(const AppType& appType) {

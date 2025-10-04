@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../../include/TechEngine/client/core/ExportDLL.hpp"
+#include "TechEngine/client/core/ExportDLL.hpp"
 #include "systems/System.hpp"
-#include "ShadersManager.hpp"
+#include "shaders/ShadersManager.hpp"
 #include "Line.hpp"
-#include "ShaderStorageBuffer.hpp"
+#include "shaders/ShaderStorageBuffer.hpp"
 #include "scene/CameraSystem.hpp"
 #include "ui/UIRenderer.hpp"
 

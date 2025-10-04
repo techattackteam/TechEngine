@@ -30,4 +30,20 @@ namespace TechEngine {
     MaterialProperties& Material::getProperties() {
         return properties;
     }
+
+    int& Material::getAlbedoMapID() {
+        return albedoMapID;
+    }
+
+    int& Material::getNormalMapID() {
+        return normalMapID;
+    }
+
+    int& Material::getMetallicMapID() {
+        return metallicMapID;
+    }
+
+    int& Material::getRoughnessMapID() {
+        return roughnessMapID;
+    }
 }

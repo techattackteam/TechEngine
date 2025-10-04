@@ -1,9 +1,9 @@
 #include "VertexArray.hpp"
-#include "ErrorCatcher.hpp"
-#include "Line.hpp"
+#include "../ErrorCatcher.hpp"
+#include "../Line.hpp"
 #include "VertexBuffer.hpp"
-#include "../../../core/include/TechEngine/core/resources/mesh/Vertex.hpp"
-#include "ui/UIVertex.hpp"
+#include "../../../../core/include/TechEngine/core/resources/mesh/Vertex.hpp"
+#include "../ui/UIVertex.hpp"
 
 namespace TechEngine {
     void VertexArray::init() {

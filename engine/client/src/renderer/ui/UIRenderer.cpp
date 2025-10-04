@@ -4,7 +4,7 @@
 #include "TechEngine/core/components/Archetype.hpp"
 #include "project/Project.hpp"
 #include "renderer/ErrorCatcher.hpp"
-#include "renderer/VertexBuffer.hpp"
+#include "../mesh/VertexBuffer.hpp"
 #include "systems/SystemsRegistry.hpp"
 #include "ui/WidgetsRegistry.hpp"
 

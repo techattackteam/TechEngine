@@ -6,8 +6,8 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
-#include "GLFW.hpp"
-#include "ErrorCatcher.hpp"
+#include "../GLFW.hpp"
+#include "../ErrorCatcher.hpp"
 #include "core/Logger.hpp"
 
 namespace TechEngine {

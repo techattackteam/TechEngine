@@ -1,8 +1,8 @@
 #pragma once
 #include "../../../include/TechEngine/client/core/ExportDLL.hpp"
 #include "UIVertex.hpp"
-#include "renderer/VertexArray.hpp"
-#include "renderer/Shader.hpp"
+#include "../mesh/VertexArray.hpp"
+#include "../shaders/Shader.hpp"
 
 #include "glm/glm.hpp"
 

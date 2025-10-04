@@ -1,5 +1,5 @@
 #include "VertexBuffer.hpp"
-#include "ErrorCatcher.hpp"
+#include "../ErrorCatcher.hpp"
 
 namespace TechEngine {
     VertexBuffer::~VertexBuffer() {

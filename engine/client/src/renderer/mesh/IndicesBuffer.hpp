@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include "GLFW.hpp"
+#include "../GLFW.hpp"
 
 namespace TechEngine {
     class IndicesBuffer {

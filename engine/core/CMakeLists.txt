@@ -8,13 +8,13 @@ find_package(yaml-cpp REQUIRED)
 find_package(assimp REQUIRED)
 find_package(JoltPhysics REQUIRED)
 
-
 option(PHYSICS_DEBUG_RENDERER "Enable the physics debug renderer" OFF)
 
 add_library(TechEngineCore STATIC
         ${ENGINE_CORE_SRC}
         ${ENGINE_CORE_PRIVATE_HEADERS}
         ${ENGINE_CORE_PUBLIC_HEADERS}
+        "${CMAKE_SOURCE_DIR}/libs/stb_image/stb_image.h"
         "src/audio/miniaudio.h"
 )
 
@@ -22,7 +22,7 @@ target_include_directories(TechEngineCore
         PUBLIC
         include
         src
-
+        ${CMAKE_SOURCE_DIR}/libs/stb_image
 )
 
 target_link_libraries(TechEngineCore
