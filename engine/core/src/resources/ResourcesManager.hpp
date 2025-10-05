@@ -55,7 +55,7 @@ namespace TechEngine {
 
         void assignTextureToMaterial(const std::string& materialName, const std::string& textureName, const std::string& textureType);
 
-        const std::vector<Material*>& getAllMaterials();
+        std::vector<Material*> getAllMaterials();
 #pragma endregion
 
 #pragma region TextureManager
