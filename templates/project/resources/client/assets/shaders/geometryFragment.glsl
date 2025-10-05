@@ -17,6 +17,7 @@ struct Material {
     uvec2 normalHandle;
     uvec2 metallicHandle;
     uvec2 roughnessHandle;
+    uvec2 ambientOcclusionHandle;
 };
 
 struct Light {
@@ -54,6 +55,49 @@ uniform float u_farPlane;
 
 const int TILE_SIZE = 16;
 
+void sampleMaterialTextures(inout Material material, vec2 uv, out vec3 normal) {
+    if (material.albedoHandle != uvec2(0)) {
+        sampler2D albedoSampler = sampler2D(material.albedoHandle);
+        vec4 albedoTex = texture(albedoSampler, v_textCoord);
+        material.albedo = albedoTex;
+    }
+    if (material.metallicHandle != uvec2(0)) {
+        sampler2D metallicSampler = sampler2D(material.metallicHandle);
+        float metallicTex = texture(metallicSampler, v_textCoord).r;
+        material.metallic = metallicTex;
+    }
+    if (material.roughnessHandle != uvec2(0)) {
+        sampler2D roughnessSampler = sampler2D(material.roughnessHandle);
+        float roughnessTex = texture(roughnessSampler, v_textCoord).r;
+        material.roughness = roughnessTex;
+    }
+    if (material.ambientOcclusionHandle != uvec2(0)) {
+        sampler2D aoSampler = sampler2D(material.ambientOcclusionHandle);
+        float aoTex = texture(aoSampler, v_textCoord).r;
+        material.ao = aoTex;
+    }
+    if (material.normalHandle != uvec2(0)) {
+        sampler2D normalSampler = sampler2D(material.normalHandle);
+        vec3 normalTex = texture(normalSampler, v_textCoord).rgb;
+        normalTex = normalTex * 2.0 - 1.0; // Transform from [0,1] to [-1,1]
+        normalTex = normalize(normalTex);
+
+        // Tangent space to world space
+        vec3 tangent;
+        vec3 bitangent;
+        vec3 N = normalize(v_normal);
+        if (abs(N.z) < 0.999) {
+            tangent = normalize(cross(N, vec3(0.0, 0.0, 1.0)));
+        } else {
+            tangent = normalize(cross(N, vec3(0.0, 1.0, 0.0)));
+        }
+        bitangent = cross(N, tangent);
+
+        mat3 TBN = mat3(tangent, bitangent, N);
+        normal = normalize(TBN * normalTex);
+    }
+}
+
 float distributionGGX(vec3 N, vec3 H, float roughness) {
     float a = roughness * roughness;
     float a2 = a * a;
@@ -85,33 +129,18 @@ float calculateOmniShadow(vec3 lightPos) {
     vec3 fragToLight = v_worldPos - lightPos;
     float closestDepth = texture(u_shadowCubeMap, fragToLight).r * u_farPlane;
     float currentDepth = length(fragToLight);
-    float bias = max(0.05 * (1.0 - dot(v_normal, normalize(lightPos - v_worldPos))), 0.005);
+    float bias = 0.15;
+    float shadow = currentDepth > (closestDepth + bias) ? 1.0 : 0.0;
 
-    float shadow = 0.0;
-    float samples = 4.0;
-    float offset = 0.1;
-    for (float x = -offset; x < offset; x += offset / (samples * 0.5)) {
-        for (float y = -offset; y < offset; y += offset / (samples * 0.5)) {
-            for (float z = -offset; z < offset; z += offset / (samples * 0.5)) {
-                float closestDepth = texture(u_shadowCubeMap, fragToLight + vec3(x, y, z)).r;
-                closestDepth *= u_farPlane;   // undo mapping [0;1]
-                if (currentDepth - bias > closestDepth)
-                shadow += 1.0;
-            }
-        }
-    }
-    shadow /= (samples * samples * samples);
     return 1.0f - shadow;
 }
 
 void main() {
     Material material = materialBuffer.materials[f_materialID];
-    if (material.albedoHandle != uvec2(0)) {
-        sampler2D albedoSampler = sampler2D(material.albedoHandle);
-        vec4 albedoTex = texture(albedoSampler, v_textCoord);
-        material.albedo *= albedoTex;
-    }
     vec3 normal = normalize(v_normal);
+
+    sampleMaterialTextures(material, v_textCoord, normal);
+
     vec3 view = normalize(u_cameraPos - v_worldPos);
 
     vec3 F0 = vec3(0.04);
@@ -132,8 +161,6 @@ void main() {
 
     vec3 totalLigth = vec3(0.0);
     uint offset = tile.offset;
-
-
 
     for (uint i = 0; i < tile.lightsCount; i++) {
         // Light calculations
@@ -176,7 +203,6 @@ void main() {
             vec3 specular = numerator / denominator;
 
             // Final Color
-
             vec3 Lo = (kD * material.albedo.rgb / 3.141592653 + specular) * radiance * NdotL; // Outgoing Radiance
 
             totalLigth += Lo * shadow;

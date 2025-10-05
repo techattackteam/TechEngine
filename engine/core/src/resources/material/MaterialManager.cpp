@@ -3,13 +3,10 @@
 #include "events/resourcersManager/materials/MaterialCreatedEvent.hpp"
 #include "events/resourcersManager/materials/MaterialDeletedEvent.hpp"
 #include "eventSystem/EventManager.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
 
 #include <utils/YAMLUtils.hpp>
 #include <fstream>
-
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-
 
 namespace TechEngine {
     MaterialManager::MaterialManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {

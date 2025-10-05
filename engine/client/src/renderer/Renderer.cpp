@@ -399,6 +399,7 @@ namespace TechEngine {
             updateHandle(material->getMetallicMapID(), material->getProperties().metallicMapHandle);
             updateHandle(material->getRoughnessMapID(), material->getProperties().roughnessMapHandle);
             updateHandle(material->getNormalMapID(), material->getProperties().normalMapHandle);
+            updateHandle(material->getAmbientOcclusionMapID(), material->getProperties().ambientOcclusionMapHandle);
             properties.push_back(material->getProperties());
         }
 
