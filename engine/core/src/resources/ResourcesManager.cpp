@@ -142,7 +142,7 @@ namespace TechEngine {
         }
     }
 
-    const std::vector<Material*>& ResourcesManager::getAllMaterials() {
+    std::vector<Material*> ResourcesManager::getAllMaterials() {
         return m_materialManager.getMaterials();
     }
 

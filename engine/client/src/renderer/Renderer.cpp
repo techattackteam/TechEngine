@@ -123,13 +123,17 @@ namespace TechEngine {
             this->removeMesh(dynamic_cast<const MeshDeletedEvent*>(event.get())->mesh);
         });
 
-        eventManager.subscribe<MaterialCreatedEvent>([this](const std::shared_ptr<Event>& event) {
-            this->uploadNewMaterial(dynamic_cast<const MaterialCreatedEvent*>(event.get())->getName());
+        /*TODO: When create the improved Assets pipelines move from every frame buffers update to event driven updates
+         *
+         */
+
+        /*eventManager.subscribe<MaterialCreatedEvent>([this](const std::shared_ptr<Event>& event) {
+            //this->uploadNewMaterial(dynamic_cast<const MaterialCreatedEvent*>(event.get())->getName());
         });
 
         eventManager.subscribe<MaterialDeletedEvent>([this](const std::shared_ptr<Event>& event) {
-            this->removeMaterial(dynamic_cast<const MaterialDeletedEvent*>(event.get())->getName());
-        });
+            //this->removeMaterial(dynamic_cast<const MaterialDeletedEvent*>(event.get())->getName());
+        });*/
     }
 
     void Renderer::onStart() {
@@ -155,9 +159,9 @@ namespace TechEngine {
     }
 
     void Renderer::renderPipeline() {
-        populateLightDataBuffers();
         populateObjectDataBuffers();
-        checkTexturesIntegrity();
+        populateLightDataBuffers();
+        populateMaterialDataBuffers();
         const uint32_t size = m_renderQueue.size();
 
         for (uint32_t i = 0; i < size; i++) {
@@ -368,23 +372,37 @@ namespace TechEngine {
         m_objectDataBuffer.addData(objectData.data(), objectData.size() * sizeof(ObjectData));
     }
 
-    void Renderer::checkTexturesIntegrity() {
-        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
-        scene.runSystem<MeshRenderer>([this](MeshRenderer& meshRenderer) {
-            Material& material = *meshRenderer.material;
+    void Renderer::populateMaterialDataBuffers() {
+        ResourcesManager& resourceManager = m_systemsRegistry.getSystem<ResourcesManager>();
+        const std::vector<Material*>& materials = resourceManager.getAllMaterials();
+        std::vector<MaterialProperties> properties;
+        properties.reserve(materials.size());
+        for (Material* material: materials) {
+            auto updateHandle = [&](int mapID, uint64_t& handle) {
+                if (mapID != -1) {
+                    TextureResource& resource = resourceManager.getTexture(mapID);
+                    for (Texture& texture: m_textures) {
+                        if (texture.getHandle() == handle) {
+                            handle = texture.getHandle();
+                            return;
+                        }
+                    }
+                    m_textures.emplace_back();
+                    Texture& texture = m_textures.back();
+                    texture.uploadFromResource(resource);
+                    texture.makeResident();
+                    handle = texture.getHandle();
+                }
+            };
 
-            if (m_textures.empty()) {
-                TextureResource& resource = m_systemsRegistry.getSystem<ResourcesManager>().getTexture(0);
+            updateHandle(material->getAlbedoMapID(), material->getProperties().albedoMapHandle);
+            updateHandle(material->getMetallicMapID(), material->getProperties().metallicMapHandle);
+            updateHandle(material->getRoughnessMapID(), material->getProperties().roughnessMapHandle);
+            updateHandle(material->getNormalMapID(), material->getProperties().normalMapHandle);
+            properties.push_back(material->getProperties());
+        }
 
-                m_textures.resize(1);
-                m_textures[0] = Texture();
-                m_textures[0].uploadFromResource(resource);
-                m_textures[0].makeResident();
-                material.getProperties().albedoMapHandle = m_textures[0].getHandle();
-                //removeMaterial(material.getName());
-                uploadNewMaterial(material.getName());
-            }
-        });
+        m_materialsBuffer.addData(properties.data(), properties.size() * sizeof(MaterialProperties));
     }
 
     void Renderer::scenePass(const RenderRequest& request) {

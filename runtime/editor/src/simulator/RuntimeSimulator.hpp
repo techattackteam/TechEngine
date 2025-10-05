@@ -9,7 +9,6 @@
 #include "core/timer.hpp"
 #include <Jolt/Jolt.h>
 
-#include "renderer/OldRenderer.hpp"
 
 namespace TechEngine {
     enum class SimulationState {

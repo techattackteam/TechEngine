@@ -13,11 +13,11 @@
 #include "core/Timer.hpp"
 #include "systems/SystemsRegistry.hpp"
 #include "input/Input.hpp"
-#include "../../include/TechEngine/client/input/Mouse.hpp"
+#include "TechEngine/client/input/Mouse.hpp"
 #include "eventSystem/EventManager.hpp"
+#include "renderer/Renderer.hpp"
 #include "TechEngine/client/events/input/KeyPressedEvent.hpp"
 #include "TechEngine/client/events/input/MouseMoveEvent.hpp"
-#include "renderer/OldRenderer.hpp"
 #include "scene/ScenesManager.hpp"
 #include "utils/YAMLUtils.hpp"
 
@@ -139,7 +139,7 @@ namespace TechEngine {
             m_rootWidgets.emplace_back(widget);
         }
         widget->rename(name);
-        UIRenderer& uiRenderer = m_systemsRegistry.getSystem<OldRenderer>().getUIRenderer();
+        UIRenderer& uiRenderer = m_systemsRegistry.getSystem<Renderer>().getUIRenderer();
         widget->calculateLayout(
             parent
                 ? parent->m_finalScreenRect
@@ -149,7 +149,7 @@ namespace TechEngine {
     }
 
     void WidgetsRegistry::calculateWidgetLayout(const std::shared_ptr<Widget>& widget) {
-        UIRenderer& uiRenderer = m_systemsRegistry.getSystem<OldRenderer>().getUIRenderer();
+        UIRenderer& uiRenderer = m_systemsRegistry.getSystem<Renderer>().getUIRenderer();
         glm::vec4 rootFinalScreenRect = {0.0f, 0.0f, (float)uiRenderer.m_screenWidth, (float)uiRenderer.m_screenHeight};
         widget->calculateLayout(widget->m_parent ? widget->m_parent->m_finalScreenRect : rootFinalScreenRect, uiRenderer.getDpiScale());
         widget->m_isDirty = false;
