@@ -18,7 +18,11 @@ namespace TechEngine {
         m_textureManager.init(filesByExtension[".png"]);
         m_materialManager.init(filesByExtension[".mat"]);
         m_meshManager.init(filesByExtension[".tesmesh"]);
-        assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "Rock_Albedo", "albedo");
+        assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-albedo", "albedo");
+        assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-Normal-ogl", "normal");
+        assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-Metallic", "metallic");
+        assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-Roughness", "roughness");
+        assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-ao", "ambient occlusion");
     }
 
     void ResourcesManager::shutdown() {
@@ -137,6 +141,8 @@ namespace TechEngine {
             material.getMetallicMapID() = texture.getID();
         } else if (textureType == "roughness") {
             material.getRoughnessMapID() = texture.getID();
+        } else if (textureType == "ambient occlusion") {
+            material.getAmbientOcclusionMapID() = texture.getID();
         } else {
             TE_LOGGER_WARN("Unknown texture type: {0}", textureType);
         }

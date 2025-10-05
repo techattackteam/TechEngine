@@ -46,4 +46,8 @@ namespace TechEngine {
     int& Material::getRoughnessMapID() {
         return roughnessMapID;
     }
+
+    int& Material::getAmbientOcclusionMapID() {
+        return ambientOcclusionMapID;
+    }
 }

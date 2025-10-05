@@ -119,7 +119,6 @@ namespace TechEngine {
 
         void addRequest(const RenderRequest& request);
 
-
         void renderPipeline();
 
         void createLine(const glm::vec3& startPosition, const glm::vec3& endPosition, const glm::vec4& color);

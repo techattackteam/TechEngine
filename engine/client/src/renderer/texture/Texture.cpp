@@ -17,7 +17,17 @@ namespace TechEngine {
         }
         glGenTextures(1, &m_id);
         glBindTexture(GL_TEXTURE_2D, m_id);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureResource.getWidth(), textureResource.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, textureResource.getPixels().data());
+        if (textureResource.getChannels() == 3) {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureResource.getWidth(), textureResource.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, textureResource.getPixels().data());
+        } else if (textureResource.getChannels() == 4) {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureResource.getWidth(), textureResource.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, textureResource.getPixels().data());
+        } else {
+            TE_LOGGER_CRITICAL("Failed to upload texture: Unsupported number of channels: {0}", textureResource.getChannels());
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glDeleteTextures(1, &m_id);
+            m_id = 0;
+            return;
+        }
         glGenerateMipmap(GL_TEXTURE_2D);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
