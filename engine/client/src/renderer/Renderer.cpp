@@ -400,6 +400,7 @@ namespace TechEngine {
             updateHandle(material->getRoughnessMapID(), material->getProperties().roughnessMapHandle);
             updateHandle(material->getNormalMapID(), material->getProperties().normalMapHandle);
             updateHandle(material->getAmbientOcclusionMapID(), material->getProperties().ambientOcclusionMapHandle);
+            updateHandle(material->getEmissionMapID(), material->getProperties().emissionMapHandle);
             properties.push_back(material->getProperties());
         }
 

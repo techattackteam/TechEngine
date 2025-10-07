@@ -91,6 +91,7 @@ namespace TechEngine {
         out << YAML::Key << "metallic" << YAML::Value << properties.metallic;
         out << YAML::Key << "roughness" << YAML::Value << properties.roughness;
         out << YAML::Key << "ambientOcclusion" << YAML::Value << properties.ambientOcclusion;
+        out << YAML::Key << "emission" << YAML::Value << YAML::Flow << YAML::BeginSeq << properties.emission.x << properties.emission.y << properties.emission.z << properties.emission.w << YAML::EndSeq;
         out << YAML::EndMap;
         std::filesystem::path path = filepath;
         create_directories(path.parent_path());
@@ -112,26 +113,31 @@ namespace TechEngine {
         YAML::Node metallicNode = data["metallic"];
         YAML::Node roughnessNode = data["roughness"];
         YAML::Node ambientOcclusionNode = data["ambientOcclusion"];
+        YAML::Node emissionNode = data["emission"];
         if (!name) {
-            TE_LOGGER_CRITICAL("Failed to load material file {0} - \"Invalid Name \"", filepath);
+            TE_LOGGER_CRITICAL("Failed to load material file {0} - \"Invalid Name\"", filepath);
             return false;
         } else if (!albedoNode) {
-            TE_LOGGER_CRITICAL("Failed to load material file {0} - \"Invalid Color \"", filepath);
+            TE_LOGGER_CRITICAL("Failed to load material file {0} - \"Invalid Color\"", filepath);
             return false;
         } else if (!metallicNode) {
-            TE_LOGGER_CRITICAL("Failed to load material file {0} - \"Invalid Ambient \"", filepath);
+            TE_LOGGER_CRITICAL("Failed to load material file {0} - \"Invalid Ambient\"", filepath);
             return false;
         } else if (!roughnessNode) {
-            TE_LOGGER_CRITICAL("Failed to load material file {0} - \"Invalid Diffuse \"", filepath);
+            TE_LOGGER_CRITICAL("Failed to load material file {0} - \"Invalid Diffuse\"", filepath);
             return false;
         } else if (!ambientOcclusionNode) {
-            TE_LOGGER_CRITICAL("Failed to load material file {0} - \"Invalid Specular \"", filepath);
+            TE_LOGGER_CRITICAL("Failed to load material file {0} - \"Invalid Specular\"", filepath);
+            return false;
+        } else if (!emissionNode) {
+            TE_LOGGER_CRITICAL("Failed to load material file {0} - \"Invalid Emission\"", filepath);
             return false;
         }
         glm::vec4 color = albedoNode.as<glm::vec4>();
         float ambient = ambientOcclusionNode.as<float>();
         float diffuse = metallicNode.as<float>();
         float specular = roughnessNode.as<float>();
+        glm::vec4 emission = emissionNode.as<glm::vec4>();
 
         createMaterial(name.as<std::string>(), color);
 

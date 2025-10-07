@@ -10,12 +10,14 @@ namespace TechEngine {
         float metallic = 0.0f; // 4 byte
         float roughness = 0.5f; // 4 byte
         float ambientOcclusion = 1.0f; // 4 byte
+        glm::vec4 emission = glm::vec4(.5f); // 16 bytes
         uint64_t albedoMapHandle = 0; // 8 byte
         uint64_t normalMapHandle = 0; // 8 byte
         uint64_t metallicMapHandle = 0; // 8 byte
         uint64_t roughnessMapHandle = 0; // 8 byte
         uint64_t ambientOcclusionMapHandle = 0; // 8 byte
-        float padding[3] = {0.0f}; // Padding to align to 16 bytes
+        uint64_t emissionMapHandle = 0;
+        float padding[1] = {0.0f}; // Padding to align to 16 bytes
     };
 
     class CORE_DLL Material : public IResource {
@@ -30,6 +32,7 @@ namespace TechEngine {
         int metallicMapID = -1; // 4 byte
         int roughnessMapID = -1; // 4 byte
         int ambientOcclusionMapID = -1; // 4 byte
+        int emissionMapID = -1; // 4 byte
 
     public:
         Material(std::string name, uint32_t gpuID, glm::vec4 color);
@@ -53,5 +56,7 @@ namespace TechEngine {
         int& getRoughnessMapID();
 
         int& getAmbientOcclusionMapID();
+
+        int& getEmissionMapID();
     };
 }
