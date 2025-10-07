@@ -50,4 +50,8 @@ namespace TechEngine {
     int& Material::getAmbientOcclusionMapID() {
         return ambientOcclusionMapID;
     }
+
+    int& Material::getEmissionMapID() {
+        return emissionMapID;
+    }
 }

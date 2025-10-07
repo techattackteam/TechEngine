@@ -13,11 +13,13 @@ struct Material {
     float metallic;
     float roughness;
     float ao;
+    vec4 emission;
     uvec2 albedoHandle;
     uvec2 normalHandle;
     uvec2 metallicHandle;
     uvec2 roughnessHandle;
     uvec2 ambientOcclusionHandle;
+    uvec2 emissionHandle;
 };
 
 struct Light {
@@ -209,8 +211,17 @@ void main() {
         }
     }
 
+    // Emission
+    if (material.emissionHandle != uvec2(0)) {
+        sampler2D emissionSampler = sampler2D(material.emissionHandle);
+        vec3 emissionTex = texture(emissionSampler, v_textCoord).rgb;
+        material.emission = vec4(emissionTex, 1.0);
+    } else if (material.emission != vec4(0.0)) {
+        totalLigth += material.emission.rgb * material.emission.a;
+    }
+
     vec3 ambient = vec3(0.03) * material.albedo.rgb * material.ao;
-    vec3 color = ambient + totalLigth;
+    vec3 color = ambient + totalLigth + material.emission.rgb;
 
     // HDR tonemapping and gamma correction
     float gamma = 2.2;
