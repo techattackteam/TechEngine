@@ -18,11 +18,11 @@ namespace TechEngine {
         m_textureManager.init(filesByExtension[".png"]);
         m_materialManager.init(filesByExtension[".mat"]);
         m_meshManager.init(filesByExtension[".tesmesh"]);
-        assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-albedo", "albedo");
-        assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-Normal-ogl", "normal");
-        assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-Metallic", "metallic");
-        assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-Roughness", "roughness");
-        assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-ao", "ambient occlusion");
+        //assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-albedo", "albedo");
+        //assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-Normal-ogl", "normal");
+        //assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-Metallic", "metallic");
+        //assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-Roughness", "roughness");
+        //assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-ao", "ambient occlusion");
     }
 
     void ResourcesManager::shutdown() {

@@ -71,7 +71,10 @@ namespace TechEngine {
         ComponentType<Transform>::get();
         ComponentType<Camera>::get();
         ComponentType<PointLight>::get();
+        ComponentType<DirectionalLight>::get();
+        ComponentType<SpotLight>::get();
         ComponentType<MeshRenderer>::get();
+
         m_systemRegistry.getSystem<PanelsManager>().init();
 
         m_runFunction = [this]() {

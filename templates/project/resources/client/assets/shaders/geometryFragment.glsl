@@ -24,9 +24,18 @@ struct Material {
 
 struct Light {
     vec3 position;
-    vec3 color;
+    int type; // 0: point, 1: directional, 2: spot
+
+    vec3 direction;
     float radius;
+
+    vec3 color;
     float intensity;
+
+    float innerCutoff;
+    float outerCutoff;
+    float castShadow;
+    int shadowIndex; // Index into the shadow map array
 };
 
 struct TileInfo {
@@ -137,16 +146,77 @@ float calculateOmniShadow(vec3 lightPos) {
     return 1.0f - shadow;
 }
 
-void main() {
-    Material material = materialBuffer.materials[f_materialID];
-    vec3 normal = normalize(v_normal);
-
-    sampleMaterialTextures(material, v_textCoord, normal);
-
-    vec3 view = normalize(u_cameraPos - v_worldPos);
-
+vec3 PBRCalculate(Light light, Material material, vec3 radiance, vec3 normal, vec3 viewDirection, vec3 lightDirection) {
+    // Base reflectivity at normal incidence
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, material.albedo.rgb, material.metallic);
+
+    lightDirection = normalize(lightDirection);
+    vec3 halfDir = normalize(viewDirection + lightDirection);
+
+
+    // Cook-Torrance BRDF
+    float NDF = distributionGGX(normal, halfDir, material.roughness); // Normal Distribution Function
+    float NdotV = max(dot(normal, viewDirection), 0.0);
+    float NdotL = max(dot(normal, lightDirection), 0.0);
+    float G = geometrySchlickGGX(NdotV, material.roughness) * geometrySchlickGGX(NdotL, material.roughness); // Geometry Function
+    vec3 fresnel = frenelSchlick(max(dot(halfDir, lightDirection), 0.0), F0); // Fresnel
+
+    vec3 kD = vec3(1.0) - fresnel; // Diffuse component
+    kD *= 1.0 - material.metallic; // Metals have no diffuse component
+
+    vec3 numerator = NDF * G * fresnel;
+    float denominator = 4.0 * max(dot(normal, lightDirection), 0.0) * max(dot(normal, viewDirection), 0.0) + 0.001; // Prevent divide by zero
+    vec3 specular = numerator / denominator;
+
+    // Final Color
+    vec3 Lo = (kD * material.albedo.rgb / 3.141592653 + specular) * radiance * NdotL; // Outgoing Radiance
+
+    return Lo /*** shadow*/;
+}
+
+
+vec3 calculateSpotLight(Light light, Material material, vec3 normal, vec3 view) {
+    vec3 lightDir = light.position - v_worldPos;
+    float dist = length(lightDir);
+
+    float theta = dot(normalize(lightDir), normalize(-light.direction));
+    float epsilon = light.innerCutoff - light.outerCutoff;
+    float attenuation = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
+
+    vec3 radiance = light.color * light.intensity * attenuation;
+
+    return PBRCalculate(light, material, radiance, normal, view, lightDir);
+}
+
+vec3 calculatePointLight(Light light, Material material, vec3 normal, vec3 view) {
+    vec3 lightDir = light.position - v_worldPos;
+    float dist = length(lightDir);
+    lightDir = normalize(lightDir);
+
+    float attenuation = 1.0 / (dist * dist + 1.0);
+    float falloff = clamp(1.0 - pow(dist / light.radius, 4.0), 0.0, 1.0);
+    falloff *= falloff;
+    attenuation *= falloff;
+
+    vec3 radiance = light.color * light.intensity * attenuation;
+
+    return PBRCalculate(light, material, radiance, normal, view, lightDir);
+}
+
+vec3 calculateDirectionalLight(Light light, Material Material, vec3 normal, vec3 view) {
+    vec3 lightDir = normalize(-light.direction);
+    vec3 radiance = light.color * (light.intensity / 100.0);
+    return PBRCalculate(light, Material, radiance, normal, view, lightDir);
+}
+
+void main() {
+    Material material = materialBuffer.materials[f_materialID];
+
+    vec3 normal = normalize(v_normal);
+    vec3 view = normalize(u_cameraPos - v_worldPos);
+
+    //sampleMaterialTextures(material, v_textCoord, normal);
 
     ivec2 pixelCoord = ivec2(floor(gl_FragCoord.xy));
     pixelCoord = clamp(pixelCoord, ivec2(0), u_screenSize - ivec2(1));
@@ -161,67 +231,45 @@ void main() {
     int tileIndex = tileCoords.y * tilesX + tileCoords.x;
     TileInfo tile = tiles[tileIndex];
 
-    vec3 totalLigth = vec3(0.0);
+    vec3 totalLight = vec3(0.0);
     uint offset = tile.offset;
 
     for (uint i = 0; i < tile.lightsCount; i++) {
         // Light calculations
         uint lightIndex = lightIndices[offset + i];
-        vec3 lightPos = lights[lightIndex].position;
-        vec3 lightColor = lights[lightIndex].color;
-        float lightIntensity = lights[lightIndex].intensity;
-        float lightRadius = lights[lightIndex].radius;
+        Light light = lights[lightIndex];
+        vec3 lightPos = light.position;
+        vec3 lightColor = light.color;
+        float lightIntensity = light.intensity;
+        float lightRadius = light.radius;
 
         // Shadow
-        float shadow = calculateOmniShadow(lightPos);
+        //float shadow = calculateOmniShadow(lightPos);
 
-        if (shadow > 0.0f) {
-            vec3 lightView = lightPos - v_worldPos;
-
-            float distance = length(lightView);
-            lightView = normalize(lightView);
-            vec3 halfDir = normalize(view + lightView);
-
-            // Attenuation
-            float attenuation = 1.0 / (distance * distance + 1.0);
-            float falloff = clamp(1.0 - pow(distance / lightRadius, 4.0), 0.0, 1.0);
-            falloff *= falloff;
-            attenuation *= falloff;
-
-            vec3 radiance = lightColor * lightIntensity * attenuation;
-
-            // Cook-Torrance BRDF
-            float NDF = distributionGGX(normal, halfDir, material.roughness); // Normal Distribution Function
-            float NdotV = max(dot(normal, view), 0.0);
-            float NdotL = max(dot(normal, lightView), 0.0);
-            float G = geometrySchlickGGX(NdotV, material.roughness) * geometrySchlickGGX(NdotL, material.roughness); // Geometry Function
-            vec3 fresnel = frenelSchlick(max(dot(halfDir, lightView), 0.0), F0); // Fresnel
-
-            vec3 kD = vec3(1.0) - fresnel; // Diffuse component
-            kD *= 1.0 - material.metallic; // Metals have no diffuse component
-
-            vec3 numerator = NDF * G * fresnel;
-            float denominator = 4.0 * max(dot(normal, lightView), 0.0) * max(dot(normal, view), 0.0) + 0.001; // Prevent divide by zero
-            vec3 specular = numerator / denominator;
-
-            // Final Color
-            vec3 Lo = (kD * material.albedo.rgb / 3.141592653 + specular) * radiance * NdotL; // Outgoing Radiance
-
-            totalLigth += Lo * shadow;
+        //if (shadow > 0.0f) {
+        //}
+        if (light.type == 0) {
+            totalLight += calculatePointLight(light, material, normal, view);
+        } else if (light.type == 1) {
+            totalLight += calculateDirectionalLight(light, material, normal, view);
+        } else if (light.type == 2) {
+            totalLight += calculateSpotLight(light, material, normal, view);
         }
     }
 
     // Emission
+/**
     if (material.emissionHandle != uvec2(0)) {
         sampler2D emissionSampler = sampler2D(material.emissionHandle);
         vec3 emissionTex = texture(emissionSampler, v_textCoord).rgb;
         material.emission = vec4(emissionTex, 1.0);
     } else if (material.emission != vec4(0.0)) {
-        totalLigth += material.emission.rgb * material.emission.a;
+        totalLight += material.emission.rgb * material.emission.a;
     }
+*/
 
-    vec3 ambient = vec3(0.03) * material.albedo.rgb * material.ao;
-    vec3 color = ambient + totalLigth + material.emission.rgb;
+    vec3 ambient = vec3(0.15f) * material.albedo.rgb * material.ao;
+    vec3 color = ambient + totalLight;
 
     // HDR tonemapping and gamma correction
     float gamma = 2.2;

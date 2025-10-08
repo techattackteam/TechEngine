@@ -229,9 +229,40 @@ namespace TechEngine {
         float padding3[3] = {0.0f}; // Padding to align to 16 bytes
 
         uint32_t gpuID = -1; // ID in the GPU
+        bool castShadow = false;
+
         static void serialize(const PointLight& staticBody, YAML::Emitter& out);
 
         static PointLight deserialize(const YAML::Node& node);
+    };
+
+    class CORE_DLL DirectionalLight {
+    public:
+        // Direction is from the entity's Transform component
+        glm::vec3 color = glm::vec3(1.0); // 12 bytes
+        float intensity = 1;
+
+        uint32_t gpuID = -1; // ID in the GPU
+        bool castShadows = false;
+
+        static void serialize(const DirectionalLight& directionalLight, YAML::Emitter& out);
+
+        static DirectionalLight deserialize(const YAML::Node& node);
+    };
+
+    class CORE_DLL SpotLight {
+    public:
+        glm::vec3 color = glm::vec3(1.0);
+        float intensity = 1.0f;
+        float innerCutoff = 12.5f;
+        float outerCutoff = 17.5f;
+
+        uint32_t gpuID = -1;
+        bool castShadows = false;
+
+        static void serialize(const SpotLight& spotLight, YAML::Emitter& out);
+
+        static SpotLight deserialize(const YAML::Node& node);
     };
 #pragma endregion
 

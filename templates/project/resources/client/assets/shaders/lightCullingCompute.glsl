@@ -4,11 +4,19 @@ layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 struct Light {
     vec3 position;
-    vec3 color;
-    float radius;
-    float intensity;
-};
+    int type; // 0: point, 1: directional, 2: spot
 
+    vec3 direction;
+    float radius;
+
+    vec3 color;
+    float intensity;
+
+    float innerCutoff;
+    float outerCutoff;
+    float castShadow;
+    int shadowIndex; // Index into the shadow map array
+};
 // Info for each tile
 struct TileInfo {
     uint offset;
@@ -61,6 +69,26 @@ vec3 screenToView(vec2 screenPos, float depth) {
     vec4 clipSpacePos = vec4(screenPos * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
     vec4 viewSpacePos = u_inverseProjection * clipSpacePos;
     return viewSpacePos.xyz / viewSpacePos.w;
+}
+
+bool coneIntersectsAABB(vec3 coneApex, vec3 coneDir, float cosConeAngle, vec3 aabbMin, vec3 aabbMax) {
+    // Basic test: Is the apex inside the AABB?
+    if (all(greaterThanEqual(coneApex, aabbMin)) && all(lessThanEqual(coneApex, aabbMax))) {
+        return true;
+    }
+
+    // Find the closest point on the AABB to the cone's apex
+    vec3 closestPoint = clamp(coneApex, aabbMin, aabbMax);
+    vec3 v = closestPoint - coneApex;
+    float v_len_sq = dot(v, v);
+    float v_dot_d = dot(v, coneDir);
+
+    // Test if the closest point is inside the cone
+    if (v_dot_d > 0.0 && (v_dot_d * v_dot_d) > (v_len_sq * cosConeAngle * cosConeAngle)) {
+        return true;
+    }
+
+    return false;
 }
 
 void main() {
@@ -144,24 +172,54 @@ void main() {
             for (uint lightIndex = 0; lightIndex < lightCount; lightIndex++) {
                 Light light = lights[lightIndex];
                 vec4 lightViewPos = u_view * vec4(light.position, 1.0);
-                float radius = light.radius;
-
-                vec3 closestPoint = clamp(lightViewPos.xyz, aabbMin, aabbMax);
-                vec3 distVec = lightViewPos.xyz - closestPoint;
-                float distSq = dot(distVec, distVec);
-                float radiusSq = radius * radius;
-
-                if (distSq > radiusSq) {
-                    continue; // Light doesn't intersect tile AABB
-                }
                 bool insideFrustum = true;
-                for (int p = 0; p < 4; p++) {
-                    float distance = dot(frustumPlanes[p].normal, lightViewPos.xyz);
-                    if (distance < -radius - 0.1) {
-                        insideFrustum = false;
-                        break;
+
+                if (light.type == 1) {
+                    if (s_visibleLightCount < 1024) {
+                        s_visibleLightIndices[s_visibleLightCount] = lightIndex;
+                        s_visibleLightCount++;
                     }
+                    continue;
+
+
+                    float radius = light.radius;
+
+
+                    for (int p = 0; p < 4; p++) {
+                        float distance = dot(frustumPlanes[p].normal, lightViewPos.xyz);
+                        if (distance < -radius) {
+                            insideFrustum = false;
+                            break;
+                        }
+                    }
+
+                    if (!insideFrustum) {
+                        continue;
+                    }
+
+                    if (lightViewPos.z + radius < aabbMin.z || lightViewPos.z - radius > aabbMax.z) {
+                        continue;
+                    }
+
+
+                } else if (light.type == 2) {
+                    vec3 lightViewDir = normalize((u_view * vec4(light.direction, 0.0)).xyz);
+                    float cosOuterAngle = light.outerCutoff;
+
+                    // A simple, conservative test: check if the AABB's center is within a slightly expanded cone.
+                    // This is not perfect but is very fast and rejects most obvious cases.
+                    //vec3 centerToLight = normalize(lightViewPos.xyz - (aabbMin + aabbMax) * 0.5);
+                    //float aabbAngularRadius = length(aabbMax - aabbMin) / (2.0 * length(lightViewPos.xyz - (aabbMin + aabbMax) * 0.5));
+
+                    //if (dot(centerToLight, -lightViewDir) <= cosOuterAngle - aabbAngularRadius) {
+                    //    continue; // Tile is outside the spotlight's cone
+                    //}
+                    //if (!coneIntersectsAABB(lightViewPos.xyz, -lightViewDir, cosOuterAngle, aabbMin, aabbMax)) {
+                    //    continue;
+                    //}
+                    //TODO: Implement better spotlight culling
                 }
+
                 if (insideFrustum && s_visibleLightCount < 1024) {
                     s_visibleLightIndices[s_visibleLightCount] = lightIndex;
                     s_visibleLightCount++;
