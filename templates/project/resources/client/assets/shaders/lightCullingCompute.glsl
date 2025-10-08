@@ -4,7 +4,10 @@ layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 struct Light {
     vec3 position;
+    float pad0;
+
     int type; // 0: point, 1: directional, 2: spot
+    float pad1_0; float pad1_1; float pad1_2;
 
     vec3 direction;
     float radius;
@@ -14,9 +17,14 @@ struct Light {
 
     float innerCutoff;
     float outerCutoff;
-    float castShadow;
-    int shadowIndex; // Index into the shadow map array
+    int castShadow;
+    float pad2;
+
+    uvec2 shadowHandle; // Index into the shadow map array
+    vec2 pad3;
+    mat4 lightMatrix; // For shadow mapping
 };
+
 // Info for each tile
 struct TileInfo {
     uint offset;
@@ -179,12 +187,8 @@ void main() {
                         s_visibleLightIndices[s_visibleLightCount] = lightIndex;
                         s_visibleLightCount++;
                     }
-                    continue;
-
-
+                } else if (light.type == 0) {
                     float radius = light.radius;
-
-
                     for (int p = 0; p < 4; p++) {
                         float distance = dot(frustumPlanes[p].normal, lightViewPos.xyz);
                         if (distance < -radius) {

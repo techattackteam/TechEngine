@@ -83,6 +83,13 @@ inline void APIENTRY DebugMessageCallback(GLenum source,
             break;
     }
     msg += "---------------\n";
-    //TE_LOGGER_CRITICAL(msg);
-    //__debugbreak();
+    if (severity == GL_DEBUG_SEVERITY_HIGH) {
+        TE_LOGGER_CRITICAL(msg);
+    } else if (severity == GL_DEBUG_SEVERITY_MEDIUM) {
+        TE_LOGGER_ERROR(msg);
+    } else if (severity == GL_DEBUG_SEVERITY_LOW) {
+        TE_LOGGER_WARN(msg);
+    } else {
+        TE_LOGGER_INFO(msg);
+    }
 }
