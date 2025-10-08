@@ -270,7 +270,7 @@ namespace TechEngine {
         MeshRenderer meshRenderer(&mesh, &material);
         return meshRenderer;
     }
-
+#pragma region Light Components
     void PointLight::serialize(const PointLight& pointLight, YAML::Emitter& out) {
         out << YAML::Key << "PointLight" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "Color" << YAML::Value << YAML::Flow << YAML::BeginSeq << pointLight.color.x << pointLight.color.y << pointLight.color.z << YAML::EndSeq;
@@ -287,6 +287,20 @@ namespace TechEngine {
         return pointLight;
     }
 
+    void DirectionalLight::serialize(const DirectionalLight& directionalLight, YAML::Emitter& out) {
+        out << YAML::Key << "DirectionalLight" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "Color" << YAML::Value << YAML::Flow << YAML::BeginSeq << directionalLight.color.x << directionalLight.color.y << directionalLight.color.z << YAML::EndSeq;
+        out << YAML::Key << "Intensity" << YAML::Value << directionalLight.intensity;
+        out << YAML::EndMap;
+    }
+
+    DirectionalLight DirectionalLight::deserialize(const YAML::Node& node) {
+        DirectionalLight directionalLight;
+        directionalLight.color = glm::vec3(node["Color"].as<glm::vec3>());
+        directionalLight.intensity = node["Intensity"].as<float>();
+        return directionalLight;
+    }
+#pragma endregion
 #pragma region Physics Components
     void BoxCollider::serialize(const BoxCollider& boxCollider, YAML::Emitter& out) {
         out << YAML::Key << "BoxCollider" << YAML::Value << YAML::BeginMap;
@@ -346,6 +360,15 @@ namespace TechEngine {
         return ComponentsFactory::createCylinderCollider(m_physicsEngine, tag, transform, center, height, radius);
     }
 
+
+    void SpotLight::serialize(const SpotLight& spotLight, YAML::Emitter& out) {
+        out << YAML::Key << "SpotLight" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "Color" << YAML::Value << YAML::Flow << YAML::BeginSeq << spotLight.color.x << spotLight.color.y << spotLight.color.z << YAML::EndSeq;
+        out << YAML::Key << "Intensity" << YAML::Value << spotLight.intensity;
+        out << YAML::Key << "InnerConeAngle" << YAML::Value << spotLight.innerCutoff;
+        out << YAML::Key << "OuterConeAngle" << YAML::Value << spotLight.outerCutoff;
+        out << YAML::EndMap;
+    }
 
     void StaticBody::serialize(const StaticBody& staticBody, YAML::Emitter& out) {
         out << YAML::Key << "StaticBody" << YAML::Value << YAML::BeginMap;

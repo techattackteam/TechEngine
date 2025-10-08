@@ -30,7 +30,7 @@ namespace TechEngine {
             return meshRenderer;
         }
 #pragma endregion
-
+#pragma region Light Components
         static PointLight createPointLight(const glm::vec3& color = glm::vec3(1.0f), float intensity = 1.0f, float radius = 10.0f) {
             PointLight light;
             light.color = color;
@@ -39,6 +39,23 @@ namespace TechEngine {
             return light;
         }
 
+        static DirectionalLight createDirectionalLight(const glm::vec3& color = glm::vec3(1.0f), float intensity = 1.0f) {
+            DirectionalLight light;
+            light.color = color;
+            light.intensity = intensity;
+            return light;
+        }
+
+        static SpotLight createSpotLight(const glm::vec3& color = glm::vec3(1.0f), float intensity = 1.0f, float innerCutoff = 12.5f, float outerCutoff = 15.0f) {
+            SpotLight light;
+            light.color = color;
+            light.intensity = intensity;
+            light.innerCutoff = innerCutoff;
+            light.outerCutoff = outerCutoff;
+            return light;
+        }
+
+#pragma endregion
 #pragma region Physics Components
         static StaticBody createStaticBody(PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform) {
             const JPH::uint32 index = physicsEngine.createStaticBody(tag, transform);
@@ -117,6 +134,8 @@ namespace TechEngine {
             emitter.loop = loop;
             return emitter;
         }
+
+
 #pragma endregion
     };
 }

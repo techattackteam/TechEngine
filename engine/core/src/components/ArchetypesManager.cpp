@@ -9,6 +9,8 @@ namespace TechEngine {
         registerComponent<Transform>();
         registerComponent<Camera>();
         registerComponent<PointLight>();
+        registerComponent<DirectionalLight>();
+        registerComponent<SpotLight>();
         registerComponent<MeshRenderer>();
     }
 

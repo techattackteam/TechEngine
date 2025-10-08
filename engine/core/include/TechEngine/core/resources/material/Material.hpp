@@ -10,7 +10,7 @@ namespace TechEngine {
         float metallic = 0.0f; // 4 byte
         float roughness = 0.5f; // 4 byte
         float ambientOcclusion = 1.0f; // 4 byte
-        glm::vec4 emission = glm::vec4(.5f); // 16 bytes
+        glm::vec4 emission = glm::vec4(.0f); // 16 bytes
         uint64_t albedoMapHandle = 0; // 8 byte
         uint64_t normalMapHandle = 0; // 8 byte
         uint64_t metallicMapHandle = 0; // 8 byte
@@ -27,12 +27,12 @@ namespace TechEngine {
 
         MaterialProperties properties;
 
-        int albedoMapID = -1; // 4 byte
-        int normalMapID = -1; // 4 byte
-        int metallicMapID = -1; // 4 byte
-        int roughnessMapID = -1; // 4 byte
-        int ambientOcclusionMapID = -1; // 4 byte
-        int emissionMapID = -1; // 4 byte
+        int albedoMapID = -1;
+        int normalMapID = -1;
+        int metallicMapID = -1;
+        int roughnessMapID = -1;
+        int ambientOcclusionMapID = -1;
+        int emissionMapID = -1;
 
     public:
         Material(std::string name, uint32_t gpuID, glm::vec4 color);

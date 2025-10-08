@@ -319,20 +319,74 @@ namespace TechEngine {
 
     void Renderer::populateLightDataBuffers() const {
         struct LightData {
-            glm::vec3 position;
-            float padding1;
-            glm::vec3 color = glm::vec3(1.0); // 12 bytes
-            float radius = 10; // 4 byte
-            float intensity = 1; // 4 byte
-            float padding3[3] = {0.0f}; // Padding to align to 16 bytes
+            glm::vec3 position = glm::vec3(0.0f); // 12 bytes (16 in std430)
+            int type = 0; // 4 bytes (0 = point light, 1 = directional light, etc.)
+
+            glm::vec3 direction = glm::vec3(0.0f); // 12 bytes (16 in std430)
+            float radius = 0.0f; // 4 byte
+
+            glm::vec3 color; // 12 bytes
+            float intensity = 0.0f; // 4 byte
+
+            float innerCutoff = 0.0f; // 4 byte
+            float outerCutoff = 0.0f; // 4 byte
+            int castShadow = 0; // 4 byte
+            int shadowMapIndex = -1; // 4 byte
         };
 
         Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
         m_lightsBuffer.clear();
         std::vector<LightData> lights;
+
         scene.runSystem<Transform, PointLight>([&](Transform& transform, PointLight& pointLight) {
-            lights.push_back({transform.m_position, 0.0f, pointLight.color, pointLight.radius, pointLight.intensity, {0.0f, 0.0f, 0.0f}});
+            lights.push_back(LightData{
+                .position = transform.m_position,
+                .type = 0, // Point light
+                .direction = glm::vec3(0.0f),
+                .radius = pointLight.radius,
+                .color = pointLight.color,
+                .intensity = pointLight.intensity,
+                .innerCutoff = 0.0f,
+                .outerCutoff = 0.0f,
+                .castShadow = pointLight.castShadow ? 1 : 0,
+                .shadowMapIndex = -1,
+            });
         });
+
+        scene.runSystem<Transform, DirectionalLight>([&](Transform& transform, DirectionalLight& directionalLight) {
+            glm::mat3 rotationMatrix = glm::mat3(transform.getModelMatrix());
+            glm::vec3 modelForward = glm::vec3(0.0f, 0.0f, -1.0f);
+            lights.push_back(LightData{
+                .position = glm::vec3(0.0f),
+                .type = 1, // Directional light
+                .direction = glm::normalize(rotationMatrix * modelForward),
+                .radius = 0.0f,
+                .color = directionalLight.color,
+                .intensity = directionalLight.intensity,
+                .innerCutoff = 0.0f,
+                .outerCutoff = 0.0f,
+                .castShadow = directionalLight.castShadows ? 1 : 0,
+                .shadowMapIndex = -1,
+            });
+        });
+
+        scene.runSystem<Transform, SpotLight>([&](Transform& transform, SpotLight& spotLight) {
+            glm::mat3 rotationMatrix = glm::mat3(transform.getModelMatrix());
+            glm::vec3 modelForward = glm::vec3(0.0f, 0.0f, -1.0f);
+            lights.push_back(LightData{
+                .position = transform.m_position,
+                .type = 2, // Spot light
+                .direction = glm::normalize(rotationMatrix * modelForward),
+                .radius = 0.0f,
+                .color = spotLight.color,
+                .intensity = spotLight.intensity,
+                .innerCutoff = glm::cos(glm::radians(spotLight.innerCutoff)),
+                .outerCutoff = glm::cos(glm::radians(spotLight.outerCutoff)),
+                .castShadow = spotLight.castShadows ? 1 : 0,
+                .shadowMapIndex = -1,
+            });
+        });
+
         m_lightsBuffer.addData(lights.data(), lights.size() * sizeof(LightData), 0);
     }
 

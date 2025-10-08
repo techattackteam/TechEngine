@@ -46,7 +46,18 @@ namespace TechEngine {
                         for (const Entity& entity: m_selectedEntities) {
                             scene.addComponent<PointLight>(entity, ComponentsFactory::createPointLight());
                         }
+                    } else if (ImGui::MenuItem("Directional Light")) {
+                        Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                        for (const Entity& entity: m_selectedEntities) {
+                            scene.addComponent<DirectionalLight>(entity, ComponentsFactory::createDirectionalLight());
+                        }
+                    } else if (ImGui::MenuItem("SpotLight")) {
+                        Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
+                        for (const Entity& entity: m_selectedEntities) {
+                            scene.addComponent<SpotLight>(entity, ComponentsFactory::createSpotLight());
+                        }
                     }
+
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Physics")) {
@@ -504,7 +515,7 @@ namespace TechEngine {
             });
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<PointLight>::get()) != componentsToDraw.end()) {
-            drawComponent<PointLight>(firstEntity, "Mesh Renderer", [this](auto& component) {
+            drawComponent<PointLight>(firstEntity, "Point Light", [this](auto& component) {
                 glm::vec3 color = component.color;
                 float intensity = component.intensity;
                 float radius = component.radius;
@@ -513,8 +524,8 @@ namespace TechEngine {
                 float newIntensity = intensity;
                 float newRadius = radius;
                 ImGui::ColorEdit3("Color", (float*)&newColor, ImGuiColorEditFlags_Float);
-                ImGui::DragFloat("Intensity", &newIntensity);
-                ImGui::DragFloat("Radius", &newRadius);
+                ImGui::DragFloat("Intensity", &newIntensity, 0.5f, 0.0f);
+                ImGui::DragFloat("Radius", &newRadius, 0.5f, 0.0f);
 
                 if (color != newColor) {
                     component.color = newColor;
@@ -524,6 +535,52 @@ namespace TechEngine {
                 }
                 if (radius != newRadius) {
                     component.radius = newRadius;
+                }
+            });
+        }
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<DirectionalLight>::get()) != componentsToDraw.end()) {
+            drawComponent<DirectionalLight>(firstEntity, "Directional Light", [this](auto& component) {
+                glm::vec3 color = component.color;
+                float intensity = component.intensity;
+
+                glm::vec3 newColor = color;
+                float newIntensity = intensity;
+                ImGui::ColorEdit3("Color", (float*)&newColor, ImGuiColorEditFlags_Float);
+                ImGui::DragFloat("Intensity", &newIntensity, 0.5f, 0.0f);
+
+                if (color != newColor) {
+                    component.color = newColor;
+                }
+                if (intensity != newIntensity) {
+                    component.intensity = newIntensity;
+                }
+            });
+        }
+        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<SpotLight>::get()) != componentsToDraw.end()) {
+            drawComponent<SpotLight>(firstEntity, "Spot Light", [this](auto& component) {
+                glm::vec3 color = component.color;
+                float intensity = component.intensity;
+                float innercutoff = component.innerCutoff;
+                float outercutoff = component.outerCutoff;
+
+                glm::vec3 newColor = color;
+                float newIntensity = intensity;
+                ImGui::ColorEdit3("Color", (float*)&newColor, ImGuiColorEditFlags_Float);
+                ImGui::DragFloat("Intensity", &newIntensity, 0.5f, 0.0f);
+                ImGui::DragFloat("Inner Cutoff", &innercutoff, 0.5f, 0.0f, outercutoff);
+                ImGui::DragFloat("Outer Cutoff", &outercutoff, 0.5f, innercutoff);
+
+                if (color != newColor) {
+                    component.color = newColor;
+                }
+                if (intensity != newIntensity) {
+                    component.intensity = newIntensity;
+                }
+                if (innercutoff != component.innerCutoff) {
+                    component.innerCutoff = innercutoff;
+                }
+                if (outercutoff != component.outerCutoff) {
+                    component.outerCutoff = outercutoff;
                 }
             });
         }
