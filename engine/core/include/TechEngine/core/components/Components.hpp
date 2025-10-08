@@ -229,7 +229,11 @@ namespace TechEngine {
         float padding3[3] = {0.0f}; // Padding to align to 16 bytes
 
         uint32_t gpuID = -1; // ID in the GPU
-        bool castShadow = false;
+        bool castShadows = true;
+
+        uint32_t shadowMapID = -1;
+        uint64_t shadowTextureHandle = 0.0f;
+
 
         static void serialize(const PointLight& staticBody, YAML::Emitter& out);
 
@@ -243,7 +247,9 @@ namespace TechEngine {
         float intensity = 1;
 
         uint32_t gpuID = -1; // ID in the GPU
-        bool castShadows = false;
+        bool castShadows = true;
+        uint64_t shadowTextureHandle = 0.0f;
+        glm::mat4 lightSpaceMatrix = glm::mat4(1.0f);
 
         static void serialize(const DirectionalLight& directionalLight, YAML::Emitter& out);
 
@@ -258,7 +264,11 @@ namespace TechEngine {
         float outerCutoff = 17.5f;
 
         uint32_t gpuID = -1;
-        bool castShadows = false;
+        bool castShadows = true;
+
+        uint32_t shadowMapID = -1;
+        uint64_t shadowTextureHandle = 0.0f;
+        glm::mat4 lightSpaceMatrix = glm::mat4(1.0f);
 
         static void serialize(const SpotLight& spotLight, YAML::Emitter& out);
 

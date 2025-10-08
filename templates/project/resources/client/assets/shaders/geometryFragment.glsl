@@ -24,7 +24,10 @@ struct Material {
 
 struct Light {
     vec3 position;
+    float pad0;
+
     int type; // 0: point, 1: directional, 2: spot
+    float pad1_0; float pad1_1; float pad1_2;
 
     vec3 direction;
     float radius;
@@ -34,8 +37,13 @@ struct Light {
 
     float innerCutoff;
     float outerCutoff;
-    float castShadow;
-    int shadowIndex; // Index into the shadow map array
+    int castShadow;
+    float pad2;
+
+    uvec2 shadowHandle; // Index into the shadow map array
+    vec2 pad3;
+
+    mat4 lightSpaceMatrix; // For shadow mapping
 };
 
 struct TileInfo {
@@ -59,7 +67,6 @@ layout (std430, binding = 5) readonly buffer TileInfoBuffer {
     TileInfo tiles[];
 };
 
-uniform samplerCube u_shadowCubeMap;
 uniform ivec2 u_screenSize;
 uniform vec3 u_cameraPos;
 uniform float u_farPlane;
@@ -136,13 +143,31 @@ vec3 frenelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
-float calculateOmniShadow(vec3 lightPos) {
-    vec3 fragToLight = v_worldPos - lightPos;
-    float closestDepth = texture(u_shadowCubeMap, fragToLight).r * u_farPlane;
+float calculateOmniShadow(Light light) {
+    vec3 fragToLight = v_worldPos - light.position;
+    samplerCube handle = samplerCube(light.shadowHandle);
+    float closestDepth = texture(handle, fragToLight).r * u_farPlane;
     float currentDepth = length(fragToLight);
-    float bias = 0.15;
+    float bias = max(0.15 * (1.0 - dot(v_normal, light.direction)), 0.005);
     float shadow = currentDepth > (closestDepth + bias) ? 1.0 : 0.0;
 
+    return 1.0f - shadow;
+}
+
+float calculateDepthShadow(Light light) {
+    vec4 fragToLight = light.lightSpaceMatrix * vec4(v_worldPos, 1.0f);
+    sampler2D handle = sampler2D(light.shadowHandle);
+
+    vec3 coords = fragToLight.xyz / fragToLight.w;
+    coords = coords * vec3(0.5, 0.5, 0.5) + vec3(0.5);
+
+    float closestDepth = texture(handle, coords.xy).r;
+    float currentDepth = coords.z;
+    if(coords.z > 1.0){
+        return 0.0f;
+    }
+    //float bias = max(0.05 * (1.0 - dot(v_normal, light.direction)), 0.0005);
+    float shadow = currentDepth > (closestDepth) ? 1.0 : 0.0;
     return 1.0f - shadow;
 }
 
@@ -243,17 +268,21 @@ void main() {
         float lightIntensity = light.intensity;
         float lightRadius = light.radius;
 
-        // Shadow
-        //float shadow = calculateOmniShadow(lightPos);
-
-        //if (shadow > 0.0f) {
-        //}
         if (light.type == 0) {
-            totalLight += calculatePointLight(light, material, normal, view);
+            float shadow = 1.0f;
+            if (light.shadowHandle != uvec2(0)) {
+                shadow = calculateOmniShadow(light);
+            }
+            totalLight = totalLight + (calculatePointLight(light, material, normal, view) * shadow);
+
         } else if (light.type == 1) {
             totalLight += calculateDirectionalLight(light, material, normal, view);
         } else if (light.type == 2) {
-            totalLight += calculateSpotLight(light, material, normal, view);
+            float shadow = 1.0f;
+            if (light.shadowHandle != uvec2(0)) {
+                shadow = calculateDepthShadow(light);
+            }
+            totalLight = totalLight + (calculateSpotLight(light, material, normal, view) * shadow);
         }
     }
 

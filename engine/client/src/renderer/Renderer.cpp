@@ -79,7 +79,7 @@ namespace TechEngine {
         m_omniShadowFBO = createFramebuffer(1024, 1024);
         FrameBuffer& omniShadowFBO = getFramebuffer(m_omniShadowFBO);
         omniShadowFBO.bind();
-        omniShadowFBO.attachDepthCubeMapTexture(1024, 1024);
+        //omniShadowFBO.attachDepthCubeMapTexture(1024, 1024);
         omniShadowFBO.unBind();
 
         m_vertexArrays[BufferLines] = VertexArray();
@@ -318,11 +318,14 @@ namespace TechEngine {
     }
 
     void Renderer::populateLightDataBuffers() const {
-        struct LightData {
-            glm::vec3 position = glm::vec3(0.0f); // 12 bytes (16 in std430)
-            int type = 0; // 4 bytes (0 = point light, 1 = directional light, etc.)
+        struct alignas(16) LightData {
+            glm::vec3 position = glm::vec3(0.0f); // 12 bytes
+            float _pad0;
 
-            glm::vec3 direction = glm::vec3(0.0f); // 12 bytes (16 in std430)
+            int type = 0; // 4 bytes (0 = point light, 1 = directional light, etc.)
+            float _pad1[3];
+
+            glm::vec3 direction = glm::vec3(0.0f); // 12 bytes
             float radius = 0.0f; // 4 byte
 
             glm::vec3 color; // 12 bytes
@@ -331,7 +334,12 @@ namespace TechEngine {
             float innerCutoff = 0.0f; // 4 byte
             float outerCutoff = 0.0f; // 4 byte
             int castShadow = 0; // 4 byte
-            int shadowMapIndex = -1; // 4 byte
+            float _pad2;
+
+            uint64_t shadowTextureHandle = -1; // 8 byte
+            float padding[2] = {0.0f}; // Padding to align to 16 bytes
+
+            glm::mat4 lightSpaceMatrix = glm::mat4(1.0f);
         };
 
         Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
@@ -348,8 +356,9 @@ namespace TechEngine {
                 .intensity = pointLight.intensity,
                 .innerCutoff = 0.0f,
                 .outerCutoff = 0.0f,
-                .castShadow = pointLight.castShadow ? 1 : 0,
-                .shadowMapIndex = -1,
+                .castShadow = pointLight.castShadows ? 1 : 0,
+                .shadowTextureHandle = pointLight.shadowTextureHandle,
+                .lightSpaceMatrix = glm::mat4(1.0f),
             });
         });
 
@@ -366,7 +375,8 @@ namespace TechEngine {
                 .innerCutoff = 0.0f,
                 .outerCutoff = 0.0f,
                 .castShadow = directionalLight.castShadows ? 1 : 0,
-                .shadowMapIndex = -1,
+                .shadowTextureHandle = directionalLight.shadowTextureHandle,
+                .lightSpaceMatrix = directionalLight.lightSpaceMatrix,
             });
         });
 
@@ -383,7 +393,8 @@ namespace TechEngine {
                 .innerCutoff = glm::cos(glm::radians(spotLight.innerCutoff)),
                 .outerCutoff = glm::cos(glm::radians(spotLight.outerCutoff)),
                 .castShadow = spotLight.castShadows ? 1 : 0,
-                .shadowMapIndex = -1,
+                .shadowTextureHandle = spotLight.shadowTextureHandle,
+                .lightSpaceMatrix = spotLight.lightSpaceMatrix,
             });
         });
 
@@ -475,6 +486,13 @@ namespace TechEngine {
         scene.runSystem<PointLight>([&](PointLight& pointLight) {
             hasLight = true;
         });
+        scene.runSystem<DirectionalLight>([&](DirectionalLight& pointLight) {
+            hasLight = true;
+        });
+        scene.runSystem<SpotLight>([&](SpotLight& pointLight) {
+            hasLight = true;
+        });
+
         if (hasLight) {
             omniShadowPass(nearPlane, farPlane, viewport);
         }
@@ -558,85 +576,150 @@ namespace TechEngine {
     }
 
     void Renderer::omniShadowPass(const float nearPlane, const float farPlane, const glm::ivec2& viewport) {
-        glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, nearPlane, farPlane);
-
-        std::vector<glm::mat4> shadowTransforms;
-        PointLight* light;
-        glm::vec3 lightPos;
         Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
-        scene.runSystem<Transform, PointLight>([&](Transform& transform, PointLight& pointLight) {
-            light = &pointLight;
-            lightPos = transform.m_position;
+        scene.runSystem<Transform, PointLight>([&](const Transform& transform, PointLight& pointLight) {
+            if (pointLight.shadowTextureHandle != 0) {
+                glMakeTextureHandleNonResidentARB(pointLight.shadowTextureHandle);
+                pointLight.shadowTextureHandle = 0;
+                glDeleteTextures(1, &pointLight.shadowMapID);
+                pointLight.shadowMapID = 0;
+            }
+
+            if (!pointLight.castShadows) {
+                return;
+            }
+
+            PointLight& light = pointLight;
+            glm::vec3 lightPos = transform.m_position;
+
+            std::vector<glm::mat4> shadowTransforms;
+            glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, nearPlane, farPlane);
+            shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+            shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+            shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
+            shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
+            shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+            shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+
+            glViewport(0, 0, 1024, 1024);
+
+            FrameBuffer& frameBuffer = getFramebuffer(m_omniShadowFBO);
+            frameBuffer.bind();
+            frameBuffer.attachDepthCubeMapTexture(1024, 1024);
+
+            glClear(GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LESS);
+            glCullFace(GL_FRONT);
+            glDrawBuffer(GL_NONE);
+            glReadBuffer(GL_NONE);
+            glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Disable color writes
+
+            m_shadersManager.changeActiveShader("omniShadowMap");
+            Shader* shadowShader = m_shadersManager.getActiveShader();
+            shadowShader->bind();
+            for (uint32_t i = 0; i < 6; i++) {
+                shadowShader->setUniformMatrix4f("u_shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
+            }
+            shadowShader->setUniformFloat("u_farPlane", farPlane);
+            shadowShader->setUniformVec3("u_lightPos", lightPos);
+
+            m_drawCommandBuffer.setBindingPoint(0);
+            m_objectDataBuffer.setBindingPoint(1);
+            m_objectDataBuffer.bind();
+            m_vertexArrays[BufferGameObjects].bind();
+            m_indicesBuffers[BufferGameObjects].bind();
+            m_drawCommandBuffer.bind();
+
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_drawCommandBuffer.getID());
+
+            glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)0, m_commandToDraw, 0);
+
+            uint32_t textureId = frameBuffer.depthCubeMapTexture;
+            glBindTexture(GL_TEXTURE_CUBE_MAP, textureId);
+            uint64_t handle = glGetTextureHandleARB(textureId);
+            glMakeTextureHandleResidentARB(handle);
+            light.shadowTextureHandle = handle;
+            light.shadowMapID = textureId;
+
+            glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+            frameBuffer.unBind();
+
+            glViewport(0, 0, viewport.x, viewport.y);
+            glDrawBuffer(GL_BACK);
+            glReadBuffer(GL_BACK);
+            glCullFace(GL_BACK);
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         });
-        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
-        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
-        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-        shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
 
-        glViewport(0, 0, 1024, 1024);
+        scene.runSystem<Transform, SpotLight>([&](Transform& transform, SpotLight& spotLight) {
+            if (spotLight.shadowTextureHandle != 0) {
+                glMakeTextureHandleNonResidentARB(spotLight.shadowTextureHandle);
+                spotLight.shadowTextureHandle = 0;
+                glDeleteTextures(1, &spotLight.shadowMapID);
+                spotLight.shadowMapID = 0;
+            }
 
-        FrameBuffer& frameBuffer = getFramebuffer(m_omniShadowFBO);
-        frameBuffer.bind();
-        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if (status != GL_FRAMEBUFFER_COMPLETE) {
-            TE_LOGGER_ERROR("Framebuffer not complete: {0}", status);
-        }
-        glClear(GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
+            if (!spotLight.castShadows) {
+                return;
+            }
+            m_shadersManager.changeActiveShader("depthShadowMap");
+            const glm::vec3 lightPos = transform.m_position;
+            const glm::mat4 shadowProj = glm::perspective(glm::radians(spotLight.outerCutoff * 2.0f), 1.0f, nearPlane, farPlane);
 
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
-        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Disable color writes
+            const glm::mat3 rotationMatrix = glm::mat3(transform.getModelMatrix());
+            const glm::vec3 forward = glm::vec3(0.0f, 0.0f, -1.0f);
+            const glm::vec3 lightDir = glm::normalize(rotationMatrix * forward);
 
-        m_shadersManager.changeActiveShader("omniShadowMap");
-        Shader* shadowShader = m_shadersManager.getActiveShader();
-        shadowShader->bind();
-        for (uint32_t i = 0; i < 6; i++) {
-            shadowShader->setUniformMatrix4f("u_shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
-        }
-        shadowShader->setUniformFloat("u_farPlane", farPlane);
-        shadowShader->setUniformVec3("u_lightPos", lightPos);
+            const glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f))); // World Up
+            const glm::vec3 up = glm::normalize(glm::cross(right, forward));
 
-        m_drawCommandBuffer.setBindingPoint(0);
-        m_objectDataBuffer.setBindingPoint(1);
-        m_objectDataBuffer.bind();
-        m_vertexArrays[BufferGameObjects].bind();
-        m_indicesBuffers[BufferGameObjects].bind();
-        m_drawCommandBuffer.bind();
+            const glm::mat4 shadowView = glm::lookAt(lightPos, lightPos + lightDir, up);
 
-        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_drawCommandBuffer.getID());
+            spotLight.lightSpaceMatrix = shadowProj * shadowView;
+            Shader* shadowShader = m_shadersManager.getActiveShader();
+            shadowShader->bind();
+            shadowShader->setUniformMatrix4f("u_lightMatrix", spotLight.lightSpaceMatrix);
 
-        glMultiDrawElementsIndirect(
-            GL_TRIANGLES,
-            GL_UNSIGNED_INT,
-            (void*)0,
-            m_commandToDraw,
-            0
-        );
+            FrameBuffer& frameBuffer = getFramebuffer(m_omniShadowFBO);
+            frameBuffer.bind();
+            frameBuffer.attachDepthTexture(1024, 1024);
 
-        frameBuffer.unBind();
-        glViewport(0, 0, viewport.x, viewport
-                   .
-                   y
-        );
-        glDrawBuffer(GL_BACK
+            glViewport(0, 0, 1024, 1024);
+            glClear(GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LESS);
+            glCullFace(GL_FRONT);
+            glDrawBuffer(GL_NONE);
+            glReadBuffer(GL_NONE);
 
-        );
-        glReadBuffer(GL_BACK
+            m_drawCommandBuffer.setBindingPoint(0);
+            m_objectDataBuffer.setBindingPoint(1);
+            m_objectDataBuffer.bind();
+            m_vertexArrays[BufferGameObjects].bind();
+            m_indicesBuffers[BufferGameObjects].bind();
+            m_drawCommandBuffer.bind();
 
-        );
-        glColorMask(GL_TRUE
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_drawCommandBuffer.getID());
 
-                    ,
-                    GL_TRUE
-                    ,
-                    GL_TRUE
-                    ,
-                    GL_TRUE
-        );
+            glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)0, m_commandToDraw, 0);
+
+            uint32_t textureId = frameBuffer.depthTexture;
+            glBindTexture(GL_TEXTURE_2D, textureId);
+            uint64_t handle = glGetTextureHandleARB(textureId);
+            glMakeTextureHandleResidentARB(handle);
+            spotLight.shadowTextureHandle = handle;
+            spotLight.shadowMapID = textureId;
+
+            glBindTexture(GL_TEXTURE_2D, 0);
+            frameBuffer.unBind();
+            glViewport(0, 0, viewport.x, viewport.y);
+            glDrawBuffer(GL_BACK);
+            glReadBuffer(GL_BACK);
+            glCullFace(GL_BACK);
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        });
+        populateLightDataBuffers();
     }
 
     void Renderer::geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport, const float farPlane) {
@@ -647,11 +730,7 @@ namespace TechEngine {
         m_shadersManager.getActiveShader()->setUniformVec3("u_cameraPos", cameraPosition);
         m_shadersManager.getActiveShader()->setUniformIVec2("u_screenSize", viewport);
 
-        FrameBuffer& shadowFB = getFramebuffer(m_omniShadowFBO);
         m_shadersManager.getActiveShader()->setUniformFloat("u_farPlane", farPlane);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, shadowFB.depthCubeMapTexture);
-        m_shadersManager.getActiveShader()->setUniformInt("u_shadowCubeMap", 0);
 
         m_drawCommandBuffer.setBindingPoint(0);
         m_objectDataBuffer.setBindingPoint(1);

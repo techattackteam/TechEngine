@@ -58,6 +58,12 @@ namespace TechEngine {
                     {ShaderType::Fragment, shaderBasePath + "shadowCubeFragment.glsl"}
                 }
             },
+            {
+                "depthShadowMap", {
+                    {ShaderType::Vertex, shaderBasePath + "shadowDepthVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "shadowDepthFragment.glsl"}
+                }
+            }
         };
 
         for (const auto& info: shadersToBuild) {
