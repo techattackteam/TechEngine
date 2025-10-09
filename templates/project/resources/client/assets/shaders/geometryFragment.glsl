@@ -163,7 +163,7 @@ float calculateDepthShadow(Light light) {
 
     float closestDepth = texture(handle, coords.xy).r;
     float currentDepth = coords.z;
-    if(coords.z > 1.0){
+    if (coords.z > 1.0) {
         return 0.0f;
     }
     //float bias = max(0.05 * (1.0 - dot(v_normal, light.direction)), 0.0005);
@@ -268,17 +268,19 @@ void main() {
         float lightIntensity = light.intensity;
         float lightRadius = light.radius;
 
+        float shadow = 1.0f;
         if (light.type == 0) {
-            float shadow = 1.0f;
             if (light.shadowHandle != uvec2(0)) {
                 shadow = calculateOmniShadow(light);
             }
             totalLight = totalLight + (calculatePointLight(light, material, normal, view) * shadow);
 
         } else if (light.type == 1) {
-            totalLight += calculateDirectionalLight(light, material, normal, view);
+            if (light.shadowHandle != uvec2(0)) {
+                shadow = calculateDepthShadow(light);
+            }
+            totalLight = totalLight + (calculateDirectionalLight(light, material, normal, view) * shadow);
         } else if (light.type == 2) {
-            float shadow = 1.0f;
             if (light.shadowHandle != uvec2(0)) {
                 shadow = calculateDepthShadow(light);
             }
