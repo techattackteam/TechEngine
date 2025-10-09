@@ -109,16 +109,11 @@ namespace TechEngine {
 
 
         void calculateUpForwardRight() {
-            glm::vec3 forward = glm::normalize(glm::vec3(
-                -sin(glm::radians(m_rotation.y)) * cos(glm::radians(m_rotation.x)),
-                sin(glm::radians(m_rotation.x)),
-                -cos(glm::radians(m_rotation.y)) * cos(glm::radians(m_rotation.x))
-            ));
-            glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f))); // World Up
-            glm::vec3 up = glm::normalize(glm::cross(right, forward));
-            m_forward = forward;
-            m_up = up;
-            m_right = right;
+            glm::quat quaternion = glm::quat(glm::radians(m_rotation));
+
+            m_forward = glm::normalize(quaternion * glm::vec3(0.0f, 0.0f, -1.0f));
+            m_right = glm::normalize(quaternion * glm::vec3(1.0f, 0.0f, 0.0f));
+            m_up = glm::normalize(quaternion * glm::vec3(0.0f, 1.0f, 0.0f));
         }
 
         glm::mat4 getModelMatrix() {
@@ -142,7 +137,7 @@ namespace TechEngine {
         glm::vec1 fov = glm::vec1(45);
         float nearPlane = 0.1f;
         float farPlane = 100;
-        float orthoSize = 5;
+        float orthoSize = 20.0f;
         float aspectRatio = 1;
         friend class CameraSystem;
 
@@ -160,6 +155,7 @@ namespace TechEngine {
 
         void updateProjectionMatrix(float aspectRatio) {
             projectionMatrix = glm::perspective(glm::radians(fov.x), aspectRatio, nearPlane, farPlane);
+            //projectionMatrix = glm::ortho(-orthoSize * aspectRatio / 2.0f, orthoSize * aspectRatio / 2.0f, -orthoSize / 2.0f, orthoSize / 2.0f, nearPlane, farPlane);
             this->aspectRatio = aspectRatio;
         }
 
@@ -248,6 +244,8 @@ namespace TechEngine {
 
         uint32_t gpuID = -1; // ID in the GPU
         bool castShadows = true;
+
+        uint32_t shadowMapID = -1;
         uint64_t shadowTextureHandle = 0.0f;
         glm::mat4 lightSpaceMatrix = glm::mat4(1.0f);
 

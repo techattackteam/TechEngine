@@ -152,7 +152,7 @@ namespace TechEngine {
 
         void lightCulling(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
 
-        void omniShadowPass(float nearPlane, float farPlane, const glm::ivec2& viewport);
+        void shadowDepthPass(const RenderRequest& request);
 
         void geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport, float farPlane);
 

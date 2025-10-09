@@ -494,7 +494,7 @@ namespace TechEngine {
         });
 
         if (hasLight) {
-            omniShadowPass(nearPlane, farPlane, viewport);
+            shadowDepthPass(request);
         }
 
         FrameBuffer& frameBuffer = getFramebuffer(request.targetFramebufferId);
@@ -575,7 +575,13 @@ namespace TechEngine {
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
-    void Renderer::omniShadowPass(const float nearPlane, const float farPlane, const glm::ivec2& viewport) {
+    void Renderer::shadowDepthPass(const RenderRequest& request) {
+        const glm::mat4 viewMatrix = request.viewMatrix;
+        const glm::mat4 projectionMatrix = request.projectionMatrix;
+        const float nearPlane = request.nearPlane;
+        const float farPlane = request.farPlane;
+        glm::ivec2 viewport = request.viewportSize;
+
         Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
         scene.runSystem<Transform, PointLight>([&](const Transform& transform, PointLight& pointLight) {
             if (pointLight.shadowTextureHandle != 0) {
@@ -719,8 +725,118 @@ namespace TechEngine {
             glCullFace(GL_BACK);
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         });
+
+        scene.runSystem<Transform, DirectionalLight>([&](Transform& transform, DirectionalLight& directionalLight) {
+            if (directionalLight.shadowTextureHandle != 0) {
+                glMakeTextureHandleNonResidentARB(directionalLight.shadowTextureHandle);
+                directionalLight.shadowTextureHandle = 0;
+                glDeleteTextures(1, &directionalLight.shadowMapID);
+                directionalLight.shadowMapID = 0;
+            }
+
+            if (!directionalLight.castShadows) {
+                return;
+            }
+            m_shadersManager.changeActiveShader("depthShadowMap");
+            const glm::vec3 lightDir = transform.m_forward;
+
+            std::vector cameraFrustumCorners = {
+                glm::vec3(-1.0f, -1.0f, 1.0f),
+                glm::vec3(1.0f, -1.0f, 1.0f),
+                glm::vec3(1.0f, 1.0f, 1.0f),
+                glm::vec3(-1.0f, 1.0f, 1.0f),
+                glm::vec3(-1.0f, -1.0f, -1.0f),
+                glm::vec3(1.0f, -1.0f, -1.0f),
+                glm::vec3(1.0f, 1.0f, -1.0f),
+                glm::vec3(-1.0f, 1.0f, -1.0f),
+            };
+            glm::mat4 inverse = glm::inverse(projectionMatrix * viewMatrix);
+            glm::vec3 frustumCenter = glm::vec3(0.0f);
+            for (glm::vec3& corner: cameraFrustumCorners) {
+                glm::vec4 invCorner = inverse * glm::vec4(corner, 1.0f);
+                corner = invCorner / invCorner.w;
+                frustumCenter += corner;
+            }
+
+            frustumCenter /= cameraFrustumCorners.size();
+
+            constexpr float shadowDistance = 50.0f;
+            const glm::vec3 lightPos = frustumCenter - glm::normalize(lightDir) * shadowDistance;
+            glm::mat4 lightView = glm::lookAt(lightPos, frustumCenter, transform.m_up);
+
+            /*
+            std::vector<glm::vec4> cameraFrustumCornersLightSpace;
+            for (const auto& corner: cameraFrustumCorners) {
+                cameraFrustumCornersLightSpace.push_back(lightView * glm::vec4(corner, 1.0f));
+            }
+
+            float minX = std::numeric_limits<float>::max();
+            float maxX = std::numeric_limits<float>::lowest();
+            float minY = std::numeric_limits<float>::max();
+            float maxY = std::numeric_limits<float>::lowest();
+            float minZ = std::numeric_limits<float>::max();
+            float maxZ = std::numeric_limits<float>::lowest();
+            for (const auto& v: cameraFrustumCorners) {
+                minX = std::min(minX, v.x);
+                maxX = std::max(maxX, v.x);
+                minY = std::min(minY, v.y);
+                maxY = std::max(maxY, v.y);
+                minZ = std::min(minZ, v.z);
+                maxZ = std::max(maxZ, v.z);
+            }
+            */
+
+            constexpr float orthoSize = 50.0f;
+            constexpr float shadowNear = 1.0f;
+            constexpr float shadowFar = 200.0f;
+            glm::mat4 lightProjection = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, shadowNear, shadowFar);
+
+            directionalLight.lightSpaceMatrix = lightProjection * lightView;
+            Shader* shadowShader = m_shadersManager.getActiveShader();
+            shadowShader->bind();
+            shadowShader->setUniformMatrix4f("u_lightMatrix", directionalLight.lightSpaceMatrix);
+
+            FrameBuffer& frameBuffer = getFramebuffer(m_omniShadowFBO);
+            frameBuffer.bind();
+            frameBuffer.attachDepthTexture(2048, 2048);
+
+            glViewport(0, 0, 2048, 2048);
+            glClear(GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LESS);
+            glCullFace(GL_FRONT);
+            glDrawBuffer(GL_NONE);
+            glReadBuffer(GL_NONE);
+
+            m_drawCommandBuffer.setBindingPoint(0);
+            m_objectDataBuffer.setBindingPoint(1);
+            m_objectDataBuffer.bind();
+            m_vertexArrays[BufferGameObjects].bind();
+            m_indicesBuffers[BufferGameObjects].bind();
+            m_drawCommandBuffer.bind();
+
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_drawCommandBuffer.getID());
+
+            glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)0, m_commandToDraw, 0);
+
+            uint32_t textureId = frameBuffer.depthTexture;
+            glBindTexture(GL_TEXTURE_2D, textureId);
+            uint64_t handle = glGetTextureHandleARB(textureId);
+            glMakeTextureHandleResidentARB(handle);
+            directionalLight.shadowTextureHandle = handle;
+            directionalLight.shadowMapID = textureId;
+
+            glBindTexture(GL_TEXTURE_2D, 0);
+            frameBuffer.unBind();
+            glViewport(0, 0, viewport.x, viewport.y);
+            glDrawBuffer(GL_BACK);
+            glReadBuffer(GL_BACK);
+            glCullFace(GL_BACK);
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        });
         populateLightDataBuffers();
     }
+
 
     void Renderer::geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport, const float farPlane) {
         m_shadersManager.changeActiveShader("geometry");
