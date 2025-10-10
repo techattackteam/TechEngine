@@ -4,10 +4,7 @@ layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 struct Light {
     vec3 position;
-    float pad0;
-
-    int type; // 0: point, 1: directional, 2: spot
-    float pad1_0; float pad1_1; float pad1_2;
+    int type;
 
     vec3 direction;
     float radius;
@@ -20,9 +17,11 @@ struct Light {
     int castShadow;
     float pad2;
 
-    uvec2 shadowHandle; // Index into the shadow map array
-    vec2 pad3;
-    mat4 lightMatrix; // For shadow mapping
+    uvec2 shadowHandle[4];
+
+    mat4 lightSpaceMatrix[4];
+
+    float cascadeSplits[4];
 };
 
 // Info for each tile

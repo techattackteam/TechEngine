@@ -14,6 +14,7 @@ namespace TechEngine {
         uint32_t targetFramebufferId;
 
         glm::vec2 viewportSize;
+        float fov;
 
         int renderMask;
     };

@@ -10,6 +10,7 @@ out vec3 v_worldPos;
 out vec3 v_normal;
 out vec2 v_textCoord;
 out flat uint f_materialID;
+out vec4 v_viewPos;
 
 uniform mat4 u_view;
 uniform mat4 u_projection;
@@ -37,6 +38,6 @@ void main() {
     v_textCoord = textCoord;
 
     f_materialID = objects[objectIndex].materialID;
-
+    v_viewPos = u_view * worldPos;
     gl_Position = u_projection * u_view * model * vec4(position, 1.0f);
 }

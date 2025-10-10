@@ -49,6 +49,7 @@ namespace TechEngine {
         request.farPlane = sceneCamera.farPlane;
         request.targetFramebufferId = this->frameBufferID;
         request.viewportSize = {wsize.x, wsize.y};
+        request.fov = sceneCamera.fov;
         request.renderMask = Renderer::SCENE_PASS | Renderer::LINE_PASS;
 
         m_appSystemsRegistry.getSystem<Renderer>().addRequest(request);
