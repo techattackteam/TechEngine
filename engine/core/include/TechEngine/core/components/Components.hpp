@@ -134,7 +134,7 @@ namespace TechEngine {
         glm::mat4 projectionMatrix = glm::mat4(1.0f);
 
 
-        glm::vec1 fov = glm::vec1(45);
+        float fov = 45;
         float nearPlane = 0.1f;
         float farPlane = 100;
         float orthoSize = 20.0f;
@@ -154,7 +154,7 @@ namespace TechEngine {
         }
 
         void updateProjectionMatrix(float aspectRatio) {
-            projectionMatrix = glm::perspective(glm::radians(fov.x), aspectRatio, nearPlane, farPlane);
+            projectionMatrix = glm::perspective(glm::radians(fov), aspectRatio, nearPlane, farPlane);
             //projectionMatrix = glm::ortho(-orthoSize * aspectRatio / 2.0f, orthoSize * aspectRatio / 2.0f, -orthoSize / 2.0f, orthoSize / 2.0f, nearPlane, farPlane);
             this->aspectRatio = aspectRatio;
         }
@@ -164,7 +164,7 @@ namespace TechEngine {
         }
 
         float getFov() const {
-            return fov.x;
+            return fov;
         }
 
         float getNearPlane() const {
@@ -245,9 +245,10 @@ namespace TechEngine {
         uint32_t gpuID = -1; // ID in the GPU
         bool castShadows = true;
 
-        uint32_t shadowMapID = -1;
-        uint64_t shadowTextureHandle = 0.0f;
-        glm::mat4 lightSpaceMatrix = glm::mat4(1.0f);
+        uint32_t shadowMapID[4] = {};
+        uint64_t shadowTextureHandle[4] = {};
+        glm::mat4 lightSpaceMatrix[4] = {glm::mat4(1.0f)};
+        float cascadeSplits[4] = {0.0f};
 
         static void serialize(const DirectionalLight& directionalLight, YAML::Emitter& out);
 

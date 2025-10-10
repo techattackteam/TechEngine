@@ -319,35 +319,46 @@ namespace TechEngine {
 
     void Renderer::populateLightDataBuffers() const {
         struct alignas(16) LightData {
-            glm::vec3 position = glm::vec3(0.0f); // 12 bytes
-            float _pad0;
+            // -- Block 1: 16 bytes --
+            glm::vec3 position = glm::vec3(0.0f);
+            int type = 0;
 
-            int type = 0; // 4 bytes (0 = point light, 1 = directional light, etc.)
-            float _pad1[3];
+            // -- Block 2: 16 bytes --
+            glm::vec3 direction = glm::vec3(0.0f);
+            float radius = 0.0f;
 
-            glm::vec3 direction = glm::vec3(0.0f); // 12 bytes
-            float radius = 0.0f; // 4 byte
+            // -- Block 3: 16 bytes --
+            glm::vec3 color;
+            float intensity = 0.0f;
 
-            glm::vec3 color; // 12 bytes
-            float intensity = 0.0f; // 4 byte
-
-            float innerCutoff = 0.0f; // 4 byte
-            float outerCutoff = 0.0f; // 4 byte
-            int castShadow = 0; // 4 byte
+            // -- Block 4: 16 bytes --
+            float innerCutoff = 0.0f;
+            float outerCutoff = 0.0f;
+            int castShadow = 0;
             float _pad2;
 
-            uint64_t shadowTextureHandle = -1; // 8 byte
-            float padding[2] = {0.0f}; // Padding to align to 16 bytes
+            // -- Block 5 & 6: 32 bytes --
+            uint64_t shadowTextureHandle[4] = {0}; // 8 byte
 
-            glm::mat4 lightSpaceMatrix = glm::mat4(1.0f);
+            // -- Block 7 - 10: 64 bytes * 4 = 256 bytes --
+            glm::mat4 lightSpaceMatrix[4] = {glm::mat4(1.0f)}; // 64 bytes
+
+            // -- Block 11: 16 bytes --
+            float cascadeSplits[4] = {0.0f};
         };
+
+        if (sizeof(LightData) % 16 != 0) {
+            TE_LOGGER_CRITICAL("LightData struct size is not multiple of 16 bytes! Current size: {0}", sizeof(LightData));
+
+            throw std::runtime_error("LightData struct size is not multiple of 16 bytes");
+        }
 
         Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
         m_lightsBuffer.clear();
         std::vector<LightData> lights;
 
         scene.runSystem<Transform, PointLight>([&](Transform& transform, PointLight& pointLight) {
-            lights.push_back(LightData{
+            LightData lightData = LightData{
                 .position = transform.m_position,
                 .type = 0, // Point light
                 .direction = glm::vec3(0.0f),
@@ -357,15 +368,16 @@ namespace TechEngine {
                 .innerCutoff = 0.0f,
                 .outerCutoff = 0.0f,
                 .castShadow = pointLight.castShadows ? 1 : 0,
-                .shadowTextureHandle = pointLight.shadowTextureHandle,
-                .lightSpaceMatrix = glm::mat4(1.0f),
-            });
+            };
+            lightData.shadowTextureHandle[0] = pointLight.shadowTextureHandle;
+            lightData.lightSpaceMatrix[0] = glm::mat4(1.0f);
+            lights.push_back(lightData);
         });
 
         scene.runSystem<Transform, DirectionalLight>([&](Transform& transform, DirectionalLight& directionalLight) {
             glm::mat3 rotationMatrix = glm::mat3(transform.getModelMatrix());
             glm::vec3 modelForward = glm::vec3(0.0f, 0.0f, -1.0f);
-            lights.push_back(LightData{
+            LightData lightData = LightData{
                 .position = glm::vec3(0.0f),
                 .type = 1, // Directional light
                 .direction = glm::normalize(rotationMatrix * modelForward),
@@ -375,15 +387,22 @@ namespace TechEngine {
                 .innerCutoff = 0.0f,
                 .outerCutoff = 0.0f,
                 .castShadow = directionalLight.castShadows ? 1 : 0,
-                .shadowTextureHandle = directionalLight.shadowTextureHandle,
-                .lightSpaceMatrix = directionalLight.lightSpaceMatrix,
-            });
+
+            };
+            if (directionalLight.shadowTextureHandle && directionalLight.lightSpaceMatrix && directionalLight.cascadeSplits) {
+                for (int i = 0; i < 4; i++) {
+                    lightData.shadowTextureHandle[i] = directionalLight.shadowTextureHandle[i];
+                    lightData.lightSpaceMatrix[i] = directionalLight.lightSpaceMatrix[i];
+                    lightData.cascadeSplits[i] = directionalLight.cascadeSplits[i];
+                }
+            }
+            lights.push_back(lightData);
         });
 
         scene.runSystem<Transform, SpotLight>([&](Transform& transform, SpotLight& spotLight) {
             glm::mat3 rotationMatrix = glm::mat3(transform.getModelMatrix());
             glm::vec3 modelForward = glm::vec3(0.0f, 0.0f, -1.0f);
-            lights.push_back(LightData{
+            LightData lightData = LightData{
                 .position = transform.m_position,
                 .type = 2, // Spot light
                 .direction = glm::normalize(rotationMatrix * modelForward),
@@ -393,9 +412,12 @@ namespace TechEngine {
                 .innerCutoff = glm::cos(glm::radians(spotLight.innerCutoff)),
                 .outerCutoff = glm::cos(glm::radians(spotLight.outerCutoff)),
                 .castShadow = spotLight.castShadows ? 1 : 0,
-                .shadowTextureHandle = spotLight.shadowTextureHandle,
-                .lightSpaceMatrix = spotLight.lightSpaceMatrix,
-            });
+
+            };
+            lightData.shadowTextureHandle[0] = spotLight.shadowTextureHandle;
+            lightData.lightSpaceMatrix[0] = spotLight.lightSpaceMatrix;
+
+            lights.push_back(lightData);
         });
 
         m_lightsBuffer.addData(lights.data(), lights.size() * sizeof(LightData), 0);
@@ -578,9 +600,10 @@ namespace TechEngine {
     void Renderer::shadowDepthPass(const RenderRequest& request) {
         const glm::mat4 viewMatrix = request.viewMatrix;
         const glm::mat4 projectionMatrix = request.projectionMatrix;
-        const float nearPlane = request.nearPlane;
-        const float farPlane = request.farPlane;
+        float nearPlane = request.nearPlane;
+        float farPlane = request.farPlane;
         glm::ivec2 viewport = request.viewportSize;
+        const float fov = request.fov;
 
         Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
         scene.runSystem<Transform, PointLight>([&](const Transform& transform, PointLight& pointLight) {
@@ -727,107 +750,157 @@ namespace TechEngine {
         });
 
         scene.runSystem<Transform, DirectionalLight>([&](Transform& transform, DirectionalLight& directionalLight) {
-            if (directionalLight.shadowTextureHandle != 0) {
-                glMakeTextureHandleNonResidentARB(directionalLight.shadowTextureHandle);
-                directionalLight.shadowTextureHandle = 0;
-                glDeleteTextures(1, &directionalLight.shadowMapID);
-                directionalLight.shadowMapID = 0;
-            }
-
-            if (!directionalLight.castShadows) {
-                return;
-            }
-            m_shadersManager.changeActiveShader("depthShadowMap");
-            const glm::vec3 lightDir = transform.m_forward;
-
-            std::vector cameraFrustumCorners = {
-                glm::vec3(-1.0f, -1.0f, 1.0f),
-                glm::vec3(1.0f, -1.0f, 1.0f),
-                glm::vec3(1.0f, 1.0f, 1.0f),
-                glm::vec3(-1.0f, 1.0f, 1.0f),
-                glm::vec3(-1.0f, -1.0f, -1.0f),
-                glm::vec3(1.0f, -1.0f, -1.0f),
-                glm::vec3(1.0f, 1.0f, -1.0f),
-                glm::vec3(-1.0f, 1.0f, -1.0f),
-            };
-            glm::mat4 inverse = glm::inverse(projectionMatrix * viewMatrix);
-            glm::vec3 frustumCenter = glm::vec3(0.0f);
-            for (glm::vec3& corner: cameraFrustumCorners) {
-                glm::vec4 invCorner = inverse * glm::vec4(corner, 1.0f);
-                corner = invCorner / invCorner.w;
-                frustumCenter += corner;
-            }
-
-            frustumCenter /= cameraFrustumCorners.size();
-
-            constexpr float shadowDistance = 50.0f;
-            const glm::vec3 lightPos = frustumCenter - glm::normalize(lightDir) * shadowDistance;
-            glm::mat4 lightView = glm::lookAt(lightPos, frustumCenter, transform.m_up);
-
-            /*
-            std::vector<glm::vec4> cameraFrustumCornersLightSpace;
-            for (const auto& corner: cameraFrustumCorners) {
-                cameraFrustumCornersLightSpace.push_back(lightView * glm::vec4(corner, 1.0f));
-            }
-
-            float minX = std::numeric_limits<float>::max();
-            float maxX = std::numeric_limits<float>::lowest();
-            float minY = std::numeric_limits<float>::max();
-            float maxY = std::numeric_limits<float>::lowest();
-            float minZ = std::numeric_limits<float>::max();
-            float maxZ = std::numeric_limits<float>::lowest();
-            for (const auto& v: cameraFrustumCorners) {
-                minX = std::min(minX, v.x);
-                maxX = std::max(maxX, v.x);
-                minY = std::min(minY, v.y);
-                maxY = std::max(maxY, v.y);
-                minZ = std::min(minZ, v.z);
-                maxZ = std::max(maxZ, v.z);
-            }
-            */
-
-            constexpr float orthoSize = 50.0f;
-            constexpr float shadowNear = 1.0f;
-            constexpr float shadowFar = 200.0f;
-            glm::mat4 lightProjection = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, shadowNear, shadowFar);
-
-            directionalLight.lightSpaceMatrix = lightProjection * lightView;
-            Shader* shadowShader = m_shadersManager.getActiveShader();
-            shadowShader->bind();
-            shadowShader->setUniformMatrix4f("u_lightMatrix", directionalLight.lightSpaceMatrix);
-
             FrameBuffer& frameBuffer = getFramebuffer(m_omniShadowFBO);
-            frameBuffer.bind();
-            frameBuffer.attachDepthTexture(2048, 2048);
+            m_shadersManager.changeActiveShader("depthShadowMap");
+            constexpr int SHADOW_CASCADE_COUNT = 4;
+            std::vector<float> cascadeSplitDepths;
 
-            glViewport(0, 0, 2048, 2048);
-            glClear(GL_DEPTH_BUFFER_BIT);
-            glEnable(GL_DEPTH_TEST);
-            glDepthFunc(GL_LESS);
-            glCullFace(GL_FRONT);
-            glDrawBuffer(GL_NONE);
-            glReadBuffer(GL_NONE);
+            cascadeSplitDepths.emplace_back(nearPlane);
 
-            m_drawCommandBuffer.setBindingPoint(0);
-            m_objectDataBuffer.setBindingPoint(1);
-            m_objectDataBuffer.bind();
-            m_vertexArrays[BufferGameObjects].bind();
-            m_indicesBuffers[BufferGameObjects].bind();
-            m_drawCommandBuffer.bind();
+            constexpr float lambda = 0.75f;
+            for (int i = 1; i < SHADOW_CASCADE_COUNT; i++) {
+                float ratio = (float)(i) / (float)(SHADOW_CASCADE_COUNT);
+                float log = nearPlane * std::pow(farPlane / nearPlane, ratio);
+                float uniform = nearPlane + (farPlane - nearPlane) * ratio;
+                float split = glm::mix(log, uniform, lambda);
+                cascadeSplitDepths.emplace_back(split);
+            }
+            cascadeSplitDepths.emplace_back(farPlane);
 
-            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_drawCommandBuffer.getID());
+            for (int i = 0; i < SHADOW_CASCADE_COUNT; i++) {
+                if (directionalLight.shadowTextureHandle[i] != 0) {
+                    glMakeTextureHandleNonResidentARB(directionalLight.shadowTextureHandle[i]);
+                    directionalLight.shadowTextureHandle[i] = 0;
+                    glDeleteTextures(1, &directionalLight.shadowMapID[i]);
+                    directionalLight.shadowMapID[i] = 0;
+                }
 
-            glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)0, m_commandToDraw, 0);
+                if (!directionalLight.castShadows) {
+                    return;
+                }
+                int resolution = 2048 / (1 << i);
+                float cascadeNear = cascadeSplitDepths[i];
+                float cascadeFar = cascadeSplitDepths[i + 1];
 
-            uint32_t textureId = frameBuffer.depthTexture;
-            glBindTexture(GL_TEXTURE_2D, textureId);
-            uint64_t handle = glGetTextureHandleARB(textureId);
-            glMakeTextureHandleResidentARB(handle);
-            directionalLight.shadowTextureHandle = handle;
-            directionalLight.shadowMapID = textureId;
 
-            glBindTexture(GL_TEXTURE_2D, 0);
-            frameBuffer.unBind();
+                glm::mat4 cascadeProjectionMatrix = glm::perspective(
+                    glm::radians(fov),
+                    (float)viewport.x / (float)viewport.y,
+                    cascadeNear,
+                    cascadeFar
+                );
+
+                const glm::vec3 lightDir = glm::normalize(transform.m_forward);
+
+                std::vector<glm::vec3> cameraFrustumCorners = {
+                    glm::vec3(-1.0f, -1.0f, 1.0f),
+                    glm::vec3(1.0f, -1.0f, 1.0f),
+                    glm::vec3(1.0f, 1.0f, 1.0f),
+                    glm::vec3(-1.0f, 1.0f, 1.0f),
+                    glm::vec3(-1.0f, -1.0f, -1.0f),
+                    glm::vec3(1.0f, -1.0f, -1.0f),
+                    glm::vec3(1.0f, 1.0f, -1.0f),
+                    glm::vec3(-1.0f, 1.0f, -1.0f),
+                };
+
+                glm::mat4 inverse = glm::inverse(cascadeProjectionMatrix * viewMatrix);
+                glm::vec3 frustumCenter = glm::vec3(0.0f);
+                glm::vec3 nearPlaneCenter = glm::vec3(0.0f);
+                glm::vec3 farPlaneCenter = glm::vec3(0.0f);
+
+                for (size_t j = 0; j < cameraFrustumCorners.size(); ++j) {
+                    glm::vec3& corner = cameraFrustumCorners[j];
+                    glm::vec4 invCorner = inverse * glm::vec4(corner, 1.0f);
+                    corner = glm::vec3(invCorner) / invCorner.w;
+
+                    if (j < 4) {
+                        nearPlaneCenter += corner;
+                    } else {
+                        farPlaneCenter += corner;
+                    }
+                }
+
+                nearPlaneCenter /= 4.0f;
+                farPlaneCenter /= 4.0f;
+                frustumCenter = (nearPlaneCenter + farPlaneCenter) / 2.0f;
+                const glm::vec3 lightPos = frustumCenter - lightDir * glm::length(farPlaneCenter - nearPlaneCenter) * .15f;
+
+                glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+                if (std::abs(glm::dot(lightDir, up)) > 0.99f) {
+                    up = glm::vec3(1.0f, 0.0f, 0.0f);
+                }
+                glm::mat4 lightView = glm::lookAt(lightPos, frustumCenter, up);
+
+                float minX = std::numeric_limits<float>::max();
+                float maxX = std::numeric_limits<float>::lowest();
+                float minY = std::numeric_limits<float>::max();
+                float maxY = std::numeric_limits<float>::lowest();
+                float minZ = std::numeric_limits<float>::max();
+                float maxZ = std::numeric_limits<float>::lowest();
+
+                for (const auto& corner: cameraFrustumCorners) {
+                    glm::vec4 lightSpaceCorner = lightView * glm::vec4(corner, 1.0f);
+                    minX = std::min(minX, lightSpaceCorner.x);
+                    maxX = std::max(maxX, lightSpaceCorner.x);
+                    minY = std::min(minY, lightSpaceCorner.y);
+                    maxY = std::max(maxY, lightSpaceCorner.y);
+                    minZ = std::min(minZ, lightSpaceCorner.z);
+                    maxZ = std::max(maxZ, lightSpaceCorner.z);
+                }
+                if (minZ > maxZ) {
+                    std::swap(minZ, maxZ);
+                }
+
+                float zRange = maxZ - minZ;
+                minZ -= zRange * 3.0f;
+                maxZ += zRange * 3.0f;
+                float xPadding = (maxX - minX) * 0.1f;
+                float yPadding = (maxY - minY) * 0.1f;
+                minX -= xPadding * 0.05f;
+                maxX += xPadding * 0.05f;
+                minY -= yPadding * 0.05f;
+                maxY += yPadding * 0.05f;
+
+                glm::mat4 lightProjection = glm::ortho(minX, maxX, minY, maxY, minZ, maxZ);
+
+                directionalLight.lightSpaceMatrix[i] = lightProjection * lightView;
+                directionalLight.cascadeSplits[i] = cascadeSplitDepths[i + 1];
+                Shader* shadowShader = m_shadersManager.getActiveShader();
+                shadowShader->bind();
+                shadowShader->setUniformMatrix4f("u_lightMatrix", directionalLight.lightSpaceMatrix[i]);
+
+                frameBuffer.bind();
+                frameBuffer.attachDepthTexture(resolution, resolution);
+
+                glViewport(0, 0, resolution, resolution);
+                glClear(GL_DEPTH_BUFFER_BIT);
+                glEnable(GL_DEPTH_TEST);
+                glDepthFunc(GL_LESS);
+                glCullFace(GL_FRONT);
+                glDrawBuffer(GL_NONE);
+                glReadBuffer(GL_NONE);
+
+                m_drawCommandBuffer.setBindingPoint(0);
+                m_objectDataBuffer.setBindingPoint(1);
+                m_objectDataBuffer.bind();
+                m_vertexArrays[BufferGameObjects].bind();
+                m_indicesBuffers[BufferGameObjects].bind();
+                m_drawCommandBuffer.bind();
+
+                glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_drawCommandBuffer.getID());
+
+                glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)0, m_commandToDraw, 0);
+
+                uint32_t textureId = frameBuffer.depthTexture;
+                glBindTexture(GL_TEXTURE_2D, textureId);
+                uint64_t handle = glGetTextureHandleARB(textureId);
+                glMakeTextureHandleResidentARB(handle);
+                directionalLight.shadowTextureHandle[i] = handle;
+                directionalLight.shadowMapID[i] = textureId;
+
+                glBindTexture(GL_TEXTURE_2D, 0);
+                frameBuffer.unBind();
+            }
             glViewport(0, 0, viewport.x, viewport.y);
             glDrawBuffer(GL_BACK);
             glReadBuffer(GL_BACK);

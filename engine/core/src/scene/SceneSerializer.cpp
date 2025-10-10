@@ -226,6 +226,7 @@ namespace TechEngine {
         transform.m_position = glm::vec3(node["Position"].as<glm::vec3>());
         transform.m_rotation = glm::vec3(node["Rotation"].as<glm::vec3>());
         transform.m_scale = glm::vec3(node["Scale"].as<glm::vec3>());
+        transform.calculateUpForwardRight();
         return transform;
     }
 
@@ -246,7 +247,7 @@ namespace TechEngine {
             }
         }
         out << YAML::EndSeq;
-        out << YAML::Key << "FOV" << YAML::Value << camera.fov.x;
+        out << YAML::Key << "FOV" << YAML::Value << camera.fov;
         out << YAML::Key << "NearPlane" << YAML::Value << camera.nearPlane;
         out << YAML::Key << "FarPlane" << YAML::Value << camera.farPlane;
         out << YAML::Key << "OrthoSize" << YAML::Value << camera.orthoSize;
@@ -263,7 +264,7 @@ namespace TechEngine {
                 camera.projectionMatrix[i][j] = node["ProjectionMatrix"][i * 4 + j].as<float>();
             }
         }
-        camera.fov = glm::vec1(node["FOV"].as<float>());
+        camera.fov = node["FOV"].as<float>();
         camera.nearPlane = node["NearPlane"].as<float>();
         camera.farPlane = node["FarPlane"].as<float>();
         camera.orthoSize = node["OrthoSize"].as<float>();

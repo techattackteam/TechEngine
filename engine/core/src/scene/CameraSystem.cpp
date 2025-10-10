@@ -10,7 +10,7 @@ namespace TechEngine {
 
     void CameraSystem::setFov(Entity entity, float fov) {
         auto& camera = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getComponent<Camera>(entity);
-        camera.fov.x = fov;
+        camera.fov = fov;
     }
 
     void CameraSystem::setNear(Entity entity, float nearPlane) {

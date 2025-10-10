@@ -388,7 +388,7 @@ namespace TechEngine {
 
                     for (Entity entity: m_selectedEntities) {
                         CameraSystem& cameraSystem = m_appSystemRegistry.getSystem<CameraSystem>();
-                        if (changeFov) camera.fov.x = commonFov;
+                        if (changeFov) camera.fov = commonFov;
                         if (changeNear) cameraSystem.setNear(entity, commonNear);
                         if (changeFar) cameraSystem.setFar(entity, commonFar);
                         //if (changeProjection) cameraSystem.changeProjectionType(entity, commonProjectionType);

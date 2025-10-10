@@ -1,33 +1,39 @@
 #version 460 core
 #extension GL_ARB_bindless_texture: enable
 
+#define SHADOW_CASCADE_COUNT 4
+
 out vec4 fragColor;
 
 in vec3 v_worldPos;
 in vec3 v_normal;
 in vec2 v_textCoord;
 in flat uint f_materialID;
+in vec4 v_viewPos;
 
 struct Material {
     vec4 albedo;
+
     float metallic;
     float roughness;
     float ao;
+    float pad_0;
+
     vec4 emission;
+
     uvec2 albedoHandle;
     uvec2 normalHandle;
+
     uvec2 metallicHandle;
     uvec2 roughnessHandle;
+
     uvec2 ambientOcclusionHandle;
     uvec2 emissionHandle;
 };
 
 struct Light {
     vec3 position;
-    float pad0;
-
-    int type; // 0: point, 1: directional, 2: spot
-    float pad1_0; float pad1_1; float pad1_2;
+    int type;
 
     vec3 direction;
     float radius;
@@ -40,10 +46,11 @@ struct Light {
     int castShadow;
     float pad2;
 
-    uvec2 shadowHandle; // Index into the shadow map array
-    vec2 pad3;
+    uvec2 shadowHandle[4];
 
-    mat4 lightSpaceMatrix; // For shadow mapping
+    mat4 lightSpaceMatrix[4];
+
+    float cascadeSplits[4];
 };
 
 struct TileInfo {
@@ -73,8 +80,8 @@ uniform float u_farPlane;
 
 const int TILE_SIZE = 16;
 
-void sampleMaterialTextures(inout Material material, vec2 uv, out vec3 normal) {
-    if (material.albedoHandle != uvec2(0)) {
+void sampleMaterialTextures(inout Material material, vec2 uv, inout vec3 normal) {
+/**    if (material.albedoHandle != uvec2(0)) {
         sampler2D albedoSampler = sampler2D(material.albedoHandle);
         vec4 albedoTex = texture(albedoSampler, v_textCoord);
         material.albedo = albedoTex;
@@ -84,7 +91,7 @@ void sampleMaterialTextures(inout Material material, vec2 uv, out vec3 normal) {
         float metallicTex = texture(metallicSampler, v_textCoord).r;
         material.metallic = metallicTex;
     }
-    if (material.roughnessHandle != uvec2(0)) {
+   if (material.roughnessHandle != uvec2(0)) {
         sampler2D roughnessSampler = sampler2D(material.roughnessHandle);
         float roughnessTex = texture(roughnessSampler, v_textCoord).r;
         material.roughness = roughnessTex;
@@ -113,7 +120,7 @@ void sampleMaterialTextures(inout Material material, vec2 uv, out vec3 normal) {
 
         mat3 TBN = mat3(tangent, bitangent, N);
         normal = normalize(TBN * normalTex);
-    }
+    }*/
 }
 
 float distributionGGX(vec3 N, vec3 H, float roughness) {
@@ -145,7 +152,7 @@ vec3 frenelSchlick(float cosTheta, vec3 F0) {
 
 float calculateOmniShadow(Light light) {
     vec3 fragToLight = v_worldPos - light.position;
-    samplerCube handle = samplerCube(light.shadowHandle);
+    samplerCube handle = samplerCube(light.shadowHandle[0]);
     float closestDepth = texture(handle, fragToLight).r * u_farPlane;
     float currentDepth = length(fragToLight);
     float bias = max(0.15 * (1.0 - dot(v_normal, light.direction)), 0.005);
@@ -155,17 +162,44 @@ float calculateOmniShadow(Light light) {
 }
 
 float calculateDepthShadow(Light light) {
-    vec4 fragToLight = light.lightSpaceMatrix * vec4(v_worldPos, 1.0f);
-    sampler2D handle = sampler2D(light.shadowHandle);
+    vec4 fragToLight = light.lightSpaceMatrix[0] * vec4(v_worldPos, 1.0f);
+    sampler2D handle = sampler2D(light.shadowHandle[0]);
 
     vec3 coords = fragToLight.xyz / fragToLight.w;
     coords = coords * vec3(0.5, 0.5, 0.5) + vec3(0.5);
 
     float closestDepth = texture(handle, coords.xy).r;
     float currentDepth = coords.z;
-    if (coords.z > 1.0) {
-        return 0.0f;
+/**    if (coords.z > 1.0) {
+        return 1.0f;
+    }*/
+    //float bias = max(0.05 * (1.0 - dot(v_normal, light.direction)), 0.0005);
+    float shadow = currentDepth > (closestDepth) ? 1.0 : 0.0;
+    return 1.0f - shadow;
+}
+
+float calculateCascadeDepthShadow(Light light) {
+    float fragmentDepth = -v_viewPos.z; // In view space, Z is negative going into the screen
+
+    // 2. Find which cascade the fragment belongs to
+    int cascadeIndex = 0;
+    for (int i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
+        if (fragmentDepth > light.cascadeSplits[i]) {
+            cascadeIndex = i + 1;
+        }
     }
+    mat4 lightMatrix = light.lightSpaceMatrix[cascadeIndex];
+    vec4 fragToLight = lightMatrix * vec4(v_worldPos, 1.0);
+    sampler2D handle = sampler2D(light.shadowHandle[cascadeIndex]);
+
+    vec3 coords = fragToLight.xyz / fragToLight.w;
+    coords = coords * vec3(0.5, 0.5, 0.5) + vec3(0.5);
+
+    float closestDepth = texture(handle, coords.xy).r;
+    float currentDepth = coords.z;
+/**    if (coords.z > 1.0 || coords.z < -1.0) {
+        return 1.0f;
+    }*/
     //float bias = max(0.05 * (1.0 - dot(v_normal, light.direction)), 0.0005);
     float shadow = currentDepth > (closestDepth) ? 1.0 : 0.0;
     return 1.0f - shadow;
@@ -241,7 +275,7 @@ void main() {
     vec3 normal = normalize(v_normal);
     vec3 view = normalize(u_cameraPos - v_worldPos);
 
-    //sampleMaterialTextures(material, v_textCoord, normal);
+    sampleMaterialTextures(material, v_textCoord, normal);
 
     ivec2 pixelCoord = ivec2(floor(gl_FragCoord.xy));
     pixelCoord = clamp(pixelCoord, ivec2(0), u_screenSize - ivec2(1));
@@ -270,18 +304,18 @@ void main() {
 
         float shadow = 1.0f;
         if (light.type == 0) {
-            if (light.shadowHandle != uvec2(0)) {
+            if (light.shadowHandle[0] != uvec2(0)) {
                 shadow = calculateOmniShadow(light);
             }
             totalLight = totalLight + (calculatePointLight(light, material, normal, view) * shadow);
 
         } else if (light.type == 1) {
-            if (light.shadowHandle != uvec2(0)) {
-                shadow = calculateDepthShadow(light);
+            if (light.shadowHandle[0] != uvec2(0)) {
+                shadow = calculateCascadeDepthShadow(light);
             }
             totalLight = totalLight + (calculateDirectionalLight(light, material, normal, view) * shadow);
         } else if (light.type == 2) {
-            if (light.shadowHandle != uvec2(0)) {
+            if (light.shadowHandle[0] != uvec2(0)) {
                 shadow = calculateDepthShadow(light);
             }
             totalLight = totalLight + (calculateSpotLight(light, material, normal, view) * shadow);
@@ -289,7 +323,6 @@ void main() {
     }
 
     // Emission
-/**
     if (material.emissionHandle != uvec2(0)) {
         sampler2D emissionSampler = sampler2D(material.emissionHandle);
         vec3 emissionTex = texture(emissionSampler, v_textCoord).rgb;
@@ -297,7 +330,6 @@ void main() {
     } else if (material.emission != vec4(0.0)) {
         totalLight += material.emission.rgb * material.emission.a;
     }
-*/
 
     vec3 ambient = vec3(0.15f) * material.albedo.rgb * material.ao;
     vec3 color = ambient + totalLight;
