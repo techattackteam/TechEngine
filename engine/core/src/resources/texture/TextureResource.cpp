@@ -7,12 +7,29 @@ namespace TechEngine {
                                      int width,
                                      int height,
                                      int channels,
+                                     TextureType type,
                                      std::vector<unsigned char> pixelData) : m_name(name),
                                                                              m_id(id),
                                                                              m_width(width),
                                                                              m_height(height),
                                                                              m_channels(channels),
+                                                                             m_type(type),
                                                                              m_pixelData(std::move(pixelData)) {
+    }
+
+    TextureResource::TextureResource(std::string name,
+                                     uint32_t id,
+                                     int width,
+                                     int height,
+                                     int channels,
+                                     TextureType type,
+                                     std::vector<float> pixelData) : m_name(name),
+                                                                     m_id(id),
+                                                                     m_width(width),
+                                                                     m_height(height),
+                                                                     m_channels(channels),
+                                                                     m_type(type),
+                                                                     m_pixelDataFloat(std::move(pixelData)) {
     }
 
     void TextureResource::freePixels() {
@@ -28,8 +45,12 @@ namespace TechEngine {
         return m_name;
     }
 
-    const std::vector<unsigned char> TextureResource::getPixels() const {
+    const std::vector<unsigned char> TextureResource::getPixelsChar() const {
         return m_pixelData;
+    }
+
+    const std::vector<float> TextureResource::getPixelsFloat() const {
+        return m_pixelDataFloat;
     }
 
     bool TextureResource::hasPixelData() const {
@@ -46,5 +67,9 @@ namespace TechEngine {
 
     int TextureResource::getChannels() const {
         return m_channels;
+    }
+
+    TextureType TextureResource::getType() const {
+        return m_type;
     }
 }

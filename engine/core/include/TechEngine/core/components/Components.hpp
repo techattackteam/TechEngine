@@ -136,7 +136,7 @@ namespace TechEngine {
 
         float fov = 45;
         float nearPlane = 0.1f;
-        float farPlane = 100;
+        float farPlane = 500;
         float orthoSize = 20.0f;
         float aspectRatio = 1;
         friend class CameraSystem;

@@ -92,6 +92,12 @@ namespace TechEngine {
 
         std::vector<Line> lines;
 
+        Texture m_hdrTexture;
+        GLuint m_envCubemap;
+        GLuint m_irradianceMap;
+        GLuint m_prefilterMap;
+        GLuint m_brdfLUTTexture;
+
     public:
         inline static const int SCENE_PASS = 1 << 0;
         inline static const int UI_PASS = 1 << 1;
@@ -139,6 +145,14 @@ namespace TechEngine {
         void removeMaterial(const std::string& name);
 
         void createRenderables();
+
+        void createCubeMapForIBL();
+
+        void createIrradianceMap();
+
+        void createPrefilterMap();
+
+        void createBRDFLUTTexture();
 
         void populateLightDataBuffers() const;
 

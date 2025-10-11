@@ -63,6 +63,42 @@ namespace TechEngine {
                     {ShaderType::Vertex, shaderBasePath + "shadowDepthVertex.glsl"},
                     {ShaderType::Fragment, shaderBasePath + "shadowDepthFragment.glsl"}
                 }
+            },
+            {
+                "equirectangular", {
+                    {ShaderType::Vertex, shaderBasePath + "equirectangularVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "equirectangularFragment.glsl"}
+                }
+            },
+            {
+                "skybox", {
+                    {ShaderType::Vertex, shaderBasePath + "skyboxVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "skyboxFragment.glsl"}
+                }
+            },
+            {
+                "irradiance", {
+                    {ShaderType::Vertex, shaderBasePath + "skyboxVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "irradianceFragment.glsl"}
+                }
+            },
+            {
+                "prefilter", {
+                    {ShaderType::Vertex, shaderBasePath + "skyboxVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "prefilterFragment.glsl"}
+                }
+            },
+            {
+                "brdf", {
+                    {ShaderType::Vertex, shaderBasePath + "brdfVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "brdfFragment.glsl"}
+                }
+            },
+            {
+                "line", {
+                    {ShaderType::Vertex, shaderBasePath + "lineVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "lineFragment.glsl"}
+                }
             }
         };
 
