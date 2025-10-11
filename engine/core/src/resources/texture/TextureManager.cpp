@@ -1,7 +1,12 @@
 #include "TechEngine/core/resources/texture/TextureManager.hpp"
+
+#include <ranges>
+
 #include "stb_image.h"
 
 namespace TechEngine {
+    class Texture;
+
     TextureManager::TextureManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
     }
 
@@ -23,20 +28,38 @@ namespace TechEngine {
         m_texturesBank.reserve(10);
 
         int width, height, channels;
-        std::vector<unsigned char> pixelData;
         stbi_set_flip_vertically_on_load(true);
-        stbi_uc* data = stbi_load(path.string().c_str(), &width, &height, &channels, 0);
-        if (!data) {
-            TE_LOGGER_ERROR("Failed to load texture: {0}", path.string());
+
+        std::string extension = path.extension().string();
+        TextureType type;
+
+        auto loadTexture = [&](auto* data, auto& pixelContainer, TextureType textureType) {
+            if (!data) {
+                TE_LOGGER_ERROR("Failed to load texture: {0}", path.string());
+                return false;
+            }
+            pixelContainer.assign(data, data + (width * height * channels));
+            m_texturesBank.emplace(name, TextureResource(name, m_texturesBank.size(), width, height, channels, textureType, pixelContainer));
+            stbi_image_free(data);
+            return true;
+        };
+
+        if (extension == ".png" || extension == ".jpg" || extension == ".jpeg") {
+            std::vector<unsigned char> pixelData;
+            type = (extension == ".png") ? PNG : JPG;
+            stbi_uc* data = stbi_load(path.string().c_str(), &width, &height, &channels, 0);
+            return loadTexture(data, pixelData, type);
+        } else if (extension == ".hdr") {
+            std::vector<float> pixelDataFloat;
+            type = HDR;
+            float* data = stbi_loadf(path.string().c_str(), &width, &height, &channels, 0);
+            return loadTexture(data, pixelDataFloat, type);
+        } else {
+            TE_LOGGER_ERROR("Unsupported texture format: {0}", extension);
             return false;
         }
-
-        pixelData.assign(data, data + (width * height * channels));
-
-        m_texturesBank.emplace(name, TextureResource(name, m_texturesBank.size(), width, height, channels, pixelData));
-        stbi_image_free(data);
-        return true;
     }
+
 
     bool TextureManager::textureExists(const std::string& name) {
         return m_texturesBank.find(name) != m_texturesBank.end();
@@ -53,5 +76,23 @@ namespace TechEngine {
             }
         }
         throw std::runtime_error("Texture not found");
+    }
+
+    std::vector<TextureResource*> TextureManager::getTextures() {
+        std::vector<TextureResource*> textures;
+        for (auto& texture: m_texturesBank | std::views::values) {
+            textures.push_back(&texture);
+        }
+        return textures;
+    }
+
+    std::vector<TextureResource*> TextureManager::getTexturesOfType(TextureType type) {
+        std::vector<TextureResource*> textures;
+        for (auto& texture: m_texturesBank | std::views::values) {
+            if (texture.getType() == type) {
+                textures.push_back(&texture);
+            }
+        }
+        return textures;
     }
 }

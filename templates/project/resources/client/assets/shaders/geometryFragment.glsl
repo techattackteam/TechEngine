@@ -77,6 +77,9 @@ layout (std430, binding = 5) readonly buffer TileInfoBuffer {
 uniform ivec2 u_screenSize;
 uniform vec3 u_cameraPos;
 uniform float u_farPlane;
+uniform samplerCube u_irradianceMap;
+uniform samplerCube u_prefilterMap;
+uniform sampler2D u_brdfLUT;
 
 const int TILE_SIZE = 16;
 
@@ -146,8 +149,8 @@ float geometrySchlickGGX(float NdotV, float roughness) {
     return num / denom;
 }
 
-vec3 frenelSchlick(float cosTheta, vec3 F0) {
-    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+vec3 frenelSchlick(float cosTheta, vec3 F0, float roughness) {
+    return F0 + max(vec3(1.0 - roughness), 1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
 float calculateOmniShadow(Light light) {
@@ -213,13 +216,12 @@ vec3 PBRCalculate(Light light, Material material, vec3 radiance, vec3 normal, ve
     lightDirection = normalize(lightDirection);
     vec3 halfDir = normalize(viewDirection + lightDirection);
 
-
     // Cook-Torrance BRDF
     float NDF = distributionGGX(normal, halfDir, material.roughness); // Normal Distribution Function
     float NdotV = max(dot(normal, viewDirection), 0.0);
     float NdotL = max(dot(normal, lightDirection), 0.0);
     float G = geometrySchlickGGX(NdotV, material.roughness) * geometrySchlickGGX(NdotL, material.roughness); // Geometry Function
-    vec3 fresnel = frenelSchlick(max(dot(halfDir, lightDirection), 0.0), F0); // Fresnel
+    vec3 fresnel = frenelSchlick(max(dot(halfDir, lightDirection), 0.0), F0, 0.0f); // Fresnel
 
     vec3 kD = vec3(1.0) - fresnel; // Diffuse component
     kD *= 1.0 - material.metallic; // Metals have no diffuse component
@@ -331,7 +333,27 @@ void main() {
         totalLight += material.emission.rgb * material.emission.a;
     }
 
-    vec3 ambient = vec3(0.15f) * material.albedo.rgb * material.ao;
+    vec3 F0 = vec3(0.04);
+    F0 = mix(F0, material.albedo.rgb, material.metallic);
+
+
+    vec3 F = frenelSchlick(max(dot(normal, view), 0.0), F0, 0.0f);
+
+    vec3 ks = F;
+    vec3 kd = vec3(1.0) - ks;
+    kd *= 1.0 - material.metallic;
+
+    // Ambient lighting (IBL can be added here)
+    vec3 irradiance = texture(u_irradianceMap, normal).rgb;
+    vec3 diffuse = irradiance * material.albedo.rgb;
+    vec3 R = reflect(-view, normal);
+
+    const float MAX_REFLECTION_LOD = 4.0;
+    vec3 prefilteredColor = textureLod(u_prefilterMap, R, material.roughness * MAX_REFLECTION_LOD).rgb;
+    vec2 envBRDF = texture(u_brdfLUT, vec2(max(dot(normal, view), 0.0), material.roughness)).rg;
+    vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+
+    vec3 ambient = (kd * diffuse + specular) * material.ao;
     vec3 color = ambient + totalLight;
 
     // HDR tonemapping and gamma correction

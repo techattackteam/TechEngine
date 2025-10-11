@@ -64,6 +64,10 @@ namespace TechEngine {
         TextureResource& getTexture(const std::string& name);
 
         TextureResource& getTexture(const int id);
+
+        std::vector<TextureResource*> getAllTextures();
+
+        std::vector<TextureResource*> getAllTexturesOfType(const TextureType& type);
 #pragma endregion
 
     private:

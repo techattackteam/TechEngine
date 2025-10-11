@@ -15,7 +15,17 @@ namespace TechEngine {
     void ResourcesManager::init(AppType appType) {
         std::unordered_map<std::string, std::vector<std::filesystem::path>> filesByExtension = getFilesByExtension(appType);
 
-        m_textureManager.init(filesByExtension[".png"]);
+        std::vector<std::filesystem::path> texturePaths;
+        if (filesByExtension.find(".png") != filesByExtension.end()) {
+            texturePaths.insert(texturePaths.end(), filesByExtension[".png"].begin(), filesByExtension[".png"].end());
+        }
+        if (filesByExtension.find(".jpg") != filesByExtension.end()) {
+            texturePaths.insert(texturePaths.end(), filesByExtension[".jpg"].begin(), filesByExtension[".jpg"].end());
+        }
+        if (filesByExtension.find(".hdr") != filesByExtension.end()) {
+            texturePaths.insert(texturePaths.end(), filesByExtension[".hdr"].begin(), filesByExtension[".hdr"].end());
+        }
+        m_textureManager.init(texturePaths);
         m_materialManager.init(filesByExtension[".mat"]);
         m_meshManager.init(filesByExtension[".tesmesh"]);
         //assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-albedo", "albedo");
@@ -175,7 +185,13 @@ namespace TechEngine {
         return m_textureManager.getTexture(id);
     }
 
+    std::vector<TextureResource*> ResourcesManager::getAllTextures() {
+        return m_textureManager.getTextures();
+    }
 
+    std::vector<TextureResource*> ResourcesManager::getAllTexturesOfType(const TextureType& type) {
+        return m_textureManager.getTexturesOfType(type);
+    }
 #pragma endregion
 
     std::unordered_map<std::string, std::vector<std::filesystem::path>> ResourcesManager::getFilesByExtension(const AppType& appType) {

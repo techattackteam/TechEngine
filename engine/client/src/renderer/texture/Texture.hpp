@@ -20,9 +20,13 @@ namespace TechEngine {
 
         void makeNonResident();
 
+        void deleteTexture();
+
         uint64_t getHandle() const;
 
         uint32_t getID() const;
+
+        uint32_t getID();
 
         bool isResident() const;
     };

@@ -7,6 +7,7 @@
 
 #include <utils/YAMLUtils.hpp>
 #include <fstream>
+#include <ranges>
 
 namespace TechEngine {
     MaterialManager::MaterialManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry) {
@@ -75,7 +76,7 @@ namespace TechEngine {
 
     std::vector<Material*> MaterialManager::getMaterials() {
         std::vector<Material*> materials;
-        for (auto& [name, material]: m_materialsBank) {
+        for (auto& material: m_materialsBank | std::views::values) {
             materials.push_back(&material);
         }
         return materials;
