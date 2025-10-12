@@ -17,5 +17,7 @@ namespace TechEngine {
         float fov;
 
         int renderMask;
+
+        bool createSkyBox = false;
     };
 }

@@ -51,7 +51,6 @@ namespace TechEngine {
             } else {
                 m_windowFlags &= ~ImGuiWindowFlags_NoMove;
             }
-
         }
         if (!m_styleVars.empty()) {
             ImGui::PopStyleVar(m_styleVars.size());
@@ -125,15 +124,15 @@ namespace TechEngine {
                     continue;
                 }
                 if (ImGui::IsKeyPressed(key)) {
-                    processKeyPressed(Key(ImGuiKeyToEngineKeyCode(key)));
+                    processKeyPressed(key);
                 }
                 // Key was just released this frame
                 if (ImGui::IsKeyReleased(key)) {
-                    processKeyReleased(Key(ImGuiKeyToEngineKeyCode(key)));
+                    processKeyReleased(key);
                 }
                 // Key is currently being held down
                 if (ImGui::IsKeyDown(key)) {
-                    processKeyHold(Key(ImGuiKeyToEngineKeyCode(key)));
+                    processKeyHold(key);
                 }
             }
         }
@@ -148,12 +147,12 @@ namespace TechEngine {
     void Panel::processMouseScroll(float yOffset) {
     }
 
-    void Panel::processKeyPressed(Key key) {
+    void Panel::processKeyPressed(ImGuiKey key) {
     }
 
-    void Panel::processKeyReleased(Key key) {
+    void Panel::processKeyReleased(ImGuiKey key) {
     }
 
-    void Panel::processKeyHold(Key key) {
+    void Panel::processKeyHold(ImGuiKey key) {
     }
 }

@@ -21,21 +21,22 @@ namespace TechEngine {
     }
 
     void SceneView::onInit() {
-        frameBufferID = m_appSystemsRegistry.getSystem<Renderer>().createFramebuffer(1080, 720);
-        FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
+        m_frameBufferID = m_appSystemsRegistry.getSystem<Renderer>().createFramebuffer(1080, 720);
+        FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(m_frameBufferID);
         frameBuffer.bind();
-        frameBuffer.attachColorTexture();
-        frameBuffer.attachDepthTexture();
+
+        frameBuffer.attachTexture(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_RGBA16F, GL_RGBA, GL_UNSIGNED_BYTE, 0, 0);
+        frameBuffer.attachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT, 0, 0);
         frameBuffer.unBind();
+        TE_LOGGER_INFO("Created SceneView Framebuffer with id: {0}", m_frameBufferID);
         id = totalIds++;
     }
 
     void SceneView::onUpdate() {
-        FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
+        FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(m_frameBufferID);
         RenderRequest request;
         ImVec2 wsize = ImGui::GetContentRegionAvail();
-        frameBuffer.bind();
-        frameBuffer.resize(wsize.x, wsize.y);
+
 
         m_appSystemsRegistry.getSystem<PhysicsEngine>().renderBodies();
         sceneCamera.updateProjectionMatrix(wsize.x / wsize.y);
@@ -47,35 +48,35 @@ namespace TechEngine {
         request.projectionMatrix = sceneCamera.getProjectionMatrix();
         request.nearPlane = sceneCamera.nearPlane;
         request.farPlane = sceneCamera.farPlane;
-        request.targetFramebufferId = this->frameBufferID;
+        request.targetFramebufferId = this->m_frameBufferID;
         request.viewportSize = {wsize.x, wsize.y};
         request.fov = sceneCamera.fov;
         request.renderMask = Renderer::SCENE_PASS | Renderer::LINE_PASS;
 
         m_appSystemsRegistry.getSystem<Renderer>().addRequest(request);
-        uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
+        uint64_t textureID = frameBuffer.getTextureID(GL_COLOR_ATTACHMENT0);
         ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
         guizmo.editTransform(&sceneCamera, ImGui::GetCurrentContext(), m_selectedEntities);
         frameBuffer.unBind();
     }
 
-    void SceneView::processKeyPressed(Key key) {
-        if (ImGui::Shortcut(ImGuiKey_F)) {
+    void SceneView::processKeyPressed(ImGuiKey key) {
+        if (ImGui::Shortcut(key)) {
             if (m_selectedEntities.size() == 1) {
                 //focusOnGameObject(selectedGO.front());
             }
         }
 
-        if (ImGui::Shortcut(ImGuiKey_T)) {
+        if (ImGui::Shortcut(key)) {
             changeGuizmoOperation(ImGuizmo::TRANSLATE);
         }
-        if (ImGui::Shortcut(ImGuiKey_R)) {
+        if (ImGui::Shortcut(key)) {
             changeGuizmoOperation(ImGuizmo::ROTATE);
         }
-        if (ImGui::Shortcut(ImGuiKey_S)) {
+        if (ImGui::Shortcut(key)) {
             changeGuizmoOperation(ImGuizmo::SCALE);
         }
-        if (ImGui::Shortcut(ImGuiKey_C)) {
+        if (ImGui::Shortcut(key)) {
             changeGuizmoMode(guizmo.getMode() == ImGuizmo::LOCAL ? ImGuizmo::WORLD : ImGuizmo::LOCAL);
         }
     }

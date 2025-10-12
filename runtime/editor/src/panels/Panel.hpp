@@ -58,11 +58,11 @@ namespace TechEngine {
 
         virtual void processMouseScroll(float yOffset);
 
-        virtual void processKeyPressed(Key key);
+        virtual void processKeyPressed(ImGuiKey key);
 
-        virtual void processKeyReleased(Key key);
+        virtual void processKeyReleased(ImGuiKey key);
 
-        virtual void processKeyHold(Key key);
+        virtual void processKeyHold(ImGuiKey key);
 
         static KeyCode ImGuiKeyToEngineKeyCode(ImGuiKey imguiKey) {
             switch (imguiKey) {

@@ -24,10 +24,10 @@ namespace TechEngine {
 
         void processMouseDragging(glm::vec2 delta, unsigned long long mouseButtons) override;
 
-        void processKeyPressed(Key key) override;
+        void processKeyPressed(ImGuiKey key) override;
 
-        void processKeyReleased(Key key) override;
+        void processKeyReleased(ImGuiKey key) override;
 
-        void processKeyHold(Key key) override;
+        void processKeyHold(ImGuiKey key) override;
     };
 }
