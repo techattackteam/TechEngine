@@ -38,23 +38,46 @@ namespace TechEngine {
             return;
         }
 
-        glGenTextures(1, &m_id);
-        glBindTexture(GL_TEXTURE_2D, m_id);
+        create(GL_TEXTURE_2D, internalFormat, textureResource.getWidth(), textureResource.getHeight(), format, type,
+               (type == GL_FLOAT) ? static_cast<const void*>(pixelsFloat.data()) : static_cast<const void*>(pixels.data()));
+        glGenerateTextureMipmap(m_id);
+    }
 
-        if (type == GL_UNSIGNED_BYTE)
-            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, textureResource.getWidth(), textureResource.getHeight(), 0, format, type, pixels.data());
-        else if (type == GL_FLOAT) {
-            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, textureResource.getWidth(), textureResource.getHeight(), 0, format, type, pixelsFloat.data());
+    void Texture::create(GLenum target, GLint internalFormat, GLsizei width, GLsizei height, GLenum format, GLenum type, const void* data) {
+        if (m_id != 0) {
+            deleteTexture();
         }
 
-        glGenerateMipmap(GL_TEXTURE_2D);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        m_target = target;
+        glGenTextures(1, &m_id);
+        glBindTexture(m_target, m_id);
+
+        if (m_target == GL_TEXTURE_CUBE_MAP) {
+            for (unsigned int i = 0; i < 6; ++i) {
+                // Note: data is expected to be null for initial empty cubemap creation
+                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0, format, type, data);
+            }
+        } else { // GL_TEXTURE_2D
+            glTexImage2D(m_target, 0, internalFormat, width, height, 0, format, type, data);
+        }
+
+        glTexParameteri(m_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(m_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        if (m_target == GL_TEXTURE_CUBE_MAP) {
+            glTexParameteri(m_target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        }
+
+        glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glBindTexture(m_target, 0);
         m_isResident = false;
         m_handle = 0;
+    }
+
+    void Texture::generateMipMap() {
+        glGenerateMipmap(m_target);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     }
 
     void Texture::makeResident() {
@@ -95,6 +118,10 @@ namespace TechEngine {
 
     uint32_t Texture::getID() {
         return m_id;
+    }
+
+    GLenum Texture::getTarget() const {
+        return m_target;
     }
 
     bool Texture::isResident() const {

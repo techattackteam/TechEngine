@@ -18,8 +18,9 @@ namespace TechEngine {
         frameBufferID = m_appSystemsRegistry.getSystem<Renderer>().createFramebuffer(1080, 720);
         FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
         frameBuffer.bind();
-        frameBuffer.attachColorTexture();
-        frameBuffer.attachDepthTexture();
+        frameBuffer.attachTexture(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_RGBA16F, GL_RGBA, GL_UNSIGNED_BYTE, 0, 0);
+        frameBuffer.attachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT, 0, 0);
+
         frameBuffer.unBind();
     }
 
@@ -34,10 +35,7 @@ namespace TechEngine {
         clientViewport.isFocused = ImGui::IsWindowFocused() || ImGui::IsWindowHovered();
 
         scene.runSystem<Transform, Camera>([this](Transform& transform, Camera& camera) {
-            FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
             ImVec2 wsize = ImGui::GetContentRegionAvail();
-            frameBuffer.bind();
-            frameBuffer.resize(wsize.x, wsize.y);
             camera.updateProjectionMatrix(wsize.x / wsize.y);
             camera.updateViewMatrix(transform.getModelMatrix());
             RenderRequest request;
@@ -53,14 +51,14 @@ namespace TechEngine {
 
         ImVec2 wsize = ImGui::GetContentRegionAvail();
         FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
-        uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
+        uint64_t textureID = frameBuffer.getTextureID(GL_COLOR_ATTACHMENT0);
         ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
         frameBuffer.unBind();
     }
 
     glm::vec2 GameView::getFrameBufferSize() {
         FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
-        return glm::vec2(frameBuffer.width, frameBuffer.height);
+        return frameBuffer.getSize();
     }
 
     void GameView::processMouseMoving(glm::vec2 delta) {
@@ -83,15 +81,15 @@ namespace TechEngine {
         Panel::processMouseDragging(delta, mouseButtons);
     }
 
-    void GameView::processKeyPressed(Key key) {
-        m_appSystemsRegistry.getSystem<Input>().onKeyPressed(key.getKeyCode());
+    void GameView::processKeyPressed(ImGuiKey key) {
+        m_appSystemsRegistry.getSystem<Input>().onKeyPressed(Key(ImGuiKeyToEngineKeyCode(key)).getKeyCode());
     }
 
-    void GameView::processKeyReleased(Key key) {
-        m_appSystemsRegistry.getSystem<Input>().onKeyReleased(key.getKeyCode());
+    void GameView::processKeyReleased(ImGuiKey key) {
+        m_appSystemsRegistry.getSystem<Input>().onKeyReleased(Key(ImGuiKeyToEngineKeyCode(key)).getKeyCode());
     }
 
-    void GameView::processKeyHold(Key key) {
-        m_appSystemsRegistry.getSystem<Input>().onKeyHold(key.getKeyCode());
+    void GameView::processKeyHold(ImGuiKey key) {
+        m_appSystemsRegistry.getSystem<Input>().onKeyHold(Key(ImGuiKeyToEngineKeyCode(key)).getKeyCode());
     }
 }

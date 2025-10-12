@@ -14,7 +14,7 @@ namespace TechEngine {
         Transform cameraTransform;
         Camera sceneCamera;
         Guizmo guizmo;
-        uint32_t frameBufferID;
+        uint32_t m_frameBufferID;
 
         bool mouse2 = false;
         bool mouse3 = false;
@@ -30,7 +30,7 @@ namespace TechEngine {
 
         void onUpdate() override;
 
-        void processKeyPressed(Key) override;
+        void processKeyPressed(ImGuiKey key) override;
 
         void processMouseDragging(glm::vec2 delta, unsigned long long mouseButtons) override;
 
@@ -43,7 +43,7 @@ namespace TechEngine {
         ImGuizmo::MODE getGuizmoMode() const;
 
         uint32_t getFrameBufferID() const {
-            return frameBufferID;
+            return m_frameBufferID;
         }
 
     private:

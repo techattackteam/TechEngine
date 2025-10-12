@@ -28,8 +28,8 @@ namespace TechEngine {
         m_frameBufferID = m_appSystemsRegistry.getSystem<Renderer>().createFramebuffer(1080, 720);
         FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(m_frameBufferID);
         frameBuffer.bind();
-        frameBuffer.attachColorTexture();
-        frameBuffer.attachDepthTexture();
+        frameBuffer.attachTexture(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, 0, 0);
+        frameBuffer.attachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, 0, 0);
         frameBuffer.unBind();
     }
 
@@ -62,7 +62,7 @@ namespace TechEngine {
         m_pendingScrollY = 0.0f;
 
         if (gameViewSize.x > 0 && gameViewSize.y > 0 &&
-            (frameBuffer.width != gameViewSize.x || frameBuffer.height != gameViewSize.y)) {
+            (frameBuffer.getWidth() != gameViewSize.x || frameBuffer.getHeight() != gameViewSize.y)) {
             frameBuffer.resize(gameViewSize.x, gameViewSize.y);
             renderer.getUIRenderer().setViewport(gameViewSize.x, gameViewSize.y);
         }
@@ -73,7 +73,7 @@ namespace TechEngine {
         int mask = Renderer::UI_PASS;
         //renderer.renderCustomPipeline(, mask);
 
-        uint64_t textureID = frameBuffer.getColorAttachmentRenderer();
+        uint64_t textureID = frameBuffer.getTextureID(GL_COLOR_ATTACHMENT0);
         ImVec2 canvasSize = {(float)gameViewSize.x, (float)gameViewSize.y};
         ImVec2 panelTopLeft = ImGui::GetCursorScreenPos();
 
