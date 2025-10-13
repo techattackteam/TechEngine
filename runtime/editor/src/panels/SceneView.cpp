@@ -51,7 +51,7 @@ namespace TechEngine {
         request.targetFramebufferId = this->m_frameBufferID;
         request.viewportSize = {wsize.x, wsize.y};
         request.fov = sceneCamera.fov;
-        request.renderMask = Renderer::SCENE_PASS | Renderer::LINE_PASS;
+        request.renderMask = Renderer::SCENE_PASS | Renderer::POST_PROCESS_PASS | Renderer::LINE_PASS;
 
         m_appSystemsRegistry.getSystem<Renderer>().addRequest(request);
         uint64_t textureID = frameBuffer.getTextureID(GL_COLOR_ATTACHMENT0);

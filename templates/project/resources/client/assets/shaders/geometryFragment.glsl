@@ -240,8 +240,9 @@ vec3 PBRCalculate(Light light, Material material, vec3 radiance, vec3 normal, ve
 vec3 calculateSpotLight(Light light, Material material, vec3 normal, vec3 view) {
     vec3 lightDir = light.position - v_worldPos;
     float dist = length(lightDir);
+    lightDir = normalize(lightDir);
 
-    float theta = dot(normalize(lightDir), normalize(-light.direction));
+    float theta = dot(lightDir, normalize(-light.direction));
     float epsilon = light.innerCutoff - light.outerCutoff;
     float attenuation = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
 
@@ -268,6 +269,7 @@ vec3 calculatePointLight(Light light, Material material, vec3 normal, vec3 view)
 vec3 calculateDirectionalLight(Light light, Material Material, vec3 normal, vec3 view) {
     vec3 lightDir = normalize(-light.direction);
     vec3 radiance = light.color * (light.intensity / 100.0);
+
     return PBRCalculate(light, Material, radiance, normal, view, lightDir);
 }
 
@@ -355,11 +357,6 @@ void main() {
 
     vec3 ambient = (kd * diffuse + specular) * material.ao;
     vec3 color = ambient + totalLight;
-
-    // HDR tonemapping and gamma correction
-    float gamma = 2.2;
-    color = color / (color + vec3(1.0)); // HDR tonemapping
-    color = pow(color, vec3(1.0 / gamma)); // Gamma correction
 
     fragColor = vec4(color, 1.0);
 }

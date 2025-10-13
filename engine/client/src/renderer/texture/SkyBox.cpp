@@ -40,7 +40,6 @@ namespace TechEngine {
         glBindVertexArray(0);
     }
 
-    // Helper function to render a quad
     void renderQuad() {
         static unsigned int quadVAO = 0;
         if (quadVAO == 0) {
@@ -308,7 +307,6 @@ namespace TechEngine {
 
         uint32_t maxMipLevels = 5;
         for (unsigned int mip = 0; mip < maxMipLevels; mip++) {
-            // resize framebuffer according to mip-level size.
             uint32_t mipWidth = 128 * std::pow(0.5, mip);
             uint32_t mipHeight = 128 * std::pow(0.5, mip);
             m_captureFBO.attachRenderBuffer(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, mipWidth, mipHeight, 0);
@@ -331,7 +329,6 @@ namespace TechEngine {
     }
 
     void SkyBox::createBRDFLUTTexture() {
-        // 1. Ensure the correct shader program is active
         m_shadersManager.changeActiveShader("brdf");
         Shader& shader = *m_shadersManager.getActiveShader();
         shader.bind();
