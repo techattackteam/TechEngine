@@ -3,6 +3,7 @@
 #include <future>
 
 #include "DrawCommand.hpp"
+#include "core/timer.hpp"
 #include "TechEngine/core/components/Components.hpp"
 #include "events/resourcersManager/materials/MaterialCreatedEvent.hpp"
 #include "events/resourcersManager/materials/MaterialDeletedEvent.hpp"
@@ -14,6 +15,8 @@
 #include "TechEngine/core/events/scene/EntityDeletedEvent.hpp"
 #include "profiling/ProfiledScope.hpp"
 #include "resources/ResourcesManager.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
 #include "resources/mesh/AssimpLoader.hpp"
 #include "TechEngine/core/resources/material/Material.hpp"
 #include "TechEngine/core/resources/mesh/Vertex.hpp"
@@ -61,6 +64,9 @@ namespace TechEngine {
         m_lightsIndexBuffer.init(3500000 * sizeof(uint32_t));
         m_tileInfoBuffer = ShaderStorageBuffer();
 
+        m_histogramBuffer = ShaderStorageBuffer();
+        m_histogramBuffer.init(256 * sizeof(uint32_t));
+
         uint32_t maxWidth = 3840; // 4K
         uint32_t maxHeight = 2160;
         uint32_t maxTilesX = (maxWidth + TILE_SIZE - 1) / TILE_SIZE;
@@ -69,21 +75,45 @@ namespace TechEngine {
 
         m_tileInfoBuffer.init(totalMaxTiles * sizeof(TileInfo));
 
+
         m_atomicCounterBuffer = ShaderStorageBuffer();
         m_atomicCounterBuffer.init(sizeof(uint32_t));
 
         m_depthPrePassFBO = createFramebuffer(800, 600);
         FrameBuffer& depthPrePassFBO = getFramebuffer(m_depthPrePassFBO);
         depthPrePassFBO.bind();
+        depthPrePassFBO.attachTexture(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_RGBA16F, GL_RGBA, GL_UNSIGNED_BYTE, 0, 0);
         depthPrePassFBO.attachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, 0, 0);
         depthPrePassFBO.unBind();
 
-        m_omniShadowFBO = createFramebuffer(1024, 1024);
-        FrameBuffer& omniShadowFBO = getFramebuffer(m_omniShadowFBO);
+        m_shadowFBO = createFramebuffer(1024, 1024);
+        FrameBuffer& omniShadowFBO = getFramebuffer(m_shadowFBO);
         omniShadowFBO.bind();
-        //omniShadowFBO.attachDepthCubeMapTexture(1024, 1024);
         omniShadowFBO.attachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, 0, 0);
         omniShadowFBO.unBind();
+
+        m_hdrFBO = createFramebuffer(800, 600);
+        FrameBuffer& hdrFBO = getFramebuffer(m_hdrFBO);
+        hdrFBO.bind();
+        hdrFBO.attachTexture(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_RGBA16F, GL_RGBA, GL_FLOAT, 0, 0);
+        // hdrFBO.attachTexture(GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, GL_RGBA16F, GL_RGBA, GL_UNSIGNED_BYTE, 0, 0); // Bright colors for bloom
+        hdrFBO.attachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, 0, 0);
+        hdrFBO.unBind();
+
+        QuadVertex quadVertices[4] = {
+            // positions   // texCoords
+            {{-1.0f, 1.0f}, {0.0f, 1.0f}},
+            {{-1.0f, -1.0f}, {0.0f, 0.0f}},
+            {{1.0f, 1.0f}, {1.0f, 1.0f}},
+            {{1.0f, -1.0f}, {1.0f, 0.0f}},
+        };
+        m_vertexArrays[BufferFullscreenQuad] = VertexArray();
+        m_vertexBuffers[BufferFullscreenQuad] = VertexBuffer();
+        m_vertexArrays[BufferFullscreenQuad].init();
+        m_vertexBuffers[BufferFullscreenQuad].init(4 * sizeof(QuadVertex));
+        m_vertexArrays[BufferFullscreenQuad].addNewBuffer(m_vertexBuffers[BufferFullscreenQuad]);
+        m_vertexBuffers[BufferFullscreenQuad].addData(quadVertices, 4 * sizeof(QuadVertex), 0);
+
 
         m_vertexArrays[BufferLines] = VertexArray();
         m_vertexBuffers[BufferLines] = VertexBuffer();
@@ -181,7 +211,7 @@ namespace TechEngine {
 
             FrameBuffer& framebuffer = getFramebuffer(request.targetFramebufferId);
             framebuffer.bind();
-            //framebuffer.resize(request.viewportSize.x, request.viewportSize.y);
+            framebuffer.resize(request.viewportSize.x, request.viewportSize.y);
             framebuffer.clear();
 
             glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
@@ -191,6 +221,20 @@ namespace TechEngine {
             if (request.renderMask & SCENE_PASS) {
                 scenePass(request);
             }
+            if (request.renderMask & POST_PROCESS_PASS) {
+                /*FrameBuffer& hdrFrameBuffer = getFramebuffer(m_hdrFBO);
+                hdrFrameBuffer.bind();
+                automaticExposurePass(request.viewportSize);
+                hdrFrameBuffer.unBind();*/
+
+                FrameBuffer& frameBuffer = getFramebuffer(request.targetFramebufferId);
+                frameBuffer.bind();
+                //frameBuffer.resize(request.viewportSize.x, request.viewportSize.y);
+                //frameBuffer.clear();
+                postProcessingPass();
+                frameBuffer.unBind();
+            }
+
             if (request.renderMask & UI_PASS && m_systemsRegistry.hasSystem<WidgetsRegistry>()) {
                 //uiPass();
             }
@@ -531,13 +575,13 @@ namespace TechEngine {
             shadowDepthPass(request);
         }
 
-        FrameBuffer& frameBuffer = getFramebuffer(request.targetFramebufferId);
+        FrameBuffer& frameBuffer = getFramebuffer(m_hdrFBO);
         frameBuffer.bind();
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        frameBuffer.resize(viewport.x, viewport.y);
+        frameBuffer.clear();
+
         geometryPass(viewMatrix, projectionMatrix, viewport, farPlane);
-
         m_skyBox.renderSkybox(viewMatrix, projectionMatrix);
-
         frameBuffer.unBind();
     }
 
@@ -646,11 +690,12 @@ namespace TechEngine {
             shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
 
 
-            FrameBuffer& frameBuffer = getFramebuffer(m_omniShadowFBO);
+            FrameBuffer& frameBuffer = getFramebuffer(m_shadowFBO);
             frameBuffer.bind();
             frameBuffer.attachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, 0, 0);
             frameBuffer.resize(1024, 1024);
 
+            glViewport(0, 0, 1024, 1024);
             glClear(GL_DEPTH_BUFFER_BIT);
             glEnable(GL_DEPTH_TEST);
             glDepthFunc(GL_LESS);
@@ -688,7 +733,6 @@ namespace TechEngine {
 
             glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
             frameBuffer.unBind();
-
             glViewport(0, 0, viewport.x, viewport.y);
             glDrawBuffer(GL_BACK);
             glReadBuffer(GL_BACK);
@@ -725,7 +769,7 @@ namespace TechEngine {
             shadowShader->bind();
             shadowShader->setUniformMatrix4f("u_lightMatrix", spotLight.lightSpaceMatrix);
 
-            FrameBuffer& frameBuffer = getFramebuffer(m_omniShadowFBO);
+            FrameBuffer& frameBuffer = getFramebuffer(m_shadowFBO);
             frameBuffer.bind();
             frameBuffer.attachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, 0, 0);
             frameBuffer.resize(1024, 1024);
@@ -766,7 +810,7 @@ namespace TechEngine {
         });
 
         scene.runSystem<Transform, DirectionalLight>([&](Transform& transform, DirectionalLight& directionalLight) {
-            FrameBuffer& frameBuffer = getFramebuffer(m_omniShadowFBO);
+            FrameBuffer& frameBuffer = getFramebuffer(m_shadowFBO);
             m_shadersManager.changeActiveShader("depthShadowMap");
             constexpr int SHADOW_CASCADE_COUNT = 4;
             std::vector<float> cascadeSplitDepths;
@@ -928,6 +972,10 @@ namespace TechEngine {
 
 
     void Renderer::geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport, const float farPlane) {
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
         m_shadersManager.changeActiveShader("geometry");
         m_shadersManager.getActiveShader()->setUniformMatrix4f("u_projection", projectionMatrix);
         m_shadersManager.getActiveShader()->setUniformMatrix4f("u_view", viewMatrix);
@@ -973,6 +1021,107 @@ namespace TechEngine {
         m_vertexArrays[BufferGameObjects].unBind();
         m_indicesBuffers[BufferGameObjects].unBind();
         m_drawCommandBuffer.unBind();
+    }
+
+    // TODO: Improve this features in future stages of the renderer
+    void Renderer::automaticExposurePass(const glm::ivec2& viewport) {
+        m_shadersManager.changeActiveShader("histogram");
+        FrameBuffer& hdrFBO = getFramebuffer(m_hdrFBO);
+        uint32_t zero = 0;
+
+
+        m_histogramBuffer.bind();
+        m_histogramBuffer.setBindingPoint(0);
+        glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &zero);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindImageTexture(0, hdrFBO.getTextureID(GL_COLOR_ATTACHMENT0), 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
+
+
+        uint32_t numGroupsX = (viewport.x + 15) / 16;
+        uint32_t numGroupsY = (viewport.y + 15) / 16;
+        glDispatchCompute(numGroupsX, numGroupsY, 1);
+
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+        uint32_t* histogramData = m_histogramBuffer.mapBuffer(GL_READ_ONLY);
+        constexpr int HISTOGRAM_BINS = 256;
+
+        if (histogramData) {
+            uint32_t pixelCount = viewport.x * viewport.y;
+            const float lowPercent = 0.50f; // 40% of pixels can be darker
+            const float highPercent = 0.90f; // 95% of pixels should be darker (i.e., ignore top 5% brightest)
+
+            uint32_t minPixelCount = (uint32_t)(pixelCount * lowPercent);
+            uint32_t maxPixelCount = (uint32_t)(pixelCount * highPercent);
+
+            uint32_t currentPixels = 0;
+            uint32_t minBin = 0;
+            uint32_t maxBin = 255;
+
+            for (int i = 0; i < HISTOGRAM_BINS; i++) {
+                currentPixels += histogramData[i];
+                if (currentPixels >= maxPixelCount) {
+                    maxBin = i;
+                    break;
+                }
+            }
+
+            for (int i = 0; i < 256; ++i) {
+                currentPixels += histogramData[i];
+                if (currentPixels >= minPixelCount) {
+                    minBin = i;
+                    break;
+                }
+            }
+
+            float minLogLum = -10.0f;
+            float maxLogLum = 3.0f;
+            float avgLogLuminance = 0;
+            uint32_t samples = 0;
+
+            for (uint32_t i = minBin; i <= maxBin; ++i) {
+                if (histogramData[i] > 0) {
+                    float binLuminance = minLogLum + (i / 255.0f) * (maxLogLum - minLogLum);
+                    avgLogLuminance += binLuminance * histogramData[i];
+                    samples += histogramData[i];
+                }
+            }
+
+            if (samples > 0) {
+                avgLogLuminance /= samples;
+            }
+
+            float avgLuminance = exp(avgLogLuminance);
+
+            float keyValue = 0.18f;
+            m_targetExposure = keyValue / avgLuminance;
+            m_targetExposure = std::max(0.25f, std::min(m_targetExposure, 2.0f));
+            TE_LOGGER_INFO("Average Luminance: {0}, Average Log Luminance {1}, Target Exposure {2}", avgLuminance, avgLogLuminance, m_targetExposure);
+        }
+        m_currentExposure = m_currentExposure + (m_targetExposure - m_currentExposure);
+        TE_LOGGER_INFO("Current Exposure: {0}", m_currentExposure);
+        m_histogramBuffer.unmapBuffer();
+        m_histogramBuffer.unBind();
+    }
+
+    void Renderer::postProcessingPass() {
+        glDisable(GL_DEPTH_TEST);
+
+        m_shadersManager.changeActiveShader("postProcess");
+        Shader* postProcessShader = m_shadersManager.getActiveShader();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, getFramebuffer(m_hdrFBO).getTextureID(GL_COLOR_ATTACHMENT0));
+        postProcessShader->setUniformInt("u_hdrBuffer", 0);
+
+        //postProcessShader->setUniformFloat("u_exposure", m_currentExposure);
+
+        m_vertexArrays[BufferFullscreenQuad].bind();
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        m_vertexArrays[BufferFullscreenQuad].unBind();
+
+        glEnable(GL_DEPTH_TEST);
     }
 
     // Old UI renderer will be revised

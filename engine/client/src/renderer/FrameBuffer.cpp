@@ -195,7 +195,7 @@ namespace TechEngine {
         if (target == GL_TEXTURE_2D || target == GL_TEXTURE_2D_MULTISAMPLE) {
             glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentPoint, target, texture->getID(), 0);
         } else if (target == GL_TEXTURE_CUBE_MAP) {
-            glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentPoint, GL_TEXTURE_CUBE_MAP_POSITIVE_X, texture->getID(), 0);
+            glFramebufferTexture(GL_FRAMEBUFFER, attachmentPoint, texture->getID(), 0);
         } else {
             glFramebufferTexture(GL_FRAMEBUFFER, attachmentPoint, texture->getID(), 0);
         }
@@ -232,7 +232,6 @@ namespace TechEngine {
         } else if (target == GL_TEXTURE_CUBE_MAP) {
             glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentPoint, GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer, texture.getID(), mipLevel);
         } else {
-            // layered textures (array/3D) should use attachTextureLayer
             glFramebufferTextureLayer(GL_FRAMEBUFFER, attachmentPoint, texture.getID(), mipLevel, layer);
         }
 

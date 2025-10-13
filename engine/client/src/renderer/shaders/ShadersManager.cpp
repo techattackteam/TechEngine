@@ -94,6 +94,18 @@ namespace TechEngine {
                     {ShaderType::Fragment, shaderBasePath + "brdfFragment.glsl"}
                 }
             },
+
+            {
+                "histogram", {
+                    {ShaderType::Compute, shaderBasePath + "histogramCompute.glsl"}
+                }
+            },
+            {
+                "postProcess", {
+                    {ShaderType::Vertex, shaderBasePath + "postProcessVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "postProcessFragment.glsl"}
+                }
+            },
             {
                 "line", {
                     {ShaderType::Vertex, shaderBasePath + "lineVertex.glsl"},

@@ -51,9 +51,15 @@ namespace TechEngine {
             }
         };
 
+        struct QuadVertex {
+            glm::vec2 position;
+            glm::vec2 texCoord;
+        };
+
     private:
         const std::string BufferGameObjects = "GameObjects";
         const std::string BufferLines = "Lines";
+        const std::string BufferFullscreenQuad = "FullscreenQuad";
 
         SystemsRegistry& m_systemsRegistry;
 
@@ -74,10 +80,14 @@ namespace TechEngine {
         ShaderStorageBuffer m_tileInfoBuffer;
         ShaderStorageBuffer m_atomicCounterBuffer;
 
+        // 256 bins for the histogram
+        ShaderStorageBuffer m_histogramBuffer;
+
         const int32_t TILE_SIZE = 16;
 
         uint32_t m_depthPrePassFBO = 0;
-        uint32_t m_omniShadowFBO = 0;
+        uint32_t m_shadowFBO = 0;
+        uint32_t m_hdrFBO = 0;
 
         std::vector<FrameBuffer*> m_frameBuffers;
 
@@ -87,6 +97,10 @@ namespace TechEngine {
         uint32_t m_currentIndexOffset = 0; // Tracks the end of the IBO data (in indices)
         size_t m_commandToDraw = 0;
 
+        float m_currentExposure = 1.0f;
+        float m_targetExposure = 1.0f;
+        float m_adaptationSpeed = 1.5f;
+
         std::vector<Renderable> m_renderables;
 
         std::vector<Texture> m_textures;
@@ -95,16 +109,11 @@ namespace TechEngine {
 
         SkyBox m_skyBox;
 
-        /*Texture m_hdrTexture;
-        GLuint m_envCubemap;
-        GLuint m_irradianceMap;
-        GLuint m_prefilterMap;
-        GLuint m_brdfLUTTexture;*/
-
     public:
         inline static const int SCENE_PASS = 1 << 0;
         inline static const int UI_PASS = 1 << 1;
         inline static const int LINE_PASS = 1 << 2;
+        inline static const int POST_PROCESS_PASS = 1 << 3;
 
         Renderer(SystemsRegistry& systemsRegistry);
 
@@ -164,6 +173,10 @@ namespace TechEngine {
         void shadowDepthPass(const RenderRequest& request);
 
         void geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport, float farPlane);
+
+        void automaticExposurePass(const glm::ivec2& viewport);
+
+        void postProcessingPass();
 
         void uiPass();
 
