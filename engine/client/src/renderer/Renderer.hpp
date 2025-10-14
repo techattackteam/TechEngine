@@ -105,6 +105,10 @@ namespace TechEngine {
 
         std::vector<Texture> m_textures;
 
+        Texture m_bloomTexture;
+        Texture m_bloomTempTexture;
+        int m_bloomIterations = 0;
+
         std::vector<Line> lines;
 
         SkyBox m_skyBox;
@@ -164,6 +168,8 @@ namespace TechEngine {
 
         void populateMaterialDataBuffers();
 
+        void recreateBloomTexture(const glm::ivec2& viewport);
+
         void scenePass(const RenderRequest& request);
 
         void depthPrePass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
@@ -175,6 +181,8 @@ namespace TechEngine {
         void geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport, float farPlane);
 
         void automaticExposurePass(const glm::ivec2& viewport);
+
+        void bloomPass(const glm::ivec2& viewport);
 
         void postProcessingPass();
 

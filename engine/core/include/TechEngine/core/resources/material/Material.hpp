@@ -16,7 +16,7 @@ namespace TechEngine {
         float padding1 = 0.0f; // Padding to align to 16 bytes
 
         // -- Block 3: 16 bytes --
-        glm::vec4 emission = glm::vec4(.0f); // 16 bytes
+        glm::vec4 emission = glm::vec4(0.0, 0, 0, 1.0f); // 16 bytes
 
         // -- Block 4: 16 bytes --
         uint64_t albedoMapHandle = 0; // 8 byte

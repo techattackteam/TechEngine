@@ -18,6 +18,8 @@
 #include "resources/mesh/AssimpLoader.hpp"
 #include "resources/mesh/AssimpLoader.hpp"
 #include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
 #include "TechEngine/core/resources/material/Material.hpp"
 #include "TechEngine/core/resources/mesh/Vertex.hpp"
 #include "TechEngine/core/scene/Scene.hpp"
@@ -121,6 +123,8 @@ namespace TechEngine {
         m_vertexBuffers[BufferLines].init(10000000 * sizeof(Line));
         m_vertexArrays[BufferLines].addNewLinesBuffer(m_vertexBuffers[BufferLines]);
 
+        recreateBloomTexture({800, 600});
+
         m_uiRenderer.init();
 
         EventManager& eventManager = m_systemsRegistry.getSystem<EventManager>();
@@ -212,6 +216,7 @@ namespace TechEngine {
             FrameBuffer& framebuffer = getFramebuffer(request.targetFramebufferId);
             framebuffer.bind();
             framebuffer.resize(request.viewportSize.x, request.viewportSize.y);
+
             framebuffer.clear();
 
             glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
@@ -226,6 +231,8 @@ namespace TechEngine {
                 hdrFrameBuffer.bind();
                 automaticExposurePass(request.viewportSize);
                 hdrFrameBuffer.unBind();*/
+                recreateBloomTexture(request.viewportSize);
+                bloomPass(request.viewportSize);
 
                 FrameBuffer& frameBuffer = getFramebuffer(request.targetFramebufferId);
                 frameBuffer.bind();
@@ -548,6 +555,35 @@ namespace TechEngine {
         }
 
         m_materialsBuffer.addData(properties.data(), properties.size() * sizeof(MaterialProperties));
+    }
+
+    void Renderer::recreateBloomTexture(const glm::ivec2& viewport) {
+        if (m_bloomTexture.getWidth() == viewport.x && m_bloomTexture.getHeight() == viewport.y) {
+            return;
+        }
+
+        if (m_bloomTexture.getID() != 0) {
+            m_bloomTexture.deleteTexture();
+        }
+
+        uint32_t width = viewport.x;
+        uint32_t height = viewport.y;
+
+        m_bloomTexture.create(GL_TEXTURE_2D, GL_RGBA16F, width, height, GL_RGBA, GL_FLOAT, nullptr);
+        m_bloomIterations = floor(log2(std::min(width, height)));
+        glBindTexture(GL_TEXTURE_2D, m_bloomTexture.getID());
+        glTexStorage2D(GL_TEXTURE_2D, m_bloomIterations, GL_RGBA16F, width, height);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        m_bloomTempTexture.create(GL_TEXTURE_2D, GL_RGBA16F, width, height, GL_RGBA, GL_FLOAT, nullptr);
+        glBindTexture(GL_TEXTURE_2D, m_bloomTempTexture.getID());
+        glTexStorage2D(GL_TEXTURE_2D, m_bloomIterations, GL_RGBA16F, width, height);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+
+        TE_LOGGER_INFO("Bloom texture recreated with size: {0}x{1}", width, height);
     }
 
     void Renderer::scenePass(const RenderRequest& request) {
@@ -1106,6 +1142,58 @@ namespace TechEngine {
         m_histogramBuffer.unBind();
     }
 
+    void Renderer::bloomPass(const glm::ivec2& viewport) {
+        m_shadersManager.changeActiveShader("bloomPrefilter");
+        m_shadersManager.getActiveShader()->setUniformFloat("u_threshold", 1.0f);
+
+        glActiveTexture(GL_TEXTURE0);
+        FrameBuffer& hdrFBO = getFramebuffer(m_hdrFBO);
+        glBindTexture(GL_TEXTURE_2D, hdrFBO.getTextureID(GL_COLOR_ATTACHMENT0));
+        m_shadersManager.getActiveShader()->setUniformInt("u_hdrBuffer", 0);
+
+
+        glBindImageTexture(0, m_bloomTexture.getID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+
+        glDispatchCompute((viewport.x + 15) / 16, (viewport.y + 15) / 16, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+        glm::ivec2 mipSize = viewport;
+
+        m_shadersManager.changeActiveShader("bloomDownSample");
+
+        for (int i = 0; i < m_bloomIterations - 1; i++) {
+            mipSize /= 2;
+            if (mipSize.x == 0 || mipSize.y == 0) break;
+
+            m_shadersManager.getActiveShader()->setUniformIVec2("u_sourceResolution", glm::ivec2{viewport.x / pow(2.0f, i), viewport.y / pow(2.0f, i)});
+
+            glBindImageTexture(0, m_bloomTexture.getID(), i, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
+            glBindImageTexture(1, m_bloomTexture.getID(), i + 1, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+
+            glDispatchCompute((mipSize.x + 15) / 16, (mipSize.y + 15) / 16, 1);
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        }
+
+        m_shadersManager.changeActiveShader("bloomUpSample");
+        m_shadersManager.getActiveShader()->setUniformFloat("u_intensity", 0.5f);
+
+        for (int i = m_bloomIterations - 2; i >= 0; --i) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, m_bloomTexture.getID());
+            m_shadersManager.getActiveShader()->setUniformInt("u_lowerMipLevel", i + 1);
+            glBindImageTexture(1, m_bloomTexture.getID(), i, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA16F);
+
+            mipSize = glm::ivec2(viewport.x, viewport.y) / (1 << i);
+            glDispatchCompute((mipSize.x + 15) / 16, (mipSize.y + 15) / 16, 1);
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        }
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_bloomTexture.getID());
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, m_bloomIterations - 1);
+    }
+
     void Renderer::postProcessingPass() {
         glDisable(GL_DEPTH_TEST);
 
@@ -1116,6 +1204,12 @@ namespace TechEngine {
         postProcessShader->setUniformInt("u_hdrBuffer", 0);
 
         //postProcessShader->setUniformFloat("u_exposure", m_currentExposure);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, m_bloomTexture.getID());
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, m_bloomIterations - 1);
+        postProcessShader->setUniformInt("u_bloomBuffer", 1);
 
         m_vertexArrays[BufferFullscreenQuad].bind();
         glDrawArrays(GL_TRIANGLES, 0, 6);

@@ -5,20 +5,25 @@ out vec4 fragColor;
 in vec2 texCoords;
 
 uniform sampler2D u_hdrBuffer;
+uniform sampler2D u_bloomBuffer;
 
 uniform float u_exposure = 1.0;
+
+uniform float u_saturation = 1.2;
+uniform float u_contrast = 1.1;
+uniform float u_brightness = 1.0;
+
 #define EPSILON 0.0001
 vec3 reinhard(vec3 color) {
     return color / (color + vec3(1.0));
 }
 
 vec3 aces_approx(vec3 v) {
-    v *= 0.6f;
-    float a = 2.51f;
-    float b = 0.03f;
-    float c = 2.43f;
-    float d = 0.59f;
-    float e = 0.14f;
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
     return clamp((v * (a * v + b)) / (v * (c * v + d) + e), 0.0, 1.0);
 }
 
@@ -36,19 +41,17 @@ vec3 uncharted2(vec3 color) {
     return color / white;
 }
 
-uniform float u_saturation = 1.2;
-uniform float u_contrast = 1.1;
-uniform float u_brightness = 1.0;
-
 void main() {
     vec3 hdrColor = texture(u_hdrBuffer, texCoords).rgb;
+    vec3 bloomColor = texture(u_bloomBuffer, texCoords).rgb;
+    hdrColor += bloomColor; // Add bloom
 
     // Apply exposure
     //hdrColor = vec3(1.0) - exp(-hdrColor * u_exposure);
 
     // Choose tone mapping operator
-    hdrColor = reinhard(hdrColor);
-    //hdrColor = aces_approx(hdrColor);
+    //hdrColor = reinhard(hdrColor);
+    hdrColor = aces_approx(hdrColor);
     //hdrColor = uncharted2(hdrColor);
 
     // Gamma correction

@@ -13,6 +13,9 @@ namespace TechEngine {
         bool m_isResident;
         GLenum m_target;
 
+        uint32_t m_width;
+        uint32_t m_height;
+
     public:
         Texture();
 
@@ -35,6 +38,10 @@ namespace TechEngine {
         uint32_t getID();
 
         GLenum getTarget() const;
+
+        uint32_t getWidth() const;
+
+        uint32_t getHeight() const;
 
         bool isResident() const;
     };
