@@ -107,6 +107,21 @@ namespace TechEngine {
                 }
             },
             {
+                "bloomPrefilter", {
+                    {ShaderType::Compute, shaderBasePath + "bloomPrefilterCompute.glsl"}
+                }
+            },
+            {
+                "bloomDownSample", {
+                    {ShaderType::Compute, shaderBasePath + "bloomDownSampleCompute.glsl"}
+                }
+            },
+            {
+                "bloomUpSample", {
+                    {ShaderType::Compute, shaderBasePath + "bloomUpSampleCompute.glsl"}
+                }
+            },
+            {
                 "line", {
                     {ShaderType::Vertex, shaderBasePath + "lineVertex.glsl"},
                     {ShaderType::Fragment, shaderBasePath + "lineFragment.glsl"}

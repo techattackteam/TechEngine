@@ -73,6 +73,8 @@ namespace TechEngine {
         glBindTexture(m_target, 0);
         m_isResident = false;
         m_handle = 0;
+        m_width = width;
+        m_height = height;
     }
 
     void Texture::generateMipMap() {
@@ -122,6 +124,14 @@ namespace TechEngine {
 
     GLenum Texture::getTarget() const {
         return m_target;
+    }
+
+    uint32_t Texture::getWidth() const {
+        return m_width;
+    }
+
+    uint32_t Texture::getHeight() const {
+        return m_height;
     }
 
     bool Texture::isResident() const {

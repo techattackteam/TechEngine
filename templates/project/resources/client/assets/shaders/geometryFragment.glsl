@@ -84,7 +84,7 @@ uniform sampler2D u_brdfLUT;
 const int TILE_SIZE = 16;
 
 void sampleMaterialTextures(inout Material material, vec2 uv, inout vec3 normal) {
-/**    if (material.albedoHandle != uvec2(0)) {
+    if (material.albedoHandle != uvec2(0)) {
         sampler2D albedoSampler = sampler2D(material.albedoHandle);
         vec4 albedoTex = texture(albedoSampler, v_textCoord);
         material.albedo = albedoTex;
@@ -94,7 +94,7 @@ void sampleMaterialTextures(inout Material material, vec2 uv, inout vec3 normal)
         float metallicTex = texture(metallicSampler, v_textCoord).r;
         material.metallic = metallicTex;
     }
-   if (material.roughnessHandle != uvec2(0)) {
+    if (material.roughnessHandle != uvec2(0)) {
         sampler2D roughnessSampler = sampler2D(material.roughnessHandle);
         float roughnessTex = texture(roughnessSampler, v_textCoord).r;
         material.roughness = roughnessTex;
@@ -104,6 +104,12 @@ void sampleMaterialTextures(inout Material material, vec2 uv, inout vec3 normal)
         float aoTex = texture(aoSampler, v_textCoord).r;
         material.ao = aoTex;
     }
+    if (material.emissionHandle != uvec2(0)) {
+        sampler2D emissionSampler = sampler2D(material.emissionHandle);
+        vec3 emissionTex = texture(emissionSampler, v_textCoord).rgb;
+        material.emission = vec4(emissionTex, 1.0);
+    }
+
     if (material.normalHandle != uvec2(0)) {
         sampler2D normalSampler = sampler2D(material.normalHandle);
         vec3 normalTex = texture(normalSampler, v_textCoord).rgb;
@@ -123,7 +129,7 @@ void sampleMaterialTextures(inout Material material, vec2 uv, inout vec3 normal)
 
         mat3 TBN = mat3(tangent, bitangent, N);
         normal = normalize(TBN * normalTex);
-    }*/
+    }
 }
 
 float distributionGGX(vec3 N, vec3 H, float roughness) {
@@ -279,6 +285,8 @@ void main() {
     vec3 normal = normalize(v_normal);
     vec3 view = normalize(u_cameraPos - v_worldPos);
 
+
+    // 1. Sample Material Textures
     sampleMaterialTextures(material, v_textCoord, normal);
 
     ivec2 pixelCoord = ivec2(floor(gl_FragCoord.xy));
@@ -297,6 +305,7 @@ void main() {
     vec3 totalLight = vec3(0.0);
     uint offset = tile.offset;
 
+    // 2. Calculate Direct Lighting
     for (uint i = 0; i < tile.lightsCount; i++) {
         // Light calculations
         uint lightIndex = lightIndices[offset + i];
@@ -326,15 +335,8 @@ void main() {
         }
     }
 
-    // Emission
-    if (material.emissionHandle != uvec2(0)) {
-        sampler2D emissionSampler = sampler2D(material.emissionHandle);
-        vec3 emissionTex = texture(emissionSampler, v_textCoord).rgb;
-        material.emission = vec4(emissionTex, 1.0);
-    } else if (material.emission != vec4(0.0)) {
-        totalLight += material.emission.rgb * material.emission.a;
-    }
 
+    // --- 3. Calculate Indirect (Ambient) Lighting (IBL) ---
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, material.albedo.rgb, material.metallic);
 
@@ -356,7 +358,11 @@ void main() {
     vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
 
     vec3 ambient = (kd * diffuse + specular) * material.ao;
-    vec3 color = ambient + totalLight;
+
+    // Emission
+    vec3 finalEmission = material.emission.rgb * material.emission.a;
+
+    vec3 color = ambient + totalLight + finalEmission;
 
     fragColor = vec4(color, 1.0);
 }
