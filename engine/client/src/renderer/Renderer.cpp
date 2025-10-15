@@ -144,14 +144,16 @@ namespace TechEngine {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        m_gtaoTexture = Texture();
-        m_gtaoTexture.create(GL_TEXTURE_2D, GL_R32F, 800, 600, GL_RED, GL_UNSIGNED_BYTE, nullptr);
-
         m_bentNormal = Texture();
         m_bentNormal.create(GL_TEXTURE_2D, GL_RGBA16F, 800, 600, GL_RGB, GL_FLOAT, nullptr);
 
         m_motionVectorTexture = Texture();
         m_motionVectorTexture.create(GL_TEXTURE_2D, GL_RGB16F, 800, 600, GL_RG, GL_FLOAT, nullptr);
+
+        for (int i = 0; i < 2; i++) {
+            m_aoHalfTextures[i] = Texture();
+            m_aoHalfTextures[i].create(GL_TEXTURE_2D, GL_R32F, 800, 600, GL_RED, GL_FLOAT, nullptr);
+        }
 
         QuadVertex quadVertices[4] = {
             // positions   // texCoords
@@ -773,17 +775,26 @@ namespace TechEngine {
         previousViewProjection = currentViewProjection;
 
         // GTAO calculation
-        if (m_gtaoTexture.getHeight() != halfViewport.y || m_gtaoTexture.getWidth() != halfViewport.x) {
-            m_gtaoTexture.deleteTexture();
-            m_gtaoTexture.create(GL_TEXTURE_2D, GL_R32F, halfViewport.x, halfViewport.y, GL_RED, GL_FLOAT, nullptr);
-            // Set texture parameters
-            glBindTexture(GL_TEXTURE_2D, m_gtaoTexture.getID());
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glBindTexture(GL_TEXTURE_2D, 0);
+        for (int i = 0; i < 2; i++) {
+            if (m_aoHalfTextures[i].getHeight() != halfViewport.y || m_aoHalfTextures[i].getWidth() != halfViewport.x) {
+                m_aoHalfTextures[i].deleteTexture();
+                m_aoHalfTextures[i].create(GL_TEXTURE_2D, GL_R32F, halfViewport.x, halfViewport.y, GL_RED, GL_FLOAT, nullptr);
+                // Set texture parameters
+                glBindTexture(GL_TEXTURE_2D, m_aoHalfTextures[i].getID());
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glBindTexture(GL_TEXTURE_2D, 0);
+
+                // Clear the history texture to avoid using uninitialized data
+                std::vector<float> clearData(halfViewport.x * halfViewport.y, 1.0f); // Assuming 1.0 means no occlusion
+                glBindTexture(GL_TEXTURE_2D, m_aoHalfTextures[i].getID());
+                glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, halfViewport.x, halfViewport.y, GL_RED, GL_FLOAT, clearData.data());
+                glBindTexture(GL_TEXTURE_2D, 0);
+            }
         }
+
         if (m_bentNormal.getHeight() != halfViewport.y || m_bentNormal.getWidth() != halfViewport.x) {
             m_bentNormal.deleteTexture();
             m_bentNormal.create(GL_TEXTURE_2D, GL_RGBA16F, halfViewport.x, halfViewport.y, GL_RGBA, GL_FLOAT, nullptr);
@@ -810,7 +821,7 @@ namespace TechEngine {
         gtaoHorizon->setUniformIVec2("u_fullSize", viewport);
         gtaoHorizon->setUniformIVec2("u_halfSize", halfViewport);
 
-        glBindImageTexture(0, m_gtaoTexture.getID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+        glBindImageTexture(0, m_aoHalfTextures[m_aoHalfTextureIndex].getID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
         glBindImageTexture(1, m_bentNormal.getID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 
         const int localSizeX = 8;
@@ -820,6 +831,53 @@ namespace TechEngine {
         glDispatchCompute(workGroupsX, workGroupsY, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
+        // GTAO Temporal accumulation
+
+        m_shadersManager.changeActiveShader("gtaoTemporal");
+        Shader* gtaoTemporal = m_shadersManager.getActiveShader();
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_aoHalfTextures[m_aoHalfTextureIndex].getID());
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, m_aoHalfTextures[1 - m_aoHalfTextureIndex].getID());
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, m_motionVectorTexture.getID());
+
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, getFramebuffer(m_depthPrePassFBO).getTextureID(GL_DEPTH_ATTACHMENT));
+
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, m_depthNormalTexture.getID());
+
+        int frameIndex = 0;
+        constexpr float PI = 3.14159265358979323846f;
+        const int numTemporalRotations = 6;
+        float rotationAngles[numTemporalRotations] = {
+            0.0f, PI / 3.0f, 2.0f * PI / 3.0f,
+            PI, 4.0f * PI / 3.0f, 5.0f * PI / 3.0f
+        };
+        int rotationIndex = frameIndex % numTemporalRotations;
+        float rotationAngle = rotationAngles[rotationIndex];
+
+        gtaoTemporal->setUniformIVec2("u_screenSize", viewport);
+        gtaoTemporal->setUniformIVec2("u_halfScreenSize", halfViewport);
+        gtaoTemporal->setUniformFloat("u_historyWeight", 0.9f);
+        gtaoTemporal->setUniformFloat("u_depthThreshold", 0.01f);
+        gtaoTemporal->setUniformFloat("u_velocityThreshold", 0.02f);
+        gtaoTemporal->setUniformFloat("u_rotationAngle", rotationAngle); // Could be based on frame count for dithering
+        gtaoTemporal->setUniformFloat("u_radius", 1.0f); // World-space radius
+        gtaoTemporal->setUniformMatrix4f("u_inverseProjection", glm::inverse(projectionMatrix));
+
+        glBindImageTexture(0, m_aoHalfTextures[1 - m_aoHalfTextureIndex].getID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+
+        glDispatchCompute((halfViewport.x + 7) / 8, (halfViewport.y + 7) / 8, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+        // Swap history buffers for next frame
+        m_aoHalfTextureIndex = 1 - m_aoHalfTextureIndex;
+        frameIndex++;
 
         /*FrameBuffer& frameBuffer = getFramebuffer(m_gtaoFBO);
         frameBuffer.bind();
@@ -1448,7 +1506,7 @@ namespace TechEngine {
         postProcessShader->setUniformInt("u_hdrBuffer", 0);
 
 
-        glBindTexture(GL_TEXTURE_2D, m_motionVectorTexture.getID());
+        glBindTexture(GL_TEXTURE_2D, m_aoHalfTextures[1 - m_aoHalfTextureIndex].getID());
         postProcessShader->setUniformInt("u_normalTexture", 0);
 
         //postProcessShader->setUniformFloat("u_exposure", m_currentExposure);

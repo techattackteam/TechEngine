@@ -107,12 +107,12 @@ namespace TechEngine {
 
         std::vector<Texture> m_materialsTextures;
 
-        Texture m_depthNormalTexture;
-
         Texture m_gtaoNoiseTexture;
-        Texture m_gtaoTexture;
+        Texture m_depthNormalTexture;
         Texture m_bentNormal;
         Texture m_motionVectorTexture;
+        Texture m_aoHalfTextures[2];
+        uint32_t m_aoHalfTextureIndex = 0;
 
         Texture m_bloomTexture;
         Texture m_bloomTempTexture;
