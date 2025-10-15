@@ -52,7 +52,7 @@ namespace TechEngine {
                 }
             },
             {
-                "gtao", {
+                "gtaoHorizon", {
                     {ShaderType::Compute, shaderBasePath + "ambientOcclusion/gtaoHorizonCompute.glsl"}
                 }
             },

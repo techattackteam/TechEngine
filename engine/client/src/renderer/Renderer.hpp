@@ -111,7 +111,7 @@ namespace TechEngine {
 
         Texture m_gtaoNoiseTexture;
         Texture m_gtaoTexture;
-        Texture m_gtaoTempTexture;
+        Texture m_bentNormal;
 
         Texture m_bloomTexture;
         Texture m_bloomTempTexture;
