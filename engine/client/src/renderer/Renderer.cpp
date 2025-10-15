@@ -139,10 +139,10 @@ namespace TechEngine {
         glBindTexture(GL_TEXTURE_2D, 0);
 
         m_gtaoTexture = Texture();
-        m_gtaoTexture.create(GL_TEXTURE_2D, GL_R8, 800, 600, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+        m_gtaoTexture.create(GL_TEXTURE_2D, GL_R32F, 800, 600, GL_RED, GL_UNSIGNED_BYTE, nullptr);
 
-        m_gtaoTempTexture = Texture();
-        m_gtaoTempTexture.create(GL_TEXTURE_2D, GL_R16F, 800, 600, GL_RED, GL_FLOAT, nullptr);
+        m_bentNormal = Texture();
+        m_bentNormal.create(GL_TEXTURE_2D, GL_RGBA16F, 800, 600, GL_RGB, GL_FLOAT, nullptr);
 
         QuadVertex quadVertices[4] = {
             // positions   // texCoords
@@ -708,10 +708,10 @@ namespace TechEngine {
     }
 
     void Renderer::gtaoPass(const glm::mat4& projectionMatrix, const glm::ivec2& viewport) {
+        glm::ivec2 halfViewport = viewport / 2;
         // Get the normals pass
         m_shadersManager.changeActiveShader("depthToNormal");
         Shader* normalShader = m_shadersManager.getActiveShader();
-        normalShader->bind();
 
         if (m_depthNormalTexture.getHeight() != viewport.y || m_depthNormalTexture.getWidth() != viewport.x) {
             m_depthNormalTexture.deleteTexture();
@@ -736,14 +736,53 @@ namespace TechEngine {
         glDispatchCompute(numGroupsX, numGroupsY, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-        /*if (m_gtaoTexture.getHeight() != viewport.y || m_gtaoTexture.getWidth() != viewport.x) {
+        if (m_gtaoTexture.getHeight() != halfViewport.y || m_gtaoTexture.getWidth() != halfViewport.x) {
             m_gtaoTexture.deleteTexture();
-            m_gtaoTexture.create(GL_TEXTURE_2D, GL_R8, viewport.x, viewport.y, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+            m_gtaoTexture.create(GL_TEXTURE_2D, GL_R32F, halfViewport.x, halfViewport.y, GL_RED, GL_FLOAT, nullptr);
+            // Set texture parameters
+            glBindTexture(GL_TEXTURE_2D, m_gtaoTexture.getID());
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glBindTexture(GL_TEXTURE_2D, 0);
         }
-        if (m_gtaoTempTexture.getHeight() != viewport.y || m_gtaoTempTexture.getWidth() != viewport.x) {
-            m_gtaoTempTexture.deleteTexture();
-            m_gtaoTempTexture.create(GL_TEXTURE_2D, GL_R16F, viewport.x, viewport.y, GL_RED, GL_FLOAT, nullptr);
-        }*/
+        if (m_bentNormal.getHeight() != halfViewport.y || m_bentNormal.getWidth() != halfViewport.x) {
+            m_bentNormal.deleteTexture();
+            m_bentNormal.create(GL_TEXTURE_2D, GL_RGBA16F, halfViewport.x, halfViewport.y, GL_RGBA, GL_FLOAT, nullptr);
+            glBindTexture(GL_TEXTURE_2D, m_bentNormal.getID());
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+
+        m_shadersManager.changeActiveShader("gtaoHorizon");
+        Shader* gtaoHorizon = m_shadersManager.getActiveShader();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, getFramebuffer(m_depthPrePassFBO).getTextureID(GL_DEPTH_ATTACHMENT));
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, m_depthNormalTexture.getID()); // Assuming this holds your normals
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, m_gtaoNoiseTexture.getID());
+
+
+        gtaoHorizon->setUniformMatrix4f("u_inverseProjection", glm::inverse(projectionMatrix));
+        gtaoHorizon->setUniformIVec2("u_fullSize", viewport);
+        gtaoHorizon->setUniformIVec2("u_halfSize", halfViewport);
+
+        glBindImageTexture(0, m_gtaoTexture.getID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+        glBindImageTexture(1, m_bentNormal.getID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+
+        const int localSizeX = 8;
+        const int localSizeY = 8;
+        int workGroupsX = (halfViewport.x + localSizeX - 1) / localSizeX;
+        int workGroupsY = (halfViewport.y + localSizeY - 1) / localSizeY;
+        glDispatchCompute(workGroupsX, workGroupsY, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
 
         /*FrameBuffer& frameBuffer = getFramebuffer(m_gtaoFBO);
         frameBuffer.bind();
