@@ -113,6 +113,7 @@ namespace TechEngine {
         Texture m_motionVectorTexture;
         Texture m_aoHalfTextures[2];
         uint32_t m_aoHalfTextureIndex = 0;
+        Texture m_aoFullTexture;
 
         Texture m_bloomTexture;
         Texture m_bloomTempTexture;

@@ -62,6 +62,11 @@ namespace TechEngine {
                 }
             },
             {
+                "gtaoUpSample", {
+                    {ShaderType::Compute, shaderBasePath + "ambientOcclusion/gtaoUpSampleCompute.glsl"}
+                }
+            },
+            {
                 "motionVector", {
                     {ShaderType::Compute, shaderBasePath + "ambientOcclusion/motionVectorCompute.glsl"}
                 }
