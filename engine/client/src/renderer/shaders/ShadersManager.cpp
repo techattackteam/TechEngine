@@ -57,8 +57,8 @@ namespace TechEngine {
                 }
             },
             {
-                "gtaoDenoise", {
-                    {ShaderType::Compute, shaderBasePath + "gtaoDenoiseCompute.glsl"}
+                "gtaoTemporal", {
+                    {ShaderType::Compute, shaderBasePath + "ambientOcclusion/gtaoTemporalCompute.glsl"}
                 }
             },
             {
