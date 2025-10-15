@@ -105,7 +105,9 @@ namespace TechEngine {
 
         std::vector<Renderable> m_renderables;
 
-        std::vector<Texture> m_textures;
+        std::vector<Texture> m_materialsTextures;
+
+        Texture m_depthNormalTexture;
 
         Texture m_gtaoNoiseTexture;
         Texture m_gtaoTexture;
