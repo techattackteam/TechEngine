@@ -20,6 +20,10 @@
 #include "resources/mesh/AssimpLoader.hpp"
 #include "resources/mesh/AssimpLoader.hpp"
 #include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
 #include "TechEngine/core/resources/material/Material.hpp"
 #include "TechEngine/core/resources/mesh/Vertex.hpp"
 #include "TechEngine/core/scene/Scene.hpp"
@@ -77,7 +81,6 @@ namespace TechEngine {
 
         m_tileInfoBuffer.init(totalMaxTiles * sizeof(TileInfo));
 
-
         m_atomicCounterBuffer = ShaderStorageBuffer();
         m_atomicCounterBuffer.init(sizeof(uint32_t));
 
@@ -85,8 +88,20 @@ namespace TechEngine {
         FrameBuffer& depthPrePassFBO = getFramebuffer(m_depthPrePassFBO);
         depthPrePassFBO.bind();
         depthPrePassFBO.attachTexture(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_RGBA16F, GL_RGBA, GL_UNSIGNED_BYTE, 0, 0);
-        depthPrePassFBO.attachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, 0, 0);
+        depthPrePassFBO.attachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT, 0, 0);
         depthPrePassFBO.unBind();
+
+        m_gtaoFBO = createFramebuffer(800, 600);
+        FrameBuffer& gtaoFBO = getFramebuffer(m_gtaoFBO);
+        gtaoFBO.bind();
+        gtaoFBO.attachTexture(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_R8, GL_RED, GL_UNSIGNED_BYTE, 0, 0);
+        gtaoFBO.unBind();
+
+        m_gtaoPingPongFBO = createFramebuffer(800, 600);
+        FrameBuffer& gtaoDenoiseFBO = getFramebuffer(m_gtaoPingPongFBO);
+        gtaoDenoiseFBO.bind();
+        gtaoDenoiseFBO.attachTexture(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_R8, GL_RED, GL_UNSIGNED_BYTE, 0, 0);
+        gtaoDenoiseFBO.unBind();
 
         m_shadowFBO = createFramebuffer(1024, 1024);
         FrameBuffer& omniShadowFBO = getFramebuffer(m_shadowFBO);
@@ -98,9 +113,33 @@ namespace TechEngine {
         FrameBuffer& hdrFBO = getFramebuffer(m_hdrFBO);
         hdrFBO.bind();
         hdrFBO.attachTexture(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_RGBA16F, GL_RGBA, GL_FLOAT, 0, 0);
-        // hdrFBO.attachTexture(GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, GL_RGBA16F, GL_RGBA, GL_UNSIGNED_BYTE, 0, 0); // Bright colors for bloom
         hdrFBO.attachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, 0, 0);
         hdrFBO.unBind();
+
+        m_gtaoNoiseTexture = Texture();
+        std::vector<glm::vec3> gtaoNoise;
+        for (unsigned int i = 0; i < 16; i++) {
+            // Generate random vectors, ensuring they are in the XY plane for 2D rotation
+            glm::vec3 noise(
+                ((float)rand() / (RAND_MAX)) * 2.0f - 1.0f,
+                ((float)rand() / (RAND_MAX)) * 2.0f - 1.0f,
+                0.0f);
+            gtaoNoise.push_back(glm::normalize(noise));
+        }
+
+        m_gtaoNoiseTexture.create(GL_TEXTURE_2D, GL_RGB16F, 4, 4, GL_RGB, GL_FLOAT, gtaoNoise.data());
+        glBindTexture(GL_TEXTURE_2D, m_gtaoNoiseTexture.getID());
+        // Have to figure out a way to set this through the Texture class
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+
+        m_gtaoTexture = Texture();
+        m_gtaoTexture.create(GL_TEXTURE_2D, GL_R8, 800, 600, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+
+        m_gtaoTempTexture = Texture();
+        m_gtaoTempTexture.create(GL_TEXTURE_2D, GL_R16F, 800, 600, GL_RED, GL_FLOAT, nullptr);
 
         QuadVertex quadVertices[4] = {
             // positions   // texCoords
@@ -593,6 +632,7 @@ namespace TechEngine {
         float nearPlane = request.nearPlane;
         float farPlane = request.farPlane;
         depthPrePass(viewMatrix, projectionMatrix, viewport);
+        gtaoPass(projectionMatrix, viewport);
         lightCulling(viewMatrix, projectionMatrix, viewport);
 
         bool hasLight = false;
@@ -629,12 +669,13 @@ namespace TechEngine {
         glClear(GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
+        glDepthMask(GL_TRUE);
 
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Disable color writes
 
-        glCullFace(GL_FRONT);
+        glCullFace(GL_BACK);
 
         m_shadersManager.changeActiveShader("depthPrePass");
         m_shadersManager.getActiveShader()->setUniformMatrix4f("u_projection", projectionMatrix);
@@ -661,6 +702,99 @@ namespace TechEngine {
         glReadBuffer(GL_BACK);
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         glCullFace(GL_BACK);
+    }
+
+    void Renderer::gtaoPass(const glm::mat4& projectionMatrix, const glm::ivec2& viewport) {
+        /*if (m_gtaoTexture.getHeight() != viewport.y || m_gtaoTexture.getWidth() != viewport.x) {
+            m_gtaoTexture.deleteTexture();
+            m_gtaoTexture.create(GL_TEXTURE_2D, GL_R8, viewport.x, viewport.y, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+        }
+        if (m_gtaoTempTexture.getHeight() != viewport.y || m_gtaoTempTexture.getWidth() != viewport.x) {
+            m_gtaoTempTexture.deleteTexture();
+            m_gtaoTempTexture.create(GL_TEXTURE_2D, GL_R16F, viewport.x, viewport.y, GL_RED, GL_FLOAT, nullptr);
+        }*/
+
+        FrameBuffer& frameBuffer = getFramebuffer(m_gtaoFBO);
+        frameBuffer.bind();
+        frameBuffer.resize(viewport.x, viewport.y);
+        frameBuffer.clear();
+
+        FrameBuffer& denoiseFrameBuffer = getFramebuffer(m_gtaoPingPongFBO);
+        denoiseFrameBuffer.bind();
+        denoiseFrameBuffer.resize(viewport.x, viewport.y);
+        denoiseFrameBuffer.clear();
+        frameBuffer.unBind();
+
+        m_shadersManager.changeActiveShader("gtao");
+        Shader* gtaoShader = m_shadersManager.getActiveShader();
+        gtaoShader->bind();
+
+        glActiveTexture(GL_TEXTURE0);
+        FrameBuffer& depthFBO = getFramebuffer(m_depthPrePassFBO);
+        glBindTexture(GL_TEXTURE_2D, depthFBO.getTextureID(GL_DEPTH_ATTACHMENT));
+        gtaoShader->setUniformInt("u_depthTexture", 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, m_gtaoNoiseTexture.getID());
+        gtaoShader->setUniformInt("u_noiseTexture", 1);
+
+        glBindImageTexture(0, frameBuffer.getTextureID(GL_COLOR_ATTACHMENT0), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R8);
+
+        gtaoShader->setUniformMatrix4f("u_projection", projectionMatrix);
+        gtaoShader->setUniformMatrix4f("u_inverseProjection", glm::inverse(projectionMatrix));
+        gtaoShader->setUniformIVec2("u_screenSize", viewport);
+
+        gtaoShader->setUniformFloat("u_radius", 1.0f); // World-space radius
+        gtaoShader->setUniformFloat("u_strength", 5.0f);
+
+        const uint32_t WORKGROUP_SIZE_X = 8;
+        const uint32_t WORKGROUP_SIZE_Y = 8;
+        uint32_t numGroupsX = (viewport.x + WORKGROUP_SIZE_X - 1) / WORKGROUP_SIZE_X;
+        uint32_t numGroupsY = (viewport.y + WORKGROUP_SIZE_Y - 1) / WORKGROUP_SIZE_Y;
+
+        glDispatchCompute(numGroupsX, numGroupsY, 1);
+
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+        // Denoise Pass
+        m_shadersManager.changeActiveShader("gtaoDenoise");
+        Shader* denoiseShader = m_shadersManager.getActiveShader();
+        denoiseShader->bind();
+
+        denoiseShader->setUniformIVec2("u_axis", {1, 0});
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, frameBuffer.getTextureID(GL_COLOR_ATTACHMENT0));
+        denoiseShader->setUniformInt("u_sourceTexture", 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, getFramebuffer(m_depthPrePassFBO).getTextureID(GL_DEPTH_ATTACHMENT));
+        denoiseShader->setUniformInt("u_depthTexture", 1);
+
+        glBindImageTexture(0, denoiseFrameBuffer.getTextureID(GL_COLOR_ATTACHMENT0), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R8);
+
+        denoiseShader->setUniformMatrix4f("u_inverseProjection", glm::inverse(projectionMatrix));
+        denoiseShader->setUniformFloat("u_blurSharpness", 10.0f); // Controls how much depth differences matter
+
+        glDispatchCompute(numGroupsX, numGroupsY, 1);
+
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, denoiseFrameBuffer.getTextureID(GL_COLOR_ATTACHMENT0));
+        denoiseShader->setUniformInt("u_sourceTexture", 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, getFramebuffer(m_depthPrePassFBO).getTextureID(GL_DEPTH_ATTACHMENT));
+        denoiseShader->setUniformInt("u_depthTexture", 1);
+
+        denoiseShader->setUniformIVec2("u_axis", {0, 1});
+
+        glBindImageTexture(0, frameBuffer.getTextureID(GL_COLOR_ATTACHMENT0), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R8);
+
+        glDispatchCompute(numGroupsX, numGroupsY, 1);
+
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
 
     void Renderer::lightCulling(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport) {
@@ -1026,10 +1160,13 @@ namespace TechEngine {
         glBindTexture(GL_TEXTURE_CUBE_MAP, m_skyBox.m_prefilterMap.getID());
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, m_skyBox.m_brdfLUTTexture.getID());
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, getFramebuffer(m_gtaoFBO).getTextureID(GL_COLOR_ATTACHMENT0));
 
         m_shadersManager.getActiveShader()->setUniformInt("u_irradianceMap", 0);
         m_shadersManager.getActiveShader()->setUniformInt("u_prefilterMap", 1);
         m_shadersManager.getActiveShader()->setUniformInt("u_brdfLUT", 2);
+        m_shadersManager.getActiveShader()->setUniformInt("u_aoMap", 3);
 
         m_drawCommandBuffer.setBindingPoint(0);
         m_objectDataBuffer.setBindingPoint(1);
@@ -1175,7 +1312,7 @@ namespace TechEngine {
         }
 
         m_shadersManager.changeActiveShader("bloomUpSample");
-        m_shadersManager.getActiveShader()->setUniformFloat("u_intensity", 0.5f);
+        //m_shadersManager.getActiveShader()->setUniformFloat("u_intensity", 0.5f);
 
         for (int i = m_bloomIterations - 2; i >= 0; --i) {
             glActiveTexture(GL_TEXTURE0);
@@ -1204,6 +1341,13 @@ namespace TechEngine {
         postProcessShader->setUniformInt("u_hdrBuffer", 0);
 
         //postProcessShader->setUniformFloat("u_exposure", m_currentExposure);
+        postProcessShader->setUniformFloat("u_bloomStrength", 0.0f);
+
+        postProcessShader->setUniformFloat("u_chromaticAberrationStrength", 0.0f);
+
+        postProcessShader->setUniformFloat("u_vignetteStrength", 0.0f);
+        postProcessShader->setUniformFloat("u_vignettePower", 1.0f);
+
 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, m_bloomTexture.getID());

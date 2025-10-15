@@ -47,6 +47,16 @@ namespace TechEngine {
                 }
             },
             {
+                "gtao", {
+                    {ShaderType::Compute, shaderBasePath + "gtaoCompute.glsl"}
+                }
+            },
+            {
+                "gtaoDenoise", {
+                    {ShaderType::Compute, shaderBasePath + "gtaoDenoiseCompute.glsl"}
+                }
+            },
+            {
                 "lightCulling", {
                     {ShaderType::Compute, shaderBasePath + "lightCullingCompute.glsl"}
                 }

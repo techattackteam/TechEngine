@@ -80,6 +80,7 @@ uniform float u_farPlane;
 uniform samplerCube u_irradianceMap;
 uniform samplerCube u_prefilterMap;
 uniform sampler2D u_brdfLUT;
+uniform sampler2D u_aoMap;
 
 const int TILE_SIZE = 16;
 
@@ -289,6 +290,9 @@ void main() {
     // 1. Sample Material Textures
     sampleMaterialTextures(material, v_textCoord, normal);
 
+    // 2. Sample Ambient Occlusion Map
+    vec2 screenUV = gl_FragCoord.xy / vec2(u_screenSize);
+
     ivec2 pixelCoord = ivec2(floor(gl_FragCoord.xy));
     pixelCoord = clamp(pixelCoord, ivec2(0), u_screenSize - ivec2(1));
 
@@ -305,7 +309,7 @@ void main() {
     vec3 totalLight = vec3(0.0);
     uint offset = tile.offset;
 
-    // 2. Calculate Direct Lighting
+    // 3. Calculate Direct Lighting
     for (uint i = 0; i < tile.lightsCount; i++) {
         // Light calculations
         uint lightIndex = lightIndices[offset + i];
@@ -336,10 +340,10 @@ void main() {
     }
 
 
-    // --- 3. Calculate Indirect (Ambient) Lighting (IBL) ---
+    // 4. Calculate Indirect (Ambient) Lighting (IBL)
+    float ao = material.ao * texture(u_aoMap, screenUV).r;
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, material.albedo.rgb, material.metallic);
-
 
     vec3 F = frenelSchlick(max(dot(normal, view), 0.0), F0, 0.0f);
 
@@ -347,22 +351,26 @@ void main() {
     vec3 kd = vec3(1.0) - ks;
     kd *= 1.0 - material.metallic;
 
-    // Ambient lighting (IBL can be added here)
+    // Diffuse lighting
     vec3 irradiance = texture(u_irradianceMap, normal).rgb;
-    vec3 diffuse = irradiance * material.albedo.rgb;
-    vec3 R = reflect(-view, normal);
+    vec3 diffuseIBL = irradiance * material.albedo.rgb;
+    vec3 diffuse = kd * diffuseIBL ;
 
+    // Specular lighting
+    vec3 R = reflect(-view, normal);
     const float MAX_REFLECTION_LOD = 4.0;
     vec3 prefilteredColor = textureLod(u_prefilterMap, R, material.roughness * MAX_REFLECTION_LOD).rgb;
     vec2 envBRDF = texture(u_brdfLUT, vec2(max(dot(normal, view), 0.0), material.roughness)).rg;
     vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
 
-    vec3 ambient = (kd * diffuse + specular) * material.ao;
+    // Ambient
+    vec3 ambient = specular + diffuse;
 
     // Emission
     vec3 finalEmission = material.emission.rgb * material.emission.a;
 
-    vec3 color = ambient + totalLight + finalEmission;
+
+    vec3 color = (ambient * ao) + totalLight + finalEmission;
 
     fragColor = vec4(color, 1.0);
 }
