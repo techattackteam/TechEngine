@@ -116,6 +116,9 @@ namespace TechEngine {
         hdrFBO.attachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, 0, 0);
         hdrFBO.unBind();
 
+        m_depthNormalTexture = Texture();
+        m_depthNormalTexture.create(GL_TEXTURE_2D, GL_RGBA16F, 800, 600, GL_RGBA, GL_FLOAT, nullptr);
+
         m_gtaoNoiseTexture = Texture();
         std::vector<glm::vec3> gtaoNoise;
         for (unsigned int i = 0; i < 16; i++) {
@@ -127,13 +130,13 @@ namespace TechEngine {
             gtaoNoise.push_back(glm::normalize(noise));
         }
 
+
         m_gtaoNoiseTexture.create(GL_TEXTURE_2D, GL_RGB16F, 4, 4, GL_RGB, GL_FLOAT, gtaoNoise.data());
         glBindTexture(GL_TEXTURE_2D, m_gtaoNoiseTexture.getID());
         // Have to figure out a way to set this through the Texture class
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glBindTexture(GL_TEXTURE_2D, 0);
-
 
         m_gtaoTexture = Texture();
         m_gtaoTexture.create(GL_TEXTURE_2D, GL_R8, 800, 600, GL_RED, GL_UNSIGNED_BYTE, nullptr);
@@ -570,14 +573,14 @@ namespace TechEngine {
             auto updateHandle = [&](int mapID, uint64_t& handle) {
                 if (mapID != -1) {
                     TextureResource& resource = resourceManager.getTexture(mapID);
-                    for (Texture& texture: m_textures) {
+                    for (Texture& texture: m_materialsTextures) {
                         if (texture.getHandle() == handle) {
                             handle = texture.getHandle();
                             return;
                         }
                     }
-                    m_textures.emplace_back();
-                    Texture& texture = m_textures.back();
+                    m_materialsTextures.emplace_back();
+                    Texture& texture = m_materialsTextures.back();
                     texture.uploadFromResource(resource);
                     texture.makeResident();
                     handle = texture.getHandle();
@@ -705,6 +708,34 @@ namespace TechEngine {
     }
 
     void Renderer::gtaoPass(const glm::mat4& projectionMatrix, const glm::ivec2& viewport) {
+        // Get the normals pass
+        m_shadersManager.changeActiveShader("depthToNormal");
+        Shader* normalShader = m_shadersManager.getActiveShader();
+        normalShader->bind();
+
+        if (m_depthNormalTexture.getHeight() != viewport.y || m_depthNormalTexture.getWidth() != viewport.x) {
+            m_depthNormalTexture.deleteTexture();
+            m_depthNormalTexture.create(GL_TEXTURE_2D, GL_RGBA16F, viewport.x, viewport.y, GL_RGBA, GL_FLOAT, nullptr);
+        }
+
+        glBindImageTexture(0, m_depthNormalTexture.getID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, getFramebuffer(m_depthPrePassFBO).getTextureID(GL_DEPTH_ATTACHMENT));
+        normalShader->setUniformInt("u_depthTexture", 0);
+
+        normalShader->setUniformMatrix4f("u_inverseProjection", glm::inverse(projectionMatrix));
+        normalShader->setUniformIVec2("u_screenSize", viewport);
+
+        const uint32_t WORKGROUP_SIZE_X = 8;
+        const uint32_t WORKGROUP_SIZE_Y = 8;
+        uint32_t numGroupsX = (viewport.x + WORKGROUP_SIZE_X - 1) / WORKGROUP_SIZE_X;
+        uint32_t numGroupsY = (viewport.y + WORKGROUP_SIZE_Y - 1) / WORKGROUP_SIZE_Y;
+
+        glDispatchCompute(numGroupsX, numGroupsY, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
         /*if (m_gtaoTexture.getHeight() != viewport.y || m_gtaoTexture.getWidth() != viewport.x) {
             m_gtaoTexture.deleteTexture();
             m_gtaoTexture.create(GL_TEXTURE_2D, GL_R8, viewport.x, viewport.y, GL_RED, GL_UNSIGNED_BYTE, nullptr);
@@ -714,7 +745,7 @@ namespace TechEngine {
             m_gtaoTempTexture.create(GL_TEXTURE_2D, GL_R16F, viewport.x, viewport.y, GL_RED, GL_FLOAT, nullptr);
         }*/
 
-        FrameBuffer& frameBuffer = getFramebuffer(m_gtaoFBO);
+        /*FrameBuffer& frameBuffer = getFramebuffer(m_gtaoFBO);
         frameBuffer.bind();
         frameBuffer.resize(viewport.x, viewport.y);
         frameBuffer.clear();
@@ -794,7 +825,7 @@ namespace TechEngine {
 
         glDispatchCompute(numGroupsX, numGroupsY, 1);
 
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);*/
     }
 
     void Renderer::lightCulling(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport) {
@@ -1339,6 +1370,10 @@ namespace TechEngine {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, getFramebuffer(m_hdrFBO).getTextureID(GL_COLOR_ATTACHMENT0));
         postProcessShader->setUniformInt("u_hdrBuffer", 0);
+
+
+        glBindTexture(GL_TEXTURE_2D, m_depthNormalTexture.getID());
+        postProcessShader->setUniformInt("u_normalTexture", 0);
 
         //postProcessShader->setUniformFloat("u_exposure", m_currentExposure);
         postProcessShader->setUniformFloat("u_bloomStrength", 0.0f);

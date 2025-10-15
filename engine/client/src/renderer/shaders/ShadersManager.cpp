@@ -47,8 +47,13 @@ namespace TechEngine {
                 }
             },
             {
+                "depthToNormal", {
+                    {ShaderType::Compute, shaderBasePath + "ambientOcclusion/depthToNormalCompute.glsl"}
+                }
+            },
+            {
                 "gtao", {
-                    {ShaderType::Compute, shaderBasePath + "gtaoCompute.glsl"}
+                    {ShaderType::Compute, shaderBasePath + "ambientOcclusion/gtaoHorizonCompute.glsl"}
                 }
             },
             {
