@@ -879,6 +879,37 @@ namespace TechEngine {
         m_aoHalfTextureIndex = 1 - m_aoHalfTextureIndex;
         frameIndex++;
 
+        // Upsample
+        if (m_aoFullTexture.getHeight() != viewport.y || m_aoFullTexture.getWidth() != viewport.x) {
+            m_aoFullTexture.deleteTexture();
+            m_aoFullTexture.create(GL_TEXTURE_2D, GL_R32F, viewport.x, viewport.y, GL_RED, GL_FLOAT, nullptr);
+            // Set texture parameters
+            glBindTexture(GL_TEXTURE_2D, m_aoFullTexture.getID());
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+        m_shadersManager.changeActiveShader("gtaoUpSample");
+        Shader* gtaoUpsample = m_shadersManager.getActiveShader();
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_aoHalfTextures[m_aoHalfTextureIndex].getID());
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, getFramebuffer(m_depthPrePassFBO).getTextureID(GL_DEPTH_ATTACHMENT));
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, m_depthNormalTexture.getID());
+
+        gtaoUpsample->setUniformIVec2("u_screenSize", viewport);
+        gtaoUpsample->setUniformIVec2("u_halfScreenSize", halfViewport);
+
+        glBindImageTexture(0, m_aoFullTexture.getID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+
+        glDispatchCompute(numGroupsX, numGroupsY, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
         /*FrameBuffer& frameBuffer = getFramebuffer(m_gtaoFBO);
         frameBuffer.bind();
         frameBuffer.resize(viewport.x, viewport.y);
@@ -1506,7 +1537,7 @@ namespace TechEngine {
         postProcessShader->setUniformInt("u_hdrBuffer", 0);
 
 
-        glBindTexture(GL_TEXTURE_2D, m_aoHalfTextures[1 - m_aoHalfTextureIndex].getID());
+        glBindTexture(GL_TEXTURE_2D, m_aoFullTexture.getID());
         postProcessShader->setUniformInt("u_normalTexture", 0);
 
         //postProcessShader->setUniformFloat("u_exposure", m_currentExposure);
