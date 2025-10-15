@@ -88,6 +88,8 @@ namespace TechEngine {
         uint32_t m_depthPrePassFBO = 0;
         uint32_t m_shadowFBO = 0;
         uint32_t m_hdrFBO = 0;
+        uint32_t m_gtaoFBO = 0;
+        uint32_t m_gtaoPingPongFBO = 0;
 
         std::vector<FrameBuffer*> m_frameBuffers;
 
@@ -104,6 +106,10 @@ namespace TechEngine {
         std::vector<Renderable> m_renderables;
 
         std::vector<Texture> m_textures;
+
+        Texture m_gtaoNoiseTexture;
+        Texture m_gtaoTexture;
+        Texture m_gtaoTempTexture;
 
         Texture m_bloomTexture;
         Texture m_bloomTempTexture;
@@ -173,6 +179,8 @@ namespace TechEngine {
         void scenePass(const RenderRequest& request);
 
         void depthPrePass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
+
+        void gtaoPass(const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
 
         void lightCulling(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
 
