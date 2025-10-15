@@ -24,6 +24,12 @@
 #include "resources/mesh/AssimpLoader.hpp"
 #include "resources/mesh/AssimpLoader.hpp"
 #include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
 #include "TechEngine/core/resources/material/Material.hpp"
 #include "TechEngine/core/resources/mesh/Vertex.hpp"
 #include "TechEngine/core/scene/Scene.hpp"
@@ -143,6 +149,9 @@ namespace TechEngine {
 
         m_bentNormal = Texture();
         m_bentNormal.create(GL_TEXTURE_2D, GL_RGBA16F, 800, 600, GL_RGB, GL_FLOAT, nullptr);
+
+        m_motionVectorTexture = Texture();
+        m_motionVectorTexture.create(GL_TEXTURE_2D, GL_RGB16F, 800, 600, GL_RG, GL_FLOAT, nullptr);
 
         QuadVertex quadVertices[4] = {
             // positions   // texCoords
@@ -635,7 +644,7 @@ namespace TechEngine {
         float nearPlane = request.nearPlane;
         float farPlane = request.farPlane;
         depthPrePass(viewMatrix, projectionMatrix, viewport);
-        gtaoPass(projectionMatrix, viewport);
+        gtaoPass(viewMatrix, projectionMatrix, viewport);
         lightCulling(viewMatrix, projectionMatrix, viewport);
 
         bool hasLight = false;
@@ -707,9 +716,9 @@ namespace TechEngine {
         glCullFace(GL_BACK);
     }
 
-    void Renderer::gtaoPass(const glm::mat4& projectionMatrix, const glm::ivec2& viewport) {
+    void Renderer::gtaoPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport) {
         glm::ivec2 halfViewport = viewport / 2;
-        // Get the normals pass
+        // Normals calculation
         m_shadersManager.changeActiveShader("depthToNormal");
         Shader* normalShader = m_shadersManager.getActiveShader();
 
@@ -736,6 +745,34 @@ namespace TechEngine {
         glDispatchCompute(numGroupsX, numGroupsY, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
+        // Motion Vectors calculation
+        if (m_motionVectorTexture.getHeight() != viewport.y || m_motionVectorTexture.getWidth() != viewport.x) {
+            m_motionVectorTexture.deleteTexture();
+            m_motionVectorTexture.create(GL_TEXTURE_2D, GL_RG16F, viewport.x, viewport.y, GL_RG, GL_FLOAT, nullptr);
+        }
+
+        static glm::mat4 previousViewProjection = glm::mat4(1.0f);
+        glm::mat4 currentViewProjection = projectionMatrix * viewMatrix;
+
+        m_shadersManager.changeActiveShader("motionVector");
+        Shader* motionVectorShader = m_shadersManager.getActiveShader();
+
+        glBindImageTexture(0, m_motionVectorTexture.getID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG16F);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, getFramebuffer(m_depthPrePassFBO).getTextureID(GL_DEPTH_ATTACHMENT));
+
+        motionVectorShader->setUniformMatrix4f("u_currentViewProjection", currentViewProjection);
+        motionVectorShader->setUniformMatrix4f("u_previousViewProjection", previousViewProjection);
+        motionVectorShader->setUniformMatrix4f("u_currentViewProjectionInverse", glm::inverse(currentViewProjection));
+        motionVectorShader->setUniformIVec2("u_screenSize", viewport);
+
+        glDispatchCompute(numGroupsX, numGroupsY, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+        previousViewProjection = currentViewProjection;
+
+        // GTAO calculation
         if (m_gtaoTexture.getHeight() != halfViewport.y || m_gtaoTexture.getWidth() != halfViewport.x) {
             m_gtaoTexture.deleteTexture();
             m_gtaoTexture.create(GL_TEXTURE_2D, GL_R32F, halfViewport.x, halfViewport.y, GL_RED, GL_FLOAT, nullptr);
@@ -1411,7 +1448,7 @@ namespace TechEngine {
         postProcessShader->setUniformInt("u_hdrBuffer", 0);
 
 
-        glBindTexture(GL_TEXTURE_2D, m_depthNormalTexture.getID());
+        glBindTexture(GL_TEXTURE_2D, m_motionVectorTexture.getID());
         postProcessShader->setUniformInt("u_normalTexture", 0);
 
         //postProcessShader->setUniformFloat("u_exposure", m_currentExposure);

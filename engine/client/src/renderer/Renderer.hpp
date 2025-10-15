@@ -112,6 +112,7 @@ namespace TechEngine {
         Texture m_gtaoNoiseTexture;
         Texture m_gtaoTexture;
         Texture m_bentNormal;
+        Texture m_motionVectorTexture;
 
         Texture m_bloomTexture;
         Texture m_bloomTempTexture;
@@ -182,7 +183,7 @@ namespace TechEngine {
 
         void depthPrePass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
 
-        void gtaoPass(const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
+        void gtaoPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
 
         void lightCulling(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
 

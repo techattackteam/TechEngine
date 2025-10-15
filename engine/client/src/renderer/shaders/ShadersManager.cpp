@@ -62,6 +62,11 @@ namespace TechEngine {
                 }
             },
             {
+                "motionVector", {
+                    {ShaderType::Compute, shaderBasePath + "ambientOcclusion/motionVectorCompute.glsl"}
+                }
+            },
+            {
                 "lightCulling", {
                     {ShaderType::Compute, shaderBasePath + "lightCullingCompute.glsl"}
                 }
