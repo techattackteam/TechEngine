@@ -35,7 +35,7 @@ namespace TechEngine {
     public:
         FrameBuffer() = default;
 
-        FrameBuffer(const FrameBuffer& other) ;
+        FrameBuffer(const FrameBuffer& other);
 
         FrameBuffer& operator=(const FrameBuffer& other);
 

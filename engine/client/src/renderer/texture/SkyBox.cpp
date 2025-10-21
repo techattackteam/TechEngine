@@ -6,6 +6,11 @@
 #include <vector>
 #include <GL/glew.h>
 
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+
 namespace TechEngine {
     void renderCube() {
         static unsigned int cubeVAO = 0;
@@ -160,7 +165,8 @@ namespace TechEngine {
         createBRDFLUTTexture();
     }
 
-    void SkyBox::renderSkybox(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) {
+    void SkyBox::renderSkybox(FrameBuffer& frameBuffer, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) {
+        frameBuffer.bind();
         m_shadersManager.changeActiveShader("skybox");
         Shader* shader = m_shadersManager.getActiveShader();
         shader->setUniformMatrix4f("u_view", glm::mat4(glm::mat3(viewMatrix)));
@@ -170,6 +176,8 @@ namespace TechEngine {
         glBindTexture(GL_TEXTURE_CUBE_MAP, m_envCubeMap.getID());
 
         shader->setUniformInt("u_envMap", 0);
+        GLenum attachment = GL_COLOR_ATTACHMENT3;
+        glDrawBuffers(1, &attachment);
         renderSkyBoxCube();
     }
 

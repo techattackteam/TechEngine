@@ -85,11 +85,9 @@ namespace TechEngine {
 
         const int32_t TILE_SIZE = 16;
 
-        uint32_t m_depthPrePassFBO = 0;
+        uint32_t m_gBufferFBO = 0; // depht - depth Map,  0 - albedo, 1 - normals, 2 - screenLight, 3 - hdr color
         uint32_t m_shadowFBO = 0;
-        uint32_t m_hdrFBO = 0;
-        uint32_t m_gtaoFBO = 0;
-        uint32_t m_gtaoPingPongFBO = 0;
+        //uint32_t m_hdrFBO = 0;
 
         std::vector<FrameBuffer*> m_frameBuffers;
 
@@ -107,13 +105,7 @@ namespace TechEngine {
 
         std::vector<Texture> m_materialsTextures;
 
-        Texture m_gtaoNoiseTexture;
-        Texture m_depthNormalTexture;
-        Texture m_bentNormal;
-        Texture m_motionVectorTexture;
-        Texture m_aoHalfTextures[2];
-        uint32_t m_aoHalfTextureIndex = 0;
-        Texture m_aoFullTexture;
+        Texture m_aoTexture;
 
         Texture m_bloomTexture;
         Texture m_bloomTempTexture;
@@ -182,9 +174,11 @@ namespace TechEngine {
 
         void scenePass(const RenderRequest& request);
 
-        void depthPrePass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
+        void prepareGBuffer(const glm::ivec2& viewport);
 
-        void gtaoPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
+        void gBufferPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
+
+        void aoPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
 
         void lightCulling(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
 

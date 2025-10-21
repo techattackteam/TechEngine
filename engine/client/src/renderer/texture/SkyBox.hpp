@@ -30,7 +30,7 @@ namespace TechEngine {
 
         void createSkybox(const TextureResource& hdrResource);
 
-        void renderSkybox(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix);
+        void renderSkybox(FrameBuffer& frameBuffer, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix);
 
     private:
         void createCubeMapForIBL();

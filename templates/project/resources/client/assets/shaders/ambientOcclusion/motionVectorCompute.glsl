@@ -4,19 +4,11 @@ layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 layout (binding = 0) uniform sampler2D u_depthMap;
 
-uniform mat4 u_previousViewProjection;
-uniform mat4 u_currentViewProjection;
-uniform mat4 u_currentViewProjectionInverse;
+uniform mat4 u_currentToPreviousMatrix;
 uniform ivec2 u_screenSize;
 
 layout (binding = 0, rg16f) uniform writeonly image2D u_motionMap;
 
-vec3 reconstructViewPosition(vec2 uv, float depth) {
-    float z = depth * 2.0 - 1.0;
-    vec4 clip = vec4(uv * 2.0 - 1.0, z, 1.0);
-    vec4 view = u_currentViewProjectionInverse * clip;
-    return view.xyz / view.w;
-}
 
 void main() {
     ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
@@ -33,19 +25,20 @@ void main() {
         return;
     }
 
-    vec3 viewPosition = reconstructViewPosition(uv, depth);
+    float z = depth * 2.0 - 1.0;
+    vec2 currentUV = (vec2(pixelCoord) + 0.5) / vec2(u_screenSize);
+    vec4 currentClipPos = vec4(currentUV * 2.0 - 1.0, z, 1.0);
 
-    vec4 currentClipPos = u_currentViewProjection * vec4(viewPosition, 1.0);
-    vec3 currentNDC = currentClipPos.xyz / currentClipPos.w;
+    vec4 previousClipPos = u_currentToPreviousMatrix * currentClipPos;
 
+    // 3. Perform perspective divide to get normalized device coordinates [-1, 1]
+    previousClipPos.xyz /= previousClipPos.w;
 
-    vec4 previousClipPos = u_previousViewProjection * vec4(viewPosition, 1.0);
-    vec3 previousNDC = previousClipPos.xyz / previousClipPos.w;
+    // 4. Convert the previous position from NDC to UV space [0, 1]
+    vec2 previousUV = previousClipPos.xy * 0.5 + 0.5;
 
-    vec2 currentUV = currentNDC.xy * 0.5 + 0.5;
-    vec2 previousUV = previousNDC.xy * 0.5 + 0.5;
-
-    vec2 motionVector = previousUV - currentUV;
+    // 5. Calculate the correct motion vector
+    vec2 motionVector = currentUV - previousUV;
 
     imageStore(u_motionMap, pixelCoord, vec4(motionVector, 0.0, 0.0));
 }

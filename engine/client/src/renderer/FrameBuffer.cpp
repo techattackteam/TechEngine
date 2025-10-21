@@ -1,5 +1,7 @@
 #include "FrameBuffer.hpp"
 
+#include <glm/gtc/type_ptr.inl>
+
 #include "core/Logger.hpp"
 #include "texture/Texture.hpp"
 

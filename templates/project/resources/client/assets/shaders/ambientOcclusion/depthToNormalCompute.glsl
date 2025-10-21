@@ -50,12 +50,16 @@ void main() {
     }
 
     vec3 n = cross(gy, gx);
-    if (any(isinf(n)) || any(isnan(n)) || dot(n, n) < 0.0001) {
-        n = vec3(0.0, 0.0, 1.0);
-    } else {
-        n = normalize(n);
+
+    if (dot(n, n) < 0.0001) {
+        imageStore(u_outNormal, pixelCoord, vec4(0.0, 0.0, -1.0, 1.0));
+        return;
     }
 
+    n = normalize(n);
 
+    if (n.z > 0.0) {
+        n = -n;
+    }
     imageStore(u_outNormal, pixelCoord, vec4(n, 1.0));
 }
