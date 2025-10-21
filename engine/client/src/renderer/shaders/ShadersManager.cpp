@@ -41,14 +41,19 @@ namespace TechEngine {
                 }
             },
             {
-                "depthPrePass", {
-                    {ShaderType::Vertex, shaderBasePath + "depthPrePassVertex.glsl"},
-                    {ShaderType::Fragment, shaderBasePath + "depthPrePassFragment.glsl"}
+                "gBufferPass", {
+                    {ShaderType::Vertex, shaderBasePath + "gBuffer/gBufferVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "gBuffer/gBufferFragment.glsl"}
                 }
             },
             {
                 "depthToNormal", {
                     {ShaderType::Compute, shaderBasePath + "ambientOcclusion/depthToNormalCompute.glsl"}
+                }
+            },
+            {
+                "AOCompute", {
+                    {ShaderType::Compute, shaderBasePath + "ambientOcclusion/aoCompute.glsl"}
                 }
             },
             {
@@ -59,6 +64,12 @@ namespace TechEngine {
             {
                 "gtaoTemporal", {
                     {ShaderType::Compute, shaderBasePath + "ambientOcclusion/gtaoTemporalCompute.glsl"}
+                }
+            },
+
+            {
+                "gtaoBlurCompute", {
+                    {ShaderType::Compute, shaderBasePath + "ambientOcclusion/gtaoBlurCompute.glsl"}
                 }
             },
             {

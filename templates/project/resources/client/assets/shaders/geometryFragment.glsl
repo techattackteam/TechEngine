@@ -3,7 +3,8 @@
 
 #define SHADOW_CASCADE_COUNT 4
 
-out vec4 fragColor;
+layout (location = 0) out vec4 out_fragColor;
+layout (location = 1) out vec4 out_screenLight;
 
 in vec3 v_worldPos;
 in vec3 v_normal;
@@ -306,7 +307,7 @@ void main() {
     int tileIndex = tileCoords.y * tilesX + tileCoords.x;
     TileInfo tile = tiles[tileIndex];
 
-    vec3 totalLight = vec3(0.0);
+    vec3 directLight = vec3(0.0);
     uint offset = tile.offset;
 
     // 3. Calculate Direct Lighting
@@ -324,24 +325,24 @@ void main() {
             if (light.shadowHandle[0] != uvec2(0)) {
                 shadow = calculateOmniShadow(light);
             }
-            totalLight = totalLight + (calculatePointLight(light, material, normal, view) * shadow);
+            directLight = directLight + (calculatePointLight(light, material, normal, view) * shadow);
 
         } else if (light.type == 1) {
             if (light.shadowHandle[0] != uvec2(0)) {
                 shadow = calculateCascadeDepthShadow(light);
             }
-            totalLight = totalLight + (calculateDirectionalLight(light, material, normal, view) * shadow);
+            directLight = directLight + (calculateDirectionalLight(light, material, normal, view) * shadow);
         } else if (light.type == 2) {
             if (light.shadowHandle[0] != uvec2(0)) {
                 shadow = calculateDepthShadow(light);
             }
-            totalLight = totalLight + (calculateSpotLight(light, material, normal, view) * shadow);
+            directLight = directLight + (calculateSpotLight(light, material, normal, view) * shadow);
         }
     }
 
 
-    // 4. Calculate Indirect (Ambient) Lighting (IBL)
-    float ao = material.ao * texture(u_aoMap, screenUV).r;
+    // 4. Calculate Ambient Lighting (IBL)
+    float ao = material.ao *texture(u_aoMap, screenUV).a;
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, material.albedo.rgb, material.metallic);
 
@@ -354,7 +355,7 @@ void main() {
     // Diffuse lighting
     vec3 irradiance = texture(u_irradianceMap, normal).rgb;
     vec3 diffuseIBL = irradiance * material.albedo.rgb;
-    vec3 diffuse = kd * diffuseIBL ;
+    vec3 diffuse = kd * diffuseIBL;
 
     // Specular lighting
     vec3 R = reflect(-view, normal);
@@ -369,8 +370,8 @@ void main() {
     // Emission
     vec3 finalEmission = material.emission.rgb * material.emission.a;
 
+    vec3 color = (ambient + directLight) * ao + finalEmission;
 
-    vec3 color = (ambient * ao) + totalLight + finalEmission;
-
-    fragColor = vec4(color, 1.0);
+    out_fragColor = vec4(color, 1.0);
+    out_screenLight = vec4(1.0);
 }

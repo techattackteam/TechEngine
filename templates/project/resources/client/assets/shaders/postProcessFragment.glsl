@@ -4,7 +4,7 @@ out vec4 fragColor;
 
 in vec2 texCoords;
 
-uniform sampler2D u_normalTexture;
+uniform sampler2D u_aoTexture;
 
 uniform sampler2D u_hdrBuffer;
 uniform sampler2D u_bloomBuffer;
@@ -105,6 +105,5 @@ void main() {
 
     fragColor = vec4(ldrColor, 1.0);
 
-    vec3 n = texture(u_normalTexture, texCoords).rgb * 0.5 + 0.5;
-    fragColor = vec4(n, 1.0);
+
 }
