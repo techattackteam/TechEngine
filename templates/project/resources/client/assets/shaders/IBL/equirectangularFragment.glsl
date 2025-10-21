@@ -16,7 +16,7 @@ vec2 sampleSphericalMap(vec3 v)
 }
 
 void main() {
-    vec2 uv = sampleSphericalMap(normalize(v_localPos)); // make sure to normalize localPos
+    vec2 uv = sampleSphericalMap(normalize(v_localPos));
     vec3 color = texture(u_equirectangularMap, uv).rgb;
 
     fragColor = vec4(color, 1.0);

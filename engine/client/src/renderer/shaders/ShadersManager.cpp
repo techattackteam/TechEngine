@@ -47,39 +47,8 @@ namespace TechEngine {
                 }
             },
             {
-                "depthToNormal", {
-                    {ShaderType::Compute, shaderBasePath + "ambientOcclusion/depthToNormalCompute.glsl"}
-                }
-            },
-            {
                 "AOCompute", {
                     {ShaderType::Compute, shaderBasePath + "ambientOcclusion/aoCompute.glsl"}
-                }
-            },
-            {
-                "gtaoHorizon", {
-                    {ShaderType::Compute, shaderBasePath + "ambientOcclusion/gtaoHorizonCompute.glsl"}
-                }
-            },
-            {
-                "gtaoTemporal", {
-                    {ShaderType::Compute, shaderBasePath + "ambientOcclusion/gtaoTemporalCompute.glsl"}
-                }
-            },
-
-            {
-                "gtaoBlurCompute", {
-                    {ShaderType::Compute, shaderBasePath + "ambientOcclusion/gtaoBlurCompute.glsl"}
-                }
-            },
-            {
-                "gtaoUpSample", {
-                    {ShaderType::Compute, shaderBasePath + "ambientOcclusion/gtaoUpSampleCompute.glsl"}
-                }
-            },
-            {
-                "motionVector", {
-                    {ShaderType::Compute, shaderBasePath + "ambientOcclusion/motionVectorCompute.glsl"}
                 }
             },
             {
@@ -89,72 +58,72 @@ namespace TechEngine {
             },
             {
                 "omniShadowMap", {
-                    {ShaderType::Vertex, shaderBasePath + "shadowCubeVertex.glsl"},
-                    {ShaderType::Geometry, shaderBasePath + "shadowCubeGeometry.glsl"},
-                    {ShaderType::Fragment, shaderBasePath + "shadowCubeFragment.glsl"}
+                    {ShaderType::Vertex, shaderBasePath + "shadow/shadowCubeVertex.glsl"},
+                    {ShaderType::Geometry, shaderBasePath + "shadow/shadowCubeGeometry.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "shadow/shadowCubeFragment.glsl"}
                 }
             },
             {
                 "depthShadowMap", {
-                    {ShaderType::Vertex, shaderBasePath + "shadowDepthVertex.glsl"},
-                    {ShaderType::Fragment, shaderBasePath + "shadowDepthFragment.glsl"}
+                    {ShaderType::Vertex, shaderBasePath + "shadow/shadowDepthVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "shadow/shadowDepthFragment.glsl"}
                 }
             },
             {
                 "equirectangular", {
-                    {ShaderType::Vertex, shaderBasePath + "equirectangularVertex.glsl"},
-                    {ShaderType::Fragment, shaderBasePath + "equirectangularFragment.glsl"}
+                    {ShaderType::Vertex, shaderBasePath + "IBL/equirectangularVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "IBL/equirectangularFragment.glsl"}
                 }
             },
             {
                 "skybox", {
-                    {ShaderType::Vertex, shaderBasePath + "skyboxVertex.glsl"},
-                    {ShaderType::Fragment, shaderBasePath + "skyboxFragment.glsl"}
+                    {ShaderType::Vertex, shaderBasePath + "IBL/skyboxVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "IBL/skyboxFragment.glsl"}
                 }
             },
             {
                 "irradiance", {
-                    {ShaderType::Vertex, shaderBasePath + "skyboxVertex.glsl"},
-                    {ShaderType::Fragment, shaderBasePath + "irradianceFragment.glsl"}
+                    {ShaderType::Vertex, shaderBasePath + "IBL/skyboxVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "IBL/irradianceFragment.glsl"}
                 }
             },
             {
                 "prefilter", {
-                    {ShaderType::Vertex, shaderBasePath + "skyboxVertex.glsl"},
-                    {ShaderType::Fragment, shaderBasePath + "prefilterFragment.glsl"}
+                    {ShaderType::Vertex, shaderBasePath + "IBL/skyboxVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "IBL/prefilterFragment.glsl"}
                 }
             },
             {
                 "brdf", {
-                    {ShaderType::Vertex, shaderBasePath + "brdfVertex.glsl"},
-                    {ShaderType::Fragment, shaderBasePath + "brdfFragment.glsl"}
+                    {ShaderType::Vertex, shaderBasePath + "IBL/brdfVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "IBL/brdfFragment.glsl"}
                 }
             },
 
             {
                 "histogram", {
-                    {ShaderType::Compute, shaderBasePath + "histogramCompute.glsl"}
+                    {ShaderType::Compute, shaderBasePath + "IBL/histogramCompute.glsl"}
                 }
             },
             {
                 "postProcess", {
-                    {ShaderType::Vertex, shaderBasePath + "postProcessVertex.glsl"},
-                    {ShaderType::Fragment, shaderBasePath + "postProcessFragment.glsl"}
+                    {ShaderType::Vertex, shaderBasePath + "postProcess/postProcessVertex.glsl"},
+                    {ShaderType::Fragment, shaderBasePath + "postProcess/postProcessFragment.glsl"}
                 }
             },
             {
                 "bloomPrefilter", {
-                    {ShaderType::Compute, shaderBasePath + "bloomPrefilterCompute.glsl"}
+                    {ShaderType::Compute, shaderBasePath + "postProcess/effects/bloomPrefilterCompute.glsl"}
                 }
             },
             {
                 "bloomDownSample", {
-                    {ShaderType::Compute, shaderBasePath + "bloomDownSampleCompute.glsl"}
+                    {ShaderType::Compute, shaderBasePath + "postProcess/effects/bloomDownSampleCompute.glsl"}
                 }
             },
             {
                 "bloomUpSample", {
-                    {ShaderType::Compute, shaderBasePath + "bloomUpSampleCompute.glsl"}
+                    {ShaderType::Compute, shaderBasePath + "postProcess/effects/bloomUpSampleCompute.glsl"}
                 }
             },
             {
