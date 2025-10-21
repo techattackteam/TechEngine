@@ -167,6 +167,7 @@ float calculateOmniShadow(Light light) {
     float closestDepth = texture(handle, fragToLight).r * u_farPlane;
     float currentDepth = length(fragToLight);
     float bias = max(0.15 * (1.0 - dot(v_normal, light.direction)), 0.005);
+    bias = 0.0f;
     float shadow = currentDepth > (closestDepth + bias) ? 1.0 : 0.0;
 
     return 1.0f - shadow;
@@ -192,7 +193,6 @@ float calculateDepthShadow(Light light) {
 float calculateCascadeDepthShadow(Light light) {
     float fragmentDepth = -v_viewPos.z; // In view space, Z is negative going into the screen
 
-    // 2. Find which cascade the fragment belongs to
     int cascadeIndex = 0;
     for (int i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
         if (fragmentDepth > light.cascadeSplits[i]) {
@@ -342,7 +342,7 @@ void main() {
 
 
     // 4. Calculate Ambient Lighting (IBL)
-    float ao = material.ao *texture(u_aoMap, screenUV).a;
+    float ao = material.ao * texture(u_aoMap, screenUV).a;
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, material.albedo.rgb, material.metallic);
 
