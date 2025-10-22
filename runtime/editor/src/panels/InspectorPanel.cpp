@@ -1082,6 +1082,55 @@ namespace TechEngine {
     }
 
     void InspectorPanel::drawRenderPassProperties() {
-
+        std::string propertyName = *m_selectedNode.renderPassName;
+        drawRenderPassProperty(propertyName, [this, propertyName](Renderer& renderer) {
+            if (propertyName == "Ambient Occlusion Settings") {
+                auto& aoProperties = renderer.getAOProperties();
+                ImGui::Checkbox("Enabled", &aoProperties.enabled);
+                ImGui::DragFloat("Radius", &aoProperties.radius, 0.1f, 0.1f, 100.0f);
+                ImGui::DragFloat("Thickness", &aoProperties.thickness, 0.1f, 0.0f, 10.0f);
+                ImGui::DragInt("Direction Count", &aoProperties.directionCount, 1, 1, 64);
+                ImGui::DragInt("Steps", &aoProperties.stepsPerDirection, 1, 1, 64);
+            } else if (propertyName == "Bloom Settings") {
+                auto& bloomProperties = renderer.getBloomProperties();
+                ImGui::Checkbox("Enabled", &bloomProperties.enabled);
+                ImGui::DragFloat("Intensity", &bloomProperties.intensity, 0.1f, 0.0f, 10.0f);
+                ImGui::DragFloat("Threshold", &bloomProperties.threshold, 0.1f, 0.0f, 10.0f);
+                ImGui::DragFloat("Knee", &bloomProperties.knee, 0.1f, 0.0f, 10.0f);
+            } else if (propertyName == "Chromatic Aberration Settings") {
+                auto& chromaticAberration = renderer.getChromaticAberrationProperties();
+                ImGui::Checkbox("Enabled", &chromaticAberration.enabled);
+                ImGui::DragFloat("Strength", &chromaticAberration.strength, 0.001f, 0.0f, 1.0f);
+                ImGui::DragFloat("Offset", &chromaticAberration.offset, 0.01f, 0.0f, 10.0f);
+            } else if (propertyName == "Vignette Settings") {
+                auto& vignetteProperties = renderer.getVignetteProperties();
+                ImGui::Checkbox("Enabled", &vignetteProperties.enabled);
+                ImGui::DragFloat("Intensity", &vignetteProperties.strength, 0.01f, 0.0f, 1.0f);
+                ImGui::DragFloat("Smoothness", &vignetteProperties.power, 0.1f, 0.0f, 10.0f);
+            } else if (propertyName == "Gamma Settings") {
+                auto& gammaProperties = renderer.getGammaProperties();
+                ImGui::Checkbox("Enabled", &gammaProperties.enabled);
+                ImGui::DragFloat("Gamma", &gammaProperties.gamma, 0.1f, 0.1f, 10.0f);
+                ImGui::ColorPicker3("Gamma RGB", &gammaProperties.gammaRGB[0]);
+                ImGui::DragFloat("Gamma Intensity", &gammaProperties.gammaIntensity, 0.1f, 0.0f, 10.0f);
+                ImGui::ColorPicker3("Lift", &gammaProperties.lift[0]);
+                ImGui::DragFloat("Lift Intensity", &gammaProperties.liftIntensity, 0.1f, 0.0f, 10.0f);
+                ImGui::ColorPicker3("Gain", &gammaProperties.gain[0]);
+                ImGui::DragFloat("Gain Intensity", &gammaProperties.gainIntensity, 0.1f, 0.0f, 10.0f);
+            } else if (propertyName == "Color Grading Settings") {
+                auto& colorGradingProperties = renderer.getColorGradingProperties();
+                ImGui::DragFloat("Exposure", &colorGradingProperties.exposure, 0.1f, 0.0f, 10.0f);
+                ImGui::DragFloat("Saturation", &colorGradingProperties.saturation, 0.1f, 0.0f, 10.0f);
+                ImGui::DragFloat("Contrast", &colorGradingProperties.contrast, 0.1f, 0.0f, 10.0f);
+                ImGui::DragFloat("Brightness", &colorGradingProperties.brightness, 0.1f, 0.0f, 10.0f);
+                ImGui::Checkbox("Use LUT", &colorGradingProperties.useLUT);
+                ImGui::DragFloat("LUT Strength", &colorGradingProperties.lutStrength, 0.1f, 0.0f, 10.0f);
+            } else if (propertyName == "Film Grain Settings") {
+                auto& filmGrainProperties = renderer.getFilmGrainProperties();
+                ImGui::Checkbox("Enabled", &filmGrainProperties.filmGrainEnabled);
+                ImGui::DragFloat("Intensity", &filmGrainProperties.filmGrainIntensity, 0.01f, 0.0f, 1.0f);
+                ImGui::DragFloat("Size", &filmGrainProperties.filmGrainSize, 0.1f, 0.1f, 10.0f);
+            }
+        });
     }
 }

@@ -6,6 +6,7 @@ layout (binding = 0) uniform sampler2D u_depthTexture;
 layout (binding = 1) uniform sampler2D u_normalTexture;
 //layout (binding = 2) uniform sampler2D u_lightTexture; // For future implementation
 
+uniform bool u_enabled;
 uniform float u_directionCount;
 uniform float u_stepsPerDirection;
 uniform float u_radius;
@@ -38,9 +39,13 @@ uint getSampleBitmask(float minHorizon, float maxHorizon) {
 }
 
 void main() {
-
     ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
     if (pixelCoords.x >= int(u_screenSize.x) || pixelCoords.y >= int(u_screenSize.y)) {
+        return;
+    }
+
+    if (!u_enabled) {
+        imageStore(u_outAO, pixelCoords, vec4(vec3(1.0f), 1.0f));
         return;
     }
 

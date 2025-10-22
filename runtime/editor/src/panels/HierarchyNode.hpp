@@ -22,8 +22,10 @@ namespace TechEngine {
               type(other.type), depth(other.depth), isOpen(other.isOpen) {
             if (type == NodeType::Widget) {
                 widget = std::make_shared<Widget>(other.widget.get());
-            } else {
+            } else if (type == NodeType::Entity) {
                 entity = other.entity; // Just copy the ID
+            } else if (type == NodeType::RenderPass) {
+                renderPassName = new std::string(*other.renderPassName);
             }
         }
 
@@ -33,8 +35,10 @@ namespace TechEngine {
               type(other.type), depth(other.depth), isOpen(other.isOpen) {
             if (type == NodeType::Widget) {
                 new(&widget) std::shared_ptr<Widget>(std::move(other.widget));
-            } else {
+            } else if (type == NodeType::Entity) {
                 entity = other.entity;
+            } else if (type == NodeType::RenderPass) {
+                renderPassName = std::move(other.renderPassName);
             }
         }
 
@@ -52,8 +56,10 @@ namespace TechEngine {
                 isOpen = other.isOpen;
                 if (type == NodeType::Widget) {
                     widget = std::make_shared<Widget>(other.widget.get());
-                } else {
+                } else if (type == NodeType::Entity) {
                     entity = other.entity;
+                } else if (type == NodeType::RenderPass) {
+                    renderPassName = new std::string(*other.renderPassName);
                 }
             }
             return *this;
@@ -73,8 +79,10 @@ namespace TechEngine {
                 isOpen = other.isOpen;
                 if (type == NodeType::Widget) {
                     new(&widget) std::shared_ptr<Widget>(std::move(other.widget));
-                } else {
+                } else if (type == NodeType::Entity) {
                     entity = other.entity;
+                } else if (type == NodeType::RenderPass) {
+                    renderPassName = std::move(other.renderPassName);
                 }
             }
             return *this;
@@ -99,12 +107,14 @@ namespace TechEngine {
         union {
             Entity entity;
             std::shared_ptr<Widget> widget;
+            std::string* renderPassName;
         };
 
         bool operator==(const HierarchyNode& other) const {
             if (type != other.type) return false;
             if (type == NodeType::Entity) return entity == other.entity;
             if (type == NodeType::Widget) return widget == other.widget;
+            if (type == NodeType::RenderPass) return *renderPassName == *other.renderPassName;
             return true;
         }
     };

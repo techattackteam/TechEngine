@@ -56,6 +56,62 @@ namespace TechEngine {
             glm::vec2 texCoord;
         };
 
+        struct AOProperties {
+            bool enabled = true;
+            int directionCount = 12;
+            int stepsPerDirection = 16;
+            float radius = 1.0f;
+            float thickness = 0.5f;
+        };
+
+        struct BloomProperties {
+            bool enabled = false;
+            float threshold = 1.5f;
+            float knee = 0.5f;
+            float intensity = 1.0f;
+        };
+
+        struct ChromaticAberrationProperties {
+            bool enabled = true;
+            float strength = 0.005f;
+            float offset = 1.0f;
+        };
+
+        struct VignetteProperties {
+            bool enabled = false;
+            float strength = 1.0f;
+            float power = 1.5f;
+        };
+
+        struct GammaProperties {
+            bool enabled = true;
+            glm::vec3 lift = glm::vec3(0.0f);
+            float liftIntensity = 1.0f;
+
+            float gamma = 2.2f;
+            glm::vec3 gammaRGB = glm::vec3(1.0f);
+            float gammaIntensity = 1.0f;
+
+            glm::vec3 gain = glm::vec3(1.0f);
+            float gainIntensity = 1.0f;
+        };
+
+        struct ColorGradingProperties {
+            float exposure = 1.0f;
+            float saturation = 1.0f;
+            float contrast = 1.0f;
+            float brightness = 1.0f;
+
+            bool useLUT = true;
+            float lutStrength = 1.0f;
+        };
+
+        struct FilmGrainProperties {
+            bool filmGrainEnabled = true;
+            float filmGrainIntensity = 0.05f;
+            float filmGrainSize = 1.0f;
+        };
+
     private:
         const std::string BufferGameObjects = "GameObjects";
         const std::string BufferLines = "Lines";
@@ -87,7 +143,6 @@ namespace TechEngine {
 
         uint32_t m_gBufferFBO = 0; // depht - depth Map,  0 - albedo, 1 - normals, 2 - screenLight, 3 - hdr color
         uint32_t m_shadowFBO = 0;
-        //uint32_t m_hdrFBO = 0;
 
         std::vector<FrameBuffer*> m_frameBuffers;
 
@@ -105,11 +160,31 @@ namespace TechEngine {
 
         std::vector<Texture> m_materialsTextures;
 
+        // Ambient Occlusion
+        AOProperties m_aoProperties;
         Texture m_aoTexture;
 
+        // Bloom
+        BloomProperties m_bloomProperties;
         Texture m_bloomTexture;
         Texture m_bloomTempTexture;
         int m_bloomIterations = 0;
+
+        // Chromatic Aberration
+        ChromaticAberrationProperties m_chromaticAberrationProperties;
+
+        // Vignette
+        VignetteProperties m_vignetteProperties;
+
+        // Gama
+        GammaProperties m_gammaProperties;
+
+        // Color Grading
+        Texture m_colorGradingLUT;
+        ColorGradingProperties m_colorGradingProperties;
+
+        // Film Grain
+        FilmGrainProperties m_filmGrainProperties;
 
         std::vector<Line> lines;
 
@@ -153,6 +228,20 @@ namespace TechEngine {
 
         UIRenderer& getUIRenderer();
 
+        AOProperties& getAOProperties();
+
+        BloomProperties& getBloomProperties();
+
+        ChromaticAberrationProperties& getChromaticAberrationProperties();
+
+        VignetteProperties& getVignetteProperties();
+
+        GammaProperties& getGammaProperties();
+
+        ColorGradingProperties& getColorGradingProperties();
+
+        FilmGrainProperties& getFilmGrainProperties();
+
     private:
         void uploadNewMesh(const std::string& name);
 
@@ -163,6 +252,8 @@ namespace TechEngine {
         void removeMaterial(const std::string& name);
 
         void createRenderables();
+
+        void createNeutralLUT(int size = 32);
 
         void populateLightDataBuffers() const;
 

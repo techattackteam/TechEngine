@@ -118,7 +118,7 @@ namespace TechEngine {
         m_vertexArrays[BufferLines].addNewLinesBuffer(m_vertexBuffers[BufferLines]);
 
         recreateBloomTexture({800, 600});
-
+        createNeutralLUT();
         m_uiRenderer.init();
 
         EventManager& eventManager = m_systemsRegistry.getSystem<EventManager>();
@@ -274,6 +274,34 @@ namespace TechEngine {
         return m_uiRenderer;
     }
 
+    Renderer::AOProperties& Renderer::getAOProperties() {
+        return m_aoProperties;
+    }
+
+    Renderer::BloomProperties& Renderer::getBloomProperties() {
+        return m_bloomProperties;
+    }
+
+    Renderer::ChromaticAberrationProperties& Renderer::getChromaticAberrationProperties() {
+        return m_chromaticAberrationProperties;
+    }
+
+    Renderer::VignetteProperties& Renderer::getVignetteProperties() {
+        return m_vignetteProperties;
+    }
+
+    Renderer::GammaProperties& Renderer::getGammaProperties() {
+        return m_gammaProperties;
+    }
+
+    Renderer::ColorGradingProperties& Renderer::getColorGradingProperties() {
+        return m_colorGradingProperties;
+    }
+
+    Renderer::FilmGrainProperties& Renderer::getFilmGrainProperties() {
+        return m_filmGrainProperties;
+    }
+
     void Renderer::uploadNewMesh(const std::string& name) {
         Mesh& mesh = m_systemsRegistry.getSystem<ResourcesManager>().getMesh(name);
         std::vector<Vertex>& vertices = mesh.m_vertices;
@@ -373,6 +401,29 @@ namespace TechEngine {
         }
 
         this->m_commandToDraw = commands.size();
+    }
+
+    void Renderer::createNeutralLUT(int size) {
+        std::vector<glm::vec3> lutData(size * size * size);
+        for (int b = 0; b < size; b++) {
+            for (int g = 0; g < size; g++) {
+                for (int r = 0; r < size; r++) {
+                    int index = r + g * size + b * size * size;
+                    lutData[index] = glm::vec3(
+                        r / float(size - 1),
+                        g / float(size - 1),
+                        b / float(size - 1)
+                    );
+                }
+            }
+        }
+        m_colorGradingLUT.create(GL_TEXTURE_3D, GL_RGB16F, size, size, GL_RGB, GL_FLOAT, lutData.data(), size);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glBindTexture(GL_TEXTURE_3D, 0);
     }
 
     void Renderer::populateLightDataBuffers() const {
@@ -688,20 +739,20 @@ namespace TechEngine {
         }
 
         m_shadersManager.changeActiveShader("AOCompute");
-        Shader* gtaoHorizon = m_shadersManager.getActiveShader();
+        Shader* aoHorizon = m_shadersManager.getActiveShader();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, getFramebuffer(m_gBufferFBO).getTextureID(GL_DEPTH_ATTACHMENT)); // Positions
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, getFramebuffer(m_gBufferFBO).getTextureID(GL_COLOR_ATTACHMENT1)); // Normals
-        //glActiveTexture(GL_TEXTURE2);
-        //glBindTexture(GL_TEXTURE_2D, getFramebuffer(m_gBufferFBO).getTextureID(GL_COLOR_ATTACHMENT2)); // Light
-        gtaoHorizon->setUniformFloat("u_directionCount", 100);
-        gtaoHorizon->setUniformFloat("u_stepsPerDirection", 16);
-        gtaoHorizon->setUniformFloat("u_radius", 1.0f);
-        gtaoHorizon->setUniformFloat("u_thickness", 0.5f);
-        gtaoHorizon->setUniformVec2("u_screenSize", viewport);
-        gtaoHorizon->setUniformMatrix4f("u_projection", projectionMatrix);
-        gtaoHorizon->setUniformMatrix4f("u_inverseProjection", glm::inverse(projectionMatrix));
+
+        aoHorizon->setUniformBool("u_enabled", m_aoProperties.enabled);
+        aoHorizon->setUniformFloat("u_directionCount", static_cast<float>(m_aoProperties.directionCount));
+        aoHorizon->setUniformFloat("u_stepsPerDirection", static_cast<float>(m_aoProperties.stepsPerDirection));
+        aoHorizon->setUniformFloat("u_radius", m_aoProperties.radius);
+        aoHorizon->setUniformFloat("u_thickness", m_aoProperties.thickness);
+        aoHorizon->setUniformVec2("u_screenSize", viewport);
+        aoHorizon->setUniformMatrix4f("u_projection", projectionMatrix);
+        aoHorizon->setUniformMatrix4f("u_inverseProjection", glm::inverse(projectionMatrix));
 
         glBindImageTexture(0, m_aoTexture.getID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 
@@ -1207,7 +1258,8 @@ namespace TechEngine {
 
     void Renderer::bloomPass(const glm::ivec2& viewport) {
         m_shadersManager.changeActiveShader("bloomPrefilter");
-        m_shadersManager.getActiveShader()->setUniformFloat("u_threshold", 1.0f);
+        m_shadersManager.getActiveShader()->setUniformFloat("u_threshold", m_bloomProperties.threshold);
+        m_shadersManager.getActiveShader()->setUniformFloat("u_knee", m_bloomProperties.knee);
 
         glActiveTexture(GL_TEXTURE0);
         FrameBuffer& hdrFBO = getFramebuffer(m_gBufferFBO);
@@ -1238,7 +1290,6 @@ namespace TechEngine {
         }
 
         m_shadersManager.changeActiveShader("bloomUpSample");
-        //m_shadersManager.getActiveShader()->setUniformFloat("u_intensity", 0.5f);
 
         for (int i = m_bloomIterations - 2; i >= 0; --i) {
             glActiveTexture(GL_TEXTURE0);
@@ -1267,25 +1318,53 @@ namespace TechEngine {
         postProcessShader->setUniformInt("u_hdrBuffer", 0);
 
 
-        /*
-        glBindTexture(GL_TEXTURE_2D, m_aoFinalTexture.getID());
-        postProcessShader->setUniformInt("u_aoTexture", 0);
-        */
-
-        //postProcessShader->setUniformFloat("u_exposure", m_currentExposure);
-        postProcessShader->setUniformFloat("u_bloomStrength", 0.0f);
-
-        postProcessShader->setUniformFloat("u_chromaticAberrationStrength", 0.0f);
-
-        postProcessShader->setUniformFloat("u_vignetteStrength", 0.0f);
-        postProcessShader->setUniformFloat("u_vignettePower", 1.0f);
-
-
+        postProcessShader->setUniformBool("u_bloomEnabled", m_bloomProperties.enabled);
+        postProcessShader->setUniformFloat("u_bloomStrength", m_bloomProperties.intensity);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, m_bloomTexture.getID());
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, m_bloomIterations - 1);
         postProcessShader->setUniformInt("u_bloomBuffer", 1);
+
+        // Lift-Gamma-Gain
+        postProcessShader->setUniformVec3("u_lift", m_gammaProperties.lift);
+        postProcessShader->setUniformFloat("u_liftIntensity", m_gammaProperties.liftIntensity);
+        postProcessShader->setUniformFloat("u_gamma", m_gammaProperties.gamma);
+        postProcessShader->setUniformVec3("u_gammaRGB", m_gammaProperties.gammaRGB);
+        postProcessShader->setUniformFloat("u_gammaIntensity", m_gammaProperties.gammaIntensity);
+        postProcessShader->setUniformVec3("u_gain", m_gammaProperties.gain);
+        postProcessShader->setUniformFloat("u_gainIntensity", m_gammaProperties.gainIntensity);
+
+        // Color grading adjustments
+        postProcessShader->setUniformFloat("u_exposure", m_colorGradingProperties.exposure);
+        postProcessShader->setUniformFloat("u_saturation", m_colorGradingProperties.saturation);
+        postProcessShader->setUniformFloat("u_contrast", m_colorGradingProperties.contrast);
+        postProcessShader->setUniformFloat("u_brightness", m_colorGradingProperties.brightness);
+        if (m_colorGradingProperties.useLUT) {
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_3D, m_colorGradingLUT.getID());
+            postProcessShader->setUniformInt("u_colorGradingLUT", 2);
+        }
+        postProcessShader->setUniformBool("u_useLUT", m_colorGradingProperties.useLUT);
+        postProcessShader->setUniformFloat("u_lutStrength", m_colorGradingProperties.lutStrength);
+        postProcessShader->setUniformInt("u_lutSize", 32); // or make this configurable
+
+        // Chromatic Aberration
+        postProcessShader->setUniformBool("u_chromaticAberrationEnabled", m_chromaticAberrationProperties.enabled);
+        postProcessShader->setUniformFloat("u_chromaticAberrationStrength", m_chromaticAberrationProperties.strength);
+        postProcessShader->setUniformFloat("u_chromaticAberrationOffset", m_chromaticAberrationProperties.offset);
+
+        // Vignette
+        postProcessShader->setUniformBool("u_vignetteEnabled", m_vignetteProperties.enabled);
+        postProcessShader->setUniformFloat("u_vignetteStrength", m_vignetteProperties.strength);
+        postProcessShader->setUniformFloat("u_vignettePower", m_vignetteProperties.power);
+
+        // Film Grain
+        postProcessShader->setUniformBool("u_filmGrainEnabled", m_filmGrainProperties.filmGrainEnabled);
+        postProcessShader->setUniformFloat("u_filmGrainIntensity", m_filmGrainProperties.filmGrainIntensity);
+        postProcessShader->setUniformFloat("u_filmGrainSize", m_filmGrainProperties.filmGrainSize);
+        postProcessShader->setUniformFloat("u_time", glfwGetTime()); // or your timer
+
 
         m_vertexArrays[BufferFullscreenQuad].bind();
         glDrawArrays(GL_TRIANGLES, 0, 6);

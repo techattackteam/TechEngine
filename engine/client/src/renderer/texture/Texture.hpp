@@ -21,7 +21,7 @@ namespace TechEngine {
 
         void uploadFromResource(const TextureResource& textureResource);
 
-        void create(GLenum target, GLint internalFormat, GLsizei width, GLsizei height, GLenum format, GLenum type, const void* data = nullptr);
+        void create(GLenum target, GLint internalFormat, GLsizei width, GLsizei height, GLenum format, GLenum type, const void* data = nullptr, GLsizei depth = 0);
 
         void generateMipMap();
 

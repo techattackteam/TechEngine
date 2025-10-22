@@ -8,7 +8,6 @@ layout (binding = 0) uniform readonly image2D u_sourceMip;
 
 layout (binding = 1, rgba16f) uniform writeonly image2D u_destinationMip;
 
-uniform bool u_horizontal = true;
 uniform ivec2 u_sourceResolution;
 
 #define KERNEL_RADIUS 5

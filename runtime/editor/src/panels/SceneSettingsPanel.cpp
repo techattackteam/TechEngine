@@ -24,6 +24,38 @@ namespace TechEngine {
 
 
     void SceneSettingsPanel::onInit() {
+        HierarchyNode node;
+        node.id = 1;
+        node.name = "Ambient Occlusion Settings";
+        node.type = HierarchyNode::NodeType::RenderPass;
+        node.depth = 0;
+        node.isOpen = true;
+        node.renderPassName = new std::string("Ambient Occlusion Settings");
+        m_displayRenderPassList.push_back(node);
+        node.id = 2;
+        node.name = "Bloom Settings";
+        node.renderPassName = new std::string("Bloom Settings");
+        m_displayRenderPassList.push_back(node);
+        node.id = 3;
+        node.name = "Chromatic Aberration Settings";
+        node.renderPassName = new std::string("Chromatic Aberration Settings");
+        m_displayRenderPassList.push_back(node);
+        node.id = 4;
+        node.name = "Vignette Settings";
+        node.renderPassName = new std::string("Vignette Settings");
+        m_displayRenderPassList.push_back(node);
+        node.id = 5;
+        node.name = "Gamma Settings";
+        node.renderPassName = new std::string("Gamma Settings");
+        m_displayRenderPassList.push_back(node);
+        node.id = 6;
+        node.name = "Color Grading Settings";
+        node.renderPassName = new std::string("Color Grading Settings");
+        m_displayRenderPassList.push_back(node);
+        node.id = 7;
+        node.name = "Film Grain Settings";
+        node.renderPassName = new std::string("Film Grain Settings");
+        m_displayRenderPassList.push_back(node);
     }
 
     void SceneSettingsPanel::onUpdate() {
@@ -82,8 +114,7 @@ namespace TechEngine {
         } else if (nodeType == HierarchyNode::NodeType::Widget) {
             displayList = &m_displayWidgetList;
         } else if (nodeType == HierarchyNode::NodeType::RenderPass) {
-            displayList = nullptr; // Not implemented yet
-            return;
+            displayList = &m_displayRenderPassList;
         } else {
             TE_LOGGER_CRITICAL("SceneSettingsPanel::drawTree: Unsupported node type.");
             return;
