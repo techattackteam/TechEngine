@@ -7,6 +7,8 @@
 
 #include <imgui_internal.h>
 
+#include "renderer/Renderer.hpp"
+
 
 namespace TechEngine {
     class InspectorPanel : public Panel {
@@ -118,6 +120,26 @@ namespace TechEngine {
         }
 
         bool resizableInputTextMultiline(const char* label, std::string* text, const ImVec2& initial_size, float min_height);
+
+        template<typename UIFunction>
+        void drawRenderPassProperty(const std::string& passName, UIFunction uiFunction) {
+            const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
+            Renderer& renderer = m_appSystemsRegistry.getSystem<Renderer>();
+
+            //ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
+
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
+            //float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+            ImGui::Separator();
+            bool open = ImGui::TreeNodeEx((void*)typeid(T).hash_code(), treeNodeFlags, "%s", passName.c_str());
+            ImGui::PopStyleVar();
+            //ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
+
+            if (open) {
+                uiFunction(renderer);
+                ImGui::TreePop();
+            }
+        }
 
         void drawRenderPassProperties();
     };

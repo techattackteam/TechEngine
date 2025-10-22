@@ -42,6 +42,7 @@ namespace TechEngine {
 
         std::vector<HierarchyNode> m_displayEntitiesList;
         std::vector<HierarchyNode> m_displayWidgetList;
+        std::vector<HierarchyNode> m_displayRenderPassList;
         HierarchyNode& m_selectedNode;
         bool m_isHierarchyDirty = true;
         bool m_isNodeHovered = false;

@@ -43,7 +43,7 @@ namespace TechEngine {
         glGenerateTextureMipmap(m_id);
     }
 
-    void Texture::create(GLenum target, GLint internalFormat, GLsizei width, GLsizei height, GLenum format, GLenum type, const void* data) {
+    void Texture::create(GLenum target, GLint internalFormat, GLsizei width, GLsizei height, GLenum format, GLenum type, const void* data, GLsizei depth) {
         if (m_id != 0) {
             deleteTexture();
         }
@@ -57,6 +57,8 @@ namespace TechEngine {
                 // Note: data is expected to be null for initial empty cubemap creation
                 glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0, format, type, data);
             }
+        } else if (m_target == GL_TEXTURE_3D) {
+            glTexImage3D(m_target, 0, internalFormat, width, height, depth, 0, format, type, data);
         } else { // GL_TEXTURE_2D
             glTexImage2D(m_target, 0, internalFormat, width, height, 0, format, type, data);
         }
