@@ -163,7 +163,6 @@ namespace TechEngine {
         return m_widgets;
     }
 
-
     const std::vector<WidgetsRegistry::CustomWidgetTemplate>& WidgetsRegistry::getWidgetTemplates() {
         return m_widgetsTemplates;
     }

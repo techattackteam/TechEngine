@@ -8,12 +8,12 @@ namespace TechEngine {
 
     class UIHierarchyPanel : public Panel {
     private:
-        struct HierarchyNode {
+        struct HierarchyNodeOld {
             std::shared_ptr<Widget> widget;
             int depth;
             bool isOpen;
 
-            bool operator==(const HierarchyNode& other) const {
+            bool operator==(const HierarchyNodeOld& other) const {
                 return widget == other.widget;
             }
 
@@ -25,7 +25,7 @@ namespace TechEngine {
         SystemsRegistry& m_appSystemsRegistry;
         UIEditor* m_editor = nullptr;
 
-        std::vector<HierarchyNode> m_displayList;
+        std::vector<HierarchyNodeOld> m_displayList;
 
 
         bool m_isHierarchyDirty = true;
@@ -49,7 +49,7 @@ namespace TechEngine {
 
         void drawDropZone(const std::shared_ptr<Widget>& parent, const std::shared_ptr<Widget>& targetBefore);
 
-        void drawWidgetNode(HierarchyNode& node);
+        void drawWidgetNode(HierarchyNodeOld& node);
 
         void openCreateWidgetMenu(const std::string& title, const std::shared_ptr<Widget>& parent = nullptr);
     };

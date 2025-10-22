@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "../../include/TechEngine/client/core/ExportDLL.hpp"
+#include "TechEngine/client/core/ExportDLL.hpp"
 #include "systems/System.hpp"
 #include "Widget.hpp"
 #include "WidgetsSerializer.hpp"

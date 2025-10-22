@@ -17,8 +17,9 @@ namespace TechEngine {
                                SystemsRegistry& appSystemsRegistry,
                                LoggerPanel& loggerPanel) : m_editorSystemsRegistry(editorSystemsRegistry),
                                                            m_appSystemsRegistry(appSystemsRegistry),
-                                                           m_inspectorPanel(editorSystemsRegistry, appSystemsRegistry, m_selectedEntities),
+                                                           m_inspectorPanel(editorSystemsRegistry, appSystemsRegistry, m_selectedNode),
                                                            m_sceneHierarchyPanel(editorSystemsRegistry, appSystemsRegistry, m_selectedEntities),
+                                                           m_sceneSettingsPanel(m_projectType, editorSystemsRegistry, appSystemsRegistry, m_selectedNode),
                                                            m_sceneView(editorSystemsRegistry, appSystemsRegistry, m_selectedEntities),
                                                            //m_gameView(editorSystemsRegistry, appSystemsRegistry),
                                                            loggerPanel(loggerPanel), DockPanel(editorSystemsRegistry) {
@@ -27,15 +28,17 @@ namespace TechEngine {
     void RuntimePanel::onInit() {
         m_sceneView.init("Scene View", &m_dockSpaceWindowClass);
         //m_gameView.init("Game View", &m_dockSpaceWindowClass);
-        m_sceneHierarchyPanel.init("Scene Hierarchy", &m_dockSpaceWindowClass);
+        //m_sceneHierarchyPanel.init("Scene Hierarchy", &m_dockSpaceWindowClass);
         m_inspectorPanel.init("Inspector", &m_dockSpaceWindowClass);
+        m_sceneSettingsPanel.init("Scene Settings", &m_dockSpaceWindowClass);
     }
 
     void RuntimePanel::onUpdate() {
         m_sceneView.update();
         //m_gameView.update();
-        m_sceneHierarchyPanel.update();
+        //m_sceneHierarchyPanel.update();
         m_inspectorPanel.update();
+        m_sceneSettingsPanel.update();
     }
 
     void RuntimePanel::setupInitialDockingLayout() {
@@ -50,6 +53,7 @@ namespace TechEngine {
         ImGui::DockBuilderDockWindow((m_sceneView.getName() + "##" + std::to_string(m_sceneView.getId())).c_str(), dockMainID);
         ImGui::DockBuilderDockWindow((m_sceneHierarchyPanel.getName() + "##" + std::to_string(m_sceneHierarchyPanel.getId())).c_str(), dockLeftID);
         //ImGui::DockBuilderDockWindow((m_inspectorPanel.getName() + "##" + std::to_string(m_inspectorPanel.getId())).c_str(), dockRightID);
+        ImGui::DockBuilderDockWindow((m_sceneSettingsPanel.getName() + "##" + std::to_string(m_sceneView.getId())).c_str(), dockLeftID);
 
         ImGui::DockBuilderFinish(m_dockSpaceID);
     }
