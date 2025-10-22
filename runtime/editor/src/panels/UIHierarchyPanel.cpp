@@ -66,11 +66,11 @@ namespace TechEngine {
     void UIHierarchyPanel::recursiveAddToDisplayList(const std::shared_ptr<Widget>& widget, int depth) {
         m_displayList.push_back({widget, depth});
 
-        if (widget->m_isHierarchyOpen) {
+        /*if (widget->m_isHierarchyOpen) {
             for (const auto& child: widget->m_children) {
                 recursiveAddToDisplayList(child, depth + 1);
             }
-        }
+        }*/
     }
 
     void UIHierarchyPanel::drawDropZone(const std::shared_ptr<Widget>& parent, const std::shared_ptr<Widget>& targetBefore) {
@@ -132,7 +132,7 @@ namespace TechEngine {
     }
 
 
-    void UIHierarchyPanel::drawWidgetNode(HierarchyNode& node) {
+    void UIHierarchyPanel::drawWidgetNode(HierarchyNodeOld& node) {
         if (!node.widget) return;
 
         ImGui::PushID(node.widget.get());
@@ -156,7 +156,7 @@ namespace TechEngine {
         }
 
         if (ImGui::IsItemToggledOpen()) {
-            node.widget->m_isHierarchyOpen = opened;
+            node.isOpen = opened;
             setHierarchyDirty();
         }
 

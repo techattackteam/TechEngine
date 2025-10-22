@@ -2,7 +2,7 @@
 #include "Panel.hpp"
 #include "ui/Widget.hpp"
 
-#include <imgui_stdlib.h>
+
 
 namespace TechEngine {
     class UIInspector : public Panel {

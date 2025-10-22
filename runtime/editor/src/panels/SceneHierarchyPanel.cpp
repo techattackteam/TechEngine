@@ -186,6 +186,7 @@ namespace TechEngine {
         ImGui::PushID((void*)(intptr_t)entity);
         bool opened = ImGui::TreeNodeEx("##TreeNode", flags, "%s", tag.getName().c_str());
         m_isItemHovered |= ImGui::IsItemHovered();
+
         ImGui::PopID();
 
         if (ImGui::BeginDragDropSource()) {

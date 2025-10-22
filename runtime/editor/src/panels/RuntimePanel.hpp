@@ -4,6 +4,7 @@
 #include "InspectorPanel.hpp"
 #include "LoggerPanel.hpp"
 #include "SceneHierarchyPanel.hpp"
+#include "SceneSettingsPanel.hpp"
 #include "SceneView.hpp"
 #include "project/ProjectManager.hpp"
 
@@ -13,6 +14,14 @@ namespace TechEngine {
     class SystemsRegistry;
 
     class RuntimePanel : public DockPanel {
+    public:
+        enum class InspectorTarget {
+            None,
+            Entity,
+            UIWidget,
+            RenderPass
+        };
+
     protected:
         SystemsRegistry& m_editorSystemsRegistry;
         SystemsRegistry& m_appSystemsRegistry;
@@ -20,9 +29,12 @@ namespace TechEngine {
 
         SceneView m_sceneView;
         SceneHierarchyPanel m_sceneHierarchyPanel;
+        SceneSettingsPanel m_sceneSettingsPanel;
         InspectorPanel m_inspectorPanel;
-        std::vector<Entity> m_selectedEntities;
+        InspectorTarget m_inspectorTarget = InspectorTarget::None;
 
+        std::vector<Entity> m_selectedEntities;
+        HierarchyNode m_selectedNode;
         ProjectType m_projectType;
 
     public:

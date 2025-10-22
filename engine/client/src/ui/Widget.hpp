@@ -77,7 +77,6 @@ namespace TechEngine {
         bool m_isDirty = false; // Marks if the layout needs to be recalculated
 
     public:
-        bool m_isHierarchyOpen = false; // This needs to be moved since the Widget class should not be aware of the UI hierarchy state
         glm::vec4 m_finalScreenRect = {0.0f, 0.0f, 0.0f, 0.0f}; // TopLeft X, TopLeft Y, Width, Height
 
         explicit Widget();

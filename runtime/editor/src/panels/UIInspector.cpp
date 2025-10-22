@@ -10,7 +10,7 @@
 #include "ui/PanelWidget.hpp"
 #include "ui/TextWidget.hpp"
 #include "ui/WidgetsRegistry.hpp"
-
+#include <imgui_stdlib.h>
 namespace TechEngine {
     UIInspector::UIInspector(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& appSystemsRegistry) : m_appSystemsRegistry(appSystemsRegistry), Panel(editorSystemsRegistry) {
         m_styleVars.emplace_back(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
