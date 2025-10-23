@@ -121,6 +121,8 @@ namespace TechEngine {
         createNeutralLUT();
         m_uiRenderer.init();
 
+        recreateFogTexture({800, 600});
+
         EventManager& eventManager = m_systemsRegistry.getSystem<EventManager>();
 
         eventManager.subscribe<EntityCreatedEvent>([this](const std::shared_ptr<Event>& event) {
@@ -300,6 +302,10 @@ namespace TechEngine {
 
     Renderer::FilmGrainProperties& Renderer::getFilmGrainProperties() {
         return m_filmGrainProperties;
+    }
+
+    Renderer::FogProperties& Renderer::getFogProperties() {
+        return m_fogProperties;
     }
 
     void Renderer::uploadNewMesh(const std::string& name) {
@@ -632,6 +638,18 @@ namespace TechEngine {
         TE_LOGGER_INFO("Bloom texture recreated with size: {0}x{1}", width, height);
     }
 
+    void Renderer::recreateFogTexture(const glm::ivec2& viewport) {
+        if (m_fogTexture.getWidth() == viewport.x && m_fogTexture.getHeight() == viewport.y) {
+            return;
+        }
+
+        if (m_fogTexture.getID() != 0) {
+            m_fogTexture.deleteTexture();
+        }
+
+        m_fogTexture.create(GL_TEXTURE_2D, GL_RGBA16F, viewport.x, viewport.y, GL_RGBA, GL_FLOAT, nullptr);
+    }
+
     void Renderer::scenePass(const RenderRequest& request) {
         glm::mat4 viewMatrix = request.viewMatrix;
         glm::mat4 projectionMatrix = request.projectionMatrix;
@@ -664,6 +682,9 @@ namespace TechEngine {
         aoPass(viewMatrix, projectionMatrix, viewport);
         geometryPass(viewMatrix, projectionMatrix, viewport, farPlane);
         m_skyBox.renderSkybox(getFramebuffer(m_gBufferFBO), viewMatrix, projectionMatrix);
+        if (m_fogProperties.enabled) {
+            fogPass(request);
+        }
     }
 
     void Renderer::prepareGBuffer(const glm::ivec2& viewport) {
@@ -1107,6 +1128,70 @@ namespace TechEngine {
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         });
         populateLightDataBuffers();
+    }
+
+    void Renderer::fogPass(const RenderRequest& request) {
+        recreateFogTexture(request.viewportSize);
+
+        m_shadersManager.changeActiveShader("atmosphericFog");
+        Shader* fogShader = m_shadersManager.getActiveShader();
+        fogShader->bind();
+
+        // Bind input texture (scene color from geometry pass)
+        FrameBuffer& gBuffer = getFramebuffer(m_gBufferFBO);
+        glBindImageTexture(0, gBuffer.getTextureID(GL_COLOR_ATTACHMENT3), 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
+
+        // Bind output texture (fog result)
+        glBindImageTexture(1, m_fogTexture.getID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+
+        // Bind depth buffer
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, gBuffer.getTextureID(GL_DEPTH_ATTACHMENT));
+        fogShader->setUniformInt("u_depthBuffer", 0);
+
+        // Set fog parameters
+        // fogShader->setUniformBool("u_fogEnabled", m_fogProperties.enabled);
+        fogShader->setUniformFloat("u_fogDensity", m_fogProperties.fogDensity);
+        fogShader->setUniformFloat("u_fogHeightFalloff", m_fogProperties.fogHeightFalloff);
+        fogShader->setUniformFloat("u_fogHeight", m_fogProperties.fogHeight);
+        fogShader->setUniformFloat("u_fogStart", m_fogProperties.fogStart);
+        fogShader->setUniformFloat("u_fogEnd", m_fogProperties.fogEnd);
+
+        fogShader->setUniformVec3("u_fogColorBase", m_fogProperties.fogColorBase);
+        fogShader->setUniformVec3("u_fogColorSky", m_fogProperties.fogColorSky);
+        fogShader->setUniformVec3("u_fogColorSun", m_fogProperties.fogColorSun);
+        fogShader->setUniformInt("u_fogBlendMode", m_fogProperties.fogBlendMode);
+        fogShader->setUniformBool("u_useDirectionalColor", m_fogProperties.useDirectionalColor);
+        fogShader->setUniformFloat("u_sunScatteringIntensity", m_fogProperties.sunScatteringIntensity);
+
+        fogShader->setUniformFloat("u_mieScattering", m_fogProperties.mieScattering);
+        fogShader->setUniformFloat("u_rayleighScattering", m_fogProperties.rayleighScattering);
+        fogShader->setUniformFloat("u_skyboxFogAmount", m_fogProperties.skyboxFogAmount);
+        // Camera data
+        fogShader->setUniformVec3("u_cameraPosition", glm::inverse(request.viewMatrix)[3]);
+        glm::mat4 inverseProjection = glm::inverse(request.projectionMatrix * request.viewMatrix);
+        fogShader->setUniformMatrix4f("u_inverseViewProjection", inverseProjection);
+
+        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        glm::vec3 sunDir = glm::vec3(0.0f, -1.0f, 0.0f);
+        scene.runSystem<Transform, DirectionalLight>([&](Transform& transform, DirectionalLight& light) {
+            glm::mat3 rotationMatrix = glm::mat3(transform.getModelMatrix());
+            glm::vec3 modelForward = glm::vec3(0.0f, 0.0f, -1.0f);
+            sunDir = glm::normalize(rotationMatrix * modelForward);
+        });
+        fogShader->setUniformVec3("u_sunDirection", sunDir);
+
+        uint32_t numGroupsX = (request.viewportSize.x + 7) / 8;
+        uint32_t numGroupsY = (request.viewportSize.y + 7) / 8;
+        glDispatchCompute(numGroupsX, numGroupsY, 1);
+
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+        glCopyImageSubData(
+            m_fogTexture.getID(), GL_TEXTURE_2D, 0, 0, 0, 0,
+            gBuffer.getTextureID(GL_COLOR_ATTACHMENT3), GL_TEXTURE_2D, 0, 0, 0, 0,
+            request.viewportSize.x, request.viewportSize.y, 1
+        );
     }
 
     void Renderer::geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport, const float farPlane) {

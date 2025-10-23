@@ -56,6 +56,10 @@ namespace TechEngine {
         node.name = "Film Grain Settings";
         node.renderPassName = new std::string("Film Grain Settings");
         m_displayRenderPassList.push_back(node);
+        node.id = 8;
+        node.name = "Fog Settings";
+        node.renderPassName = new std::string("Fog Settings");
+        m_displayRenderPassList.push_back(node);
     }
 
     void SceneSettingsPanel::onUpdate() {

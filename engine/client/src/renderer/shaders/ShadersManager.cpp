@@ -126,6 +126,12 @@ namespace TechEngine {
                     {ShaderType::Compute, shaderBasePath + "postProcess/effects/bloomUpSampleCompute.glsl"}
                 }
             },
+
+            {
+                "atmosphericFog", {
+                    {ShaderType::Compute, shaderBasePath + "atmosphericFog/atmosphericFogCompute.glsl"}
+                }
+            },
             {
                 "line", {
                     {ShaderType::Vertex, shaderBasePath + "lineVertex.glsl"},
