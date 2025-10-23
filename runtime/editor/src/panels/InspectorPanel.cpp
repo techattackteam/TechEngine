@@ -1130,6 +1130,30 @@ namespace TechEngine {
                 ImGui::Checkbox("Enabled", &filmGrainProperties.filmGrainEnabled);
                 ImGui::DragFloat("Intensity", &filmGrainProperties.filmGrainIntensity, 0.01f, 0.0f, 1.0f);
                 ImGui::DragFloat("Size", &filmGrainProperties.filmGrainSize, 0.1f, 0.1f, 10.0f);
+            } else if (propertyName == "Fog Settings") {
+                auto& fogProperties = renderer.getFogProperties();
+                ImGui::Checkbox("Enabled", &fogProperties.enabled);
+                ImGui::Separator();
+                ImGui::DragFloat("Density", &fogProperties.fogDensity, 0.001f, 0.0f, 1.0f);
+                ImGui::DragFloat("Height Falloff", &fogProperties.fogHeightFalloff, 0.01f, 0.0f, 10.0f);
+                ImGui::DragFloat("Height", &fogProperties.fogHeight, 0.1f, -1000.0f, 1000.0f);
+                ImGui::Separator();
+                ImGui::DragFloat("Start Distance", &fogProperties.fogStart, 0.1f, 0.0f, fogProperties.fogEnd);
+                ImGui::DragFloat("End Distance", &fogProperties.fogEnd, 0.1f, fogProperties.fogStart, 1000.0f);
+                ImGui::Separator();
+                ImGui::DragFloat("Skybox Fog Amount", &fogProperties.skyboxFogAmount, 0.1f, 0.0f, 1.0f);
+                const char* blendModes[] = {"Height", "Distance", "Max", "Additive"};
+                ImGui::Combo("Blend Mode", &fogProperties.fogBlendMode, blendModes, IM_ARRAYSIZE(blendModes));
+                ImGui::Separator();
+                ImGui::ColorPicker3("Base Color", &fogProperties.fogColorBase[0]);
+                ImGui::ColorPicker3("Sky Color", &fogProperties.fogColorSky[0]);
+                ImGui::Separator();
+                ImGui::Checkbox("Use Directional Color", &fogProperties.useDirectionalColor);
+                ImGui::ColorPicker3("Color Sun", &fogProperties.fogColorSun[0]);
+                ImGui::DragFloat("Scattering Intensity", &fogProperties.sunScatteringIntensity, 0.1f, 0.0f, 10.0f);
+                ImGui::Separator();
+                ImGui::DragFloat("Mie Scattering", &fogProperties.mieScattering, 0.1f, 0.1f, 10.0f);
+                ImGui::DragFloat("Rayleigh Scattering", &fogProperties.rayleighScattering, 0.1f, 0.1f, 10.0f);
             }
         });
     }

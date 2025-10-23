@@ -107,9 +107,31 @@ namespace TechEngine {
         };
 
         struct FilmGrainProperties {
-            bool filmGrainEnabled = true;
+            bool filmGrainEnabled = false;
             float filmGrainIntensity = 0.05f;
             float filmGrainSize = 1.0f;
+        };
+
+        struct FogProperties {
+            bool enabled = true;
+
+            float fogDensity = 0.01f;
+            float fogHeightFalloff = 0.1f;
+            float fogHeight = 0.0f;
+
+            float fogStart = 0.0f;
+            float fogEnd = 1.0f;
+            float skyboxFogAmount = 0.5f;
+            int fogBlendMode = 0;
+            glm::vec3 fogColorBase = glm::vec3(0.5f, 0.5f, 0.5f);
+            glm::vec3 fogColorSky = glm::vec3(0.7f, 0.7f, 0.8f);
+
+            bool useDirectionalColor = false;
+            glm::vec3 fogColorSun = glm::vec3(1.0f, 1.0f, 0.9f);
+            float sunScatteringIntensity = 1.0f;
+
+            float mieScattering = 1.0f;
+            float rayleighScattering = 1.0f;
         };
 
     private:
@@ -186,6 +208,10 @@ namespace TechEngine {
         // Film Grain
         FilmGrainProperties m_filmGrainProperties;
 
+        // Fog
+        FogProperties m_fogProperties;
+        Texture m_fogTexture;
+
         std::vector<Line> lines;
 
         SkyBox m_skyBox;
@@ -242,6 +268,8 @@ namespace TechEngine {
 
         FilmGrainProperties& getFilmGrainProperties();
 
+        FogProperties& getFogProperties();
+
     private:
         void uploadNewMesh(const std::string& name);
 
@@ -263,6 +291,8 @@ namespace TechEngine {
 
         void recreateBloomTexture(const glm::ivec2& viewport);
 
+        void recreateFogTexture(const glm::ivec2& viewport);
+
         void scenePass(const RenderRequest& request);
 
         void prepareGBuffer(const glm::ivec2& viewport);
@@ -274,6 +304,8 @@ namespace TechEngine {
         void lightCulling(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
 
         void shadowDepthPass(const RenderRequest& request);
+
+        void fogPass(const RenderRequest& request);
 
         void geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport, float farPlane);
 
