@@ -122,6 +122,7 @@ namespace TechEngine {
         m_uiRenderer.init();
 
         recreateFogTexture({800, 600});
+        createFroxelTexture({800, 600});
 
         EventManager& eventManager = m_systemsRegistry.getSystem<EventManager>();
 
@@ -306,6 +307,10 @@ namespace TechEngine {
 
     Renderer::FogProperties& Renderer::getFogProperties() {
         return m_fogProperties;
+    }
+
+    Renderer::FroxelGridProperties& Renderer::getFroxelGridProperties() {
+        return m_froxelGridProperties;
     }
 
     void Renderer::uploadNewMesh(const std::string& name) {
@@ -502,7 +507,6 @@ namespace TechEngine {
                 .innerCutoff = 0.0f,
                 .outerCutoff = 0.0f,
                 .castShadow = directionalLight.castShadows ? 1 : 0,
-
             };
             if (directionalLight.shadowTextureHandle && directionalLight.lightSpaceMatrix && directionalLight.cascadeSplits) {
                 for (int i = 0; i < 4; i++) {
@@ -531,7 +535,6 @@ namespace TechEngine {
             };
             lightData.shadowTextureHandle[0] = spotLight.shadowTextureHandle;
             lightData.lightSpaceMatrix[0] = spotLight.lightSpaceMatrix;
-
             lights.push_back(lightData);
         });
 
@@ -650,6 +653,24 @@ namespace TechEngine {
         m_fogTexture.create(GL_TEXTURE_2D, GL_RGBA16F, viewport.x, viewport.y, GL_RGBA, GL_FLOAT, nullptr);
     }
 
+    void Renderer::createFroxelTexture(const glm::ivec2& viewport) {
+        if (m_froxelTexture.getID() != 0) {
+            m_froxelTexture.deleteTexture();
+        }
+
+        m_froxelTexture.create(GL_TEXTURE_3D, GL_RGBA16F, m_froxelGridProperties.width, m_froxelGridProperties.height, GL_RGBA, GL_FLOAT, nullptr, m_froxelGridProperties.depth);
+
+        glGenBuffers(1, &m_froxelParamsUBO);
+        glBindBuffer(GL_UNIFORM_BUFFER, m_froxelParamsUBO);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(FroxelParams), nullptr, GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        glGenBuffers(1, &m_volumetricSettingsUBO);
+        glBindBuffer(GL_UNIFORM_BUFFER, m_volumetricSettingsUBO);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(VolumetricSettings), nullptr, GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    }
+
     void Renderer::scenePass(const RenderRequest& request) {
         glm::mat4 viewMatrix = request.viewMatrix;
         glm::mat4 projectionMatrix = request.projectionMatrix;
@@ -685,6 +706,9 @@ namespace TechEngine {
         if (m_fogProperties.enabled) {
             fogPass(request);
         }
+        godRayPass(request);
+        /*if (m_godRaysProperties.enabled) {
+        }*/
     }
 
     void Renderer::prepareGBuffer(const glm::ivec2& viewport) {
@@ -1137,20 +1161,14 @@ namespace TechEngine {
         Shader* fogShader = m_shadersManager.getActiveShader();
         fogShader->bind();
 
-        // Bind input texture (scene color from geometry pass)
         FrameBuffer& gBuffer = getFramebuffer(m_gBufferFBO);
         glBindImageTexture(0, gBuffer.getTextureID(GL_COLOR_ATTACHMENT3), 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
-
-        // Bind output texture (fog result)
         glBindImageTexture(1, m_fogTexture.getID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 
-        // Bind depth buffer
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, gBuffer.getTextureID(GL_DEPTH_ATTACHMENT));
         fogShader->setUniformInt("u_depthBuffer", 0);
 
-        // Set fog parameters
-        // fogShader->setUniformBool("u_fogEnabled", m_fogProperties.enabled);
         fogShader->setUniformFloat("u_fogDensity", m_fogProperties.fogDensity);
         fogShader->setUniformFloat("u_fogHeightFalloff", m_fogProperties.fogHeightFalloff);
         fogShader->setUniformFloat("u_fogHeight", m_fogProperties.fogHeight);
@@ -1393,6 +1411,70 @@ namespace TechEngine {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, m_bloomIterations - 1);
     }
 
+    void Renderer::godRayPass(const RenderRequest& request) {
+        /*if (!m_godRaysProperties.enabled) {
+            return;
+        }*/
+        //createFroxelTexture(request.viewportSize);
+        glm::vec3 cameraPosition = glm::inverse(request.viewMatrix)[3];
+        populateLightDataBuffers();
+        m_froxelGridProperties.nearPlane = request.nearPlane;
+        m_froxelGridProperties.farPlane = request.farPlane;
+
+        m_froxelParams.viewMatrix = request.viewMatrix;
+        m_froxelParams.viewProjectionInverse = glm::inverse(request.projectionMatrix * request.viewMatrix);
+
+        m_froxelParams.froxelDimensions = glm::uvec3(m_froxelGridProperties.width, m_froxelGridProperties.height, m_froxelGridProperties.depth);
+
+        m_froxelParams.froxelNearPlane = m_froxelGridProperties.nearPlane;
+        m_froxelParams.froxelFarPlane = m_froxelGridProperties.farPlane;
+        m_froxelParams.depthDistributionScale = m_froxelGridProperties.depthDistributionScale;
+        m_froxelParams.useExponentialDepth = m_froxelGridProperties.useExponentialDepth ? 1 : 0;
+
+        m_froxelParams.rcpFroxelDimX = 1.0f / static_cast<float>(m_froxelGridProperties.width);
+        m_froxelParams.rcpFroxelDimY = 1.0f / static_cast<float>(m_froxelGridProperties.height);
+        m_froxelParams.rcpFroxelDimZ = 1.0f / static_cast<float>(m_froxelGridProperties.depth);
+        m_froxelParams.cameraPosition = cameraPosition;
+        glBindBuffer(GL_UNIFORM_BUFFER, m_froxelParamsUBO);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(FroxelParams), &m_froxelParams);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        m_volumetricSettings.globalDensity = glm::vec3(0.01f, 0.02f, 0.01f); // Adjust to taste
+        m_volumetricSettings.heightFalloff = 0.1f;
+        m_volumetricSettings.globalAlbedo = glm::vec3(0.9f, 0.9f, 0.9f); // Nearly white scattering
+        m_volumetricSettings.anisotropy = 0.3f; // Slightly forward scattering
+        m_volumetricSettings.globalExtinction = 0.05f;
+        m_volumetricSettings.ambientIntensity = 0.05f;
+        glBindBuffer(GL_UNIFORM_BUFFER, m_volumetricSettingsUBO);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(VolumetricSettings), &m_volumetricSettings);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        GLfloat clearColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+        glClearTexImage(m_froxelTexture.getID(), 0, GL_RGBA, GL_FLOAT, clearColor);
+
+        // Use compute shader
+        m_shadersManager.changeActiveShader("volumetricLighting");
+        // Bind UBO
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_froxelParamsUBO);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_volumetricSettingsUBO);
+        m_lightsBuffer.setBindingPoint(0);
+
+        // Bind 3D texture as image
+        glBindImageTexture(0, m_froxelTexture.getID(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+
+        // Dispatch compute
+        uint32_t groupsX = (m_froxelGridProperties.width + 7) / 8;
+        uint32_t groupsY = (m_froxelGridProperties.height + 7) / 8;
+        uint32_t groupsZ = m_froxelGridProperties.depth;
+
+        glDispatchCompute(groupsX, groupsY, groupsZ);
+
+        // Memory barrier
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+        glUseProgram(0);
+    }
+
     void Renderer::postProcessingPass() {
         glDisable(GL_DEPTH_TEST);
 
@@ -1450,6 +1532,11 @@ namespace TechEngine {
         postProcessShader->setUniformFloat("u_filmGrainSize", m_filmGrainProperties.filmGrainSize);
         postProcessShader->setUniformFloat("u_time", glfwGetTime()); // or your timer
 
+        // In postProcessingPass()
+        /*glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, m_froxelTexture.getID());
+        postProcessShader->setUniformInt("u_godRaysTexture", 3);*/
+        //postProcessShader->setUniformBool("u_godRaysEnabled", m_godRaysProperties.enabled);
 
         m_vertexArrays[BufferFullscreenQuad].bind();
         glDrawArrays(GL_TRIANGLES, 0, 6);

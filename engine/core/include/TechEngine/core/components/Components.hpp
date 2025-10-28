@@ -230,7 +230,6 @@ namespace TechEngine {
         uint32_t shadowMapID = -1;
         uint64_t shadowTextureHandle = 0.0f;
 
-
         static void serialize(const PointLight& staticBody, YAML::Emitter& out);
 
         static PointLight deserialize(const YAML::Node& node);

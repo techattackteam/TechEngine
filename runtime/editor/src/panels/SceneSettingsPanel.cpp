@@ -60,6 +60,10 @@ namespace TechEngine {
         node.name = "Fog Settings";
         node.renderPassName = new std::string("Fog Settings");
         m_displayRenderPassList.push_back(node);
+        node.id = 9;
+        node.name = "God Rays Settings";
+        node.renderPassName = new std::string("God Rays Settings");
+        m_displayRenderPassList.push_back(node);
     }
 
     void SceneSettingsPanel::onUpdate() {
