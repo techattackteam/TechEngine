@@ -65,7 +65,7 @@ namespace TechEngine {
 
         glTexParameteri(m_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(m_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        if (m_target == GL_TEXTURE_CUBE_MAP) {
+        if (m_target == GL_TEXTURE_CUBE_MAP || m_target == GL_TEXTURE_3D) {
             glTexParameteri(m_target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
         }
 

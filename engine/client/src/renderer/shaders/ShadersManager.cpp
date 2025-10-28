@@ -113,23 +113,33 @@ namespace TechEngine {
             },
             {
                 "bloomPrefilter", {
-                    {ShaderType::Compute, shaderBasePath + "postProcess/effects/bloomPrefilterCompute.glsl"}
+                    {ShaderType::Compute, shaderBasePath + "postProcess/effects/bloom/bloomPrefilterCompute.glsl"}
                 }
             },
             {
                 "bloomDownSample", {
-                    {ShaderType::Compute, shaderBasePath + "postProcess/effects/bloomDownSampleCompute.glsl"}
+                    {ShaderType::Compute, shaderBasePath + "postProcess/effects/bloom/bloomDownSampleCompute.glsl"}
                 }
             },
             {
                 "bloomUpSample", {
-                    {ShaderType::Compute, shaderBasePath + "postProcess/effects/bloomUpSampleCompute.glsl"}
+                    {ShaderType::Compute, shaderBasePath + "postProcess/effects/bloom/bloomUpSampleCompute.glsl"}
                 }
             },
 
             {
                 "atmosphericFog", {
                     {ShaderType::Compute, shaderBasePath + "atmosphericFog/atmosphericFogCompute.glsl"}
+                }
+            },
+            {
+                "occlusionMask", {
+                    {ShaderType::Compute, shaderBasePath + "postProcess/effects/godRays/occlusionMaskCompute.glsl"}
+                }
+            },
+            {
+                "volumetricLighting", {
+                    {ShaderType::Compute, shaderBasePath + "volumetricLighting/VolumetricLighting.glsl"}
                 }
             },
             {

@@ -46,6 +46,10 @@ uniform float u_filmGrainIntensity = 0.05;
 uniform float u_filmGrainSize = 1.0;
 uniform float u_time = 0.0;
 
+// God Rays
+uniform sampler2D u_godRaysTexture;
+uniform bool u_godRaysEnabled;
+
 vec3 reinhard(vec3 color) {
     return color / (color + vec3(1.0));
 }
@@ -147,6 +151,11 @@ void main() {
     if (u_bloomEnabled) {
         vec3 bloomColor = texture(u_bloomBuffer, texCoords).rgb;
         hdrColor += bloomColor * u_bloomStrength;
+    }
+
+    if (u_godRaysEnabled) {
+        vec3 godRays = texture(u_godRaysTexture, texCoords).rgb;
+        hdrColor += godRays; // Additive blend
     }
 
     // Exposure

@@ -1154,6 +1154,15 @@ namespace TechEngine {
                 ImGui::Separator();
                 ImGui::DragFloat("Mie Scattering", &fogProperties.mieScattering, 0.1f, 0.1f, 10.0f);
                 ImGui::DragFloat("Rayleigh Scattering", &fogProperties.rayleighScattering, 0.1f, 0.1f, 10.0f);
+            } else if ("God Rays Settings" == propertyName) {
+                /*auto& godRaysProperties = renderer.getGodRaysProperties();
+                ImGui::Checkbox("Enabled", &godRaysProperties.enabled);
+                ImGui::Checkbox("Use Half Resolution", &godRaysProperties.useHalfResolution);
+                ImGui::DragFloat("Exposure", &godRaysProperties.exposure, 0.01f, 0.0f, 1.0f);
+                ImGui::DragFloat("Decay", &godRaysProperties.decay, 0.01f, 0.0f, 1.0f);
+                ImGui::DragFloat("Density", &godRaysProperties.density, 0.01f, 0.0f, 1.0f);
+                ImGui::DragFloat("Weight", &godRaysProperties.weight, 0.01f, 0.0f, 1.0f);
+                ImGui::DragInt("Samples", &godRaysProperties.numSamples, 1, 1, 1000);*/
             }
         });
     }

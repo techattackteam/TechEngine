@@ -113,7 +113,7 @@ namespace TechEngine {
         };
 
         struct FogProperties {
-            bool enabled = true;
+            bool enabled = false;
 
             float fogDensity = 0.01f;
             float fogHeightFalloff = 0.1f;
@@ -132,6 +132,53 @@ namespace TechEngine {
 
             float mieScattering = 1.0f;
             float rayleighScattering = 1.0f;
+        };
+
+        struct FroxelGridProperties {
+            // Grid dimensions
+            uint32_t width = 160;
+            uint32_t height = 90;
+            uint32_t depth = 64;
+
+            // Depth distribution
+            float nearPlane = 0.1f; // Camera near plane
+            float farPlane = 100.0f; // Camera far plane
+            bool useExponentialDepth = true;
+
+            float depthDistributionScale = 1.0f;
+        };
+
+        struct FroxelParams {
+            glm::mat4 viewProjectionInverse;
+            glm::mat4 viewMatrix;
+
+            glm::uvec3 froxelDimensions;
+            float froxelNearPlane;
+
+            float froxelFarPlane;
+            float depthDistributionScale;
+            uint32_t useExponentialDepth;
+            float rcpFroxelDimX;
+
+            float rcpFroxelDimY;
+            float rcpFroxelDimZ;
+            glm::vec2 padding;
+
+            glm::vec3 cameraPosition;
+            float padding2;
+        };
+
+        struct VolumetricSettings {
+            bool enabled = true;
+            glm::vec3 globalDensity = glm::vec3(0.01f, 0.02f, 0.01f); // Base atmospheric density
+            float heightFalloff = 0.1f; // Exponential height falloff
+
+            glm::vec3 globalAlbedo = glm::vec3(0.9f); // Scattering color (typically ~0.9)
+            float anisotropy = 0.3f; // Phase function g parameter [-1, 1]
+
+            float globalExtinction = 0.05f; // How quickly light is absorbed
+            float ambientIntensity = 0.05f; // Ambient light contribution
+            glm::vec2 padding;
         };
 
     private:
@@ -212,6 +259,14 @@ namespace TechEngine {
         FogProperties m_fogProperties;
         Texture m_fogTexture;
 
+        // Volumetric Rendering
+        FroxelGridProperties m_froxelGridProperties;
+        FroxelParams m_froxelParams;
+        VolumetricSettings m_volumetricSettings;
+        Texture m_froxelTexture;
+        uint32_t m_froxelParamsUBO;
+        uint32_t m_volumetricSettingsUBO;
+
         std::vector<Line> lines;
 
         SkyBox m_skyBox;
@@ -270,6 +325,8 @@ namespace TechEngine {
 
         FogProperties& getFogProperties();
 
+        FroxelGridProperties& getFroxelGridProperties();
+
     private:
         void uploadNewMesh(const std::string& name);
 
@@ -293,6 +350,8 @@ namespace TechEngine {
 
         void recreateFogTexture(const glm::ivec2& viewport);
 
+        void createFroxelTexture(const glm::ivec2& viewport);
+
         void scenePass(const RenderRequest& request);
 
         void prepareGBuffer(const glm::ivec2& viewport);
@@ -312,6 +371,8 @@ namespace TechEngine {
         void automaticExposurePass(const glm::ivec2& viewport);
 
         void bloomPass(const glm::ivec2& viewport);
+
+        void godRayPass(const RenderRequest& request);
 
         void postProcessingPass();
 
