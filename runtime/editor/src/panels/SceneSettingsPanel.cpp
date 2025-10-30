@@ -61,8 +61,8 @@ namespace TechEngine {
         node.renderPassName = new std::string("Fog Settings");
         m_displayRenderPassList.push_back(node);
         node.id = 9;
-        node.name = "God Rays Settings";
-        node.renderPassName = new std::string("God Rays Settings");
+        node.name = "Volumetric Settings";
+        node.renderPassName = new std::string("Volumetric Settings");
         m_displayRenderPassList.push_back(node);
     }
 

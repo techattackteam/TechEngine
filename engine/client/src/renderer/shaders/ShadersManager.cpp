@@ -138,8 +138,17 @@ namespace TechEngine {
                 }
             },
             {
-                "volumetricLighting", {
-                    {ShaderType::Compute, shaderBasePath + "volumetricLighting/VolumetricLighting.glsl"}
+                "froxelScattering", {
+                    {ShaderType::Compute, shaderBasePath + "volumetricLighting/VolumetricFroxelScatteringCompute.glsl"}
+                }
+            },
+            {
+                "volumetricRayMarching", {
+                    {ShaderType::Compute, shaderBasePath + "volumetricLighting/VolumetricRayMarchingCompute.glsl"}
+                }
+            },{
+                "sampleVolumetricLight", {
+                    {ShaderType::Compute, shaderBasePath + "volumetricLighting/SampleVolumetricLightCompute.glsl"}
                 }
             },
             {
