@@ -313,6 +313,10 @@ namespace TechEngine {
         return m_froxelGridProperties;
     }
 
+    Renderer::VolumetricSettings& Renderer::getVolumetricSettings() {
+        return m_volumetricSettings;
+    }
+
     void Renderer::uploadNewMesh(const std::string& name) {
         Mesh& mesh = m_systemsRegistry.getSystem<ResourcesManager>().getMesh(name);
         std::vector<Vertex>& vertices = mesh.m_vertices;
@@ -656,9 +660,11 @@ namespace TechEngine {
     void Renderer::createFroxelTexture(const glm::ivec2& viewport) {
         if (m_froxelTexture.getID() != 0) {
             m_froxelTexture.deleteTexture();
+            m_volumetricLightVolume.deleteTexture();
         }
 
         m_froxelTexture.create(GL_TEXTURE_3D, GL_RGBA16F, m_froxelGridProperties.width, m_froxelGridProperties.height, GL_RGBA, GL_FLOAT, nullptr, m_froxelGridProperties.depth);
+        m_volumetricLightVolume.create(GL_TEXTURE_3D, GL_RGBA16F, m_froxelGridProperties.width, m_froxelGridProperties.height, GL_RGBA, GL_FLOAT, nullptr, m_froxelGridProperties.depth);
 
         glGenBuffers(1, &m_froxelParamsUBO);
         glBindBuffer(GL_UNIFORM_BUFFER, m_froxelParamsUBO);
@@ -702,13 +708,13 @@ namespace TechEngine {
 
         aoPass(viewMatrix, projectionMatrix, viewport);
         geometryPass(viewMatrix, projectionMatrix, viewport, farPlane);
-        m_skyBox.renderSkybox(getFramebuffer(m_gBufferFBO), viewMatrix, projectionMatrix);
+        if (m_volumetricSettings.enabled) {
+            godRayPass(request);
+        }
+        //m_skyBox.renderSkybox(getFramebuffer(m_gBufferFBO), viewMatrix, projectionMatrix);
         if (m_fogProperties.enabled) {
             fogPass(request);
         }
-        godRayPass(request);
-        /*if (m_godRaysProperties.enabled) {
-        }*/
     }
 
     void Renderer::prepareGBuffer(const glm::ivec2& viewport) {
@@ -1238,11 +1244,14 @@ namespace TechEngine {
         glBindTexture(GL_TEXTURE_2D, m_skyBox.m_brdfLUTTexture.getID());
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m_aoTexture.getID());
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_3D, m_volumetricLightVolume.getID());
 
         m_shadersManager.getActiveShader()->setUniformInt("u_irradianceMap", 3);
         m_shadersManager.getActiveShader()->setUniformInt("u_prefilterMap", 1);
         m_shadersManager.getActiveShader()->setUniformInt("u_brdfLUT", 2);
         m_shadersManager.getActiveShader()->setUniformInt("u_aoMap", 0);
+        m_shadersManager.getActiveShader()->setUniformInt("u_volumetricLightVolume", 4);
 
         GLenum attachments[2] = {GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT2};
 
@@ -1412,10 +1421,6 @@ namespace TechEngine {
     }
 
     void Renderer::godRayPass(const RenderRequest& request) {
-        /*if (!m_godRaysProperties.enabled) {
-            return;
-        }*/
-        //createFroxelTexture(request.viewportSize);
         glm::vec3 cameraPosition = glm::inverse(request.viewMatrix)[3];
         populateLightDataBuffers();
         m_froxelGridProperties.nearPlane = request.nearPlane;
@@ -1439,21 +1444,16 @@ namespace TechEngine {
         glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(FroxelParams), &m_froxelParams);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-        m_volumetricSettings.globalDensity = glm::vec3(0.01f, 0.02f, 0.01f); // Adjust to taste
-        m_volumetricSettings.heightFalloff = 0.1f;
-        m_volumetricSettings.globalAlbedo = glm::vec3(0.9f, 0.9f, 0.9f); // Nearly white scattering
-        m_volumetricSettings.anisotropy = 0.3f; // Slightly forward scattering
-        m_volumetricSettings.globalExtinction = 0.05f;
-        m_volumetricSettings.ambientIntensity = 0.05f;
         glBindBuffer(GL_UNIFORM_BUFFER, m_volumetricSettingsUBO);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(VolumetricSettings), &m_volumetricSettings);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
         GLfloat clearColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
         glClearTexImage(m_froxelTexture.getID(), 0, GL_RGBA, GL_FLOAT, clearColor);
+        glClearTexImage(m_volumetricLightVolume.getID(), 0, GL_RGBA, GL_FLOAT, clearColor);
 
         // Use compute shader
-        m_shadersManager.changeActiveShader("volumetricLighting");
+        m_shadersManager.changeActiveShader("froxelScattering");
         // Bind UBO
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_froxelParamsUBO);
         glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_volumetricSettingsUBO);
@@ -1471,6 +1471,64 @@ namespace TechEngine {
 
         // Memory barrier
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+        glUseProgram(0);
+
+        m_shadersManager.changeActiveShader("volumetricRayMarching");
+        Shader* volumetricShader = m_shadersManager.getActiveShader();
+        FrameBuffer& hdrFBO = getFramebuffer(m_gBufferFBO);
+
+        volumetricShader->setUniformFloat("u_nearPlane", request.nearPlane);
+        volumetricShader->setUniformFloat("u_farPlane", request.farPlane);
+
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, hdrFBO.getTextureID(GL_DEPTH_ATTACHMENT));
+        volumetricShader->setUniformInt("u_depthBuffer", 0);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_3D, m_froxelTexture.getID());
+        volumetricShader->setUniformInt("u_froxelScattering", 1);
+
+        glBindImageTexture(0, m_volumetricLightVolume.getID(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_froxelParamsUBO);
+
+        groupsZ = 1;
+
+        glDispatchCompute(groupsX, groupsY, groupsZ);
+
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
+                        GL_TEXTURE_FETCH_BARRIER_BIT |
+                        GL_FRAMEBUFFER_BARRIER_BIT);
+
+        glUseProgram(0);
+
+        m_shadersManager.changeActiveShader("sampleVolumetricLight");
+        Shader* sampleVolumetricShader = m_shadersManager.getActiveShader();
+
+        /*glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, hdrFBO.getTextureID(GL_COLOR_ATTACHMENT3));
+        sampleVolumetricShader->setUniformInt("u_hdrBuffer", 0);*/
+        glBindImageTexture(0, hdrFBO.getTextureID(GL_COLOR_ATTACHMENT3), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_3D, m_volumetricLightVolume.getID());
+        sampleVolumetricShader->setUniformInt("u_volumetricLightVolume", 1);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, hdrFBO.getTextureID(GL_DEPTH_ATTACHMENT));
+        sampleVolumetricShader->setUniformInt("u_depthBuffer", 2);
+
+        sampleVolumetricShader->setUniformMatrix4f("u_viewProjection", request.projectionMatrix * request.viewMatrix);
+
+        groupsX = (request.viewportSize.x + 7) / 8;
+        groupsY = (request.viewportSize.y + 7) / 8;
+        groupsZ = 1;
+
+        glDispatchCompute(groupsX, groupsY, groupsZ);
+
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
+                        GL_TEXTURE_FETCH_BARRIER_BIT |
+                        GL_FRAMEBUFFER_BARRIER_BIT);
 
         glUseProgram(0);
     }
@@ -1532,11 +1590,6 @@ namespace TechEngine {
         postProcessShader->setUniformFloat("u_filmGrainSize", m_filmGrainProperties.filmGrainSize);
         postProcessShader->setUniformFloat("u_time", glfwGetTime()); // or your timer
 
-        // In postProcessingPass()
-        /*glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, m_froxelTexture.getID());
-        postProcessShader->setUniformInt("u_godRaysTexture", 3);*/
-        //postProcessShader->setUniformBool("u_godRaysEnabled", m_godRaysProperties.enabled);
 
         m_vertexArrays[BufferFullscreenQuad].bind();
         glDrawArrays(GL_TRIANGLES, 0, 6);

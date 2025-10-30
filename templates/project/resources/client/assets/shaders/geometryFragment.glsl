@@ -83,6 +83,9 @@ uniform samplerCube u_prefilterMap;
 uniform sampler2D u_brdfLUT;
 uniform sampler2D u_aoMap;
 
+uniform sampler3D u_volumetricLightVolume;
+uniform mat4 u_view;
+uniform mat4 u_projection;
 const int TILE_SIZE = 16;
 
 void sampleMaterialTextures(inout Material material, vec2 uv, inout vec3 normal) {
@@ -281,6 +284,35 @@ vec3 calculateDirectionalLight(Light light, Material Material, vec3 normal, vec3
     return PBRCalculate(light, Material, radiance, normal, view, lightDir);
 }
 
+vec4 applyVolumetricLighting(sampler3D volume, vec3 worldPos) {
+    mat4 viewProj = u_projection * u_view;
+    vec4 p = viewProj * vec4(worldPos, 1.0f);
+
+    if (p.w > 0.0f)
+    {
+        p.x /= p.w;
+        p.y /= p.w;
+        p.z /= p.w;
+    }
+
+    vec3 uvw;
+
+    float z_buffer_params_y = 500 / 0.1f;
+    float z_buffer_params_x = 1.0f - z_buffer_params_y;
+
+    uvw.x = p.x * 0.5f + 0.5f;
+    uvw.y = p.y * 0.5f + 0.5f;
+    uvw.z = 1.0f / (z_buffer_params_x * (p.z * 0.5f + 0.5f) + z_buffer_params_y);
+
+    // Exponential View-Z
+    vec2 params = vec2(float(128) / log2(500 / 0.1f), -(float(128) * log2(0.1f) / log2(500 / 0.1f)));
+
+    float view_z = uvw.z * 500;
+    uvw.z = (max(log2(view_z) * params.x + params.y, 0.0f)) / 128;
+
+    return textureLod(volume, uvw, 0);
+}
+
 void main() {
     Material material = materialBuffer.materials[f_materialID];
 
@@ -355,14 +387,14 @@ void main() {
     // Diffuse lighting
     vec3 irradiance = texture(u_irradianceMap, normal).rgb;
     vec3 diffuseIBL = irradiance * material.albedo.rgb;
-    vec3 diffuse = kd * diffuseIBL;
+    vec3 diffuse = kd * material.albedo.rgb;
 
     // Specular lighting
     vec3 R = reflect(-view, normal);
     const float MAX_REFLECTION_LOD = 4.0;
     vec3 prefilteredColor = textureLod(u_prefilterMap, R, material.roughness * MAX_REFLECTION_LOD).rgb;
     vec2 envBRDF = texture(u_brdfLUT, vec2(max(dot(normal, view), 0.0), material.roughness)).rg;
-    vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+    vec3 specular = material.roughness * (F/** * envBRDF.x + envBRDF.y*/);
 
     // Ambient
     vec3 ambient = specular + diffuse;

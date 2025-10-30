@@ -138,7 +138,7 @@ namespace TechEngine {
             // Grid dimensions
             uint32_t width = 160;
             uint32_t height = 90;
-            uint32_t depth = 64;
+            uint32_t depth = 128;
 
             // Depth distribution
             float nearPlane = 0.1f; // Camera near plane
@@ -169,16 +169,14 @@ namespace TechEngine {
         };
 
         struct VolumetricSettings {
+            glm::vec3 scatteringCoefficient = glm::vec3(0.1f, 0.1f, 0.1f);
+            float density = 1.0f;
+
+            glm::vec3 absorptionCoefficient = glm::vec3(0.0f);
+            float anisotropy = 0.0f;
+
+            glm::vec3 emissiveCoefficient = glm::vec3(0.0f);
             bool enabled = true;
-            glm::vec3 globalDensity = glm::vec3(0.01f, 0.02f, 0.01f); // Base atmospheric density
-            float heightFalloff = 0.1f; // Exponential height falloff
-
-            glm::vec3 globalAlbedo = glm::vec3(0.9f); // Scattering color (typically ~0.9)
-            float anisotropy = 0.3f; // Phase function g parameter [-1, 1]
-
-            float globalExtinction = 0.05f; // How quickly light is absorbed
-            float ambientIntensity = 0.05f; // Ambient light contribution
-            glm::vec2 padding;
         };
 
     private:
@@ -266,6 +264,7 @@ namespace TechEngine {
         Texture m_froxelTexture;
         uint32_t m_froxelParamsUBO;
         uint32_t m_volumetricSettingsUBO;
+        Texture m_volumetricLightVolume;
 
         std::vector<Line> lines;
 
@@ -326,6 +325,8 @@ namespace TechEngine {
         FogProperties& getFogProperties();
 
         FroxelGridProperties& getFroxelGridProperties();
+
+        VolumetricSettings& getVolumetricSettings();
 
     private:
         void uploadNewMesh(const std::string& name);
