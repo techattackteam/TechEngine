@@ -146,10 +146,6 @@ namespace TechEngine {
                 "volumetricRayMarching", {
                     {ShaderType::Compute, shaderBasePath + "volumetricLighting/VolumetricRayMarchingCompute.glsl"}
                 }
-            },{
-                "sampleVolumetricLight", {
-                    {ShaderType::Compute, shaderBasePath + "volumetricLighting/SampleVolumetricLightCompute.glsl"}
-                }
             },
             {
                 "line", {

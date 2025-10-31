@@ -1160,7 +1160,7 @@ namespace TechEngine {
                 ImGuiUtils::drawVec3Control("Scattering", volumetricSettings.scatteringCoefficient, 10.0f, 100.0f, 0.0f, 100.0f);
                 ImGui::DragFloat("Density", &volumetricSettings.density, 0.01f, 0.0f, 100.0f);
                 ImGuiUtils::drawVec3Control("Absorption", volumetricSettings.absorptionCoefficient, 0.0f, 100.0f, 0.0f, 10.0f);
-                ImGui::DragFloat("Anisotropy", &volumetricSettings.anisotropy, 0.01f, 0.0f, 1.0f);
+                ImGui::DragFloat("Anisotropy", &volumetricSettings.anisotropy, 0.01f, -1.0f, 1.0f);
                 ImGuiUtils::drawVec3Control("Emissive", volumetricSettings.emissiveCoefficient, 0.00f, 100.0f, 0.0f, 100.0f);
             }
         });

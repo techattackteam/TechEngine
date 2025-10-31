@@ -63,18 +63,6 @@ layout (std430, binding = 0) readonly buffer LightBuffer {
     Light lights[];
 };
 
-float froxelZToDepth(float froxelZ) {
-    float normalizedZ = froxelZ / float(froxelDimensions.z);
-
-    if (useExponentialDepth != 0u) {
-        float scale = depthDistributionScale;
-        float linearZ = log(normalizedZ * (exp(scale) - 1.0) + 1.0) / scale;
-        return froxelNearPlane + linearZ * (froxelFarPlane - froxelNearPlane);
-    } else {
-        return froxelNearPlane + normalizedZ * (froxelFarPlane - froxelNearPlane);
-    }
-}
-
 vec3 froxelToWorldPos(uvec3 froxelCoord) {
     float view_z = froxelNearPlane * pow(froxelFarPlane / froxelNearPlane, (float(froxelCoord.z) + 0.5f) / float(froxelDimensions.z));
 
@@ -91,32 +79,36 @@ vec3 froxelToWorldPos(uvec3 froxelCoord) {
 
     vec4 p = viewProjectionInverse * vec4(ndc, 1.0f);
 
-    p.x /= p.w;
-    p.y /= p.w;
-    p.z /= p.w;
-
+    p.xyz /= p.w;
     return p.xyz;
 }
 
 // Henyey-Greenstein phase function
 float phaseHG(float cosTheta, float g) {
     const float PI = 3.14159265359;
-    float g2 = g * g;
+    float g2 = pow(g, 2.0);
     float denom = 1.0 + g2 - 2.0 * g * cosTheta;
     return (1.0f / (4.0f * PI)) * (1.0f - g2) / max(pow(denom, 1.5f), 0.0001f);
 }
 
-float sampleDensity(vec3 worldPos) {
-    //float heightDensity = globalDensity.y /*** exp(-worldPos.y * heightFalloff)*/;
+float calculatePointShadow(Light light, vec3 worldPos) {
+    vec3 fragToLight = worldPos - light.position;
+    samplerCube handle = samplerCube(light.shadowHandle[0]);
+    float closestDepth = texture(handle, fragToLight).r * froxelFarPlane;
+    float currentDepth = length(fragToLight);
+    float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
 
-    // For now, just return global density
-    // Later we'll add local volume sampling here
-
-    //return heightDensity;
-    return 1.0f;
+    return 1.0f - shadow;
 }
 
 vec3 evaluatePointLight(Light light, vec3 worldPos, vec3 viewDir, float density) {
+    float shadow;
+    if (light.castShadow != 0) {
+        shadow = calculatePointShadow(light, worldPos);
+    }
+    if (shadow <= 0.0) {
+        return vec3(0.0);
+    }
     vec3 toLight = light.position - worldPos;
     float distToLight = length(toLight);
     vec3 lightDir = toLight / distToLight;
@@ -133,7 +125,7 @@ vec3 evaluatePointLight(Light light, vec3 worldPos, vec3 viewDir, float density)
     float cosTheta = dot(lightDir, -viewDir);
     float phase = phaseHG(cosTheta, anisotropy);
 
-    return light.color * light.intensity * attenuation * phase;
+    return light.color * light.intensity * attenuation * phase * shadow;
 }
 
 float calculateDirectionalShadow(Light light, vec3 worldPos, vec4 viewPos) {
@@ -210,14 +202,10 @@ void main() {
         }
     }
 
-    inScattering += vec3(0.0f); // Ambient term
+    inScattering += vec3(0.1f); // Ambient term for testing. Sample the ambient light from the scene
     inScattering += emissiveCoefficient;
 
-    vec3 finalColor = inScattering * sigma_s;
-
-    float froxelDepth = froxelZToDepth(float(froxelCoords.z + 1)) - froxelZToDepth(float(froxelCoords.z));
-    //vec3 transmittance = exp(-extinctionCoefficient * froxelDepth);
-    //float avgTransmittance = (transmittance.r + transmittance.g + transmittance.b) / 3.0;
+    vec3 finalColor = inScattering * scatteringAlbedo;
     float avgExtinction = (extinctionCoefficient.r + extinctionCoefficient.g + extinctionCoefficient.b) / 3.0;
     imageStore(froxelScattering, ivec3(froxelCoords), vec4(finalColor, avgExtinction));
 }
