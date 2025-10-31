@@ -708,10 +708,10 @@ namespace TechEngine {
 
         aoPass(viewMatrix, projectionMatrix, viewport);
         geometryPass(viewMatrix, projectionMatrix, viewport, farPlane);
+        m_skyBox.renderSkybox(getFramebuffer(m_gBufferFBO), viewMatrix, projectionMatrix);
         if (m_volumetricSettings.enabled) {
             godRayPass(request);
         }
-        //m_skyBox.renderSkybox(getFramebuffer(m_gBufferFBO), viewMatrix, projectionMatrix);
         if (m_fogProperties.enabled) {
             fogPass(request);
         }
@@ -1244,14 +1244,11 @@ namespace TechEngine {
         glBindTexture(GL_TEXTURE_2D, m_skyBox.m_brdfLUTTexture.getID());
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m_aoTexture.getID());
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_3D, m_volumetricLightVolume.getID());
 
         m_shadersManager.getActiveShader()->setUniformInt("u_irradianceMap", 3);
         m_shadersManager.getActiveShader()->setUniformInt("u_prefilterMap", 1);
         m_shadersManager.getActiveShader()->setUniformInt("u_brdfLUT", 2);
         m_shadersManager.getActiveShader()->setUniformInt("u_aoMap", 0);
-        m_shadersManager.getActiveShader()->setUniformInt("u_volumetricLightVolume", 4);
 
         GLenum attachments[2] = {GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT2};
 
@@ -1478,47 +1475,16 @@ namespace TechEngine {
         Shader* volumetricShader = m_shadersManager.getActiveShader();
         FrameBuffer& hdrFBO = getFramebuffer(m_gBufferFBO);
 
-        volumetricShader->setUniformFloat("u_nearPlane", request.nearPlane);
-        volumetricShader->setUniformFloat("u_farPlane", request.farPlane);
-
-
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, hdrFBO.getTextureID(GL_DEPTH_ATTACHMENT));
-        volumetricShader->setUniformInt("u_depthBuffer", 0);
-        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_3D, m_froxelTexture.getID());
-        volumetricShader->setUniformInt("u_froxelScattering", 1);
+        volumetricShader->setUniformInt("u_froxelScattering", 0);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, hdrFBO.getTextureID(GL_DEPTH_ATTACHMENT));
+        volumetricShader->setUniformInt("u_depthBuffer", 1);
 
-        glBindImageTexture(0, m_volumetricLightVolume.getID(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
-
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_froxelParamsUBO);
-
-        groupsZ = 1;
-
-        glDispatchCompute(groupsX, groupsY, groupsZ);
-
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
-                        GL_TEXTURE_FETCH_BARRIER_BIT |
-                        GL_FRAMEBUFFER_BARRIER_BIT);
-
-        glUseProgram(0);
-
-        m_shadersManager.changeActiveShader("sampleVolumetricLight");
-        Shader* sampleVolumetricShader = m_shadersManager.getActiveShader();
-
-        /*glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, hdrFBO.getTextureID(GL_COLOR_ATTACHMENT3));
-        sampleVolumetricShader->setUniformInt("u_hdrBuffer", 0);*/
         glBindImageTexture(0, hdrFBO.getTextureID(GL_COLOR_ATTACHMENT3), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_3D, m_volumetricLightVolume.getID());
-        sampleVolumetricShader->setUniformInt("u_volumetricLightVolume", 1);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, hdrFBO.getTextureID(GL_DEPTH_ATTACHMENT));
-        sampleVolumetricShader->setUniformInt("u_depthBuffer", 2);
-
-        sampleVolumetricShader->setUniformMatrix4f("u_viewProjection", request.projectionMatrix * request.viewMatrix);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_froxelParamsUBO);
 
         groupsX = (request.viewportSize.x + 7) / 8;
         groupsY = (request.viewportSize.y + 7) / 8;
@@ -1531,6 +1497,31 @@ namespace TechEngine {
                         GL_FRAMEBUFFER_BARRIER_BIT);
 
         glUseProgram(0);
+
+        /*
+        m_shadersManager.changeActiveShader("sampleVolumetricLight");
+        Shader* sampleVolumetricShader = m_shadersManager.getActiveShader();
+
+        sampleVolumetricShader->setUniformInt("u_hdrBuffer", 0);
+        glBindImageTexture(0, hdrFBO.getTextureID(GL_COLOR_ATTACHMENT3), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_3D, m_volumetricLightVolume.getID());
+        sampleVolumetricShader->setUniformInt("u_volumetricLightingVolume", 1);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, hdrFBO.getTextureID(GL_DEPTH_ATTACHMENT));
+        sampleVolumetricShader->setUniformInt("u_depthBuffer", 2);
+
+        sampleVolumetricShader->setUniformMatrix4f("u_viewProjection", request.projectionMatrix * request.viewMatrix);
+
+
+        glDispatchCompute(groupsX, groupsY, groupsZ);
+
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
+                        GL_TEXTURE_FETCH_BARRIER_BIT |
+                        GL_FRAMEBUFFER_BARRIER_BIT);
+
+        glUseProgram(0);*/
     }
 
     void Renderer::postProcessingPass() {
