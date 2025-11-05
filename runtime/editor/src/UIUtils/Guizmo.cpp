@@ -3,6 +3,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 
+#include "panels/HierarchyNode.hpp"
 #include "TechEngine/core/components/Archetype.hpp"
 #include "physics/PhysicsEngine.hpp"
 #include "scene/ScenesManager.hpp"
@@ -70,11 +71,11 @@ namespace TechEngine {
         return true;
     }
 
-    void Guizmo::editTransform(Camera* camera, ImGuiContext* context, const std::vector<Entity>& selectedEntities) {
+    void Guizmo::editTransform(Camera* camera, ImGuiContext* context, HierarchyNode& selectedNode) {
         if (operation == -1) {
             return;
         }
-        if (selectedEntities.empty()) {
+        if (selectedNode.type != HierarchyNode::NodeType::Entity) {
             return;
         }
 
@@ -92,7 +93,7 @@ namespace TechEngine {
 
         const glm::mat4& cameraProjection = camera->getProjectionMatrix();
         glm::mat4 cameraView = camera->getViewMatrix();
-        Entity entity = selectedEntities.front();
+        Entity entity = selectedNode.entity;
         Transform& transform = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getComponent<Transform>(entity);
         glm::mat4 modelMatrix = transform.getModelMatrix();
         Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),

@@ -10,11 +10,11 @@
 namespace TechEngine {
     SceneView::SceneView(SystemsRegistry& editorSystemsRegistry,
                          SystemsRegistry& appSystemsRegistry,
-                         const std::vector<Entity>& selectedEntities) : m_appSystemsRegistry(appSystemsRegistry),
-                                                                        m_selectedEntities(selectedEntities),
-                                                                        guizmo(id, appSystemsRegistry),
-                                                                        cameraTransform(ComponentsFactory::createTransform(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f))),
-                                                                        Panel(editorSystemsRegistry) {
+                         HierarchyNode& selectedNode) : m_appSystemsRegistry(appSystemsRegistry),
+                                                        m_selectedNode(selectedNode),
+                                                        guizmo(id, appSystemsRegistry),
+                                                        cameraTransform(ComponentsFactory::createTransform(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f))),
+                                                        Panel(editorSystemsRegistry) {
         m_styleVars.emplace_back(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         totalIds++;
         id = totalIds;
@@ -44,6 +44,7 @@ namespace TechEngine {
         renderCameraFrustum();
         renderColliders();
 
+        request.cameraPosition = cameraTransform.m_position;
         request.viewMatrix = sceneCamera.getViewMatrix();
         request.projectionMatrix = sceneCamera.getProjectionMatrix();
         request.nearPlane = sceneCamera.nearPlane;
@@ -56,27 +57,27 @@ namespace TechEngine {
         m_appSystemsRegistry.getSystem<Renderer>().addRequest(request);
         uint64_t textureID = frameBuffer.getTextureID(GL_COLOR_ATTACHMENT0);
         ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));
-        guizmo.editTransform(&sceneCamera, ImGui::GetCurrentContext(), m_selectedEntities);
+        guizmo.editTransform(&sceneCamera, ImGui::GetCurrentContext(), m_selectedNode);
         frameBuffer.unBind();
     }
 
     void SceneView::processKeyPressed(ImGuiKey key) {
         if (ImGui::Shortcut(key)) {
-            if (m_selectedEntities.size() == 1) {
+            /*if (m_selectedEntities.size() == 1) {
                 //focusOnGameObject(selectedGO.front());
-            }
+            }*/
         }
 
-        if (ImGui::Shortcut(key)) {
+        if (key == ImGuiKey_T) {
             changeGuizmoOperation(ImGuizmo::TRANSLATE);
         }
-        if (ImGui::Shortcut(key)) {
+        if (key == ImGuiKey_R) {
             changeGuizmoOperation(ImGuizmo::ROTATE);
         }
-        if (ImGui::Shortcut(key)) {
+        if (key == ImGuiKey_S) {
             changeGuizmoOperation(ImGuizmo::SCALE);
         }
-        if (ImGui::Shortcut(key)) {
+        if (key == ImGuiKey_Q) {
             changeGuizmoMode(guizmo.getMode() == ImGuizmo::LOCAL ? ImGuizmo::WORLD : ImGuizmo::LOCAL);
         }
     }
@@ -480,7 +481,7 @@ namespace TechEngine {
         const Entity entity = scene.getEntity(tag);
 
         // Check if entity is selected
-        bool isSelected = std::find(m_selectedEntities.begin(), m_selectedEntities.end(), entity) != m_selectedEntities.end();
+        bool isSelected = m_selectedNode.type == HierarchyNode::NodeType::Entity && m_selectedNode.entity == entity;
 
         if (!collider) {
             if (scene.hasComponent<StaticBody>(entity)) {

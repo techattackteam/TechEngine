@@ -157,12 +157,14 @@ namespace TechEngine {
             TE_LOGGER_CRITICAL("Skybox already created with id: {0}", m_hdrTexture.getID());
             return;
         }
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
         m_hdrTexture.uploadFromResource(hdrResource);
         m_captureFBO.init(512, 512);
         createCubeMapForIBL();
         createIrradianceMap();
         createPrefilterMap();
         createBRDFLUTTexture();
+        glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
     }
 
     void SkyBox::renderSkybox(FrameBuffer& frameBuffer, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) {
@@ -294,7 +296,6 @@ namespace TechEngine {
         glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
         glm::mat4 captureViews[] =
         {
-            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
             glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
             glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
             glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),

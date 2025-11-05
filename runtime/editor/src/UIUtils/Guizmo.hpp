@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "../../../../engine/core/include/TechEngine/core/components/Entity.hpp"
+#include "panels/HierarchyNode.hpp"
 #include "ui/Widget.hpp"
 
 namespace TechEngine {
@@ -25,7 +26,7 @@ namespace TechEngine {
     public:
         Guizmo(int& id, SystemsRegistry& appSystemsRegistry);
 
-        void editTransform(Camera* camera, ImGuiContext* context, const std::vector<Entity>& selectedEntities);
+        void editTransform(Camera* camera, ImGuiContext* context, HierarchyNode& selectedNode);
 
         void editUI(ImVec2 viewPosition, ImVec2 viewSize, std::shared_ptr<Widget> widget);
 

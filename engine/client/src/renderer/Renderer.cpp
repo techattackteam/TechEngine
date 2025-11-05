@@ -45,8 +45,8 @@ namespace TechEngine {
         m_indicesBuffers[BufferGameObjects] = IndicesBuffer();
 
         m_vertexArrays[BufferGameObjects].init();
-        m_vertexBuffers[BufferGameObjects].init(10000 * sizeof(Vertex));
-        m_indicesBuffers[BufferGameObjects].init(10000 * sizeof(uint32_t));
+        m_vertexBuffers[BufferGameObjects].init(1000000 * sizeof(Vertex));
+        m_indicesBuffers[BufferGameObjects].init(1000000 * sizeof(uint32_t));
 
         m_vertexArrays[BufferGameObjects].addNewBuffer(m_vertexBuffers[BufferGameObjects]);
 
@@ -202,7 +202,7 @@ namespace TechEngine {
             return;
         }
 
-        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
         populateObjectDataBuffers();
         populateLightDataBuffers();
         populateMaterialDataBuffers();
@@ -311,6 +311,10 @@ namespace TechEngine {
 
     Renderer::FroxelGridProperties& Renderer::getFroxelGridProperties() {
         return m_froxelGridProperties;
+    }
+
+    Renderer::FroxelParams& Renderer::getFroxelParams() {
+        return m_froxelParams;
     }
 
     Renderer::VolumetricSettings& Renderer::getVolumetricSettings() {
@@ -586,7 +590,8 @@ namespace TechEngine {
         const std::vector<Material*>& materials = resourceManager.getAllMaterials();
         std::vector<MaterialProperties> properties;
         properties.reserve(materials.size());
-        for (Material* material: materials) {
+        for (int i = 0; i < materials.size(); i++) {
+            Material* material = materials[i];
             auto updateHandle = [&](int mapID, uint64_t& handle) {
                 if (mapID != -1) {
                     TextureResource& resource = resourceManager.getTexture(mapID);
@@ -611,6 +616,7 @@ namespace TechEngine {
             updateHandle(material->getAmbientOcclusionMapID(), material->getProperties().ambientOcclusionMapHandle);
             updateHandle(material->getEmissionMapID(), material->getProperties().emissionMapHandle);
             properties.push_back(material->getProperties());
+            material->setGpuID(i);
         }
 
         m_materialsBuffer.addData(properties.data(), properties.size() * sizeof(MaterialProperties));
@@ -1235,7 +1241,7 @@ namespace TechEngine {
 
         m_shadersManager.getActiveShader()->setUniformVec3("u_cameraPos", cameraPosition);
         m_shadersManager.getActiveShader()->setUniformIVec2("u_screenSize", viewport);
-        m_shadersManager.getActiveShader()->setUniformFloat("u_farPlane", farPlane);
+        //        m_shadersManager.getActiveShader()->setUniformFloat("u_farPlane", farPlane);
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_CUBE_MAP, m_skyBox.m_irradianceMap.getID());
         glActiveTexture(GL_TEXTURE1);
@@ -1437,91 +1443,158 @@ namespace TechEngine {
         m_froxelParams.rcpFroxelDimY = 1.0f / static_cast<float>(m_froxelGridProperties.height);
         m_froxelParams.rcpFroxelDimZ = 1.0f / static_cast<float>(m_froxelGridProperties.depth);
         m_froxelParams.cameraPosition = cameraPosition;
-        glBindBuffer(GL_UNIFORM_BUFFER, m_froxelParamsUBO);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(FroxelParams), &m_froxelParams);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-        glBindBuffer(GL_UNIFORM_BUFFER, m_volumetricSettingsUBO);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(VolumetricSettings), &m_volumetricSettings);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        if (m_froxelParams.myImplementation) {
+            glBindBuffer(GL_UNIFORM_BUFFER, m_froxelParamsUBO);
+            glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(FroxelParams), &m_froxelParams);
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-        GLfloat clearColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-        glClearTexImage(m_froxelTexture.getID(), 0, GL_RGBA, GL_FLOAT, clearColor);
-        glClearTexImage(m_volumetricLightVolume.getID(), 0, GL_RGBA, GL_FLOAT, clearColor);
+            glBindBuffer(GL_UNIFORM_BUFFER, m_volumetricSettingsUBO);
+            glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(VolumetricSettings), &m_volumetricSettings);
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-        // Use compute shader
-        m_shadersManager.changeActiveShader("froxelScattering");
-        // Bind UBO
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_froxelParamsUBO);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_volumetricSettingsUBO);
-        m_lightsBuffer.setBindingPoint(0);
+            GLfloat clearColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+            glClearTexImage(m_froxelTexture.getID(), 0, GL_RGBA, GL_FLOAT, clearColor);
+            glClearTexImage(m_volumetricLightVolume.getID(), 0, GL_RGBA, GL_FLOAT, clearColor);
 
-        // Bind 3D texture as image
-        glBindImageTexture(0, m_froxelTexture.getID(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+            // Use compute shader
+            m_shadersManager.changeActiveShader("froxelScattering");
+            // Bind UBO
+            glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_froxelParamsUBO);
+            glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_volumetricSettingsUBO);
+            m_lightsBuffer.setBindingPoint(0);
 
-        // Dispatch compute
-        uint32_t groupsX = (m_froxelGridProperties.width + 7) / 8;
-        uint32_t groupsY = (m_froxelGridProperties.height + 7) / 8;
-        uint32_t groupsZ = m_froxelGridProperties.depth;
+            // Bind 3D texture as image
+            glBindImageTexture(0, m_froxelTexture.getID(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 
-        glDispatchCompute(groupsX, groupsY, groupsZ);
+            // Dispatch compute
+            uint32_t groupsX = (m_froxelGridProperties.width + 7) / 8;
+            uint32_t groupsY = (m_froxelGridProperties.height + 7) / 8;
+            uint32_t groupsZ = m_froxelGridProperties.depth;
 
-        // Memory barrier
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+            glDispatchCompute(groupsX, groupsY, groupsZ);
 
-        glUseProgram(0);
+            // Memory barrier
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-        m_shadersManager.changeActiveShader("volumetricRayMarching");
-        Shader* volumetricShader = m_shadersManager.getActiveShader();
-        FrameBuffer& hdrFBO = getFramebuffer(m_gBufferFBO);
+            glUseProgram(0);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_3D, m_froxelTexture.getID());
-        volumetricShader->setUniformInt("u_froxelScattering", 0);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, hdrFBO.getTextureID(GL_DEPTH_ATTACHMENT));
-        volumetricShader->setUniformInt("u_depthBuffer", 1);
+            m_shadersManager.changeActiveShader("volumetricRayMarching");
+            Shader* volumetricShader = m_shadersManager.getActiveShader();
+            FrameBuffer& hdrFBO = getFramebuffer(m_gBufferFBO);
 
-        glBindImageTexture(0, hdrFBO.getTextureID(GL_COLOR_ATTACHMENT3), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_3D, m_froxelTexture.getID());
+            volumetricShader->setUniformInt("u_froxelScattering", 0);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, hdrFBO.getTextureID(GL_DEPTH_ATTACHMENT));
+            volumetricShader->setUniformInt("u_depthBuffer", 1);
 
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_froxelParamsUBO);
-
-        groupsX = (request.viewportSize.x + 7) / 8;
-        groupsY = (request.viewportSize.y + 7) / 8;
-        groupsZ = 1;
-
-        glDispatchCompute(groupsX, groupsY, groupsZ);
-
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
-                        GL_TEXTURE_FETCH_BARRIER_BIT |
-                        GL_FRAMEBUFFER_BARRIER_BIT);
-
-        glUseProgram(0);
-
-        /*
-        m_shadersManager.changeActiveShader("sampleVolumetricLight");
-        Shader* sampleVolumetricShader = m_shadersManager.getActiveShader();
-
-        sampleVolumetricShader->setUniformInt("u_hdrBuffer", 0);
-        glBindImageTexture(0, hdrFBO.getTextureID(GL_COLOR_ATTACHMENT3), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_3D, m_volumetricLightVolume.getID());
-        sampleVolumetricShader->setUniformInt("u_volumetricLightingVolume", 1);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, hdrFBO.getTextureID(GL_DEPTH_ATTACHMENT));
-        sampleVolumetricShader->setUniformInt("u_depthBuffer", 2);
-
-        sampleVolumetricShader->setUniformMatrix4f("u_viewProjection", request.projectionMatrix * request.viewMatrix);
+            volumetricShader->setUniformFloat("u_blendingFactor", m_volumetricSettings.blendingFactor);
 
 
-        glDispatchCompute(groupsX, groupsY, groupsZ);
+            glBindImageTexture(0, hdrFBO.getTextureID(GL_COLOR_ATTACHMENT3), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
-                        GL_TEXTURE_FETCH_BARRIER_BIT |
-                        GL_FRAMEBUFFER_BARRIER_BIT);
+            glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_froxelParamsUBO);
 
-        glUseProgram(0);*/
+            groupsX = (request.viewportSize.x + 7) / 8;
+            groupsY = (request.viewportSize.y + 7) / 8;
+            groupsZ = 1;
+
+            glDispatchCompute(groupsX, groupsY, groupsZ);
+
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
+                            GL_TEXTURE_FETCH_BARRIER_BIT |
+                            GL_FRAMEBUFFER_BARRIER_BIT);
+
+            glUseProgram(0);
+        } else {
+            glBindBuffer(GL_UNIFORM_BUFFER, m_froxelParamsUBO);
+            glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(FroxelParams), &m_froxelParams);
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+            glBindBuffer(GL_UNIFORM_BUFFER, m_volumetricSettingsUBO);
+            glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(VolumetricSettings), &m_volumetricSettings);
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+            GLfloat clearColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+            glClearTexImage(m_froxelTexture.getID(), 0, GL_RGBA, GL_FLOAT, clearColor);
+            glClearTexImage(m_volumetricLightVolume.getID(), 0, GL_RGBA, GL_FLOAT, clearColor);
+
+            // Use compute shader
+            m_shadersManager.changeActiveShader("VolFroxelScatteringOtherImpCompute");
+            // Bind UBO
+            glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_froxelParamsUBO);
+            glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_volumetricSettingsUBO);
+            m_lightsBuffer.setBindingPoint(0);
+
+            // Bind 3D texture as image
+            glBindImageTexture(0, m_froxelTexture.getID(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+
+            // Dispatch compute
+            uint32_t groupsX = (m_froxelGridProperties.width + 7) / 8;
+            uint32_t groupsY = (m_froxelGridProperties.height + 7) / 8;
+            uint32_t groupsZ = m_froxelGridProperties.depth;
+
+            glDispatchCompute(groupsX, groupsY, groupsZ);
+
+            // Memory barrier
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+            glUseProgram(0);
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+            glUseProgram(0);
+
+            m_shadersManager.changeActiveShader("VolRayMarchinOtherImpCompute");
+            Shader* volumetricShader = m_shadersManager.getActiveShader();
+            FrameBuffer& hdrFBO = getFramebuffer(m_gBufferFBO);
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_3D, m_froxelTexture.getID());
+            volumetricShader->setUniformInt("s_VoxelGrid", 0);
+
+            glBindImageTexture(0, m_volumetricLightVolume.getID(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+
+            glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_froxelParamsUBO);
+
+            uint32_t size_x = static_cast<uint32_t>(ceil(float(m_froxelParams.froxelDimensions.x) / float(8)));
+            uint32_t size_y = static_cast<uint32_t>(ceil(float(m_froxelParams.froxelDimensions.y) / float(8)));
+            uint32_t size_z = 1;
+            glDispatchCompute(size_x, size_y, size_z);
+
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
+                            GL_TEXTURE_FETCH_BARRIER_BIT |
+                            GL_FRAMEBUFFER_BARRIER_BIT);
+
+            glUseProgram(0);
+            m_shadersManager.changeActiveShader("sampleVolumetricLight");
+            Shader* sampleVolumetricShader = m_shadersManager.getActiveShader();
+
+            sampleVolumetricShader->setUniformInt("u_hdrBuffer", 0);
+            glBindImageTexture(0, hdrFBO.getTextureID(GL_COLOR_ATTACHMENT3), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_3D, m_volumetricLightVolume.getID());
+            sampleVolumetricShader->setUniformInt("u_volumetricLightingVolume", 1);
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, hdrFBO.getTextureID(GL_DEPTH_ATTACHMENT));
+            sampleVolumetricShader->setUniformInt("u_depthBuffer", 2);
+
+            sampleVolumetricShader->setUniformMatrix4f("u_viewProjection", request.projectionMatrix * request.viewMatrix);
+            sampleVolumetricShader->setUniformFloat("u_blendingFactor", m_volumetricSettings.blendingFactor);
+            groupsX = (request.viewportSize.x + 7) / 8;
+            groupsY = (request.viewportSize.y + 7) / 8;
+            groupsZ = 1;
+
+            glDispatchCompute(groupsX, groupsY, groupsZ);
+
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
+                            GL_TEXTURE_FETCH_BARRIER_BIT |
+                            GL_FRAMEBUFFER_BARRIER_BIT);
+
+            glUseProgram(0);
+        }
     }
 
     void Renderer::postProcessingPass() {

@@ -22,14 +22,36 @@ namespace TechEngine {
         GLenum type;
         std::vector<unsigned char> pixels;
         std::vector<float> pixelsFloat;
-        if ((textureType == PNG || textureType == JPG) && (channels == 3 || channels == 4)) {
-            internalFormat = (channels == 3) ? GL_RGB8 : GL_RGBA8;
-            format = (channels == 3) ? GL_RGB : GL_RGBA;
+        if (textureType == PNG || textureType == JPG) {
+            if (channels == 1) {
+                internalFormat = GL_R8;
+                format = GL_RED;
+            } else if (channels == 2) {
+                internalFormat = GL_RG8;
+                format = GL_RG;
+            } else if (channels == 3) {
+                internalFormat = GL_RGB8;
+                format = GL_RGB;
+            } else if (channels == 4) {
+                internalFormat = GL_RGBA8;
+                format = GL_RGBA;
+            }
             type = GL_UNSIGNED_BYTE;
             pixels = textureResource.getPixelsChar();
-        } else if (textureType == HDR && (channels == 3 || channels == 4)) {
-            internalFormat = (channels == 3) ? GL_RGB16F : GL_RGBA16F;
-            format = (channels == 3) ? GL_RGB : GL_RGBA;
+        } else if (textureType == HDR) {
+            if (channels == 1) {
+                internalFormat = GL_R8;
+                format = GL_RED;
+            } else if (channels == 2) {
+                internalFormat = GL_RG8;
+                format = GL_RG;
+            } else if (channels == 3) {
+                internalFormat = GL_RGB8;
+                format = GL_RGB;
+            } else if (channels == 4) {
+                internalFormat = GL_RGBA8;
+                format = GL_RGBA;
+            }
             type = GL_FLOAT;
             pixelsFloat = textureResource.getPixelsFloat();
         } else {
@@ -82,6 +104,7 @@ namespace TechEngine {
     void Texture::generateMipMap() {
         glGenerateMipmap(m_target);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
 
     void Texture::makeResident() {

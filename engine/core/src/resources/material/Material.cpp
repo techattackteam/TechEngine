@@ -19,6 +19,10 @@ namespace TechEngine {
         return m_gpuID;
     }
 
+    void Material::setGpuID(uint32_t gpuID) {
+        this->m_gpuID = gpuID;
+    }
+
     glm::vec4& Material::getColor() {
         return properties.albedo;
     }

@@ -28,11 +28,34 @@ namespace TechEngine {
         m_textureManager.init(texturePaths);
         m_materialManager.init(filesByExtension[".mat"]);
         m_meshManager.init(filesByExtension[".tesmesh"]);
-        //assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-albedo", "albedo");
-        //assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-Normal-ogl", "normal");
-        //assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-Metallic", "metallic");
-        //assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-Roughness", "roughness");
-        //assignTextureToMaterial(MaterialManager::DEFAULT_MATERIAL_NAME, "black-streaked-rock1-ao", "ambient occlusion");
+        assignTextureToMaterial("FlooringBrown", "laminate-flooring-brown_albedo", "albedo");
+        assignTextureToMaterial("FlooringBrown", "laminate-flooring-brown_normal-ogl", "normal");
+        assignTextureToMaterial("FlooringBrown", "laminate-flooring-brown_metallic", "metallic");
+        assignTextureToMaterial("FlooringBrown", "laminate-flooring-brown_roughness", "roughness");
+        assignTextureToMaterial("FlooringBrown", "laminate-flooring-brown_ao", "ambient occlusion");
+
+        assignTextureToMaterial("PeelingPaintedMetal", "peeling-painted-metal_albedo", "albedo");
+        assignTextureToMaterial("PeelingPaintedMetal", "peeling-painted-metal_normal-ogl", "normal");
+        assignTextureToMaterial("PeelingPaintedMetal", "peeling-painted-metal_metallic", "metallic");
+        assignTextureToMaterial("PeelingPaintedMetal", "peeling-painted-metal_roughness", "roughness");
+        assignTextureToMaterial("PeelingPaintedMetal", "peeling-painted-metal_ao", "ambient occlusion");
+
+        assignTextureToMaterial("Gold", "hammered-gold_albedo", "albedo");
+        assignTextureToMaterial("Gold", "hammered-gold_normal-ogl", "normal");
+        assignTextureToMaterial("Gold", "hammered-gold_metallic", "metallic");
+        assignTextureToMaterial("Gold", "hammered-gold_roughness", "roughness");
+        assignTextureToMaterial("Gold", "hammered-gold_ao", "ambient occlusion");
+
+        assignTextureToMaterial("Titanium", "Titanium-Scuffed_baseColor", "albedo");
+        assignTextureToMaterial("Titanium", "Titanium-Scuffed_normal", "normal");
+        assignTextureToMaterial("Titanium", "Titanium-Scuffed_metallic", "metallic");
+        assignTextureToMaterial("Titanium", "Titanium-Scuffed_roughness", "roughness");
+
+        assignTextureToMaterial("Gravel", "gravel_albedo", "albedo");
+        assignTextureToMaterial("Gravel", "gravel_normal-ogl", "normal");
+        assignTextureToMaterial("Gravel", "gravel_metallic", "metallic");
+        assignTextureToMaterial("Gravel", "gravel_roughness", "roughness");
+        assignTextureToMaterial("Gravel", "gravel_ao", "ambient occlusion");
     }
 
     void ResourcesManager::shutdown() {

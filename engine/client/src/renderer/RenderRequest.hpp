@@ -5,6 +5,8 @@ namespace TechEngine {
     struct RenderRequest {
         uint32_t viewId;
 
+        glm::vec3 cameraPosition = glm::vec3(0.0f);
+
         glm::mat4 viewMatrix = glm::mat4(1.0f);
         glm::mat4 projectionMatrix = glm::mat4(1.0f);
 

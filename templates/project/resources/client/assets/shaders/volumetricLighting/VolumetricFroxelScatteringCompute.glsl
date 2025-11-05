@@ -45,7 +45,7 @@ layout (std430, binding = 0) uniform FroxelParams {
     vec2 padding_0;
 
     vec3 cameraPosition;
-    float padding_1;
+    float frameCount;
 };
 
 layout (std430, binding = 1) uniform VolumetricSettings {
@@ -153,7 +153,7 @@ float calculateDirectionalShadow(Light light, vec3 worldPos, vec4 viewPos) {
     return 1.0 - shadow;
 }
 
-vec3 evaluateDirectionalLight(Light light, vec3 worldPos, vec4 viewPos, vec3 viewDir, float density) {
+vec4 evaluateDirectionalLight(Light light, vec3 worldPos, vec4 viewPos, vec3 viewDir, float density) {
     float shadow = 1.0;
     if (light.castShadow != 0) {
         // Pass the world and view position to the shadow function
@@ -161,7 +161,7 @@ vec3 evaluateDirectionalLight(Light light, vec3 worldPos, vec4 viewPos, vec3 vie
     }
 
     if (shadow <= 0.0) {
-        return vec3(0.0);
+        return vec4(0.0);
     }
 
     // Phase function
@@ -169,7 +169,7 @@ vec3 evaluateDirectionalLight(Light light, vec3 worldPos, vec4 viewPos, vec3 vie
     float phase = phaseHG(cosTheta, anisotropy);
 
     // Light contribution
-    return light.color * light.intensity * phase * shadow;
+    return vec4(light.color * light.intensity * phase * shadow, shadow); // Return shadow in alpha
 }
 void main() {
     uvec3 froxelCoords = gl_GlobalInvocationID;
@@ -186,10 +186,9 @@ void main() {
     vec3 sigma_a = absorptionCoefficient;
 
     vec3 extinctionCoefficient = sigma_s + sigma_a;
-    vec3 scatteringAlbedo = sigma_s / max(extinctionCoefficient, vec3(0.00001)); // max() to avoid divide by zero
 
     vec3 inScattering = vec3(0.0f);
-
+    float shadow = 0.0f;
     for (uint i = 0u; i < lights.length(); ++i) {
         Light light = lights[i];
 
@@ -198,14 +197,16 @@ void main() {
             inScattering += evaluatePointLight(light, worldPosition, viewDirection, density);
         } else if (light.type == 1) {
             // Directional light
-            inScattering += evaluateDirectionalLight(light, worldPosition, viewPosition, viewDirection, density);
+            vec4 result = evaluateDirectionalLight(light, worldPosition, viewPosition, viewDirection, density);
+            inScattering += result.rgb;
+            shadow = result.a;
         }
     }
 
-    inScattering += vec3(0.1f); // Ambient term for testing. Sample the ambient light from the scene
+    float avgSigmaS = (sigma_s.r + sigma_s.g + sigma_s.b) / 3.0;
+    vec3 ambientLight = vec3(0.3, 0.3, 0.35) * clamp(avgSigmaS / 2.0, 0.5, 2.0); // Ambient term for testing. Sample the ambient light from the scene
+    inScattering += ambientLight;
     inScattering += emissiveCoefficient;
-
-    vec3 finalColor = inScattering * scatteringAlbedo;
     float avgExtinction = (extinctionCoefficient.r + extinctionCoefficient.g + extinctionCoefficient.b) / 3.0;
-    imageStore(froxelScattering, ivec3(froxelCoords), vec4(finalColor, avgExtinction));
+    imageStore(froxelScattering, ivec3(froxelCoords), vec4(inScattering * sigma_s, avgExtinction));
 }

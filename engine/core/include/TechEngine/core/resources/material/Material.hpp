@@ -52,6 +52,8 @@ namespace TechEngine {
 
         uint32_t getGpuID() const;
 
+        void setGpuID(uint32_t gpuID);
+
         glm::vec4& getColor();
 
         void setColor(glm::vec4 color);
