@@ -33,9 +33,9 @@ namespace TechEngine {
         clientViewport.position = {panelPos.x + contentStart.x, panelPos.y + contentStart.y};
         clientViewport.size = glm::vec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
         clientViewport.isFocused = ImGui::IsWindowFocused() || ImGui::IsWindowHovered();
+        ImVec2 wsize = ImGui::GetContentRegionAvail();
 
-        scene.runSystem<Transform, Camera>([this](Transform& transform, Camera& camera) {
-            ImVec2 wsize = ImGui::GetContentRegionAvail();
+        scene.runSystem<Transform, Camera>([this, wsize](Transform& transform, Camera& camera) {
             camera.updateProjectionMatrix(wsize.x / wsize.y);
             camera.updateViewMatrix(transform.getModelMatrix());
             RenderRequest request;
@@ -49,7 +49,7 @@ namespace TechEngine {
             m_appSystemsRegistry.getSystem<Renderer>().addRequest(request);
         });
 
-        ImVec2 wsize = ImGui::GetContentRegionAvail();
+
         FrameBuffer& frameBuffer = m_appSystemsRegistry.getSystem<Renderer>().getFramebuffer(frameBufferID);
         uint64_t textureID = frameBuffer.getTextureID(GL_COLOR_ATTACHMENT0);
         ImGui::Image(reinterpret_cast<void*>(textureID), wsize, ImVec2(0, 1), ImVec2(1, 0));

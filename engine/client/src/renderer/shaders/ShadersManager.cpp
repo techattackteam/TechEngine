@@ -148,6 +148,21 @@ namespace TechEngine {
                 }
             },
             {
+                "VolFroxelScatteringOtherImpCompute", {
+                    {ShaderType::Compute, shaderBasePath + "volumetricLighting/VolFroxelScatteringOtherImpCompute.glsl"}
+                }
+            },
+            {
+                "VolRayMarchinOtherImpCompute", {
+                    {ShaderType::Compute, shaderBasePath + "volumetricLighting/VolRayMarchinOtherImpCompute.glsl"}
+                }
+            },
+            {
+                "sampleVolumetricLight", {
+                    {ShaderType::Compute, shaderBasePath + "volumetricLighting/SampleVolumetricLightCompute.glsl"}
+                }
+            },
+            {
                 "line", {
                     {ShaderType::Vertex, shaderBasePath + "lineVertex.glsl"},
                     {ShaderType::Fragment, shaderBasePath + "lineFragment.glsl"}

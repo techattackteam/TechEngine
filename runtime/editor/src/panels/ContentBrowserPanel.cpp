@@ -162,7 +162,7 @@ namespace TechEngine {
             } else if (extension == ".mat") {
                 std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
                 //m_panelsManager.openMaterialEditor(filenameWithoutExtension, path);
-            } else if (extension == ".fbx" || extension == ".obj") {
+            } else if (extension == ".fbx" || extension == ".obj" || extension == ".gltf" || extension == ".glb") {
                 runFunctionBasedOnFileType(path,
                                            [&] {
                                                m_clientRegistry.getSystem<ResourcesManager>().loadModelFile(path);

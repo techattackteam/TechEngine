@@ -20,7 +20,7 @@ namespace TechEngine {
                                                            m_inspectorPanel(editorSystemsRegistry, appSystemsRegistry, m_selectedNode),
                                                            m_sceneHierarchyPanel(editorSystemsRegistry, appSystemsRegistry, m_selectedEntities),
                                                            m_sceneSettingsPanel(m_projectType, editorSystemsRegistry, appSystemsRegistry, m_selectedNode),
-                                                           m_sceneView(editorSystemsRegistry, appSystemsRegistry, m_selectedEntities),
+                                                           m_sceneView(editorSystemsRegistry, appSystemsRegistry, m_selectedNode),
                                                            //m_gameView(editorSystemsRegistry, appSystemsRegistry),
                                                            loggerPanel(loggerPanel), DockPanel(editorSystemsRegistry) {
     }

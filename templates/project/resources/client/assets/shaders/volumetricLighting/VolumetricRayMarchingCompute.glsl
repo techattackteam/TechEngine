@@ -28,18 +28,10 @@ layout (std430, binding = 0) uniform FroxelParams {
     float padding_1;
 };
 
-float interleavedGradientNoise(vec2 screenPos, float time) {
-    vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
-    float t = fract(time);
-    return fract(magic.z * fract(dot(screenPos + vec2(t * 13.7, t * 7.3), magic.xy)));
-}
+uniform float u_blendingFactor;
 
-float sliceDistance(int z) {
-    return froxelNearPlane * pow(froxelFarPlane / froxelNearPlane, (float(z) + 0.5f) / float(froxelDimensions.z));
-}
-
-float sliceTickness(int z) {
-    return abs(sliceDistance(z + 1) - sliceDistance(z));
+float sliceBoundary(int z) {
+    return froxelNearPlane * pow(froxelFarPlane / froxelNearPlane, float(z) / float(froxelDimensions.z));
 }
 
 void main() {
@@ -56,31 +48,55 @@ void main() {
     vec3 accumulatedScattering = vec3(0.0);
     float accumulatedTransmittance = 1.0;
 
-
     for (int step = 0; step < froxelDimensions.z; step++) {
-        float currentSliceZ = sliceDistance(step);
-        if (surfaceViewZ < currentSliceZ) {
+        float sliceStart = sliceBoundary(step);
+        float sliceEnd = sliceBoundary(step + 1);
+
+        if (surfaceViewZ <= sliceStart) {
             break;
         }
-        vec3 froxelUVW = vec3(uv, (float(step) + 0.5) / float(froxelDimensions.z));
 
+        // Calculate depth through this froxel slice
+        float D = min(sliceEnd, surfaceViewZ) - sliceStart;
+
+        vec3 froxelUVW = vec3(uv, (float(step) + 0.5) / float(froxelDimensions.z));
         vec4 froxelData = texture(u_froxelScattering, froxelUVW);
 
-        vec3 scattering = froxelData.rgb;
-        float extinction = froxelData.a;
+        vec3 S = froxelData.rgb;  // sigma_s * L_i (scattered radiance)
+        float sigma_t = max(froxelData.a, 0.00001);
 
-        const float thickness = sliceTickness(step);
-        float transmittance = exp(-extinction * thickness);
+        // Energy-conserving integration (from EA slides)
+        // Integral: ∫₀^D e^(-σₜ·x) × S dx = (S/σₜ) × (1 - e^(-σₜ·D))
+        float tau = sigma_t * D;  // Optical depth
 
-        float weight = (1.0 - transmittance) / extinction;
-        accumulatedScattering += scattering * accumulatedTransmittance * weight;
+        // Clamp optical depth to prevent numerical issues
+        tau = min(tau, 20.0);
 
-        accumulatedTransmittance *= transmittance;
+        float sliceTransmittance = exp(-tau);
 
+        // The energy-conserving integration formula
+        vec3 integratedScattering = (S / sigma_t) * (1.0 - sliceTransmittance);
+
+        // Accumulate with transmittance from previous steps
+        accumulatedScattering += accumulatedTransmittance * integratedScattering;
+        accumulatedTransmittance *= sliceTransmittance;
+
+        // Early exit when transmittance is negligible
+        if (accumulatedTransmittance < 0.001) {
+            accumulatedTransmittance = 0.0;
+            break;
+        }
+
+        if (surfaceViewZ <= sliceEnd) {
+            break;
+        }
     }
+
     vec4 sceneColor = imageLoad(u_hdrColor, pixelCoords);
 
-    sceneColor.rgb = sceneColor.rgb * accumulatedTransmittance + accumulatedScattering;
+    // Composite: background * transmittance + in-scattered light
+    vec3 color = sceneColor.rgb * accumulatedTransmittance + accumulatedScattering;
 
+    sceneColor = mix(sceneColor, vec4(color, 1.0), u_blendingFactor);
     imageStore(u_hdrColor, pixelCoords, sceneColor);
 }

@@ -114,8 +114,8 @@ void sampleMaterialTextures(inout Material material, vec2 uv, inout vec3 normal)
 
     if (material.normalHandle != uvec2(0)) {
         sampler2D normalSampler = sampler2D(material.normalHandle);
-        vec3 normalTex = texture(normalSampler, v_textCoord).rgb;
-        normalTex = normalTex * 2.0 - 1.0; // Transform from [0,1] to [-1,1]
+        //vec3 normalTex = texture(normalSampler, v_textCoord).rgb;
+    /**        normalTex = normalTex * 2.0 - 1.0; // Transform from [0,1] to [-1,1]
         normalTex = normalize(normalTex);
 
         // Tangent space to world space
@@ -130,6 +130,19 @@ void sampleMaterialTextures(inout Material material, vec2 uv, inout vec3 normal)
         bitangent = cross(N, tangent);
 
         mat3 TBN = mat3(tangent, bitangent, N);
+        normal = normalize(TBN * normalTex);*/
+        vec3 normalTex = texture(normalSampler, v_textCoord).rgb * 2.0 - 1.0;
+
+        vec3 Q1 = dFdx(v_worldPos);
+        vec3 Q2 = dFdy(v_worldPos);
+        vec2 st1 = dFdx(v_textCoord);
+        vec2 st2 = dFdy(v_textCoord);
+
+        vec3 N = normalize(normal);
+        vec3 T = normalize(Q1 * st2.t - Q2 * st1.t);
+        vec3 B = -normalize(cross(N, T));
+        mat3 TBN = mat3(T, B, N);
+
         normal = normalize(TBN * normalTex);
     }
 }
@@ -157,8 +170,12 @@ float geometrySchlickGGX(float NdotV, float roughness) {
     return num / denom;
 }
 
-vec3 frenelSchlick(float cosTheta, vec3 F0, float roughness) {
-    return F0 + max(vec3(1.0 - roughness), 1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+vec3 frenelSchlick(float cosTheta, vec3 F0) {
+    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+vec3 frenelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
 float calculateOmniShadow(Light light) {
@@ -229,7 +246,7 @@ vec3 PBRCalculate(Light light, Material material, vec3 radiance, vec3 normal, ve
     float NdotV = max(dot(normal, viewDirection), 0.0);
     float NdotL = max(dot(normal, lightDirection), 0.0);
     float G = geometrySchlickGGX(NdotV, material.roughness) * geometrySchlickGGX(NdotL, material.roughness); // Geometry Function
-    vec3 fresnel = frenelSchlick(max(dot(halfDir, lightDirection), 0.0), F0, 0.0f); // Fresnel
+    vec3 fresnel = frenelSchlick(max(dot(halfDir, viewDirection), 0.0), F0); // Fresnel
 
     vec3 kD = vec3(1.0) - fresnel; // Diffuse component
     kD *= 1.0 - material.metallic; // Metals have no diffuse component
@@ -241,7 +258,7 @@ vec3 PBRCalculate(Light light, Material material, vec3 radiance, vec3 normal, ve
     // Final Color
     vec3 Lo = (kD * material.albedo.rgb / 3.141592653 + specular) * radiance * NdotL; // Outgoing Radiance
 
-    return Lo /*** shadow*/;
+    return Lo;
 }
 
 
@@ -264,9 +281,8 @@ vec3 calculatePointLight(Light light, Material material, vec3 normal, vec3 view)
     float dist = length(lightDir);
     lightDir = normalize(lightDir);
 
-    float attenuation = 1.0 / (dist * dist + 1.0);
-    float falloff = clamp(1.0 - pow(dist / light.radius, 4.0), 0.0, 1.0);
-    falloff *= falloff;
+    float attenuation = 1.0 / (pow(dist, 2.0f) + 1.0);
+    float falloff = clamp(1.0 - pow(pow(dist / light.radius, 4.0f), 2.0f), 0.0, 1.0);
     attenuation *= falloff;
 
     vec3 radiance = light.color * light.intensity * attenuation;
@@ -291,7 +307,7 @@ void main() {
     // 1. Sample Material Textures
     sampleMaterialTextures(material, v_textCoord, normal);
 
-    // 2. Sample Ambient Occlusion Map
+    // 2. Get Tile and Light Indices
     vec2 screenUV = gl_FragCoord.xy / vec2(u_screenSize);
 
     ivec2 pixelCoord = ivec2(floor(gl_FragCoord.xy));
@@ -323,13 +339,13 @@ void main() {
         float shadow = 1.0f;
         if (light.type == 0) {
             if (light.shadowHandle[0] != uvec2(0)) {
-                shadow = calculateOmniShadow(light);
+                //shadow = calculateOmniShadow(light);
             }
             directLight = directLight + (calculatePointLight(light, material, normal, view) * shadow);
 
         } else if (light.type == 1) {
             if (light.shadowHandle[0] != uvec2(0)) {
-                shadow = calculateCascadeDepthShadow(light);
+                //shadow = calculateCascadeDepthShadow(light);
             }
             directLight = directLight + (calculateDirectionalLight(light, material, normal, view) * shadow);
         } else if (light.type == 2) {
@@ -346,7 +362,7 @@ void main() {
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, material.albedo.rgb, material.metallic);
 
-    vec3 F = frenelSchlick(max(dot(normal, view), 0.0), F0, 0.0f);
+    vec3 F = frenelSchlickRoughness(max(dot(normal, view), 0.0), F0, material.roughness);
 
     vec3 ks = F;
     vec3 kd = vec3(1.0) - ks;
@@ -355,23 +371,24 @@ void main() {
     // Diffuse lighting
     vec3 irradiance = texture(u_irradianceMap, normal).rgb;
     vec3 diffuseIBL = irradiance * material.albedo.rgb;
-    vec3 diffuse = kd * material.albedo.rgb;
+    vec3 diffuse = kd * diffuseIBL;
 
     // Specular lighting
     vec3 R = reflect(-view, normal);
     const float MAX_REFLECTION_LOD = 4.0;
     vec3 prefilteredColor = textureLod(u_prefilterMap, R, material.roughness * MAX_REFLECTION_LOD).rgb;
     vec2 envBRDF = texture(u_brdfLUT, vec2(max(dot(normal, view), 0.0), material.roughness)).rg;
-    vec3 specular = material.roughness * (F/** * envBRDF.x + envBRDF.y*/);
+    vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
 
     // Ambient
-    vec3 ambient = specular + diffuse;
+    vec3 ambient = (diffuse + specular) * ao;
+    //vec3 ambient = material.albedo.rgb * 0.5f * material.ao; // 3% ambient light
 
     // Emission
     vec3 finalEmission = material.emission.rgb * material.emission.a;
 
-    vec3 color = (ambient + directLight) * ao + finalEmission;
+    vec3 color = ambient + directLight + finalEmission;
 
-    out_fragColor = vec4(color, 1.0);
+    out_fragColor = vec4(color, 1.0f);
     out_screenLight = vec4(1.0);
 }

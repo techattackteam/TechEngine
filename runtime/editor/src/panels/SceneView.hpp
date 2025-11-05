@@ -5,12 +5,13 @@
 #include "UIUtils/Guizmo.hpp"
 
 namespace TechEngine {
+    struct HierarchyNode;
     class Tag;
 
     class SceneView : public Panel {
     private:
         SystemsRegistry& m_appSystemsRegistry;
-        const std::vector<Entity>& m_selectedEntities;
+        HierarchyNode& m_selectedNode;
         Transform cameraTransform;
         Camera sceneCamera;
         Guizmo guizmo;
@@ -24,7 +25,7 @@ namespace TechEngine {
         inline static int totalIds = 0;
 
     public:
-        SceneView(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& appSystemsRegistry, const std::vector<Entity>& selectedEntities);
+        SceneView(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& appSystemsRegistry, HierarchyNode& m_selectedNode);
 
         void onInit() override;
 

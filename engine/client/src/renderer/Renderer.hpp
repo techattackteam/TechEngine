@@ -57,7 +57,7 @@ namespace TechEngine {
         };
 
         struct AOProperties {
-            bool enabled = true;
+            bool enabled = false;
             int directionCount = 12;
             int stepsPerDirection = 16;
             float radius = 1.0f;
@@ -165,18 +165,21 @@ namespace TechEngine {
             glm::vec2 padding;
 
             glm::vec3 cameraPosition;
-            float padding2;
+            bool myImplementation = true;
         };
 
         struct VolumetricSettings {
             glm::vec3 scatteringCoefficient = glm::vec3(0.1f, 0.1f, 0.1f);
-            float density = 1.0f;
+            float density = 5.0f;
 
             glm::vec3 absorptionCoefficient = glm::vec3(0.0f);
             float anisotropy = 0.0f;
 
             glm::vec3 emissiveCoefficient = glm::vec3(0.0f);
-            bool enabled = true;
+            bool enabled = false;
+
+            float blendingFactor = 1.0f;
+            glm::vec3 padding;
         };
 
     private:
@@ -325,6 +328,8 @@ namespace TechEngine {
         FogProperties& getFogProperties();
 
         FroxelGridProperties& getFroxelGridProperties();
+
+        FroxelParams& getFroxelParams();
 
         VolumetricSettings& getVolumetricSettings();
 

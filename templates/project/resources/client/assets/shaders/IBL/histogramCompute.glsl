@@ -21,8 +21,8 @@ void main() {
     float luminance = max(dot(hdrColor, vec3(0.2126, 0.7152, 0.0722)), EPSILON); // Avoid log(0)
     float logLuminance = log2(luminance);
 
-    float minLogLum = -10.0; // Adjust based on expected luminance range
-    float maxLogLum = 10.0;  // Adjust based on expected luminance range
+    float minLogLum = -10.0;
+    float maxLogLum = 10.0;
 
     int binIndex = int(((logLuminance - minLogLum) / (maxLogLum - minLogLum)) * 255.0);
 
