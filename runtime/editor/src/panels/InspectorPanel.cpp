@@ -1165,6 +1165,8 @@ namespace TechEngine {
                 ImGuiUtils::drawVec3Control("Emissive", volumetricSettings.emissiveCoefficient, 0.00f, 100.0f, 0.0f, 100.0f);
                 ImGui::DragFloat("Blending Factor", &volumetricSettings.blendingFactor, 0.01f, 0.0f, 1.0f);
                 ImGui::Checkbox("My Implementation", &froxelParams.myImplementation);
+            } else if ("LightCulling") {
+                ImGui::Checkbox("Enabled", &renderer.getDebugLightCullingEnabled());
             }
         });
     }
