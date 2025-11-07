@@ -9,6 +9,7 @@
 #include "systems/SystemsRegistry.hpp"
 #include "scene/ScenesManager.hpp"
 #include "TechEngine/core/components/ComponentsFactory.hpp"
+#include "TechEngine/core/events/scene/EntityCreatedEvent.hpp"
 #include "ui/Widget.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
 
@@ -24,7 +25,20 @@ namespace TechEngine {
 
 
     void SceneSettingsPanel::onInit() {
+        m_appSystemsRegistry.getSystem<EventManager>().subscribe<EntityCreatedEvent>(
+            [this](const std::shared_ptr<Event>& event) {
+                m_isHierarchyDirty = true;
+            }
+        );
+
         HierarchyNode node;
+        node.id = 1;
+        node.name = "LightCulling";
+        node.type = HierarchyNode::NodeType::RenderPass;
+        node.depth = 0;
+        node.isOpen = true;
+        node.renderPassName = new std::string("LightCulling");
+        m_displayRenderPassList.push_back(node);
         node.id = 1;
         node.name = "Ambient Occlusion Settings";
         node.type = HierarchyNode::NodeType::RenderPass;
@@ -447,6 +461,7 @@ namespace TechEngine {
             switch (entityType.type) {
                 case Empty: {
                     scene.createEntity("New Entity");
+                    break;
                 }
                 case Cube: {
                     Entity entity = scene.createEntity("Cube");
@@ -465,7 +480,6 @@ namespace TechEngine {
             }
         }
         m_nodesToCreate.clear();
-        m_isHierarchyDirty = true;
     }
 
     void SceneSettingsPanel::setHierarchyDirty() {

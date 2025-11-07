@@ -77,13 +77,16 @@ layout (std430, binding = 5) readonly buffer TileInfoBuffer {
 
 uniform ivec2 u_screenSize;
 uniform vec3 u_cameraPos;
+uniform float u_nearPlane;
 uniform float u_farPlane;
+uniform float u_depthSliceScale;
+uniform float u_depthSliceBias;
+uniform uvec3 u_gridSize; // Number of tiles in x, y, z directions
 uniform samplerCube u_irradianceMap;
 uniform samplerCube u_prefilterMap;
 uniform sampler2D u_brdfLUT;
 uniform sampler2D u_aoMap;
-
-const int TILE_SIZE = 16;
+uniform bool u_debugLightCulling;
 
 void sampleMaterialTextures(inout Material material, vec2 uv, inout vec3 normal) {
     if (material.albedoHandle != uvec2(0)) {
@@ -297,30 +300,91 @@ vec3 calculateDirectionalLight(Light light, Material Material, vec3 normal, vec3
     return PBRCalculate(light, Material, radiance, normal, view, lightDir);
 }
 
+float linearDepth(float depthSample) {
+    float depthRange = 2.0 * depthSample - 1.0;
+    float linear = 2.0 * u_nearPlane * u_farPlane / (u_farPlane + u_nearPlane - depthRange * (u_farPlane - u_nearPlane));
+    return linear;
+}
+
+vec3 getTurboColor(float value) {
+    value = clamp(value / 20.0, 0.0, 1.0);
+
+    const vec3 kRedVec4 = vec3(0.13572138, 4.61539260, -42.66032258);
+    const vec3 kGreenVec4 = vec3(0.09140261, 2.19418839, 4.84296658);
+    const vec3 kBlueVec4 = vec3(0.10667330, 12.64194608, -60.58204836);
+
+    vec4 v4 = vec4(1.0, value, value * value, value * value * value);
+
+    vec3 color;
+    color.r = dot(v4.xyz, kRedVec4) + v4.w * 132.13108234;
+    color.g = dot(v4.xyz, kGreenVec4) + v4.w * -3.08578554;
+    color.b = dot(v4.xyz, kBlueVec4) + v4.w * 110.36276771;
+
+    return clamp(color, 0.0, 1.0);
+}
+
+vec3 getHeatMapColor(float value) {
+    // Normalize value to 0-1 range (assumes max ~20 lights per cluster)
+    value = clamp(value / 20.0, 0.0, 1.0);
+
+    vec3 color;
+    if (value < 0.25) {
+        // Blue to Cyan
+        float t = value / 0.25;
+        color = mix(vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 1.0), t);
+    } else if (value < 0.5) {
+        // Cyan to Green
+        float t = (value - 0.25) / 0.25;
+        color = mix(vec3(0.0, 1.0, 1.0), vec3(0.0, 1.0, 0.0), t);
+    } else if (value < 0.75) {
+        // Green to Yellow
+        float t = (value - 0.5) / 0.25;
+        color = mix(vec3(0.0, 1.0, 0.0), vec3(1.0, 1.0, 0.0), t);
+    } else {
+        // Yellow to Red
+        float t = (value - 0.75) / 0.25;
+        color = mix(vec3(1.0, 1.0, 0.0), vec3(1.0, 0.0, 0.0), t);
+    }
+
+    return color;
+}
+
+vec3 getBinaryColor(uint sliceIndex) {
+    vec3 color = vec3(
+    float((sliceIndex & 1u) != 0u),
+    float((sliceIndex & 2u) != 0u),
+    float((sliceIndex & 4u) != 0u)
+    );
+
+    // Prevent pure black
+    if (color == vec3(0.0)) {
+        color = vec3(0.1);
+    }
+
+    return color;
+}
+
+vec3 colors[8] = vec3[](
+vec3(0, 0, 0), vec3(0, 0, 1), vec3(0, 1, 0), vec3(0, 1, 1),
+vec3(1, 0, 0), vec3(1, 0, 1), vec3(1, 1, 0), vec3(1, 1, 1)
+);
+
 void main() {
     Material material = materialBuffer.materials[f_materialID];
 
     vec3 normal = normalize(v_normal);
     vec3 view = normalize(u_cameraPos - v_worldPos);
-
+    vec2 screenUV = gl_FragCoord.xy / vec2(u_screenSize);
 
     // 1. Sample Material Textures
     sampleMaterialTextures(material, v_textCoord, normal);
 
     // 2. Get Tile and Light Indices
-    vec2 screenUV = gl_FragCoord.xy / vec2(u_screenSize);
+    uint tileZ = uint(max(log2(linearDepth(gl_FragCoord.z)) * u_depthSliceScale + u_depthSliceBias, 0.0));
+    vec2 tileSize = u_screenSize / u_gridSize.xy;
+    uvec3 tileCoords = uvec3(gl_FragCoord.xy / tileSize, tileZ);
+    uint tileIndex = tileCoords.x + (tileCoords.y * u_gridSize.x) + (tileCoords.z * u_gridSize.x * u_gridSize.y);
 
-    ivec2 pixelCoord = ivec2(floor(gl_FragCoord.xy));
-    pixelCoord = clamp(pixelCoord, ivec2(0), u_screenSize - ivec2(1));
-
-    ivec2 tileCoords = ivec2(pixelCoord) / TILE_SIZE;
-
-    int tilesX = (u_screenSize.x + TILE_SIZE - 1) / TILE_SIZE;
-    int tilesY = (u_screenSize.y + TILE_SIZE - 1) / TILE_SIZE;
-
-    tileCoords = clamp(tileCoords, ivec2(0), ivec2(tilesX - 1, tilesY - 1));
-
-    int tileIndex = tileCoords.y * tilesX + tileCoords.x;
     TileInfo tile = tiles[tileIndex];
 
     vec3 directLight = vec3(0.0);
@@ -391,4 +455,21 @@ void main() {
 
     out_fragColor = vec4(color, 1.0f);
     out_screenLight = vec4(1.0);
+
+    if (!u_debugLightCulling) {
+        return;
+    }
+
+    // Get light count for this cluster
+    vec4 sliceColor = vec4(colors[uint(mod(tileZ, 8))], 1.0);
+    out_fragColor = sliceColor;
+
+/**    // Optional: Draw grid lines
+    vec2 pixelInTile = mod(gl_FragCoord.xy, float(u_tileSize));
+    if (pixelInTile.x < 2.0 || pixelInTile.y < 2.0) {
+        heatColor = mix(heatColor, vec3(1.0), 0.3); // Brighten borders
+    }
+
+    out_fragColor = vec4(heatColor, alpha);
+*/
 }

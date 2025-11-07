@@ -17,6 +17,12 @@
 #include "profiling/ProfiledScope.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/mesh/AssimpLoader.hpp"
 #include "TechEngine/core/resources/material/Material.hpp"
 #include "TechEngine/core/resources/mesh/Vertex.hpp"
 #include "TechEngine/core/scene/Scene.hpp"
@@ -51,31 +57,33 @@ namespace TechEngine {
         m_vertexArrays[BufferGameObjects].addNewBuffer(m_vertexBuffers[BufferGameObjects]);
 
         m_drawCommandBuffer = ShaderStorageBuffer();
-        m_drawCommandBuffer.init(10000000 * sizeof(DrawCommand));
+        m_drawCommandBuffer.init(1000000 * sizeof(DrawCommand));
         m_objectDataBuffer = ShaderStorageBuffer();
-        m_objectDataBuffer.init(10000000 * sizeof(ObjectData));
+        m_objectDataBuffer.init(1000000 * sizeof(ObjectData));
         m_materialsBuffer = ShaderStorageBuffer();
         m_materialsBuffer.init(100 * sizeof(MaterialProperties));
 
         m_lightsBuffer = ShaderStorageBuffer();
-        m_lightsBuffer.init(1024 * sizeof(PointLight));
+        m_lightsBuffer.init(1024 * sizeof(LightData));
         m_lightsIndexBuffer = ShaderStorageBuffer();
-        m_lightsIndexBuffer.init(3500000 * sizeof(uint32_t));
-        m_tileInfoBuffer = ShaderStorageBuffer();
+        m_lightsIndexBuffer.init(35000 * sizeof(uint32_t));
 
-        m_histogramBuffer = ShaderStorageBuffer();
-        m_histogramBuffer.init(256 * sizeof(uint32_t));
+        m_clusterAABBsBuffer = ShaderStorageBuffer();
+        m_clusterAABBsBuffer.init(10000 * sizeof(ClusterAABB));
+        m_globalIndexCount = ShaderStorageBuffer();
+        m_globalIndexCount.init(10000 * sizeof(uint32_t));
 
         uint32_t maxWidth = 3840; // 4K
         uint32_t maxHeight = 2160;
         uint32_t maxTilesX = (maxWidth + TILE_SIZE - 1) / TILE_SIZE;
         uint32_t maxTilesY = (maxHeight + TILE_SIZE - 1) / TILE_SIZE;
         uint32_t totalMaxTiles = maxTilesX * maxTilesY;
-
+        m_tileInfoBuffer = ShaderStorageBuffer();
         m_tileInfoBuffer.init(totalMaxTiles * sizeof(TileInfo));
 
-        m_atomicCounterBuffer = ShaderStorageBuffer();
-        m_atomicCounterBuffer.init(sizeof(uint32_t));
+
+        m_histogramBuffer = ShaderStorageBuffer();
+        m_histogramBuffer.init(256 * sizeof(uint32_t));
 
         m_gBufferFBO = createFramebuffer(800, 600);
         FrameBuffer& depthPrePassFBO = getFramebuffer(m_gBufferFBO);
@@ -114,7 +122,7 @@ namespace TechEngine {
         m_vertexArrays[BufferLines] = VertexArray();
         m_vertexBuffers[BufferLines] = VertexBuffer();
         m_vertexArrays[BufferLines].init();
-        m_vertexBuffers[BufferLines].init(10000000 * sizeof(Line));
+        m_vertexBuffers[BufferLines].init(100000 * sizeof(Line));
         m_vertexArrays[BufferLines].addNewLinesBuffer(m_vertexBuffers[BufferLines]);
 
         recreateBloomTexture({800, 600});
@@ -202,7 +210,6 @@ namespace TechEngine {
             return;
         }
 
-
         populateObjectDataBuffers();
         populateLightDataBuffers();
         populateMaterialDataBuffers();
@@ -228,8 +235,8 @@ namespace TechEngine {
                 hdrFrameBuffer.bind();
                 automaticExposurePass(request.viewportSize);
                 hdrFrameBuffer.unBind();*/
-                recreateBloomTexture(request.viewportSize);
-                bloomPass(request.viewportSize);
+                //recreateBloomTexture(request.viewportSize);
+                //bloomPass(request.viewportSize);
 
                 FrameBuffer& frameBuffer = getFramebuffer(request.targetFramebufferId);
                 frameBuffer.bind();
@@ -319,6 +326,10 @@ namespace TechEngine {
 
     Renderer::VolumetricSettings& Renderer::getVolumetricSettings() {
         return m_volumetricSettings;
+    }
+
+    bool& Renderer::getDebugLightCullingEnabled() {
+        return m_enableDebugLightCulling;
     }
 
     void Renderer::uploadNewMesh(const std::string& name) {
@@ -446,35 +457,6 @@ namespace TechEngine {
     }
 
     void Renderer::populateLightDataBuffers() const {
-        struct alignas(16) LightData {
-            // -- Block 1: 16 bytes --
-            glm::vec3 position = glm::vec3(0.0f);
-            int type = 0;
-
-            // -- Block 2: 16 bytes --
-            glm::vec3 direction = glm::vec3(0.0f);
-            float radius = 0.0f;
-
-            // -- Block 3: 16 bytes --
-            glm::vec3 color;
-            float intensity = 0.0f;
-
-            // -- Block 4: 16 bytes --
-            float innerCutoff = 0.0f;
-            float outerCutoff = 0.0f;
-            int castShadow = 0;
-            float _pad2;
-
-            // -- Block 5 & 6: 32 bytes --
-            uint64_t shadowTextureHandle[4] = {0}; // 8 byte
-
-            // -- Block 7 - 10: 64 bytes * 4 = 256 bytes --
-            glm::mat4 lightSpaceMatrix[4] = {glm::mat4(1.0f)}; // 64 bytes
-
-            // -- Block 11: 16 bytes --
-            float cascadeSplits[4] = {0.0f};
-        };
-
         if (sizeof(LightData) % 16 != 0) {
             TE_LOGGER_CRITICAL("LightData struct size is not multiple of 16 bytes! Current size: {0}", sizeof(LightData));
 
@@ -694,7 +676,7 @@ namespace TechEngine {
 
         gBufferPass(viewMatrix, projectionMatrix, viewport);
 
-        lightCulling(viewMatrix, projectionMatrix, viewport);
+        lightCulling(request);
 
         bool hasLight = false;
         Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
@@ -713,7 +695,7 @@ namespace TechEngine {
         }
 
         aoPass(viewMatrix, projectionMatrix, viewport);
-        geometryPass(viewMatrix, projectionMatrix, viewport, farPlane);
+        geometryPass(viewMatrix, projectionMatrix, viewport, nearPlane, farPlane);
         m_skyBox.renderSkybox(getFramebuffer(m_gBufferFBO), viewMatrix, projectionMatrix);
         if (m_volumetricSettings.enabled) {
             godRayPass(request);
@@ -823,32 +805,41 @@ namespace TechEngine {
         frameCounter = (frameCounter + 1) % NUM_ROTATIONS;
     }
 
-    void Renderer::lightCulling(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport) {
+    void Renderer::lightCulling(const RenderRequest& request) {
+        m_shadersManager.changeActiveShader("createClusters");
+        Shader* createClusters = m_shadersManager.getActiveShader();
+        createClusters->setUniformMatrix4f("u_inverseProjection", glm::inverse(request.projectionMatrix));
+        createClusters->setUniformUVec2("u_screenSize", request.viewportSize);
+        createClusters->setUniformFloat("u_nearPlane", request.nearPlane);
+        createClusters->setUniformFloat("u_farPlane", request.farPlane);
+        createClusters->setUniformUVec3("u_gridSize", m_gridSize);
+
+        m_clusterAABBsBuffer.setBindingPoint(0);
+        m_clusterAABBsBuffer.bind();
+
+        glDispatchCompute(m_gridSize.x, m_gridSize.y, m_gridSize.z);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
         m_shadersManager.changeActiveShader("lightCulling");
         Shader* cullShader = m_shadersManager.getActiveShader();
         cullShader->bind();
 
-        cullShader->setUniformMatrix4f("u_view", viewMatrix);
-        cullShader->setUniformMatrix4f("u_inverseProjection", glm::inverse(projectionMatrix));
-        cullShader->setUniformIVec2("u_screenSize", viewport);
+        cullShader->setUniformMatrix4f("u_view", request.viewMatrix);
+        //cullShader->setUniformMatrix4f("u_inverseProjection", glm::inverse(request.projectionMatrix));
+        //cullShader->setUniformIVec2("u_screenSize", request.viewportSize);
 
-        glActiveTexture(GL_TEXTURE0);
-        FrameBuffer& frameBuffer = getFramebuffer(m_gBufferFBO);
-        glBindTexture(GL_TEXTURE_2D, frameBuffer.getTextureID(GL_DEPTH_ATTACHMENT));
-        cullShader->setUniformInt("u_depthMap", 0);
+        //glActiveTexture(GL_TEXTURE0);
+        //FrameBuffer& frameBuffer = getFramebuffer(m_gBufferFBO);
+        //glBindTexture(GL_TEXTURE_2D, frameBuffer.getTextureID(GL_DEPTH_ATTACHMENT));
+        //cullShader->setUniformInt("u_depthMap", 0);
 
         m_lightsBuffer.setBindingPoint(0);
         m_lightsIndexBuffer.setBindingPoint(1);
-        m_tileInfoBuffer.setBindingPoint(2);
-        m_atomicCounterBuffer.setBindingPoint(3);
+        m_globalIndexCount.setBindingPoint(2);
+        m_tileInfoBuffer.setBindingPoint(3);
+        m_clusterAABBsBuffer.setBindingPoint(4);
 
-        uint32_t zero = 0;
-        glClearNamedBufferData(m_atomicCounterBuffer.getID(), GL_R32UI, GL_RED, GL_UNSIGNED_INT, &zero);
-
-        int32_t numGroupsX = (viewport.x + TILE_SIZE - 1) / TILE_SIZE;
-        int32_t numGroupsY = (viewport.y + TILE_SIZE - 1) / TILE_SIZE;
-        glDispatchCompute(numGroupsX, numGroupsY, 1);
-
+        glDispatchCompute(1, 1, 6);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
@@ -862,6 +853,10 @@ namespace TechEngine {
 
         Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
         scene.runSystem<Transform, PointLight>([&](const Transform& transform, PointLight& pointLight) {
+            if (!pointLight.castShadows) {
+                return;
+            }
+
             if (pointLight.shadowTextureHandle != 0) {
                 glMakeTextureHandleNonResidentARB(pointLight.shadowTextureHandle);
                 pointLight.shadowTextureHandle = 0;
@@ -869,9 +864,6 @@ namespace TechEngine {
                 pointLight.shadowMapID = 0;
             }
 
-            if (!pointLight.castShadows) {
-                return;
-            }
 
             PointLight& light = pointLight;
             glm::vec3 lightPos = transform.m_position;
@@ -1224,7 +1216,7 @@ namespace TechEngine {
         );
     }
 
-    void Renderer::geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport, const float farPlane) {
+    void Renderer::geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport, const float nearPlane, const float farPlane) {
         FrameBuffer& frameBuffer = getFramebuffer(m_gBufferFBO);
         frameBuffer.bind();
         frameBuffer.clear(GL_DEPTH_BUFFER_BIT);
@@ -1241,7 +1233,14 @@ namespace TechEngine {
 
         m_shadersManager.getActiveShader()->setUniformVec3("u_cameraPos", cameraPosition);
         m_shadersManager.getActiveShader()->setUniformIVec2("u_screenSize", viewport);
-        //        m_shadersManager.getActiveShader()->setUniformFloat("u_farPlane", farPlane);
+        m_shadersManager.getActiveShader()->setUniformFloat("u_nearPlane", nearPlane);
+        m_shadersManager.getActiveShader()->setUniformFloat("u_farPlane", farPlane);
+        m_shadersManager.getActiveShader()->setUniformBool("u_debugLightCulling", m_enableDebugLightCulling);
+        float scale = (float)m_gridSize.z / std::log2f(farPlane / nearPlane);
+        float bias = -((float)m_gridSize.z * std::log2f(nearPlane) / std::log2f(farPlane / nearPlane));
+        m_shadersManager.getActiveShader()->setUniformFloat("u_depthSliceScale", scale);
+        m_shadersManager.getActiveShader()->setUniformFloat("u_depthSliceBias", bias);
+        m_shadersManager.getActiveShader()->setUniformUVec3("u_gridSize", m_gridSize);
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_CUBE_MAP, m_skyBox.m_irradianceMap.getID());
         glActiveTexture(GL_TEXTURE1);

@@ -22,19 +22,43 @@
 
 namespace TechEngine {
     class CLIENT_DLL Renderer : public System {
-        // Temp before creating the light component
-        struct Light {
-            glm::vec3 position; // 12 bytes
-            float padding1; // 4 byte to align to 16 bytes match std430 layout
-            glm::vec3 color; // 12 bytes
-            float radius; // 4 byte
-            float intensity; // 4 byte
-            float padding3[3]; // Padding to align to 16 bytes
+        struct alignas(16) LightData {
+            // -- Block 1: 16 bytes --
+            glm::vec3 position = glm::vec3(0.0f);
+            int type = 0;
+
+            // -- Block 2: 16 bytes --
+            glm::vec3 direction = glm::vec3(0.0f);
+            float radius = 0.0f;
+
+            // -- Block 3: 16 bytes --
+            glm::vec3 color;
+            float intensity = 0.0f;
+
+            // -- Block 4: 16 bytes --
+            float innerCutoff = 0.0f;
+            float outerCutoff = 0.0f;
+            int castShadow = 0;
+            float _pad2;
+
+            // -- Block 5 & 6: 32 bytes --
+            uint64_t shadowTextureHandle[4] = {0}; // 8 byte
+
+            // -- Block 7 - 10: 64 bytes * 4 = 256 bytes --
+            glm::mat4 lightSpaceMatrix[4] = {glm::mat4(1.0f)}; // 64 bytes
+
+            // -- Block 11: 16 bytes --
+            float cascadeSplits[4] = {0.0f};
         };
 
         struct TileInfo {
             uint32_t offset;
             uint32_t lightCount;
+        };
+
+        struct ClusterAABB {
+            glm::vec4 minPoint;
+            glm::vec4 maxPoint;
         };
 
         struct Renderable {
@@ -204,7 +228,10 @@ namespace TechEngine {
         // Buffers for light culling
         ShaderStorageBuffer m_lightsIndexBuffer;
         ShaderStorageBuffer m_tileInfoBuffer;
-        ShaderStorageBuffer m_atomicCounterBuffer;
+        ShaderStorageBuffer m_clusterAABBsBuffer;
+        ShaderStorageBuffer m_globalIndexCount;
+        const glm::uvec3 m_gridSize = glm::vec3(16, 9, 24);
+        bool m_enableDebugLightCulling = false;
 
         // 256 bins for the histogram
         ShaderStorageBuffer m_histogramBuffer;
@@ -333,6 +360,8 @@ namespace TechEngine {
 
         VolumetricSettings& getVolumetricSettings();
 
+        bool& getDebugLightCullingEnabled();
+
     private:
         void uploadNewMesh(const std::string& name);
 
@@ -366,13 +395,13 @@ namespace TechEngine {
 
         void aoPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
 
-        void lightCulling(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
+        void lightCulling(const RenderRequest& request);
 
         void shadowDepthPass(const RenderRequest& request);
 
         void fogPass(const RenderRequest& request);
 
-        void geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport, float farPlane);
+        void geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport, float nearPlane, float farPlane);
 
         void automaticExposurePass(const glm::ivec2& viewport);
 

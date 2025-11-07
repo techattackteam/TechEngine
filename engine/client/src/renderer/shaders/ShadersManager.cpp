@@ -52,8 +52,13 @@ namespace TechEngine {
                 }
             },
             {
+                "createClusters", {
+                    {ShaderType::Compute, shaderBasePath + "lightCulling/createClustersCompute.glsl"}
+                }
+            },
+            {
                 "lightCulling", {
-                    {ShaderType::Compute, shaderBasePath + "lightCullingCompute.glsl"}
+                    {ShaderType::Compute, shaderBasePath + "lightCulling/lightCullingCompute.glsl"}
                 }
             },
             {

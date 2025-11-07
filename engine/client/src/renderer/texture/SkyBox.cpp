@@ -154,7 +154,7 @@ namespace TechEngine {
 
     void SkyBox::createSkybox(const TextureResource& hdrResource) {
         if (m_hdrTexture.getID() != 0) {
-            TE_LOGGER_CRITICAL("Skybox already created with id: {0}", m_hdrTexture.getID());
+            //TE_LOGGER_CRITICAL("Skybox already created with id: {0}", m_hdrTexture.getID());
             return;
         }
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);

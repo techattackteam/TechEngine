@@ -225,7 +225,7 @@ namespace TechEngine {
         float padding3[3] = {0.0f}; // Padding to align to 16 bytes
 
         uint32_t gpuID = -1; // ID in the GPU
-        bool castShadows = true;
+        bool castShadows = false;
 
         uint32_t shadowMapID = -1;
         uint64_t shadowTextureHandle = 0.0f;

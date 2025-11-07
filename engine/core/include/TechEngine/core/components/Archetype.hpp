@@ -64,7 +64,6 @@ namespace TechEngine {
 
         Archetype& operator=(const Archetype&) = delete;
 
-        // You should still define move operations if moving is allowed
         Archetype(Archetype&&) noexcept = default;
 
         Archetype& operator=(Archetype&&) noexcept = default;
