@@ -323,30 +323,41 @@ vec3 getTurboColor(float value) {
     return clamp(color, 0.0, 1.0);
 }
 
+const float HEAT_MAX_LIGHTS = 512.0; // Adjust if your scene exceeds this
+
+float normalizeHeat(float v) {
+    // Log-scale normalization to handle large ranges smoothly
+    float num = log2(1.0 + max(v, 0.0));
+    float den = log2(1.0 + HEAT_MAX_LIGHTS);
+    return clamp(num / den, 0.0, 1.0);
+}
+
 vec3 getHeatMapColor(float value) {
-    // Normalize value to 0-1 range (assumes max ~20 lights per cluster)
-    value = clamp(value / 20.0, 0.0, 1.0);
+    float x = normalizeHeat(value);
 
-    vec3 color;
-    if (value < 0.25) {
-        // Blue to Cyan
-        float t = value / 0.25;
-        color = mix(vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 1.0), t);
-    } else if (value < 0.5) {
-        // Cyan to Green
-        float t = (value - 0.25) / 0.25;
-        color = mix(vec3(0.0, 1.0, 1.0), vec3(0.0, 1.0, 0.0), t);
-    } else if (value < 0.75) {
-        // Green to Yellow
-        float t = (value - 0.5) / 0.25;
-        color = mix(vec3(0.0, 1.0, 0.0), vec3(1.0, 1.0, 0.0), t);
-    } else {
-        // Yellow to Red
-        float t = (value - 0.75) / 0.25;
-        color = mix(vec3(1.0, 1.0, 0.0), vec3(1.0, 0.0, 0.0), t);
+    const int N = 9;
+    const float pos[N] = float[](
+    0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0
+    );
+    const vec3 col[N] = vec3[](
+    vec3(0.0, 0.0, 0.2), // deep blue
+    vec3(0.0, 0.0, 1.0), // blue
+    vec3(0.0, 1.0, 1.0), // cyan
+    vec3(0.0, 1.0, 0.5), // spring green
+    vec3(0.0, 1.0, 0.0), // green
+    vec3(1.0, 1.0, 0.0), // yellow
+    vec3(1.0, 0.65, 0.0), // orange
+    vec3(1.0, 0.0, 0.0), // red
+    vec3(1.0, 1.0, 1.0)    // white
+    );
+
+    for (int i = 0; i < N - 1; ++i) {
+        if (x <= pos[i + 1]) {
+            float t = (x - pos[i]) / (pos[i + 1] - pos[i]);
+            return mix(col[i], col[i + 1], t);
+        }
     }
-
-    return color;
+    return col[N - 1];
 }
 
 vec3 getBinaryColor(uint sliceIndex) {
@@ -445,8 +456,8 @@ void main() {
     vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
 
     // Ambient
-    vec3 ambient = (diffuse + specular) * ao;
-    //vec3 ambient = material.albedo.rgb * 0.5f * material.ao; // 3% ambient light
+    //vec3 ambient = (diffuse + specular) * ao;
+    vec3 ambient = material.albedo.rgb * 0.5f * material.ao; // 3% ambient light
 
     // Emission
     vec3 finalEmission = material.emission.rgb * material.emission.a;
@@ -460,16 +471,9 @@ void main() {
         return;
     }
 
-    // Get light count for this cluster
-    vec4 sliceColor = vec4(colors[uint(mod(tileZ, 8))], 1.0);
-    out_fragColor = sliceColor;
-
-/**    // Optional: Draw grid lines
-    vec2 pixelInTile = mod(gl_FragCoord.xy, float(u_tileSize));
-    if (pixelInTile.x < 2.0 || pixelInTile.y < 2.0) {
-        heatColor = mix(heatColor, vec3(1.0), 0.3); // Brighten borders
-    }
-
-    out_fragColor = vec4(heatColor, alpha);
-*/
+    uint lightCount = tiles[tileIndex].lightsCount;
+    vec3 heatColor = getHeatMapColor(float(lightCount));
+    float blendFactor = 0.5;
+    color = mix(color, heatColor, blendFactor);
+    out_fragColor = vec4(color, 1.0f);
 }

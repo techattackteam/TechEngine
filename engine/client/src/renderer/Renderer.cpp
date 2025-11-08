@@ -17,6 +17,7 @@
 #include "profiling/ProfiledScope.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "resources/mesh/AssimpLoader.hpp"
+#include "scene/SceneInternal.hpp"
 #include "TechEngine/core/resources/material/Material.hpp"
 #include "TechEngine/core/resources/mesh/Vertex.hpp"
 #include "TechEngine/core/scene/Scene.hpp"
@@ -819,14 +820,9 @@ namespace TechEngine {
         cullShader->bind();
 
         cullShader->setUniformMatrix4f("u_view", request.viewMatrix);
-        cullShader->setUniformUVec3("u_gridSize", m_gridSize);
-        //cullShader->setUniformMatrix4f("u_inverseProjection", glm::inverse(request.projectionMatrix));
-        //cullShader->setUniformIVec2("u_screenSize", request.viewportSize);
-
-        //glActiveTexture(GL_TEXTURE0);
-        //FrameBuffer& frameBuffer = getFramebuffer(m_gBufferFBO);
-        //glBindTexture(GL_TEXTURE_2D, frameBuffer.getTextureID(GL_DEPTH_ATTACHMENT));
-        //cullShader->setUniformInt("u_depthMap", 0);
+        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        uint32_t lightCount = scene.getInternal()->getComponentCount<PointLight>();
+        cullShader->setUniformUInt("u_lightCount", lightCount);
 
         m_lightsBuffer.setBindingPoint(0);
         m_lightsIndexBuffer.setBindingPoint(1);

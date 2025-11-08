@@ -25,6 +25,7 @@ namespace TechEngine {
         ArchetypeID m_lastArchetypeID = 0;
         Entity m_lastEntityID = 0;
         mutable std::shared_mutex m_mutex;
+
     public:
         ArchetypesManager();
 
@@ -141,6 +142,18 @@ namespace TechEngine {
         }
 
         void clear();
+
+        template<typename T>
+        uint32_t getComponentCount() {
+            ComponentTypeID typeID = ComponentType<T>::get();
+            uint32_t total = 0;
+            for (auto& archetype_ptr: m_archetypes) {
+                if (archetype_ptr->containsComponents({typeID})) {
+                    total += archetype_ptr->getComponentCount<T>();
+                }
+            }
+            return total;
+        }
 
     private:
         Archetype* createArchetype(const std::vector<ComponentTypeID>& componentTypes);
