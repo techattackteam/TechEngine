@@ -59,6 +59,8 @@ uniform sampler2D u_depthMap;
 // Camera matrices
 uniform mat4 u_view;
 
+uniform uint u_lightCount;
+
 shared uint s_visibleLightIndices[576]; // Max 1024 lights
 shared uint s_visibleLightCount;
 /**
@@ -89,27 +91,17 @@ bool coneIntersectsAABB(vec3 coneApex, vec3 coneDir, float cosConeAngle, vec3 aa
     return false;
 }
 
-float sqDistPointAABB(vec3 point, uint tile) {
-    float sqDist = 0.0;
-    volumeAABB currentAABB = aabbs[tile];
-
-    for (int i = 0; i < 3; ++i) {
-        float v = point[i];
-        if (v < currentAABB.minPoint[i]) {
-            sqDist += pow(currentAABB.minPoint[i] - v, 2);
-        } else if (v > currentAABB.maxPoint[i]) {
-            sqDist += pow(v - currentAABB.maxPoint[i], 2);
-        }
-    }
-    return sqDist;
+bool sphereIntersectsAABB(vec3 center, float radius, volumeAABB box) {
+    vec3 closest = clamp(center, box.minPoint.xyz, box.maxPoint.xyz);
+    vec3 diff = center - closest;
+    return dot(diff, diff) <= radius * radius;
 }
 
 bool testPointLightAABB(uint sharedLightIndex, uint tile) {
     uint lightIndex = s_visibleLightIndices[sharedLightIndex];
     Light light = lights[lightIndex];
-    float radius = light.radius;
     vec3 center = (u_view * vec4(light.position, 1.0)).xyz;
-    return sqDistPointAABB(center, tile) <= radius * radius;
+    return sphereIntersectsAABB(center, light.radius, aabbs[tile]);
 }
 
 void main() {
@@ -133,8 +125,7 @@ void main() {
 
     uint visibleLightCount = 0;
     uint visibleLightIndices[100]; // Max 100 lights per tile
-    uint numLights = lights.length();
-    uint numBatches = (numLights + threadCount - 1) / threadCount;
+    uint numBatches = (u_lightCount + threadCount - 1) / threadCount;
 
     for (uint batch = 0; batch < numBatches; batch++) {
         uint lightIndex = batch * threadCount + gl_LocalInvocationIndex;
@@ -144,9 +135,9 @@ void main() {
         }
 
         barrier();
-        uint lightInBatch = min(threadCount, numLights - batch * threadCount);
+        uint lightInBatch = min(threadCount, u_lightCount - batch * threadCount);
 
-        for (uint light = 0; light < threadCount; ++light) {
+        for (uint light = 0; light < lightInBatch; ++light) {
             if (testPointLightAABB(light, tileIndex) && visibleLightCount < 100) {
                 visibleLightIndices[visibleLightCount] = s_visibleLightIndices[light];
                 visibleLightCount += 1;

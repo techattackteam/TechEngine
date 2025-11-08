@@ -95,6 +95,16 @@ namespace TechEngine {
 
         void reserve(size_t count);
 
+        template<typename T>
+        uint32_t getComponentCount() {
+            ComponentTypeID typeID = ComponentType<T>::get();
+            if (m_componentData.find(typeID) != m_componentData.end()) {
+                return static_cast<uint32_t>(m_componentData[typeID]->size());
+            } else {
+                return 0;
+            }
+        }
+
     private:
         void addEntity(Entity entity);
 

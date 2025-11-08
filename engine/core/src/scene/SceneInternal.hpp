@@ -20,6 +20,11 @@ namespace TechEngine {
 
         std::vector<ComponentTypeID> getCommonComponents(const std::vector<Entity>& entities);
 
+        template<typename T>
+        uint32_t getComponentCount() {
+            return m_archetypesManager.getComponentCount<T>();
+        }
+
         void setName(const std::string& name);
 
         Internal* getImpl(Scene& scene) {

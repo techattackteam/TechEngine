@@ -279,7 +279,7 @@ namespace TechEngine {
         int32_t location;
         location = glGetUniformLocation(m_id, name.c_str());
         if (location == -1) {
-            TE_LOGGER_WARN("Warning: uniform '{0}' doesn't exist in {1} shader", name, this->m_shaderName);
+            //TE_LOGGER_WARN("Warning: uniform '{0}' doesn't exist in {1} shader", name, this->m_shaderName);
         } else {
             uniformLocationCache[name] = location;
         }

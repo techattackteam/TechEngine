@@ -19,8 +19,8 @@ uniform float u_nearPlane;
 uniform float u_farPlane;
 
 vec3 screenToViewPosition(vec2 screenPosition) {
-    vec2 texCoord = screenPosition.xy / u_screenSize.xy;
-    vec4 clip = vec4(vec2(texCoord.x, texCoord.y) * 2.0 - 1.0, -1.0, 1.0);
+    vec2 ndc = (screenPosition / vec2(u_screenSize)) * 2.0 - 1.0;
+    vec4 clip = vec4(ndc, -1.0, 1.0);
 
     vec4 view = u_inverseProjection * clip;
     view = view / view.w;
