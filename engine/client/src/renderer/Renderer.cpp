@@ -17,12 +17,6 @@
 #include "profiling/ProfiledScope.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
 #include "TechEngine/core/resources/material/Material.hpp"
 #include "TechEngine/core/resources/mesh/Vertex.hpp"
 #include "TechEngine/core/scene/Scene.hpp"
@@ -66,12 +60,12 @@ namespace TechEngine {
         m_lightsBuffer = ShaderStorageBuffer();
         m_lightsBuffer.init(1024 * sizeof(LightData));
         m_lightsIndexBuffer = ShaderStorageBuffer();
-        m_lightsIndexBuffer.init(35000 * sizeof(uint32_t));
+        m_lightsIndexBuffer.init(16 * 9 * 24 * 100 * sizeof(uint32_t));
 
         m_clusterAABBsBuffer = ShaderStorageBuffer();
-        m_clusterAABBsBuffer.init(10000 * sizeof(ClusterAABB));
+        m_clusterAABBsBuffer.init(16 * 9 * 24 * sizeof(ClusterAABB));
         m_globalIndexCount = ShaderStorageBuffer();
-        m_globalIndexCount.init(10000 * sizeof(uint32_t));
+        m_globalIndexCount.init(16 * 9 * 24 * sizeof(uint32_t));
 
         uint32_t maxWidth = 3840; // 4K
         uint32_t maxHeight = 2160;
@@ -825,6 +819,7 @@ namespace TechEngine {
         cullShader->bind();
 
         cullShader->setUniformMatrix4f("u_view", request.viewMatrix);
+        cullShader->setUniformUVec3("u_gridSize", m_gridSize);
         //cullShader->setUniformMatrix4f("u_inverseProjection", glm::inverse(request.projectionMatrix));
         //cullShader->setUniformIVec2("u_screenSize", request.viewportSize);
 

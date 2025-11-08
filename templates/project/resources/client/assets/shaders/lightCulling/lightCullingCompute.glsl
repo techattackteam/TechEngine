@@ -127,11 +127,14 @@ void main() {
     memoryBarrierBuffer();
 
     uint threadCount = gl_WorkGroupSize.x * gl_WorkGroupSize.y * gl_WorkGroupSize.z;
-    uint tileIndex = gl_LocalInvocationIndex + gl_WorkGroupSize.x * gl_WorkGroupSize.y * gl_WorkGroupSize.z * gl_WorkGroupID.z;
+    uint tileIndex = gl_GlobalInvocationID.x +
+    (gl_GlobalInvocationID.y * gl_WorkGroupSize.x) +
+    (gl_GlobalInvocationID.z * gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 
     uint visibleLightCount = 0;
     uint visibleLightIndices[100]; // Max 100 lights per tile
-    uint numBatches = (lights.length() + threadCount - 1) / threadCount;
+    uint numLights = lights.length();
+    uint numBatches = (numLights + threadCount - 1) / threadCount;
 
     for (uint batch = 0; batch < numBatches; batch++) {
         uint lightIndex = batch * threadCount + gl_LocalInvocationIndex;
@@ -139,11 +142,13 @@ void main() {
         if (lightIndex < lights.length()) {
             s_visibleLightIndices[gl_LocalInvocationIndex] = lightIndex;
         }
+
         barrier();
+        uint lightInBatch = min(threadCount, numLights - batch * threadCount);
 
         for (uint light = 0; light < threadCount; ++light) {
             if (testPointLightAABB(light, tileIndex) && visibleLightCount < 100) {
-                visibleLightIndices[visibleLightCount] = batch * threadCount + light;
+                visibleLightIndices[visibleLightCount] = s_visibleLightIndices[light];
                 visibleLightCount += 1;
             }
         }
