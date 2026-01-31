@@ -202,9 +202,9 @@ float calculateDepthShadow(Light light) {
 
     float closestDepth = texture(handle, coords.xy).r;
     float currentDepth = coords.z;
-/**    if (coords.z > 1.0) {
+    if (coords.z > 1.0) {
         return 1.0f;
-    }*/
+    }
     //float bias = max(0.05 * (1.0 - dot(v_normal, light.direction)), 0.0005);
     float shadow = currentDepth > (closestDepth) ? 1.0 : 0.0;
     return 1.0f - shadow;
@@ -228,9 +228,9 @@ float calculateCascadeDepthShadow(Light light) {
 
     float closestDepth = texture(handle, coords.xy).r;
     float currentDepth = coords.z;
-/**    if (coords.z > 1.0 || coords.z < -1.0) {
+   if (coords.z > 1.0 || coords.z < -1.0) {
         return 1.0f;
-    }*/
+    }
     //float bias = max(0.05 * (1.0 - dot(v_normal, light.direction)), 0.0005);
     float shadow = currentDepth > (closestDepth) ? 1.0 : 0.0;
     return 1.0f - shadow;
@@ -414,13 +414,13 @@ void main() {
         float shadow = 1.0f;
         if (light.type == 0) {
             if (light.shadowHandle[0] != uvec2(0)) {
-                //shadow = calculateOmniShadow(light);
+                shadow = calculateOmniShadow(light);
             }
             directLight = directLight + (calculatePointLight(light, material, normal, view) * shadow);
 
         } else if (light.type == 1) {
             if (light.shadowHandle[0] != uvec2(0)) {
-                //shadow = calculateCascadeDepthShadow(light);
+                shadow = calculateCascadeDepthShadow(light);
             }
             directLight = directLight + (calculateDirectionalLight(light, material, normal, view) * shadow);
         } else if (light.type == 2) {
@@ -456,8 +456,8 @@ void main() {
     vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
 
     // Ambient
-    //vec3 ambient = (diffuse + specular) * ao;
-    vec3 ambient = material.albedo.rgb * 0.5f * material.ao; // 3% ambient light
+    vec3 ambient = (diffuse + specular) * ao;
+    //vec3 ambient = material.albedo.rgb * 0.5f * material.ao; // 3% ambient light
 
     // Emission
     vec3 finalEmission = material.emission.rgb * material.emission.a;

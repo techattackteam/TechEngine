@@ -68,6 +68,7 @@ namespace TechEngine {
         m_systemRegistry.getSystem<RuntimeSimulator<Client>>().init();
         m_systemRegistry.getSystem<RuntimeSimulator<Server>>().init();
         ComponentType<Tag>::get();
+        ComponentType<Hierarchy>::get();
         ComponentType<Transform>::get();
         ComponentType<Camera>::get();
         ComponentType<PointLight>::get();

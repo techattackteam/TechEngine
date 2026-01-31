@@ -10,6 +10,8 @@
 #include <glm/detail/type_quat.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#include "Entity.hpp"
+
 namespace YAML {
     class Emitter;
     class Node;
@@ -18,7 +20,6 @@ namespace YAML {
 namespace TechEngine {
     class ResourcesManager;
     class PhysicsEngine;
-
 
     class CORE_DLL Tag {
         friend class ComponentsFactory;
@@ -59,6 +60,20 @@ namespace TechEngine {
         static Tag deserialize(const YAML::Node& node);
     };
 
+    class CORE_DLL Hierarchy {
+    public:
+        Entity parent = -1;
+        Entity firstChild = -1;
+        Entity nextSibling = -1;
+        Entity previousSibling = -1;
+
+        size_t childrenCount = 0;
+
+        static void serialize(const Hierarchy& hierarchy, YAML::Emitter& out);
+
+        static Hierarchy deserialize(const YAML::Node& node);
+    };
+
     class CORE_DLL Transform {
     public:
         friend class ComponentsFactory;
@@ -74,6 +89,9 @@ namespace TechEngine {
         glm::vec3 m_forward = glm::vec3(0.0f, 0.0f, -1.0f);
         glm::vec3 m_up = glm::vec3(0.0f, 1.0f, 0.0f);
         glm::vec3 m_right = glm::vec3(1.0f, 0.0f, 0.0f);
+
+        glm::mat4 m_worldMatrix = glm::mat4(1.0f);
+        bool m_isDirty = true;
 
 
         void translate(glm::vec3 vector) {
@@ -107,7 +125,6 @@ namespace TechEngine {
             m_scale = vector;
         }
 
-
         void calculateUpForwardRight() {
             glm::quat quaternion = glm::quat(glm::radians(m_rotation));
 
@@ -116,10 +133,14 @@ namespace TechEngine {
             m_up = glm::normalize(quaternion * glm::vec3(0.0f, 1.0f, 0.0f));
         }
 
-        glm::mat4 getModelMatrix() {
+        glm::mat4 getLocalModelMatrix() {
             return glm::translate(glm::mat4(1), m_position) *
                    glm::mat4_cast(glm::quat(glm::radians(m_rotation))) *
                    glm::scale(glm::mat4(1), m_scale);
+        }
+
+        glm::mat4 getModelMatrix() {
+            return m_worldMatrix;
         }
 
         static void serialize(const Transform& transform, YAML::Emitter& out);
@@ -225,7 +246,7 @@ namespace TechEngine {
         float padding3[3] = {0.0f}; // Padding to align to 16 bytes
 
         uint32_t gpuID = -1; // ID in the GPU
-        bool castShadows = false;
+        bool castShadows = true;
 
         uint32_t shadowMapID = -1;
         uint64_t shadowTextureHandle = 0.0f;

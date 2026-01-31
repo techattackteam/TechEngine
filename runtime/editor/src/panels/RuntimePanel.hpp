@@ -1,10 +1,11 @@
 #pragma once
 #include "DockPanel.hpp"
+#include "EntityHierarchyPanel.hpp"
+#include "WidgetHierarchyPanel.hpp"
+#include "RenderPassHierarchyPanel.hpp"
 #include "GameView.hpp"
 #include "InspectorPanel.hpp"
 #include "LoggerPanel.hpp"
-#include "SceneHierarchyPanel.hpp"
-#include "SceneSettingsPanel.hpp"
 #include "SceneView.hpp"
 #include "project/ProjectManager.hpp"
 
@@ -28,12 +29,15 @@ namespace TechEngine {
         LoggerPanel& loggerPanel;
 
         SceneView m_sceneView;
-        SceneHierarchyPanel m_sceneHierarchyPanel;
-        SceneSettingsPanel m_sceneSettingsPanel;
+
+        // New hierarchy panels
+        EntityHierarchyPanel m_entityHierarchyPanel;
+        //WidgetHierarchyPanel m_widgetHierarchyPanel;
+        //RenderPassHierarchyPanel m_renderPassHierarchyPanel;
+
         InspectorPanel m_inspectorPanel;
         InspectorTarget m_inspectorTarget = InspectorTarget::None;
 
-        std::vector<Entity> m_selectedEntities;
         HierarchyNode m_selectedNode;
         ProjectType m_projectType;
 

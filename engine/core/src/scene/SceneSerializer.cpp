@@ -68,6 +68,9 @@ namespace TechEngine {
         } else if (typeID == ComponentType<Tag>::get()) {
             const Tag& tag = m_scene.getComponent<Tag>(entity);
             Tag::serialize(tag, out);
+        } else if (typeID == ComponentType<Hierarchy>::get()) {
+            const Hierarchy& hierarchy = m_scene.getComponent<Hierarchy>(entity);
+            Hierarchy::serialize(hierarchy, out);
         } else if (typeID == ComponentType<Camera>::get()) {
             const Camera& camera = m_scene.getComponent<Camera>(entity);
             Camera::serialize(camera, out);
@@ -116,6 +119,11 @@ namespace TechEngine {
             UUID::registerUUID(std::stoull(tag.getUuid()));
             m_scene.addComponent(entity, tag);
         }
+        if (componentNode["Hierarchy"]) {
+            Hierarchy hierarchy = Hierarchy::deserialize(componentNode["Hierarchy"]);
+            m_scene.addComponent(entity, hierarchy);
+        }
+
         if (componentNode["Transform"]) {
             Transform transform = Transform::deserialize(componentNode["Transform"]);
             m_scene.addComponent(entity, transform);
@@ -211,6 +219,26 @@ namespace TechEngine {
 
     Tag Tag::deserialize(const YAML::Node& node) {
         return ComponentsFactory::createTag(node["Name"].as<std::string>(), node["UUID"].as<std::string>());
+    }
+
+    void Hierarchy::serialize(const Hierarchy& hierarchy, YAML::Emitter& out) {
+        out << YAML::Key << "Hierarchy" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "Parent" << YAML::Value << hierarchy.parent;
+        out << YAML::Key << "FirstChild" << YAML::Value << hierarchy.firstChild;
+        out << YAML::Key << "NextSibling" << YAML::Value << hierarchy.nextSibling;
+        out << YAML::Key << "PreviousSibling" << YAML::Value << hierarchy.previousSibling;
+        out << YAML::Key << "ChildrenCount" << YAML::Value << hierarchy.childrenCount;
+        out << YAML::EndMap;
+    }
+
+    Hierarchy Hierarchy::deserialize(const YAML::Node& node) {
+        Hierarchy hierarchy;
+        hierarchy.parent = node["Parent"].as<Entity>();
+        hierarchy.firstChild = node["FirstChild"].as<Entity>();
+        hierarchy.nextSibling = node["NextSibling"].as<Entity>();
+        hierarchy.previousSibling = node["PreviousSibling"].as<Entity>();
+        hierarchy.childrenCount = node["ChildrenCount"].as<size_t>();
+        return hierarchy;
     }
 
     void Transform::serialize(const Transform& transform, YAML::Emitter& out) {

@@ -94,21 +94,74 @@ namespace TechEngine {
         const glm::mat4& cameraProjection = camera->getProjectionMatrix();
         glm::mat4 cameraView = camera->getViewMatrix();
         Entity entity = selectedNode.entity;
-        Transform& transform = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getComponent<Transform>(entity);
-        glm::mat4 modelMatrix = transform.getModelMatrix();
+        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        Transform& transform = scene.getComponent<Transform>(entity);
+
+        // Use the world matrix for display - this is where the gizmo should appear
+        glm::mat4 worldMatrix = transform.m_worldMatrix;
+
         Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
-                   (ImGuizmo::OPERATION)operation, (ImGuizmo::MODE)(mode), glm::value_ptr(modelMatrix),
+                   (ImGuizmo::OPERATION)operation, (ImGuizmo::MODE)(mode), glm::value_ptr(worldMatrix),
                    nullptr, nullptr);
 
         if (ImGuizmo::IsUsing() && (lastUsingID == -1 || lastUsingID == id)) {
             lastUsingID = id;
-            glm::vec3 translation, rotation, scale;
-            DecomposeTransform(modelMatrix, translation, rotation, scale);
 
-            transform.translateToWorld(translation);
-            transform.setRotation(degrees(rotation));
-            transform.setScale(scale);
-            Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+            // Decompose the manipulated world matrix
+            glm::vec3 newWorldScale;
+            glm::quat newWorldRotation;
+            glm::vec3 newWorldPosition;
+            glm::vec3 skew;
+            glm::vec4 perspective;
+            glm::decompose(worldMatrix, newWorldScale, newWorldRotation, newWorldPosition, skew, perspective);
+
+            // Check if entity has a parent
+            if (scene.hasComponent<Hierarchy>(entity)) {
+                Hierarchy& hierarchy = scene.getComponent<Hierarchy>(entity);
+
+                if (hierarchy.parent != (Entity)-1 && scene.hasComponent<Transform>(hierarchy.parent)) {
+                    // Entity has a parent - convert world transform to local space
+                    // using the same logic as the new transform system
+                    Transform& parentTransform = scene.getComponent<Transform>(hierarchy.parent);
+
+                    // Decompose parent's world matrix
+                    glm::vec3 parentWorldScale;
+                    glm::quat parentWorldRotation;
+                    glm::vec3 parentWorldPosition;
+                    glm::decompose(parentTransform.m_worldMatrix, parentWorldScale, parentWorldRotation, parentWorldPosition, skew, perspective);
+
+                    // Local scale: In the new system, child scale doesn't inherit parent scale for shape
+                    // So local scale = world scale (the child's own scale)
+                    glm::vec3 localScale = newWorldScale;
+
+                    // Local rotation: inverse of parent rotation * world rotation
+                    glm::quat parentRotationInverse = glm::inverse(parentWorldRotation);
+                    glm::quat localRotation = parentRotationInverse * newWorldRotation;
+
+                    // Local position:
+                    // World position is: parentWorldPos + parentWorldRot * (parentWorldScale * localPos)
+                    // So: localPos = (inverse(parentWorldRot) * (worldPos - parentWorldPos)) / parentWorldScale
+                    glm::vec3 relativePos = newWorldPosition - parentWorldPosition;
+                    glm::vec3 rotatedRelativePos = parentRotationInverse * relativePos;
+                    glm::vec3 localPosition = rotatedRelativePos / parentWorldScale;
+
+                    transform.m_position = localPosition;
+                    transform.setRotation(glm::degrees(glm::eulerAngles(localRotation)));
+                    transform.setScale(localScale);
+                } else {
+                    // No parent, use world transform directly as local
+                    transform.m_position = newWorldPosition;
+                    transform.setRotation(glm::degrees(glm::eulerAngles(newWorldRotation)));
+                    transform.setScale(newWorldScale);
+                }
+            } else {
+                // No hierarchy component, use world transform directly
+                transform.m_position = newWorldPosition;
+                transform.setRotation(glm::degrees(glm::eulerAngles(newWorldRotation)));
+                transform.setScale(newWorldScale);
+            }
+
+            transform.m_isDirty = true;
             m_systemsRegistry.getSystem<PhysicsEngine>().moveOrRotateBody(scene.getComponent<Tag>(entity), scene.getComponent<Transform>(entity));
         } else {
             lastUsingID = -1;
