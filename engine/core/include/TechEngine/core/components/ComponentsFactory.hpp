@@ -18,6 +18,10 @@ namespace TechEngine {
             return tag;
         }
 
+        static Hierarchy createHierarchy() {
+            return Hierarchy();
+        }
+
         static Transform createTransform(const glm::vec3& position, const glm::vec3& rotation, const glm::vec3& scale) {
             return Transform();
         }

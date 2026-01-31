@@ -64,6 +64,14 @@ namespace TechEngine {
             m_archetypesManager.query<Components...>().parallelEach(function);
         }
 
+        void setParent(Entity child, Entity parent);
+
+        void setParentPreservingWorldTransform(Entity parent, Entity child);
+
+        void unParent(Entity child);
+
+        std::vector<Entity> getChildren(Entity entity);
+
         void clear();
 
         const std::string& getName() const;

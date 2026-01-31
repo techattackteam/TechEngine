@@ -205,6 +205,7 @@ namespace TechEngine {
             return;
         }
 
+        m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getInternal()->updateGlobalTransforms(); // Not ideal place for this call
         populateObjectDataBuffers();
         populateLightDataBuffers();
         populateMaterialDataBuffers();
@@ -692,6 +693,9 @@ namespace TechEngine {
         aoPass(viewMatrix, projectionMatrix, viewport);
         geometryPass(viewMatrix, projectionMatrix, viewport, nearPlane, farPlane);
         m_skyBox.renderSkybox(getFramebuffer(m_gBufferFBO), viewMatrix, projectionMatrix);
+        if (m_bloomProperties.enabled) {
+            bloomPass(viewport);
+        }
         if (m_volumetricSettings.enabled) {
             godRayPass(request);
         }
@@ -1362,6 +1366,7 @@ namespace TechEngine {
     }
 
     void Renderer::bloomPass(const glm::ivec2& viewport) {
+        recreateBloomTexture(viewport);
         m_shadersManager.changeActiveShader("bloomPrefilter");
         m_shadersManager.getActiveShader()->setUniformFloat("u_threshold", m_bloomProperties.threshold);
         m_shadersManager.getActiveShader()->setUniformFloat("u_knee", m_bloomProperties.knee);
@@ -1499,6 +1504,7 @@ namespace TechEngine {
 
             glUseProgram(0);
         } else {
+            return; // Temporary disable other implementation
             glBindBuffer(GL_UNIFORM_BUFFER, m_froxelParamsUBO);
             glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(FroxelParams), &m_froxelParams);
             glBindBuffer(GL_UNIFORM_BUFFER, 0);

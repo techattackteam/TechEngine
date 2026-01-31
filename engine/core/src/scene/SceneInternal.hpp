@@ -8,13 +8,14 @@ namespace TechEngine {
     private:
         std::string m_name = "Untitled";
 
+        Scene& m_scene;
         ArchetypesManager& m_archetypesManager;
 
         friend class SceneSerializer;
         friend class Scene;
 
     public:
-        Internal(ArchetypesManager& archetypesManager);
+        Internal(Scene& scene, ArchetypesManager& archetypesManager);
 
         int getTotalEntities();
 
@@ -27,6 +28,8 @@ namespace TechEngine {
 
         void setName(const std::string& name);
 
+        void updateGlobalTransforms();
+
         Internal* getImpl(Scene& scene) {
             return scene.m_internal.get();
         }
@@ -34,5 +37,8 @@ namespace TechEngine {
         const Internal* getImpl(const Scene& scene) {
             return scene.m_internal.get();
         }
+
+    private:
+        void updateTransformsRecursive(Entity entity, const glm::mat4& parentTransformNoScale, const glm::vec3& parentWorldScale, bool parentDirty);
     };
 }

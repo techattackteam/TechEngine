@@ -6,6 +6,7 @@ namespace TechEngine {
     ArchetypesManager::ArchetypesManager() {
         Component::familyCounter = 0;
         registerComponent<Tag>();
+        registerComponent<Hierarchy>();
         registerComponent<Transform>();
         registerComponent<Camera>();
         registerComponent<PointLight>();

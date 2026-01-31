@@ -97,9 +97,7 @@ bool sphereIntersectsAABB(vec3 center, float radius, volumeAABB box) {
     return dot(diff, diff) <= radius * radius;
 }
 
-bool testPointLightAABB(uint sharedLightIndex, uint tile) {
-    uint lightIndex = s_visibleLightIndices[sharedLightIndex];
-    Light light = lights[lightIndex];
+bool testPointLightAABB(Light light, uint tile) {
     vec3 center = (u_view * vec4(light.position, 1.0)).xyz;
     return sphereIntersectsAABB(center, light.radius, aabbs[tile]);
 }
@@ -137,9 +135,21 @@ void main() {
         barrier();
         uint lightInBatch = min(threadCount, u_lightCount - batch * threadCount);
 
-        for (uint light = 0; light < lightInBatch; ++light) {
-            if (testPointLightAABB(light, tileIndex) && visibleLightCount < 100) {
-                visibleLightIndices[visibleLightCount] = s_visibleLightIndices[light];
+        for (uint sharedLightIndex = 0; sharedLightIndex < lightInBatch; ++sharedLightIndex) {
+            uint lightIndex = s_visibleLightIndices[sharedLightIndex];
+            Light light = lights[lightIndex];
+            visibleLightIndices[visibleLightCount] = s_visibleLightIndices[sharedLightIndex];
+            visibleLightCount += 1;
+            continue;
+            if (visibleLightCount >= 100) {
+                break; // Prevent overflow
+            }
+            if (light.type == 0 && testPointLightAABB(light, tileIndex)) {
+                // Point Light
+
+            } else if (light.type == 1) {
+                // Directional Light, always visible
+                visibleLightIndices[visibleLightCount] = s_visibleLightIndices[sharedLightIndex];
                 visibleLightCount += 1;
             }
         }
