@@ -5,8 +5,8 @@
 #include "core/Logger.hpp"
 #include "resources/ResourcesManager.hpp"
 #include "resources/mesh/AssimpLoader.hpp"
-#include "../../../../engine/core/include/TechEngine/core/resources/mesh/MeshManager.hpp"
 #include "UIUtils/ImGuiUtils.hpp"
+#include "scene/ScenesManager.hpp"
 
 namespace TechEngine {
     ContentBrowserPanel::ContentBrowserPanel(SystemsRegistry& editorRegistry,
@@ -161,16 +161,17 @@ namespace TechEngine {
                 );*/
             } else if (extension == ".mat") {
                 std::string filenameWithoutExtension = filename.substr(0, filename.find_last_of('.'));
-                //m_panelsManager.openMaterialEditor(filenameWithoutExtension, path);
-            } else if (extension == ".fbx" || extension == ".obj" || extension == ".gltf" || extension == ".glb") {
+            } else if (extension == ".temodel") {
                 runFunctionBasedOnFileType(path,
                                            [&] {
-                                               m_clientRegistry.getSystem<ResourcesManager>().loadModelFile(path);
+                                               Scene& scene = m_clientRegistry.getSystem<ScenesManager>().getActiveScene();
+                                               m_clientRegistry.getSystem<ResourcesManager>().loadModel(path, scene);
                                            },
                                            [&] {
-                                               m_serverRegistry.getSystem<ResourcesManager>().loadModelFile(path);
+                                               Scene& scene = m_serverRegistry.getSystem<ScenesManager>().getActiveScene();
+                                               m_serverRegistry.getSystem<ResourcesManager>().loadModel(path, scene);
                                            });
-            } else if (extension == ".TE_mesh") {
+            } else if (extension == ".tesmesh") {
                 runFunctionBasedOnFileType(path,
                                            [&] {
                                                m_clientRegistry.getSystem<ResourcesManager>().loadStaticMesh(path);
@@ -221,21 +222,69 @@ namespace TechEngine {
         if (ImGui::BeginPopupContextItem()) {
             opened = true;
 
-            if (ImGui::Button("Open")) {
-                openFolderOrFile(path.string());
-            }
+            std::string extension = path.extension().string();
             std::string filenameString = path.filename().string();
-            /*if (ImGuiUtils::beginMenuWithInputMenuField("Rename", "New name", filenameString)) {
-                renameFile(path.filename().string(), filenameString);
-            }*/
-            if (ImGui::Button("LoadModel")) {
-                tryLoadModel(path.string());
-            }
-            if (ImGui::Button("Delete")) {
-                if (is_directory(path)) {
-                    std::filesystem::remove_all(path);
-                } else {
-                    deleteFile(path.filename().string());
+
+            bool isModelFile = (extension == ".fbx" || extension == ".obj" || extension == ".gltf" || extension == ".glb");
+            bool isTEModelFile = (extension == ".temodel");
+
+            if (isModelFile) {
+                if (ImGui::Button("Create Mesh")) {
+                    runFunctionBasedOnFileType(path.string(),
+                                               [&] {
+                                                   m_clientRegistry.getSystem<ResourcesManager>().createMeshFromModelFile(path.string());
+                                               },
+                                               [&] {
+                                                   m_serverRegistry.getSystem<ResourcesManager>().createMeshFromModelFile(path.string());
+                                               });
+                    ImGui::CloseCurrentPopup();
+                }
+                if (ImGui::Button("Create Model")) {
+                    runFunctionBasedOnFileType(path.string(),
+                                               [&] {
+                                                   m_clientRegistry.getSystem<ResourcesManager>().createModelFromFile(path.string());
+                                               },
+                                               [&] {
+                                                   m_serverRegistry.getSystem<ResourcesManager>().createModelFromFile(path.string());
+                                               });
+                    ImGui::CloseCurrentPopup();
+                }
+                if (ImGui::Button("Delete")) {
+                    std::filesystem::remove(path);
+                    ImGui::CloseCurrentPopup();
+                }
+            } else if (isTEModelFile) {
+                if (ImGui::Button("Load into Scene")) {
+                    runFunctionBasedOnFileType(path.string(),
+                                               [&] {
+                                                   Scene& scene = m_clientRegistry.getSystem<ScenesManager>().getActiveScene();
+                                                   m_clientRegistry.getSystem<ResourcesManager>().loadModel(path.string(), scene);
+                                               },
+                                               [&] {
+                                                   Scene& scene = m_serverRegistry.getSystem<ScenesManager>().getActiveScene();
+                                                   m_serverRegistry.getSystem<ResourcesManager>().loadModel(path.string(), scene);
+                                               });
+                    ImGui::CloseCurrentPopup();
+                }
+                if (ImGui::Button("Delete")) {
+                    std::filesystem::remove(path);
+                    ImGui::CloseCurrentPopup();
+                }
+            } else {
+                if (ImGui::Button("Open")) {
+                    openFolderOrFile(path.string());
+                    ImGui::CloseCurrentPopup();
+                }
+                /*if (ImGuiUtils::beginMenuWithInputMenuField("Rename", "New name", filenameString)) {
+                    renameFile(path.filename().string(), filenameString);
+                }*/
+                if (ImGui::Button("Delete")) {
+                    if (is_directory(path)) {
+                        std::filesystem::remove_all(path);
+                    } else {
+                        deleteFile(path.filename().string());
+                    }
+                    ImGui::CloseCurrentPopup();
                 }
             }
             ImGui::EndPopup();

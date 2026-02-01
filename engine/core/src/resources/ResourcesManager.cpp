@@ -4,6 +4,9 @@
 #include "files/FileUtils.hpp"
 #include "project/Project.hpp"
 #include "systems/SystemsRegistry.hpp"
+#include "TechEngine/core/scene/Scene.hpp"
+
+#include <algorithm>
 
 namespace TechEngine {
     ResourcesManager::ResourcesManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry),
@@ -68,13 +71,37 @@ namespace TechEngine {
         m_meshManager.createMesh(name);
     }
 
-    void ResourcesManager::loadModelFile(const std::string& path) {
+    void ResourcesManager::createMeshFromModelFile(const std::string& path) {
         std::string modelName = FileUtils::getFileName(path);
         std::string parentFolder = std::filesystem::path(path).parent_path().string();
         std::string staticMeshPath = parentFolder + "\\" + modelName + ".tesmesh";
+
         AssimpLoader::ModelData modelData = m_assimpLoader.loadModel(path);
         m_assimpLoader.createStaticMeshFile(modelData.rootNode, staticMeshPath);
-        loadStaticMesh(staticMeshPath);
+
+        TE_LOGGER_INFO("Created mesh file: {}", staticMeshPath);
+    }
+
+    void ResourcesManager::createModelFromFile(const std::string& path) {
+        std::string modelName = FileUtils::getFileName(path);
+        std::string parentFolder = std::filesystem::path(path).parent_path().string();
+
+        AssimpLoader::ModelData modelData = m_assimpLoader.loadModel(path);
+        m_assimpLoader.createModelFiles(modelData.rootNode, modelName, parentFolder);
+
+        TE_LOGGER_INFO("Created model folder: {}", parentFolder);
+    }
+
+    void ResourcesManager::loadModel(const std::string& path, Scene& scene) {
+        AssimpLoader::TEModelData teModelData = m_assimpLoader.loadTEModel(path);
+
+        std::string modelFolder = std::filesystem::path(path).parent_path().string();
+
+        loadMeshesFromModelNode(teModelData.rootNode, modelFolder);
+
+        createEntityFromModelNode(scene, teModelData.rootNode, static_cast<Entity>(-1), modelFolder);
+
+        TE_LOGGER_INFO("Loaded model: {} into scene", teModelData.modelName);
     }
 
     void ResourcesManager::loadStaticMesh(const std::string& path) {
@@ -240,5 +267,142 @@ namespace TechEngine {
             }
         }
         return filesByExtension;
+    }
+
+    void ResourcesManager::registerMeshesFromNode(const AssimpLoader::Node& node, const std::string& modelName, const std::string& parentPath) {
+        std::string nodePath = parentPath.empty() ? node.name : parentPath + "/" + node.name;
+        if (nodePath.empty()) {
+            nodePath = modelName;
+        }
+
+        for (size_t i = 0; i < node.meshes.size(); ++i) {
+            std::string meshName = modelName + "_" + nodePath + "_mesh" + std::to_string(i);
+            std::replace(meshName.begin(), meshName.end(), '/', '_');
+            std::replace(meshName.begin(), meshName.end(), '\\', '_');
+
+            if (!m_meshManager.isMeshLoaded(meshName)) {
+                m_meshManager.createMesh(meshName, node.meshes[i].vertices, node.meshes[i].indices);
+            }
+        }
+
+        for (const AssimpLoader::Node& child: node.children) {
+            registerMeshesFromNode(child, modelName, nodePath);
+        }
+    }
+
+    Entity ResourcesManager::createEntityFromNode(Scene& scene, const AssimpLoader::Node& node, Entity parent, const std::string& modelName, const std::string& nodePath) {
+        std::string entityName = node.name.empty() ? modelName : node.name;
+
+        std::string currentNodePath = nodePath.empty() ? node.name : nodePath + "/" + node.name;
+        if (currentNodePath.empty()) {
+            currentNodePath = modelName;
+        }
+
+        Entity entity = scene.createEntity(entityName);
+
+        Transform& transform = scene.getComponent<Transform>(entity);
+        transform.m_position = node.position;
+        transform.m_rotation = node.rotation;
+        transform.m_scale = node.scale;
+        transform.calculateUpForwardRight();
+        transform.m_isDirty = true;
+
+        if (parent != static_cast<Entity>(-1)) {
+            scene.setParent(parent, entity);
+        }
+
+        for (size_t i = 0; i < node.meshes.size(); ++i) {
+            std::string meshName = modelName + "_" + currentNodePath + "_mesh" + std::to_string(i);
+            std::replace(meshName.begin(), meshName.end(), '/', '_');
+            std::replace(meshName.begin(), meshName.end(), '\\', '_');
+
+            std::string meshEntityName = entityName + "_mesh" + std::to_string(i);
+            Entity meshEntity = scene.createEntity(meshEntityName);
+
+            Transform& meshTransform = scene.getComponent<Transform>(meshEntity);
+            meshTransform.m_position = glm::vec3(0.0f);
+            meshTransform.m_rotation = glm::vec3(0.0f);
+            meshTransform.m_scale = glm::vec3(1.0f);
+            meshTransform.m_isDirty = true;
+
+            scene.setParent(entity, meshEntity);
+
+            MeshRenderer meshRenderer;
+            meshRenderer.mesh = &getMesh(meshName);
+            meshRenderer.material = &getDefaultMaterial();
+            scene.addComponent(meshEntity, meshRenderer);
+        }
+
+        for (const AssimpLoader::Node& child: node.children) {
+            createEntityFromNode(scene, child, entity, modelName, currentNodePath);
+        }
+
+        return entity;
+    }
+
+    void ResourcesManager::loadMeshesFromModelNode(const AssimpLoader::ModelNode& node, const std::string& modelFolder) {
+        // Load all mesh files referenced by this node
+        for (const std::string& meshFile: node.meshFiles) {
+            std::string meshPath = modelFolder + "\\" + meshFile;
+            std::string meshName = std::filesystem::path(meshFile).stem().string();
+
+            if (!m_meshManager.isMeshLoaded(meshName)) {
+                m_meshManager.loadStaticMesh(meshPath);
+            }
+        }
+
+        // Recursively load meshes from children
+        for (const AssimpLoader::ModelNode& child: node.children) {
+            loadMeshesFromModelNode(child, modelFolder);
+        }
+    }
+
+    Entity ResourcesManager::createEntityFromModelNode(Scene& scene, const AssimpLoader::ModelNode& node, Entity parent, const std::string& modelFolder) {
+        std::string entityName = node.name.empty() ? "Node" : node.name;
+
+        Entity entity = scene.createEntity(entityName);
+
+        // Set transform from node data
+        Transform& transform = scene.getComponent<Transform>(entity);
+        transform.m_position = node.position;
+        transform.m_rotation = node.rotation;
+        transform.m_scale = node.scale;
+        transform.calculateUpForwardRight();
+        transform.m_isDirty = true;
+
+        // Set parent if provided
+        if (parent != static_cast<Entity>(-1)) {
+            scene.setParent(parent, entity);
+        }
+
+        // Create a child entity for each mesh (since each entity can only have one MeshRenderer)
+        for (size_t i = 0; i < node.meshFiles.size(); ++i) {
+            std::string meshFileName = node.meshFiles[i];
+            std::string meshName = std::filesystem::path(meshFileName).stem().string();
+
+            std::string meshEntityName = entityName + "_mesh" + std::to_string(i);
+            Entity meshEntity = scene.createEntity(meshEntityName);
+
+            // Mesh entities inherit identity transform (relative to parent node)
+            Transform& meshTransform = scene.getComponent<Transform>(meshEntity);
+            meshTransform.m_position = glm::vec3(0.0f);
+            meshTransform.m_rotation = glm::vec3(0.0f);
+            meshTransform.m_scale = glm::vec3(1.0f);
+            meshTransform.m_isDirty = true;
+
+            scene.setParent(entity, meshEntity);
+
+            MeshRenderer meshRenderer;
+            meshRenderer.mesh = &getMesh(meshName);
+            meshRenderer.material = &getDefaultMaterial();
+            scene.addComponent(meshEntity, meshRenderer);
+        }
+
+        // Recursively create child entities
+        for (const AssimpLoader::ModelNode& child: node.children) {
+            createEntityFromModelNode(scene, child, entity, modelFolder);
+        }
+
+        return entity;
     }
 }
