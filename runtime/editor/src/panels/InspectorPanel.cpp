@@ -1,5 +1,6 @@
 #include "InspectorPanel.hpp"
 
+#include "core/Logger.hpp"
 #include "scene/CameraSystem.hpp"
 #include "scene/ScenesManager.hpp"
 #include "TechEngine/core/components/Components.hpp"
@@ -223,95 +224,55 @@ namespace TechEngine {
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<MeshRenderer>::get()) != componentsToDraw.end()) {
             drawComponent<MeshRenderer>(entity, "Mesh Renderer", [this](auto& component) {
-                /*
-                Scene& scene = m_appSystemRegistry.getSystem<ScenesManager>().getActiveScene();
-                bool isMeshCommon = true;
-                bool isMaterialCommon = true;
-                const std::string commonMeshName = component.mesh.getName();
-                const std::string commonMaterialName = component.material.getName();
+                // Display current mesh name
+                std::string meshName = component.mesh ? component.mesh->getName() : "None";
+                std::string materialName = component.material ? component.material->getName() : "None";
 
-                for (Entity entity: m_selectedEntities) {
-                    auto currentMeshRenderer = scene.getComponent<MeshRenderer>(entity);
+                ImGui::Text("Mesh");
+                ImGui::SameLine();
 
-                    if (currentMeshRenderer.mesh.getName() != commonMeshName) {
-                        isMeshCommon = false;
+                // Create a button showing the current mesh name that accepts drag-drop
+                float availWidth = ImGui::GetContentRegionAvail().x;
+                ImGui::Button(meshName.c_str(), ImVec2(availWidth, 0));
+
+                // Drag-drop target for mesh
+                if (ImGui::BeginDragDropTarget()) {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+                        std::string filename = (const char*)payload->Data;
+                        std::string extension = filename.substr(filename.find_last_of('.'));
+                        if (extension == ".tesmesh") {
+                            std::string newMeshName = filename.substr(0, filename.find_last_of("."));
+                            // Check if mesh is loaded, if not load it
+                            if (!m_appSystemsRegistry.getSystem<ResourcesManager>().m_meshManager.isMeshLoaded(newMeshName)) {
+                                // Get the full path from content browser current path
+                                // For now, we assume the mesh is already loaded via Create Mesh
+                                TE_LOGGER_WARN("Mesh '{}' is not loaded. Please load it first via Content Browser.", newMeshName);
+                            } else {
+                                component.changeMesh(m_appSystemsRegistry.getSystem<ResourcesManager>().getMesh(newMeshName));
+                            }
+                        }
                     }
-
-                    if (currentMeshRenderer.material.getName() != commonMaterialName) {
-                        isMaterialCommon = false;
-                    }
+                    ImGui::EndDragDropTarget();
                 }
 
+                ImGui::Text("Material");
+                ImGui::SameLine();
 
-                if (isMeshCommon && commonMeshName == "export3dcoat") {
-                    ImGui::Text("Imported Mesh");
-                } else {
-                    static const char* current_item;
-                    const char* items[] = {"Cube", "Sphere", "Cylinder", "Capsule", "Plane"};
-                    for (auto& item: items) {
-                        if (commonMeshName == item) {
-                            current_item = item;
-                            break;
-                        }
-                    }
+                // Create a button showing the current material name that accepts drag-drop
+                ImGui::Button(materialName.c_str(), ImVec2(availWidth, 0));
 
-                    if (ImGui::BeginCombo("##combo", isMeshCommon ? current_item : "-")) {
-                        // The second parameter is the label previewed before opening the combo.
-                        for (auto& item: items) {
-                            bool is_selected = (current_item == item); // You can store your selection however you want, outside or inside your objects
-                            if (ImGui::Selectable(item, is_selected))
-                                current_item = item;
-                            if (is_selected)
-                                ImGui::SetItemDefaultFocus(); // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
-                        }
-                        ImGui::EndCombo();
-                    }
-                    component.changeMesh(m_appSystemRegistry.getSystem<ResourcesManager>().getMesh(current_item));
-                }
-                static bool open = false;
-                if (ImGui::Button(isMaterialCommon ? commonMaterialName.c_str() : "-", ImVec2(ImGui::GetContentRegionAvail().x, 0)) && !open) {
-                    open = true;
-                    OPENFILENAMEA ofn;
-                    CHAR szFile[260] = {0};
-                    CHAR currentDir[256] = {0};
-                    ZeroMemory(&ofn, sizeof(OPENFILENAME));
-                    ofn.lStructSize = sizeof(OPENFILENAME);
-                    ofn.lpstrFile = szFile;
-                    ofn.nMaxFile = sizeof(szFile);
-                    if (GetCurrentDirectoryA(256, currentDir))
-                        ofn.lpstrInitialDir = currentDir;
-                    ofn.lpstrFilter = ".mat";
-                    ofn.nFilterIndex = 1;
-                    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
-
-                    if (GetOpenFileNameA(&ofn) == TRUE) {
-                        open = false;
-                        std::string filepath = ofn.lpstrFile;
-                        std::string filename = filepath.substr(filepath.find_last_of("/\\") + 1);
-                        std::string materialName = filename.substr(0, filename.find_last_of("."));
-                        for (Entity entity: m_selectedEntities) {
-                            //entity->getComponent<MeshRenderer>()->changeMaterial(m_appSystemRegistry.getSystem<MaterialManager>().getMaterial(materialName));
-                        }
-                    }
-                };
-
+                // Drag-drop target for material
                 if (ImGui::BeginDragDropTarget()) {
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
                         std::string filename = (const char*)payload->Data;
                         std::string extension = filename.substr(filename.find_last_of('.'));
                         if (extension == ".mat") {
-                            std::string materialName = filename.substr(0, filename.find_last_of("."));
-                            component.changeMaterial(m_appSystemRegistry.getSystem<ResourcesManager>().getMaterial(materialName));
-                        } else if (extension == ".tesmesh") {
-                            std::string meshName = filename.substr(0, filename.find_last_of("."));
-                            component.changeMesh(m_appSystemRegistry.getSystem<ResourcesManager>().getMesh(meshName));
+                            std::string newMaterialName = filename.substr(0, filename.find_last_of("."));
+                            component.changeMaterial(m_appSystemsRegistry.getSystem<ResourcesManager>().getMaterial(newMaterialName));
                         }
-                        return;
                     }
                     ImGui::EndDragDropTarget();
                 }
-                    */
-                //component.paintMesh();
             });
         }
         if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<PointLight>::get()) != componentsToDraw.end()) {
@@ -766,8 +727,8 @@ namespace TechEngine {
                 Mesh& mesh = m_appSystemsRegistry.getSystem<ResourcesManager>().getDefaultMesh();
                 Material& material = m_appSystemsRegistry.getSystem<ResourcesManager>().getDefaultMaterial();
                 MeshRenderer& meshRenderer = addComponent<MeshRenderer>();
-                /*meshRenderer.changeMaterial(material);
-                meshRenderer.changeMesh(mesh);*/
+                meshRenderer.changeMaterial(material);
+                meshRenderer.changeMesh(mesh);
             }
             if (ImGui::BeginMenu("Light")) {
                 if (ImGui::MenuItem("Point Light")) {

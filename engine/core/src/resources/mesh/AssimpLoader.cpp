@@ -12,37 +12,79 @@
 #include <assimp/postprocess.h>
 #include <yaml-cpp/yaml.h>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <algorithm>
 
 namespace TechEngine {
-    std::filesystem::path AssimpLoader::createStaticMeshFile(const AssimpLoader::Node& node, const std::string& staticMeshPath) {
-        std::queue<AssimpLoader::Node> nodeQueue;
-        nodeQueue.push(node);
+    // Helper function to compute the transformation matrix from node properties
+    static glm::mat4 computeNodeTransformMatrix(const AssimpLoader::Node& node) {
+        glm::mat4 translation = glm::translate(glm::mat4(1.0f), node.position);
+        glm::mat4 rotation = glm::toMat4(glm::quat(glm::radians(node.rotation)));
+        glm::mat4 scale = glm::scale(glm::mat4(1.0f), node.scale);
+        return translation * rotation * scale;
+    }
 
-        int lastIndex = 0;
-        FileStreamWriter writer(staticMeshPath);
-        while (!nodeQueue.empty()) {
-            // Get the current node
-            AssimpLoader::Node currentNode = nodeQueue.front();
-            nodeQueue.pop();
+    // Helper function to transform vertices by a matrix
+    static std::vector<Vertex> transformVertices(const std::vector<Vertex>& vertices, const glm::mat4& transform) {
+        std::vector<Vertex> transformedVertices;
+        transformedVertices.reserve(vertices.size());
 
-            // Add current node's meshes to the list
-            for (AssimpLoader::aiMeshData& meshData: currentNode.meshes) {
-                writer.writeArray(meshData.vertices);
+        glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(transform)));
 
-                std::vector<int> indices;
-                for (int index: meshData.indices) {
-                    indices.push_back(index + lastIndex);
-                }
-                writer.writeArray(meshData.indices);
-                lastIndex = meshData.indices.back();
-            }
-
-            // Add current node's children to the queue
-            for (const AssimpLoader::Node& child: currentNode.children) {
-                nodeQueue.push(child);
-            }
+        for (const Vertex& v : vertices) {
+            Vertex transformed;
+            // Transform position
+            glm::vec4 pos = transform * glm::vec4(v.position, 1.0f);
+            transformed.position = glm::vec3(pos);
+            // Transform normal (using normal matrix to handle non-uniform scaling)
+            transformed.normal = glm::normalize(normalMatrix * v.normal);
+            // UV coordinates don't need transformation
+            transformed.texCoords = v.texCoords;
+            transformedVertices.push_back(transformed);
         }
+        return transformedVertices;
+    }
+
+    // Recursive helper to collect all meshes with their world transforms
+    static void collectMeshesWithTransforms(const AssimpLoader::Node& node, const glm::mat4& parentTransform,
+                                            std::vector<Vertex>& allVertices, std::vector<int>& allIndices) {
+        // Compute world transform for this node
+        glm::mat4 localTransform = computeNodeTransformMatrix(node);
+        glm::mat4 worldTransform = parentTransform * localTransform;
+
+        // Process all meshes in this node
+        for (const AssimpLoader::aiMeshData& meshData : node.meshes) {
+            // Transform vertices to world space
+            std::vector<Vertex> transformedVertices = transformVertices(meshData.vertices, worldTransform);
+
+            // Add indices with offset
+            int indexOffset = static_cast<int>(allVertices.size());
+            for (int index : meshData.indices) {
+                allIndices.push_back(index + indexOffset);
+            }
+
+            // Add transformed vertices
+            allVertices.insert(allVertices.end(), transformedVertices.begin(), transformedVertices.end());
+        }
+
+        // Recursively process children
+        for (const AssimpLoader::Node& child : node.children) {
+            collectMeshesWithTransforms(child, worldTransform, allVertices, allIndices);
+        }
+    }
+
+    std::filesystem::path AssimpLoader::createStaticMeshFile(const AssimpLoader::Node& node, const std::string& staticMeshPath) {
+        // Collect all vertices and indices with transforms applied
+        std::vector<Vertex> allVertices;
+        std::vector<int> allIndices;
+
+        collectMeshesWithTransforms(node, glm::mat4(1.0f), allVertices, allIndices);
+
+        // Write to file
+        FileStreamWriter writer(staticMeshPath);
+        writer.writeArray(allVertices);
+        writer.writeArray(allIndices);
 
         return staticMeshPath;
     }
