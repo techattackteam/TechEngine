@@ -85,6 +85,27 @@ namespace TechEngine {
         return true;
     }
 
+    Entity ArchetypesManager::duplicateEntity(Entity sourceEntity) {
+        auto it = m_entityToArchetypeMap.find(sourceEntity);
+        if (it == m_entityToArchetypeMap.end()) {
+            return -1; // Source entity doesn't exist.
+        }
+
+        const EntityLocation sourceLocation = it->second;
+        Archetype* archetype = m_archetypes.at(sourceLocation.m_archetypeIndex).get();
+
+        Entity newEntity = generateEntityID();
+        size_t newIndex = archetype->reserveSlotFor(newEntity);
+
+        // Copy all component data from source to new entity
+        for (auto& [typeID, storage] : archetype->m_componentData) {
+            storage->set_from(newIndex, *storage, sourceLocation.m_indexInArchetype);
+        }
+
+        m_entityToArchetypeMap[newEntity] = {sourceLocation.m_archetypeIndex, newIndex};
+        return newEntity;
+    }
+
 
     void ArchetypesManager::clear() {
         m_archetypes.clear();

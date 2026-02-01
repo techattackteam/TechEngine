@@ -23,30 +23,80 @@ namespace TechEngine {
 
     class CORE_DLL Tag {
         friend class ComponentsFactory;
-        char* uuid;
-        char* name;
 
-        /*Tag(const std::string& name, const std::string& uuid) : name(new char[name.size() + 1]), uuid(new char[uuid.size() + 1]) {
-            strcpy_s(this->name, name.size() + 1, name.c_str());
-            strcpy_s(this->uuid, uuid.size() + 1, uuid.c_str());
-            //Memory leak here because I'm not deleting the memory allocated for name and uuid when deleting entity
-        }*/
+    private:
+        char* uuid = nullptr;
+        char* name = nullptr;
 
     public:
-        bool operator==(const Tag& lhr) const {
-            if (strcmp(uuid, lhr.uuid) != 0) {
-                return false;
-            } else {
-                return true;
+        Tag() = default;
+
+        ~Tag() {
+            delete[] uuid;
+            delete[] name;
+        }
+
+        Tag(const Tag& other) {
+            if (other.uuid) {
+                uuid = new char[strlen(other.uuid) + 1];
+                strcpy_s(uuid, strlen(other.uuid) + 1, other.uuid);
+            }
+            if (other.name) {
+                name = new char[strlen(other.name) + 1];
+                strcpy_s(name, strlen(other.name) + 1, other.name);
             }
         }
 
+        Tag(Tag&& other) noexcept {
+            uuid = other.uuid;
+            name = other.name;
+            other.uuid = nullptr;
+            other.name = nullptr;
+        }
+
+        Tag& operator=(const Tag& other) {
+            if (this != &other) {
+                delete[] uuid;
+                delete[] name;
+                uuid = nullptr;
+                name = nullptr;
+                if (other.uuid) {
+                    uuid = new char[strlen(other.uuid) + 1];
+                    strcpy_s(uuid, strlen(other.uuid) + 1, other.uuid);
+                }
+                if (other.name) {
+                    name = new char[strlen(other.name) + 1];
+                    strcpy_s(name, strlen(other.name) + 1, other.name);
+                }
+            }
+            return *this;
+        }
+
+        Tag& operator=(Tag&& other) noexcept {
+            if (this != &other) {
+                delete[] uuid;
+                delete[] name;
+                uuid = other.uuid;
+                name = other.name;
+                other.uuid = nullptr;
+                other.name = nullptr;
+            }
+            return *this;
+        }
+
+        bool operator==(const Tag& lhr) const {
+            if (uuid == nullptr || lhr.uuid == nullptr) {
+                return uuid == lhr.uuid;
+            }
+            return strcmp(uuid, lhr.uuid) == 0;
+        }
+
         [[nodiscard]] std::string getName() const {
-            return name;
+            return name ? name : "";
         }
 
         [[nodiscard]] std::string getUuid() const {
-            return uuid;
+            return uuid ? uuid : "";
         }
 
         void setName(const std::string& name) {

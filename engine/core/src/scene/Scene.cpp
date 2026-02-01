@@ -29,6 +29,80 @@ namespace TechEngine {
         return entity;
     }
 
+    Entity Scene::duplicateEntity(Entity sourceEntity) {
+        return duplicateEntityRecursive(sourceEntity, (Entity)-1);
+    }
+
+    Entity Scene::duplicateEntityRecursive(Entity sourceEntity, Entity newParent) {
+        Entity newEntity = m_archetypesManager.duplicateEntity(sourceEntity);
+        if (newEntity == (Entity)-1) {
+            return -1; // Duplication failed
+        }
+
+        if (hasComponent<Tag>(newEntity)) {
+            Tag& sourceTag = getComponent<Tag>(sourceEntity);
+            UUID newUuid = UUID::generate();
+            std::string newName = sourceTag.getName() + " (Copy)";
+            // Since Tag's uuid is private, we'll create a new tag instead
+            Tag duplicatedTag = ComponentsFactory::createTag(newName, newUuid.toString());
+            getComponent<Tag>(newEntity) = duplicatedTag;
+        }
+
+        // Get the original parent before resetting hierarchy
+        Entity originalParent = (Entity)-1;
+        if (hasComponent<Hierarchy>(newEntity)) {
+            originalParent = getComponent<Hierarchy>(newEntity).parent;
+        }
+
+        // Get the children of the source entity BEFORE resetting hierarchy
+        std::vector<Entity> sourceChildren;
+        if (hasComponent<Hierarchy>(sourceEntity)) {
+            Hierarchy& sourceHierarchy = getComponent<Hierarchy>(sourceEntity);
+            Entity child = sourceHierarchy.firstChild;
+            while (child != (Entity)-1) {
+                sourceChildren.push_back(child);
+                if (hasComponent<Hierarchy>(child)) {
+                    child = getComponent<Hierarchy>(child).nextSibling;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        // Reset the Hierarchy component for the new entity
+        if (hasComponent<Hierarchy>(newEntity)) {
+            Hierarchy& newHierarchy = getComponent<Hierarchy>(newEntity);
+            newHierarchy.parent = -1;
+            newHierarchy.firstChild = -1;
+            newHierarchy.nextSibling = -1;
+            newHierarchy.previousSibling = -1;
+            newHierarchy.childrenCount = 0;
+
+            // Set the parent for the duplicate
+            if (newParent != (Entity)-1) {
+                // If a new parent was specified (for recursive calls), use that
+                setParent(newParent, newEntity);
+            } else if (originalParent != (Entity)-1) {
+                // Otherwise, use the same parent as the source entity
+                setParent(originalParent, newEntity);
+            }
+        }
+
+        // Mark the transform as dirty so it gets updated
+        if (hasComponent<Transform>(newEntity)) {
+            Transform& newTransform = getComponent<Transform>(newEntity);
+            newTransform.m_isDirty = true;
+        }
+
+        // Recursively duplicate all children
+        for (Entity sourceChild : sourceChildren) {
+            duplicateEntityRecursive(sourceChild, newEntity);
+        }
+
+        m_systemsRegistry.getSystem<EventManager>().dispatch<EntityCreatedEvent>(newEntity);
+        return newEntity;
+    }
+
     void Scene::destroyEntity(Entity entity) {
         Hierarchy& hierarchy = getComponent<Hierarchy>(entity);
         if (hierarchy.parent != -1) {

@@ -26,6 +26,8 @@ namespace TechEngine {
 
         Entity createEntity(const std::string& name);
 
+        Entity duplicateEntity(Entity sourceEntity);
+
         void destroyEntity(Entity entity);
 
         template<typename T>
@@ -82,5 +84,7 @@ namespace TechEngine {
         void addComponentInternal(Entity entity, ComponentTypeID componentTypeID);
 
         void removeComponentInternal(Entity entity, ComponentTypeID componentTypeID);
+
+        Entity duplicateEntityRecursive(Entity sourceEntity, Entity newParent);
     };
 }
