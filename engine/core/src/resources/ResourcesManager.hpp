@@ -4,9 +4,11 @@
 #include "TechEngine/core/resources/mesh/MeshManager.hpp"
 #include "TechEngine/core/resources/texture/TextureManager.hpp"
 #include "mesh/AssimpLoader.hpp"
+#include "TechEngine/core/components/Entity.hpp"
 
 namespace TechEngine {
     enum class AppType;
+    class Scene;
 
     class CORE_DLL ResourcesManager : public System {
     private:
@@ -27,7 +29,11 @@ namespace TechEngine {
 #pragma region MeshManager
         void createMesh(const std::string& name);
 
-        void loadModelFile(const std::string& path);
+        void createMeshFromModelFile(const std::string& path);
+
+        void createModelFromFile(const std::string& path);
+
+        void loadModel(const std::string& path, Scene& scene);
 
         void loadStaticMesh(const std::string& path);
 
@@ -72,5 +78,15 @@ namespace TechEngine {
 
     private:
         std::unordered_map<std::string, std::vector<std::filesystem::path>> getFilesByExtension(const AppType& appType);
+
+        void registerMeshesFromNode(const AssimpLoader::Node& node, const std::string& modelName, const std::string& parentPath = "");
+
+        Entity createEntityFromNode(Scene& scene, const AssimpLoader::Node& node, Entity parent, const std::string& modelName, const std::string& nodePath = "");
+
+        // Loads all meshes referenced by a ModelNode hierarchy
+        void loadMeshesFromModelNode(const AssimpLoader::ModelNode& node, const std::string& modelFolder);
+
+        // Creates entity hierarchy from a .temodel ModelNode
+        Entity createEntityFromModelNode(Scene& scene, const AssimpLoader::ModelNode& node, Entity parent, const std::string& modelFolder);
     };
 }

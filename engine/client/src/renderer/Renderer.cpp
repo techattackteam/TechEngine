@@ -47,7 +47,7 @@ namespace TechEngine {
 
         m_vertexArrays[BufferGameObjects].init();
         m_vertexBuffers[BufferGameObjects].init(1000000 * sizeof(Vertex));
-        m_indicesBuffers[BufferGameObjects].init(1000000 * sizeof(uint32_t));
+        m_indicesBuffers[BufferGameObjects].init(10000000 * sizeof(uint32_t));
 
         m_vertexArrays[BufferGameObjects].addNewBuffer(m_vertexBuffers[BufferGameObjects]);
 

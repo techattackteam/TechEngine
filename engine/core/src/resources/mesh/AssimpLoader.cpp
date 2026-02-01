@@ -11,6 +11,8 @@
 #include <queue>
 #include <assimp/postprocess.h>
 #include <yaml-cpp/yaml.h>
+#include <glm/gtc/type_ptr.hpp>
+#include <algorithm>
 
 namespace TechEngine {
     std::filesystem::path AssimpLoader::createStaticMeshFile(const AssimpLoader::Node& node, const std::string& staticMeshPath) {
@@ -45,6 +47,75 @@ namespace TechEngine {
         return staticMeshPath;
     }
 
+    void AssimpLoader::createSingleMeshFile(const aiMeshData& meshData, const std::string& outputPath) {
+        FileStreamWriter writer(outputPath);
+        writer.writeArray(meshData.vertices);
+        writer.writeArray(meshData.indices);
+    }
+
+    std::filesystem::path AssimpLoader::createModelFiles(const Node& node, const std::string& modelName, const std::string& parentFolder) {
+        std::string modelFolder = parentFolder + "\\" + modelName;
+        std::filesystem::path folderPath = parentFolder;
+        if (!std::filesystem::exists(folderPath)) {
+            std::filesystem::create_directories(folderPath);
+        }
+        std::string meshesFolder = modelFolder + "\\meshes";
+        if (!std::filesystem::exists(meshesFolder)) {
+            std::filesystem::create_directories(meshesFolder);
+        }
+        ModelNode modelNode = convertNodeToModelNode(node, modelName, meshesFolder);
+
+        // Create the .temodel file
+        TEModelData teModelData;
+        teModelData.modelName = modelName;
+        teModelData.rootNode = modelNode;
+
+        std::string teModelPath = parentFolder + "\\" + modelName + ".temodel";
+        FileStreamWriter writer(teModelPath);
+        TEModelData::Serialize(&writer, teModelData);
+
+        TE_LOGGER_INFO("Created model file: {}", teModelPath);
+        return teModelPath;
+    }
+
+    AssimpLoader::ModelNode AssimpLoader::convertNodeToModelNode(const Node& node, const std::string& modelName, const std::string& outputFolder, const std::string& nodePath) {
+        ModelNode modelNode;
+        modelNode.name = node.name;
+        modelNode.position = node.position;
+        modelNode.rotation = node.rotation;
+        modelNode.scale = node.scale;
+
+        std::string currentNodePath = nodePath.empty() ? node.name : nodePath + "_" + node.name;
+        if (currentNodePath.empty()) {
+            currentNodePath = modelName;
+        }
+
+        for (size_t i = 0; i < node.meshes.size(); ++i) {
+            std::string meshFileName = modelName + "_" + currentNodePath + "_mesh" + std::to_string(i);
+            std::replace(meshFileName.begin(), meshFileName.end(), '/', '_');
+            std::replace(meshFileName.begin(), meshFileName.end(), '\\', '_');
+
+            std::string meshFilePath = outputFolder + "\\" + meshFileName + ".tesmesh";
+            createSingleMeshFile(node.meshes[i], meshFilePath);
+
+            modelNode.meshFiles.push_back(meshFileName + ".tesmesh");
+            TE_LOGGER_INFO("Created mesh file: {}", meshFilePath);
+        }
+
+        for (const Node& child: node.children) {
+            modelNode.children.push_back(convertNodeToModelNode(child, modelName, outputFolder, currentNodePath));
+        }
+
+        return modelNode;
+    }
+
+    AssimpLoader::TEModelData AssimpLoader::loadTEModel(const std::string& path) {
+        FileStreamReader reader(path);
+        TEModelData data;
+        TEModelData::Deserialize(&reader, data);
+        return data;
+    }
+
     AssimpLoader::ModelData AssimpLoader::loadModel(const std::string& path) {
         Assimp::Importer importer;
         const aiScene* aiScene = importer.ReadFile(path, aiProcess_Triangulate);
@@ -69,11 +140,18 @@ namespace TechEngine {
             aiNode* currentAINode = nodeQueue.front().second;
             nodeQueue.pop();
 
+            currentNode->name = currentAINode->mName.C_Str();
+
+            aiVector3t<float> scaling;
+            aiVector3t<float> rotation;
+            aiVector3t<float> position;
+            currentAINode->mTransformation.Decompose(scaling, rotation, position);
+
+            currentNode->position = glm::vec3(position.x, position.y, position.z);
+            currentNode->rotation = glm::degrees(glm::vec3(rotation.x, rotation.y, rotation.z));
+            currentNode->scale = glm::vec3(scaling.x, scaling.y, scaling.z);
+
             for (unsigned int i = 0; i < currentAINode->mNumMeshes; i++) {
-                aiVector3t<float> scaling;
-                aiVector3t<float> rotation;
-                aiVector3t<float> position;
-                currentAINode->mTransformation.Decompose(scaling, rotation, position);
                 aiMesh* aiMesh = aiScene->mMeshes[currentAINode->mMeshes[i]];
 
                 aiMeshData processedMesh = processMesh(modelName, aiMesh, aiScene);
