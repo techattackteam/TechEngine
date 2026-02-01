@@ -227,7 +227,7 @@ namespace TechEngine {
         }
 
         if (ImGui::MenuItem("Duplicate")) {
-            // TODO: Implement entity duplication
+            m_entitiesToDuplicate.push_back(entity);
         }
     }
 
@@ -402,6 +402,20 @@ namespace TechEngine {
             }
 
             m_entitiesToDelete.clear();
+            markFullRebuildNeeded();
+        }
+
+        if (!m_entitiesToDuplicate.empty()) {
+            Scene& scene = getActiveScene();
+
+            for (Entity entity : m_entitiesToDuplicate) {
+                Entity duplicatedEntity = scene.duplicateEntity(entity);
+                if (isValidNodeId(duplicatedEntity)) {
+                    m_selectedNode = duplicatedEntity;
+                }
+            }
+
+            m_entitiesToDuplicate.clear();
             markFullRebuildNeeded();
         }
 

@@ -62,6 +62,8 @@ namespace TechEngine {
 
         bool removeEntity(Entity entity);
 
+        Entity duplicateEntity(Entity sourceEntity);
+
         template<typename T>
         bool addComponent(Entity entity, const T& component) {
             auto it = m_entityToArchetypeMap.find(entity);

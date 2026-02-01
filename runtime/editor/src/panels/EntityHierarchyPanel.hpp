@@ -40,6 +40,7 @@ namespace TechEngine {
         // Queued operations
         std::vector<EntityToCreate> m_entitiesToCreate;
         std::vector<Entity> m_entitiesToDelete;
+        std::vector<Entity> m_entitiesToDuplicate;
 
     public:
         EntityHierarchyPanel(
