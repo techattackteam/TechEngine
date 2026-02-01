@@ -87,7 +87,7 @@ namespace TechEngine {
         std::string parentFolder = std::filesystem::path(path).parent_path().string();
 
         AssimpLoader::ModelData modelData = m_assimpLoader.loadModel(path);
-        m_assimpLoader.createModelFiles(modelData.rootNode, modelName, parentFolder);
+        m_assimpLoader.createModelFiles(modelData, modelName, parentFolder);
 
         TE_LOGGER_INFO("Created model folder: {}", parentFolder);
     }
@@ -97,11 +97,16 @@ namespace TechEngine {
 
         std::string modelFolder = std::filesystem::path(path).parent_path().string();
 
+        // Load all materials from the model
+        loadMaterialsFromTEModel(teModelData, modelFolder);
+
+        // Load all meshes
         loadMeshesFromModelNode(teModelData.rootNode, modelFolder);
 
-        createEntityFromModelNode(scene, teModelData.rootNode, static_cast<Entity>(-1), modelFolder);
+        // Create entity hierarchy with materials assigned
+        createEntityFromModelNode(scene, teModelData, teModelData.rootNode, static_cast<Entity>(-1), modelFolder);
 
-        TE_LOGGER_INFO("Loaded model: {} into scene", teModelData.modelName);
+        TE_LOGGER_INFO("Loaded model: {} into scene with {} materials", teModelData.modelName, teModelData.materials.size());
     }
 
     void ResourcesManager::loadStaticMesh(const std::string& path) {
@@ -357,7 +362,64 @@ namespace TechEngine {
         }
     }
 
-    Entity ResourcesManager::createEntityFromModelNode(Scene& scene, const AssimpLoader::ModelNode& node, Entity parent, const std::string& modelFolder) {
+    void ResourcesManager::loadMaterialsFromTEModel(const AssimpLoader::TEModelData& teModelData, const std::string& modelFolder) {
+        for (const AssimpLoader::MaterialData& matData : teModelData.materials) {
+            // Skip if material already exists
+            if (m_materialManager.materialExists(matData.name)) {
+                TE_LOGGER_INFO("Material '{}' already exists, skipping", matData.name);
+                continue;
+            }
+
+            // Create material with the albedo color
+            Material& material = m_materialManager.createMaterial(matData.name, matData.albedoColor);
+            material.getProperties().metallic = matData.metallic;
+            material.getProperties().roughness = matData.roughness;
+
+            // Helper lambda to load texture and assign to material
+            auto loadAndAssignTexture = [&](const std::string& texturePath, int& materialMapID, const std::string& textureType) {
+                if (texturePath.empty()) {
+                    return;
+                }
+
+                // Check if the path exists as-is (absolute path)
+                std::string finalPath = texturePath;
+                if (!std::filesystem::exists(finalPath)) {
+                    // Try relative to model folder
+                    finalPath = modelFolder + "\\" + std::filesystem::path(texturePath).filename().string();
+                }
+
+                if (!std::filesystem::exists(finalPath)) {
+                    TE_LOGGER_WARN("Texture file not found for material '{}': {} (tried: {})", matData.name, texturePath, finalPath);
+                    return;
+                }
+
+                std::string texName = std::filesystem::path(finalPath).stem().string();
+                if (!m_textureManager.textureExists(texName)) {
+                    bool loaded = m_textureManager.loadFromFile(texName, finalPath);
+                    if (!loaded) {
+                        TE_LOGGER_ERROR("Failed to load texture '{}' from '{}'", texName, finalPath);
+                        return;
+                    }
+                    TE_LOGGER_INFO("Loaded {} texture '{}' for material '{}'", textureType, texName, matData.name);
+                }
+                materialMapID = m_textureManager.getTexture(texName).getID();
+            };
+
+            // Load and assign textures
+            loadAndAssignTexture(matData.albedoTexture, material.getAlbedoMapID(), "albedo");
+            loadAndAssignTexture(matData.normalTexture, material.getNormalMapID(), "normal");
+            loadAndAssignTexture(matData.metallicTexture, material.getMetallicMapID(), "metallic");
+            loadAndAssignTexture(matData.roughnessTexture, material.getRoughnessMapID(), "roughness");
+            loadAndAssignTexture(matData.aoTexture, material.getAmbientOcclusionMapID(), "ao");
+            loadAndAssignTexture(matData.emissionTexture, material.getEmissionMapID(), "emission");
+
+            TE_LOGGER_INFO("Created material '{}' from temodel (albedoMapID={}, normalMapID={}, metallicMapID={}, roughnessMapID={})",
+                matData.name, material.getAlbedoMapID(), material.getNormalMapID(),
+                material.getMetallicMapID(), material.getRoughnessMapID());
+        }
+    }
+
+    Entity ResourcesManager::createEntityFromModelNode(Scene& scene, const AssimpLoader::TEModelData& teModelData, const AssimpLoader::ModelNode& node, Entity parent, const std::string& modelFolder) {
         std::string entityName = node.name.empty() ? "Node" : node.name;
 
         Entity entity = scene.createEntity(entityName);
@@ -394,13 +456,25 @@ namespace TechEngine {
 
             MeshRenderer meshRenderer;
             meshRenderer.mesh = &getMesh(meshName);
-            meshRenderer.material = &getDefaultMaterial();
+
+            // Assign the correct material for this mesh
+            if (i < node.materialNames.size() && !node.materialNames[i].empty()) {
+                std::string materialName = node.materialNames[i];
+                if (m_materialManager.materialExists(materialName)) {
+                    meshRenderer.material = &m_materialManager.getMaterial(materialName);
+                } else {
+                    meshRenderer.material = &getDefaultMaterial();
+                }
+            } else {
+                meshRenderer.material = &getDefaultMaterial();
+            }
+
             scene.addComponent(meshEntity, meshRenderer);
         }
 
         // Recursively create child entities
         for (const AssimpLoader::ModelNode& child: node.children) {
-            createEntityFromModelNode(scene, child, entity, modelFolder);
+            createEntityFromModelNode(scene, teModelData, child, entity, modelFolder);
         }
 
         return entity;

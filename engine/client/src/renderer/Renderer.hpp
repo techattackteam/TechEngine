@@ -65,12 +65,9 @@ namespace TechEngine {
             Transform* transform;
             MeshRenderer* meshRenderer;
 
-            // A comparison operator for std::sort
             bool operator<(const Renderable& other) const {
-                // Sort primarily by mesh, then by material, for maximum batching.
                 if (meshRenderer->mesh < other.meshRenderer->mesh) return true;
                 if (meshRenderer->mesh > other.meshRenderer->mesh) return false;
-                // If meshes are the same, you could optionally sort by material as a secondary key.
                 return meshRenderer->material->getGpuID() < other.meshRenderer->material->getGpuID();
             }
         };
