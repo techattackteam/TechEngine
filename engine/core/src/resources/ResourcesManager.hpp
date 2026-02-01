@@ -86,7 +86,10 @@ namespace TechEngine {
         // Loads all meshes referenced by a ModelNode hierarchy
         void loadMeshesFromModelNode(const AssimpLoader::ModelNode& node, const std::string& modelFolder);
 
-        // Creates entity hierarchy from a .temodel ModelNode
-        Entity createEntityFromModelNode(Scene& scene, const AssimpLoader::ModelNode& node, Entity parent, const std::string& modelFolder);
+        // Loads all materials from a TEModelData
+        void loadMaterialsFromTEModel(const AssimpLoader::TEModelData& teModelData, const std::string& modelFolder);
+
+        // Creates entity hierarchy from a .temodel ModelNode with materials assigned
+        Entity createEntityFromModelNode(Scene& scene, const AssimpLoader::TEModelData& teModelData, const AssimpLoader::ModelNode& node, Entity parent, const std::string& modelFolder);
     };
 }

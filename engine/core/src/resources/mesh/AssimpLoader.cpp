@@ -6,6 +6,7 @@
 #include "files/FileUtils.hpp"
 
 #include "assimp/Importer.hpp"
+#include <assimp/material.h>
 #include <filesystem>
 #include <fstream>
 #include <queue>
@@ -32,7 +33,7 @@ namespace TechEngine {
 
         glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(transform)));
 
-        for (const Vertex& v : vertices) {
+        for (const Vertex& v: vertices) {
             Vertex transformed;
             // Transform position
             glm::vec4 pos = transform * glm::vec4(v.position, 1.0f);
@@ -54,13 +55,13 @@ namespace TechEngine {
         glm::mat4 worldTransform = parentTransform * localTransform;
 
         // Process all meshes in this node
-        for (const AssimpLoader::aiMeshData& meshData : node.meshes) {
+        for (const AssimpLoader::aiMeshData& meshData: node.meshes) {
             // Transform vertices to world space
             std::vector<Vertex> transformedVertices = transformVertices(meshData.vertices, worldTransform);
 
             // Add indices with offset
             int indexOffset = static_cast<int>(allVertices.size());
-            for (int index : meshData.indices) {
+            for (int index: meshData.indices) {
                 allIndices.push_back(index + indexOffset);
             }
 
@@ -69,7 +70,7 @@ namespace TechEngine {
         }
 
         // Recursively process children
-        for (const AssimpLoader::Node& child : node.children) {
+        for (const AssimpLoader::Node& child: node.children) {
             collectMeshesWithTransforms(child, worldTransform, allVertices, allIndices);
         }
     }
@@ -95,7 +96,52 @@ namespace TechEngine {
         writer.writeArray(meshData.indices);
     }
 
-    std::filesystem::path AssimpLoader::createModelFiles(const Node& node, const std::string& modelName, const std::string& parentFolder) {
+    void AssimpLoader::createMaterialFile(const MaterialData& matData, const std::string& outputFolder) {
+        std::string filepath = outputFolder + "\\" + matData.name + ".mat";
+
+        YAML::Emitter out;
+        out << YAML::BeginMap;
+        out << YAML::Key << "name" << YAML::Value << matData.name;
+        out << YAML::Key << "albedo" << YAML::Value << YAML::Flow << YAML::BeginSeq
+                << matData.albedoColor.x << matData.albedoColor.y << matData.albedoColor.z << matData.albedoColor.w
+                << YAML::EndSeq;
+        out << YAML::Key << "metallic" << YAML::Value << matData.metallic;
+        out << YAML::Key << "roughness" << YAML::Value << matData.roughness;
+        out << YAML::Key << "ambientOcclusion" << YAML::Value << 1.0f;
+        out << YAML::Key << "emission" << YAML::Value << YAML::Flow << YAML::BeginSeq
+                << 0.0f << 0.0f << 0.0f << 0.0f
+                << YAML::EndSeq;
+
+        // Add texture paths if available
+        if (!matData.albedoTexture.empty()) {
+            out << YAML::Key << "albedoTexture" << YAML::Value << matData.albedoTexture;
+        }
+        if (!matData.normalTexture.empty()) {
+            out << YAML::Key << "normalTexture" << YAML::Value << matData.normalTexture;
+        }
+        if (!matData.metallicTexture.empty()) {
+            out << YAML::Key << "metallicTexture" << YAML::Value << matData.metallicTexture;
+        }
+        if (!matData.roughnessTexture.empty()) {
+            out << YAML::Key << "roughnessTexture" << YAML::Value << matData.roughnessTexture;
+        }
+        if (!matData.aoTexture.empty()) {
+            out << YAML::Key << "aoTexture" << YAML::Value << matData.aoTexture;
+        }
+        if (!matData.emissionTexture.empty()) {
+            out << YAML::Key << "emissionTexture" << YAML::Value << matData.emissionTexture;
+        }
+
+        out << YAML::EndMap;
+
+        std::ofstream fout(filepath);
+        fout << out.c_str();
+        fout.close();
+
+        TE_LOGGER_INFO("Created material file: {}", filepath);
+    }
+
+    std::filesystem::path AssimpLoader::createModelFiles(const ModelData& modelData, const std::string& modelName, const std::string& parentFolder) {
         std::string modelFolder = parentFolder + "\\" + modelName;
         std::filesystem::path folderPath = parentFolder;
         if (!std::filesystem::exists(folderPath)) {
@@ -105,22 +151,75 @@ namespace TechEngine {
         if (!std::filesystem::exists(meshesFolder)) {
             std::filesystem::create_directories(meshesFolder);
         }
-        ModelNode modelNode = convertNodeToModelNode(node, modelName, meshesFolder);
+
+        // Create materials folder and .mat files
+        std::string materialsFolder = modelFolder + "\\materials";
+        if (!std::filesystem::exists(materialsFolder)) {
+            std::filesystem::create_directories(materialsFolder);
+        }
+
+        // Create textures folder
+        std::string texturesFolder = modelFolder + "\\textures";
+        if (!std::filesystem::exists(texturesFolder)) {
+            std::filesystem::create_directories(texturesFolder);
+        }
+
+        // Helper lambda to copy texture and return new relative path
+        auto copyTextureIfExists = [&](const std::string& texturePath) -> std::string {
+            if (texturePath.empty() || !std::filesystem::exists(texturePath)) {
+                return "";
+            }
+            std::string filename = std::filesystem::path(texturePath).filename().string();
+            std::string destPath = texturesFolder + "\\" + filename;
+
+            // Only copy if destination doesn't exist
+            if (!std::filesystem::exists(destPath)) {
+                try {
+                    std::filesystem::copy_file(texturePath, destPath, std::filesystem::copy_options::overwrite_existing);
+                    TE_LOGGER_INFO("Copied texture: {} -> {}", texturePath, destPath);
+                } catch (const std::exception& e) {
+                    TE_LOGGER_WARN("Failed to copy texture {}: {}", texturePath, e.what());
+                    return texturePath; // Return original path if copy fails
+                }
+            }
+            return destPath;
+        };
+
+        // Create .mat files for each material with updated texture paths
+        std::vector<MaterialData> updatedMaterials;
+        for (const auto& [name, matData]: modelData.materials) {
+            // Create a copy of the material data with updated texture paths
+            MaterialData updatedMatData = matData;
+            updatedMatData.albedoTexture = copyTextureIfExists(matData.albedoTexture);
+            updatedMatData.normalTexture = copyTextureIfExists(matData.normalTexture);
+            updatedMatData.metallicTexture = copyTextureIfExists(matData.metallicTexture);
+            updatedMatData.roughnessTexture = copyTextureIfExists(matData.roughnessTexture);
+            updatedMatData.aoTexture = copyTextureIfExists(matData.aoTexture);
+            updatedMatData.emissionTexture = copyTextureIfExists(matData.emissionTexture);
+
+            createMaterialFile(updatedMatData, materialsFolder);
+            updatedMaterials.push_back(updatedMatData);
+        }
+
+        ModelNode modelNode = convertNodeToModelNode(modelData.rootNode, modelData, modelName, meshesFolder);
 
         // Create the .temodel file
         TEModelData teModelData;
         teModelData.modelName = modelName;
         teModelData.rootNode = modelNode;
 
+        // Add all materials with updated texture paths to the temodel
+        teModelData.materials = updatedMaterials;
+
         std::string teModelPath = parentFolder + "\\" + modelName + ".temodel";
         FileStreamWriter writer(teModelPath);
         TEModelData::Serialize(&writer, teModelData);
 
-        TE_LOGGER_INFO("Created model file: {}", teModelPath);
+        TE_LOGGER_INFO("Created model file: {} with {} materials", teModelPath, teModelData.materials.size());
         return teModelPath;
     }
 
-    AssimpLoader::ModelNode AssimpLoader::convertNodeToModelNode(const Node& node, const std::string& modelName, const std::string& outputFolder, const std::string& nodePath) {
+    AssimpLoader::ModelNode AssimpLoader::convertNodeToModelNode(const Node& node, const ModelData& modelData, const std::string& modelName, const std::string& outputFolder, const std::string& nodePath) {
         ModelNode modelNode;
         modelNode.name = node.name;
         modelNode.position = node.position;
@@ -141,11 +240,12 @@ namespace TechEngine {
             createSingleMeshFile(node.meshes[i], meshFilePath);
 
             modelNode.meshFiles.push_back(meshFileName + ".tesmesh");
-            TE_LOGGER_INFO("Created mesh file: {}", meshFilePath);
+            modelNode.materialNames.push_back(node.meshes[i].material);
+            TE_LOGGER_INFO("Created mesh file: {} with material: {}", meshFilePath, node.meshes[i].material);
         }
 
         for (const Node& child: node.children) {
-            modelNode.children.push_back(convertNodeToModelNode(child, modelName, outputFolder, currentNodePath));
+            modelNode.children.push_back(convertNodeToModelNode(child, modelData, modelName, outputFolder, currentNodePath));
         }
 
         return modelNode;
@@ -166,9 +266,19 @@ namespace TechEngine {
             TE_LOGGER_WARN("Assimp error: {}", importer.GetErrorString());
         }
 
+        // Get the directory containing the model file (for resolving texture paths)
+        std::string modelDirectory = std::filesystem::path(path).parent_path().string();
+
         // Process the scene and create a game object
         TE_LOGGER_INFO("Loaded Model with {0} meshes, {1} materials and {2} textures", aiScene->mNumMeshes, aiScene->mNumMaterials, aiScene->mNumTextures);
         AssimpLoader::ModelData modelData = processScene(FileUtils::getFileName(path), aiScene->mRootNode, aiScene);
+
+        // Process all materials from the scene
+        for (unsigned int i = 0; i < aiScene->mNumMaterials; ++i) {
+            MaterialData matData = processMaterial(aiScene->mMaterials[i], modelDirectory);
+            modelData.materials[matData.name] = matData;
+        }
+
         return modelData;
     }
 
@@ -198,7 +308,7 @@ namespace TechEngine {
 
                 aiMeshData processedMesh = processMesh(modelName, aiMesh, aiScene);
                 currentNode->meshes.emplace_back(processedMesh);
-                modelData.materials.push_back(processedMesh.material);
+                modelData.materialNames.push_back(processedMesh.material);
             }
             for (unsigned int i = 0; i < currentAINode->mNumChildren; i++) {
                 Node childNode;
@@ -209,6 +319,81 @@ namespace TechEngine {
         modelData.rootNode = node;
 
         return modelData;
+    }
+
+    AssimpLoader::MaterialData AssimpLoader::processMaterial(aiMaterial* material, const std::string& modelDirectory) {
+        MaterialData matData;
+
+        // Get material name
+        aiString name;
+        if (material->Get(AI_MATKEY_NAME, name) == AI_SUCCESS) {
+            matData.name = name.C_Str();
+        } else {
+            matData.name = "Material_" + std::to_string(reinterpret_cast<uintptr_t>(material));
+        }
+
+        // Get base color/albedo
+        aiColor4D color;
+        if (material->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS) {
+            matData.albedoColor = glm::vec4(color.r, color.g, color.b, color.a);
+        }
+
+        // Get metallic factor
+        float metallic;
+        if (material->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == AI_SUCCESS) {
+            matData.metallic = metallic;
+        }
+
+        // Get roughness factor
+        float roughness;
+        if (material->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == AI_SUCCESS) {
+            matData.roughness = roughness;
+        }
+
+        // Helper lambda to get texture path
+        auto getTexturePath = [&](aiTextureType type) -> std::string {
+            if (material->GetTextureCount(type) > 0) {
+                aiString texPath;
+                if (material->GetTexture(type, 0, &texPath) == AI_SUCCESS) {
+                    std::string path = texPath.C_Str();
+                    // If path is relative, make it relative to model directory
+                    if (!path.empty() && path[0] != '/' && path[0] != '\\' && (path.size() < 2 || path[1] != ':')) {
+                        return modelDirectory + "\\" + path;
+                    }
+                    return path;
+                }
+            }
+            return "";
+        };
+
+        // Get texture paths
+        matData.albedoTexture = getTexturePath(aiTextureType_DIFFUSE);
+        if (matData.albedoTexture.empty()) {
+            matData.albedoTexture = getTexturePath(aiTextureType_BASE_COLOR);
+        }
+        matData.normalTexture = getTexturePath(aiTextureType_NORMALS);
+        if (matData.normalTexture.empty()) {
+            matData.normalTexture = getTexturePath(aiTextureType_HEIGHT);
+        }
+        matData.metallicTexture = getTexturePath(aiTextureType_METALNESS);
+        matData.roughnessTexture = getTexturePath(aiTextureType_DIFFUSE_ROUGHNESS);
+        if (matData.roughnessTexture.empty()) {
+            matData.roughnessTexture = getTexturePath(aiTextureType_SHININESS);
+        }
+        matData.aoTexture = getTexturePath(aiTextureType_AMBIENT_OCCLUSION);
+        if (matData.aoTexture.empty()) {
+            matData.aoTexture = getTexturePath(aiTextureType_LIGHTMAP);
+        }
+        matData.emissionTexture = getTexturePath(aiTextureType_EMISSIVE);
+
+        TE_LOGGER_INFO("Processed material '{}': albedo={}, normal={}, metallic={}, roughness={}",
+                       matData.name,
+                       matData.albedoTexture.empty() ? "none" : matData.albedoTexture,
+                       matData.normalTexture.empty() ? "none" : matData.normalTexture,
+                       matData.metallicTexture.empty() ? "none" : matData.metallicTexture,
+                       matData.roughnessTexture.empty() ? "none" : matData.roughnessTexture);
+
+        return matData;
     }
 
     AssimpLoader::aiMeshData AssimpLoader::processMesh(const std::string& modelName, aiMesh* mesh, const aiScene* scene) {
@@ -239,7 +424,13 @@ namespace TechEngine {
             for (int j = 0; j < face.mNumIndices; j++)
                 meshData.indices.push_back(face.mIndices[j]);
         }
-        meshData.material = scene->mMaterials[mesh->mMaterialIndex]->GetName().C_Str();
+        aiString materialName;
+        if (scene->mMaterials[mesh->mMaterialIndex]->Get(AI_MATKEY_NAME, materialName) == AI_SUCCESS) {
+            meshData.material = materialName.C_Str();
+        } else {
+            meshData.material = "Material_" + std::to_string(reinterpret_cast<uintptr_t>(scene->mMaterials[mesh->mMaterialIndex]));
+        }
+
         TE_LOGGER_INFO("Material: {}", meshData.material);
         return meshData;
     }
