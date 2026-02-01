@@ -358,7 +358,7 @@ namespace TechEngine {
                                              glm::translate(glm::mat4(1.0f), scaledLocalPos) *
                                              localRotation;
 
-        glm::vec3 finalWorldScale = transform.m_scale;
+        glm::vec3 finalWorldScale = parentWorldScale * transform.m_scale;
 
         transform.m_worldMatrix = worldRotationTranslation * glm::scale(glm::mat4(1.0f), finalWorldScale);
 
