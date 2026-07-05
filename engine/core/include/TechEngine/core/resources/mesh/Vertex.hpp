@@ -18,8 +18,8 @@ namespace TechEngine {
             : position(position), normal(normal), texCoords(texCoords) {
         }
 
-        static void Serialize(StreamWriter* stream, const Vertex& vertex);
+        static void serialize(StreamWriter* stream, const Vertex& vertex);
 
-        static void Deserialize(StreamReader* stream, Vertex& vertex);
+        static void deserialize(StreamReader* stream, Vertex& vertex);
     };
 }

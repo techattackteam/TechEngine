@@ -3,10 +3,11 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 
-#include "panels/HierarchyNode.hpp"
+#include "../panels/hieraychyPanel/HierarchyNode.hpp"
 #include "TechEngine/core/components/Archetype.hpp"
 #include "physics/PhysicsEngine.hpp"
-#include "scene/ScenesManager.hpp"
+#include "resources/ResourceSystem.hpp"
+#include "scene/SceneManager.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
@@ -94,7 +95,7 @@ namespace TechEngine {
         const glm::mat4& cameraProjection = camera->getProjectionMatrix();
         glm::mat4 cameraView = camera->getViewMatrix();
         Entity entity = selectedNode.entity;
-        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        Scene& scene = m_systemsRegistry.getSystem<SceneManager>().getActiveScene();
         Transform& transform = scene.getComponent<Transform>(entity);
 
         // Use the world matrix for display - this is where the gizmo should appear
@@ -107,7 +108,6 @@ namespace TechEngine {
         if (ImGuizmo::IsUsing() && (lastUsingID == -1 || lastUsingID == id)) {
             lastUsingID = id;
 
-            // Decompose the manipulated world matrix
             glm::vec3 newWorldScale;
             glm::quat newWorldRotation;
             glm::vec3 newWorldPosition;
@@ -115,47 +115,31 @@ namespace TechEngine {
             glm::vec4 perspective;
             glm::decompose(worldMatrix, newWorldScale, newWorldRotation, newWorldPosition, skew, perspective);
 
-            // Check if entity has a parent
             if (scene.hasComponent<Hierarchy>(entity)) {
                 Hierarchy& hierarchy = scene.getComponent<Hierarchy>(entity);
 
-                if (hierarchy.parent != (Entity)-1 && scene.hasComponent<Transform>(hierarchy.parent)) {
-                    // Entity has a parent - convert world transform to local space
-                    // using the same logic as the new transform system
+                if (hierarchy.parent != static_cast<Entity>(-1) && scene.hasComponent<Transform>(hierarchy.parent)) {
                     Transform& parentTransform = scene.getComponent<Transform>(hierarchy.parent);
 
-                    // Decompose parent's world matrix
-                    glm::vec3 parentWorldScale;
-                    glm::quat parentWorldRotation;
-                    glm::vec3 parentWorldPosition;
-                    glm::decompose(parentTransform.m_worldMatrix, parentWorldScale, parentWorldRotation, parentWorldPosition, skew, perspective);
+                    glm::mat4 parentWorldInverse = glm::inverse(parentTransform.m_worldMatrix);
+                    glm::mat4 localMatrix = parentWorldInverse * worldMatrix;
 
-                    // Local scale: In the new system, child scale doesn't inherit parent scale for shape
-                    // So local scale = world scale (the child's own scale)
-                    glm::vec3 localScale = newWorldScale;
-
-                    // Local rotation: inverse of parent rotation * world rotation
-                    glm::quat parentRotationInverse = glm::inverse(parentWorldRotation);
-                    glm::quat localRotation = parentRotationInverse * newWorldRotation;
-
-                    // Local position:
-                    // World position is: parentWorldPos + parentWorldRot * (parentWorldScale * localPos)
-                    // So: localPos = (inverse(parentWorldRot) * (worldPos - parentWorldPos)) / parentWorldScale
-                    glm::vec3 relativePos = newWorldPosition - parentWorldPosition;
-                    glm::vec3 rotatedRelativePos = parentRotationInverse * relativePos;
-                    glm::vec3 localPosition = rotatedRelativePos / parentWorldScale;
+                    glm::vec3 localScale;
+                    glm::quat localRotation;
+                    glm::vec3 localPosition;
+                    glm::vec3 skew;
+                    glm::vec4 perspective;
+                    glm::decompose(localMatrix, localScale, localRotation, localPosition, skew, perspective);
 
                     transform.m_position = localPosition;
                     transform.setRotation(glm::degrees(glm::eulerAngles(localRotation)));
                     transform.setScale(localScale);
                 } else {
-                    // No parent, use world transform directly as local
                     transform.m_position = newWorldPosition;
                     transform.setRotation(glm::degrees(glm::eulerAngles(newWorldRotation)));
                     transform.setScale(newWorldScale);
                 }
             } else {
-                // No hierarchy component, use world transform directly
                 transform.m_position = newWorldPosition;
                 transform.setRotation(glm::degrees(glm::eulerAngles(newWorldRotation)));
                 transform.setScale(newWorldScale);

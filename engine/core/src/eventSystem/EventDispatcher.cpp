@@ -1,4 +1,4 @@
-#include "../../include/TechEngine/core/eventSystem/EventDispatcher.hpp"
+#include "TechEngine/core/eventSystem/EventDispatcher.hpp"
 #include "eventSystem/EventManager.hpp"
 
 namespace TechEngine {

@@ -2,28 +2,41 @@
 #include "core/Logger.hpp"
 #include "script/ScriptEngine.hpp"
 
-#include <yaml-cpp/yaml.h>
-#include <fstream>
-
 #include "files/FileUtils.hpp"
-#include "project/Project.hpp"
-#include "scene/ScenesManager.hpp"
+#include "fileSystem/FileSystem.hpp"
+#include "Project.hpp"
+#include "resources/loaders/MaterialLoader.hpp"
+#include "resources/loaders/TextureLoader.hpp"
+#include "resources/loaders/MeshLoader.hpp"
+#include "resources/loaders/ModelLoader.hpp"
+#include "resources/loaders/SceneLoader.hpp"
+#include "resources/ResourceSystem.hpp"
+#include "scene/SceneManager.hpp"
 #include "systems/SystemsRegistry.hpp"
 #include "ui/Widget.hpp"
 #include "ui/WidgetsRegistry.hpp"
 
+#include <fstream>
 
 namespace TechEngine {
-    ProjectManager::ProjectManager(SystemsRegistry& clientSystemsRegistry,
-                                   SystemsRegistry& serverSystemsRegistry) : m_systemsRegistry(clientSystemsRegistry),
-                                                                             m_clientSystemsRegistry(
-                                                                                 clientSystemsRegistry),
-                                                                             m_serverSystemsRegistry(
-                                                                                 serverSystemsRegistry) {
+    ProjectManager::ProjectManager(SystemsRegistry& editorSystemsRegistry,
+                                   SystemsRegistry& clientSystemsRegistry,
+                                   SystemsRegistry& serverSystemsRegistry) : m_editorSystemsRegistry(editorSystemsRegistry),
+                                                                             m_clientSystemsRegistry(clientSystemsRegistry),
+                                                                             m_serverSystemsRegistry(serverSystemsRegistry) {
     }
 
-    void ProjectManager::init(const std::filesystem::path& projectPath) {
+    void ProjectManager::init(const std::filesystem::path& projectPath,
+                              TextureLoader& textureLoader,
+                              MaterialLoader& materialLoader,
+                              MeshLoader& meshLoader,
+                              ModelLoader& modelLoader,
+                              SceneLoader& sceneLoader,
+                              FileSystem& fileSystem) {
+        m_sceneLoader = &sceneLoader;
         m_projectPath = projectPath;
+        m_clientProject.init(m_projectPath);
+        m_serverProject.init(m_projectPath);
         if (!std::filesystem::exists(m_projectPath)) {
             TE_LOGGER_ERROR("Project not found: " + m_projectPath.string());
             createDefaultProject();
@@ -34,7 +47,7 @@ namespace TechEngine {
                 break;
             }
         }
-        loadProject();
+        loadProject(textureLoader, materialLoader, meshLoader, modelLoader, sceneLoader, fileSystem);
     }
 
     void ProjectManager::shutdown() {
@@ -81,8 +94,6 @@ namespace TechEngine {
         assert(!path.empty() && !m_projectName.empty() && !m_projectPath.empty());
         std::string exportPath = path.string() + "\\" + m_projectName.string();
         if (!std::filesystem::exists(exportPath)) {
-            //Make parent directories
-
             std::filesystem::create_directories(exportPath);
         } else {
             for (const auto& entry: std::filesystem::directory_iterator(exportPath)) {
@@ -160,13 +171,19 @@ namespace TechEngine {
         YAML::Node config;
         config["Project Name"] = m_projectName.string();
 
-        YAML::Node client = m_clientSystemsRegistry.getSystem<Project>().saveProject();
+        YAML::Node client = m_clientProject.saveProject();
+
+        SceneManager& sceneManager = m_clientSystemsRegistry.getSystem<SceneManager>();
         WidgetsSerializer& serializer = m_clientSystemsRegistry.getSystem<WidgetsRegistry>().getSerializer();
-        std::string sceneName = m_clientSystemsRegistry.getSystem<ScenesManager>().getActiveScene().getName();
-        serializer.serializeUI(sceneName, m_clientSystemsRegistry);
+        serializer.serializeUI(sceneManager.getActiveSceneName(), m_clientSystemsRegistry);
+        if (m_sceneLoader) {
+            m_sceneLoader->saveActiveScene();
+        }
+
         config["Client"] = client;
 
-        YAML::Node server = m_serverSystemsRegistry.getSystem<Project>().saveProject();
+
+        YAML::Node server = m_serverProject.saveProject();
         config["Server"] = server;
 
         fout << config;
@@ -224,7 +241,12 @@ namespace TechEngine {
         createProject("New Project");
     }
 
-    void ProjectManager::loadProject() {
+    void ProjectManager::loadProject(const TextureLoader& textureLoader,
+                                     const MaterialLoader& materialLoader,
+                                     const MeshLoader& meshLoader,
+                                     const ModelLoader& modelLoader,
+                                     SceneLoader& sceneLoader,
+                                     FileSystem& fileSystem) {
         assert(!m_projectName.empty());
         if (!std::filesystem::exists(m_projectPath.string() + "\\" + m_projectName.string() + ".teproj")) {
             TE_LOGGER_ERROR(
@@ -237,14 +259,99 @@ namespace TechEngine {
             config["Project Name"] = "New Project";
         }
         YAML::Node clientNode = config["Client"];
-        m_clientSystemsRegistry.getSystem<Project>().loadProject(m_projectPath, clientNode);
+        m_clientProject.loadProject(m_projectPath, clientNode);
 
         YAML::Node serverNode = config["Server"];
-        m_serverSystemsRegistry.getSystem<Project>().loadProject(m_projectPath, serverNode);
+        m_serverProject.loadProject(m_projectPath, serverNode);
 
-        //TE_LOGGER_INFO("Project loaded: " + m_projectName.string());
         m_assetsPath = m_projectPath.string() + "\\assets";
         m_resourcesPath = m_projectPath.string() + "\\resources";
         m_cachePath = m_projectPath.string() + "\\cache";
+        fileSystem.mount("editorAssetsClient://", getAssetsPath() / "client", 100);
+        fileSystem.mount("projectCache://", getCachePath() / "common", 100);
+
+        wchar_t path[FILENAME_MAX] = {0};
+        GetModuleFileNameW(nullptr, path, FILENAME_MAX);
+        std::filesystem::path p(path);
+
+        fileSystem.mount("editorAssets://", p.parent_path() / "assets", 100);
+
+        loadResources(textureLoader, materialLoader, meshLoader, modelLoader, sceneLoader);
+    }
+
+    void ProjectManager::loadResources(const TextureLoader& textureLoader,
+                                       const MaterialLoader& materialLoader,
+                                       const MeshLoader& meshLoader,
+                                       const ModelLoader& modelLoader,
+                                       SceneLoader& sceneLoader) const {
+        FileSystem& fileSystem = m_editorSystemsRegistry.getSystem<FileSystem>();
+        ResourceSystem& resourceSystem = m_clientSystemsRegistry.getSystem<ResourceSystem>();
+
+        std::vector<std::filesystem::path> files = fileSystem.list("editorAssetsClient://", true);
+        std::vector<std::filesystem::path> cacheFiles = fileSystem.list("projectCache://", true);
+        files.insert(files.end(), cacheFiles.begin(), cacheFiles.end());
+
+        static const std::string sceneExtension = ".tescene";
+
+        files.erase(std::remove_if(files.begin(), files.end(), [&](const std::filesystem::path& file) {
+            const FileStatus status = fileSystem.status(file);
+            return status.extension != textureLoader.resourceExtension() &&
+                   status.extension != materialLoader.resourceExtension() &&
+                   status.extension != meshLoader.resourceExtension() &&
+                   status.extension != modelLoader.resourceExtension() &&
+                   status.extension != sceneExtension;
+        }), files.end());
+
+        auto extensionPriority = [&](const std::filesystem::path& file) {
+            const FileStatus status = fileSystem.status(file);
+            if (status.extension == textureLoader.resourceExtension()) {
+                return 0;
+            }
+            if (status.extension == materialLoader.resourceExtension()) {
+                return 1;
+            }
+            if (status.extension == meshLoader.resourceExtension()) {
+                return 2;
+            }
+            if (status.extension == sceneExtension) {
+                return 3;
+            }
+            return 1000;
+        };
+
+        std::ranges::stable_sort(files, [&](const std::filesystem::path& left, const std::filesystem::path& right) {
+            const int leftPriority = extensionPriority(left);
+            const int rightPriority = extensionPriority(right);
+            if (leftPriority != rightPriority) {
+                return leftPriority < rightPriority;
+            }
+            return left.string() < right.string();
+        });
+
+        for (const std::filesystem::path& file: files) {
+            FileStatus status = fileSystem.status(file);
+            Buffer buffer;
+            fileSystem.read(file, buffer);
+            if (status.extension == textureLoader.resourceExtension()) {
+                textureLoader.deserializeTextureResource(buffer);
+            } else if (status.extension == materialLoader.resourceExtension()) {
+                materialLoader.deserializeMaterialResource(buffer);
+            } else if (status.extension == meshLoader.resourceExtension()) {
+                meshLoader.deserializeMeshResource(buffer);
+            } else if (status.extension == modelLoader.resourceExtension()) {
+                modelLoader.deserializeModelResource(buffer);
+            } else if (status.extension == sceneExtension) {
+                sceneLoader.loadSceneMetadata(buffer);
+            }
+        }
+
+        const std::string lastSceneName = m_clientProject.getProjectConfigs().at(ProjectConfig::Scene);
+        if (resourceSystem.isSceneRegistered(lastSceneName)) {
+            sceneLoader.loadScene(lastSceneName);
+        } else {
+            TE_LOGGER_ERROR("Last loaded scene not found {0}. Creating default scene", lastSceneName);
+            sceneLoader.createScene("DefaultScene", "editorAssetsClient://DefaultScene.tescene");
+            sceneLoader.loadScene(std::string("DefaultScene"));
+        }
     }
 }

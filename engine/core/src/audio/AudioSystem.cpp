@@ -9,8 +9,9 @@
 
 #define MA_IMPLEMENTATION
 #include "miniaudio.h"
-#include "scene/ScenesManager.hpp"
+#include "resources/ResourceSystem.hpp"
 #include "systems/SystemsRegistry.hpp"
+#include "scene/SceneManager.hpp"
 
 
 namespace TechEngine {
@@ -39,7 +40,7 @@ namespace TechEngine {
 
     void AudioSystem::onUpdate() {
         m_frameCount++;
-        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        Scene& scene = m_systemsRegistry.getSystem<SceneManager>().getActiveScene();
 
         scene.runSystem<Tag, Transform, AudioListener>([this, &scene](Tag& tag, Transform& transform, AudioListener& listener) {
             Entity entity = scene.getEntity(tag);

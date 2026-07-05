@@ -1,5 +1,4 @@
 #pragma once
-#include "../../../include/TechEngine/client/core/ExportDLL.hpp"
 #include "UIVertex.hpp"
 #include "../mesh/VertexArray.hpp"
 #include "../shaders/Shader.hpp"

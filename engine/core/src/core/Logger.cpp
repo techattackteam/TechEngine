@@ -9,6 +9,8 @@ namespace TechEngine {
         this->name = name;
     }
 
+    Logger::~Logger() = default;
+
     void Logger::init() {
         m_distSinks = std::make_shared<spdlog::sinks::dist_sink_mt>();
         std::vector<spdlog::sink_ptr> logSinks;

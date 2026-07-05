@@ -1,6 +1,10 @@
 #include "System.hpp"
 
 namespace TechEngine {
+    System::System() = default;
+
+    System::~System() = default;
+
     void System::init() {
     }
 

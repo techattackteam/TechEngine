@@ -1,9 +1,9 @@
 #pragma once
 
+#include "core/Logger.hpp"
+
 #include <memory>
 #include <string.h>
-
-#include "core/Logger.hpp"
 
 namespace TechEngine {
     class Buffer {

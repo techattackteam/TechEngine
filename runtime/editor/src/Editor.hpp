@@ -2,7 +2,12 @@
 #include <Application.hpp>
 #include <core/Client.hpp>
 #include <core/Server.hpp>
+#include "fileSystem/FileWatcher.hpp"
+#include "resources/loaders/TextureLoader.hpp"
+
 #include <filesystem>
+#include <memory>
+
 
 namespace TechEngine {
     class Editor : public Application {
@@ -11,6 +16,14 @@ namespace TechEngine {
         Server m_server;
         Client m_client;
         SystemsRegistry m_systemRegistry;
+
+        TextureLoader* m_textureLoader;
+        MaterialLoader* m_materialLoader;
+        MeshLoader* m_meshLoader;
+        ModelLoader* m_modelLoader;
+        SceneLoader* m_sceneLoader;
+        std::unique_ptr<FileWatcher> m_fileWatcher;
+
         std::filesystem::path m_EditorConfigPath;
         std::filesystem::path m_lastProjectLoaded;
 

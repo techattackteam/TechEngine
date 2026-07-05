@@ -2,11 +2,15 @@
 #include "events/application/AppCloseEvent.hpp"
 #include "events/scripts/ScriptCrashEvent.hpp"
 #include "eventSystem/EventManager.hpp"
-#include "project/Project.hpp"
+#include "../project/Project.hpp"
 #include "renderer/Renderer.hpp"
 #include "systems/System.hpp"
 #include "physics/PhysicsEngine.hpp"
 #include "core/timer.hpp"
+#include "logger/ImGuiSink.hpp"
+#include "script/ScriptEngine.hpp"
+#include "scene/SceneManager.hpp"
+#include "resources/loaders/SceneLoader.hpp"
 #include <Jolt/Jolt.h>
 
 
@@ -23,19 +27,31 @@ namespace TechEngine {
         SimulationState m_simulationState = SimulationState::STOPPED;
         SystemsRegistry& m_systemsRegistry;
         bool m_stopNextUpdate = false;
+        std::string m_preSimulationSceneName;
+        SceneLoader* m_sceneLoader = nullptr;
 
     public:
         T& m_runtime;
 
-        explicit RuntimeSimulator(T& runtime, SystemsRegistry& m_systemRegistry) : m_runtime(runtime), m_systemsRegistry(m_systemRegistry) {
+        explicit RuntimeSimulator(T& runtime,
+                                  SystemsRegistry& m_systemRegistry) : m_runtime(runtime),
+                                                                       m_systemsRegistry(m_systemRegistry) {
+        }
+
+        void setSceneLoader(SceneLoader* sceneLoader) {
+            m_sceneLoader = sceneLoader;
         }
 
         bool startSimulation(const std::string& dllPath, const std::shared_ptr<ImGuiSink<std::mutex>>& sink) {
             ScriptEngine& scriptEngine = m_runtime.m_systemRegistry.template getSystem<ScriptEngine>();
             PhysicsEngine& physicsEngine = m_runtime.m_systemRegistry.template getSystem<PhysicsEngine>();
-            ScenesManager& scenesManager = m_runtime.m_systemRegistry.template getSystem<ScenesManager>();
-            Project& project = m_runtime.m_systemRegistry.template getSystem<Project>();
-            scenesManager.copyScene(scenesManager.getActiveScene(), project.getPath(PathType::Cache, AppType::Client) / "runtimeScene.tescene");
+            SceneManager& sceneManager = m_runtime.m_systemRegistry.template getSystem<SceneManager>();
+
+            m_preSimulationSceneName = sceneManager.getActiveSceneName();
+            if (m_sceneLoader) {
+                m_sceneLoader->saveActiveScene();
+            }
+
             spdlog::sinks::dist_sink_mt* userDllSink;
             bool result;
             std::tie(result, userDllSink) = scriptEngine.start(dllPath);
@@ -46,7 +62,6 @@ namespace TechEngine {
             if (!physicsEngine.start()) {
                 return false;
             }
-            //userDllSink->add_sink(sink);
             m_simulationState = SimulationState::RUNNING;
             onStart();
             return true;
@@ -59,9 +74,9 @@ namespace TechEngine {
         void stopSimulation() {
             onStop();
             m_simulationState = SimulationState::STOPPED;
-            ScenesManager& scenesManager = m_runtime.m_systemRegistry.template getSystem<ScenesManager>();
-            Project& project = m_runtime.m_systemRegistry.template getSystem<Project>();
-            scenesManager.loadScene(project.getPath(PathType::Cache, AppType::Client) / "runtimeScene.tescene");
+            if (m_sceneLoader) {
+                m_sceneLoader->loadScene(m_preSimulationSceneName);
+            }
             shutdown();
             init();
         }
@@ -86,12 +101,6 @@ namespace TechEngine {
                     m_stopNextUpdate = true;
                 }
             });
-            //Renderer& renderer = m_runtime.m_systemRegistry.template getSystem<Renderer>();
-            //DebugRenderer* debugRenderer = m_runtime.m_systemRegistry.template getSystem<PhysicsEngine>().debugRenderer;
-            //debugRenderer->init([this](const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) {
-            //    this->m_runtime.m_systemRegistry.template getSystem<Renderer>().createLine(from, to, color);
-            //});
-            //m_runtime.m_systemRegistry.template getSystem<PhysicsEngine>().debugRenderer = debugRenderer;
             JPH::RegisterDefaultAllocator();
         }
 

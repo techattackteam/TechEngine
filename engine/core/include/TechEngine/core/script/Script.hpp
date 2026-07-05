@@ -1,7 +1,6 @@
 #pragma once
 
 #include "TechEngine/core/core/CoreExportDLL.hpp"
-#include <functional>
 #include <string>
 
 
@@ -9,7 +8,7 @@ namespace TechEngine {
     class Scene;
     class EventDispatcher;
     class MeshManager;
-    class MaterialManager;
+    class ResourceSystem;
 
     class CORE_DLL Script {
     private:
@@ -19,8 +18,7 @@ namespace TechEngine {
     protected:
         Scene* m_scene;
         EventDispatcher* m_eventDispatcher;
-        MaterialManager* m_materialManager;
-        MeshManager* m_meshManager;
+        ResourceSystem* m_resourceSystem;
 
     public:
         Script();

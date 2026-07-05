@@ -32,7 +32,8 @@ namespace TechEngine {
     }
 
     void EventManager::subscribe(const std::type_index& type, const Observer& callback) {
-        if (m_observers.count(type) == 0) {
+        std::unique_lock lock(m_observersMutex);
+        if (!m_observers.contains(type)) {
             m_observers[type] = ObserversVector();
         }
         m_observers[type].emplace_back(std::make_shared<Observer>(callback));
@@ -43,25 +44,33 @@ namespace TechEngine {
         //callbacks.erase(std::remove(callbacks.begin(), callbacks.end(), callback), callbacks.end());
     }
 
-    void EventManager::dispatch(const std::shared_ptr<Event>& event) {
-        m_dispatchedEvents.push(event);
-        if (m_editorWatchDogCallback) {
-            m_editorWatchDogCallback(event);
+    void EventManager::dispatch(const std::shared_ptr<Event>& event) { //
+        {
+            std::lock_guard lock(m_queueMutex);
+            m_dispatchedEvents.push(event);
         }
     }
 
 
     void EventManager::execute() {
-        uint32_t size = m_dispatchedEvents.size();
-        for (uint32_t i = 0; i < size; i++) {
-            std::shared_ptr<Event> event = m_dispatchedEvents.front();
-            if (m_observers.count(typeid(*event)) != 0) {
-                ObserversVector& callbacks = m_observers.at(typeid(*event));
-                for (auto& callback: callbacks) {
+        std::queue<std::shared_ptr<Event>> localQueue; //
+        {
+            std::lock_guard lock(m_queueMutex);
+            std::swap(localQueue, m_dispatchedEvents);
+        }
+        while (!localQueue.empty()) {
+            std::shared_ptr<Event> event = localQueue.front();
+            localQueue.pop();
+            if (m_editorWatchDogCallback) {
+                m_editorWatchDogCallback(event);
+            }
+            std::shared_lock observerLock(m_observersMutex);
+            auto it = m_observers.find(typeid(*event));
+            if (it != m_observers.end()) {
+                for (auto& callback: it->second) {
                     (*callback)(event);
                 }
             }
-            m_dispatchedEvents.pop();
         }
     }
 

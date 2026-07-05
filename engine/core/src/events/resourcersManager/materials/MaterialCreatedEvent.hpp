@@ -6,14 +6,14 @@
 namespace TechEngine {
     class CORE_DLL MaterialCreatedEvent : public Event {
     private:
-        std::string name;
+        const UUID uuid;
 
     public:
-        explicit MaterialCreatedEvent(std::string name) : name(std::move(name)) {
+        explicit MaterialCreatedEvent(const UUID uuid) : uuid(uuid) {
         }
 
-        [[nodiscard]] const std::string& getName() const {
-            return name;
+        const UUID& getUUID() const {
+            return uuid;
         }
     };
 }

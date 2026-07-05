@@ -7,10 +7,10 @@ namespace TechEngine {
     protected:
         friend class SystemsRegistry;
 
-        System() = default;
+        System();
 
     public:
-        virtual ~System() = default;
+        virtual ~System();
 
         // Called when the engine is initializing, before the application starts
         virtual void init();

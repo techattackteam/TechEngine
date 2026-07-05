@@ -162,8 +162,6 @@ namespace TechEngine {
 
         void moveEntityToArchetype(Entity entity, Archetype* sourceArchetype, const ArchetypeEdge& edge);
 
-        // Note: The types vector MUST be sorted before calling this function
-        // to ensure that {Pos, Vel} and {Vel, Pos} produce the same hash.
         size_t hashComponentTypes(const std::vector<ComponentTypeID>& componentTypes) const;
 
         Archetype* findArchetype(const std::vector<ComponentTypeID>& componentTypes) const;

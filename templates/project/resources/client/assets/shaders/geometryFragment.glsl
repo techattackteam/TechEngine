@@ -88,64 +88,46 @@ uniform sampler2D u_brdfLUT;
 uniform sampler2D u_aoMap;
 uniform bool u_debugLightCulling;
 
+mat3 buildTBN(vec3 N) {
+    float s = (N.z >= 0.0) ? 1.0 : -1.0;
+    float a = -1.0 / (s + N.z);
+    float b = N.x * N.y * a;
+    vec3 T = vec3(1.0 + s * N.x * N.x * a, s * b, -s * N.x);
+    vec3 B = vec3(b, s + N.y * N.y * a, -N.y);
+    return mat3(T, B, N);
+}
+
 void sampleMaterialTextures(inout Material material, vec2 uv, inout vec3 normal) {
     if (material.albedoHandle != uvec2(0)) {
         sampler2D albedoSampler = sampler2D(material.albedoHandle);
-        vec4 albedoTex = texture(albedoSampler, v_textCoord);
+        vec4 albedoTex = texture(albedoSampler, uv);
         material.albedo = albedoTex;
     }
     if (material.metallicHandle != uvec2(0)) {
         sampler2D metallicSampler = sampler2D(material.metallicHandle);
-        float metallicTex = texture(metallicSampler, v_textCoord).r;
+        float metallicTex = texture(metallicSampler, uv).r;
         material.metallic = metallicTex;
     }
     if (material.roughnessHandle != uvec2(0)) {
         sampler2D roughnessSampler = sampler2D(material.roughnessHandle);
-        float roughnessTex = texture(roughnessSampler, v_textCoord).r;
+        float roughnessTex = texture(roughnessSampler, uv).r;
         material.roughness = roughnessTex;
     }
     if (material.ambientOcclusionHandle != uvec2(0)) {
         sampler2D aoSampler = sampler2D(material.ambientOcclusionHandle);
-        float aoTex = texture(aoSampler, v_textCoord).r;
+        float aoTex = texture(aoSampler, uv).r;
         material.ao = aoTex;
     }
     if (material.emissionHandle != uvec2(0)) {
         sampler2D emissionSampler = sampler2D(material.emissionHandle);
-        vec3 emissionTex = texture(emissionSampler, v_textCoord).rgb;
+        vec3 emissionTex = texture(emissionSampler, uv).rgb;
         material.emission = vec4(emissionTex, 1.0);
     }
 
     if (material.normalHandle != uvec2(0)) {
         sampler2D normalSampler = sampler2D(material.normalHandle);
-        //vec3 normalTex = texture(normalSampler, v_textCoord).rgb;
-    /**        normalTex = normalTex * 2.0 - 1.0; // Transform from [0,1] to [-1,1]
-        normalTex = normalize(normalTex);
-
-        // Tangent space to world space
-        vec3 tangent;
-        vec3 bitangent;
-        vec3 N = normalize(v_normal);
-        if (abs(N.z) < 0.999) {
-            tangent = normalize(cross(N, vec3(0.0, 0.0, 1.0)));
-        } else {
-            tangent = normalize(cross(N, vec3(0.0, 1.0, 0.0)));
-        }
-        bitangent = cross(N, tangent);
-
-        mat3 TBN = mat3(tangent, bitangent, N);
-        normal = normalize(TBN * normalTex);*/
-        vec3 normalTex = texture(normalSampler, v_textCoord).rgb * 2.0 - 1.0;
-
-        vec3 Q1 = dFdx(v_worldPos);
-        vec3 Q2 = dFdy(v_worldPos);
-        vec2 st1 = dFdx(v_textCoord);
-        vec2 st2 = dFdy(v_textCoord);
-
-        vec3 N = normalize(normal);
-        vec3 T = normalize(Q1 * st2.t - Q2 * st1.t);
-        vec3 B = -normalize(cross(N, T));
-        mat3 TBN = mat3(T, B, N);
-
+        vec3 normalTex = texture(normalSampler, uv).rgb * 2.0 - 1.0;
+        mat3 TBN = buildTBN(normalize(normal));
         normal = normalize(TBN * normalTex);
     }
 }
@@ -228,7 +210,7 @@ float calculateCascadeDepthShadow(Light light) {
 
     float closestDepth = texture(handle, coords.xy).r;
     float currentDepth = coords.z;
-   if (coords.z > 1.0 || coords.z < -1.0) {
+    if (coords.z > 1.0 || coords.z < -1.0) {
         return 1.0f;
     }
     //float bias = max(0.05 * (1.0 - dot(v_normal, light.direction)), 0.0005);
@@ -456,8 +438,8 @@ void main() {
     vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
 
     // Ambient
-    vec3 ambient = (diffuse + specular) * ao;
-    //vec3 ambient = material.albedo.rgb * 0.5f * material.ao; // 3% ambient light
+    //vec3 ambient = (diffuse + specular) * ao;
+    vec3 ambient = material.albedo.rgb; // 3% ambient light
 
     // Emission
     vec3 finalEmission = material.emission.rgb * material.emission.a;
@@ -466,14 +448,4 @@ void main() {
 
     out_fragColor = vec4(color, 1.0f);
     out_screenLight = vec4(1.0);
-
-    if (!u_debugLightCulling) {
-        return;
-    }
-
-    uint lightCount = tiles[tileIndex].lightsCount;
-    vec3 heatColor = getHeatMapColor(float(lightCount));
-    float blendFactor = 0.5;
-    color = mix(color, heatColor, blendFactor);
-    out_fragColor = vec4(color, 1.0f);
 }

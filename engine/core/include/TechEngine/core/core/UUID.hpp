@@ -4,12 +4,20 @@
 
 #include <string>
 #include <unordered_set>
+#include <shared_mutex>
 
 namespace TechEngine {
     class CORE_DLL UUID {
     private:
-        uint64_t uuid;
+        uint64_t uuid = -1;
         inline static std::unordered_set<uint64_t> registeredUUIDs;
+        inline static std::shared_mutex mutex;
+
+        struct UnlockedTag {};
+
+        static uint64_t generateUniqueUUIDLocked();
+
+        UUID(uint64_t uuid, UnlockedTag) noexcept;
 
     public:
         UUID();
@@ -30,13 +38,20 @@ namespace TechEngine {
             return uuid;
         }
 
+        bool operator==(const UUID& other) const {
+            return uuid == other.uuid;
+        }
+
         static UUID generate();
 
         static void registerUUID(uint64_t existingUUID) {
+            std::lock_guard lock(mutex);
             registeredUUIDs.insert(existingUUID);
         }
 
-        std::string toString() const;
+        [[nodiscard]] bool isNull() const;
+
+        [[nodiscard]] std::string toString() const;
     };
 }
 

@@ -1,19 +1,20 @@
 #pragma once
 
 #include "TechEngine/core/core/CoreExportDLL.hpp"
-#include <string>
+#include "TechEngine/core/core/UUID.hpp"
+#include "TechEngine/core/events/Event.hpp"
 
 namespace TechEngine {
-    class CORE_DLL MaterialDeletedEvent : public Event{
+    class CORE_DLL MaterialDeletedEvent : public Event {
     private:
-        std::string m_name;
+        const UUID m_uuid;
 
     public:
-        explicit MaterialDeletedEvent(std::string name) : m_name(std::move(name)) {
+        explicit MaterialDeletedEvent(const UUID uuid) : m_uuid(uuid), Event() {
         }
 
-        const std::string& getName() const {
-            return m_name;
+        const UUID& getUUID() const {
+            return m_uuid;
         }
     };
 }

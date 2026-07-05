@@ -5,6 +5,7 @@
 #include "core/Logger.hpp"
 #include "core/Timer.hpp"
 #include "systems/SystemsRegistry.hpp"
+#include "scene/SceneManager.hpp"
 //#include "physics/DebugRenderer.hpp"
 
 #include <iostream>
@@ -18,8 +19,7 @@
 #include <Jolt/Physics/Collision/Shape/ScaledShape.h>
 #include <Jolt/Physics/Constraints/FixedConstraint.h>
 
-#include "resources/mesh/AssimpLoader.hpp"
-#include "scene/ScenesManager.hpp"
+#include "../../../../runtime/editor/src/resources/loaders/AssimpLoader.hpp"
 
 // Disable common warnings triggered by Jolt, you can use JPH_SUPPRESS_WARNING_PUSH / JPH_SUPPRESS_WARNING_POP to store and restore the warning state
 JPH_SUPPRESS_WARNINGS
@@ -296,7 +296,7 @@ namespace TechEngine {
     }
 
     void PhysicsEngine::updateBodies() {
-        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        Scene& scene = m_systemsRegistry.getSystem<SceneManager>().getActiveScene();
         scene.runSystem<Transform, StaticBody>([this](Transform& transform, StaticBody& body) {
             updateBodies<StaticBody>(transform, body);
         });
@@ -309,7 +309,7 @@ namespace TechEngine {
     }
 
     void PhysicsEngine::updateEntities() {
-        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        Scene& scene = m_systemsRegistry.getSystem<SceneManager>().getActiveScene();
         scene.runSystem<Transform, RigidBody>([this](Transform& transform, RigidBody& body) {
             updateEntities<RigidBody>(transform, body);
         });

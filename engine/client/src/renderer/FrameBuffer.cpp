@@ -3,7 +3,7 @@
 #include <glm/gtc/type_ptr.inl>
 
 #include "core/Logger.hpp"
-#include "texture/Texture.hpp"
+#include "resources/Texture.hpp"
 
 namespace TechEngine {
     FrameBuffer::FrameBuffer(const FrameBuffer& other) {
@@ -186,12 +186,12 @@ namespace TechEngine {
         auto texture = std::make_unique<Texture>();
 
         if (multisample) {
-            texture->create(target, internalFormat, m_width, m_height, format, type, nullptr); // create will use glTexImage2D normally
+            texture->create(target, internalFormat, m_width, m_height, format, type, GL_CLAMP, GL_CLAMP, nullptr); // create will use glTexImage2D normally
             glBindTexture(target, texture->getID());
             glTexImage2DMultisample(target, samples, internalFormat, m_width, m_height, GL_TRUE);
             glBindTexture(target, 0);
         } else {
-            texture->create(target, internalFormat, m_width, m_height, format, type, nullptr);
+            texture->create(target, internalFormat, m_width, m_height, format, type, GL_CLAMP, GL_CLAMP, nullptr);
         }
 
         if (target == GL_TEXTURE_2D || target == GL_TEXTURE_2D_MULTISAMPLE) {

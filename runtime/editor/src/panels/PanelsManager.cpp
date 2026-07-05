@@ -18,24 +18,39 @@
 #include "imgui_impl_opengl3.h"
 #include <imgui_internal.h>
 
+#include "resources/loaders/SceneLoader.hpp"
+
+
 namespace TechEngine {
     PanelsManager::PanelsManager(SystemsRegistry& systemsRegistry,
                                  Client& client,
-                                 Server& server) : m_systemsRegistry(systemsRegistry),
-                                                   m_client(client), m_server(server),
-                                                   m_clientPanel(systemsRegistry, m_client.m_systemRegistry,
-                                                                 m_LoggerPanel),
-                                                   m_serverPanel(systemsRegistry, m_server.m_systemRegistry,
-                                                                 m_LoggerPanel),
-                                                   m_LoggerPanel(systemsRegistry,
-                                                                 m_client.m_systemRegistry,
-                                                                 m_server.m_systemRegistry),
-                                                   m_ContentBrowserPanel(systemsRegistry,
-                                                                         m_client.m_systemRegistry,
-                                                                         m_server.m_systemRegistry, *this),
-                                                   m_ProfilerPanel(systemsRegistry, systemsRegistry) {
+                                 Server& server,
+                                 TextureLoader* textureLoader,
+                                 MaterialLoader* materialLoader,
+                                 ModelLoader* modelLoader,
+                                 MeshLoader* meshLoader,
+                                 SceneLoader* sceneLoader,
+                                 FileWatcher* fileWatcher) : m_systemsRegistry(systemsRegistry),
+                                                             m_client(client), m_server(server),
+                                                             m_clientPanel(systemsRegistry, m_client.m_systemRegistry,
+                                                                           m_LoggerPanel),
+                                                             m_serverPanel(systemsRegistry, m_server.m_systemRegistry,
+                                                                           m_LoggerPanel),
+                                                             m_LoggerPanel(systemsRegistry,
+                                                                           m_client.m_systemRegistry,
+                                                                           m_server.m_systemRegistry),
+                                                             m_ContentBrowserPanel(systemsRegistry,
+                                                                                   m_client.m_systemRegistry,
+                                                                                   m_server.m_systemRegistry,
+                                                                                   *this,
+                                                                                   textureLoader,
+                                                                                   materialLoader,
+                                                                                   meshLoader,
+                                                                                   modelLoader,
+                                                                                   sceneLoader,
+                                                                                   fileWatcher),
+                                                             m_ProfilerPanel(systemsRegistry, systemsRegistry) {
     }
-
 
     void PanelsManager::init() {
         initImGui();
@@ -82,6 +97,10 @@ namespace TechEngine {
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
+    }
+
+    ContentBrowserPanel& PanelsManager::getContentBrowserPanel() {
+        return m_ContentBrowserPanel;
     }
 
     void PanelsManager::initImGui() {
@@ -233,7 +252,7 @@ namespace TechEngine {
             if (ImGui::MenuItem("Open Project", "Ctrl+O")) {
             }
             if (ImGui::MenuItem("Save Project", "Ctrl+S")) {
-                m_systemsRegistry.getSystem<ProjectManager>().saveProject();
+                //m_systemsRegistry.getSystem<ProjectManager>().saveProject();
             }
 
             if (ImGui::MenuItem("Export")) {

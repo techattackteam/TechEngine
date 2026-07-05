@@ -10,8 +10,10 @@ namespace TechEngine {
     private:
         class Internal;
         friend class Internal;
-        friend class SceneSerializer;
-        friend class ScenesManager;
+        friend class ResourceSystem;
+        friend class SceneManager;
+        friend class SceneResource;
+        friend class SceneLoader;
 
         std::unique_ptr<Internal> m_internal;
 

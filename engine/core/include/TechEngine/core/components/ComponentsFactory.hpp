@@ -26,11 +26,10 @@ namespace TechEngine {
             return Transform();
         }
 #pragma region Mesh
-        static MeshRenderer createMeshRenderer(Mesh* mesh, Material* material) {
+        static MeshRenderer createMeshRenderer(MeshResource* mesh, MaterialResource* material) {
             MeshRenderer meshRenderer;
-            meshRenderer.mesh = mesh;
-            meshRenderer.material = material;
-            //eventManager->dispatch<ChangeMeshEvent>();
+            meshRenderer.meshUUID = mesh->getUUID();
+            meshRenderer.materialUUID = material->getUUID();
             return meshRenderer;
         }
 #pragma endregion

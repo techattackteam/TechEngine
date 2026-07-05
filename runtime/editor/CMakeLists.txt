@@ -101,6 +101,13 @@ add_custom_command(TARGET TechEngineEditor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:TechEngineEditor>/resources
 
 )
+
+add_custom_command(TARGET TechEngineEditor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/runtime/editor/assets"
+        $<TARGET_FILE_DIR:TechEngineEditor>/assets
+)
+
 add_custom_command(TARGET TechEngineEditor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory
         $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates
@@ -129,7 +136,7 @@ if (WIN32)
 
     add_custom_command(TARGET TechEngineEditor POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${PROJECT_SOURCE_DIR}/engine/core/include
+            "${PROJECT_SOURCE_DIR}/engine/core/include"
             $<TARGET_FILE_DIR:TechEngineEditor>/resources/templates/project/resources/core/include
     )
 

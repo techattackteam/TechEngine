@@ -11,7 +11,6 @@ namespace TechEngine {
         Scene& m_scene;
         ArchetypesManager& m_archetypesManager;
 
-        friend class SceneSerializer;
         friend class Scene;
 
     public:
@@ -22,7 +21,7 @@ namespace TechEngine {
         std::vector<ComponentTypeID> getCommonComponents(const std::vector<Entity>& entities);
 
         template<typename T>
-        uint32_t getComponentCount() {
+        uint32_t getComponentCount() const {
             return m_archetypesManager.getComponentCount<T>();
         }
 

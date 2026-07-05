@@ -9,6 +9,9 @@ namespace TechEngine {
         if (bufferPosition + size > targetBuffer.size) {
             uint64_t newSize = targetBuffer.size;
             do {
+                if (newSize == 0) {
+                    newSize = 1;
+                }
                 newSize *= 2;
             } while (bufferPosition + size > newSize);
 

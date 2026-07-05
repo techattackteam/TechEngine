@@ -1,7 +1,6 @@
 #include "ShadersManager.hpp"
 #include "files/FileUtils.hpp"
 #include "core/Logger.hpp"
-#include "project/Project.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
@@ -204,25 +203,5 @@ namespace TechEngine {
 
     Shader* ShadersManager::getActiveShader() {
         return activeShader;
-    }
-
-    void ShadersManager::exportShaderFiles(const std::string& path) {
-        if (!std::filesystem::exists(path)) {
-            std::filesystem::create_directory(path);
-        }
-        for (auto& element: shaders) {
-            std::string newPath = m_systemsRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Client).string() + "/shaders/" + element.first + "Vertex.glsl";
-            try {
-                std::filesystem::copy(newPath, path);
-            } catch (std::exception& e) {
-                TE_LOGGER_ERROR("Failed to copy Shader {0} into: {1}. \n {2}", element.first + "Vertex.glsl", newPath, e.what());
-            }
-            newPath = m_systemsRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Client).string() + "/shaders/" + element.first + "Fragment.glsl";
-            try {
-                std::filesystem::copy(newPath, path);
-            } catch (std::exception& e) {
-                TE_LOGGER_ERROR("Failed to copy Shader {0} into: {1}. \n {2}", element.first + "Fragment.glsl", newPath, e.what());
-            }
-        }
     }
 }

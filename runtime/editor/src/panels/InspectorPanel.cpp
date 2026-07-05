@@ -2,14 +2,14 @@
 
 #include "core/Logger.hpp"
 #include "scene/CameraSystem.hpp"
-#include "scene/ScenesManager.hpp"
 #include "TechEngine/core/components/Components.hpp"
 #include "TechEngine/core/components/ComponentsFactory.hpp"
 
 #include "physics/PhysicsEngine.hpp"
 #include "renderer/Renderer.hpp"
-#include "resources/ResourcesManager.hpp"
+#include "resources/ResourceSystem.hpp"
 #include "scene/SceneInternal.hpp"
+#include "scene/SceneManager.hpp"
 #include "ui/InputTextWidget.hpp"
 #include "ui/InteractableWidget.hpp"
 #include "ui/PanelWidget.hpp"
@@ -24,15 +24,23 @@ namespace TechEngine {
                                    SystemsRegistry& appSystemRegistry,
                                    HierarchyNode& selectedNode) : m_appSystemsRegistry(appSystemRegistry),
                                                                   m_selectedNode(selectedNode),
+                                                                  m_componentDrawerRegistry(m_appSystemsRegistry),
                                                                   Panel(editorSystemRegistry) {
     }
 
     void InspectorPanel::onInit() {
+        m_componentDrawerRegistry.registerAllDrawers();
     }
 
     void InspectorPanel::onUpdate() {
         if (m_selectedNode.type == HierarchyNode::NodeType::Entity) {
-            drawComponents();
+            Entity entity = m_selectedNode.entity;
+            Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
+            drawEntityHeader(entity, scene);
+            m_componentDrawerRegistry.drawAll(entity, scene,
+                                              [this](const ComponentDrawer& drawer, Entity entity, Scene& scene) {
+                                                  drawComponentFrame(drawer, entity, scene);
+                                              });
             openAddComponentMenu();
         } else if (m_selectedNode.type == HierarchyNode::NodeType::Widget) {
             drawWidgetProperties();
@@ -41,679 +49,63 @@ namespace TechEngine {
         }
     }
 
-    void InspectorPanel::drawComponents() {
-        ImGui::SameLine();
+    void InspectorPanel::drawEntityHeader(Entity entity, Scene& scene) {
+        Tag& tag = scene.getComponent<Tag>(entity);
+        std::string name = tag.getName();
         ImGui::PushItemWidth(-1);
-
-        if (ImGui::Button("Add Component")) {
-            ImGui::OpenPopup("Add Component");
+        if (ImGui::InputText("##EntityName", &name)) {
+            tag.setName(name);
         }
-
         ImGui::PopItemWidth();
 
-        Entity entity = m_selectedNode.entity;
-        Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-        std::vector<ComponentTypeID> componentsToDraw = scene.getInternal()->getCommonComponents({entity});
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.f));
+        ImGui::TextUnformatted(tag.getUuid().c_str());
+        ImGui::PopStyleColor();
 
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<Transform>::get()) != componentsToDraw.end()) {
-            drawComponent<Transform>(entity, "Transform", [this, entity](auto& component) {
-                Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                glm::vec3 position = component.m_position;
-                glm::vec3 rotation = component.m_rotation;
-                glm::vec3 scale = component.m_scale;
+        ImGui::Separator();
+    }
 
-                bool drawPosition = true;
-                bool drawOrientation = true;
-                bool drawScale = true;
+    void InspectorPanel::drawComponentFrame(const ComponentDrawer& drawer, Entity entity, Scene& scene) {
+        constexpr ImGuiTreeNodeFlags flags =
+                ImGuiTreeNodeFlags_DefaultOpen |
+                ImGuiTreeNodeFlags_Framed |
+                ImGuiTreeNodeFlags_SpanAvailWidth |
+                ImGuiTreeNodeFlags_AllowItemOverlap |
+                ImGuiTreeNodeFlags_FramePadding;
 
-                ImGuiUtils::drawVec3Control("Translation", position, 0.0f, 100.0f, 0, 0, drawPosition);
-                ImGuiUtils::drawVec3Control("Rotation", rotation, 0.0f, 100.0f, 0, 0, drawOrientation);
-                ImGuiUtils::drawVec3Control("Scale", scale, 1.0f, 100.0f, 0, 0, drawScale);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {4, 4});
+        ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
+        const float lineH = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.f;
+        ImGui::Separator();
 
-                bool move = false;
-                bool rotate = false;
-                bool scaling = false;
-                if (move || position != component.m_position) {
-                    component.translateTo(position);
-                    m_appSystemsRegistry.getSystem<PhysicsEngine>().moveOrRotateBody(scene.getComponent<Tag>(entity), scene.getComponent<Transform>(entity));
-                    move = true;
-                }
-                if (rotate || rotation != component.m_rotation) {
-                    component.setRotation(rotation);
-                    m_appSystemsRegistry.getSystem<PhysicsEngine>().moveOrRotateBody(scene.getComponent<Tag>(entity), scene.getComponent<Transform>(entity));
-                    rotate = true;
-                }
-                if (scaling || scale != component.m_scale) {
-                    component.setScale(scale);
-                    if (scene.hasComponent<BoxCollider>(entity)) {
-                        m_appSystemsRegistry.getSystem<PhysicsEngine>().rescaleCollider(
-                            scene.getComponent<Tag>(entity),
-                            scene.getComponent<Transform>(entity),
-                            scene.getComponent<BoxCollider>(entity).center,
-                            false);
-                    }
-                    if (scene.hasComponent<SphereCollider>(entity)) {
-                        m_appSystemsRegistry.getSystem<PhysicsEngine>().rescaleCollider(
-                            scene.getComponent<Tag>(entity),
-                            scene.getComponent<Transform>(entity),
-                            scene.getComponent<SphereCollider>(entity).center,
-                            true);
-                    }
-                    if (scene.hasComponent<CapsuleCollider>(entity)) {
-                        m_appSystemsRegistry.getSystem<PhysicsEngine>().rescaleCollider(
-                            scene.getComponent<Tag>(entity),
-                            scene.getComponent<Transform>(entity),
-                            scene.getComponent<CapsuleCollider>(entity).center,
-                            true);
-                    }
-                    if (scene.hasComponent<CylinderCollider>(entity)) {
-                        m_appSystemsRegistry.getSystem<PhysicsEngine>().rescaleCollider(
-                            scene.getComponent<Tag>(entity),
-                            scene.getComponent<Transform>(entity),
-                            scene.getComponent<CylinderCollider>(entity).center,
-                            false);
-                    }
-                    if (scene.hasComponent<BoxTrigger>(entity)) {
-                        m_appSystemsRegistry.getSystem<PhysicsEngine>().rescaleTrigger(
-                            scene.getComponent<Tag>(entity),
-                            scene.getComponent<Transform>(entity),
-                            scene.getComponent<BoxTrigger>(entity).center);
-                    }
-                    if (scene.hasComponent<SphereTrigger>(entity)) {
-                        m_appSystemsRegistry.getSystem<PhysicsEngine>().rescaleTrigger(
-                            scene.getComponent<Tag>(entity),
-                            scene.getComponent<Transform>(entity),
-                            scene.getComponent<SphereTrigger>(entity).center);
-                    }
-                    if (scene.hasComponent<CapsuleTrigger>(entity)) {
-                        m_appSystemsRegistry.getSystem<PhysicsEngine>().rescaleTrigger(
-                            scene.getComponent<Tag>(entity),
-                            scene.getComponent<Transform>(entity),
-                            scene.getComponent<CapsuleTrigger>(entity).center);
-                    }
-                    if (scene.hasComponent<CylinderTrigger>(entity)) {
-                        m_appSystemsRegistry.getSystem<PhysicsEngine>().rescaleTrigger(
-                            scene.getComponent<Tag>(entity),
-                            scene.getComponent<Transform>(entity),
-                            scene.getComponent<CylinderTrigger>(entity).center);
-                    }
-                    scaling = true;
-                }
-            });
+        const ImGuiID nodeId = ImGui::GetID(drawer.displayName.c_str());
+        const bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<intptr_t>(nodeId)),
+                                            flags, "%s", drawer.displayName.c_str());
+
+        ImGui::PopStyleVar();
+
+        ImGui::SameLine(contentRegionAvailable.x - lineH * 0.5f);
+
+        const std::string popupId = "##settings_" + drawer.displayName;
+        if (ImGui::Button(("-##" + drawer.displayName).c_str(), {lineH, lineH})) {
+            ImGui::OpenPopup(popupId.c_str());
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<Camera>::get()) != componentsToDraw.end()) {
-            drawComponent<Camera>(entity, "Camera", [this, entity](auto& component) {
-                auto& camera = component;
-                Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                const char* projectionTypeStrings[] = {"Perspective", "Orthographic"};
-                //Camera::ProjectionType commonProjectionType = camera->getProjectionType();
-                float fov = camera.getFov();
-                float nearPlane = camera.getNearPlane();
-                float farPlane = camera.getFarPlane();
 
-                /*
-                const char* currentProjectionTypeString = projectionTypeStrings[(int)camera->getProjectionType()];
-                bool changeProjection = false;
-                if (ImGui::BeginCombo("Projection", isProjectionCommon ? currentProjectionTypeString : "-")) {
-                    for (int i = 0; i < 2; i++) {
-                        bool isSelected = currentProjectionTypeString == projectionTypeStrings[i];
-                        if (ImGui::Selectable(projectionTypeStrings[i], isSelected)) {
-                            currentProjectionTypeString = projectionTypeStrings[i];
-                            commonProjectionType = (Camera::ProjectionType)i;
-                            changeProjection = true;
-                        }
-
-                        if (isSelected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-
-                    ImGui::EndCombo();
-                }*/
-                const char* fovLabel = "Vertical FOV";
-                const char* nearLabel = "Near";
-                const char* farLabel = "Far";
-                if (/*camera->getProjectionType() == Camera::ProjectionType::PERSPECTIVE*/ true) {
-                    bool changeFov = false;
-                    bool changeNear = false;
-                    bool changeFar = false;
-                    bool mainCamera = camera.isMainCamera();
-
-                    CameraSystem& cameraSystem = m_appSystemsRegistry.getSystem<CameraSystem>();
-                    ImGui::Checkbox("Main Camera", &mainCamera);
-                    if (mainCamera) {
-                        cameraSystem.setMainCamera(camera);
-                    }
-                    if (ImGui::DragFloat(fovLabel, &fov, 0.1f)) {
-                        changeFov = true;
-                    }
-                    if (ImGui::DragFloat(nearLabel, &nearPlane, 0.1f)) {
-                        changeNear = true;
-                    }
-                    if (ImGui::DragFloat(farLabel, &farPlane, 0.1f)) {
-                        changeFar = true;
-                    }
-
-                    if (changeFov) camera.fov = fov;
-                    if (changeNear) cameraSystem.setNear(entity, nearPlane);
-                    if (changeFar) cameraSystem.setFar(entity, farPlane);
-                    //if (changeProjection) cameraSystem.changeProjectionType(entity, commonProjectionType);
-                }
-
-                /*if (camera->getProjectionType() == Camera::ProjectionType::ORTHOGRAPHIC) {
-                    bool changeOrthoSize = false;
-                    bool changeOrthoNear = false;
-                    bool changeOrthoFar = false;
-                    if (ImGui::DragFloat(orthoSizeLabel, &commonFov, 0.1f)) {
-                        changeOrthoSize = true;
-                    }
-                    if (ImGui::DragFloat(orthoNearLabel, &commonNear, 0.1f)) {
-                        changeOrthoNear = true;
-                    }
-                    if (ImGui::DragFloat(orthoFarLabel, &commonFar, 0.1f)) {
-                        changeOrthoFar = true;
-                    }
-
-                    for (GameObject* entity: m_selectedEntities) {
-                        if (changeOrthoSize) entity->getComponent<Camera>()->setOrthoSize(commonFov);
-                        if (changeOrthoNear) entity->getComponent<Camera>()->setNear(commonNear);
-                        if (changeOrthoFar) entity->getComponent<Camera>()->setFar(commonFar);
-                        if (changeProjection) entity->getComponent<Camera>()->changeProjectionType(commonProjectionType);
-                    }
-                }*/
-            });
+        bool remove = false;
+        if (ImGui::BeginPopup(popupId.c_str())) {
+            if (ImGui::MenuItem("Remove component")) {
+                remove = true;
+            }
+            ImGui::EndPopup();
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<MeshRenderer>::get()) != componentsToDraw.end()) {
-            drawComponent<MeshRenderer>(entity, "Mesh Renderer", [this](auto& component) {
-                // Display current mesh name
-                std::string meshName = component.mesh ? component.mesh->getName() : "None";
-                std::string materialName = component.material ? component.material->getName() : "None";
 
-                ImGui::Text("Mesh");
-                ImGui::SameLine();
-
-                // Create a button showing the current mesh name that accepts drag-drop
-                float availWidth = ImGui::GetContentRegionAvail().x;
-                ImGui::Button(meshName.c_str(), ImVec2(availWidth, 0));
-
-                // Drag-drop target for mesh
-                if (ImGui::BeginDragDropTarget()) {
-                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-                        std::string filename = (const char*)payload->Data;
-                        std::string extension = filename.substr(filename.find_last_of('.'));
-                        if (extension == ".tesmesh") {
-                            std::string newMeshName = filename.substr(0, filename.find_last_of("."));
-                            // Check if mesh is loaded, if not load it
-                            if (!m_appSystemsRegistry.getSystem<ResourcesManager>().m_meshManager.isMeshLoaded(newMeshName)) {
-                                // Get the full path from content browser current path
-                                // For now, we assume the mesh is already loaded via Create Mesh
-                                TE_LOGGER_WARN("Mesh '{}' is not loaded. Please load it first via Content Browser.", newMeshName);
-                            } else {
-                                component.changeMesh(m_appSystemsRegistry.getSystem<ResourcesManager>().getMesh(newMeshName));
-                            }
-                        }
-                    }
-                    ImGui::EndDragDropTarget();
-                }
-
-                ImGui::Text("Material");
-                ImGui::SameLine();
-
-                // Create a button showing the current material name that accepts drag-drop
-                ImGui::Button(materialName.c_str(), ImVec2(availWidth, 0));
-
-                // Drag-drop target for material
-                if (ImGui::BeginDragDropTarget()) {
-                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-                        std::string filename = (const char*)payload->Data;
-                        std::string extension = filename.substr(filename.find_last_of('.'));
-                        if (extension == ".mat") {
-                            std::string newMaterialName = filename.substr(0, filename.find_last_of("."));
-                            component.changeMaterial(m_appSystemsRegistry.getSystem<ResourcesManager>().getMaterial(newMaterialName));
-                        }
-                    }
-                    ImGui::EndDragDropTarget();
-                }
-            });
+        if (open) {
+            drawer.draw(entity, scene);
+            ImGui::TreePop();
         }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<PointLight>::get()) != componentsToDraw.end()) {
-            drawComponent<PointLight>(entity, "Point Light", [this](auto& component) {
-                glm::vec3 color = component.color;
-                float intensity = component.intensity;
-                float radius = component.radius;
 
-                glm::vec3 newColor = color;
-                float newIntensity = intensity;
-                float newRadius = radius;
-                ImGui::ColorEdit3("Color", (float*)&newColor, ImGuiColorEditFlags_Float);
-                ImGui::DragFloat("Intensity", &newIntensity, 0.5f, 0.0f);
-                ImGui::DragFloat("Radius", &newRadius, 0.5f, 0.0f);
-
-                if (color != newColor) {
-                    component.color = newColor;
-                }
-                if (intensity != newIntensity) {
-                    component.intensity = newIntensity;
-                }
-                if (radius != newRadius) {
-                    component.radius = newRadius;
-                }
-            });
-        }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<DirectionalLight>::get()) != componentsToDraw.end()) {
-            drawComponent<DirectionalLight>(entity, "Directional Light", [this](auto& component) {
-                glm::vec3 color = component.color;
-                float intensity = component.intensity;
-
-                glm::vec3 newColor = color;
-                float newIntensity = intensity;
-                ImGui::ColorEdit3("Color", (float*)&newColor, ImGuiColorEditFlags_Float);
-                ImGui::DragFloat("Intensity", &newIntensity, 0.5f, 0.0f);
-
-                if (color != newColor) {
-                    component.color = newColor;
-                }
-                if (intensity != newIntensity) {
-                    component.intensity = newIntensity;
-                }
-            });
-        }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<SpotLight>::get()) != componentsToDraw.end()) {
-            drawComponent<SpotLight>(entity, "Spot Light", [this](auto& component) {
-                glm::vec3 color = component.color;
-                float intensity = component.intensity;
-                float innercutoff = component.innerCutoff;
-                float outercutoff = component.outerCutoff;
-
-                glm::vec3 newColor = color;
-                float newIntensity = intensity;
-                ImGui::ColorEdit3("Color", (float*)&newColor, ImGuiColorEditFlags_Float);
-                ImGui::DragFloat("Intensity", &newIntensity, 0.5f, 0.0f);
-                ImGui::DragFloat("Inner Cutoff", &innercutoff, 0.5f, 0.0f, outercutoff);
-                ImGui::DragFloat("Outer Cutoff", &outercutoff, 0.5f, innercutoff);
-
-                if (color != newColor) {
-                    component.color = newColor;
-                }
-                if (intensity != newIntensity) {
-                    component.intensity = newIntensity;
-                }
-                if (innercutoff != component.innerCutoff) {
-                    component.innerCutoff = innercutoff;
-                }
-                if (outercutoff != component.outerCutoff) {
-                    component.outerCutoff = outercutoff;
-                }
-            });
-        }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<StaticBody>::get()) != componentsToDraw.end()) {
-            drawComponent<StaticBody>(entity, "Static Body", [this](auto& component) {
-                                          Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                                      }, [this, entity]() {
-                                          Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                                          m_appSystemsRegistry.getSystem<PhysicsEngine>().removeBody(scene.getComponent<Tag>(entity));
-                                      });
-        }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<KinematicBody>::get()) != componentsToDraw.end()) {
-            drawComponent<KinematicBody>(entity, "Kinematic Body", [this](auto& component) {
-                                         }, [this, entity]() {
-                                             Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                                             m_appSystemsRegistry.getSystem<PhysicsEngine>().removeBody(scene.getComponent<Tag>(entity));
-                                         });
-        }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<RigidBody>::get()) != componentsToDraw.end()) {
-            drawComponent<RigidBody>(entity, "Rigid Body", [this](auto& component) {
-                                         Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                                         bool isMassCommon = true;
-                                         bool isDensityCommon = true;
-                                     }, [this, entity]() {
-                                         Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                                         m_appSystemsRegistry.getSystem<PhysicsEngine>().removeBody(scene.getComponent<Tag>(entity));
-                                     });
-        }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<BoxCollider>::get()) != componentsToDraw.end()) {
-            drawComponent<BoxCollider>(entity, "Box Collider", [this, entity](auto& component) {
-                                           Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                                           glm::vec3 center = component.center;
-                                           glm::vec3 size = component.size;
-
-                                           bool changeCenter = false;
-                                           bool changeSize = false;
-                                           ImGuiUtils::drawVec3Control("Center", center, 0, 100.0f, 0, 0);
-                                           ImGuiUtils::drawVec3Control("Scale", size, 1.0f, 100.0f, 0, 0);
-                                           if (center != component.center) {
-                                               changeCenter = true;
-                                           }
-                                           if (size != component.size) {
-                                               changeSize = true;
-                                           }
-
-                                           if (changeCenter) {
-                                               scene.getComponent<BoxCollider>(entity).center = center;
-                                               m_appSystemsRegistry.getSystem<PhysicsEngine>().recenterCollider(scene.getComponent<Tag>(entity), center);
-                                           }
-                                           if (changeSize) {
-                                               scene.getComponent<BoxCollider>(entity).size = size;
-                                               m_appSystemsRegistry.getSystem<PhysicsEngine>().resizeCollider(
-                                                   Shape::Cube,
-                                                   scene.getComponent<Tag>(entity),
-                                                   scene.getComponent<Transform>(entity),
-                                                   center,
-                                                   size);
-                                           }
-                                       }, [this, entity]() {
-                                           Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                                           m_appSystemsRegistry.getSystem<PhysicsEngine>().removeCollider(scene.getComponent<Tag>(entity));
-                                       });
-        }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<SphereCollider>::get()) != componentsToDraw.end()) {
-            drawComponent<SphereCollider>(entity, "Sphere Collider", [this, entity](auto& component) {
-                                              Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                                              glm::vec3 center = component.center;
-                                              float radius = component.radius;
-
-                                              bool changeCenter = false;
-                                              bool changeRadius = false;
-                                              ImGuiUtils::drawVec3Control("Center", center, 0, 100.0f, 0, 0);
-                                              if (center != component.center) {
-                                                  changeCenter = true;
-                                              }
-                                              ImGui::Text("Radius");
-                                              ImGui::SameLine();
-                                              ImGui::DragFloat("##X", &radius, 0.1f, 0.1f,FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp);
-                                              if (radius != component.radius) {
-                                                  changeRadius = true;
-                                              }
-                                              if (changeCenter) {
-                                                  scene.getComponent<SphereCollider>(entity).center = center;
-                                                  m_appSystemsRegistry.getSystem<PhysicsEngine>().recenterCollider(scene.getComponent<Tag>(entity), center);
-                                              }
-                                              if (changeRadius) {
-                                                  scene.getComponent<SphereCollider>(entity).radius = radius;
-                                                  m_appSystemsRegistry.getSystem<PhysicsEngine>().resizeCollider(Shape::Sphere,
-                                                                                                                 scene.getComponent<Tag>(entity),
-                                                                                                                 scene.getComponent<Transform>(entity),
-                                                                                                                 center,
-                                                                                                                 glm::vec3(radius));
-                                              }
-                                          },
-                                          [this, entity]() {
-                                              Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                                              m_appSystemsRegistry.getSystem<PhysicsEngine>().removeCollider(scene.getComponent<Tag>(entity));
-                                          }
-            );
-        }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<CapsuleCollider>::get()) != componentsToDraw.end()) {
-            drawComponent<CapsuleCollider>(entity, "Capsule Collider", [this, entity](auto& component) {
-                Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                glm::vec3 center = component.center;
-                float radius = component.radius;
-                float height = component.height;
-
-                bool changeCenter = false;
-                bool changeRadius = false;
-                bool changeHeight = false;
-
-                ImGuiUtils::drawVec3Control("Center", center, 0, 100.0f, 0, 0);
-                if (center != component.center) {
-                    changeCenter = true;
-                }
-
-                ImGui::Text("Radius");
-                ImGui::SameLine();
-                ImGui::DragFloat("##Radius", &radius, 0.1f, 0.1f, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp);
-                if (radius != component.radius) {
-                    changeRadius = true;
-                }
-                ImGui::Text("Height");
-                ImGui::SameLine();
-                ImGui::DragFloat("##Height", &height, 0.1f, 0.1f, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp);
-                if (height != component.height) {
-                    changeHeight = true;
-                }
-                if (changeCenter) {
-                    scene.getComponent<CapsuleCollider>(entity).center = center;
-                    m_appSystemsRegistry.getSystem<PhysicsEngine>().recenterCollider(scene.getComponent<Tag>(entity), center);
-                }
-                if (changeRadius || changeHeight) {
-                    scene.getComponent<CapsuleCollider>(entity).radius = radius;
-                    scene.getComponent<CapsuleCollider>(entity).height = height;
-                    m_appSystemsRegistry.getSystem<PhysicsEngine>().resizeCollider(Shape::Capsule,
-                                                                                   scene.getComponent<Tag>(entity),
-                                                                                   scene.getComponent<Transform>(entity),
-                                                                                   center,
-                                                                                   glm::vec3(radius, height, radius));
-                }
-            }, [this, entity] {
-                Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                m_appSystemsRegistry.getSystem<PhysicsEngine>().removeCollider(scene.getComponent<Tag>(entity));
-            });
-        }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<CylinderCollider>::get()) != componentsToDraw.end()) {
-            drawComponent<CylinderCollider>(entity, "Cylinder Collider", [this, entity](auto& component) {
-                Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                glm::vec3 commonCenter = component.center;
-                float commonHeight = component.height;
-                float commonRadius = component.radius;
-
-                bool changeCenter = false;
-                bool changeRadius = false;
-                bool changeHeight = false;
-
-                ImGuiUtils::drawVec3Control("Center", commonCenter, 0, 100.0f, 0, 0);
-                if (commonCenter != component.center) {
-                    changeCenter = true;
-                }
-
-                ImGui::Text("Radius");
-                ImGui::SameLine();
-                ImGui::DragFloat("##Radius", &commonRadius, 0.1f);
-                if (commonRadius != component.radius) {
-                    changeRadius = true;
-                }
-                ImGui::Text("Height");
-                ImGui::SameLine();
-                ImGui::DragFloat("##Height", &commonHeight, 0.1f);
-                if (commonHeight != component.height) {
-                    changeHeight = true;
-                }
-                if (changeCenter) {
-                    scene.getComponent<CylinderCollider>(entity).center = commonCenter;
-                    m_appSystemsRegistry.getSystem<PhysicsEngine>().recenterCollider(scene.getComponent<Tag>(entity), commonCenter);
-                }
-                if (changeRadius || changeHeight) {
-                    scene.getComponent<CylinderCollider>(entity).radius = commonRadius;
-                    scene.getComponent<CylinderCollider>(entity).height = commonHeight;
-                    m_appSystemsRegistry.getSystem<PhysicsEngine>().resizeCollider(Shape::Cylinder,
-                                                                                   scene.getComponent<Tag>(entity),
-                                                                                   scene.getComponent<Transform>(entity),
-                                                                                   commonCenter,
-                                                                                   glm::vec3(commonRadius, commonHeight, commonRadius));
-                }
-            }, [this, entity] {
-                Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                m_appSystemsRegistry.getSystem<PhysicsEngine>().removeCollider(scene.getComponent<Tag>(entity));
-            });
-        }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<BoxTrigger>::get()) != componentsToDraw.end()) {
-            drawComponent<BoxTrigger>(entity, "Box Trigger", [this, entity](auto& component) {
-                                          Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                                          glm::vec3 center = component.center;
-                                          glm::vec3 size = component.size;
-
-                                          bool changeCenter = false;
-                                          bool changeSize = false;
-                                          ImGuiUtils::drawVec3Control("Center", center, 0, 100.0f, 0, 0);
-                                          ImGuiUtils::drawVec3Control("Scale", size, 1.0f, 100.0f, 0, 0);
-                                          if (center != component.center) {
-                                              changeCenter = true;
-                                          }
-                                          if (size != component.size) {
-                                              changeSize = true;
-                                          }
-
-                                          if (changeCenter) {
-                                              scene.getComponent<BoxTrigger>(entity).center = center;
-                                              m_appSystemsRegistry.getSystem<PhysicsEngine>().recenterTrigger(scene.getComponent<Tag>(entity), center);
-                                          }
-                                          if (changeSize) {
-                                              scene.getComponent<BoxTrigger>(entity).size = size;
-                                              m_appSystemsRegistry.getSystem<PhysicsEngine>().resizeTrigger(
-                                                  Shape::Cube,
-                                                  scene.getComponent<Tag>(entity),
-                                                  scene.getComponent<Transform>(entity),
-                                                  center,
-                                                  size);
-                                          }
-                                      }, [this, entity]() {
-                                          Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                                          m_appSystemsRegistry.getSystem<PhysicsEngine>().removeTrigger(scene.getComponent<Tag>(entity));
-                                      });
-        }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<SphereTrigger>::get()) != componentsToDraw.end()) {
-            drawComponent<SphereTrigger>(entity, "Sphere Trigger", [this, entity](auto& component) {
-                                             Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                                             glm::vec3 center = component.center;
-                                             float radius = component.radius;
-
-                                             bool changeCenter = false;
-                                             bool changeRadius = false;
-                                             ImGuiUtils::drawVec3Control("Center", center, 0, 100.0f, 0, 0);
-                                             if (center != component.center) {
-                                                 changeCenter = true;
-                                             }
-                                             ImGui::Text("Radius");
-                                             ImGui::SameLine();
-                                             ImGui::DragFloat("##X", &radius, 0.1f, 0.1f,FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp);
-                                             if (radius != component.radius) {
-                                                 changeRadius = true;
-                                             }
-                                             if (changeCenter) {
-                                                 scene.getComponent<SphereTrigger>(entity).center = center;
-                                                 m_appSystemsRegistry.getSystem<PhysicsEngine>().recenterTrigger(scene.getComponent<Tag>(entity), center);
-                                             }
-                                             if (changeRadius) {
-                                                 scene.getComponent<SphereTrigger>(entity).radius = radius;
-                                                 m_appSystemsRegistry.getSystem<PhysicsEngine>().resizeTrigger(
-                                                     Shape::Sphere,
-                                                     scene.getComponent<Tag>(entity),
-                                                     scene.getComponent<Transform>(entity),
-                                                     center,
-                                                     glm::vec3(radius));
-                                             }
-                                         },
-                                         [this, entity]() {
-                                             Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                                             m_appSystemsRegistry.getSystem<PhysicsEngine>().removeTrigger(scene.getComponent<Tag>(entity));
-                                         }
-            );
-        }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<CapsuleTrigger>::get()) != componentsToDraw.end()) {
-            drawComponent<CapsuleTrigger>(entity, "Capsule Trigger", [this, entity](auto& component) {
-                Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                glm::vec3 center = component.center;
-                float radius = component.radius;
-                float height = component.height;
-
-                bool changeCenter = false;
-                bool changeRadius = false;
-                bool changeHeight = false;
-
-                ImGuiUtils::drawVec3Control("Center", center, 0, 100.0f, 0, 0);
-                if (center != component.center) {
-                    changeCenter = true;
-                }
-
-                ImGui::Text("Radius");
-                ImGui::SameLine();
-                ImGui::DragFloat("##Radius", &radius, 0.1f, 0.1f, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp);
-                if (radius != component.radius) {
-                    changeRadius = true;
-                }
-                ImGui::Text("Height");
-                ImGui::SameLine();
-                ImGui::DragFloat("##Height", &height, 0.1f, 0.1f, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp);
-                if (height != component.height) {
-                    changeHeight = true;
-                }
-                if (changeCenter) {
-                    scene.getComponent<CapsuleTrigger>(entity).center = center;
-                    m_appSystemsRegistry.getSystem<PhysicsEngine>().recenterTrigger(scene.getComponent<Tag>(entity), center);
-                }
-                if (changeRadius || changeHeight) {
-                    scene.getComponent<CapsuleTrigger>(entity).radius = radius;
-                    scene.getComponent<CapsuleTrigger>(entity).height = height;
-                    m_appSystemsRegistry.getSystem<PhysicsEngine>().resizeTrigger(Shape::Capsule,
-                                                                                  scene.getComponent<Tag>(entity),
-                                                                                  scene.getComponent<Transform>(entity),
-                                                                                  center,
-                                                                                  glm::vec3(radius, height, radius));
-                }
-            }, [this, entity] {
-                Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                m_appSystemsRegistry.getSystem<PhysicsEngine>().removeTrigger(scene.getComponent<Tag>(entity));
-            });
-        }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<CylinderTrigger>::get()) != componentsToDraw.end()) {
-            drawComponent<CylinderTrigger>(entity, "Cylinder Trigger", [this, entity](auto& component) {
-                Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                glm::vec3 center = component.center;
-                float height = component.height;
-                float radius = component.radius;
-
-                bool changeCenter = false;
-                bool changeRadius = false;
-                bool changeHeight = false;
-
-                ImGuiUtils::drawVec3Control("Center", center, 0, 100.0f, 0, 0);
-                if (center != component.center) {
-                    changeCenter = true;
-                }
-
-                ImGui::Text("Radius");
-                ImGui::SameLine();
-                ImGui::DragFloat("##Radius", &radius, 0.1f);
-                if (radius != component.radius) {
-                    changeRadius = true;
-                }
-                ImGui::Text("Height");
-                ImGui::SameLine();
-                ImGui::DragFloat("##Height", &height, 0.1f);
-                if (height != component.height) {
-                    changeHeight = true;
-                }
-                if (changeCenter) {
-                    scene.getComponent<CylinderTrigger>(entity).center = center;
-                    m_appSystemsRegistry.getSystem<PhysicsEngine>().recenterTrigger(scene.getComponent<Tag>(entity), center);
-                }
-                if (changeRadius || changeHeight) {
-                    scene.getComponent<CylinderTrigger>(entity).radius = radius;
-                    scene.getComponent<CylinderTrigger>(entity).height = height;
-                    m_appSystemsRegistry.getSystem<PhysicsEngine>().resizeTrigger(Shape::Cylinder,
-                                                                                  scene.getComponent<Tag>(entity),
-                                                                                  scene.getComponent<Transform>(entity),
-                                                                                  center,
-                                                                                  glm::vec3(radius, height, radius));
-                }
-            }, [this, entity] {
-                Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                m_appSystemsRegistry.getSystem<PhysicsEngine>().removeTrigger(scene.getComponent<Tag>(entity));
-            });
-        }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<AudioListener>::get()) != componentsToDraw.end()) {
-            drawComponent<AudioListener>(entity, "Audio Listener", [](auto& component) {
-                                             // No properties to edit for Audio Listener
-                                         }, []() {
-                                             // No action on remove for Audio Listener
-                                         });
-        }
-        if (std::find(componentsToDraw.begin(), componentsToDraw.end(), ComponentType<AudioEmitter>::get()) != componentsToDraw.end()) {
-            drawComponent<AudioEmitter>(entity, "Audio Emitter", [this](auto& component) {
-                                            Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-                                            ImGui::DragFloat("Volume", &component.volume, 0.01f, 0.0f, 1.0f, "%.2f");
-                                            ImGui::DragFloat("Pitch", &component.pitch, 0.01f, 0.0f, 1.0f);
-                                            ImGui::Checkbox("Loop", &component.loop);
-                                        }, []() {
-                                        });
+        if (remove) {
+            drawer.onRemove(entity, scene);
         }
     }
 
@@ -724,21 +116,21 @@ namespace TechEngine {
                 addComponent<Camera>();
             }
             if (ImGui::MenuItem("Mesh Renderer")) {
-                Mesh& mesh = m_appSystemsRegistry.getSystem<ResourcesManager>().getDefaultMesh();
-                Material& material = m_appSystemsRegistry.getSystem<ResourcesManager>().getDefaultMaterial();
+                const std::shared_ptr<MeshResource> mesh = m_appSystemsRegistry.getSystem<ResourceSystem>().getDefaultMesh();
+                const std::shared_ptr<MaterialResource> material = m_appSystemsRegistry.getSystem<ResourceSystem>().getDefaultMaterial();
                 MeshRenderer& meshRenderer = addComponent<MeshRenderer>();
-                meshRenderer.changeMaterial(material);
-                meshRenderer.changeMesh(mesh);
+                meshRenderer.changeMaterial(material->getUUID());
+                meshRenderer.changeMesh(mesh->getUUID());
             }
             if (ImGui::BeginMenu("Light")) {
                 if (ImGui::MenuItem("Point Light")) {
-                    Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+                    Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
                     scene.addComponent<PointLight>(entity, ComponentsFactory::createPointLight());
                 } else if (ImGui::MenuItem("Directional Light")) {
-                    Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+                    Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
                     scene.addComponent<DirectionalLight>(entity, ComponentsFactory::createDirectionalLight());
                 } else if (ImGui::MenuItem("SpotLight")) {
-                    Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+                    Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
                     scene.addComponent<SpotLight>(entity, ComponentsFactory::createSpotLight());
                 }
 
@@ -747,21 +139,21 @@ namespace TechEngine {
             if (ImGui::BeginMenu("Physics")) {
                 if (ImGui::BeginMenu("Bodies")) {
                     if (ImGui::MenuItem("Static Body")) {
-                        Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+                        Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
                         Tag& tag = scene.getComponent<Tag>(entity);
                         Transform& transform = scene.getComponent<Transform>(entity);
                         PhysicsEngine& physicsEngine = m_appSystemsRegistry.getSystem<PhysicsEngine>();
                         scene.addComponent<StaticBody>(entity, ComponentsFactory::createStaticBody(physicsEngine, tag, transform));
                     }
                     if (ImGui::MenuItem("Kinematic Body")) {
-                        Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+                        Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
                         Tag& tag = scene.getComponent<Tag>(entity);
                         Transform& transform = scene.getComponent<Transform>(entity);
                         PhysicsEngine& physicsEngine = m_appSystemsRegistry.getSystem<PhysicsEngine>();
                         scene.addComponent<KinematicBody>(entity, ComponentsFactory::createKinematicBody(physicsEngine, tag, transform));
                     }
                     if (ImGui::MenuItem("Rigid Body")) {
-                        Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+                        Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
                         Tag& tag = scene.getComponent<Tag>(entity);
                         Transform& transform = scene.getComponent<Transform>(entity);
                         PhysicsEngine& physicsEngine = m_appSystemsRegistry.getSystem<PhysicsEngine>();
@@ -771,28 +163,28 @@ namespace TechEngine {
                 }
                 if (ImGui::BeginMenu("Colliders")) {
                     if (ImGui::MenuItem("Box Collider")) {
-                        Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+                        Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
                         Tag& tag = scene.getComponent<Tag>(entity);
                         Transform& transform = scene.getComponent<Transform>(entity);
                         PhysicsEngine& physicsEngine = m_appSystemsRegistry.getSystem<PhysicsEngine>();
                         scene.addComponent<BoxCollider>(entity, ComponentsFactory::createBoxCollider(physicsEngine, tag, transform, glm::vec3(0, 0, 0), glm::vec3(1)));
                     }
                     if (ImGui::MenuItem("Sphere Collider")) {
-                        Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+                        Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
                         Tag& tag = scene.getComponent<Tag>(entity);
                         Transform& transform = scene.getComponent<Transform>(entity);
                         PhysicsEngine& physicsEngine = m_appSystemsRegistry.getSystem<PhysicsEngine>();
                         scene.addComponent<SphereCollider>(entity, ComponentsFactory::createSphereCollider(physicsEngine, tag, transform, glm::vec3(0), 0.5f));
                     }
                     if (ImGui::MenuItem("Capsule Collider")) {
-                        Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+                        Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
                         Tag& tag = scene.getComponent<Tag>(entity);
                         Transform& transform = scene.getComponent<Transform>(entity);
                         PhysicsEngine& physicsEngine = m_appSystemsRegistry.getSystem<PhysicsEngine>();
                         scene.addComponent<CapsuleCollider>(entity, ComponentsFactory::createCapsuleCollider(physicsEngine, tag, transform, glm::vec3(0), 1.0f, 0.5f));
                     }
                     if (ImGui::MenuItem("Cylinder Collider")) {
-                        Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+                        Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
                         Tag& tag = scene.getComponent<Tag>(entity);
                         Transform& transform = scene.getComponent<Transform>(entity);
                         PhysicsEngine& physicsEngine = m_appSystemsRegistry.getSystem<PhysicsEngine>();
@@ -802,7 +194,7 @@ namespace TechEngine {
                 }
                 if (ImGui::BeginMenu("Triggers")) {
                     if (ImGui::MenuItem("Box Trigger")) {
-                        Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+                        Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
                         Tag& tag = scene.getComponent<Tag>(entity);
                         Transform& transform = scene.getComponent<Transform>(entity);
                         PhysicsEngine& physicsEngine = m_appSystemsRegistry.getSystem<PhysicsEngine>();
@@ -810,7 +202,7 @@ namespace TechEngine {
                     }
 
                     if (ImGui::MenuItem("Sphere Trigger")) {
-                        Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+                        Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
                         Tag& tag = scene.getComponent<Tag>(entity);
                         Transform& transform = scene.getComponent<Transform>(entity);
                         PhysicsEngine& physicsEngine = m_appSystemsRegistry.getSystem<PhysicsEngine>();
@@ -818,14 +210,14 @@ namespace TechEngine {
                     }
 
                     if (ImGui::MenuItem("Capsule Trigger")) {
-                        Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+                        Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
                         Tag& tag = scene.getComponent<Tag>(entity);
                         Transform& transform = scene.getComponent<Transform>(entity);
                         PhysicsEngine& physicsEngine = m_appSystemsRegistry.getSystem<PhysicsEngine>();
                         scene.addComponent<CapsuleTrigger>(entity, ComponentsFactory::createCapsuleTrigger(physicsEngine, tag, transform, glm::vec3(0), 1.0f, 0.5f));
                     }
                     if (ImGui::MenuItem("Cylinder Trigger")) {
-                        Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+                        Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
                         Tag& tag = scene.getComponent<Tag>(entity);
                         Transform& transform = scene.getComponent<Transform>(entity);
                         PhysicsEngine& physicsEngine = m_appSystemsRegistry.getSystem<PhysicsEngine>();
@@ -838,11 +230,11 @@ namespace TechEngine {
             }
             if (ImGui::BeginMenu("Audio")) {
                 if (ImGui::MenuItem("Listener")) {
-                    Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+                    Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
                     scene.addComponent<AudioListener>(entity, ComponentsFactory::createAudioListener());
                 }
                 if (ImGui::MenuItem("Emitter")) {
-                    Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+                    Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
                     scene.addComponent<AudioEmitter>(entity, ComponentsFactory::createAudioEmitter());
                 }
                 ImGui::EndMenu();

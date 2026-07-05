@@ -1,9 +1,11 @@
 #pragma once
 #include "systems/System.hpp"
-#include <filesystem>
+#include "Project.hpp"
+#include "resources/loaders/TextureLoader.hpp"
 
 namespace TechEngine {
     enum class CompileMode;
+    class SceneLoader;
 
     enum class ProjectType {
         Client,
@@ -13,7 +15,10 @@ namespace TechEngine {
 
     class ProjectManager : public System {
     private:
-        SystemsRegistry& m_systemsRegistry;
+        Project m_clientProject;
+        Project m_serverProject;
+
+        SystemsRegistry& m_editorSystemsRegistry;
         SystemsRegistry& m_clientSystemsRegistry;
         SystemsRegistry& m_serverSystemsRegistry;
 
@@ -30,14 +35,17 @@ namespace TechEngine {
         std::filesystem::path m_resourcesPath;
         std::filesystem::path m_cachePath;
 
-        const std::filesystem::path m_runtimesPath = std::filesystem::current_path().string() + "\\runtimes";
-        const std::filesystem::path m_clientRuntimePath = m_runtimesPath.string() + "\\client";
-        const std::filesystem::path m_serverRuntimesPath = m_runtimesPath.string() + "\\server";
+        SceneLoader* m_sceneLoader = nullptr;
+
+        // Prefer composing paths using filesystem::path operator/ instead of manual string concatenation
+        const std::filesystem::path m_runtimesPath = std::filesystem::current_path() / "runtimes";
+        const std::filesystem::path m_clientRuntimePath = m_runtimesPath / "client";
+        const std::filesystem::path m_serverRuntimesPath = m_runtimesPath / "server";
 
     public:
-        explicit ProjectManager(SystemsRegistry& clientSystemsRegistry, SystemsRegistry& serverSystemsRegistry);
+        ProjectManager(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& clientSystemsRegistry, SystemsRegistry& serverSystemsRegistry);
 
-        void init(const std::filesystem::path& projectPath);
+        void init(const std::filesystem::path& projectPath, TextureLoader& textureLoader, MaterialLoader& materialLoader, MeshLoader& meshLoader, ModelLoader& modelLoader, SceneLoader& sceneLoader, FileSystem& fileSystem);
 
         void shutdown() override;
 
@@ -66,6 +74,13 @@ namespace TechEngine {
     private:
         void createDefaultProject();
 
-        void loadProject();
+        void loadProject(const TextureLoader& textureLoader,
+                         const MaterialLoader& materialLoader,
+                         const MeshLoader& meshLoader,
+                         const ModelLoader& modelLoader,
+                         SceneLoader& sceneLoader,
+                         FileSystem& fileSystem);
+
+        void loadResources(const TextureLoader& textureLoader, const MaterialLoader& materialLoader, const MeshLoader& meshLoader, const ModelLoader& modelLoader, SceneLoader& sceneLoader) const;
     };
 }
