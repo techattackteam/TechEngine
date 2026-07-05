@@ -1,15 +1,15 @@
 #include "SkyBox.hpp"
 
 #include "renderer/shaders/ShadersManager.hpp"
-#include "resources/ResourcesManager.hpp"
+#include "resources/ResourceSystem.hpp"
 
 #include <vector>
 #include <GL/glew.h>
 
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
+#include "../../../../../runtime/editor/src/resources/loaders/AssimpLoader.hpp"
+#include "../../../../../runtime/editor/src/resources/loaders/AssimpLoader.hpp"
+#include "../../../../../runtime/editor/src/resources/loaders/AssimpLoader.hpp"
+#include "../../../../../runtime/editor/src/resources/loaders/AssimpLoader.hpp"
 
 namespace TechEngine {
     void renderCube() {
@@ -145,7 +145,7 @@ namespace TechEngine {
         }
     }
 
-    SkyBox::SkyBox(ResourcesManager& resourcesManager,
+    SkyBox::SkyBox(ResourceSystem& resourcesManager,
                    ShadersManager& shadersManager) : m_resourcesManager(resourcesManager),
                                                      m_shadersManager(shadersManager) {
     }
@@ -194,7 +194,7 @@ namespace TechEngine {
         m_captureFBO.attachRenderBuffer(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, width, height, 0);
         glViewport(0, 0, width, height);
 
-        m_envCubeMap.create(GL_TEXTURE_CUBE_MAP, GL_RGB16F, width, height, GL_RGB, GL_FLOAT, nullptr);
+        m_envCubeMap.create(GL_TEXTURE_CUBE_MAP, GL_RGB16F, width, height, GL_RGB, GL_FLOAT, GL_CLAMP, GL_CLAMP, nullptr);
         glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
         glm::mat4 captureViews[] =
         {
@@ -241,7 +241,7 @@ namespace TechEngine {
         m_captureFBO.resize(width, height);
         m_captureFBO.attachRenderBuffer(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, width, height, 0);
         glViewport(0, 0, width, height);
-        m_irradianceMap.create(GL_TEXTURE_CUBE_MAP, GL_RGB16F, width, height, GL_RGB, GL_FLOAT, nullptr);
+        m_irradianceMap.create(GL_TEXTURE_CUBE_MAP, GL_RGB16F, width, height, GL_RGB, GL_FLOAT, GL_CLAMP, GL_CLAMP, nullptr);
 
         glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
         glm::mat4 captureViews[] =
@@ -288,7 +288,7 @@ namespace TechEngine {
         m_captureFBO.resize(width, height);
         //m_captureFBO.attachRenderBuffer(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, width, height);
 
-        m_prefilterMap.create(GL_TEXTURE_CUBE_MAP, GL_RGB16F, width, height, GL_RGB, GL_FLOAT, nullptr);
+        m_prefilterMap.create(GL_TEXTURE_CUBE_MAP, GL_RGB16F, width, height, GL_RGB, GL_FLOAT, GL_CLAMP, GL_CLAMP, nullptr);
         glBindTexture(GL_TEXTURE_CUBE_MAP, m_prefilterMap.getID());
         m_prefilterMap.generateMipMap();
         glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
@@ -345,7 +345,7 @@ namespace TechEngine {
         constexpr uint32_t width = 512;
         constexpr uint32_t height = 512;
 
-        m_brdfLUTTexture.create(GL_TEXTURE_2D, GL_RG16F, width, height, GL_RG, GL_FLOAT);
+        m_brdfLUTTexture.create(GL_TEXTURE_2D, GL_RG16F, width, height, GL_RG, GL_FLOAT, GL_CLAMP, GL_CLAMP);
 
         m_captureFBO.bind();
         m_captureFBO.resize(width, height);

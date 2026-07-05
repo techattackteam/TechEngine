@@ -5,7 +5,6 @@
 #include "TechEngine/core/events/scene/SceneLoadEvent.hpp"
 #include "TechEngine/core/events/scene/SceneSaveEvent.hpp"
 #include "eventSystem/EventManager.hpp"
-#include "scene/ScenesManager.hpp"
 #include "systems/SystemsRegistry.hpp"
 #include "utils/YAMLUtils.hpp"
 
@@ -30,7 +29,7 @@ namespace TechEngine {
     }
 
     void WidgetsSerializer::serializeUI(const std::string& sceneName, SystemsRegistry& systemsRegistry) {
-        std::filesystem::path path = systemsRegistry.getSystem<ScenesManager>().m_scenesBank[sceneName];
+        /*std::filesystem::path path = systemsRegistry.getSystem<SceneSystem>().m_scenesBank[sceneName];
         YAML::Node node = YAML::LoadFile(path.string());
         std::ofstream file(path);
         if (!file.is_open()) {
@@ -50,11 +49,11 @@ namespace TechEngine {
         }
         out << YAML::EndSeq;
         out << YAML::EndMap;
-        file << out.c_str();
+        file << out.c_str();*/
     }
 
     void WidgetsSerializer::deserializeUI(const std::string& sceneName, SystemsRegistry& systemsRegistry) {
-        std::filesystem::path path = systemsRegistry.getSystem<ScenesManager>().m_scenesBank[sceneName];
+        /*std::filesystem::path path = systemsRegistry.getSystem<SceneSystem>().m_scenesBank[sceneName];
         std::vector<YAML::Node> docs = YAML::LoadAllFromFile(path.string());
         if (docs.size() < 2) {
             TE_LOGGER_WARN("No Widgets section found in scene: {}", sceneName);
@@ -70,6 +69,6 @@ namespace TechEngine {
                 widget->deserialize(widgetNode, systemsRegistry.getSystem<WidgetsRegistry>());
                 TE_LOGGER_INFO("Deserialized widget: {0}", widgetName);
             }
-        }
+        }*/
     }
 }

@@ -64,10 +64,10 @@ namespace TechEngine {
                     // I use our helper to get a type_pack of all components *except* the first one (Entity).
                     using SlicedComponents = pop_front<type_pack<Components...>>::type;
                     // Now, I execute the loop with this sliced pack.
-                    parallel_each_impl(archetype, function, SlicedComponents{});
+                    parallelEachImpl(archetype, function, SlicedComponents{});
                 } else {
                     // Normal case: user just wants components.
-                    parallel_each_impl(archetype, function, type_pack<Components...>{});
+                    parallelEachImpl(archetype, function, type_pack<Components...>{});
                 }
             }
         }
@@ -87,7 +87,7 @@ namespace TechEngine {
         }
 
         template<typename Func, typename... ComponentTypes>
-        void parallel_each_impl(Archetype* archetype, Func function, type_pack<ComponentTypes...>) {
+        void parallelEachImpl(Archetype* archetype, Func function, type_pack<ComponentTypes...>) {
             auto componentArrays = std::make_tuple(
                 archetype->getComponentArrayAsRawPtr<ComponentTypes>()...
             );

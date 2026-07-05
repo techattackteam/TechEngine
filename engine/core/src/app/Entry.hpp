@@ -14,7 +14,7 @@ namespace TechEngine {
 
         Entry(const Entry& rhs);
 
-        void run(const std::function<void()>& onFixedUpdate, const std::function<void()>& onUpdate);
+        void run(const std::function<void()>& onFixedUpdate, const std::function<void()>& onUpdate) const;
     };
 }
 

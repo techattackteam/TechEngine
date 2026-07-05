@@ -1,11 +1,7 @@
 #pragma once
 
 #include <imGuizmo.h>
-#include <imgui_internal.h>
-#include <vector>
-
-#include "../../../../engine/core/include/TechEngine/core/components/Entity.hpp"
-#include "panels/HierarchyNode.hpp"
+#include "../panels/hieraychyPanel/HierarchyNode.hpp"
 #include "ui/Widget.hpp"
 
 namespace TechEngine {

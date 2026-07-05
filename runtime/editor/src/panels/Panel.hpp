@@ -1,13 +1,12 @@
 #pragma once
 
-#include "../../../../engine/client/include/TechEngine/client/input/Key.hpp"
+#include "TechEngine/client/input/Key.hpp"
+#include "TechEngine/core/core/UUID.hpp"
 #include <imgui.h>
 #include <string>
 #include <variant>
 #include <vector>
 #include <glm/vec2.hpp>
-
-#include "../../../../engine/core/include/TechEngine/core/core/UUID.hpp"
 
 
 namespace TechEngine {

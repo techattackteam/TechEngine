@@ -6,7 +6,7 @@
 #include "core/Logger.hpp"
 #include "eventSystem/EventManager.hpp"
 #include "TechEngine/core/scene/Scene.hpp"
-#include "scene/ScenesManager.hpp"
+#include "scene/SceneManager.hpp"
 
 #include "events/physics/OnTriggerEnter.hpp"
 #include "events/physics/OnTriggerStay.hpp"
@@ -14,6 +14,7 @@
 #include "events/physics/OnCollisionEnter.hpp"
 #include "events/physics/OnCollisionStay.hpp"
 #include "events/physics/OnCollisionLeave.hpp"
+#include "resources/ResourceSystem.hpp"
 
 namespace TechEngine {
     void MyContactListener::init(std::unordered_map<std::string, JPH::BodyID>* bodies,
@@ -39,12 +40,12 @@ namespace TechEngine {
             auto getEntity = [&](const JPH::BodyID& bodyID) {
                 for (auto& [uuid, body]: *m_triggers) {
                     if (body == bodyID) {
-                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
+                        return m_systemsRegistry.getSystem<SceneManager>().getActiveScene().getEntity(uuid);
                     }
                 }
                 for (auto& [uuid, body]: *m_bodies) {
                     if (body == bodyID) {
-                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
+                        return m_systemsRegistry.getSystem<SceneManager>().getActiveScene().getEntity(uuid);
                     }
                 }
                 return Entity(-2);
@@ -59,10 +60,10 @@ namespace TechEngine {
             Entity entity2 = -2;
             for (auto& [uuid, body]: *m_bodies) {
                 if (body == inBody1.GetID()) {
-                    entity1 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
+                    entity1 = m_systemsRegistry.getSystem<SceneManager>().getActiveScene().getEntity(uuid);
                 }
                 if (body == inBody2.GetID()) {
-                    entity2 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
+                    entity2 = m_systemsRegistry.getSystem<SceneManager>().getActiveScene().getEntity(uuid);
                 }
                 if (entity1 != -2 && entity2 != -2) {
                     break;
@@ -81,12 +82,12 @@ namespace TechEngine {
             auto getEntity = [&](const JPH::BodyID& bodyID) {
                 for (auto& [uuid, body]: *m_triggers) {
                     if (body == bodyID) {
-                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
+                        return m_systemsRegistry.getSystem<SceneManager>().getActiveScene().getEntity(uuid);
                     }
                 }
                 for (auto& [uuid, body]: *m_bodies) {
                     if (body == bodyID) {
-                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
+                        return m_systemsRegistry.getSystem<SceneManager>().getActiveScene().getEntity(uuid);
                     }
                 }
                 return Entity(-2);
@@ -101,10 +102,10 @@ namespace TechEngine {
             Entity entity2 = -2;
             for (auto& [uuid, body]: *m_bodies) {
                 if (body == inBody1.GetID()) {
-                    entity1 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
+                    entity1 = m_systemsRegistry.getSystem<SceneManager>().getActiveScene().getEntity(uuid);
                 }
                 if (body == inBody2.GetID()) {
-                    entity2 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
+                    entity2 = m_systemsRegistry.getSystem<SceneManager>().getActiveScene().getEntity(uuid);
                 }
                 if (entity1 != -2 && entity2 != -2) {
                     break;
@@ -137,12 +138,12 @@ namespace TechEngine {
             auto getEntity = [&](const JPH::BodyID& bodyID) {
                 for (auto& [uuid, body]: *m_triggers) {
                     if (body == bodyID) {
-                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
+                        return m_systemsRegistry.getSystem<SceneManager>().getActiveScene().getEntity(uuid);
                     }
                 }
                 for (auto& [uuid, body]: *m_bodies) {
                     if (body == bodyID) {
-                        return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
+                        return m_systemsRegistry.getSystem<SceneManager>().getActiveScene().getEntity(uuid);
                     }
                 }
                 return Entity(-2);
@@ -157,10 +158,10 @@ namespace TechEngine {
             Entity entity2 = -2;
             for (auto& [uuid, body]: *m_bodies) {
                 if (body == body1ID) {
-                    entity1 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
+                    entity1 = m_systemsRegistry.getSystem<SceneManager>().getActiveScene().getEntity(uuid);
                 }
                 if (body == body2ID) {
-                    entity2 = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntity(uuid);
+                    entity2 = m_systemsRegistry.getSystem<SceneManager>().getActiveScene().getEntity(uuid);
                 }
                 if (entity1 != -2 && entity2 != -2) {
                     break;

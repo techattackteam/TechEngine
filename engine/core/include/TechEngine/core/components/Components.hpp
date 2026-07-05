@@ -1,113 +1,52 @@
 #pragma once
-#include "TechEngine/core/resources/material/Material.hpp"
-#include "TechEngine/core/resources/mesh/Mesh.hpp"
-
-
+#include "TechEngine/core/resources/material/MaterialResource.hpp"
+#include "TechEngine/core/resources/mesh/MeshResource.hpp"
 #include "TechEngine/core/core/CoreExportDLL.hpp"
 
-#include <typeindex>
-#include <glm/glm.hpp>
 #include <glm/detail/type_quat.hpp>
 #include <glm/gtc/quaternion.hpp>
 
 #include "Entity.hpp"
 
-namespace YAML {
-    class Emitter;
-    class Node;
-}
-
 namespace TechEngine {
-    class ResourcesManager;
+    class StreamWriter;
+    class StreamReader;
+    class ResourceSystem;
     class PhysicsEngine;
 
     class CORE_DLL Tag {
         friend class ComponentsFactory;
 
     private:
-        char* uuid = nullptr;
-        char* name = nullptr;
+        //char* uuid = nullptr;
+        //char* name = nullptr;
+        std::string uuid;
+        std::string name;
 
     public:
         Tag() = default;
 
         ~Tag() {
-            delete[] uuid;
-            delete[] name;
+            //delete[] uuid;
+            //delete[] name;
         }
 
-        Tag(const Tag& other) {
-            if (other.uuid) {
-                uuid = new char[strlen(other.uuid) + 1];
-                strcpy_s(uuid, strlen(other.uuid) + 1, other.uuid);
-            }
-            if (other.name) {
-                name = new char[strlen(other.name) + 1];
-                strcpy_s(name, strlen(other.name) + 1, other.name);
-            }
-        }
-
-        Tag(Tag&& other) noexcept {
-            uuid = other.uuid;
-            name = other.name;
-            other.uuid = nullptr;
-            other.name = nullptr;
-        }
-
-        Tag& operator=(const Tag& other) {
-            if (this != &other) {
-                delete[] uuid;
-                delete[] name;
-                uuid = nullptr;
-                name = nullptr;
-                if (other.uuid) {
-                    uuid = new char[strlen(other.uuid) + 1];
-                    strcpy_s(uuid, strlen(other.uuid) + 1, other.uuid);
-                }
-                if (other.name) {
-                    name = new char[strlen(other.name) + 1];
-                    strcpy_s(name, strlen(other.name) + 1, other.name);
-                }
-            }
-            return *this;
-        }
-
-        Tag& operator=(Tag&& other) noexcept {
-            if (this != &other) {
-                delete[] uuid;
-                delete[] name;
-                uuid = other.uuid;
-                name = other.name;
-                other.uuid = nullptr;
-                other.name = nullptr;
-            }
-            return *this;
-        }
-
-        bool operator==(const Tag& lhr) const {
-            if (uuid == nullptr || lhr.uuid == nullptr) {
-                return uuid == lhr.uuid;
-            }
-            return strcmp(uuid, lhr.uuid) == 0;
-        }
 
         [[nodiscard]] std::string getName() const {
-            return name ? name : "";
+            return name;
         }
 
         [[nodiscard]] std::string getUuid() const {
-            return uuid ? uuid : "";
+            return uuid;
         }
 
         void setName(const std::string& name) {
-            delete[] this->name;
-            this->name = new char[name.size() + 1];
-            strcpy_s(this->name, name.size() + 1, name.c_str());
+            this->name = name;
         }
 
-        static void serialize(const Tag& tag, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const Tag& tag);
 
-        static Tag deserialize(const YAML::Node& node);
+        static Tag deserialize(StreamReader* reader);
     };
 
     class CORE_DLL Hierarchy {
@@ -119,9 +58,9 @@ namespace TechEngine {
 
         size_t childrenCount = 0;
 
-        static void serialize(const Hierarchy& hierarchy, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const Hierarchy& hierarchy);
 
-        static Hierarchy deserialize(const YAML::Node& node);
+        static Hierarchy deserialize(StreamReader* reader);
     };
 
     class CORE_DLL Transform {
@@ -193,9 +132,9 @@ namespace TechEngine {
             return m_worldMatrix;
         }
 
-        static void serialize(const Transform& transform, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const Transform& transform);
 
-        static Transform deserialize(const YAML::Node& node);
+        static Transform deserialize(StreamReader* reader);
     };
 
     class CORE_DLL Camera {
@@ -254,37 +193,28 @@ namespace TechEngine {
             return aspectRatio;
         }
 
-        static void serialize(const Camera& camera, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const Camera& camera);
 
-        static Camera deserialize(const YAML::Node& node);
+        static Camera deserialize(StreamReader* reader);
     };
 
     class CORE_DLL MeshRenderer {
     public:
-        //TODO: Change to mesh and material IDs and get them from ResourcesManager
-        Mesh* mesh;
-        Material* material;
+        UUID meshUUID;
+        UUID materialUUID;
 
-        std::vector<Vertex> getVertices() const {
-            return mesh->m_vertices;
-        }
-
-        std::vector<int> getIndices() const {
-            return mesh->m_indices;
-        }
-
-        void changeMaterial(Material& material) {
-            this->material = &material;
+        void changeMaterial(const UUID& materialUUID) {
+            this->materialUUID = materialUUID;
         }
 
         // This changes the mesh but does not notify the Renderer about this change since it does not have access to the Event System
-        void changeMesh(Mesh& mesh) {
-            this->mesh = &mesh;
+        void changeMesh(const UUID& meshUUID) {
+            this->meshUUID = meshUUID;
         }
 
-        static void serialize(const MeshRenderer& meshRenderer, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const MeshRenderer& meshRenderer);
 
-        static MeshRenderer deserialize(const YAML::Node& node, ResourcesManager& resourcesManager);
+        static MeshRenderer deserialize(StreamReader* reader);
     };
 
 #pragma region Light Components
@@ -301,9 +231,9 @@ namespace TechEngine {
         uint32_t shadowMapID = -1;
         uint64_t shadowTextureHandle = 0.0f;
 
-        static void serialize(const PointLight& staticBody, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const PointLight& pointLight);
 
-        static PointLight deserialize(const YAML::Node& node);
+        static PointLight deserialize(StreamReader* reader);
     };
 
     class CORE_DLL DirectionalLight {
@@ -320,9 +250,9 @@ namespace TechEngine {
         glm::mat4 lightSpaceMatrix[4] = {glm::mat4(1.0f)};
         float cascadeSplits[4] = {0.0f};
 
-        static void serialize(const DirectionalLight& directionalLight, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const DirectionalLight& directionalLight);
 
-        static DirectionalLight deserialize(const YAML::Node& node);
+        static DirectionalLight deserialize(StreamReader* reader);
     };
 
     class CORE_DLL SpotLight {
@@ -339,9 +269,9 @@ namespace TechEngine {
         uint64_t shadowTextureHandle = 0.0f;
         glm::mat4 lightSpaceMatrix = glm::mat4(1.0f);
 
-        static void serialize(const SpotLight& spotLight, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const SpotLight& spotLight);
 
-        static SpotLight deserialize(const YAML::Node& node);
+        static SpotLight deserialize(StreamReader* reader);
     };
 #pragma endregion
 
@@ -352,9 +282,9 @@ namespace TechEngine {
     public:
         std::uint32_t index;
 
-        static void serialize(const StaticBody& staticBody, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const StaticBody& staticBody);
 
-        static StaticBody deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+        static StaticBody deserialize(StreamReader* reader, PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform);
     };
 
     class CORE_DLL KinematicBody {
@@ -363,9 +293,9 @@ namespace TechEngine {
     public:
         std::uint32_t index;
 
-        static void serialize(const KinematicBody& kinematicBody, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const KinematicBody& kinematicBody);
 
-        static KinematicBody deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+        static KinematicBody deserialize(StreamReader* reader, PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform);
     };
 
     class CORE_DLL RigidBody {
@@ -374,9 +304,9 @@ namespace TechEngine {
     public:
         std::uint32_t index;
 
-        static void serialize(const RigidBody& rigidbody, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const RigidBody& rigidBody);
 
-        static RigidBody deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+        static RigidBody deserialize(StreamReader* reader, PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform);
     };
 
     class CORE_DLL BoxCollider {
@@ -387,9 +317,9 @@ namespace TechEngine {
         glm::vec3 center = glm::vec3(0.0f, 0, 0);
         glm::vec3 size = glm::vec3(1.0f);
 
-        static void serialize(const BoxCollider& boxCollider, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const BoxCollider& boxCollider);
 
-        static BoxCollider deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+        static BoxCollider deserialize(StreamReader* reader, PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform);
     };
 
     class CORE_DLL SphereCollider {
@@ -399,9 +329,9 @@ namespace TechEngine {
         glm::vec3 center = glm::vec3(0.0f);
         float radius = 0.5f;
 
-        static void serialize(const SphereCollider& sphereCollider, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const SphereCollider& sphereCollider);
 
-        static SphereCollider deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+        static SphereCollider deserialize(StreamReader* reader, PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform);
     };
 
     class CORE_DLL CapsuleCollider {
@@ -412,9 +342,9 @@ namespace TechEngine {
         float height = 1.0f;
         float radius = 0.5f;
 
-        static void serialize(const CapsuleCollider& capsuleCollider, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const CapsuleCollider& capsuleCollider);
 
-        static CapsuleCollider deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+        static CapsuleCollider deserialize(StreamReader* reader, PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform);
     };
 
     class CORE_DLL CylinderCollider {
@@ -425,9 +355,9 @@ namespace TechEngine {
         float height = 1.0f;
         float radius = 0.5f;
 
-        static void serialize(const CylinderCollider& cylinderCollider, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const CylinderCollider& cylinderCollider);
 
-        static CylinderCollider deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+        static CylinderCollider deserialize(StreamReader* reader, PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform);
     };
 
     class CORE_DLL BoxTrigger {
@@ -438,9 +368,9 @@ namespace TechEngine {
         glm::vec3 center = glm::vec3(0.0f, 0, 0);
         glm::vec3 size = glm::vec3(1.0f);
 
-        static void serialize(const BoxTrigger& boxTrigger, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const BoxTrigger& boxTrigger);
 
-        static BoxTrigger deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+        static BoxTrigger deserialize(StreamReader* reader, PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform);
     };
 
     class CORE_DLL SphereTrigger {
@@ -451,9 +381,9 @@ namespace TechEngine {
         glm::vec3 center = glm::vec3(0.0f);
         float radius = 0.5f;
 
-        static void serialize(const SphereTrigger& sphereCollider, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const SphereTrigger& sphereTrigger);
 
-        static SphereTrigger deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+        static SphereTrigger deserialize(StreamReader* reader, PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform);
     };
 
     class CORE_DLL CapsuleTrigger {
@@ -465,9 +395,9 @@ namespace TechEngine {
         float height = 1.0f;
         float radius = 0.5f;
 
-        static void serialize(const CapsuleTrigger& capsuleCollider, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const CapsuleTrigger& capsuleTrigger);
 
-        static CapsuleTrigger deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+        static CapsuleTrigger deserialize(StreamReader* reader, PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform);
     };
 
     class CORE_DLL CylinderTrigger {
@@ -479,29 +409,29 @@ namespace TechEngine {
         float height = 1.0f;
         float radius = 0.5f;
 
-        static void serialize(const CylinderTrigger& cylinderCollider, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const CylinderTrigger& cylinderTrigger);
 
-        static CylinderTrigger deserialize(const YAML::Node& node, PhysicsEngine& m_physicsEngine, const Tag& tag, const Transform& transform);
+        static CylinderTrigger deserialize(StreamReader* reader, PhysicsEngine& physicsEngine, const Tag& tag, const Transform& transform);
     };
 #pragma endregion
 
 #pragma region Audio Components
     class CORE_DLL AudioListener {
-        static void serialize(const AudioListener& audioListener, YAML::Emitter& out);
+    public:
+        static void serialize(StreamWriter* writer, const AudioListener& audioListener);
 
-        static AudioListener deserialize(const YAML::Node& node);
+        static AudioListener deserialize(StreamReader* reader);
     };
 
     class CORE_DLL AudioEmitter {
     public:
-        float volume = 1.0f; // Volume of the emitter
-        float pitch = 1.0f; // Pitch of the emitter
-        bool loop = false; // Whether the emitter should loop the sound
-        //std::string soundPath; // Path to the sound file
+        float volume = 1.0f;
+        float pitch = 1.0f;
+        bool loop = false;
 
-        static void serialize(const AudioEmitter& emitter, YAML::Emitter& out);
+        static void serialize(StreamWriter* writer, const AudioEmitter& emitter);
 
-        static AudioEmitter deserialize(const YAML::Node& node);
+        static AudioEmitter deserialize(StreamReader* reader);
     };
 #pragma endregion
 }

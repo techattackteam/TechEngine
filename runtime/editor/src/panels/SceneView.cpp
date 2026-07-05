@@ -4,7 +4,8 @@
 #include "TechEngine/core/components/ComponentsFactory.hpp"
 #include "renderer/FrameBuffer.hpp"
 #include "renderer/Renderer.hpp"
-#include "scene/ScenesManager.hpp"
+#include "resources/ResourceSystem.hpp"
+#include "scene/SceneManager.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
@@ -125,7 +126,7 @@ namespace TechEngine {
     }
 
     void SceneView::renderCameraFrustum() {
-        Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
         // Define the 8 corners of the frustum in NDC
         scene.runSystem<Camera, Transform>([this](Camera& camera, Transform& transform) {
             std::vector<glm::vec3> frustumPoints;
@@ -173,7 +174,7 @@ namespace TechEngine {
     }
 
     void SceneView::renderColliders() {
-        Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
         scene.runSystem<Tag, Transform, BoxCollider>([this](Tag& tag, Transform& transform, BoxCollider& collider) {
             glm::vec4 color = getColor(tag, true);
             renderBox(transform, collider.center, collider.size, color);
@@ -477,7 +478,7 @@ namespace TechEngine {
     }
 
     glm::vec4 SceneView::getColor(const Tag& tag, bool collider) const {
-        Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
         const Entity entity = scene.getEntity(tag);
 
         // Check if entity is selected

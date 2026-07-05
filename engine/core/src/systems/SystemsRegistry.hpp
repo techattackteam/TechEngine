@@ -12,7 +12,6 @@ namespace TechEngine {
         std::vector<std::shared_ptr<System>> m_systemsList;
 
     public:
-        // Create and register a system
         template<typename T, typename... Args>
         T& registerSystem(Args&&... args) {
             static_assert(std::is_base_of<System, T>::value, "T must derive from System<T>");
@@ -22,7 +21,6 @@ namespace TechEngine {
             return *static_cast<T*>(m_systems.at(typeid(T)).get());
         }
 
-        // Retrieve a system
         template<typename T>
         T& getSystem() {
             if (!hasSystem<T>()) {

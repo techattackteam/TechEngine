@@ -14,8 +14,9 @@ namespace TechEngine {
 
     bool StreamReader::readString(std::string& string) {
         size_t size;
-        if (!readData((char*)&size, sizeof(size_t)))
+        if (!readData((char*)&size, sizeof(size_t))) {
             return false;
+        }
 
         string.resize(size);
         return readData((char*)string.data(), sizeof(char) * size);

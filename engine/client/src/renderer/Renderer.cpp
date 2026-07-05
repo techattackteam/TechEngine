@@ -3,25 +3,26 @@
 #include <future>
 #include <random>
 
+
 #include "DrawCommand.hpp"
 #include "core/timer.hpp"
 #include "TechEngine/core/components/Components.hpp"
 #include "events/resourcersManager/materials/MaterialCreatedEvent.hpp"
 #include "events/resourcersManager/materials/MaterialDeletedEvent.hpp"
-#include "events/resourcersManager/meshManager/MeshCreatedEvent.hpp"
-#include "events/resourcersManager/meshManager/MeshDeletedEvent.hpp"
+#include "events/resourcersManager/mesh/MeshCreatedEvent.hpp"
+#include "events/resourcersManager/mesh/MeshDeletedEvent.hpp"
+#include "events/resourcersManager/model/ModelCreatedEvent.hpp"
 #include "eventSystem/EventManager.hpp"
 #include "TechEngine/core/events/scene/ComponentAddedEvent.hpp"
 #include "TechEngine/core/events/scene/EntityCreatedEvent.hpp"
 #include "TechEngine/core/events/scene/EntityDeletedEvent.hpp"
+#include "TechEngine/core/events/scene/SceneLoadEvent.hpp"
 #include "profiling/ProfiledScope.hpp"
-#include "resources/ResourcesManager.hpp"
-#include "resources/mesh/AssimpLoader.hpp"
+#include "resources/ResourceSystem.hpp"
 #include "scene/SceneInternal.hpp"
-#include "TechEngine/core/resources/material/Material.hpp"
-#include "TechEngine/core/resources/mesh/Vertex.hpp"
+#include "scene/SceneManager.hpp"
+#include "resources/Material.hpp"
 #include "TechEngine/core/scene/Scene.hpp"
-#include "scene/ScenesManager.hpp"
 #include "TechEngine/core/events/scene/meshRenderer/ChangeMeshEvent.hpp"
 #include "ui/PanelWidget.hpp"
 #include "ui/WidgetsRegistry.hpp"
@@ -30,9 +31,10 @@
 
 namespace TechEngine {
     Renderer::Renderer(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry),
+                                                           m_gpuResourcesManager(systemsRegistry),
                                                            m_shadersManager(systemsRegistry),
                                                            m_uiRenderer(systemsRegistry),
-                                                           m_skyBox(systemsRegistry.getSystem<ResourcesManager>(), m_shadersManager) {
+                                                           m_skyBox(systemsRegistry.getSystem<ResourceSystem>(), m_shadersManager) {
     }
 
     Renderer::~Renderer() {
@@ -41,22 +43,23 @@ namespace TechEngine {
     void Renderer::init() {
         m_shadersManager.init();
 
-        m_vertexArrays[BufferGameObjects] = VertexArray();
-        m_vertexBuffers[BufferGameObjects] = VertexBuffer();
-        m_indicesBuffers[BufferGameObjects] = IndicesBuffer();
+        /* m_vertexArrays[BufferGameObjects] = VertexArray();*/
+        /* m_vertexBuffers[BufferGameObjects] = VertexBuffer();*/
+        /* m_indicesBuffers[BufferGameObjects] = IndicesBuffer();*/
 
-        m_vertexArrays[BufferGameObjects].init();
-        m_vertexBuffers[BufferGameObjects].init(1000000 * sizeof(Vertex));
-        m_indicesBuffers[BufferGameObjects].init(10000000 * sizeof(uint32_t));
+        /* m_vertexArrays[BufferGameObjects].init();*/
+        /* m_vertexBuffers[BufferGameObjects].init(1000000 * sizeof(Vertex));*/
+        /* m_indicesBuffers[BufferGameObjects].init(10000000 * sizeof(uint32_t));*/
 
-        m_vertexArrays[BufferGameObjects].addNewBuffer(m_vertexBuffers[BufferGameObjects]);
+        /* m_vertexArrays[BufferGameObjects].addNewBuffer(m_vertexBuffers[BufferGameObjects]);*/
 
         m_drawCommandBuffer = ShaderStorageBuffer();
         m_drawCommandBuffer.init(1000000 * sizeof(DrawCommand));
         m_objectDataBuffer = ShaderStorageBuffer();
         m_objectDataBuffer.init(1000000 * sizeof(ObjectData));
-        m_materialsBuffer = ShaderStorageBuffer();
-        m_materialsBuffer.init(100 * sizeof(MaterialProperties));
+        //m_materialsBuffer = ShaderStorageBuffer();
+        //m_materialsBuffer.init(100 * sizeof(MaterialProperties));
+        m_gpuResourcesManager.init();
 
         m_lightsBuffer = ShaderStorageBuffer();
         m_lightsBuffer.init(1024 * sizeof(LightData));
@@ -96,8 +99,8 @@ namespace TechEngine {
         omniShadowFBO.attachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, 0, 0);
         omniShadowFBO.unBind();
 
-        m_aoTexture = Texture();
-        m_aoTexture.create(GL_TEXTURE_2D, GL_RGBA16F, 800, 600, GL_RGBA, GL_FLOAT, nullptr);
+        //m_aoTexture = Texture();
+        //m_aoTexture.create(GL_TEXTURE_2D, GL_RGBA16F, 800, 600, GL_RGBA, GL_FLOAT, nullptr);
 
         QuadVertex quadVertices[4] = {
             // positions   // texCoords
@@ -138,6 +141,11 @@ namespace TechEngine {
             this->createRenderables();
         });
 
+        eventManager.subscribe<SceneLoadEvent>([this](const std::shared_ptr<Event>& event) {
+            // A new scene was loaded, the old renderables point into the previous scene, so rebuild the list
+            this->createRenderables();
+        });
+
         eventManager.subscribe<ComponentAddedEvent>([this](const std::shared_ptr<Event>& event) {
             if (dynamic_cast<const ComponentAddedEvent*>(event.get())->getComponentTypeID() == ComponentType<Material>::get()) {
                 // Internal Renderables pointers may have changed, so I need to reconstruct the list
@@ -152,29 +160,20 @@ namespace TechEngine {
             this->createRenderables();
         });
 
-        eventManager.subscribe<MeshCreatedEvent>([this](const std::shared_ptr<Event>& event) {
-            this->uploadNewMesh(dynamic_cast<const MeshCreatedEvent*>(event.get())->m_name);
+        eventManager.subscribe<ModelCreatedEvent>([this](const std::shared_ptr<Event>& event) {
+            //this->uploadNewMesh(dynamic_cast<const MeshCreatedEvent*>(event.get())->m_name);
         });
 
         eventManager.subscribe<MeshDeletedEvent>([this](const std::shared_ptr<Event>& event) {
-            this->removeMesh(dynamic_cast<const MeshDeletedEvent*>(event.get())->mesh);
+            // GPU already dropped the mesh (subscribed first); rebuild the draw-command groups so
+            // entities that fell back to the default mesh render correctly.
+            this->createRenderables();
         });
 
-        /*TODO: When the improved Assets pipelines is created move from every frame buffers update to event driven updates
-         *
-         */
-
-        /*eventManager.subscribe<MaterialCreatedEvent>([this](const std::shared_ptr<Event>& event) {
-            //this->uploadNewMaterial(dynamic_cast<const MaterialCreatedEvent*>(event.get())->getName());
-        });
-
-        eventManager.subscribe<MaterialDeletedEvent>([this](const std::shared_ptr<Event>& event) {
-            //this->removeMaterial(dynamic_cast<const MaterialDeletedEvent*>(event.get())->getName());
-        });*/
-        for (const TextureResource* textureResource: m_systemsRegistry.getSystem<ResourcesManager>().getAllTexturesOfType(HDR)) {
+        /*for (const TextureResource* textureResource: m_systemsRegistry.getSystem<ResourceSystem>().getAllTexturesOfType(HDR)) {
             m_skyBox.createSkybox(*textureResource);
             break; // For now only one HDR texture is supported
-        }
+        }*/
     }
 
     void Renderer::onStart() {
@@ -187,8 +186,6 @@ namespace TechEngine {
 
     void Renderer::shutdown() {
         System::shutdown();
-        m_currentIndexOffset = 0;
-        m_currentVertexOffset = 0;
         m_commandToDraw = 0;
         m_vertexArrays.clear();
         m_vertexBuffers.clear();
@@ -205,10 +202,10 @@ namespace TechEngine {
             return;
         }
 
-        m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getInternal()->updateGlobalTransforms(); // Not ideal place for this call
+        m_systemsRegistry.getSystem<SceneManager>().getActiveScene().getInternal()->updateGlobalTransforms(); // Not ideal place for this call
         populateObjectDataBuffers();
         populateLightDataBuffers();
-        populateMaterialDataBuffers();
+        //populateMaterialDataBuffers();
 
         for (uint32_t i = 0; i < size; i++) {
             RenderRequest& request = m_renderQueue.front();
@@ -227,19 +224,18 @@ namespace TechEngine {
                 scenePass(request);
             }
             if (request.renderMask & POST_PROCESS_PASS) {
-                /*FrameBuffer& hdrFrameBuffer = getFramebuffer(m_hdrFBO);
+                /*FrameBuffer& hdrFrameBuffer = getFramebuffer(m_gBufferFBO);
                 hdrFrameBuffer.bind();
                 automaticExposurePass(request.viewportSize);
                 hdrFrameBuffer.unBind();*/
                 //recreateBloomTexture(request.viewportSize);
                 //bloomPass(request.viewportSize);
 
-                FrameBuffer& frameBuffer = getFramebuffer(request.targetFramebufferId);
-                frameBuffer.bind();
-                //frameBuffer.resize(request.viewportSize.x, request.viewportSize.y);
-                //frameBuffer.clear();
+                framebuffer.bind();
+                framebuffer.resize(request.viewportSize.x, request.viewportSize.y);
+                framebuffer.clear();
                 postProcessingPass();
-                frameBuffer.unBind();
+                framebuffer.unBind();
             }
 
             if (request.renderMask & UI_PASS && m_systemsRegistry.hasSystem<WidgetsRegistry>()) {
@@ -328,24 +324,9 @@ namespace TechEngine {
         return m_enableDebugLightCulling;
     }
 
-    void Renderer::uploadNewMesh(const std::string& name) {
-        Mesh& mesh = m_systemsRegistry.getSystem<ResourcesManager>().getMesh(name);
-        std::vector<Vertex>& vertices = mesh.m_vertices;
-
-        std::vector<int>& indices = mesh.m_indices;
-        m_vertexBuffers[BufferGameObjects].addData(vertices.data(), vertices.size() * sizeof(Vertex), m_currentVertexOffset * sizeof(Vertex));
-        m_indicesBuffers[BufferGameObjects].addData(indices.data(), indices.size() * sizeof(uint32_t), m_currentIndexOffset * sizeof(uint32_t));
-
-        mesh.indexCount = mesh.m_indices.size();
-        mesh.firstIndex = m_currentIndexOffset;
-        mesh.baseVertex = m_currentVertexOffset;
-
-        m_currentVertexOffset += vertices.size();
-        m_currentIndexOffset += indices.size();
-    }
-
-    void Renderer::removeMesh(Mesh& mesh) {
-        //TODO: Instead of re-uploading all the meshes, remove the specific mesh and compact the buffers
+    /*
+    void Renderer::removeMesh(MeshResource& mesh) {
+        //GL_CLAMP: Instead of re-uploading all the meshes, remove the specific mesh and compact the buffers
         //std::vector<Vertex>& vertices = mesh.m_vertices;
         //std::vector<int>& indices = mesh.m_indices;
 
@@ -355,32 +336,39 @@ namespace TechEngine {
         //Reconstruct the VBO and IBO
         m_currentIndexOffset = 0;
         m_currentVertexOffset = 0;
-        ResourcesManager& resourcesManager = m_systemsRegistry.getSystem<ResourcesManager>();
-        for (const Mesh& m: resourcesManager.getAllMeshes()) {
-            if (m.getName() != mesh.getName()) {
+        ResourceSystem& resourcesManager = m_systemsRegistry.getSystem<ResourceSystem>();
+        for (const std::weak_ptr<MeshResource>& m: resourcesManager.getAllMeshes()) {
+            if (m.lock()->getName() != mesh.getName()) {
                 uploadNewMesh(mesh.getName());
             }
         }
     }
+    */
 
-    void Renderer::uploadNewMaterial(const std::string& name) {
-        Material& material = m_systemsRegistry.getSystem<ResourcesManager>().getMaterial(name);
-        const MaterialProperties& properties = material.getProperties();
+    /*void Renderer::uploadNewMaterial(const std::string& name) {
+        std::shared_ptr<Material> material = m_systemsRegistry.getSystem<ResourceSystem>().getMaterialResource(name);
+        const MaterialProperties& properties = material->getProperties();
         m_materialsBuffer.addData(&properties, sizeof(MaterialProperties), material.getGpuID() * sizeof(MaterialProperties));
     }
 
     void Renderer::removeMaterial(const std::string& name) {
-        const std::vector<Material*>& materials = m_systemsRegistry.getSystem<ResourcesManager>().getAllMaterials();
+        const std::vector<Material*>& materials = m_systemsRegistry.getSystem<ResourceSystem>().getAllMaterials();
         for (Material* m: materials) {
             uploadNewMaterial(m->getName());
         }
-    }
+    }*/
 
     void Renderer::createRenderables() {
         m_renderables.clear();
-        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        Scene& scene = m_systemsRegistry.getSystem<SceneManager>().getActiveScene();
 
         scene.runSystem<Transform, MeshRenderer>([&](Transform& transform, MeshRenderer& meshRenderer) {
+            // Skip entities whose mesh is not present on the GPU (e.g. a mesh was just deleted and
+            // this entity has not yet fallen back to the default). Keeping them would dereference a
+            // null Mesh below and desync the instance indexing used by populateObjectDataBuffers().
+            if (m_gpuResourcesManager.getMesh(meshRenderer.meshUUID) == nullptr) {
+                return;
+            }
             m_renderables.emplace_back(&transform, &meshRenderer);
         });
         if (m_renderables.empty()) {
@@ -393,24 +381,24 @@ namespace TechEngine {
         std::vector<ObjectData> objectData;
 
         commands.reserve(128);
-        Mesh* mesh = m_renderables[0].meshRenderer->mesh;
+        const Mesh* mesh = m_gpuResourcesManager.getMesh(m_renderables[0].meshRenderer->meshUUID);
         DrawCommand cmd = {};
 
-        cmd.firstIndex = mesh->firstIndex;
-        cmd.count = mesh->m_indices.size();
-        cmd.baseVertex = mesh->baseVertex;
+        cmd.firstIndex = mesh->getFirstIndex();
+        cmd.count = mesh->getIndexCount();
+        cmd.baseVertex = mesh->getBaseVertex();
 
         cmd.baseInstance = 0;
         cmd.instanceCount = 0;
 
         uint32_t i = 0;
         for (const auto& renderable: m_renderables) {
-            if (renderable.meshRenderer->mesh != mesh) {
+            if (renderable.meshRenderer->meshUUID != mesh->getUUID()) {
                 commands.push_back(cmd);
-                mesh = renderable.meshRenderer->mesh;
-                cmd.count = mesh->m_indices.size();
-                cmd.firstIndex = mesh->firstIndex;
-                cmd.baseVertex = mesh->baseVertex;
+                mesh = m_gpuResourcesManager.getMesh(renderable.meshRenderer->meshUUID);
+                cmd.firstIndex = mesh->getFirstIndex();
+                cmd.count = mesh->getIndexCount();
+                cmd.baseVertex = mesh->getBaseVertex();
 
                 cmd.baseInstance = i;
                 cmd.instanceCount = 0;
@@ -443,7 +431,7 @@ namespace TechEngine {
                 }
             }
         }
-        m_colorGradingLUT.create(GL_TEXTURE_3D, GL_RGB16F, size, size, GL_RGB, GL_FLOAT, lutData.data(), size);
+        m_colorGradingLUT.create(GL_TEXTURE_3D, GL_RGB16F, size, size, GL_RGB, GL_FLOAT, GL_CLAMP, GL_CLAMP, lutData.data(), size);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -459,7 +447,7 @@ namespace TechEngine {
             throw std::runtime_error("LightData struct size is not multiple of 16 bytes");
         }
 
-        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        Scene& scene = m_systemsRegistry.getSystem<SceneManager>().getActiveScene();
         m_lightsBuffer.clear();
         std::vector<LightData> lights;
 
@@ -550,8 +538,9 @@ namespace TechEngine {
             threads.emplace_back([this, &objectData, start, end]() {
                 for (size_t j = start; j < end; j++) {
                     const Renderable& renderable = m_renderables[j];
+                    const Material* material = m_gpuResourcesManager.getMaterial(renderable.meshRenderer->materialUUID); // Ensure material is uploaded to GPU and get its index
                     objectData[j].modelMatrix = renderable.transform->getModelMatrix();
-                    objectData[j].materialIndex = renderable.meshRenderer->material->getGpuID();
+                    objectData[j].materialIndex = material->getSSBOSlot(); // Assuming materialUUID is the index in the shader storage buffer, otherwise a mapping is needed
                 }
             });
         }
@@ -563,16 +552,17 @@ namespace TechEngine {
         m_objectDataBuffer.addData(objectData.data(), objectData.size() * sizeof(ObjectData));
     }
 
+    /*
     void Renderer::populateMaterialDataBuffers() {
-        ResourcesManager& resourceManager = m_systemsRegistry.getSystem<ResourcesManager>();
-        const std::vector<Material*>& materials = resourceManager.getAllMaterials();
+        ResourceSystem& resourceManager = m_systemsRegistry.getSystem<ResourceSystem>();
+        //const std::vector<Material*>& materials = resourceManager.getAllMaterials();
         std::vector<MaterialProperties> properties;
         properties.reserve(materials.size());
         for (int i = 0; i < materials.size(); i++) {
             Material* material = materials[i];
-            auto updateHandle = [&](int mapID, uint64_t& handle) {
+            auto updateHandle = [&](UUID mapID, uint64_t& handle) {
                 if (mapID != -1) {
-                    TextureResource& resource = resourceManager.getTexture(mapID);
+                    std::shared_ptr<TextureResource> resource = resourceManager.getTextureResource(mapID);
                     for (Texture& texture: m_materialsTextures) {
                         if (texture.getHandle() == handle) {
                             handle = texture.getHandle();
@@ -581,7 +571,7 @@ namespace TechEngine {
                     }
                     m_materialsTextures.emplace_back();
                     Texture& texture = m_materialsTextures.back();
-                    texture.uploadFromResource(resource);
+                    texture.uploadFromResource(*resource.get());
                     texture.makeResident();
                     handle = texture.getHandle();
                 }
@@ -599,6 +589,7 @@ namespace TechEngine {
 
         m_materialsBuffer.addData(properties.data(), properties.size() * sizeof(MaterialProperties));
     }
+    */
 
     void Renderer::recreateBloomTexture(const glm::ivec2& viewport) {
         if (m_bloomTexture.getWidth() == viewport.x && m_bloomTexture.getHeight() == viewport.y) {
@@ -612,14 +603,14 @@ namespace TechEngine {
         uint32_t width = viewport.x;
         uint32_t height = viewport.y;
 
-        m_bloomTexture.create(GL_TEXTURE_2D, GL_RGBA16F, width, height, GL_RGBA, GL_FLOAT, nullptr);
+        m_bloomTexture.create(GL_TEXTURE_2D, GL_RGBA16F, width, height, GL_RGBA, GL_FLOAT, GL_CLAMP, GL_CLAMP, nullptr);
         m_bloomIterations = floor(log2(std::min(width, height)));
         glBindTexture(GL_TEXTURE_2D, m_bloomTexture.getID());
         glTexStorage2D(GL_TEXTURE_2D, m_bloomIterations, GL_RGBA16F, width, height);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        m_bloomTempTexture.create(GL_TEXTURE_2D, GL_RGBA16F, width, height, GL_RGBA, GL_FLOAT, nullptr);
+        m_bloomTempTexture.create(GL_TEXTURE_2D, GL_RGBA16F, width, height, GL_RGBA, GL_FLOAT, GL_CLAMP, GL_CLAMP, nullptr);
         glBindTexture(GL_TEXTURE_2D, m_bloomTempTexture.getID());
         glTexStorage2D(GL_TEXTURE_2D, m_bloomIterations, GL_RGBA16F, width, height);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -638,7 +629,7 @@ namespace TechEngine {
             m_fogTexture.deleteTexture();
         }
 
-        m_fogTexture.create(GL_TEXTURE_2D, GL_RGBA16F, viewport.x, viewport.y, GL_RGBA, GL_FLOAT, nullptr);
+        m_fogTexture.create(GL_TEXTURE_2D, GL_RGBA16F, viewport.x, viewport.y, GL_RGBA, GL_FLOAT, GL_CLAMP, GL_CLAMP, nullptr);
     }
 
     void Renderer::createFroxelTexture(const glm::ivec2& viewport) {
@@ -647,8 +638,8 @@ namespace TechEngine {
             m_volumetricLightVolume.deleteTexture();
         }
 
-        m_froxelTexture.create(GL_TEXTURE_3D, GL_RGBA16F, m_froxelGridProperties.width, m_froxelGridProperties.height, GL_RGBA, GL_FLOAT, nullptr, m_froxelGridProperties.depth);
-        m_volumetricLightVolume.create(GL_TEXTURE_3D, GL_RGBA16F, m_froxelGridProperties.width, m_froxelGridProperties.height, GL_RGBA, GL_FLOAT, nullptr, m_froxelGridProperties.depth);
+        m_froxelTexture.create(GL_TEXTURE_3D, GL_RGBA16F, m_froxelGridProperties.width, m_froxelGridProperties.height, GL_RGBA, GL_FLOAT, GL_CLAMP, GL_CLAMP, nullptr, m_froxelGridProperties.depth);
+        m_volumetricLightVolume.create(GL_TEXTURE_3D, GL_RGBA16F, m_froxelGridProperties.width, m_froxelGridProperties.height, GL_RGBA, GL_FLOAT, GL_CLAMP, GL_CLAMP, nullptr, m_froxelGridProperties.depth);
 
         glGenBuffers(1, &m_froxelParamsUBO);
         glBindBuffer(GL_UNIFORM_BUFFER, m_froxelParamsUBO);
@@ -675,7 +666,7 @@ namespace TechEngine {
         lightCulling(request);
 
         bool hasLight = false;
-        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        Scene& scene = m_systemsRegistry.getSystem<SceneManager>().getActiveScene();
         scene.runSystem<PointLight>([&](PointLight& pointLight) {
             hasLight = true;
         });
@@ -690,17 +681,17 @@ namespace TechEngine {
             shadowDepthPass(request);
         }
 
-        aoPass(viewMatrix, projectionMatrix, viewport);
+        //aoPass(viewMatrix, projectionMatrix, viewport);
         geometryPass(viewMatrix, projectionMatrix, viewport, nearPlane, farPlane);
-        m_skyBox.renderSkybox(getFramebuffer(m_gBufferFBO), viewMatrix, projectionMatrix);
+        //m_skyBox.renderSkybox(getFramebuffer(m_gBufferFBO), viewMatrix, projectionMatrix);
         if (m_bloomProperties.enabled) {
-            bloomPass(viewport);
+            // bloomPass(viewport);
         }
         if (m_volumetricSettings.enabled) {
-            godRayPass(request);
+            //godRayPass(request);
         }
         if (m_fogProperties.enabled) {
-            fogPass(request);
+            // fogPass(request);
         }
     }
 
@@ -744,12 +735,12 @@ namespace TechEngine {
 
         m_drawCommandBuffer.setBindingPoint(0);
         m_objectDataBuffer.setBindingPoint(1);
-        m_materialsBuffer.setBindingPoint(2);
+        m_gpuResourcesManager.m_materialsBuffer.setBindingPoint(2);
         m_objectDataBuffer.bind();
-        m_vertexArrays[BufferGameObjects].bind();
-        m_indicesBuffers[BufferGameObjects].bind();
+        m_gpuResourcesManager.m_meshesVertexArray.bind();
+        m_gpuResourcesManager.m_meshesIndexBuffer.bind();
         m_drawCommandBuffer.bind();
-        m_materialsBuffer.bind();
+        m_gpuResourcesManager.m_materialsBuffer.bind();
 
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_drawCommandBuffer.getID());
 
@@ -761,8 +752,8 @@ namespace TechEngine {
             0
         );
         m_objectDataBuffer.unBind();
-        m_vertexArrays[BufferGameObjects].unBind();
-        m_indicesBuffers[BufferGameObjects].unBind();
+        m_gpuResourcesManager.m_meshesVertexArray.unBind();
+        m_gpuResourcesManager.m_meshesIndexBuffer.unBind();
         m_drawCommandBuffer.unBind();
         frameBuffer.unBind();
     }
@@ -773,7 +764,7 @@ namespace TechEngine {
 
         if (m_aoTexture.getWidth() != viewport.x || m_aoTexture.getHeight() != viewport.y) {
             m_aoTexture.deleteTexture();
-            m_aoTexture.create(GL_TEXTURE_2D, GL_RGBA16F, viewport.x, viewport.y, GL_RGBA, GL_FLOAT, nullptr);
+            m_aoTexture.create(GL_TEXTURE_2D, GL_RGBA16F, viewport.x, viewport.y, GL_RGBA, GL_FLOAT, GL_CLAMP, GL_CLAMP, nullptr);
         }
 
         m_shadersManager.changeActiveShader("AOCompute");
@@ -824,7 +815,7 @@ namespace TechEngine {
         cullShader->bind();
 
         cullShader->setUniformMatrix4f("u_view", request.viewMatrix);
-        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        Scene& scene = m_systemsRegistry.getSystem<SceneManager>().getActiveScene();
         uint32_t lightCount = scene.getInternal()->getComponentCount<PointLight>();
         cullShader->setUniformUInt("u_lightCount", lightCount);
 
@@ -846,7 +837,7 @@ namespace TechEngine {
         glm::ivec2 viewport = request.viewportSize;
         const float fov = request.fov;
 
-        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        Scene& scene = m_systemsRegistry.getSystem<SceneManager>().getActiveScene();
         scene.runSystem<Transform, PointLight>([&](const Transform& transform, PointLight& pointLight) {
             if (!pointLight.castShadows) {
                 return;
@@ -899,8 +890,10 @@ namespace TechEngine {
             m_drawCommandBuffer.setBindingPoint(0);
             m_objectDataBuffer.setBindingPoint(1);
             m_objectDataBuffer.bind();
-            m_vertexArrays[BufferGameObjects].bind();
-            m_indicesBuffers[BufferGameObjects].bind();
+            /*m_vertexArrays[BufferGameObjects].bind();
+            m_indicesBuffers[BufferGameObjects].bind();*/
+            m_gpuResourcesManager.m_meshesVertexArray.bind();
+            m_gpuResourcesManager.m_meshesIndexBuffer.bind();
             m_drawCommandBuffer.bind();
 
             glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_drawCommandBuffer.getID());
@@ -968,8 +961,10 @@ namespace TechEngine {
             m_drawCommandBuffer.setBindingPoint(0);
             m_objectDataBuffer.setBindingPoint(1);
             m_objectDataBuffer.bind();
-            m_vertexArrays[BufferGameObjects].bind();
-            m_indicesBuffers[BufferGameObjects].bind();
+            /*m_vertexArrays[BufferGameObjects].bind();
+            m_indicesBuffers[BufferGameObjects].bind();*/
+            m_gpuResourcesManager.m_meshesVertexArray.bind();
+            m_gpuResourcesManager.m_meshesIndexBuffer.bind();
             m_drawCommandBuffer.bind();
 
             glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_drawCommandBuffer.getID());
@@ -1126,8 +1121,10 @@ namespace TechEngine {
                 m_drawCommandBuffer.setBindingPoint(0);
                 m_objectDataBuffer.setBindingPoint(1);
                 m_objectDataBuffer.bind();
-                m_vertexArrays[BufferGameObjects].bind();
-                m_indicesBuffers[BufferGameObjects].bind();
+                /*m_vertexArrays[BufferGameObjects].bind();
+                m_indicesBuffers[BufferGameObjects].bind();*/
+                m_gpuResourcesManager.m_meshesVertexArray.bind();
+                m_gpuResourcesManager.m_meshesIndexBuffer.bind();
                 m_drawCommandBuffer.bind();
 
                 glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_drawCommandBuffer.getID());
@@ -1189,7 +1186,7 @@ namespace TechEngine {
         glm::mat4 inverseProjection = glm::inverse(request.projectionMatrix * request.viewMatrix);
         fogShader->setUniformMatrix4f("u_inverseViewProjection", inverseProjection);
 
-        Scene& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        Scene& scene = m_systemsRegistry.getSystem<SceneManager>().getActiveScene();
         glm::vec3 sunDir = glm::vec3(0.0f, -1.0f, 0.0f);
         scene.runSystem<Transform, DirectionalLight>([&](Transform& transform, DirectionalLight& light) {
             glm::mat3 rotationMatrix = glm::mat3(transform.getModelMatrix());
@@ -1256,14 +1253,14 @@ namespace TechEngine {
 
         m_drawCommandBuffer.setBindingPoint(0);
         m_objectDataBuffer.setBindingPoint(1);
-        m_materialsBuffer.setBindingPoint(2);
+        m_gpuResourcesManager.m_materialsBuffer.setBindingPoint(2);
         m_lightsBuffer.setBindingPoint(3);
         m_lightsIndexBuffer.setBindingPoint(4);
         m_tileInfoBuffer.setBindingPoint(5);
 
         m_objectDataBuffer.bind();
-        m_vertexArrays[BufferGameObjects].bind();
-        m_indicesBuffers[BufferGameObjects].bind();
+        m_gpuResourcesManager.m_meshesVertexArray.bind();
+        m_gpuResourcesManager.m_meshesIndexBuffer.bind();
         m_drawCommandBuffer.bind();
 
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_drawCommandBuffer.getID());
@@ -1277,13 +1274,13 @@ namespace TechEngine {
         );
 
         m_objectDataBuffer.unBind();
-        m_vertexArrays[BufferGameObjects].unBind();
-        m_indicesBuffers[BufferGameObjects].unBind();
+        m_gpuResourcesManager.m_meshesVertexArray.unBind();
+        m_gpuResourcesManager.m_meshesIndexBuffer.unBind();
         m_drawCommandBuffer.unBind();
         frameBuffer.unBind();
     }
 
-    // TODO: Improve this features in future stages of the renderer
+    // GL_CLAMP: Improve this features in future stages of the renderer
     void Renderer::automaticExposurePass(const glm::ivec2& viewport) {
         m_shadersManager.changeActiveShader("histogram");
         FrameBuffer& hdrFBO = getFramebuffer(m_gBufferFBO);

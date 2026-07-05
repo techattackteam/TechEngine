@@ -2,12 +2,14 @@
 
 #include "Panel.hpp"
 #include "systems/SystemsRegistry.hpp"
-#include "scene/ScenesManager.hpp"
-#include "HierarchyNode.hpp"
+#include "hieraychyPanel/HierarchyNode.hpp"
 
 #include <imgui_internal.h>
 
+#include "componentDrawer/ComponentDrawerRegistry.hpp"
 #include "renderer/Renderer.hpp"
+#include "resources/ResourceSystem.hpp"
+#include "scene/SceneManager.hpp"
 
 
 namespace TechEngine {
@@ -15,6 +17,7 @@ namespace TechEngine {
     private:
         SystemsRegistry& m_appSystemsRegistry;
         HierarchyNode& m_selectedNode;
+        ComponentDrawerRegistry m_componentDrawerRegistry;
 
     public:
         InspectorPanel(SystemsRegistry& editorSystemRegistry, SystemsRegistry& appSystemRegistry, HierarchyNode& selectedNode);
@@ -23,52 +26,15 @@ namespace TechEngine {
 
         void onUpdate() override;
 
-        void drawComponents();
+        void drawEntityHeader(Entity entity, Scene& scene);
+
+        void drawComponentFrame(const ComponentDrawer& drawer, Entity entity, Scene& scene);
 
         void openAddComponentMenu();
 
-        template<typename T, typename UIFunction, typename RemoveFunction = std::function<void()>>
-        void drawComponent(Entity entity, const std::string& name, UIFunction uiFunction, RemoveFunction removeFunction = [] {
-                           }) {
-            const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
-            Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
-            if (scene.hasComponent<T>(entity)) {
-                auto& component = scene.getComponent<T>(entity);
-                ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
-
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
-                float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
-                ImGui::Separator();
-                bool open = ImGui::TreeNodeEx((void*)typeid(T).hash_code(), treeNodeFlags, "%s", name.c_str());
-                ImGui::PopStyleVar();
-                ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
-                if (ImGui::Button("-", ImVec2{lineHeight, lineHeight})) {
-                    ImGui::OpenPopup("ComponentSettings");
-                }
-
-                bool removeComponent = false;
-                if (ImGui::BeginPopup("ComponentSettings")) {
-                    if (ImGui::MenuItem("Remove component"))
-                        removeComponent = true;
-
-                    ImGui::EndPopup();
-                }
-
-                if (open) {
-                    uiFunction(component);
-                    ImGui::TreePop();
-                }
-
-                if (removeComponent) {
-                    scene.removeComponent<T>(entity);
-                    removeFunction();
-                }
-            }
-        }
-
         template<class C, class... A>
         C& addComponent(A&... args) {
-            Scene& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+            Scene& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
             Entity entity = m_selectedNode.entity;
             scene.addComponent<C>(entity, C(args...));
             return scene.getComponent<C>(entity);

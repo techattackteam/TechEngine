@@ -159,7 +159,7 @@ void main() {
     //hdrColor = uncharted2(hdrColor);
 
     // Lift-Gamma-Gain
-    tonemapped = pow(tonemapped, vec3(1.0 / u_gamma));
+    //tonemapped = pow(tonemapped, vec3(1.0 / u_gamma));
     tonemapped = applyLiftGammaGain(tonemapped, u_lift, u_gammaRGB, u_gain);
 
     // Color correction

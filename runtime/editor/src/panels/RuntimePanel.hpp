@@ -1,8 +1,8 @@
 #pragma once
 #include "DockPanel.hpp"
-#include "EntityHierarchyPanel.hpp"
-#include "WidgetHierarchyPanel.hpp"
-#include "RenderPassHierarchyPanel.hpp"
+#include "hieraychyPanel/EntityHierarchyPanel.hpp"
+#include "hieraychyPanel/WidgetHierarchyPanel.hpp"
+#include "hieraychyPanel/RenderPassHierarchyPanel.hpp"
 #include "GameView.hpp"
 #include "InspectorPanel.hpp"
 #include "LoggerPanel.hpp"

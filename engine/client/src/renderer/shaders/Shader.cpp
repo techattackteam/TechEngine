@@ -79,7 +79,7 @@ namespace TechEngine {
             glDeleteShader(id);
         }
 
-        TE_LOGGER_INFO("Successfully linked shader program '{0}'.", m_shaderName);
+        //TE_LOGGER_INFO("Successfully linked shader program '{0}'.", m_shaderName);
         m_sources.clear();
         return true;
     }

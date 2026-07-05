@@ -4,12 +4,11 @@
 #include "StreamWriter.hpp"
 
 #include <filesystem>
-#include "TechEngine/core/core/CoreExportDLL.hpp"
 
 namespace TechEngine {
     //==============================================================================
     /// BufferStreamWriter
-    class CORE_DLL BufferStreamWriter : public StreamWriter {
+    class BufferStreamWriter : public StreamWriter {
     public:
         BufferStreamWriter(Buffer& targetBuffer, uint64_t position = 0);
 
@@ -43,7 +42,7 @@ namespace TechEngine {
 
     //==============================================================================
     /// BufferStreamReader
-    class CORE_DLL BufferStreamReader : public StreamReader {
+    class BufferStreamReader : public StreamReader {
     public:
         BufferStreamReader(Buffer& targetBuffer, uint64_t position = 0);
 

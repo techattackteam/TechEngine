@@ -1,7 +1,6 @@
 #include "Server.hpp"
 
 #include "core/Logger.hpp"
-#include "project/Project.hpp"
 
 namespace TechEngine {
     Server::Server() : m_entry(m_systemRegistry) {
@@ -22,7 +21,7 @@ namespace TechEngine {
     }
 
     void Server::init() {
-        Core::init(AppType::Server);
+        Core::init();
     }
 
     void Server::onStart() {

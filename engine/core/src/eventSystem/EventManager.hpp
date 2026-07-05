@@ -7,6 +7,7 @@
 #include <functional>
 #include <memory>
 #include <queue>
+#include <shared_mutex>
 #include <typeindex>
 #include <unordered_map>
 
@@ -20,6 +21,9 @@ namespace TechEngine {
         std::unordered_map<std::type_index, ObserversVector> m_observers;
         std::function<void(std::shared_ptr<Event>)> m_editorWatchDogCallback;
         EventDispatcher m_eventDispatcher;
+
+        mutable std::shared_mutex m_observersMutex;
+        std::mutex m_queueMutex;
 
     public:
         EventManager();
@@ -65,6 +69,6 @@ namespace TechEngine {
 
         void shutdown();
 
-         EventDispatcher& getEventDispatcher() ;
+        EventDispatcher& getEventDispatcher();
     };
 }

@@ -27,7 +27,15 @@ namespace TechEngine {
         inline static ImGuiWindowClass m_editorWindowClass;
 
     public:
-        PanelsManager(SystemsRegistry& systemsRegistry, Client& client, Server& server);
+        PanelsManager(SystemsRegistry& systemsRegistry,
+                      Client& client,
+                      Server& server,
+                      TextureLoader* textureLoader,
+                      MaterialLoader* materialLoader,
+                      ModelLoader* modelLoader,
+                      MeshLoader* meshLoader,
+                      SceneLoader* sceneLoader,
+                      FileWatcher* fileWatcher);
 
         void init() override;
 
@@ -38,6 +46,8 @@ namespace TechEngine {
         void endFrame();
 
         void shutdown() override;
+
+        ContentBrowserPanel& getContentBrowserPanel();
 
     private:
         void initImGui();

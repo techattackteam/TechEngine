@@ -5,22 +5,24 @@
 #include "project/ProjectManager.hpp"
 #include "script/ScriptEngine.hpp"
 
+#include "resources/loaders/MeshLoader.hpp"
 #include "eventSystem/EventManager.hpp"
 #include "events/application/AppCloseEvent.hpp"
-#include "input/Input.hpp"
-#include "logger/ImGuiSink.hpp"
 #include "panels/PanelsManager.hpp"
-#include "physics/PhysicsEngine.hpp"
 #include "simulator/RuntimeSimulator.hpp"
 #include "window/Window.hpp"
+#include "profiling/Profiler.hpp"
 
 #include <yaml-cpp/yaml.h>
 #include <fstream>
 
-#include "profiling/Profiler.hpp"
+#include "resources/loaders/MaterialLoader.hpp"
+#include "resources/loaders/ModelLoader.hpp"
+#include "resources/loaders/SceneLoader.hpp"
+
 
 namespace TechEngine {
-    Editor::Editor() : Application(), m_entry(m_systemRegistry) {
+    Editor::Editor() : Application(), m_entry(m_systemRegistry), m_textureLoader(nullptr) {
     }
 
     void Editor::loadEditorConfig() {
@@ -46,22 +48,35 @@ namespace TechEngine {
         m_systemRegistry.registerSystem<Logger>("TechEngineEditor");
         m_systemRegistry.getSystem<Logger>().init();
         loadEditorConfig();
-        m_systemRegistry.registerSystem<EventManager>();
-        m_systemRegistry.registerSystem<Timer>();
-        m_systemRegistry.registerSystem<ProjectManager>(m_client.m_systemRegistry, m_server.m_systemRegistry);
-        m_systemRegistry.registerSystem<Window>(m_systemRegistry);
-        m_systemRegistry.registerSystem<PanelsManager>(m_systemRegistry, m_client, m_server);
-        m_systemRegistry.registerSystem<Profiler>();
         m_systemRegistry.registerSystem<RuntimeSimulator<Client>>(m_client, m_systemRegistry);
         m_systemRegistry.registerSystem<RuntimeSimulator<Server>>(m_server, m_systemRegistry);
+
+        m_systemRegistry.registerSystem<EventManager>();
+        m_systemRegistry.registerSystem<Timer>();
+        m_systemRegistry.registerSystem<ProjectManager>(m_systemRegistry, m_client.m_systemRegistry, m_server.m_systemRegistry);
+        m_systemRegistry.registerSystem<Window>(m_systemRegistry);
+        m_systemRegistry.registerSystem<FileSystem>();
+        m_systemRegistry.registerSystem<Profiler>();
+
         m_systemRegistry.getSystem<RuntimeSimulator<Client>>().registerSystems(m_lastProjectLoaded);
         m_systemRegistry.getSystem<RuntimeSimulator<Client>>().m_runtime.m_systemRegistry.registerSystem<Profiler>();
         m_systemRegistry.getSystem<RuntimeSimulator<Server>>().registerSystems(m_lastProjectLoaded);
         m_systemRegistry.getSystem<RuntimeSimulator<Server>>().m_runtime.m_systemRegistry.registerSystem<Profiler>();
+        FileSystem& fileSystem = m_systemRegistry.getSystem<FileSystem>();
+        m_fileWatcher = std::make_unique<FileWatcher>(fileSystem);
+        m_textureLoader = new TextureLoader(m_systemRegistry.getSystem<RuntimeSimulator<Client>>().m_runtime.m_systemRegistry.getSystem<ResourceSystem>(),
+                                            m_systemRegistry.getSystem<FileSystem>());
+        m_materialLoader = new MaterialLoader(m_systemRegistry.getSystem<RuntimeSimulator<Client>>().m_runtime.m_systemRegistry.getSystem<ResourceSystem>(), m_systemRegistry.getSystem<FileSystem>());
+        m_meshLoader = new MeshLoader(m_systemRegistry.getSystem<RuntimeSimulator<Client>>().m_runtime.m_systemRegistry.getSystem<ResourceSystem>(), m_systemRegistry.getSystem<FileSystem>(), *m_textureLoader, *m_materialLoader);
+        m_modelLoader = new ModelLoader(m_systemRegistry.getSystem<RuntimeSimulator<Client>>().m_runtime.m_systemRegistry.getSystem<ResourceSystem>(), m_systemRegistry.getSystem<FileSystem>(), *m_textureLoader, *m_materialLoader, *m_meshLoader);
+        m_sceneLoader = new SceneLoader(m_systemRegistry.getSystem<RuntimeSimulator<Client>>().m_runtime.m_systemRegistry, m_systemRegistry.getSystem<FileSystem>());
+        m_systemRegistry.getSystem<RuntimeSimulator<Client>>().setSceneLoader(m_sceneLoader);
+        m_systemRegistry.registerSystem<PanelsManager>(m_systemRegistry, m_client, m_server, m_textureLoader, m_materialLoader, m_modelLoader, m_meshLoader, m_sceneLoader, m_fileWatcher.get());
     }
 
     void Editor::init() {
-        m_systemRegistry.getSystem<ProjectManager>().init(m_lastProjectLoaded);
+        FileSystem& fileSystem = m_systemRegistry.getSystem<FileSystem>();
+        m_systemRegistry.getSystem<ProjectManager>().init(m_lastProjectLoaded, *m_textureLoader, *m_materialLoader, *m_meshLoader, *m_modelLoader, *m_sceneLoader, fileSystem);
         m_systemRegistry.getSystem<Window>().init("TechEngineEditor - " + m_systemRegistry.getSystem<ProjectManager>().getProjectName(), 1280, 720);
         m_systemRegistry.getSystem<Timer>().init();
         m_systemRegistry.getSystem<EventManager>().init();
@@ -86,12 +101,23 @@ namespace TechEngine {
                         });
         };
 
-        TE_LOGGER_INFO("Editor initialized");
+
+        m_fileWatcher->watch("editorAssetsClient://", true);
+        m_fileWatcher->subscribe([&](const FileChangedEvent& event) {
+            //TE_LOGGER_INFO("File changed: {0}", event.virtualPath.string());
+            if (event.action == FileChangeAction::Removed ||
+                event.action == FileChangeAction::Renamed) {
+                m_systemRegistry.getSystem<PanelsManager>().getContentBrowserPanel().validateCurrentPath();
+            }
+        });
+
+
         m_systemRegistry.getSystem<EventManager>().subscribe<AppCloseEvent>([this](const std::shared_ptr<Event>& event) {
             m_running = false;
             m_systemRegistry.getSystem<ProjectManager>().saveProject();
         });
 
+        TE_LOGGER_INFO("Editor initialized");
         m_running = true;
     }
 
@@ -100,6 +126,9 @@ namespace TechEngine {
     }
 
     void Editor::update() {
+        if (m_fileWatcher) {
+            m_fileWatcher->poll();
+        }
         m_systemRegistry.getSystem<PanelsManager>().beginFrame();
         float deltaTime = m_systemRegistry.getSystem<Timer>().getDeltaTime();
 

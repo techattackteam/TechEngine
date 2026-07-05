@@ -16,6 +16,8 @@ namespace TechEngine {
     public:
         explicit Logger(const std::string& name);
 
+        ~Logger() override;
+
         void init() override;
 
         void shutdown() override;

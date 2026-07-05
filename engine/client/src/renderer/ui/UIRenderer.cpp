@@ -2,7 +2,6 @@
 
 #include "Font.hpp"
 #include "TechEngine/core/components/Archetype.hpp"
-#include "project/Project.hpp"
 #include "renderer/ErrorCatcher.hpp"
 #include "../mesh/VertexBuffer.hpp"
 #include "systems/SystemsRegistry.hpp"
@@ -16,13 +15,13 @@ namespace TechEngine {
     }
 
     void UIRenderer::init() {
-        std::string clientPath = m_systemsRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Client).string();
-       //m_uiShader = m_uiShader = new Shader("ui");
-       //m_uiShader->attachSourceFile(ShaderType::Vertex, clientPath + "/assets/shaders/uiVertex.glsl");
-       //m_uiShader->attachSourceFile(ShaderType::Fragment, clientPath + "/assets/shaders/uiFragment.glsl");
-       //if (!m_uiShader->link()) {
-       //    TE_LOGGER_ERROR("Failed to link UI shader");
-       //}
+        //std::string clientPath = m_systemsRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Client).string();
+        //m_uiShader = m_uiShader = new Shader("ui");
+        //m_uiShader->attachSourceFile(ShaderType::Vertex, clientPath + "/assets/shaders/uiVertex.glsl");
+        //m_uiShader->attachSourceFile(ShaderType::Fragment, clientPath + "/assets/shaders/uiFragment.glsl");
+        //if (!m_uiShader->link()) {
+        //    TE_LOGGER_ERROR("Failed to link UI shader");
+        //}
         m_vertexArray = new VertexArray();
         m_vertexArray->init();
 

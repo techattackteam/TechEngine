@@ -1,7 +1,8 @@
 #include "CameraSystem.hpp"
 
+#include "resources/ResourceSystem.hpp"
 #include "TechEngine/core/scene/Scene.hpp"
-#include "ScenesManager.hpp"
+#include "scene/SceneManager.hpp"
 #include "systems/SystemsRegistry.hpp"
 
 namespace TechEngine {
@@ -9,17 +10,17 @@ namespace TechEngine {
     }
 
     void CameraSystem::setFov(Entity entity, float fov) {
-        auto& camera = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getComponent<Camera>(entity);
+        auto& camera = m_systemsRegistry.getSystem<SceneManager>().getActiveScene().getComponent<Camera>(entity);
         camera.fov = fov;
     }
 
     void CameraSystem::setNear(Entity entity, float nearPlane) {
-        auto& camera = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getComponent<Camera>(entity);
+        auto& camera = m_systemsRegistry.getSystem<SceneManager>().getActiveScene().getComponent<Camera>(entity);
         camera.nearPlane = nearPlane;
     }
 
     void CameraSystem::setFar(Entity entity, float farPlane) {
-        auto& camera = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getComponent<Camera>(entity);
+        auto& camera = m_systemsRegistry.getSystem<SceneManager>().getActiveScene().getComponent<Camera>(entity);
         camera.farPlane = farPlane;
     }
 
@@ -29,7 +30,7 @@ namespace TechEngine {
     }
 
     bool CameraSystem::hasMainCamera() {
-        /*auto& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        /*auto& scene = m_systemsRegistry.getSystem<SceneSystem>().getActiveScene();
         auto matchingArchetypes = scene.queryArchetypes({ComponentType::get<Camera>()});
         if (matchingArchetypes.empty()) {
             return false;
@@ -47,17 +48,17 @@ namespace TechEngine {
     }
 
     /*Camera& CameraSystem::getMainCamera() {
-        /*auto& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        /*auto& scene = m_systemsRegistry.getSystem<SceneSystem>().getActiveScene();
         for (Camera& camera: scene.getComponents<Camera>()) {
             if (camera.isMainCamera()) {
                 return camera;
             }
         }#1#
-        //return m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getComponent<Camera>(m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getEntityByTag(Tag("Main Camera", "")));
+        //return m_systemsRegistry.getSystem<SceneSystem>().getActiveScene().getComponent<Camera>(m_systemsRegistry.getSystem<SceneSystem>().getActiveScene().getEntityByTag(Tag("Main Camera", "")));
     }*/
 
     void CameraSystem::removeMainCamera() {
-        /*auto& scene = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        /*auto& scene = m_systemsRegistry.getSystem<SceneSystem>().getActiveScene();
         auto matchingArchetypes = scene.queryArchetypes({ComponentType::get<Camera>()});
         for (auto& archetype: matchingArchetypes) {
             auto& cameras = archetype.getComponentArray<Camera>();

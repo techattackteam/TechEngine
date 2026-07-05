@@ -1,10 +1,9 @@
 #pragma once
 
-#include <string>
 
-#include "TechEngine/core/core/CoreExportDLL.hpp"
-#include <vector>
-
+#include "serialization/StreamReader.hpp"
+#include "serialization/StreamWriter.hpp"
+#include "TechEngine/core/resources/IResource.hpp"
 
 namespace TechEngine {
     enum TextureType {
@@ -13,29 +12,37 @@ namespace TechEngine {
         HDR
     };
 
-    class CORE_DLL TextureResource {
+    enum TextureMode {
+        REPEAT,
+        MIRRORED_REPEAT,
+        CLAMP_TO_EDGE,
+        CLAMP_TO_BORDER
+    };
+
+    class CORE_DLL TextureResource : public IResource {
     private:
-        uint32_t m_id;
+        friend class TextureLoader;
 
         std::vector<unsigned char> m_pixelData;
         std::vector<float> m_pixelDataFloat;
 
-        std::string m_name;
         int m_width;
         int m_height;
         int m_channels;
         TextureType m_type;
+        TextureMode m_modeU;
+        TextureMode m_modeV;
+        float m_wrapS = 1.0f;
+        float m_wrapT = 1.0f;
 
     public:
-        TextureResource(std::string name, uint32_t id, int width, int height, int channels, TextureType type, std::vector<unsigned char> pixelData);
+        TextureResource(const std::string& name, int width, int height, int channels, TextureType type, TextureMode mode, float wrapS, float wrapT, std::vector<unsigned char> pixelData);
 
-        TextureResource(std::string name, uint32_t id, int width, int height, int channels, TextureType type, std::vector<float> pixelData);
+        TextureResource(const std::string& name, int width, int height, int channels, TextureType type, TextureMode mode, float wrapS, float wrapT, std::vector<float> pixelData);
 
         void freePixels();
 
-        uint32_t getID() const;
-
-        std::string getName() const;
+        void setMapMode(TextureMode modeU, TextureMode modeV);
 
         const std::vector<unsigned char> getPixelsChar() const;
 
@@ -49,6 +56,15 @@ namespace TechEngine {
 
         int getChannels() const;
 
+        TextureMode getModeU() const;
+
+        TextureMode getModeV() const;
+
         TextureType getType() const;
+
+    private:
+        static void serialize(StreamWriter* writer, const TextureResource& texture);
+
+        static void deserialize(StreamReader* reader, TextureResource& texture);
     };
 }

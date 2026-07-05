@@ -17,7 +17,7 @@ namespace TechEngine {
 
         virtual void registerSystems(const std::filesystem::path& rootPath);
 
-        virtual void init(AppType appType);
+        virtual void init();
 
         virtual void onStart();
 

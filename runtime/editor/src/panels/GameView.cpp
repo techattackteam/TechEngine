@@ -5,7 +5,8 @@
 #include "input/Input.hpp"
 #include "renderer/FrameBuffer.hpp"
 #include "renderer/Renderer.hpp"
-#include "scene/ScenesManager.hpp"
+#include "resources/ResourceSystem.hpp"
+#include "scene/SceneManager.hpp"
 #include "window/Viewport.hpp"
 
 namespace TechEngine {
@@ -25,7 +26,7 @@ namespace TechEngine {
     }
 
     void GameView::onUpdate() {
-        auto& scene = m_appSystemsRegistry.getSystem<ScenesManager>().getActiveScene();
+        auto& scene = m_appSystemsRegistry.getSystem<SceneManager>().getActiveScene();
         Viewport& clientViewport = m_appSystemsRegistry.getSystem<Viewport>();
 
         ImVec2 panelPos = ImGui::GetWindowPos();

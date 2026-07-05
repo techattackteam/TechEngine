@@ -12,7 +12,7 @@
 #include <glm/gtx/matrix_decompose.hpp>
 
 namespace TechEngine {
-    Scene::Scene(SystemsRegistry& systemsRegistry) : m_archetypesManager(), m_systemsRegistry(systemsRegistry), m_internal(std::make_unique<Internal>(*this, m_archetypesManager)) {
+    Scene::Scene(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry), m_internal(std::make_unique<Internal>(*this, m_archetypesManager)) {
         ComponentsFactory::eventManager = &systemsRegistry.getSystem<EventManager>();
     }
 
@@ -43,18 +43,15 @@ namespace TechEngine {
             Tag& sourceTag = getComponent<Tag>(sourceEntity);
             UUID newUuid = UUID::generate();
             std::string newName = sourceTag.getName() + " (Copy)";
-            // Since Tag's uuid is private, we'll create a new tag instead
             Tag duplicatedTag = ComponentsFactory::createTag(newName, newUuid.toString());
             getComponent<Tag>(newEntity) = duplicatedTag;
         }
 
-        // Get the original parent before resetting hierarchy
         Entity originalParent = (Entity)-1;
         if (hasComponent<Hierarchy>(newEntity)) {
             originalParent = getComponent<Hierarchy>(newEntity).parent;
         }
 
-        // Get the children of the source entity BEFORE resetting hierarchy
         std::vector<Entity> sourceChildren;
         if (hasComponent<Hierarchy>(sourceEntity)) {
             Hierarchy& sourceHierarchy = getComponent<Hierarchy>(sourceEntity);
@@ -69,7 +66,6 @@ namespace TechEngine {
             }
         }
 
-        // Reset the Hierarchy component for the new entity
         if (hasComponent<Hierarchy>(newEntity)) {
             Hierarchy& newHierarchy = getComponent<Hierarchy>(newEntity);
             newHierarchy.parent = -1;
@@ -78,24 +74,19 @@ namespace TechEngine {
             newHierarchy.previousSibling = -1;
             newHierarchy.childrenCount = 0;
 
-            // Set the parent for the duplicate
             if (newParent != (Entity)-1) {
-                // If a new parent was specified (for recursive calls), use that
                 setParent(newParent, newEntity);
             } else if (originalParent != (Entity)-1) {
-                // Otherwise, use the same parent as the source entity
                 setParent(originalParent, newEntity);
             }
         }
 
-        // Mark the transform as dirty so it gets updated
         if (hasComponent<Transform>(newEntity)) {
             Transform& newTransform = getComponent<Transform>(newEntity);
             newTransform.m_isDirty = true;
         }
 
-        // Recursively duplicate all children
-        for (Entity sourceChild : sourceChildren) {
+        for (Entity sourceChild: sourceChildren) {
             duplicateEntityRecursive(sourceChild, newEntity);
         }
 
@@ -125,7 +116,6 @@ namespace TechEngine {
             return {};
         }
 
-        // Get the component types of the first entity
         std::vector<ComponentTypeID> commonComponents; {
             auto it = m_archetypesManager.m_entityToArchetypeMap.find(entities[0]);
             if (it == m_archetypesManager.m_entityToArchetypeMap.end()) {
@@ -136,7 +126,6 @@ namespace TechEngine {
             commonComponents = archetype->getComponentTypes();
         }
 
-        // Intersect with the component types of the remaining entities
         for (size_t i = 1; i < entities.size(); ++i) {
             auto it = m_archetypesManager.m_entityToArchetypeMap.find(entities[i]);
             if (it == m_archetypesManager.m_entityToArchetypeMap.end()) {
@@ -205,12 +194,10 @@ namespace TechEngine {
         if (hasComponent<Transform>(child) && hasComponent<Transform>(parent)) {
             //getComponent<Transform>(child).m_isDirty = true;
         }
-        TE_LOGGER_INFO("Scene::setParent: Parent set successfully. Parent: {0}, Child: {1}", parent, child);
     }
 
     void Scene::setParentPreservingWorldTransform(Entity parent, Entity child) {
         if (!hasComponent<Hierarchy>(child) || !hasComponent<Transform>(child)) {
-            // Fall back to regular setParent if no transform
             setParent(parent, child);
             return;
         }
@@ -219,11 +206,9 @@ namespace TechEngine {
             return; // Prevent self-parenting
         }
 
-        // Store the world transform before reparenting
         Transform& childTransform = getComponent<Transform>(child);
         glm::mat4 worldMatrix = childTransform.m_worldMatrix;
 
-        // Decompose world matrix to get world position, rotation, scale
         glm::vec3 worldScale;
         glm::quat worldRotation;
         glm::vec3 worldPosition;
@@ -231,40 +216,30 @@ namespace TechEngine {
         glm::vec4 perspective;
         glm::decompose(worldMatrix, worldScale, worldRotation, worldPosition, skew, perspective);
 
-        // Perform the reparenting
         setParent(parent, child);
 
-        // Now convert world transform to local space relative to new parent
         if (parent != (Entity)-1 && hasComponent<Transform>(parent)) {
             Transform& parentTransform = getComponent<Transform>(parent);
 
-            // Decompose parent's world matrix to get parent's world position, rotation, scale
             glm::vec3 parentWorldScale;
             glm::quat parentWorldRotation;
             glm::vec3 parentWorldPosition;
             glm::decompose(parentTransform.m_worldMatrix, parentWorldScale, parentWorldRotation, parentWorldPosition, skew, perspective);
 
-            // Compute local scale: world scale / parent world scale
             glm::vec3 localScale = worldScale / parentWorldScale;
 
-            // Compute local rotation: inverse of parent rotation * world rotation
             glm::quat parentRotationInverse = glm::inverse(parentWorldRotation);
             glm::quat localRotation = parentRotationInverse * worldRotation;
 
-            // Compute local position:
-            // The world position is computed as: parentWorldPos + parentWorldRot * (parentWorldScale * localPos)
-            // So: localPos = (inverse(parentWorldRot) * (worldPos - parentWorldPos)) / parentWorldScale
             glm::vec3 relativePos = worldPosition - parentWorldPosition;
             glm::vec3 rotatedRelativePos = parentRotationInverse * relativePos;
             glm::vec3 localPosition = rotatedRelativePos / parentWorldScale;
 
-            // Apply local transform
             childTransform.m_position = localPosition;
             childTransform.m_rotation = glm::degrees(glm::eulerAngles(localRotation));
             childTransform.m_scale = localScale;
             childTransform.calculateUpForwardRight();
         } else {
-            // Parent is root, use world transform directly
             childTransform.m_position = worldPosition;
             childTransform.m_rotation = glm::degrees(glm::eulerAngles(worldRotation));
             childTransform.m_scale = worldScale;

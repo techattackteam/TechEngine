@@ -15,10 +15,12 @@
 #include "TechEngine/core/scene/Scene.hpp"
 #include "ui/UIRenderer.hpp"
 
-#include <queue>
 
+#include "resources/GpuResourceManager.hpp"
 #include "texture/SkyBox.hpp"
-#include "texture/Texture.hpp"
+#include "resources/Texture.hpp"
+
+#include <queue>
 
 namespace TechEngine {
     class CLIENT_DLL Renderer : public System {
@@ -66,9 +68,10 @@ namespace TechEngine {
             MeshRenderer* meshRenderer;
 
             bool operator<(const Renderable& other) const {
-                if (meshRenderer->mesh < other.meshRenderer->mesh) return true;
-                if (meshRenderer->mesh > other.meshRenderer->mesh) return false;
-                return meshRenderer->material->getGpuID() < other.meshRenderer->material->getGpuID();
+                if (meshRenderer->meshUUID.toString() < other.meshRenderer->meshUUID.toString()) return true;
+                if (meshRenderer->meshUUID.toString() > other.meshRenderer->meshUUID.toString()) return false;
+                //return meshRenderer->material->getGpuID() < other.meshRenderer->material->getGpuID();
+                return false;
             }
         };
 
@@ -204,11 +207,11 @@ namespace TechEngine {
         };
 
     private:
-        const std::string BufferGameObjects = "GameObjects";
         const std::string BufferLines = "Lines";
         const std::string BufferFullscreenQuad = "FullscreenQuad";
 
         SystemsRegistry& m_systemsRegistry;
+        GpuResourceManager m_gpuResourcesManager;
 
         std::queue<RenderRequest> m_renderQueue;
 
@@ -219,7 +222,6 @@ namespace TechEngine {
 
         ShaderStorageBuffer m_drawCommandBuffer;
         ShaderStorageBuffer m_objectDataBuffer;
-        ShaderStorageBuffer m_materialsBuffer;
         ShaderStorageBuffer m_lightsBuffer;
 
         // Buffers for light culling
@@ -242,8 +244,6 @@ namespace TechEngine {
 
         UIRenderer m_uiRenderer;
 
-        uint32_t m_currentVertexOffset = 0; // Tracks the end of the VBO data (in vertices)
-        uint32_t m_currentIndexOffset = 0; // Tracks the end of the IBO data (in indices)
         size_t m_commandToDraw = 0;
 
         float m_currentExposure = 1.0f;
@@ -360,14 +360,6 @@ namespace TechEngine {
         bool& getDebugLightCullingEnabled();
 
     private:
-        void uploadNewMesh(const std::string& name);
-
-        void removeMesh(Mesh& mesh);
-
-        void uploadNewMaterial(const std::string& name);
-
-        void removeMaterial(const std::string& name);
-
         void createRenderables();
 
         void createNeutralLUT(int size = 32);
@@ -376,7 +368,7 @@ namespace TechEngine {
 
         void populateObjectDataBuffers() const;
 
-        void populateMaterialDataBuffers();
+        //void populateMaterialDataBuffers();
 
         void recreateBloomTexture(const glm::ivec2& viewport);
 

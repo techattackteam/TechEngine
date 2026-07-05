@@ -45,7 +45,8 @@ namespace TechEngine {
     class CORE_DLL Archetype {
     private:
         friend class ArchetypesManager;
-        friend class SceneSerializer;
+        friend class SceneResource;
+
         ArchetypeID m_id;
         size_t m_indexInECS;
         std::vector<Entity> m_entities; // List of entities in this archetype

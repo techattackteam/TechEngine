@@ -16,9 +16,10 @@
 #include "TechEngine/client/input/Mouse.hpp"
 #include "eventSystem/EventManager.hpp"
 #include "renderer/Renderer.hpp"
+#include "resources/ResourceSystem.hpp"
+#include "scene/SceneManager.hpp"
 #include "TechEngine/client/events/input/KeyPressedEvent.hpp"
 #include "TechEngine/client/events/input/MouseMoveEvent.hpp"
-#include "scene/ScenesManager.hpp"
 #include "utils/YAMLUtils.hpp"
 
 namespace TechEngine {
@@ -42,7 +43,7 @@ namespace TechEngine {
             onMouseMoveEvent(std::dynamic_pointer_cast<MouseMoveEvent>(event));
         });
         m_serializer.init(m_systemsRegistry);
-        std::string sceneName = m_systemsRegistry.getSystem<ScenesManager>().getActiveScene().getName();
+        std::string sceneName = m_systemsRegistry.getSystem<SceneManager>().getActiveScene().getName();
         m_serializer.deserializeUI(sceneName, m_systemsRegistry);
     }
 

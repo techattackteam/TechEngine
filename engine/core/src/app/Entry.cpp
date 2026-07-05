@@ -13,7 +13,7 @@ namespace TechEngine {
     Entry::Entry(const Entry& rhs) : m_systemsRegistry(rhs.m_systemsRegistry) {
     }
 
-    void Entry::run(const std::function<void()>& onFixedUpdate, const std::function<void()>& onUpdate) {
+    void Entry::run(const std::function<void()>& onFixedUpdate, const std::function<void()>& onUpdate) const {
         Timer& timer = m_systemsRegistry.getSystem<Timer>();
         timer.tick();
         timer.addAccumulator(timer.getDeltaTime());

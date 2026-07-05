@@ -140,7 +140,7 @@ namespace TechEngine {
             mapping.destination_storage->set_from(destinationIndex, *mapping.source_storage, sourceIndex);
         }
 
-        m_entityToArchetypeMap[entity] = {destinationArchetype->m_indexInECS, destinationIndex}; // Assumes m_indexInECS fix is applied
+        m_entityToArchetypeMap[entity] = {destinationArchetype->m_indexInECS, destinationIndex};
 
         Entity swappedEntity = sourceArchetype->removeEntity(sourceIndex);
         if (swappedEntity != entity && sourceIndex < sourceArchetype->m_entities.size()) {

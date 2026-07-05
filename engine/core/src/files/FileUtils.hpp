@@ -25,13 +25,6 @@ namespace TechEngine::FileUtils {
         return filesWithExtension;
     }
 
-    inline std::string getFileName(std::string filepath) {
-        std::filesystem::path path = filepath;
-        std::string fileName = path.filename().string();
-        std::string name = fileName.substr(0, fileName.find_last_of('.'));
-        return name;
-    }
-
     inline bool isExcluded(const std::filesystem::path& path, const std::vector<std::string>& excludedExtension, const std::vector<std::string>& excludedFolders) {
         return (std::find(excludedExtension.begin(), excludedExtension.end(), path.extension().string()) != excludedExtension.end()) ||
                (std::filesystem::is_directory(path) && std::find(excludedFolders.begin(), excludedFolders.end(), path.filename()) != excludedFolders.end());

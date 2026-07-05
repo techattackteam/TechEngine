@@ -1,5 +1,7 @@
 #include "UIHierarchyPanel.hpp"
 
+#include <imgui_internal.h>
+
 #include "UIEditor.hpp"
 #include "systems/SystemsRegistry.hpp"
 #include "ui/commands/MoveWidgetCommand.hpp"

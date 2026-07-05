@@ -1,6 +1,5 @@
 #include "RuntimeServer.hpp"
 
-#include "project/Project.hpp"
 #include "script/ScriptEngine.hpp"
 
 namespace TechEngine {
@@ -9,9 +8,9 @@ namespace TechEngine {
     }
 
     void RuntimeServer::init() {
-        m_server.m_systemRegistry.getSystem<Project>().init();
+        //m_server.m_systemRegistry.getSystem<Project>().init();
         std::filesystem::path path = std::filesystem::current_path();
-        m_server.m_systemRegistry.getSystem<Project>().loadRuntimeProject(path);
+        //m_server.m_systemRegistry.getSystem<Project>().loadRuntimeProject(path);
         m_server.init();
 
         m_runFunction = [this]() {
@@ -21,8 +20,9 @@ namespace TechEngine {
                                      update();
                                  });
         };
-        m_server.m_systemRegistry.getSystem<ScriptEngine>().start(
+        /*m_server.m_systemRegistry.getSystem<ScriptEngine>().start(
             m_server.m_systemRegistry.getSystem<Project>().getPath(PathType::Resources, AppType::Server).string() + "\\server\\scripts\\build\\debug\\ServerScripts.dll");
+        */
     }
 
     void RuntimeServer::start() {

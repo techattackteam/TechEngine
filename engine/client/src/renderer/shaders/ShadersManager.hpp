@@ -38,7 +38,5 @@ namespace TechEngine {
         Shader* getActiveShader();
 
         void unBindShader();
-
-        void exportShaderFiles(const std::string& path);
     };
 }

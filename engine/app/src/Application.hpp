@@ -10,7 +10,7 @@ namespace TechEngine {
     public:
         virtual ~Application() = default;
 
-        void run();
+        void run() const;
 
         virtual void registerSystems() = 0;
 
