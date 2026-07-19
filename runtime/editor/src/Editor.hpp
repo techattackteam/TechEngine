@@ -10,6 +10,8 @@
 
 
 namespace TechEngine {
+    class ShadersLoader;
+
     class Editor : public Application {
     private:
         Entry m_entry;
@@ -22,6 +24,7 @@ namespace TechEngine {
         MeshLoader* m_meshLoader;
         ModelLoader* m_modelLoader;
         SceneLoader* m_sceneLoader;
+        ShadersLoader* m_shadersLoader;
         std::unique_ptr<FileWatcher> m_fileWatcher;
 
         std::filesystem::path m_EditorConfigPath;

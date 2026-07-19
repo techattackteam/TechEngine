@@ -15,12 +15,15 @@
 #include "events/resourcersManager/model/ModelCreatedEvent.hpp"
 #include "events/resourcersManager/texture/TextureCreatedEvent.hpp"
 #include "events/resourcersManager/texture/TextureDeletedEvent.hpp"
+#include "events/resourcersManager/shader/ShaderCreatedEvent.hpp"
+#include "events/resourcersManager/shader/ShaderDeletedEvent.hpp"
 
 namespace TechEngine {
     GpuResourceManager::GpuResourceManager(SystemsRegistry& systemsRegistry) : m_systemsRegistry(systemsRegistry),
                                                                                m_materialsCache(8, &m_materialsBuffer),
                                                                                m_meshesCache(8, nullptr),
-                                                                               m_texturesCache(8, nullptr) {
+                                                                               m_texturesCache(8, nullptr),
+                                                                               m_shadersCache(8, nullptr) {
         EventManager& eventManager = systemsRegistry.getSystem<EventManager>();
         eventManager.subscribe<MaterialCreatedEvent>([this](const std::shared_ptr<Event>& event) {
             this->uploadNewMaterial(dynamic_cast<const MaterialCreatedEvent*>(event.get())->getUUID());
@@ -45,11 +48,17 @@ namespace TechEngine {
         eventManager.subscribe<TextureDeletedEvent>([this](const std::shared_ptr<Event>& event) {
             const UUID uuid = dynamic_cast<const TextureDeletedEvent*>(event.get())->getUUID();
             this->removeTexture(uuid);
-            // Materials that referenced this texture had their map reset to null on the resource
-            // side; re-upload their SSBO slots so the bindless handle is cleared too.
             m_materialsCache.forEach([this](Material& material, uint32_t) {
                 this->updateMaterial(material.getUUID());
             });
+        });
+
+        eventManager.subscribe<ShaderCreatedEvent>([this](const std::shared_ptr<Event>& event) {
+            this->uploadNewShader(dynamic_cast<const ShaderCreatedEvent*>(event.get())->getUUID());
+        });
+
+        eventManager.subscribe<ShaderDeletedEvent>([this](const std::shared_ptr<Event>& event) {
+            this->removeShader(dynamic_cast<const ShaderDeletedEvent*>(event.get())->getUUID());
         });
     }
 
@@ -236,5 +245,52 @@ namespace TechEngine {
         }
         TE_LOGGER_WARN("Texture not found with ID: {0}", textureUUID.toString());
         return nullptr;
+    }
+
+    void GpuResourceManager::uploadNewShader(const UUID& shaderUUID) {
+        std::shared_ptr<ShaderResource> shaderResource = m_systemsRegistry.getSystem<ResourceSystem>().getShaderResource(shaderUUID);
+
+        Shader shader(shaderResource->getName(), shaderUUID);
+        shader.link(shaderResource->getSources());
+        m_shadersCache.add(shaderUUID, std::move(shader));
+    }
+
+    void GpuResourceManager::removeShader(const UUID& shaderUUID) {
+        m_shadersCache.remove(shaderUUID);
+    }
+
+    void GpuResourceManager::changeActiveShader(const std::string& shaderName) {
+        if (m_activeShader != nullptr) {
+            m_activeShader->unBind();
+        }
+        m_activeShader = m_shadersCache.get(shaderName);
+        if (m_activeShader) {
+            m_activeShader->bind();
+        }
+    }
+
+    const Shader* GpuResourceManager::getShader(const UUID& shaderUUID) const {
+        if (const Shader* shader = m_shadersCache.get(shaderUUID)) {
+            return shader;
+        }
+        TE_LOGGER_WARN("Shader not found with ID: {0}", shaderUUID.toString());
+        return nullptr;
+    }
+
+    const Shader* GpuResourceManager::getShader(const std::string& shaderName) const {
+        const Shader* shader = m_shadersCache.get(shaderName);
+        if (shader) {
+            return shader;
+        } else {
+            TE_LOGGER_WARN("Shader not found with name: {0}", shaderName);
+            return nullptr;
+        }
+    }
+
+    Shader* GpuResourceManager::getActiveShader() {
+        if (!m_activeShader) {
+            TE_LOGGER_WARN("No active shader set");
+        }
+        return m_activeShader;
     }
 }

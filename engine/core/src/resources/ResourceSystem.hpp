@@ -3,6 +3,7 @@
 #include <filesystem>
 
 #include "IResourceCache.hpp"
+#include "shader/ShaderResource.hpp"
 #include "scene/SceneResource.hpp"
 #include "TechEngine/core/components/Entity.hpp"
 #include "TechEngine/core/resources/model/ModelResource.hpp"
@@ -23,6 +24,7 @@ namespace TechEngine {
         IResourceCache<MeshResource> m_meshCache = IResourceCache<MeshResource>();
         IResourceCache<MaterialResource> m_materialCache = IResourceCache<MaterialResource>();
         IResourceCache<TextureResource> m_textureCache = IResourceCache<TextureResource>();
+        IResourceCache<ShaderResource> m_shaderCache = IResourceCache<ShaderResource>();
         IResourceCache<SceneResource> m_sceneCache = IResourceCache<SceneResource>();
 
     public:
@@ -94,6 +96,20 @@ namespace TechEngine {
         std::shared_ptr<TextureResource> getTextureResource(const std::string& name) const;
 
         std::shared_ptr<TextureResource> getTextureResource(const UUID& uuid) const;
+
+#pragma endregion
+
+#pragma region ShaderManager
+
+        bool isShaderRegistered(const std::string& name) const;
+
+        bool registerShaderResource(const std::shared_ptr<ShaderResource>& shaderResource);
+
+        bool unregisterShaderResource(const std::string& name);
+
+        std::shared_ptr<ShaderResource> getShaderResource(const std::string& name) const;
+
+        std::shared_ptr<ShaderResource> getShaderResource(const UUID& uuid) const;
 
 #pragma endregion
 

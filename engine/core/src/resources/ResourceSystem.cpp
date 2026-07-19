@@ -7,6 +7,8 @@
 #include "events/resourcersManager/mesh/MeshDeletedEvent.hpp"
 #include "events/resourcersManager/texture/TextureCreatedEvent.hpp"
 #include "events/resourcersManager/texture/TextureDeletedEvent.hpp"
+#include "events/resourcersManager/shader/ShaderCreatedEvent.hpp"
+#include "events/resourcersManager/shader/ShaderDeletedEvent.hpp"
 #include "systems/SystemsRegistry.hpp"
 #include "scene/SceneManager.hpp"
 #include "TechEngine/core/scene/Scene.hpp"
@@ -443,6 +445,67 @@ namespace TechEngine {
             return m_textureCache.get(uuid);
         }
         TE_LOGGER_WARN("Texture resource not found with ID: {0}", uuid.toString());
+        return nullptr;
+    }
+
+#pragma endregion
+
+#pragma region ShaderManager
+    bool ResourceSystem::isShaderRegistered(const std::string& name) const {
+        return m_shaderCache.contains(name);
+    }
+
+    bool ResourceSystem::registerShaderResource(const std::shared_ptr<ShaderResource>& shaderResource) {
+        if (!shaderResource) {
+            return false;
+        }
+        if (m_shaderCache.contains(shaderResource->getUUID())) {
+            const std::shared_ptr<ShaderResource> existing = m_shaderCache.get(shaderResource->getUUID());
+            if (existing && existing->getName() == shaderResource->getName()) {
+                return true; // Same resource already registered.
+            }
+            TE_LOGGER_ERROR("Shader UUID collision: ID {0} is already used by '{1}', cannot register '{2}'",
+                            shaderResource->getUUID().toString(),
+                            existing ? existing->getName() : "<unknown>",
+                            shaderResource->getName());
+            return false;
+        }
+        if (m_shaderCache.contains(shaderResource->getName())) {
+            TE_LOGGER_WARN("Shader resource already registered: {0}", shaderResource->getName());
+            return false;
+        }
+        m_shaderCache.add(shaderResource);
+        m_systemsRegistry.getSystem<EventManager>().dispatch<ShaderCreatedEvent>(shaderResource->getUUID());
+        TE_LOGGER_INFO("Registered shader resource: {0} (ID: {1})", shaderResource->getName(), shaderResource->getUUID().toString());
+        return true;
+    }
+
+    bool ResourceSystem::unregisterShaderResource(const std::string& name) {
+        const std::shared_ptr<ShaderResource> shaderResource = m_shaderCache.get(name);
+        if (!shaderResource) {
+            TE_LOGGER_WARN("Shader resource not found: {0}", name);
+            return false;
+        }
+        const UUID shaderUUID = shaderResource->getUUID();
+        m_shaderCache.remove(shaderUUID);
+        m_systemsRegistry.getSystem<EventManager>().dispatch<ShaderDeletedEvent>(shaderUUID);
+        TE_LOGGER_INFO("Unregistered shader resource: {0}", name);
+        return true;
+    }
+
+    std::shared_ptr<ShaderResource> ResourceSystem::getShaderResource(const std::string& name) const {
+        if (m_shaderCache.contains(name)) {
+            return m_shaderCache.get(name);
+        }
+        TE_LOGGER_WARN("Shader resource not found: {0}", name);
+        return nullptr;
+    }
+
+    std::shared_ptr<ShaderResource> ResourceSystem::getShaderResource(const UUID& uuid) const {
+        if (m_shaderCache.contains(uuid)) {
+            return m_shaderCache.get(uuid);
+        }
+        TE_LOGGER_WARN("Shader resource not found with ID: {0}", uuid.toString());
         return nullptr;
     }
 

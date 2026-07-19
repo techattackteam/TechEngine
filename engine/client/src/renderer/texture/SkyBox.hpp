@@ -5,13 +5,11 @@
 #include "renderer/FrameBuffer.hpp"
 
 namespace TechEngine {
-    class ShadersManager;
     class ResourceSystem;
 
     class SkyBox {
     public:
         ResourceSystem& m_resourcesManager;
-        ShadersManager& m_shadersManager;
 
         FrameBuffer m_captureFBO;
 
@@ -24,7 +22,7 @@ namespace TechEngine {
         unsigned int m_brdfLUTTextureOld = 0;
 
     public:
-        SkyBox(ResourceSystem& resourcesManager, ShadersManager& shadersManager);
+        SkyBox(ResourceSystem& resourcesManager);
 
         ~SkyBox();
 

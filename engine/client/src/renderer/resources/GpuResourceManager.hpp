@@ -6,6 +6,7 @@
 #include "renderer/mesh/Mesh.hpp"
 #include "renderer/mesh/VertexArray.hpp"
 #include "renderer/mesh/VertexBuffer.hpp"
+#include "renderer/shaders/Shader.hpp"
 #include "renderer/shaders/ShaderStorageBuffer.hpp"
 
 namespace TechEngine {
@@ -25,6 +26,9 @@ namespace TechEngine {
         uint32_t m_currentIndexOffset = 0; // Tracks the end of the IBO data (in indices)
 
         GPUResourceCache<Texture> m_texturesCache;
+
+        GPUResourceCache<Shader> m_shadersCache;
+        Shader* m_activeShader = nullptr;
 
     public:
         GpuResourceManager(SystemsRegistry& systemsRegistry);
@@ -54,6 +58,21 @@ namespace TechEngine {
         void removeTexture(const UUID& textureUUID);
 
         const Texture* getTexture(const UUID& textureUUID) const;
+#pragma endregion
+
+#pragma region Shaders
+        void uploadNewShader(const UUID& shaderUUID);
+
+        void removeShader(const UUID& shaderUUID);
+
+        void changeActiveShader(const std::string& shaderName);
+
+        const Shader* getShader(const UUID& shaderUUID) const;
+
+        const Shader* getShader(const std::string& shaderName) const;
+
+        Shader* getActiveShader();
+
 #pragma endregion
     };
 }

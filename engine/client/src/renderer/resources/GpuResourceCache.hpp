@@ -59,6 +59,26 @@ namespace TechEngine {
             return nullptr;
         }
 
+        T* get(const std::string& name) {
+            for (auto& [uuid, entry]: m_entries) {
+                if (entry.resource.getName() == name) {
+                    return &entry.resource;
+                }
+            }
+            TE_LOGGER_WARN("GPUResourceCache: Resource not found: {0}", name);
+            return nullptr;
+        }
+
+        const T* get(const std::string& name) const {
+            for (const auto& [uuid, entry]: m_entries) {
+                if (entry.resource.getName() == name) {
+                    return &entry.resource;
+                }
+            }
+            TE_LOGGER_WARN("GPUResourceCache: Resource not found: {0}", name);
+            return nullptr;
+        }
+
         uint32_t getSlot(const UUID& uuid) const {
             auto it = m_entries.find(uuid);
             if (it != m_entries.end()) {

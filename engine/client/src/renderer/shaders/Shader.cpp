@@ -7,7 +7,6 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "../GLFW.hpp"
-#include "../ErrorCatcher.hpp"
 #include "core/Logger.hpp"
 
 namespace TechEngine {
@@ -23,22 +22,23 @@ namespace TechEngine {
         return 0;
     }
 
-    Shader::Shader(const std::string& name) : m_id(-1), m_shaderName(name) {
+    Shader::Shader(const std::string& name, const UUID& resourceUUID) : IGPUResource(resourceUUID), m_id(-1), m_shaderName(name) {
     }
 
-    void Shader::attachSourceFile(ShaderType shaderType, const std::string& path) {
-        m_sources[shaderType] = parseShader(path);
+    const std::string& Shader::getName() const{
+        return m_shaderName;
     }
 
-    bool Shader::link() {
+
+    bool Shader::link(std::unordered_map<ShaderType, std::string> sources) {
         m_id = glCreateProgram();
-        if (m_sources.empty()) {
+        if (sources.empty()) {
             TE_LOGGER_ERROR("Shader '{0}' has no attached sources to link.", m_shaderName);
             return false;
         }
 
         std::vector<uint32_t> compiledShaders;
-        for (const auto& [type, source]: m_sources) {
+        for (const auto& [type, source]: sources) {
             uint32_t shaderId = compileShader(type, source);
             if (shaderId == -1) {
                 for (uint32_t id: compiledShaders) {
@@ -80,7 +80,7 @@ namespace TechEngine {
         }
 
         //TE_LOGGER_INFO("Successfully linked shader program '{0}'.", m_shaderName);
-        m_sources.clear();
+        sources.clear();
         return true;
     }
 

@@ -6,6 +6,7 @@
 namespace TechEngine {
     enum class CompileMode;
     class SceneLoader;
+    class ShadersLoader;
 
     enum class ProjectType {
         Client,
@@ -15,6 +16,15 @@ namespace TechEngine {
 
     class ProjectManager : public System {
     private:
+        struct Loaders {
+            const TextureLoader& textureLoader;
+            const MaterialLoader& materialLoader;
+            const MeshLoader& meshLoader;
+            const ModelLoader& modelLoader;
+            SceneLoader& sceneLoader;
+            const ShadersLoader& shadersLoader;
+        };
+
         Project m_clientProject;
         Project m_serverProject;
 
@@ -45,7 +55,9 @@ namespace TechEngine {
     public:
         ProjectManager(SystemsRegistry& editorSystemsRegistry, SystemsRegistry& clientSystemsRegistry, SystemsRegistry& serverSystemsRegistry);
 
-        void init(const std::filesystem::path& projectPath, TextureLoader& textureLoader, MaterialLoader& materialLoader, MeshLoader& meshLoader, ModelLoader& modelLoader, SceneLoader& sceneLoader, FileSystem& fileSystem);
+        void init(const std::filesystem::path& projectPath,
+                  const Loaders& loaders,
+                  FileSystem& fileSystem);
 
         void shutdown() override;
 
@@ -74,13 +86,9 @@ namespace TechEngine {
     private:
         void createDefaultProject();
 
-        void loadProject(const TextureLoader& textureLoader,
-                         const MaterialLoader& materialLoader,
-                         const MeshLoader& meshLoader,
-                         const ModelLoader& modelLoader,
-                         SceneLoader& sceneLoader,
+        void loadProject(const Loaders& loaders,
                          FileSystem& fileSystem);
 
-        void loadResources(const TextureLoader& textureLoader, const MaterialLoader& materialLoader, const MeshLoader& meshLoader, const ModelLoader& modelLoader, SceneLoader& sceneLoader) const;
+        void loadResources(const Loaders& loaders) const;
     };
 }

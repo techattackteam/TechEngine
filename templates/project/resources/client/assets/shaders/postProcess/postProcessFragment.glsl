@@ -75,7 +75,9 @@ vec3 uncharted2(vec3 color) {
 }
 
 vec3 applyLiftGammaGain(vec3 color, vec3 lift, vec3 gamma, vec3 gain) {
-    vec3 liftAdjusted = color + (lift * 2.0 - 1.0) * (1.0 - color) * u_liftIntensity;
+    // A zero lift is neutral. The previous formula treated zero as -1 and
+    // crushed darker color channels, washing textured materials toward gray.
+    vec3 liftAdjusted = color + lift * (1.0 - color) * u_liftIntensity;
     vec3 gammaAdjusted = pow(max(liftAdjusted, vec3(0.0)), 1.0 / (gamma * u_gammaIntensity));
     vec3 gainAdjusted = gammaAdjusted * (gain * u_gainIntensity);
     return gainAdjusted;
@@ -137,17 +139,15 @@ float filmGrain(vec2 uv, float time, float intensity, float size) {
 
 void main() {
     // Sample HDR color with optional chromatic aberration
-    vec3 hdrColor;
+    vec3 hdrColor = texture(u_hdrBuffer, texCoords).rgb;
     if (u_chromaticAberrationEnabled) {
-        hdrColor = chromaticAberration(u_hdrBuffer, texCoords, u_chromaticAberrationStrength);
-    } else {
-        hdrColor = texture(u_hdrBuffer, texCoords).rgb;
+        //hdrColor = chromaticAberration(u_hdrBuffer, texCoords, u_chromaticAberrationStrength);
     }
 
     // Bloom
     if (u_bloomEnabled) {
-        vec3 bloomColor = texture(u_bloomBuffer, texCoords).rgb;
-        hdrColor += bloomColor * u_bloomStrength;
+        //vec3 bloomColor = texture(u_bloomBuffer, texCoords).rgb;
+        //hdrColor += bloomColor * u_bloomStrength;
     }
 
     // Exposure
@@ -159,7 +159,6 @@ void main() {
     //hdrColor = uncharted2(hdrColor);
 
     // Lift-Gamma-Gain
-    //tonemapped = pow(tonemapped, vec3(1.0 / u_gamma));
     tonemapped = applyLiftGammaGain(tonemapped, u_lift, u_gammaRGB, u_gain);
 
     // Color correction
