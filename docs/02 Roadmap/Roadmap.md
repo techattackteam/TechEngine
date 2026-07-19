@@ -7,7 +7,7 @@ execute. Review at each month's last-Sunday planning session.
 
 - **Quarter** → large milestones (below).
 - **Month** → one sprint with a single headline goal.
-- **Week** → review on Sunday, implement Mon/Thu/Fri/Sun.
+- **Week** → review on Sunday; deep implementation Mon/Thu/Sun, moderate Fri (see Dashboard rhythm).
 - **Last Sunday of month** → sprint review + retro + next-sprint planning.
 
 ## Quarters
@@ -38,8 +38,8 @@ execute. Review at each month's last-Sunday planning session.
 |-----------|--------|--------|
 | Vault + process live | Jul 2026 | 🟡 in progress |
 | Rewrite/refactor decision locked | Jul 2026 | 🟢 done (ADR-004) |
-| Deep v1 audit complete | Jul 2026 | 🟡 in progress |
-| v2 foundation ADRs Accepted | Jul 2026 | ⚪ after audit |
+| Deep v1 audit complete | Jul 2026 | 🟢 done |
+| v2 foundation ADRs Accepted | Jul 2026 | 🟢 done |
 | First v2 slice builds + runs | Q3 2026 | ⚪ not started |
 | Atmospheric scattering | Q4 2026 (gated) | ⚪ |
 | First demo | Q4 2026 / Q1 2027 | ⚪ |

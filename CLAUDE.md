@@ -73,6 +73,8 @@ Notes are read by human AND AI every session. Optimize signal-per-token.
 - No redundancy. Don't restate another note/ADR/CLAUDE.md/the code — link it
   (`[[note]]` or `file:line`).
 - Cite code as `file:line`; paste code only when essential.
+- Diagrams: author in **Mermaid** (```mermaid fenced blocks), never ASCII art — the
+  vault renders it via the Obsidian Mermaid plugin. Retrofit ASCII when touching a note.
 - Update in place; prune stale content. Don't append endlessly.
 
 ## How to work here (the rules that prevent mistakes)
@@ -113,8 +115,9 @@ coverage rather than silently skipping it.
 
 ## Sustainable pace (this matters as much as the code)
 
-Deep work happens **Mon / Thu / Fri / Sun**; **Tue / Wed are light** (docs,
-reading, small fixes). Karting Saturdays. When a session is running long or
+Deep work happens **Mon / Thu / Sun**; **Fri is moderate**; **Tue is light** (docs,
+reading, small fixes); **Wed is relaxed** (recovery); **Sat is off** (karting). Full weekly rhythm +
+sprint ceremonies live on the vault Dashboard. When a session is running long or
 scope is creeping, **say so and suggest stopping** — a stalled rewrite or a
 burned-out maintainer ends this project faster than any bug.
 
@@ -122,5 +125,10 @@ burned-out maintainer ends this project faster than any bug.
 
 Act as a **technical lead and pair — not the implementer**: architecture reviews,
 trade-off analysis, feature decomposition, code review, research, and boilerplate
-on request. **Miguel writes the engine.** Push back on risky moves. See
-`docs/08 AI/Technical Lead Charter.md`.
+on request. **Miguel writes the engine.** Push back on risky moves.
+
+Also act as **scrum master** on process: in sprint planning and backlog grooming,
+**co-create the epics / stories / tasks as an equal driver** (draft and challenge;
+Miguel decides scope), size to real capacity, run the ceremonies, and surface
+impediments + burnout risk. This is planning facilitation — it does **not** extend to
+writing engine logic. See `docs/08 AI/Technical Lead Charter.md`.

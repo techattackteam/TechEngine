@@ -14,6 +14,25 @@
 | **Next milestone** | v2 foundation ADRs Accepted + `v1-reference` tagged |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
 
+## 🗓️ Rhythm
+
+**Sprints:** monthly, one headline goal (*may change later*). **Weekly review** every
+**Sunday** (`/weekly-review`). **Sprint demo + retro + next-sprint planning** on the
+**last Sunday of the month** (`/sprint-plan`).
+→ **Next ceremony:** **Sun 26 Jul 2026** — Sprint 01 demo + retro → plan Sprint 02 (Aug).
+
+**Weekly rhythm** — energy is *planned*, not aspirational; protect the light/off days.
+
+| Day | Mode      | Typical work                                  |
+| --- | --------- | --------------------------------------------- |
+| Mon | 🟢 Deep   | Implementation (core loop)                    |
+| Tue | 🟡 Light  | Docs, reading, small fixes, ADR drafting      |
+| Wed | ⚪ Relaxed | Recovery — optional light planning, else rest |
+| Thu | 🟢 Deep   | Implementation                                |
+| Fri | 🟠 Moderate | Lighter implementation — finish/refactor, prep next week |
+| Sat | 🔴 Off    | Karting — no engine work                      |
+| Sun | 🟢 Deep   | Implementation + weekly review                |
+
 ## 🧭 Plan (collapsed — audit-first)
 
 Timeline compressed: the audit moves up to **today** so planning can start right
@@ -38,9 +57,9 @@ _Tasks → [[Sprint Board]]. Nothing in phase 2/3 is decided until phase 1 lands
 ## Active decisions in flight
 
 - [x] Fresh start vs continue in place → **fresh (v2)**, [[ADR-004 — Fresh start (v2) with v1 as reference]]
-- [ ] v2 module layout & core architecture → ADR (_after audit_)
-- [ ] v2 renderer approach → ADR (_after audit_)
-- [ ] v2 build + testing baseline (presets, test framework) → ADR (_after audit_)
+- [x] v2 module layout & core architecture → ADR (_after audit_)
+- [x] v2 renderer approach → ADR (_after audit_)
+- [x] v2 build + testing baseline (presets, test framework) → ADR (_after audit_)
 
 ## Health check (update weekly)
 

@@ -27,5 +27,21 @@ typing.
 - Decisions that stick get an [[ADR Index|ADR]] — AI drafts, you accept.
 - Ground every recommendation in the actual repo, not generic advice.
 
+## As scrum master (planning & ceremonies)
+
+On **process** — sprint planning, backlog grooming, retro, demo/planning — Claude is a
+**co-driver, equal to Miguel**, not a proposer awaiting sign-off:
+
+- **Co-create the plan**: build the Epic → Story → Task breakdown *together* — Claude
+  drafts and challenges, Miguel decides scope. Tasks sized to one 2–6h session with a
+  clear done-condition.
+- **Run the ceremonies**: `/sprint-plan` (last Sunday/mo), `/weekly-review` (Sundays);
+  keep [[Sprint Board]], [[Roadmap]], and [[Dashboard]] in sync.
+- **Guard capacity & sustainability**: size to the real weekly rhythm; call over-scope
+  and burnout risk out loud.
+- **Surface impediments** early; log blockers on the Dashboard.
+
+Facilitation, not implementation — this hat never becomes "Claude writes the engine."
+
 See [[Prompt Library]] for reusable prompts and [[Working with Claude — Operating Guide]]
 for the day-to-day workflow. Machine-facing rules live in the repo-root `CLAUDE.md`.

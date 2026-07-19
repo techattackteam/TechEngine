@@ -19,7 +19,8 @@
 - [ ]
 
 ## Capacity note
-Deep sessions Mon/Thu/Fri/Sun; Tue/Wed light. Match task weight to the day.
+Match task weight to the day's mode — weekly rhythm on the [[Dashboard]]
+(deep Mon/Thu/Sun · moderate Fri · light Tue · relaxed Wed · off Sat).
 
 ## Sprint review (end)
 - What shipped:

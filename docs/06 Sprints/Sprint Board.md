@@ -9,23 +9,20 @@ kanban-plugin: board
 - [ ] Full backlog → [[Backlog]]
 
 
-## 📋 To Do — Story B/C (after audit — nothing decided until A lands)
+## 📋 To Do — Week of Jul 20–26 (bridge → Sprint 02 on Sun 26; B2 + B4 deferred → [[Backlog]])
 
-- [ ] B1 — v2 core & module-layout ADR
-- [ ] B2 — v2 renderer-approach ADR
-- [ ] B3 — v2 build + testing baseline ADR
-- [ ] C2 — first v2 vertical slice + draft Sprint 02
+- [ ] GitHub repo & CI enforcement — *once `ci.yml` is green*: branch protection on `master` + [[ADR-008 — v2 build & testing baseline]] §9 required checks + repo visibility (Fri/Sun · Miguel)
+- [ ] Backlog grooming for Sprint 02 (Fri · moderate)
+- [ ] Sun 26 — Sprint 01 demo + retro + plan Sprint 02 → `/sprint-plan`
+- [ ] C2 — first v2 vertical slice + draft Sprint 02 (renderer ADR born here; B4 conventions land here too) *(Sprint 02)*
 
 
-## 🔨 In Progress — Story B next (v2 design, unblocked by the audit)
+## 🔨 In Progress — Story C (ground: first buildable slice)
 
-- [ ] C1 — run git flow (tag v1-reference, start v2) *[Miguel]*
-- [ ] B5 — set up AI collaborators (agents + refresh CLAUDE.md/prompts for v2)
-- [ ] B4 — v2 code conventions (naming, layout, headers, style)
+- [ ] Build scaffold — first v2 skeleton per [[ADR-008 — v2 build & testing baseline]] checklist (deep Mon/Thu + moderate Fri) **← active**
 
 
 ## 👀 Review / Demo
-
 
 
 ## ✅ Done — Story A (deep v1 audit · Jul 19)
@@ -41,6 +38,13 @@ kanban-plugin: board
 
 ## ✅ Done
 
+- [x] B5 — AI collaborators set up (3 agents + docs); CLAUDE.md/prompt refresh → B4
+- [x] Command polish — `/adr`, `/weekly-review`, `/feature-breakdown` wired to agents + scrum-master + ADR immutability (Sun 19)
+- [x] B3 — v2 build + testing baseline ADR → [[ADR-008 — v2 build & testing baseline]] (Accepted)
+- [x] B1b — Networking & ECS replication foundation ADR → [[ADR-007 — v2 networking & ECS replication foundation]] (Accepted)
+- [x] B1 — v2 core & module-layout ADR → [[ADR-006 — v2 core architecture & module layout]] (Accepted)
+- [x] B0 — v2 tech stack & toolchain ADR → [[ADR-005 — v2 tech stack & toolchain]] (Accepted)
+- [x] C1 — run git flow (tag v1-reference, start v2) *[Miguel]*
 - [x] Obsidian vault + process
 - [x] AI operating model (CLAUDE.md, slash commands, operating guide)
 - [x] Direction: fresh start (v2) — [[ADR-004 — Fresh start (v2) with v1 as reference]]

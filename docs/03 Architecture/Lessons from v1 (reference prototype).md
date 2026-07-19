@@ -1,4 +1,4 @@
-	# 📓 Lessons from v1 (reference prototype)
+# 📓 Lessons from v1 (reference prototype)
 
 The mined wisdom of the current codebase — what to **port**, **redesign**, or
 **drop** in v2. See [[ADR-004 — Fresh start (v2) with v1 as reference]].

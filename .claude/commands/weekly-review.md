@@ -14,9 +14,13 @@ Notes from me about the week: $ARGUMENTS
 
 Then:
 1. Draft this week's review using `docs/Templates/Weekly Review Template.md`:
-   completed, in-progress, blockers, next-week objective, and an honest
-   sustainability check (energy, job+engine+karting balance, anything to cut).
+   completed, in-progress, blockers, next-week objective, and an honest sustainability
+   check — did the week respect the cadence (deep/moderate/light/off)? energy,
+   job+engine+karting balance, anything to cut.
 2. Save it as `docs/07 Journal/YYYY-MM-DD Weekly Review.md` (today's date).
-3. Update `docs/00 Dashboard/Dashboard.md` (current focus, blockers, health).
-4. Keep it short and honest. Flag scope creep or burnout risk if you see it.
-5. Do NOT start any implementation work — this is a planning ritual.
+3. Update `docs/00 Dashboard/Dashboard.md`: current focus, blockers, health, and
+   **roll the `Next ceremony` line**.
+4. **If today is the month's last Sunday**, this is also the sprint boundary — hand off
+   to `/sprint-plan` (demo + retro + plan the next sprint).
+5. Keep it short and honest. Flag scope creep or burnout risk if you see it.
+6. Do NOT start any implementation work — this is a planning ritual.
