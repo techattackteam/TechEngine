@@ -1,35 +1,22 @@
 #pragma once
+#include "renderer/resources/IGPUResource.hpp"
+#include "resources/shader/ShaderResource.hpp"
 #include <unordered_map>
-#include <glm/fwd.hpp>
-#include <string>
-#include <vector>
 #include <glm/glm.hpp>
 
-
 namespace TechEngine {
-    enum class ShaderType {
-        Vertex,
-        Fragment,
-        Geometry,
-        Compute,
-        TessellationControl,
-        TessellationEvaluation
-    };
-
-    class Shader {
+    class Shader : public IGPUResource {
     private:
         uint32_t m_id;
         std::string m_shaderName;
         std::unordered_map<std::string, int32_t> uniformLocationCache;
 
-        std::unordered_map<ShaderType, std::string> m_sources;
-
     public:
-        Shader(const std::string& name);
+        Shader(const std::string& name, const UUID& resourceUUID);
 
-        void attachSourceFile(ShaderType shaderType, const std::string& path);
+        const std::string& getName() const;
 
-        bool link();
+        bool link(std::unordered_map<ShaderType, std::string> sources);
 
         void bind() const;
 

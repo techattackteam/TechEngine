@@ -1,15 +1,9 @@
 #include "SkyBox.hpp"
 
-#include "renderer/shaders/ShadersManager.hpp"
 #include "resources/ResourceSystem.hpp"
 
-#include <vector>
 #include <GL/glew.h>
 
-#include "../../../../../runtime/editor/src/resources/loaders/AssimpLoader.hpp"
-#include "../../../../../runtime/editor/src/resources/loaders/AssimpLoader.hpp"
-#include "../../../../../runtime/editor/src/resources/loaders/AssimpLoader.hpp"
-#include "../../../../../runtime/editor/src/resources/loaders/AssimpLoader.hpp"
 
 namespace TechEngine {
     void renderCube() {
@@ -145,9 +139,7 @@ namespace TechEngine {
         }
     }
 
-    SkyBox::SkyBox(ResourceSystem& resourcesManager,
-                   ShadersManager& shadersManager) : m_resourcesManager(resourcesManager),
-                                                     m_shadersManager(shadersManager) {
+    SkyBox::SkyBox(ResourceSystem& resourcesManager) : m_resourcesManager(resourcesManager) {
     }
 
     SkyBox::~SkyBox() = default;
@@ -169,15 +161,15 @@ namespace TechEngine {
 
     void SkyBox::renderSkybox(FrameBuffer& frameBuffer, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) {
         frameBuffer.bind();
-        m_shadersManager.changeActiveShader("skybox");
-        Shader* shader = m_shadersManager.getActiveShader();
-        shader->setUniformMatrix4f("u_view", glm::mat4(glm::mat3(viewMatrix)));
-        shader->setUniformMatrix4f("u_projection", projectionMatrix);
+        // m_shadersManager.changeActiveShader("skybox");
+        // Shader* shader = m_shadersManager.getActiveShader();
+        // shader->setUniformMatrix4f("u_view", glm::mat4(glm::mat3(viewMatrix)));
+        // shader->setUniformMatrix4f("u_projection", projectionMatrix);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, m_envCubeMap.getID());
 
-        shader->setUniformInt("u_envMap", 0);
+        // shader->setUniformInt("u_envMap", 0);
         GLenum attachment = GL_COLOR_ATTACHMENT3;
         glDrawBuffers(1, &attachment);
         renderSkyBoxCube();
@@ -186,8 +178,8 @@ namespace TechEngine {
     void SkyBox::createCubeMapForIBL() {
         const uint32_t width = 512;
         const uint32_t height = 512;
-        m_shadersManager.changeActiveShader("equirectangular");
-        Shader& shader = *m_shadersManager.getActiveShader();
+        // m_shadersManager.changeActiveShader("equirectangular");
+        // Shader& shader = *m_shadersManager.getActiveShader();
 
         m_captureFBO.bind();
         m_captureFBO.resize(width, height);
@@ -208,9 +200,9 @@ namespace TechEngine {
 
 
         // convert HDR equirectangular environment map to cubemap equivalent
-        shader.bind();
-        shader.setUniformInt("u_equirectangularMap", 0);
-        shader.setUniformMatrix4f("u_projection", captureProjection);
+        // shader.bind();
+        // shader.setUniformInt("u_equirectangularMap", 0);
+        // shader.setUniformMatrix4f("u_projection", captureProjection);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m_hdrTexture.getID());
@@ -218,7 +210,7 @@ namespace TechEngine {
         glCullFace(GL_FRONT);
 
         for (unsigned int i = 0; i < 6; ++i) {
-            shader.setUniformMatrix4f("u_view", captureViews[i]);
+            // shader.setUniformMatrix4f("u_view", captureViews[i]);
             m_captureFBO.attachTextureLayer(GL_COLOR_ATTACHMENT0, m_envCubeMap, i);
             m_captureFBO.clear();
             renderCube();
@@ -231,8 +223,8 @@ namespace TechEngine {
     }
 
     void SkyBox::createIrradianceMap() {
-        m_shadersManager.changeActiveShader("irradiance");
-        Shader& shader = *m_shadersManager.getActiveShader();
+        // m_shadersManager.changeActiveShader("irradiance");
+        // Shader& shader = *m_shadersManager.getActiveShader();
 
         const uint32_t width = 32;
         const uint32_t height = 32;
@@ -255,9 +247,9 @@ namespace TechEngine {
         };
 
 
-        shader.bind();
-        shader.setUniformMatrix4f("u_projection", captureProjection);
-        shader.setUniformInt("u_envMap", 0);
+        // shader.bind();
+        // shader.setUniformMatrix4f("u_projection", captureProjection);
+        // shader.setUniformInt("u_envMap", 0);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, m_envCubeMap.getID());
@@ -266,7 +258,7 @@ namespace TechEngine {
         glCullFace(GL_FRONT);
 
         for (unsigned int i = 0; i < 6; ++i) {
-            shader.setUniformMatrix4f("u_view", captureViews[i]);
+            // shader.setUniformMatrix4f("u_view", captureViews[i]);
             m_captureFBO.attachTextureLayer(GL_COLOR_ATTACHMENT0, m_irradianceMap, i);
             m_captureFBO.clear();
 
@@ -278,8 +270,8 @@ namespace TechEngine {
     }
 
     void SkyBox::createPrefilterMap() {
-        m_shadersManager.changeActiveShader("prefilter");
-        Shader& shader = *m_shadersManager.getActiveShader();
+        // m_shadersManager.changeActiveShader("prefilter");
+        // Shader& shader = *m_shadersManager.getActiveShader();
 
         constexpr uint32_t width = 128;
         constexpr uint32_t height = 128;
@@ -305,9 +297,9 @@ namespace TechEngine {
         };
 
 
-        shader.bind();
-        shader.setUniformMatrix4f("u_projection", captureProjection);
-        shader.setUniformInt("u_envMap", 0);
+        //shader.bind();
+        //shader.setUniformMatrix4f("u_projection", captureProjection);
+        //shader.setUniformInt("u_envMap", 0);
 
         glBindTexture(GL_TEXTURE_CUBE_MAP, m_envCubeMap.getID());
         glActiveTexture(GL_TEXTURE0);
@@ -322,10 +314,10 @@ namespace TechEngine {
             glViewport(0, 0, mipWidth, mipHeight);
 
             float roughness = (float)mip / (float)(maxMipLevels - 1);
-            shader.setUniformFloat("u_roughness", roughness);
+            //shader.setUniformFloat("u_roughness", roughness);
 
             for (unsigned int i = 0; i < 6; ++i) {
-                shader.setUniformMatrix4f("u_view", captureViews[i]);
+                //shader.setUniformMatrix4f("u_view", captureViews[i]);
                 m_captureFBO.attachTextureLayer(GL_COLOR_ATTACHMENT0, m_prefilterMap, i, mip);
                 m_captureFBO.clear();
 
@@ -338,9 +330,9 @@ namespace TechEngine {
     }
 
     void SkyBox::createBRDFLUTTexture() {
-        m_shadersManager.changeActiveShader("brdf");
-        Shader& shader = *m_shadersManager.getActiveShader();
-        shader.bind();
+        //m_shadersManager.changeActiveShader("brdf");
+        //Shader& shader = *m_shadersManager.getActiveShader();
+        //shader.bind();
 
         constexpr uint32_t width = 512;
         constexpr uint32_t height = 512;

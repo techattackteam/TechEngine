@@ -3,11 +3,6 @@
 #include "TechEngine/client/core/ExportDLL.hpp"
 #include "systems/System.hpp"
 
-#include "shaders/ShadersManager.hpp"
-#include "shaders/ShaderStorageBuffer.hpp"
-#include "mesh/VertexArray.hpp"
-#include "mesh/VertexBuffer.hpp"
-#include "mesh/IndicesBuffer.hpp"
 #include "FrameBuffer.hpp"
 #include "Line.hpp"
 #include "RenderRequest.hpp"
@@ -15,54 +10,19 @@
 #include "TechEngine/core/scene/Scene.hpp"
 #include "ui/UIRenderer.hpp"
 
+#include "graph/FrameContext.hpp"
+#include "graph/RenderGraph.hpp"
+#include "graph/RenderResources.hpp"
+#include "graph/RenderSettings.hpp"
 
 #include "resources/GpuResourceManager.hpp"
 #include "texture/SkyBox.hpp"
-#include "resources/Texture.hpp"
 
 #include <queue>
+#include <vector>
 
 namespace TechEngine {
     class CLIENT_DLL Renderer : public System {
-        struct alignas(16) LightData {
-            // -- Block 1: 16 bytes --
-            glm::vec3 position = glm::vec3(0.0f);
-            int type = 0;
-
-            // -- Block 2: 16 bytes --
-            glm::vec3 direction = glm::vec3(0.0f);
-            float radius = 0.0f;
-
-            // -- Block 3: 16 bytes --
-            glm::vec3 color;
-            float intensity = 0.0f;
-
-            // -- Block 4: 16 bytes --
-            float innerCutoff = 0.0f;
-            float outerCutoff = 0.0f;
-            int castShadow = 0;
-            float _pad2;
-
-            // -- Block 5 & 6: 32 bytes --
-            uint64_t shadowTextureHandle[4] = {0}; // 8 byte
-
-            // -- Block 7 - 10: 64 bytes * 4 = 256 bytes --
-            glm::mat4 lightSpaceMatrix[4] = {glm::mat4(1.0f)}; // 64 bytes
-
-            // -- Block 11: 16 bytes --
-            float cascadeSplits[4] = {0.0f};
-        };
-
-        struct TileInfo {
-            uint32_t offset;
-            uint32_t lightCount;
-        };
-
-        struct ClusterAABB {
-            glm::vec4 minPoint;
-            glm::vec4 maxPoint;
-        };
-
         struct Renderable {
             Transform* transform;
             MeshRenderer* meshRenderer;
@@ -75,233 +35,34 @@ namespace TechEngine {
             }
         };
 
-        struct QuadVertex {
-            glm::vec2 position;
-            glm::vec2 texCoord;
-        };
-
-        struct AOProperties {
-            bool enabled = false;
-            int directionCount = 12;
-            int stepsPerDirection = 16;
-            float radius = 1.0f;
-            float thickness = 0.5f;
-        };
-
-        struct BloomProperties {
-            bool enabled = false;
-            float threshold = 1.5f;
-            float knee = 0.5f;
-            float intensity = 1.0f;
-        };
-
-        struct ChromaticAberrationProperties {
-            bool enabled = true;
-            float strength = 0.005f;
-            float offset = 1.0f;
-        };
-
-        struct VignetteProperties {
-            bool enabled = false;
-            float strength = 1.0f;
-            float power = 1.5f;
-        };
-
-        struct GammaProperties {
-            bool enabled = true;
-            glm::vec3 lift = glm::vec3(0.0f);
-            float liftIntensity = 1.0f;
-
-            float gamma = 2.2f;
-            glm::vec3 gammaRGB = glm::vec3(1.0f);
-            float gammaIntensity = 1.0f;
-
-            glm::vec3 gain = glm::vec3(1.0f);
-            float gainIntensity = 1.0f;
-        };
-
-        struct ColorGradingProperties {
-            float exposure = 1.0f;
-            float saturation = 1.0f;
-            float contrast = 1.0f;
-            float brightness = 1.0f;
-
-            bool useLUT = true;
-            float lutStrength = 1.0f;
-        };
-
-        struct FilmGrainProperties {
-            bool filmGrainEnabled = false;
-            float filmGrainIntensity = 0.05f;
-            float filmGrainSize = 1.0f;
-        };
-
-        struct FogProperties {
-            bool enabled = false;
-
-            float fogDensity = 0.01f;
-            float fogHeightFalloff = 0.1f;
-            float fogHeight = 0.0f;
-
-            float fogStart = 0.0f;
-            float fogEnd = 1.0f;
-            float skyboxFogAmount = 0.5f;
-            int fogBlendMode = 0;
-            glm::vec3 fogColorBase = glm::vec3(0.5f, 0.5f, 0.5f);
-            glm::vec3 fogColorSky = glm::vec3(0.7f, 0.7f, 0.8f);
-
-            bool useDirectionalColor = false;
-            glm::vec3 fogColorSun = glm::vec3(1.0f, 1.0f, 0.9f);
-            float sunScatteringIntensity = 1.0f;
-
-            float mieScattering = 1.0f;
-            float rayleighScattering = 1.0f;
-        };
-
-        struct FroxelGridProperties {
-            // Grid dimensions
-            uint32_t width = 160;
-            uint32_t height = 90;
-            uint32_t depth = 128;
-
-            // Depth distribution
-            float nearPlane = 0.1f; // Camera near plane
-            float farPlane = 100.0f; // Camera far plane
-            bool useExponentialDepth = true;
-
-            float depthDistributionScale = 1.0f;
-        };
-
-        struct FroxelParams {
-            glm::mat4 viewProjectionInverse;
-            glm::mat4 viewMatrix;
-
-            glm::uvec3 froxelDimensions;
-            float froxelNearPlane;
-
-            float froxelFarPlane;
-            float depthDistributionScale;
-            uint32_t useExponentialDepth;
-            float rcpFroxelDimX;
-
-            float rcpFroxelDimY;
-            float rcpFroxelDimZ;
-            glm::vec2 padding;
-
-            glm::vec3 cameraPosition;
-            bool myImplementation = true;
-        };
-
-        struct VolumetricSettings {
-            glm::vec3 scatteringCoefficient = glm::vec3(0.1f, 0.1f, 0.1f);
-            float density = 5.0f;
-
-            glm::vec3 absorptionCoefficient = glm::vec3(0.0f);
-            float anisotropy = 0.0f;
-
-            glm::vec3 emissiveCoefficient = glm::vec3(0.0f);
-            bool enabled = false;
-
-            float blendingFactor = 1.0f;
-            glm::vec3 padding;
-        };
-
     private:
-        const std::string BufferLines = "Lines";
-        const std::string BufferFullscreenQuad = "FullscreenQuad";
-
         SystemsRegistry& m_systemsRegistry;
         GpuResourceManager m_gpuResourcesManager;
+        UIRenderer m_uiRenderer;
+        SkyBox m_skyBox;
+
+        RenderResources m_resources;
+        RenderGraph m_graph;
+
+        RenderSettings m_settings;
 
         std::queue<RenderRequest> m_renderQueue;
 
-        ShadersManager m_shadersManager;
-        std::unordered_map<std::string, VertexArray> m_vertexArrays;
-        std::unordered_map<std::string, VertexBuffer> m_vertexBuffers;
-        std::unordered_map<std::string, IndicesBuffer> m_indicesBuffers;
-
-        ShaderStorageBuffer m_drawCommandBuffer;
-        ShaderStorageBuffer m_objectDataBuffer;
-        ShaderStorageBuffer m_lightsBuffer;
-
-        // Buffers for light culling
-        ShaderStorageBuffer m_lightsIndexBuffer;
-        ShaderStorageBuffer m_tileInfoBuffer;
-        ShaderStorageBuffer m_clusterAABBsBuffer;
-        ShaderStorageBuffer m_globalIndexCount;
-        const glm::uvec3 m_gridSize = glm::vec3(16, 9, 24);
-        bool m_enableDebugLightCulling = false;
-
-        // 256 bins for the histogram
-        ShaderStorageBuffer m_histogramBuffer;
-
-        const int32_t TILE_SIZE = 16;
-
-        uint32_t m_gBufferFBO = 0; // depht - depth Map,  0 - albedo, 1 - normals, 2 - screenLight, 3 - hdr color
-        uint32_t m_shadowFBO = 0;
-
-        std::vector<FrameBuffer*> m_frameBuffers;
-
-        UIRenderer m_uiRenderer;
-
+        std::vector<Renderable> m_renderables;
         size_t m_commandToDraw = 0;
 
+        bool m_enableDebugLightCulling = false;
+        const glm::uvec3 m_gridSize = glm::uvec3(16, 9, 24);
+
         float m_currentExposure = 1.0f;
-        float m_targetExposure = 1.0f;
-        float m_adaptationSpeed = 1.5f;
-
-        std::vector<Renderable> m_renderables;
-
-        std::vector<Texture> m_materialsTextures;
-
-        // Ambient Occlusion
-        AOProperties m_aoProperties;
-        Texture m_aoTexture;
-
-        // Bloom
-        BloomProperties m_bloomProperties;
-        Texture m_bloomTexture;
-        Texture m_bloomTempTexture;
-        int m_bloomIterations = 0;
-
-        // Chromatic Aberration
-        ChromaticAberrationProperties m_chromaticAberrationProperties;
-
-        // Vignette
-        VignetteProperties m_vignetteProperties;
-
-        // Gama
-        GammaProperties m_gammaProperties;
-
-        // Color Grading
-        Texture m_colorGradingLUT;
-        ColorGradingProperties m_colorGradingProperties;
-
-        // Film Grain
-        FilmGrainProperties m_filmGrainProperties;
-
-        // Fog
-        FogProperties m_fogProperties;
-        Texture m_fogTexture;
-
-        // Volumetric Rendering
-        FroxelGridProperties m_froxelGridProperties;
-        FroxelParams m_froxelParams;
-        VolumetricSettings m_volumetricSettings;
-        Texture m_froxelTexture;
-        uint32_t m_froxelParamsUBO;
-        uint32_t m_volumetricSettingsUBO;
-        Texture m_volumetricLightVolume;
 
         std::vector<Line> lines;
 
-        SkyBox m_skyBox;
-
     public:
-        inline static const int SCENE_PASS = 1 << 0;
-        inline static const int UI_PASS = 1 << 1;
-        inline static const int LINE_PASS = 1 << 2;
-        inline static const int POST_PROCESS_PASS = 1 << 3;
+        inline static const int SCENE_PASS = RenderMasks::SCENE;
+        inline static const int UI_PASS = RenderMasks::UI;
+        inline static const int LINE_PASS = RenderMasks::LINE;
+        inline static const int POST_PROCESS_PASS = RenderMasks::POST_PROCESS;
 
         Renderer(SystemsRegistry& systemsRegistry);
 
@@ -360,48 +121,14 @@ namespace TechEngine {
         bool& getDebugLightCullingEnabled();
 
     private:
-        void createRenderables();
+        void registerPasses();
 
-        void createNeutralLUT(int size = 32);
+        FrameContext makeFrameContext(const RenderRequest& request);
+
+        void createRenderables();
 
         void populateLightDataBuffers() const;
 
         void populateObjectDataBuffers() const;
-
-        //void populateMaterialDataBuffers();
-
-        void recreateBloomTexture(const glm::ivec2& viewport);
-
-        void recreateFogTexture(const glm::ivec2& viewport);
-
-        void createFroxelTexture(const glm::ivec2& viewport);
-
-        void scenePass(const RenderRequest& request);
-
-        void prepareGBuffer(const glm::ivec2& viewport);
-
-        void gBufferPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
-
-        void aoPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport);
-
-        void lightCulling(const RenderRequest& request);
-
-        void shadowDepthPass(const RenderRequest& request);
-
-        void fogPass(const RenderRequest& request);
-
-        void geometryPass(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, const glm::ivec2& viewport, float nearPlane, float farPlane);
-
-        void automaticExposurePass(const glm::ivec2& viewport);
-
-        void bloomPass(const glm::ivec2& viewport);
-
-        void godRayPass(const RenderRequest& request);
-
-        void postProcessingPass();
-
-        void uiPass();
-
-        void linePass(glm::mat4 viewMatrix, glm::mat4 projectionMatrix);
     };
 }

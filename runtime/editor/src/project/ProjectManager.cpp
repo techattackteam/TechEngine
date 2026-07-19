@@ -10,6 +10,7 @@
 #include "resources/loaders/MeshLoader.hpp"
 #include "resources/loaders/ModelLoader.hpp"
 #include "resources/loaders/SceneLoader.hpp"
+#include "resources/loaders/ShadersLoader.hpp"
 #include "resources/ResourceSystem.hpp"
 #include "scene/SceneManager.hpp"
 #include "systems/SystemsRegistry.hpp"
@@ -27,13 +28,9 @@ namespace TechEngine {
     }
 
     void ProjectManager::init(const std::filesystem::path& projectPath,
-                              TextureLoader& textureLoader,
-                              MaterialLoader& materialLoader,
-                              MeshLoader& meshLoader,
-                              ModelLoader& modelLoader,
-                              SceneLoader& sceneLoader,
+                              const Loaders& loaders,
                               FileSystem& fileSystem) {
-        m_sceneLoader = &sceneLoader;
+        m_sceneLoader = &loaders.sceneLoader;
         m_projectPath = projectPath;
         m_clientProject.init(m_projectPath);
         m_serverProject.init(m_projectPath);
@@ -47,7 +44,7 @@ namespace TechEngine {
                 break;
             }
         }
-        loadProject(textureLoader, materialLoader, meshLoader, modelLoader, sceneLoader, fileSystem);
+        loadProject(loaders, fileSystem);
     }
 
     void ProjectManager::shutdown() {
@@ -241,11 +238,7 @@ namespace TechEngine {
         createProject("New Project");
     }
 
-    void ProjectManager::loadProject(const TextureLoader& textureLoader,
-                                     const MaterialLoader& materialLoader,
-                                     const MeshLoader& meshLoader,
-                                     const ModelLoader& modelLoader,
-                                     SceneLoader& sceneLoader,
+    void ProjectManager::loadProject(const Loaders& loaders,
                                      FileSystem& fileSystem) {
         assert(!m_projectName.empty());
         if (!std::filesystem::exists(m_projectPath.string() + "\\" + m_projectName.string() + ".teproj")) {
@@ -269,6 +262,7 @@ namespace TechEngine {
         m_cachePath = m_projectPath.string() + "\\cache";
         fileSystem.mount("editorAssetsClient://", getAssetsPath() / "client", 100);
         fileSystem.mount("projectCache://", getCachePath() / "common", 100);
+        fileSystem.mount("projectResources://", getResourcesPath() / "client", 100);
 
         wchar_t path[FILENAME_MAX] = {0};
         GetModuleFileNameW(nullptr, path, FILENAME_MAX);
@@ -276,31 +270,54 @@ namespace TechEngine {
 
         fileSystem.mount("editorAssets://", p.parent_path() / "assets", 100);
 
-        loadResources(textureLoader, materialLoader, meshLoader, modelLoader, sceneLoader);
+        loadResources(loaders);
     }
 
-    void ProjectManager::loadResources(const TextureLoader& textureLoader,
-                                       const MaterialLoader& materialLoader,
-                                       const MeshLoader& meshLoader,
-                                       const ModelLoader& modelLoader,
-                                       SceneLoader& sceneLoader) const {
+    void ProjectManager::loadResources(const Loaders& loaders) const {
         FileSystem& fileSystem = m_editorSystemsRegistry.getSystem<FileSystem>();
         ResourceSystem& resourceSystem = m_clientSystemsRegistry.getSystem<ResourceSystem>();
 
+        const TextureLoader& textureLoader = loaders.textureLoader;
+        const MaterialLoader& materialLoader = loaders.materialLoader;
+        const MeshLoader& meshLoader = loaders.meshLoader;
+        const ModelLoader& modelLoader = loaders.modelLoader;
+        SceneLoader& sceneLoader = loaders.sceneLoader;
+        const ShadersLoader& shadersLoader = loaders.shadersLoader;
+
         std::vector<std::filesystem::path> files = fileSystem.list("editorAssetsClient://", true);
         std::vector<std::filesystem::path> cacheFiles = fileSystem.list("projectCache://", true);
+        std::vector<std::filesystem::path> resourceFiles = fileSystem.list("projectResources://", true);
         files.insert(files.end(), cacheFiles.begin(), cacheFiles.end());
+        files.insert(files.end(), resourceFiles.begin(), resourceFiles.end());
 
-        static const std::string sceneExtension = ".tescene";
+        // Shaders are built from .teshader manifests. Collect the source (.glsl) files and existing
+        // manifests, auto-generate a manifest for any scattered sources that don't have one yet, then
+        // load every manifest so its program is registered and linkable by name.
+        std::vector<std::filesystem::path> shaderSources;
+        std::vector<std::filesystem::path> shaderManifests;
+        for (const std::filesystem::path& file: files) {
+            const FileStatus status = fileSystem.status(file);
+            if (shadersLoader.canLoad(status.extension.string())) {
+                shaderSources.push_back(file);
+            } else if (status.extension == shadersLoader.resourceExtension()) {
+                shaderManifests.push_back(file);
+            }
+        }
+        const std::vector<std::filesystem::path> generatedManifests =
+            shadersLoader.generateMissingShaderManifests(shaderSources, shaderManifests);
+        shaderManifests.insert(shaderManifests.end(), generatedManifests.begin(), generatedManifests.end());
+        for (const std::filesystem::path& manifest: shaderManifests) {
+            shadersLoader.loadShaderResource(manifest);
+        }
 
-        files.erase(std::remove_if(files.begin(), files.end(), [&](const std::filesystem::path& file) {
+        std::erase_if(files, [&](const std::filesystem::path& file) {
             const FileStatus status = fileSystem.status(file);
             return status.extension != textureLoader.resourceExtension() &&
                    status.extension != materialLoader.resourceExtension() &&
                    status.extension != meshLoader.resourceExtension() &&
                    status.extension != modelLoader.resourceExtension() &&
-                   status.extension != sceneExtension;
-        }), files.end());
+                   status.extension != sceneLoader.resourceExtension();
+        });
 
         auto extensionPriority = [&](const std::filesystem::path& file) {
             const FileStatus status = fileSystem.status(file);
@@ -313,7 +330,7 @@ namespace TechEngine {
             if (status.extension == meshLoader.resourceExtension()) {
                 return 2;
             }
-            if (status.extension == sceneExtension) {
+            if (status.extension == sceneLoader.resourceExtension()) {
                 return 3;
             }
             return 1000;
@@ -340,7 +357,7 @@ namespace TechEngine {
                 meshLoader.deserializeMeshResource(buffer);
             } else if (status.extension == modelLoader.resourceExtension()) {
                 modelLoader.deserializeModelResource(buffer);
-            } else if (status.extension == sceneExtension) {
+            } else if (status.extension == sceneLoader.resourceExtension()) {
                 sceneLoader.loadSceneMetadata(buffer);
             }
         }

@@ -19,6 +19,7 @@
 #include "resources/loaders/MaterialLoader.hpp"
 #include "resources/loaders/ModelLoader.hpp"
 #include "resources/loaders/SceneLoader.hpp"
+#include "resources/loaders/ShadersLoader.hpp"
 
 
 namespace TechEngine {
@@ -70,13 +71,14 @@ namespace TechEngine {
         m_meshLoader = new MeshLoader(m_systemRegistry.getSystem<RuntimeSimulator<Client>>().m_runtime.m_systemRegistry.getSystem<ResourceSystem>(), m_systemRegistry.getSystem<FileSystem>(), *m_textureLoader, *m_materialLoader);
         m_modelLoader = new ModelLoader(m_systemRegistry.getSystem<RuntimeSimulator<Client>>().m_runtime.m_systemRegistry.getSystem<ResourceSystem>(), m_systemRegistry.getSystem<FileSystem>(), *m_textureLoader, *m_materialLoader, *m_meshLoader);
         m_sceneLoader = new SceneLoader(m_systemRegistry.getSystem<RuntimeSimulator<Client>>().m_runtime.m_systemRegistry, m_systemRegistry.getSystem<FileSystem>());
+        m_shadersLoader = new ShadersLoader(m_systemRegistry.getSystem<RuntimeSimulator<Client>>().m_runtime.m_systemRegistry.getSystem<ResourceSystem>(), m_systemRegistry.getSystem<FileSystem>(), *m_fileWatcher);
         m_systemRegistry.getSystem<RuntimeSimulator<Client>>().setSceneLoader(m_sceneLoader);
         m_systemRegistry.registerSystem<PanelsManager>(m_systemRegistry, m_client, m_server, m_textureLoader, m_materialLoader, m_modelLoader, m_meshLoader, m_sceneLoader, m_fileWatcher.get());
     }
 
     void Editor::init() {
         FileSystem& fileSystem = m_systemRegistry.getSystem<FileSystem>();
-        m_systemRegistry.getSystem<ProjectManager>().init(m_lastProjectLoaded, *m_textureLoader, *m_materialLoader, *m_meshLoader, *m_modelLoader, *m_sceneLoader, fileSystem);
+        m_systemRegistry.getSystem<ProjectManager>().init(m_lastProjectLoaded, {*m_textureLoader, *m_materialLoader, *m_meshLoader, *m_modelLoader, *m_sceneLoader, *m_shadersLoader}, fileSystem);
         m_systemRegistry.getSystem<Window>().init("TechEngineEditor - " + m_systemRegistry.getSystem<ProjectManager>().getProjectName(), 1280, 720);
         m_systemRegistry.getSystem<Timer>().init();
         m_systemRegistry.getSystem<EventManager>().init();
@@ -137,7 +139,7 @@ namespace TechEngine {
         auto& client = m_systemRegistry.getSystem<RuntimeSimulator<Client>>();
         auto& server = m_systemRegistry.getSystem<RuntimeSimulator<Server>>();
         client.tick(deltaTime);
-        server.tick(deltaTime);
+        //server.tick(deltaTime);
 
         m_systemRegistry.getSystem<PanelsManager>().endFrame();
     }
