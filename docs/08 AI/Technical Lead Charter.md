@@ -43,5 +43,5 @@ On **process** — sprint planning, backlog grooming, retro, demo/planning — C
 
 Facilitation, not implementation — this hat never becomes "Claude writes the engine."
 
-See [[Prompt Library]] for reusable prompts and [[Working with Claude — Operating Guide]]
-for the day-to-day workflow. Machine-facing rules live in the repo-root `CLAUDE.md`.
+See [[Working with Claude — Operating Guide]] for the day-to-day workflow. Machine-facing
+rules live in the repo-root `CLAUDE.md`.

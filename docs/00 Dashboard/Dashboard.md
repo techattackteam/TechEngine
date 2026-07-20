@@ -9,9 +9,9 @@
 | **Quarter** | 2026 Q3 (Jul–Sep) |
 | **Sprint** | [[2026-07 Sprint 01 — Foundation Planning (v2)]] |
 | **Sprint goal** | Plan the fresh engine (v2) on paper: mine v1 for lessons, decide architecture + what to port, set up git flow, define the first slice. No v2 code until the plan exists. |
-| **Current focus** | ✅ **Deep v1 audit done (Jul 19)** — [[v1 Code Audit]] F1–F35 + verdicts. Next: Miguel reviews, then B1 (v2 module-layout ADR). |
+| **Current focus** | 🔨 **Build scaffold** — first v2 skeleton compiling green on CI ([[ADR-008 — v2 build & testing baseline]] checklist). Foundation ADRs 005–008 Accepted; `v1-reference` tagged, `v2` mainline. |
 | **Top blocker** | _none logged_ |
-| **Next milestone** | v2 foundation ADRs Accepted + `v1-reference` tagged |
+| **Next milestone** | v2 skeleton builds green on CI → Sprint 02 planned (Sun 26 Jul) |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
 
 ## 🗓️ Rhythm
@@ -35,31 +35,32 @@
 
 ## 🧭 Plan (collapsed — audit-first)
 
-Timeline compressed: the audit moves up to **today** so planning can start right
-after. Each phase gates the next — nothing downstream is filled in ahead of it.
+Timeline compressed into the Jul 19–26 window: audit → plan → ground, back-to-back.
+Each phase gated the next.
 
 | # | Phase | What | State |
 |---|-------|------|-------|
 | 1 | **Deep v1 audit** | Read (not skim) each subsystem → deepen [[v1 Code Audit]] | ✅ done (Jul 19) |
-| 2 | **Plan v2 + set up AI** | Foundation ADRs (module layout, renderer, build/test) · code conventions · agents | 🔨 next |
-| 3 | **Ground** | Git flow (tag `v1-reference`, start `v2`) · first buildable slice · draft Sprint 02 | ⏳ after 2 |
+| 2 | **Plan v2 + set up AI** | Foundation ADRs 005–008 (stack, architecture, networking, build/test) · AI agents (renderer + conventions → [[Backlog]]) | ✅ done |
+| 3 | **Ground** | Git flow ✅ · build scaffold (green on CI) · first slice + draft Sprint 02 (Jul 26) | 🔨 active |
 
-_Tasks → [[Sprint Board]]. Nothing in phase 2/3 is decided until phase 1 lands._
+_Tasks → [[Sprint Board]]._
 
 ## Quick links
 
 - 📌 [[Roadmap]] · [[2026-Q3]]
 - 🏃 [[Sprint Board]] · [[Backlog]]
 - 🏛️ [[ADR Index]] · [[v1 Code Audit]] · [[Lessons from v1 (reference prototype)]]
-- 🧠 [[Technical Lead Charter]] · [[Prompt Library]] · [[Working with Claude — Operating Guide]]
-- 📓 Latest review: [[2026-07-19 Weekly Review]]
+- 🧠 [[Technical Lead Charter]] · [[Working with Claude — Operating Guide]]
+- 📓 Journal: [[07 Journal]]
 
-## Active decisions in flight
+## Active decisions
 
-- [x] Fresh start vs continue in place → **fresh (v2)**, [[ADR-004 — Fresh start (v2) with v1 as reference]]
-- [x] v2 module layout & core architecture → ADR (_after audit_)
-- [x] v2 renderer approach → ADR (_after audit_)
-- [x] v2 build + testing baseline (presets, test framework) → ADR (_after audit_)
+Recently locked — full set in [[ADR Index]]:
+
+- [x] Fresh start vs continue → **fresh (v2)**, [[ADR-004 — Fresh start (v2) with v1 as reference]]
+- [x] v2 stack · architecture · networking · build/testing → ADRs 005–008 Accepted ([[ADR Index]])
+- [ ] Renderer · job-system · serialization · netcode transport · scripting SDK → deferred, write when coding starts ([[Backlog]])
 
 ## Health check (update weekly)
 

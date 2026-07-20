@@ -1,0 +1,23 @@
+# TechEngine static analysis (ADR-005: checked in, CI-enforced on the Linux/Clang
+# leg via CMAKE_CXX_CLANG_TIDY; off for _deps).
+#
+# Deliberately CONSERVATIVE to start: high-signal, low-false-positive families only,
+# so the Linux leg stays green (a chronically-red leg silently kills UBSan/TSan —
+# ADR-005/008). Identifier-naming enforcement (PascalCase types / camelCase methods /
+# m_ members) is B4's job and lands with the conventions note, not here. Widen the
+# check set as the code stabilizes.
+---
+Checks: >
+  -*,
+  bugprone-*,
+  performance-*,
+  misc-const-correctness,
+  modernize-use-nullptr,
+  modernize-use-override,
+  modernize-use-using,
+  -bugprone-easily-swappable-parameters
+
+WarningsAsErrors: '*'
+
+# Analyze only our headers; never FetchContent'd third-party code.
+HeaderFilterRegex: '.*/(engine|apps|sdk)/.*/include/.*'

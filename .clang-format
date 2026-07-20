@@ -1,0 +1,15 @@
+# TechEngine formatting (ADR-005: checked in, CI-enforced). Verified stable against
+# the current tree — clang-format 19 reformats nothing. Naming is NOT a clang-format
+# concern (see .clang-tidy / B4 conventions).
+---
+Language: Cpp
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+NamespaceIndentation: All
+FixNamespaceComments: false
+PointerAlignment: Left
+AllowShortFunctionsOnASingleLine: None
+IncludeBlocks: Preserve

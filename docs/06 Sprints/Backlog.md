@@ -12,6 +12,11 @@ from here into [[Sprint Board]]. Group by epic.
 
 ## Parked for v2 — revisit after audit + design
 
+- **C2 — first v2 vertical slice (Sprint 02 anchor).** First end-to-end slice built on
+  the ADR-008 scaffold. The renderer/render-graph ADR (Rendering below) and **B4**
+  conventions (Process/Infra below) are both **born here**, evidence-driven, with v1
+  passes as reference. **Trigger:** Sprint 02 planning (Sun 26 Jul).
+
 ### Rendering (Q4 direction — needs v2 renderer ADR first)
 - **Renderer / render-graph ADR (was B2) — write when BUILDING the renderer, not before.**
   Approach already decided across ADR-005/006/007: OpenGL 4.5 behind a device seam,

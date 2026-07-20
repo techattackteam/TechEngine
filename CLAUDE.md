@@ -37,10 +37,16 @@ cmake --build cmake-build-release --config Release --parallel
 
 ## Code conventions (match the existing code)
 
-- Namespace `TechEngine` around everything.
+> **Full spec:** [B4 — Code Conventions](docs/03%20Architecture/B4%20—%20Code%20Conventions.md)
+> (naming, brace/indent style, CMake target naming, open decisions). The bullets below
+> are the load-bearing subset — B4 wins on any detail.
+
+- Namespace `TechEngine` around everything; **no `} // namespace` closing comment**.
 - Paired `.hpp` / `.cpp`; `#pragma once` in headers.
 - Types `PascalCase`, methods `camelCase`, members `m_camelCase`.
 - Prefer forward declarations in headers; include in `.cpp`.
+- **Comment _why_, not _what_** — no per-include / per-line narration. A comment
+  earns its place (intent, gotcha, docs) or it's deleted.
 - Match the surrounding file's style, includes, and idioms over any personal
   preference. Read a neighbouring file before adding a new one.
 

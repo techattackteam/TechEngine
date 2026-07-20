@@ -30,9 +30,14 @@ rewrite for its own sake.**
    - Carry the vault (`docs/`) and `CLAUDE.md` forward into v2; freeze v1 code
      behind the tag, reachable whenever we port from it.
 
-```
-main (v2)   ──●──●──●──►      fresh engine (planned)
-v1-reference ●               prototype, frozen for reference
+```mermaid
+flowchart LR
+  subgraph V2["main (v2) — fresh engine (planned)"]
+    direction LR
+    c1(( )) --> c2(( )) --> c3(( )) --> c4["▶"]
+  end
+  ref["● v1-reference — prototype, frozen for reference"]
+  ref -. "git show → port from" .-> V2
 ```
 
 4. **Division of labor holds:** Miguel implements v2; AI leads/reviews and writes

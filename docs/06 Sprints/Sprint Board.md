@@ -11,18 +11,18 @@ kanban-plugin: board
 
 ## 📋 To Do — Week of Jul 20–26 (bridge → Sprint 02 on Sun 26; B2 + B4 deferred → [[Backlog]])
 
-- [ ] GitHub repo & CI enforcement — *once `ci.yml` is green*: branch protection on `master` + [[ADR-008 — v2 build & testing baseline]] §9 required checks + repo visibility (Fri/Sun · Miguel)
-- [ ] Backlog grooming for Sprint 02 (Fri · moderate)
 - [ ] Sun 26 — Sprint 01 demo + retro + plan Sprint 02 → `/sprint-plan`
-- [ ] C2 — first v2 vertical slice + draft Sprint 02 (renderer ADR born here; B4 conventions land here too) *(Sprint 02)*
 
 
 ## 🔨 In Progress — Story C (ground: first buildable slice)
 
-- [ ] Build scaffold — first v2 skeleton per [[ADR-008 — v2 build & testing baseline]] checklist (deep Mon/Thu + moderate Fri) **← active**
+- [ ] GitHub repo & CI enforcement — *once `ci.yml` is green*: branch protection on `master` + [[ADR-008 — v2 build & testing baseline]] §9 required checks + repo visibility (Fri/Sun · Miguel)
+- [ ] Backlog grooming for Sprint 02 (Fri · moderate)
 
 
 ## 👀 Review / Demo
+
+- [ ] Build scaffold (ADR-008 checklist) — **built + locally green** (Jul 20): Win/MSVC Debug+Release, `ctest` 3/3 (base ×2 + SDK-smoke), clang-format clean, ASan flag confirmed on our targets only. Slices: skeleton → deps (FetchContent, pins in `cmake/deps.cmake`) → CI + clang-format/tidy + `te_sdk_smoke`. **Open:** `ci.yml` never run → CI-green tracked by the "GitHub repo & CI enforcement" To Do card; clang-tidy verified on Linux leg only (VS tidy segfaults local); glad2 deferred until `platform` opens a GL context. Uncommitted → Miguel branches + commits.
 
 
 ## ✅ Done — Story A (deep v1 audit · Jul 19)

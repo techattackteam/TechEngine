@@ -137,7 +137,7 @@ Claude route to it. All are **read-only or research** — they report, they don'
 ## Using Claude as technical lead, not typist
 
 - Bring it **decisions and designs**, not just "write X." The leverage is in
-  architecture and trade-offs (see [[Prompt Library]]).
+  architecture and trade-offs.
 - Make it **argue against your idea** before you commit to it.
 - Everything load-bearing ends in an **ADR** you deliberately Accept.
 
@@ -151,4 +151,4 @@ Claude route to it. All are **read-only or research** — they report, they don'
 
 ---
 
-_Related: [[Technical Lead Charter]] · [[Prompt Library]] · repo-root `CLAUDE.md`_
+_Related: [[Technical Lead Charter]] · repo-root `CLAUDE.md`_

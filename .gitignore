@@ -34,3 +34,7 @@
 /cmake-build-release/
 /bin
 
+# CMake preset build tree (ADR-008 §3) + local preset overrides
+/build
+CMakeUserPresets.json
+
