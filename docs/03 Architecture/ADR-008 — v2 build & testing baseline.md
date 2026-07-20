@@ -15,6 +15,16 @@
   generator ignores; Ninja enables it, cutting CI dep-rebuild cost. Cost: Windows builds
   need the MSVC env active (CLion handles it; CI uses `msvc-dev-cmd`) + `/Z7` embedded
   debug info (compiler caches can't cache `/Zi` PDBs).
+- **Amended 2026-07-21:** two §9 corrections. (1) Sanitizer trigger made literal —
+  sanitizers run **`pull_request` only** (Option A "all per-PR"); the `push`→`master`
+  backstop runs build+format+tidy+`te_sdk_smoke`, **not** the sanitizer trio (a
+  squash-merge was already sanitized on its up-to-date PR — see [[ADR-009 — Branching
+  strategy & merge rules]] §4). Sanitizers remain **required PR checks**; only the push
+  run drops them. (2) The §4/§9 "ccache caches deps" claim needed Jolt to stop forcing
+  `/Zi`: despite the 2026-07-20 `/Z7` amendment, Jolt's own CMake still appended `/Zi`
+  (its `GENERATE_DEBUG_SYMBOLS` default), so every Jolt TU was uncacheable and recompiled
+  each run. `deps.cmake` now sets `GENERATE_DEBUG_SYMBOLS OFF` on MSVC (Clang keeps `-g`,
+  which caches fine).
 
 ## Context
 

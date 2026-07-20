@@ -86,10 +86,9 @@ jobs:
           key: deps-${{ runner.os }}-${{ hashFiles('cmake/deps.cmake') }}
 
       - name: Configure
-        env:
-          FETCHCONTENT_BASE_DIR: ${{ github.workspace }}/.deps
         run: >
           cmake --preset ${{ matrix.preset }}
+          -DFETCHCONTENT_BASE_DIR=${{ github.workspace }}/.deps
           -DTE_ENABLE_CLANG_TIDY=${{ matrix.tidy }}
           -DCMAKE_C_COMPILER_LAUNCHER=ccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
@@ -108,6 +107,9 @@ jobs:
   # --- sanitizers, all per-PR (ADR-008 §9 Option A) --------------------------
   sanitizers:
     name: ${{ matrix.name }}
+    # PR-only (ADR-008 §9 Option A / ADR-009 §4): a squash-merge to master was already
+    # sanitized on its up-to-date PR, so the push backstop skips the sanitizer trio.
+    if: github.event_name == 'pull_request'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -150,10 +152,9 @@ jobs:
           key: deps-${{ runner.os }}-${{ hashFiles('cmake/deps.cmake') }}
 
       - name: Configure
-        env:
-          FETCHCONTENT_BASE_DIR: ${{ github.workspace }}/.deps
         run: >
           cmake --preset ${{ matrix.preset }}
+          -DFETCHCONTENT_BASE_DIR=${{ github.workspace }}/.deps
           -DCMAKE_C_COMPILER_LAUNCHER=ccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           -DCMAKE_POLICY_DEFAULT_CMP0141=NEW
