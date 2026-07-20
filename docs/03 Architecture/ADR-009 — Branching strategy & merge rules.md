@@ -83,7 +83,12 @@ Protection is what makes §1 real; without it the rules are honour-system.
 
 The §9 `push` → `master` trigger still fires: a squash-merged PR **is** a push to
 `master`. So "no direct pushes" (§2) and "push backstop" (§9) coexist — the only push to
-`master` is the merge itself, and the backstop run guards it. No change to §9.
+`master` is the merge itself, and the backstop run guards it. The backstop runs the
+**always-on legs** (build × {Debug, Release} + `clang-format`/`clang-tidy` +
+`te_sdk_smoke`); the **sanitizer trio is `pull_request`-only** (ADR-008 §9 Option A "all
+per-PR", amended 2026-07-21), since a squash of an up-to-date branch (§2) yields the same
+tree the PR already sanitized. This clarifies §9's *trigger*, not its required-check set —
+sanitizers stay **required PR checks** (§2), they just don't re-run on the merge push.
 
 ## Consequences
 
