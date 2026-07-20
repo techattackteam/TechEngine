@@ -5,12 +5,13 @@
 # clang-tidy on the Linux leg; sanitizers per-PR (Option A) — ASan/Win, UBSan+TSan/Linux.
 # Stage order per leg (fail cheap first): format/tidy -> build -> ctest (incl. sdk-smoke).
 #
-# Caching: sccache (GitHub Actions backend) caches BOTH our + dependency compilation on
-# every leg, so pinned deps aren't rebuilt each run. sccache is a compiler *launcher*,
-# which needs Ninja (the VS generator ignores it) — hence Ninja Multi-Config on Windows
-# (ADR-008 §3 Amended) with /Z7 embedded debug info (sccache can't cache /Zi PDBs).
+# Caching: ccache caches BOTH our + dependency compilation on every leg, so pinned deps
+# aren't rebuilt each run. ccache is a compiler *launcher*, which needs Ninja (the VS
+# generator ignores it) — hence Ninja Multi-Config on Windows (ADR-008 §3 Amended) with
+# /Z7 embedded debug info (compiler caches can't cache /Zi PDBs). ccache degrades to
+# uncached compilation if its backend is down, so a cache outage never fails the build.
 #
-# NOTE: the sccache wiring is verified by its first PR run, not locally. The Ninja
+# NOTE: the ccache wiring is verified by its first PR run, not locally. The Ninja
 # generator + MSVC flags themselves are verified locally.
 
 name: CI
@@ -24,9 +25,6 @@ on:
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
-
-env:
-  SCCACHE_GHA_ENABLED: "true"
 
 jobs:
   # --- cheapest gate first: formatting ---------------------------------------
@@ -73,8 +71,12 @@ jobs:
           sudo apt-get install -y clang clang-tidy \
             xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev
 
-      - name: sccache
-        uses: mozilla-actions/sccache-action@v0.0.6
+      # ccache degrades gracefully: a cold/unreachable cache just compiles slower,
+      # it never fails a compile (unlike sccache-as-launcher gating on a live backend).
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ matrix.build }}
 
       # Share FetchContent downloads across runs (avoids re-cloning deps each run).
       - name: Cache FetchContent sources
@@ -89,8 +91,8 @@ jobs:
         run: >
           cmake --preset ${{ matrix.preset }}
           -DTE_ENABLE_CLANG_TIDY=${{ matrix.tidy }}
-          -DCMAKE_C_COMPILER_LAUNCHER=sccache
-          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           -DCMAKE_POLICY_DEFAULT_CMP0141=NEW
           -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
 
@@ -100,8 +102,8 @@ jobs:
       - name: Test (ctest incl. sdk-smoke)
         run: ctest --preset ${{ matrix.test }}
 
-      - name: sccache stats
-        run: sccache --show-stats
+      - name: ccache stats
+        run: ccache -s
 
   # --- sanitizers, all per-PR (ADR-008 §9 Option A) --------------------------
   sanitizers:
@@ -134,8 +136,12 @@ jobs:
           sudo apt-get install -y clang \
             xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev
 
-      - name: sccache
-        uses: mozilla-actions/sccache-action@v0.0.6
+      # ccache degrades gracefully: a cold/unreachable cache just compiles slower,
+      # it never fails a compile (unlike sccache-as-launcher gating on a live backend).
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ matrix.build }}
 
       - name: Cache FetchContent sources
         uses: actions/cache@v4
@@ -148,8 +154,8 @@ jobs:
           FETCHCONTENT_BASE_DIR: ${{ github.workspace }}/.deps
         run: >
           cmake --preset ${{ matrix.preset }}
-          -DCMAKE_C_COMPILER_LAUNCHER=sccache
-          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           -DCMAKE_POLICY_DEFAULT_CMP0141=NEW
           -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
 
@@ -159,5 +165,5 @@ jobs:
       - name: Test
         run: ctest --preset ${{ matrix.test }}
 
-      - name: sccache stats
-        run: sccache --show-stats
+      - name: ccache stats
+        run: ccache -s
