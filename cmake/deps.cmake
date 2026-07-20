@@ -49,6 +49,13 @@ FetchContent_Declare(tomlplusplus
 
 # --- physics ----------------------------------------------------------------
 # Jolt's CMake lives in the Build/ subdir. Trim its samples/tests/tools.
+# Jolt appends /Zi under GENERATE_DEBUG_SYMBOLS (its default), which ccache refuses to
+# cache (separate-PDB side output) — every Jolt TU then recompiles each CI run. On MSVC
+# we already get embedded debug info from CMAKE_MSVC_DEBUG_INFORMATION_FORMAT (/Z7), so
+# drop Jolt's own flag there; Clang (-g) caches fine, so leave it on for the Linux legs.
+if(MSVC)
+  set(GENERATE_DEBUG_SYMBOLS OFF CACHE BOOL "" FORCE)
+endif()
 set(TARGET_UNIT_TESTS       OFF CACHE BOOL "" FORCE)
 set(TARGET_HELLO_WORLD      OFF CACHE BOOL "" FORCE)
 set(TARGET_PERFORMANCE_TEST OFF CACHE BOOL "" FORCE)
