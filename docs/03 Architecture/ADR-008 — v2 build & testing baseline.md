@@ -273,11 +273,11 @@ merge. (ADR-005 chose GitHub Actions.)
 
 ### Scaffold checklist (first commit(s))
 
-- [ ] `cmake/` helpers: `techengine_module`, `warnings`, `sanitizers`, `deps`
-- [ ] top-level `CMakeLists.txt` + `CMakePresets.json` (full matrix + san presets)
-- [ ] 5 lib skeletons (`engine/*`) with the public/private include split, each compiling
+- [x] `cmake/` helpers: `techengine_module`, `warnings`, `sanitizers`, `deps`
+- [x] top-level `CMakeLists.txt` + `CMakePresets.json` (full matrix + san presets)
+- [x] 5 lib skeletons (`engine/*`) with the public/private include split, each compiling
       empty
-- [ ] leaf exe targets `apps/runtime`, `apps/editor` (thin `main()`)
+- [x] leaf exe targets `apps/runtime`, `apps/editor` (thin `main()`)
 - [ ] one real per-module test exe (e.g. `te_base_tests`) proving the Catch2+CTest path
 - [ ] `sdk/` INTERFACE target + `te_sdk_smoke`
 - [ ] `.clang-format`, `.clang-tidy`
