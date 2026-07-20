@@ -11,10 +11,10 @@
   concrete, buildable skeleton. First code lands here.
 - **Amended 2026-07-20:** Windows generator **Visual Studio 17 2022 → Ninja Multi-Config**
   (§3). No decision reversed — still one configure → all configs, presets identical
-  local+CI. Reason: sccache (the §9 compiler cache) is a compiler *launcher*, which the VS
+  local+CI. Reason: ccache (the §9 compiler cache) is a compiler *launcher*, which the VS
   generator ignores; Ninja enables it, cutting CI dep-rebuild cost. Cost: Windows builds
   need the MSVC env active (CLion handles it; CI uses `msvc-dev-cmd`) + `/Z7` embedded
-  debug info (sccache can't cache `/Zi` PDBs).
+  debug info (compiler caches can't cache `/Zi` PDBs).
 
 ## Context
 
@@ -131,7 +131,7 @@ configurations.
   three configs come from one configure (`CMAKE_CONFIGURATION_TYPES`); on Linux/Clang
   (single-config Ninja) each config is its own preset.
   > **Amended 2026-07-20:** the Windows generator is now **Ninja Multi-Config** (still
-  > multi-config, one configure → all configs) so sccache's compiler-launcher caching
+  > multi-config, one configure → all configs) so ccache's compiler-launcher caching
   > works (§9); see the header amendment. `sanitizers.cmake` also disables MSVC STL
   > container annotations under ASan (`_DISABLE_STRING/VECTOR_ANNOTATION`) so instrumented
   > TUs link the uninstrumented FetchContent deps (else LNK2038).
