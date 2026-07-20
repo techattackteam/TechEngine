@@ -41,8 +41,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: "win-msvc Debug",      os: windows-latest, preset: windows,       build: windows-debug,          test: windows-debug,          tidy: "OFF" }
-          - { name: "win-msvc Release",    os: windows-latest, preset: windows,       build: windows-release,        test: windows-release,        tidy: "OFF" }
+          - { name: "win-msvc Debug",      os: windows-2022, preset: windows,       build: windows-debug,          test: windows-debug,          tidy: "OFF" }
+          - { name: "win-msvc Release",    os: windows-2022, preset: windows,       build: windows-release,        test: windows-release,        tidy: "OFF" }
           - { name: "linux-clang Debug",   os: ubuntu-latest,  preset: linux-debug,   build: linux-debug,   test: linux-debug,   tidy: "ON" }
           - { name: "linux-clang Release", os: ubuntu-latest,  preset: linux-release, build: linux-release, test: linux-release, tidy: "ON" }
     steps:
@@ -87,7 +87,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: "win ASan",    os: windows-latest, preset: windows-asan, build: windows-asan, test: windows-asan }
+          - { name: "win ASan",    os: windows-2022, preset: windows-asan, build: windows-asan, test: windows-asan }
           - { name: "linux UBSan", os: ubuntu-latest,  preset: linux-ubsan,  build: linux-ubsan,  test: linux-ubsan }
           - { name: "linux TSan",  os: ubuntu-latest,  preset: linux-tsan,   build: linux-tsan,   test: linux-tsan }
     steps:
