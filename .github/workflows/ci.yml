@@ -53,7 +53,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build clang clang-tidy \
-            xorg-dev libgl1-mesa-dev   # GLFW X11/GL build deps
+            xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev  # GLFW X11/GL + Wayland deps
 
       - name: ccache
         if: runner.os == 'Linux'
@@ -97,7 +97,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build clang xorg-dev libgl1-mesa-dev
+          sudo apt-get install -y ninja-build clang xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev
 
       - name: ccache
         if: runner.os == 'Linux'
