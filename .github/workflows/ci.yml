@@ -5,8 +5,13 @@
 # clang-tidy on the Linux leg; sanitizers per-PR (Option A) — ASan/Win, UBSan+TSan/Linux.
 # Stage order per leg (fail cheap first): format/tidy -> build -> ctest (incl. sdk-smoke).
 #
-# NOTE: This workflow has NOT run yet — it is verified by its first PR, not locally.
-# Branch protection (Dashboard task) makes these checks required once it's green.
+# Caching: sccache (GitHub Actions backend) caches BOTH our + dependency compilation on
+# every leg, so pinned deps aren't rebuilt each run. sccache is a compiler *launcher*,
+# which needs Ninja (the VS generator ignores it) — hence Ninja Multi-Config on Windows
+# (ADR-008 §3 Amended) with /Z7 embedded debug info (sccache can't cache /Zi PDBs).
+#
+# NOTE: the sccache wiring is verified by its first PR run, not locally. The Ninja
+# generator + MSVC flags themselves are verified locally.
 
 name: CI
 
@@ -19,6 +24,9 @@ on:
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  SCCACHE_GHA_ENABLED: "true"
 
 jobs:
   # --- cheapest gate first: formatting ---------------------------------------
@@ -41,27 +49,34 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: "win-msvc Debug",      os: windows-2022, preset: windows,       build: windows-debug,          test: windows-debug,          tidy: "OFF" }
-          - { name: "win-msvc Release",    os: windows-2022, preset: windows,       build: windows-release,        test: windows-release,        tidy: "OFF" }
-          - { name: "linux-clang Debug",   os: ubuntu-latest,  preset: linux-debug,   build: linux-debug,   test: linux-debug,   tidy: "ON" }
-          - { name: "linux-clang Release", os: ubuntu-latest,  preset: linux-release, build: linux-release, test: linux-release, tidy: "ON" }
+          - { name: "win-msvc Debug",      os: windows-2022,  preset: windows,       build: windows-debug,   test: windows-debug,   tidy: "OFF" }
+          - { name: "win-msvc Release",    os: windows-2022,  preset: windows,       build: windows-release, test: windows-release, tidy: "OFF" }
+          - { name: "linux-clang Debug",   os: ubuntu-latest, preset: linux-debug,   build: linux-debug,     test: linux-debug,     tidy: "ON" }
+          - { name: "linux-clang Release", os: ubuntu-latest, preset: linux-release, build: linux-release,   test: linux-release,   tidy: "ON" }
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Linux toolchain + GLFW deps
+      - name: Setup CMake + Ninja
+        uses: lukka/get-cmake@latest
+
+      # Ninja on Windows uses cl.exe from the MSVC environment; this puts it on PATH.
+      - name: MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Install clang + GLFW deps (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build clang clang-tidy \
-            xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev  # GLFW X11/GL + Wayland deps
+          sudo apt-get install -y clang clang-tidy \
+            xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev
 
-      - name: ccache
-        if: runner.os == 'Linux'
-        uses: hendrikmuhs/ccache-action@v1
-        with:
-          key: ${{ matrix.build }}
+      - name: sccache
+        uses: mozilla-actions/sccache-action@v0.0.6
 
-      # Share FetchContent downloads across runs (biggest cost is cloning deps).
+      # Share FetchContent downloads across runs (avoids re-cloning deps each run).
       - name: Cache FetchContent sources
         uses: actions/cache@v4
         with:
@@ -71,13 +86,22 @@ jobs:
       - name: Configure
         env:
           FETCHCONTENT_BASE_DIR: ${{ github.workspace }}/.deps
-        run: cmake --preset ${{ matrix.preset }} -DTE_ENABLE_CLANG_TIDY=${{ matrix.tidy }}
+        run: >
+          cmake --preset ${{ matrix.preset }}
+          -DTE_ENABLE_CLANG_TIDY=${{ matrix.tidy }}
+          -DCMAKE_C_COMPILER_LAUNCHER=sccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          -DCMAKE_POLICY_DEFAULT_CMP0141=NEW
+          -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
 
       - name: Build
         run: cmake --build --preset ${{ matrix.build }}
 
       - name: Test (ctest incl. sdk-smoke)
         run: ctest --preset ${{ matrix.test }}
+
+      - name: sccache stats
+        run: sccache --show-stats
 
   # --- sanitizers, all per-PR (ADR-008 §9 Option A) --------------------------
   sanitizers:
@@ -87,23 +111,31 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: "win ASan",    os: windows-2022, preset: windows-asan, build: windows-asan, test: windows-asan }
-          - { name: "linux UBSan", os: ubuntu-latest,  preset: linux-ubsan,  build: linux-ubsan,  test: linux-ubsan }
-          - { name: "linux TSan",  os: ubuntu-latest,  preset: linux-tsan,   build: linux-tsan,   test: linux-tsan }
+          - { name: "win ASan",    os: windows-2022,  preset: windows-asan, build: windows-asan, test: windows-asan }
+          - { name: "linux UBSan", os: ubuntu-latest, preset: linux-ubsan,  build: linux-ubsan,  test: linux-ubsan }
+          - { name: "linux TSan",  os: ubuntu-latest, preset: linux-tsan,   build: linux-tsan,   test: linux-tsan }
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Linux toolchain + GLFW deps
+      - name: Setup CMake + Ninja
+        uses: lukka/get-cmake@latest
+
+      # Also puts clang_rt.asan_dynamic-x86_64.dll on PATH so ASan exes start under ctest.
+      - name: MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Install clang + GLFW deps (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build clang xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev
+          sudo apt-get install -y clang \
+            xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev
 
-      - name: ccache
-        if: runner.os == 'Linux'
-        uses: hendrikmuhs/ccache-action@v1
-        with:
-          key: ${{ matrix.build }}   # each sanitizer is its own cache namespace
+      - name: sccache
+        uses: mozilla-actions/sccache-action@v0.0.6
 
       - name: Cache FetchContent sources
         uses: actions/cache@v4
@@ -114,10 +146,18 @@ jobs:
       - name: Configure
         env:
           FETCHCONTENT_BASE_DIR: ${{ github.workspace }}/.deps
-        run: cmake --preset ${{ matrix.preset }}
+        run: >
+          cmake --preset ${{ matrix.preset }}
+          -DCMAKE_C_COMPILER_LAUNCHER=sccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          -DCMAKE_POLICY_DEFAULT_CMP0141=NEW
+          -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
 
       - name: Build
         run: cmake --build --preset ${{ matrix.build }}
 
       - name: Test
         run: ctest --preset ${{ matrix.test }}
+
+      - name: sccache stats
+        run: sccache --show-stats

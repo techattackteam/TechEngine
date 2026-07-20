@@ -22,7 +22,6 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
-- [ ] Build scaffold (ADR-008 checklist) — **built + locally green** (Jul 20): Win/MSVC Debug+Release, `ctest` 3/3 (base ×2 + SDK-smoke), clang-format clean, ASan flag confirmed on our targets only. Slices: skeleton → deps (FetchContent, pins in `cmake/deps.cmake`) → CI + clang-format/tidy + `te_sdk_smoke`. **Open:** `ci.yml` never run → CI-green tracked by the "GitHub repo & CI enforcement" To Do card; clang-tidy verified on Linux leg only (VS tidy segfaults local); glad2 deferred until `platform` opens a GL context. Uncommitted → Miguel branches + commits.
 
 
 ## ✅ Done — Story A (deep v1 audit · Jul 19)
@@ -49,6 +48,7 @@ kanban-plugin: board
 - [x] AI operating model (CLAUDE.md, slash commands, operating guide)
 - [x] Direction: fresh start (v2) — [[ADR-004 — Fresh start (v2) with v1 as reference]]
 - [x] Breadth-first scan (first pass) — [[v1 Code Audit]]; deep audit = Story A
+- [ ] Build scaffold (ADR-008 checklist) — **built + locally green** (Jul 20): Win/MSVC Debug+Release, `ctest` 3/3 (base ×2 + SDK-smoke), clang-format clean, ASan flag confirmed on our targets only. Slices: skeleton → deps (FetchContent, pins in `cmake/deps.cmake`) → CI + clang-format/tidy + `te_sdk_smoke`. **Open:** `ci.yml` never run → CI-green tracked by the "GitHub repo & CI enforcement" To Do card; clang-tidy verified on Linux leg only (VS tidy segfaults local); glad2 deferred until `platform` opens a GL context. Uncommitted → Miguel branches + commits.
 - [x] Vault cleanup: dropped stale v1 system/overview notes
 - [x] Vault reset for fresh start (Jul 19): archived v1 ADRs 001–003, blanked premature v2 verdicts/backlog, collapsed timeline to audit-now
 
