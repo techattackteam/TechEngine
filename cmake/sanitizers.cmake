@@ -23,6 +23,9 @@ if(MSVC)
                         "UBSan/TSan live on the Linux/Clang leg (ADR-005).")
   endif()
   target_compile_options(te_warnings INTERFACE /fsanitize=address)
+  target_compile_definitions(te_warnings INTERFACE
+    _DISABLE_STRING_ANNOTATION=1
+    _DISABLE_VECTOR_ANNOTATION=1)
 else()
   if(TE_SANITIZER STREQUAL "asan")
     set(_te_san address)

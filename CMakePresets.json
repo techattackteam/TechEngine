@@ -13,25 +13,26 @@
     },
 
     {
-      "name": "windows-msvc",
+      "name": "windows-ninja",
       "hidden": true,
       "inherits": "base",
-      "generator": "Visual Studio 17 2022",
-      "architecture": "x64",
+      "generator": "Ninja Multi-Config",
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" },
       "cacheVariables": {
-        "CMAKE_CONFIGURATION_TYPES": "Debug;Release;RelWithDebInfo"
+        "CMAKE_CONFIGURATION_TYPES": "Debug;Release;RelWithDebInfo",
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl"
       }
     },
     {
       "name": "windows",
-      "displayName": "Windows / MSVC (multi-config)",
-      "inherits": "windows-msvc"
+      "displayName": "Windows / Ninja (multi-config)",
+      "inherits": "windows-ninja"
     },
     {
       "name": "windows-asan",
-      "displayName": "Windows / MSVC + ASan",
-      "inherits": "windows-msvc",
+      "displayName": "Windows / Ninja + ASan",
+      "inherits": "windows-ninja",
       "cacheVariables": { "TE_SANITIZER": "asan" }
     },
 
