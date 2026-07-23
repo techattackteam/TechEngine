@@ -18,9 +18,19 @@ Then:
    check — did the week respect the cadence (deep/moderate/light/off)? energy,
    job+engine+karting balance, anything to cut.
 2. Save it as `docs/07 Journal/YYYY-MM-DD Weekly Review.md` (today's date).
-3. Update `docs/00 Dashboard/Dashboard.md`: current focus, blockers, health, and
+3. **Stale-artifact check.** For features touched this week (from `git log` + the
+   sprint board), spot-check their ADR / design note against what actually got built:
+   did implementation diverge from the documented end-state? A stale artifact is
+   poisoned ground truth — Claude will anchor to the wrong thing (CLAUDE.md rule 2).
+   **Also check hub drift:** for touched systems, the design note's *Decided*
+   one-liners vs the ADRs they index — the hub pattern reads the note *first*, so a
+   drifted one-liner silently overrides the ADR ([[Planning Workflow — Artifact Gate]]).
+   List any drift under "Artifact drift"; offer to reconcile (update the living design
+   note; a *superseding* ADR if an Accepted decision changed). See
+   [[Planning Workflow — Artifact Gate]]. If none, say so.
+4. Update `docs/00 Dashboard/Dashboard.md`: current focus, blockers, health, and
    **roll the `Next ceremony` line**.
-4. **If today is the month's last Sunday**, this is also the sprint boundary — hand off
+5. **If today is the month's last Sunday**, this is also the sprint boundary — hand off
    to `/sprint-plan` (demo + retro + plan the next sprint).
-5. Keep it short and honest. Flag scope creep or burnout risk if you see it.
-6. Do NOT start any implementation work — this is a planning ritual.
+6. Keep it short and honest. Flag scope creep or burnout risk if you see it.
+7. Do NOT start any implementation work — this is a planning ritual.

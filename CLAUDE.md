@@ -88,19 +88,26 @@ Notes are read by human AND AI every session. Optimize signal-per-token.
 1. **Design together before coding.** For anything non-trivial, discuss the
    approach first (plan mode is good for this). Agree on the design; **Miguel
    implements it.** Claude fills in boilerplate only where asked.
-2. **Refactor by default; rewrite only with evidence.** A rewrite needs
+2. **Ground answers in the artifact, not the moment.** When Miguel asks about a
+   feature mid-implementation, **start at the system's design note** in
+   `docs/04 Systems/` — its *Decided* section indexes the ADR decisions; follow an
+   ADR link only when the rationale matters. No note yet → the ADRs directly. If a
+   feature is load-bearing enough to warrant an artifact but none exists, that's a
+   gap: say so and design it, **don't hallucinate the goal on the spot.** The
+   artifact gate ([[Planning Workflow — Artifact Gate]]) decides what each item gets.
+3. **Refactor by default; rewrite only with evidence.** A rewrite needs
    documented, concrete pain — not "this feels messy." (See `docs` Principles.)
-3. **ADR before load-bearing decisions.** If a choice will be hard to reverse,
+4. **ADR before load-bearing decisions.** If a choice will be hard to reverse,
    draft an ADR in `docs/03 Architecture/` before building on it.
-4. **One task per session.** Keep scope tight. If new work appears mid-task, note
+5. **One task per session.** Keep scope tight. If new work appears mid-task, note
    it in `docs/06 Sprints/Backlog.md` instead of chasing it.
-5. **Verify, then claim done.** State build/run status honestly. If tests were
+6. **Verify, then claim done.** State build/run status honestly. If tests were
    skipped or something failed, say so with the output.
-6. **Small, reviewable diffs.** Whatever Claude *does* write stays small enough
+7. **Small, reviewable diffs.** Whatever Claude *does* write stays small enough
    for Miguel to fully understand and own. Explain non-obvious code.
-7. **Correctness first, then clarity, then performance.** Do not micro-optimize
+8. **Correctness first, then clarity, then performance.** Do not micro-optimize
    without a measurement. See Performance.
-8. **Don't commit or push unless asked.** When asked, branch off `master` first;
+9. **Don't commit or push unless asked.** When asked, branch off `master` first;
    never commit directly to `master`.
 
 ## Performance (this is a game engine)

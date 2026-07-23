@@ -20,6 +20,14 @@ Steps:
    and challenge, I decide scope. Every task must fit one 2–6h coding session with a
    clear done-condition. Size the sprint to my real weekly rhythm (deep Mon/Thu/Sun;
    moderate Fri; light Tue; relaxed Wed; off Sat) — the Dashboard calendar.
+   - **Artifact gate** (`docs/06 Sprints/Planning Workflow — Artifact Gate.md`) — ADR,
+     design note, or neither, by reversibility × blast radius; rarely both. Then apply
+     **artifact timing**: flag every artifact-less item that warrants one — **draft the
+     light ones with me now, in this session**; heavy ones (ADR / needs a spike) become
+     a sprint task ordered before the impl task they unblock.
+   - **Priority + weight on every task** — `P1/P2/P3` and a weight (🟢 Deep / 🟠 Moderate
+     / 🟡 Light) matching the day-type it fits, so I can pick by the day I'm on. Tag
+     format `· P1 · 🟢 Deep`.
 5. Create the sprint note from `docs/Templates/Sprint Template.md` and update
    `docs/06 Sprints/Sprint Board.md`, the roadmap, and the dashboard.
 6. This is planning only — no implementation.
