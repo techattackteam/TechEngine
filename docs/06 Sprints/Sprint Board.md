@@ -17,7 +17,7 @@ kanban-plugin: board
 ## 🔨 In Progress — Story C (ground: first buildable slice)
 
 - [ ] GitHub repo & CI enforcement — *once `ci.yml` is green*: branch protection on `master` + [[ADR-008 — v2 build & testing baseline]] §9 required checks + repo visibility (Fri/Sun · Miguel)
-- [ ] Backlog grooming for Sprint 02 (Fri · moderate)
+- [ ] Backlog grooming  and populating for Sprint 02 (Fri · moderate)
 
 
 ## 👀 Review / Demo

@@ -23,15 +23,15 @@
 
 **Weekly rhythm** — energy is *planned*, not aspirational; protect the light/off days.
 
-| Day | Mode      | Typical work                                  |
-| --- | --------- | --------------------------------------------- |
-| Mon | 🟢 Deep   | Implementation (core loop)                    |
-| Tue | 🟡 Light  | Docs, reading, small fixes, ADR drafting      |
-| Wed | ⚪ Relaxed | Recovery — optional light planning, else rest |
-| Thu | 🟢 Deep   | Implementation                                |
+| Day | Mode        | Typical work                                             |
+| --- | ----------- | -------------------------------------------------------- |
+| Mon | 🟢 Deep     | Implementation (core loop)                               |
+| Tue | 🟡 Light    | Docs, reading, small fixes, ADR drafting                 |
+| Wed | ⚪ Relaxed   | Recovery — optional light planning, else rest            |
+| Thu | 🟢 Deep     | Implementation                                           |
 | Fri | 🟠 Moderate | Lighter implementation — finish/refactor, prep next week |
-| Sat | 🔴 Off    | Karting — no engine work                      |
-| Sun | 🟢 Deep   | Implementation + weekly review                |
+| Sat | 🔴 Off      | Karting — no engine work                                 |
+| Sun | 🟢 Deep     | Implementation + weekly review                           |
 
 ## 🧭 Plan (collapsed — audit-first)
 
