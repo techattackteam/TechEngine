@@ -11,17 +11,23 @@ kanban-plugin: board
 
 ## 📋 To Do — Week of Jul 20–26 (bridge → Sprint 02 on Sun 26; B2 + B4 deferred → [[Backlog]])
 
+- [ ] **Fri 24 — ADR vocabulary amendments** (P2 · 🟡 Light · mechanical, ~30min) — **one dated positioning amendment per ADR**, covering *both* renames at once (positioning only, **no decision change** → amendment is the sanctioned instrument, [[ADR Index]]):
+	  1. **`World` → `Scene`** — [[ADR-006 — v2 core architecture & module layout]] §2 ("snapshot-able world") + §5 ("operates on world/ECS state"); [[ADR-007 — v2 networking & ECS replication foundation]] §6 (**`World&` is a live type name** in the system signature + "`World` asserts `actual ⊆ declared`"). Decided: it is **always Scene** — one concept, no separate serialized-scene asset.
+	  2. **Task-graph vocabulary** — retire **"scheduler"** as ambiguous. Keep `Schedule` (the data) + **task graph** (the built plan) + `executor` (the runner). ADR-006 §5 "the scheduler/task-graph ADR"; ADR-007 §6 "plan" → task graph.
+	  - **Free edits (not Accepted, no amendment needed):** [[ADR-010 — User authoring model (Systems & Scripts)]] §4 + negatives say "scheduler" ×2 → task graph.
+	  - **Then:** drop the ⚠️ vocabulary-debt banner at the top of [[Task Graph — Execution Flow]] — it exists only until these land.
+- [ ] **ADR-010 — deliberate Accept or keep Proposed** (P2 · 🟡 Light) — sleep on the **parallelism ceiling** first: `ScriptSystem` writes-everything ⇒ serializes vs all systems, and scripts don't run parallel to each other. That's the trade to argue before Accepting. Note it's ahead of its consumers (no ECS/task graph yet) — a fair argument for leaving it Proposed until the task-graph ADR lands.
 - [ ] Sun 26 — Sprint 01 demo + retro + plan Sprint 02 → `/sprint-plan`
 
 
 ## 🔨 In Progress — Story C (ground: first buildable slice)
 
 - [ ] GitHub repo & CI enforcement — *once `ci.yml` is green*: branch protection on `master` + [[ADR-008 — v2 build & testing baseline]] §9 required checks + repo visibility (Fri/Sun · Miguel)
-- [ ] Backlog grooming  and populating for Sprint 02 (Fri · moderate)
 
 
 ## 👀 Review / Demo
 
+- [ ] Backlog grooming and populating for Sprint 02 (Fri · moderate)
 
 
 ## ✅ Done — Story A (deep v1 audit · Jul 19)

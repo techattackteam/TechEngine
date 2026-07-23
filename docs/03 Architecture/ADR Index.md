@@ -5,6 +5,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 
 | #   | Title                                               | Status   | Date    |
 | --- | --------------------------------------------------- | -------- | ------- |
+| 010 | [[ADR-010 — User authoring model (Systems & Scripts)]] | Proposed | 2026-07 |
 | 009 | [[ADR-009 — Branching strategy & merge rules]]      | Proposed | 2026-07 |
 | 008 | [[ADR-008 — v2 build & testing baseline]]           | Accepted | 2026-07 |
 | 007 | [[ADR-007 — v2 networking & ECS replication foundation]] | Accepted | 2026-07 |
@@ -17,7 +18,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 > ADR-001/002/003 describe the **v1 reference prototype** and are moved to
 > `_archive v1/` — history/prior art, out of the active list. Mine them via
 > [[v1 Code Audit]] and (post-audit) [[Lessons from v1 (reference prototype)]].
-> Next number is **010** (numbers are never reused).
+> Next number is **011** (numbers are never reused).
 
 ## Statuses
 

@@ -94,6 +94,12 @@ flowchart LR
 handler through the hookable seam — the *same* seam the tests use. → no OS in `base`, DAG intact.
 
 ## Open questions (→ Diagnostics ADR)
+- ⚠️ **Supersede ADR-006 §6 explicitly.** The four-tier model *changes* an Accepted
+  decision — §6 says two-tier with `TE_VERIFY` "always-on for shipped invariants";
+  here VERIFY = always-eval, **dev-only abort**. The Diagnostics ADR must state it
+  supersedes ADR-006 §6's assert bullet (not silently drift past it).
+- **SDK exposure** — do user scripts get assert macros (likely `ENSURE`/`CHECK`), and
+  through what `te_sdk` seam? Ties to the base-ABI rules ([[ADR-010 — User authoring model (Systems & Scripts)]] §8).
 - RelWithDebInfo: ASSERT on or off?
 - ENSURE report-once scope — per call-site (static local) vs a global rate-limit.
 - `TE_ASSUME(cond)` (C++23 `[[assume]]` / `__assume`) as a **separate** opt-in optimizer hint — in or

@@ -1,7 +1,8 @@
 # 🗃️ Backlog
 
 Everything wanted but not in the active sprint. Groom at sprint planning. Pull
-from here into [[Sprint Board]].
+from here into [[Sprint Board]]. At grooming, run each item through the
+[[Planning Workflow — Artifact Gate]] — ADR / design note / neither, don't reflex-mint.
 
 **Hierarchy:** `## module` (per [[ADR-006 — v2 core architecture & module layout]] §1)
 → `### utilities | systems` → `#### <item>`. **utilities** = passive helpers you
@@ -18,10 +19,21 @@ lands and flag coverage gaps.
 > everything else stays parked until designed. **Each item carries its own trigger** —
 > read that, not a blanket "parked."
 
-- 🎯 **C2 — first v2 vertical slice (Sprint 02 anchor)** *(milestone, cross-module).* First
+- 🎯 **C2 — first v2 vertical slice (Sprint 03 anchor)** *(milestone, cross-module).* First
   end-to-end slice built on the ADR-008 scaffold. The renderer/render-graph ADR
   (client → systems) and **B4** conventions (etc → infra) are both **born here**,
-  evidence-driven, with v1 passes as reference. **Trigger:** Sprint 02 planning (Sun 26 Jul).
+  evidence-driven, with v1 passes as reference. **Re-sequenced to Sprint 03** (see the
+  Sprint 02 lock below) — the slice builds on the base foundation Sprint 02 lays.
+  **Trigger:** Sprint 03 planning (end Aug).
+
+> 🔒 **Sprint 02 direction — locked (Jul 23, pre-planning).** Sprint 02 is a **narrow
+> horizontal base**, not the vertical slice: **Diagnostics (Logger + Assert) + Clock**,
+> unit-tested, pulled by the **first sliver of the app loop (± window)** as the real
+> consumer. Pressure-test: the rest of `base` (Profiler, memory tracking, Pool, SlotMap,
+> ring buffer, containers) has **no Sprint-02 consumer** → building it now = speculation
+> ([[Planning Workflow — Artifact Gate]]). **C2 vertical slice → Sprint 03.** Consequence:
+> Q3 DoD demo lands at quarter's edge (Sep) — accepted. Scope details (window in/out, loop
+> depth, fixed-timestep now/later; first task = the **Diagnostics ADR**) finalized Sun 26 Jul.
 
 ## base
 Pure foundation, below the OS (ADR-006 §1): math, logging, assert, clock,
@@ -50,7 +62,10 @@ simple, dockable panel** over Worker's data; a "deep dive" button dumps a `.trac
 launches the **Tracy desktop app** (native viewer — not a browser). **Open Qs for the ADR:** app
 in-proc vs separate runtime process (loopback topology — an ADR-006 composition question); single
 live consumer → deep dive = snapshot-to-file, not a 2nd live feed; pin Tracy version (wire-protocol
-lock); socket **off** in shipping builds. **Trigger:** Sprint 02 — foundation.
+lock); socket **off** in shipping builds. **Trigger:** **not Sprint 02** — no hot path to measure
+yet (pressure-test, [[Planning Workflow — Artifact Gate]]). Lands just-in-time before the **first
+perf pass** (renderer/ECS, Sprint 03+); CLAUDE.md's "profiling hook before optimization" presupposes
+an optimization pass, which doesn't exist until then. Also gates the Job-system ADR.
 
 #### Assert
 **Four tiers (`ASSERT`/`VERIFY`/`CHECK`/`ENSURE`), one hookable handler — helper(utility) in `base`
@@ -142,7 +157,8 @@ The *thread-pool execution* of the schedule ADR-007 §6 designs: work-stealing p
 dispatch, ECS parallel iteration, integration with Jolt's internal pool (fixes F15 — v1's 3
 ad-hoc threading models). ADR-007 already defines its **input** (the built plan = the task graph;
 `ISystem` + `SystemAccess` unchanged), so this is execution, not interface. Land the base
-Profiler first (CLAUDE.md perf rule).
+Profiler first (CLAUDE.md perf rule). **Execution view + open questions →
+[[Task Graph — Execution Flow]]** (draft).
 
 #### Resources — hot-reload / eviction (candidate ADR)
 Hot-reload + eviction policy for the CPU resource cache. Depends on the UUID/cache model ported

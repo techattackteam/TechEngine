@@ -78,6 +78,8 @@ ADR-006 §6); Error = "the world did something bad and we handled it." Missing f
 null is impossible → assert. *(These rules may promote to root `CONVENTIONS.md` when B4 lands.)*
 
 ## Open questions (→ Logger ADR)
+- **SDK exposure** — user scripts will log ([[ADR-010 — User authoring model (Systems & Scripts)]]):
+  which macros cross `te_sdk`, and under what ABI rules (no STL by value across the DLL seam)?
 - Exact seam surface — how much `fmt` leaks vs fully hidden.
 - Async vs sync file sink (cross-thread ordering trade).
 - Shipping compile-time min level per build config.

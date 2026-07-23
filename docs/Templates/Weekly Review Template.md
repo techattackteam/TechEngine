@@ -14,6 +14,10 @@ date: YYYY-MM-DD
 ## ⛔ Blockers
 -
 
+## 📐 Artifact drift
+> ADR / design notes vs what got built this week. "None" is a valid, good answer.
+-
+
 ## 🎯 Objective for next week
 -
 
