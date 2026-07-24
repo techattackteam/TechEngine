@@ -8,6 +8,19 @@
   [[ADR-005 — v2 tech stack & toolchain]] · feeds the deferred **job-system/task-graph**,
   **netcode transport**, and **binary serialization** ADRs
 - **Task:** B1b — the ECS + multiplayer foundation gameplay code depends on.
+- **Amended 2026-07-24 — vocabulary (positioning only; no decision reversed):** two renames
+  apply throughout, both concentrated in §6.
+  1. **`World` → `Scene`** — and here it is a **live type name**, not prose. §6's signature
+     reads `update(Scene&, const FrameContext&)`, its debug check is "**`Scene`** asserts
+     `actual ⊆ declared`", and a system gets `Scene&` + `FrameContext`. Always `Scene`: one
+     concept, no separate serialized-scene asset. (Unrelated: "Jolt world" §6, "world-state
+     transport" in Alternatives are ordinary English.)
+  2. **"scheduler" / "plan" → task graph** — `Schedule` (input data) · **task graph** (the
+     plan built from it) · `executor` (the runner); [[Task Graph — Execution Flow]]. §6's
+     "the plan is built once … the executor walks a prebuilt plan" **is** the task graph
+     (so "this plan *is* the deferred job-system's task graph" is now identity by name, not
+     an equivalence to argue); §4's "scheduler must support role-conditioned schedules" and
+     §6's access-set consumer "scheduler" mean the **task-graph build**.
 
 ## Context
 
@@ -147,6 +160,9 @@ compression (§2) is its bandwidth form, not a rival**; discrete gameplay events
   feedback (mild time dilation). Listen-server: client tick == server tick (offset 0).
 
 ### 6. System interface & scheduling
+
+> **Vocabulary amended 2026-07-24** (header): `World` → **`Scene`** — including the type
+> name in the signature below · "plan"/"scheduler" → **task graph**. Naming only.
 
 - **`ISystem` = a stateful object behind a light virtual base** — `update(World&, const
   FrameContext&)`, a cached `access()`, `string_view name()`. One virtual call per system

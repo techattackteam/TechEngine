@@ -6,14 +6,11 @@
 > view** (one end-to-end sequence), not a restatement of the rules.
 
 **Module:** `core` · **Kind:** system · **Status:** draft
+**Runs inside:** [[Game Loop — Frame Flow]] — this doc is one stage of one phase
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §5 ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §6 ·
 [[ADR-010 — User authoring model (Systems & Scripts)]] *(Proposed)*
 **Backlog:** [[Backlog]] → `core` → `systems` → Job-system / task-graph
-
-> ⚠️ **Vocabulary:** this doc uses **`Scene`** (runtime ECS container) and **task graph**.
-> ADR-006 §2/§5 and ADR-007 §6 still say `World` / "plan" / "scheduler" — a dated
-> positioning amendment to both is **outstanding**.
 
 ## Purpose
 
@@ -101,6 +98,7 @@ buffer — no separate path.
 
 - [[ADR-007 — v2 networking & ECS replication foundation]] §6 — the decisions
 - [[ADR-006 — v2 core architecture & module layout]] §5 — System/helper taxonomy
+- [[Game Loop — Frame Flow]] — the frame this graph executes inside (incl. `FixedUpdate` ×N)
 - [[ADR-010 — User authoring model (Systems & Scripts)]] — script terminal slot
 - [[v1 Code Audit]] — F15 (3 ad-hoc threading models), F19 (per-frame alloc)
 - Code: *(none yet — `core` is greenfield)*

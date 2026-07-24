@@ -6,7 +6,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 | #   | Title                                               | Status   | Date    |
 | --- | --------------------------------------------------- | -------- | ------- |
 | 010 | [[ADR-010 — User authoring model (Systems & Scripts)]] | Proposed | 2026-07 |
-| 009 | [[ADR-009 — Branching strategy & merge rules]]      | Proposed | 2026-07 |
+| 009 | [[ADR-009 — Branching strategy & merge rules]]      | Accepted | 2026-07 |
 | 008 | [[ADR-008 — v2 build & testing baseline]]           | Accepted | 2026-07 |
 | 007 | [[ADR-007 — v2 networking & ECS replication foundation]] | Accepted | 2026-07 |
 | 006 | [[ADR-006 — v2 core architecture & module layout]]  | Accepted | 2026-07 |
