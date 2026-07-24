@@ -8,6 +8,19 @@
   replication foundation ADR) · feeds **B2** (renderer), **B3** (build+testing),
   **B4** (code conventions)
 - **Task:** B1 — the structural skeleton. Deep subsystems get their own ADRs (below).
+- **Amended 2026-07-24 — vocabulary (positioning only; no decision reversed):** two renames
+  apply throughout this ADR.
+  1. **`World` → `Scene`.** The runtime ECS container is **always `Scene`** — one concept,
+     no separate serialized-scene asset, same name in the SDK façade (`IScene`). Read §2's
+     "snapshot-able world" and §5's "operates on world/ECS state" as `Scene`. (Unrelated:
+     "Jolt world" in §5 is Jolt's own term, unchanged.)
+  2. **"scheduler" retired** — it conflated three layers. Vocabulary is `Schedule` (the
+     input data) · **task graph** (the plan built from it) · `executor` (the runner) —
+     [[Task Graph — Execution Flow]]. So the Context deferral list's "task-graph/scheduler
+     (F15)" and §5's "the scheduler/task-graph ADR" are **the task-graph ADR**; §5's
+     profiler rows ("wraps the scheduler") wrap the **executor**.
+  Driver: [[ADR-010 — User authoring model (Systems & Scripts)]] §7 fixed `Scene`, and the
+  task-graph design note needs one unambiguous set of terms.
 
 ## Context
 
@@ -188,6 +201,10 @@ struct FrameContext { float dt; float fixedDt; uint64_t frameIndex; const Engine
   short, linear function (no magic resolver).
 
 ### 5. System / helper taxonomy — two buckets
+
+> **Vocabulary amended 2026-07-24** (header): "world/ECS state" → **`Scene`** ·
+> "the scheduler/task-graph ADR" → **the task-graph ADR** · profiler wraps the
+> **executor**. Naming only.
 
 **One test — a *System* qualifies on all three axes:** (1) ticks per-frame/fixed,
 (2) operates on world/ECS state, (3) ordering is load-bearing. Everything else is a
