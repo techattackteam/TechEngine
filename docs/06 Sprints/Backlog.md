@@ -76,8 +76,21 @@ debugger break only if attached (`platform` handler); failure path `[[unlikely]]
 **Full design + usage rules → [[Assert — Design]].** Combined **Diagnostics ADR** with the Logger.
 **Trigger:** Sprint 02 — rides with Logger.
 
+#### FrameAllocator — untracked, architecturally mandated
+`EngineContext` carries `FrameAllocator&` (ADR-006 §4) and ADR-007 §2's "no per-tick heap snapshot"
+promise rides on it (encode columns → wire buffer through it). **Out of near-term scope** — not in
+Sprint 02's base slice — but it is not optional in the architecture, and nothing tracked it until now.
+Open: reset granularity (per frame vs per tick, given `FixedUpdate` runs ×N — [[Game Loop — Frame Flow]]).
+**Trigger:** replication / the first netcode slice.
+
 #### Clock / time
-**Read-only time facade in `EngineContext` (`const Clock&`, ADR-006 §5) — loop writes, systems read.**
+**Read-only time facade in `EngineContext` (`const Clock&`, ADR-006 §4) — loop writes, systems read.**
+> **Scoped 2026-07-24 ([[Game Loop — Frame Flow]]):** the Clock is the **time source**, not the
+> home of simulation time. It keeps monotonic `now()`, wall-clock stamps, `totalTime`, and a
+> **diagnostic** frame counter for Logger/Profiler correlation. `dt`/`fixedDt`/`tick`/`alpha`/
+> `role` stay on **`FrameContext`** (ADR-007 §6's system signature) — a process can host more
+> than one sim, so they cannot be process-globals. `timeScale`/pause is loop policy: the loop
+> scales the `dt` it feeds the accumulator. Strike the overlapping fields below.
 Monotonic (`std::chrono::steady_clock`) + wall-clock (`system_clock`) sources **in `base`, no `platform`
 seam** (steady_clock is std + QPC-backed; add a raw platform timer only if the Profiler needs it — measure
 first). Exposes the per-frame values the loop publishes: `dt`/`unscaledDt` (fixed sim step, scaled/real),
@@ -160,6 +173,19 @@ ad-hoc threading models). ADR-007 already defines its **input** (the built plan 
 Profiler first (CLAUDE.md perf rule). **Execution view + open questions →
 [[Task Graph — Execution Flow]]** (draft).
 
+**Also owes three things now** (recorded so the dependency is visible — *not* a schedule):
+1. **Terminal-slot mechanism** — "after everything" in a phase; ADR-007 §6's `.after<A>()` is
+   pairwise and can't express it ([[ADR-010 — User authoring model (Systems & Scripts)]] §4).
+2. **Script execution ordering key** — must be stable, or reconciliation replay diverges
+   (ADR-010 negatives).
+3. **`ScriptSystem` declares no access** (ADR-010 §5) — the terminal slot is its whole
+   scheduling contract; the graph builder has to accept an entry with an empty access set.
+
+**Unscheduled, deliberately.** Its consumers don't exist yet (no ECS, no loop), and
+[[ADR-010 — User authoring model (Systems & Scripts)]] stays **Proposed** until it lands —
+that's a dependency, not a deadline. **Trigger:** the ECS + app-loop slice being real, not a
+sprint date.
+
 #### Resources — hot-reload / eviction (candidate ADR)
 Hot-reload + eviction policy for the CPU resource cache. Depends on the UUID/cache model ported
 from v1 (F7, F13, F31).
@@ -205,16 +231,35 @@ Loop + composition root (ADR-006 §1): game loop (simulate | present), engine li
 
 ### systems
 
-#### Loop timestep policy — needs a design decision (app-loop ADR / design note)
-**Fixed timestep for `simulate`, variable for `present`, interpolate render with `alpha`** ("fix your
-timestep"). Effectively mandated by ADR-007 (server tick = master clock) + Jolt stability. The loop owns
-the accumulator and **publishes `dt`/`tick`/`alpha`/`frame` into the Clock facade** (`base → Clock`,
-read-only to systems). Open: fixed rate (60? 128?), spiral-of-death clamp, sim-ahead-of-render for
-prediction (ADR-007 time-sync). **Trigger:** the C2 loop / first sim slice.
+#### Loop timestep policy — design note drafted
+Timestep, phase cadence and the accumulator are **decided** in ADR-007 §5/§6 (fixed 60 Hz sim,
+`alpha`-interpolated present, dt clamp) — assembled view + open questions →
+**[[Game Loop — Frame Flow]]** (draft). Time ownership **decided** there (2026-07-24):
+`FrameContext` holds sim time, `Clock` is the source + diagnostic frame counter. Still open:
+`FrameAllocator` reset granularity; where net send/receive sit. **Trigger:** the C2 loop /
+first sim slice.
 
 ## net
 
 ### systems
+
+#### Per-component-type byte counters in the encoder — visibility, not a rail
+Attribute outgoing bytes **per component type per second**, surfaced in a debug overlay. The delta
+encoder already iterates per column (ADR-007 §2), so this is close to free. Rationale: `IsReplicated<T>`
+is a bare compile-time bool — no size ceiling, no rate, no budget — so a user can opt a 300-byte
+component into replication on 2k entities and the only symptom is "netcode feels bad". This converts
+that into a named component. **The engine's answer to replication cost is a profiler, not a limit**
+(CLAUDE.md perf rule: land the measurement before the optimization). **Trigger:** first real
+replication slice.
+
+#### Debug assert on raw entity indices arriving over the wire
+POD/trivially-copyable is enforced for replicated components, but it does **not** catch a user
+component holding a raw slotmap index (`uint32 targetIndex`) instead of a `NetId`. It memcpys fine and
+is garbage on the receiving client — ADR-007 §1: the local index is never transmitted and is
+per-process. Silent cross-machine corruption, no crash, only visible in multiplayer playtest. A
+receiving-side `TE_ASSERT` (debug-only, ADR-006 §6) turns it into an ordinary, diagnosable foot-gun.
+Considered and dropped as over-engineering: a `NetRef` wrapper type forcing it at compile time.
+**Trigger:** first replicated user component.
 
 #### Netcode transport — needs its own ADR
 Candidates: **ENet** (light, low-dep) · **GameNetworkingSockets** (batteries-included, heavy deps) ·

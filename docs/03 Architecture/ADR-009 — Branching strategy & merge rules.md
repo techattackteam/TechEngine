@@ -1,6 +1,6 @@
 # ADR-009 — Branching strategy & merge rules
 
-- **Status:** Proposed
+- **Status:** Accepted — 2026-07-24
 - **Date:** 2026-07
 - **Deciders:** Miguel (Lead Engineer), with AI as technical lead
 - **Related:** [[ADR-008 — v2 build & testing baseline]] §9 (CI enforcement — this fills

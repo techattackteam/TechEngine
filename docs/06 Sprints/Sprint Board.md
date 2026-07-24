@@ -11,12 +11,6 @@ kanban-plugin: board
 
 ## 📋 To Do — Week of Jul 20–26 (bridge → Sprint 02 on Sun 26; B2 + B4 deferred → [[Backlog]])
 
-- [ ] **Fri 24 — ADR vocabulary amendments** (P2 · 🟡 Light · mechanical, ~30min) — **one dated positioning amendment per ADR**, covering *both* renames at once (positioning only, **no decision change** → amendment is the sanctioned instrument, [[ADR Index]]):
-	  1. **`World` → `Scene`** — [[ADR-006 — v2 core architecture & module layout]] §2 ("snapshot-able world") + §5 ("operates on world/ECS state"); [[ADR-007 — v2 networking & ECS replication foundation]] §6 (**`World&` is a live type name** in the system signature + "`World` asserts `actual ⊆ declared`"). Decided: it is **always Scene** — one concept, no separate serialized-scene asset.
-	  2. **Task-graph vocabulary** — retire **"scheduler"** as ambiguous. Keep `Schedule` (the data) + **task graph** (the built plan) + `executor` (the runner). ADR-006 §5 "the scheduler/task-graph ADR"; ADR-007 §6 "plan" → task graph.
-	  - **Free edits (not Accepted, no amendment needed):** [[ADR-010 — User authoring model (Systems & Scripts)]] §4 + negatives say "scheduler" ×2 → task graph.
-	  - **Then:** drop the ⚠️ vocabulary-debt banner at the top of [[Task Graph — Execution Flow]] — it exists only until these land.
-- [ ] **ADR-010 — deliberate Accept or keep Proposed** (P2 · 🟡 Light) — sleep on the **parallelism ceiling** first: `ScriptSystem` writes-everything ⇒ serializes vs all systems, and scripts don't run parallel to each other. That's the trade to argue before Accepting. Note it's ahead of its consumers (no ECS/task graph yet) — a fair argument for leaving it Proposed until the task-graph ADR lands.
 - [ ] Sun 26 — Sprint 01 demo + retro + plan Sprint 02 → `/sprint-plan`
 
 
@@ -43,6 +37,9 @@ kanban-plugin: board
 
 ## ✅ Done
 
+- [x] **ADR-010 — decided: stays Proposed** (Jul 24) — gated on the task-graph ADR (its consumers don't exist yet). Session also settled: §1a user Systems register their own component types · §2a binding is a `ScriptComponent` (side table rejected) · §5 `ScriptSystem` declares **no** access — the terminal slot determines ordering · §5a the `te_sdk` façade is the sole `changeTick` path for scripts, which is what keeps delta compression alive.
+- [x] **Game loop design note** (Jul 24) — [[Game Loop — Frame Flow]] drafted (frame diagram, `FixedUpdate` ×N, phase cadence); **decided** `FrameContext` owns sim time, `Clock` is the time source + diagnostic frame counter. Closes [[Backlog]] `app` → Loop timestep policy.
+- [x] **ADR vocabulary amendments** (Jul 24) — `World` → **`Scene`** + **"scheduler"** retired (`Schedule` · task graph · `executor`). One dated amendment each on ADR-006/-007 (Accepted → header amendment, body untouched); free edits in ADR-010 §4/§7/negatives; vocabulary-debt banner dropped from [[Task Graph — Execution Flow]].
 - [x] B5 — AI collaborators set up (3 agents + docs); CLAUDE.md/prompt refresh → B4
 - [x] Command polish — `/adr`, `/weekly-review`, `/feature-breakdown` wired to agents + scrum-master + ADR immutability (Sun 19)
 - [x] B3 — v2 build + testing baseline ADR → [[ADR-008 — v2 build & testing baseline]] (Accepted)
