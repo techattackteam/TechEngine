@@ -51,8 +51,9 @@ follow that calendar. Match the session type to the day's mode:
 | Relaxed | Optional light planning / docs, or rest | — |
 | Off | No engine work | — |
 
-Ceremonies: **Sundays** `/weekly-review`; **last Sunday of the month** `/sprint-plan`
-(demo + retro + next-sprint planning).
+Ceremonies: **each weekend** `/weekly-review`; **last weekend of the month** `/sprint-plan`
+(demo + retro + next-sprint planning). Run them on whichever weekend day you work — see
+the [[Dashboard]] weekend rule.
 
 ## One task per session
 
@@ -70,7 +71,7 @@ repo-root `CLAUDE.md` → "Token economy & vault cleanliness".
 
 | Command                        | Use it for                                                |
 | ------------------------------ | --------------------------------------------------------- |
-| `/weekly-review [notes]`       | Sunday review → writes the journal + updates dashboard    |
+| `/weekly-review [notes]`       | Weekend review → writes the journal + updates dashboard    |
 | `/sprint-plan [focus]`         | Monthly planning → retro + next sprint, sized to capacity |
 | `/adr <decision>`              | Draft an ADR for a load-bearing decision                  |
 | `/arch-review <area>`          | Technical-lead review of a system (analysis, no edits)    |
@@ -91,13 +92,13 @@ flowchart TD
   FB --> TASK["A sprint task"]
   TASK --> LOOP["Core loop<br/>design → you implement → verify"]
   LOOP --> CR["/code-review<br/>before every commit"]
-  SUN(["Every Sunday"]) --> WR["/weekly-review"]
-  LSUN(["Last Sunday / month"]) --> SP["/sprint-plan<br/>demo + retro + plan"]
+  SUN(["Every weekend"]) --> WR["/weekly-review"]
+  LSUN(["Last weekend / month"]) --> SP["/sprint-plan<br/>demo + retro + plan"]
   SP --> FB
 ```
 
-- **Cadence commands fire on the calendar:** `/weekly-review` every Sunday;
-  `/sprint-plan` the last Sunday of the month (which then feeds `/feature-breakdown`).
+- **Cadence commands fire on the calendar:** `/weekly-review` once per weekend;
+  `/sprint-plan` the last weekend of the month (which then feeds `/feature-breakdown`).
 - **Work commands fire on a trigger, not the clock:** a load-bearing decision → `/adr`;
   decomposing a feature → `/feature-breakdown`; assessing existing code → `/arch-review`;
   before any commit → `/code-review`.

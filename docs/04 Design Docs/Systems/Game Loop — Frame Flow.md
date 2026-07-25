@@ -9,6 +9,7 @@
 **Module:** `app` · **Kind:** system · **Status:** draft
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §1 §4 §5 ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §5 §6 ·
+[[ADR-011 — Diagnostics (Logger & Assert)]] §9 (frame-stamp push) ·
 [[ADR-010 — User authoring model (Systems & Scripts)]] §3 §4 *(Proposed)*
 **Backlog:** [[Backlog]] → `app` → `systems` → Loop timestep policy
 
@@ -40,6 +41,7 @@ Here the loop lives in `app` and the editor hosts it from outside.
 | Scripts run in a **terminal slot** of `FixedUpdate` and `Update` | ADR-010 §3, §4 *(Proposed)* |
 | Editor hosts `app` from **outside** the frame loop | ADR-006 §1 (F14) |
 | **`FrameContext` owns sim time; `Clock` is the time source** — see below | ADR-006 §4, ADR-007 §5/§6 (this note, 2026-07-24) |
+| The loop **pushes** the diagnostic frame number into diagnostics once per frame — the Logger never reads the `Clock` | [[ADR-011 — Diagnostics (Logger & Assert)]] §9 |
 
 ## Design
 
@@ -90,10 +92,11 @@ owner per fact:
 | | Owns | Read by |
 |---|---|---|
 | **`FrameContext`** (parameter) | `dt`, `fixedDt`, `tick`, `alpha`, `role`, `frameIndex` — the authoritative simulation state | systems, via `update(Scene&, const FrameContext&)` (ADR-007 §6) |
-| **`Clock`** (`EngineContext` service, `base`) | monotonic `now()`, wall-clock stamp, `totalTime`, a **diagnostic** frame counter | the loop (to compute `dt`); Logger/Profiler macros |
+| **`Clock`** (`EngineContext` service, `base`) | monotonic `now()`, wall-clock stamp, `totalTime`, a **diagnostic** frame counter | **the loop only** |
 
-The loop owns the accumulator, publishes into `FrameContext`, and bumps the Clock's
-diagnostic counter once per frame.
+The loop owns the accumulator, publishes into `FrameContext`, bumps the Clock's diagnostic
+counter once per frame, and **pushes that number into diagnostics** so the Logger/Profiler
+macros can stamp it.
 
 **Why sim time is not on the Clock:** a process can run **more than one sim** — the editor
 hosts a client *and* a server (v1's F1 trigger), and tests run several headless sims. A
@@ -101,10 +104,17 @@ process-wide Clock can hold only one `tick`/`alpha`, and `role` is meaningless a
 `FrameContext` is per-call, so each sim carries its own. ADR-007 §6's signature already
 delivers it to every system, so a Clock read would be a **second path to the same fact**.
 
-**Why the Clock keeps a frame counter anyway:** Logger/Profiler are global macros (ADR-006
-§6) and cannot take a `FrameContext`; [[Logger — Design]]'s `[f 1043]` stamp needs an ambient
-number. It is for **correlation only** — approximate when two sims share a process — never
-the simulation's source of truth.
+**Why the Clock keeps a frame counter anyway:** Logger/Profiler are global macros and cannot
+take a `FrameContext`; [[Logger — Design]]'s `[f 1043]` stamp needs an ambient number. It is
+for **correlation only** — approximate when two sims share a process — never the
+simulation's source of truth.
+
+**But diagnostics does not read the Clock — the loop pushes to it**
+([[ADR-011 — Diagnostics (Logger & Assert)]] §9). An ambient global `Clock*` behind a log
+macro would be a *second
+access path to an `EngineContext` service*, the shape ADR-006 §4 exists to remove. So the
+loop reads `frame()` and publishes it; `base` holds no `Clock` reference. **This is an
+obligation on the loop** — forget the push and every log line stamps `[f 0]`.
 
 **`timeScale` / pause / slow-mo is loop policy**, not a Clock knob: the loop scales the `dt`
 it feeds the accumulator, so systems read an already-scaled `dt`. Add `unscaledDt` to

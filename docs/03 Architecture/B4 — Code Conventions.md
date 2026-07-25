@@ -1,81 +1,64 @@
 # 📐 B4 — Code Conventions
 
-The code style every session follows. Companion to [[ADR-008 — v2 build & testing baseline]] §8
-("net-new build conventions feed B4"). Read by human AND AI.
+> **Moved 2026-07-25 → root `CONVENTIONS.md`.** The rules now live **next to the code**, at
+> the repo root, where a contributor or AI reads them without the vault. This note is the
+> vault-side pointer + the decision history; it holds **no rules**, so the two cannot drift.
+>
+> **Go to `CONVENTIONS.md`** (repo root) for naming, internal linkage, comments, includes,
+> headers and CMake conventions.
 
-**Rule 0:** match the surrounding file over any line here. If a file is the outlier,
-fix the file — don't fork the convention.
+**Task:** S2-T10 ([[2026-08 Sprint 02 — Base Foundation]]) — running **in parallel** with the
+`base` tasks rather than late in the sprint, so a convention lands the day it's decided instead
+of being reconstructed at sprint end. The "schedule late" trigger (*needs real code to have
+opinions about*) fired on S2-T2.
 
-**Source of truth for *formatting* = Miguel's CLion scheme** (global `Default`), not
-`.clang-format`. CLion's ClangFormat support is **OFF** (`EnableClangFormatSupport=false`),
-so a `.clang-format` would be *ignored* today — this note records the scheme in prose
-instead. (If we ever want CI format-gating per ADR-008 §9, that's a separate decision:
-turn ClangFormat on and generate a matching `.clang-format`.)
+## Why the split
 
-## C++ naming
+| | Home | Holds |
+|---|---|---|
+| **Rules** | `CONVENTIONS.md` (repo root) | The house style. One home — no restating. |
+| **Mechanical subset** | `.clang-format`, `.clang-tidy` | CI-enforced; wins on any conflict with prose. |
+| **Short subset** | `CLAUDE.md` → *Code conventions* | What AI loads every session; points at the root file. |
+| **Decisions / history** | this note | Why a convention changed, and when. |
 
-| Element                         | Style              | Example                    |
-| ------------------------------- | ------------------ | -------------------------- |
-| Namespace                       | one flat `TechEngine` | `namespace TechEngine {` |
-| Types (class/struct/enum/alias) | `PascalCase`       | `RenderGraph`, `FrameCtx`  |
-| Functions / methods             | `camelCase`        | `baseVersion()`, `run()`   |
-| Members                         | `m_camelCase`      | `m_frameCount`             |
-| Locals / params                 | `camelCase`        | `passIndex`                |
-| Files (paired `.hpp`/`.cpp`)    | `PascalCase`, match primary type | `Base.hpp` / `Base.cpp` |
-| Include path                    | `<TechEngine/<module>/File.hpp>` | `<TechEngine/core/Core.hpp>` |
+## Decision history
 
-- **No `te_` / snake_case prefixes on C++ identifiers.** `baseVersion`, not `te_base_version`.
-- Header include path is always `TechEngine/<module>/` (basename-collision-proof, ADR-008 §1).
+- **2026-07-25 — comments bar raised.** "Comment *why*, not *what*" was already in force and
+  still produced narrated code (the S2-T2 Logger scaffold). Replaced with **default: no
+  comment** + three exceptions (gotcha · `TODO(S2-Tn)` · `§ref`). Driver: Miguel's review.
+- **2026-07-25 — anonymous namespaces demoted.** `static` at file scope is the default for
+  internal linkage; `namespace {}` is a last resort earned only by a `.cpp`-local type with a
+  real ODR collision risk. Driver: Miguel's review of the same scaffold. The S2-T2 files were
+  refactored to match (zero anonymous namespaces in `engine/`, `apps/`, `sdk/`).
+- **2026-07-25 — constants are `SCREAMING_SNAKE_CASE`**, not `kPascalCase`. Overturns the
+  provisional call Claude scaffolded from the ADRs' illustrative `kFixedDt`. `TE_` now carries
+  the macro/constant distinction (both are `SCREAMING_SNAKE`). Driver: Miguel.
+- **2026-07-25 — include order is ours-first, and mechanically enforced.** Our headers before any
+  external or std header, tests included. Rationale: an external header above ours can satisfy
+  what our header forgot to include, hiding the omission until the next call site — ours-first
+  forces headers to be self-sufficient, which is what keeps include counts down. Moved from a
+  remembered rule to `.clang-format` (`IncludeBlocks: Regroup` + `IncludeCategories` +
+  `IncludeIsMainRegex: '(Tests)?$'`), so CLion and CI both enforce it and **no IDE
+  configuration is needed**. Driver: Miguel.
+- **2026-07-25 — private plumbing gets a CI guard, not just a naming convention.** Miguel
+  demonstrated the hole by calling `TE_DETAIL_LOG` from `apps/editor`. Macros have no access
+  control and `detail::` is a convention, so the boundary moved into `ci.yml`
+  (*No reaching into private plumbing*), sibling to the `te_sdk_smoke` leak gate. Renamed
+  `TE_DETAIL_LOG`/`TE_DETAIL_NO_LOG` → `TE_LOG_PRIVATE_EMIT`/`TE_LOG_PRIVATE_DISCARD`.
+  Driver: Miguel.
+- **2026-07-25 — formatting authority corrected.** This note previously claimed the CLion
+  scheme was authoritative and a `.clang-format` "would be ignored" — written before the
+  scaffold landed. The CI format gate has been live since 2026-07-20; `.clang-format` is the
+  source of truth. (`ColumnLimit: 100`, not the 380 an earlier draft claimed.)
 
-## Formatting (from the CLion scheme)
+## Open — local ergonomics (not a code rule)
 
-- **Indent 4 spaces**, no tabs. Continuation indent 8.
-- **Braces on the same line** (K&R / attach) — *everywhere*: functions, types,
-  namespaces, `if`/`for`/`while`, lambdas. `} else {`, `} catch`, `} while` stay **joined**
-  (else/while/catch not on a new line).
-- **Namespace body is indented** (+4). Matches CLion `NAMESPACE_INDENTATION=All`.
-- **No `} // namespace TechEngine` closing comment** — single flat namespace, the label is
-  noise. (Stripped from the scaffold 2026-07-20.)
-- `#pragma once` in every header (no include guards).
-- Pointer/reference **type-attached, left**: `const char* p`, `Foo& r` — as in the scaffold.
-- Right margin is 380 (effectively no hard wrap) — wrap by readability, not a column count.
-
-## Comments
-
-- **Comment *why*, not *what*.** A comment earns its place by explaining intent, a
-  non-obvious trick, or a gotcha — or as API/type documentation. If it just restates the
-  code, delete it.
-- **No per-line / per-include narration.** Do **not** annotate every `#include` (`// core
-  -> base`, `// proves X resolves`). The dependency graph lives in the `CMakeLists.txt` +
-  [[ADR-006 — v2 core architecture & module layout]], not in inline noise.
-- A short comment on a genuinely non-obvious line is fine (e.g. a call that exists only to
-  force a link). One line that pulls its weight, not a running commentary.
-- Prefer a self-explanatory name over a comment that explains a bad one.
-
-## CMake target naming
-
-- **Module libraries → real target `TechEngine<Module>`** (PascalCase, v1 nomenclature):
-  `TechEngineBase`, `TechEngineCore`, `TechEngineClient`, `TechEnginePlatform`,
-  `TechEngineApp`. This refines the *illustrative* `te_<module>` spelling in
-  [[ADR-008 — v2 build & testing baseline]] §2 (the ADR's real decisions — one helper,
-  explicit sources, the `TechEngine::` alias — are unchanged).
-- **Link the `TechEngine::<module>` alias, never the real name.** The real target name is
-  IDE-/build-output-facing only; consumers (`apps/*`, other modules' `DEPS`) use the alias,
-  so it stays the ADR-008 §2 invariant. Set in `cmake/techengine_module.cmake` (pascal-cases
-  the module dir name).
-
-## Open — decide when they first bite
-
-| Item | Current | Recommendation |
-| ---- | ------- | -------------- |
-| Utility interface target | `te_warnings` (+ `TechEngine::warnings`) | Keep `te_` as the **internal build-only** prefix — visually separates shippable module libs (`TechEngine*`) from interface/test targets. |
-| Per-module test exes (ADR-008 §6) | not built yet; ADR shows `te_<module>_tests` | Follow the same rule → `te_*_tests` (build-only) *or* `TechEngine<Module>Tests` if we want uniformity. |
-| Leaf exes | `editor`, `runtime` | v1 used `TechEngineEditor` / `TechEngineRuntime*` — prefix them to match if we want one scheme. |
-| `TechEngine::` alias case | lowercase `TechEngine::core` | Left lowercase = zero churn; Pascal `TechEngine::Core` reads cleaner if we reformat later. |
-| Constants / `enum class` values | undecided | Pick when the first real enum/constant lands (candidates: `kPascalCase`, `PascalCase`). |
+- If CLion still has `EnableClangFormatSupport=false`, turn it **on** so the IDE and CI agree —
+  otherwise local saves drift and CI catches it late.
 
 ## Related
 
-- [[ADR-008 — v2 build & testing baseline]] · [[B3 — Build & Testing Notes]] — the build side.
-- [[ADR-006 — v2 core architecture & module layout]] — module graph the names describe.
-- `CLAUDE.md` → "Code conventions" (the short version AI loads every session).
+- **`CONVENTIONS.md`** (repo root) — the rules.
+- [[ADR-008 — v2 build & testing baseline]] §8 ("net-new build conventions feed B4") ·
+  [[B3 — Build & Testing Notes]] — the build side.
+- [[ADR-006 — v2 core architecture & module layout]] — the module graph the names describe.

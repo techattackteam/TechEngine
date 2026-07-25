@@ -26,14 +26,14 @@ lands and flag coverage gaps.
   Sprint 02 lock below) — the slice builds on the base foundation Sprint 02 lays.
   **Trigger:** Sprint 03 planning (end Aug).
 
-> 🔒 **Sprint 02 direction — locked (Jul 23, pre-planning).** Sprint 02 is a **narrow
-> horizontal base**, not the vertical slice: **Diagnostics (Logger + Assert) + Clock**,
-> unit-tested, pulled by the **first sliver of the app loop (± window)** as the real
-> consumer. Pressure-test: the rest of `base` (Profiler, memory tracking, Pool, SlotMap,
-> ring buffer, containers) has **no Sprint-02 consumer** → building it now = speculation
-> ([[Planning Workflow — Artifact Gate]]). **C2 vertical slice → Sprint 03.** Consequence:
-> Q3 DoD demo lands at quarter's edge (Sep) — accepted. Scope details (window in/out, loop
-> depth, fixed-timestep now/later; first task = the **Diagnostics ADR**) finalized Sun 26 Jul.
+> ✅ **Sprint 02 direction — locked Jul 23, planned Jul 25** →
+> [[2026-08 Sprint 02 — Base Foundation]]. Narrow horizontal base: **Diagnostics (Logger +
+> Assert) + Clock**, unit-tested, pulled by the first sliver of the app loop. Pressure-test
+> held — the rest of `base` (Profiler, memory tracking, Pool, SlotMap, ring buffer,
+> containers) has **no Sprint-02 consumer**, so it stays parked.
+> **Scope calls closed at planning:** loop = **accumulator + `FrameContext`**, no phases ·
+> window **out** (headless) · fixed timestep **now** · first task = the **Diagnostics ADR**.
+> **C2 vertical slice → Sprint 03**; Q3 DoD demo lands at quarter's edge (Sep) — accepted.
 
 ## base
 Pure foundation, below the OS (ADR-006 §1): math, logging, assert, clock,
@@ -48,7 +48,8 @@ rules → [[Logger — Design]].** In brief: `fmt` in header / **spdlog hidden i
 `format_args`); **self-registering channels** tagged by module; structured `LogRecord` → editor + file
 sinks + flush-on-crash hook (crash/minidump in `platform`); per-level macros `TE_LOGGER_INFO/…`,
 positional `{0}` args; wall-clock + frame-# timestamps. **Load-bearing bits need their own ADR.**
-**Trigger:** Sprint 02 — foundation.
+✅ **Scheduled: [[2026-08 Sprint 02 — Base Foundation]]** — S2-T1 (ADR-011) → S2-T2/T3.
+*Editor ring-buffer sink excluded this sprint — no editor, no consumer.*
 
 #### Profiler
 **Scoped CPU + GPU instrumentation — helper(service) in `base` (ADR-006 §5).** RAII scopes,
@@ -74,7 +75,8 @@ an optimization pass, which doesn't exist until then. Also gates the Job-system 
 via [[Logger — Design|Logger]] + flush + controlled abort; never a silent `__debugbreak` in release (F10);
 debugger break only if attached (`platform` handler); failure path `[[unlikely]]`/cold. **No external lib.**
 **Full design + usage rules → [[Assert — Design]].** Combined **Diagnostics ADR** with the Logger.
-**Trigger:** Sprint 02 — rides with Logger.
+✅ **Scheduled: [[2026-08 Sprint 02 — Base Foundation]]** — S2-T4/T5. *Debugger-break-if-attached
+stays a documented `platform` hook, unimplemented (no `platform` module this sprint).*
 
 #### FrameAllocator — untracked, architecturally mandated
 `EngineContext` carries `FrameAllocator&` (ADR-006 §4) and ADR-007 §2's "no per-tick heap snapshot"
@@ -84,6 +86,8 @@ Open: reset granularity (per frame vs per tick, given `FixedUpdate` runs ×N —
 **Trigger:** replication / the first netcode slice.
 
 #### Clock / time
+**Design note drafted → [[Clock — Design]]** (2026-07-25 planning; light artifact, no ADR owed).
+✅ **Scheduled: [[2026-08 Sprint 02 — Base Foundation]]** — S2-T6.
 **Read-only time facade in `EngineContext` (`const Clock&`, ADR-006 §4) — loop writes, systems read.**
 > **Scoped 2026-07-24 ([[Game Loop — Frame Flow]]):** the Clock is the **time source**, not the
 > home of simulation time. It keeps monotonic `now()`, wall-clock stamps, `totalTime`, and a
@@ -304,17 +308,27 @@ Not a module — the `editor` exe (ADR-006 §1); owns the asset pipeline. Flat l
   order, file skeletons, const-correctness) into **one** root `CONVENTIONS.md` — judgment
   rules only; link `.clang-format`/`.clang-tidy` for the mechanical subset. CLAUDE.md
   "Code conventions" then shrinks to a pointer. One house style (Claude matches it — no
-  separate AI style). **Trigger:** first module / C2 slice. Also unblocks B5's
-  deferred CLAUDE.md/prompt refresh.
+  separate AI style). ✅ **Scheduled: Sprint 02 S2-T10** (trigger fired — first module code),
+  **late in the sprint** so it has real code to describe. *Partly pre-paid: B4's formatting
+  section was corrected to the CI-enforced `.clang-format` on 2026-07-25.*
+- **Mark third-party include dirs `SYSTEM` (`/external:I`) — build hygiene, found in S2-T2.**
+  ADR-008 §5 keeps `/WX` off third-party *targets*, but their **headers compiled into our TUs
+  still get our flags**: instantiating spdlog's bundled-fmt format checker from `Log.cpp` broke
+  the build on `C4459` inside `spdlog/fmt/bundled/base.h`. Dodged in T2 by not using spdlog's
+  format API (which ADR-011 §1 forbids anyway) — but **glm is the same shape** and will bite the
+  first time a glm template warns. Fix: `SYSTEM` on fetched include dirs (`deps.cmake` already
+  does it for miniaudio) or MSVC `/external:W0`. **Trigger:** next third-party header warning —
+  or pre-emptively, it's cheap.
+- ✅ **Tracked in root `CONVENTIONS.md` → *Open* (Jul 25).** Enum/constant casing, nested impl
+  namespace, ownership default, const-correctness and error handling are now rows in the live
+  conventions file (S2-T10 runs in parallel — flag them as they bite). Three are marked
+  **⚠️ provisional**, scaffolded to the artifacts' de-facto spelling and awaiting Miguel's
+  ratification: `PascalCase` enum values · `kPascalCase` constants · `TechEngine::detail`.
 - README at repo root (public-facing)
-- **GitHub repo & CI enforcement setup (repo admin, not code) — Miguel.** CI is
-  *designed* ([[ADR-008 — v2 build & testing baseline]] §9) and its `ci.yml` is a B3
-  scaffold item; this task is the **GitHub-side** config that makes the design bite:
-  branch protection on `master` with the §9 **required checks**; decide repo
-  **visibility** (public → unlimited free Actions minutes, kills the §9 cost trigger ·
-  private → ~2,000-min cap, Windows 2×); confirm `techattackteam` org Actions
-  minutes/billing. **Trigger:** right after B3's `ci.yml` first goes green (need the real
-  check names to require them). Repo + remote already exist.
+- ✅ **GitHub repo & CI enforcement — done Jul 24.** `master` ruleset Active (8 required
+  checks, empty bypass list); repo **stays private** → ADR-008 §9's ~2,000-min cap is live
+  (Windows 2×, ≈22 billed min per merged change). Watch Billing → Actions; response is §9's
+  (sanitizers → nightly). Ops findings → [[B3 — Build & Testing Notes]].
 - Recorded-demo workflow (capture + store)
 - **Ownership / smart-pointer policy (fixes v1 F13) — `CONVENTIONS.md` (B4) or a short ADR.** Default =
   value + **handle** (index + generation); `unique_ptr` = single heap ownership; raw ptr/ref = non-owning
@@ -330,7 +344,7 @@ Not a module — the `editor` exe (ADR-006 §1); owns the asset pipeline. Flat l
   [[ADR-006 — v2 core architecture & module layout]] / [[ADR-008 — v2 build & testing baseline]]:
   `include/TechEngine/<m>` + `src` split, `techengine_module()` call, colocated Catch2
   test exe, SDK-exposure decision, deps wiring; bundles the CMake snippet templates.
-  **Trigger:** right after the build scaffold exists (this week) so it references real files.
+  ✅ **Scheduled: Sprint 02 S2-T11** (P3 · 🟡 Light — trigger fired, scaffold exists).
 - **Skill `te-review` — engine review rubric.** Checks a diff against the ADR structural
   invariants (F3 private-header boundary; link-what-you-use [[ADR-008 — v2 build & testing baseline]] §8;
   no export macros; `EngineContext`≠locator [[ADR-006 — v2 core architecture & module layout]] §4;

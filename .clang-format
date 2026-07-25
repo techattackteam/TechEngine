@@ -1,6 +1,5 @@
-# TechEngine formatting (ADR-005: checked in, CI-enforced). Verified stable against
-# the current tree — clang-format 19 reformats nothing. Naming is NOT a clang-format
-# concern (see .clang-tidy / B4 conventions).
+# TechEngine formatting (ADR-005: checked in, CI-enforced). Naming is NOT a
+# clang-format concern (see .clang-tidy / CONVENTIONS.md).
 ---
 Language: Cpp
 BasedOnStyle: LLVM
@@ -12,4 +11,17 @@ NamespaceIndentation: All
 FixNamespaceComments: false
 PointerAlignment: Left
 AllowShortFunctionsOnASingleLine: None
-IncludeBlocks: Preserve
+
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+IncludeIsMainRegex: '(Tests)?$'
+# GOTCHA: the FIRST matching regex wins, so the '.*' catch-all must stay LAST or it
+# swallows std and the Priority 3 row becomes dead. Reads out of priority order on
+# purpose — that is match order, not sort order.
+IncludeCategories:
+  - Regex: '^<TechEngine/'   # ours
+    Priority: 1
+  - Regex: '^<[a-z_]+>$'     # std: one lowercase word, no slash or dot
+    Priority: 3
+  - Regex: '.*'              # third-party
+    Priority: 2

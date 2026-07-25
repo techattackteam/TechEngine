@@ -38,7 +38,7 @@ Sprint 02).
 ## 🗓️ Week of Jul 20–26 → Sprint 02 ceremony
 
 Deep days start the **build scaffold** ([[ADR-008 — v2 build & testing baseline]]
-checklist); the month's last Sunday (Jul 26) is the first true ceremony.
+checklist); the month's last weekend (Jul 25–26) is the first true ceremony.
 
 | Day | Mode | Plan |
 |-----|------|------|
@@ -47,10 +47,9 @@ checklist); the month's last Sunday (Jul 26) is the first true ceremony.
 | Wed 22 | ⚪ Relaxed | Rest · optional: consolidate stale memory tail |
 | Thu 23 | 🟢 Deep | Scaffold pt2 — leaf exes (`apps/runtime`, `editor`) + `te_base_tests` (Catch2+CTest) + `sdk/` + `te_sdk_smoke` + `.clang-format`/`.clang-tidy` |
 | Fri 24 | 🟠 Moderate | `ci.yml` (build matrix + tidy + ctest + sanitizers + SDK smoke) → green · **then GitHub repo setup** if green (branch protection + §9 required checks + visibility) · backlog grooming |
-| Sat 25 | 🔴 Off | Karting |
-| Sun 26 | 🟢 Deep | Weekly review + **Sprint 01 demo + retro + plan Sprint 02** (`/sprint-plan`) |
+| Sat 25 / Sun 26 | 🟢 Deep + 🔴 Off | Ceremony weekend — one day: weekly review + **Sprint 01 demo + retro + plan Sprint 02** (`/sprint-plan`); other day off (karting) |
 
-**Demo target (Jul 26):** v2 skeleton builds **green on CI** (both legs), tests + SDK
+**Demo target (weekend of Jul 25–26):** v2 skeleton builds **green on CI** (both legs), tests + SDK
 smoke pass. The GitHub repo task is gated on `ci.yml` first going green.
 
 ## Definition of Done
@@ -59,18 +58,22 @@ smoke pass. The GitHub repo task is gated on `ci.yml` first going green.
 - [x] v2 foundation ADRs (stack, architecture, networking, build/testing) **Accepted**.
 - [x] AI collaborators set up (agents + role + commands). *(v2 `CLAUDE.md`/prompt refresh + code conventions deferred → B4 / coding.)*
 - [x] `v1-reference` tagged; `v2` is mainline.
-- [ ] Build skeleton compiles **green on CI** (this week).
-- [ ] Sprint 02 has a concrete headline goal (the first slice) — set Jul 26.
+- [x] Build skeleton compiles **green on CI** (Jul 24).
+- [x] Sprint 02 has a concrete headline goal — set Jul 25 ([[2026-08 Sprint 02 — Base Foundation]]).
 
 ## Capacity note
 
 Weekly rhythm lives on the [[Dashboard]] — respect it. If a deep session runs long,
 stop and continue on the next deep day rather than forcing it in one sitting.
 
-## Sprint review (fill Jul 26)
+## Sprint review — closed 2026-07-25 ✅
 
-- Lessons captured:
-- Architecture decided:
-- First slice defined:
+- **Lessons captured:** [[v1 Code Audit]] F1–F35 + salvage verdicts in
+  [[Lessons from v1 (reference prototype)]].
+- **Architecture decided:** ADRs 005–009 **Accepted** (stack · module layout · networking/ECS ·
+  build & testing · branching); ADR-010 deliberately held **Proposed**.
+- **Ground:** scaffold **green on CI** both legs, `ctest` 3/3, `master` ruleset Active.
+- **First slice defined:** re-sequenced — Sprint 02 lays the **base foundation**
+  ([[2026-08 Sprint 02 — Base Foundation]]); **C2 vertical slice → Sprint 03**.
 
-→ Retrospective goes in [[07 Journal]].
+→ Retrospective: [[2026-07-25 Sprint 01 Retrospective]] · Week detail: [[2026-07-25 Weekly Review]]

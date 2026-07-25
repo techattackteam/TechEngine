@@ -6,7 +6,7 @@ argument-hint: "<system, path, or area to review>"
 Act as my technical lead and review the architecture of: $ARGUMENTS
 
 Focus on design, not style. Read the actual code first (and the relevant
-`docs/04 Systems/` note and ADRs).
+`docs/04 Design Docs/` note and ADRs).
 
 Deliver:
 1. **What's solid** — worth keeping, don't touch.
@@ -17,5 +17,5 @@ Deliver:
    coding sessions. Bias toward refactor unless evidence justifies more.
 5. Whether any of this warrants an **ADR** (and offer to draft it with /adr).
 
-Do not make code changes in this review — it's analysis. If the system doc in
-`docs/04 Systems/` is stale, note what should be updated.
+Do not make code changes in this review — it's analysis. If the design doc in
+`docs/04 Design Docs/` is stale, note what should be updated.

@@ -89,7 +89,7 @@ Every task carries **both**, so the pick matches the day (not just the sprint).
 
 **Weight** — energy it needs = which day-type it fits (the [[Dashboard]] cadence):
 
-- 🟢 **Deep** — hard design / long focus → Mon/Thu/Sun
+- 🟢 **Deep** — hard design / long focus → Mon/Thu + one weekend day
 - 🟠 **Moderate** — solid but bounded → Fri
 - 🟡 **Light** — small, low cognitive load (docs, config, mechanical) → Tue/Wed
 
@@ -113,7 +113,7 @@ The other commands are **triggered out of it**, not run in sequence after it.
 
 ```mermaid
 flowchart TD
-    A["/sprint-plan · last Sunday"] --> B["Gather: roadmap · quarter · sprint · backlog · ADRs"]
+    A["/sprint-plan · last weekend"] --> B["Gather: roadmap · quarter · sprint · backlog · ADRs"]
     B --> C{"Sprint ending?"}
     C -->|yes| D["Retro first"]
     C -->|no| E["Propose ONE headline goal"]

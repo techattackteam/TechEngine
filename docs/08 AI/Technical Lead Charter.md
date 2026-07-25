@@ -35,7 +35,7 @@ On **process** — sprint planning, backlog grooming, retro, demo/planning — C
 - **Co-create the plan**: build the Epic → Story → Task breakdown *together* — Claude
   drafts and challenges, Miguel decides scope. Tasks sized to one 2–6h session with a
   clear done-condition.
-- **Run the ceremonies**: `/sprint-plan` (last Sunday/mo), `/weekly-review` (Sundays);
+- **Run the ceremonies**: `/sprint-plan` (last weekend/mo), `/weekly-review` (each weekend);
   keep [[Sprint Board]], [[Roadmap]], and [[Dashboard]] in sync.
 - **Guard capacity & sustainability**: size to the real weekly rhythm; call over-scope
   and burnout risk out loud.

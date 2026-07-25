@@ -5,6 +5,7 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 
 | #   | Title                                               | Status   | Date    |
 | --- | --------------------------------------------------- | -------- | ------- |
+| 011 | [[ADR-011 — Diagnostics (Logger & Assert)]]         | Accepted | 2026-07 |
 | 010 | [[ADR-010 — User authoring model (Systems & Scripts)]] | Proposed | 2026-07 |
 | 009 | [[ADR-009 — Branching strategy & merge rules]]      | Accepted | 2026-07 |
 | 008 | [[ADR-008 — v2 build & testing baseline]]           | Accepted | 2026-07 |
@@ -18,7 +19,17 @@ Architecture Decision Records. Every load-bearing decision gets one. Use
 > ADR-001/002/003 describe the **v1 reference prototype** and are moved to
 > `_archive v1/` — history/prior art, out of the active list. Mine them via
 > [[v1 Code Audit]] and (post-audit) [[Lessons from v1 (reference prototype)]].
-> Next number is **011** (numbers are never reused).
+> Next number is **012** (numbers are never reused).
+
+### Partial supersessions
+
+A superseding ADR sometimes reverses **one clause** of an Accepted ADR, not the whole
+record. The superseded ADR stays **Accepted** and its body is **never edited** — the
+partial scope is tracked here.
+
+| Clause | Superseded by | Scope |
+| --- | --- | --- |
+| [[ADR-006 — v2 core architecture & module layout]] §6 — assert **tier** clause (`TE_VERIFY` always-on abort) | [[ADR-011 — Diagnostics (Logger & Assert)]] §5 | **That clause only.** §6's logging bullet, `TE_ASSERT` semantics, the never-silent-`__debugbreak` rule and the `[[unlikely]]`/cold failure path all remain in force. |
 
 ## Statuses
 

@@ -1,5 +1,5 @@
 ---
-description: Plan the next monthly sprint (last-Sunday-of-month ritual)
+description: Plan the next monthly sprint (last-weekend-of-month ritual)
 argument-hint: "[sprint theme or focus, if you have one in mind]"
 ---
 
@@ -18,8 +18,9 @@ Steps:
    and the latest ADR decisions. Push back if I'm over-scoping.
 4. **Co-create** the Epic → Story → Task breakdown with me as an equal driver — draft
    and challenge, I decide scope. Every task must fit one 2–6h coding session with a
-   clear done-condition. Size the sprint to my real weekly rhythm (deep Mon/Thu/Sun;
-   moderate Fri; light Tue; relaxed Wed; off Sat) — the Dashboard calendar.
+   clear done-condition. Size the sprint to my real weekly rhythm (deep Mon/Thu + one
+   weekend day; moderate Fri; light Tue; relaxed Wed; the other weekend day off) — the
+   Dashboard calendar. Weekend days are a swappable pair, so don't hard-assign Sat/Sun.
    - **Artifact gate** (`docs/06 Sprints/Planning Workflow — Artifact Gate.md`) — ADR,
      design note, or neither, by reversibility × blast radius; rarely both. Then apply
      **artifact timing**: flag every artifact-less item that warrants one — **draft the
