@@ -315,9 +315,31 @@ Not a module — the `editor` exe (ADR-006 §1); owns the asset pipeline. Flat l
   order, file skeletons, const-correctness) into **one** root `CONVENTIONS.md` — judgment
   rules only; link `.clang-format`/`.clang-tidy` for the mechanical subset. CLAUDE.md
   "Code conventions" then shrinks to a pointer. One house style (Claude matches it — no
-  separate AI style). ✅ **Scheduled: Sprint 02 S2-T10** (trigger fired — first module code),
-  **late in the sprint** so it has real code to describe. *Partly pre-paid: B4's formatting
-  section was corrected to the CI-enforced `.clang-format` on 2026-07-25.*
+  separate AI style). ✅ **Done-ish: root `CONVENTIONS.md` opened 2026-07-25** (S2-T10, running
+  **in parallel** with T2–T9, not late — conventions land the day they're flagged). B4 migrated
+  in and reduced to a pointer + decision history, so the rules have one home. Remaining: fill the
+  *Open* rows, then shrink CLAUDE.md's section at sprint end.
+- **Code coverage in CI — catch *unreachable* code, not just failing code.** Motivated by a
+  concrete miss: S2-T2 shipped a truncation bug in `flattenRecord` with `ctest` **100% green**,
+  because all 9 logger cases install a capture sink via `setLogSink` — the seam used to
+  *observe* logging deletes the default path, so `spdlogSink`/`flattenRecord` executed **zero
+  times**. A passing suite said nothing; a coverage report would have shown those functions at
+  **0%** immediately. This is the class of bug tests structurally cannot catch, so it needs a
+  different instrument.
+  - **How:** Linux/Clang leg only — `-fprofile-instr-generate -fcoverage-mapping` +
+    `llvm-profdata`/`llvm-cov`. MSVC has no equivalent without OpenCppCoverage (heavier, and
+    the Linux leg already runs the same deterministic suite). **Reuse the existing
+    `linux-debug` job** with a coverage build type rather than adding a matrix leg — ADR-008 §9's
+    CI-minute budget is live (~2k/mo, Windows 2×), and a new leg is the expensive way to do this.
+  - **Start as a report, not a gate.** Print per-file coverage in the job summary and let it be
+    read; a hard threshold on a 2-module codebase mostly generates noise and ratchet-gaming.
+    Promote to a required check (or a "no *new* uncovered function" diff gate) once the surface
+    is real — same escalation shape ADR-008 §9 uses for sanitizers.
+  - **The signal that matters is 0%-coverage functions**, not the aggregate percentage. A
+    codebase at 85% with a dead sink path is worse than one at 60% with everything reachable.
+  - **Trigger:** after S2-T3 lands the real sink set (the first place this pays for itself), or
+    sooner if another green-but-unreached bug appears. Related: S2-T3's test-reachability
+    done-criterion is the *local* fix; this is the systemic one.
 - **Mark third-party include dirs `SYSTEM` (`/external:I`) — build hygiene, found in S2-T2.**
   ADR-008 §5 keeps `/WX` off third-party *targets*, but their **headers compiled into our TUs
   still get our flags**: instantiating spdlog's bundled-fmt format checker from `Log.cpp` broke

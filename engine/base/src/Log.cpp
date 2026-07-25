@@ -25,6 +25,18 @@ namespace TechEngine {
                 truncated = true;
             }
         }
+
+        // Overflow is silent without this — stamp the marker over the tail so a cut line
+        // reads as cut rather than as a complete short one.
+        void markTruncated() {
+            if (!truncated) {
+                return;
+            }
+            size = size > TRUNCATION_MARKER.size() ? size - TRUNCATION_MARKER.size() : 0;
+            for (const char c: TRUNCATION_MARKER) {
+                push(c);
+            }
+        }
     };
 
     class LogFormatBufferIterator {
@@ -91,10 +103,12 @@ namespace TechEngine {
         return spdlog::level::info;
     }
 
+    // Marks its own overflow, so a sink cannot forget to.
     static void flattenRecord(const LogRecord& record, LogFormatBuffer& out) {
         // TODO(S2-T3): prepend channel + module tag. ADR-011 §3.
-        std::format_to(LogFormatBufferIterator{out}, "[f {0}][{1}:{2}:{3}()] {4}", record.frame,
+        std::format_to(LogFormatBufferIterator{out}, "[f-{0}][{1}:{2}:{3}()] {4}", record.frame,
                        record.file, record.line, record.function, record.message);
+        out.markTruncated();
     }
 
     // TODO(S2-T3): replace with the real sink set. ADR-011 §3.
@@ -151,7 +165,7 @@ namespace TechEngine {
         if (g_initialized.exchange(true, std::memory_order_acq_rel)) {
             return;
         }
-        spdlog::set_pattern("[%H:%M:%S.%e][%^%l%$] %v");
+        spdlog::set_pattern("[%H:%M:%S.%e][%^%l%$]%v");
         spdlog::set_level(spdlog::level::trace); // we filter; spdlog must not double-filter
     }
 
@@ -222,15 +236,7 @@ namespace TechEngine {
                 buffer.push('>');
             }
 
-            if (buffer.truncated) {
-                const std::size_t start = buffer.size > TRUNCATION_MARKER.size()
-                                              ? buffer.size - TRUNCATION_MARKER.size()
-                                              : 0;
-                buffer.size = start;
-                for (const char c: TRUNCATION_MARKER) {
-                    buffer.push(c);
-                }
-            }
+            buffer.markTruncated();
 
             const LogRecord record{
                 .frame = g_frame.load(std::memory_order_relaxed),

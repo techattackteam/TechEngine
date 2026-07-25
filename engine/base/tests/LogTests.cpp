@@ -17,9 +17,11 @@ struct CapturedRecord {
 static std::vector<CapturedRecord> g_captured;
 
 static void captureSink(const TechEngine::LogRecord& record) {
-    g_captured.push_back(CapturedRecord{record.frame, record.level, std::string{record.message},
-                                        std::string{record.file}, std::string{record.function},
-                                        record.line});
+    g_captured.push_back(CapturedRecord{
+        record.frame, record.level, std::string{record.message},
+        std::string{record.file}, std::string{record.function},
+        record.line
+    });
 }
 
 // Diagnostics state is process-global (ADR-011 §8) and Catch2 shares one process — restore
@@ -39,6 +41,7 @@ public:
     }
 
     SinkGuard(const SinkGuard&) = delete;
+
     SinkGuard& operator=(const SinkGuard&) = delete;
 
 private:
@@ -123,10 +126,11 @@ TEST_CASE("macros survive a dangling else", "[base][log]") {
     TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     const bool condition = false;
-    if (condition)
+    if (condition) {
         TE_LOGGER_INFO("then branch");
-    else
+    } else {
         TE_LOGGER_WARN("else branch");
+    }
 
     REQUIRE(g_captured.size() == 1);
     REQUIRE(g_captured[0].level == TechEngine::Level::Warn);
