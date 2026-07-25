@@ -1,6 +1,5 @@
-#include <TechEngine/core/Core.hpp>
-
 #include <TechEngine/base/Base.hpp>
+#include <TechEngine/core/Core.hpp>
 #include <TechEngine/platform/Platform.hpp>
 
 #include <toml++/toml.hpp>

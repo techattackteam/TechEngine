@@ -1,5 +1,4 @@
 #include <TechEngine/app/App.hpp>
-
 #include <TechEngine/core/Core.hpp>
 
 namespace TechEngine {
