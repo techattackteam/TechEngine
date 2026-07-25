@@ -3,8 +3,6 @@
 #include <TechEngine/core/Core.hpp>
 #include <TechEngine/platform/Platform.hpp>
 
-#include <miniaudio.h>
-
 namespace TechEngine {
     const char* clientVersion() {
         (void)baseVersion();

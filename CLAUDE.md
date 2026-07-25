@@ -98,9 +98,22 @@ smallest scaffold that unblocks him and hand the logic back — **uncompiled** (
 "Build & run"): diagnosing the build is his half of that ownership. If a request is
 ambiguous between "write this for me" and "help me write this," ask.
 
-## Token economy & vault cleanliness
+## Token economy — chat responses AND the vault
 
-Notes are read by human AND AI every session. Optimize signal-per-token.
+Both are read by human AND AI every session. Optimize signal-per-token.
+
+### Chat responses
+
+- **Short by default. Answer, then stop.** No preamble, no restating the question, no
+  closing summary of what was just said.
+- **Lead with the answer.** Add detail only where it changes what Miguel does next.
+- Say **what changed** and **what's unverified** — not a tour of every file touched.
+- **No scaffolding for small answers**: no headers, no status tables, no bold-everything.
+  Reserve structure for genuinely multi-part answers.
+- A risk or caveat is **one line**, not a section.
+- Never re-explain a decision already written to the vault — link it.
+
+### The vault
 
 - Tables/bullets/short lines > prose. Caveman style OK for notes, logs, status:
   drop filler words + articles, keywords over sentences.

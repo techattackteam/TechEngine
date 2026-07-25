@@ -67,9 +67,17 @@ vertical slice is **Sprint 03**.
       `.cpp`** (type-erased `format_args`); `te_base_tests` covers level filtering + positional
       args; format/tidy clean, CI green.
 - [ ] **S2-T3** — Channels + `LogRecord` + console/file sinks · **P1** · 🟢 Deep —
-      done: self-registering channels tagged by module; structured `LogRecord` reaches console
-      + file sinks; two modules log on distinct channels in a test. *(Editor ring-buffer sink
-      **excluded** — no editor, no consumer.)*
+      done: channels registered **explicitly from the composition root**, tagged by module
+      (ADR-011 §2 — *not* file-scope self-registration: static libs strip it); structured
+      `LogRecord` reaches console + file sinks; two modules log on distinct channels in a test.
+      *(Editor ring-buffer sink **excluded** — no editor, no consumer.)*
+      **+ Sink path must be reachable from `te_base_tests`.** S2-T2 shipped a truncation bug in
+      `flattenRecord` with the suite 100% green, because all 9 cases install a capture sink via
+      `setLogSink` — the seam used to *observe* logging deletes the default path, so
+      `spdlogSink`/`flattenRecord` ran **zero** times. Fix the shape, not the symptom: the
+      flatten/format step must be callable from a test (a `src/`-internal header the test target
+      can include, or a test-installed sink that exercises real flattening). **No code path may
+      exist that only runs when the default sink is installed.**
 
 ### Story C — Assert
 
