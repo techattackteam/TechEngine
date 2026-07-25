@@ -35,8 +35,8 @@ rationale.** Go to the ADR for *why*.
 
 Still owned here (not ADR material): macros capture `std::source_location::current()` → file/func/line
 free (F20) · every macro `do{…}while(0)` (F10 if/else break) · per-level macros
-`TE_LOGGER_TRACE/DEBUG/INFO/WARN/ERROR/CRITICAL` · **math formatters live with math**, not here
-(ADR-006 §6) · the level-usage table below.
+`TE_LOGGER_TRACE/DEBUG/INFO/WARN/ERROR/CRITICAL` · **per-TU `TE_LOG_CHANNEL`** + the `_CH` escape
+(below) · **math formatters live with math**, not here (ADR-006 §6) · the level-usage table below.
 
 ## Design
 
@@ -71,14 +71,38 @@ registered handle**, not an enum, and gives two-level filtering (module → chan
 **Registration is explicit, invoked from the composition root** — file-scope static initializers get
 **stripped by the linker** in a static lib. Rationale: ADR-011 §2.
 
+**Registered names are stored, never copied** — pass a literal or a static. Table caps are fixed
+(no allocation): overflow → default channel + a stderr line, never a resize.
+
+### Call site picks its channel (decided S2-T3)
+**Per-TU `TE_LOG_CHANNEL`**, defined **before** including `Log.hpp`; unset → `DEFAULT_CHANNEL`.
+One channel per TU is the intended shape, so the plain macros stay channel-free at the call site.
+`TE_LOGGER_<LEVEL>_CH(channel, …)` is the escape hatch for the cross-cutting exception.
+
+```cpp
+#define TE_LOG_CHANNEL kRenderChannel
+#include <TechEngine/base/Log.hpp>
+
+TE_LOGGER_INFO("swapchain {0}x{1}", w, h);      // → render
+TE_LOGGER_WARN_CH(kNetChannel, "peer {0}", id); // → net, by exception
+```
+
+> Defining `TE_LOG_CHANNEL` *after* the include is a redefinition — the header's fallback already
+> won. Ordering is the gotcha; the macro itself is not.
+
 ### Structured record — why editor filtering stays clean
 Editor sink stores **records**, not strings — filter on fields, never re-parse:
 `{ time, frame#, level, channel(+module), file, function, line, message }`.
-File/console sinks flatten a record to a line; the editor keeps the struct.
+File/console sinks flatten a record to a line; the editor keeps the struct. The record carries
+**handles**, not names — sinks resolve via `logChannelName()`/`logModuleName()`, and an
+out-of-range handle resolves to `default` rather than indexing the table.
 
 ### Sinks (ADR-011 §3)
-- **console** + **rotating file** — `logs/…`, size/count capped, **synchronous**.
-- **in-memory ring** of last N *records* → flushed by the crash path.
+- **console** + **rotating file** — `logs/techengine.log`, **5 MB × 3**, **synchronous**. One spdlog
+  logger over both (pattern `%^%v%$` — our line already carries time + level), so a record is
+  flattened **once**. An unopenable log file degrades to console-only, never a failed boot (S2-T3).
+- **in-memory ring** of last N *records* → flushed by the crash path. **Lands with S2-T5**, not T3 —
+  the assert flush-on-fail path is its only consumer ([[Planning Workflow — Artifact Gate]]).
 - **flush-on-crash hook** — the crash handler lives in `platform`, **not** a sink. *Minidumps +
   symbolication are not in scope*: ADR-008 §3 gives `runtime` Debug+Release only and pre-authorizes
   RelWithDebInfo for that later.
@@ -86,7 +110,13 @@ File/console sinks flatten a record to a line; the editor keeps the struct.
   Log panel (twin of the [[Backlog|Profiler]] panel).
 
 ### Format (rendered — file/console)
-`[14:32:07.412][f 1043][client · render][renderer.cpp:88:renderScene()][INFO] swapchain 1920x1080`
+`[14:32:07.412][f 1043][client/render][renderer.cpp:88:renderScene()][INFO] swapchain 1920x1080`
+
+Format string (S2-T3, `Log.cpp`): `[{0:02}:{1:02}:{2:02}.{3:03}][f {4}][{5}/{6}][{7}:{8}:{9}()][{10}] {11}`
+— field **order is the contract** (a grep reads positionally); spacing is not.
+**ASCII only** in the rendered line and in the truncation marker (`...[truncated]`): MSVC
+re-encodes non-ASCII literals as the system codepage without `/utf-8`, and nothing asserts
+those bytes.
 
 Call site is **`file:line:function()`** — `source_location::function_name()` is the whole
 signature on MSVC (`void __cdecl renderScene(void)`), so the dispatcher trims it to the
