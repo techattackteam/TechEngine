@@ -122,7 +122,7 @@ namespace TechEngine {
             return;
         }
 
-        std::array<char, MESSAGE_CAPACITY + 256> storage{};
+        std::array<char, MESSAGE_CAPACITY + 256> storage;
         LogFormatBuffer line{storage.data(), storage.size(), 0, false};
         flattenRecord(record, line);
 
@@ -219,7 +219,7 @@ namespace TechEngine {
                 return;
             }
 
-            std::array<char, MESSAGE_CAPACITY> storage{};
+            std::array<char, MESSAGE_CAPACITY> storage;
             LogFormatBuffer buffer{storage.data(), storage.size(), 0, false};
 
             try {
