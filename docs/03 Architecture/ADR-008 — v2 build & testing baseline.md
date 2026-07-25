@@ -281,18 +281,22 @@ merge. (ADR-005 chose GitHub Actions.)
   `deps.cmake` + compiler + `TE_SANITIZER`.
 - **Stage order (fail cheap first):** format/tidy → build → ctest → SDK-smoke, per leg.
 
-### Scaffold checklist (first commit(s))
+### Scaffold checklist (first commit(s)) — **complete 2026-07-24**
 
 - [x] `cmake/` helpers: `techengine_module`, `warnings`, `sanitizers`, `deps`
 - [x] top-level `CMakeLists.txt` + `CMakePresets.json` (full matrix + san presets)
 - [x] 5 lib skeletons (`engine/*`) with the public/private include split, each compiling
       empty
 - [x] leaf exe targets `apps/runtime`, `apps/editor` (thin `main()`)
-- [ ] one real per-module test exe (e.g. `te_base_tests`) proving the Catch2+CTest path
-- [ ] `sdk/` INTERFACE target + `te_sdk_smoke`
-- [ ] `.clang-format`, `.clang-tidy`
-- [ ] `.github/workflows/ci.yml`: matrix build → format+tidy → ctest → sanitizer legs →
+- [x] one real per-module test exe (`te_base_tests`) proving the Catch2+CTest path
+- [x] `sdk/` INTERFACE target + `te_sdk_smoke`
+- [x] `.clang-format`, `.clang-tidy`
+- [x] `.github/workflows/ci.yml`: matrix build → format+tidy → ctest → sanitizer legs →
       SDK smoke, with dep/ccache caching
+
+> **Closed 2026-07-24** — all items built and **green on CI** (both legs, `ctest` 3/3).
+> Ongoing build/CI *status* is not tracked here: it lives on [[Sprint Board]], with
+> operational findings in [[B3 — Build & Testing Notes]]. This list is frozen history.
 
 ## Consequences
 

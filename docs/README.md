@@ -28,7 +28,7 @@ lockstep with the code that implements them.
 | `01 Vision` | Why TechEngine exists, principles, non-goals |
 | `02 Roadmap` | Quarterly goals, monthly sprints, milestones |
 | `03 Architecture` | ADRs, system overview, diagrams |
-| `04 Systems` | Living docs per subsystem (renderer, ECS, resources…) |
+| `04 Design Docs` | Living design docs per system + utility — the *how* behind the ADRs |
 | `05 Research` | Papers, SIGGRAPH notes, technique write-ups |
 | `06 Sprints` | Sprint board, active sprint, backlog |
 | `07 Journal` | Weekly reviews, sprint retrospectives |
@@ -38,6 +38,8 @@ lockstep with the code that implements them.
 
 ## Weekly rhythm (from the plan)
 
-- **Sunday morning** — Weekly review (30–45 min) in `07 Journal`.
-- **Sunday afternoon** — Long implementation session.
-- **Last Sunday of month** — Sprint planning + retrospective.
+- **Weekend working day, morning** — Weekly review (30–45 min) in `07 Journal`.
+- **Same day, afternoon** — Long implementation session.
+- **Last weekend of month** — Sprint planning + retrospective.
+
+Full rhythm + the weekend rule live on [[Dashboard]].

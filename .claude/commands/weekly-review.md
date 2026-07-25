@@ -1,9 +1,10 @@
 ---
-description: Run the Sunday weekly review and write it into the vault
+description: Run the weekend weekly review and write it into the vault
 argument-hint: "[optional notes about the week]"
 ---
 
-Act as my technical lead for the TechEngine Sunday weekly review.
+Act as my technical lead for the TechEngine weekly review (run on whichever weekend
+day I work — Sat or Sun).
 
 Context to gather first:
 - Read the current sprint in `docs/06 Sprints/` and the `docs/06 Sprints/Sprint Board.md`.
@@ -30,7 +31,9 @@ Then:
    [[Planning Workflow — Artifact Gate]]. If none, say so.
 4. Update `docs/00 Dashboard/Dashboard.md`: current focus, blockers, health, and
    **roll the `Next ceremony` line**.
-5. **If today is the month's last Sunday**, this is also the sprint boundary — hand off
-   to `/sprint-plan` (demo + retro + plan the next sprint).
+5. **If this is the month's last weekend** (the weekend containing the last Sunday), it's
+   also the sprint boundary — hand off to `/sprint-plan` (demo + retro + plan the next
+   sprint). If I already ran the review on the other day of this weekend, say so instead
+   of writing a second entry.
 6. Keep it short and honest. Flag scope creep or burnout risk if you see it.
 7. Do NOT start any implementation work — this is a planning ritual.
