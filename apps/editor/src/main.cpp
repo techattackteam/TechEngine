@@ -1,6 +1,5 @@
 #include <TechEngine/app/App.hpp>
-
-#include "TechEngine/base/Log.hpp"
+#include <TechEngine/base/Log.hpp>
 
 
 int main() {
