@@ -147,8 +147,8 @@ namespace TechEngine {
         }
 
         const auto isNameChar = [](char c) {
-            return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
-                   || c == '_' || c == ':' || c == '~' || c == '<' || c == '>';
+            return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
+                   c == '_' || c == ':' || c == '~' || c == '<' || c == '>';
         };
 
         std::size_t begin = paren;

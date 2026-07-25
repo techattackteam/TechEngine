@@ -6,7 +6,7 @@ namespace TechEngine {
     // here — never an engine-private type (never a raw ResourceSystem*). The real
     // facade API lands with the scripting ADR.
     class ScriptContext {
-      public:
+    public:
         ScriptContext() = default;
     };
 }

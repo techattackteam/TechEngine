@@ -17,11 +17,9 @@ struct CapturedRecord {
 static std::vector<CapturedRecord> g_captured;
 
 static void captureSink(const TechEngine::LogRecord& record) {
-    g_captured.push_back(CapturedRecord{
-        record.frame, record.level, std::string{record.message},
-        std::string{record.file}, std::string{record.function},
-        record.line
-    });
+    g_captured.push_back(CapturedRecord{record.frame, record.level, std::string{record.message},
+                                        std::string{record.file}, std::string{record.function},
+                                        record.line});
 }
 
 // Diagnostics state is process-global (ADR-011 §8) and Catch2 shares one process — restore

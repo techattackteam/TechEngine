@@ -101,7 +101,7 @@ namespace TechEngine {
 // preprocessor lacks it without /Zc:preprocessor. Don't "fix" this into a named parameter.
 #define TE_LOG_PRIVATE_EMIT(level, ...)                                                            \
     do {                                                                                           \
-        ::TechEngine::detail::logImpl((level), ::std::source_location::current(), __VA_ARGS__);     \
+        ::TechEngine::detail::logImpl((level), ::std::source_location::current(), __VA_ARGS__);    \
     } while (0)
 
 #define TE_LOG_PRIVATE_DISCARD(...)                                                                \

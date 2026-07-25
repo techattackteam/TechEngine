@@ -2,7 +2,6 @@
 
 #include "TechEngine/base/Log.hpp"
 
-
 int main() {
     TechEngine::initLogging();
     int x = 10;

@@ -1,5 +1,5 @@
 #pragma once
 
 namespace TechEngine {
-        const char* baseVersion();
+    const char* baseVersion();
 }
