@@ -39,6 +39,29 @@ jobs:
           find engine apps sdk \( -name '*.cpp' -o -name '*.hpp' \) -print0 \
             | xargs -0 clang-format --dry-run --Werror
 
+      # A macro has no access control and `detail::` is a convention, not a boundary — so
+      # the boundary is a red check. Anything reaching into another module's plumbing fails
+      # here. Sibling of the te_sdk_smoke leak gate (ADR-008 §7): make the rule structural.
+      - name: No reaching into private plumbing
+        run: |
+          set -o pipefail
+          # <owning dir>:<pattern> — the pattern is legal ONLY inside the owning dir.
+          violations=0
+          check() {
+            owner="$1"; pattern="$2"; label="$3"
+            hits=$(grep -rnE "$pattern" engine apps sdk \
+                     --include='*.cpp' --include='*.hpp' \
+                   | grep -v "^$owner" || true)
+            if [ -n "$hits" ]; then
+              echo "::error::$label is private to $owner — use the public API instead:"
+              echo "$hits"
+              violations=1
+            fi
+          }
+          check 'engine/base/' 'TE_LOG_PRIVATE_' 'TE_LOG_PRIVATE_* (call TE_LOGGER_<LEVEL>)'
+          check 'engine/base/' '\bdetail::log' 'TechEngine::detail log plumbing'
+          exit $violations
+
   # --- build + test on both legs x {Debug, Release} --------------------------
   build-test:
     name: ${{ matrix.name }}

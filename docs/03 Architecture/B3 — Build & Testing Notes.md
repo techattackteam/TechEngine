@@ -37,12 +37,32 @@ ADR-005/006). Decisions already made live in the ADRs (linked); this collects
 - **Test-bed = sample project(s)** loaded by `runtime`/`editor` (content), not a
   separate exe; `app` exposes a headless/sim-only mode (exercised by `tests`).
 
-## Scaffold checklist (for the ADR / first commit)
+## CI operational notes (observed on the first real runs, 2026-07-24)
 
-- [ ] `CMakePresets.json` (Debug/Release × Win-MSVC / Linux-Clang; ASan/UBSan/TSan presets)
-- [ ] `techengine_module()` helper
-- [ ] 5 lib skeletons with public/private include split
-- [ ] leaf exe targets (`runtime`, `editor`, `tests`)
-- [ ] FetchContent manifest + CI caching
-- [ ] `.clang-format`, `.clang-tidy` (feeds B4)
-- [ ] CI workflow: build matrix + tests + sanitizers + format/tidy + SDK smoke
+**Why the `push` → `master` backstop stays — it warms the shared ccache.** The obvious
+argument for deleting it is redundancy: with "require branches up to date" on
+([[ADR-009 — Branching strategy & merge rules]] §2), a squash-merge produces the tree the PR
+already tested, so the backstop re-tests it. The reason to keep it anyway is **GitHub Actions
+cache scoping**: a cache saved on a branch is visible to that branch and its children, but a
+cache saved on the **default branch is visible to every branch**. PR runs restore only from
+their own branch or `master`, so the backstop run is what keeps the cache every future PR
+pulls from fresh. Delete it and each PR starts from whatever stale `master` cache was last
+written — directly against ADR-008 §9's "CI time rides entirely on caching working".
+(Backstop guarantees are ADR-009 §4; this is the *practical* reason, which that ADR doesn't
+state.)
+
+**Phantom `CI / matrix.name` check on push runs — cosmetic, don't chase it.** The sanitizer
+job is `pull_request`-only (`ci.yml` `if: github.event_name == 'pull_request'`, ADR-008 §9
+amended + ADR-009 §4). When a job is skipped by a **job-level `if:`** the matrix never
+expands, so `name: ${{ matrix.name }}` has no matrix context and GitHub renders the literal
+expression — **one** skipped check called `matrix.name` instead of three named ones. On a PR
+the job runs, the matrix expands, and the real contexts (`win ASan`, `linux UBSan`,
+`linux TSan`) report normally — which is where required checks are evaluated, so branch
+rulesets are unaffected. Clean fix if it ever matters: split sanitizers into their own
+`pull_request`-only workflow; costs ~40 lines of duplicated setup for a cosmetic win.
+
+## Scaffold checklist
+
+Moved — this note fed the ADR, and the ADR is where the checklist landed:
+[[ADR-008 — v2 build & testing baseline]] → *Scaffold checklist*, **closed 2026-07-24**
+(all green on CI, both legs). Kept in one place so it can't rot in two.

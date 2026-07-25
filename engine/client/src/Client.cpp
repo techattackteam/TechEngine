@@ -1,6 +1,5 @@
-#include <TechEngine/client/Client.hpp>
-
 #include <TechEngine/base/Base.hpp>
+#include <TechEngine/client/Client.hpp>
 #include <TechEngine/core/Core.hpp>
 #include <TechEngine/platform/Platform.hpp>
 

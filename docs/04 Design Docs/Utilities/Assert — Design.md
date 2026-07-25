@@ -2,8 +2,12 @@
 
 > Living design doc. Terse (CLAUDE.md token economy). ADR = the irreversible decision; this doc = the _how_.
 
-**Module:** `base` (helper/utility — dependency-free leaf) · **Kind:** utility · **Status:** ⚠️ **draft — not committed; pending Sprint 02 Diagnostics ADR**
-**ADRs:** [[ADR-006 — v2 core architecture & module layout]] §6 (two-tier seed), [[ADR-005 — v2 tech stack & toolchain]] · combined **Diagnostics (logging + assert)** ADR with [[Logger — Design]] · **Backlog:** [[Backlog]] → base → utilities
+**Module:** `base` (helper/utility — dependency-free leaf) · **Kind:** utility · **Status:** decided — implementing (S2-T4/T5)
+**ADRs:** **[[ADR-011 — Diagnostics (Logger & Assert)]] — the decisions** (combined with
+[[Logger — Design]]; **supersedes ADR-006 §6's assert-tier clause**) ·
+[[ADR-006 — v2 core architecture & module layout]] §6 (two-tier seed — tier clause now superseded) ·
+[[ADR-005 — v2 tech stack & toolchain]]
+**Backlog:** [[Backlog]] → base → utilities
 
 ## Purpose
 One assert strategy for the whole engine — fixes v1 **F10** (scattered `assert`/`cout`, no strategy,
@@ -12,14 +16,24 @@ silent `__debugbreak` in release). Paired with the Logger as the single "diagnos
 depends only on the Logger (fail → log) and a thin platform hook (debugger-awareness).
 
 ## Decided
-- **Four tiers** (below) + **one hookable handler**.
-- Fail (fatal tiers): log (Critical) → flush → controlled abort. **Never a silent `__debugbreak` in
-  release** (F10).
-- Failure branch `[[unlikely]]` / cold; the happy path pays nothing.
-- Handler is **installable** — tests swap a throw/flag policy (ADR-008 core tests); platform/app swap a
-  debugger-aware one.
-- Shares the Logger's `fmt` seam for formatted messages; positional `{0}` args.
-- **Combined Diagnostics ADR** with the Logger (one strategy, shared seam + fail→log path).
+
+Every row below is frozen in [[ADR-011 — Diagnostics (Logger & Assert)]] — **§ref, no copied
+rationale.** Go to the ADR for *why*.
+
+| Decision | Where |
+|---|---|
+| **Four tiers** (table below) + **one hookable handler** | ADR-011 §5 |
+| `TE_VERIFY` = always-**evaluate**, **dev-only abort** — **supersedes ADR-006 §6's tier clause** | ADR-011 §5 |
+| `TE_ASSERT` is **on** in RelWithDebInfo | ADR-011 §5 |
+| `TE_ENSURE` report-once is **per call-site** (function-local static) | ADR-011 §5 |
+| `setAssertHandler` **returns the previous** handler (tests scope-swap); install at composition-root time | ADR-011 §5 |
+| **No external assert lib** — macros + `source_location` + intrinsics | ADR-011 §5 |
+| Fatal path: log Critical → flush → controlled abort · **never a silent `__debugbreak` in release** (F10) · failure branch `[[unlikely]]`/cold | ADR-011 §6 |
+| `base` ships the default handler (no break); **platform/app install** the debugger-aware one — OS include in a platform `.cpp`, **Linux equivalent or explicit no-op** | ADR-011 §6 |
+| **Assert → Logger, never the reverse**; `thread_local` no-recursion guard; pre-init → **stderr** | ADR-011 §7 |
+| Shares the Logger's seam for formatted messages (**`std::format`**, positional `{0}` args) | ADR-011 §1 |
+| `TE_ASSUME` — **out** (wrong assume = UB, no measured need); never auto-derived from a compiled-out `TE_ASSERT` | ADR-011 §11 |
+| SDK exposure **deferred** to the scripting ADR | ADR-011 §10 |
 
 ## Tiers & usage rules
 Two axes: **(1)** is `cond` evaluated in shipping? · **(2)** does failure abort in shipping?
@@ -82,10 +96,10 @@ flowchart LR
 | Build | ASSERT | VERIFY | CHECK | ENSURE |
 |---|---|---|---|---|
 | Debug | on | on | on | on |
-| RelWithDebInfo (dev runtime) | on* | on | on | on |
+| RelWithDebInfo (dev runtime) | **on** | on | on | on |
 | Release / Shipping | **off** (cond not eval) | cond eval, no abort | on (fatal) | on (non-fatal) |
 
-\*RelWithDebInfo ASSERT on/off = open Q.
+RelWithDebInfo ASSERT = **on** (ADR-011 §5 — it's the dev-runtime config; debuggability is its point).
 
 ### `base` stays a leaf (the debugger-break subtlety)
 `__debugbreak()` / `__builtin_trap()` are **compiler intrinsics** (no OS) → fine in `base`. But
@@ -93,24 +107,21 @@ flowchart LR
 `base` ships the **default handler** (log + abort, no break); **platform/app install** the debugger-aware
 handler through the hookable seam — the *same* seam the tests use. → no OS in `base`, DAG intact.
 
-## Open questions (→ Diagnostics ADR)
-- ⚠️ **Supersede ADR-006 §6 explicitly.** The four-tier model *changes* an Accepted
-  decision — §6 says two-tier with `TE_VERIFY` "always-on for shipped invariants";
-  here VERIFY = always-eval, **dev-only abort**. The Diagnostics ADR must state it
-  supersedes ADR-006 §6's assert bullet (not silently drift past it).
-- **SDK exposure** — do user scripts get assert macros (likely `ENSURE`/`CHECK`), and
-  through what `te_sdk` seam? Ties to the base-ABI rules ([[ADR-010 — User authoring model (Systems & Scripts)]] §8).
-- RelWithDebInfo: ASSERT on or off?
-- ENSURE report-once scope — per call-site (static local) vs a global rate-limit.
-- `TE_ASSUME(cond)` (C++23 `[[assume]]` / `__assume`) as a **separate** opt-in optimizer hint — in or
-  out? (a wrong `assume` is UB, so never auto-derived from a compiled-out ASSERT.)
-- Exact handler signature + install mechanism (runtime `setAssertHandler` vs link-time).
-- **Bootstrap / recursion:** assert fires before the Logger is initialized (early boot) → **stderr
-  fallback**; and the Logger's own hot path must not use an assert that routes back through the Logger
-  (**no-recursion guard**). Pins the Assert→Logger dependency direction.
+## Open questions
+
+**All closed by [[ADR-011 — Diagnostics (Logger & Assert)]]** — the ADR-006 §6 supersession (stated in
+ADR-011's header + [[ADR Index]] *Partial supersessions*), SDK exposure (§10, deferred), RelWithDebInfo
+ASSERT (§5, on), ENSURE report-once scope (§5, per call-site), `TE_ASSUME` (§11, out), handler signature
++ install mechanism (§5), bootstrap/recursion/stderr fallback (§7).
+
+Live, and owned by the ADR's exit triggers:
+- **The Linux/Clang debugger-aware handler** has no implementation yet — ADR-011 §6 requires an
+  equivalent **or an explicit no-op** so the required Linux check stays green. Lands with `platform`,
+  not this sprint (S2-T5 leaves it a documented hook).
 
 ## References
-- [[ADR-006 — v2 core architecture & module layout]] §6, [[ADR-005 — v2 tech stack & toolchain]]
-- [[Logger — Design]] — shares the `fmt` seam + fail→log path; **combined Diagnostics ADR**
+- **[[ADR-011 — Diagnostics (Logger & Assert)]]** — the decisions
+- [[ADR-006 — v2 core architecture & module layout]] §6 (tier clause superseded), [[ADR-005 — v2 tech stack & toolchain]]
+- [[Logger — Design]] — shares the `std::format` seam + fail→log path; **combined Diagnostics ADR**
 - [[v1 Code Audit]] — F10
 - [[Backlog]] → base → utilities

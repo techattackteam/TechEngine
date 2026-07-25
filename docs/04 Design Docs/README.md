@@ -1,4 +1,4 @@
-# 04 Systems — v2
+# 04 Design Docs — v2
 
 Living docs per v2 subsystem/utility. **Filled as each is built** — keep terse
 (see `CLAUDE.md` → token economy).

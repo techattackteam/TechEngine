@@ -1,7 +1,7 @@
 # YYYY-MM · Sprint NN — <name>
 
 - **Quarter:** [[YYYY-QN]]
-- **Dates:** <month> (review + plan last Sunday)
+- **Dates:** <month> (review + plan on the last weekend)
 - **Epic:** <epic>
 
 ## 🎯 Sprint goal
@@ -22,7 +22,7 @@
 
 ## Capacity note
 Match task weight to the day's mode — weekly rhythm on the [[Dashboard]]
-(deep Mon/Thu/Sun · moderate Fri · light Tue · relaxed Wed · off Sat).
+(deep Mon/Thu + one weekend day · moderate Fri · light Tue · relaxed Wed · other weekend day off).
 
 ## Sprint review (end)
 - What shipped:
