@@ -62,15 +62,24 @@ vertical slice is **Sprint 03**.
 
 ### Story B — Logger
 
-- [ ] **S2-T2** — Logger core: levels, macros, `source_location`, `do{}while(0)` · **P1** · 🟢 Deep —
-      done: `TE_LOGGER_INFO/WARN/...` compile in `base`; `fmt` in the header, **spdlog in one
-      `.cpp`** (type-erased `format_args`); `te_base_tests` covers level filtering + positional
-      args; format/tidy clean, CI green.
+- [x] **S2-T2** — Logger core: levels, macros, `source_location`, `do{}while(0)` · **P1** · 🟢 Deep —
+      **✅ Jul 25** → PR #8 (`6f054b6b`), required checks green. Shipped: `TE_LOGGER_*` over the
+      **`std::format` seam**, spdlog private to `Log.cpp`, `spdlog::spdlog` → `LIBS_PRIVATE`
+      (ADR-011 §1 — the `:4` visibility breach the ADR flagged is closed); compile-time gate wired
+      **per config** via genex (Debug 0 · RelWithDebInfo 1 · Release 2) + `TE_LOG_ACTIVE_LEVEL`
+      cache override (§4); 9 Catch2 cases; `.clang-format` aligned to the CLion scheme so IDE == CI.
+      **ADR-011's `std::format` exit trigger did not fire** — the Linux/Clang legs merged green, so
+      the standalone-`fmt` fallback stays parked.
+      Carried into T3: default-sink path untested · `LogRecord` has no `time` field (§3) · rendered
+      line is still `[f-N][file:line:func()]`, not §3's. Found in flight → [[Backlog]]: `SYSTEM`
+      third-party includes · coverage in CI · gate fails open · diagnostics init belongs in `app`.
 - [ ] **S2-T3** — Channels + `LogRecord` + console/file sinks · **P1** · 🟢 Deep —
       done: channels registered **explicitly from the composition root**, tagged by module
       (ADR-011 §2 — *not* file-scope self-registration: static libs strip it); structured
       `LogRecord` reaches console + file sinks; two modules log on distinct channels in a test.
-      *(Editor ring-buffer sink **excluded** — no editor, no consumer.)*
+      Call site picks its channel via a **per-TU `TE_LOG_CHANNEL`** + `_CH` escape (decided
+      2026-07-25 → [[Logger — Design]]). *(Editor ring-buffer sink **excluded** — no editor, no
+      consumer. **In-memory ring moved to T5**, where the flush path consumes it.)*
       **+ Sink path must be reachable from `te_base_tests`.** S2-T2 shipped a truncation bug in
       `flattenRecord` with the suite 100% green, because all 9 cases install a capture sink via
       `setLogSink` — the seam used to *observe* logging deletes the default path, so
@@ -87,6 +96,8 @@ vertical slice is **Sprint 03**.
       `[[unlikely]]`/cold; tests prove VERIFY still evaluates its expression in release and
       ENSURE reports once.
 - [ ] **S2-T5** — Assert → Logger integration + flush-on-fail · **P2** · 🟠 Moderate —
+      **+ owns the in-memory ring sink** (moved from T3, 2026-07-25: this is the task whose flush
+      path consumes it — ADR-011 §3).
       done: failure logs **Critical** through the Logger, flushes, controlled abort; the
       debugger-break-if-attached path is a **documented `platform` hook left unimplemented**
       (no `platform` module this sprint). Test: `ENSURE` logs and continues; `CHECK` aborts.

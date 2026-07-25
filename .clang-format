@@ -6,7 +6,7 @@ BasedOnStyle: LLVM
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
-ColumnLimit: 100
+ColumnLimit: 380
 NamespaceIndentation: All
 FixNamespaceComments: false
 PointerAlignment: Left
@@ -17,6 +17,11 @@ AccessModifierOffset: -4
 IndentCaseLabels: true
 SpaceAfterTemplateKeyword: false
 SpaceBeforeRangeBasedForLoopColon: false
+# CLion's BREAK_TEMPLATE_DECLARATION=LINE_BREAK. LLVM's MultiLine only breaks when the
+# declaration below already wraps, so short templates got pulled onto one line.
+# Spelled the pre-19 way on purpose: clang-format 19 renamed it BreakTemplateDeclarations
+# but still accepts this, and CLion's bundled binary may be older.
+AlwaysBreakTemplateDeclarations: Yes
 
 SortIncludes: CaseSensitive
 IncludeBlocks: Regroup
