@@ -85,6 +85,13 @@ Sprint 02's base slice — but it is not optional in the architecture, and nothi
 Open: reset granularity (per frame vs per tick, given `FixedUpdate` runs ×N — [[Game Loop — Frame Flow]]).
 **Trigger:** replication / the first netcode slice.
 
+#### FrameAllocator — untracked, architecturally mandated
+`EngineContext` carries `FrameAllocator&` (ADR-006 §4) and ADR-007 §2's "no per-tick heap snapshot"
+promise rides on it (encode columns → wire buffer through it). **Out of near-term scope** — not in
+Sprint 02's base slice — but it is not optional in the architecture, and nothing tracked it until now.
+Open: reset granularity (per frame vs per tick, given `FixedUpdate` runs ×N — [[Game Loop — Frame Flow]]).
+**Trigger:** replication / the first netcode slice.
+
 #### Clock / time
 **Design note drafted → [[Clock — Design]]** (2026-07-25 planning; light artifact, no ADR owed).
 ✅ **Scheduled: [[2026-08 Sprint 02 — Base Foundation]]** — S2-T6.
