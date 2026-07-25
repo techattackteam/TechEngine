@@ -296,9 +296,12 @@ static std::string captureStderr(Body&& body) {
     const int saved = dup(fileno(stderr));
 #endif
     REQUIRE(saved >= 0);
+    // freopen_s on MSVC only because /WX turns std::freopen's C4996 into an error.
 #if defined(_WIN32)
     FILE* redirected = nullptr;
     REQUIRE(freopen_s(&redirected, path.string().c_str(), "w", stderr) == 0);
+#else
+    REQUIRE(std::freopen(path.string().c_str(), "w", stderr) != nullptr);
 #endif
 
     body();

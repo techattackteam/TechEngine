@@ -22,7 +22,7 @@ namespace TechEngine {
     static constexpr std::uint16_t MAX_LOG_MODULES = 16;
     static constexpr std::uint16_t MAX_LOG_CHANNELS = 64;
     static constexpr std::size_t MAX_LOG_SINKS = 8;
-    static constexpr std::size_t LOG_FILE_MAX_SIZE = 5 * 1024 * 1024;
+    static constexpr std::size_t LOG_FILE_MAX_SIZE = std::size_t{5} * 1024 * 1024;
     static constexpr std::size_t LOG_FILE_MAX_COUNT = 3;
     static constexpr const char* LOG_FILE_PATH = "logs/techengine.log";
 
