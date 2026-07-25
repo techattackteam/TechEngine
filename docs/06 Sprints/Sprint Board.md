@@ -11,9 +11,6 @@ kanban-plugin: board
 
 ## 📋 To Do — [[2026-08 Sprint 02 — Base Foundation]] (Jul 27 – Aug 30)
 
-- [ ] **S2-T3** — Channels + `LogRecord` + console/file sinks · P1 · 🟢 Deep — **+ sink path
-	  must be test-reachable**: no code path that only runs when the default sink is installed
-	  (S2-T2 shipped a bug there with the suite green)
 - [ ] **S2-T4** — Assert: four tiers + single handler · P1 · 🟢 Deep
 - [ ] **S2-T5** — Assert → Logger integration + flush-on-fail · P2 · 🟠 Moderate
 - [ ] **S2-T6** — Clock implementation ([[Clock — Design]]) · P1 · 🟠 Moderate
@@ -26,7 +23,9 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
-- [ ] **S2-T2** — Logger core: levels, macros, `source_location` · P1 · 🟢 Deep — **unblocked**; seam = [[ADR-011 — Diagnostics (Logger & Assert)]] §1
+- [ ] **S2-T3** — Channels + `LogRecord` + console/file sinks · P1 · 🟢 Deep — **+ sink path
+	  must be test-reachable**: no code path that only runs when the default sink is installed
+	  (S2-T2 shipped a bug there with the suite green)
 - [ ] **S2-T10** — Root `CONVENTIONS.md` (B4) · P2 · 🟠 Moderate — **runs in parallel**, not
 	  late. File opened Jul 25 (B4 migrated in; B4 → pointer + history). **Flag conventions as
 	  you review** — they land here live. Remaining: fill the *Open* rows, then shrink
@@ -39,6 +38,10 @@ kanban-plugin: board
 
 ## ✅ Done — [[2026-08 Sprint 02 — Base Foundation]]
 
+- [x] **S2-T2** — Logger core · P1 · 🟢 Deep — **Jul 25** → PR #8 (`6f054b6b`) merged green.
+	  `std::format` seam + spdlog private (ADR-011 §1), per-config compile-time gate (§4), 9 Catch2
+	  cases, `.clang-format` = CLion scheme. **`std::format` survived the Linux leg** — ADR-011's
+	  fmt-fallback trigger did not fire.
 - [x] **S2-T1** — Diagnostics ADR (Logger + Assert) · P1 · 🟢 Deep — **Jul 25** →
 	  [[ADR-011 — Diagnostics (Logger & Assert)]] Accepted; **T2–T6 unblocked**. Seam changed
 	  under review: `fmt`-in-header was unbuildable → **`std::format`**, spdlog private, no new

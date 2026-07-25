@@ -348,6 +348,16 @@ Not a module — the `editor` exe (ADR-006 §1); owns the asset pipeline. Flat l
   first time a glm template warns. Fix: `SYSTEM` on fetched include dirs (`deps.cmake` already
   does it for miniaudio) or MSVC `/external:W0`. **Trigger:** next third-party header warning —
   or pre-emptively, it's cheap.
+- **`TE_LOG_ACTIVE_LEVEL` fails *open* — found in S2-T2 review.** `Log.hpp` defaults the gate to
+  **Trace** when the define is absent, so a TU that includes the header without linking
+  `TechEngine::base` compiles Trace into Release — and `logDispatch`'s backstop can't catch it
+  (that `.cpp` was compiled with `base`'s own value). Fix: default off `NDEBUG` so a missed link
+  is quiet, not loud. **Trigger:** first target that includes `Log.hpp` without linking `base` —
+  `te_sdk` is the likely one (ADR-011 §10).
+- **Diagnostics init belongs in `app`, not a leaf exe — found in S2-T2 review.**
+  `apps/editor/src/main.cpp` calls `initLogging()` (plus demo log lines, no `shutdownLogging()`),
+  putting composition in the exe instead of ADR-006 §4's single wiring point. **Trigger:** S2-T7
+  opens `run()` — move init there and drop the editor scratch.
 - ✅ **Tracked in root `CONVENTIONS.md` → *Open* (Jul 25).** Enum/constant casing, nested impl
   namespace, ownership default, const-correctness and error handling are now rows in the live
   conventions file (S2-T10 runs in parallel — flag them as they bite). Three are marked

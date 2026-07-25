@@ -23,6 +23,9 @@ function(techengine_test module)
   set(_te_target "TechEngine${_te_first}${_te_rest}Tests")
 
   add_executable(${_te_target} ${TT_SOURCES})
+
+ target_include_directories(${_te_target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
   target_link_libraries(${_te_target} PRIVATE
     TechEngine::${module}
     Catch2::Catch2WithMain
