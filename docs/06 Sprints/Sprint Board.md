@@ -11,7 +11,9 @@ kanban-plugin: board
 
 ## 📋 To Do — [[2026-08 Sprint 02 — Base Foundation]] (Jul 27 – Aug 30)
 
-- [ ] **S2-T3** — Channels + `LogRecord` + console/file sinks · P1 · 🟢 Deep
+- [ ] **S2-T3** — Channels + `LogRecord` + console/file sinks · P1 · 🟢 Deep — **+ sink path
+	  must be test-reachable**: no code path that only runs when the default sink is installed
+	  (S2-T2 shipped a bug there with the suite green)
 - [ ] **S2-T4** — Assert: four tiers + single handler · P1 · 🟢 Deep
 - [ ] **S2-T5** — Assert → Logger integration + flush-on-fail · P2 · 🟠 Moderate
 - [ ] **S2-T6** — Clock implementation ([[Clock — Design]]) · P1 · 🟠 Moderate

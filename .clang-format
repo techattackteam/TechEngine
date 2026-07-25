@@ -12,6 +12,12 @@ FixNamespaceComments: false
 PointerAlignment: Left
 AllowShortFunctionsOnASingleLine: None
 
+# LLVM defaults that disagree with the CLion scheme this codebase was written in.
+AccessModifierOffset: -4
+IndentCaseLabels: true
+SpaceAfterTemplateKeyword: false
+SpaceBeforeRangeBasedForLoopColon: false
+
 SortIncludes: CaseSensitive
 IncludeBlocks: Regroup
 IncludeIsMainRegex: '(Tests)?$'
