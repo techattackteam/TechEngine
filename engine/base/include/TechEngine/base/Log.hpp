@@ -92,8 +92,7 @@ namespace TechEngine {
     // `name` is stored, never copied — pass a literal or a static. ADR-011 §2.
     LogModule registerLogModule(std::string_view name, Level defaultLevel = Level::Trace);
 
-    LogChannel registerLogChannel(std::string_view name, LogModule moduleTag,
-                                  Level defaultLevel = Level::Trace);
+    LogChannel registerLogChannel(std::string_view name, LogModule moduleTag, Level defaultLevel = Level::Trace);
 
     [[nodiscard]] std::string_view logModuleName(LogModule moduleTag);
 
@@ -125,12 +124,10 @@ namespace TechEngine {
     void setDiagnosticFrame(std::uint64_t frame);
 
     namespace detail {
-        void logDispatch(Level level, LogChannel channel, const std::source_location& loc,
-                         std::string_view fmtStr, std::format_args args);
+        void logDispatch(Level level, LogChannel channel, const std::source_location& loc, std::string_view fmtStr, std::format_args args);
 
         template<typename... Args>
-        void logImpl(Level level, LogChannel channel, const std::source_location& loc,
-                     std::format_string<Args...> fmtStr, Args&&... args) {
+        void logImpl(Level level, LogChannel channel, const std::source_location& loc, std::format_string<Args...> fmtStr, Args&&... args) {
             logDispatch(level, channel, loc, fmtStr.get(), std::make_format_args(args...));
         }
     }
@@ -150,71 +147,58 @@ namespace TechEngine {
 //
 // The format string rides inside __VA_ARGS__ to avoid __VA_OPT__ — MSVC's traditional
 // preprocessor lacks it without /Zc:preprocessor. Don't "fix" this into a named parameter.
-#define TE_LOG_PRIVATE_EMIT(level, channel, ...)                                                   \
-    do {                                                                                           \
-        ::TechEngine::detail::logImpl((level), (channel), ::std::source_location::current(),        \
-                                      __VA_ARGS__);                                                \
+#define TE_LOG_PRIVATE_EMIT(level, channel, ...)                                                                                                                                                                                                                                                                                                                                           \
+    do {                                                                                                                                                                                                                                                                                                                                                                                   \
+        ::TechEngine::detail::logImpl((level), (channel), ::std::source_location::current(), __VA_ARGS__);                                                                                                                                                                                                                                                                                 \
     } while (0)
 
-#define TE_LOG_PRIVATE_DISCARD(...)                                                                \
-    do {                                                                                           \
+#define TE_LOG_PRIVATE_DISCARD(...)                                                                                                                                                                                                                                                                                                                                                        \
+    do {                                                                                                                                                                                                                                                                                                                                                                                   \
     } while (0)
 
 #if TE_LOG_ACTIVE_LEVEL <= TE_LOG_LEVEL_TRACE
-#define TE_LOGGER_TRACE(...)                                                                       \
-    TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Trace, TE_LOG_CHANNEL, __VA_ARGS__)
-#define TE_LOGGER_TRACE_CH(channel, ...)                                                           \
-    TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Trace, (channel), __VA_ARGS__)
+#define TE_LOGGER_TRACE(...) TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Trace, TE_LOG_CHANNEL, __VA_ARGS__)
+#define TE_LOGGER_TRACE_CH(channel, ...) TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Trace, (channel), __VA_ARGS__)
 #else
 #define TE_LOGGER_TRACE(...) TE_LOG_PRIVATE_DISCARD(__VA_ARGS__)
 #define TE_LOGGER_TRACE_CH(channel, ...) TE_LOG_PRIVATE_DISCARD((channel), __VA_ARGS__)
 #endif
 
 #if TE_LOG_ACTIVE_LEVEL <= TE_LOG_LEVEL_DEBUG
-#define TE_LOGGER_DEBUG(...)                                                                       \
-    TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Debug, TE_LOG_CHANNEL, __VA_ARGS__)
-#define TE_LOGGER_DEBUG_CH(channel, ...)                                                           \
-    TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Debug, (channel), __VA_ARGS__)
+#define TE_LOGGER_DEBUG(...) TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Debug, TE_LOG_CHANNEL, __VA_ARGS__)
+#define TE_LOGGER_DEBUG_CH(channel, ...) TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Debug, (channel), __VA_ARGS__)
 #else
 #define TE_LOGGER_DEBUG(...) TE_LOG_PRIVATE_DISCARD(__VA_ARGS__)
 #define TE_LOGGER_DEBUG_CH(channel, ...) TE_LOG_PRIVATE_DISCARD((channel), __VA_ARGS__)
 #endif
 
 #if TE_LOG_ACTIVE_LEVEL <= TE_LOG_LEVEL_INFO
-#define TE_LOGGER_INFO(...)                                                                        \
-    TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Info, TE_LOG_CHANNEL, __VA_ARGS__)
-#define TE_LOGGER_INFO_CH(channel, ...)                                                            \
-    TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Info, (channel), __VA_ARGS__)
+#define TE_LOGGER_INFO(...) TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Info, TE_LOG_CHANNEL, __VA_ARGS__)
+#define TE_LOGGER_INFO_CH(channel, ...) TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Info, (channel), __VA_ARGS__)
 #else
 #define TE_LOGGER_INFO(...) TE_LOG_PRIVATE_DISCARD(__VA_ARGS__)
 #define TE_LOGGER_INFO_CH(channel, ...) TE_LOG_PRIVATE_DISCARD((channel), __VA_ARGS__)
 #endif
 
 #if TE_LOG_ACTIVE_LEVEL <= TE_LOG_LEVEL_WARN
-#define TE_LOGGER_WARN(...)                                                                        \
-    TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Warn, TE_LOG_CHANNEL, __VA_ARGS__)
-#define TE_LOGGER_WARN_CH(channel, ...)                                                            \
-    TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Warn, (channel), __VA_ARGS__)
+#define TE_LOGGER_WARN(...) TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Warn, TE_LOG_CHANNEL, __VA_ARGS__)
+#define TE_LOGGER_WARN_CH(channel, ...) TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Warn, (channel), __VA_ARGS__)
 #else
 #define TE_LOGGER_WARN(...) TE_LOG_PRIVATE_DISCARD(__VA_ARGS__)
 #define TE_LOGGER_WARN_CH(channel, ...) TE_LOG_PRIVATE_DISCARD((channel), __VA_ARGS__)
 #endif
 
 #if TE_LOG_ACTIVE_LEVEL <= TE_LOG_LEVEL_ERROR
-#define TE_LOGGER_ERROR(...)                                                                       \
-    TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Error, TE_LOG_CHANNEL, __VA_ARGS__)
-#define TE_LOGGER_ERROR_CH(channel, ...)                                                           \
-    TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Error, (channel), __VA_ARGS__)
+#define TE_LOGGER_ERROR(...) TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Error, TE_LOG_CHANNEL, __VA_ARGS__)
+#define TE_LOGGER_ERROR_CH(channel, ...) TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Error, (channel), __VA_ARGS__)
 #else
 #define TE_LOGGER_ERROR(...) TE_LOG_PRIVATE_DISCARD(__VA_ARGS__)
 #define TE_LOGGER_ERROR_CH(channel, ...) TE_LOG_PRIVATE_DISCARD((channel), __VA_ARGS__)
 #endif
 
 #if TE_LOG_ACTIVE_LEVEL <= TE_LOG_LEVEL_CRITICAL
-#define TE_LOGGER_CRITICAL(...)                                                                    \
-    TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Critical, TE_LOG_CHANNEL, __VA_ARGS__)
-#define TE_LOGGER_CRITICAL_CH(channel, ...)                                                        \
-    TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Critical, (channel), __VA_ARGS__)
+#define TE_LOGGER_CRITICAL(...) TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Critical, TE_LOG_CHANNEL, __VA_ARGS__)
+#define TE_LOGGER_CRITICAL_CH(channel, ...) TE_LOG_PRIVATE_EMIT(::TechEngine::Level::Critical, (channel), __VA_ARGS__)
 #else
 #define TE_LOGGER_CRITICAL(...) TE_LOG_PRIVATE_DISCARD(__VA_ARGS__)
 #define TE_LOGGER_CRITICAL_CH(channel, ...) TE_LOG_PRIVATE_DISCARD((channel), __VA_ARGS__)

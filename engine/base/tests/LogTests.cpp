@@ -1,7 +1,6 @@
 #include <TechEngine/base/Log.hpp>
 
 #include "LogFormat.hpp"
-
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
@@ -35,10 +34,7 @@ struct CapturedRecord {
 static std::vector<CapturedRecord> g_captured;
 
 static void captureSink(const TechEngine::LogRecord& record) {
-    g_captured.push_back(CapturedRecord{record.time, record.frame, record.level, record.moduleTag,
-                                        record.channel, std::string{record.message},
-                                        std::string{record.file}, std::string{record.function},
-                                        record.line});
+    g_captured.push_back(CapturedRecord{record.time, record.frame, record.level, record.moduleTag, record.channel, std::string{record.message}, std::string{record.file}, std::string{record.function}, record.line});
 }
 
 static std::vector<std::string> g_secondary;
@@ -235,8 +231,7 @@ TEST_CASE("module level is a floor over its channels", "[base][log][channel]") {
     TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     const TechEngine::LogModule physics = TechEngine::registerLogModule("physics");
-    const TechEngine::LogChannel solver =
-        TechEngine::registerLogChannel("solver", physics, TechEngine::Level::Trace);
+    const TechEngine::LogChannel solver = TechEngine::registerLogChannel("solver", physics, TechEngine::Level::Trace);
     TechEngine::setModuleLevel(physics, TechEngine::Level::Error);
 
     TE_LOGGER_INFO_CH(solver, "dropped by the module floor");
@@ -263,8 +258,7 @@ TEST_CASE("unregistered channel falls back to the default", "[base][log][channel
     REQUIRE(g_captured[0].channel == bogus);
     REQUIRE(g_captured[0].moduleTag == TechEngine::DEFAULT_MODULE);
     REQUIRE(TechEngine::logChannelName(bogus) == "default");
-    REQUIRE(TechEngine::channelLevel(bogus)
-        == TechEngine::channelLevel(TechEngine::DEFAULT_CHANNEL));
+    REQUIRE(TechEngine::channelLevel(bogus) == TechEngine::channelLevel(TechEngine::DEFAULT_CHANNEL));
 }
 
 TEST_CASE("sinks are added, not swapped", "[base][log][sink]") {
@@ -293,8 +287,7 @@ TEST_CASE("sinks are added, not swapped", "[base][log][sink]") {
 // names the original to freopen back to, so the descriptor is saved and restored by hand.
 template<typename Body>
 static std::string captureStderr(Body&& body) {
-    const std::filesystem::path path = std::filesystem::temp_directory_path()
-                                       / "te_log_stderr.txt";
+    const std::filesystem::path path = std::filesystem::temp_directory_path() / "te_log_stderr.txt";
 
     std::fflush(stderr);
 #if defined(_WIN32)
@@ -320,8 +313,7 @@ static std::string captureStderr(Body&& body) {
 #endif
 
     std::ifstream file{path};
-    const std::string contents{std::istreambuf_iterator<char>{file},
-                               std::istreambuf_iterator<char>{}};
+    const std::string contents{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
 
     std::error_code ec;
     std::filesystem::remove(path, ec);
@@ -334,9 +326,7 @@ TEST_CASE("with no sink installed a record still reaches stderr", "[base][log][s
     const TechEngine::Level previous = TechEngine::minLevel();
     TechEngine::setMinLevel(TechEngine::Level::Trace);
 
-    const std::string captured = captureStderr([] {
-        TE_LOGGER_ERROR("fallback {0}", 7);
-    });
+    const std::string captured = captureStderr([] { TE_LOGGER_ERROR("fallback {0}", 7); });
 
     TechEngine::setMinLevel(previous);
 
@@ -355,7 +345,6 @@ TEST_CASE("a record carries a wall-clock stamp", "[base][log]") {
     REQUIRE(g_captured[0].time.time_since_epoch().count() > 0);
     REQUIRE(g_captured[1].time >= g_captured[0].time);
 }
-
 
 static TechEngine::LogRecord sampleRecord(std::string_view message) {
     return TechEngine::LogRecord{

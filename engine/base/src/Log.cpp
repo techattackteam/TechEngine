@@ -46,9 +46,7 @@ namespace TechEngine {
             if (!truncated) {
                 return;
             }
-            size = size > detail::TRUNCATION_MARKER.size()
-                       ? size - detail::TRUNCATION_MARKER.size()
-                       : 0;
+            size = size > detail::TRUNCATION_MARKER.size() ? size - detail::TRUNCATION_MARKER.size() : 0;
             for (const char c: detail::TRUNCATION_MARKER) {
                 push(c);
             }
@@ -88,8 +86,7 @@ namespace TechEngine {
         LogFormatBuffer* m_buffer{nullptr};
     };
 
-    static_assert(std::output_iterator<LogFormatBufferIterator, char>,
-                  "vformat_to needs this to model output_iterator");
+    static_assert(std::output_iterator<LogFormatBufferIterator, char>, "vformat_to needs this to model output_iterator");
 
     struct LogModuleEntry {
         std::string_view name;
@@ -173,18 +170,13 @@ namespace TechEngine {
 
             // count() is in system_clock's own ticks — 100 ns on MSVC, 1 ns on libstdc++ —
             // so the cast is what makes this the same number on both legs.
-            const auto sinceEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    record.time.time_since_epoch());
+            const auto sinceEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(record.time.time_since_epoch());
             const std::tm local = localTime(std::chrono::system_clock::to_time_t(record.time));
 
             std::format_to(LogFormatBufferIterator{buffer},
                            "[{0:02}:{1:02}:{2:02}.{3:03}][f {4}][{5}/{6}][{7}:{8}:{9}()][{10}] "
                            "{11}",
-                           local.tm_hour, local.tm_min, local.tm_sec,
-                           static_cast<int>(sinceEpoch.count() % 1000), record.frame,
-                           logModuleName(record.moduleTag), logChannelName(record.channel),
-                           record.file, record.line, record.function, levelTag(record.level),
-                           record.message);
+                           local.tm_hour, local.tm_min, local.tm_sec, static_cast<int>(sinceEpoch.count() % 1000), record.frame, logModuleName(record.moduleTag), logChannelName(record.channel), record.file, record.line, record.function, levelTag(record.level), record.message);
             buffer.markTruncated();
             return buffer.size;
         }
@@ -194,8 +186,7 @@ namespace TechEngine {
         std::array<char, MESSAGE_CAPACITY + 256> storage;
         const std::size_t size = detail::flattenRecord(record, storage.data(), storage.size());
 
-        spdlog::default_logger_raw()->log(toSpdlogLevel(record.level),
-                                          spdlog::string_view_t{storage.data(), size});
+        spdlog::default_logger_raw()->log(toSpdlogLevel(record.level), spdlog::string_view_t{storage.data(), size});
     }
 
     static std::string_view baseName(std::string_view path) {
@@ -209,10 +200,7 @@ namespace TechEngine {
             return signature;
         }
 
-        const auto isNameChar = [](char c) {
-            return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
-                   c == '_' || c == ':' || c == '~' || c == '<' || c == '>';
-        };
+        const auto isNameChar = [](char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == ':' || c == '~' || c == '<' || c == '>'; };
 
         std::size_t begin = paren;
         while (begin > 0 && isNameChar(signature[begin - 1])) {
@@ -259,8 +247,7 @@ namespace TechEngine {
         const std::uint16_t slot = g_moduleCount.fetch_add(1, std::memory_order_acq_rel);
         if (slot >= MAX_LOG_MODULES) {
             g_moduleCount.store(MAX_LOG_MODULES, std::memory_order_release);
-            std::fprintf(stderr, "[log] module table full — '%.*s' falls back to default\n",
-                         static_cast<int>(name.size()), name.data());
+            std::fprintf(stderr, "[log] module table full — '%.*s' falls back to default\n", static_cast<int>(name.size()), name.data());
             return DEFAULT_MODULE;
         }
 
@@ -273,8 +260,7 @@ namespace TechEngine {
         const std::uint16_t slot = g_channelCount.fetch_add(1, std::memory_order_acq_rel);
         if (slot >= MAX_LOG_CHANNELS) {
             g_channelCount.store(MAX_LOG_CHANNELS, std::memory_order_release);
-            std::fprintf(stderr, "[log] channel table full — '%.*s' falls back to default\n",
-                         static_cast<int>(name.size()), name.data());
+            std::fprintf(stderr, "[log] channel table full — '%.*s' falls back to default\n", static_cast<int>(name.size()), name.data());
             return DEFAULT_CHANNEL;
         }
 
@@ -308,14 +294,13 @@ namespace TechEngine {
         sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
 
         try {
-            sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-                LOG_FILE_PATH, LOG_FILE_MAX_SIZE, LOG_FILE_MAX_COUNT));
+            sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(LOG_FILE_PATH, LOG_FILE_MAX_SIZE, LOG_FILE_MAX_COUNT));
         } catch (const spdlog::spdlog_ex& e) {
             std::fprintf(stderr, "[log] file sink disabled (%s): %s\n", LOG_FILE_PATH, e.what());
         }
 
         auto logger = std::make_shared<spdlog::logger>("techengine", sinks.begin(), sinks.end());
-        logger->set_pattern("%^%v%$"); // our line already carries the time and the level
+        logger->set_pattern("%^%v%$");           // our line already carries the time and the level
         logger->set_level(spdlog::level::trace); // we filter; spdlog must not double-filter
         logger->flush_on(spdlog::level::err);
         spdlog::set_default_logger(std::move(logger));
@@ -368,10 +353,7 @@ namespace TechEngine {
         }
 
         const LogChannelEntry& entry = channelEntry(channel);
-        const Level floor = std::max({g_minLevel.load(std::memory_order_relaxed),
-                                      moduleEntry(entry.moduleTag).level.load(
-                                          std::memory_order_relaxed),
-                                      entry.level.load(std::memory_order_relaxed)});
+        const Level floor = std::max({g_minLevel.load(std::memory_order_relaxed), moduleEntry(entry.moduleTag).level.load(std::memory_order_relaxed), entry.level.load(std::memory_order_relaxed)});
         return level >= floor;
     }
 
@@ -380,8 +362,7 @@ namespace TechEngine {
     }
 
     namespace detail {
-        void logDispatch(Level level, LogChannel channel, const std::source_location& loc,
-                         std::string_view fmtStr, std::format_args args) {
+        void logDispatch(Level level, LogChannel channel, const std::source_location& loc, std::string_view fmtStr, std::format_args args) {
             if (static_cast<int>(level) < TE_LOG_ACTIVE_LEVEL) {
                 return;
             }
@@ -431,11 +412,7 @@ namespace TechEngine {
             }
 
             if (!delivered) {
-                std::fprintf(stderr, "[f %llu][%.*s:%u:%.*s()] %.*s\n",
-                             static_cast<unsigned long long>(record.frame),
-                             static_cast<int>(record.file.size()), record.file.data(), record.line,
-                             static_cast<int>(record.function.size()), record.function.data(),
-                             static_cast<int>(record.message.size()), record.message.data());
+                std::fprintf(stderr, "[f %llu][%.*s:%u:%.*s()] %.*s\n", static_cast<unsigned long long>(record.frame), static_cast<int>(record.file.size()), record.file.data(), record.line, static_cast<int>(record.function.size()), record.function.data(), static_cast<int>(record.message.size()), record.message.data());
             }
         }
     }
