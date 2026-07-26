@@ -26,12 +26,20 @@ kanban-plugin: board
 	  you review** — they land here live. CLAUDE.md's section **shrunk to a pointer + the 3
 	  AI-default corrections (Jul 26)**. Remaining: ratify the *Open* rows — 3 are ⚠️ provisional
 	  and need your call, not Claude's reading.
-- [ ] **S2-T12** — Land the accumulated vault + AI-config work through the ruleset · P3 · 🟡 Light
-	  — **started Jul 26**. Was written as "land `feat/improving-vault`"; that branch is gone and
-	  the work sat uncommitted on `master` instead, so the mechanism changed, not the goal.
 
 
 ## 👀 Review / Demo
+
+- [ ] **S2-T12** — Land the accumulated vault + AI-config work through the ruleset · P3 · 🟡 Light
+	  — **Jul 26** → PR #NN (not yet opened). 24 files, **+409/−237, zero code**. Backlog is now a
+	  staging area — entries cut at planning, not swept later (350→289 lines); `/task-start` +
+	  `/task-wrap` bracket every task off a freshly fetched `origin/master`, which is the fix for
+	  the squash-merge branch reuse that conflicted PRs #8–#10; CLAUDE.md conventions reduced to a
+	  pointer + the 3 AI-default corrections, and its stale test-target names fixed
+	  (`TechEngineBaseTests` / `sdk-smoke` / `TechEngine::sdk`).
+	  **Done-condition not yet met** — it *is* the PR lifecycle (opened → 8 checks green →
+	  squash-merged), so it closes on merge, not here. Card was retitled: the original
+	  `feat/improving-vault` branch no longer exists.
 
 
 

@@ -324,6 +324,19 @@ Not a module — the `editor` exe (ADR-006 §1); owns the asset pipeline. Flat l
   `apps/editor/src/main.cpp` calls `initLogging()` (plus demo log lines, no `shutdownLogging()`),
   putting composition in the exe instead of ADR-006 §4's single wiring point. **Trigger:** S2-T7
   opens `run()` — move init there and drop the editor scratch.
+- **Docs-only PRs burn a full CI run — path-filter it.** A vault-only change runs all 8 required
+  checks on both legs (~22 billed min, ADR-008 §9's budget is live). **The trap:** plain
+  `paths-ignore` on `pull_request` makes required checks *never report*, so a ruleset-protected
+  PR blocks forever. Needs the dummy-job pattern (same job **name**, reports success on doc-only
+  changes) or `dorny/paths-filter`. Measured on S2-T12: 24 files, zero code, full matrix.
+  Also fix while in there: `ci.yml:44` still says `te_sdk_smoke` (now `TechEngineSDKSmoke`).
+  **Trigger:** the second docs-only PR — one is a rounding error, a habit is a budget line.
+- **`CONVENTIONS.md` isn't auto-loaded — the rules left Claude's default context (Jul 26).**
+  S2-T10 shrank CLAUDE.md's conventions section to a pointer, which the sprint note had
+  deliberately deferred to sprint end *because* only `CLAUDE.md` loads every session. Naming,
+  include order and header rules now depend on Claude choosing to open `CONVENTIONS.md`. Options:
+  an `@CONVENTIONS.md` import from CLAUDE.md, or accept it and watch for drift.
+  **Trigger:** the first review where Claude gets a convention wrong that the file covers.
 - README at repo root (public-facing)
 - Recorded-demo workflow (capture + store)
 - **Ownership / smart-pointer policy (fixes v1 F13) — `CONVENTIONS.md` (B4) or a short ADR.** Default =
@@ -336,6 +349,11 @@ Not a module — the `editor` exe (ADR-006 §1); owns the asset pipeline. Flat l
   ECS + resources + renderer are real.
 
 ### AI tooling (skills)
+- **Command `/catch-up` — session re-entry.** Deep days are Mon/Thu + a weekend day, so most
+  sessions start after a 3-day gap with cleared context. Reads [[Dashboard]], the board's In
+  Progress card, `git log` since the last session, and the active card's design note — so the
+  session opens grounded instead of re-derived. Proposed 2026-07-26, not taken up.
+  **Trigger:** the first session that opens with "where was I".
 - **Skill `te-review` — engine review rubric.** Checks a diff against the ADR structural
   invariants (F3 private-header boundary; link-what-you-use [[ADR-008 — v2 build & testing baseline]] §8;
   no export macros; `EngineContext`≠locator [[ADR-006 — v2 core architecture & module layout]] §4;
