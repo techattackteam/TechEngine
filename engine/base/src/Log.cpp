@@ -409,7 +409,7 @@ namespace TechEngine {
                 }
             }
 
-             if (!delivered) {
+            if (!delivered) {
                 std::array<char, MESSAGE_CAPACITY + 256> line;
                 const std::size_t size = flattenRecord(record, line.data(), line.size());
                 std::fprintf(stderr, "%.*s\n", static_cast<int>(size), line.data());
