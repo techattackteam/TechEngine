@@ -73,20 +73,23 @@ vertical slice is **Sprint 03**.
       Carried into T3: default-sink path untested · `LogRecord` has no `time` field (§3) · rendered
       line is still `[f-N][file:line:func()]`, not §3's. Found in flight → [[Backlog]]: `SYSTEM`
       third-party includes · coverage in CI · gate fails open · diagnostics init belongs in `app`.
-- [ ] **S2-T3** — Channels + `LogRecord` + console/file sinks · **P1** · 🟢 Deep —
-      done: channels registered **explicitly from the composition root**, tagged by module
-      (ADR-011 §2 — *not* file-scope self-registration: static libs strip it); structured
-      `LogRecord` reaches console + file sinks; two modules log on distinct channels in a test.
-      Call site picks its channel via a **per-TU `TE_LOG_CHANNEL`** + `_CH` escape (decided
-      2026-07-25 → [[Logger — Design]]). *(Editor ring-buffer sink **excluded** — no editor, no
-      consumer. **In-memory ring moved to T5**, where the flush path consumes it.)*
-      **+ Sink path must be reachable from `te_base_tests`.** S2-T2 shipped a truncation bug in
-      `flattenRecord` with the suite 100% green, because all 9 cases install a capture sink via
-      `setLogSink` — the seam used to *observe* logging deletes the default path, so
-      `spdlogSink`/`flattenRecord` ran **zero** times. Fix the shape, not the symptom: the
-      flatten/format step must be callable from a test (a `src/`-internal header the test target
-      can include, or a test-installed sink that exercises real flattening). **No code path may
-      exist that only runs when the default sink is installed.**
+- [x] **S2-T3** — Channels + `LogRecord` + console/file sinks · **P1** · 🟢 Deep —
+      **✅ Jul 25** → PR #9. Shipped: module/channel **handles** in fixed tables, registered
+      explicitly from the composition root (ADR-011 §2); filtering at
+      `max(process, module, channel)`; `LogRecord` gains `time` + module tag; a **sink array**
+      (`addLogSink`/`removeLogSink`) replacing the single slot; one spdlog logger over console +
+      rotating file (`logs/techengine.log`, 5 MB × 3) that degrades to console-only if the file
+      won't open; the [[Logger — Design]] line, flattened **once** per record and shared by the
+      pre-init stderr fallback. Call site picks its channel via a per-TU `TE_LOG_CHANNEL` +
+      `_CH` escape.
+      **Test-reachability criterion met** (the one T2's green-but-unreached bug earned):
+      `flattenRecord` sits behind a `src/`-internal header the test target includes —
+      `techengine_test()` now puts every module's `src/` on its test include path — and the
+      capture sink **adds** instead of replacing, so no path exists that only runs when the
+      default sink is installed. 9 new cases, incl. the stderr fallback (fd save/restore) and a
+      buffer canary. *(Ring sink → T5; editor sink still excluded.)*
+      **Residual:** `initLogging`/`spdlogSink` stay uncovered by ctest — the suite never calls
+      `initLogging()` so it writes no log files; **T9's demo is what proves them.**
 
 ### Story C — Assert
 

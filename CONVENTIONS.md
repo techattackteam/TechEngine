@@ -162,6 +162,22 @@ that violates it. `IncludeIsMainRegex: '(Tests)?$'` is what makes `LogTests.cpp`
   façade rule, and it's what keeps backends swappable (ADR-011 §1 is the worked example).
 - A module's public header must not expose a *lower* module's private type (ADR-006 §3).
 
+## Attributes — no `[[nodiscard]]`
+
+**Don't write `[[nodiscard]]`.** Not on getters, not on queries, not anywhere. Removed from
+`base` on 2026-07-26 (S2-T10).
+
+Rationale: it is noise on every declaration for a warning that fires on code nobody writes —
+calling a pure getter and dropping the result is a typo, not a class of bug worth taxing the
+whole API surface for. It also reads as attribute-soup next to `constexpr` / `static` /
+`inline`, which are load-bearing.
+
+- Nothing enforces it either way — `modernize-use-nodiscard` is **not** in `.clang-tidy`, so no
+  gate re-adds it.
+- **Revisit only for a fallible API** where the discarded value *is* the error (`std::expected`,
+  a `bool` "did it work"). That is the Error-handling row in *Open* below — decide it there, for
+  that shape, not as a blanket habit. Today's only case (`addLogSink`) is a bool nobody ignores.
+
 ## CMake
 
 - **Module libraries → real target `TechEngine<Module>`** (`TechEngineBase`, `TechEngineCore`).

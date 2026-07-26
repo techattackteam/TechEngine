@@ -168,8 +168,6 @@ namespace TechEngine {
         std::size_t flattenRecord(const LogRecord& record, char* out, std::size_t capacity) {
             LogFormatBuffer buffer{out, capacity, 0, false};
 
-            // count() is in system_clock's own ticks — 100 ns on MSVC, 1 ns on libstdc++ —
-            // so the cast is what makes this the same number on both legs.
             const auto sinceEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(record.time.time_since_epoch());
             const std::tm local = localTime(std::chrono::system_clock::to_time_t(record.time));
 
@@ -412,7 +410,9 @@ namespace TechEngine {
             }
 
             if (!delivered) {
-                std::fprintf(stderr, "[f %llu][%.*s:%u:%.*s()] %.*s\n", static_cast<unsigned long long>(record.frame), static_cast<int>(record.file.size()), record.file.data(), record.line, static_cast<int>(record.function.size()), record.function.data(), static_cast<int>(record.message.size()), record.message.data());
+                std::array<char, MESSAGE_CAPACITY + 256> line;
+                const std::size_t size = flattenRecord(record, line.data(), line.size());
+                std::fprintf(stderr, "%.*s\n", static_cast<int>(size), line.data());
             }
         }
     }
