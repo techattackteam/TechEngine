@@ -5,7 +5,7 @@
 **Module:** `base` (helper/utility — dependency-free leaf) · **Kind:** utility · **Status:** decided — implementing (S2-T2/T3)
 **ADRs:** **[[ADR-011 — Diagnostics (Logger & Assert)]] — the decisions** ·
 [[ADR-005 — v2 tech stack & toolchain]] (spdlog) · [[ADR-006 — v2 core architecture & module layout]] §5/§6
-**Backlog:** [[Backlog]] → base → utilities
+**Sprint:** [[2026-08 Sprint 02 — Base Foundation]] — S2-T2 / S2-T3
 
 ## Purpose
 Structured, low-overhead logging for the whole engine, wrapping **spdlog** (don't rebuild infra).

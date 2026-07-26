@@ -31,6 +31,16 @@ maintained separately (`/consolidate-memory`).
    that are empty / placeholder-only.
 6. **Bloat** — notes over ~150 lines or covering more than one topic (→ split); append-
    only growth; prose where a table/bullets would carry it in fewer tokens.
+   **ADRs are exempt from the line count** — an ADR is one immutable decision record, and
+   splitting it breaks the `§` refs the whole vault cites. Judge an ADR on whether it covers
+   more than one *decision*, never on length.
+7. **[[Backlog]] leaks** — entries are cut at `/sprint-plan`, so anything scheduled or
+   built that's *still there* is a leak from planning, not routine cleanup. Flag entries
+   marked `✅ Scheduled`, already on the [[Sprint Board]], or settled by an Accepted ADR.
+   Before proposing a cut, **check the thinking has a durable home** (sprint note, design
+   note, ADR, code) — if the entry is its only home, propose a **move**. Settled-without-
+   building items collapse to a one-line tombstone. A parked item with no `**Trigger:**`
+   is also a finding.
 
 ## Guardrails — do NOT over-clean
 - **Accepted ADRs are immutable** ([[ADR Index]]). Never rewrite an Accepted ADR's

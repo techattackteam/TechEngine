@@ -18,9 +18,12 @@ typing.
 - Skipping the ADR when AI proposes a load-bearing decision.
 
 ## Cadence
-- **Monthly** — architecture discussion, sprint planning, research.
-- **Weekly** — review implementation, refine tasks.
-- **Daily** — implement tasks; call AI when blocked or reviewing.
+Anchored to the real weekly rhythm on the [[Dashboard]] — **not** a daily standup.
+
+- **Sprint boundary (every 4th weekend)** — retro + planning + architecture discussion.
+- **Other weekends** — weekly review; refine tasks.
+- **Deep days (Mon / Thu + one weekend day)** — implementation; call AI to design first and
+  review after. Light/relaxed days are for docs, ADR drafting, and reading.
 
 ## Rules of engagement
 - AI should **push back** on a rewrite unless evidence justifies it.
@@ -35,7 +38,8 @@ On **process** — sprint planning, backlog grooming, retro, demo/planning — C
 - **Co-create the plan**: build the Epic → Story → Task breakdown *together* — Claude
   drafts and challenges, Miguel decides scope. Tasks sized to one 2–6h session with a
   clear done-condition.
-- **Run the ceremonies**: `/sprint-plan` (last weekend/mo), `/weekly-review` (each weekend);
+- **Run the ceremonies**: `/sprint-plan` (every 4th weekend — absorbs that weekend's review,
+  never both), `/weekly-review` (the other weekends);
   keep [[Sprint Board]], [[Roadmap]], and [[Dashboard]] in sync.
 - **Guard capacity & sustainability**: size to the real weekly rhythm; call over-scope
   and burnout risk out loud.

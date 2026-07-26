@@ -1,9 +1,11 @@
 # 2026-08 · Sprint 02 — Base Foundation
 
 - **Quarter:** [[2026-Q3]]
-- **Dates:** **Jul 27 – Aug 30 2026** (5 weeks — one-off length; Sprint 01 was a short
-  special sprint, so this absorbs the Jul 27–31 week rather than orphaning it).
-  Review + plan on the **Aug 29–30** weekend.
+- **Dates:** **Jul 25 – Aug 28 2026** (5 weeks — **one-off transition**: the 4-week Sat→Fri
+  cadence was adopted 2026-07-26 mid-sprint, and this sprint was already sized at ~5 weeks.
+  Cutting it to 4 would have removed the deliberate slack, not idle time. Sprint 03 is the
+  first clean cycle). Review + plan on the **Aug 29–30** weekend — which is **day 1 of
+  Sprint 03**, not the tail of this one.
 - **Epic:** v2 base foundation
 - **Decisions behind it:** [[ADR-006 — v2 core architecture & module layout]] §4 §6 ·
   [[ADR-007 — v2 networking & ECS replication foundation]] §5 · [[Backlog]] Sprint 02 lock (Jul 23)
@@ -107,7 +109,7 @@ vertical slice is **Sprint 03**.
 
 ### Story D — Clock
 
-- [ ] **S2-T6** — Clock implementation · **P1** · 🟠 Moderate —
+- [x] **S2-T6** — Clock implementation · **P1** · 🟠 Moderate —
       done: `now()` / `wallClock()` / `totalTime()` / diagnostic `frame()` per
       [[Clock — Design]]; **no `platform` seam**; tests cover monotonicity + `totalTime`
       accumulation; Logger's `[f N]` stamp reads it.
@@ -143,9 +145,11 @@ vertical slice is **Sprint 03**.
 - [ ] **S2-T11** — Skill `te-module` scaffolder · **P3** · 🟡 Light —
       done: stamps `include/TechEngine/<m>` + `src` split, `techengine_module()` call,
       colocated Catch2 test exe, deps wiring — referencing the **real** scaffold files.
-- [ ] **S2-T12** — Land `feat/improving-vault` through the ruleset · **P3** · 🟡 Light —
-      done: PR opened, 8 required checks green, squash-merged. First real exercise of the
-      protection rules.
+- [ ] **S2-T12** — Land the accumulated vault + AI-config work through the ruleset ·
+      **P3** · 🟡 Light — done: PR opened, 8 required checks green, squash-merged. First real
+      exercise of the protection rules. *(Written as "land `feat/improving-vault`"; that
+      branch is gone and the work accumulated uncommitted on `master` instead — mechanism
+      changed, goal unchanged.)*
 
 ## Definition of Done
 

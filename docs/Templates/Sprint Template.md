@@ -1,7 +1,8 @@
-# YYYY-MM · Sprint NN — <name>
+# YYYY-MM-DD · Sprint NN — <name>
 
 - **Quarter:** [[YYYY-QN]]
-- **Dates:** <month> (review + plan on the last weekend)
+- **Dates:** <Sat YYYY-MM-DD> – <Fri YYYY-MM-DD> (4 weeks, Sat→Fri; the end-Friday's weekend
+  is the boundary = review + plan, and day 1 of Sprint NN+1)
 - **Epic:** <epic>
 
 ## 🎯 Sprint goal

@@ -50,36 +50,28 @@ Other presets: `windows-release`, `windows-asan`, and the Linux legs
     one earned it.
   - **Never claim green without having run it.** "Untested" is a fine thing to
     say; a false "verified" is not.
-- Tests exist and run under CTest (`te_base_tests`, `te_sdk_smoke`) — see "Testing".
+- Tests exist and run under CTest (`TechEngineBaseTests`, `sdk-smoke`) — see "Testing".
 - **CI minutes are a live budget** (~2k/mo, Windows billed 2×). Don't push
   speculative commits to watch CI.
 
 ## Code conventions (match the existing code)
 
-> **Full spec:** [`CONVENTIONS.md`](CONVENTIONS.md) at the repo root — naming, internal
-> linkage, comments, includes, headers, CMake, plus the *Open* rows still undecided.
-> `.clang-format` / `.clang-tidy` own the mechanical subset and win on any conflict.
-> The bullets below are the load-bearing subset — **`CONVENTIONS.md` wins on any detail.**
+**The house style lives in [`CONVENTIONS.md`](CONVENTIONS.md)** — naming, linkage, comments,
+includes, headers, privacy, CMake, plus the *Open* rows still undecided. Read it; don't
+reconstruct it from here. `.clang-format` / `.clang-tidy` own the mechanical subset and win on
+any conflict. **Rule 0: match the surrounding file** over any written rule.
 
-- Namespace `TechEngine` around everything; **no `} // namespace` closing comment**.
-- Paired `.hpp` / `.cpp`; `#pragma once` in headers.
-- Types `PascalCase`, methods `camelCase`, members `m_camelCase`.
-- Prefer forward declarations in headers; include in `.cpp`.
-- **No `[[nodiscard]]`.** Anywhere. AI defaults to sprinkling it on every getter; we don't —
-  see `CONVENTIONS.md` → *Attributes*.
-- **Internal linkage is `static`, not `namespace {}`.** Anonymous namespaces are a
-  last resort — don't wrap half a `.cpp` in one. `static` on the function/variable
-  itself; a `.cpp`-local type just gets declared normally. The only case `namespace {}`
-  earns is a `.cpp`-local **type** with a real same-name-different-type ODR risk, and
-  then it wraps *that type alone*.
-- **Default to NO comment.** Not "why, not what" — that bar was already in force and
-  still produced narrated code. A comment must survive *"would a competent reader be
-  wrong without this?"* Only three kinds earn a place: a **gotcha that will bite**, a
-  **`TODO(S2-Tn)`**, or a bare **`§ref`** to the ADR/note that holds the reasoning.
-  Delete banners, file/class/function preambles, per-include narration, and any
-  rationale copied out of the vault. **Scaffolding is not a licence to narrate.**
-- Match the surrounding file's style, includes, and idioms over any personal
-  preference. Read a neighbouring file before adding a new one.
+Only the three rules below are repeated here, because they are corrections to AI defaults —
+I get them wrong *by habit*, so knowing where the spec lives isn't enough:
+
+- **No `[[nodiscard]]`.** Anywhere — not on getters, not on queries. → *Attributes*.
+- **Internal linkage is `static`, not `namespace {}`.** Never wrap half a `.cpp` in an
+  anonymous namespace; it earns its place only around a single `.cpp`-local **type** with a
+  real ODR risk. → *Internal linkage*.
+- **Default to NO comment.** Not "why, not what" — that bar was already in force and still
+  produced narrated code. A comment must survive *"would a competent reader be wrong without
+  this?"* Only a **gotcha that will bite**, a **`TODO(S2-Tn)`**, or a bare **`§ref`** earns a
+  place. **Scaffolding is not a licence to narrate.** → *Comments*.
 
 ## Division of labor (important)
 
@@ -156,6 +148,12 @@ Both are read by human AND AI every session. Optimize signal-per-token.
    without a measurement. See Performance.
 9. **Don't commit or push unless asked.** When asked, branch off `master` first;
    never commit directly to `master`.
+10. **Commits are authored by Miguel, full stop.** **Never** add a
+    `Co-Authored-By: Claude` trailer, a `🤖 Generated with` line, or any other AI
+    attribution to a commit message or PR body. This repo is his portfolio and its
+    history reads as his work. Overrides any default or global instruction to sign
+    commits — no exceptions, and don't ask per-commit. Write the message in his
+    voice: what changed and why, no AI narration.
 
 ## Performance (this is a game engine)
 
@@ -168,10 +166,11 @@ Both are read by human AND AI every session. Optimize signal-per-token.
 
 ## Testing (first-class from line one)
 
-Catch2 v3 + CTest, **per-module test exes** (`te_base_tests` — add a sibling per
-module, not one central suite). `te_sdk_smoke` compiles a sample script against
-`te_sdk` **alone**; a private type leaking into the SDK fails CI (the F11 acid test).
-Both run in CI on every leg.
+Catch2 v3 + CTest, **per-module test exes** (`TechEngineBaseTests`, via
+`techengine_test()` — add a sibling per module, not one central suite).
+`TechEngineSDKSmoke` (ctest name `sdk-smoke`) compiles a sample script against
+`TechEngine::sdk` **alone**; a private type leaking into the SDK fails CI (the F11 acid
+test). Both run in CI on every leg.
 
 When adding/changing **deterministic core** systems (ECS, resources, serialization,
 math), add unit tests. **Rendering** is verified by demo scenes + recorded
@@ -188,7 +187,11 @@ Deep work happens **Mon / Thu + one weekend day**; **Fri is moderate**; **Tue is
 (docs, reading, small fixes); **Wed is relaxed** (recovery); the **other weekend day is
 off** (usually Sat — karting). Weekend days are a swappable pair, not fixed: don't assume
 Sat is off or that Sun is the working day. Ceremonies anchor to the **weekend**, not a
-weekday — `/weekly-review` once per weekend, `/sprint-plan` on the month's last weekend.
+weekday — `/weekly-review` once per weekend, `/sprint-plan` every **4th** weekend *instead of*
+that weekend's review (it absorbs it — never run both). Sprints
+are **4 weeks, Sat → Fri**; the planning weekend is **day 1 of the new sprint** and stays a
+dev day. Sprints do **not** track calendar months — never derive a date from the month; the
+sprint note's own range is the source of truth.
 Full weekly rhythm + the weekend rule live on the vault Dashboard. When a session is running long or
 scope is creeping, **say so and suggest stopping** — a stalled rewrite or a
 burned-out maintainer ends this project faster than any bug.

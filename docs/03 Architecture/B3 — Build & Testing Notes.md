@@ -32,7 +32,7 @@ ADR-005/006). Decisions already made live in the ADRs (linked); this collects
   `tests`), one linkage story, no engine DLLs.
 - **Tests** → per-module Catch2 targets under CTest, **not core-only**; rendering
   verified by demo scenes + captures, not unit tests.
-- **★ SDK smoke CI target** → compile a sample script against `te_sdk` **alone**; a
+- **★ SDK smoke CI target** → compile a sample script against `TechEngine::sdk` **alone**; a
   private type leaking into the SDK fails CI (the F11 acid test, automated).
 - **Test-bed = sample project(s)** loaded by `runtime`/`editor` (content), not a
   separate exe; `app` exposes a headless/sim-only mode (exercised by `tests`).
@@ -50,6 +50,10 @@ pulls from fresh. Delete it and each PR starts from whatever stale `master` cach
 written — directly against ADR-008 §9's "CI time rides entirely on caching working".
 (Backstop guarantees are ADR-009 §4; this is the *practical* reason, which that ADR doesn't
 state.)
+
+**clang-tidy is verified on the Linux leg only.** The MSVC-side tidy integration segfaults
+locally, so the Linux/Clang leg is the only place the gate has actually been exercised. Treat a
+clean local Windows build as *no evidence* about tidy — the Linux leg is the authority.
 
 **Phantom `CI / matrix.name` check on push runs — cosmetic, don't chase it.** The sanitizer
 job is `pull_request`-only (`ci.yml` `if: github.event_name == 'pull_request'`, ADR-008 §9
