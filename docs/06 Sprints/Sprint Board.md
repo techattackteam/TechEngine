@@ -31,6 +31,9 @@ kanban-plugin: board
 
 ## 👀 Review / Demo
 
+- [ ] **S2-T3** — Channels + `LogRecord` + console/file sinks · P1 · 🟢 Deep — **+ sink path
+	  must be test-reachable**: no code path that only runs when the default sink is installed
+	  (S2-T2 shipped a bug there with the suite green)
 
 
 ## ✅ Done — [[2026-08 Sprint 02 — Base Foundation]]
