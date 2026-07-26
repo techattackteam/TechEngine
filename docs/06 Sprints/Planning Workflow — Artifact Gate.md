@@ -113,7 +113,7 @@ The other commands are **triggered out of it**, not run in sequence after it.
 
 ```mermaid
 flowchart TD
-    A["/sprint-plan · last weekend"] --> B["Gather: roadmap · quarter · sprint · backlog · ADRs"]
+    A["/sprint-plan · boundary weekend"] --> B["Gather: roadmap · quarter · sprint · backlog · ADRs"]
     B --> C{"Sprint ending?"}
     C -->|yes| D["Retro first"]
     C -->|no| E["Propose ONE headline goal"]

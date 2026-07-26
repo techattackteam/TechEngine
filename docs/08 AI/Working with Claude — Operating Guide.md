@@ -51,9 +51,10 @@ follow that calendar. Match the session type to the day's mode:
 | Relaxed | Optional light planning / docs, or rest | — |
 | Off | No engine work | — |
 
-Ceremonies: **each weekend** `/weekly-review`; **last weekend of the month** `/sprint-plan`
-(demo + retro + next-sprint planning). Run them on whichever weekend day you work — see
-the [[Dashboard]] weekend rule.
+Ceremonies: **each weekend** `/weekly-review`; **every 4th weekend** (the sprint boundary)
+`/sprint-plan` instead (demo + retro + next-sprint planning) — it **absorbs** the weekly
+review, so never run both on the same weekend. Run them on whichever weekend day you work —
+see the [[Dashboard]] weekend rule.
 
 ## One task per session
 
@@ -71,8 +72,10 @@ repo-root `CLAUDE.md` → "Token economy & vault cleanliness".
 
 | Command                        | Use it for                                                |
 | ------------------------------ | --------------------------------------------------------- |
+| `/task-start [S2-T4]`          | Cut a fresh branch from `origin/master` + open the card    |
+| `/task-wrap [notes]`           | Close the task — annotate the card, park strays, then *you* open the PR |
 | `/weekly-review [notes]`       | Weekend review → writes the journal + updates dashboard    |
-| `/sprint-plan [focus]`         | Monthly planning → retro + next sprint, sized to capacity |
+| `/sprint-plan [focus]`         | 4-week sprint planning → retro + next sprint, sized to capacity |
 | `/adr <decision>`              | Draft an ADR for a load-bearing decision                  |
 | `/arch-review <area>`          | Technical-lead review of a system (analysis, no edits)    |
 | `/feature-breakdown <feature>` | Epic → Story → session-sized Tasks                        |
@@ -90,18 +93,25 @@ flowchart TD
   SYS["Assess a built system"] --> AR["/arch-review<br/>analysis only"]
   AR -. may surface .-> DEC
   FB --> TASK["A sprint task"]
-  TASK --> LOOP["Core loop<br/>design → you implement → verify"]
+  TASK --> TS["/task-start<br/>branch off origin/master"]
+  TS --> LOOP["Core loop<br/>design → you implement → verify"]
   LOOP --> CR["/code-review<br/>before every commit"]
-  SUN(["Every weekend"]) --> WR["/weekly-review"]
-  LSUN(["Last weekend / month"]) --> SP["/sprint-plan<br/>demo + retro + plan"]
+  CR --> TW["/task-wrap<br/>annotate card → you open the PR"]
+  SUN(["Weekend — non-boundary"]) --> WR["/weekly-review"]
+  LSUN(["Every 4th weekend — sprint boundary"]) --> SP["/sprint-plan<br/>demo + retro + plan<br/>(absorbs the weekly review)"]
   SP --> FB
 ```
 
-- **Cadence commands fire on the calendar:** `/weekly-review` once per weekend;
-  `/sprint-plan` the last weekend of the month (which then feeds `/feature-breakdown`).
+- **Cadence commands fire on the calendar:** `/weekly-review` on non-boundary weekends;
+  `/sprint-plan` every 4th weekend — the sprint boundary, read off the sprint note's end
+  date, not the month — which absorbs the review and then feeds `/feature-breakdown`.
 - **Work commands fire on a trigger, not the clock:** a load-bearing decision → `/adr`;
   decomposing a feature → `/feature-breakdown`; assessing existing code → `/arch-review`;
   before any commit → `/code-review`.
+- **Every task is bracketed** by `/task-start` … `/task-wrap`. The pair exists to keep the
+  branch discipline out of your head: start always cuts from a freshly fetched
+  `origin/master`, wrap always leaves the card carrying its own outcome. Neither pushes —
+  **you open the PR**, and a merged branch is dead (squash + linear history), never reused.
 - **Agents support these, they don't replace them:** `/adr` can lean on
   `adr-consistency-checker`; research / prior-art during design → `engine-researcher` /
   `v1-reference-miner`.
@@ -147,8 +157,8 @@ Claude route to it. All are **read-only or research** — they report, they don'
 - Correctness → clarity → performance, in that order.
 - No optimization without a measurement. Land profiling hooks before big perf work.
 - Deterministic core systems (ECS, resources, serialization, math) get **unit
-  tests**; rendering gets **demo + before/after captures**. (There are no tests
-  yet — closing this gap is real engine work, not overhead.)
+  tests**; rendering gets **demo + before/after captures**. Catch2 v3 + CTest, one test
+  exe per module — `TechEngineBaseTests` and `te_sdk_smoke` run on every CI leg.
 
 ---
 

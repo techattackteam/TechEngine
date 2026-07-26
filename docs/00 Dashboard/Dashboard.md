@@ -7,25 +7,41 @@
 | | |
 |---|---|
 | **Quarter** | 2026 Q3 (Jul–Sep) |
-| **Sprint** | [[2026-08 Sprint 02 — Base Foundation]] *(Jul 27 – Aug 30)* |
+| **Sprint** | [[2026-08 Sprint 02 — Base Foundation]] *(Jul 25 – Aug 28)* |
 | **Sprint goal** | **`base` you can trust:** Logger, Assert and Clock — unit-tested and proven by a real consumer, the first sliver of the app loop. Horizontal base, **not** the vertical slice. |
-| **Current focus** | 🟢 **S2-T1 — the Diagnostics ADR** (`/adr`), which gates the Logger/Assert/Clock work. First v2 code that isn't a skeleton. |
+| **Current focus** | 🟢 **S2-T4 — Assert: four tiers + single handler.** T1–T3 + T6 are in (ADR-011 Accepted; Logger, channels/sinks, Clock all merged), so Story C is the open front. |
 | **Top blocker** | _none_ — watch: CI-minute budget (≈22 billed min/merged change, ADR-008 §9) · clang-tidy unproven on Windows |
-| **Next milestone** | `base` foundation done (Aug 30) → **C2 vertical slice** in Sprint 03 (Sep) |
+| **Next milestone** | `base` foundation done (Aug 28) → **C2 vertical slice** in Sprint 03 (Aug 29 – Sep 25) |
 | **Direction** | Fresh start ([[ADR-004 — Fresh start (v2) with v1 as reference]]); v1 = reference prototype |
 
 ## 🗓️ Rhythm
 
-**Sprints:** monthly, one headline goal (*may change later*). **Weekly review** once per
-**weekend** (`/weekly-review`). **Sprint demo + retro + next-sprint planning** on the
-**last weekend of the month** (`/sprint-plan`).
+**Sprints: 4 weeks**, one headline goal. A sprint **week runs Sat → Fri**, so a sprint starts
+on a **Saturday** and ends on the **Friday** 4 weeks later. Every sprint therefore contains
+**4 weekends**: the boundary weekend (`/sprint-plan` — demo + retro + next-sprint planning)
+followed by **3 weekly reviews** (`/weekly-review`). Counting them is the cheapest way to
+tell where you are in a sprint.
+
+**`/sprint-plan` absorbs `/weekly-review` on a boundary weekend — never run both**
+(2026-07-26). The retro covers the final week, and it inherits the weekly review's
+stale-artifact + hub-drift check. Running both wrote two journal entries and updated this
+Dashboard twice before any code got written.
 → **Next ceremony:** **weekend of Aug 1–2 2026** — weekly review.
 *(Jul 25–26 weekend fully closed: [[2026-07-25 Weekly Review]] + [[2026-07-25 Sprint 01 Retrospective]]
 + Sprint 02 planned. Next **sprint boundary**: weekend of **Aug 29–30**.)*
 
 **Ceremony anchor = the weekend, not a fixed day.** Run each on whichever weekend day you
-work; if you work both, pick one. *Last weekend of the month* = the weekend containing the
-month's last Sunday (so a month ending on a Saturday doesn't spawn a stray ceremony).
+work; if you work both, pick one.
+
+**The boundary weekend is day 1 of the new sprint, and stays a dev day.** Because the week
+starts Saturday, both weekend days already fall inside the new sprint — so the Sat/Sun swap
+never moves the boundary. Time-box the ceremonies and spend the rest of the day on code; the
+artifact gate and a groomed [[Backlog]] are what keep planning short.
+
+**Sprints no longer track calendar months** (4 weeks ≠ 1 month → 13/yr, and the boundary
+walks backwards through the calendar). Don't derive dates from the month — the sprint note's
+own date range is the source of truth. Adopted 2026-07-26; Sprint 02 is a 5-week one-off
+transition, Sprint 03 is the first clean cycle.
 
 **Weekly rhythm** — energy is *planned*, not aspirational; protect the light/off days.
 

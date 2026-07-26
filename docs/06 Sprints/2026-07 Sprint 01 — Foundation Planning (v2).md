@@ -1,7 +1,9 @@
 # 2026-07 · Sprint 01 — Foundation Planning (v2)
 
 - **Quarter:** [[2026-Q3]]
-- **Dates:** Jul 19–26 2026 — a short, special first sprint. Normal **monthly** cadence starts **Sprint 02**.
+- **Dates:** Jul 19–26 2026 — a short, special first sprint. Regular cadence starts **Sprint 02**.
+  *(Planned as monthly; superseded 2026-07-26 by the **4-week Sat→Fri** rule — [[Dashboard]] → Rhythm.
+  Prose below still reads "monthly": it records what was true at the time.)*
 - **Epic:** Foundation & Direction
 - **Decision behind it:** [[ADR-004 — Fresh start (v2) with v1 as reference]]
 
