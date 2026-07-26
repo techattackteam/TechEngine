@@ -7,9 +7,6 @@
 
 using namespace std::chrono_literals;
 
-// GOTCHA: no upper bound on any elapsed assertion — a loaded CI runner can stall a thread for
-// seconds, and an "elapsed < 50ms" case would flake on it. Lower bounds only.
-
 TEST_CASE("now is monotonic across calls", "[base][clock]") {
     const TechEngine::Clock clock;
 
