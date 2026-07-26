@@ -36,11 +36,11 @@ namespace TechEngine {
         constexpr explicit LogModule(std::uint16_t id) : m_id{id} {
         }
 
-        [[nodiscard]] constexpr std::uint16_t id() const {
+        constexpr std::uint16_t id() const {
             return m_id;
         }
 
-        [[nodiscard]] constexpr bool operator==(const LogModule&) const = default;
+        constexpr bool operator==(const LogModule&) const = default;
 
     private:
         std::uint16_t m_id{0};
@@ -53,11 +53,11 @@ namespace TechEngine {
         constexpr explicit LogChannel(std::uint16_t id) : m_id{id} {
         }
 
-        [[nodiscard]] constexpr std::uint16_t id() const {
+        constexpr std::uint16_t id() const {
             return m_id;
         }
 
-        [[nodiscard]] constexpr bool operator==(const LogChannel&) const = default;
+        constexpr bool operator==(const LogChannel&) const = default;
 
     private:
         std::uint16_t m_id{0};
@@ -94,25 +94,25 @@ namespace TechEngine {
 
     LogChannel registerLogChannel(std::string_view name, LogModule moduleTag, Level defaultLevel = Level::Trace);
 
-    [[nodiscard]] std::string_view logModuleName(LogModule moduleTag);
+    std::string_view logModuleName(LogModule moduleTag);
 
-    [[nodiscard]] std::string_view logChannelName(LogChannel channel);
+    std::string_view logChannelName(LogChannel channel);
 
-    [[nodiscard]] LogModule logChannelModule(LogChannel channel);
+    LogModule logChannelModule(LogChannel channel);
 
     void setMinLevel(Level level);
 
-    [[nodiscard]] Level minLevel();
+    Level minLevel();
 
     void setModuleLevel(LogModule moduleTag, Level level);
 
-    [[nodiscard]] Level moduleLevel(LogModule moduleTag);
+    Level moduleLevel(LogModule moduleTag);
 
     void setChannelLevel(LogChannel channel, Level level);
 
-    [[nodiscard]] Level channelLevel(LogChannel channel);
+    Level channelLevel(LogChannel channel);
 
-    [[nodiscard]] bool isEnabled(Level level, LogChannel channel = DEFAULT_CHANNEL);
+    bool isEnabled(Level level, LogChannel channel = DEFAULT_CHANNEL);
 
     // Sinks are added, never swapped: a test that replaced the set would delete the real
     // path and pass against nothing (S2-T2). Returns false when the set is full.

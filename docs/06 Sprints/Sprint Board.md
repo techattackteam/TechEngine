@@ -12,10 +12,9 @@ kanban-plugin: board
 ## 📋 To Do — [[2026-08 Sprint 02 — Base Foundation]] (Jul 27 – Aug 30)
 
 - [ ] **S2-T4** — Assert: four tiers + single handler · P1 · 🟢 Deep
-- [ ] **S2-T5** — Assert → Logger integration + flush-on-fail · P2 · 🟠 Moderate
-- [ ] **S2-T6** — Clock implementation ([[Clock — Design]]) · P1 · 🟠 Moderate
 - [ ] **S2-T7** — `FrameContext` + fixed-timestep accumulator (headless) · P1 · 🟢 Deep
 - [ ] **S2-T8** — Determinism + clamp tests (injected time source) · P1 · 🟢 Deep
+- [ ] **S2-T5** — Assert → Logger integration + flush-on-fail · P2 · 🟠 Moderate
 - [ ] **S2-T9** — End-to-end wire-up = sprint demo · P2 · 🟠 Moderate
 - [ ] **S2-T11** — Skill `te-module` scaffolder · P3 · 🟡 Light
 - [ ] **S2-T12** — Land `feat/improving-vault` through the ruleset · P3 · 🟡 Light
@@ -27,17 +26,20 @@ kanban-plugin: board
 	  late. File opened Jul 25 (B4 migrated in; B4 → pointer + history). **Flag conventions as
 	  you review** — they land here live. Remaining: fill the *Open* rows, then shrink
 	  CLAUDE.md's section at sprint end.
+- [ ] **S2-T6** — Clock implementation ([[Clock — Design]]) · P1 · 🟠 Moderate
 
 
 ## 👀 Review / Demo
 
-- [ ] **S2-T3** — Channels + `LogRecord` + console/file sinks · P1 · 🟢 Deep — **+ sink path
-	  must be test-reachable**: no code path that only runs when the default sink is installed
-	  (S2-T2 shipped a bug there with the suite green)
 
 
 ## ✅ Done — [[2026-08 Sprint 02 — Base Foundation]]
 
+- [x] **S2-T3** — Channels + `LogRecord` + console/file sinks · P1 · 🟢 Deep — **Jul 25** → PR #9.
+	  Handles + explicit registration (ADR-011 §2), filtering at max(process, module, channel),
+	  sink **array** not slot, console + rotating file behind one spdlog logger, one flatten shared
+	  with the stderr fallback. **Sink path is test-reachable** — the criterion T2's
+	  green-but-unreached bug earned. Ring sink → T5.
 - [x] **S2-T2** — Logger core · P1 · 🟢 Deep — **Jul 25** → PR #8 (`6f054b6b`) merged green.
 	  `std::format` seam + spdlog private (ADR-011 §1), per-config compile-time gate (§4), 9 Catch2
 	  cases, `.clang-format` = CLion scheme. **`std::format` survived the Linux leg** — ADR-011's
