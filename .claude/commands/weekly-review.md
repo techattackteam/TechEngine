@@ -6,6 +6,11 @@ argument-hint: "[optional notes about the week]"
 Act as my technical lead for the TechEngine weekly review (run on whichever weekend
 day I work — Sat or Sun).
 
+**GATE — check before doing anything else.** Read the active sprint note's end date. If it
+is the Friday just gone, this weekend is a **sprint boundary**: stop and tell me to run
+`/sprint-plan` instead, which absorbs this command (decided 2026-07-26). Never derive that
+date from the calendar month. Otherwise, continue.
+
 Context to gather first:
 - Read the current sprint in `docs/06 Sprints/` and the `docs/06 Sprints/Sprint Board.md`.
 - Run `git log --since="7 days ago" --oneline` to see what actually shipped.
@@ -31,9 +36,8 @@ Then:
    [[Planning Workflow — Artifact Gate]]. If none, say so.
 4. Update `docs/00 Dashboard/Dashboard.md`: current focus, blockers, health, and
    **roll the `Next ceremony` line**.
-5. **If this is the month's last weekend** (the weekend containing the last Sunday), it's
-   also the sprint boundary — hand off to `/sprint-plan` (demo + retro + plan the next
-   sprint). If I already ran the review on the other day of this weekend, say so instead
-   of writing a second entry.
+5. If I already ran the review on the other day of this weekend, say so instead of writing
+   a second entry. (The sprint-boundary case is handled by the GATE above — on those
+   weekends this command doesn't run at all.)
 6. Keep it short and honest. Flag scope creep or burnout risk if you see it.
 7. Do NOT start any implementation work — this is a planning ritual.

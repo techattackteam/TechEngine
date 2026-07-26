@@ -7,7 +7,7 @@
 [[Logger — Design]]; **supersedes ADR-006 §6's assert-tier clause**) ·
 [[ADR-006 — v2 core architecture & module layout]] §6 (two-tier seed — tier clause now superseded) ·
 [[ADR-005 — v2 tech stack & toolchain]]
-**Backlog:** [[Backlog]] → base → utilities
+**Sprint:** [[2026-08 Sprint 02 — Base Foundation]] — S2-T4 / S2-T5
 
 ## Purpose
 One assert strategy for the whole engine — fixes v1 **F10** (scattered `assert`/`cout`, no strategy,

@@ -1,14 +1,15 @@
 # 🗺️ Roadmap
 
 High-level and slow-moving. Quarters set direction; [[Sprint Board|sprints]]
-execute. Review at each month's last-weekend planning session.
+execute. Review at each sprint-boundary planning session.
 
 ## Cadence
 
 - **Quarter** → large milestones (below).
-- **Month** → one sprint with a single headline goal.
-- **Week** → review on the weekend; deep implementation Mon/Thu + one weekend day, moderate Fri (see Dashboard rhythm).
-- **Last weekend of month** → sprint review + retro + next-sprint planning.
+- **Sprint** → **4 weeks**, one headline goal. Sprints don't track calendar months (13/yr) —
+  dates come from the sprint note, never from the month ([[Dashboard]] → Rhythm).
+- **Week** → **Sat → Fri**; review on the weekend; deep implementation Mon/Thu + one weekend day, moderate Fri (see Dashboard rhythm).
+- **Boundary weekend** → sprint review + retro + next-sprint planning; it is **day 1** of the new sprint.
 
 ## Quarters
 

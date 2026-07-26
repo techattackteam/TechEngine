@@ -92,6 +92,8 @@ first (`LogFormatBuffer`, not `FormatBuffer`) — that removes the risk without 
 **Delete on sight:**
 
 - **Section-divider banners** — `// --- the seam ---`. Use structure, not ASCII furniture.
+- **Namespace closing comments** — `} // namespace TechEngine`. One flat namespace per file
+  makes the brace unambiguous; the comment is pure furniture.
 - **Rationale copied from the vault.** The ADR/design note is the home for *why*; a `§ref` is
   the whole comment. Copied rationale drifts from its source.
 - **File / class / function preambles** explaining purpose. The name and the header do that.
