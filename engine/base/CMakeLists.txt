@@ -1,6 +1,6 @@
 techengine_module(base
-  SOURCES src/Base.cpp src/Log.cpp
-  HEADERS include/TechEngine/base/Base.hpp include/TechEngine/base/Log.hpp
+  SOURCES src/Base.cpp src/Log.cpp src/Clock.cpp
+  HEADERS include/TechEngine/base/Base.hpp include/TechEngine/base/Log.hpp include/TechEngine/base/Clock.hpp
   LIBS    glm::glm
   LIBS_PRIVATE spdlog::spdlog)
 
@@ -19,5 +19,6 @@ target_compile_definitions(TechEngineBase PUBLIC TE_LOG_ACTIVE_LEVEL=${_te_log_l
 if(TE_BUILD_TESTS)
   techengine_test(base SOURCES
           tests/BaseTests.cpp
-          tests/LogTests.cpp)
+          tests/LogTests.cpp
+          tests/ClockTests.cpp)
 endif()

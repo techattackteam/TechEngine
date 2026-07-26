@@ -65,6 +65,8 @@ Other presets: `windows-release`, `windows-asan`, and the Linux legs
 - Paired `.hpp` / `.cpp`; `#pragma once` in headers.
 - Types `PascalCase`, methods `camelCase`, members `m_camelCase`.
 - Prefer forward declarations in headers; include in `.cpp`.
+- **No `[[nodiscard]]`.** Anywhere. AI defaults to sprinkling it on every getter; we don't —
+  see `CONVENTIONS.md` → *Attributes*.
 - **Internal linkage is `static`, not `namespace {}`.** Anonymous namespaces are a
   last resort — don't wrap half a `.cpp` in one. `static` on the function/variable
   itself; a `.cpp`-local type just gets declared normally. The only case `namespace {}`
