@@ -145,9 +145,11 @@ vertical slice is **Sprint 03**.
 - [ ] **S2-T11** — Skill `te-module` scaffolder · **P3** · 🟡 Light —
       done: stamps `include/TechEngine/<m>` + `src` split, `techengine_module()` call,
       colocated Catch2 test exe, deps wiring — referencing the **real** scaffold files.
-- [ ] **S2-T12** — Land `feat/improving-vault` through the ruleset · **P3** · 🟡 Light —
-      done: PR opened, 8 required checks green, squash-merged. First real exercise of the
-      protection rules.
+- [ ] **S2-T12** — Land the accumulated vault + AI-config work through the ruleset ·
+      **P3** · 🟡 Light — done: PR opened, 8 required checks green, squash-merged. First real
+      exercise of the protection rules. *(Written as "land `feat/improving-vault`"; that
+      branch is gone and the work accumulated uncommitted on `master` instead — mechanism
+      changed, goal unchanged.)*
 
 ## Definition of Done
 
