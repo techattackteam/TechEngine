@@ -56,6 +56,7 @@ git commit -m "<card ID>: wrap — <one-line outcome>"
 ```
 
 Nothing else. Don't touch the Done sections or the Dashboard — ceremony territory.
+**No AI attribution in the message** (CLAUDE.md rule 10).
 
 ## 6. Stop here and remind me
 
@@ -65,8 +66,9 @@ Nothing else. Don't touch the Done sections or the Dashboard — ceremony territ
 > Unverified by Claude: <what Miguel still needs to build/run, or "Miguel confirmed: <result>">.
 >
 > ```
-> git push -u origin <branch>
+> git push
 > ```
-> Then open the PR against `master` on GitHub.
+> Upstream was set by `/task-start`, so this is a bare push. Then open the PR against
+> `master` on GitHub.
 > **On merge:** the branch is dead — squash + linear history means it can never be reused.
 > Delete it and start the next task with `/task-start`.

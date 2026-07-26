@@ -54,7 +54,22 @@ Nothing else goes in this commit. Don't touch the Done sections, the sprint note
 Dashboard — those are the weekend ceremony's to write (`/weekly-review`), and every branch
 that edits them is a merge conflict against every other branch that does.
 
-## 5. Hand off
+**Commit message carries no AI attribution** — no `Co-Authored-By`, no "Generated with"
+(CLAUDE.md rule 10).
+
+## 5. Push and set upstream
+
+```
+git push --set-upstream origin <branch>
+```
+
+So the remote branch exists and later pushes are a bare `git push`. This is safe to do
+unprompted: `ci.yml` fires on `pull_request` and `push` to **`master`** only, so pushing a
+task branch runs no jobs and burns no minutes from ADR-008 §9's budget.
+
+Still **no PR** — that stays Miguel's (`/task-wrap` reminds him).
+
+## 6. Hand off
 
 Report in three lines: branch name, the card's one-line goal, and the design artifact that
 governs it — the system's note in `docs/04 Design Docs/`, or the ADR if there's no note yet
