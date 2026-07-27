@@ -1,4 +1,5 @@
 #include <TechEngine/app/App.hpp>
+#include <TechEngine/base/Assert.hpp>
 #include <TechEngine/base/Log.hpp>
 
 int main() {
@@ -11,5 +12,8 @@ int main() {
     TE_LOGGER_CRITICAL("Starting TechEngine Editor: {1}, {0}", x, y);
     TE_LOGGER_DEBUG("Starting TechEngine Editor: {1}, {0}", x, y);
     TE_LOGGER_TRACE("Starting TechEngine Editor: {1}, {0}", x, y);
+    TE_VERIFY(y == 10);
+    TE_CHECK(x == 11, "x is not 11");
+    TE_ASSERT(x == 11, "x is not 11");
     return TechEngine::run();
 }

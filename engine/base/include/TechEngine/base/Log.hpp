@@ -1,10 +1,9 @@
 #pragma once
 
+#include <TechEngine/base/Format.hpp>
+
 #include <chrono>
-#include <cstdint>
-#include <format>
 #include <source_location>
-#include <string_view>
 
 #define TE_LOG_LEVEL_TRACE 0
 #define TE_LOG_LEVEL_DEBUG 1
@@ -127,7 +126,7 @@ namespace TechEngine {
         void logDispatch(Level level, LogChannel channel, const std::source_location& loc, std::string_view fmtStr, std::format_args args);
 
         template<typename... Args>
-        void logImpl(Level level, LogChannel channel, const std::source_location& loc, std::format_string<Args...> fmtStr, Args&&... args) {
+        void logImpl(Level level, LogChannel channel, const std::source_location& loc, PositionalFormat<Args...> fmtStr, Args&&... args) {
             logDispatch(level, channel, loc, fmtStr.get(), std::make_format_args(args...));
         }
     }
@@ -147,13 +146,13 @@ namespace TechEngine {
 //
 // The format string rides inside __VA_ARGS__ to avoid __VA_OPT__ — MSVC's traditional
 // preprocessor lacks it without /Zc:preprocessor. Don't "fix" this into a named parameter.
-#define TE_LOG_PRIVATE_EMIT(level, channel, ...)                                                                                                                                                                                                                                                                                                                                           \
-    do {                                                                                                                                                                                                                                                                                                                                                                                   \
-        ::TechEngine::detail::logImpl((level), (channel), ::std::source_location::current(), __VA_ARGS__);                                                                                                                                                                                                                                                                                 \
+#define TE_LOG_PRIVATE_EMIT(level, channel, ...)                                                           \
+    do {                                                                                                   \
+        ::TechEngine::detail::logImpl((level), (channel), ::std::source_location::current(), __VA_ARGS__); \
     } while (0)
 
-#define TE_LOG_PRIVATE_DISCARD(...)                                                                                                                                                                                                                                                                                                                                                        \
-    do {                                                                                                                                                                                                                                                                                                                                                                                   \
+#define TE_LOG_PRIVATE_DISCARD(...) \
+    do {                            \
     } while (0)
 
 #if TE_LOG_ACTIVE_LEVEL <= TE_LOG_LEVEL_TRACE

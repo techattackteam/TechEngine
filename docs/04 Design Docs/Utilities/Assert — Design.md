@@ -101,6 +101,31 @@ flowchart LR
 
 RelWithDebInfo ASSERT = **on** (ADR-011 §5 — it's the dev-runtime config; debuggability is its point).
 
+Knob is `TE_ASSERT_DEV`, a **PUBLIC** compile definition (`engine/base/CMakeLists.txt`) — 1 for
+Debug + RelWithDebInfo, 0 for Release. PUBLIC matters: go PRIVATE and consumers silently fall
+back to the header's `#if !defined` default of 1 while the library compiled 0. That split is
+what `AssertTests.cpp` "kind fatality matches the config table" catches — it compares the
+library's compiled-in view against the macro as the *test TU* sees it.
+
+**Verification is asymmetric, on purpose.** The two halves of the mapping are proved by
+different things:
+
+| Claim | Proved by | Runs |
+|---|---|---|
+| macro honours the knob (`on` → evaluates + reports · `off` → cond **not evaluated**) | `AssertTests.cpp`, `#if TE_ASSERT_DEV` / `#else` | every leg, Debug + Release |
+| config → knob (RelWithDebInfo ⇒ 1) | building & running that config | **local only** |
+
+The second is a build property — no unit test inside a Debug binary can observe what a
+RelWithDebInfo compile emits, and a `static_assert` against a CMake-supplied expectation is
+tautological (both sides, one generator expression). So RelWithDebInfo gets **test presets**
+(`windows-relwithdebinfo` / `linux-relwithdebinfo`, added S2-T4) and is run **by hand before a
+PR**, not as a CI leg — ADR-008 §9's minute budget is live and this config's required-check
+status is unchanged.
+
+```bash
+ctest --preset windows-relwithdebinfo
+```
+
 ### `base` stays a leaf (the debugger-break subtlety)
 `__debugbreak()` / `__builtin_trap()` are **compiler intrinsics** (no OS) → fine in `base`. But
 "is a debugger attached?" (`IsDebuggerPresent`) is an **OS** call → *not* allowed in `base`. Resolution:
