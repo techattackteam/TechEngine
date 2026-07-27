@@ -165,7 +165,8 @@ TEST_CASE("TE_ASSERT follows the per-config gate", "[base][assert]") {
     const AssertHandlerGuard guard;
 
     int calls = 0;
-    const auto sideEffect = [&calls] {
+
+    [[maybe_unused]] const auto sideEffect = [&calls] {
         ++calls;
         return false;
     };
