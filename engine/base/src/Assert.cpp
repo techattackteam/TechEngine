@@ -14,9 +14,21 @@ namespace TechEngine {
 
     static std::atomic<AssertHandlerFn> g_assertHandler{&defaultAssertHandler};
 
-    // ADR-011 §7 — a failure raised while already reporting skips the handler entirely and
-    // goes straight to stderr, so a broken handler cannot recurse forever.
     static thread_local bool t_reporting = false;
+
+    struct ReportingScope {
+        ReportingScope() {
+            t_reporting = true;
+        }
+
+        ~ReportingScope() {
+            t_reporting = false;
+        }
+
+        ReportingScope(const ReportingScope&) = delete;
+
+        ReportingScope& operator=(const ReportingScope&) = delete;
+    };
 
     bool assertKindIsFatal(AssertKind kind) {
         switch (kind) {
@@ -105,17 +117,11 @@ namespace TechEngine {
                 return AssertResponse{false, assertKindIsFatal(kind)};
             }
 
-            t_reporting = true;
-            const AssertResponse response = assertHandler()(context);
-            t_reporting = false;
-
-            return response;
+            const ReportingScope scope;
+            return assertHandler()(context);
         }
 
         AssertResponse assertReport(AssertKind kind, std::string_view condition, const std::source_location& loc) {
-            // GOTCHA: not std::format_args{} — the standard mandates that default constructor
-            // but MSVC 14.44's STL does not provide it. An empty store converts on every
-            // toolchain, and assertDispatch ignores args when fmtStr is empty anyway.
             return assertDispatch(kind, condition, loc, std::string_view{}, std::make_format_args());
         }
 

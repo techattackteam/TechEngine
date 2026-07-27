@@ -252,3 +252,22 @@ TEST_CASE("a failure raised while reporting does not re-enter the handler", "[ba
 
     REQUIRE(g_handlerEntries == 1);
 }
+
+struct ThrownFromHandler {};
+
+static TechEngine::AssertResponse throwingHandler(const TechEngine::AssertContext&) {
+    throw ThrownFromHandler{};
+}
+
+TEST_CASE("a throwing handler does not latch the in-flight guard", "[base][assert]") {
+    const TechEngine::AssertHandlerFn original = TechEngine::setAssertHandler(&throwingHandler);
+
+    REQUIRE_THROWS_AS(TE_ENSURE(false, "thrown"), ThrownFromHandler);
+
+    TechEngine::setAssertHandler(original);
+
+    const AssertHandlerGuard guard;
+    TE_ENSURE(false, "delivered after the throw");
+
+    REQUIRE(g_fired.size() == 1);
+}
