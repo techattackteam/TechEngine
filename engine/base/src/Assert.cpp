@@ -4,7 +4,6 @@
 #include "SourceName.hpp"
 
 #include <array>
-#include <atomic>
 #include <cstdio>
 #include <cstdlib>
 #include <exception>

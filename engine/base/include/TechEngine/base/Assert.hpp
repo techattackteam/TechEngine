@@ -2,6 +2,7 @@
 
 #include <TechEngine/base/Format.hpp>
 
+#include <atomic>
 #include <cstdint>
 #include <format>
 #include <source_location>
