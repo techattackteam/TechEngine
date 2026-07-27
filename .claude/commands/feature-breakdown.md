@@ -20,10 +20,19 @@ Steps:
    task, ordered before the impl task it unblocks).
 4. Produce Epic → Stories → Tasks together. Each **task** must fit one 2–6h coding
    session and have an explicit done-condition. Note dependencies and ordering
-   (an ADR/design-note task precedes the impl task it unblocks). Tag every task with
+   (an ADR/design-note task precedes the story it unblocks). **Where the gate chose a
+   heavy artifact, STOP the breakdown at that artifact's task** — the work below it stays a
+   named, roughly-counted story (`~2–3 tasks · size after ADR-NNN`), never cards with
+   done-conditions; cutting them belongs to the artifact task's own done-condition (gate
+   note § *Don't size past an open decision*). Tag every task with
    **priority + weight** — `P1/P2/P3` and 🟢 Deep / 🟠 Moderate / 🟡 Light (day-fit) —
    per the gate note, so tasks can be picked by the day's energy. Format `· P1 · 🟢 Deep`.
 5. Call out the riskiest/most-uncertain task and suggest a spike to de-risk it.
-6. Offer to drop the stories/tasks into `docs/06 Sprints/Backlog.md` (do not add
-   to the active sprint unless I say so).
-7. Planning only — no implementation.
+6. **If the gate chose a light design note, draft it in this same pass** from
+   `docs/Templates/Design Doc Template.md` — light artifacts are *made in the session*, not
+   scheduled (gate note, Artifact timing). Don't leave the decision in a backlog entry;
+   that's the entry-budget tripwire in `Backlog.md`.
+7. Offer to drop the stories/tasks into `docs/06 Sprints/Backlog.md` (do not add
+   to the active sprint unless I say so). Backlog entries carry **want + `Trigger:` + a link
+   to the artifact** — not the decision itself.
+8. Planning only — no implementation.

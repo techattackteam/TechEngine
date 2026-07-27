@@ -32,12 +32,33 @@ For each item, ask: *is there a decision, how reversible, how wide?*
 
 | Item smell | ADR? | Design note? | Then |
 |---|---|---|---|
-| Hard-to-reverse **and** cross-module | ✅ | maybe | ADR task precedes impl task |
-| Load-bearing but cohesive | ✅ (combine related) | fold into ADR | one ADR, no separate note |
+| Hard-to-reverse **and** cross-module | ✅ | maybe | ADR task first — **breakdown stops there** (§ below) |
+| Load-bearing but cohesive | ✅ (combine related) | fold into ADR | one ADR, no separate note — same stop rule |
 | Non-trivial shape, decision settled, one module | ❌ | ✅ | design note → impl |
 | Reversible / local / obvious | ❌ | ❌ | straight to impl task |
 
 Bottom row is the default. Forcing an ADR there is the drift.
+
+## Don't size past an open decision
+
+Gate says **heavy** (an ADR, or a note gated on a spike) → the breakdown **stops at that
+artifact's task**. Work below it stays a *named, roughly-counted story* —
+`Story B — Logger impl · ~2–3 tasks · size after ADR-011` — never tasks with
+done-conditions. Cutting those tasks is part of the artifact task's **own done-condition**.
+
+Why: a card with a precise done-condition reads as **decided**. S2-T2 was written at
+planning around an `fmt`-in-header seam; S2-T1 then found that unbuildable (→ `std::format`)
+and flipped the frame stamp to pushed — two cards describing work that couldn't be done as
+written. Board cards get read as ground truth mid-session (CLAUDE.md rule 2), so sizing
+early *manufactures* the stale artifact `/sprint-plan`'s drift check exists to catch. An
+unsized story can't lie.
+
+**Only where the *decision* is open.** Row 3 (design note, decision settled) sizes normally
+— S2-T6/Clock was drafted at planning and held; the call was already made. Light artifacts
+are drafted in-session, so the decision exists before tasks get tagged.
+
+Buys card **accuracy**, not capacity accuracy: the task *count* under a heavy-gated story is
+usually about right. Estimate what the story costs — just don't pretend to know its cards.
 
 ## ADR **or** design note — rarely both
 
@@ -66,8 +87,8 @@ When the gate says an item needs an artifact but none exists, decide **when** it
 
 | Decision weight | When | Becomes |
 |---|---|---|
-| **Light** — short note, call is essentially clear, no spike/research | **drafted in the Sunday planning session** | part of the ceremony, *not* a sprint task |
-| **Heavy** — an ADR, or a note gated on a spike/research | a **task in the sprint** | Deep/Moderate weight, ordered *before* the impl task it unblocks |
+| **Light** — short note, call is essentially clear, no spike/research | **drafted in the planning session** (boundary weekend) | part of the ceremony, *not* a sprint task |
+| **Heavy** — an ADR, or a note gated on a spike/research | a **task in the sprint** | Deep/Moderate weight, ordered *before* the story it unblocks — which stays **unsized** (§ *Don't size past an open decision*) |
 
 At planning, **flag every artifact-less item the gate wants an artifact for** — draft the
 light ones on the spot, schedule the heavy ones. Never let implementation start
@@ -100,7 +121,7 @@ highest **priority** among what fits. Tag format on every task line: `· P1 · �
 
 1. **Backlog entry** — always, cheap.
 2. **One decision artifact** — ADR *or* design note, rarely both (gate above). Often none.
-   Light → drafted in planning; heavy → a sprint task.
+   Light → drafted in planning; heavy → a sprint task, and the breakdown stops there.
 3. **Implementation** — always, Miguel writes it.
 4. **Docs** — DoD line, not a stage.
 
@@ -121,7 +142,7 @@ flowchart TD
     E --> F["Co-create Epic → Story → Task"]
     F --> G{"Artifact gate, per item"}
     G -->|light note| H["Draft it now, in session"]
-    G -->|"heavy: ADR / spike"| I["Schedule as a task"]
+    G -->|"heavy: ADR / spike"| I["Schedule as a task ·<br/>story below it stays UNSIZED"]
     G -->|neither| J["Straight to impl task"]
     H --> K["Tag every task: priority + weight"]
     I --> K
