@@ -1,7 +1,4 @@
 #pragma once
-
-#include <TechEngine/base/Format.hpp>
-
 #include <chrono>
 #include <source_location>
 
@@ -113,20 +110,19 @@ namespace TechEngine {
 
     bool isEnabled(Level level, LogChannel channel = DEFAULT_CHANNEL);
 
-    // Sinks are added, never swapped: a test that replaced the set would delete the real
-    // path and pass against nothing (S2-T2). Returns false when the set is full.
     bool addLogSink(LogSinkFn sink);
 
     bool removeLogSink(LogSinkFn sink);
 
-    // ADR-011 §9. Consumed by S2-T7/T9.
     void setDiagnosticFrame(std::uint64_t frame);
 
     namespace detail {
         void logDispatch(Level level, LogChannel channel, const std::source_location& loc, std::string_view fmtStr, std::format_args args);
 
+        std::size_t flattenRecord(const LogRecord& record, char* out, std::size_t capacity);
+
         template<typename... Args>
-        void logImpl(Level level, LogChannel channel, const std::source_location& loc, PositionalFormat<Args...> fmtStr, Args&&... args) {
+        void logImpl(Level level, LogChannel channel, const std::source_location& loc, std::format_string<Args...> fmtStr, Args&&... args) {
             logDispatch(level, channel, loc, fmtStr.get(), std::make_format_args(args...));
         }
     }

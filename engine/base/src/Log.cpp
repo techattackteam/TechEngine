@@ -1,8 +1,7 @@
 #include <TechEngine/base/Log.hpp>
 
-#include "LogFormat.hpp"
+#include "FormatBuffer.hpp"
 #include "SourceName.hpp"
-
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
@@ -99,22 +98,6 @@ namespace TechEngine {
         localtime_r(&seconds, &out);
 #endif
         return out;
-    }
-
-    namespace detail {
-        std::size_t flattenRecord(const LogRecord& record, char* out, std::size_t capacity) {
-            FormatBuffer buffer{out, capacity, 0, false};
-
-            const auto sinceEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(record.time.time_since_epoch());
-            const std::tm local = localTime(std::chrono::system_clock::to_time_t(record.time));
-
-            std::format_to(FormatBufferIterator{buffer},
-                           "[{0:02}:{1:02}:{2:02}.{3:03}][f {4}][{5}/{6}][{7}:{8}:{9}()][{10}] "
-                           "{11}",
-                           local.tm_hour, local.tm_min, local.tm_sec, static_cast<int>(sinceEpoch.count() % 1000), record.frame, logModuleName(record.moduleTag), logChannelName(record.channel), record.file, record.line, record.function, levelTag(record.level), record.message);
-            buffer.markTruncated();
-            return buffer.size;
-        }
     }
 
     static void spdlogSink(const LogRecord& record) {
@@ -275,6 +258,28 @@ namespace TechEngine {
         g_frame.store(frame, std::memory_order_relaxed);
     }
 
+    // No sink registered is not the same as a dropped record — before initLogging(), or after
+    // shutdownLogging(), the line still has to reach somewhere (ADR-011 §2). That fallback is
+    // what LogTests' captureStderr case pins.
+    static void deliverRecord(const LogRecord& record) {
+        bool delivered = false;
+        for (const std::atomic<LogSinkFn>& slot: g_sinks) {
+            const LogSinkFn sink = slot.load(std::memory_order_acquire);
+            if (sink != nullptr) {
+                sink(record);
+                delivered = true;
+            }
+        }
+
+        if (delivered) {
+            return;
+        }
+
+        std::array<char, MESSAGE_CAPACITY + 256> line;
+        const std::size_t size = detail::flattenRecord(record, line.data(), line.size());
+        std::fprintf(stderr, "%.*s\n", static_cast<int>(size), line.data());
+    }
+
     namespace detail {
         void logDispatch(Level level, LogChannel channel, const std::source_location& loc, std::string_view fmtStr, std::format_args args) {
             if (static_cast<int>(level) < TE_LOG_ACTIVE_LEVEL) {
@@ -317,6 +322,20 @@ namespace TechEngine {
             };
 
             deliverRecord(record);
+        }
+
+        std::size_t flattenRecord(const LogRecord& record, char* out, std::size_t capacity) {
+            FormatBuffer buffer{out, capacity, 0, false};
+
+            const auto sinceEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(record.time.time_since_epoch());
+            const std::tm local = localTime(std::chrono::system_clock::to_time_t(record.time));
+
+            std::format_to(FormatBufferIterator{buffer},
+                           "[{0:02}:{1:02}:{2:02}.{3:03}][f {4}][{5}/{6}][{7}:{8}:{9}()][{10}] "
+                           "{11}",
+                           local.tm_hour, local.tm_min, local.tm_sec, static_cast<int>(sinceEpoch.count() % 1000), record.frame, logModuleName(record.moduleTag), logChannelName(record.channel), record.file, record.line, record.function, levelTag(record.level), record.message);
+            buffer.markTruncated();
+            return buffer.size;
         }
     }
 }
