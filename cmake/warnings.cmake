@@ -17,8 +17,12 @@ add_library(TechEngine::warnings ALIAS te_warnings)
 option(TE_WERROR "Treat warnings as errors on first-party targets" ON)
 
 if(MSVC)
+  # /Zc:preprocessor — conforming preprocessor, needed for __VA_OPT__. The traditional one
+  # silently drops the trailing comma of an empty __VA_ARGS__, so a macro that is fine here
+  # is a hard error on the Clang leg. First-party only: vendored deps keep the default.
   target_compile_options(te_warnings INTERFACE
     /W4
+    /Zc:preprocessor
     $<$<BOOL:${TE_WERROR}>:/WX>)
 else()
   target_compile_options(te_warnings INTERFACE
