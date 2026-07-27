@@ -18,6 +18,11 @@
 ### Story B — <name>
 - [ ] SN-T3 — <task> · P? · 🟢/🟠/🟡 — done: <condition>
 
+### Story C — <name> · ~N tasks · **size after ADR-NNN**
+> Heavy-gated → deliberately unsized ([[Planning Workflow — Artifact Gate]] § *Don't size
+> past an open decision*). Cards get cut when the ADR is Accepted, per that task's
+> done-condition. Leave this as a story — no done-conditions yet.
+
 ## Definition of Done
 - [ ]
 

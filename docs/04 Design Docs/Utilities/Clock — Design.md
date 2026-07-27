@@ -9,7 +9,7 @@
 **Module:** `base` · **Kind:** utility (helper you *call*) · **Status:** draft
 **ADRs:** [[ADR-006 — v2 core architecture & module layout]] §4 §6 ·
 [[ADR-007 — v2 networking & ECS replication foundation]] §5
-**Consumers:** the app loop (writes) · [[Logger — Design]] / Profiler (read the frame stamp)
+**Consumers:** the app loop (writes) · [[Logger — Design]] / [[Profiler — Design]] (read the frame stamp)
 **Sprint:** [[2026-08 Sprint 02 — Base Foundation]] — S2-T6
 
 ## Purpose

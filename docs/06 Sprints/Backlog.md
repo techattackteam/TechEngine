@@ -19,6 +19,15 @@ should have been a move: the same item now described in two places, free to drif
 Because the pull happens at planning, an item can never still be sitting here when it
 ships — "done" is not a backlog state either.
 
+**Entry budget — a want + a `Trigger:`, not a decision.** An entry that has acquired a
+**decision + rationale** (a settled direction, dropped alternatives *with reasons*, a `How:`)
+is past what this file is for. Decisions parked here are ground truth living in the one file
+nobody reads as ground truth — worse than no artifact, because it looks covered (CLAUDE.md
+rule 2). **Tripwire:** the words *decided* / *dropped*, or a `How:`, in a parked entry. At
+grooming it goes one of two ways — the entry becomes its **design note** now, or its content
+is handed to the **ADR-to-be** as raw material — and the entry shrinks back to want + trigger
++ a link to that artifact.
+
 Cut only once the thinking has somewhere else to live. If an entry is the *only* home for
 its design content, that content **moves** into the sprint note, design note, or ADR as
 part of the pull — never dropped on the floor. That hand-off is what the artifact gate
@@ -55,21 +64,11 @@ containers/allocators. No OS, no ECS.
 ### utilities
 
 #### Profiler
-**Scoped CPU + GPU instrumentation — helper(service) in `base` (ADR-006 §5).** RAII scopes,
-`string_view` names, no `shared_ptr` registry (fixes F19); ~free when compiled out. The
-"profiling hook" CLAUDE.md requires before any optimization; gates the Job-system ADR. GPU
-zones = GL 4.5 timestamp queries per render-graph pass (absorbs the old
-`client → per-pass GPU timing + overlay` item).
-**Direction — decided, needs its own ADR:** thin `base` façade → **Tracy** backend. Editor embeds
-Tracy **`Worker` headless** (no Tracy ImGui → dodges the two-context clash) and draws a **native,
-simple, dockable panel** over Worker's data; a "deep dive" button dumps a `.tracy` snapshot and
-launches the **Tracy desktop app** (native viewer — not a browser). **Open Qs for the ADR:** app
-in-proc vs separate runtime process (loopback topology — an ADR-006 composition question); single
-live consumer → deep dive = snapshot-to-file, not a 2nd live feed; pin Tracy version (wire-protocol
-lock); socket **off** in shipping builds. **Trigger:** **not Sprint 02** — no hot path to measure
-yet (pressure-test, [[Planning Workflow — Artifact Gate]]). Lands just-in-time before the **first
-perf pass** (renderer/ECS, Sprint 03+); CLAUDE.md's "profiling hook before optimization" presupposes
-an optimization pass, which doesn't exist until then. Also gates the Job-system ADR.
+Scoped CPU + GPU instrumentation — the measurement CLAUDE.md requires before any optimization;
+fixes F19; gates the Job-system ADR. **Direction, open questions and the ADR it owes →
+[[Profiler — Design]]** (promoted out of here 2026-07-27 — it had grown a decided direction).
+**Trigger:** just-in-time before the **first perf pass** (renderer/ECS, Sprint 03+) — *not*
+Sprint 02, no hot path to measure yet.
 
 #### FrameAllocator — untracked, architecturally mandated
 `EngineContext` carries `FrameAllocator&` (ADR-006 §4) and ADR-007 §2's "no per-tick heap snapshot"
@@ -105,8 +104,8 @@ columns + handles + ownership discipline (see **Ownership policy** + **Memory-ma
 #### Memory tracking
 **Tag allocations by subsystem + track high-water / budgets / leaks — land EARLY, feeds the Profiler.**
 Cheap instrumentation that makes "measure before optimizing" (CLAUDE.md) real *before* any exotic allocator
-is justified. Emits into the **Profiler** (base → utilities) — Tracy has first-class memory events/plots, so
-the Profiler panel doubles as the memory dashboard. Pools + third-party hooks (Jolt `TempAllocator` /
+is justified. Emits into the **Profiler** ([[Profiler — Design]]) — Tracy has first-class memory
+events/plots, so the Profiler panel doubles as the memory dashboard. Pools + third-party hooks (Jolt `TempAllocator` /
 `JPH::Allocate`) route through it. **Trigger:** Sprint 02 — foundation, with the Profiler.
 
 #### Containers
@@ -152,7 +151,7 @@ The *thread-pool execution* of the schedule ADR-007 §6 designs: work-stealing p
 dispatch, ECS parallel iteration, integration with Jolt's internal pool (fixes F15 — v1's 3
 ad-hoc threading models). ADR-007 already defines its **input** (the built plan = the task graph;
 `ISystem` + `SystemAccess` unchanged), so this is execution, not interface. Land the base
-Profiler first (CLAUDE.md perf rule). **Execution view + open questions →
+Profiler first ([[Profiler — Design]] — CLAUDE.md perf rule). **Execution view + open questions →
 [[Task Graph — Execution Flow]]** (draft).
 
 **Also owes three things now** (recorded so the dependency is visible — *not* a schedule):
@@ -203,7 +202,7 @@ Post-C2 rendering features (deferred, Q4 direction):
 - Atmospheric scattering (sky LUT, aerial perspective)
 - Volumetric fog (froxel scattering)
 - Volumetric shadows / god rays through froxel path
-- ~~Per-pass GPU timing + frame profiler overlay~~ → moved to `base → Profiler` (GPU zones + editor panel)
+- ~~Per-pass GPU timing + frame profiler overlay~~ → moved to `base → Profiler` ([[Profiler — Design]])
 - Auto-exposure + bloom
 
 #### Audio (miniaudio)
