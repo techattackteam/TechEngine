@@ -145,6 +145,14 @@ Both are read by human AND AI every session. Optimize signal-per-token.
    feature is load-bearing enough to warrant an artifact but none exists, that's a
    gap: say so and design it, **don't hallucinate the goal on the spot.** The
    artifact gate ([[Planning Workflow — Artifact Gate]]) decides what each item gets.
+   **Check the vault's freshness before trusting it.** The vault is a separate repo
+   (rule 9), so its notes can describe code the engine has moved past. The Dashboard
+   carries `**Reconciled against:** engine <sha> (date)` — the last commit a drift
+   check *actually* ran against (ADR-012 §6). Compare it:
+   `git log --oneline <sha>..origin/master`. If the engine is ahead, design notes are
+   **suspect** — say so when grounding an answer instead of citing them as current.
+   Distance is a signal, not proof: a note may be fine or may be twenty commits stale,
+   and the stamp cannot tell you which. Judgement still applies.
 3. **Refactor by default; rewrite only with evidence.** A rewrite needs
    documented, concrete pain — not "this feels messy." (See `docs` Principles.)
 4. **ADR before load-bearing decisions.** If a choice will be hard to reverse,
