@@ -145,15 +145,42 @@ vertical slice is **Sprint 03**.
 - [ ] **S2-T11** — Skill `te-module` scaffolder · **P3** · 🟡 Light —
       done: stamps `include/TechEngine/<m>` + `src` split, `techengine_module()` call,
       colocated Catch2 test exe, deps wiring — referencing the **real** scaffold files.
-- [ ] **S2-T12** — Land the accumulated vault + AI-config work through the ruleset ·
+- [x] **S2-T12** — Land the accumulated vault + AI-config work through the ruleset ·
       **P3** · 🟡 Light — done: PR opened, 8 required checks green, squash-merged. First real
       exercise of the protection rules. *(Written as "land `feat/improving-vault`"; that
       branch is gone and the work accumulated uncommitted on `master` instead — mechanism
       changed, goal unchanged.)*
 
+**Vault repo split — added mid-sprint 2026-07-27** on
+[[ADR-012 — Vault repository split]] (Accepted). Urgent: the pain is *per-merge* and
+*per-overlap*, so every day it waits costs another orphaned board edit or a board conflict.
+T13 blocks T14 and T15.
+
+- [ ] **S2-T13** — Vault repo cutover · **P1** · 🟠 Moderate —
+      done: `docs/` is its own private GitHub repo **with its history preserved** (subtree
+      split / `filter-repo`, *not* a fresh `init`), removed from the engine index;
+      `.gitignore` gains `docs/` and a root `.ignore` gains `!docs/` **in the same commit**
+      (ADR-012 §1 — split them and vault search silently dies); verified both ways —
+      `git check-ignore` reports `docs/` ignored *and* a repo-root ripgrep search returns
+      vault hits; `CLAUDE.md` + root README document the two-repo clone so a fresh machine
+      works. **Atomic:** do not leave `docs/` both tracked and separately-repo'd.
+- [ ] **S2-T14** — Retarget the vault-writing commands · **P2** · 🟡 Light —
+      done: every `.claude/commands/*` that commits vault files targets the nested repo
+      (`git -C docs …`) — `/task-start`, `/task-wrap`, `/sprint-plan`, `/weekly-review`,
+      `/vault-clean`; no command attempts a `docs/` commit from the engine repo; a
+      `/task-start` board move no longer appears in an engine PR.
+- [ ] **S2-T15** — Reconciliation stamp · **P2** · 🟡 Light —
+      done: [[Dashboard]] carries `**Reconciled against:** engine <sha> (YYYY-MM-DD)`;
+      `/weekly-review` and `/sprint-plan` advance it **only after** the drift check has
+      actually run (a formality stamp is worse than none — ADR-012 §6); CLAUDE.md rule 2
+      says to compare it against `origin/master` and treat design notes as **suspect** while
+      the engine is ahead.
+
 ## Definition of Done
 
 - [x] **ADR-011 (Diagnostics) Accepted**; both design notes index it, no copied rationale.
+- [ ] **Vault split done (ADR-012)** — `docs/` its own repo, board edits no longer touch engine
+      PRs, reconciliation stamp live. *Added mid-sprint 2026-07-27; see the capacity note.*
 - [ ] **Logger, Assert, Clock** live in `base`, each with Catch2 tests, **CI green both legs**.
 - [ ] **Headless app loop** runs a fixed-timestep accumulator publishing `FrameContext`, with
       a **tick-exact** determinism test and a **clamp** test.
@@ -176,7 +203,23 @@ Weight matches day-type — rhythm on the [[Dashboard]] (deep Mon/Thu + one week
 moderate Fri · light Tue · relaxed Wed · other weekend day off). Weekend days are a
 **swappable pair** — nothing here is assigned to Sat or Sun specifically.
 
-**Ordering constraint:** S2-T1 (the ADR) gates T2–T6. Everything else is free.
+**Ordering constraint:** S2-T1 (the ADR) gates T2–T6. T13 gates T14/T15. Everything else is free.
+
+### Mid-sprint scope change — 2026-07-27
+
+**12 → 15 tasks** (T13/T14/T15, the ADR-012 vault split), added on day 3. Recorded rather
+than absorbed silently, because the note above forbids refilling freed time.
+
+**This is not that case** — the rule targets *refilling slack when the sprint runs dry*; this
+is new work arriving with a real trigger. The distinction matters, so: **zero 🟢 Deep tasks
+were added.** The added weights are 🟠 + 🟡 + 🟡, which draw on moderate/light capacity (Fri /
+Tue), while the protected resource — deep slots for T4/T7/T8 — is untouched. That is why T13
+is **P1 but Moderate**: prioritised without displacing the sprint goal.
+
+**Still a net increase, and the trade is on the table:** if light capacity gets tight, push
+**S2-T11** (`te-module`, P3 🟡) to Sprint 03. It is the same tooling category, the lowest
+priority in the sprint, and it has no consumer waiting. Take that trade before letting
+anything touch the Deep slots.
 
 ## Sprint review (fill Aug 29–30)
 

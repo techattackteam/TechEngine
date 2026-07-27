@@ -53,6 +53,13 @@ Steps:
      **artifact timing**: flag every artifact-less item that warrants one — **draft the
      light ones with me now, in this session**; heavy ones (ADR / needs a spike) become
      a sprint task ordered before the impl task they unblock.
+   - **Heavy-gated stories stay unsized** — where the gate demanded an ADR (or a
+     spike-gated note), the breakdown **stops at that artifact's task**: the story below it
+     goes into the sprint note named and roughly counted (`~2–3 tasks · size after ADR-NNN`),
+     with no done-conditions, and cutting its cards is part of the artifact task's own
+     done-condition. Sizing them now writes cards the ADR will overturn (S2-T2's `fmt` seam)
+     — see the gate note § *Don't size past an open decision*. Do not "helpfully" fill them
+     in to make the sprint note look complete.
    - **Priority + weight on every task** — `P1/P2/P3` and a weight (🟢 Deep / 🟠 Moderate
      / 🟡 Light) matching the day-type it fits, so I can pick by the day I'm on. Tag
      format `· P1 · 🟢 Deep`.
