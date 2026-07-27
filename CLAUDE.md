@@ -168,7 +168,10 @@ Both are read by human AND AI every session. Optimize signal-per-token.
    split, that name is the **only** thing linking a squashed engine commit back to
    its board card, because the squash subject is taken from the branch
    ([ADR-012](docs/03%20Architecture/ADR-012%20—%20Vault%20repository%20split.md) §Consequences).
-   Vault commits are exempt from all of this — straight to its `master` (ADR-012 §2).
+   Vault commits are exempt from all of this: `docs/` is a **separate repository**
+   (`TechEngine-vault`, cloned in place — see "What this project is"), so its commits
+   are not engine commits at all. Commit straight to its own `master` from inside
+   `docs/` — no branch, no PR, no CI (ADR-012 §2).
 10. **Commits are authored by Miguel, full stop.** **Never** add a
     `Co-Authored-By: Claude` trailer, a `🤖 Generated with` line, or any other AI
     attribution to a commit message or PR body. This repo is his portfolio and its
