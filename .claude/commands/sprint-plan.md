@@ -40,6 +40,12 @@ Steps:
    the ADRs they index — the hub pattern reads the note *first*, so a drifted one-liner
    silently overrides the ADR ([[Planning Workflow — Artifact Gate]]). List drift and offer
    to reconcile; if none, say so.
+   Then **advance the reconciliation stamp** on [[Dashboard]] —
+   `**Reconciled against:** engine <sha> (date)`, `<sha>` = current `origin/master` —
+   **only if this step actually ran to completion**. Skipped, partial, or reconciling
+   deferred → leave it and say why. A formality stamp is worse than none: it turns
+   "unknown freshness" into a false "checked" that CLAUDE.md rule 2 then trusts
+   (ADR-012 §6).
 4. Propose ONE headline goal for the next sprint. Justify it against the roadmap and the
    affected systems' design notes — dropping to their ADRs where a decision's rationale
    carries the argument. Push back if I'm over-scoping.
