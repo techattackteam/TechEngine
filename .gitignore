@@ -1,4 +1,4 @@
-# Prerequisihttps://www.youtube.com/watch?v=QkETiyYWh2otes
+# Prerequisites
 *.d
 
 # Compiled Object files
@@ -37,4 +37,9 @@
 # CMake preset build tree (ADR-008 §3) + local preset overrides
 /build
 CMakeUserPresets.json
+
+# The vault is its own repo, cloned in place (ADR-012 §1).
+# Removing this line without also removing `!docs/` from the root `.ignore`
+# makes ripgrep and git disagree about whether the vault exists.
+/docs/
 

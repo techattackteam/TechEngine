@@ -10,6 +10,19 @@ in modern C++. Long-term goal: turn it into a company. The full project brain
 (vision, roadmap, architecture, sprints) lives in the Obsidian vault at
 **`docs/`** — start at `docs/00 Dashboard/Dashboard.md`.
 
+**The vault is a separate repo, cloned in place** ([ADR-012](docs/03%20Architecture/ADR-012%20—%20Vault%20repository%20split.md)).
+A fresh engine clone has no `docs/` until you add it — and nothing will tell you it is
+missing, so do this before the first session on a new machine:
+
+```bash
+git clone git@github.com:techattackteam/TechEngine-vault.git docs
+```
+
+Vault commits go straight to its `master` — no branch, no PR, no CI (ADR-012 §2). That is
+the vault repo only; the engine repo is still PR-only under ADR-009 §2. The two HEADs move
+independently, so the vault can describe code that has moved on: the Dashboard's
+**Reconciled against** stamp is how far behind it was last checked (ADR-012 §6).
+
 - **Language/build:** C++20, CMake ≥ 3.21, **CMakePresets** everywhere (local == CI).
   Windows/MSVC via **Ninja Multi-Config**, Linux/Clang via Ninja. Layout:
   `engine/{base,platform,core,client,app}` (static libs, strict link order) +
