@@ -15,7 +15,6 @@ kanban-plugin: board
 	  — **blocks T14/T15**. `.gitignore` + root `.ignore` land in the **same** commit, history
 	  preserved, fresh clone documented. Weighted Moderate on purpose: urgent, but it must not
 	  eat a 🟢 Deep slot reserved for T4/T7/T8.
-- [ ] **S2-T4** — Assert: four tiers + single handler · P1 · 🟢 Deep
 - [ ] **S2-T7** — `FrameContext` + fixed-timestep accumulator (headless) · P1 · 🟢 Deep
 - [ ] **S2-T8** — Determinism + clamp tests (injected time source) · P1 · 🟢 Deep
 - [ ] **S2-T9** — End-to-end wire-up = sprint demo · P2 · 🟠 Moderate
@@ -26,6 +25,7 @@ kanban-plugin: board
 
 ## 🔨 In Progress
 
+- [ ] **S2-T4** — Assert: four tiers + single handler · P1 · 🟢 Deep
 - [ ] **S2-T5** — Assert → Logger integration + flush-on-fail · P2 · 🟠 Moderate
 - [ ] **S2-T10** — Root `CONVENTIONS.md` (B4) · P2 · 🟠 Moderate — **runs in parallel**, not
 	  late. File opened Jul 25 (B4 migrated in; B4 → pointer + history). **Flag conventions as
