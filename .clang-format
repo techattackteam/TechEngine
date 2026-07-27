@@ -11,6 +11,7 @@ NamespaceIndentation: All
 FixNamespaceComments: false
 PointerAlignment: Left
 AllowShortFunctionsOnASingleLine: None
+AlignEscapedNewlines: Left
 
 # LLVM defaults that disagree with the CLion scheme this codebase was written in.
 AccessModifierOffset: -4

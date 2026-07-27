@@ -8,6 +8,12 @@
   [[ADR-008 — v2 build & testing baseline]] §7 §8 · living *how*:
   [[Logger — Design]] · [[Assert — Design]]
 - **Task:** S2-T1 ([[2026-08 Sprint 02 — Base Foundation]]) — **gates S2-T2…T6.**
+- **Amended 2026-07-27:** §7's no-recursion guard now aborts **only if the nested failure's
+  own tier is fatal**, was "and aborts" unconditionally. No decision reversed — fatality was
+  always a property of the tier (§5), and the original wording made a `TE_ENSURE` fatal purely
+  by firing inside a handler, which contradicts its "log + continue" definition. Found while
+  implementing S2-T4: the guard's test could not raise a nested failure without killing the
+  runner.
 - **Supersedes:** **ADR-006 §6's assert-tier clause only** — the `TE_VERIFY`
   semantics in "`TE_CHECK/TE_VERIFY` always-on for shipped invariants" (ADR-006
   `:254-255`). ADR-006 §6's **logging bullet**, its **`TE_ASSERT`** semantics, the
@@ -194,7 +200,11 @@ abort.** **Never a silent `__debugbreak()` in release** (F10; restates ADR-006 �
 - **Assert depends on the Logger; never the reverse.** The Logger's own internals must not
   use an assert macro that routes back through the Logger.
 - **No-recursion guard** — a `thread_local` in-flight flag; a failure raised while
-  already reporting goes straight to stderr and aborts.
+  already reporting goes straight to stderr, **skips the handler entirely, and then aborts
+  if its own tier is fatal**. Fatality stays a property of the tier, not of where the
+  failure happened — a nested `TE_ENSURE` reports and continues, exactly as an unnested one
+  would. (Amended 2026-07-27; originally "and aborts", which made a non-fatal tier fatal
+  purely by firing inside a handler.)
 - **Pre-init fallback** — an assert that fires before the Logger is initialized writes to
   **stderr** (same fallback as §2).
 

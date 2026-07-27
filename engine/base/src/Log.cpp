@@ -1,8 +1,7 @@
 #include <TechEngine/base/Log.hpp>
 
-#include "LogFormat.hpp"
-
-// The ONLY TU that may include spdlog — ADR-011 §1.
+#include "FormatBuffer.hpp"
+#include "SourceName.hpp"
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
@@ -10,7 +9,6 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
-#include <chrono>
 #include <cstdio>
 #include <ctime>
 #include <iterator>
@@ -25,68 +23,6 @@ namespace TechEngine {
     static constexpr std::size_t LOG_FILE_MAX_SIZE = std::size_t{5} * 1024 * 1024;
     static constexpr std::size_t LOG_FILE_MAX_COUNT = 3;
     static constexpr const char* LOG_FILE_PATH = "logs/techengine.log";
-
-    struct LogFormatBuffer {
-        char* data{nullptr};
-        std::size_t capacity{0};
-        std::size_t size{0};
-        bool truncated{false};
-
-        void push(char c) {
-            if (size < capacity) {
-                data[size++] = c;
-            } else {
-                truncated = true;
-            }
-        }
-
-        // Overflow is silent without this — stamp the marker over the tail so a cut line
-        // reads as cut rather than as a complete short one.
-        void markTruncated() {
-            if (!truncated) {
-                return;
-            }
-            size = size > detail::TRUNCATION_MARKER.size() ? size - detail::TRUNCATION_MARKER.size() : 0;
-            for (const char c: detail::TRUNCATION_MARKER) {
-                push(c);
-            }
-        }
-    };
-
-    class LogFormatBufferIterator {
-    public:
-        using difference_type = std::ptrdiff_t;
-        using value_type = char;
-
-        LogFormatBufferIterator() = default;
-
-        explicit LogFormatBufferIterator(LogFormatBuffer& buffer) : m_buffer{&buffer} {
-        }
-
-        // const because that is what std::indirectly_writable requires; drop it and the
-        // static_assert below fires.
-        const LogFormatBufferIterator& operator*() const {
-            return *this;
-        }
-
-        const LogFormatBufferIterator& operator=(char c) const {
-            m_buffer->push(c);
-            return *this;
-        }
-
-        LogFormatBufferIterator& operator++() {
-            return *this;
-        }
-
-        LogFormatBufferIterator operator++(int) {
-            return *this;
-        }
-
-    private:
-        LogFormatBuffer* m_buffer{nullptr};
-    };
-
-    static_assert(std::output_iterator<LogFormatBufferIterator, char>, "vformat_to needs this to model output_iterator");
 
     struct LogModuleEntry {
         std::string_view name;
@@ -164,48 +100,11 @@ namespace TechEngine {
         return out;
     }
 
-    namespace detail {
-        std::size_t flattenRecord(const LogRecord& record, char* out, std::size_t capacity) {
-            LogFormatBuffer buffer{out, capacity, 0, false};
-
-            const auto sinceEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(record.time.time_since_epoch());
-            const std::tm local = localTime(std::chrono::system_clock::to_time_t(record.time));
-
-            std::format_to(LogFormatBufferIterator{buffer},
-                           "[{0:02}:{1:02}:{2:02}.{3:03}][f {4}][{5}/{6}][{7}:{8}:{9}()][{10}] "
-                           "{11}",
-                           local.tm_hour, local.tm_min, local.tm_sec, static_cast<int>(sinceEpoch.count() % 1000), record.frame, logModuleName(record.moduleTag), logChannelName(record.channel), record.file, record.line, record.function, levelTag(record.level), record.message);
-            buffer.markTruncated();
-            return buffer.size;
-        }
-    }
-
     static void spdlogSink(const LogRecord& record) {
         std::array<char, MESSAGE_CAPACITY + 256> storage;
         const std::size_t size = detail::flattenRecord(record, storage.data(), storage.size());
 
         spdlog::default_logger_raw()->log(toSpdlogLevel(record.level), spdlog::string_view_t{storage.data(), size});
-    }
-
-    static std::string_view baseName(std::string_view path) {
-        const auto slash = path.find_last_of("/\\");
-        return slash == std::string_view::npos ? path : path.substr(slash + 1);
-    }
-
-    static std::string_view shortFunctionName(std::string_view signature) {
-        const auto paren = signature.find('(');
-        if (paren == std::string_view::npos) {
-            return signature;
-        }
-
-        const auto isNameChar = [](char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == ':' || c == '~' || c == '<' || c == '>'; };
-
-        std::size_t begin = paren;
-        while (begin > 0 && isNameChar(signature[begin - 1])) {
-            --begin;
-        }
-
-        return begin == paren ? signature : signature.substr(begin, paren - begin);
     }
 
     bool addLogSink(LogSinkFn sink) {
@@ -359,6 +258,28 @@ namespace TechEngine {
         g_frame.store(frame, std::memory_order_relaxed);
     }
 
+    // No sink registered is not the same as a dropped record — before initLogging(), or after
+    // shutdownLogging(), the line still has to reach somewhere (ADR-011 §2). That fallback is
+    // what LogTests' captureStderr case pins.
+    static void deliverRecord(const LogRecord& record) {
+        bool delivered = false;
+        for (const std::atomic<LogSinkFn>& slot: g_sinks) {
+            const LogSinkFn sink = slot.load(std::memory_order_acquire);
+            if (sink != nullptr) {
+                sink(record);
+                delivered = true;
+            }
+        }
+
+        if (delivered) {
+            return;
+        }
+
+        std::array<char, MESSAGE_CAPACITY + 256> line;
+        const std::size_t size = detail::flattenRecord(record, line.data(), line.size());
+        std::fprintf(stderr, "%.*s\n", static_cast<int>(size), line.data());
+    }
+
     namespace detail {
         void logDispatch(Level level, LogChannel channel, const std::source_location& loc, std::string_view fmtStr, std::format_args args) {
             if (static_cast<int>(level) < TE_LOG_ACTIVE_LEVEL) {
@@ -370,10 +291,10 @@ namespace TechEngine {
             }
 
             std::array<char, MESSAGE_CAPACITY> storage;
-            LogFormatBuffer buffer{storage.data(), storage.size(), 0, false};
+            FormatBuffer buffer{storage.data(), storage.size(), 0, false};
 
             try {
-                std::vformat_to(LogFormatBufferIterator{buffer}, fmtStr, args);
+                std::vformat_to(FormatBufferIterator{buffer}, fmtStr, args);
             } catch (const std::exception& e) {
                 buffer.size = 0;
                 buffer.truncated = false;
@@ -400,20 +321,21 @@ namespace TechEngine {
                 .line = static_cast<std::uint32_t>(loc.line()), // line() is uint_least32_t
             };
 
-            bool delivered = false;
-            for (const std::atomic<LogSinkFn>& slot: g_sinks) {
-                const LogSinkFn sink = slot.load(std::memory_order_acquire);
-                if (sink != nullptr) {
-                    sink(record);
-                    delivered = true;
-                }
-            }
+            deliverRecord(record);
+        }
 
-            if (!delivered) {
-                std::array<char, MESSAGE_CAPACITY + 256> line;
-                const std::size_t size = flattenRecord(record, line.data(), line.size());
-                std::fprintf(stderr, "%.*s\n", static_cast<int>(size), line.data());
-            }
+        std::size_t flattenRecord(const LogRecord& record, char* out, std::size_t capacity) {
+            FormatBuffer buffer{out, capacity, 0, false};
+
+            const auto sinceEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(record.time.time_since_epoch());
+            const std::tm local = localTime(std::chrono::system_clock::to_time_t(record.time));
+
+            std::format_to(FormatBufferIterator{buffer},
+                           "[{0:02}:{1:02}:{2:02}.{3:03}][f {4}][{5}/{6}][{7}:{8}:{9}()][{10}] "
+                           "{11}",
+                           local.tm_hour, local.tm_min, local.tm_sec, static_cast<int>(sinceEpoch.count() % 1000), record.frame, logModuleName(record.moduleTag), logChannelName(record.channel), record.file, record.line, record.function, levelTag(record.level), record.message);
+            buffer.markTruncated();
+            return buffer.size;
         }
     }
 }

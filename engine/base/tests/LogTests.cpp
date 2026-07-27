@@ -1,6 +1,6 @@
 #include <TechEngine/base/Log.hpp>
 
-#include "LogFormat.hpp"
+#include "FormatBuffer.hpp"
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
