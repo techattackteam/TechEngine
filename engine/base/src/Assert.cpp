@@ -114,7 +114,10 @@ namespace TechEngine {
         }
 
         AssertResponse assertReport(AssertKind kind, std::string_view condition, const std::source_location& loc) {
-            return assertDispatch(kind, condition, loc, std::string_view{}, std::format_args{});
+            // GOTCHA: not std::format_args{} — the standard mandates that default constructor
+            // but MSVC 14.44's STL does not provide it. An empty store converts on every
+            // toolchain, and assertDispatch ignores args when fmtStr is empty anyway.
+            return assertDispatch(kind, condition, loc, std::string_view{}, std::make_format_args());
         }
 
         void assertAbort() {
