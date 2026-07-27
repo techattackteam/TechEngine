@@ -159,8 +159,19 @@ Both are read by human AND AI every session. Optimize signal-per-token.
    response, not in comments** (see Code conventions).
 8. **Correctness first, then clarity, then performance.** Do not micro-optimize
    without a measurement. See Performance.
-9. **Don't commit or push unless asked.** When asked, branch off `master` first;
-   never commit directly to `master`.
+9. **Don't commit or push unless asked.** Never commit directly to `master`. When
+   asked, cut the branch **from `origin/master`, freshly fetched** — never local
+   `master`, never a previous task's branch. The repo squash-merges onto a linear
+   history, so a merged branch's commits never appear on `master`; building on one
+   replays the whole PR as a conflict against itself (this is what conflicted
+   PRs #8–#10). Name it `<card ID>/<slug>` — `S2-T4/assert-tiers`. Since the vault
+   split, that name is the **only** thing linking a squashed engine commit back to
+   its board card, because the squash subject is taken from the branch
+   ([ADR-012](docs/03%20Architecture/ADR-012%20—%20Vault%20repository%20split.md) §Consequences).
+   Vault commits are exempt from all of this: `docs/` is a **separate repository**
+   (`TechEngine-vault`, cloned in place — see "What this project is"), so its commits
+   are not engine commits at all. Commit straight to its own `master` from inside
+   `docs/` — no branch, no PR, no CI (ADR-012 §2).
 10. **Commits are authored by Miguel, full stop.** **Never** add a
     `Co-Authored-By: Claude` trailer, a `🤖 Generated with` line, or any other AI
     attribution to a commit message or PR body. This repo is his portfolio and its
