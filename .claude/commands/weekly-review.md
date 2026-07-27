@@ -36,6 +36,12 @@ Then:
    [[Planning Workflow — Artifact Gate]]. If none, say so.
 4. Update `docs/00 Dashboard/Dashboard.md`: current focus, blockers, health, and
    **roll the `Next ceremony` line**.
+   **Advance the reconciliation stamp** — `**Reconciled against:** engine <sha> (date)`,
+   `<sha>` = current `origin/master` — **only if step 3 actually ran**. If it was skipped,
+   partial, or you deferred the reconciling, leave the stamp where it is and say why.
+   A stamp advanced as a formality is worse than no stamp: it converts "unknown freshness"
+   into a false "checked" that CLAUDE.md rule 2 will then trust (ADR-012 §6). Advancing it
+   is the *output* of the check, never a step in updating the Dashboard.
 5. If I already ran the review on the other day of this weekend, say so instead of writing
    a second entry. (The sprint-boundary case is handled by the GATE above — on those
    weekends this command doesn't run at all.)
