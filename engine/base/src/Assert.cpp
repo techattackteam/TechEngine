@@ -62,7 +62,18 @@ namespace TechEngine {
     static void writeToStderr(const AssertContext& context) {
         const std::string_view kind = assertKindName(context.kind);
 
-        std::fprintf(stderr, "[%.*s][%.*s:%u:%.*s()] (%.*s)", static_cast<int>(kind.size()), kind.data(), static_cast<int>(context.file.size()), context.file.data(), context.line, static_cast<int>(context.function.size()), context.function.data(), static_cast<int>(context.condition.size()), context.condition.data());
+        std::fprintf(
+            stderr,
+            "[%.*s][%.*s:%u:%.*s()] (%.*s)",
+            static_cast<int>(kind.size()),
+            kind.data(),
+            static_cast<int>(context.file.size()),
+            context.file.data(),
+            context.line,
+            static_cast<int>(context.function.size()),
+            context.function.data(),
+            static_cast<int>(context.condition.size()),
+            context.condition.data());
 
         if (!context.message.empty()) {
             std::fprintf(stderr, " %.*s", static_cast<int>(context.message.size()), context.message.data());
@@ -84,8 +95,9 @@ namespace TechEngine {
         }
 
         const std::string_view kind = assertKindName(context.kind);
-        const int written = context.message.empty() ? std::snprintf(out, capacity, "[%.*s] (%.*s)", static_cast<int>(kind.size()), kind.data(), static_cast<int>(context.condition.size()), context.condition.data())
-                                                    : std::snprintf(out, capacity, "[%.*s] (%.*s) %.*s", static_cast<int>(kind.size()), kind.data(), static_cast<int>(context.condition.size()), context.condition.data(), static_cast<int>(context.message.size()), context.message.data());
+        const int written = context.message.empty()
+                                ? std::snprintf(out, capacity, "[%.*s] (%.*s)", static_cast<int>(kind.size()), kind.data(), static_cast<int>(context.condition.size()), context.condition.data())
+                                : std::snprintf(out, capacity, "[%.*s] (%.*s) %.*s", static_cast<int>(kind.size()), kind.data(), static_cast<int>(context.condition.size()), context.condition.data(), static_cast<int>(context.message.size()), context.message.data());
 
         if (written <= 0) {
             return 0;
@@ -137,7 +149,12 @@ namespace TechEngine {
             buffer.markTruncated();
 
             const AssertContext context{
-                kind, condition, std::string_view{storage.data(), buffer.size}, baseName(loc.file_name()), shortFunctionName(loc.function_name()), static_cast<std::uint32_t>(loc.line()),
+                kind,
+                condition,
+                std::string_view{storage.data(), buffer.size},
+                baseName(loc.file_name()),
+                shortFunctionName(loc.function_name()),
+                static_cast<std::uint32_t>(loc.line()),
             };
 
             if (t_reporting) {

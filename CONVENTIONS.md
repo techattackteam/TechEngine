@@ -33,7 +33,7 @@ restate them; it covers what a formatter cannot decide.
 | Locals / params | `camelCase` | `passIndex` |
 | Files (paired `.hpp`/`.cpp`) | `PascalCase`, match primary type | `Log.hpp` / `Log.cpp` |
 | Include path | `<TechEngine/<module>/File.hpp>` | `<TechEngine/base/Log.hpp>` |
-| **Constants** | `SCREAMING_SNAKE_CASE` | `TRUNCATION_MARKER`, `MESSAGE_CAPACITY`, `FIXED_DT` |
+| **Constants** | `SCREAMING_SNAKE_CASE` | `TRUNCATION_MARKER`, `MESSAGE_CAPACITY`, `FIXED_DELTA_TIME` |
 | **Macros** | `SCREAMING_SNAKE_CASE`, **`TE_` prefix** | `TE_LOGGER_INFO`, `TE_LOG_ACTIVE_LEVEL` |
 | **`enum class` values** ⚠️ provisional | `PascalCase` | `Level::Info`, `Level::Critical` |
 | **File-scope mutable state** ⚠️ provisional | `g_camelCase` + `static` | `g_minLevel` |
@@ -46,11 +46,32 @@ restate them; it covers what a formatter cannot decide.
 - **Constants refine the `kPascalCase` spelling that appears in the ADRs** (`kFixedDt` in
   ADR-007 §5, [[Game Loop — Frame Flow]]). Those are *illustrative*, not decisions — the same
   precedent by which `TechEngine<Module>` refines ADR-008 §2's `te_<module>`. Accepted ADRs are
-  not edited; read `kFixedDt` there as `FIXED_DT`.
+  not edited; read `kFixedDt` there as `FIXED_DELTA_TIME` (see *Names are spelled out*).
 - **Gotcha:** all-caps identifiers are macro territory to the preprocessor, so a constant can be
   clobbered by a third-party or OS macro of the same name (Windows headers define `ERROR`,
   `DELETE`, `MAX_PATH`, …). Avoid bare single-word names that read like OS macros; prefer a
   qualifying word (`MESSAGE_CAPACITY`, not `CAPACITY`).
+
+## Names are spelled out
+
+> **Default: full words.** `deltaTime`, not `dt`. `accumulator`, not `acc`. `previous`, not `prev`.
+> Decided 2026-07-30 (S2-T7) — the loop's `dt`/`fixedDt` were the trigger.
+
+The bar is the **reader**, not the typist: a name is read far more often than typed, and IDE
+completion makes the length free. Abbreviate only when the full spelling makes a line
+genuinely unwieldy — and then abbreviate the *whole* codebase's way, not that file's way.
+
+**Not abbreviations — leave these alone:**
+
+| Case | Example |
+|---|---|
+| Established acronyms, cased as words | `NetId`, `uuidOf()`, `httpClient` — ADR-007's `NetId` spelling |
+| Single letters that **are** the domain notation | loop counters `i`/`j`, matrix `m`, texcoords `u`/`v`, `alpha` for the interpolation factor |
+| A term of art whose expansion is worse | `alpha`, not `interpolationFactor`; `tick`, not `simulationStepIndex` |
+
+**The ADRs and design notes write `dt` / `fixedDt`.** Read them as `deltaTime` / `fixedDeltaTime`
+in code — the same refinement precedent as `kFixedDt` → `FIXED_DT` and `te_<module>` →
+`TechEngine<Module>` above. Accepted ADRs are not edited to match.
 
 ## Internal linkage — `static`, not `namespace {}`
 

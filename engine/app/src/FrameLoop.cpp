@@ -1,0 +1,33 @@
+#include <TechEngine/app/FrameLoop.hpp>
+
+namespace TechEngine {
+    FrameLoop::FrameLoop(Role role, double fixedDeltaTime, double maxFrameDeltaTime) : m_fixedDeltaTime(fixedDeltaTime), m_maxFrameDeltaTime(maxFrameDeltaTime) {
+        m_frame.role = role;
+        m_frame.fixedDeltaTime = static_cast<float>(fixedDeltaTime);
+    }
+
+    const FrameContext& FrameLoop::advance(double frameDeltaTime) {
+        const double clampedDeltaTime = frameDeltaTime > m_maxFrameDeltaTime ? m_maxFrameDeltaTime : frameDeltaTime;
+
+        m_accumulator += clampedDeltaTime;
+
+        while (m_accumulator >= m_fixedDeltaTime) {
+            m_accumulator -= m_fixedDeltaTime;
+            m_frame.tick++;
+        }
+
+        m_frame.deltaTime = static_cast<float>(clampedDeltaTime);
+        m_frame.alpha = static_cast<float>(m_accumulator / m_fixedDeltaTime);
+        m_frame.frameIndex++;
+
+        return m_frame;
+    }
+
+    const FrameContext& FrameLoop::frame() const {
+        return m_frame;
+    }
+
+    double FrameLoop::accumulator() const {
+        return m_accumulator;
+    }
+}
