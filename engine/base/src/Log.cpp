@@ -296,9 +296,6 @@ namespace TechEngine {
         g_frame.store(frame, std::memory_order_relaxed);
     }
 
-    // No sink registered is not the same as a dropped record — before initLogging(), or after
-    // shutdownLogging(), the line still has to reach somewhere (ADR-011 §2). That fallback is
-    // what LogTests' captureStderr case pins.
     static void deliverRecord(const LogRecord& record) {
         ringWrite(record);
 
