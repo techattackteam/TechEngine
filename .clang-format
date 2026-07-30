@@ -6,12 +6,20 @@ BasedOnStyle: LLVM
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
-ColumnLimit: 380
+ColumnLimit: 280
 NamespaceIndentation: All
 FixNamespaceComments: false
 PointerAlignment: Left
 AllowShortFunctionsOnASingleLine: None
 AlignEscapedNewlines: Left
+# All-or-nothing wrapping: a call/decl that overflows ColumnLimit puts every
+# argument on its own line instead of packing them. AlwaysBreak is load-bearing
+# here, not cosmetic: under the default Align, the continuation starts at the
+# open-paren column, so AllowAllArgumentsOnNextLine never fits and every overflow
+# explodes one-per-line.
+BinPackArguments: false
+BinPackParameters: false
+AlignAfterOpenBracket: AlwaysBreak
 
 # LLVM defaults that disagree with the CLion scheme this codebase was written in.
 AccessModifierOffset: -4

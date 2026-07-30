@@ -388,10 +388,22 @@ namespace TechEngine {
             const auto sinceEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(record.time.time_since_epoch());
             const std::tm local = localTime(std::chrono::system_clock::to_time_t(record.time));
 
-            std::format_to(FormatBufferIterator{buffer},
-                           "[{0:02}:{1:02}:{2:02}.{3:03}][f {4}][{5}/{6}][{7}:{8}:{9}()][{10}] "
-                           "{11}",
-                           local.tm_hour, local.tm_min, local.tm_sec, static_cast<int>(sinceEpoch.count() % 1000), record.frame, logModuleName(record.moduleTag), logChannelName(record.channel), record.file, record.line, record.function, levelTag(record.level), record.message);
+            std::format_to(
+                FormatBufferIterator{buffer},
+                "[{0:02}:{1:02}:{2:02}.{3:03}][f {4}][{5}/{6}][{7}:{8}:{9}()][{10}] "
+                "{11}",
+                local.tm_hour,
+                local.tm_min,
+                local.tm_sec,
+                static_cast<int>(sinceEpoch.count() % 1000),
+                record.frame,
+                logModuleName(record.moduleTag),
+                logChannelName(record.channel),
+                record.file,
+                record.line,
+                record.function,
+                levelTag(record.level),
+                record.message);
             buffer.markTruncated();
             return buffer.size;
         }

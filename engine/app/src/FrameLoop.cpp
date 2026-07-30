@@ -1,23 +1,23 @@
 #include <TechEngine/app/FrameLoop.hpp>
 
 namespace TechEngine {
-    FrameLoop::FrameLoop(Role role, double fixedDt, double maxFrameDt) : m_fixedDt(fixedDt), m_maxFrameDt(maxFrameDt) {
+    FrameLoop::FrameLoop(Role role, double fixedDeltaTime, double maxFrameDeltaTime) : m_fixedDeltaTime(fixedDeltaTime), m_maxFrameDeltaTime(maxFrameDeltaTime) {
         m_frame.role = role;
-        m_frame.fixedDt = static_cast<float>(fixedDt);
+        m_frame.fixedDeltaTime = static_cast<float>(fixedDeltaTime);
     }
 
-    const FrameContext& FrameLoop::advance(double frameDt) {
-        const double clamped = frameDt > m_maxFrameDt ? m_maxFrameDt : frameDt;
+    const FrameContext& FrameLoop::advance(double frameDeltaTime) {
+        const double clampedDeltaTime = frameDeltaTime > m_maxFrameDeltaTime ? m_maxFrameDeltaTime : frameDeltaTime;
 
-        m_accumulator += clamped;
+        m_accumulator += clampedDeltaTime;
 
-        while (m_accumulator >= m_fixedDt) {
-            m_accumulator -= m_fixedDt;
+        while (m_accumulator >= m_fixedDeltaTime) {
+            m_accumulator -= m_fixedDeltaTime;
             m_frame.tick++;
         }
 
-        m_frame.dt = static_cast<float>(clamped);
-        m_frame.alpha = static_cast<float>(m_accumulator / m_fixedDt);
+        m_frame.deltaTime = static_cast<float>(clampedDeltaTime);
+        m_frame.alpha = static_cast<float>(m_accumulator / m_fixedDeltaTime);
         m_frame.frameIndex++;
 
         return m_frame;
