@@ -1,6 +1,7 @@
 #include <TechEngine/base/Log.hpp>
 
 #include "FormatBuffer.hpp"
+#include "LogInternal.hpp"
 #include "SourceName.hpp"
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -47,6 +48,45 @@ namespace TechEngine {
 
     // A null slot is an empty one — no separate count to keep in step with the array.
     static std::array<std::atomic<LogSinkFn>, MAX_LOG_SINKS> g_sinks{};
+
+    struct RingEntry {
+        LogRecord record{};
+        std::array<char, MESSAGE_CAPACITY> messageStorage{};
+    };
+
+    // Always-on process-global state (ADR-011 §8), not a pluggable sink — every dispatched
+    // record lands here regardless of what's in g_sinks. Slot choice is a bare fetch_add
+    // modulo; two threads racing the same wrapped slot can tear a write. Accepted for a
+    // best-effort crash trail, not a linearizable log.
+    static std::array<RingEntry, LOG_RING_CAPACITY> g_ring{};
+    static std::atomic<std::uint64_t> g_ringWritten{0};
+
+    static void ringWrite(const LogRecord& record) {
+        const std::uint64_t index = g_ringWritten.fetch_add(1, std::memory_order_relaxed);
+        RingEntry& entry = g_ring[static_cast<std::size_t>(index % LOG_RING_CAPACITY)];
+
+        const std::size_t copySize = std::min(record.message.size(), entry.messageStorage.size());
+        std::copy_n(record.message.data(), copySize, entry.messageStorage.data());
+
+        entry.record = record;
+        entry.record.message = std::string_view{entry.messageStorage.data(), copySize};
+    }
+
+    std::size_t ringSnapshot(LogRecord* out, std::size_t capacity) {
+        const std::uint64_t written = g_ringWritten.load(std::memory_order_relaxed);
+        const std::size_t available = static_cast<std::size_t>(std::min<std::uint64_t>(written, LOG_RING_CAPACITY));
+        const std::size_t count = std::min(available, capacity);
+        const std::uint64_t start = written - count;
+
+        for (std::size_t i = 0; i < count; ++i) {
+            out[i] = g_ring[static_cast<std::size_t>((start + i) % LOG_RING_CAPACITY)].record;
+        }
+        return count;
+    }
+
+    void ringClear() {
+        g_ringWritten.store(0, std::memory_order_relaxed);
+    }
 
     static spdlog::level::level_enum toSpdlogLevel(Level level) {
         switch (level) {
@@ -191,7 +231,10 @@ namespace TechEngine {
         sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
 
         try {
-            sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(LOG_FILE_PATH, LOG_FILE_MAX_SIZE, LOG_FILE_MAX_COUNT));
+            // rotate_on_open=true — without it spdlog only rotates past LOG_FILE_MAX_SIZE, so
+            // every run appends to the same file instead of starting fresh (found running the
+            // S2-T5 smoke test: three log-format eras end up mixed in one file).
+            sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(LOG_FILE_PATH, LOG_FILE_MAX_SIZE, LOG_FILE_MAX_COUNT, true));
         } catch (const spdlog::spdlog_ex& e) {
             std::fprintf(stderr, "[log] file sink disabled (%s): %s\n", LOG_FILE_PATH, e.what());
         }
@@ -262,6 +305,8 @@ namespace TechEngine {
     // shutdownLogging(), the line still has to reach somewhere (ADR-011 §2). That fallback is
     // what LogTests' captureStderr case pins.
     static void deliverRecord(const LogRecord& record) {
+        ringWrite(record);
+
         bool delivered = false;
         for (const std::atomic<LogSinkFn>& slot: g_sinks) {
             const LogSinkFn sink = slot.load(std::memory_order_acquire);
@@ -281,6 +326,27 @@ namespace TechEngine {
     }
 
     namespace detail {
+        // Assert-only (LogInternal.hpp). `message` is already formatted — this skips
+        // logDispatch's vformat_to entirely rather than re-formatting finished text, and
+        // bypasses isEnabled(): a Critical assert failure must reach the ring/sinks
+        // regardless of a channel's runtime filter (unlike TE_LOGGER_CRITICAL, which honours
+        // it) — this is the process's last chance to record why it's about to abort.
+        void logRaw(Level level, LogChannel channel, std::string_view file, std::string_view function, std::uint32_t line, std::string_view message) {
+            const LogRecord record{
+                .time = std::chrono::system_clock::now(),
+                .frame = g_frame.load(std::memory_order_relaxed),
+                .level = level,
+                .moduleTag = logChannelModule(channel),
+                .channel = channel,
+                .message = message,
+                .file = file,
+                .function = function,
+                .line = line,
+            };
+
+            deliverRecord(record);
+        }
+
         void logDispatch(Level level, LogChannel channel, const std::source_location& loc, std::string_view fmtStr, std::format_args args) {
             if (static_cast<int>(level) < TE_LOG_ACTIVE_LEVEL) {
                 return;

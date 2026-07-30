@@ -452,3 +452,61 @@ TEST_CASE("registry overflow degrades to the default channel", "[base][log][chan
     REQUIRE(g_captured.size() == 1);
     REQUIRE(g_captured[0].message == "still delivered");
 }
+
+// The ring is always-on process-global state (ADR-011 §3/§8), not a pluggable sink — it has
+// no guard of its own to add/remove, so each ring case resets it directly.
+TEST_CASE("the ring captures records even with no sink installed", "[base][log][ring]") {
+    TechEngine::ringClear();
+    const TechEngine::Level previous = TechEngine::minLevel();
+    TechEngine::setMinLevel(TechEngine::Level::Trace);
+
+    TE_LOGGER_WARN("no sink needed");
+
+    TechEngine::setMinLevel(previous);
+
+    std::array<TechEngine::LogRecord, 1> snapshot{};
+    const std::size_t count = TechEngine::ringSnapshot(snapshot.data(), snapshot.size());
+
+    REQUIRE(count == 1);
+    REQUIRE(snapshot[0].message == "no sink needed");
+    REQUIRE(snapshot[0].level == TechEngine::Level::Warn);
+}
+
+TEST_CASE("the ring keeps the last LOG_RING_CAPACITY records, oldest evicted first", "[base][log][ring]") {
+    TechEngine::ringClear();
+    const TechEngine::Level previous = TechEngine::minLevel();
+    TechEngine::setMinLevel(TechEngine::Level::Trace);
+
+    const int total = static_cast<int>(TechEngine::LOG_RING_CAPACITY) + 5;
+    for (int i = 0; i < total; ++i) {
+        TE_LOGGER_INFO("record {0}", i);
+    }
+
+    TechEngine::setMinLevel(previous);
+
+    std::array<TechEngine::LogRecord, TechEngine::LOG_RING_CAPACITY> snapshot{};
+    const std::size_t count = TechEngine::ringSnapshot(snapshot.data(), snapshot.size());
+
+    REQUIRE(count == TechEngine::LOG_RING_CAPACITY);
+    REQUIRE(snapshot[0].message == "record 5");
+    REQUIRE(snapshot[count - 1].message == "record " + std::to_string(total - 1));
+}
+
+TEST_CASE("ringSnapshot never writes past the caller's capacity", "[base][log][ring]") {
+    TechEngine::ringClear();
+    const TechEngine::Level previous = TechEngine::minLevel();
+    TechEngine::setMinLevel(TechEngine::Level::Trace);
+
+    TE_LOGGER_INFO("one");
+    TE_LOGGER_INFO("two");
+    TE_LOGGER_INFO("three");
+
+    TechEngine::setMinLevel(previous);
+
+    std::array<TechEngine::LogRecord, 2> snapshot{};
+    const std::size_t count = TechEngine::ringSnapshot(snapshot.data(), snapshot.size());
+
+    REQUIRE(count == 2);
+    REQUIRE(snapshot[0].message == "two");
+    REQUIRE(snapshot[1].message == "three");
+}

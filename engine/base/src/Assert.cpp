@@ -1,8 +1,10 @@
 #include <TechEngine/base/Assert.hpp>
 
 #include "FormatBuffer.hpp"
+#include "LogInternal.hpp"
 #include "SourceName.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cstdio>
 #include <cstdlib>
@@ -70,10 +72,35 @@ namespace TechEngine {
         std::fflush(stderr);
     }
 
+    static constexpr std::size_t CRITICAL_MESSAGE_CAPACITY = ASSERT_MESSAGE_CAPACITY + 128;
+
+    // "[KIND] (cond) message" in one line — the Logger's LogRecord has no condition/kind
+    // fields of its own, so the assert context is flattened into the record's message rather
+    // than growing LogRecord for one caller. snprintf, not std::format: context.message is
+    // already-formatted, arbitrary text and may itself contain '{'/'}'.
+    static std::size_t composeCriticalMessage(const AssertContext& context, char* out, std::size_t capacity) {
+        if (capacity == 0) {
+            return 0;
+        }
+
+        const std::string_view kind = assertKindName(context.kind);
+        const int written = context.message.empty()
+                                 ? std::snprintf(out, capacity, "[%.*s] (%.*s)", static_cast<int>(kind.size()), kind.data(), static_cast<int>(context.condition.size()), context.condition.data())
+                                 : std::snprintf(out, capacity, "[%.*s] (%.*s) %.*s", static_cast<int>(kind.size()), kind.data(), static_cast<int>(context.condition.size()), context.condition.data(), static_cast<int>(context.message.size()), context.message.data());
+
+        if (written <= 0) {
+            return 0;
+        }
+        return std::min(static_cast<std::size_t>(written), capacity - 1);
+    }
+
     AssertResponse defaultAssertHandler(const AssertContext& context) {
-        // TODO(S2-T5): route through the Logger at Critical + flush all sinks before the
-        // abort (ADR-011 §6). stderr-only until that lands, so `base` still reports.
-        writeToStderr(context);
+        std::array<char, CRITICAL_MESSAGE_CAPACITY> messageStorage;
+        const std::size_t messageSize = composeCriticalMessage(context, messageStorage.data(), messageStorage.size());
+
+        detail::logRaw(Level::Critical, DEFAULT_CHANNEL, context.file, context.function, context.line, std::string_view{messageStorage.data(), messageSize});
+        flushLogs();
+
         return AssertResponse{false, assertKindIsFatal(context.kind)};
     }
 

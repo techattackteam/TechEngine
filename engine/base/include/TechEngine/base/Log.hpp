@@ -114,6 +114,16 @@ namespace TechEngine {
 
     bool removeLogSink(LogSinkFn sink);
 
+    inline constexpr std::size_t LOG_RING_CAPACITY = 64;
+
+    // Always-on, independent of the pluggable sink set above — every dispatched record lands
+    // here regardless of what's registered (ADR-011 §3, process-global by design per §8). The
+    // eventual `platform` crash handler reads it; this copies out up to `capacity` entries,
+    // oldest first, and returns the count actually written.
+    std::size_t ringSnapshot(LogRecord* out, std::size_t capacity);
+
+    void ringClear();
+
     void setDiagnosticFrame(std::uint64_t frame);
 
     namespace detail {
