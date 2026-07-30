@@ -84,9 +84,8 @@ namespace TechEngine {
         }
 
         const std::string_view kind = assertKindName(context.kind);
-        const int written = context.message.empty()
-                                 ? std::snprintf(out, capacity, "[%.*s] (%.*s)", static_cast<int>(kind.size()), kind.data(), static_cast<int>(context.condition.size()), context.condition.data())
-                                 : std::snprintf(out, capacity, "[%.*s] (%.*s) %.*s", static_cast<int>(kind.size()), kind.data(), static_cast<int>(context.condition.size()), context.condition.data(), static_cast<int>(context.message.size()), context.message.data());
+        const int written = context.message.empty() ? std::snprintf(out, capacity, "[%.*s] (%.*s)", static_cast<int>(kind.size()), kind.data(), static_cast<int>(context.condition.size()), context.condition.data())
+                                                    : std::snprintf(out, capacity, "[%.*s] (%.*s) %.*s", static_cast<int>(kind.size()), kind.data(), static_cast<int>(context.condition.size()), context.condition.data(), static_cast<int>(context.message.size()), context.message.data());
 
         if (written <= 0) {
             return 0;
