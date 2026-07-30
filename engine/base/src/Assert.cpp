@@ -98,7 +98,9 @@ namespace TechEngine {
         const std::size_t messageSize = composeCriticalMessage(context, messageStorage.data(), messageStorage.size());
 
         detail::logRaw(Level::Critical, DEFAULT_CHANNEL, context.file, context.function, context.line, std::string_view{messageStorage.data(), messageSize});
-        flushLogs();
+        if (assertKindIsFatal(context.kind)) {
+            flushLogs();
+        }
 
         return AssertResponse{false, assertKindIsFatal(context.kind)};
     }

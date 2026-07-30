@@ -3,7 +3,7 @@
 #include "FormatBuffer.hpp"
 #include "LogInternal.hpp"
 #include "SourceName.hpp"
-#include <spdlog/sinks/rotating_file_sink.h>
+#include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
@@ -21,8 +21,6 @@ namespace TechEngine {
     static constexpr std::uint16_t MAX_LOG_MODULES = 16;
     static constexpr std::uint16_t MAX_LOG_CHANNELS = 64;
     static constexpr std::size_t MAX_LOG_SINKS = 8;
-    static constexpr std::size_t LOG_FILE_MAX_SIZE = std::size_t{5} * 1024 * 1024;
-    static constexpr std::size_t LOG_FILE_MAX_COUNT = 3;
     static constexpr const char* LOG_FILE_PATH = "logs/techengine.log";
 
     struct LogModuleEntry {
@@ -231,10 +229,7 @@ namespace TechEngine {
         sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
 
         try {
-            // rotate_on_open=true — without it spdlog only rotates past LOG_FILE_MAX_SIZE, so
-            // every run appends to the same file instead of starting fresh (found running the
-            // S2-T5 smoke test: three log-format eras end up mixed in one file).
-            sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(LOG_FILE_PATH, LOG_FILE_MAX_SIZE, LOG_FILE_MAX_COUNT, true));
+            sinks.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(LOG_FILE_PATH, true));
         } catch (const spdlog::spdlog_ex& e) {
             std::fprintf(stderr, "[log] file sink disabled (%s): %s\n", LOG_FILE_PATH, e.what());
         }
