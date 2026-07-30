@@ -7,6 +7,10 @@ namespace TechEngine {
     }
 
     const FrameContext& FrameLoop::advance(double frameDeltaTime) {
+        if (frameDeltaTime < 0.0) {
+            frameDeltaTime = 0.0;
+        }
+
         const double clampedDeltaTime = frameDeltaTime > m_maxFrameDeltaTime ? m_maxFrameDeltaTime : frameDeltaTime;
 
         m_accumulator += clampedDeltaTime;
