@@ -3,6 +3,7 @@
 #include <TechEngine/base/Log.hpp>
 
 int main() {
+    TechEngine::registerLogModule("editor");
     TechEngine::initLogging();
     int x = 10;
     int y = -10;
@@ -15,5 +16,7 @@ int main() {
     TE_VERIFY(y == 10);
     TE_CHECK(x == 11, "x is not 11");
     TE_ASSERT(x == 11, "x is not 11");
-    return TechEngine::run();
+    TE_ENSURE(false, "smoke test - non-fatal path");
+    // fatal: logs Critical, flushes, then aborts the process
+    TechEngine::run();
 }

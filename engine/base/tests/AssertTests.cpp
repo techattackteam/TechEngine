@@ -1,8 +1,10 @@
 #include <TechEngine/base/Assert.hpp>
+#include <TechEngine/base/Log.hpp>
 
 #include "FormatBuffer.hpp"
 #include <catch2/catch_test_macros.hpp>
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -44,6 +46,39 @@ public:
 
 private:
     TechEngine::AssertHandlerFn m_previous;
+};
+
+struct CapturedLog {
+    TechEngine::Level level;
+    std::string message;
+    std::string file;
+    std::string function;
+    std::uint32_t line;
+};
+
+static std::vector<CapturedLog> g_loggedRecords;
+
+// Copies out immediately — record.message points into the dispatcher's stack buffer and does
+// not outlive this call.
+static void captureLogSink(const TechEngine::LogRecord& record) {
+    g_loggedRecords.push_back(CapturedLog{record.level, std::string{record.message}, std::string{record.file}, std::string{record.function}, record.line});
+}
+
+class LogCaptureGuard {
+public:
+    LogCaptureGuard() {
+        g_loggedRecords.clear();
+        TechEngine::addLogSink(&captureLogSink);
+    }
+
+    ~LogCaptureGuard() {
+        TechEngine::removeLogSink(&captureLogSink);
+        g_loggedRecords.clear();
+    }
+
+    LogCaptureGuard(const LogCaptureGuard&) = delete;
+
+    LogCaptureGuard& operator=(const LogCaptureGuard&) = delete;
 };
 
 TEST_CASE("setAssertHandler returns the previous handler", "[base][assert]") {
@@ -270,4 +305,49 @@ TEST_CASE("a throwing handler does not latch the in-flight guard", "[base][asser
     TE_ENSURE(false, "delivered after the throw");
 
     REQUIRE(g_fired.size() == 1);
+}
+
+// ADR-011 §6/§7: a failure logs Critical through the Logger, flushes, then the response's
+// abortProcess tells the macro whether to abort — this covers the log half; "the default
+// handler asks to abort exactly for fatal kinds" already covers abortProcess itself.
+TEST_CASE("the default handler routes the failure through the Logger at Critical", "[base][assert][log]") {
+    const LogCaptureGuard logGuard;
+
+    const TechEngine::AssertContext context{TechEngine::AssertKind::Ensure, "budget <= max", "over by 3", "AssertTests.cpp", "test", 42};
+    const TechEngine::AssertResponse response = TechEngine::defaultAssertHandler(context);
+
+    REQUIRE_FALSE(response.abortProcess);
+    REQUIRE(g_loggedRecords.size() == 1);
+    REQUIRE(g_loggedRecords[0].level == TechEngine::Level::Critical);
+    REQUIRE(g_loggedRecords[0].file == "AssertTests.cpp");
+    REQUIRE(g_loggedRecords[0].line == 42);
+    REQUIRE(g_loggedRecords[0].message.find("ENSURE") != std::string::npos);
+    REQUIRE(g_loggedRecords[0].message.find("budget <= max") != std::string::npos);
+    REQUIRE(g_loggedRecords[0].message.find("over by 3") != std::string::npos);
+}
+
+TEST_CASE("a message-less failure still composes a readable Critical line", "[base][assert][log]") {
+    const LogCaptureGuard logGuard;
+
+    const TechEngine::AssertContext context{TechEngine::AssertKind::Check, "device != nullptr", "", "AssertTests.cpp", "test", 7};
+    TechEngine::defaultAssertHandler(context);
+
+    REQUIRE(g_loggedRecords.size() == 1);
+    REQUIRE(g_loggedRecords[0].message == "[CHECK] (device != nullptr)");
+}
+
+// The ring is always-on (ADR-011 §3/§8) — not something the handler opts into — so a failure
+// lands there even with no pluggable sink installed.
+TEST_CASE("a failure's Critical log lands in the always-on ring", "[base][assert][log]") {
+    TechEngine::ringClear();
+
+    const TechEngine::AssertContext context{TechEngine::AssertKind::Check, "device != nullptr", "", "AssertTests.cpp", "test", 7};
+    TechEngine::defaultAssertHandler(context);
+
+    std::array<TechEngine::LogRecord, TechEngine::LOG_RING_CAPACITY> snapshot{};
+    const std::size_t count = TechEngine::ringSnapshot(snapshot.data(), snapshot.size());
+
+    REQUIRE(count >= 1);
+    REQUIRE(snapshot[count - 1].level == TechEngine::Level::Critical);
+    REQUIRE(snapshot[count - 1].line == 7);
 }
