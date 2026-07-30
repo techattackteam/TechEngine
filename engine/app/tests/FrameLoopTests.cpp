@@ -58,10 +58,10 @@ TEST_CASE("the loop's state comes only from the deltas fed in", "[app][loop]") {
     TechEngine::FrameLoop first(TechEngine::Role::DedicatedServer);
     TechEngine::FrameLoop second(TechEngine::Role::DedicatedServer);
 
-    for (const double delta : deltas) {
+    for (const double delta: deltas) {
         first.advance(delta);
     }
-    for (const double delta : deltas) {
+    for (const double delta: deltas) {
         second.advance(delta);
     }
 
@@ -106,7 +106,7 @@ TEST_CASE("alpha stays in [0, 1) across ragged frames", "[app][loop]") {
 
     TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer);
 
-    for (const double delta : deltas) {
+    for (const double delta: deltas) {
         const TechEngine::FrameContext& frame = loop.advance(delta);
 
         REQUIRE(frame.alpha >= 0.0F);
