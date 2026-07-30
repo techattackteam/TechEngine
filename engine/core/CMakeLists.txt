@@ -1,6 +1,6 @@
 techengine_module(core
   SOURCES     src/Core.cpp
-  HEADERS     include/TechEngine/core/Core.hpp
+  HEADERS     include/TechEngine/core/Core.hpp include/TechEngine/core/FrameContext.hpp
   DEPS        base platform
   LIBS        Jolt                             # authoritative physics (ADR-006 §1)
   LIBS_PRIVATE tomlplusplus::tomlplusplus)     # config parsing, .cpp-only
