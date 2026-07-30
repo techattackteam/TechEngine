@@ -32,7 +32,7 @@ TEST_CASE("sub-step frames accumulate until a step is due", "[app][loop]") {
     loop.advance(0.25);
 
     REQUIRE(loop.frame().tick == 0);
-    REQUIRE(loop.frame().alpha == Catch::Approx(0.5));
+    REQUIRE(loop.frame().alpha == Catch::Approx(0.5f));
 
     loop.advance(0.25);
 
@@ -109,9 +109,40 @@ TEST_CASE("alpha stays in [0, 1) across ragged frames", "[app][loop]") {
     for (const double delta: deltas) {
         const TechEngine::FrameContext& frame = loop.advance(delta);
 
-        REQUIRE(frame.alpha >= 0.0F);
-        REQUIRE(frame.alpha < 1.0F);
+        REQUIRE(frame.alpha >= 0.0f);
+        REQUIRE(frame.alpha < 1.0f);
     }
+}
+
+TEST_CASE("a zero delta advances the frame but not the tick", "[app][loop]") {
+    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer, 0.5, 10.0);
+
+    loop.advance(0.25);
+    const std::uint64_t tickBefore = loop.frame().tick;
+    const double accumulatorBefore = loop.accumulator();
+
+    loop.advance(0.0);
+
+    REQUIRE(loop.frame().tick == tickBefore);
+    REQUIRE(loop.frame().frameIndex == 2);
+    REQUIRE(loop.frame().deltaTime == Catch::Approx(0.0));
+    REQUIRE(loop.accumulator() == Catch::Approx(accumulatorBefore));
+}
+
+TEST_CASE("a negative delta is clamped to zero", "[app][loop]") {
+    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer, 0.5, 10.0);
+
+    loop.advance(0.25);
+    const std::uint64_t tickBefore = loop.frame().tick;
+    const double accumulatorBefore = loop.accumulator();
+
+    loop.advance(-1.0);
+
+    REQUIRE(loop.frame().tick == tickBefore);
+    REQUIRE(loop.accumulator() >= 0.0);
+    REQUIRE(loop.accumulator() == Catch::Approx(accumulatorBefore));
+    REQUIRE(loop.frame().deltaTime >= 0.0f);
+    REQUIRE(loop.frame().alpha >= 0.0f);
 }
 
 TEST_CASE("the published context carries the construction values", "[app][loop]") {

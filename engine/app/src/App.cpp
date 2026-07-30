@@ -15,7 +15,7 @@ namespace TechEngine {
         Clock::TimePoint previous = clock.now();
         constexpr std::uint64_t frames = 120;
 
-        const Clock::TimePoint::duration frameBudget = std::chrono::duration_cast<Clock::TimePoint::duration>(std::chrono::duration<double>(FrameLoop::FIXED_DELTA_TIME));
+        constexpr Clock::TimePoint::duration frameBudget = std::chrono::duration_cast<Clock::TimePoint::duration>(std::chrono::duration<double>(FrameLoop::FIXED_DELTA_TIME));
 
         for (std::uint64_t i = 0; i < frames; ++i) {
             clock.advanceFrame();
