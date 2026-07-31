@@ -18,20 +18,50 @@ stale-artifact check is *not* dropped — it's step 3 below.
 
 My input on focus (may be empty): $ARGUMENTS
 
+**Budget:** retro **≤ 80 lines**, no section over ~20. Sprint note = the template's
+skeleton, **one line per task** (title, done-condition, tags). Sprint-review entries are one
+line each. No prose recap of work already recorded elsewhere — link it.
+
 Steps:
-1. Read `docs/02 Roadmap/Roadmap.md` and the current quarter note, the active sprint, and
-   `docs/06 Sprints/Backlog.md`. Then, for each system in play, **start at its design note
-   in `docs/04 Design Docs/`** — the note is the hub, and its *Decided* section indexes the
-   ADR decisions. Follow an ADR link into `docs/03 Architecture/` only when the **rationale**
-   matters (CLAUDE.md rule 2). **No design note yet → the ADRs directly**, and say so: a
-   load-bearing system planned with neither is the artifact gate failing
-   ([[Planning Workflow — Artifact Gate]]), not a detail to work around.
+1. **Source the work from design notes** — `docs/06 Sprints/Planning Workflow — Artifact Gate.md`
+   § *Where plans come from* is the rule; this step executes it. Read
+   `docs/02 Roadmap/Roadmap.md`, the current quarter note and the active sprint for
+   direction. Then, for each system in play, **start at its design note in
+   `docs/04 Design Docs/`** and work the two sources in order:
+   - **Decided ∧ unbuilt ∧ has a consumer now** — the delta between the note's *Decided*
+     rows and the code. This is the queue; these become **Dev** tasks.
+   - **An open question that blocks one of those** — becomes a **Design** task. An open
+     question with nothing waiting on it earns **no card**.
+   Follow an ADR link into `docs/03 Architecture/` only when the **rationale** carries the
+   argument (CLAUDE.md rule 2). **Never size a card off an ADR body alone** — an Accepted
+   ADR can hold a partially-superseded clause ([[ADR Index]] → *Partial supersessions*); the
+   design note's *Decided* rows are the reconciled view.
+   - **Coverage check.** For each **system** in play, no design note → **say it out loud**
+     and put drafting the note in this sprint as a Design task, ordered before the dev work
+     it grounds. Read the ADR directly meanwhile — that's the fallback, not the plan.
+     Process/meta ADRs (004, 009, 012) have no system and never trigger this.
+   - **`docs/03 Architecture/Known Issues.md`** — one question: *does any `D<n>` block or
+     touch what we're planning?* Blocks → a Dev card ordered before it. Touches the same
+     files → no card, it rides along in that PR. Neither → it stays; that's the list working,
+     not a backlog of unfixed work. A `D<n>` whose condition has actually **fired** is no
+     longer latent: promote it to a **Bug** card and delete the entry.
+   - **Known bugs → `B` cards, planned in like any other work.** A bug is anything that
+     misbehaves *now*. Sweep three places: any **unfixed `B` card from the closing sprint**
+     (it carries — see step 8), anything the retro or the stale-artifact check surfaced as
+     actually broken, and Known Issue promotions above. Bugs planned in at the boundary are
+     **ordinary sized cards** — they displace nothing, because the sprint is being sized
+     fresh around them. Only a bug *arriving mid-sprint* displaces (step 5).
+   - **`docs/06 Sprints/Backlog.md` is read LAST**, and only to ask *"has any trigger
+     fired?"* It is a parking lot of one-line wants — it holds no decisions, so nothing can
+     be planned from it.
 2. If the current sprint is ending, first help me capture a short retrospective
    using `docs/Templates/Retrospective Template.md` into `docs/07 Journal/`. Cover the
    **final week** in it too (`git log --since="7 days ago" --oneline`) — no separate weekly
    review runs this weekend — including the honest sustainability check: did the sprint
    respect the cadence (deep/moderate/light/off)? energy, job+engine+karting balance,
-   anything to cut.
+   anything to cut. **Report the kind mix as numbers** — how many Dev / Design / Bug /
+   Process cards closed. Bug load is unplanned work the sprint absorbed, and Process load is
+   how much of it wasn't the goal; both are invisible unless counted.
 3. **Stale-artifact check** (inherited from `/weekly-review`, which does not run today).
    For features touched this sprint, spot-check their ADR / design note against what
    actually got built: did implementation diverge from the documented end-state? A stale
@@ -66,26 +96,45 @@ Steps:
      done-condition. Sizing them now writes cards the ADR will overturn (S2-T2's `fmt` seam)
      — see the gate note § *Don't size past an open decision*. Do not "helpfully" fill them
      in to make the sprint note look complete.
-   - **Priority + weight on every task** — `P1/P2/P3` and a weight (🟢 Deep / 🟠 Moderate
-     / 🟡 Light) matching the day-type it fits, so I can pick by the day I'm on. Tag
-     format `· P1 · 🟢 Deep`.
+   - **Kind, priority + weight on every task** — the **kind lives in the card ID**
+     (`S3-T4` Dev · `S3-D1` Design · `S3-B1` Bug · `S3-P2` Process), then `P1/P2/P3` and a
+     weight (🟢 Deep / 🟠 Moderate / 🟡 Light) matching the day-type it fits. Tag format
+     `· P1 · 🟢 Deep`. Design tasks are ordered **before** the story they unblock; Process
+     tasks are the **first thing cut** if capacity tightens — call the mix out loud when a
+     sprint is more than about a third Process.
+   - **Bugs enter two ways, and they behave differently.** Known *at planning* (step 1) → an
+     ordinary card, sized in with everything else, nothing displaced. Arriving *mid-sprint* →
+     still taken that sprint, but it **displaces**: name what it pushes out (lowest-priority
+     Process first) rather than stacking it on top, since piling unplanned work onto a full
+     sprint is the refill reflex the Sprint 01 retro flagged. Record the mid-sprint kind the
+     way T13–T15 were — a dated scope-change note in the sprint file.
 6. Create the sprint note from `docs/Templates/Sprint Template.md` and update the roadmap
    and the dashboard — including the Dashboard's **Next ceremony** line, which
    `/weekly-review` would normally roll.
-7. **Cut every pulled item out of `docs/06 Sprints/Backlog.md`** — pulling is a *move,
-   not a copy* (see that file's header). As each task is written, delete its backlog
-   entry; carry any design content it held into the sprint note, design note, or ADR
-   first, so nothing is dropped on the floor. Never leave a `✅ Scheduled` marker behind
-   — that's the same item in two places, and the copy will drift from the sprint note.
+7. **Cut every pulled item out of `docs/06 Sprints/Backlog.md`** — pulling is a *move, not a
+   copy*. As each task is written, delete its entry. Nothing needs carrying across: entries
+   are one line and hold no decisions, so there is nothing to rescue. If one *does* hold a
+   decision, that's the finding — the entry outgrew the file and its content belongs in the
+   design note or ADR, not in a longer backlog entry.
 8. **Reset `docs/06 Sprints/Sprint Board.md` for the new sprint** — the board shows *live
    state*, never history. It carries exactly **one** Done column, for the sprint in flight.
    Do this only after the retro (step 2) has mined it:
    - Fold the closing sprint's Done cards into that sprint note's `## Sprint review`
      ("what shipped" + demo/artifact), condensed to a line each. The sprint note is the
      permanent record; the column is not.
+   - **Carry the unfinished before emptying anything.** Every card left in To Do, In Progress
+     or Review / Demo is either **re-planned into the new sprint note** (new sprint's ID
+     prefix, old ID noted) or **consciously dropped and said out loud**. Emptying a column is
+     not a decision about the work in it. **An unfixed `B` card is never dropped** — a bug
+     doesn't stop being real because a sprint ended; re-plan it, or if it turns out to be
+     latent-and-silent after all, demote it to a `D<n>` in [[Known Issues]]. Anything dropped
+     without a home is the same gap the last bullet of this step already names.
    - **Empty** Done, In Progress, and Review / Demo; retitle Done for the new sprint.
    - Rebuild **To Do** from the new sprint note's tasks, tags included (`· P1 · 🟢 Deep`).
    - Backlog column stays a bare pointer to [[Backlog]] — cards never accumulate there.
-   Never open a second Done column to keep old cards around. If a card in a closing column
-   has no home in a sprint note, that's a gap — say so and place it before cutting.
+   Never open a second Done column to keep old cards around, and **never add a column for a
+   task kind** — kind lives in the card ID (a column would be a second home for the same
+   fact, and it hides that a Design card is sprint-bound critical-path work). If a card in a
+   closing column has no home in a sprint note, that's a gap — say so and place it before
+   cutting.
 9. This is planning only — no implementation.
