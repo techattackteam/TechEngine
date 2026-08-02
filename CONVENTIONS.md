@@ -6,10 +6,8 @@ no separate "AI style".
 **Rule 0:** match the surrounding file over any line here. If a file is the outlier, fix the
 file — don't fork the convention.
 
-> **Status: in progress (S2-T10, Sprint 02).** Written *while* `base` is being built so rules
-> land the day they're decided instead of being reconstructed at sprint end. Sections marked
-> **⚠️ provisional** are Claude's reading of existing code, not Miguel's ratified call — see
-> *Open* at the bottom.
+> Written *while* `base` is being built so rules land the day they're decided instead of being
+> reconstructed at sprint end.
 
 ## Mechanical vs judgment
 
@@ -35,8 +33,8 @@ restate them; it covers what a formatter cannot decide.
 | Include path | `<TechEngine/<module>/File.hpp>` | `<TechEngine/base/Log.hpp>` |
 | **Constants** | `SCREAMING_SNAKE_CASE` | `TRUNCATION_MARKER`, `MESSAGE_CAPACITY`, `FIXED_DELTA_TIME` |
 | **Macros** | `SCREAMING_SNAKE_CASE`, **`TE_` prefix** | `TE_LOGGER_INFO`, `TE_LOG_ACTIVE_LEVEL` |
-| **`enum class` values** ⚠️ provisional | `PascalCase` | `Level::Info`, `Level::Critical` |
-| **File-scope mutable state** ⚠️ provisional | `g_camelCase` + `static` | `g_minLevel` |
+| **`enum class` values** | `PascalCase` | `Level::Info`, `Level::Critical` |
+| **File-scope mutable state** | `g_camelCase` + `static` | `g_minLevel` |
 
 - **No `te_` / snake_case prefixes on C++ identifiers.** `baseVersion`, not `te_base_version`.
 - Include path is always `TechEngine/<module>/` — basename-collision-proof (ADR-008 §1).
@@ -108,6 +106,7 @@ first (`LogFormatBuffer`, not `FormatBuffer`) — that removes the risk without 
 |---|---|
 | A **gotcha** that will bite — non-obvious lifetime, a footgun the compiler allows | `message` points into the dispatch call's buffer; a sink that outlives the call must copy |
 | A **`TODO(S2-Tn)`** marking deliberately unfinished work | `TODO(S2-T3): per-channel level array replaces this global` |
+| A **`TODO(D<n>)`** pointing at a [[Known Issues]] entry — prefer this over a card ID for a known defect: cards die and their IDs go stale, `D<n>` doesn't | `TODO(D1): gate defaults to Trace if this TU never links base` |
 | A bare **`§ref`** to the decision | `// ADR-011 §1` |
 
 **Delete on sight:**
@@ -221,16 +220,13 @@ Flag these as they come up; each becomes a rule above.
 
 | Item | Current | Notes |
 |---|---|---|
-| `enum class` value casing | ⚠️ `PascalCase` (provisional) | First real enum landed in S2-T2 (`Level`). Artifacts already write `Level::Info`. **Needs ratifying.** |
-| Nested impl namespace | `TechEngine::detail` in use | Cuts against "one flat `TechEngine`". Macros need a non-curated target to call. **Needs ratifying.** |
-| File-scope state prefix | ⚠️ `g_camelCase` (provisional) | `g_minLevel`. Open whether `g_` survives now that constants are `SCREAMING_SNAKE` and `static` already marks linkage. |
+| ~~`enum class` value casing~~ | **`PascalCase`** — ratified Jul 30 | First real enum: `Level` (S2-T2). |
+| ~~Nested impl namespace~~ | **`TechEngine::detail`** — ratified Jul 30 | Macros need a non-curated target to call; the "one flat namespace" rule applies to *curated* API, not plumbing. |
+| ~~File-scope state prefix~~ | **`g_camelCase`** — ratified Jul 30 | `g_` earns its place: `static` marks linkage but doesn't distinguish mutable state from constants at a glance. |
 | **Ownership / smart pointers** | undecided | Fixes v1 F13. Proposed default: value + **handle** (index + generation); `unique_ptr` = single heap ownership; raw ptr/ref = non-owning, never deletes; `shared_ptr` only for genuine shared + unclear lifetime. Trigger: first real ownership decision. → [[Backlog]] |
 | const-correctness | `misc-const-correctness` on in `.clang-tidy` | Mechanical for locals. Open: params/methods by hand? |
 | Error handling | undecided | Exceptions vs `std::expected` vs error codes. Note `logDispatch` catches to keep diagnostics from killing logic. Trigger: first fallible API. |
-| Utility interface target | `te_warnings` | Keep `te_` as the internal build-only prefix — separates shippable libs (`TechEngine*`) from interface/test targets. |
-| Per-module test exes | `TechEngine<Module>Tests` | Built that way in `cmake/techengine_test.cmake`; ADR-008 §6 showed `te_<module>_tests`. Uniformity vs the build-only prefix above. |
-| Leaf exes | `editor`, `runtime` | v1 used `TechEngineEditor`; prefix to match if we want one scheme. |
-| `TechEngine::` alias case | lowercase `TechEngine::core` | Lowercase = zero churn; Pascal reads cleaner. |
+| **Target naming scheme** — one decision, four faces | shipping libs `TechEngine<Module>` · build-only/interface `te_*` (`te_warnings`) · tests `TechEngine<Module>Tests` · leaf exes bare (`editor`, `runtime`) · alias lowercase `TechEngine::core` | Decide the **principle** once — "`te_` = build-only, everything shippable is Pascal" — and tests + leaf exes fall out of it, leaving alias case as the only free choice. Prior spellings that don't match: ADR-008 §6 `te_<module>_tests`, v1's `TechEngineEditor`. Trigger: next new target. |
 
 ## Related
 

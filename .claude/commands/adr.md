@@ -7,6 +7,9 @@ Help me write an ADR for TechEngine.
 
 Decision / question: $ARGUMENTS
 
+**Budget:** ADR **≤ 120 lines**, no `§` over ~30. Rationale is the one place real prose is
+earned — spend it there and nowhere else. Options as a table, consequences as bullets.
+
 Steps:
 1. Read `docs/03 Architecture/ADR Index.md` for the next number + the **Accepted**
    set. Read any relevant code so the ADR is grounded in reality (cite `file:line`).
