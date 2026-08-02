@@ -7,9 +7,13 @@ Break down this feature for TechEngine — as scrum master, **co-create it with 
 equal driver** (draft and challenge; I decide scope): $ARGUMENTS
 
 Steps:
-1. Check `docs/05 Research/` and relevant ADRs — flag if research or an ADR is needed
-   BEFORE any implementation, and don't hand-wave those prerequisites. (For a technique,
-   the `engine-researcher` agent can evaluate it; for v1 prior art, `v1-reference-miner`.)
+1. Start at the system's **design note** in `docs/04 Design Docs/` — its *Decided* rows are
+   the reconciled view and the entry point; follow an ADR link only where a decision's
+   **rationale** carries the argument (CLAUDE.md rule 2, gate note § *Where plans come
+   from*). No note for a system in play → say so; that gap is itself a Design task. Then
+   check `docs/05 Research/` — flag if research or an ADR is needed BEFORE any
+   implementation, and don't hand-wave those prerequisites. (For a technique, the
+   `engine-researcher` agent can evaluate it; for v1 prior art, `v1-reference-miner`.)
 2. Read the relevant code/system docs so the breakdown is grounded.
 3. **Artifact gate** — run each item through
    `docs/06 Sprints/Planning Workflow — Artifact Gate.md`: decide by reversibility ×

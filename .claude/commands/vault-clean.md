@@ -31,9 +31,12 @@ maintained separately (`/consolidate-memory`).
    that are empty / placeholder-only.
 6. **Bloat** — notes over ~150 lines or covering more than one topic (→ split); append-
    only growth; prose where a table/bullets would carry it in fewer tokens.
-   **ADRs are exempt from the line count** — an ADR is one immutable decision record, and
-   splitting it breaks the `§` refs the whole vault cites. Judge an ADR on whether it covers
-   more than one *decision*, never on length.
+   **ADRs are never split** — an ADR is one immutable decision record, and splitting it
+   breaks the `§` refs the whole vault cites. But length is still a **signal**: an ADR past
+   ~150 lines usually carries *mechanism* that belongs in the system's design note (surface
+   tables, diagrams, workflows). Report it as a peel candidate for the **note**, never as a
+   split, and never by editing the Accepted ADR. Judge the ADR itself on whether it covers
+   more than one *decision*.
 7. **[[Backlog]] leaks** — entries are cut at `/sprint-plan`, so anything scheduled or
    built that's *still there* is a leak from planning, not routine cleanup. Flag entries
    marked `✅ Scheduled`, already on the [[Sprint Board]], or settled by an Accepted ADR.

@@ -215,7 +215,9 @@ rather than reporting a pass.
 
 ## Sustainable pace (this matters as much as the code)
 
-Deep work happens **Mon / Thu + one weekend day**; **Fri is moderate**; **Tue is light**
+Deep work happens **Mon / Thu + one weekend day** — but the weekend deep day is a **full
+day (2–3 deep tasks)**, while Mon/Thu are one after-job evening block (~1 deep task each);
+size plans accordingly. **Fri is moderate**; **Tue is light**
 (docs, reading, small fixes); **Wed is relaxed** (recovery); the **other weekend day is
 off** (usually Sat — karting). Weekend days are a swappable pair, not fixed: don't assume
 Sat is off or that Sun is the working day. Ceremonies anchor to the **weekend**, not a

@@ -16,7 +16,9 @@ implementation detail is deferred to when the subsystem is actually built.
 
 ## Ground every answer in the relevant decision
 
-Read the ADR(s) for the sub-area first, and evaluate against the *actual* stack — flag
+Read the sub-area's design note in `docs/04 Design Docs/` first (its *Decided* rows index
+the live decisions), then the ADR(s) below for rationale and constraints — and evaluate
+against the *actual* stack — flag
 when a technique needs something the current choice can't serve (that trips an ADR's
 "what would move this" trigger, which is a big deal, not a footnote):
 

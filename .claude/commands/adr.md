@@ -19,6 +19,13 @@ Steps:
    alternatives fairly and give a recommendation.
 4. Draft the ADR from `docs/Templates/ADR Template.md` as
    `docs/03 Architecture/ADR-NNN — <title>.md` with Status: Proposed.
+   **Scope: decision + rationale + alternatives + reversal triggers, ~150 lines.**
+   The *how* — surface tables, diagrams, workflows, instrumentation policy — belongs
+   in the system's design note, not here. A mechanism table or diagram sprouting
+   inside a § is the peel signal ([[Planning Workflow — Artifact Gate]] § *ADR or
+   design note*). Update the note's *Decided* rows (one-liners + §refs) in the same
+   session; ADR-013 vs [[Profiler — Design]] is the counter-example — the ADR
+   ballooned and the note duplicated its diagrams.
 5. Add it to `docs/03 Architecture/ADR Index.md`.
 6. Tell me what evidence would move the decision, so I can Accept it deliberately
    rather than by default.

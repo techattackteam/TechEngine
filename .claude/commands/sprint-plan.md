@@ -54,6 +54,8 @@ Steps:
    clear done-condition. Size the sprint to my real weekly rhythm (deep Mon/Thu + one
    weekend day; moderate Fri; light Tue; relaxed Wed; the other weekend day off) — the
    Dashboard calendar. Weekend days are a swappable pair, so don't hard-assign Sat/Sun.
+   **Deep days are not equal capacity:** Mon/Thu are after the day job → ~1 🟢 each; the
+   weekend deep day is a full day → **2–3 🟢**. Count slots that way, not one-per-day.
    - **Artifact gate** (`docs/06 Sprints/Planning Workflow — Artifact Gate.md`) — ADR,
      design note, or neither, by reversibility × blast radius; rarely both. Then apply
      **artifact timing**: flag every artifact-less item that warrants one — **draft the
