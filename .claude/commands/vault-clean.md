@@ -9,9 +9,14 @@ losing anything load-bearing. Scope is the `docs/` vault only; the AI memory fil
 maintained separately (`/consolidate-memory`).
 
 ## Reconcile everything against the sources of truth
-- **State:** [[Dashboard]] (Now + Rhythm), [[Sprint Board]] (task states), [[ADR Index]]
-  (the Accepted set), and **today's date**.
-- **Rules:** repo-root `CLAUDE.md` → "Token economy & vault cleanliness".
+- **State:** [[Dashboard]] (Now + Rhythm), [[Sprint Board]] (task states), the **design notes**
+  in `04 Design Docs/` (current shape of each system), [[ADR Index]] (the Accepted set — the
+  *why*, and frozen, so a note and an ADR disagreeing is not automatically the note's fault:
+  check *Partial supersessions* first), and **today's date**.
+- **Rules:** repo-root `CLAUDE.md` → "Token economy — chat responses AND the vault".
+
+**Budget:** the report is **one line per finding** — `note:line → action`. No per-finding
+paragraphs, no restating the content you're flagging. Group headers only.
 
 ## What to find (scan the whole target)
 1. **Stale / outdated** — content that contradicts the sources of truth: done or dropped

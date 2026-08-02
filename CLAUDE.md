@@ -83,8 +83,8 @@ I get them wrong *by habit*, so knowing where the spec lives isn't enough:
   real ODR risk. → *Internal linkage*.
 - **Default to NO comment.** Not "why, not what" — that bar was already in force and still
   produced narrated code. A comment must survive *"would a competent reader be wrong without
-  this?"* Only a **gotcha that will bite**, a **`TODO(S2-Tn)`**, or a bare **`§ref`** earns a
-  place. **Scaffolding is not a licence to narrate.** → *Comments*.
+  this?"* Only a **gotcha that will bite**, a **`TODO(S2-Tn)`** / **`TODO(D<n>)`**, or a bare
+  **`§ref`** earns a place. **Scaffolding is not a licence to narrate.** → *Comments*.
 
 ## Division of labor (important)
 
@@ -105,19 +105,36 @@ smallest scaffold that unblocks him and hand the logic back — **uncompiled** (
 "Build & run"): diagnosing the build is his half of that ownership. If a request is
 ambiguous between "write this for me" and "help me write this," ask.
 
-## Token economy — chat responses AND the vault
+## Token economy — what Claude reads, says, and writes
 
-Both are read by human AND AI every session. Optimize signal-per-token.
+All three are paid for every session, and chat and the vault are both read by human AND AI.
+Optimize signal-per-token.
+
+### Reading (input costs tokens too)
+
+**Search to locate; read to understand.** Grep/Glob return paths and matched lines for a
+fraction of what opening the wrong file costs, and the vault's indexes ([[ADR Index]],
+[[Sprint Board]], a design note's *Decided* section) exist to name the right file before
+one is opened. `Read` takes `offset`/`limit` when the target section is already known.
+
+**The failure mode is asymmetric — when in doubt, read more.** A confident answer built on a
+half-read file costs far more than the tokens it saved.
+
+- Under ~100 lines → just read it; searching costs more round trips than it saves.
+- About to **change, review, or design against** a file → read it in full. No exceptions.
+- Locating, orienting, "which of these forty notes" → search first.
+- **Never cite `file:line` from a grep hit alone.** Open it before quoting it.
 
 ### Chat responses
 
-- **Short by default. Answer, then stop.** No preamble, no restating the question, no
-  closing summary of what was just said.
-- **Lead with the answer.** Add detail only where it changes what Miguel does next.
+The hard rules live in the **`techengine` output style**
+([`.claude/output-styles/techengine.md`](.claude/output-styles/techengine.md)) — length caps,
+granularity mirroring, plain language — because a system prompt holds where a skimmed file
+doesn't. It must be the **active** style; if answers start running long, that's the first
+thing to check (`/output-style`, from an interactive terminal). Two rules that are
+TechEngine-specific and stay here:
+
 - Say **what changed** and **what's unverified** — not a tour of every file touched.
-- **No scaffolding for small answers**: no headers, no status tables, no bold-everything.
-  Reserve structure for genuinely multi-part answers.
-- A risk or caveat is **one line**, not a section.
 - Never re-explain a decision already written to the vault — link it.
 
 ### The vault
@@ -125,7 +142,10 @@ Both are read by human AND AI every session. Optimize signal-per-token.
 - Tables/bullets/short lines > prose. Caveman style OK for notes, logs, status:
   drop filler words + articles, keywords over sentences.
 - Reserve real prose for where nuance matters (ADR rationale, Vision).
-- One topic per note. Split when it passes ~150 lines or covers >1 topic.
+- **No section over ~30 lines.** File length is uncapped — a renderer design doc may
+  legitimately run long — but a section that outgrows a screen splits, or spins out as its
+  own note. Big file, small sections.
+- One topic per note. Split when it covers >1 topic.
 - No redundancy. Don't restate another note/ADR/CLAUDE.md/the code — link it
   (`[[note]]` or `file:line`).
 - Cite code as `file:line`; paste code only when essential.
@@ -169,17 +189,13 @@ Both are read by human AND AI every session. Optimize signal-per-token.
    without a measurement. See Performance.
 9. **Don't commit or push unless asked.** Never commit directly to `master`. When
    asked, cut the branch **from `origin/master`, freshly fetched** — never local
-   `master`, never a previous task's branch. The repo squash-merges onto a linear
-   history, so a merged branch's commits never appear on `master`; building on one
-   replays the whole PR as a conflict against itself (this is what conflicted
-   PRs #8–#10). Name it `<card ID>/<slug>` — `S2-T4/assert-tiers`. Since the vault
-   split, that name is the **only** thing linking a squashed engine commit back to
-   its board card, because the squash subject is taken from the branch
+   `master`, never a previous task's branch — the repo squash-merges, so building on a
+   merged branch replays its whole PR as a conflict against itself (that was PRs #8–#10).
+   Name it `<card ID>/<slug>` — `S2-T4/assert-tiers`. That name is the **only** link from
+   a squashed engine commit back to its board card
    ([ADR-012](docs/03%20Architecture/ADR-012%20—%20Vault%20repository%20split.md) §Consequences).
-   Vault commits are exempt from all of this: `docs/` is a **separate repository**
-   (`TechEngine-vault`, cloned in place — see "What this project is"), so its commits
-   are not engine commits at all. Commit straight to its own `master` from inside
-   `docs/` — no branch, no PR, no CI (ADR-012 §2).
+   **`docs/` is a separate repo** — commit straight to its own `master`, no branch, no PR,
+   no CI (ADR-012 §2).
 10. **Commits are authored by Miguel, full stop.** **Never** add a
     `Co-Authored-By: Claude` trailer, a `🤖 Generated with` line, or any other AI
     attribution to a commit message or PR body. This repo is his portfolio and its
