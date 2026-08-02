@@ -34,31 +34,21 @@ paragraphs, no restating the content you're flagging. Group headers only.
    renamed notes.
 5. **Orphans / empty** — notes linked from nowhere and reachable by no path, or notes
    that are empty / placeholder-only.
-6. **Bloat** — any **section over ~30 lines** (→ split it, or spin it out as its own note),
-   notes covering more than one topic, append-only growth, prose where a table/bullets would
-   carry it in fewer tokens. Judge **sections**, not files: a long design doc made of tight
-   sections is healthy. **ADRs are exempt** — one immutable decision record, and splitting it
-   breaks the `§` refs the vault cites; judge an ADR on whether it covers more than one
-   *decision*.
-7. **[[Backlog]] leaks** — it is a parking lot of one-line wants, so the tripwires are
-   mechanical. Flag any entry that:
-   - **runs past ~2 lines**, or carries a decision, a rationale, a dropped alternative or a
-     `How:` — it has outgrown the file; its content belongs in a design note or ADR, and
-     that promotion is the finding (do **not** fix it by trimming words);
-   - is **settled** by an Accepted ADR or a design note — decided ⇒ deleted, **no tombstone**;
-   - is already on the [[Sprint Board]], or marked `✅ Scheduled` — pulling is a move, not a
-     copy;
-   - carries **no `**Trigger:**`**;
-   - has a trigger that has **already fired** — it's either a card or a re-trigger, not parked.
-
-   Cutting is safe here by design: entries hold no decisions, so there is nothing to rescue
-   first. An entry that *would* lose something on deletion is itself finding #1.
-8. **[[Known Issues]] rot** — the list only earns its keep if it stays true. Flag a `D<n>`
-   that: is **already fixed** in the code (verify the `file:line`, don't assume — then it's
-   deleted, not ticked) · has had its **condition fire**, so it is now a *bug* and belongs on
-   the [[Sprint Board]] as a `B` card · **misbehaves today** and was filed here instead of as
-   a bug · would fail **loudly** and so is below the bar · has sat **3+ sprints** untouched
-   (card it or delete it) · or whose `file:line` no longer resolves.
+6. **Bloat** — notes over ~150 lines or covering more than one topic (→ split); append-
+   only growth; prose where a table/bullets would carry it in fewer tokens.
+   **ADRs are never split** — an ADR is one immutable decision record, and splitting it
+   breaks the `§` refs the whole vault cites. But length is still a **signal**: an ADR past
+   ~150 lines usually carries *mechanism* that belongs in the system's design note (surface
+   tables, diagrams, workflows). Report it as a peel candidate for the **note**, never as a
+   split, and never by editing the Accepted ADR. Judge the ADR itself on whether it covers
+   more than one *decision*.
+7. **[[Backlog]] leaks** — entries are cut at `/sprint-plan`, so anything scheduled or
+   built that's *still there* is a leak from planning, not routine cleanup. Flag entries
+   marked `✅ Scheduled`, already on the [[Sprint Board]], or settled by an Accepted ADR.
+   Before proposing a cut, **check the thinking has a durable home** (sprint note, design
+   note, ADR, code) — if the entry is its only home, propose a **move**. Settled-without-
+   building items collapse to a one-line tombstone. A parked item with no `**Trigger:**`
+   is also a finding.
 
 ## Guardrails — do NOT over-clean
 - **Accepted ADRs are immutable** ([[ADR Index]]). Never rewrite an Accepted ADR's
