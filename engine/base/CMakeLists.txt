@@ -1,6 +1,6 @@
 techengine_module(base
   SOURCES src/Base.cpp src/Log.cpp src/Clock.cpp src/Assert.cpp
-  HEADERS include/TechEngine/base/Base.hpp include/TechEngine/base/Log.hpp include/TechEngine/base/Clock.hpp include/TechEngine/base/Assert.hpp include/TechEngine/base/Format.hpp
+  HEADERS include/TechEngine/base/Base.hpp include/TechEngine/base/Log.hpp include/TechEngine/base/Clock.hpp include/TechEngine/base/Assert.hpp include/TechEngine/base/Format.hpp include/TechEngine/base/Math.hpp
   LIBS    glm::glm
   LIBS_PRIVATE spdlog::spdlog)
 
@@ -25,5 +25,6 @@ if(TE_BUILD_TESTS)
           tests/BaseTests.cpp
           tests/LogTests.cpp
           tests/ClockTests.cpp
-          tests/AssertTests.cpp)
+          tests/AssertTests.cpp
+          tests/MathTests.cpp)
 endif()
