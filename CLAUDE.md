@@ -231,18 +231,20 @@ rather than reporting a pass.
 
 ## Sustainable pace (this matters as much as the code)
 
-The weekly rhythm — which days are deep / moderate / light / off, and which weekend day is
-which — lives on the vault **Dashboard**. Read it there when sizing work; don't reconstruct
-it from here. Three rules must hold without looking:
-
-- **Ceremonies anchor to the weekend**, not a weekday: `/weekly-review` once per weekend,
-  `/sprint-plan` every **4th** weekend *instead of* it — never both.
-- **Sprints are 4 weeks, Sat → Fri, and do not track calendar months.** Never derive a
-  sprint date from the month; the sprint note's own range is the source of truth.
-- **Weekend days are a swappable pair.** Don't assume Sat is the day off.
-
-When a session runs long or scope creeps, **say so and suggest stopping** — a stalled
-rewrite or a burned-out maintainer ends this project faster than any bug.
+Deep work happens **Mon / Thu + one weekend day** — but the weekend deep day is a **full
+day (2–3 deep tasks)**, while Mon/Thu are one after-job evening block (~1 deep task each);
+size plans accordingly. **Fri is moderate**; **Tue is light**
+(docs, reading, small fixes); **Wed is relaxed** (recovery); the **other weekend day is
+off** (usually Sat — karting). Weekend days are a swappable pair, not fixed: don't assume
+Sat is off or that Sun is the working day. Ceremonies anchor to the **weekend**, not a
+weekday — `/weekly-review` once per weekend, `/sprint-plan` every **4th** weekend *instead of*
+that weekend's review (it absorbs it — never run both). Sprints
+are **4 weeks, Sat → Fri**; the planning weekend is **day 1 of the new sprint** and stays a
+dev day. Sprints do **not** track calendar months — never derive a date from the month; the
+sprint note's own range is the source of truth.
+Full weekly rhythm + the weekend rule live on the vault Dashboard. When a session is running long or
+scope is creeping, **say so and suggest stopping** — a stalled rewrite or a
+burned-out maintainer ends this project faster than any bug.
 
 ## Role
 
