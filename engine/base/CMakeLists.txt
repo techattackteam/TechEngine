@@ -9,6 +9,7 @@ techengine_module(base
           include/TechEngine/base/diagnostics/FormatString.hpp
           include/TechEngine/base/math/Math.hpp
           include/TechEngine/base/math/Format.hpp
+          include/TechEngine/base/profiler/Profile.hpp
           include/TechEngine/base/time/Clock.hpp
   LIBS    glm::glm
   LIBS_PRIVATE spdlog::spdlog)
