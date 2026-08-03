@@ -12,7 +12,6 @@
 #include <atomic>
 #include <cstdio>
 #include <ctime>
-#include <iterator>
 #include <memory>
 #include <vector>
 
@@ -52,10 +51,6 @@ namespace TechEngine {
         std::array<char, MESSAGE_CAPACITY> messageStorage{};
     };
 
-    // Always-on process-global state (ADR-011 §8), not a pluggable sink — every dispatched
-    // record lands here regardless of what's in g_sinks. Slot choice is a bare fetch_add
-    // modulo; two threads racing the same wrapped slot can tear a write. Accepted for a
-    // best-effort crash trail, not a linearizable log.
     static std::array<RingEntry, LOG_RING_CAPACITY> g_ring{};
     static std::atomic<std::uint64_t> g_ringWritten{0};
 
@@ -318,11 +313,6 @@ namespace TechEngine {
     }
 
     namespace detail {
-        // Assert-only (LogInternal.hpp). `message` is already formatted — this skips
-        // logDispatch's vformat_to entirely rather than re-formatting finished text, and
-        // bypasses isEnabled(): a Critical assert failure must reach the ring/sinks
-        // regardless of a channel's runtime filter (unlike TE_LOGGER_CRITICAL, which honours
-        // it) — this is the process's last chance to record why it's about to abort.
         void logRaw(Level level, LogChannel channel, std::string_view file, std::string_view function, std::uint32_t line, std::string_view message) {
             const LogRecord record{
                 .time = std::chrono::system_clock::now(),

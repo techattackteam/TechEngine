@@ -65,9 +65,6 @@ namespace TechEngine {
     inline constexpr LogModule DEFAULT_MODULE{};
     inline constexpr LogChannel DEFAULT_CHANNEL{};
 
-    // `message` points into the dispatch call's stack buffer — a sink that outlives the call
-    // must copy it. `file`/`function` are safe: they are substrings of source_location's
-    // static strings.
     struct LogRecord {
         std::chrono::system_clock::time_point time;
         std::uint64_t frame{0};
