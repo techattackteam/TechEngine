@@ -10,18 +10,6 @@
 #include <thread>
 
 namespace TechEngine {
-
-    void testFunction() {
-        {
-            for (int i = 0; i < 1000; i++) {
-                TE_PROFILER_SCOPE("testFunction inner SCOPE");
-            }
-            TE_PROFILER_SCOPE("testFunction outer SCOPE");
-        }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(30));
-        TE_PROFILER_FUNCTION();
-    }
     int run() {
         Clock clock;
         FrameLoop loop(Role::Client);
@@ -56,7 +44,6 @@ namespace TechEngine {
             while (clock.now() < frameDeadline) {
                 std::this_thread::yield();
             }
-            testFunction();
 
             TE_PROFILER_FRAME();
         }
