@@ -8,12 +8,12 @@
 namespace TechEngine {
     namespace detail {
         consteval bool hasAutomaticField(std::string_view text) {
-            for (std::size_t i = 0; i < text.size(); ++i) {
+            for (std::size_t i = 0; i < text.size(); i++) {
                 if (text[i] != '{') {
                     continue;
                 }
                 if (i + 1 < text.size() && text[i + 1] == '{') {
-                    ++i;
+                    i++;
                     continue;
                 }
 

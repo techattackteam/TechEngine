@@ -1,7 +1,7 @@
-#include <TechEngine/base/Assert.hpp>
-#include <TechEngine/base/Log.hpp>
+#include <TechEngine/base/diagnostics/Assert.hpp>
+#include <TechEngine/base/diagnostics/Log.hpp>
 
-#include "FormatBuffer.hpp"
+#include "diagnostics/FormatBuffer.hpp"
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
@@ -223,7 +223,7 @@ TEST_CASE("TE_ASSERT follows the per-config gate", "[base][assert]") {
 TEST_CASE("TE_ENSURE yields its value and reports once per call site", "[base][assert]") {
     const AssertHandlerGuard guard;
 
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 5; i++) {
         REQUIRE(!TE_ENSURE(false));
     }
 

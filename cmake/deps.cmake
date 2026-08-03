@@ -53,8 +53,12 @@ FetchContent_Declare(tomlplusplus
 # cache (separate-PDB side output) — every Jolt TU then recompiles each CI run. On MSVC
 # we already get embedded debug info from CMAKE_MSVC_DEBUG_INFORMATION_FORMAT (/Z7), so
 # drop Jolt's own flag there; Clang (-g) caches fine, so leave it on for the Linux legs.
+# Jolt defaults USE_STATIC_MSVC_RUNTIME_LIBRARY ON (/MTd); every other target here is on
+# CMake's default /MDd, and mixing CRTs is an LNK2038 the moment the linker pulls a Jolt
+# object in. Ours is the majority, so Jolt moves.
 if(MSVC)
   set(GENERATE_DEBUG_SYMBOLS OFF CACHE BOOL "" FORCE)
+  set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
 endif()
 set(TARGET_UNIT_TESTS       OFF CACHE BOOL "" FORCE)
 set(TARGET_HELLO_WORLD      OFF CACHE BOOL "" FORCE)
