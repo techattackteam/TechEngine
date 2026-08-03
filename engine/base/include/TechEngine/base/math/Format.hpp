@@ -55,7 +55,12 @@ struct std::formatter<glm::mat<C, R, T, Q>> {
 
     auto format(const glm::mat<C, R, T, Q>& value, std::format_context& context) const {
         // TODO(S3-T2): "<prefix>mat<C>((c0…), (c1…))" — square is "mat4", else "mat3x4";
-        auto out = std::format_to(context.out(), "{0}mat{1}(", TechEngine::detail::mathTypePrefix<T>(), C);
+        auto out = std::format_to(context.out(), "{0}mat", TechEngine::detail::mathTypePrefix<T>());
+        if constexpr (C == R) {
+            out = std::format_to(out, "{1}(", TechEngine::detail::mathTypePrefix<T>(), C);
+        } else {
+            out = std::format_to(out, "{1}x{2}(", TechEngine::detail::mathTypePrefix<T>(), C, R);
+        }
         for (glm::length_t i = 0; i < C; i++) {
             if (i > 0) {
                 out = std::format_to(out, ", ");

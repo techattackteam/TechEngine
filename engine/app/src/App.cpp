@@ -46,8 +46,10 @@ namespace TechEngine {
         }
         Vec3 position = Vec3(1.4f, 3, 4);
         Mat4 matrix = Mat4(1, 2, 3, 4, 5, 67, 8, 9, 1, 2, 3, 54, 6, 1, 2, 2);
+        Mat2x3 matrix2x3 = Mat2x3(1, 2, 3, 4, 5, 6);
         TE_LOGGER_INFO("{0:.2f}", position);
         TE_LOGGER_INFO("{0:.2f}", matrix);
+        TE_LOGGER_INFO("{0:.2f}", matrix2x3);
 
         return 0;
     }

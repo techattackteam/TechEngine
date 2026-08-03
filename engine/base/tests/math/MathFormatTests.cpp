@@ -28,6 +28,11 @@ TEST_CASE("a square matrix renders as columns", "[base][math][format]") {
     REQUIRE(std::format("{0}", TechEngine::Mat3{1.0f}) == "mat3((1, 0, 0), (0, 1, 0), (0, 0, 1))");
 }
 
+TEST_CASE("a non-square matrix renders as columns", "[base][math][format]") {
+    REQUIRE(std::format("{0}", TechEngine::Mat4x3{1.0f}) == "mat4x3((1, 0, 0), (0, 1, 0), (0, 0, 1), (0, 0, 0))");
+    REQUIRE(std::format("{0}", TechEngine::Mat3x4{1.0f}) == "mat3x4((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0))");
+}
+
 TEST_CASE("a quaternion renders xyzw", "[base][math][format]") {
     REQUIRE(std::format("{0}", TechEngine::Quat{1.0f, 0.0f, 0.0f, 0.0f}) == "quat(0, 0, 0, 1)");
     REQUIRE(std::format("{0}", TechEngine::Quat{0.5f, 0.5f, 0.0f, 0.0f}) == "quat(0.5, 0, 0, 0.5)");
