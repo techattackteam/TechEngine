@@ -1,8 +1,8 @@
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/app/FrameLoop.hpp>
-#include <TechEngine/base/time/Clock.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/math/Format.hpp>
+#include <TechEngine/base/time/Clock.hpp>
 
 #include <chrono>
 #include <cstdint>
