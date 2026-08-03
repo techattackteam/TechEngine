@@ -13,6 +13,7 @@ endif()
 # --- global options ---------------------------------------------------------
 option(TE_BUILD_TESTS       "Build the per-module test suites"        ON)
 option(TE_ENABLE_CLANG_TIDY "Run clang-tidy on first-party targets"   OFF)
+option(TE_PROFILE           "Build with the Tracy profiler client"    OFF)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
