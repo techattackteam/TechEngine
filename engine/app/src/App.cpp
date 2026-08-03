@@ -2,6 +2,7 @@
 #include <TechEngine/app/FrameLoop.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/math/Format.hpp>
+#include <TechEngine/base/profiler/Profile.hpp>
 #include <TechEngine/base/time/Clock.hpp>
 
 #include <chrono>
@@ -9,6 +10,18 @@
 #include <thread>
 
 namespace TechEngine {
+
+    void testFunction() {
+        {
+            for (int i = 0; i < 1000; i++) {
+                TE_PROFILER_SCOPE("testFunction inner SCOPE");
+            }
+            TE_PROFILER_SCOPE("testFunction outer SCOPE");
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        TE_PROFILER_FUNCTION();
+    }
     int run() {
         Clock clock;
         FrameLoop loop(Role::Client);
@@ -43,6 +56,9 @@ namespace TechEngine {
             while (clock.now() < frameDeadline) {
                 std::this_thread::yield();
             }
+            testFunction();
+
+            TE_PROFILER_FRAME();
         }
         Vec3 position = Vec3(1.4f, 3, 4);
         Mat4 matrix = Mat4(1, 2, 3, 4, 5, 67, 8, 9, 1, 2, 3, 54, 6, 1, 2, 2);
