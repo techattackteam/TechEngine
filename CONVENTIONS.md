@@ -30,7 +30,7 @@ restate them; it covers what a formatter cannot decide.
 | Members | `m_camelCase` | `m_frameCount` |
 | Locals / params | `camelCase` | `passIndex` |
 | Files (paired `.hpp`/`.cpp`) | `PascalCase`, match primary type | `Log.hpp` / `Log.cpp` |
-| Include path | `<TechEngine/<module>/File.hpp>` | `<TechEngine/base/Log.hpp>` |
+| Include path | `<TechEngine/<module>/<utility>/File.hpp>` | `<TechEngine/base/diagnostics/Log.hpp>` |
 | **Constants** | `SCREAMING_SNAKE_CASE` | `TRUNCATION_MARKER`, `MESSAGE_CAPACITY`, `FIXED_DELTA_TIME` |
 | **Macros** | `SCREAMING_SNAKE_CASE`, **`TE_` prefix** | `TE_LOGGER_INFO`, `TE_LOG_ACTIVE_LEVEL` |
 | **`enum class` values** | `PascalCase` | `Level::Info`, `Level::Critical` |
@@ -149,13 +149,13 @@ a guarantee, it needs a guard, not a comment.
 **Our headers come before any external or standard header.** No exceptions, including in tests.
 
 ```cpp
-#include <TechEngine/base/Log.hpp>   // 1. the paired header, first, alone
-                                     //
-#include <TechEngine/base/Clock.hpp> // 2. other TechEngine headers
-                                     //
-#include <spdlog/spdlog.h>           // 3. third-party (incl. catch2)
-                                     //
-#include <array>                     // 4. standard library
+#include <TechEngine/base/diagnostics/Log.hpp> // 1. the paired header, first, alone
+                                               //
+#include <TechEngine/base/time/Clock.hpp>      // 2. other TechEngine headers
+                                               //
+#include <spdlog/spdlog.h>                     // 3. third-party (incl. catch2)
+                                               //
+#include <array>                               // 4. standard library
 #include <atomic>
 ```
 
@@ -178,6 +178,11 @@ that violates it. `IncludeIsMainRegex: '(Tests)?$'` is what makes `LogTests.cpp`
 ## Headers
 
 - `#pragma once`, never include guards.
+- **One folder per utility, named after its design note** — `base/diagnostics/` ([[Logger —
+  Design]] + [[Assert — Design]], one ADR), `base/math/`, `base/time/`. `src/` and `tests/`
+  mirror it. The module's own header (`base/Base.hpp`) stays at the root; a header shared by
+  two utilities lives in the folder of the note that owns it, not at the root. Decided
+  2026-08-03 (S3-T2), when `base` had two `Format.hpp` files.
 - **Forward-declare in headers; include in the `.cpp`.** A public header pulling a heavy
   transitive include is a cost every consumer pays.
 - **No third-party type in a module's public header** unless the ADR says so — that's the
@@ -199,6 +204,19 @@ whole API surface for. It also reads as attribute-soup next to `constexpr` / `st
 - **Revisit only for a fallible API** where the discarded value *is* the error (`std::expected`,
   a `bool` "did it work"). That is the Error-handling row in *Open* below — decide it there, for
   that shape, not as a blanket habit. Today's only case (`addLogSink`) is a bool nobody ignores.
+
+## Loops — post-increment in the `for` step
+
+```cpp
+for (int i = 0; i < 10; i++)
+```
+
+`i++`, not `++i`. Decided 2026-08-03. The step expression's result is discarded, so the two are
+identical for scalars and for any sane iterator; `i++` is what the loop idiom reads as. Nothing
+enforces it — no clang-tidy check in our set covers increment form.
+
+Applies to the `for` step only. In an expression whose value is used, write what the expression
+actually needs.
 
 ## CMake
 

@@ -1,4 +1,4 @@
-#include <TechEngine/base/Clock.hpp>
+#include <TechEngine/base/time/Clock.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 

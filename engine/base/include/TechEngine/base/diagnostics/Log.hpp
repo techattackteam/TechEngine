@@ -1,4 +1,7 @@
 #pragma once
+
+#include <TechEngine/base/diagnostics/FormatString.hpp>
+
 #include <chrono>
 #include <source_location>
 
@@ -85,7 +88,6 @@ namespace TechEngine {
 
     void flushLogs();
 
-    // `name` is stored, never copied — pass a literal or a static. ADR-011 §2.
     LogModule registerLogModule(std::string_view name, Level defaultLevel = Level::Trace);
 
     LogChannel registerLogChannel(std::string_view name, LogModule moduleTag, Level defaultLevel = Level::Trace);
@@ -116,10 +118,6 @@ namespace TechEngine {
 
     inline constexpr std::size_t LOG_RING_CAPACITY = 64;
 
-    // Always-on, independent of the pluggable sink set above — every dispatched record lands
-    // here regardless of what's registered (ADR-011 §3, process-global by design per §8). The
-    // eventual `platform` crash handler reads it; this copies out up to `capacity` entries,
-    // oldest first, and returns the count actually written.
     std::size_t ringSnapshot(LogRecord* out, std::size_t capacity);
 
     void ringClear();
@@ -132,7 +130,7 @@ namespace TechEngine {
         std::size_t flattenRecord(const LogRecord& record, char* out, std::size_t capacity);
 
         template<typename... Args>
-        void logImpl(Level level, LogChannel channel, const std::source_location& loc, std::format_string<Args...> fmtStr, Args&&... args) {
+        void logImpl(Level level, LogChannel channel, const std::source_location& loc, PositionalFormat<Args...> fmtStr, Args&&... args) {
             logDispatch(level, channel, loc, fmtStr.get(), std::make_format_args(args...));
         }
     }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <TechEngine/base/Format.hpp>
+#include <TechEngine/base/diagnostics/FormatString.hpp>
 
 #include <atomic>
 #include <cstdint>

@@ -1,5 +1,5 @@
-#include <TechEngine/base/Assert.hpp>
-#include <TechEngine/base/Log.hpp>
+#include <TechEngine/base/diagnostics/Assert.hpp>
+#include <TechEngine/base/diagnostics/Log.hpp>
 
 #include "FormatBuffer.hpp"
 #include <catch2/catch_test_macros.hpp>

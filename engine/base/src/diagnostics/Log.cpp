@@ -1,4 +1,4 @@
-#include <TechEngine/base/Log.hpp>
+#include <TechEngine/base/diagnostics/Log.hpp>
 
 #include "FormatBuffer.hpp"
 #include "LogInternal.hpp"

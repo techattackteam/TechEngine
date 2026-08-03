@@ -1,4 +1,4 @@
-#include <TechEngine/base/Assert.hpp>
+#include <TechEngine/base/diagnostics/Assert.hpp>
 
 #include "FormatBuffer.hpp"
 #include "LogInternal.hpp"
