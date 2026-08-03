@@ -1,4 +1,7 @@
 #pragma once
+
+#include <TechEngine/base/diagnostics/FormatString.hpp>
+
 #include <chrono>
 #include <source_location>
 
@@ -132,7 +135,7 @@ namespace TechEngine {
         std::size_t flattenRecord(const LogRecord& record, char* out, std::size_t capacity);
 
         template<typename... Args>
-        void logImpl(Level level, LogChannel channel, const std::source_location& loc, std::format_string<Args...> fmtStr, Args&&... args) {
+        void logImpl(Level level, LogChannel channel, const std::source_location& loc, PositionalFormat<Args...> fmtStr, Args&&... args) {
             logDispatch(level, channel, loc, fmtStr.get(), std::make_format_args(args...));
         }
     }

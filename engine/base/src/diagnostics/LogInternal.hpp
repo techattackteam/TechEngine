@@ -1,6 +1,6 @@
 #pragma once
 
-#include <TechEngine/base/Log.hpp>
+#include <TechEngine/base/diagnostics/Log.hpp>
 
 #include <cstdint>
 #include <string_view>

@@ -1,4 +1,4 @@
-#include <TechEngine/base/Math.hpp>
+#include <TechEngine/base/math/Math.hpp>
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/mat3x3.hpp>

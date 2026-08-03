@@ -1,6 +1,15 @@
 techengine_module(base
-  SOURCES src/Base.cpp src/Log.cpp src/Clock.cpp src/Assert.cpp
-  HEADERS include/TechEngine/base/Base.hpp include/TechEngine/base/Log.hpp include/TechEngine/base/Clock.hpp include/TechEngine/base/Assert.hpp include/TechEngine/base/Format.hpp include/TechEngine/base/Math.hpp
+  SOURCES src/Base.cpp
+          src/diagnostics/Log.cpp
+          src/diagnostics/Assert.cpp
+          src/time/Clock.cpp
+  HEADERS include/TechEngine/base/Base.hpp
+          include/TechEngine/base/diagnostics/Log.hpp
+          include/TechEngine/base/diagnostics/Assert.hpp
+          include/TechEngine/base/diagnostics/FormatString.hpp
+          include/TechEngine/base/math/Math.hpp
+          include/TechEngine/base/math/Format.hpp
+          include/TechEngine/base/time/Clock.hpp
   LIBS    glm::glm
   LIBS_PRIVATE spdlog::spdlog)
 
@@ -23,8 +32,9 @@ target_compile_definitions(TechEngineBase PUBLIC
 if(TE_BUILD_TESTS)
   techengine_test(base SOURCES
           tests/BaseTests.cpp
-          tests/LogTests.cpp
-          tests/ClockTests.cpp
-          tests/AssertTests.cpp
-          tests/MathTests.cpp)
+          tests/diagnostics/LogTests.cpp
+          tests/diagnostics/AssertTests.cpp
+          tests/math/MathTests.cpp
+          tests/math/MathFormatTests.cpp
+          tests/time/ClockTests.cpp)
 endif()

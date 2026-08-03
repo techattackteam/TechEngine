@@ -1,6 +1,6 @@
-#include <TechEngine/base/Log.hpp>
+#include <TechEngine/base/diagnostics/Log.hpp>
 
-#include "FormatBuffer.hpp"
+#include "diagnostics/FormatBuffer.hpp"
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
@@ -423,7 +423,7 @@ TEST_CASE("flatten never writes past its buffer", "[base][log][format]") {
     const std::size_t size = TechEngine::detail::flattenRecord(record, storage.data(), capacity);
 
     REQUIRE(size <= capacity);
-    for (std::size_t i = capacity; i < storage.size(); ++i) {
+    for (std::size_t i = capacity; i < storage.size(); i++) {
         REQUIRE(storage[i] == '\0');
     }
 }
@@ -439,7 +439,7 @@ TEST_CASE("registry overflow degrades to the default channel", "[base][log][chan
     REQUIRE_FALSE(first == TechEngine::DEFAULT_CHANNEL);
 
     TechEngine::LogChannel last = first;
-    for (int i = 0; i < 128; ++i) {
+    for (int i = 0; i < 128; i++) {
         last = TechEngine::registerLogChannel("filler", owner);
     }
 
@@ -478,7 +478,7 @@ TEST_CASE("the ring keeps the last LOG_RING_CAPACITY records, oldest evicted fir
     TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     const int total = static_cast<int>(TechEngine::LOG_RING_CAPACITY) + 5;
-    for (int i = 0; i < total; ++i) {
+    for (int i = 0; i < total; i++) {
         TE_LOGGER_INFO("record {0}", i);
     }
 
