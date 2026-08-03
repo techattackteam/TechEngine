@@ -35,6 +35,12 @@
       "inherits": "windows-ninja",
       "cacheVariables": { "TE_SANITIZER": "asan" }
     },
+    {
+      "name": "windows-profile",
+      "displayName": "Windows / Ninja + Tracy",
+      "inherits": "windows-ninja",
+      "cacheVariables": { "TE_PROFILE": "ON" }
+    },
 
     {
       "name": "linux-clang",
@@ -66,6 +72,12 @@
       "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo" }
     },
     {
+      "name": "linux-profile",
+      "displayName": "Linux / Clang + Tracy (RelWithDebInfo)",
+      "inherits": "linux-clang",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo", "TE_PROFILE": "ON" }
+    },
+    {
       "name": "linux-ubsan",
       "displayName": "Linux / Clang + UBSan",
       "inherits": "linux-clang",
@@ -84,10 +96,12 @@
     { "name": "windows-release",        "configurePreset": "windows",      "configuration": "Release" },
     { "name": "windows-relwithdebinfo", "configurePreset": "windows",      "configuration": "RelWithDebInfo" },
     { "name": "windows-asan",           "configurePreset": "windows-asan", "configuration": "Debug" },
+    { "name": "windows-profile",        "configurePreset": "windows-profile", "configuration": "RelWithDebInfo" },
 
     { "name": "linux-debug",            "configurePreset": "linux-debug" },
     { "name": "linux-release",          "configurePreset": "linux-release" },
     { "name": "linux-relwithdebinfo",   "configurePreset": "linux-relwithdebinfo" },
+    { "name": "linux-profile",          "configurePreset": "linux-profile" },
     { "name": "linux-ubsan",            "configurePreset": "linux-ubsan" },
     { "name": "linux-tsan",             "configurePreset": "linux-tsan" }
   ],
@@ -101,12 +115,16 @@
       "output": { "outputOnFailure": true } },
     { "name": "windows-asan",    "configurePreset": "windows-asan", "configuration": "Debug",
       "output": { "outputOnFailure": true } },
+    { "name": "windows-profile", "configurePreset": "windows-profile", "configuration": "RelWithDebInfo",
+      "output": { "outputOnFailure": true } },
 
     { "name": "linux-debug",     "configurePreset": "linux-debug",
       "output": { "outputOnFailure": true } },
     { "name": "linux-release",   "configurePreset": "linux-release",
       "output": { "outputOnFailure": true } },
     { "name": "linux-relwithdebinfo", "configurePreset": "linux-relwithdebinfo",
+      "output": { "outputOnFailure": true } },
+    { "name": "linux-profile",   "configurePreset": "linux-profile",
       "output": { "outputOnFailure": true } },
     { "name": "linux-ubsan",     "configurePreset": "linux-ubsan",
       "output": { "outputOnFailure": true } },

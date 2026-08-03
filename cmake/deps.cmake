@@ -88,6 +88,29 @@ add_library(miniaudio INTERFACE)
 add_library(TechEngine::miniaudio ALIAS miniaudio)
 target_include_directories(miniaudio SYSTEM INTERFACE ${miniaudio_SOURCE_DIR})
 
+# --- profiler (opt-in) ------------------------------------------------------
+# Option-guarded like Catch2 below, so a default build fetches nothing. TE_PROFILE is a
+# build option and never a shipping runtime flag — ADR-013 §4.
+#
+# The GIT_TAG is a WIRE-PROTOCOL LOCK, not a version preference: Tracy compiles its
+# ProtocolVersion into both sides, so this tag and the Tracy desktop app in use must be
+# the same release or the connection is silently refused. Bumping it means re-downloading
+# the app (ADR-013 §1). Record the version in B3 — Build & Testing Notes.
+#
+# No SYSTEM re-export here: Tracy already declares its own include dir SYSTEM
+# (its CMakeLists, target_include_directories(TracyClient SYSTEM PUBLIC ...)).
+if(TE_PROFILE)
+  set(TRACY_ENABLE         ON CACHE BOOL "" FORCE)
+  set(TRACY_ON_DEMAND      ON CACHE BOOL "" FORCE)
+  set(TRACY_ONLY_LOCALHOST ON CACHE BOOL "" FORCE)
+  set(TRACY_NO_BROADCAST   ON CACHE BOOL "" FORCE)
+  FetchContent_Declare(tracy
+    GIT_REPOSITORY https://github.com/wolfpld/tracy.git
+    GIT_TAG        v0.13.1
+    GIT_SHALLOW    TRUE)
+  FetchContent_MakeAvailable(tracy)
+endif()
+
 # --- test framework ---------------------------------------------------------
 if(TE_BUILD_TESTS)
   FetchContent_Declare(Catch2

@@ -29,6 +29,13 @@ target_compile_definitions(TechEngineBase PUBLIC TE_LOG_ACTIVE_LEVEL=${_te_log_l
 target_compile_definitions(TechEngineBase PUBLIC
     TE_ASSERT_DEV=$<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>,1,0>)
 
+# PUBLIC because Profile.hpp includes <tracy/Tracy.hpp> when the option is on (ADR-013 §2).
+# techengine_module()'s LIBS cannot be conditional, hence the follow-up call.
+if(TE_PROFILE)
+  target_link_libraries(TechEngineBase PUBLIC Tracy::TracyClient)
+  target_compile_definitions(TechEngineBase PUBLIC TE_PROFILE_ENABLED)
+endif()
+
 if(TE_BUILD_TESTS)
   techengine_test(base SOURCES
           tests/BaseTests.cpp
