@@ -71,7 +71,7 @@ namespace TechEngine {
         const std::size_t count = std::min(available, capacity);
         const std::uint64_t start = written - count;
 
-        for (std::size_t i = 0; i < count; ++i) {
+        for (std::size_t i = 0; i < count; i++) {
             out[i] = g_ring[static_cast<std::size_t>((start + i) % LOG_RING_CAPACITY)].record;
         }
         return count;

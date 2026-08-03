@@ -91,7 +91,6 @@ struct std::formatter<glm::qua<T, Q>> {
     }
 
     auto format(const glm::qua<T, Q>& value, std::format_context& context) const {
-        // TODO(S3-T2): "<prefix>quat(x, y, z, w)" — storage order, not glm::to_string's wxyz
         auto out = std::format_to(context.out(), "{0}quat(", TechEngine::detail::mathTypePrefix<T>());
         const T components[4]{value.x, value.y, value.z, value.w};
 

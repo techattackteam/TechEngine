@@ -47,7 +47,7 @@ TEST_CASE("frame starts at zero and advances by exactly one", "[base][clock]") {
     clock.advanceFrame();
     REQUIRE(clock.frame() == 1);
 
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 10; i++) {
         clock.advanceFrame();
     }
     REQUIRE(clock.frame() == 11);
