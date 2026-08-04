@@ -10,6 +10,8 @@ techengine_module(base
           include/TechEngine/base/math/Math.hpp
           include/TechEngine/base/math/Format.hpp
           include/TechEngine/base/profiler/Profile.hpp
+          include/TechEngine/base/stringid/StringId.hpp
+          include/TechEngine/base/stringid/Format.hpp
           include/TechEngine/base/time/Clock.hpp
   LIBS    glm::glm
   LIBS_PRIVATE spdlog::spdlog)
@@ -44,5 +46,7 @@ if(TE_BUILD_TESTS)
           tests/diagnostics/AssertTests.cpp
           tests/math/MathTests.cpp
           tests/math/MathFormatTests.cpp
+          tests/stringid/StringIdTests.cpp
+          tests/stringid/StringIdFormatTests.cpp
           tests/time/ClockTests.cpp)
 endif()
