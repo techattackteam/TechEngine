@@ -25,16 +25,6 @@ namespace TechEngine {
         EventWire wire{EventWire::Local};
     };
 
-    namespace detail {
-        template<typename T>
-        inline EventTypeId g_eventTypeSlot{};
-    }
-
-    template<typename T>
-    EventTypeId eventTypeId() {
-        return detail::g_eventTypeSlot<T>;
-    }
-
     class EventRegistry {
     private:
         std::vector<EventTypeRecord> m_eventRecords;

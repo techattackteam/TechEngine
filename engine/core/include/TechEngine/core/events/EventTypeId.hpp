@@ -27,6 +27,16 @@ namespace TechEngine {
     private:
         StringId m_value{};
     };
+
+    namespace detail {
+        template<typename T>
+        inline EventTypeId g_eventTypeSlot{};
+    }
+
+    template<typename T>
+    EventTypeId eventTypeId() {
+        return detail::g_eventTypeSlot<T>;
+    }
 }
 
 template<>

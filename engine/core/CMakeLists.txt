@@ -1,10 +1,12 @@
 techengine_module(core
   SOURCES src/Core.cpp
           src/events/EventRegistry.cpp
+          src/events/EventStream.cpp
   HEADERS include/TechEngine/core/Core.hpp
           include/TechEngine/core/FrameContext.hpp
           include/TechEngine/core/events/EventRegistry.hpp
           include/TechEngine/core/events/EventTypeId.hpp
+          include/TechEngine/core/events/EventStream.hpp
   DEPS    base platform
   LIBS    Jolt                             # authoritative physics (ADR-006 §1)
   LIBS_PRIVATE tomlplusplus::tomlplusplus)     # config parsing, .cpp-only
@@ -13,5 +15,6 @@ techengine_module(core
 
 if(TE_BUILD_TESTS)
   techengine_test(core SOURCES
-          tests/events/EventRegistryTests.cpp)
+          tests/events/EventRegistryTests.cpp
+          tests/events/EventStreamTests.cpp)
 endif()
