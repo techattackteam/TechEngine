@@ -1,5 +1,8 @@
 #pragma once
 
+#include <compare>
+#include <cstdint>
+#include <functional>
 #include <string_view>
 
 namespace TechEngine {
