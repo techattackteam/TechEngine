@@ -113,7 +113,8 @@ first (`LogFormatBuffer`, not `FormatBuffer`) — that removes the risk without 
 - **Section-divider banners** — `// --- the seam ---`. Use structure, not ASCII furniture.
 - **Namespace closing comments** — `} // namespace TechEngine`. One flat namespace per file
   makes the brace unambiguous; the comment is pure furniture.
-- **Rationale copied from the vault** — and the citation itself; see the next section.
+- **Rationale copied from the vault** — and the citation itself; see *Comments never cite the
+  vault*.
 - **File / class / function preambles** explaining purpose. The name and the header do that.
 - **Per-line or per-include narration** — never annotate `#include`s (`// core -> base`).
 - **Anything restating the code**, including "why this obvious idiom".
@@ -124,7 +125,7 @@ Prefer a self-explanatory name over a comment explaining a bad one.
 
 > **No `ADR-011 §2`, no `[[Logger — Design]]`, no bare `§ref` — in any comment, in any module,
 > tests included.** Code and comments stand alone. Decided 2026-08-07; this reverses the earlier
-> "a bare `§ref` is the whole comment" rule, and the refs it produced were swept the same day.
+> "a bare `§ref` is the whole comment" rule.
 
 A reader who needs the ADR open to follow the line is reading a line that isn't clear enough yet.
 

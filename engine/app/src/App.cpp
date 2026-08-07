@@ -4,15 +4,30 @@
 #include <TechEngine/base/math/Format.hpp>
 #include <TechEngine/base/profiler/Profile.hpp>
 #include <TechEngine/base/time/Clock.hpp>
+#include <TechEngine/core/events/EventRegistry.hpp>
+#include <TechEngine/core/events/EventStream.hpp>
 
 #include <chrono>
 #include <cstdint>
 #include <thread>
 
 namespace TechEngine {
+    // TODO(S3-T10): throwaway. Real wiring makes events visible per fixed sub-step inside
+    // FrameLoop and retires before Input; this only reaches the frame tail.
+    struct DemoDamage {
+        std::uint64_t frameIndex;
+        std::uint32_t amount;
+        inline static std::string tag = "TechEngine.DemoDamage";
+    };
+
     int run() {
         Clock clock;
         FrameLoop loop(Role::Client);
+
+        EventRegistry events;
+        const EventTypeId damageId = events.registerEvent<DemoDamage>(DemoDamage::tag);
+        EventStream damageStream{damageId, sizeof(DemoDamage), alignof(DemoDamage), 64};
+        EventCursor damageCursor;
 
         Clock::TimePoint previous = clock.now();
         constexpr std::uint64_t frames = 120;
@@ -28,6 +43,18 @@ namespace TechEngine {
             previous = current;
 
             loop.advance(frameDeltaTime);
+
+            damageStream.retire(loop.frame().frameIndex, loop.frame().tick);
+
+            if (loop.frame().frameIndex % 30 == 0) {
+                damageStream.publish(DemoDamage{loop.frame().frameIndex, 42});
+            }
+
+            damageStream.makeVisible(loop.frame().frameIndex, loop.frame().tick);
+
+            for (const DemoDamage& damage: damageStream.read<DemoDamage>(damageCursor)) {
+                TE_LOGGER_WARN("DemoDamage {0} published on frame {1}", damage.amount, damage.frameIndex);
+            }
 
             TE_LOGGER_INFO(
                 "Frame {0}: deltaTime = {1:.6f}, fixedDeltaTime = {2:.6f}, accumulator = {3:.6f}, tick = {4}, role = {5}",
