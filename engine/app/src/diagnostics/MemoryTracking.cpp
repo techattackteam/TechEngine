@@ -1,6 +1,6 @@
-#include <diagnostics/MemoryTracking.hpp>
-
 #include <TechEngine/base/diagnostics/Profile.hpp>
+
+#include <diagnostics/MemoryTracking.hpp>
 
 #include <cstddef>
 #include <cstdlib>
