@@ -1,6 +1,5 @@
-#include <TechEngine/core/events/EventStream.hpp>
-
 #include <TechEngine/core/events/EventRegistry.hpp>
+#include <TechEngine/core/events/EventStream.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
