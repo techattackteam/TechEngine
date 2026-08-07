@@ -5,8 +5,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <cstdlib>
-#include <new>
 #include <span>
 #include <string_view>
 
@@ -180,4 +178,26 @@ TEST_CASE("the buffer grows and keeps every event", "[core][events]") {
     for (std::uint32_t i = 0; i < 5; i++) {
         REQUIRE(all[i].amount == i);
     }
+}
+
+TEST_CASE("a steady-state loop never regrows the ring", "[core][events]") {
+    TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 64);
+    TechEngine::EventCursor cursor;
+
+    stream.publish(Damage{0});
+    stream.makeVisible(0, 0);
+    stream.read<Damage>(cursor);
+    stream.retire(1, 1);
+
+    for (std::uint64_t frame = 1; frame <= 8; frame++) {
+        stream.retire(frame, frame);
+        for (std::uint32_t i = 0; i < 4; i++) {
+            stream.publish(Damage{i});
+        }
+        stream.makeVisible(frame, frame);
+        stream.read<Damage>(cursor);
+    }
+
+    REQUIRE(stream.capacity() == 64);
+    REQUIRE(stream.visibleCount() == 4);
 }
