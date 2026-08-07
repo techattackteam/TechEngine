@@ -1,6 +1,7 @@
 techengine_module(app
-  SOURCES src/App.cpp src/FrameLoop.cpp
+  SOURCES src/App.cpp src/FrameLoop.cpp src/diagnostics/MemoryTracking.cpp
   HEADERS include/TechEngine/app/App.hpp include/TechEngine/app/FrameLoop.hpp
+          src/diagnostics/MemoryTracking.hpp
   DEPS    core
   DEPS_PRIVATE base)
 # app = game loop + composition root, presentation-agnostic (ADR-006 §1/§4).

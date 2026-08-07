@@ -1,11 +1,13 @@
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/app/FrameLoop.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/base/math/Format.hpp>
-#include <TechEngine/base/profiler/Profile.hpp>
 #include <TechEngine/base/time/Clock.hpp>
 #include <TechEngine/core/events/EventRegistry.hpp>
 #include <TechEngine/core/events/EventStream.hpp>
+
+#include <diagnostics/MemoryTracking.hpp>
 
 #include <chrono>
 #include <cstdint>
@@ -21,6 +23,8 @@ namespace TechEngine {
     };
 
     int run() {
+        memoryTrackingAnchor();
+
         Clock clock;
         FrameLoop loop(Role::Client);
 

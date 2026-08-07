@@ -201,11 +201,14 @@ that violates it. `IncludeIsMainRegex: '(Tests)?$'` is what makes `LogTests.cpp`
 ## Headers
 
 - `#pragma once`, never include guards.
-- **One folder per utility, named after its design note** — `base/diagnostics/` ([[Logger —
-  Design]] + [[Assert — Design]], one ADR), `base/math/`, `base/time/`. `src/` and `tests/`
-  mirror it. The module's own header (`base/Base.hpp`) stays at the root; a header shared by
-  two utilities lives in the folder of the note that owns it, not at the root. Decided
-  2026-08-03 (S3-T2), when `base` had two `Format.hpp` files.
+- **One folder per subject area** — `base/diagnostics/` (Logger, Assert, Profiler),
+  `base/math/`, `base/stringid/`, `base/time/`. `src/` and `tests/` mirror it. The module's
+  own header (`base/Base.hpp`) stays at the root; a header shared by two utilities lives in
+  the folder of the utility that owns it, not at the root. Decided 2026-08-03 (S3-T2), when
+  `base` had two `Format.hpp` files. **Relaxed 2026-08-07 (S3-T5)** from *one folder per
+  design note*: the profiler is instrumentation — the same thing a reader is looking for when
+  they open `diagnostics/` — and a design note is a unit of documentation, not of layout. The
+  test is **what a reader would look under**, not how many notes cover it.
 - **Forward-declare in headers; include in the `.cpp`.** A public header pulling a heavy
   transitive include is a cost every consumer pays.
 - **No third-party type in a module's public header** unless the ADR says so — that's the
