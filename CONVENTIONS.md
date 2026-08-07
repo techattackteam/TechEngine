@@ -106,22 +106,44 @@ first (`LogFormatBuffer`, not `FormatBuffer`) — that removes the risk without 
 |---|---|
 | A **gotcha** that will bite — non-obvious lifetime, a footgun the compiler allows | `message` points into the dispatch call's buffer; a sink that outlives the call must copy |
 | A **`TODO(S2-Tn)`** marking deliberately unfinished work | `TODO(S2-T3): per-channel level array replaces this global` |
-| A **`TODO(D<n>)`** pointing at a [[Known Issues]] entry — prefer this over a card ID for a known defect: cards die and their IDs go stale, `D<n>` doesn't | `TODO(D1): gate defaults to Trace if this TU never links base` |
-| A bare **`§ref`** to the decision | `// ADR-011 §1` |
+| A **`TODO(D<n>)`** pointing at a known defect — prefer this over a card ID: cards die and their IDs go stale, `D<n>` doesn't | `TODO(D1): gate defaults to Trace if this TU never links base` |
 
 **Delete on sight:**
 
 - **Section-divider banners** — `// --- the seam ---`. Use structure, not ASCII furniture.
 - **Namespace closing comments** — `} // namespace TechEngine`. One flat namespace per file
   makes the brace unambiguous; the comment is pure furniture.
-- **Rationale copied from the vault.** The ADR/design note is the home for *why*; a `§ref` is
-  the whole comment. Copied rationale drifts from its source.
+- **Rationale copied from the vault** — and the citation itself; see the next section.
 - **File / class / function preambles** explaining purpose. The name and the header do that.
 - **Per-line or per-include narration** — never annotate `#include`s (`// core -> base`).
 - **Anything restating the code**, including "why this obvious idiom".
 
-Prefer a self-explanatory name over a comment explaining a bad one. A `§ref` beats a paragraph;
-no comment beats a `§ref` that adds nothing.
+Prefer a self-explanatory name over a comment explaining a bad one.
+
+## Comments never cite the vault
+
+> **No `ADR-011 §2`, no `[[Logger — Design]]`, no bare `§ref` — in any comment, in any module,
+> tests included.** Code and comments stand alone. Decided 2026-08-07; this reverses the earlier
+> "a bare `§ref` is the whole comment" rule, and the refs it produced were swept the same day.
+
+A reader who needs the ADR open to follow the line is reading a line that isn't clear enough yet.
+
+| The ref was… | Do this |
+|---|---|
+| standing in for rationale | Delete it. If the *why* is load-bearing **at that line**, state the mechanical fact in the reader's own terms — no source named. |
+| tacked onto a real gotcha — `// process-global (ADR-011 §8), so restore it` | Keep the gotcha, drop the parenthetical. |
+| the entire comment — `// ADR-011 §1` | Delete the line. |
+
+**Why, beyond noise:** a citation is a promise the code cannot keep. Section numbers shift, notes
+get renamed, and the vault is a **separate repo** — a fresh engine clone has no `docs/` at all, so
+the ref resolves to nothing for the reader most likely to need it. Traceability is git's job: the
+branch name (`S3-T8/Event-Registry`) is the link from a commit back to its card.
+
+**Not refs, and they stay:** `TODO(S3-T8)` and `TODO(D1)`. They mark unfinished work rather than
+explaining finished code, and they read as IDs, not as reading assignments.
+
+**This file, the vault, CMake and CI still cite freely** — the rule covers `.hpp` / `.cpp` /
+tests.
 
 ## Privacy that the compiler can't enforce
 

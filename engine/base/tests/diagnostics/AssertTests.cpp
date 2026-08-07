@@ -27,8 +27,8 @@ static TechEngine::AssertResponse captureHandler(const TechEngine::AssertContext
     return TechEngine::AssertResponse{false, false};
 }
 
-// Diagnostics state is process-global (ADR-011 §8) and Catch2 shares one process — restore
-// it or cases leak into each other.
+// Diagnostics state is process-global and Catch2 shares one process — restore it or cases
+// leak into each other.
 class AssertHandlerGuard {
 public:
     AssertHandlerGuard() : m_previous{TechEngine::setAssertHandler(&captureHandler)} {
@@ -266,9 +266,9 @@ TEST_CASE("the default handler asks to abort exactly for fatal kinds", "[base][a
 
 static int g_handlerEntries = 0;
 
-// Both raises are TE_ENSURE on purpose. The guarded path still reports the nested failure
-// as fatal for a fatal tier (ADR-011 §7), so a nested TE_CHECK aborts the runner rather
-// than failing the case — Ensure is the only tier that is never fatal.
+// Both raises are TE_ENSURE on purpose. The guarded path still reports the nested failure as
+// fatal for a fatal tier, so a nested TE_CHECK aborts the runner rather than failing the
+// case — Ensure is the only tier that is never fatal.
 static TechEngine::AssertResponse recursingHandler(const TechEngine::AssertContext&) {
     ++g_handlerEntries;
     if (g_handlerEntries < 5) {
@@ -307,9 +307,9 @@ TEST_CASE("a throwing handler does not latch the in-flight guard", "[base][asser
     REQUIRE(g_fired.size() == 1);
 }
 
-// ADR-011 §6/§7: a failure logs Critical through the Logger, flushes, then the response's
-// abortProcess tells the macro whether to abort — this covers the log half; "the default
-// handler asks to abort exactly for fatal kinds" already covers abortProcess itself.
+// A failure logs Critical through the Logger, flushes, then the response's abortProcess tells
+// the macro whether to abort — this covers the log half; "the default handler asks to abort
+// exactly for fatal kinds" already covers abortProcess itself.
 TEST_CASE("the default handler routes the failure through the Logger at Critical", "[base][assert][log]") {
     const LogCaptureGuard logGuard;
 
@@ -336,8 +336,8 @@ TEST_CASE("a message-less failure still composes a readable Critical line", "[ba
     REQUIRE(g_loggedRecords[0].message == "[CHECK] (device != nullptr)");
 }
 
-// The ring is always-on (ADR-011 §3/§8) — not something the handler opts into — so a failure
-// lands there even with no pluggable sink installed.
+// The ring is always-on — not something the handler opts into — so a failure lands there even
+// with no pluggable sink installed.
 TEST_CASE("a failure's Critical log lands in the always-on ring", "[base][assert][log]") {
     TechEngine::ringClear();
 

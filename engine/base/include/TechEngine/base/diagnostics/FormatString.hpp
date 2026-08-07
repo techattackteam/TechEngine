@@ -27,8 +27,8 @@ namespace TechEngine {
     }
 
     // std::format_string, narrowed to reject automatic indexing: "{0}" compiles, "{}" does
-    // not. Positional is the house spelling (ADR-011 §1) because a diagnostic string that
-    // names its slots survives being reordered or having an argument dropped.
+    // not. A diagnostic string that names its slots survives being reordered or having an
+    // argument dropped.
     template<typename... Args>
     class PositionalFormatString {
     public:

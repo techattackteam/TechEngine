@@ -7,9 +7,6 @@
 
 #include <string_view>
 
-// First real per-module test exe — proves the Catch2 + CTest path end to end
-// (ADR-008 §6), and that base's PUBLIC glm dep links through the module.
-
 TEST_CASE("base version anchor is present", "[base]") {
     REQUIRE(std::string_view{TechEngine::baseVersion()} == "0.0.0");
 }

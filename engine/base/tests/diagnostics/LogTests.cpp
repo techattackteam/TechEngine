@@ -43,8 +43,8 @@ static void secondarySink(const TechEngine::LogRecord& record) {
     g_secondary.push_back(std::string{record.message});
 }
 
-// Diagnostics state is process-global (ADR-011 §8) and Catch2 shares one process — restore
-// it or cases leak into each other.
+// Diagnostics state is process-global and Catch2 shares one process — restore it or cases
+// leak into each other.
 class SinkGuard {
 public:
     SinkGuard() : m_previousLevel{TechEngine::minLevel()} {
@@ -165,7 +165,7 @@ TEST_CASE("over-long messages truncate rather than overflow", "[base][log]") {
     REQUIRE(g_captured[0].message.ends_with("[truncated]"));
 }
 
-// Per-config gate (ADR-011 §4) — a binary can only assert the config it was built in.
+// The gate is per-config — a binary can only assert the config it was built in.
 TEST_CASE("compile-time level gate matches the build config", "[base][log]") {
     const SinkGuard guard;
     TechEngine::setMinLevel(TechEngine::Level::Trace);
@@ -254,7 +254,7 @@ TEST_CASE("unregistered channel falls back to the default", "[base][log][channel
     REQUIRE(g_captured[0].message == "still delivered");
 
     // The record keeps the handle it was given; only the lookup falls back, so an out-of-range
-    // id can never index the table (ADR-011 §2).
+    // id can never index the table.
     REQUIRE(g_captured[0].channel == bogus);
     REQUIRE(g_captured[0].moduleTag == TechEngine::DEFAULT_MODULE);
     REQUIRE(TechEngine::logChannelName(bogus) == "default");
@@ -324,7 +324,7 @@ static std::string captureStderr(Body&& body) {
 }
 
 // No SinkGuard — an empty sink set is the whole point. initLogging() is never called from the
-// suite, so nothing else is installed either (ADR-011 §2's pre-init fallback).
+// suite, so nothing else is installed either.
 TEST_CASE("with no sink installed a record still reaches stderr", "[base][log][sink]") {
     const TechEngine::Level previous = TechEngine::minLevel();
     TechEngine::setMinLevel(TechEngine::Level::Trace);
@@ -364,7 +364,7 @@ static TechEngine::LogRecord sampleRecord(std::string_view message) {
 }
 
 // [14:32:07.412][f 1043][module/channel][renderer.cpp:88:renderScene()][INFO] message
-TEST_CASE("flatten renders the design-note line", "[base][log][format]") {
+TEST_CASE("flatten renders the canonical line", "[base][log][format]") {
     std::array<char, 512> out{};
     const TechEngine::LogRecord record = sampleRecord("swapchain 1920x1080");
 
@@ -453,8 +453,8 @@ TEST_CASE("registry overflow degrades to the default channel", "[base][log][chan
     REQUIRE(g_captured[0].message == "still delivered");
 }
 
-// The ring is always-on process-global state (ADR-011 §3/§8), not a pluggable sink — it has
-// no guard of its own to add/remove, so each ring case resets it directly.
+// The ring is always-on process-global state, not a pluggable sink — it has no guard of its
+// own to add/remove, so each ring case resets it directly.
 TEST_CASE("the ring captures records even with no sink installed", "[base][log][ring]") {
     TechEngine::ringClear();
     const TechEngine::Level previous = TechEngine::minLevel();
