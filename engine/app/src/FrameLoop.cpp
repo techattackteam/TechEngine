@@ -1,6 +1,5 @@
 #include <TechEngine/app/FrameLoop.hpp>
-
-#include <../../base/include/TechEngine/base/diagnostics/Profile.hpp>
+#include <TechEngine/base/diagnostics/Profile.hpp>
 
 namespace TechEngine {
     FrameLoop::FrameLoop(Role role, double fixedDeltaTime, double maxFrameDeltaTime) : m_fixedDeltaTime(fixedDeltaTime), m_maxFrameDeltaTime(maxFrameDeltaTime) {

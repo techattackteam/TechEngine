@@ -1,4 +1,4 @@
-#include "MemoryTracking.hpp"
+#include <diagnostics/MemoryTracking.hpp>
 
 #include <TechEngine/base/diagnostics/Profile.hpp>
 
@@ -207,3 +207,5 @@ void operator delete[](void* pointer, std::align_val_t, const std::nothrow_t&) n
 }
 
 #endif
+
+#undef TE_SANITIZER_OWNS_ALLOCATOR

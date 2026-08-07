@@ -1,12 +1,12 @@
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/app/FrameLoop.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/base/math/Format.hpp>
 #include <TechEngine/base/time/Clock.hpp>
 #include <TechEngine/core/events/EventRegistry.hpp>
 #include <TechEngine/core/events/EventStream.hpp>
 
-#include <../../base/include/TechEngine/base/diagnostics/Profile.hpp>
 #include <diagnostics/MemoryTracking.hpp>
 
 #include <chrono>
