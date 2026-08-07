@@ -51,7 +51,7 @@ namespace TechEngine {
         std::array<char, MESSAGE_CAPACITY> messageStorage{};
     };
 
-    // Always-on process-global state (ADR-011 §8), not a pluggable sink — every dispatched
+    // Always-on process-global state, not a pluggable sink — every dispatched
     // record lands here regardless of what's in g_sinks. Slot choice is a bare fetch_add
     // modulo; two threads racing the same wrapped slot can tear a write. Accepted for a
     // best-effort crash trail, not a linearizable log.
@@ -126,7 +126,7 @@ namespace TechEngine {
     }
 
     // std::localtime shares one static tm across threads; the CRT's reentrant spellings are
-    // the portable fix. Not an OS header (ADR-005) — this is the C runtime.
+    // the portable fix. Not an OS header — this is the C runtime.
     static std::tm localTime(std::time_t seconds) {
         std::tm out{};
 #if defined(_WIN32)

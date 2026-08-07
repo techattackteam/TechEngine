@@ -143,7 +143,8 @@ branch name (`S3-T8/Event-Registry`) is the link from a commit back to its card.
 **Not refs, and they stay:** `TODO(S3-T8)` and `TODO(D1)`. They mark unfinished work rather than
 explaining finished code, and they read as IDs, not as reading assignments.
 
-**This file, the vault, and CI still cite freely** — the rule is about `.hpp`/`.cpp`/tests only.
+**This file, the vault, CMake and CI still cite freely** — the rule covers `.hpp` / `.cpp` /
+tests.
 
 ## Privacy that the compiler can't enforce
 

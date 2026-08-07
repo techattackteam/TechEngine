@@ -88,7 +88,7 @@ namespace TechEngine {
 
     void flushLogs();
 
-    // `name` is stored, never copied — pass a literal or a static. ADR-011 §2.
+    // `name` is stored, never copied — pass a literal or a static.
     LogModule registerLogModule(std::string_view name, Level defaultLevel = Level::Trace);
 
     LogChannel registerLogChannel(std::string_view name, LogModule moduleTag, Level defaultLevel = Level::Trace);
@@ -119,10 +119,9 @@ namespace TechEngine {
 
     inline constexpr std::size_t LOG_RING_CAPACITY = 64;
 
-    // Always-on, independent of the pluggable sink set above — every dispatched record lands
-    // here regardless of what's registered (ADR-011 §3, process-global by design per §8). The
-    // eventual `platform` crash handler reads it; this copies out up to `capacity` entries,
-    // oldest first, and returns the count actually written.
+    // Always-on process-global state, independent of the pluggable sink set above — every
+    // dispatched record lands here regardless of what's registered. This copies out up to
+    // `capacity` entries, oldest first, and returns the count actually written.
     std::size_t ringSnapshot(LogRecord* out, std::size_t capacity);
 
     void ringClear();
