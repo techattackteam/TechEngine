@@ -83,8 +83,11 @@ I get them wrong *by habit*, so knowing where the spec lives isn't enough:
   real ODR risk. → *Internal linkage*.
 - **Default to NO comment.** Not "why, not what" — that bar was already in force and still
   produced narrated code. A comment must survive *"would a competent reader be wrong without
-  this?"* Only a **gotcha that will bite**, a **`TODO(S2-Tn)`** / **`TODO(D<n>)`**, or a bare
-  **`§ref`** earns a place. **Scaffolding is not a licence to narrate.** → *Comments*.
+  this?"* Only a **gotcha that will bite** or a **`TODO(S2-Tn)`** / **`TODO(D<n>)`** earns a
+  place. **Scaffolding is not a licence to narrate.** → *Comments*.
+- **Never cite the vault from code.** No `ADR-011 §2`, no `[[note]]`, no bare `§ref` in any
+  comment — the vault is a separate repo, so the ref resolves to nothing for a fresh clone. Say
+  the mechanical fact instead, or delete the comment. → *Comments never cite the vault*.
 
 ## Division of labor (important)
 

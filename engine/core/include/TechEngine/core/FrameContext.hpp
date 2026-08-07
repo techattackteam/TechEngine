@@ -5,7 +5,7 @@
 namespace TechEngine {
     enum class Role : std::uint8_t { Client, ListenServer, DedicatedServer };
 
-    // TODO(S3): + `const EngineContext& engine` (ADR-006 §4) — no engine services exist yet.
+    // TODO(S3): + `const EngineContext& engine` — no engine services exist yet.
     struct FrameContext {
         float deltaTime{0.0F};
         float fixedDeltaTime{0.0F};

@@ -128,7 +128,7 @@ namespace TechEngine {
     }(::std::source_location::current()))
 
 // The report-once static is inside the lambda body, so each expansion gets its own —
-// that is what makes it per-call-site (ADR-011 §5) with no shared table.
+// that is what makes it per-call-site with no shared table.
 #define TE_ASSERT_PRIVATE_ONCE(cond, ...)                                                                                                               \
     ([&](const ::std::source_location& te_loc_) -> bool {                                                                                               \
         TE_ASSERT_PRIVATE_FOLDABLE_BEGIN                                                                                                                \
