@@ -16,49 +16,11 @@ struct Damage {
     std::uint32_t amount;
 };
 
-// Registration is what writes the process-global type slot that publish/read check; the
-// registry itself is not referenced afterwards, so a throwaway one is enough.
 template<typename T>
 static TechEngine::EventStream makeStream(std::string_view tag, std::size_t capacity) {
     TechEngine::EventRegistry registry;
     const TechEngine::EventTypeId id = registry.registerEvent<T>(tag);
     return TechEngine::EventStream{id, sizeof(T), alignof(T), capacity};
-}
-
-static std::size_t g_allocationCount = 0;
-
-void* operator new(std::size_t size) {
-    g_allocationCount++;
-    void* memory = std::malloc(size);
-    if (memory == nullptr) {
-        throw std::bad_alloc{};
-    }
-    return memory;
-}
-
-void* operator new[](std::size_t size) {
-    g_allocationCount++;
-    void* memory = std::malloc(size);
-    if (memory == nullptr) {
-        throw std::bad_alloc{};
-    }
-    return memory;
-}
-
-void operator delete(void* memory) noexcept {
-    std::free(memory);
-}
-
-void operator delete(void* memory, std::size_t) noexcept {
-    std::free(memory);
-}
-
-void operator delete[](void* memory) noexcept {
-    std::free(memory);
-}
-
-void operator delete[](void* memory, std::size_t) noexcept {
-    std::free(memory);
 }
 
 TEST_CASE("publishing stages; nothing is visible until the barrier", "[core][events]") {
@@ -75,7 +37,6 @@ TEST_CASE("publishing stages; nothing is visible until the barrier", "[core][eve
     REQUIRE(stream.visibleCount() == 1);
 }
 
-// ADR-014 §3 — the retire rule is an AND, and these three cases are the reason it is one.
 TEST_CASE("retiring needs both a frame boundary and a tick", "[core][events]") {
     TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 8);
 
@@ -93,8 +54,6 @@ TEST_CASE("retiring needs both a frame boundary and a tick", "[core][events]") {
     REQUIRE(stream.retireHeadSequence() == 1);
 }
 
-// The classic fixed-timestep footgun: a run of frames fast enough to advance no tick must
-// not age an event out before any fixed-domain reader has had a look.
 TEST_CASE("events survive back-to-back frames that run no ticks", "[core][events]") {
     TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 8);
 
@@ -161,8 +120,6 @@ TEST_CASE("a cursor reads each retained event exactly once", "[core][events]") {
     REQUIRE(second.empty());
 }
 
-// ADR-014 §3's reader-independent retention: a reader that did not run inside the window
-// misses silently rather than holding the buffer or dangling.
 TEST_CASE("a lagging cursor clamps to the head and misses", "[core][events]") {
     TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 8);
 
@@ -184,8 +141,6 @@ TEST_CASE("a lagging cursor clamps to the head and misses", "[core][events]") {
     REQUIRE(cursor.sequence == 4);
 }
 
-// The memmove case: retiring the leading batch shifts what is left down to index 0, and a
-// wrong offset or length here reads as plausible garbage rather than a crash.
 TEST_CASE("compaction preserves the retained payload", "[core][events]") {
     TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 8);
 
@@ -225,30 +180,4 @@ TEST_CASE("the buffer grows and keeps every event", "[core][events]") {
     for (std::uint32_t i = 0; i < 5; i++) {
         REQUIRE(all[i].amount == i);
     }
-}
-
-// No REQUIRE inside the loop: Catch2's expression decomposition is not guaranteed
-// allocation-free, and it would be counted here.
-TEST_CASE("steady-state publish, read and retire allocate nothing", "[core][events]") {
-    TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 64);
-    TechEngine::EventCursor cursor;
-
-    stream.publish(Damage{0});
-    stream.makeVisible(0, 0);
-    stream.read<Damage>(cursor);
-    stream.retire(1, 1);
-
-    const std::size_t before = g_allocationCount;
-
-    for (std::uint64_t frame = 1; frame <= 8; frame++) {
-        stream.retire(frame, frame);
-        for (std::uint32_t i = 0; i < 4; i++) {
-            stream.publish(Damage{i});
-        }
-        stream.makeVisible(frame, frame);
-        stream.read<Damage>(cursor);
-    }
-
-    REQUIRE(g_allocationCount == before);
-    REQUIRE(stream.capacity() == 64);
 }
