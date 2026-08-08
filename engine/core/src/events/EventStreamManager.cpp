@@ -34,7 +34,7 @@ namespace TechEngine {
 
     EventStream* EventStreamManager::getStream(const EventTypeId id) {
         const EventTypeRecord* record = m_registry->find(id);
-        if (!TE_VERIFY(record != nullptr && record->streamIndex < m_streams.size(), "Event type {0} has no stream", id.stringID().value())) {
+        if (!TE_VERIFY(record != nullptr && record->streamIndex < m_streams.size(), "Event type {0} has no stream", id.stringId().value())) {
             return nullptr;
         }
         return &m_streams[record->streamIndex];
@@ -42,7 +42,7 @@ namespace TechEngine {
 
     const EventStream* EventStreamManager::getStream(const EventTypeId id) const {
         const EventTypeRecord* record = m_registry->find(id);
-        if (!TE_VERIFY(record != nullptr && record->streamIndex < m_streams.size(), "Event type {0} has no stream", id.stringID().value())) {
+        if (!TE_VERIFY(record != nullptr && record->streamIndex < m_streams.size(), "Event type {0} has no stream", id.stringId().value())) {
             return nullptr;
         }
         return &m_streams[record->streamIndex];

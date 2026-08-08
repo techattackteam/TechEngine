@@ -4,6 +4,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
+#include <cstdint>
+#include <vector>
 
 TEST_CASE("sixty fixed-step frames run exactly sixty ticks", "[app][loop]") {
     TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer);
@@ -143,6 +145,53 @@ TEST_CASE("a negative delta is clamped to zero", "[app][loop]") {
     REQUIRE(loop.accumulator() == Catch::Approx(accumulatorBefore));
     REQUIRE(loop.frame().deltaTime >= 0.0f);
     REQUIRE(loop.frame().alpha >= 0.0f);
+}
+
+// The hook stamps event batches with the frame and tick it reads here, so a stale frameIndex
+// would retire every batch one frame early. The one-argument overload cannot catch it: by the
+// time advance() returns, both orderings have produced the same state.
+TEST_CASE("the fixed-step hook sees the frame it is running in", "[app][loop]") {
+    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer, 0.5, 10.0);
+    std::vector<std::uint64_t> frames;
+    std::vector<std::uint64_t> ticks;
+
+    const auto record = [&frames, &ticks](const TechEngine::FrameContext& step) {
+        frames.push_back(step.frameIndex);
+        ticks.push_back(step.tick);
+    };
+
+    loop.advance(0.5, record);
+    loop.advance(0.5, record);
+
+    REQUIRE(frames == std::vector<std::uint64_t>{1, 2});
+    REQUIRE(ticks == std::vector<std::uint64_t>{1, 2});
+}
+
+TEST_CASE("a catch-up frame runs the hook once per fixed step", "[app][loop]") {
+    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer, 0.5, 10.0);
+    std::vector<std::uint64_t> ticks;
+
+    loop.advance(2.0, [&ticks](const TechEngine::FrameContext& step) {
+        ticks.push_back(step.tick);
+
+        REQUIRE(step.frameIndex == 1);
+        REQUIRE(step.deltaTime == Catch::Approx(2.0));
+    });
+
+    REQUIRE(ticks == std::vector<std::uint64_t>{1, 2, 3, 4});
+}
+
+TEST_CASE("a frame with no fixed step never runs the hook", "[app][loop]") {
+    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer, 0.5, 10.0);
+    int invocations = 0;
+
+    loop.advance(0.25, [&invocations](const TechEngine::FrameContext&) {
+        invocations++;
+    });
+
+    REQUIRE(invocations == 0);
+    REQUIRE(loop.frame().frameIndex == 1);
+    REQUIRE(loop.frame().tick == 0);
 }
 
 TEST_CASE("the published context carries the construction values", "[app][loop]") {

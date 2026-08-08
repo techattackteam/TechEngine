@@ -1,4 +1,5 @@
-#include <TechEngine/base/diagnostics/Assert.hpp>
+#include "AssertCapture.hpp"
+
 #include <TechEngine/core/events/EventRegistry.hpp>
 #include <TechEngine/core/events/EventStreamManager.hpp>
 
@@ -7,7 +8,6 @@
 #include <cstdint>
 #include <span>
 #include <string_view>
-#include <vector>
 
 static constexpr std::string_view ALPHA_TAG = "TechEngine.StreamsAlpha";
 static constexpr std::string_view BETA_TAG = "TechEngine.StreamsBeta";
@@ -23,32 +23,6 @@ namespace {
 
     struct StreamsUnregistered {
         std::uint32_t amount;
-    };
-
-    std::vector<TechEngine::AssertKind> g_fired;
-
-    TechEngine::AssertResponse captureHandler(const TechEngine::AssertContext& context) {
-        g_fired.push_back(context.kind);
-        return TechEngine::AssertResponse{false, false};
-    }
-
-    class AssertHandlerGuard {
-    public:
-        AssertHandlerGuard() : m_previous{TechEngine::setAssertHandler(&captureHandler)} {
-            g_fired.clear();
-        }
-
-        ~AssertHandlerGuard() {
-            TechEngine::setAssertHandler(m_previous);
-            g_fired.clear();
-        }
-
-        AssertHandlerGuard(const AssertHandlerGuard&) = delete;
-
-        AssertHandlerGuard& operator=(const AssertHandlerGuard&) = delete;
-
-    private:
-        TechEngine::AssertHandlerFn m_previous;
     };
 }
 
@@ -145,7 +119,7 @@ TEST_CASE("retiring reaches every stream at once", "[core][events]") {
 // The miss is always-on and survivable: a handler that declines to abort must land on a
 // defined path, not index the stream vector with a record that was never found.
 TEST_CASE("a type with no stream is rejected and changes nothing", "[core][events]") {
-    const AssertHandlerGuard guard;
+    const TechEngineTests::AssertHandlerGuard guard;
     TechEngine::EventRegistry registry;
     registry.registerEvent<StreamsAlpha>(ALPHA_TAG);
     TechEngine::EventStreamManager streams{registry};
@@ -155,8 +129,8 @@ TEST_CASE("a type with no stream is rejected and changes nothing", "[core][event
     TechEngine::EventCursor cursor;
     const std::span<const StreamsUnregistered> missing = streams.read<StreamsUnregistered>(cursor);
 
-    REQUIRE(g_fired.size() == 2);
-    REQUIRE(g_fired.front() == TechEngine::AssertKind::Verify);
+    REQUIRE(TechEngineTests::g_fired.size() == 2);
+    REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Verify);
     REQUIRE(missing.empty());
     REQUIRE(cursor.sequence == 0);
     REQUIRE(streams.streamCount() == 1);
