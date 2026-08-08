@@ -185,9 +185,7 @@ TEST_CASE("a frame with no fixed step never runs the hook", "[app][loop]") {
     TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer, 0.5, 10.0);
     int invocations = 0;
 
-    loop.advance(0.25, [&invocations](const TechEngine::FrameContext&) {
-        invocations++;
-    });
+    loop.advance(0.25, [&invocations](const TechEngine::FrameContext&) { invocations++; });
 
     REQUIRE(invocations == 0);
     REQUIRE(loop.frame().frameIndex == 1);
