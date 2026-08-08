@@ -7,6 +7,7 @@
 #include <TechEngine/core/events/EventRegistry.hpp>
 #include <TechEngine/core/events/EventStreamManager.hpp>
 
+#include <diagnostics/Diagnostics.hpp>
 #include <diagnostics/MemoryTracking.hpp>
 
 #include <chrono>
@@ -23,6 +24,8 @@ namespace TechEngine {
     static constexpr std::uint64_t DEMO_DAMAGE_TICK_PERIOD = 30;
 
     int run() {
+        const DiagnosticsScope diagnostics;
+
         memoryTrackingAnchor();
 
         Clock clock;
