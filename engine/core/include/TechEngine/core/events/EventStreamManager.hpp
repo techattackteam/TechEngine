@@ -12,7 +12,7 @@
 namespace TechEngine {
     class EventStreamManager {
     private:
-        const EventRegistry* m_registry{nullptr};
+        const EventRegistry* m_registry = nullptr;
         std::vector<EventStream> m_streams;
 
     public:

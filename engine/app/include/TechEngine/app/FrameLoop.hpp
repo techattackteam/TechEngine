@@ -52,7 +52,7 @@ namespace TechEngine {
     private:
         double m_fixedDeltaTime;
         double m_maxFrameDeltaTime;
-        double m_accumulator{0.0};
+        double m_accumulator = 0.0;
         FrameContext m_frame{};
     };
 }

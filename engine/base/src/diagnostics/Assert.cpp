@@ -14,7 +14,7 @@
 namespace TechEngine {
     static constexpr std::size_t ASSERT_MESSAGE_CAPACITY = 1024;
 
-    static std::atomic<AssertHandlerFn> g_assertHandler{&defaultAssertHandler};
+    static std::atomic<AssertHandlerFn> g_assertHandler = &defaultAssertHandler;
 
     static thread_local bool t_reporting = false;
 

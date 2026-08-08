@@ -16,8 +16,8 @@
 
 namespace TechEngine {
     struct DemoDamage {
-        std::uint64_t tick{0};
-        std::uint32_t amount{0};
+        std::uint64_t tick = 0;
+        std::uint32_t amount = 0;
     };
 
     static constexpr std::uint64_t DEMO_DAMAGE_TICK_PERIOD = 30;

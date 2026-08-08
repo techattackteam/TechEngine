@@ -42,7 +42,7 @@ namespace TechEngine {
         constexpr bool operator==(const LogModule&) const = default;
 
     private:
-        std::uint16_t m_id{0};
+        std::uint16_t m_id = 0;
     };
 
     class LogChannel {
@@ -59,7 +59,7 @@ namespace TechEngine {
         constexpr bool operator==(const LogChannel&) const = default;
 
     private:
-        std::uint16_t m_id{0};
+        std::uint16_t m_id = 0;
     };
 
     inline constexpr LogModule DEFAULT_MODULE{};
@@ -70,14 +70,14 @@ namespace TechEngine {
     // static strings.
     struct LogRecord {
         std::chrono::system_clock::time_point time;
-        std::uint64_t frame{0};
-        Level level{Level::Info};
+        std::uint64_t frame = 0;
+        Level level = Level::Info;
         LogModule moduleTag{};
         LogChannel channel{};
         std::string_view message;
         std::string_view file;
         std::string_view function;
-        std::uint32_t line{0};
+        std::uint32_t line = 0;
     };
 
     using LogSinkFn = void (*)(const LogRecord&);

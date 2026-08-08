@@ -23,6 +23,6 @@ namespace TechEngine {
 
     private:
         TimePoint m_start;
-        std::uint64_t m_frame{0};
+        std::uint64_t m_frame = 0;
     };
 }

@@ -37,7 +37,7 @@ namespace TechEngine {
         auto operator<=>(const StringId&) const = default;
 
     private:
-        std::uint64_t m_value{0};
+        std::uint64_t m_value = 0;
     };
 }
 
