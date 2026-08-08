@@ -13,7 +13,7 @@ namespace TechEngine {
         constexpr explicit EventTypeId(StringId tag) : m_value{tag} {
         }
 
-        constexpr StringId value() const {
+        constexpr StringId stringID() const {
             return m_value;
         }
 
@@ -42,6 +42,6 @@ namespace TechEngine {
 template<>
 struct std::hash<TechEngine::EventTypeId> {
     std::size_t operator()(TechEngine::EventTypeId id) const noexcept {
-        return std::hash<TechEngine::StringId>{}(id.value());
+        return std::hash<TechEngine::StringId>{}(id.stringID());
     }
 };

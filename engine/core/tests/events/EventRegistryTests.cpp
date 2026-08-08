@@ -6,46 +6,51 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+namespace {
+    struct CollisionEnter {
+        std::uint32_t entity;
+        float impulse;
+    };
 
-struct CollisionEnter {
-    std::uint32_t entity;
-    float impulse;
-};
+    struct GamePaused {};
 
-struct GamePaused {};
+    struct DamageDealt {
+        std::uint64_t source;
+        std::int32_t amount;
+    };
 
-struct DamageDealt {
-    std::uint64_t source;
-    std::int32_t amount;
-};
+    struct TagSharer {
+        std::uint32_t value;
+    };
 
-struct TagSharer {
-    std::uint32_t value;
-};
+    struct SecondRegistryEvent {
+        std::uint32_t value;
+    };
 
-struct SecondRegistryEvent {
-    std::uint32_t value;
-};
+    struct LocalByDefault {
+        std::uint32_t value;
+    };
 
-struct LocalByDefault {
-    std::uint32_t value;
-};
+    struct NeverRegistered {
+        std::uint32_t value;
+    };
 
-struct NeverRegistered {
-    std::uint32_t value;
-};
+    struct RejectedEvent {
+        std::uint32_t value;
+    };
 
-struct RejectedEvent {
-    std::uint32_t value;
-};
+    struct AfterRejection {
+        std::uint32_t value;
+    };
 
-struct AfterRejection {
-    std::uint32_t value;
-};
+    struct EmptyTagEvent {
+        std::uint32_t value;
+    };
 
-struct EmptyTagEvent {
-    std::uint32_t value;
-};
+    struct AfterSeal {
+        std::uint32_t value;
+    };
+}
 
 static std::vector<TechEngine::AssertKind> g_fired;
 
@@ -195,6 +200,24 @@ TEST_CASE("a rejected registration does not consume a stream index", "[core][eve
     REQUIRE(g_fired.size() == 1);
     REQUIRE(registry.typeCount() == 2);
     REQUIRE(registry.find(accepted)->streamIndex == 1);
+}
+
+// The streams are built from the records once, so a late registration would otherwise
+// surface as a missing stream at the first publish, far from the call that caused it.
+TEST_CASE("registration after the seal is rejected", "[core][events]") {
+    const AssertHandlerGuard guard;
+    TechEngine::EventRegistry registry;
+
+    registry.registerEvent<CollisionEnter>("TechEngine.CollisionEnter");
+    registry.seal();
+    const TechEngine::EventTypeId id = registry.registerEvent<AfterSeal>("TechEngine.AfterSeal");
+
+    REQUIRE(registry.sealed());
+    REQUIRE(g_fired.size() == 1);
+    REQUIRE(g_fired.front() == TechEngine::AssertKind::Check);
+    REQUIRE_FALSE(id.valid());
+    REQUIRE(registry.typeCount() == 1);
+    REQUIRE_FALSE(TechEngine::eventTypeId<AfterSeal>().valid());
 }
 
 // The slot holds the id, never the dense index — that is what lets two registries in one

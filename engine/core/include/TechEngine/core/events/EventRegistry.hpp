@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -29,6 +30,7 @@ namespace TechEngine {
     private:
         std::vector<EventTypeRecord> m_eventRecords;
         std::unordered_map<EventTypeId, std::uint32_t> m_indexById;
+        bool m_sealed = false;
 
     public:
         EventRegistry() = default;
@@ -49,6 +51,12 @@ namespace TechEngine {
         }
 
         const EventTypeRecord* find(EventTypeId id) const;
+
+        std::span<const EventTypeRecord> records() const;
+
+        void seal();
+
+        bool sealed() const;
 
         std::string_view tagOf(EventTypeId id) const;
 

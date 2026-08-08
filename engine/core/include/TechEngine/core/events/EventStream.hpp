@@ -28,7 +28,7 @@ namespace TechEngine {
         };
 
         EventTypeId m_id;
-        std::uint32_t m_elementSize{0};
+        std::uint32_t m_elementSize = 0;
         std::uint32_t m_alignment{0};
         std::size_t m_capacity{0};
         std::unique_ptr<std::byte[]> m_storage;
@@ -54,8 +54,6 @@ namespace TechEngine {
             stage(&event);
         }
 
-        // The cast is the type erasure's seam: registration proved T trivially copyable, and
-        // the id check above proved these bytes are T's.
         template<typename T>
         std::span<const T> read(EventCursor& cursor) const {
             TE_ASSERT(m_id == eventTypeId<T>());
