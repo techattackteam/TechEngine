@@ -74,10 +74,13 @@ includes, headers, privacy, CMake, plus the *Open* rows still undecided. Read it
 reconstruct it from here. `.clang-format` / `.clang-tidy` own the mechanical subset and win on
 any conflict. **Rule 0: match the surrounding file** over any written rule.
 
-Only the three rules below are repeated here, because they are corrections to AI defaults —
+Only the rules below are repeated here, because they are corrections to AI defaults —
 I get them wrong *by habit*, so knowing where the spec lives isn't enough:
 
 - **No `[[nodiscard]]`.** Anywhere — not on getters, not on queries. → *Attributes*.
+- **Initialize with `=`, not braces.** `std::uint32_t m_alignment = 0;`, never `m_alignment{0}`.
+  Braces only for value-init `{}`, multi-field aggregates, and real constructor calls.
+  → *Initialization*.
 - **Internal linkage is `static`, not `namespace {}`.** Never wrap half a `.cpp` in an
   anonymous namespace; it earns its place only around a single `.cpp`-local **type** with a
   real ODR risk. → *Internal linkage*.

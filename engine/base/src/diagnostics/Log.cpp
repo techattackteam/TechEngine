@@ -24,24 +24,24 @@ namespace TechEngine {
 
     struct LogModuleEntry {
         std::string_view name;
-        std::atomic<Level> level{Level::Trace};
+        std::atomic<Level> level = Level::Trace;
     };
 
     struct LogChannelEntry {
         std::string_view name;
         LogModule moduleTag{};
-        std::atomic<Level> level{Level::Trace};
+        std::atomic<Level> level = Level::Trace;
     };
 
-    static std::atomic<Level> g_minLevel{Level::Trace};
-    static std::atomic<std::uint64_t> g_frame{0};
-    static std::atomic<bool> g_initialized{false};
+    static std::atomic<Level> g_minLevel = Level::Trace;
+    static std::atomic<std::uint64_t> g_frame = 0;
+    static std::atomic<bool> g_initialized = false;
 
     // Slot 0 is the default module/channel and is never handed out by registration.
     static std::array<LogModuleEntry, MAX_LOG_MODULES> g_modules{};
-    static std::atomic<std::uint16_t> g_moduleCount{1};
+    static std::atomic<std::uint16_t> g_moduleCount = 1;
     static std::array<LogChannelEntry, MAX_LOG_CHANNELS> g_channels{};
-    static std::atomic<std::uint16_t> g_channelCount{1};
+    static std::atomic<std::uint16_t> g_channelCount = 1;
 
     // A null slot is an empty one — no separate count to keep in step with the array.
     static std::array<std::atomic<LogSinkFn>, MAX_LOG_SINKS> g_sinks{};
@@ -56,7 +56,7 @@ namespace TechEngine {
     // modulo; two threads racing the same wrapped slot can tear a write. Accepted for a
     // best-effort crash trail, not a linearizable log.
     static std::array<RingEntry, LOG_RING_CAPACITY> g_ring{};
-    static std::atomic<std::uint64_t> g_ringWritten{0};
+    static std::atomic<std::uint64_t> g_ringWritten = 0;
 
     static void ringWrite(const LogRecord& record) {
         const std::uint64_t index = g_ringWritten.fetch_add(1, std::memory_order_relaxed);

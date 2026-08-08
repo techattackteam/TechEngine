@@ -21,17 +21,17 @@ namespace TechEngine {
     };
 
     struct AssertContext {
-        AssertKind kind{AssertKind::Assert};
+        AssertKind kind = AssertKind::Assert;
         std::string_view condition;
         std::string_view message;
         std::string_view file;
         std::string_view function;
-        std::uint32_t line{0};
+        std::uint32_t line = 0;
     };
 
     struct AssertResponse {
-        bool breakAtCallSite{false};
-        bool abortProcess{false};
+        bool breakAtCallSite = false;
+        bool abortProcess = false;
     };
 
     using AssertHandlerFn = AssertResponse (*)(const AssertContext&);
@@ -136,7 +136,7 @@ namespace TechEngine {
             return true;                                                                                                                                \
         }                                                                                                                                               \
         TE_ASSERT_PRIVATE_FOLDABLE_END                                                                                                                  \
-        static ::std::atomic<bool> te_reported_{false};                                                                                                 \
+        static ::std::atomic<bool> te_reported_ = false;                                                                                                \
         if (!te_reported_.exchange(true, ::std::memory_order_relaxed)) {                                                                                \
             TE_ASSERT_PRIVATE_RESPOND(::TechEngine::detail::assertReport(::TechEngine::AssertKind::Ensure, #cond, te_loc_ __VA_OPT__(, ) __VA_ARGS__)); \
         }                                                                                                                                               \
