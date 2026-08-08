@@ -231,6 +231,31 @@ whole API surface for. It also reads as attribute-soup next to `constexpr` / `st
   a `bool` "did it work"). That is the Error-handling row in *Open* below — decide it there, for
   that shape, not as a blanket habit. Today's only case (`addLogSink`) is a bool nobody ignores.
 
+## Initialization — `= value`, not `{value}`
+
+> **A variable that starts at a value spells it with `=`.** `std::uint32_t m_alignment = 0;`,
+> not `m_alignment{0}`. Decided 2026-08-08. Applies to members, locals, file-scope state.
+
+Braces stay where they do something `=` cannot:
+
+| Case | Write |
+|---|---|
+| scalar / enum / pointer with a starting value | `std::uint64_t m_frame = 0;` · `Level level = Level::Trace;` |
+| **value-init, no value to state** | `std::array<char, 512> out{};` — bare `{}`; `= {}` is the same brace plus a token |
+| aggregate with more than one field | `const Vec3 position{1.0f, 2.0f, 3.0f};` |
+| a constructor call, not a value | `std::ifstream file{path};` — `= path` won't compile for an explicit ctor |
+| narrowing you want the compiler to catch | braces; `=` truncates silently |
+| a constructor's member-init list | out of scope — `=` isn't available there. `: m_id{id}` stays |
+
+`std::atomic<T> x = value;` is fine — the converting constructor is not `explicit`, so the
+retrofit of `g_minLevel{Level::Trace}` and friends is mechanical.
+
+**Why:** `= 0` reads as *starts at zero*; `{0}` reads as *constructed from a one-element list*,
+which is the wrong mental model for a scalar and the wrong shape next to the cases above that
+genuinely are construction. Nothing enforces this — no check in our set covers init form.
+
+`base`, `core` and `app` were swept to match on 2026-08-08.
+
 ## Loops — post-increment in the `for` step
 
 ```cpp

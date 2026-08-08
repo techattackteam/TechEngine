@@ -20,10 +20,10 @@ namespace TechEngine {
     struct EventTypeRecord {
         EventTypeId id;
         std::string tag;
-        std::uint32_t streamIndex{0};
-        std::uint32_t size{0};
-        std::uint32_t alignment{0};
-        EventWire wire{EventWire::Local};
+        std::uint32_t streamIndex = 0;
+        std::uint32_t size = 0;
+        std::uint32_t alignment = 0;
+        EventWire wire = EventWire::Local;
     };
 
     class EventRegistry {

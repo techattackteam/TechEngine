@@ -8,10 +8,10 @@ namespace TechEngine {
         inline constexpr std::string_view TRUNCATION_MARKER = "...[truncated]";
 
         struct FormatBuffer {
-            char* data{nullptr};
-            std::size_t capacity{0};
-            std::size_t size{0};
-            bool truncated{false};
+            char* data = nullptr;
+            std::size_t capacity = 0;
+            std::size_t size = 0;
+            bool truncated = false;
 
             void push(char c) {
                 if (size < capacity) {
@@ -60,7 +60,7 @@ namespace TechEngine {
             }
 
         private:
-            FormatBuffer* m_buffer{nullptr};
+            FormatBuffer* m_buffer = nullptr;
         };
 
         static_assert(std::output_iterator<FormatBufferIterator, char>, "vformat_to needs this to model output_iterator");
