@@ -5,22 +5,22 @@
 #include <TechEngine/base/math/Format.hpp>
 #include <TechEngine/base/time/Clock.hpp>
 #include <TechEngine/core/events/EventRegistry.hpp>
-#include <TechEngine/core/events/EventStream.hpp>
+#include <TechEngine/core/events/EventStreamManager.hpp>
 
 #include <diagnostics/MemoryTracking.hpp>
 
 #include <chrono>
 #include <cstdint>
+#include <span>
 #include <thread>
 
 namespace TechEngine {
-    // TODO(S3-T10): throwaway. Real wiring makes events visible per fixed sub-step inside
-    // FrameLoop and retires before Input; this only reaches the frame tail.
     struct DemoDamage {
-        std::uint64_t frameIndex;
-        std::uint32_t amount;
-        inline static std::string tag = "TechEngine.DemoDamage";
+        std::uint64_t tick{0};
+        std::uint32_t amount{0};
     };
+
+    static constexpr std::uint64_t DEMO_DAMAGE_TICK_PERIOD = 30;
 
     int run() {
         memoryTrackingAnchor();
@@ -28,9 +28,10 @@ namespace TechEngine {
         Clock clock;
         FrameLoop loop(Role::Client);
 
-        EventRegistry events;
-        const EventTypeId damageId = events.registerEvent<DemoDamage>(DemoDamage::tag);
-        EventStream damageStream{damageId, sizeof(DemoDamage), alignof(DemoDamage), 64};
+        EventRegistry registry;
+        registry.registerEvent<DemoDamage>("TechEngine.DemoDamage");
+
+        EventStreamManager streams{registry};
         EventCursor damageCursor;
 
         Clock::TimePoint previous = clock.now();
@@ -46,28 +47,24 @@ namespace TechEngine {
             const double frameDeltaTime = std::chrono::duration<double>(current - previous).count();
             previous = current;
 
-            loop.advance(frameDeltaTime);
+            loop.advance(frameDeltaTime, [&streams](const FrameContext& fixedStep) {
+                if (fixedStep.tick % DEMO_DAMAGE_TICK_PERIOD == 0) {
+                    streams.publish(DemoDamage{fixedStep.tick, 42});
+                }
+                streams.makeVisible(fixedStep.frameIndex, fixedStep.tick);
+            });
 
-            damageStream.retire(loop.frame().frameIndex, loop.frame().tick);
+            const FrameContext& frame = loop.frame();
+            streams.makeVisible(frame.frameIndex, frame.tick);
 
-            if (loop.frame().frameIndex % 30 == 0) {
-                damageStream.publish(DemoDamage{loop.frame().frameIndex, 42});
+            const std::span<const DemoDamage> damage = streams.read<DemoDamage>(damageCursor);
+            for (const DemoDamage& event: damage) {
+                TE_LOGGER_WARN("DemoDamage {0} from tick {1}, read on frame {2} ({3} in this batch)", event.amount, event.tick, frame.frameIndex, damage.size());
             }
 
-            damageStream.makeVisible(loop.frame().frameIndex, loop.frame().tick);
+            streams.retire(frame.frameIndex, frame.tick);
 
-            for (const DemoDamage& damage: damageStream.read<DemoDamage>(damageCursor)) {
-                TE_LOGGER_WARN("DemoDamage {0} published on frame {1}", damage.amount, damage.frameIndex);
-            }
-
-            TE_LOGGER_INFO(
-                "Frame {0}: deltaTime = {1:.6f}, fixedDeltaTime = {2:.6f}, accumulator = {3:.6f}, tick = {4}, role = {5}",
-                loop.frame().frameIndex,
-                loop.frame().deltaTime,
-                loop.frame().fixedDeltaTime,
-                loop.accumulator(),
-                loop.frame().tick,
-                static_cast<std::uint32_t>(loop.frame().role));
+            TE_LOGGER_INFO("Frame {0}: deltaTime = {1:.6f}, fixedDeltaTime = {2:.6f}, accumulator = {3:.6f}, tick = {4}, role = {5}", frame.frameIndex, frame.deltaTime, frame.fixedDeltaTime, loop.accumulator(), frame.tick, static_cast<std::uint32_t>(frame.role));
 
             // TODO(S3): throwaway 60 Hz pacer. Spins because sleep_for rounds up to the
             // ~15.6 ms Windows timer tick; real frame pacing is undecided.

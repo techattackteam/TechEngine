@@ -10,6 +10,10 @@ namespace TechEngine {
         return nullptr;
     }
 
+    std::span<const EventTypeRecord> EventRegistry::records() const {
+        return m_eventRecords;
+    }
+
     std::string_view EventRegistry::tagOf(EventTypeId id) const {
         const auto it = m_indexById.find(id);
         if (it != m_indexById.end()) {
@@ -22,7 +26,20 @@ namespace TechEngine {
         return m_eventRecords.size();
     }
 
+    void EventRegistry::seal() {
+        m_sealed = true;
+    }
+
+    bool EventRegistry::sealed() const {
+        return m_sealed;
+    }
+
     EventTypeId EventRegistry::registerType(std::string_view tag, std::uint32_t size, std::uint32_t alignment, EventWire wire) {
+        if (m_sealed) {
+            TE_CHECK(false, "Event registration is closed — {0} is registered after the streams were built", tag);
+            return {};
+        }
+
         if (tag.empty()) {
             TE_CHECK(false, "An event tag must not be empty");
             return {};
