@@ -1,6 +1,9 @@
 #pragma once
 
+#include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/FrameContext.hpp>
+
+#include <concepts>
 
 namespace TechEngine {
     class FrameLoop {
@@ -11,6 +14,36 @@ namespace TechEngine {
         explicit FrameLoop(Role role, double fixedDeltaTime = FIXED_DELTA_TIME, double maxFrameDeltaTime = MAX_FRAME_DELTA_TIME);
 
         const FrameContext& advance(double frameDeltaTime);
+
+        template<std::invocable<const FrameContext&> Step>
+        const FrameContext& advance(double frameDeltaTime, Step&& onFixedStep) {
+            TE_PROFILER_FUNCTION();
+
+            if (frameDeltaTime < 0.0) {
+                frameDeltaTime = 0.0;
+            }
+
+            const double clampedDeltaTime = frameDeltaTime > m_maxFrameDeltaTime ? m_maxFrameDeltaTime : frameDeltaTime;
+
+            m_frame.frameIndex++;
+            m_frame.deltaTime = static_cast<float>(clampedDeltaTime);
+
+            m_accumulator += clampedDeltaTime;
+
+            {
+                TE_PROFILER_SCOPE("FixedSteps");
+
+                while (m_accumulator >= m_fixedDeltaTime) {
+                    m_accumulator -= m_fixedDeltaTime;
+                    m_frame.tick++;
+                    onFixedStep(m_frame);
+                }
+            }
+
+            m_frame.alpha = static_cast<float>(m_accumulator / m_fixedDeltaTime);
+
+            return m_frame;
+        }
 
         const FrameContext& frame() const;
 

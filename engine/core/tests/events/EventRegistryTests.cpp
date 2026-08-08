@@ -1,79 +1,56 @@
-#include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/core/events/EventRegistry.hpp>
 
+#include "AssertCapture.hpp"
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstdint>
 #include <string>
-#include <vector>
 
-struct CollisionEnter {
-    std::uint32_t entity;
-    float impulse;
-};
+namespace {
+    struct CollisionEnter {
+        std::uint32_t entity;
+        float impulse;
+    };
 
-struct GamePaused {};
+    struct GamePaused {};
 
-struct DamageDealt {
-    std::uint64_t source;
-    std::int32_t amount;
-};
+    struct DamageDealt {
+        std::uint64_t source;
+        std::int32_t amount;
+    };
 
-struct TagSharer {
-    std::uint32_t value;
-};
+    struct TagSharer {
+        std::uint32_t value;
+    };
 
-struct SecondRegistryEvent {
-    std::uint32_t value;
-};
+    struct SecondRegistryEvent {
+        std::uint32_t value;
+    };
 
-struct LocalByDefault {
-    std::uint32_t value;
-};
+    struct LocalByDefault {
+        std::uint32_t value;
+    };
 
-struct NeverRegistered {
-    std::uint32_t value;
-};
+    struct NeverRegistered {
+        std::uint32_t value;
+    };
 
-struct RejectedEvent {
-    std::uint32_t value;
-};
+    struct RejectedEvent {
+        std::uint32_t value;
+    };
 
-struct AfterRejection {
-    std::uint32_t value;
-};
+    struct AfterRejection {
+        std::uint32_t value;
+    };
 
-struct EmptyTagEvent {
-    std::uint32_t value;
-};
+    struct EmptyTagEvent {
+        std::uint32_t value;
+    };
 
-static std::vector<TechEngine::AssertKind> g_fired;
-
-// {false, false} keeps a fatal TE_CHECK from killing the runner, so the case can go on to
-// assert what the registry looks like *after* a rejection.
-static TechEngine::AssertResponse captureHandler(const TechEngine::AssertContext& context) {
-    g_fired.push_back(context.kind);
-    return TechEngine::AssertResponse{false, false};
+    struct AfterSeal {
+        std::uint32_t value;
+    };
 }
-
-class AssertHandlerGuard {
-public:
-    AssertHandlerGuard() : m_previous{TechEngine::setAssertHandler(&captureHandler)} {
-        g_fired.clear();
-    }
-
-    ~AssertHandlerGuard() {
-        TechEngine::setAssertHandler(m_previous);
-        g_fired.clear();
-    }
-
-    AssertHandlerGuard(const AssertHandlerGuard&) = delete;
-
-    AssertHandlerGuard& operator=(const AssertHandlerGuard&) = delete;
-
-private:
-    TechEngine::AssertHandlerFn m_previous;
-};
 
 TEST_CASE("registerEvent returns the tag's hash and fills the type slot", "[core][events]") {
     TechEngine::EventRegistry registry;
@@ -154,14 +131,14 @@ TEST_CASE("the invalid id resolves to nothing", "[core][events]") {
 }
 
 TEST_CASE("a duplicate tag fires a check and leaves the registry unchanged", "[core][events]") {
-    const AssertHandlerGuard guard;
+    const TechEngineTests::AssertHandlerGuard guard;
     TechEngine::EventRegistry registry;
 
     registry.registerEvent<CollisionEnter>("TechEngine.CollisionEnter");
     const TechEngine::EventTypeId second = registry.registerEvent<TagSharer>("TechEngine.CollisionEnter");
 
-    REQUIRE(g_fired.size() == 1);
-    REQUIRE(g_fired.front() == TechEngine::AssertKind::Check);
+    REQUIRE(TechEngineTests::g_fired.size() == 1);
+    REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Check);
     REQUIRE_FALSE(second.valid());
     REQUIRE(registry.typeCount() == 1);
     REQUIRE_FALSE(TechEngine::eventTypeId<TagSharer>().valid());
@@ -170,13 +147,13 @@ TEST_CASE("a duplicate tag fires a check and leaves the registry unchanged", "[c
 // An empty tag hashes to the FNV offset basis, which is a perfectly valid id — so this
 // cannot ride the id.valid() check; the guard is on the string.
 TEST_CASE("an empty tag is rejected", "[core][events]") {
-    const AssertHandlerGuard guard;
+    const TechEngineTests::AssertHandlerGuard guard;
     TechEngine::EventRegistry registry;
 
     const TechEngine::EventTypeId id = registry.registerEvent<EmptyTagEvent>("");
 
-    REQUIRE(g_fired.size() == 1);
-    REQUIRE(g_fired.front() == TechEngine::AssertKind::Check);
+    REQUIRE(TechEngineTests::g_fired.size() == 1);
+    REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Check);
     REQUIRE_FALSE(id.valid());
     REQUIRE(registry.typeCount() == 0);
     REQUIRE_FALSE(TechEngine::eventTypeId<EmptyTagEvent>().valid());
@@ -185,16 +162,34 @@ TEST_CASE("an empty tag is rejected", "[core][events]") {
 // A rejected registration must not burn a dense index: the indices are stream slots, and a
 // hole here would mis-size every stream array T9 builds from this registry.
 TEST_CASE("a rejected registration does not consume a stream index", "[core][events]") {
-    const AssertHandlerGuard guard;
+    const TechEngineTests::AssertHandlerGuard guard;
     TechEngine::EventRegistry registry;
 
     registry.registerEvent<CollisionEnter>("TechEngine.CollisionEnter");
     registry.registerEvent<RejectedEvent>("TechEngine.CollisionEnter");
     const TechEngine::EventTypeId accepted = registry.registerEvent<AfterRejection>("TechEngine.AfterRejection");
 
-    REQUIRE(g_fired.size() == 1);
+    REQUIRE(TechEngineTests::g_fired.size() == 1);
     REQUIRE(registry.typeCount() == 2);
     REQUIRE(registry.find(accepted)->streamIndex == 1);
+}
+
+// The streams are built from the records once, so a late registration would otherwise
+// surface as a missing stream at the first publish, far from the call that caused it.
+TEST_CASE("registration after the seal is rejected", "[core][events]") {
+    const TechEngineTests::AssertHandlerGuard guard;
+    TechEngine::EventRegistry registry;
+
+    registry.registerEvent<CollisionEnter>("TechEngine.CollisionEnter");
+    registry.seal();
+    const TechEngine::EventTypeId id = registry.registerEvent<AfterSeal>("TechEngine.AfterSeal");
+
+    REQUIRE(registry.sealed());
+    REQUIRE(TechEngineTests::g_fired.size() == 1);
+    REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Check);
+    REQUIRE_FALSE(id.valid());
+    REQUIRE(registry.typeCount() == 1);
+    REQUIRE_FALSE(TechEngine::eventTypeId<AfterSeal>().valid());
 }
 
 // The slot holds the id, never the dense index — that is what lets two registries in one
