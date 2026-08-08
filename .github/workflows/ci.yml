@@ -60,6 +60,13 @@ jobs:
           }
           check 'engine/base/' 'TE_LOG_PRIVATE_' 'TE_LOG_PRIVATE_* (call TE_LOGGER_<LEVEL>)'
           check 'engine/base/' '\bdetail::log' 'TechEngine::detail log plumbing'
+          # Two ADR-013 rules at once. Every call site spelling TE_PROFILER_* is what keeps
+          # swapping the backend a one-header edit; banning ZoneTransient here is v1's F19
+          # (runtime-named zones on a per-frame path) made structural instead of review-only.
+          # This is the only gate on either — CI never compiles TE_PROFILE=ON.
+          check 'engine/base/include/TechEngine/base/diagnostics/' \
+                'ZoneScoped|ZoneTransient|FrameMark|Tracy(Secure)?(Alloc|Free)|tracy/' \
+                'Tracy identifiers (call TE_PROFILER_*)'
           exit $violations
 
   # --- build + test on both legs x {Debug, Release} --------------------------

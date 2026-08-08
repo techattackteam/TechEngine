@@ -44,6 +44,7 @@ if(TE_BUILD_TESTS)
           tests/BaseTests.cpp
           tests/diagnostics/LogTests.cpp
           tests/diagnostics/AssertTests.cpp
+          tests/diagnostics/ProfileTests.cpp
           tests/math/MathTests.cpp
           tests/math/MathFormatTests.cpp
           tests/stringid/StringIdTests.cpp
