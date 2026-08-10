@@ -329,7 +329,9 @@ TEST_CASE("with no sink installed a record still reaches stderr", "[base][log][s
     const TechEngine::Level previous = TechEngine::minLevel();
     TechEngine::setMinLevel(TechEngine::Level::Trace);
 
-    const std::string captured = captureStderr([] { TE_LOGGER_ERROR("fallback {0}", 7); });
+    const std::string captured = captureStderr([] {
+        TE_LOGGER_ERROR("fallback {0}", 7);
+    });
 
     TechEngine::setMinLevel(previous);
 
