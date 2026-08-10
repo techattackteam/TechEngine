@@ -7,7 +7,8 @@ namespace TechEngine {
     }
 
     const FrameContext& FrameLoop::advance(double frameDeltaTime) {
-        return advance(frameDeltaTime, [](const FrameContext&) {});
+        return advance(frameDeltaTime, [](const FrameContext&) {
+        });
     }
 
     const FrameContext& FrameLoop::frame() const {

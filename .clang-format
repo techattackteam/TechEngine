@@ -11,6 +11,7 @@ NamespaceIndentation: All
 FixNamespaceComments: false
 PointerAlignment: Left
 AllowShortFunctionsOnASingleLine: None
+AllowShortLambdasOnASingleLine: None
 AlignEscapedNewlines: Left
 # All-or-nothing wrapping: a call/decl that overflows ColumnLimit puts every
 # argument on its own line instead of packing them. AlwaysBreak is load-bearing
