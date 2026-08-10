@@ -93,8 +93,8 @@ namespace TechEngine {
         }
 
         // file_time_type's epoch is unspecified — MSVC counts from 1601, libstdc++ from 1970.
-        // clock_cast is the only portable spelling; file_clock exposes to_utc on one and
-        // to_sys on the other.
+        // An implementation may provide file_clock::to_sys or ::to_utc and need not provide
+        // both, so clock_cast is the only portable spelling.
         const auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(writeTime);
 
         out.physicalPath = physicalPath;
@@ -117,7 +117,11 @@ namespace TechEngine {
         }
 
         std::error_code ec;
-        if (!std::filesystem::is_directory(physicalPath, ec)) {
+        const bool isDirectory = std::filesystem::is_directory(physicalPath, ec);
+        if (ec) {
+            return FileResult::IoError;
+        }
+        if (!isDirectory) {
             return FileResult::NotADirectory;
         }
 

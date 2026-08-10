@@ -33,6 +33,12 @@ namespace TechEngineTests {
             return target;
         }
 
+        std::filesystem::path makeDirectory(const std::filesystem::path& relative) const {
+            const std::filesystem::path target = m_root / relative;
+            std::filesystem::create_directories(target);
+            return target;
+        }
+
     private:
         std::filesystem::path m_root;
     };
