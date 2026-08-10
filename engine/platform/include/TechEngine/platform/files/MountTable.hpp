@@ -13,7 +13,7 @@ namespace TechEngine {
     struct MountEntry {
         std::string alias;
         std::filesystem::path physicalRoot;
-         std::filesystem::path canonicalRoot; // Empty when physicalRoot did not exist at mount time
+        std::filesystem::path canonicalRoot; // Empty when physicalRoot did not exist at mount time
         int priority = 0;
     };
 
