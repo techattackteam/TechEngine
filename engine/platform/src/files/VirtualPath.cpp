@@ -1,28 +1,30 @@
 #include <TechEngine/platform/files/VirtualPath.hpp>
 
+#include <cstddef>
+
 namespace TechEngine {
-    bool splitVirtualPath(std::string_view virtualPath, VirtualPathParts& out) {
-        auto hasParentSegment = [](std::string_view path) {
-            std::size_t position = 0;
+    static bool hasParentSegment(std::string_view path) {
+        std::size_t position = 0;
 
-            while ((position = path.find("..", position)) != std::string_view::npos) {
-                const bool atStart = position == 0;
-                const bool afterSlash = !atStart && path[position - 1] == '/';
-                const std::size_t end = position + 2;
-                const bool atEnd = end == path.size();
-                const bool beforeSlash = !atEnd && path[end] == '/';
+        while ((position = path.find("..", position)) != std::string_view::npos) {
+            const bool atStart = position == 0;
+            const bool afterSlash = !atStart && path[position - 1] == '/';
+            const std::size_t end = position + 2;
+            const bool atEnd = end == path.size();
+            const bool beforeSlash = !atEnd && path[end] == '/';
 
-                if ((atStart || afterSlash) && (atEnd || beforeSlash)) {
-                    return true;
-                }
-
-                position += 2;
+            if ((atStart || afterSlash) && (atEnd || beforeSlash)) {
+                return true;
             }
 
-            return false;
-        };
+            position += 2;
+        }
 
-        if (virtualPath.empty() || virtualPath[0] == '/' || virtualPath.find('\\') != std::string_view::npos) {
+        return false;
+    }
+
+    bool splitVirtualPath(std::string_view virtualPath, VirtualPathParts& out) {
+        if (virtualPath.find('\\') != std::string_view::npos) {
             return false;
         }
 
@@ -42,7 +44,7 @@ namespace TechEngine {
             return false;
         }
 
-        if (hasParentSegment(virtualPath) || hasParentSegment(relative)) {
+        if (hasParentSegment(relative)) {
             return false;
         }
 

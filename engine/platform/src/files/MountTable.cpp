@@ -2,12 +2,13 @@
 #include <TechEngine/platform/files/VirtualPath.hpp>
 
 #include <algorithm>
+#include <utility>
 
 namespace TechEngine {
     // Windows resolves a wrong-case path happily and Linux does not, so exists() alone gives
     // the two CI legs different answers. Every candidate that exists still has to prove its
     // spelling matches the bytes on disk — canonical() reports the real on-disk name.
-    static bool matchesOnDiskCase(const std::filesystem::path& physicalRoot, std::string_view relative, const std::filesystem::path& candidate) {
+    static bool matchesOnDiskCase(const MountEntry& entry, std::string_view relative, const std::filesystem::path& candidate) {
         std::error_code ec;
 
         const std::filesystem::path actual = std::filesystem::canonical(candidate, ec);
@@ -15,23 +16,33 @@ namespace TechEngine {
             return false;
         }
 
-        const std::filesystem::path canonicalRoot = std::filesystem::canonical(physicalRoot, ec);
-        if (ec) {
-            return false;
+        std::filesystem::path root = entry.canonicalRoot;
+        if (root.empty()) {
+            root = std::filesystem::canonical(entry.physicalRoot, ec);
+            if (ec) {
+                return false;
+            }
         }
 
-        const std::filesystem::path expected = relative.empty() ? canonicalRoot : canonicalRoot / relative;
+        const std::filesystem::path expected = relative.empty() ? root : root / relative;
         return actual == expected.lexically_normal();
     }
 
     void MountTable::mount(const std::string& alias, const std::filesystem::path& physicalRoot, int priority) {
+        std::error_code ec;
+        std::filesystem::path canonicalRoot = std::filesystem::canonical(physicalRoot, ec);
+        if (ec) {
+            canonicalRoot.clear();
+        }
+
+        MountEntry entry{alias, physicalRoot, std::move(canonicalRoot), priority};
         for (auto it = m_entries.begin(); it != m_entries.end(); ++it) {
             if (it->priority < priority) {
-                m_entries.insert(it, MountEntry{alias, physicalRoot, priority});
+                m_entries.insert(it, std::move(entry));
                 return;
             }
         }
-        m_entries.emplace_back(MountEntry{alias, physicalRoot, priority});
+        m_entries.push_back(std::move(entry));
     }
 
     bool MountTable::unmount(const std::string& alias) {
@@ -78,7 +89,7 @@ namespace TechEngine {
             if (!std::filesystem::exists(candidate, ec)) {
                 continue;
             }
-            if (!matchesOnDiskCase(entry.physicalRoot, parts.relative, candidate)) {
+            if (!matchesOnDiskCase(entry, parts.relative, candidate)) {
                 continue;
             }
 
