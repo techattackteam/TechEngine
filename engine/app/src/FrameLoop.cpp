@@ -1,7 +1,7 @@
 #include <TechEngine/app/FrameLoop.hpp>
 
 namespace TechEngine {
-    FrameLoop::FrameLoop(const Role role, const double fixedDeltaTime, const double maxFrameDeltaTime) : m_fixedDeltaTime(fixedDeltaTime), m_maxFrameDeltaTime(maxFrameDeltaTime) {
+    FrameLoop::FrameLoop(const EngineContext& engine, const Role role, const double fixedDeltaTime, const double maxFrameDeltaTime) : m_fixedDeltaTime(fixedDeltaTime), m_maxFrameDeltaTime(maxFrameDeltaTime), m_frame{.engine = engine} {
         m_frame.role = role;
         m_frame.fixedDeltaTime = static_cast<float>(fixedDeltaTime);
     }

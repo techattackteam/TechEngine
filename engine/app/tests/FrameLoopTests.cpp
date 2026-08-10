@@ -1,4 +1,5 @@
 #include <TechEngine/app/FrameLoop.hpp>
+#include <TechEngine/core/EngineContext.hpp>
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -7,8 +8,20 @@
 #include <cstdint>
 #include <vector>
 
+namespace {
+    struct LoopEngine {
+        TechEngine::MountTable mounts;
+        TechEngine::FileAccess files{mounts};
+        TechEngine::EngineContext context{files};
+    };
+}
+
+// The loop only carries the context to its hook; no case here reads through it, so one empty
+// mount table serves the whole suite.
+static LoopEngine g_loopEngine;
+
 TEST_CASE("sixty fixed-step frames run exactly sixty ticks", "[app][loop]") {
-    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer);
+    TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::DedicatedServer);
 
     for (int frame = 0; frame < 60; ++frame) {
         loop.advance(TechEngine::FrameLoop::FIXED_DELTA_TIME);
@@ -20,7 +33,7 @@ TEST_CASE("sixty fixed-step frames run exactly sixty ticks", "[app][loop]") {
 }
 
 TEST_CASE("one frame worth several fixed steps runs them all", "[app][loop]") {
-    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer, 0.5, 10.0);
+    TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, 0.5, 10.0);
 
     loop.advance(2.0);
 
@@ -29,7 +42,7 @@ TEST_CASE("one frame worth several fixed steps runs them all", "[app][loop]") {
 }
 
 TEST_CASE("sub-step frames accumulate until a step is due", "[app][loop]") {
-    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer, 0.5, 10.0);
+    TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, 0.5, 10.0);
 
     loop.advance(0.25);
 
@@ -44,7 +57,7 @@ TEST_CASE("sub-step frames accumulate until a step is due", "[app][loop]") {
 }
 
 TEST_CASE("frameIndex counts frames, not ticks", "[app][loop]") {
-    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer, 0.5, 10.0);
+    TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, 0.5, 10.0);
 
     loop.advance(0.1);
     loop.advance(0.1);
@@ -72,7 +85,7 @@ TEST_CASE("the loop's state comes only from the deltas fed in", "[app][loop]") {
 }
 
 TEST_CASE("a stalled frame is clamped to the ceiling", "[app][loop]") {
-    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer, 0.5, 2.0);
+    TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, 0.5, 2.0);
 
     loop.advance(60.0);
 
@@ -81,7 +94,7 @@ TEST_CASE("a stalled frame is clamped to the ceiling", "[app][loop]") {
 }
 
 TEST_CASE("repeated stalls never grow the accumulator", "[app][loop]") {
-    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer, 0.5, 2.0);
+    TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, 0.5, 2.0);
 
     for (int frame = 0; frame < 10; ++frame) {
         loop.advance(60.0);
@@ -92,7 +105,7 @@ TEST_CASE("repeated stalls never grow the accumulator", "[app][loop]") {
 }
 
 TEST_CASE("the default clamp bounds catch-up at fifteen ticks", "[app][loop]") {
-    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer);
+    TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::DedicatedServer);
 
     loop.advance(2.0);
 
@@ -106,7 +119,7 @@ TEST_CASE("the default clamp bounds catch-up at fifteen ticks", "[app][loop]") {
 TEST_CASE("alpha stays in [0, 1) across ragged frames", "[app][loop]") {
     const std::array<double, 9> deltas{0.004, 0.0166, 0.5, 0.021, 2.0, 0.0009, 0.033, 0.008, 0.05};
 
-    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer);
+    TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::DedicatedServer);
 
     for (const double delta: deltas) {
         const TechEngine::FrameContext& frame = loop.advance(delta);
@@ -117,7 +130,7 @@ TEST_CASE("alpha stays in [0, 1) across ragged frames", "[app][loop]") {
 }
 
 TEST_CASE("a zero delta advances the frame but not the tick", "[app][loop]") {
-    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer, 0.5, 10.0);
+    TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, 0.5, 10.0);
 
     loop.advance(0.25);
     const std::uint64_t tickBefore = loop.frame().tick;
@@ -132,7 +145,7 @@ TEST_CASE("a zero delta advances the frame but not the tick", "[app][loop]") {
 }
 
 TEST_CASE("a negative delta is clamped to zero", "[app][loop]") {
-    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer, 0.5, 10.0);
+    TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, 0.5, 10.0);
 
     loop.advance(0.25);
     const std::uint64_t tickBefore = loop.frame().tick;
@@ -151,7 +164,7 @@ TEST_CASE("a negative delta is clamped to zero", "[app][loop]") {
 // would retire every batch one frame early. The one-argument overload cannot catch it: by the
 // time advance() returns, both orderings have produced the same state.
 TEST_CASE("the fixed-step hook sees the frame it is running in", "[app][loop]") {
-    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer, 0.5, 10.0);
+    TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, 0.5, 10.0);
     std::vector<std::uint64_t> frames;
     std::vector<std::uint64_t> ticks;
 
@@ -168,7 +181,7 @@ TEST_CASE("the fixed-step hook sees the frame it is running in", "[app][loop]") 
 }
 
 TEST_CASE("a catch-up frame runs the hook once per fixed step", "[app][loop]") {
-    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer, 0.5, 10.0);
+    TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, 0.5, 10.0);
     std::vector<std::uint64_t> ticks;
 
     loop.advance(2.0, [&ticks](const TechEngine::FrameContext& step) {
@@ -182,7 +195,7 @@ TEST_CASE("a catch-up frame runs the hook once per fixed step", "[app][loop]") {
 }
 
 TEST_CASE("a frame with no fixed step never runs the hook", "[app][loop]") {
-    TechEngine::FrameLoop loop(TechEngine::Role::DedicatedServer, 0.5, 10.0);
+    TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, 0.5, 10.0);
     int invocations = 0;
 
     loop.advance(0.25, [&invocations](const TechEngine::FrameContext&) {
@@ -195,7 +208,7 @@ TEST_CASE("a frame with no fixed step never runs the hook", "[app][loop]") {
 }
 
 TEST_CASE("the published context carries the construction values", "[app][loop]") {
-    TechEngine::FrameLoop loop(TechEngine::Role::ListenServer, 0.5, 2.0);
+    TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::ListenServer, 0.5, 2.0);
 
     loop.advance(0.25);
 

@@ -11,7 +11,7 @@ namespace TechEngine {
         static constexpr double FIXED_DELTA_TIME = 1.0 / 60.0;
         static constexpr double MAX_FRAME_DELTA_TIME = 0.25;
 
-        explicit FrameLoop(Role role, double fixedDeltaTime = FIXED_DELTA_TIME, double maxFrameDeltaTime = MAX_FRAME_DELTA_TIME);
+        FrameLoop(const EngineContext& engine, Role role, double fixedDeltaTime = FIXED_DELTA_TIME, double maxFrameDeltaTime = MAX_FRAME_DELTA_TIME);
 
         const FrameContext& advance(double frameDeltaTime);
 
@@ -53,6 +53,6 @@ namespace TechEngine {
         double m_fixedDeltaTime;
         double m_maxFrameDeltaTime;
         double m_accumulator = 0.0;
-        FrameContext m_frame{};
+        FrameContext m_frame;
     };
 }
