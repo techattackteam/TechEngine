@@ -29,6 +29,7 @@ function(techengine_test module)
   target_link_libraries(${_te_target} PRIVATE
     TechEngine::${module}
     Catch2::Catch2WithMain
+    te_test_support
     te_warnings)
 
   set_target_properties(${_te_target} PROPERTIES FOLDER "tests")

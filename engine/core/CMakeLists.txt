@@ -4,6 +4,7 @@ techengine_module(core
           src/events/EventStream.cpp
           src/events/EventStreamManager.cpp
   HEADERS include/TechEngine/core/Core.hpp
+          include/TechEngine/core/EngineContext.hpp
           include/TechEngine/core/FrameContext.hpp
           include/TechEngine/core/events/EventRegistry.hpp
           include/TechEngine/core/events/EventTypeId.hpp
@@ -17,6 +18,7 @@ techengine_module(core
 
 if(TE_BUILD_TESTS)
   techengine_test(core SOURCES
+          tests/EngineContextTests.cpp
           tests/events/EventRegistryTests.cpp
           tests/events/EventStreamTests.cpp
           tests/events/EventStreamManagerTests.cpp)

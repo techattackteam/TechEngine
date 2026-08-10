@@ -45,6 +45,7 @@ include(cmake/deps.cmake)           # FetchContent manifest (fetches Catch2 unde
 
 if(TE_BUILD_TESTS)
   include(cmake/techengine_test.cmake)
+  add_subdirectory(tests/support)   # te_test_support — must precede any techengine_test() call
 endif()
 
 add_subdirectory(engine)
