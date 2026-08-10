@@ -1,6 +1,6 @@
 #include <TechEngine/platform/files/MountTable.hpp>
+#include <TechEngine/testing/ScratchDirectory.hpp>
 
-#include "ScratchDirectory.hpp"
 #include <catch2/catch_test_macros.hpp>
 
 #include <filesystem>

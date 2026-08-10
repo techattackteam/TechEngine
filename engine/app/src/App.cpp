@@ -4,16 +4,21 @@
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/base/math/Format.hpp>
 #include <TechEngine/base/time/Clock.hpp>
+#include <TechEngine/core/EngineContext.hpp>
 #include <TechEngine/core/events/EventRegistry.hpp>
 #include <TechEngine/core/events/EventStreamManager.hpp>
+#include <TechEngine/platform/files/FileAccess.hpp>
+#include <TechEngine/platform/files/MountTable.hpp>
 
 #include <diagnostics/Diagnostics.hpp>
 #include <diagnostics/MemoryTracking.hpp>
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <thread>
+#include <vector>
 
 namespace TechEngine {
     struct DemoDamage {
@@ -28,8 +33,21 @@ namespace TechEngine {
 
         memoryTrackingAnchor();
 
+        MountTable mounts;
+        FileAccess files{mounts};
+        const EngineContext engine{files};
+
+        // TODO(S3-T13): throwaway demo mount. M3 brings the real set — project root,
+        // resources, cache — sourced from the loaded project, and the baked-in source path
+        // goes with it.
+        mounts.mount("assets", TE_DEMO_ASSETS_DIR);
+
+        std::vector<std::byte> demoAsset;
+        const FileResult demoRead = engine.files.read("assets://demo.txt", demoAsset);
+        TE_LOGGER_INFO("assets://demo.txt -> result {0}, {1} bytes", static_cast<std::uint32_t>(demoRead), demoAsset.size());
+
         Clock clock;
-        FrameLoop loop(Role::Client);
+        FrameLoop loop(engine, Role::Client);
 
         EventRegistry registry;
         registry.registerEvent<DemoDamage>("TechEngine.DemoDamage");
