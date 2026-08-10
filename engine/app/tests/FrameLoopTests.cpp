@@ -70,8 +70,8 @@ TEST_CASE("frameIndex counts frames, not ticks", "[app][loop]") {
 TEST_CASE("the loop's state comes only from the deltas fed in", "[app][loop]") {
     const std::array<double, 8> deltas{0.004, 0.021, 0.0166, 0.033, 0.008, 0.05, 0.0009, 0.017};
 
-    TechEngine::FrameLoop first(TechEngine::Role::DedicatedServer);
-    TechEngine::FrameLoop second(TechEngine::Role::DedicatedServer);
+    TechEngine::FrameLoop first(g_loopEngine.context, TechEngine::Role::DedicatedServer);
+    TechEngine::FrameLoop second(g_loopEngine.context, TechEngine::Role::DedicatedServer);
 
     for (const double delta: deltas) {
         first.advance(delta);
