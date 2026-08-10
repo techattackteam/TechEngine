@@ -1,0 +1,15 @@
+#!/bin/sh
+# Formats staged C++ in place and re-stages it, so a commit can never fail CI's
+# clang-format gate. Requires clang-format 19.1.5 on PATH (the version CI pins).
+set -e
+
+files=$(git diff --cached --name-only --diff-filter=ACMR -- '*.cpp' '*.hpp')
+[ -z "$files" ] && exit 0
+
+if ! command -v clang-format >/dev/null 2>&1; then
+    echo "pre-commit: clang-format not on PATH — skipping format" >&2
+    exit 0
+fi
+
+printf '%s\n' "$files" | tr '\n' '\0' | xargs -0 clang-format -i
+printf '%s\n' "$files" | tr '\n' '\0' | xargs -0 git add
