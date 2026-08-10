@@ -1,0 +1,17 @@
+#!/bin/sh
+# Formats staged C++ in place and re-stages it. CI's format gate stays the authority:
+# a missing clang-format skips silently, and the version is not checked against the
+# 19.1.5 CI pins. Re-stages whole files, so a partially staged file commits in full.
+# Enable per clone:  git config core.hooksPath .githooks
+set -e
+
+files=$(git diff --cached --name-only --diff-filter=ACMR -- '*.cpp' '*.hpp')
+[ -z "$files" ] && exit 0
+
+if ! command -v clang-format >/dev/null 2>&1; then
+    echo "pre-commit: clang-format not on PATH — skipping format" >&2
+    exit 0
+fi
+
+printf '%s\n' "$files" | tr '\n' '\0' | xargs -0 clang-format -i
+printf '%s\n' "$files" | tr '\n' '\0' | xargs -0 git add
