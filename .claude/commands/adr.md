@@ -14,9 +14,11 @@ Steps:
 1. Read `docs/03 Architecture/ADR Index.md` for the next number + the **Accepted**
    set. Read any relevant code so the ADR is grounded in reality (cite `file:line`).
 2. Check the decision against the Accepted ADRs (the `adr-consistency-checker` agent
-   can do this): flag contradictions. Accepted ADRs are **immutable** — if this changes
-   one, write a **superseding** ADR; a dated in-place *amendment* is allowed only for
-   pure positioning that changes no decision.
+   can do this): flag contradictions. If this changes an Accepted ADR, apply
+   [[ADR Index]] § *Amending an Accepted ADR*. A change that fits one dated header entry,
+   old value quoted and trigger named, is an in-place **amendment**, `decision` kind
+   included. A change needing its own Context and Alternatives is a **superseding** ADR.
+   The headline decision in a title is never amendable.
 3. Act as technical lead: lay out the real options with honest trade-offs. Cite
    evidence (`file:line`). Do not rubber-stamp my preferred option — argue the
    alternatives fairly and give a recommendation.
