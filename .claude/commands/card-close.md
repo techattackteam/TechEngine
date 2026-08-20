@@ -71,7 +71,10 @@ me to skim the column.
 - **Never advance the Dashboard's `Reconciled against` stamp.** That is `/weekly-review`'s
   output, and only after a real drift check. A stamp advanced as a formality converts unknown
   freshness into a false "checked" (ADR-012 §6).
-- **Never edit an Accepted ADR.**
+- **Do not amend an Accepted ADR during a close.** A card whose *work* was an amendment
+  already landed it in its own PR. If closing reveals an ADR that now owes one, that is a
+  finding for the report, never a close-time edit
+  ([[ADR Index]] § *Amending an Accepted ADR*).
 - **Do not review the code.** Findings come from the card's review, already logged in the PR.
   A fresh defect you spot while reading the diff is not a close finding, and inventing
   [[Known Issues]] rows out of new analysis makes every close an unplanned code review. That

@@ -81,5 +81,7 @@ The `<card ID>/` prefix is the only link from the squashed commit back to the bo
   this card depends on if I ask, but a broad reconciliation is `/vault-clean` and
   `/weekly-review`, and doing it here hides the drift from the check that is supposed to
   record it.
-- **Never edit an Accepted ADR.**
+- **Do not amend an Accepted ADR while grounding a card.** A design note disagreeing with
+  its ADR is drift to **report**. Filing the amendment is part of the card's work, if it is
+  anyone's ([[ADR Index]] § *Amending an Accepted ADR*).
 - **Stop at the brief.** No engine implementation, no scaffolding unless I ask for it by name.
