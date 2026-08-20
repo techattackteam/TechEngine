@@ -36,7 +36,7 @@ paragraphs, no restating the content you're flagging. Group headers only.
    that are empty / placeholder-only.
 6. **Bloat** — notes over ~150 lines or covering more than one topic (→ split); append-
    only growth; prose where a table/bullets would carry it in fewer tokens.
-   **ADRs are never split** — an ADR is one immutable decision record, and splitting it
+   **ADRs are never split** — an ADR is one decision record, and splitting it
    breaks the `§` refs the whole vault cites. But length is still a **signal**: an ADR past
    ~150 lines usually carries *mechanism* that belongs in the system's design note (surface
    tables, diagrams, workflows). Report it as a peel candidate for the **note**, never as a
@@ -51,10 +51,10 @@ paragraphs, no restating the content you're flagging. Group headers only.
    is also a finding.
 
 ## Guardrails — do NOT over-clean
-- **Accepted ADRs are immutable** ([[ADR Index]]). Never rewrite an Accepted ADR's
-  decision. You may only fix genuine malformatting (typos, broken links) or add a
-  **dated positioning amendment** that changes no decision. An actual change is a
-  **superseding** ADR — out of scope for a cleanup.
+- **Never rewrite an Accepted ADR's body in a cleanup** ([[ADR Index]] § *Amending an
+  Accepted ADR*). A cleanup fixes genuine malformatting only: typos, broken links, stale
+  boilerplate. Amendments and supersessions are decisions, not hygiene, so both stay out of
+  scope here even where the policy would allow one. Report them as findings instead.
 - **Distinguish a placeholder awaiting its time from a stale one.** A "fill at end"
   section dated in the future (e.g. an unfilled Sprint review for an ongoing sprint) is
   **not** an error — leave it. Flag only abandoned / never-to-be-filled placeholders.
