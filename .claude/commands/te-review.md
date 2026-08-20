@@ -104,8 +104,9 @@ one I should trim rather than keep running.
   *"this file diverges"*, and my call is whether to fix the file or the convention. Never both.
 - **The ADRs' spellings are illustrative, not decisions.** `kFixedDt`, `dt`, `fixedDt`,
   `te_<module>`, ADR-008 §6's `te_<module>_tests` — all refined by `CONVENTIONS.md`. Flagging
-  code for matching the file instead of the ADR is backwards, and Accepted ADRs are never edited
-  to match.
+  code for matching the file instead of the ADR is backwards. The ADR never *decided* those
+  spellings, so there is nothing to amend either
+  ([[ADR Index]] § *What is not an amendment*).
 - **Not abbreviations:** `NetId`, `uuidOf`, `httpClient`, loop `i`/`j`, matrix `m`, texcoords
   `u`/`v`, `alpha`, `tick`. Leave them.
 - **Report, don't edit.** No fixes unless I ask, and never a reformat.

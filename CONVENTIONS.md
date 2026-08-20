@@ -43,8 +43,9 @@ restate them; it covers what a formatter cannot decide.
   Never put `TE_` on a constant.
 - **Constants refine the `kPascalCase` spelling that appears in the ADRs** (`kFixedDt` in
   ADR-007 §5, [[Game Loop — Frame Flow]]). Those are *illustrative*, not decisions — the same
-  precedent by which `TechEngine<Module>` refines ADR-008 §2's `te_<module>`. Accepted ADRs are
-  not edited; read `kFixedDt` there as `FIXED_DELTA_TIME` (see *Names are spelled out*).
+  precedent by which `TechEngine<Module>` refines ADR-008 §2's `te_<module>`. An ADR is not
+  amended for a spelling it never decided, so read `kFixedDt` there as `FIXED_DELTA_TIME`
+  (see *Names are spelled out*).
 - **Gotcha:** all-caps identifiers are macro territory to the preprocessor, so a constant can be
   clobbered by a third-party or OS macro of the same name (Windows headers define `ERROR`,
   `DELETE`, `MAX_PATH`, …). Avoid bare single-word names that read like OS macros; prefer a
@@ -69,7 +70,7 @@ genuinely unwieldy — and then abbreviate the *whole* codebase's way, not that 
 
 **The ADRs and design notes write `dt` / `fixedDt`.** Read them as `deltaTime` / `fixedDeltaTime`
 in code — the same refinement precedent as `kFixedDt` → `FIXED_DT` and `te_<module>` →
-`TechEngine<Module>` above. Accepted ADRs are not edited to match.
+`TechEngine<Module>` above. An ADR is not amended for a spelling it never decided.
 
 ## Internal linkage — `static`, not `namespace {}`
 
