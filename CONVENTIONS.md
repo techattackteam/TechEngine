@@ -296,7 +296,7 @@ Flag these as they come up; each becomes a rule above.
 | **Ownership / smart pointers** | undecided | Fixes v1 F13. Proposed default: value + **handle** (index + generation); `unique_ptr` = single heap ownership; raw ptr/ref = non-owning, never deletes; `shared_ptr` only for genuine shared + unclear lifetime. Trigger: first real ownership decision. → [[Backlog]] |
 | const-correctness | `misc-const-correctness` on in `.clang-tidy` | Mechanical for locals. Open: params/methods by hand? |
 | Error handling | undecided | Exceptions vs `std::expected` vs error codes. Note `logDispatch` catches to keep diagnostics from killing logic. Trigger: first fallible API. |
-| **Target naming scheme** — one decision, four faces | shipping libs `TechEngine<Module>` · build-only/interface `te_*` (`te_warnings`) · tests `TechEngine<Module>Tests` · leaf exes bare (`editor`, `runtime`) · alias lowercase `TechEngine::core` | Decide the **principle** once — "`te_` = build-only, everything shippable is Pascal" — and tests + leaf exes fall out of it, leaving alias case as the only free choice. Prior spellings that don't match: ADR-008 §6 `te_<module>_tests`, v1's `TechEngineEditor`. Trigger: next new target. |
+| ~~**Target naming scheme**~~ | **`te_` = build-only, everything shippable is Pascal** — ratified 2026-08-10 | Shipping libs `TechEngine<Module>` · build-only/interface `te_*` · tests `TechEngine<Module>Tests` · leaf exes bare (`editor`, `runtime`) · alias lowercase `TechEngine::core`. The trigger fired at S3-T13: `te_test_support` (shared test helpers, INTERFACE) took its spelling from the principle with no new decision. Prior spellings that don't match and are not adopted: ADR-008 §6 `te_<module>_tests`, v1's `TechEngineEditor`. |
 
 ## Related
 
