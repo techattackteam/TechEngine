@@ -26,9 +26,12 @@ conflicts; you do not redesign and you do not edit files.
   accepted decision; note what to clarify.
 - **New load-bearing decision?** — if the proposal decides something not yet covered
   and hard to reverse, say it needs its **own ADR** and offer `/adr`.
-- **Immutability guard** — accepted ADRs are immutable (ADR Index rule). If the
-  proposal *changes* an accepted decision, it needs a **superseding ADR** — never
-  suggest editing the old one's decision (a dated positioning *amendment* is the only
-  in-place exception, and only when no technical choice changes).
+- **Amendment guard** — if the proposal *changes* an Accepted ADR, name the mechanism it
+  owes under [[ADR Index]] § *Amending an Accepted ADR*. Fits one dated header entry with
+  the old value quoted: an in-place **amendment**, and say which kind (`vocabulary` /
+  `correction` / `decision`). Needs its own Context and Alternatives: a **superseding ADR**.
+  Touches the headline decision in the title: always a new ADR. Never suggest a silent edit,
+  and never suggest one for a detail the ADR did not decide — that belongs to the design
+  note.
 
 If it's clean, say so in one line — don't manufacture findings. Token-lean (CLAUDE.md).
