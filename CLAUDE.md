@@ -134,19 +134,21 @@ half-read file costs far more than the tokens it saved.
 ### Chat responses
 
 The hard rules live in the **`techengine` output style**
-([`.claude/output-styles/techengine.md`](.claude/output-styles/techengine.md)) — length caps,
-granularity mirroring, plain language — because a system prompt holds where a skimmed file
-doesn't. It must be the **active** style; if answers start running long, that's the first
-thing to check (`/output-style`, from an interactive terminal). Two rules that are
-TechEngine-specific and stay here:
+([`.claude/output-styles/techengine.md`](.claude/output-styles/techengine.md)). It covers
+readability, length caps, and granularity mirroring. It lives there because a system prompt
+holds where a skimmed file doesn't. **Readability outranks the length caps**: never compress
+a sentence to hit a line count. It must also be the **active** style. If answers start
+running long, or start reading dense, that's the first thing to check (`/output-style`, from
+an interactive terminal). Two rules that are TechEngine-specific and stay here:
 
 - Say **what changed** and **what's unverified** — not a tour of every file touched.
 - Never re-explain a decision already written to the vault — link it.
 
 ### The vault
 
-- Tables/bullets/short lines > prose. Caveman style OK for notes, logs, status:
-  drop filler words + articles, keywords over sentences.
+- Tables/bullets/short lines > prose. But write them as **real sentences**: no dropped
+  articles, no keyword shorthand, no telegram style. A note is read months later with the
+  context gone, and shorthand that saved five words costs a re-read.
 - Reserve real prose for where nuance matters (ADR rationale, Vision).
 - **No section over ~30 lines.** File length is uncapped — a renderer design doc may
   legitimately run long — but a section that outgrows a screen splits, or spins out as its
