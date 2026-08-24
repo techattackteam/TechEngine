@@ -12,8 +12,9 @@
 #define TE_PROFILER_FRAME() FrameMark
 // The secure forms check the profiler is up before recording. The global operator new
 // replacement runs during CRT static init, which can precede Tracy's own construction.
-#define TE_PROFILER_ALLOC(pointer, size) TracySecureAlloc(pointer, size)
-#define TE_PROFILER_FREE(pointer) TracySecureFree(pointer)
+#define TE_PROFILER_ALLOC(pointer, size) TracyAlloc(pointer, size)
+#define TE_PROFILER_FREE(pointer) TracyFree(pointer)
+#define TE_PROFILER_THREAD_NAME(name) ::tracy::SetThreadName(name)
 
 #else
 
@@ -22,5 +23,6 @@
 #define TE_PROFILER_FRAME() ((void)0)
 #define TE_PROFILER_ALLOC(pointer, size) ((void)0)
 #define TE_PROFILER_FREE(pointer) ((void)0)
+#define TE_PROFILER_THREAD_NAME(name) ((void)(name))
 
 #endif

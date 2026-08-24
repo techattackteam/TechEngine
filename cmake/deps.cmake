@@ -17,7 +17,7 @@ include(FetchContent)
 # step intermittently fails with "The system cannot find the path specified".
 # Tradeoff: changing a GIT_TAG needs the dep's _deps dir cleared to re-fetch. CI
 # does clean checkouts, so it always fetches the pinned tag fresh.
-set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
+set(FETCHCONTENT_UPDATES_DISCONNECTED OFF)
 
 # --- math (header-only) -----------------------------------------------------
 FetchContent_Declare(glm
@@ -106,7 +106,7 @@ if(TE_PROFILE)
   set(TRACY_NO_BROADCAST   ON CACHE BOOL "" FORCE)
   FetchContent_Declare(tracy
     GIT_REPOSITORY https://github.com/wolfpld/tracy.git
-    GIT_TAG        v0.13.1
+    GIT_TAG        v0.14.1
     GIT_SHALLOW    TRUE)
   FetchContent_MakeAvailable(tracy)
 endif()
