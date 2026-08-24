@@ -12,7 +12,8 @@ namespace {
     struct LoopEngine {
         TechEngine::MountTable mounts;
         TechEngine::FileAccess files{mounts};
-        TechEngine::EngineContext context{files};
+        TechEngine::JobSystem jobs{4};
+        TechEngine::EngineContext context{files, jobs};
     };
 }
 

@@ -3,14 +3,19 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <array>
+#include <atomic>
 #include <cstddef>
 #include <string>
 #include <vector>
 
+using TechEngine::BatchId;
 using TechEngine::EngineContext;
 using TechEngine::FileAccess;
 using TechEngine::FileResult;
+using TechEngine::JobSystem;
 using TechEngine::MountTable;
+using TechEngine::Task;
 using TechEngineTests::ScratchDirectory;
 
 // F30's regression test: core holds the context, platform holds the implementation, and no
@@ -23,7 +28,8 @@ TEST_CASE("a file is read through the context by virtual path", "[core][engineco
     MountTable mounts;
     mounts.mount("assets", scratch.root());
     FileAccess files{mounts};
-    const EngineContext engine{files};
+    JobSystem jobs{1};
+    const EngineContext engine{files, jobs};
 
     std::vector<std::byte> out;
     REQUIRE(engine.files.read("assets://demo.txt", out) == FileResult::Ok);
@@ -36,7 +42,8 @@ TEST_CASE("the context carries its miss results through unchanged", "[core][engi
     MountTable mounts;
     mounts.mount("assets", scratch.root());
     FileAccess files{mounts};
-    const EngineContext engine{files};
+    JobSystem jobs{1};
+    const EngineContext engine{files, jobs};
 
     std::vector<std::byte> out;
     CHECK(engine.files.read("cache://demo.txt", out) == FileResult::NoMount);
@@ -52,11 +59,33 @@ TEST_CASE("the context observes the table it was built over", "[core][enginecont
 
     MountTable mounts;
     FileAccess files{mounts};
-    const EngineContext engine{files};
+    JobSystem jobs{1};
+    const EngineContext engine{files, jobs};
 
     std::vector<std::byte> out;
     REQUIRE(engine.files.read("assets://demo.txt", out) == FileResult::NoMount);
 
     mounts.mount("assets", scratch.root());
     CHECK(engine.files.read("assets://demo.txt", out) == FileResult::Ok);
+}
+
+TEST_CASE("work submitted through the context runs on the pool", "[core][enginecontext]") {
+    MountTable mounts;
+    FileAccess files{mounts};
+    JobSystem jobs{1};
+    const EngineContext engine{files, jobs};
+
+    std::atomic<int> ran = 0;
+    std::array<Task, 2> tasks{
+        [&ran] {
+            ran.fetch_add(1);
+        },
+        [&ran] {
+            ran.fetch_add(1);
+        }};
+
+    const BatchId batch = engine.jobs.submit(tasks);
+    engine.jobs.wait(batch);
+
+    CHECK(ran.load() == 2);
 }
