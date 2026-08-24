@@ -46,6 +46,7 @@ namespace TechEngine {
 
         std::vector<std::thread> m_workers;
         std::mutex m_mutex;
+        std::mutex m_shutdownMutex;
         std::condition_variable m_workAvailable;
         std::condition_variable m_batchComplete;
         std::deque<QueuedTask> m_queue;
@@ -77,5 +78,7 @@ namespace TechEngine {
 
     private:
         void workerMain(std::size_t workerIndex);
+
+        bool isWorkerThread() const;
     };
 }

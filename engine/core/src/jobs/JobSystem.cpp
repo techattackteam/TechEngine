@@ -2,6 +2,7 @@
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 
+#include <exception>
 #include <format>
 #include <string>
 #include <utility>
@@ -16,10 +17,16 @@ namespace TechEngine {
 
         m_running = true;
         m_workers.reserve(count);
-        for (std::size_t i = 0; i < count; i++) {
-            m_workers.emplace_back([this, i] {
-                workerMain(i);
-            });
+
+        try {
+            for (std::size_t i = 0; i < count; i++) {
+                m_workers.emplace_back([this, i] {
+                    workerMain(i);
+                });
+            }
+        } catch (...) {
+            shutdown();
+            throw;
         }
     }
 
@@ -60,6 +67,11 @@ namespace TechEngine {
             return;
         }
 
+        if (isWorkerThread()) {
+            TE_CHECK(false, "wait() called from a pool worker; barriers never run on workers");
+            return;
+        }
+
         TE_PROFILER_SCOPE("JobSystem.Wait");
 
         std::unique_lock lock{m_mutex};
@@ -69,6 +81,8 @@ namespace TechEngine {
     }
 
     void JobSystem::shutdown() {
+        std::lock_guard const shutdownLock{m_shutdownMutex};
+
         {
             std::lock_guard const lock{m_mutex};
             if (!m_running) {
@@ -88,6 +102,16 @@ namespace TechEngine {
 
     std::size_t JobSystem::workerCount() const {
         return m_workers.size();
+    }
+
+    bool JobSystem::isWorkerThread() const {
+        const std::thread::id self = std::this_thread::get_id();
+        for (const std::thread& worker: m_workers) {
+            if (worker.get_id() == self) {
+                return true;
+            }
+        }
+        return false;
     }
 
     void JobSystem::workerMain(const std::size_t workerIndex) {
@@ -112,7 +136,14 @@ namespace TechEngine {
 
             {
                 TE_PROFILER_SCOPE("JobSystem.Task");
-                queued.task();
+
+                try {
+                    queued.task();
+                } catch (const std::exception& error) {
+                    TE_CHECK(false, "Task in batch {0} threw on worker {1}: {2}", queued.batchId, workerIndex, error.what());
+                } catch (...) {
+                    TE_CHECK(false, "Task in batch {0} threw a non-std exception on worker {1}", queued.batchId, workerIndex);
+                }
             }
 
             bool completed = false;

@@ -157,3 +157,46 @@ TEST_CASE("a multi-worker pool runs many batches back to back", "[core][jobs]") 
 
     REQUIRE(ran.load() == static_cast<int>(BATCH_COUNT * TASKS_PER_BATCH));
 }
+
+TEST_CASE("a zero-worker pool is checked and clamped to one", "[core][jobs]") {
+    const TechEngineTests::AssertHandlerGuard guard;
+    std::atomic<int> ran = 0;
+
+    TechEngine::JobSystem jobs{0};
+
+    REQUIRE(TechEngineTests::g_fired.size() == 1);
+    REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Check);
+    REQUIRE(jobs.workerCount() == 1);
+
+    std::array<TechEngine::Task, 1> tasks{[&ran] {
+        ran.fetch_add(1);
+    }};
+    const TechEngine::BatchId batch = jobs.submit(tasks);
+    jobs.wait(batch);
+
+    CHECK(ran.load() == 1);
+}
+
+TEST_CASE("shutdown drains the queue instead of dropping it", "[core][jobs]") {
+    constexpr std::size_t TASK_COUNT = 16;
+    std::atomic<int> ran = 0;
+
+    {
+        TechEngine::JobSystem jobs{1};
+
+        std::vector<TechEngine::Task> tasks;
+        tasks.reserve(TASK_COUNT);
+        for (std::size_t j = 0; j < TASK_COUNT; j++) {
+            tasks.emplace_back([&ran] {
+                // Keeps the queue non-empty when shutdown() lands, which is the whole case.
+                std::this_thread::sleep_for(std::chrono::milliseconds{2});
+                ran.fetch_add(1);
+            });
+        }
+
+        jobs.submit(tasks);
+        jobs.shutdown();
+    }
+
+    REQUIRE(ran.load() == static_cast<int>(TASK_COUNT));
+}
