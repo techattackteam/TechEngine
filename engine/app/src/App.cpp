@@ -121,7 +121,7 @@ namespace TechEngine {
             TE_ASSERT(demoTotal == DEMO_SUM_EXPECTED, "Demo batch summed to {0}, expected {1}", demoTotal, DEMO_SUM_EXPECTED);
 
             TE_LOGGER_INFO(
-                "Frame {0}: deltaTime = {1:.6f}, fixedDeltaTime = {2:.6f}, accumulator = {3:.6f}, tick = {4}, role = {5}, workers = {6}, jobSum = {7}",
+                "Frame {0}: deltaTime = {1:.6f}, fixedDeltaTime = {2:.6f}, accumulator = {3:.6f}, tick = {4}, role = {5}, workers = {6}, jobSum = {7} of {8}",
                 frame.frameIndex,
                 frame.deltaTime,
                 frame.fixedDeltaTime,
@@ -129,7 +129,8 @@ namespace TechEngine {
                 frame.tick,
                 static_cast<std::uint32_t>(frame.role),
                 engine.jobs.workerCount(),
-                demoTotal);
+                demoTotal,
+                DEMO_SUM_EXPECTED);
 
             // TODO(S3): throwaway 60 Hz pacer. Spins because sleep_for rounds up to the
             // ~15.6 ms Windows timer tick; real frame pacing is undecided.
