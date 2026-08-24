@@ -1,5 +1,6 @@
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/app/FrameLoop.hpp>
+#include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/base/math/Format.hpp>
@@ -7,12 +8,14 @@
 #include <TechEngine/core/EngineContext.hpp>
 #include <TechEngine/core/events/EventRegistry.hpp>
 #include <TechEngine/core/events/EventStreamManager.hpp>
+#include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/platform/files/MountTable.hpp>
 
 #include <diagnostics/Diagnostics.hpp>
 #include <diagnostics/MemoryTracking.hpp>
 
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -27,6 +30,9 @@ namespace TechEngine {
     };
 
     static constexpr std::uint64_t DEMO_DAMAGE_TICK_PERIOD = 30;
+    static constexpr std::size_t DEMO_JOB_COUNT = 4;
+    static constexpr std::uint64_t DEMO_SUM_LIMIT = 1000000;
+    static constexpr std::uint64_t DEMO_SUM_EXPECTED = DEMO_SUM_LIMIT * (DEMO_SUM_LIMIT + 1) / 2;
 
     int run() {
         const DiagnosticsScope diagnostics;
@@ -35,7 +41,8 @@ namespace TechEngine {
 
         MountTable mounts;
         FileAccess files{mounts};
-        const EngineContext engine{files};
+        JobSystem jobs;
+        const EngineContext engine{files, jobs};
 
         // TODO(S3-T13): throwaway demo mount. M3 brings the real set — project root,
         // resources, cache — sourced from the loaded project, and the baked-in source path
@@ -54,6 +61,10 @@ namespace TechEngine {
 
         EventStreamManager streams{registry};
         EventCursor damageCursor;
+
+        std::array<std::uint64_t, DEMO_JOB_COUNT> demoResults{};
+        std::vector<Task> demoTasks;
+        demoTasks.reserve(DEMO_JOB_COUNT);
 
         Clock::TimePoint previous = clock.now();
         constexpr std::uint64_t frames = 120;
@@ -85,7 +96,41 @@ namespace TechEngine {
 
             streams.retire(frame.frameIndex, frame.tick);
 
-            TE_LOGGER_INFO("Frame {0}: deltaTime = {1:.6f}, fixedDeltaTime = {2:.6f}, accumulator = {3:.6f}, tick = {4}, role = {5}", frame.frameIndex, frame.deltaTime, frame.fixedDeltaTime, loop.accumulator(), frame.tick, static_cast<std::uint32_t>(frame.role));
+            // TODO(S4-T5): throwaway demo batch. It splits 1..DEMO_SUM_LIMIT across the pool
+            demoTasks.clear();
+            constexpr std::uint64_t demoChunk = DEMO_SUM_LIMIT / DEMO_JOB_COUNT;
+            for (std::size_t j = 0; j < DEMO_JOB_COUNT; j++) {
+                const std::uint64_t begin = j * demoChunk + 1;
+                const std::uint64_t end = j + 1 == DEMO_JOB_COUNT ? DEMO_SUM_LIMIT : (j + 1) * demoChunk;
+                demoTasks.emplace_back([&demoResults, j, begin, end] {
+                    std::uint64_t sum = 0;
+                    for (std::uint64_t k = begin; k <= end; k++) {
+                        sum += k;
+                    }
+                    demoResults[j] = sum;
+                });
+            }
+
+            const BatchId demoBatch = engine.jobs.submit(demoTasks);
+            engine.jobs.wait(demoBatch);
+
+            std::uint64_t demoTotal = 0;
+            for (const std::uint64_t partial: demoResults) {
+                demoTotal += partial;
+            }
+            TE_ASSERT(demoTotal == DEMO_SUM_EXPECTED, "Demo batch summed to {0}, expected {1}", demoTotal, DEMO_SUM_EXPECTED);
+
+            TE_LOGGER_INFO(
+                "Frame {0}: deltaTime = {1:.6f}, fixedDeltaTime = {2:.6f}, accumulator = {3:.6f}, tick = {4}, role = {5}, workers = {6}, jobSum = {7} of {8}",
+                frame.frameIndex,
+                frame.deltaTime,
+                frame.fixedDeltaTime,
+                loop.accumulator(),
+                frame.tick,
+                static_cast<std::uint32_t>(frame.role),
+                engine.jobs.workerCount(),
+                demoTotal,
+                DEMO_SUM_EXPECTED);
 
             // TODO(S3): throwaway 60 Hz pacer. Spins because sleep_for rounds up to the
             // ~15.6 ms Windows timer tick; real frame pacing is undecided.
