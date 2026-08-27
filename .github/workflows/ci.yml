@@ -22,9 +22,6 @@ on:
   push:
     branches: [master]
 
-permissions:
-  contents: read
-
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true

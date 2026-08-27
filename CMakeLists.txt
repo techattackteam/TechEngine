@@ -41,6 +41,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 include(cmake/warnings.cmake)       # defines te_warnings
 include(cmake/sanitizers.cmake)     # augments te_warnings (must follow warnings)
+include(cmake/coverage.cmake)
 include(cmake/techengine_module.cmake)
 if(TE_BUILD_TESTS)
   enable_testing()
@@ -58,6 +59,5 @@ add_subdirectory(sdk)
 add_subdirectory(apps)
 
 if(TE_COVERAGE)
-  include(cmake/coverage.cmake)
   te_add_coverage_target()          # needs every techengine_test() call to have run
 endif()
