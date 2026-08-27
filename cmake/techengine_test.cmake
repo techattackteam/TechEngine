@@ -34,5 +34,9 @@ function(techengine_test module)
 
   set_target_properties(${_te_target} PROPERTIES FOLDER "tests")
 
+  # coverage.cmake reads this to build llvm-cov's -object list, so a new module's tests are
+  # picked up without editing the coverage wiring.
+  set_property(GLOBAL APPEND PROPERTY TE_TEST_TARGETS ${_te_target})
+
   catch_discover_tests(${_te_target})
 endfunction()

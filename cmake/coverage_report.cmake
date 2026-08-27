@@ -1,0 +1,101 @@
+# Script-mode (-P) half of the `coverage` target. Runs after ctest has produced the
+# .profraw files. Kept out of the custom target because globbing needs CMake, not a shell.
+#
+# Passed in: TE_COV_DIR · TE_LLVM_PROFDATA · TE_LLVM_COV · TE_DIFF_COVER · TE_SOURCE_DIR ·
+# TE_OBJECTS ('|'-joined test binaries). Threshold, base branch and the bypass are read
+# from the environment, so CI and a local run issue the same command.
+
+file(GLOB _te_profraw "${TE_COV_DIR}/*.profraw")
+if(NOT _te_profraw)
+  message(FATAL_ERROR "No .profraw in ${TE_COV_DIR}. Did ctest run under LLVM_PROFILE_FILE?")
+endif()
+
+set(_te_profdata "${TE_COV_DIR}/merged.profdata")
+execute_process(COMMAND "${TE_LLVM_PROFDATA}" merge -sparse ${_te_profraw} -o "${_te_profdata}"
+                RESULT_VARIABLE _te_result)
+if(NOT _te_result EQUAL 0)
+  message(FATAL_ERROR "llvm-profdata merge failed (${_te_result}). A version skew between "
+                      "clang and llvm-profdata is the usual cause.")
+endif()
+
+string(REPLACE "|" ";" _te_objects "${TE_OBJECTS}")
+list(POP_FRONT _te_objects _te_first)
+set(_te_object_args "")
+foreach(_te_object IN LISTS _te_objects)
+  list(APPEND _te_object_args -object "${_te_object}")
+endforeach()
+
+# Deps are never instrumented (the flags ride te_warnings), but our own TUs still carry
+# mapping records for dependency headers they inline. This drops those.
+set(_te_common "-instr-profile=${_te_profdata}" "${_te_first}" ${_te_object_args}
+               "-ignore-filename-regex=(/_deps/|/build/)")
+
+set(_te_lcov "${TE_COV_DIR}/coverage.lcov")
+execute_process(COMMAND "${TE_LLVM_COV}" export -format=lcov ${_te_common}
+                OUTPUT_FILE "${_te_lcov}" RESULT_VARIABLE _te_result)
+if(NOT _te_result EQUAL 0)
+  message(FATAL_ERROR "llvm-cov export failed (${_te_result}).")
+endif()
+
+execute_process(COMMAND "${TE_LLVM_COV}" show -format=html
+                        -output-dir=${TE_COV_DIR}/html ${_te_common}
+                RESULT_VARIABLE _te_result)
+if(NOT _te_result EQUAL 0)
+  message(FATAL_ERROR "llvm-cov show failed (${_te_result}).")
+endif()
+
+execute_process(COMMAND "${TE_LLVM_COV}" report ${_te_common} RESULT_VARIABLE _te_result)
+
+message(STATUS "Browsable report: ${TE_COV_DIR}/html/index.html")
+
+# diff-cover compares against the merge base by default ('...' range notation), which is
+# the same thing CI wants and the same thing a local pre-push check wants.
+set(_te_base "$ENV{TE_COVERAGE_BASE}")
+if(NOT _te_base)
+  set(_te_base "origin/master")
+endif()
+
+set(_te_threshold "$ENV{TE_COVERAGE_THRESHOLD}")
+if(NOT _te_threshold)
+  set(_te_threshold "85")
+endif()
+
+set(_te_markdown "${TE_COV_DIR}/diff-coverage.md")
+
+execute_process(COMMAND "${TE_DIFF_COVER}" "${_te_lcov}"
+                        "--compare-branch=${_te_base}"
+                        "--fail-under=${_te_threshold}"
+                        "--format" "markdown:${_te_markdown}"
+                WORKING_DIRECTORY "${TE_SOURCE_DIR}"
+                OUTPUT_VARIABLE _te_output ECHO_OUTPUT_VARIABLE
+                ERROR_VARIABLE _te_output ECHO_ERROR_VARIABLE
+                RESULT_VARIABLE _te_result)
+
+# GitHub appends step summaries, and diff-cover truncates whatever it writes to, so the
+# report is written to its own file first and appended here.
+if(DEFINED ENV{GITHUB_STEP_SUMMARY} AND EXISTS "${_te_markdown}")
+  file(READ "${_te_markdown}" _te_report)
+  file(APPEND "$ENV{GITHUB_STEP_SUMMARY}" "${_te_report}")
+endif()
+
+if(_te_result EQUAL 0)
+  return()
+endif()
+
+# diff-cover exits 1 for a real under-threshold verdict, and writes its report on the way
+# out. No report means it never got that far, so this is a tool failure wearing a
+# threshold failure's exit code. Saying so beats sending someone to write tests they do
+# not need.
+if(NOT _te_result EQUAL 1 OR NOT EXISTS "${_te_markdown}")
+  message(FATAL_ERROR "diff-cover did not complete (result: ${_te_result}). "
+                      "This is not a coverage verdict.
+${_te_output}")
+endif()
+
+if(NOT "$ENV{TE_COVERAGE_BYPASS}" STREQUAL "")
+  message(STATUS "Diff coverage is below ${_te_threshold}%, bypassed by [skip-coverage].")
+  return()
+endif()
+
+message(FATAL_ERROR "Diff coverage is below ${_te_threshold}%. Add [skip-coverage] to the "
+                    "pull request description to merge anyway.")
