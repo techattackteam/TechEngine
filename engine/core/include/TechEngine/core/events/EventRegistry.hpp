@@ -45,7 +45,7 @@ namespace TechEngine {
 
             const EventTypeId id = registerType(tag, static_cast<std::uint32_t>(sizeof(T)), static_cast<std::uint32_t>(alignof(T)), wire);
             if (id.valid()) {
-                detail::g_eventTypeSlot<T> = id;
+                internal::g_eventTypeSlot<T> = id;
             }
             return id;
         }

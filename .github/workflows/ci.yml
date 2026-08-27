@@ -39,7 +39,7 @@ jobs:
           find engine apps sdk \( -name '*.cpp' -o -name '*.hpp' \) -print0 \
             | xargs -0 clang-format --dry-run --Werror
 
-      # A macro has no access control and `detail::` is a convention, not a boundary — so
+      # A macro has no access control and `internal::` is a convention, not a boundary — so
       # the boundary is a red check. Anything reaching into another module's plumbing fails
       # here. Sibling of the te_sdk_smoke leak gate (ADR-008 §7): make the rule structural.
       - name: No reaching into private plumbing
@@ -59,7 +59,7 @@ jobs:
             fi
           }
           check 'engine/base/' 'TE_LOG_PRIVATE_' 'TE_LOG_PRIVATE_* (call TE_LOGGER_<LEVEL>)'
-          check 'engine/base/' '\bdetail::log' 'TechEngine::detail log plumbing'
+          check 'engine/base/' '\binternal::log' 'TechEngine::internal log plumbing'
           # Two ADR-013 rules at once. Every call site spelling TE_PROFILER_* is what keeps
           # swapping the backend a one-header edit; banning ZoneTransient here is v1's F19
           # (runtime-named zones on a per-frame path) made structural instead of review-only.

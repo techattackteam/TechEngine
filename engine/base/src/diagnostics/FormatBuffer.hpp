@@ -4,7 +4,7 @@
 #include <string_view>
 
 namespace TechEngine {
-    namespace detail {
+    namespace internal {
         inline constexpr std::string_view TRUNCATION_MARKER = "...[truncated]";
 
         struct FormatBuffer {

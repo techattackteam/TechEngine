@@ -167,7 +167,7 @@ TEST_CASE("an overlong message is truncated, not silently cut", "[base][assert]"
     TE_CHECK(false, "{0}", huge);
 
     REQUIRE(g_fired.size() == 1);
-    REQUIRE(g_fired.front().message.ends_with(TechEngine::detail::TRUNCATION_MARKER));
+    REQUIRE(g_fired.front().message.ends_with(TechEngine::internal::TRUNCATION_MARKER));
 }
 
 TEST_CASE("a runtime format error is reported instead of escaping", "[base][assert]") {

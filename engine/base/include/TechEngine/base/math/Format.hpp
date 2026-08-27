@@ -6,7 +6,7 @@
 #include <format>
 #include <string_view>
 
-namespace TechEngine::detail {
+namespace TechEngine::internal {
     template<typename T>
     constexpr std::string_view mathTypePrefix() {
         if constexpr (std::same_as<T, double>) {
@@ -30,7 +30,7 @@ struct std::formatter<glm::vec<L, T, Q>> {
     }
 
     auto format(const glm::vec<L, T, Q>& value, std::format_context& context) const {
-        auto out = std::format_to(context.out(), "{0}vec{1}(", TechEngine::detail::mathTypePrefix<T>(), L);
+        auto out = std::format_to(context.out(), "{0}vec{1}(", TechEngine::internal::mathTypePrefix<T>(), L);
 
         for (glm::length_t i = 0; i < L; i++) {
             if (i > 0) {
@@ -55,11 +55,11 @@ struct std::formatter<glm::mat<C, R, T, Q>> {
 
     auto format(const glm::mat<C, R, T, Q>& value, std::format_context& context) const {
         // TODO(S3-T2): "<prefix>mat<C>((c0…), (c1…))" — square is "mat4", else "mat3x4";
-        auto out = std::format_to(context.out(), "{0}mat", TechEngine::detail::mathTypePrefix<T>());
+        auto out = std::format_to(context.out(), "{0}mat", TechEngine::internal::mathTypePrefix<T>());
         if constexpr (C == R) {
-            out = std::format_to(out, "{1}(", TechEngine::detail::mathTypePrefix<T>(), C);
+            out = std::format_to(out, "{1}(", TechEngine::internal::mathTypePrefix<T>(), C);
         } else {
-            out = std::format_to(out, "{1}x{2}(", TechEngine::detail::mathTypePrefix<T>(), C, R);
+            out = std::format_to(out, "{1}x{2}(", TechEngine::internal::mathTypePrefix<T>(), C, R);
         }
         for (glm::length_t i = 0; i < C; i++) {
             if (i > 0) {
@@ -91,7 +91,7 @@ struct std::formatter<glm::qua<T, Q>> {
     }
 
     auto format(const glm::qua<T, Q>& value, std::format_context& context) const {
-        auto out = std::format_to(context.out(), "{0}quat(", TechEngine::detail::mathTypePrefix<T>());
+        auto out = std::format_to(context.out(), "{0}quat(", TechEngine::internal::mathTypePrefix<T>());
         const T components[4]{value.x, value.y, value.z, value.w};
 
         for (glm::length_t i = 0; i < 4; i++) {

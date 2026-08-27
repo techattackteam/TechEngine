@@ -11,6 +11,6 @@
 // of paying a second std::format pass over text that's already text. Private to base/src on
 // purpose: nothing outside this module — and nothing but Assert.cpp inside it — should reach
 // for this instead of TE_LOGGER_*.
-namespace TechEngine::detail {
+namespace TechEngine::internal {
     void logRaw(Level level, LogChannel channel, std::string_view file, std::string_view function, std::uint32_t line, std::string_view message);
 }

@@ -4,7 +4,7 @@
 #include <string_view>
 
 namespace TechEngine {
-    namespace detail {
+    namespace internal {
         inline std::string_view baseName(std::string_view path) {
             const auto slash = path.find_last_of("/\\");
             return slash == std::string_view::npos ? path : path.substr(slash + 1);
