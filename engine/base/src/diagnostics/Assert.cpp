@@ -109,7 +109,7 @@ namespace TechEngine {
         std::array<char, CRITICAL_MESSAGE_CAPACITY> messageStorage;
         const std::size_t messageSize = composeCriticalMessage(context, messageStorage.data(), messageStorage.size());
 
-        detail::logRaw(Level::Critical, DEFAULT_CHANNEL, context.file, context.function, context.line, std::string_view{messageStorage.data(), messageSize});
+        internal::logRaw(Level::Critical, DEFAULT_CHANNEL, context.file, context.function, context.line, std::string_view{messageStorage.data(), messageSize});
         if (assertKindIsFatal(context.kind)) {
             flushLogs();
         }
@@ -125,7 +125,7 @@ namespace TechEngine {
         return g_assertHandler.load(std::memory_order_acquire);
     }
 
-    namespace detail {
+    namespace internal {
         AssertResponse assertDispatch(AssertKind kind, std::string_view condition, const std::source_location& loc, std::string_view fmtStr, std::format_args args) {
             std::array<char, ASSERT_MESSAGE_CAPACITY> storage;
             FormatBuffer buffer{storage.data(), storage.size(), 0, false};

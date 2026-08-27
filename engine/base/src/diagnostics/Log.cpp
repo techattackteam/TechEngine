@@ -139,7 +139,7 @@ namespace TechEngine {
 
     static void spdlogSink(const LogRecord& record) {
         std::array<char, MESSAGE_CAPACITY + 256> storage;
-        const std::size_t size = detail::flattenRecord(record, storage.data(), storage.size());
+        const std::size_t size = internal::flattenRecord(record, storage.data(), storage.size());
 
         spdlog::default_logger_raw()->log(toSpdlogLevel(record.level), spdlog::string_view_t{storage.data(), size});
     }
@@ -312,11 +312,11 @@ namespace TechEngine {
         }
 
         std::array<char, MESSAGE_CAPACITY + 256> line;
-        const std::size_t size = detail::flattenRecord(record, line.data(), line.size());
+        const std::size_t size = internal::flattenRecord(record, line.data(), line.size());
         std::fprintf(stderr, "%.*s\n", static_cast<int>(size), line.data());
     }
 
-    namespace detail {
+    namespace internal {
         // Assert-only (LogInternal.hpp). `message` is already formatted — this skips
         // logDispatch's vformat_to entirely rather than re-formatting finished text, and
         // bypasses isEnabled(): a Critical assert failure must reach the ring/sinks

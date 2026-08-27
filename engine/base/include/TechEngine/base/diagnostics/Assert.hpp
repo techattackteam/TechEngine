@@ -46,7 +46,7 @@ namespace TechEngine {
 
     AssertHandlerFn assertHandler();
 
-    namespace detail {
+    namespace internal {
         AssertResponse assertDispatch(AssertKind kind, std::string_view condition, const std::source_location& loc, std::string_view fmtStr, std::format_args args);
 
         AssertResponse assertReport(AssertKind kind, std::string_view condition, const std::source_location& loc);
@@ -96,17 +96,17 @@ namespace TechEngine {
             TE_DEBUG_BREAK();                                         \
         }                                                             \
         if (te_response_.abortProcess) {                              \
-            ::TechEngine::detail::assertAbort();                      \
+            ::TechEngine::internal::assertAbort();                    \
         }                                                             \
     } while (0)
 
-#define TE_ASSERT_PRIVATE_STMT(kind, cond, ...)                                                                                                         \
-    do {                                                                                                                                                \
-        TE_ASSERT_PRIVATE_FOLDABLE_BEGIN                                                                                                                \
-        if (!(cond)) [[unlikely]] {                                                                                                                     \
-            TE_ASSERT_PRIVATE_RESPOND(::TechEngine::detail::assertReport((kind), #cond, ::std::source_location::current() __VA_OPT__(, ) __VA_ARGS__)); \
-        }                                                                                                                                               \
-        TE_ASSERT_PRIVATE_FOLDABLE_END                                                                                                                  \
+#define TE_ASSERT_PRIVATE_STMT(kind, cond, ...)                                                                                                           \
+    do {                                                                                                                                                  \
+        TE_ASSERT_PRIVATE_FOLDABLE_BEGIN                                                                                                                  \
+        if (!(cond)) [[unlikely]] {                                                                                                                       \
+            TE_ASSERT_PRIVATE_RESPOND(::TechEngine::internal::assertReport((kind), #cond, ::std::source_location::current() __VA_OPT__(, ) __VA_ARGS__)); \
+        }                                                                                                                                                 \
+        TE_ASSERT_PRIVATE_FOLDABLE_END                                                                                                                    \
     } while (0)
 
 #define TE_ASSERT_PRIVATE_DISCARD(...) \
@@ -116,31 +116,31 @@ namespace TechEngine {
 // Expression form: `cond` is evaluated exactly once and the result is the macro's value.
 // source_location is taken in the argument list, not the body — inside the lambda it would
 // name the lambda, not the failing line.
-#define TE_ASSERT_PRIVATE_EXPR(kind, cond, ...)                                                                           \
-    ([&](const ::std::source_location& te_loc_) -> bool {                                                                 \
-        TE_ASSERT_PRIVATE_FOLDABLE_BEGIN                                                                                  \
-        if ((cond)) [[likely]] {                                                                                          \
-            return true;                                                                                                  \
-        }                                                                                                                 \
-        TE_ASSERT_PRIVATE_FOLDABLE_END                                                                                    \
-        TE_ASSERT_PRIVATE_RESPOND(::TechEngine::detail::assertReport((kind), #cond, te_loc_ __VA_OPT__(, ) __VA_ARGS__)); \
-        return false;                                                                                                     \
+#define TE_ASSERT_PRIVATE_EXPR(kind, cond, ...)                                                                             \
+    ([&](const ::std::source_location& te_loc_) -> bool {                                                                   \
+        TE_ASSERT_PRIVATE_FOLDABLE_BEGIN                                                                                    \
+        if ((cond)) [[likely]] {                                                                                            \
+            return true;                                                                                                    \
+        }                                                                                                                   \
+        TE_ASSERT_PRIVATE_FOLDABLE_END                                                                                      \
+        TE_ASSERT_PRIVATE_RESPOND(::TechEngine::internal::assertReport((kind), #cond, te_loc_ __VA_OPT__(, ) __VA_ARGS__)); \
+        return false;                                                                                                       \
     }(::std::source_location::current()))
 
 // The report-once static is inside the lambda body, so each expansion gets its own —
 // that is what makes it per-call-site with no shared table.
-#define TE_ASSERT_PRIVATE_ONCE(cond, ...)                                                                                                               \
-    ([&](const ::std::source_location& te_loc_) -> bool {                                                                                               \
-        TE_ASSERT_PRIVATE_FOLDABLE_BEGIN                                                                                                                \
-        if ((cond)) [[likely]] {                                                                                                                        \
-            return true;                                                                                                                                \
-        }                                                                                                                                               \
-        TE_ASSERT_PRIVATE_FOLDABLE_END                                                                                                                  \
-        static ::std::atomic<bool> te_reported_ = false;                                                                                                \
-        if (!te_reported_.exchange(true, ::std::memory_order_relaxed)) {                                                                                \
-            TE_ASSERT_PRIVATE_RESPOND(::TechEngine::detail::assertReport(::TechEngine::AssertKind::Ensure, #cond, te_loc_ __VA_OPT__(, ) __VA_ARGS__)); \
-        }                                                                                                                                               \
-        return false;                                                                                                                                   \
+#define TE_ASSERT_PRIVATE_ONCE(cond, ...)                                                                                                                 \
+    ([&](const ::std::source_location& te_loc_) -> bool {                                                                                                 \
+        TE_ASSERT_PRIVATE_FOLDABLE_BEGIN                                                                                                                  \
+        if ((cond)) [[likely]] {                                                                                                                          \
+            return true;                                                                                                                                  \
+        }                                                                                                                                                 \
+        TE_ASSERT_PRIVATE_FOLDABLE_END                                                                                                                    \
+        static ::std::atomic<bool> te_reported_ = false;                                                                                                  \
+        if (!te_reported_.exchange(true, ::std::memory_order_relaxed)) {                                                                                  \
+            TE_ASSERT_PRIVATE_RESPOND(::TechEngine::internal::assertReport(::TechEngine::AssertKind::Ensure, #cond, te_loc_ __VA_OPT__(, ) __VA_ARGS__)); \
+        }                                                                                                                                                 \
+        return false;                                                                                                                                     \
     }(::std::source_location::current()))
 
 // never put a side effect in TE_ASSERT — it vanishes in Release. That is what

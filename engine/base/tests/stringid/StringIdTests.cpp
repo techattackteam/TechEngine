@@ -12,7 +12,7 @@ static_assert(TechEngine::StringId{"foobar"}.value() == 0x85944171f73967e8ULL);
 
 // The algorithm restated for a single byte ≥ 0x80 — the published ASCII vectors above pass
 // just as happily with a sign-extended XOR, so this is the case that pins unsigned bytes.
-static_assert(TechEngine::StringId{"\x80"}.value() == ((TechEngine::detail::FNV_OFFSET_BASIS ^ 0x80ULL) * TechEngine::detail::FNV_PRIME));
+static_assert(TechEngine::StringId{"\x80"}.value() == ((TechEngine::internal::FNV_OFFSET_BASIS ^ 0x80ULL) * TechEngine::internal::FNV_PRIME));
 
 static_assert(TechEngine::StringId{}.value() == 0);
 static_assert(TechEngine::StringId{"Game.Hit"} == TechEngine::StringId{"Game.Hit"});

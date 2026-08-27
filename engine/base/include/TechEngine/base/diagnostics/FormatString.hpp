@@ -6,7 +6,7 @@
 #include <type_traits>
 
 namespace TechEngine {
-    namespace detail {
+    namespace internal {
         consteval bool hasAutomaticField(std::string_view text) {
             for (std::size_t i = 0; i < text.size(); i++) {
                 if (text[i] != '{') {
@@ -35,7 +35,7 @@ namespace TechEngine {
         template<typename T>
             requires std::convertible_to<const T&, std::string_view>
         consteval PositionalFormatString(const T& text) : m_inner{text} {
-            if (detail::hasAutomaticField(std::string_view{text})) {
+            if (internal::hasAutomaticField(std::string_view{text})) {
                 throw "TechEngine format strings index their arguments — write {0}, not {}";
             }
         }

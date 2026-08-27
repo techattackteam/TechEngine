@@ -6,7 +6,7 @@
 #include <string_view>
 
 namespace TechEngine {
-    namespace detail {
+    namespace internal {
         inline constexpr std::uint64_t FNV_OFFSET_BASIS = 14695981039346656037ULL;
         inline constexpr std::uint64_t FNV_PRIME = 1099511628211ULL;
     }
@@ -15,10 +15,10 @@ namespace TechEngine {
         constexpr StringId() = default;
 
         constexpr explicit StringId(std::string_view tag) {
-            std::uint64_t hash = detail::FNV_OFFSET_BASIS;
+            std::uint64_t hash = internal::FNV_OFFSET_BASIS;
             for (std::size_t i = 0; i < tag.size(); i++) {
                 hash ^= static_cast<std::uint8_t>(tag[i]);
-                hash *= detail::FNV_PRIME;
+                hash *= internal::FNV_PRIME;
             }
             m_value = hash;
         }
