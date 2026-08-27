@@ -128,7 +128,7 @@ namespace TechEngine {
 
     void setDiagnosticFrame(std::uint64_t frame);
 
-    namespace detail {
+    namespace internal {
         void logDispatch(Level level, LogChannel channel, const std::source_location& loc, std::string_view fmtStr, std::format_args args);
 
         std::size_t flattenRecord(const LogRecord& record, char* out, std::size_t capacity);
@@ -154,9 +154,9 @@ namespace TechEngine {
 //
 // The format string rides inside __VA_ARGS__ to avoid __VA_OPT__ — MSVC's traditional
 // preprocessor lacks it without /Zc:preprocessor. Don't "fix" this into a named parameter.
-#define TE_LOG_PRIVATE_EMIT(level, channel, ...)                                                           \
-    do {                                                                                                   \
-        ::TechEngine::detail::logImpl((level), (channel), ::std::source_location::current(), __VA_ARGS__); \
+#define TE_LOG_PRIVATE_EMIT(level, channel, ...)                                                             \
+    do {                                                                                                     \
+        ::TechEngine::internal::logImpl((level), (channel), ::std::source_location::current(), __VA_ARGS__); \
     } while (0)
 
 #define TE_LOG_PRIVATE_DISCARD(...) \

@@ -370,7 +370,7 @@ TEST_CASE("flatten renders the canonical line", "[base][log][format]") {
     std::array<char, 512> out{};
     const TechEngine::LogRecord record = sampleRecord("swapchain 1920x1080");
 
-    const std::size_t size = TechEngine::detail::flattenRecord(record, out.data(), out.size());
+    const std::size_t size = TechEngine::internal::flattenRecord(record, out.data(), out.size());
     const std::string line{out.data(), size};
 
     REQUIRE(size > 0);
@@ -407,11 +407,11 @@ TEST_CASE("flatten marks its own truncation", "[base][log][format]") {
     const std::string huge(4096, 'x');
     const TechEngine::LogRecord record = sampleRecord(huge);
 
-    const std::size_t size = TechEngine::detail::flattenRecord(record, out.data(), out.size());
+    const std::size_t size = TechEngine::internal::flattenRecord(record, out.data(), out.size());
     const std::string line{out.data(), size};
 
     REQUIRE(size <= out.size());
-    REQUIRE(line.ends_with(TechEngine::detail::TRUNCATION_MARKER));
+    REQUIRE(line.ends_with(TechEngine::internal::TRUNCATION_MARKER));
 }
 
 TEST_CASE("flatten never writes past its buffer", "[base][log][format]") {
@@ -422,7 +422,7 @@ TEST_CASE("flatten never writes past its buffer", "[base][log][format]") {
     const std::string huge(4096, 'y');
     const TechEngine::LogRecord record = sampleRecord(huge);
 
-    const std::size_t size = TechEngine::detail::flattenRecord(record, storage.data(), capacity);
+    const std::size_t size = TechEngine::internal::flattenRecord(record, storage.data(), capacity);
 
     REQUIRE(size <= capacity);
     for (std::size_t i = capacity; i < storage.size(); i++) {

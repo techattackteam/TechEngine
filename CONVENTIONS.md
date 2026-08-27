@@ -150,12 +150,12 @@ tests.
 ## Privacy that the compiler can't enforce
 
 Module boundaries are structural (`PUBLIC include/` vs `PRIVATE src/`, ADR-006 §3) — but two
-things escape that: **macros have no access control**, and `detail::` is a convention, not a
+things escape that: **macros have no access control**, and `internal::` is a convention, not a
 boundary. Both live in public headers by necessity (a macro must expand in the consumer's TU; a
 template must be visible). So:
 
 - **Name it private:** `TE_<AREA>_PRIVATE_<VERB>` for plumbing macros (`TE_LOG_PRIVATE_EMIT`),
-  `detail::` for functions the macros call.
+  `internal::` for functions the macros call.
 - **Say what to call instead**, at the definition — a `§ref` isn't enough here, because the
   reader is about to make a mistake the compiler will accept.
 - **Guard it in CI.** `ci.yml` → *No reaching into private plumbing* greps for each private
@@ -291,7 +291,7 @@ Flag these as they come up; each becomes a rule above.
 | Item | Current | Notes |
 |---|---|---|
 | ~~`enum class` value casing~~ | **`PascalCase`** — ratified Jul 30 | First real enum: `Level` (S2-T2). |
-| ~~Nested impl namespace~~ | **`TechEngine::detail`** — ratified Jul 30 | Macros need a non-curated target to call; the "one flat namespace" rule applies to *curated* API, not plumbing. |
+| ~~Nested impl namespace~~ | **`TechEngine::internal`** — ratified Jul 30, respelled 2026-08-27 | Macros need a non-curated target to call; the "one flat namespace" rule applies to *curated* API, not plumbing. The Jul 30 spelling was `detail`; S4-T2 respelled it. |
 | ~~File-scope state prefix~~ | **`g_camelCase`** — ratified Jul 30 | `g_` earns its place: `static` marks linkage but doesn't distinguish mutable state from constants at a glance. |
 | **Ownership / smart pointers** | undecided | Fixes v1 F13. Proposed default: value + **handle** (index + generation); `unique_ptr` = single heap ownership; raw ptr/ref = non-owning, never deletes; `shared_ptr` only for genuine shared + unclear lifetime. Trigger: first real ownership decision. → [[Backlog]] |
 | const-correctness | `misc-const-correctness` on in `.clang-tidy` | Mechanical for locals. Open: params/methods by hand? |
