@@ -72,6 +72,18 @@ jobs:
   # --- build + test on both legs x {Debug, Release} --------------------------
   build-test:
     name: ${{ matrix.name }}
+    # Gated behind the two cheap checks so a formatting slip or an under-covered diff never
+    # pays for seven more legs, three of them Windows at 2x (ADR-008 §9's cost trigger).
+    #
+    # GOTCHA: coverage is pull_request-only, so a push to master SKIPS it, and a skipped
+    # dependency skips everything downstream by default. That would kill the master
+    # backstop silently. Hence the explicit result checks: skipped is fine here, failed
+    # is not. !cancelled() is what stops GitHub applying its own implicit success() gate.
+    needs: [format, coverage]
+    if: >-
+      ${{ !cancelled()
+          && needs.format.result == 'success'
+          && needs.coverage.result != 'failure' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -145,6 +157,7 @@ jobs:
   # the PR description prints the number and exits 0 instead of failing the threshold.
   coverage:
     name: diff coverage
+    needs: format
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -212,7 +225,12 @@ jobs:
     name: ${{ matrix.name }}
     # PR-only (ADR-008 §9 Option A / ADR-009 §4): a squash-merge to master was already
     # sanitized on its up-to-date PR, so the push backstop skips the sanitizer trio.
-    if: github.event_name == 'pull_request'
+    needs: [format, coverage]
+    if: >-
+      ${{ !cancelled()
+          && github.event_name == 'pull_request'
+          && needs.format.result == 'success'
+          && needs.coverage.result == 'success' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
