@@ -88,6 +88,12 @@
       "displayName": "Linux / Clang + TSan",
       "inherits": "linux-clang",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "TE_SANITIZER": "tsan" }
+    },
+    {
+      "name": "linux-coverage",
+      "displayName": "Linux / Clang + coverage",
+      "inherits": "linux-clang",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "TE_COVERAGE": "ON" }
     }
   ],
 
@@ -103,7 +109,8 @@
     { "name": "linux-relwithdebinfo",   "configurePreset": "linux-relwithdebinfo" },
     { "name": "linux-profile",          "configurePreset": "linux-profile" },
     { "name": "linux-ubsan",            "configurePreset": "linux-ubsan" },
-    { "name": "linux-tsan",             "configurePreset": "linux-tsan" }
+    { "name": "linux-tsan",             "configurePreset": "linux-tsan" },
+    { "name": "linux-coverage",         "configurePreset": "linux-coverage" }
   ],
 
   "testPresets": [
@@ -129,6 +136,8 @@
     { "name": "linux-ubsan",     "configurePreset": "linux-ubsan",
       "output": { "outputOnFailure": true } },
     { "name": "linux-tsan",      "configurePreset": "linux-tsan",
+      "output": { "outputOnFailure": true } },
+    { "name": "linux-coverage",  "configurePreset": "linux-coverage",
       "output": { "outputOnFailure": true } }
   ]
 }
