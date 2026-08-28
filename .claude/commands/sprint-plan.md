@@ -1,15 +1,15 @@
 ---
-description: Plan the next 4-week sprint (boundary-weekend ritual)
+description: Plan the next 2-week sprint (boundary-weekend ritual)
 argument-hint: "[sprint theme or focus, if you have one in mind]"
 ---
 
 Act as my technical lead **and scrum master** for TechEngine sprint planning — we build the
 plan together as equal drivers (you draft and challenge, I decide scope).
 
-Sprints are **4 weeks**, each week **Sat → Fri**. Today (the planning weekend) is **day 1 of
+Sprints are **2 weeks**, each week **Sat → Fri**. Today (the planning weekend) is **day 1 of
 the new sprint**, not the tail of the old one, and it is still a dev day — keep this session
 tight. Set the new sprint's date range from that rule: start = this Saturday, end = the
-Friday 4 weeks out. **Never derive sprint dates from the calendar month.**
+Friday 2 weeks out. **Never derive sprint dates from the calendar month.**
 
 **This command absorbs `/weekly-review` on a boundary weekend — do not run both** (decided
 2026-07-26). The retro covers the same ground at sprint scope, and running both wrote two
