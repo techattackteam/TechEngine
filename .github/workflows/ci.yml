@@ -16,11 +16,20 @@
 
 name: CI
 
-# The "no code" scope rule (S4-P4): a change that cannot alter a build artifact does not
-# get a build. Only prose and the AI tooling qualify — Markdown anywhere, plus `.claude/`.
-# Everything else runs the full matrix, including `.gitignore`, `.githooks/` and this file,
-# because "obviously harmless" is how a build-affecting path gets added to the list later.
-# Self-review (ADR-009) is untouched: a docs-only PR has no code to review for correctness.
+# The "no code" scope rule (S4-P4; widened to CI config 2026-08-28): a change that cannot
+# alter a build artifact does not get a build. Three things qualify: Markdown anywhere,
+# `.claude/`, and `.github/workflows/`. Everything else runs the full matrix, `.gitignore`
+# and `.githooks/` included, because "obviously harmless" is how a build-affecting path gets
+# added to the list later. Self-review (ADR-009) is untouched: none of the three carry engine
+# code to review for correctness.
+#
+# GOTCHA, and this is the sharp one: `.github/workflows/` is in that list, so A CHANGE TO
+# THIS FILE IS NEVER TESTED BY THIS FILE. Break the YAML, rename a leg, drop a job, and the
+# PR still shows nine green checks from the stand-in and merges clean. The next PR is what
+# finds out. Worse, ci-docs.yml hardcodes the nine required context names, so renaming a leg
+# here silently uncovers it and every later docs-only PR hangs unmergeable with no clue why.
+# A workflow change is verified by watching the run it produces on `master`, never by its
+# own PR. Land workflow edits alone, and read the next run before building on them.
 #
 # GOTCHA: `paths-ignore` skips only when EVERY changed file matches, which is the behaviour
 # this wants. Its mirror in ci-docs.yml cannot be written that way — see the header there.
@@ -32,11 +41,13 @@ on:
     paths-ignore:
       - '**.md'
       - '.claude/**'
+      - '.github/workflows/**'
   push:
     branches: [master]
     paths-ignore:
       - '**.md'
       - '.claude/**'
+      - '.github/workflows/**'
 
 concurrency:
   group: ci-${{ github.ref }}
