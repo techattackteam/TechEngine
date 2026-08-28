@@ -16,11 +16,27 @@
 
 name: CI
 
+# The "no code" scope rule (S4-P4): a change that cannot alter a build artifact does not
+# get a build. Only prose and the AI tooling qualify — Markdown anywhere, plus `.claude/`.
+# Everything else runs the full matrix, including `.gitignore`, `.githooks/` and this file,
+# because "obviously harmless" is how a build-affecting path gets added to the list later.
+# Self-review (ADR-009) is untouched: a docs-only PR has no code to review for correctness.
+#
+# GOTCHA: `paths-ignore` skips only when EVERY changed file matches, which is the behaviour
+# this wants. Its mirror in ci-docs.yml cannot be written that way — see the header there.
+# The list is duplicated below and mirrored again in ci-docs.yml: Actions does not support
+# YAML anchors, so three copies is the only spelling. They must stay identical.
 on:
   pull_request:
     branches: [master]
+    paths-ignore:
+      - '**.md'
+      - '.claude/**'
   push:
     branches: [master]
+    paths-ignore:
+      - '**.md'
+      - '.claude/**'
 
 concurrency:
   group: ci-${{ github.ref }}
