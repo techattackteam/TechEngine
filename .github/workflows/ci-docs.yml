@@ -1,0 +1,68 @@
+# TechEngine CI — the docs-only stand-in (S4-P4). Partner to ci.yml, which carries the
+# "no code" scope rule and the real jobs.
+#
+# WHY THIS FILE EXISTS: a workflow skipped by a path filter never reports its contexts, and
+# a required context that never reports leaves the PR pending forever rather than mergeable.
+# So when ci.yml opts out, something else has to report the same nine names. That is this.
+#
+# WHY NOT AN `if:` ON THE REAL JOBS: measured on the push run for #49, where `coverage` and
+# `sanitizers` were both skipped by their `if:`. A skipped plain job does report its context
+# (`diff coverage` came back `skipped`). A skipped MATRIX job does not expand: `sanitizers`
+# reported one check literally named `matrix.name`, and `win ASan` / `linux UBSan` /
+# `linux TSan` never reported at all. Seven of the nine required contexts are matrix legs,
+# so gating with `if:` would hang every docs-only PR.
+#
+# GOTCHA — the names below are load-bearing. A required status check matches on the context
+# string, so each entry must equal a `name:` ci.yml produces, character for character. Rename
+# a leg there and this file silently stops covering it; the failure shows up as a docs PR
+# that will not merge. The list is the ruleset's, verified against
+# `gh api repos/:owner/:repo/rulesets/<id>`.
+#
+# GOTCHA — a MIXED PR (docs + code) triggers BOTH workflows. `paths` fires when ANY changed
+# file matches, while ci.yml's `paths-ignore` skips only when ALL of them do, and Actions has
+# no filter for "all changed files match". Both then report the same nine contexts, and the
+# merge box takes the most recent per name. That is the real run, which finishes minutes
+# after these do, so a mixed PR is still gated on its real result. It is ordering, not a
+# guarantee: if this file ever grows a slow step, that stops being true.
+
+name: CI (docs-only)
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - '**.md'
+      - '.claude/**'
+  push:
+    branches: [master]
+    paths:
+      - '**.md'
+      - '.claude/**'
+
+concurrency:
+  group: ci-docs-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  stand-in:
+    name: ${{ matrix.context }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        context:
+          - clang-format
+          - win-msvc Debug
+          - win-msvc Release
+          - linux-clang Debug
+          - linux-clang Release
+          - win ASan
+          - linux UBSan
+          - linux TSan
+          - diff coverage
+    steps:
+      - name: No code in this change
+        run: echo "Docs-only change — '${{ matrix.context }}' has nothing to build."
