@@ -66,6 +66,10 @@ Other presets: `windows-release`, `windows-asan`, and the Linux legs
 - Tests exist and run under CTest (`TechEngineBaseTests`, `sdk-smoke`) — see "Testing".
 - **CI minutes are a live budget** (~2k/mo, Windows billed 2×). Don't push
   speculative commits to watch CI.
+- **A PR with no code skips the build.** Change only Markdown or `.claude/` and
+  `ci.yml` steps aside, while `ci-docs.yml` reports the required checks in its
+  place. Everything else runs the full matrix, `.gitignore` and the workflows
+  included. Touch one code file and the whole matrix comes back.
 
 ## Code conventions (match the existing code)
 
