@@ -134,7 +134,8 @@ jobs:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ matrix.build }}
+          key: v1-${{ matrix.build }}-${{ hashFiles('cmake/deps.cmake') }}
+          append-timestamp: false
 
       # Share FetchContent downloads across runs (avoids re-cloning deps each run).
       - name: Cache FetchContent sources
@@ -194,10 +195,13 @@ jobs:
       # computes it does not get to change under us.
       - run: pipx install diff-cover==10.5.1
 
+      # Stable, content-addressed key. See the build-test leg for why, and for the one
+      # failure mode it cannot recover from on its own.
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: linux-coverage
+          key: v1-linux-coverage-${{ hashFiles('cmake/deps.cmake') }}
+          append-timestamp: false
 
       - name: Cache FetchContent sources
         uses: actions/cache@v4
@@ -277,10 +281,13 @@ jobs:
 
       # ccache degrades gracefully: a cold/unreachable cache just compiles slower,
       # it never fails a compile (unlike sccache-as-launcher gating on a live backend).
+      # Stable, content-addressed key. See the build-test leg for why, and for the one
+      # failure mode it cannot recover from on its own.
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ matrix.build }}
+          key: v1-${{ matrix.build }}-${{ hashFiles('cmake/deps.cmake') }}
+          append-timestamp: false
 
       - name: Cache FetchContent sources
         uses: actions/cache@v4
