@@ -27,17 +27,22 @@
 
 name: CI (docs-only)
 
+# Widened to `.github/workflows/**` on 2026-08-28, so a CI-config-only PR draws no build.
+# That also means THIS file stops being tested by its own PR: get a context name below wrong
+# and the very PR that broke it still reports nine green. See ci.yml's header.
 on:
   pull_request:
     branches: [master]
     paths:
       - '**.md'
       - '.claude/**'
+      - '.github/workflows/**'
   push:
     branches: [master]
     paths:
       - '**.md'
       - '.claude/**'
+      - '.github/workflows/**'
 
 concurrency:
   group: ci-docs-${{ github.ref }}
