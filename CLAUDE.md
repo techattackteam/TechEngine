@@ -245,9 +245,9 @@ size plans accordingly. **Fri is moderate**; **Tue is light**
 (docs, reading, small fixes); **Wed is relaxed** (recovery); the **other weekend day is
 off** (usually Sat — karting). Weekend days are a swappable pair, not fixed: don't assume
 Sat is off or that Sun is the working day. Ceremonies anchor to the **weekend**, not a
-weekday — `/weekly-review` once per weekend, `/sprint-plan` every **4th** weekend *instead of*
+weekday — `/weekly-review` once per weekend, `/sprint-plan` every **2nd** weekend *instead of*
 that weekend's review (it absorbs it — never run both). Sprints
-are **4 weeks, Sat → Fri**; the planning weekend is **day 1 of the new sprint** and stays a
+are **2 weeks, Sat → Fri**; the planning weekend is **day 1 of the new sprint** and stays a
 dev day. Sprints do **not** track calendar months — never derive a date from the month; the
 sprint note's own range is the source of truth.
 Full weekly rhythm + the weekend rule live on the vault Dashboard. When a session is running long or
