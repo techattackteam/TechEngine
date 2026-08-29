@@ -177,9 +177,11 @@ a guarantee, it needs a guard, not a comment.
                                                //
 #include <TechEngine/base/time/Clock.hpp>      // 2. other TechEngine headers
                                                //
-#include <spdlog/spdlog.h>                     // 3. third-party (incl. catch2)
+#include <diagnostics/FormatBuffer.hpp>        // 3. our module-private headers
                                                //
-#include <array>                               // 4. standard library
+#include <spdlog/spdlog.h>                     // 4. third-party (incl. catch2)
+                                               //
+#include <array>                               // 5. standard library
 #include <atomic>
 ```
 
@@ -191,13 +193,21 @@ the number of includes down: each header carries exactly what it needs, and no m
 - Blank line between groups; alphabetical **within** a group.
 - **Tests obey the same rule** — the unit under test comes before `<catch2/…>`, not after.
 - Angle brackets throughout — every path resolves through a target's include dirs, so there are
-  no `"relative"` includes.
+  no `"relative"` includes. A module's own private headers are reached the same way:
+  `<diagnostics/FormatBuffer.hpp>` from `src/`, `<events/AssertCapture.hpp>` from `tests/`.
+  Never `"FormatBuffer.hpp"`, and never `"../events/…"`. `techengine_module()` puts `src/` on
+  the include path and `techengine_test()` puts both.
 
 **Enforced, not remembered.** `.clang-format` has `IncludeBlocks: Regroup` +
 `IncludeCategories`, so clang-format *moves* includes into these groups — CLion applies it
 (it reads `.clang-format`; no IDE setting to configure) and the CI format gate blocks a merge
 that violates it. `IncludeIsMainRegex: '(Tests)?$'` is what makes `LogTests.cpp` treat
 `Log.hpp` as its main header so it sorts to the top.
+
+**One hole to know about.** Group 3 and group 4 are the same shape to a regex, a lowercase
+root plus a path, so `.clang-format` tells them apart by **enumerating the third-party roots**.
+A new dependency that is not added to that row sorts into group 3 as if it were ours, and the
+format gate stays green while it does. Adding the root is part of adding the dependency.
 
 ## Headers
 
@@ -230,7 +240,10 @@ whole API surface for. It also reads as attribute-soup next to `constexpr` / `st
   gate re-adds it.
 - **Revisit only for a fallible API** where the discarded value *is* the error (`std::expected`,
   a `bool` "did it work"). That is the Error-handling row in *Open* below — decide it there, for
-  that shape, not as a blanket habit. Today's only case (`addLogSink`) is a bool nobody ignores.
+  that shape, not as a blanket habit. Today's cases are `addLogSink` and `removeLogSink`. Both
+  bools were dropped unremarked until S4-T3; `addLogSink`'s is now checked at its one production
+  call site, and `removeLogSink`'s is an explicit `(void)`. Nothing but review catches the next
+  one, which is the cost this rule accepts.
 
 ## Initialization — `= value`, not `{value}`
 
@@ -295,7 +308,7 @@ Flag these as they come up; each becomes a rule above.
 | ~~File-scope state prefix~~ | **`g_camelCase`** — ratified Jul 30 | `g_` earns its place: `static` marks linkage but doesn't distinguish mutable state from constants at a glance. |
 | **Ownership / smart pointers** | undecided | Fixes v1 F13. Proposed default: value + **handle** (index + generation); `unique_ptr` = single heap ownership; raw ptr/ref = non-owning, never deletes; `shared_ptr` only for genuine shared + unclear lifetime. Trigger: first real ownership decision. → [[Backlog]] |
 | const-correctness | `misc-const-correctness` on in `.clang-tidy` | Mechanical for locals. Open: params/methods by hand? |
-| Error handling | undecided | Exceptions vs `std::expected` vs error codes. Note `logDispatch` catches to keep diagnostics from killing logic. Trigger: first fallible API. |
+| Error handling | undecided | Exceptions vs `std::expected` vs error codes. Note `logDispatch` catches to keep diagnostics from killing logic. **Trigger fired twice and the row did not move**: `addLogSink` returns a bare bool, `Reader` carries a sticky `ReadStatus` (ADR-016). Carded at S4-T3 → [[Backlog]] § *etc*; it owns the `[[nodiscard]]` revisit above. |
 | ~~**Target naming scheme**~~ | **`te_` = build-only, everything shippable is Pascal** — ratified 2026-08-10 | Shipping libs `TechEngine<Module>` · build-only/interface `te_*` · tests `TechEngine<Module>Tests` · leaf exes bare (`editor`, `runtime`) · alias lowercase `TechEngine::core`. The trigger fired at S3-T13: `te_test_support` (shared test helpers, INTERFACE) took its spelling from the principle with no new decision. Prior spellings that don't match and are not adopted: ADR-008 §6 `te_<module>_tests`, v1's `TechEngineEditor`. |
 
 ## Related

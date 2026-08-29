@@ -1,8 +1,8 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 
-#include "FormatBuffer.hpp"
-#include "LogInternal.hpp"
-#include "SourceName.hpp"
+#include <diagnostics/FormatBuffer.hpp>
+#include <diagnostics/LogInternal.hpp>
+#include <diagnostics/SourceName.hpp>
 
 #include <algorithm>
 #include <array>

@@ -1,7 +1,8 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
 
-#include "diagnostics/FormatBuffer.hpp"
+#include <diagnostics/FormatBuffer.hpp>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
