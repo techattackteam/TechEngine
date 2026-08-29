@@ -193,9 +193,10 @@ the number of includes down: each header carries exactly what it needs, and no m
 - Blank line between groups; alphabetical **within** a group.
 - **Tests obey the same rule** — the unit under test comes before `<catch2/…>`, not after.
 - Angle brackets throughout — every path resolves through a target's include dirs, so there are
-  no `"relative"` includes. A module's own private headers under `src/` are reached the same
-  way: `<diagnostics/FormatBuffer.hpp>`, never `"FormatBuffer.hpp"`. Both
-  `techengine_module()` and `techengine_test()` put `src/` on the target's include path.
+  no `"relative"` includes. A module's own private headers are reached the same way:
+  `<diagnostics/FormatBuffer.hpp>` from `src/`, `<events/AssertCapture.hpp>` from `tests/`.
+  Never `"FormatBuffer.hpp"`, and never `"../events/…"`. `techengine_module()` puts `src/` on
+  the include path and `techengine_test()` puts both.
 
 **Enforced, not remembered.** `.clang-format` has `IncludeBlocks: Regroup` +
 `IncludeCategories`, so clang-format *moves* includes into these groups — CLion applies it
