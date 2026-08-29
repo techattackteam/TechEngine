@@ -24,7 +24,9 @@ function(techengine_test module)
 
   add_executable(${_te_target} ${TT_SOURCES})
 
- target_include_directories(${_te_target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+   target_include_directories(${_te_target} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
   target_link_libraries(${_te_target} PRIVATE
     TechEngine::${module}

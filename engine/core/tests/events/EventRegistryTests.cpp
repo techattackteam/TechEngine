@@ -1,6 +1,7 @@
 #include <TechEngine/core/events/EventRegistry.hpp>
 
-#include "AssertCapture.hpp"
+#include <events/AssertCapture.hpp>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstdint>

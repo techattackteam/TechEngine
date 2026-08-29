@@ -37,12 +37,18 @@ SortIncludes: CaseSensitive
 IncludeBlocks: Regroup
 IncludeIsMainRegex: '(Tests)?$'
 # GOTCHA: the FIRST matching regex wins, so the '.*' catch-all must stay LAST or it
-# swallows std and the Priority 3 row becomes dead. Reads out of priority order on
-# purpose — that is match order, not sort order.
+# swallows every row below it. Reads out of priority order on purpose — that is match
+# order, not sort order.
+# The catch-all means "ours, module-private": a header reached through a target's PRIVATE
+# src dir, e.g. <diagnostics/FormatBuffer.hpp>. Third-party is enumerated above it because
+# the two are the same shape, a lowercase root plus a path. A new dependency that is not
+# added to that row sorts as ours, and the format gate stays green while it does.
 IncludeCategories:
-  - Regex: '^<TechEngine/'   # ours
+  - Regex: '^<TechEngine/'                                             # ours: public API
     Priority: 1
-  - Regex: '^<[a-z_]+>$'     # std: one lowercase word, no slash or dot
+  - Regex: '^<(GLFW|Jolt|catch2|glm|miniaudio|spdlog|toml\+\+|tracy)/' # third-party
     Priority: 3
-  - Regex: '.*'              # third-party
+  - Regex: '^<[a-z_]+>$'                                               # std: one lowercase word, no slash or dot
+    Priority: 4
+  - Regex: '.*'                                                        # ours: module-private
     Priority: 2

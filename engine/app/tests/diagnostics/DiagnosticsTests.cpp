@@ -1,7 +1,8 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 
-#include <catch2/catch_test_macros.hpp>
 #include <diagnostics/Diagnostics.hpp>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include <filesystem>
 #include <fstream>

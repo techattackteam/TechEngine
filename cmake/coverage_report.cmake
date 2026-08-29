@@ -26,9 +26,19 @@ foreach(_te_object IN LISTS _te_objects)
 endforeach()
 
 # Deps are never instrumented (the flags ride te_warnings), but our own TUs still carry
-# mapping records for dependency headers they inline. This drops those.
+# mapping records for dependency headers they inline.
+#
+# GOTCHA: this was `-ignore-filename-regex=/_deps/`, which is FetchContent's DEFAULT directory
+# and not the one CI uses — ci.yml passes FETCHCONTENT_BASE_DIR=<workspace>/.deps. So it
+# matched every local run and nothing in CI, and inlined catch2 headers were scored against
+# the merge threshold. The positional root list is the fix: llvm-cov keeps only files under
+# these paths, whatever the deps directory is called.
+#
+# Test sources are dropped too. A test file is executed by definition, so counting it lets a
+# large test diff carry an untested feature over the threshold.
+set(_te_roots "${TE_SOURCE_DIR}/engine" "${TE_SOURCE_DIR}/apps" "${TE_SOURCE_DIR}/sdk")
 set(_te_common "-instr-profile=${_te_profdata}" "${_te_first}" ${_te_object_args}
-               "-ignore-filename-regex=(/_deps/|/build/)")
+               "-ignore-filename-regex=(/tests/|/build/)" ${_te_roots})
 
 set(_te_lcov "${TE_COV_DIR}/coverage.lcov")
 execute_process(COMMAND "${TE_LLVM_COV}" export -format=lcov ${_te_common}
@@ -43,8 +53,6 @@ execute_process(COMMAND "${TE_LLVM_COV}" show -format=html
 if(NOT _te_result EQUAL 0)
   message(FATAL_ERROR "llvm-cov show failed (${_te_result}).")
 endif()
-
-execute_process(COMMAND "${TE_LLVM_COV}" report ${_te_common} RESULT_VARIABLE _te_result)
 
 message(STATUS "Browsable report: ${TE_COV_DIR}/html/index.html")
 
@@ -62,9 +70,13 @@ endif()
 
 set(_te_markdown "${TE_COV_DIR}/diff-coverage.md")
 
+# --exclude repeats the lcov's test filter rather than trusting it. A changed file absent
+# from the report is diff-cover's decision to make, not ours, and this takes the decision
+# away: the paths are excluded by name whatever the report holds.
 execute_process(COMMAND "${TE_DIFF_COVER}" "${_te_lcov}"
                         "--compare-branch=${_te_base}"
                         "--fail-under=${_te_threshold}"
+                        "--exclude" "*/tests/*" "tests/*"
                         "--format" "markdown:${_te_markdown}"
                 WORKING_DIRECTORY "${TE_SOURCE_DIR}"
                 OUTPUT_VARIABLE _te_output ECHO_OUTPUT_VARIABLE
@@ -73,9 +85,11 @@ execute_process(COMMAND "${TE_DIFF_COVER}" "${_te_lcov}"
 
 # GitHub appends step summaries, and diff-cover truncates whatever it writes to, so the
 # report is written to its own file first and appended here.
-if(DEFINED ENV{GITHUB_STEP_SUMMARY} AND EXISTS "${_te_markdown}")
+if(EXISTS "${_te_markdown}")
   file(READ "${_te_markdown}" _te_report)
-  file(APPEND "$ENV{GITHUB_STEP_SUMMARY}" "${_te_report}")
+  if(DEFINED ENV{GITHUB_STEP_SUMMARY})
+    file(APPEND "$ENV{GITHUB_STEP_SUMMARY}" "${_te_report}")
+  endif()
 endif()
 
 if(_te_result EQUAL 0)
@@ -92,9 +106,37 @@ if(NOT _te_result EQUAL 1 OR NOT EXISTS "${_te_markdown}")
 ${_te_output}")
 endif()
 
+# The explicit bypass is checked BEFORE the floor, and the order is the point. Both let the
+# run pass, so which one fires changes nothing about the exit code — it changes what the log
+# says happened. A human wrote [skip-coverage] on purpose; the floor is an automatic fallback.
+# Reporting the fallback while a deliberate signal sat unread hides whether the signal was
+# even received, which is exactly how the frozen-payload bug stayed invisible.
 if(NOT "$ENV{TE_COVERAGE_BYPASS}" STREQUAL "")
   message(STATUS "Diff coverage is below ${_te_threshold}%, bypassed by [skip-coverage].")
   return()
+endif()
+
+# A floor, not a second threshold. Under a handful of lines the percentage stops measuring
+# anything: at four measurable lines one line is worth 25 points, so a rename plus one
+# unreachable error branch reads as a failure with nothing to fix.
+#
+# The count is parsed from diff-cover rather than recomputed. diff-cover already intersected
+# the diff with the report, and a second implementation of that would eventually disagree
+# with the number the percentage was built from. Parsing its output is only safe because
+# coverage.cmake pins the version and checks it at configure time. A parse miss falls through
+# to the verdict below, never to a pass.
+set(_te_floor "$ENV{TE_COVERAGE_MIN_LINES}")
+if(NOT _te_floor)
+  set(_te_floor "10")
+endif()
+
+if(_te_report MATCHES "Total[^0-9]+([0-9]+) lines")
+  set(_te_total "${CMAKE_MATCH_1}")
+  if(_te_total LESS _te_floor)
+    message(STATUS "Diff coverage is below ${_te_threshold}%, but only ${_te_total} "
+                   "measurable lines changed (floor: ${_te_floor}). Too small to score.")
+    return()
+  endif()
 endif()
 
 message(FATAL_ERROR "Diff coverage is below ${_te_threshold}%. Add [skip-coverage] to the "

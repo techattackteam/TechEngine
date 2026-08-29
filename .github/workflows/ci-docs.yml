@@ -18,12 +18,13 @@
 # that will not merge. The list is the ruleset's, verified against
 # `gh api repos/:owner/:repo/rulesets/<id>`.
 #
-# GOTCHA — a MIXED PR (docs + code) triggers BOTH workflows. `paths` fires when ANY changed
-# file matches, while ci.yml's `paths-ignore` skips only when ALL of them do, and Actions has
-# no filter for "all changed files match". Both then report the same nine contexts, and the
-# merge box takes the most recent per name. That is the real run, which finishes minutes
-# after these do, so a mixed PR is still gated on its real result. It is ordering, not a
-# guarantee: if this file ever grows a slow step, that stops being true.
+# HOW THE SCOPE SPLIT WORKS, and why there is no `paths:` filter here. Actions has no "all
+# changed files match" filter, so `paths:` fired whenever ANY changed file matched. A mixed PR
+# (docs + code) therefore triggered BOTH workflows and both reported the same nine contexts;
+# the merge box took whichever landed last, which was ordering and not a guarantee. Fixed
+# 2026-08-29: the `scope` job reads the real diff and `stand-in` is gated on it, so exactly one
+# of the two workflows ever reports. A skipped MATRIX job never expands its contexts (see
+# above), which is precisely what a code PR needs from this file — silence.
 
 name: CI (docs-only)
 
@@ -33,16 +34,8 @@ name: CI (docs-only)
 on:
   pull_request:
     branches: [master]
-    paths:
-      - '**.md'
-      - '.claude/**'
-      - '.github/workflows/**'
   push:
     branches: [master]
-    paths:
-      - '**.md'
-      - '.claude/**'
-      - '.github/workflows/**'
 
 concurrency:
   group: ci-docs-${{ github.ref }}
@@ -52,8 +45,50 @@ permissions:
   contents: read
 
 jobs:
+  # The third copy of the no-code list, and the only one that is not a `paths` block. It must
+  # stay identical to ci.yml's two `paths-ignore` lists: Actions has no YAML anchors.
+  scope:
+    name: no-code scope
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.check.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the merge base has to be reachable
+
+      # Fails toward `false`, which is the safe direction. A wrong `false` reports nothing
+      # here and ci.yml reports the nine real results, or the PR hangs pending and someone
+      # looks. A wrong `true` hands out nine green checks for code nobody built.
+      - id: check
+        env:
+          TE_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          TE_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -uo pipefail
+          if ! git rev-parse --verify --quiet "${TE_BASE}^{commit}" >/dev/null \
+             || ! git rev-parse --verify --quiet "${TE_HEAD}^{commit}" >/dev/null; then
+            echo "::notice::Cannot resolve ${TE_BASE}..${TE_HEAD} — treating this as code."
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          base=$(git merge-base "$TE_BASE" "$TE_HEAD")
+          files=$(git diff --name-only "$base" "$TE_HEAD")
+          echo "Changed files:"
+          echo "$files"
+          code=$(echo "$files" | grep -vE '(\.md$|^\.claude/|^\.github/workflows/)' || true)
+          if [ -z "$files" ] || [ -n "$code" ]; then
+            echo "::notice::Code in this change — ci.yml is the reporter, standing down."
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No code in this change — standing in for the nine contexts."
+            echo "docs_only=true" >> "$GITHUB_OUTPUT"
+          fi
+
   stand-in:
     name: ${{ matrix.context }}
+    needs: scope
+    if: needs.scope.outputs.docs_only == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
