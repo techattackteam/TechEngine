@@ -32,9 +32,11 @@ name: CI
 # own PR. Land workflow edits alone, and read the next run before building on them.
 #
 # GOTCHA: `paths-ignore` skips only when EVERY changed file matches, which is the behaviour
-# this wants. Its mirror in ci-docs.yml cannot be written that way — see the header there.
-# The list is duplicated below and mirrored again in ci-docs.yml: Actions does not support
-# YAML anchors, so three copies is the only spelling. They must stay identical.
+# this wants. ci-docs.yml cannot be spelled that way, so since 2026-08-29 it carries no path
+# filter and computes the same rule from the real diff in its `scope` job — see the header
+# there. The list is duplicated below and mirrored a third time as that job's grep: Actions
+# does not support YAML anchors, so three copies is the only spelling. They must stay
+# identical, and the third is a regex rather than a glob list.
 on:
   pull_request:
     branches: [master]

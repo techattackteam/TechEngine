@@ -26,9 +26,19 @@ foreach(_te_object IN LISTS _te_objects)
 endforeach()
 
 # Deps are never instrumented (the flags ride te_warnings), but our own TUs still carry
-# mapping records for dependency headers they inline. This drops those.
+# mapping records for dependency headers they inline.
+#
+# GOTCHA: this was `-ignore-filename-regex=/_deps/`, which is FetchContent's DEFAULT directory
+# and not the one CI uses — ci.yml passes FETCHCONTENT_BASE_DIR=<workspace>/.deps. So it
+# matched every local run and nothing in CI, and inlined catch2 headers were scored against
+# the merge threshold. The positional root list is the fix: llvm-cov keeps only files under
+# these paths, whatever the deps directory is called.
+#
+# Test sources are dropped too. A test file is executed by definition, so counting it lets a
+# large test diff carry an untested feature over the threshold.
+set(_te_roots "${TE_SOURCE_DIR}/engine" "${TE_SOURCE_DIR}/apps" "${TE_SOURCE_DIR}/sdk")
 set(_te_common "-instr-profile=${_te_profdata}" "${_te_first}" ${_te_object_args}
-               "-ignore-filename-regex=(/_deps/|/build/)")
+               "-ignore-filename-regex=(/tests/|/build/)" ${_te_roots})
 
 set(_te_lcov "${TE_COV_DIR}/coverage.lcov")
 execute_process(COMMAND "${TE_LLVM_COV}" export -format=lcov ${_te_common}
@@ -62,9 +72,13 @@ endif()
 
 set(_te_markdown "${TE_COV_DIR}/diff-coverage.md")
 
+# --exclude repeats the lcov's test filter rather than trusting it. A changed file absent
+# from the report is diff-cover's decision to make, not ours, and this takes the decision
+# away: the paths are excluded by name whatever the report holds.
 execute_process(COMMAND "${TE_DIFF_COVER}" "${_te_lcov}"
                         "--compare-branch=${_te_base}"
                         "--fail-under=${_te_threshold}"
+                        "--exclude" "*/tests/*" "tests/*"
                         "--format" "markdown:${_te_markdown}"
                 WORKING_DIRECTORY "${TE_SOURCE_DIR}"
                 OUTPUT_VARIABLE _te_output ECHO_OUTPUT_VARIABLE
