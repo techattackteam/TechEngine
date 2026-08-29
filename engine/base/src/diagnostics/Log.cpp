@@ -240,14 +240,18 @@ namespace TechEngine {
         logger->flush_on(spdlog::level::err);
         spdlog::set_default_logger(std::move(logger));
 
-        addLogSink(&spdlogSink);
+        if (!addLogSink(&spdlogSink)) {
+            std::fprintf(stderr, "[log] sink table full — console and file output disabled\n");
+        }
     }
 
     void shutdownLogging() {
         if (!g_initialized.exchange(false, std::memory_order_acq_rel)) {
             return;
         }
-        removeLogSink(&spdlogSink);
+        if (!removeLogSink(&spdlogSink)) {
+            std::fprintf(stderr, "[log] failed to remove spdlog sink\n");
+        }
         spdlog::shutdown();
     }
 
