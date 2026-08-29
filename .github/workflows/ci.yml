@@ -181,10 +181,14 @@ jobs:
   # threshold would fall every time `client` grows, because rendering is proven by demo
   # scenes and not unit tests, and a gate that is bypassed weekly teaches nothing.
   #
-  # The job runs on every PR and ALWAYS reports, even when bypassed. A required check that
-  # is skipped by an `if:` never reports its context at all, which leaves the PR pending
-  # forever rather than mergeable. So the bypass lives inside the job: `[skip-coverage]` in
-  # the PR description prints the number and exits 0 instead of failing the threshold.
+  # The job runs on every PR and ALWAYS reports its context. A required check skipped by a
+  # JOB-level `if:` does not report one as success, which leaves the PR pending forever rather
+  # than mergeable. So the bypass lives inside the job as a per-STEP guard: the job goes green
+  # either way, and `[skip-coverage]` skips the work rather than the check.
+  #
+  # The price of that shape, taken deliberately on 2026-08-29: a bypassed run reports no
+  # number and uploads no HTML. Before, it built everything and printed the figure it was
+  # about to ignore, which cost ~2 minutes of runner time per bypassed run.
   #
   # GOTCHA that cost a debugging session: the bypass USED to read
   # `github.event.pull_request.body`, which is the event payload and is frozen at the moment
@@ -202,38 +206,73 @@ jobs:
       contents: read
       pull-requests: read   # `gh pr view` reads the live description for the bypass
     steps:
+      # FIRST, before a single apt package. The answer is knowable at second zero, and a
+      # bypassed run used to spend two minutes on clang, diff-cover and an instrumented
+      # build to reach a conclusion it already had.
+      #
+      # It needs no checkout: `gh` talks to the API, and GH_REPO says which repo.
+      - name: Check the bypass
+        id: bypass
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TE_PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          # The LIVE description, never github.event.pull_request.body. See the GOTCHA above.
+          body=$(gh pr view "$TE_PR" --json body --jq .body)
+          skip=false
+          case "$body" in
+            *'[skip-coverage]'*)
+              echo "::notice::[skip-coverage] in the description; coverage not enforced."
+              skip=true
+              ;;
+          esac
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+
+      # GOTCHA: every step below MUST carry this guard, and a new step is not exempt. The
+      # bypass skips STEPS and never the job, because `diff coverage` is a required context
+      # and a job skipped by a job-level `if:` does not report one as `success`. The job has
+      # to run and go green; only the work inside it is optional.
       - uses: actions/checkout@v4
+        if: steps.bypass.outputs.skip != 'true'
         with:
-          fetch-depth: 0   # diff_coverage.py diffs against the merge base
+          fetch-depth: 0   # diff-cover diffs against the merge base
 
       - name: Setup CMake + Ninja
+        if: steps.bypass.outputs.skip != 'true'
         uses: lukka/get-cmake@latest
 
       # `llvm` carries llvm-profdata and llvm-cov, which must match clang's major version.
       - name: Install clang + LLVM + GLFW deps
+        if: steps.bypass.outputs.skip != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y clang llvm             xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev
 
       # Pinned like clang-format is: the threshold is a merge gate, so the tool that
       # computes it does not get to change under us.
-      - run: pipx install diff-cover==10.5.1
+      - if: steps.bypass.outputs.skip != 'true'
+        run: pipx install diff-cover==10.5.1
 
       # Stable, content-addressed key. See the build-test leg for why, and for the one
       # failure mode it cannot recover from on its own.
       - name: ccache
+        if: steps.bypass.outputs.skip != 'true'
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: v1-linux-coverage-${{ hashFiles('cmake/deps.cmake') }}
           append-timestamp: false
 
       - name: Cache FetchContent sources
+        if: steps.bypass.outputs.skip != 'true'
         uses: actions/cache@v4
         with:
           path: .deps
           key: deps-${{ runner.os }}-${{ hashFiles('cmake/deps.cmake') }}
 
       - name: Configure
+        if: steps.bypass.outputs.skip != 'true'
         run: >
           cmake --preset linux-coverage
           -DFETCHCONTENT_BASE_DIR=${{ github.workspace }}/.deps
@@ -241,34 +280,23 @@ jobs:
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Build
+        if: steps.bypass.outputs.skip != 'true'
         run: cmake --build --preset linux-coverage
 
-      # The cmake command is identical to the local one. Threshold, base ref, the bypass and
-      # the summary path all reach it through the environment, so nothing about the job
-      # diverges from a developer run. Only where the bypass is SOURCED is CI-specific.
+      # Identical to the local command. Threshold, base ref, the floor and the summary path
+      # all reach it through the environment, so nothing here diverges from a developer run.
+      # TE_COVERAGE_BYPASS is deliberately absent: CI bypasses by not reaching this step at
+      # all, so the cmake-side bypass exists for local runs only.
       - name: Coverage
+        if: steps.bypass.outputs.skip != 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}   # the checkout is a detached merge ref; don't infer
-          TE_PR: ${{ github.event.pull_request.number }}
           TE_COVERAGE_BASE: origin/${{ github.base_ref }}
           TE_COVERAGE_THRESHOLD: "85"
           TE_COVERAGE_MIN_LINES: "10"
-        run: |
-          set -euo pipefail
-          # Read the description now rather than trusting the event payload. See the GOTCHA
-          # on the job above for why the payload is the wrong source.
-          body=$(gh pr view "$TE_PR" --json body --jq .body)
-          case "$body" in
-            *'[skip-coverage]'*)
-              echo "::notice::[skip-coverage] found in the description; threshold not enforced."
-              export TE_COVERAGE_BYPASS=1
-              ;;
-          esac
-          cmake --build --preset linux-coverage --target coverage
+        run: cmake --build --preset linux-coverage --target coverage
 
       - name: Upload the browsable report
-        if: always()
+        if: always() && steps.bypass.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-html
@@ -276,6 +304,7 @@ jobs:
           retention-days: 7
 
       - name: ccache stats
+        if: steps.bypass.outputs.skip != 'true'
         run: ccache -s
 
   # --- sanitizers, all per-PR (ADR-008 §9 Option A) --------------------------

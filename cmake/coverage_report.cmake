@@ -106,6 +106,16 @@ if(NOT _te_result EQUAL 1 OR NOT EXISTS "${_te_markdown}")
 ${_te_output}")
 endif()
 
+# The explicit bypass is checked BEFORE the floor, and the order is the point. Both let the
+# run pass, so which one fires changes nothing about the exit code — it changes what the log
+# says happened. A human wrote [skip-coverage] on purpose; the floor is an automatic fallback.
+# Reporting the fallback while a deliberate signal sat unread hides whether the signal was
+# even received, which is exactly how the frozen-payload bug stayed invisible.
+if(NOT "$ENV{TE_COVERAGE_BYPASS}" STREQUAL "")
+  message(STATUS "Diff coverage is below ${_te_threshold}%, bypassed by [skip-coverage].")
+  return()
+endif()
+
 # A floor, not a second threshold. Under a handful of lines the percentage stops measuring
 # anything: at four measurable lines one line is worth 25 points, so a rename plus one
 # unreachable error branch reads as a failure with nothing to fix.
@@ -114,7 +124,7 @@ endif()
 # the diff with the report, and a second implementation of that would eventually disagree
 # with the number the percentage was built from. Parsing its output is only safe because
 # coverage.cmake pins the version and checks it at configure time. A parse miss falls through
-# to the verdict below — never to a pass.
+# to the verdict below, never to a pass.
 set(_te_floor "$ENV{TE_COVERAGE_MIN_LINES}")
 if(NOT _te_floor)
   set(_te_floor "10")
@@ -127,11 +137,6 @@ if(_te_report MATCHES "Total[^0-9]+([0-9]+) lines")
                    "measurable lines changed (floor: ${_te_floor}). Too small to score.")
     return()
   endif()
-endif()
-
-if(NOT "$ENV{TE_COVERAGE_BYPASS}" STREQUAL "")
-  message(STATUS "Diff coverage is below ${_te_threshold}%, bypassed by [skip-coverage].")
-  return()
 endif()
 
 message(FATAL_ERROR "Diff coverage is below ${_te_threshold}%. Add [skip-coverage] to the "
