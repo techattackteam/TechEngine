@@ -1,4 +1,3 @@
-#include <TechEngine/base/stringid/Format.hpp>
 #include <TechEngine/base/stringid/StringId.hpp>
 
 #include <catch2/catch_test_macros.hpp>

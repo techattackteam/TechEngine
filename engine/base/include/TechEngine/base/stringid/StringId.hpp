@@ -2,6 +2,7 @@
 
 #include <compare>
 #include <cstdint>
+#include <format>
 #include <functional>
 #include <string_view>
 
@@ -45,5 +46,20 @@ template<>
 struct std::hash<TechEngine::StringId> {
     std::size_t operator()(TechEngine::StringId id) const noexcept {
         return id.value();
+    }
+};
+
+template<>
+struct std::formatter<TechEngine::StringId> {
+    constexpr auto parse(std::format_parse_context& context) {
+        auto it = context.begin();
+        if (it != context.end() && *it != '}') {
+            throw std::format_error("StringId takes no format spec");
+        }
+        return it;
+    }
+
+    auto format(TechEngine::StringId id, std::format_context& context) const {
+        return std::format_to(context.out(), "{0:#018x}", id.value());
     }
 };
