@@ -3,7 +3,7 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
-#include <TechEngine/base/math/Format.hpp>
+#include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/base/time/Clock.hpp>
 #include <TechEngine/core/EngineContext.hpp>
 #include <TechEngine/core/events/EventRegistry.hpp>

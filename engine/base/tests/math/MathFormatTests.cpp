@@ -1,5 +1,4 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
-#include <TechEngine/base/math/Format.hpp>
 #include <TechEngine/base/math/Math.hpp>
 
 #include <catch2/catch_test_macros.hpp>
