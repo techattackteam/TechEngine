@@ -54,8 +54,6 @@ if(NOT _te_result EQUAL 0)
   message(FATAL_ERROR "llvm-cov show failed (${_te_result}).")
 endif()
 
-execute_process(COMMAND "${TE_LLVM_COV}" report ${_te_common} RESULT_VARIABLE _te_result)
-
 message(STATUS "Browsable report: ${TE_COV_DIR}/html/index.html")
 
 # diff-cover compares against the merge base by default ('...' range notation), which is
@@ -87,9 +85,11 @@ execute_process(COMMAND "${TE_DIFF_COVER}" "${_te_lcov}"
 
 # GitHub appends step summaries, and diff-cover truncates whatever it writes to, so the
 # report is written to its own file first and appended here.
-if(DEFINED ENV{GITHUB_STEP_SUMMARY} AND EXISTS "${_te_markdown}")
+if(EXISTS "${_te_markdown}")
   file(READ "${_te_markdown}" _te_report)
-  file(APPEND "$ENV{GITHUB_STEP_SUMMARY}" "${_te_report}")
+  if(DEFINED ENV{GITHUB_STEP_SUMMARY})
+    file(APPEND "$ENV{GITHUB_STEP_SUMMARY}" "${_te_report}")
+  endif()
 endif()
 
 if(_te_result EQUAL 0)
@@ -104,6 +104,29 @@ if(NOT _te_result EQUAL 1 OR NOT EXISTS "${_te_markdown}")
   message(FATAL_ERROR "diff-cover did not complete (result: ${_te_result}). "
                       "This is not a coverage verdict.
 ${_te_output}")
+endif()
+
+# A floor, not a second threshold. Under a handful of lines the percentage stops measuring
+# anything: at four measurable lines one line is worth 25 points, so a rename plus one
+# unreachable error branch reads as a failure with nothing to fix.
+#
+# The count is parsed from diff-cover rather than recomputed. diff-cover already intersected
+# the diff with the report, and a second implementation of that would eventually disagree
+# with the number the percentage was built from. Parsing its output is only safe because
+# coverage.cmake pins the version and checks it at configure time. A parse miss falls through
+# to the verdict below — never to a pass.
+set(_te_floor "$ENV{TE_COVERAGE_MIN_LINES}")
+if(NOT _te_floor)
+  set(_te_floor "10")
+endif()
+
+if(_te_report MATCHES "Total[^0-9]+([0-9]+) lines")
+  set(_te_total "${CMAKE_MATCH_1}")
+  if(_te_total LESS _te_floor)
+    message(STATUS "Diff coverage is below ${_te_threshold}%, but only ${_te_total} "
+                   "measurable lines changed (floor: ${_te_floor}). Too small to score.")
+    return()
+  endif()
 endif()
 
 if(NOT "$ENV{TE_COVERAGE_BYPASS}" STREQUAL "")

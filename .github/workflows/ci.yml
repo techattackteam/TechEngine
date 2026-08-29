@@ -185,11 +185,22 @@ jobs:
   # is skipped by an `if:` never reports its context at all, which leaves the PR pending
   # forever rather than mergeable. So the bypass lives inside the job: `[skip-coverage]` in
   # the PR description prints the number and exits 0 instead of failing the threshold.
+  #
+  # GOTCHA that cost a debugging session: the bypass USED to read
+  # `github.event.pull_request.body`, which is the event payload and is frozen at the moment
+  # the event fired. Adding `[skip-coverage]` to an open PR did nothing, and "Re-run all
+  # jobs" replays that same stale payload, so the description was invisible no matter how
+  # many times it was re-run. The Coverage step now asks the API for the live body. Editing
+  # the description and re-running the job is enough; no new commit, and `edited` stays out
+  # of the trigger list so a title typo does not buy a nine-leg matrix run.
   coverage:
     name: diff coverage
     needs: format
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read   # `gh pr view` reads the live description for the bypass
     steps:
       - uses: actions/checkout@v4
         with:
@@ -232,15 +243,29 @@ jobs:
       - name: Build
         run: cmake --build --preset linux-coverage
 
-      # Identical to the local command. Threshold, base ref, the bypass and the summary
-      # path all come from the environment, so nothing about the job diverges from a
-      # developer run.
+      # The cmake command is identical to the local one. Threshold, base ref, the bypass and
+      # the summary path all reach it through the environment, so nothing about the job
+      # diverges from a developer run. Only where the bypass is SOURCED is CI-specific.
       - name: Coverage
         env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}   # the checkout is a detached merge ref; don't infer
+          TE_PR: ${{ github.event.pull_request.number }}
           TE_COVERAGE_BASE: origin/${{ github.base_ref }}
           TE_COVERAGE_THRESHOLD: "85"
-          TE_COVERAGE_BYPASS: ${{ contains(github.event.pull_request.body, '[skip-coverage]') && '1' || '' }}
-        run: cmake --build --preset linux-coverage --target coverage
+          TE_COVERAGE_MIN_LINES: "10"
+        run: |
+          set -euo pipefail
+          # Read the description now rather than trusting the event payload. See the GOTCHA
+          # on the job above for why the payload is the wrong source.
+          body=$(gh pr view "$TE_PR" --json body --jq .body)
+          case "$body" in
+            *'[skip-coverage]'*)
+              echo "::notice::[skip-coverage] found in the description; threshold not enforced."
+              export TE_COVERAGE_BYPASS=1
+              ;;
+          esac
+          cmake --build --preset linux-coverage --target coverage
 
       - name: Upload the browsable report
         if: always()
