@@ -1,8 +1,9 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 
-#include "FormatBuffer.hpp"
-#include "LogInternal.hpp"
-#include "SourceName.hpp"
+#include <diagnostics/FormatBuffer.hpp>
+#include <diagnostics/LogInternal.hpp>
+#include <diagnostics/SourceName.hpp>
+
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
@@ -46,7 +47,7 @@ namespace TechEngine {
     // A null slot is an empty one — no separate count to keep in step with the array.
     static std::array<std::atomic<LogSinkFn>, MAX_LOG_SINKS> g_sinks{};
 
-    struct RingEntry {
+    struct LogRingEntry {
         LogRecord record{};
         std::array<char, MESSAGE_CAPACITY> messageStorage{};
     };
@@ -55,12 +56,12 @@ namespace TechEngine {
     // record lands here regardless of what's in g_sinks. Slot choice is a bare fetch_add
     // modulo; two threads racing the same wrapped slot can tear a write. Accepted for a
     // best-effort crash trail, not a linearizable log.
-    static std::array<RingEntry, LOG_RING_CAPACITY> g_ring{};
+    static std::array<LogRingEntry, LOG_RING_CAPACITY> g_ring{};
     static std::atomic<std::uint64_t> g_ringWritten = 0;
 
     static void ringWrite(const LogRecord& record) {
         const std::uint64_t index = g_ringWritten.fetch_add(1, std::memory_order_relaxed);
-        RingEntry& entry = g_ring[static_cast<std::size_t>(index % LOG_RING_CAPACITY)];
+        LogRingEntry& entry = g_ring[static_cast<std::size_t>(index % LOG_RING_CAPACITY)];
 
         const std::size_t copySize = std::min(record.message.size(), entry.messageStorage.size());
         std::copy_n(record.message.data(), copySize, entry.messageStorage.data());

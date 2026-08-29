@@ -177,9 +177,11 @@ a guarantee, it needs a guard, not a comment.
                                                //
 #include <TechEngine/base/time/Clock.hpp>      // 2. other TechEngine headers
                                                //
-#include <spdlog/spdlog.h>                     // 3. third-party (incl. catch2)
+#include <diagnostics/FormatBuffer.hpp>        // 3. our module-private headers
                                                //
-#include <array>                               // 4. standard library
+#include <spdlog/spdlog.h>                     // 4. third-party (incl. catch2)
+                                               //
+#include <array>                               // 5. standard library
 #include <atomic>
 ```
 
@@ -191,13 +193,20 @@ the number of includes down: each header carries exactly what it needs, and no m
 - Blank line between groups; alphabetical **within** a group.
 - **Tests obey the same rule** — the unit under test comes before `<catch2/…>`, not after.
 - Angle brackets throughout — every path resolves through a target's include dirs, so there are
-  no `"relative"` includes.
+  no `"relative"` includes. A module's own private headers under `src/` are reached the same
+  way: `<diagnostics/FormatBuffer.hpp>`, never `"FormatBuffer.hpp"`. Both
+  `techengine_module()` and `techengine_test()` put `src/` on the target's include path.
 
 **Enforced, not remembered.** `.clang-format` has `IncludeBlocks: Regroup` +
 `IncludeCategories`, so clang-format *moves* includes into these groups — CLion applies it
 (it reads `.clang-format`; no IDE setting to configure) and the CI format gate blocks a merge
 that violates it. `IncludeIsMainRegex: '(Tests)?$'` is what makes `LogTests.cpp` treat
 `Log.hpp` as its main header so it sorts to the top.
+
+**One hole to know about.** Group 3 and group 4 are the same shape to a regex, a lowercase
+root plus a path, so `.clang-format` tells them apart by **enumerating the third-party roots**.
+A new dependency that is not added to that row sorts into group 3 as if it were ours, and the
+format gate stays green while it does. Adding the root is part of adding the dependency.
 
 ## Headers
 
