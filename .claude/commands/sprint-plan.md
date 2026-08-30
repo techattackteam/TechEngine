@@ -100,10 +100,20 @@ Steps:
      in to make the sprint note look complete.
    - **Kind, priority + weight on every task** — the **kind lives in the card ID**
      (`S3-T4` Dev · `S3-D1` Design · `S3-B1` Bug · `S3-P2` Process), then `P1/P2/P3` and a
-     weight (🟢 Deep / 🟠 Moderate / 🟡 Light) matching the day-type it fits. Tag format
-     `· P1 · 🟢 Deep`. Design tasks are ordered **before** the story they unblock; Process
-     tasks are the **first thing cut** if capacity tightens — call the mix out loud when a
-     sprint is more than about a third Process.
+     weight (🟢 Deep / 🟠 Moderate / 🟡 Light / 🤖 Auto) matching the day-type it fits. Tag
+     format `· P1 · 🟢 Deep`. Design tasks are ordered **before** the story they unblock;
+     Process tasks are the **first thing cut** if capacity tightens — call the mix out loud
+     when a sprint is more than about a third Process.
+   - **Fill the two lanes separately, attended first.** Size the attended lane against the
+     capacity table exactly as before — the 🤖 Auto lane does **not** raise it. Then make a
+     second pass over what is left and run each candidate through the artifact gate's
+     § *The 🤖 Auto gate* (four questions; one no disqualifies). Process and research cards
+     are the natural population, and moving them is the point: every sustainability overrun
+     of Sprint 04 was process work, not engine work.
+     **Cap the Auto lane at one PR-producing card per weekday**, ~5 per sprint week, because
+     each costs 16.1 billed CI minutes and ~15 minutes of Miguel's review. Report-only and
+     vault-only Auto cards are free and are not capped.
+     Full model: [[Autonomous Lane — Design]].
    - **Bugs enter two ways, and they behave differently.** Known *at planning* (step 1) → an
      ordinary card, sized in with everything else, nothing displaced. Arriving *mid-sprint* →
      still taken that sprint, but it **displaces**: name what it pushes out (lowest-priority
@@ -136,7 +146,8 @@ Steps:
    - Backlog column stays a bare pointer to [[Backlog]] — cards never accumulate there.
    Never open a second Done column to keep old cards around, and **never add a column for a
    task kind** — kind lives in the card ID (a column would be a second home for the same
-   fact, and it hides that a Design card is sprint-bound critical-path work). If a card in a
-   closing column has no home in a sprint note, that's a gap — say so and place it before
-   cutting.
+   fact, and it hides that a Design card is sprint-bound critical-path work). **The same
+   applies to the 🤖 Auto lane: no column for it either.** Lane is a weight, it already shows
+   in the card's tag, and a column would be that second home. If a card in a closing column
+   has no home in a sprint note, that's a gap — say so and place it before cutting.
 9. This is planning only — no implementation.

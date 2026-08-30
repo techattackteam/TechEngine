@@ -41,7 +41,9 @@ CMakeUserPresets.json
 # The vault is its own repo, cloned in place (ADR-012 §1).
 # Removing this line without also removing `!docs/` from the root `.ignore`
 # makes ripgrep and git disagree about whether the vault exists.
-/docs/
+# No trailing slash: a cloud routine mounts the vault as a symlink, and a
+# directory-only pattern does not match one.
+/docs
 
 # S4-T7 demo blob: the runtime writes it into the source assets dir at every start.
 /engine/app/assets/demo-material.bin
