@@ -43,3 +43,5 @@ CMakeUserPresets.json
 # makes ripgrep and git disagree about whether the vault exists.
 /docs/
 
+# S4-T7 demo blob: the runtime writes it into the source assets dir at every start.
+/engine/app/assets/demo-material.bin

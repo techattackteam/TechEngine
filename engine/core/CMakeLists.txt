@@ -16,6 +16,7 @@ techengine_module(core
           include/TechEngine/core/jobs/JobSystem.hpp
           include/TechEngine/core/serialization/BlobHeader.hpp
           include/TechEngine/core/serialization/Reader.hpp
+          include/TechEngine/core/serialization/Visit.hpp
           include/TechEngine/core/serialization/Writer.hpp
   DEPS    base platform
   LIBS    Jolt                             # authoritative physics (ADR-006 §1)
@@ -31,5 +32,6 @@ if(TE_BUILD_TESTS)
           tests/events/EventStreamTests.cpp
           tests/events/EventStreamManagerTests.cpp
           tests/jobs/JobSystemTests.cpp
+          tests/serialization/VisitTests.cpp
           tests/serialization/WriterReaderTests.cpp)
 endif()

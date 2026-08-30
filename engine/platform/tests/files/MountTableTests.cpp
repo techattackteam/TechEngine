@@ -125,3 +125,34 @@ TEST_CASE("resolveExisting is case-sensitive", "[files][mounttable]") {
     CHECK(table.resolveExisting("assets://ui/Icon.png", resolved) == FileResult::NotFound);
     CHECK(table.resolveExisting("assets://ui/icon.PNG", resolved) == FileResult::NotFound);
 }
+
+TEST_CASE("resolveForCreate returns a path that does not exist yet", "[files][mounttable]") {
+    ScratchDirectory scratch{"resolveForCreateMissing"};
+    MountTable table;
+    table.mount("assets", scratch.root());
+
+    std::filesystem::path out;
+    REQUIRE(table.resolveForCreate("assets://baked/level.bin", out) == FileResult::Ok);
+    CHECK(out == scratch.root() / "baked" / "level.bin");
+    CHECK_FALSE(std::filesystem::exists(out));
+}
+
+TEST_CASE("resolveForCreate takes the top mount and never falls through", "[files][mounttable]") {
+    MountTable table;
+    table.mount("assets", "/base", 0);
+    table.mount("assets", "/overlay", 100);
+
+    std::filesystem::path out;
+    REQUIRE(table.resolveForCreate("assets://level.bin", out) == FileResult::Ok);
+    CHECK(out == std::filesystem::path{"/overlay"} / "level.bin");
+}
+
+TEST_CASE("resolveForCreate rejects the mount root and an unmounted alias", "[files][mounttable]") {
+    MountTable table;
+    table.mount("assets", "/base");
+
+    std::filesystem::path out;
+    CHECK(table.resolveForCreate("assets://", out) == FileResult::InvalidPath);
+    CHECK(table.resolveForCreate("assets://../escape.bin", out) == FileResult::InvalidPath);
+    CHECK(table.resolveForCreate("cache://level.bin", out) == FileResult::NoMount);
+}

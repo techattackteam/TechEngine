@@ -7,6 +7,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -350,4 +351,89 @@ TEST_CASE("list covers only the winning mount", "[files][fileaccess]") {
 
     std::vector<std::byte> bytes;
     CHECK(files.read("assets://ui/only-in-base.png", bytes) == FileResult::Ok);
+}
+
+static std::vector<std::byte> asBytes(std::string_view text) {
+    std::vector<std::byte> bytes(text.size());
+    for (std::size_t i = 0; i < text.size(); i++) {
+        bytes[i] = static_cast<std::byte>(text[i]);
+    }
+    return bytes;
+}
+
+TEST_CASE("write then read round-trips the bytes", "[files][fileaccess]") {
+    MountedScratch env{"writeRoundTrip"};
+    const std::vector<std::byte> payload = asBytes("baked level bytes");
+
+    REQUIRE(env.files.write("assets://level.bin", payload) == FileResult::Ok);
+
+    std::vector<std::byte> out;
+    REQUIRE(env.files.read("assets://level.bin", out) == FileResult::Ok);
+    CHECK(out == payload);
+}
+
+// The same all-256-values guard the read side carries: a stream that forgot std::ios::binary
+// rewrites 0x0D 0x0A on Windows, and an embedded NUL must not truncate.
+TEST_CASE("write preserves every byte value", "[files][fileaccess]") {
+    MountedScratch env{"writeEveryByte"};
+    const std::vector<std::byte> payload = asBytes(everyByteValue());
+
+    REQUIRE(env.files.write("assets://raw.bin", payload) == FileResult::Ok);
+
+    std::vector<std::byte> out;
+    REQUIRE(env.files.read("assets://raw.bin", out) == FileResult::Ok);
+    CHECK(out == payload);
+}
+
+TEST_CASE("write truncates an existing file rather than appending", "[files][fileaccess]") {
+    MountedScratch env{"writeTruncates"};
+    env.scratch.writeFile("level.bin", "a much longer previous payload");
+
+    const std::vector<std::byte> payload = asBytes("short");
+    REQUIRE(env.files.write("assets://level.bin", payload) == FileResult::Ok);
+
+    std::vector<std::byte> out;
+    REQUIRE(env.files.read("assets://level.bin", out) == FileResult::Ok);
+    CHECK(asString(out) == "short");
+}
+
+TEST_CASE("write accepts an empty span and leaves an empty file", "[files][fileaccess]") {
+    MountedScratch env{"writeEmpty"};
+
+    REQUIRE(env.files.write("assets://empty.bin", {}) == FileResult::Ok);
+
+    std::vector<std::byte> out;
+    REQUIRE(env.files.read("assets://empty.bin", out) == FileResult::Ok);
+    CHECK(out.empty());
+}
+
+TEST_CASE("write lands in the highest-priority mount", "[files][fileaccess]") {
+    ScratchDirectory base{"writePriorityBase"};
+    ScratchDirectory overlay{"writePriorityOverlay"};
+
+    MountTable mounts;
+    FileAccess files{mounts};
+    mounts.mount("assets", base.root(), 0);
+    mounts.mount("assets", overlay.root(), 100);
+
+    REQUIRE(files.write("assets://level.bin", asBytes("overlay")) == FileResult::Ok);
+    CHECK(std::filesystem::exists(overlay.root() / "level.bin"));
+    CHECK_FALSE(std::filesystem::exists(base.root() / "level.bin"));
+}
+
+TEST_CASE("write refuses an unmounted alias, the mount root, and a directory", "[files][fileaccess]") {
+    MountedScratch env{"writeRefusals"};
+    env.scratch.makeDirectory("meshes");
+
+    CHECK(env.files.write("cache://level.bin", asBytes("x")) == FileResult::NoMount);
+    CHECK(env.files.write("assets://", asBytes("x")) == FileResult::InvalidPath);
+    CHECK(env.files.write("assets://meshes", asBytes("x")) == FileResult::IsADirectory);
+}
+
+// Pins today's behaviour rather than endorsing it: write does not create parent directories,
+// so a missing one surfaces as the generic IoError. M3 owns whether that becomes createDirectory.
+TEST_CASE("write does not create a missing parent directory", "[files][fileaccess]") {
+    MountedScratch env{"writeMissingParent"};
+
+    CHECK(env.files.write("assets://absent/level.bin", asBytes("x")) == FileResult::IoError);
 }
