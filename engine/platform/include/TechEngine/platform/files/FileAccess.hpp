@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -26,6 +27,8 @@ namespace TechEngine {
         explicit FileAccess(const MountTable& mounts);
 
         FileResult read(std::string_view virtualPath, std::vector<std::byte>& out) const;
+
+        FileResult write(std::string_view virtualPath, std::span<const std::byte> bytes);
 
         FileResult status(std::string_view virtualPath, FileStatus& out) const;
 

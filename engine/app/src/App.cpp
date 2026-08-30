@@ -4,11 +4,15 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/base/stringid/StringId.hpp>
 #include <TechEngine/base/time/Clock.hpp>
 #include <TechEngine/core/EngineContext.hpp>
 #include <TechEngine/core/events/EventRegistry.hpp>
 #include <TechEngine/core/events/EventStreamManager.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
+#include <TechEngine/core/serialization/BlobHeader.hpp>
+#include <TechEngine/core/serialization/Reader.hpp>
+#include <TechEngine/core/serialization/Writer.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/platform/files/MountTable.hpp>
 
@@ -20,6 +24,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -28,6 +33,46 @@ namespace TechEngine {
         std::uint64_t tick = 0;
         std::uint32_t amount = 0;
     };
+
+    struct DemoTransform {
+        float x = 0.0f;
+        float y = 0.0f;
+        float z = 0.0f;
+        float scale = 1.0f;
+
+        bool operator==(const DemoTransform&) const = default;
+    };
+
+    struct DemoMaterial {
+        StringId shader;
+        std::string name;
+        DemoTransform transform;
+        std::vector<std::uint32_t> textureIds;
+
+        bool operator==(const DemoMaterial&) const = default;
+    };
+
+    template<typename Archive>
+    static void visit(Archive& archive, DemoTransform& value) {
+        static_assert(sizeof(DemoTransform) == 16, "DemoTransform changed shape; check that visit still covers every field.");
+
+        archive.field(value.x);
+        archive.field(value.y);
+        archive.field(value.z);
+        archive.field(value.scale);
+    }
+
+    // No sizeof guard: a type holding std::string or std::vector has a different sizeof per
+    // standard library and per config, so pinning a constant here goes red on another leg.
+    template<typename Archive>
+    static void visit(Archive& archive, DemoMaterial& value) {
+        archive.field(value.shader);
+        archive.field(value.name);
+        archive.field(value.transform);
+        archive.field(value.textureIds);
+    }
+
+    static constexpr const char* DEMO_BLOB_VIRTUAL_PATH = "assets://demo-material.bin";
 
     static constexpr std::uint64_t DEMO_DAMAGE_TICK_PERIOD = 30;
     static constexpr std::size_t DEMO_JOB_COUNT = 4;
@@ -52,6 +97,49 @@ namespace TechEngine {
         std::vector<std::byte> demoAsset;
         const FileResult demoRead = engine.files.read("assets://demo.txt", demoAsset);
         TE_LOGGER_INFO("assets://demo.txt -> result {0}, {1} bytes", static_cast<std::uint32_t>(demoRead), demoAsset.size());
+
+        // TODO(S4-T7): throwaway serialization demo. M5 registers real components against this
+        // seam; the struct below only proves the round-trip.
+        DemoMaterial demoMaterial;
+        demoMaterial.shader = StringId{"TechEngine.DemoUnlit"};
+        demoMaterial.name = "materials/brushed-metal";
+        demoMaterial.transform = DemoTransform{1.0f, 2.0f, 3.0f, 0.5f};
+        demoMaterial.textureIds = {11, 22, 33};
+
+        std::vector<std::byte> demoBlob;
+        Writer demoWriter{demoBlob};
+        demoWriter.writeHeader();
+        demoWriter.field(demoMaterial);
+
+        const FileResult demoBlobWritten = engine.files.write(DEMO_BLOB_VIRTUAL_PATH, demoBlob);
+
+        std::vector<std::byte> demoBlobFromDisk;
+        const FileResult demoBlobRead = engine.files.read(DEMO_BLOB_VIRTUAL_PATH, demoBlobFromDisk);
+
+        Reader demoReader{demoBlobFromDisk};
+        BlobHeader demoHeader;
+        demoReader.readHeader(demoHeader);
+
+        DemoMaterial demoRestored;
+        demoReader.field(demoRestored);
+
+        TE_LOGGER_INFO(
+            "DemoMaterial: wrote {0} bytes to {1} (result {2}), read back result {3} at {4} bytes, header version {5}, status {6}, equal {7}, shader {8}, name {9}, textures {10}",
+            demoBlob.size(),
+            DEMO_BLOB_VIRTUAL_PATH,
+            static_cast<std::uint32_t>(demoBlobWritten),
+            static_cast<std::uint32_t>(demoBlobRead),
+            demoBlobFromDisk.size(),
+            demoHeader.formatVersion,
+            static_cast<std::uint32_t>(demoReader.status()),
+            demoRestored == demoMaterial,
+            demoRestored.shader,
+            demoRestored.name,
+            demoRestored.textureIds.size());
+
+        TE_ASSERT(demoBlobWritten == FileResult::Ok, "DemoMaterial blob did not write to {0}", DEMO_BLOB_VIRTUAL_PATH);
+        TE_ASSERT(demoBlobRead == FileResult::Ok, "DemoMaterial blob did not read back from {0}", DEMO_BLOB_VIRTUAL_PATH);
+        TE_ASSERT(demoReader.ok() && demoRestored == demoMaterial, "DemoMaterial did not survive the round-trip through disk");
 
         Clock clock;
         FrameLoop loop(engine, Role::Client);

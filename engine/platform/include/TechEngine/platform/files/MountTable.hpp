@@ -35,5 +35,7 @@ namespace TechEngine {
         std::span<const MountEntry> entries() const;
 
         FileResult resolveExisting(std::string_view virtualPath, std::filesystem::path& out) const;
+
+        FileResult resolveForCreate(std::string_view virtualPath, std::filesystem::path& out) const;
     };
 }

@@ -2,6 +2,7 @@
 
 #include <TechEngine/base/stringid/StringId.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
+#include <TechEngine/core/serialization/Visit.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -78,6 +79,21 @@ namespace TechEngine {
 
             out.resize(count);
             readBytes(std::as_writable_bytes(std::span<T>{out}));
+        }
+
+        template<typename T>
+        void field(T& value) {
+            if constexpr (requires(Reader& archive) { archive.read(value); }) {
+                read(value);
+            } else {
+                static_assert(Visitable<T, Reader>, "No read overload and no visit(archive, value) for this type; give it a visit function in its own namespace.");
+                visit(*this, value);
+            }
+        }
+
+        template<typename T>
+        void field(std::vector<T>& values) {
+            readSpan(values);
         }
 
         bool ok() const;

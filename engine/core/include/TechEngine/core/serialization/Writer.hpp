@@ -3,6 +3,7 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/stringid/StringId.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
+#include <TechEngine/core/serialization/Visit.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -67,6 +68,21 @@ namespace TechEngine {
 
             write(static_cast<std::uint32_t>(values.size()));
             writeBytes(std::as_bytes(values));
+        }
+
+        template<typename T>
+        void field(T& value) {
+            if constexpr (requires(Writer& archive) { archive.write(value); }) {
+                write(value);
+            } else {
+                static_assert(Visitable<T, Writer>, "No write overload and no visit(archive, value) for this type; give it a visit function in its own namespace.");
+                visit(*this, value);
+            }
+        }
+
+        template<typename T>
+        void field(std::vector<T>& values) {
+            writeSpan(std::span<const T>{values});
         }
 
         std::size_t size() const;

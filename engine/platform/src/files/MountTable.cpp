@@ -99,4 +99,30 @@ namespace TechEngine {
 
         return aliasMounted ? FileResult::NotFound : FileResult::NoMount;
     }
+
+    FileResult MountTable::resolveForCreate(std::string_view virtualPath, std::filesystem::path& out) const {
+        VirtualPathParts parts;
+        if (!splitVirtualPath(virtualPath, parts)) {
+            return FileResult::InvalidPath;
+        }
+
+        // An empty relative names the mount root itself, which is a directory nobody can
+        // create over. The read side accepts it because listing a root is meaningful.
+        if (parts.relative.empty()) {
+            return FileResult::InvalidPath;
+        }
+
+        for (const MountEntry& entry: m_entries) {
+            if (entry.alias != parts.alias) {
+                continue;
+            }
+
+            // The first match is the top mount only because mount() keeps m_entries in
+            // descending priority order. There is no existence check to fall through on.
+            out = entry.physicalRoot / parts.relative;
+            return FileResult::Ok;
+        }
+
+        return FileResult::NoMount;
+    }
 }

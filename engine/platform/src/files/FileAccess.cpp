@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <fstream>
+#include <ios>
 #include <system_error>
 
 namespace TechEngine {
@@ -64,6 +65,31 @@ namespace TechEngine {
             return FileResult::IoError;
         }
         return FileResult::Ok;
+    }
+
+    FileResult FileAccess::write(std::string_view virtualPath, std::span<const std::byte> bytes) {
+        std::filesystem::path physicalPath;
+        const FileResult resolved = m_mounts->resolveForCreate(virtualPath, physicalPath);
+        if (resolved != FileResult::Ok) {
+            return resolved;
+        }
+
+        std::error_code ec;
+        if (std::filesystem::is_directory(physicalPath, ec)) {
+            return FileResult::IsADirectory;
+        }
+
+        std::ofstream file{physicalPath, std::ios::binary | std::ios::trunc};
+        if (!file) {
+            return FileResult::IoError;
+        }
+
+        if (!bytes.empty() && !file.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()))) {
+            return FileResult::IoError;
+        }
+
+        file.close();
+        return file ? FileResult::Ok : FileResult::IoError;
     }
 
     FileResult FileAccess::status(std::string_view virtualPath, FileStatus& out) const {
