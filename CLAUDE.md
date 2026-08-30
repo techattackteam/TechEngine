@@ -18,6 +18,16 @@ missing, so do this before the first session on a new machine:
 git clone git@github.com:techattackteam/TechEngine-vault.git docs
 ```
 
+**An unattended remote session does not clone it at all.** The routine checks the vault out as
+a second source, landing at `/home/user/TechEngine-vault` beside the engine repo, and the
+session links it into place as its first act (measured 2026-08-30):
+
+```bash
+ln -s /home/user/TechEngine-vault docs
+```
+
+Everything below assumes `docs/` is present, so a session that cannot produce it stops there.
+
 Vault commits go straight to its `master` — no branch, no PR, no CI (ADR-012 §2). That is
 the vault repo only; the engine repo is still PR-only under ADR-009 §2. The two HEADs move
 independently, so the vault can describe code that has moved on: the Dashboard's
@@ -63,6 +73,13 @@ Other presets: `windows-release`, `windows-asan`, and the Linux legs
     one earned it.
   - **Never claim green without having run it.** "Untested" is a fine thing to
     say; a false "verified" is not.
+  - **Carve-out: an unattended remote session builds.** It runs the Linux presets
+    and `ctest`, and a red build opens no PR. The rule above protects Miguel's
+    ownership of the toolchain, and he is not present in that lane, so it has no
+    referent there. It also cannot hand code back for him to verify, which is the
+    exchange the rule is built on. This applies **only** to a scheduled cloud
+    routine, never to an attended session, and never to Windows or the sanitizer
+    legs. See `docs/08 AI/Autonomous Lane — Design.md`.
 - Tests exist and run under CTest (`TechEngineBaseTests`, `sdk-smoke`) — see "Testing".
 - **CI minutes are a live budget** (~2k/mo, Windows billed 2×). Don't push
   speculative commits to watch CI.
