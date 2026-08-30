@@ -20,11 +20,14 @@ git clone git@github.com:techattackteam/TechEngine-vault.git docs
 
 **An unattended remote session does not clone it at all.** The routine checks the vault out as
 a second source, landing at `/home/user/TechEngine-vault` beside the engine repo, and the
-session links it into place as its first act (measured 2026-08-30):
+environment's setup script links it into place before the session starts (measured 2026-08-30):
 
 ```bash
 ln -s /home/user/TechEngine-vault docs
 ```
+
+That symlink survives between runs; the git state does not. Both checkouts arrive shallow and
+detached on every run, so an unattended session re-anchors them itself before doing anything.
 
 Everything below assumes `docs/` is present, so a session that cannot produce it stops there.
 
