@@ -43,6 +43,7 @@ include(cmake/warnings.cmake)       # defines te_warnings
 include(cmake/sanitizers.cmake)     # augments te_warnings (must follow warnings)
 include(cmake/coverage.cmake)
 include(cmake/techengine_module.cmake)
+include(cmake/techengine_app.cmake)   # leaf exes; its test half is guarded by TE_BUILD_TESTS
 if(TE_BUILD_TESTS)
   enable_testing()
 endif()

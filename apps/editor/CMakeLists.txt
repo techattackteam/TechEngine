@@ -1,12 +1,10 @@
-# editor — host/observer of app, out of the frame loop; owns the asset pipeline
-# (import + bake). Composition = app + client + core + tooling (ADR-006 §1).
-add_executable(editor src/main.cpp)
-
-target_link_libraries(editor PRIVATE
-  TechEngine::app
-  TechEngine::client
-  TechEngine::core
-  te_warnings)
+# editor — host of app; owns the asset pipeline (import + bake).
+# Composition = app + client + core (ADR-006 §1). ADR-017 decided no `tooling` tier is
+# created for now, so editor-only code lives in the app itself.
+techengine_app(editor
+  MAIN    src/main.cpp
+  SOURCES src/EditorApp.cpp
+  HEADERS src/EditorApp.hpp
+  DEPS    app client core
+  TESTS   tests/EditorAppTests.cpp)
 # Slice 2+: tooling deps (ImGui, ImGuizmo, assimp, stb) link here only.
-
-set_target_properties(editor PROPERTIES FOLDER "apps")
