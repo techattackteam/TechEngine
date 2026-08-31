@@ -1,6 +1,6 @@
 techengine_module(app
   SOURCES src/App.cpp src/FrameLoop.cpp src/diagnostics/Diagnostics.cpp src/diagnostics/MemoryTracking.cpp
-  HEADERS include/TechEngine/app/App.hpp include/TechEngine/app/FrameLoop.hpp
+  HEADERS include/TechEngine/app/App.hpp include/TechEngine/app/FrameLoop.hpp include/TechEngine/app/EntryPoint.hpp
           src/diagnostics/Diagnostics.hpp src/diagnostics/MemoryTracking.hpp
   DEPS    core base
   DEPS_PRIVATE platform)
@@ -14,5 +14,5 @@ target_compile_definitions(TechEngineApp PRIVATE TE_DEMO_ASSETS_DIR="${CMAKE_CUR
 # the exes add client where presentation is wanted.
 
 if(TE_BUILD_TESTS)
-  techengine_test(app SOURCES tests/FrameLoopTests.cpp tests/diagnostics/DiagnosticsTests.cpp)
+  techengine_test(app SOURCES tests/AppTests.cpp tests/FrameLoopTests.cpp tests/diagnostics/DiagnosticsTests.cpp)
 endif()
