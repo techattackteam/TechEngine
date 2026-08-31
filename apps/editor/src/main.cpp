@@ -1,5 +1,7 @@
-#include <TechEngine/app/App.hpp>
+#include <TechEngine/app/EntryPoint.hpp>
+
+#include "EditorApp.hpp"
 
 int main() {
-    return TechEngine::run();
+    return TechEngine::runApp<TechEngine::EditorApp>();
 }

@@ -3,9 +3,22 @@
 #include <TechEngine/core/EngineContext.hpp>
 
 #include <cstdint>
+#include <string>
 
 namespace TechEngine {
     enum class Role : std::uint8_t { Client, ListenServer, DedicatedServer };
+
+    inline std::string toString(Role role) {
+        switch (role) {
+            case Role::Client:
+                return "Client";
+            case Role::ListenServer:
+                return "ListenServer";
+            case Role::DedicatedServer:
+                return "DedicatedServer";
+        }
+        return "Unknown";
+    }
 
     // The reference member deletes copy-assignment: a frame is observed through the loop's
     // const&, never reseated.

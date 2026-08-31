@@ -1,9 +1,23 @@
 #pragma once
 
-#include <TechEngine/core/FrameContext.hpp>
+#include "TechEngine/app/App.hpp"
 
 namespace TechEngine {
-    // TODO(S5-T11): replaced by the App subclass. It exists now so the app has a compiled
-    // source of its own for the suite to link against.
-    Role runtimeRole();
+    class RuntimeApp : public App {
+    public:
+        RuntimeApp();
+
+        ~RuntimeApp() override;
+
+        static Role runtimeRole();
+
+    protected:
+        void init() override;
+
+        void fixedUpdate(const FrameContext& frame) override;
+
+        void update(const FrameContext& frame) override;
+
+        void shutdown() override;
+    };
 }

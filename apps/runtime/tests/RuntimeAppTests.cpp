@@ -2,6 +2,17 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+namespace {
+    class RuntimeProbe : public TechEngine::RuntimeApp {
+    public:
+        TechEngine::Role loopRole() const {
+            return m_loop.frame().role;
+        }
+    };
+}
+
 TEST_CASE("runtime composes as a client", "[runtime]") {
-    REQUIRE(TechEngine::runtimeRole() == TechEngine::Role::Client);
+    const RuntimeProbe runtime;
+
+    REQUIRE(runtime.loopRole() == TechEngine::Role::Client);
 }
