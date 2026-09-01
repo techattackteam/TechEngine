@@ -1,3 +1,4 @@
+#include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/platform/files/MountTable.hpp>
 #include <TechEngine/platform/files/VirtualPath.hpp>
 
@@ -29,6 +30,10 @@ namespace TechEngine {
     }
 
     void MountTable::mount(const std::string& alias, const std::filesystem::path& physicalRoot, int priority) {
+        TE_CHECK(!alias.empty(), "A mount alias must not be empty");
+        TE_CHECK(alias.find('/') == std::string::npos, "A mount alias must not contain '/': {0}", alias);
+        TE_CHECK(alias.find(':') == std::string::npos, "A mount alias must not contain ':'. Mount it without the separator: {0}", alias);
+
         std::error_code ec;
         std::filesystem::path canonicalRoot = std::filesystem::canonical(physicalRoot, ec);
         if (ec) {

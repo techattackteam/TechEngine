@@ -60,8 +60,7 @@ namespace TechEngine {
         void writeSpan(std::span<const T> values) {
             static_assert(std::is_trivially_copyable_v<T>, "writeSpan is the bulk path; a non-trivially-copyable type must go through visit instead.");
 
-            if (values.size() > BLOB_MAX_COUNT) {
-                TE_CHECK(false, "Bulk span of {0} elements exceeds the u32 count prefix; writing an empty span", values.size());
+            if (!TE_ENSURE(values.size() <= BLOB_MAX_COUNT, "Bulk span of {0} elements exceeds the u32 count prefix; writing an empty span", values.size())) {
                 write(static_cast<std::uint32_t>(0));
                 return;
             }

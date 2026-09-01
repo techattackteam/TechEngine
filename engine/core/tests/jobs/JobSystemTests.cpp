@@ -1,7 +1,6 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
-
-#include <events/AssertCapture.hpp>
+#include <TechEngine/testing/AssertCapture.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -80,7 +79,7 @@ TEST_CASE("tasks execute on a worker thread, not on the caller", "[core][jobs]")
     REQUIRE(ranOn.load() != std::this_thread::get_id());
 }
 
-TEST_CASE("submitting after shutdown is checked and runs nothing", "[core][jobs]") {
+TEST_CASE("submitting after shutdown is reported and runs nothing", "[core][jobs]") {
     TechEngine::JobSystem jobs{1};
     jobs.shutdown();
 
@@ -93,7 +92,7 @@ TEST_CASE("submitting after shutdown is checked and runs nothing", "[core][jobs]
     const TechEngine::BatchId batch = jobs.submit(tasks);
 
     REQUIRE(TechEngineTests::g_fired.size() == 1);
-    REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Check);
+    REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Ensure);
     REQUIRE_FALSE(batch.valid());
     REQUIRE(ran.load() == 0);
 }
@@ -159,14 +158,14 @@ TEST_CASE("a multi-worker pool runs many batches back to back", "[core][jobs]") 
     REQUIRE(ran.load() == static_cast<int>(BATCH_COUNT * TASKS_PER_BATCH));
 }
 
-TEST_CASE("a zero-worker pool is checked and clamped to one", "[core][jobs]") {
+TEST_CASE("a zero-worker pool is reported and clamped to one", "[core][jobs]") {
     const TechEngineTests::AssertHandlerGuard guard;
     std::atomic<int> ran = 0;
 
     TechEngine::JobSystem jobs{0};
 
     REQUIRE(TechEngineTests::g_fired.size() == 1);
-    REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Check);
+    REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Ensure);
     REQUIRE(jobs.workerCount() == 1);
 
     std::array<TechEngine::Task, 1> tasks{[&ran] {

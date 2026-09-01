@@ -1,6 +1,5 @@
 #include <TechEngine/core/events/EventRegistry.hpp>
-
-#include <events/AssertCapture.hpp>
+#include <TechEngine/testing/AssertCapture.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -131,7 +130,7 @@ TEST_CASE("the invalid id resolves to nothing", "[core][events]") {
     REQUIRE(registry.tagOf(TechEngine::EventTypeId{}).empty());
 }
 
-TEST_CASE("a duplicate tag fires a check and leaves the registry unchanged", "[core][events]") {
+TEST_CASE("a duplicate tag is reported and leaves the registry unchanged", "[core][events]") {
     const TechEngineTests::AssertHandlerGuard guard;
     TechEngine::EventRegistry registry;
 
@@ -139,7 +138,7 @@ TEST_CASE("a duplicate tag fires a check and leaves the registry unchanged", "[c
     const TechEngine::EventTypeId second = registry.registerEvent<TagSharer>("TechEngine.CollisionEnter");
 
     REQUIRE(TechEngineTests::g_fired.size() == 1);
-    REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Check);
+    REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Ensure);
     REQUIRE_FALSE(second.valid());
     REQUIRE(registry.typeCount() == 1);
     REQUIRE_FALSE(TechEngine::eventTypeId<TagSharer>().valid());
@@ -154,7 +153,7 @@ TEST_CASE("an empty tag is rejected", "[core][events]") {
     const TechEngine::EventTypeId id = registry.registerEvent<EmptyTagEvent>("");
 
     REQUIRE(TechEngineTests::g_fired.size() == 1);
-    REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Check);
+    REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Ensure);
     REQUIRE_FALSE(id.valid());
     REQUIRE(registry.typeCount() == 0);
     REQUIRE_FALSE(TechEngine::eventTypeId<EmptyTagEvent>().valid());
@@ -170,7 +169,8 @@ TEST_CASE("a rejected registration does not consume a stream index", "[core][eve
     registry.registerEvent<RejectedEvent>("TechEngine.CollisionEnter");
     const TechEngine::EventTypeId accepted = registry.registerEvent<AfterRejection>("TechEngine.AfterRejection");
 
-    REQUIRE(TechEngineTests::g_fired.size() == 1);
+    // No fire count here. TE_ENSURE reports once per call site, and the duplicate-tag site is
+    // already spent by the case above when the whole exe runs in one process.
     REQUIRE(registry.typeCount() == 2);
     REQUIRE(registry.find(accepted)->streamIndex == 1);
 }
@@ -187,7 +187,7 @@ TEST_CASE("registration after the seal is rejected", "[core][events]") {
 
     REQUIRE(registry.sealed());
     REQUIRE(TechEngineTests::g_fired.size() == 1);
-    REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Check);
+    REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Ensure);
     REQUIRE_FALSE(id.valid());
     REQUIRE(registry.typeCount() == 1);
     REQUIRE_FALSE(TechEngine::eventTypeId<AfterSeal>().valid());
