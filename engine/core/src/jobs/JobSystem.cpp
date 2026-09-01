@@ -10,8 +10,7 @@
 namespace TechEngine {
     JobSystem::JobSystem(const std::size_t workerCount) {
         std::size_t count = workerCount;
-        if (count == 0) {
-            TE_CHECK(false, "A job system needs at least one worker; starting one");
+        if (!TE_ENSURE(count > 0, "A job system needs at least one worker; starting one")) {
             count = 1;
         }
 
@@ -53,8 +52,7 @@ namespace TechEngine {
             }
         }
 
-        if (id == 0) {
-            TE_CHECK(false, "Work submitted after the job system shut down");
+        if (!TE_ENSURE(id != 0, "Work submitted after the job system shut down")) {
             return {};
         }
 
@@ -67,8 +65,7 @@ namespace TechEngine {
             return;
         }
 
-        if (isWorkerThread()) {
-            TE_CHECK(false, "wait() called from a pool worker; barriers never run on workers");
+        if (!TE_ENSURE(!isWorkerThread(), "wait() called from a pool worker; barriers never run on workers")) {
             return;
         }
 

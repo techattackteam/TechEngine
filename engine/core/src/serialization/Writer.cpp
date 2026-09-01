@@ -57,8 +57,7 @@ namespace TechEngine {
     }
 
     void Writer::write(const std::string_view value) {
-        if (value.size() > BLOB_MAX_COUNT) {
-            TE_CHECK(false, "String of {0} bytes exceeds the u32 length prefix; writing an empty string", value.size());
+        if (!TE_ENSURE(value.size() <= BLOB_MAX_COUNT, "String of {0} bytes exceeds the u32 length prefix; writing an empty string", value.size())) {
             write(static_cast<std::uint32_t>(0));
             return;
         }

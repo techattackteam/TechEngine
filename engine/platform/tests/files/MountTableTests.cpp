@@ -1,4 +1,5 @@
 #include <TechEngine/platform/files/MountTable.hpp>
+#include <TechEngine/testing/AssertCapture.hpp>
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <catch2/catch_test_macros.hpp>
@@ -7,6 +8,8 @@
 
 using TechEngine::FileResult;
 using TechEngine::MountTable;
+using TechEngineTests::AssertFired;
+using TechEngineTests::FatalAssertGuard;
 using TechEngineTests::ScratchDirectory;
 
 TEST_CASE("mount registers an alias", "[files][mounttable]") {
@@ -17,6 +20,61 @@ TEST_CASE("mount registers an alias", "[files][mounttable]") {
     CHECK(table.hasAlias("assets"));
     CHECK_FALSE(table.hasAlias("Assets"));
     CHECK_FALSE(table.hasAlias("cache"));
+}
+
+// The checks are fatal, so mount() carries no recovery path and these cases assert the stop
+// rather than a state after it. FatalAssertGuard throws where abort() would have run, so the
+// table is left exactly as production leaves it: the insert is never reached.
+TEST_CASE("an empty alias is rejected", "[files][mounttable]") {
+    const FatalAssertGuard guard;
+    MountTable table;
+
+    REQUIRE_THROWS_AS(table.mount("", "/some/root"), AssertFired);
+    CHECK(table.mountCount() == 0);
+}
+
+TEST_CASE("an alias containing a slash is rejected", "[files][mounttable]") {
+    const FatalAssertGuard guard;
+    MountTable table;
+
+    REQUIRE_THROWS_AS(table.mount("assets/textures", "/some/root"), AssertFired);
+    CHECK(table.mountCount() == 0);
+}
+
+TEST_CASE("an alias containing a colon is rejected", "[files][mounttable]") {
+    const FatalAssertGuard guard;
+    MountTable table;
+
+    REQUIRE_THROWS_AS(table.mount("C:", "/some/root"), AssertFired);
+    CHECK(table.mountCount() == 0);
+}
+
+// Spelling the separator into the alias is the mistake that motivated the whole check: the
+// mount call succeeded, mountCount() counted it, and every read through it returned NoMount
+// because splitVirtualPath yields the alias without the separator.
+TEST_CASE("an alias spelled with the separator is rejected", "[files][mounttable]") {
+    const FatalAssertGuard guard;
+    MountTable table;
+
+    REQUIRE_THROWS_AS(table.mount("editorAssets://", "/some/root"), AssertFired);
+    CHECK(table.mountCount() == 0);
+    CHECK_FALSE(table.hasAlias("editorAssets"));
+}
+
+// A rejected mount must leave the ordering invariant alone: resolveForCreate takes the first
+// entry for an alias and trusts that mount() kept the vector in descending priority order.
+TEST_CASE("a rejected mount does not disturb the entries already held", "[files][mounttable]") {
+    const FatalAssertGuard guard;
+    MountTable table;
+
+    table.mount("assets", "/low", 1);
+    REQUIRE_THROWS_AS(table.mount("bad/alias", "/ignored", 100), AssertFired);
+    table.mount("assets", "/high", 50);
+
+    const auto entries = table.entries();
+    REQUIRE(entries.size() == 2);
+    CHECK(entries[0].physicalRoot == std::filesystem::path{"/high"});
+    CHECK(entries[1].physicalRoot == std::filesystem::path{"/low"});
 }
 
 TEST_CASE("unmount removes every entry for an alias", "[files][mounttable]") {
