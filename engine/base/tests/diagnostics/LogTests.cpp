@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <source_location>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -178,6 +179,21 @@ TEST_CASE("compile-time level gate matches the build config", "[base][log]") {
 #else
     REQUIRE(g_captured.empty());
 #endif
+}
+
+// The macros gate on this TU's TE_LOG_ACTIVE_LEVEL and Log.cpp gates on the one the library
+// was compiled with. Both come from the same PUBLIC define, so they agree only while it
+// reaches both — and a TU that fell back to the header's default instead fails silently.
+// Dispatching past the macros is the only way to see the library's half of the gate.
+TEST_CASE("the library gates at the level this TU compiled", "[base][log]") {
+    const SinkGuard guard;
+    TechEngine::setMinLevel(TechEngine::Level::Trace);
+
+    for (int level = TE_LOG_LEVEL_TRACE; level <= TE_LOG_LEVEL_CRITICAL; level++) {
+        TechEngine::internal::logImpl(static_cast<TechEngine::Level>(level), TechEngine::DEFAULT_CHANNEL, std::source_location::current(), "{0}", level);
+    }
+
+    REQUIRE(g_captured.size() == static_cast<std::size_t>(TE_LOG_LEVEL_CRITICAL - TE_LOG_ACTIVE_LEVEL + 1));
 }
 
 TEST_CASE("two modules log on distinct channels", "[base][log][channel]") {
