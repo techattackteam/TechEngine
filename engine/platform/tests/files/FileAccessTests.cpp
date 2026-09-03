@@ -430,10 +430,160 @@ TEST_CASE("write refuses an unmounted alias, the mount root, and a directory", "
     CHECK(env.files.write("assets://meshes", asBytes("x")) == FileResult::IsADirectory);
 }
 
-// Pins today's behaviour rather than endorsing it: write does not create parent directories,
-// so a missing one surfaces as the generic IoError. M3 owns whether that becomes createDirectory.
 TEST_CASE("write does not create a missing parent directory", "[files][fileaccess]") {
     MountedScratch env{"writeMissingParent"};
 
-    CHECK(env.files.write("assets://absent/level.bin", asBytes("x")) == FileResult::IoError);
+    CHECK(env.files.write("assets://absent/level.bin", asBytes("x")) == FileResult::NotFound);
+}
+
+TEST_CASE("createDirectory creates the directory and its missing parents", "[files][fileaccess]") {
+    MountedScratch env{"createDirectoryParents"};
+
+    REQUIRE(env.files.createDirectory("assets://meshes/props/crates") == FileResult::Ok);
+    CHECK(std::filesystem::is_directory(env.scratch.root() / "meshes/props/crates"));
+}
+
+TEST_CASE("createDirectory refuses a destination that already exists", "[files][fileaccess]") {
+    MountedScratch env{"createDirectoryExists"};
+    env.scratch.makeDirectory("meshes");
+    env.scratch.writeFile("ui/icon.png", "x");
+
+    CHECK(env.files.createDirectory("assets://meshes") == FileResult::AlreadyExists);
+    CHECK(env.files.createDirectory("assets://ui/icon.png") == FileResult::AlreadyExists);
+}
+
+TEST_CASE("createDirectory refuses an unmounted alias and the mount root", "[files][fileaccess]") {
+    MountedScratch env{"createDirectoryRefusals"};
+
+    CHECK(env.files.createDirectory("cache://meshes") == FileResult::NoMount);
+    CHECK(env.files.createDirectory("assets://") == FileResult::InvalidPath);
+}
+
+TEST_CASE("remove deletes a file and an empty directory", "[files][fileaccess]") {
+    MountedScratch env{"removeBasics"};
+    env.scratch.writeFile("ui/icon.png", "x");
+    env.scratch.makeDirectory("empty");
+
+    REQUIRE(env.files.remove("assets://ui/icon.png", false) == FileResult::Ok);
+    CHECK_FALSE(std::filesystem::exists(env.scratch.root() / "ui/icon.png"));
+
+    REQUIRE(env.files.remove("assets://empty", false) == FileResult::Ok);
+    CHECK_FALSE(std::filesystem::exists(env.scratch.root() / "empty"));
+}
+
+TEST_CASE("remove reports a path that is not there", "[files][fileaccess]") {
+    MountedScratch env{"removeMissing"};
+
+    CHECK(env.files.remove("assets://absent.bin", false) == FileResult::NotFound);
+}
+
+// The recursive flag is the whole difference: without it a populated directory is refused
+// rather than emptied, so a caller cannot delete a tree by accident.
+TEST_CASE("remove refuses a non-empty directory unless recursive", "[files][fileaccess]") {
+    MountedScratch env{"removeNonEmpty"};
+    env.scratch.writeFile("meshes/crate.bin", "x");
+
+    CHECK(env.files.remove("assets://meshes", false) == FileResult::NotEmpty);
+    CHECK(std::filesystem::exists(env.scratch.root() / "meshes/crate.bin"));
+
+    REQUIRE(env.files.remove("assets://meshes", true) == FileResult::Ok);
+    CHECK_FALSE(std::filesystem::exists(env.scratch.root() / "meshes"));
+}
+
+TEST_CASE("copy duplicates a file and leaves the source in place", "[files][fileaccess]") {
+    MountedScratch env{"copyFile"};
+    env.scratch.writeFile("ui/icon.png", "the bytes");
+
+    REQUIRE(env.files.copy("assets://ui/icon.png", "assets://ui/icon.backup.png") == FileResult::Ok);
+
+    std::vector<std::byte> out;
+    REQUIRE(env.files.read("assets://ui/icon.backup.png", out) == FileResult::Ok);
+    CHECK(asString(out) == "the bytes");
+    CHECK(std::filesystem::exists(env.scratch.root() / "ui/icon.png"));
+}
+
+TEST_CASE("copy carries a directory's contents", "[files][fileaccess]") {
+    MountedScratch env{"copyDirectory"};
+    env.scratch.writeFile("meshes/props/crate.bin", "x");
+
+    REQUIRE(env.files.copy("assets://meshes", "assets://meshes.backup") == FileResult::Ok);
+    CHECK(std::filesystem::exists(env.scratch.root() / "meshes.backup/props/crate.bin"));
+}
+
+TEST_CASE("copy refuses an existing destination and a missing parent", "[files][fileaccess]") {
+    MountedScratch env{"copyRefusals"};
+    env.scratch.writeFile("ui/icon.png", "x");
+    env.scratch.writeFile("ui/taken.png", "y");
+
+    CHECK(env.files.copy("assets://ui/icon.png", "assets://ui/taken.png") == FileResult::AlreadyExists);
+    CHECK(env.files.copy("assets://ui/icon.png", "assets://absent/icon.png") == FileResult::NotFound);
+    CHECK(env.files.copy("assets://absent.png", "assets://ui/copy.png") == FileResult::NotFound);
+}
+
+// The source goes through the read path, so it falls through to a lower-priority mount the
+// way read does. resolveForCreate would stop at the overlay and report NotFound for a file
+// the caller can read.
+TEST_CASE("copy resolves its source through the mount priority order", "[files][fileaccess]") {
+    ScratchDirectory base{"copySourceBase"};
+    ScratchDirectory overlay{"copySourceOverlay"};
+    base.writeFile("ui/icon.png", "from the base mount");
+
+    MountTable mounts;
+    FileAccess files{mounts};
+    mounts.mount("assets", base.root(), 0);
+    mounts.mount("assets", overlay.root(), 100);
+
+    REQUIRE(files.copy("assets://ui/icon.png", "assets://copy.png") == FileResult::Ok);
+    CHECK(std::filesystem::exists(overlay.root() / "copy.png"));
+}
+
+TEST_CASE("move relocates a file and removes the source", "[files][fileaccess]") {
+    MountedScratch env{"moveFile"};
+    env.scratch.writeFile("ui/icon.png", "the bytes");
+    env.scratch.makeDirectory("sprites");
+
+    REQUIRE(env.files.move("assets://ui/icon.png", "assets://sprites/icon.png") == FileResult::Ok);
+    CHECK_FALSE(std::filesystem::exists(env.scratch.root() / "ui/icon.png"));
+
+    std::vector<std::byte> out;
+    REQUIRE(env.files.read("assets://sprites/icon.png", out) == FileResult::Ok);
+    CHECK(asString(out) == "the bytes");
+}
+
+TEST_CASE("move refuses an existing destination and a missing source", "[files][fileaccess]") {
+    MountedScratch env{"moveRefusals"};
+    env.scratch.writeFile("ui/icon.png", "x");
+    env.scratch.writeFile("ui/taken.png", "y");
+
+    CHECK(env.files.move("assets://ui/icon.png", "assets://ui/taken.png") == FileResult::AlreadyExists);
+    CHECK(env.files.move("assets://absent.png", "assets://ui/moved.png") == FileResult::NotFound);
+    CHECK(std::filesystem::exists(env.scratch.root() / "ui/icon.png"));
+}
+
+TEST_CASE("rename changes the name in place", "[files][fileaccess]") {
+    MountedScratch env{"renameFile"};
+    env.scratch.writeFile("ui/icon.png", "the bytes");
+
+    REQUIRE(env.files.rename("assets://ui/icon.png", "logo.png") == FileResult::Ok);
+    CHECK_FALSE(std::filesystem::exists(env.scratch.root() / "ui/icon.png"));
+    CHECK(std::filesystem::exists(env.scratch.root() / "ui/logo.png"));
+}
+
+// newName is one component, never a path. Accepting a separator would turn rename into a
+// move that skips the destination's mount resolution entirely.
+TEST_CASE("rename refuses a new name carrying a separator", "[files][fileaccess]") {
+    MountedScratch env{"renameSeparator"};
+    env.scratch.writeFile("ui/icon.png", "x");
+
+    CHECK(env.files.rename("assets://ui/icon.png", "sprites/logo.png") == FileResult::InvalidPath);
+    CHECK(env.files.rename("assets://ui/icon.png", "") == FileResult::InvalidPath);
+}
+
+TEST_CASE("rename refuses a name already taken and a missing source", "[files][fileaccess]") {
+    MountedScratch env{"renameRefusals"};
+    env.scratch.writeFile("ui/icon.png", "x");
+    env.scratch.writeFile("ui/logo.png", "y");
+
+    CHECK(env.files.rename("assets://ui/icon.png", "logo.png") == FileResult::AlreadyExists);
+    CHECK(env.files.rename("assets://absent.png", "logo.png") == FileResult::NotFound);
 }

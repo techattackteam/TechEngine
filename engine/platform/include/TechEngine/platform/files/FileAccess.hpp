@@ -35,5 +35,15 @@ namespace TechEngine {
         FileResult list(std::string_view virtualPath, bool recursive, std::vector<std::string>& out) const;
 
         FileResult resolve(std::string_view virtualPath, std::filesystem::path& out) const;
+
+        FileResult createDirectory(std::string_view virtualPath);
+
+        FileResult remove(std::string_view virtualPath, bool recursive);
+
+        FileResult copy(std::string_view from, std::string_view to) const;
+
+        FileResult move(std::string_view from, std::string_view to) const;
+
+        FileResult rename(std::string_view virtualPath, std::string_view newName) const;
     };
 }
