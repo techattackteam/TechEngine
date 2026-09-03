@@ -81,7 +81,7 @@ namespace TechEngine {
 
         std::ofstream file{physicalPath, std::ios::binary | std::ios::trunc};
         if (!file) {
-            return FileResult::IoError;
+            return FileResult::NotFound;
         }
 
         if (!bytes.empty() && !file.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()))) {
@@ -165,7 +165,123 @@ namespace TechEngine {
         return collected;
     }
 
-    FileResult FileAccess::resolve(std::string_view virtualPath, std::filesystem::path& out) const {
+    FileResult FileAccess::resolve(const std::string_view virtualPath, std::filesystem::path& out) const {
         return m_mounts->resolveExisting(virtualPath, out);
+    }
+
+    FileResult FileAccess::createDirectory(std::string_view virtualPath) {
+        std::filesystem::path physicalPath;
+        const FileResult resolved = m_mounts->resolveForCreate(virtualPath, physicalPath);
+        if (resolved != FileResult::Ok) {
+            return resolved;
+        }
+
+        std::error_code ec;
+        if (std::filesystem::exists(physicalPath, ec)) {
+            return FileResult::AlreadyExists;
+        }
+
+        std::filesystem::create_directories(physicalPath, ec);
+        return ec ? FileResult::IoError : FileResult::Ok;
+    }
+
+    FileResult FileAccess::remove(const std::string_view virtualPath, const bool recursive) {
+        std::filesystem::path physicalPath;
+        const FileResult resolved = m_mounts->resolveForCreate(virtualPath, physicalPath);
+        if (resolved != FileResult::Ok) {
+            return resolved;
+        }
+
+        std::error_code ec;
+        if (!std::filesystem::exists(physicalPath, ec)) {
+            return FileResult::NotFound;
+        }
+
+        if (!recursive && std::filesystem::is_directory(physicalPath, ec) && !std::filesystem::is_empty(physicalPath, ec)) {
+            return FileResult::NotEmpty;
+        }
+
+        if (recursive) {
+            std::filesystem::remove_all(physicalPath, ec);
+        } else {
+            std::filesystem::remove(physicalPath, ec);
+        }
+        return ec ? FileResult::IoError : FileResult::Ok;
+    }
+
+    FileResult FileAccess::copy(const std::string_view from, const std::string_view to) const {
+        std::filesystem::path sourcePath;
+        const FileResult resolvedSource = m_mounts->resolveExisting(from, sourcePath);
+        if (resolvedSource != FileResult::Ok) {
+            return resolvedSource;
+        }
+
+        std::filesystem::path destinationPath;
+        const FileResult resolvedDestination = m_mounts->resolveForCreate(to, destinationPath);
+        if (resolvedDestination != FileResult::Ok) {
+            return resolvedDestination;
+        }
+
+        std::error_code ec;
+        if (std::filesystem::exists(destinationPath, ec)) {
+            return FileResult::AlreadyExists;
+        }
+        if (!std::filesystem::exists(destinationPath.parent_path(), ec)) {
+            return FileResult::NotFound;
+        }
+
+        if (std::filesystem::is_directory(sourcePath, ec)) {
+            std::filesystem::copy(sourcePath, destinationPath, std::filesystem::copy_options::recursive, ec);
+        } else {
+            std::filesystem::copy_file(sourcePath, destinationPath, ec);
+        }
+        return ec ? FileResult::IoError : FileResult::Ok;
+    }
+
+    FileResult FileAccess::move(const std::string_view from, const std::string_view to) const {
+        std::filesystem::path sourcePath;
+        const FileResult resolvedSource = m_mounts->resolveExisting(from, sourcePath);
+        if (resolvedSource != FileResult::Ok) {
+            return resolvedSource;
+        }
+
+        std::filesystem::path destinationPath;
+        const FileResult resolvedDestination = m_mounts->resolveForCreate(to, destinationPath);
+        if (resolvedDestination != FileResult::Ok) {
+            return resolvedDestination;
+        }
+
+        std::error_code ec;
+        if (std::filesystem::exists(destinationPath, ec)) {
+            return FileResult::AlreadyExists;
+        }
+        if (!std::filesystem::exists(destinationPath.parent_path(), ec)) {
+            return FileResult::NotFound;
+        }
+
+        std::filesystem::rename(sourcePath, destinationPath, ec);
+        return ec ? FileResult::IoError : FileResult::Ok;
+    }
+
+    FileResult FileAccess::rename(const std::string_view virtualPath, const std::string_view newName) const {
+        if (newName.empty() || newName == "." || newName == ".." || newName.find('/') != std::string_view::npos || newName.find('\\') != std::string_view::npos) {
+            return FileResult::InvalidPath;
+        }
+
+        std::filesystem::path physicalPath;
+        const FileResult resolved = m_mounts->resolveExisting(virtualPath, physicalPath);
+        if (resolved != FileResult::Ok) {
+            return resolved;
+        }
+
+        const std::filesystem::path newPath = physicalPath.parent_path() / newName;
+
+        std::error_code ec;
+        if (std::filesystem::exists(newPath, ec)) {
+            return FileResult::AlreadyExists;
+        }
+
+        std::filesystem::rename(physicalPath, newPath, ec);
+        return ec ? FileResult::IoError : FileResult::Ok;
     }
 }

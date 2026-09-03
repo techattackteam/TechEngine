@@ -111,8 +111,6 @@ namespace TechEngine {
             return FileResult::InvalidPath;
         }
 
-        // An empty relative names the mount root itself, which is a directory nobody can
-        // create over. The read side accepts it because listing a root is meaningful.
         if (parts.relative.empty()) {
             return FileResult::InvalidPath;
         }
@@ -122,8 +120,6 @@ namespace TechEngine {
                 continue;
             }
 
-            // The first match is the top mount only because mount() keeps m_entries in
-            // descending priority order. There is no existence check to fall through on.
             out = entry.physicalRoot / parts.relative;
             return FileResult::Ok;
         }
