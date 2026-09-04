@@ -16,7 +16,7 @@ namespace TechEngine {
         std::string m_name;
 
     public:
-        static ProjectResult load(const FileAccess& files, std::string_view manifestPath, Project& out);
+        ProjectResult load(const FileAccess& files, std::string_view manifestPath);
 
         ProjectResult save(FileAccess& files, std::string_view manifestPath) const;
 

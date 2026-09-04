@@ -7,7 +7,7 @@
 
 namespace TechEngine {
 
-    ProjectResult Project::load(const FileAccess& files, std::string_view manifestPath, Project& out) {
+    ProjectResult Project::load(const FileAccess& files, std::string_view manifestPath) {
         std::vector<std::byte> bytes;
         if (files.read(manifestPath, bytes) != FileResult::Ok) {
             return ProjectResult::ReadFailed;
@@ -30,8 +30,8 @@ namespace TechEngine {
             return ProjectResult::ReadFailed;
         }
 
-        out.m_root = physical.parent_path();
-        out.m_name = *name;
+        m_root = physical.parent_path();
+        m_name = *name;
         return ProjectResult::Ok;
     }
 
