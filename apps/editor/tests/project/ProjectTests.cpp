@@ -36,7 +36,7 @@ TEST_CASE("load reads the name and derives the root", "[editor][project]") {
 
     Project project;
 
-    REQUIRE(Project::load(env.files, "project://project.toml", project) == ProjectResult::Ok);
+    REQUIRE(project.load(env.files, "project://project.toml") == ProjectResult::Ok);
     CHECK(project.name() == "Sandbox");
     CHECK(project.root() == env.scratch.root());
 }
@@ -47,7 +47,7 @@ TEST_CASE("load returns ParseFailed on a malformed manifest", "[editor][project]
 
     Project project;
 
-    CHECK(Project::load(env.files, "project://project.toml", project) == ProjectResult::ParseFailed);
+    CHECK(project.load(env.files, "project://project.toml") == ProjectResult::ParseFailed);
 }
 
 TEST_CASE("load returns ReadFailed when the manifest is missing", "[editor][project]") {
@@ -55,7 +55,7 @@ TEST_CASE("load returns ReadFailed when the manifest is missing", "[editor][proj
 
     Project project;
 
-    CHECK(Project::load(env.files, "project://project.toml", project) == ProjectResult::ReadFailed);
+    CHECK(project.load(env.files, "project://project.toml") == ProjectResult::ReadFailed);
 }
 
 TEST_CASE("load returns ReadFailed for a manifest path that escapes the root", "[editor][project]") {
@@ -64,7 +64,7 @@ TEST_CASE("load returns ReadFailed for a manifest path that escapes the root", "
 
     Project project;
 
-    CHECK(Project::load(env.files, "project://../project.toml", project) == ProjectResult::ReadFailed);
+    CHECK(project.load(env.files, "project://../project.toml") == ProjectResult::ReadFailed);
 }
 
 TEST_CASE("load returns SchemaInvalid when name is missing", "[editor][project]") {
@@ -73,7 +73,7 @@ TEST_CASE("load returns SchemaInvalid when name is missing", "[editor][project]"
 
     Project project;
 
-    CHECK(Project::load(env.files, "project://project.toml", project) == ProjectResult::SchemaInvalid);
+    CHECK(project.load(env.files, "project://project.toml") == ProjectResult::SchemaInvalid);
 }
 
 TEST_CASE("load returns SchemaInvalid when name is not a string", "[editor][project]") {
@@ -82,7 +82,7 @@ TEST_CASE("load returns SchemaInvalid when name is not a string", "[editor][proj
 
     Project project;
 
-    CHECK(Project::load(env.files, "project://project.toml", project) == ProjectResult::SchemaInvalid);
+    CHECK(project.load(env.files, "project://project.toml") == ProjectResult::SchemaInvalid);
 }
 
 TEST_CASE("save round-trips through load", "[editor][project]") {
@@ -90,10 +90,10 @@ TEST_CASE("save round-trips through load", "[editor][project]") {
     env.scratch.writeFile("project.toml", GOOD_MANIFEST);
 
     Project source;
-    REQUIRE(Project::load(env.files, "project://project.toml", source) == ProjectResult::Ok);
+    REQUIRE(source.load(env.files, "project://project.toml") == ProjectResult::Ok);
     REQUIRE(source.save(env.files, "project://copy.toml") == ProjectResult::Ok);
 
     Project reloaded;
-    REQUIRE(Project::load(env.files, "project://copy.toml", reloaded) == ProjectResult::Ok);
+    REQUIRE(reloaded.load(env.files, "project://copy.toml") == ProjectResult::Ok);
     CHECK(reloaded.name() == source.name());
 }

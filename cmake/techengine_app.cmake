@@ -47,7 +47,9 @@ function(techengine_app name)
   # carries its include dirs and its DEPS through to the consumer as well as its objects.
   add_executable(${name} ${TA_MAIN})
   target_link_libraries(${name} PRIVATE ${_te_objects} te_warnings)
-  set_target_properties(${name} PROPERTIES FOLDER "apps")
+  set_target_properties(${name} PROPERTIES
+    FOLDER "apps"
+    VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
 
   if(NOT TE_BUILD_TESTS OR NOT TA_TESTS)
     return()
