@@ -73,6 +73,15 @@ FetchContent_Declare(Jolt
 
 FetchContent_MakeAvailable(glm spdlog glfw tomlplusplus Jolt)
 
+# toml++ defaults TOML_EXCEPTIONS to 1 whenever the compiler has exceptions, and in that mode
+# `toml::parse_result` is a plain alias for `toml::table` — so a failure check against it
+# compiles, never fires, and `parse()` throws instead. Link this wrapper, never the upstream
+# target directly, so no consumer can pick up the throwing mode by forgetting a define.
+add_library(te_tomlplusplus INTERFACE)
+add_library(TechEngine::tomlplusplus ALIAS te_tomlplusplus)
+target_link_libraries(te_tomlplusplus INTERFACE tomlplusplus::tomlplusplus)
+target_compile_definitions(te_tomlplusplus INTERFACE TOML_EXCEPTIONS=0)
+
 # --- audio (single-header) --------------------------------------------------
 # Not a CMake project — populate the source and wrap the include dir in an
 # INTERFACE target. The MINIAUDIO_IMPLEMENTATION TU lands when client uses audio.

@@ -4,7 +4,11 @@
 techengine_app(editor
   MAIN    src/main.cpp
   SOURCES src/EditorApp.cpp
+          src/project/Project.cpp
   HEADERS src/EditorApp.hpp
+          src/project/Project.hpp
   DEPS    app client core
-  TESTS   tests/EditorAppTests.cpp)
+  LIBS    TechEngine::tomlplusplus
+  TESTS   tests/EditorAppTests.cpp
+          tests/project/ProjectTests.cpp)
 # Slice 2+: tooling deps (ImGui, ImGuizmo, assimp, stb) link here only.
