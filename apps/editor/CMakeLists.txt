@@ -11,4 +11,8 @@ techengine_app(editor
   LIBS    TechEngine::tomlplusplus
   TESTS   tests/EditorAppTests.cpp
           tests/project/ProjectTests.cpp)
+
+target_compile_definitions(editor PRIVATE
+  TE_EDITOR_DEFAULT_PROJECT_ROOT="${PROJECT_SOURCE_DIR}/projects/dev")
+
 # Slice 2+: tooling deps (ImGui, ImGuizmo, assimp, stb) link here only.
