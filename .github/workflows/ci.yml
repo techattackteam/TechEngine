@@ -28,8 +28,8 @@ name: CI
 # PR still shows nine green checks from the stand-in and merges clean. The next PR is what
 # finds out. Worse, ci-docs.yml hardcodes the nine required context names, so renaming a leg
 # here silently uncovers it and every later docs-only PR hangs unmergeable with no clue why.
-# A workflow change is verified by watching the run it produces on `master`, never by its
-# own PR. Land workflow edits alone, and read the next run before building on them.
+# A workflow-only merge is also excluded by the push filter. Land it alone, then use
+# workflow_dispatch on master and read that run before building on the change.
 #
 # GOTCHA: `paths-ignore` skips only when EVERY changed file matches, which is the behaviour
 # this wants. ci-docs.yml cannot be spelled that way, so since 2026-08-29 it carries no path
@@ -38,6 +38,7 @@ name: CI
 # does not support YAML anchors, so three copies is the only spelling. They must stay
 # identical, and the third is a regex rather than a glob list.
 on:
+  workflow_dispatch:
   pull_request:
     branches: [master]
     paths-ignore:
@@ -140,7 +141,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y clang clang-tidy \
-            xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev
+            xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev \
+            xvfb xauth libgl1-mesa-dri mesa-utils
+
+      - name: Report software OpenGL capabilities
+        if: runner.os == 'Linux'
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: xvfb-run -a glxinfo -B
 
       # ccache degrades gracefully: a cold/unreachable cache just compiles slower,
       # it never fails a compile (unlike sccache-as-launcher gating on a live backend).
@@ -171,7 +179,14 @@ jobs:
         run: cmake --build --preset ${{ matrix.build }}
 
       - name: Test (ctest incl. sdk-smoke)
+        if: runner.os == 'Windows'
         run: ctest --preset ${{ matrix.test }}
+
+      - name: Test under Xvfb (ctest incl. sdk-smoke)
+        if: runner.os == 'Linux'
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: xvfb-run -a ctest --preset ${{ matrix.test }}
 
       - name: ccache stats
         run: ccache -s
@@ -248,7 +263,9 @@ jobs:
         if: steps.bypass.outputs.skip != 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang llvm             xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev
+          sudo apt-get install -y clang llvm \
+            xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev \
+            xvfb xauth libgl1-mesa-dri
 
       # Pinned like clang-format is: the threshold is a merge gate, so the tool that
       # computes it does not get to change under us.
@@ -283,8 +300,8 @@ jobs:
         if: steps.bypass.outputs.skip != 'true'
         run: cmake --build --preset linux-coverage
 
-      # Identical to the local command. Threshold, base ref, the floor and the summary path
-      # all reach it through the environment, so nothing here diverges from a developer run.
+      # The coverage target runs CTest internally, so Xvfb wraps the whole target.
+      # Threshold, base ref, the floor and the summary path reach it through the environment.
       # TE_COVERAGE_BYPASS is deliberately absent: CI bypasses by not reaching this step at
       # all, so the cmake-side bypass exists for local runs only.
       - name: Coverage
@@ -293,7 +310,8 @@ jobs:
           TE_COVERAGE_BASE: origin/${{ github.base_ref }}
           TE_COVERAGE_THRESHOLD: "85"
           TE_COVERAGE_MIN_LINES: "10"
-        run: cmake --build --preset linux-coverage --target coverage
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: xvfb-run -a cmake --build --preset linux-coverage --target coverage
 
       - name: Upload the browsable report
         if: always() && steps.bypass.outputs.skip != 'true'
@@ -344,7 +362,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y clang \
-            xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev
+            xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev \
+            xvfb xauth libgl1-mesa-dri
 
       # ccache degrades gracefully: a cold/unreachable cache just compiles slower,
       # it never fails a compile (unlike sccache-as-launcher gating on a live backend).
@@ -375,7 +394,14 @@ jobs:
         run: cmake --build --preset ${{ matrix.build }}
 
       - name: Test
+        if: runner.os == 'Windows'
         run: ctest --preset ${{ matrix.test }}
+
+      - name: Test under Xvfb
+        if: runner.os == 'Linux'
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: xvfb-run -a ctest --preset ${{ matrix.test }}
 
       - name: ccache stats
         run: ccache -s
