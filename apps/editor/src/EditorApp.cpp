@@ -5,6 +5,7 @@
 #include "TechEngine/base/diagnostics/Assert.hpp"
 #include "TechEngine/base/diagnostics/Log.hpp"
 
+#include <string>
 #include <utility>
 
 namespace TechEngine {
@@ -28,17 +29,37 @@ namespace TechEngine {
         m_mounts.mount("assets", root / "assets" / "client", 100);
 
         TE_LOGGER_INFO("Opened project '{0}' at {1}", m_project.name(), root.string());
+        TE_CHECK(m_client.start(1280, 720, "TechEngine Editor"), "Failed to start the client session");
+        m_titleUpdated = std::chrono::steady_clock::now();
+        m_titleFrameCount = 0;
+        m_titleTicksCount = 0;
     }
 
-    void EditorApp::fixedUpdate(const FrameContext& frame) {
-        TE_LOGGER_INFO("Editor fixedUpdate: tick {0}, frame {1}, deltaTime {2}, fixedDeltaTime {3}, alpha {4}, role {5}", frame.tick, frame.frameIndex, frame.deltaTime, frame.fixedDeltaTime, frame.alpha, toString(frame.role));
+    void EditorApp::fixedUpdate(const FrameContext&) {
     }
 
     void EditorApp::update(const FrameContext& frame) {
-        TE_LOGGER_INFO("Editor update: tick {0}, frame {1}, deltaTime {2}, fixedDeltaTime {3}, alpha {4}, role {5}", frame.tick, frame.frameIndex, frame.deltaTime, frame.fixedDeltaTime, frame.alpha, toString(frame.role));
+        m_client.pollEvents();
+        m_titleFrameCount++;
+        m_titleTicksCount++;
+        const auto now = std::chrono::steady_clock::now();
+        const double elapsed = std::chrono::duration<double>(now - m_titleUpdated).count();
+        if (elapsed >= 0.25) {
+            const auto framesPerSecond = static_cast<std::uint64_t>(static_cast<double>(m_titleFrameCount) / elapsed);
+            const auto ticksPerSecond = static_cast<std::uint64_t>(static_cast<double>(m_titleTicksCount) / elapsed);
+            m_client.setTitle("TechEngine Editor | Update FPS: " + std::to_string(framesPerSecond) + " | Tick: " + std::to_string(ticksPerSecond));
+            m_titleUpdated = now;
+            m_titleFrameCount = 0;
+            m_titleTicksCount = 0;
+        }
+        (void)frame;
     }
 
     void EditorApp::shutdown() {
+        m_client.stop();
+    }
+    bool EditorApp::shouldClose() const {
+        return m_client.shouldClose();
     }
 
     Role EditorApp::editorRole() {

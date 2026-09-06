@@ -25,8 +25,6 @@ namespace TechEngine {
 
         virtual ~App() = default;
 
-        // Owns the whole lifecycle: init, the loop, shutdown. Nothing outside calls the
-        // hooks below, which is why they are protected.
         int run();
 
     protected:
@@ -37,5 +35,7 @@ namespace TechEngine {
         virtual void update(const FrameContext& frame) = 0;
 
         virtual void shutdown() = 0;
+
+        virtual bool shouldClose() const = 0;
     };
 }

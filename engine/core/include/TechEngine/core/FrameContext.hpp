@@ -20,8 +20,6 @@ namespace TechEngine {
         return "Unknown";
     }
 
-    // The reference member deletes copy-assignment: a frame is observed through the loop's
-    // const&, never reseated.
     struct FrameContext {
         float deltaTime = 0.0F;
         float fixedDeltaTime = 0.0F;

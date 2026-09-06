@@ -23,6 +23,10 @@ namespace {
         void shutdown() override {
         }
 
+        bool shouldClose() const override {
+            return true;
+        }
+
         TechEngine::Role loopRole() const {
             return m_loop.frame().role;
         }
