@@ -14,9 +14,15 @@ if ($preset.Count -ne 1 -or -not $preset[0].configuration) {
 $outputDirectory = Join-Path "$PSScriptRoot/../../build" "$($preset[0].configurePreset)/bin/$($preset[0].configuration)"
 $outputDirectory = (Resolve-Path -LiteralPath $outputDirectory).Path
 $mesaDirectory = Join-Path $env:RUNNER_TEMP "mesa-$version"
-$archive = Join-Path $env:RUNNER_TEMP "mesa3d-$version-release-msvc.7z"
+$downloadDirectory = Join-Path $env:RUNNER_TEMP 'mesa-download'
+$archive = Join-Path $downloadDirectory "mesa3d-$version-release-msvc.7z"
 
-Invoke-WebRequest -Uri "https://github.com/pal1000/mesa-dist-win/releases/download/$version/mesa3d-$version-release-msvc.7z" -OutFile $archive
+if (Test-Path -LiteralPath $archive -PathType Leaf) {
+    Write-Host "Using cached Mesa archive: $archive"
+} else {
+    New-Item -ItemType Directory -Path $downloadDirectory -Force | Out-Null
+    Invoke-WebRequest -Uri "https://github.com/pal1000/mesa-dist-win/releases/download/$version/mesa3d-$version-release-msvc.7z" -OutFile $archive
+}
 if ((Get-FileHash -Algorithm SHA256 -LiteralPath $archive).Hash -ne $expectedHash) {
     throw 'Mesa archive SHA-256 mismatch'
 }
