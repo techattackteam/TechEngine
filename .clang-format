@@ -46,7 +46,7 @@ IncludeIsMainRegex: '(Tests)?$'
 IncludeCategories:
   - Regex: '^<TechEngine/'                                             # ours: public API
     Priority: 1
-  - Regex: '^<(GLFW|Jolt|catch2|glm|miniaudio|spdlog|toml\+\+|tracy)/' # third-party
+  - Regex: '^<(GLFW|Jolt|catch2|glad|glm|miniaudio|spdlog|toml\+\+|tracy)/' # third-party
     Priority: 3
   - Regex: '^<[a-z_]+>$'                                               # std: one lowercase word, no slash or dot
     Priority: 4

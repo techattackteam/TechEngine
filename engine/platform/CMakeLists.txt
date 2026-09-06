@@ -10,7 +10,7 @@ techengine_module(platform
           include/TechEngine/platform/files/MountTable.hpp
           include/TechEngine/platform/files/VirtualPath.hpp
   DEPS    base
-  LIBS    glfw) # OS seam: window/input (ADR-006 §1). glad2 wired once vendored.
+  LIBS    glfw) # OS seam: window/input (ADR-006 §1).
 
 if(TE_BUILD_TESTS)
   techengine_test(platform SOURCES
