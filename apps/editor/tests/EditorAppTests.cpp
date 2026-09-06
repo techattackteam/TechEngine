@@ -13,6 +13,19 @@ namespace {
     class EditorProbe : public TechEngine::EditorApp {
     public:
         using TechEngine::EditorApp::EditorApp;
+        using TechEngine::EditorApp::shouldClose;
+        using TechEngine::EditorApp::shutdown;
+
+        void advanceFrame(double deltaTime) {
+            m_loop.advance(deltaTime, [this](const TechEngine::FrameContext& frame) {
+                fixedUpdate(frame);
+            });
+            update(m_loop.frame());
+        }
+
+        bool ratesUpdated() const {
+            return m_loop.ratesUpdated();
+        }
 
         TechEngine::Role loopRole() const {
             return m_loop.frame().role;
@@ -74,4 +87,23 @@ TEST_CASE("assets/client shadows assets/common", "[editor]") {
     std::filesystem::path resolved;
     REQUIRE(editor.files().resolve("assets://shared.txt", resolved) == TechEngine::FileResult::Ok);
     CHECK(resolved == client);
+}
+
+TEST_CASE("editor updates through a rate sample and shuts down its client", "[editor][window]") {
+    ScratchDirectory scratch{"editorLifecycle"};
+    writeProjectLayout(scratch);
+    EditorProbe editor{scratch.root()};
+    CHECK(editor.shouldClose());
+    editor.bootstrap();
+    REQUIRE_FALSE(editor.shouldClose());
+
+    for (int i = 0; i < 8; i++) {
+        editor.advanceFrame(0.125);
+        CHECK(editor.ratesUpdated() == (i == 7));
+        CHECK_FALSE(editor.shouldClose());
+    }
+
+    editor.shutdown();
+    CHECK(editor.shouldClose());
+    editor.shutdown();
 }
