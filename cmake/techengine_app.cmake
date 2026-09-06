@@ -74,5 +74,5 @@ function(techengine_app name)
   # instrumented object covering it ever reached the report before.
   set_property(GLOBAL APPEND PROPERTY TE_TEST_TARGETS ${_te_test_target})
 
-  catch_discover_tests(${_te_test_target})
+  catch_discover_tests(${_te_test_target} PROPERTIES TIMEOUT 60)
 endfunction()

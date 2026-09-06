@@ -14,6 +14,7 @@ set_target_properties(TechEngineSDKSmoke PROPERTIES FOLDER "sdk")
 
 if(TE_BUILD_TESTS)
     add_test(NAME sdk-smoke COMMAND TechEngineSDKSmoke)
+    set_tests_properties(sdk-smoke PROPERTIES TIMEOUT 60)
 
     # This exe is a CTest case without going through techengine_test(), so it has to
     # register itself. Without it the coverage target never builds it and ctest reports

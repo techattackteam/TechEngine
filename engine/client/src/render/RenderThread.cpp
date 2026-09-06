@@ -1,3 +1,4 @@
+#include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/platform/window/Window.hpp>
 
 #include <render/RenderThread.hpp>
@@ -25,12 +26,13 @@ namespace TechEngine {
         std::future<bool> ready = startup.get_future();
         try {
             m_thread = std::jthread([this, &window, startup = std::move(startup)](std::stop_token stopToken) mutable {
-                threadMain(stopToken, window, std::move(startup));
+                threadMain(std::move(stopToken), window, std::move(startup));
             });
             if (ready.get()) {
                 return true;
             }
-        } catch (const std::exception&) {
+        } catch (const std::exception& error) {
+            TE_LOGGER_ERROR("Render thread startup failed: {0}", error.what());
         }
 
         stop();
@@ -57,10 +59,11 @@ namespace TechEngine {
             startupReported = true;
 
             if (ready) {
+                TE_LOGGER_INFO("OpenGL {0}; renderer: {1}", reinterpret_cast<const char*>(glGetString(GL_VERSION)), reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
                 std::mutex mutex;
                 std::condition_variable_any stopped;
                 std::unique_lock lock{mutex};
-                stopped.wait(lock, stopToken, [] {
+                stopped.wait(lock, std::move(stopToken), [] {
                     return false;
                 });
             }

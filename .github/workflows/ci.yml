@@ -60,6 +60,7 @@ jobs:
   # --- cheapest gate first: formatting ---------------------------------------
   format:
     name: clang-format
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -102,6 +103,7 @@ jobs:
   # --- build + test on both legs x {Debug, Release} --------------------------
   build-test:
     name: ${{ matrix.name }}
+    timeout-minutes: 20
     # Gated behind the two cheap checks so a formatting slip or an under-covered diff never
     # pays for seven more legs, three of them Windows at 2x (ADR-008 §9's cost trigger).
     #
@@ -178,12 +180,23 @@ jobs:
       - name: Build
         run: cmake --build --preset ${{ matrix.build }}
 
+      - name: Deploy software OpenGL (Windows)
+        if: runner.os == 'Windows'
+        timeout-minutes: 5
+        shell: pwsh
+        run: ./.github/scripts/Setup-Mesa.ps1 -TestPreset '${{ matrix.test }}'
+
       - name: Test (ctest incl. sdk-smoke)
         if: runner.os == 'Windows'
+        timeout-minutes: 5
+        env:
+          GALLIUM_DRIVER: llvmpipe
+          LIBGL_ALWAYS_SOFTWARE: "1"
         run: ctest --preset ${{ matrix.test }}
 
       - name: Test under Xvfb (ctest incl. sdk-smoke)
         if: runner.os == 'Linux'
+        timeout-minutes: 5
         env:
           LIBGL_ALWAYS_SOFTWARE: "1"
         run: xvfb-run -a ctest --preset ${{ matrix.test }}
@@ -214,6 +227,7 @@ jobs:
   # of the trigger list so a title typo does not buy a nine-leg matrix run.
   coverage:
     name: diff coverage
+    timeout-minutes: 20
     needs: format
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -306,6 +320,7 @@ jobs:
       # all, so the cmake-side bypass exists for local runs only.
       - name: Coverage
         if: steps.bypass.outputs.skip != 'true'
+        timeout-minutes: 5
         env:
           TE_COVERAGE_BASE: origin/${{ github.base_ref }}
           TE_COVERAGE_THRESHOLD: "85"
@@ -328,6 +343,7 @@ jobs:
   # --- sanitizers, all per-PR (ADR-008 §9 Option A) --------------------------
   sanitizers:
     name: ${{ matrix.name }}
+    timeout-minutes: 20
     # PR-only (ADR-008 §9 Option A / ADR-009 §4): a squash-merge to master was already
     # sanitized on its up-to-date PR, so the push backstop skips the sanitizer trio.
     needs: [format, coverage]
@@ -393,12 +409,23 @@ jobs:
       - name: Build
         run: cmake --build --preset ${{ matrix.build }}
 
+      - name: Deploy software OpenGL (Windows)
+        if: runner.os == 'Windows'
+        timeout-minutes: 5
+        shell: pwsh
+        run: ./.github/scripts/Setup-Mesa.ps1 -TestPreset '${{ matrix.test }}'
+
       - name: Test
         if: runner.os == 'Windows'
+        timeout-minutes: 5
+        env:
+          GALLIUM_DRIVER: llvmpipe
+          LIBGL_ALWAYS_SOFTWARE: "1"
         run: ctest --preset ${{ matrix.test }}
 
       - name: Test under Xvfb
         if: runner.os == 'Linux'
+        timeout-minutes: 5
         env:
           LIBGL_ALWAYS_SOFTWARE: "1"
         run: xvfb-run -a ctest --preset ${{ matrix.test }}

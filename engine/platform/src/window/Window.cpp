@@ -1,3 +1,4 @@
+#include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/platform/window/Window.hpp>
 
 #define GLFW_INCLUDE_NONE
@@ -6,6 +7,10 @@
 #include <string>
 
 namespace TechEngine {
+    static void logGlfwError(int code, const char* description) {
+        TE_LOGGER_ERROR("GLFW error {0}: {1}", code, description);
+    }
+
     Window::Window() = default;
 
     Window::~Window() {
@@ -13,6 +18,7 @@ namespace TechEngine {
     }
 
     bool Window::initialize() {
+        glfwSetErrorCallback(logGlfwError);
         if (!glfwInit()) {
             return false;
         }
