@@ -21,6 +21,50 @@ namespace {
 // mount table serves the whole suite.
 static LoopEngine g_loopEngine;
 
+TEST_CASE("loop rates count frames and executed ticks separately", "[app][loop]") {
+    TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, 0.25, 2.0);
+    CHECK(loop.framesPerSecond() == 0.0);
+    CHECK(loop.ticksPerSecond() == 0.0);
+    CHECK_FALSE(loop.ratesUpdated());
+
+    for (int i = 0; i < 8; i++) {
+        loop.advance(0.125);
+        CHECK(loop.ratesUpdated() == (i == 7));
+    }
+    CHECK(loop.framesPerSecond() == Catch::Approx(8.0));
+    CHECK(loop.ticksPerSecond() == Catch::Approx(4.0));
+
+    loop.advance(0.5);
+    CHECK_FALSE(loop.ratesUpdated());
+    CHECK(loop.framesPerSecond() == Catch::Approx(8.0));
+    loop.advance(0.5);
+    CHECK(loop.ratesUpdated());
+    CHECK(loop.framesPerSecond() == Catch::Approx(2.0));
+    CHECK(loop.ticksPerSecond() == Catch::Approx(4.0));
+}
+
+TEST_CASE("loop rates include stalled time beyond the simulation clamp", "[app][loop]") {
+    TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, 0.125, 0.25);
+    loop.advance(2.0);
+    REQUIRE(loop.ratesUpdated());
+    CHECK(loop.frame().tick == 2);
+    CHECK(loop.framesPerSecond() == Catch::Approx(0.5));
+    CHECK(loop.ticksPerSecond() == Catch::Approx(1.0));
+}
+
+TEST_CASE("zero and negative deltas do not publish or subtract elapsed rate time", "[app][loop]") {
+    TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, 0.25, 2.0);
+    loop.advance(0.5);
+    loop.advance(0.0);
+    loop.advance(-1.0);
+    CHECK_FALSE(loop.ratesUpdated());
+    CHECK(loop.framesPerSecond() == 0.0);
+    loop.advance(0.5);
+    REQUIRE(loop.ratesUpdated());
+    CHECK(loop.framesPerSecond() == Catch::Approx(4.0));
+    CHECK(loop.ticksPerSecond() == Catch::Approx(4.0));
+}
+
 TEST_CASE("sixty fixed-step frames run exactly sixty ticks", "[app][loop]") {
     TechEngine::FrameLoop loop(g_loopEngine.context, TechEngine::Role::DedicatedServer);
 

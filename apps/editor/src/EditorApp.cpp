@@ -5,6 +5,7 @@
 #include "TechEngine/base/diagnostics/Assert.hpp"
 #include "TechEngine/base/diagnostics/Log.hpp"
 
+#include <cstdint>
 #include <string>
 #include <utility>
 
@@ -30,29 +31,18 @@ namespace TechEngine {
 
         TE_LOGGER_INFO("Opened project '{0}' at {1}", m_project.name(), root.string());
         TE_CHECK(m_client.start(1280, 720, "TechEngine Editor"), "Failed to start the client session");
-        m_titleUpdated = std::chrono::steady_clock::now();
-        m_titleFrameCount = 0;
-        m_titleTicksCount = 0;
     }
 
     void EditorApp::fixedUpdate(const FrameContext&) {
     }
 
-    void EditorApp::update(const FrameContext& frame) {
+    void EditorApp::update(const FrameContext&) {
         m_client.pollEvents();
-        m_titleFrameCount++;
-        m_titleTicksCount++;
-        const auto now = std::chrono::steady_clock::now();
-        const double elapsed = std::chrono::duration<double>(now - m_titleUpdated).count();
-        if (elapsed >= 0.25) {
-            const auto framesPerSecond = static_cast<std::uint64_t>(static_cast<double>(m_titleFrameCount) / elapsed);
-            const auto ticksPerSecond = static_cast<std::uint64_t>(static_cast<double>(m_titleTicksCount) / elapsed);
-            m_client.setTitle("TechEngine Editor | Update FPS: " + std::to_string(framesPerSecond) + " | Tick: " + std::to_string(ticksPerSecond));
-            m_titleUpdated = now;
-            m_titleFrameCount = 0;
-            m_titleTicksCount = 0;
+        if (m_loop.ratesUpdated()) {
+            const auto framesPerSecond = static_cast<std::uint64_t>(m_loop.framesPerSecond());
+            const auto ticksPerSecond = static_cast<std::uint64_t>(m_loop.ticksPerSecond());
+            m_client.setTitle("TechEngine Editor | Update FPS: " + std::to_string(framesPerSecond) + " | TPS: " + std::to_string(ticksPerSecond));
         }
-        (void)frame;
     }
 
     void EditorApp::shutdown() {
