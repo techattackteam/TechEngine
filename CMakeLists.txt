@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(TechEngine
   DESCRIPTION "Client/server 3D game engine (v2)"
-  LANGUAGES CXX)
+  LANGUAGES C CXX)
 
 # --- guard: presets are the intended entry point (ADR-008 §3) ---------------
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)

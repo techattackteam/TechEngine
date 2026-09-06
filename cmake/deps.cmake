@@ -12,11 +12,7 @@
 
 include(FetchContent)
 
-# Skip the ExternalProject "update" step after the initial download: the GIT_TAG
-# checkout already pins us, the re-fetch is redundant, and on Windows/MSBuild that
-# step intermittently fails with "The system cannot find the path specified".
-# Tradeoff: changing a GIT_TAG needs the dep's _deps dir cleared to re-fetch. CI
-# does clean checkouts, so it always fetches the pinned tag fresh.
+# Allow FetchContent's update step so changes to pinned tags can be fetched.
 set(FETCHCONTENT_UPDATES_DISCONNECTED OFF)
 
 # --- math (header-only) -----------------------------------------------------
@@ -132,6 +128,8 @@ if(TE_BUILD_TESTS)
 endif()
 
 # --- glad2 (GL loader) — the ONE vendored dep (ADR-008 §4 case 3) ------------
-# Not yet present. glad2 is generated (GL 4.5 core, DSA), not a fetchable CMake
-# project, so it is committed under external/glad/ and wrapped in a target here.
-# Wired to `platform` once generated — see the open decision in the session notes.
+# Generator: glad2 2.0.8 (pip install glad2==2.0.8).
+# glad --api gl:core=4.5 --extensions= --out-path external/glad --reproducible c
+add_library(TechEngineGlad STATIC ${CMAKE_SOURCE_DIR}/external/glad/src/gl.c)
+add_library(TechEngine::glad ALIAS TechEngineGlad)
+target_include_directories(TechEngineGlad SYSTEM PUBLIC ${CMAKE_SOURCE_DIR}/external/glad/include)
