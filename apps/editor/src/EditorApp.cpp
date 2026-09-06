@@ -5,6 +5,8 @@
 #include "TechEngine/base/diagnostics/Assert.hpp"
 #include "TechEngine/base/diagnostics/Log.hpp"
 
+#include <cstdint>
+#include <string>
 #include <utility>
 
 namespace TechEngine {
@@ -28,17 +30,26 @@ namespace TechEngine {
         m_mounts.mount("assets", root / "assets" / "client", 100);
 
         TE_LOGGER_INFO("Opened project '{0}' at {1}", m_project.name(), root.string());
+        TE_CHECK(m_client.start(1280, 720, "TechEngine Editor"), "Failed to start the client session");
     }
 
-    void EditorApp::fixedUpdate(const FrameContext& frame) {
-        TE_LOGGER_INFO("Editor fixedUpdate: tick {0}, frame {1}, deltaTime {2}, fixedDeltaTime {3}, alpha {4}, role {5}", frame.tick, frame.frameIndex, frame.deltaTime, frame.fixedDeltaTime, frame.alpha, toString(frame.role));
+    void EditorApp::fixedUpdate(const FrameContext&) {
     }
 
-    void EditorApp::update(const FrameContext& frame) {
-        TE_LOGGER_INFO("Editor update: tick {0}, frame {1}, deltaTime {2}, fixedDeltaTime {3}, alpha {4}, role {5}", frame.tick, frame.frameIndex, frame.deltaTime, frame.fixedDeltaTime, frame.alpha, toString(frame.role));
+    void EditorApp::update(const FrameContext&) {
+        m_client.pollEvents();
+        if (m_loop.ratesUpdated()) {
+            const auto framesPerSecond = static_cast<std::uint64_t>(m_loop.framesPerSecond());
+            const auto ticksPerSecond = static_cast<std::uint64_t>(m_loop.ticksPerSecond());
+            m_client.setTitle("TechEngine Editor | Update FPS: " + std::to_string(framesPerSecond) + " | TPS: " + std::to_string(ticksPerSecond));
+        }
     }
 
     void EditorApp::shutdown() {
+        m_client.stop();
+    }
+    bool EditorApp::shouldClose() const {
+        return m_client.shouldClose();
     }
 
     Role EditorApp::editorRole() {

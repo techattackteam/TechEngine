@@ -4,6 +4,7 @@
 #include <TechEngine/core/FrameContext.hpp>
 
 #include <concepts>
+#include <cstdint>
 
 namespace TechEngine {
     class FrameLoop {
@@ -24,6 +25,7 @@ namespace TechEngine {
             }
 
             const double clampedDeltaTime = frameDeltaTime > m_maxFrameDeltaTime ? m_maxFrameDeltaTime : frameDeltaTime;
+            const std::uint64_t previousTick = m_frame.tick;
 
             m_frame.frameIndex++;
             m_frame.deltaTime = static_cast<float>(clampedDeltaTime);
@@ -41,6 +43,7 @@ namespace TechEngine {
             }
 
             m_frame.alpha = static_cast<float>(m_accumulator / m_fixedDeltaTime);
+            updateRates(frameDeltaTime, m_frame.tick - previousTick);
 
             return m_frame;
         }
@@ -49,10 +52,22 @@ namespace TechEngine {
 
         double accumulator() const;
 
+        double framesPerSecond() const;
+        double ticksPerSecond() const;
+        bool ratesUpdated() const;
+
     private:
+        void updateRates(double elapsed, std::uint64_t ticks);
+
         double m_fixedDeltaTime;
         double m_maxFrameDeltaTime;
         double m_accumulator = 0.0;
         FrameContext m_frame;
+        double m_rateElapsed = 0.0;
+        std::uint64_t m_rateFrames = 0;
+        std::uint64_t m_rateTicks = 0;
+        double m_framesPerSecond = 0.0;
+        double m_ticksPerSecond = 0.0;
+        bool m_ratesUpdated = false;
     };
 }

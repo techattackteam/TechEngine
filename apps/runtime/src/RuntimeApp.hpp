@@ -2,8 +2,13 @@
 
 #include "TechEngine/app/App.hpp"
 
+#include <cstdint>
+
 namespace TechEngine {
     class RuntimeApp : public App {
+    private:
+        std::uint64_t m_frameCount = 0;
+
     public:
         RuntimeApp();
 
@@ -19,5 +24,7 @@ namespace TechEngine {
         void update(const FrameContext& frame) override;
 
         void shutdown() override;
+
+        bool shouldClose() const override;
     };
 }

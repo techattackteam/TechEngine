@@ -40,5 +40,5 @@ function(techengine_test module)
   # picked up without editing the coverage wiring.
   set_property(GLOBAL APPEND PROPERTY TE_TEST_TARGETS ${_te_target})
 
-  catch_discover_tests(${_te_target})
+  catch_discover_tests(${_te_target} PROPERTIES TIMEOUT 60)
 endfunction()

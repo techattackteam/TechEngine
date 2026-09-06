@@ -1,5 +1,6 @@
 #pragma once
 
+#include <TechEngine/client/Client.hpp>
 #include <TechEngine/core/FrameContext.hpp>
 
 #include "TechEngine/app/App.hpp"
@@ -12,6 +13,7 @@ namespace TechEngine {
     private:
         std::filesystem::path m_projectRoot;
         Project m_project;
+        Client m_client;
 
     public:
         explicit EditorApp(std::filesystem::path projectRoot);
@@ -28,5 +30,7 @@ namespace TechEngine {
         void update(const FrameContext& frame) override;
 
         void shutdown() override;
+
+        bool shouldClose() const override;
     };
 }
