@@ -38,10 +38,11 @@ namespace TechEngine {
 
     void EditorApp::update(const FrameContext&) {
         m_client.pollEvents();
+        // TODO(S5-T8): publish a FrameCommand with clear colour, drawTriangle and this update's frameIndex.
         if (m_loop.ratesUpdated()) {
-            const auto framesPerSecond = static_cast<std::uint64_t>(m_loop.framesPerSecond());
+            const auto framesPerSecond = static_cast<std::uint64_t>(m_client.renderFramesPerSecond());
             const auto ticksPerSecond = static_cast<std::uint64_t>(m_loop.ticksPerSecond());
-            m_client.setTitle("TechEngine Editor | Update FPS: " + std::to_string(framesPerSecond) + " | TPS: " + std::to_string(ticksPerSecond));
+            m_client.setTitle("TechEngine Editor | FPS: " + std::to_string(framesPerSecond) + " | TPS: " + std::to_string(ticksPerSecond));
         }
     }
 

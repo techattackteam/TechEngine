@@ -11,8 +11,6 @@
 namespace TechEngine {
     class App {
     protected:
-        // Declaration order is construction order, and three of these bind to the one above.
-        // Reordering compiles cleanly and binds a reference to an unconstructed member.
         MountTable m_mounts;
         FileAccess m_files{m_mounts};
         JobSystem m_jobs;

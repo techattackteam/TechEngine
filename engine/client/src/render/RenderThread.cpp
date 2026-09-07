@@ -1,13 +1,14 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/platform/window/Window.hpp>
 
 #include <render/RenderThread.hpp>
 
 #include <glad/gl.h>
 
-#include <condition_variable>
+#include <chrono>
+#include <cstdint>
 #include <exception>
-#include <mutex>
 #include <utility>
 
 namespace TechEngine {
@@ -22,6 +23,7 @@ namespace TechEngine {
             return false;
         }
 
+        m_framesPerSecond.store(0.0, std::memory_order_relaxed);
         std::promise<bool> startup;
         std::future<bool> ready = startup.get_future();
         try {
@@ -44,28 +46,55 @@ namespace TechEngine {
             m_thread.request_stop();
             m_thread.join();
         }
+        m_commandBuffer.reset();
+        m_framesPerSecond.store(0.0, std::memory_order_relaxed);
     }
 
-    void RenderThread::threadMain(std::stop_token stopToken, Window& window, std::promise<bool> startup) {
+    void RenderThread::publish(const FrameCommand& command) {
+        m_commandBuffer.publish(command);
+    }
+
+    double RenderThread::framesPerSecond() const {
+        return m_framesPerSecond.load(std::memory_order_relaxed);
+    }
+
+    void RenderThread::threadMain(const std::stop_token& stopToken, Window& window, std::promise<bool> startup) {
+        TE_PROFILER_THREAD_NAME("TERender");
         bool contextClaimed = false;
         bool startupReported = false;
         try {
             window.makeContextCurrent();
+            window.setVSync(true);
             contextClaimed = true;
             const GlProcLoader loader = window.processLoader();
             const int version = loader != nullptr ? gladLoadGL(loader) : 0;
-            const bool ready = version != 0 && GLAD_GL_VERSION_4_5 != 0;
+            m_commandBuffer.reset();
+            const bool ready = version != 0 && GLAD_GL_VERSION_4_5 != 0 && m_frameRenderer.initialize();
+
             startup.set_value(ready);
             startupReported = true;
 
             if (ready) {
-                TE_LOGGER_INFO("OpenGL {0}; renderer: {1}", reinterpret_cast<const char*>(glGetString(GL_VERSION)), reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
-                std::mutex mutex;
-                std::condition_variable_any stopped;
-                std::unique_lock lock{mutex};
-                stopped.wait(lock, std::move(stopToken), [] {
-                    return false;
-                });
+                using RateClock = std::chrono::steady_clock;
+                RateClock::time_point rateStarted = RateClock::now();
+                std::uint64_t renderedFrames = 0;
+                while (!stopToken.stop_requested() && !window.shouldClose()) {
+                    {
+                        TE_PROFILER_SCOPE("RenderThread.Present");
+                        const FrameCommand command = m_commandBuffer.snapshot();
+                        const FramebufferSize size = window.framebufferSize();
+                        m_frameRenderer.draw(command, size);
+                        window.swapBuffers();
+                    }
+                    renderedFrames++;
+                    const RateClock::time_point now = RateClock::now();
+                    const double elapsed = std::chrono::duration<double>(now - rateStarted).count();
+                    if (elapsed >= 1.0) {
+                        m_framesPerSecond.store(static_cast<double>(renderedFrames) / elapsed, std::memory_order_relaxed);
+                        renderedFrames = 0;
+                        rateStarted = now;
+                    }
+                }
             }
         } catch (...) {
             if (!startupReported) {
@@ -74,6 +103,7 @@ namespace TechEngine {
         }
 
         if (contextClaimed) {
+            m_frameRenderer.shutdown();
             window.releaseContext();
         }
     }

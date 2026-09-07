@@ -1,9 +1,6 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/platform/window/Window.hpp>
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
-
 #include <string>
 
 namespace TechEngine {
@@ -34,6 +31,11 @@ namespace TechEngine {
         }
         const std::string windowTitle{title};
         m_window = glfwCreateWindow(width, height, windowTitle.c_str(), nullptr, nullptr);
+        m_framebufferSize = FramebufferSize{width, height};
+        glfwSetWindowUserPointer(m_window, this);
+        glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, const int width, const int height) {
+            static_cast<Window*>(glfwGetWindowUserPointer(window))->framebufferSizeCallback(window, width, height);
+        });
         return m_window != nullptr;
     }
 
@@ -57,10 +59,15 @@ namespace TechEngine {
             glfwDestroyWindow(m_window);
             m_window = nullptr;
         }
+        m_framebufferSize = FramebufferSize{0, 0};
     }
 
     bool Window::shouldClose() const {
         return m_window == nullptr || glfwWindowShouldClose(m_window) != 0;
+    }
+
+    FramebufferSize Window::framebufferSize() const {
+        return m_framebufferSize;
     }
 
     void Window::makeContextCurrent() const {
@@ -74,8 +81,17 @@ namespace TechEngine {
     void Window::swapBuffers() {
         glfwSwapBuffers(m_window);
     }
+    void Window::setVSync(bool vsync) {
+        glfwSwapInterval(vsync ? 1 : 0);
+    }
 
     GlProcLoader Window::processLoader() const {
         return glfwGetProcAddress;
+    }
+    void Window::framebufferSizeCallback(GLFWwindow* window, int width, int height) {
+        std::lock_guard<std::mutex> const lock(m_framebufferMutex);
+        m_framebufferSize.width = width;
+        m_framebufferSize.height = height;
+        (void)(GLFWwindow*)window;
     }
 }

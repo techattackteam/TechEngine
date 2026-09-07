@@ -38,6 +38,14 @@ namespace TechEngine {
         }
     }
 
+    void Client::publish(const FrameCommand& command) {
+        m_state->renderer.publish(command);
+    }
+
+    double Client::renderFramesPerSecond() const {
+        return m_state->renderer.framesPerSecond();
+    }
+
     bool Client::shouldClose() const {
         if (!m_state->initialized) {
             return true;
