@@ -7,6 +7,8 @@
 #include <glad/gl.h>
 
 #include <array>
+#include <cstdint>
+#include <span>
 
 namespace TechEngine {
     static bool compileShader(unsigned int shader, const char* source, const char* stage) {
@@ -28,16 +30,17 @@ namespace TechEngine {
     }
 
     bool FrameRenderer::initialize() {
-        const float vertices[] = {-0.5F, -0.5F, 0.0F, 0.5F, -0.5F, 0.0F, 0.0F, 0.5F, 0.0F};
-        glGenBuffers(1, &m_triangleVbo);
-        glGenVertexArrays(1, &m_triangleVao);
-        glBindBuffer(GL_ARRAY_BUFFER, m_triangleVbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-        glBindVertexArray(m_triangleVao);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
-        glEnableVertexAttribArray(0);
-        glBindVertexArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        const std::array<float, 9> vertices{-0.5F, -0.5F, 0.0F, 0.5F, -0.5F, 0.0F, 0.0F, 0.5F, 0.0F};
+        const std::array<std::uint32_t, 3> indices{0, 1, 2};
+        if (!m_triangleVertexBuffer.initialize(std::as_bytes(std::span{vertices})) || !m_triangleIndexBuffer.initialize(std::as_bytes(std::span{indices})) || !m_triangleVertexArray.initialize()) {
+            shutdown();
+            return false;
+        }
+
+        constexpr std::uint32_t VERTEX_BINDING = 0;
+        m_triangleVertexArray.setVertexBuffer(m_triangleVertexBuffer, VERTEX_BINDING, 0, static_cast<int>(3 * sizeof(float)));
+        m_triangleVertexArray.setIndexBuffer(m_triangleIndexBuffer);
+        m_triangleVertexArray.setFloatAttribute(0, VERTEX_BINDING, 3, 0);
 
         m_vertexShader = glCreateShader(GL_VERTEX_SHADER);
         m_fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -92,21 +95,16 @@ namespace TechEngine {
         glClear(GL_COLOR_BUFFER_BIT);
         if (command.drawTriangle) {
             glUseProgram(m_shaderProgram);
-            glBindVertexArray(m_triangleVao);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
-            glBindVertexArray(0);
+            m_triangleVertexArray.bind();
+            glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr);
+            VertexArray::unbind();
         }
     }
 
     void FrameRenderer::shutdown() {
-        if (m_triangleVbo != 0) {
-            glDeleteBuffers(1, &m_triangleVbo);
-            m_triangleVbo = 0;
-        }
-        if (m_triangleVao != 0) {
-            glDeleteVertexArrays(1, &m_triangleVao);
-            m_triangleVao = 0;
-        }
+        m_triangleVertexArray.shutdown();
+        m_triangleIndexBuffer.shutdown();
+        m_triangleVertexBuffer.shutdown();
         if (m_vertexShader != 0) {
             glDeleteShader(m_vertexShader);
             m_vertexShader = 0;
