@@ -1,6 +1,9 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/platform/window/Window.hpp>
 
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+
 #include <string>
 
 namespace TechEngine {
@@ -26,17 +29,23 @@ namespace TechEngine {
     }
 
     bool Window::open(int width, int height, std::string_view const title) {
-        if (m_window != nullptr) {
+        if (m_window != nullptr || width <= 0 || height <= 0) {
             return false;
         }
         const std::string windowTitle{title};
         m_window = glfwCreateWindow(width, height, windowTitle.c_str(), nullptr, nullptr);
-        m_framebufferSize = FramebufferSize{width, height};
+        if (m_window == nullptr) {
+            return false;
+        }
+        int framebufferWidth = 0;
+        int framebufferHeight = 0;
+        glfwGetFramebufferSize(m_window, &framebufferWidth, &framebufferHeight);
+        framebufferSizeCallback(framebufferWidth, framebufferHeight);
         glfwSetWindowUserPointer(m_window, this);
-        glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, const int width, const int height) {
-            static_cast<Window*>(glfwGetWindowUserPointer(window))->framebufferSizeCallback(window, width, height);
+        glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, const int width, const int height) {
+            static_cast<Window*>(glfwGetWindowUserPointer(window))->framebufferSizeCallback(width, height);
         });
-        return m_window != nullptr;
+        return true;
     }
 
     void Window::terminate() {
@@ -59,7 +68,7 @@ namespace TechEngine {
             glfwDestroyWindow(m_window);
             m_window = nullptr;
         }
-        m_framebufferSize = FramebufferSize{0, 0};
+        framebufferSizeCallback(0, 0);
     }
 
     bool Window::shouldClose() const {
@@ -67,6 +76,7 @@ namespace TechEngine {
     }
 
     FramebufferSize Window::framebufferSize() const {
+        const std::lock_guard lock{m_framebufferMutex};
         return m_framebufferSize;
     }
 
@@ -88,10 +98,8 @@ namespace TechEngine {
     GlProcLoader Window::processLoader() const {
         return glfwGetProcAddress;
     }
-    void Window::framebufferSizeCallback(GLFWwindow* window, int width, int height) {
-        std::lock_guard<std::mutex> const lock(m_framebufferMutex);
-        m_framebufferSize.width = width;
-        m_framebufferSize.height = height;
-        (void)(GLFWwindow*)window;
+    void Window::framebufferSizeCallback(int width, int height) {
+        const std::lock_guard lock{m_framebufferMutex};
+        m_framebufferSize = FramebufferSize{width, height};
     }
 }

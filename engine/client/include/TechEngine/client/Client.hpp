@@ -6,7 +6,6 @@
 namespace TechEngine {
     struct FrameCommand;
 
-    // One client owns the process-wide GLFW lifetime. Call its lifecycle methods on main.
     class Client {
     private:
         struct State;

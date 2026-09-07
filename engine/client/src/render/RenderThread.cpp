@@ -7,7 +7,6 @@
 #include <glad/gl.h>
 
 #include <chrono>
-#include <cstdint>
 #include <exception>
 #include <utility>
 
@@ -78,7 +77,7 @@ namespace TechEngine {
                 using RateClock = std::chrono::steady_clock;
                 RateClock::time_point rateStarted = RateClock::now();
                 std::uint64_t renderedFrames = 0;
-                while (!stopToken.stop_requested() && !window.shouldClose()) {
+                while (!stopToken.stop_requested()) {
                     {
                         TE_PROFILER_SCOPE("RenderThread.Present");
                         const FrameCommand command = m_commandBuffer.snapshot();

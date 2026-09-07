@@ -1,10 +1,9 @@
 #pragma once
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
-
 #include <mutex>
 #include <string_view>
+
+struct GLFWwindow;
 
 namespace TechEngine {
     using GlProc = void (*)();
@@ -20,7 +19,6 @@ namespace TechEngine {
         GLFWwindow* m_window = nullptr;
         mutable std::mutex m_framebufferMutex;
         FramebufferSize m_framebufferSize;
-        std::mutex m_contextMutex;
 
     public:
         Window();
@@ -62,6 +60,6 @@ namespace TechEngine {
         GlProcLoader processLoader() const;
 
     private:
-        void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+        void framebufferSizeCallback(int width, int height);
     };
 }

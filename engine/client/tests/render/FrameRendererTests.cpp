@@ -16,6 +16,84 @@ struct FrameRendererWindowScope {
     }
 };
 
+enum class FrameShaderFailure { VertexCompile, FragmentCompile, Link };
+
+static PFNGLSHADERSOURCEPROC g_originalShaderSource = nullptr;
+static FrameShaderFailure g_shaderFailure = FrameShaderFailure::VertexCompile;
+
+static void GLAD_API_PTR failingShaderSource(unsigned int shader, int count, const char* const* source, const int* length) {
+    int type = 0;
+    glGetShaderiv(shader, GL_SHADER_TYPE, &type);
+    const char* replacement = nullptr;
+    if ((g_shaderFailure == FrameShaderFailure::VertexCompile && type == GL_VERTEX_SHADER) || (g_shaderFailure == FrameShaderFailure::FragmentCompile && type == GL_FRAGMENT_SHADER)) {
+        replacement = "#version 450 core\ninvalid shader source";
+    } else if (g_shaderFailure == FrameShaderFailure::Link) {
+        replacement = type == GL_VERTEX_SHADER ? "#version 450 core\nout vec3 mismatch; void main() { mismatch = vec3(1.0); gl_Position = vec4(0.0, 0.0, 0.0, 1.0); }" : "#version 450 core\nin vec4 mismatch; out vec4 color; void main() { color = mismatch; }";
+    }
+    if (replacement != nullptr) {
+        g_originalShaderSource(shader, 1, &replacement, nullptr);
+    } else {
+        g_originalShaderSource(shader, count, source, length);
+    }
+}
+
+struct FrameShaderFailureScope {
+    explicit FrameShaderFailureScope(FrameShaderFailure failure) {
+        g_shaderFailure = failure;
+        g_originalShaderSource = glad_glShaderSource;
+        glad_glShaderSource = failingShaderSource;
+    }
+
+    ~FrameShaderFailureScope() {
+        glad_glShaderSource = g_originalShaderSource;
+    }
+};
+
+TEST_CASE("Frame renderer rejects shader failures and can retry initialization", "[client][render][window]") {
+    FrameShaderFailure failure = FrameShaderFailure::VertexCompile;
+    SECTION("Vertex compilation fails") {
+        failure = FrameShaderFailure::VertexCompile;
+    }
+    SECTION("Fragment compilation fails") {
+        failure = FrameShaderFailure::FragmentCompile;
+    }
+    SECTION("Shader interfaces fail to link") {
+        failure = FrameShaderFailure::Link;
+    }
+
+    const FrameRendererWindowScope scope;
+    REQUIRE(TechEngine::Window::initialize());
+    TechEngine::Window window;
+    REQUIRE(window.open(320, 240, "Shader failure test"));
+    bool loaded = false;
+    bool rejected = false;
+    bool recovered = false;
+    unsigned int error = GL_NO_ERROR;
+    {
+        std::jthread worker([&] {
+            window.makeContextCurrent();
+            const TechEngine::GlProcLoader loader = window.processLoader();
+            loaded = loader != nullptr && gladLoadGL(loader) != 0 && GLAD_GL_VERSION_4_5 != 0;
+            if (loaded) {
+                TechEngine::FrameRenderer renderer;
+                {
+                    const FrameShaderFailureScope failureScope{failure};
+                    rejected = !renderer.initialize();
+                }
+                recovered = renderer.initialize();
+                renderer.shutdown();
+                renderer.shutdown();
+                error = glGetError();
+            }
+            window.releaseContext();
+        });
+    }
+    REQUIRE(loaded);
+    CHECK(rejected);
+    CHECK(recovered);
+    CHECK(error == GL_NO_ERROR);
+}
+
 TEST_CASE("Frame renderer clears, draws, redraws and resizes on its context owner", "[client][render][window]") {
     const FrameRendererWindowScope scope;
     REQUIRE(TechEngine::Window::initialize());

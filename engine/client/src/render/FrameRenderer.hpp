@@ -8,6 +8,9 @@ namespace TechEngine {
     private:
         unsigned int m_triangleVao = 0;
         unsigned int m_triangleVbo = 0;
+        unsigned int m_vertexShader = 0;
+        unsigned int m_fragmentShader = 0;
+        unsigned int m_shaderProgram = 0;
 
     public:
         FrameRenderer() = default;
