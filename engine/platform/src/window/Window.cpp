@@ -29,12 +29,23 @@ namespace TechEngine {
     }
 
     bool Window::open(int width, int height, std::string_view const title) {
-        if (m_window != nullptr) {
+        if (m_window != nullptr || width <= 0 || height <= 0) {
             return false;
         }
         const std::string windowTitle{title};
         m_window = glfwCreateWindow(width, height, windowTitle.c_str(), nullptr, nullptr);
-        return m_window != nullptr;
+        if (m_window == nullptr) {
+            return false;
+        }
+        int framebufferWidth = 0;
+        int framebufferHeight = 0;
+        glfwGetFramebufferSize(m_window, &framebufferWidth, &framebufferHeight);
+        framebufferSizeCallback(framebufferWidth, framebufferHeight);
+        glfwSetWindowUserPointer(m_window, this);
+        glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, const int width, const int height) {
+            static_cast<Window*>(glfwGetWindowUserPointer(window))->framebufferSizeCallback(width, height);
+        });
+        return true;
     }
 
     void Window::terminate() {
@@ -57,10 +68,16 @@ namespace TechEngine {
             glfwDestroyWindow(m_window);
             m_window = nullptr;
         }
+        framebufferSizeCallback(0, 0);
     }
 
     bool Window::shouldClose() const {
         return m_window == nullptr || glfwWindowShouldClose(m_window) != 0;
+    }
+
+    FramebufferSize Window::framebufferSize() const {
+        const std::lock_guard lock{m_framebufferMutex};
+        return m_framebufferSize;
     }
 
     void Window::makeContextCurrent() const {
@@ -74,8 +91,15 @@ namespace TechEngine {
     void Window::swapBuffers() {
         glfwSwapBuffers(m_window);
     }
+    void Window::setVSync(bool vsync) {
+        glfwSwapInterval(vsync ? 1 : 0);
+    }
 
     GlProcLoader Window::processLoader() const {
         return glfwGetProcAddress;
+    }
+    void Window::framebufferSizeCallback(int width, int height) {
+        const std::lock_guard lock{m_framebufferMutex};
+        m_framebufferSize = FramebufferSize{width, height};
     }
 }

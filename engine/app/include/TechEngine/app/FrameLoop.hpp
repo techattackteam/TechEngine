@@ -53,7 +53,9 @@ namespace TechEngine {
         double accumulator() const;
 
         double framesPerSecond() const;
+
         double ticksPerSecond() const;
+
         bool ratesUpdated() const;
 
     private:
@@ -62,10 +64,13 @@ namespace TechEngine {
         double m_fixedDeltaTime;
         double m_maxFrameDeltaTime;
         double m_accumulator = 0.0;
+
         FrameContext m_frame;
         double m_rateElapsed = 0.0;
+
         std::uint64_t m_rateFrames = 0;
         std::uint64_t m_rateTicks = 0;
+
         double m_framesPerSecond = 0.0;
         double m_ticksPerSecond = 0.0;
         bool m_ratesUpdated = false;

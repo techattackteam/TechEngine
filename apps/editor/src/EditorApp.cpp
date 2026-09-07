@@ -4,6 +4,7 @@
 
 #include "TechEngine/base/diagnostics/Assert.hpp"
 #include "TechEngine/base/diagnostics/Log.hpp"
+#include "TechEngine/client/render/FrameCommand.hpp"
 
 #include <cstdint>
 #include <string>
@@ -36,13 +37,18 @@ namespace TechEngine {
     void EditorApp::fixedUpdate(const FrameContext&) {
     }
 
-    void EditorApp::update(const FrameContext&) {
+    void EditorApp::update(const FrameContext& context) {
         m_client.pollEvents();
         if (m_loop.ratesUpdated()) {
-            const auto framesPerSecond = static_cast<std::uint64_t>(m_loop.framesPerSecond());
+            const auto framesPerSecond = static_cast<std::uint64_t>(m_client.renderFramesPerSecond());
             const auto ticksPerSecond = static_cast<std::uint64_t>(m_loop.ticksPerSecond());
-            m_client.setTitle("TechEngine Editor | Update FPS: " + std::to_string(framesPerSecond) + " | TPS: " + std::to_string(ticksPerSecond));
+            m_client.setTitle("TechEngine Editor | FPS: " + std::to_string(framesPerSecond) + " | TPS: " + std::to_string(ticksPerSecond));
         }
+        m_client.publish(FrameCommand{
+            .clearColor = {0.1f, 0.1f, 0.1f, 1.0f},
+            .drawTriangle = true,
+            .frameIndex = context.frameIndex,
+        });
     }
 
     void EditorApp::shutdown() {

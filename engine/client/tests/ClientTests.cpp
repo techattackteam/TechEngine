@@ -4,13 +4,15 @@
 
 TEST_CASE("Client starts GL and shuts down before destroying its window", "[client][window]") {
     TechEngine::Client client;
+    CHECK(client.renderFramesPerSecond() == 0.0);
     REQUIRE(client.start(320, 240, "Client test"));
     CHECK_FALSE(client.shouldClose());
     CHECK_FALSE(client.start(320, 240, "Duplicate client start"));
-    client.setTitle("Client test | Update FPS: 8 | TPS: 60");
+    client.setTitle("Client test | FPS: 8 | TPS: 60");
     client.pollEvents();
     client.stop();
     CHECK(client.shouldClose());
+    CHECK(client.renderFramesPerSecond() == 0.0);
     client.stop();
 }
 

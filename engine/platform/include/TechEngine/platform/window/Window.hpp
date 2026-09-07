@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include <string_view>
 
 struct GLFWwindow;
@@ -8,9 +9,16 @@ namespace TechEngine {
     using GlProc = void (*)();
     using GlProcLoader = GlProc (*)(const char* name);
 
+    struct FramebufferSize {
+        int width = 0;
+        int height = 0;
+    };
+
     class Window {
     private:
         GLFWwindow* m_window = nullptr;
+        mutable std::mutex m_framebufferMutex;
+        FramebufferSize m_framebufferSize;
 
     public:
         Window();
@@ -39,12 +47,19 @@ namespace TechEngine {
 
         bool shouldClose() const;
 
+        FramebufferSize framebufferSize() const;
+
         void makeContextCurrent() const;
 
         void releaseContext();
 
         void swapBuffers();
 
+        void setVSync(bool vsync);
+
         GlProcLoader processLoader() const;
+
+    private:
+        void framebufferSizeCallback(int width, int height);
     };
 }
