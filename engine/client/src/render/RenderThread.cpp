@@ -26,8 +26,8 @@ namespace TechEngine {
         std::promise<bool> startup;
         std::future<bool> ready = startup.get_future();
         try {
-            m_thread = std::jthread([this, &window, startup = std::move(startup)](std::stop_token stopToken) mutable {
-                threadMain(std::move(stopToken), window, std::move(startup));
+            m_thread = std::jthread([this, &window, startup = std::move(startup)](const std::stop_token& stopToken) mutable {
+                threadMain(stopToken, window, std::move(startup));
             });
             if (ready.get()) {
                 return true;
