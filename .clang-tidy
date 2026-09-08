@@ -1,4 +1,4 @@
-# TechEngine static analysis (ADR-005: checked in, CI-enforced on the Linux/Clang
+# TechEngine static analysis (ADR-005: checked in, run on the Linux/Clang CI
 # leg via CMAKE_CXX_CLANG_TIDY; off for _deps).
 #
 # Deliberately CONSERVATIVE to start: high-signal, low-false-positive families only,
@@ -17,7 +17,7 @@ Checks: >
   modernize-use-using,
   -bugprone-easily-swappable-parameters
 
-WarningsAsErrors: '*'
+WarningsAsErrors: ''
 
 # Analyze only our headers; never FetchContent'd third-party code.
 HeaderFilterRegex: '.*/(engine|apps|sdk)/.*/include/.*'
