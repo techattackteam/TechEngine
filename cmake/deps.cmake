@@ -4,8 +4,8 @@
 # just names the target it links (in its techengine_module() call). Nothing is
 # vendored except glad2 (ADR-008 §4 case 3) — see external/ and the note at the end.
 #
-# Warnings: /WX rides te_warnings (our targets only), so these builds keep their own
-# warning settings and are never held to our -Werror.
+# Warning levels ride te_warnings for our targets only; dependencies keep their
+# own warning settings.
 #
 # Pins below are the lead's recommendation; adjust deliberately, then treat the tag
 # as the source of truth (a floating branch is NOT a pin).
@@ -56,6 +56,9 @@ if(MSVC)
   set(GENERATE_DEBUG_SYMBOLS OFF CACHE BOOL "" FORCE)
   set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
 endif()
+# Jolt otherwise exports _HAS_EXCEPTIONS=0 on MSVC, changing STL exception types
+# in our consumers while Catch2 and the other libraries retain the normal types.
+set(CPP_EXCEPTIONS_ENABLED ON CACHE BOOL "" FORCE)
 set(TARGET_UNIT_TESTS       OFF CACHE BOOL "" FORCE)
 set(TARGET_HELLO_WORLD      OFF CACHE BOOL "" FORCE)
 set(TARGET_PERFORMANCE_TEST OFF CACHE BOOL "" FORCE)
