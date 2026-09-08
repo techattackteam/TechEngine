@@ -3,7 +3,11 @@ techengine_module(core
           src/events/EventRegistry.cpp
           src/events/EventStream.cpp
           src/events/EventStreamManager.cpp
+          src/jobs/DedicatedThread.cpp
+          src/jobs/DedicatedThreadContext.cpp
+          src/jobs/DedicatedThreadState.cpp
           src/jobs/JobSystem.cpp
+          src/jobs/ThreadRegistration.cpp
           src/serialization/Reader.cpp
           src/serialization/Writer.cpp
   HEADERS include/TechEngine/core/Core.hpp
@@ -13,11 +17,15 @@ techengine_module(core
           include/TechEngine/core/events/EventTypeId.hpp
           include/TechEngine/core/events/EventStream.hpp
           include/TechEngine/core/events/EventStreamManager.hpp
+          include/TechEngine/core/jobs/DedicatedThread.hpp
+          include/TechEngine/core/jobs/DedicatedThreadContext.hpp
           include/TechEngine/core/jobs/JobSystem.hpp
+          include/TechEngine/core/jobs/ThreadRegistration.hpp
           include/TechEngine/core/serialization/BlobHeader.hpp
           include/TechEngine/core/serialization/Reader.hpp
           include/TechEngine/core/serialization/Visit.hpp
           include/TechEngine/core/serialization/Writer.hpp
+          src/jobs/DedicatedThreadState.hpp
   DEPS    base platform
   LIBS    Jolt                             # authoritative physics (ADR-006 §1)
           Threads::Threads                 # JobSystem's workers; PUBLIC because the header has std::thread
@@ -31,6 +39,7 @@ if(TE_BUILD_TESTS)
           tests/events/EventRegistryTests.cpp
           tests/events/EventStreamTests.cpp
           tests/events/EventStreamManagerTests.cpp
+          tests/jobs/DedicatedThreadTests.cpp
           tests/jobs/JobSystemTests.cpp
           tests/serialization/VisitTests.cpp
           tests/serialization/WriterReaderTests.cpp)

@@ -2,8 +2,11 @@
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 
+#include <jobs/DedicatedThreadState.hpp>
+
 #include <exception>
 #include <format>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -99,6 +102,44 @@ namespace TechEngine {
 
     std::size_t JobSystem::workerCount() const {
         return m_workers.size();
+    }
+
+    DedicatedThread JobSystem::createDedicatedThread(std::string name, const ThreadRole role, std::function<void(DedicatedThreadContext&)> entry) {
+        DedicatedThread thread;
+        thread.m_state = std::make_unique<DedicatedThreadContext::State>();
+        DedicatedThreadContext::State* const state = thread.m_state.get();
+
+        try {
+            thread.m_thread = std::jthread{[this, state, name = std::move(name), role, entry = std::move(entry)](const std::stop_token stopToken) {
+                std::exception_ptr failure;
+                try {
+                    const ThreadRegistration registration = registerCurrentThread(name, role);
+                    DedicatedThreadContext context{*state, stopToken};
+                    entry(context);
+                } catch (...) {
+                    failure = std::current_exception();
+                }
+                state->finish(failure);
+            }};
+        } catch (...) {
+            state->finish(std::current_exception());
+        }
+
+        return thread;
+    }
+
+    ThreadRegistration JobSystem::registerCurrentThread(std::string name, const ThreadRole role) {
+        return ThreadRegistration{*this, std::move(name), role};
+    }
+
+    std::vector<ThreadInfo> JobSystem::registeredThreads() const {
+        std::lock_guard const lock{m_registryMutex};
+        std::vector<ThreadInfo> threads;
+        threads.reserve(m_registeredThreads.size());
+        for (const auto& entry: m_registeredThreads) {
+            threads.push_back(entry.second);
+        }
+        return threads;
     }
 
     bool JobSystem::isWorkerThread() const {
