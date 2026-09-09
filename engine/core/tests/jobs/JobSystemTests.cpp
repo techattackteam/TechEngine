@@ -4,11 +4,13 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <format>
 #include <thread>
 #include <vector>
 
@@ -23,6 +25,42 @@ TEST_CASE("a default pool starts the decided number of workers", "[core][jobs]")
 
     REQUIRE(jobs.workerCount() == TechEngine::JobSystem::DEFAULT_WORKER_COUNT);
     REQUIRE(TechEngine::JobSystem::DEFAULT_WORKER_COUNT == 4);
+}
+
+TEST_CASE("pool workers are registered before construction returns and removed by shutdown", "[core][jobs]") {
+    TechEngine::JobSystem jobs;
+    const std::vector<TechEngine::ThreadInfo> threads = jobs.registeredThreads();
+    REQUIRE(threads.size() == jobs.workerCount());
+    for (std::size_t i = 0; i < jobs.workerCount(); i++) {
+        const auto worker = std::ranges::find(threads, std::format("TEWorker{}", i), &TechEngine::ThreadInfo::name);
+        REQUIRE(worker != threads.end());
+        CHECK(worker->role == TechEngine::ThreadRole::PoolWorker);
+        CHECK(worker->id != std::this_thread::get_id());
+    }
+    jobs.shutdown();
+    jobs.shutdown();
+    CHECK(jobs.registeredThreads().empty());
+}
+
+TEST_CASE("pool workers reject batch waits and still drain their submitted work", "[core][jobs]") {
+    TechEngine::JobSystem jobs{1};
+    const TechEngineTests::AssertHandlerGuard guard;
+    bool childRan = false;
+    bool childWasPending = false;
+    std::array<TechEngine::Task, 1> tasks{[&] {
+        std::array<TechEngine::Task, 1> child{[&] {
+            childRan = true;
+        }};
+        jobs.wait(jobs.submit(child));
+        childWasPending = !childRan;
+    }};
+    jobs.wait(jobs.submit(tasks));
+    jobs.shutdown();
+
+    REQUIRE(TechEngineTests::g_fired.size() == 1);
+    CHECK(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Ensure);
+    CHECK(childWasPending);
+    CHECK(childRan);
 }
 
 TEST_CASE("every task in a batch runs exactly once", "[core][jobs]") {

@@ -6,11 +6,42 @@
 
 #include <exception>
 #include <format>
+#include <future>
 #include <memory>
+#include <stop_token>
 #include <string>
 #include <utility>
 
 namespace TechEngine {
+    template<typename Thread, typename Entry, typename Completion>
+    static Thread createRegisteredThread(JobSystem& jobs, std::string name, const ThreadRole role, Entry entry, Completion complete) {
+        std::promise<void> registered;
+        std::future<void> ready = registered.get_future();
+        Thread thread{[&jobs, name = std::move(name), role, entry = std::move(entry), complete = std::move(complete), registered = std::move(registered)](const std::stop_token stopToken = {}) mutable {
+            std::exception_ptr failure;
+            try {
+                const ThreadRegistration registration = jobs.registerCurrentThread(name, role);
+                registered.set_value();
+                try {
+                    entry(stopToken);
+                } catch (...) {
+                    failure = std::current_exception();
+                }
+            } catch (...) {
+                registered.set_exception(std::current_exception());
+                return;
+            }
+            complete(failure);
+        }};
+        try {
+            ready.get();
+        } catch (...) {
+            thread.join();
+            throw;
+        }
+        return thread;
+    }
+
     JobSystem::JobSystem(const std::size_t workerCount) {
         std::size_t count = workerCount;
         if (!TE_ENSURE(count > 0, "A job system needs at least one worker; starting one")) {
@@ -22,9 +53,18 @@ namespace TechEngine {
 
         try {
             for (std::size_t i = 0; i < count; i++) {
-                m_workers.emplace_back([this, i] {
-                    workerMain(i);
-                });
+                m_workers.push_back(createRegisteredThread<std::thread>(
+                    *this,
+                    std::format("TEWorker{0}", i),
+                    ThreadRole::PoolWorker,
+                    [this, i](const std::stop_token stopToken) {
+                        workerMain(i);
+                    },
+                    [](const std::exception_ptr failure) {
+                        if (failure) {
+                            std::terminate();
+                        }
+                    }));
             }
         } catch (...) {
             shutdown();
@@ -110,17 +150,17 @@ namespace TechEngine {
         DedicatedThreadContext::State* const state = thread.m_state.get();
 
         try {
-            thread.m_thread = std::jthread{[this, state, name = std::move(name), role, entry = std::move(entry)](const std::stop_token stopToken) {
-                std::exception_ptr failure;
-                try {
-                    const ThreadRegistration registration = registerCurrentThread(name, role);
+            thread.m_thread = createRegisteredThread<std::jthread>(
+                *this,
+                std::move(name),
+                role,
+                [state, entry = std::move(entry)](const std::stop_token stopToken) {
                     DedicatedThreadContext context{*state, stopToken};
                     entry(context);
-                } catch (...) {
-                    failure = std::current_exception();
-                }
-                state->finish(failure);
-            }};
+                },
+                [state](const std::exception_ptr failure) {
+                    state->finish(failure);
+                });
         } catch (...) {
             state->finish(std::current_exception());
         }
@@ -143,19 +183,12 @@ namespace TechEngine {
     }
 
     bool JobSystem::isWorkerThread() const {
-        const std::thread::id self = std::this_thread::get_id();
-        for (const std::thread& worker: m_workers) {
-            if (worker.get_id() == self) {
-                return true;
-            }
-        }
-        return false;
+        std::lock_guard const lock{m_registryMutex};
+        const auto it = m_registeredThreads.find(std::this_thread::get_id());
+        return it != m_registeredThreads.end() && it->second.role == ThreadRole::PoolWorker;
     }
 
     void JobSystem::workerMain(const std::size_t workerIndex) {
-        const std::string threadName = std::format("TEWorker{}", workerIndex);
-        TE_PROFILER_THREAD_NAME(threadName.c_str());
-
         while (true) {
             QueuedTask queued;
             {

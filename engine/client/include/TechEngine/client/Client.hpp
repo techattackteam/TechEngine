@@ -5,6 +5,7 @@
 
 namespace TechEngine {
     struct FrameCommand;
+    class JobSystem;
 
     class Client {
     private:
@@ -24,7 +25,8 @@ namespace TechEngine {
 
         Client& operator=(Client&&) = delete;
 
-        bool start(int width, int height, std::string_view title);
+        // jobs must outlive the active client session.
+        bool start(JobSystem& jobs, int width, int height, std::string_view title);
 
         void pollEvents();
 

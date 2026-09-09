@@ -14,6 +14,7 @@ namespace TechEngine {
 
     int App::run() {
         const DiagnosticsScope diagnostics;
+        const ThreadRegistration host = m_jobs.registerCurrentThread("TEMain", ThreadRole::Host);
 
         init();
 
