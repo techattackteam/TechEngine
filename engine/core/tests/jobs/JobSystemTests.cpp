@@ -2,6 +2,9 @@
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
+#include <jobs/RegisteredThread.hpp>
+
+#include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
@@ -10,7 +13,10 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <format>
+#include <stdexcept>
+#include <stop_token>
 #include <thread>
 #include <vector>
 
@@ -237,4 +243,55 @@ TEST_CASE("shutdown drains the queue instead of dropping it", "[core][jobs]") {
     }
 
     REQUIRE(ran.load() == static_cast<int>(TASK_COUNT));
+}
+
+struct RegisteredThreadExitProbe {
+    bool& exited;
+
+    ~RegisteredThreadExitProbe() {
+        exited = true;
+    }
+};
+
+TEMPLATE_TEST_CASE("registration failure joins the thread and unwinds its registration", "[core][jobs][registration]", std::thread, std::jthread) {
+    TechEngine::JobSystem jobs{1};
+    bool exited = false;
+    bool entryCalled = false;
+    bool completionCalled = false;
+    bool standardException = true;
+    SECTION("standard exception") {
+    }
+    SECTION("non-standard exception") {
+        standardException = false;
+    }
+
+    const auto start = [&] {
+        return TechEngine::createRegisteredThread<TestType>(
+            [&]() -> TechEngine::ThreadRegistration {
+                thread_local const RegisteredThreadExitProbe exitProbe{exited};
+                const TechEngine::ThreadRegistration registration = jobs.registerCurrentThread("FailingRegistration", TechEngine::ThreadRole::Dedicated);
+                if (standardException) {
+                    throw std::runtime_error{"registration failed"};
+                }
+                throw 42;
+            },
+            [&](const std::stop_token) {
+                entryCalled = true;
+            },
+            [&](const std::exception_ptr) {
+                completionCalled = true;
+            });
+    };
+
+    if (standardException) {
+        CHECK_THROWS_AS(start(), std::runtime_error);
+    } else {
+        CHECK_THROWS_AS(start(), int);
+    }
+    CHECK(exited);
+    CHECK_FALSE(entryCalled);
+    CHECK_FALSE(completionCalled);
+    const auto registered = jobs.registeredThreads();
+    REQUIRE(registered.size() == 1);
+    CHECK(registered.front().role == TechEngine::ThreadRole::PoolWorker);
 }

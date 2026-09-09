@@ -3,45 +3,16 @@
 #include <TechEngine/core/jobs/JobSystem.hpp>
 
 #include <jobs/DedicatedThreadState.hpp>
+#include <jobs/RegisteredThread.hpp>
 
 #include <exception>
 #include <format>
-#include <future>
 #include <memory>
 #include <stop_token>
 #include <string>
 #include <utility>
 
 namespace TechEngine {
-    template<typename Thread, typename Entry, typename Completion>
-    static Thread createRegisteredThread(JobSystem& jobs, std::string name, const ThreadRole role, Entry entry, Completion complete) {
-        std::promise<void> registered;
-        std::future<void> ready = registered.get_future();
-        Thread thread{[&jobs, name = std::move(name), role, entry = std::move(entry), complete = std::move(complete), registered = std::move(registered)](const std::stop_token stopToken = {}) mutable {
-            std::exception_ptr failure;
-            try {
-                const ThreadRegistration registration = jobs.registerCurrentThread(name, role);
-                registered.set_value();
-                try {
-                    entry(stopToken);
-                } catch (...) {
-                    failure = std::current_exception();
-                }
-            } catch (...) {
-                registered.set_exception(std::current_exception());
-                return;
-            }
-            complete(failure);
-        }};
-        try {
-            ready.get();
-        } catch (...) {
-            thread.join();
-            throw;
-        }
-        return thread;
-    }
-
     JobSystem::JobSystem(const std::size_t workerCount) {
         std::size_t count = workerCount;
         if (!TE_ENSURE(count > 0, "A job system needs at least one worker; starting one")) {
@@ -54,9 +25,9 @@ namespace TechEngine {
         try {
             for (std::size_t i = 0; i < count; i++) {
                 m_workers.push_back(createRegisteredThread<std::thread>(
-                    *this,
-                    std::format("TEWorker{0}", i),
-                    ThreadRole::PoolWorker,
+                    [this, name = std::format("TEWorker{0}", i)] {
+                        return registerCurrentThread(name, ThreadRole::PoolWorker);
+                    },
                     [this, i](const std::stop_token stopToken) {
                         workerMain(i);
                     },
@@ -151,9 +122,9 @@ namespace TechEngine {
 
         try {
             thread.m_thread = createRegisteredThread<std::jthread>(
-                *this,
-                std::move(name),
-                role,
+                [this, name = std::move(name), role] {
+                    return registerCurrentThread(name, role);
+                },
                 [state, entry = std::move(entry)](const std::stop_token stopToken) {
                     DedicatedThreadContext context{*state, stopToken};
                     entry(context);
