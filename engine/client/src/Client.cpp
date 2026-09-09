@@ -17,7 +17,7 @@ namespace TechEngine {
         stop();
     }
 
-    bool Client::start(int width, int height, std::string_view title) {
+    bool Client::start(JobSystem& jobs, int width, int height, std::string_view title) {
         if (m_state->initialized) {
             return false;
         }
@@ -25,7 +25,7 @@ namespace TechEngine {
             return false;
         }
         m_state->initialized = true;
-        if (!m_state->window.open(width, height, title) || !m_state->renderer.start(m_state->window)) {
+        if (!m_state->window.open(width, height, title) || !m_state->renderer.start(jobs, m_state->window)) {
             stop();
             return false;
         }

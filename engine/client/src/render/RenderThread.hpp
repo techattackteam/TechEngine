@@ -1,14 +1,14 @@
 #pragma once
 
+#include <TechEngine/core/jobs/DedicatedThread.hpp>
+
 #include <render/FrameCommandBuffer.hpp>
 #include <render/FrameRenderer.hpp>
 
 #include <atomic>
-#include <future>
-#include <stop_token>
-#include <thread>
 
 namespace TechEngine {
+    class JobSystem;
     class Window;
 
     class RenderThread {
@@ -16,7 +16,7 @@ namespace TechEngine {
         FrameRenderer m_frameRenderer;
         FrameCommandBuffer m_commandBuffer;
         std::atomic<double> m_framesPerSecond = 0.0;
-        std::jthread m_thread;
+        DedicatedThread m_thread;
 
     public:
         RenderThread();
@@ -31,7 +31,7 @@ namespace TechEngine {
 
         RenderThread& operator=(RenderThread&&) = delete;
 
-        bool start(Window& window);
+        bool start(JobSystem& jobs, Window& window);
 
         void publish(const FrameCommand& command);
 
@@ -40,6 +40,6 @@ namespace TechEngine {
         void stop();
 
     private:
-        void threadMain(const std::stop_token& stopToken, Window& window, std::promise<bool> startup);
+        void threadMain(DedicatedThreadContext& context, Window& window);
     };
 }

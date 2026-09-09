@@ -1,5 +1,6 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
+#include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/platform/window/Window.hpp>
 
 #include <render/RenderThread.hpp>
@@ -8,7 +9,6 @@
 
 #include <chrono>
 #include <exception>
-#include <utility>
 
 namespace TechEngine {
     RenderThread::RenderThread() = default;
@@ -17,23 +17,27 @@ namespace TechEngine {
         stop();
     }
 
-    bool RenderThread::start(Window& window) {
+    bool RenderThread::start(JobSystem& jobs, Window& window) {
         if (m_thread.joinable()) {
             return false;
         }
 
         m_framesPerSecond.store(0.0, std::memory_order_relaxed);
-        std::promise<bool> startup;
-        std::future<bool> ready = startup.get_future();
         try {
-            m_thread = std::jthread([this, &window, startup = std::move(startup)](const std::stop_token& stopToken) mutable {
-                threadMain(stopToken, window, std::move(startup));
+            m_thread = jobs.createDedicatedThread("TERender", ThreadRole::Dedicated, [this, &window](DedicatedThreadContext& context) {
+                threadMain(context, window);
             });
-            if (ready.get()) {
+            const ThreadStartupResult startup = m_thread.waitUntilReady();
+            if (startup.status == ThreadStartupStatus::Ready) {
                 return true;
+            }
+            if (startup.failure) {
+                std::rethrow_exception(startup.failure);
             }
         } catch (const std::exception& error) {
             TE_LOGGER_ERROR("Render thread startup failed: {0}", error.what());
+        } catch (...) {
+            TE_LOGGER_ERROR("Render thread startup failed with a non-std exception");
         }
 
         stop();
@@ -42,7 +46,7 @@ namespace TechEngine {
 
     void RenderThread::stop() {
         if (m_thread.joinable()) {
-            m_thread.request_stop();
+            m_thread.requestStop();
             m_thread.join();
         }
         m_commandBuffer.reset();
@@ -57,23 +61,21 @@ namespace TechEngine {
         return m_framesPerSecond.load(std::memory_order_relaxed);
     }
 
-    void RenderThread::threadMain(const std::stop_token& stopToken, Window& window, std::promise<bool> startup) {
-        TE_PROFILER_THREAD_NAME("TERender");
+    void RenderThread::threadMain(DedicatedThreadContext& context, Window& window) {
+        const std::stop_token stopToken = context.stopToken();
         bool contextClaimed = false;
-        bool startupReported = false;
+        std::exception_ptr failure;
         try {
             window.makeContextCurrent();
-            window.setVSync(true);
             contextClaimed = true;
+            window.setVSync(true);
             const GlProcLoader loader = window.processLoader();
             const int version = loader != nullptr ? gladLoadGL(loader) : 0;
             m_commandBuffer.reset();
             const bool ready = version != 0 && GLAD_GL_VERSION_4_5 != 0 && m_frameRenderer.initialize();
 
-            startup.set_value(ready);
-            startupReported = true;
-
             if (ready) {
+                context.signalReady();
                 using RateClock = std::chrono::steady_clock;
                 RateClock::time_point rateStarted = RateClock::now();
                 std::uint64_t renderedFrames = 0;
@@ -96,14 +98,15 @@ namespace TechEngine {
                 }
             }
         } catch (...) {
-            if (!startupReported) {
-                startup.set_exception(std::current_exception());
-            }
+            failure = std::current_exception();
         }
 
         if (contextClaimed) {
             m_frameRenderer.shutdown();
             window.releaseContext();
+        }
+        if (failure) {
+            std::rethrow_exception(failure);
         }
     }
 }

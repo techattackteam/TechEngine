@@ -7,6 +7,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
 
+#include <array>
 #include <condition_variable>
 #include <exception>
 #include <functional>
@@ -18,6 +19,14 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+
+static std::vector<TechEngine::ThreadInfo> nonPoolThreads(const TechEngine::JobSystem& jobs) {
+    std::vector<TechEngine::ThreadInfo> threads = jobs.registeredThreads();
+    std::erase_if(threads, [](const TechEngine::ThreadInfo& thread) {
+        return thread.role == TechEngine::ThreadRole::PoolWorker;
+    });
+    return threads;
+}
 
 class DedicatedThreadTestGate {
 public:
@@ -74,7 +83,7 @@ TEST_CASE("dedicated threads publish readiness and successful completion", "[cor
     CHECK(completion.status == TechEngine::ThreadCompletionStatus::Completed);
     CHECK_FALSE(completion.failure);
     CHECK(returned);
-    CHECK(jobs.registeredThreads().empty());
+    CHECK(nonPoolThreads(jobs).empty());
     thread.join();
     CHECK_FALSE(thread.joinable());
     CHECK(thread.waitUntilReady().status == TechEngine::ThreadStartupStatus::Ready);
@@ -109,7 +118,7 @@ TEST_CASE("dedicated thread failure before readiness wakes the startup waiter", 
         CHECK_FALSE(startup.failure);
         CHECK_FALSE(completion.failure);
     }
-    CHECK(jobs.registeredThreads().empty());
+    CHECK(nonPoolThreads(jobs).empty());
     thread.join();
 }
 
@@ -145,7 +154,7 @@ TEST_CASE("dedicated thread failure after readiness remains observable", "[core]
     }
     CHECK(thread.waitUntilReady().status == TechEngine::ThreadStartupStatus::Ready);
     CHECK_FALSE(thread.waitUntilReady().failure);
-    CHECK(jobs.registeredThreads().empty());
+    CHECK(nonPoolThreads(jobs).empty());
     thread.join();
 }
 
@@ -158,7 +167,7 @@ TEST_CASE("empty dedicated callbacks report startup failure", "[core][jobs][dedi
     CHECK_THROWS_AS(std::rethrow_exception(startup.failure), std::bad_function_call);
     CHECK(thread.waitUntilComplete().status == TechEngine::ThreadCompletionStatus::Failed);
     thread.join();
-    CHECK(jobs.registeredThreads().empty());
+    CHECK(nonPoolThreads(jobs).empty());
 }
 
 TEST_CASE("dedicated thread stop and join are repeatable", "[core][jobs][dedicated]") {
@@ -180,7 +189,7 @@ TEST_CASE("dedicated thread stop and join are repeatable", "[core][jobs][dedicat
     CHECK(stopped);
     CHECK_FALSE(thread.joinable());
     CHECK(thread.completion().status == TechEngine::ThreadCompletionStatus::Completed);
-    CHECK(jobs.registeredThreads().empty());
+    CHECK(nonPoolThreads(jobs).empty());
 }
 
 TEST_CASE("empty dedicated handles have no pending work", "[core][jobs][dedicated]") {
@@ -209,7 +218,7 @@ TEST_CASE("stopping before readiness still resolves startup and cleans up regist
     CHECK(thread.waitUntilComplete().status == TechEngine::ThreadCompletionStatus::Failed);
     thread.join();
     CHECK(stopped);
-    CHECK(jobs.registeredThreads().empty());
+    CHECK(nonPoolThreads(jobs).empty());
 }
 
 TEST_CASE("moving dedicated handles preserves active work and results", "[core][jobs][dedicated]") {
@@ -263,14 +272,14 @@ TEST_CASE("move assignment stops the previous thread before replacing its state"
     CHECK(oldStopped);
     CHECK_FALSE(source.joinable());
     CHECK(target.completion().status == TechEngine::ThreadCompletionStatus::Running);
-    const std::vector<TechEngine::ThreadInfo> registered = jobs.registeredThreads();
+    const std::vector<TechEngine::ThreadInfo> registered = nonPoolThreads(jobs);
     REQUIRE(registered.size() == 1);
     CHECK(registered.front().name == "NewThread");
 
     target.requestStop();
     target.join();
     CHECK(newStopped);
-    CHECK(jobs.registeredThreads().empty());
+    CHECK(nonPoolThreads(jobs).empty());
 }
 
 TEST_CASE("dedicated handle destruction requests stop and joins", "[core][jobs][dedicated]") {
@@ -286,7 +295,7 @@ TEST_CASE("dedicated handle destruction requests stop and joins", "[core][jobs][
         REQUIRE(thread.waitUntilReady().status == TechEngine::ThreadStartupStatus::Ready);
     }
     CHECK(stopped);
-    CHECK(jobs.registeredThreads().empty());
+    CHECK(nonPoolThreads(jobs).empty());
 }
 
 TEST_CASE("thread registrations copy metadata and clean up after completion", "[core][jobs][dedicated]") {
@@ -302,17 +311,17 @@ TEST_CASE("thread registrations copy metadata and clean up after completion", "[
     role = TechEngine::ThreadRole::Host;
     REQUIRE(thread.waitUntilReady().status == TechEngine::ThreadStartupStatus::Ready);
 
-    std::vector<TechEngine::ThreadInfo> snapshot = jobs.registeredThreads();
+    std::vector<TechEngine::ThreadInfo> snapshot = nonPoolThreads(jobs);
     REQUIRE(snapshot.size() == 1);
     CHECK(snapshot.front().name == "NamedThread");
     CHECK(snapshot.front().role != role);
     CHECK(snapshot.front().id != std::this_thread::get_id());
     snapshot.front().name = "ChangedSnapshot";
-    CHECK(jobs.registeredThreads().front().name == "NamedThread");
+    CHECK(nonPoolThreads(jobs).front().name == "NamedThread");
 
     gate.open();
     thread.join();
-    CHECK(jobs.registeredThreads().empty());
+    CHECK(nonPoolThreads(jobs).empty());
     CHECK(snapshot.front().name == "ChangedSnapshot");
 }
 
@@ -320,20 +329,20 @@ TEST_CASE("host registration is scoped to the calling thread", "[core][jobs][ded
     TechEngine::JobSystem jobs{1};
     {
         const TechEngine::ThreadRegistration registration = jobs.registerCurrentThread("TestHost", TechEngine::ThreadRole::Host);
-        const std::vector<TechEngine::ThreadInfo> snapshot = jobs.registeredThreads();
+        const std::vector<TechEngine::ThreadInfo> snapshot = nonPoolThreads(jobs);
         REQUIRE(snapshot.size() == 1);
         CHECK(snapshot.front().id == std::this_thread::get_id());
         CHECK(snapshot.front().name == "TestHost");
         CHECK(snapshot.front().role == TechEngine::ThreadRole::Host);
     }
-    CHECK(jobs.registeredThreads().empty());
+    CHECK(nonPoolThreads(jobs).empty());
 
     try {
         const TechEngine::ThreadRegistration registration = jobs.registerCurrentThread("UnwindingHost", TechEngine::ThreadRole::Host);
         throw std::runtime_error{"unwind"};
     } catch (const std::runtime_error&) {
     }
-    CHECK(jobs.registeredThreads().empty());
+    CHECK(nonPoolThreads(jobs).empty());
 }
 
 TEST_CASE("duplicate registration is rejected without removing the existing scope", "[core][jobs][dedicated]") {
@@ -341,7 +350,7 @@ TEST_CASE("duplicate registration is rejected without removing the existing scop
     const TechEngineTests::FatalAssertGuard guard;
     const TechEngine::ThreadRegistration registration = jobs.registerCurrentThread("OriginalHost", TechEngine::ThreadRole::Host);
     REQUIRE_THROWS_AS(jobs.registerCurrentThread("DuplicateHost", TechEngine::ThreadRole::Host), TechEngineTests::AssertFired);
-    const std::vector<TechEngine::ThreadInfo> snapshot = jobs.registeredThreads();
+    const std::vector<TechEngine::ThreadInfo> snapshot = nonPoolThreads(jobs);
     REQUIRE(snapshot.size() == 1);
     CHECK(snapshot.front().name == "OriginalHost");
 }
@@ -381,9 +390,29 @@ TEST_CASE("pool shutdown leaves dedicated thread ownership with its caller", "[c
     jobs.shutdown();
     CHECK(thread.joinable());
     CHECK(thread.completion().status == TechEngine::ThreadCompletionStatus::Running);
-    CHECK(jobs.registeredThreads().size() == 1);
+    CHECK(nonPoolThreads(jobs).size() == 1);
 
     thread.requestStop();
     thread.join();
-    CHECK(jobs.registeredThreads().empty());
+    CHECK(nonPoolThreads(jobs).empty());
+}
+
+TEST_CASE("dedicated threads can submit and wait for pool work", "[core][jobs][dedicated]") {
+    TechEngine::JobSystem jobs{1};
+    bool taskRan = false;
+    bool waitObservedTask = false;
+    TechEngine::DedicatedThread thread = jobs.createDedicatedThread("BatchDriver", TechEngine::ThreadRole::Dedicated, [&](TechEngine::DedicatedThreadContext& context) {
+        context.signalReady();
+        std::array<TechEngine::Task, 1> tasks{[&] {
+            taskRan = true;
+        }};
+        jobs.wait(jobs.submit(tasks));
+        waitObservedTask = taskRan;
+    });
+
+    REQUIRE(thread.waitUntilReady().status == TechEngine::ThreadStartupStatus::Ready);
+    thread.join();
+    CHECK(thread.completion().status == TechEngine::ThreadCompletionStatus::Completed);
+    CHECK(waitObservedTask);
+    CHECK(nonPoolThreads(jobs).empty());
 }

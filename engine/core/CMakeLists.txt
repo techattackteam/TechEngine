@@ -26,6 +26,7 @@ techengine_module(core
           include/TechEngine/core/serialization/Visit.hpp
           include/TechEngine/core/serialization/Writer.hpp
           src/jobs/DedicatedThreadState.hpp
+          src/jobs/RegisteredThread.hpp
   DEPS    base platform
   LIBS    Jolt                             # authoritative physics (ADR-006 §1)
           Threads::Threads                 # JobSystem's workers; PUBLIC because the header has std::thread

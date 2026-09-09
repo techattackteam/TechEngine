@@ -4,6 +4,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <filesystem>
+#include <stdexcept>
+#include <thread>
 
 namespace {
     class ProbeApp : public TechEngine::App {
@@ -12,6 +14,10 @@ namespace {
         }
 
         void init() override {
+            registeredDuringInit = hostRegistered();
+            if (failInit) {
+                throw std::runtime_error{"init failed"};
+            }
         }
 
         void fixedUpdate(const TechEngine::FrameContext&) override {
@@ -21,6 +27,7 @@ namespace {
         }
 
         void shutdown() override {
+            registeredDuringShutdown = hostRegistered();
         }
 
         bool shouldClose() const override {
@@ -38,7 +45,39 @@ namespace {
         const TechEngine::EngineContext& context() const {
             return m_engine;
         }
+
+        bool hostRegistered() const {
+            for (const TechEngine::ThreadInfo& thread: m_jobs.registeredThreads()) {
+                if (thread.id == std::this_thread::get_id() && thread.role == TechEngine::ThreadRole::Host && thread.name == "TEMain") {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        bool failInit = false;
+        bool registeredDuringInit = false;
+        bool registeredDuringShutdown = false;
     };
+}
+
+TEST_CASE("App scopes host registration across initialization and shutdown", "[app]") {
+    ProbeApp app{TechEngine::Role::DedicatedServer};
+    CHECK_FALSE(app.hostRegistered());
+    REQUIRE(app.run() == 0);
+    CHECK(app.registeredDuringInit);
+    CHECK(app.registeredDuringShutdown);
+    CHECK_FALSE(app.hostRegistered());
+    REQUIRE(app.run() == 0);
+    CHECK_FALSE(app.hostRegistered());
+}
+
+TEST_CASE("App removes host registration when initialization throws", "[app]") {
+    ProbeApp app{TechEngine::Role::DedicatedServer};
+    app.failInit = true;
+    CHECK_THROWS_AS(app.run(), std::runtime_error);
+    CHECK(app.registeredDuringInit);
+    CHECK_FALSE(app.hostRegistered());
 }
 
 TEST_CASE("the subclass's role reaches the loop App owns", "[app]") {

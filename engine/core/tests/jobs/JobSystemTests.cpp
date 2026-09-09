@@ -2,13 +2,21 @@
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
+#include <jobs/RegisteredThread.hpp>
+
+#include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
+#include <format>
+#include <stdexcept>
+#include <stop_token>
 #include <thread>
 #include <vector>
 
@@ -23,6 +31,42 @@ TEST_CASE("a default pool starts the decided number of workers", "[core][jobs]")
 
     REQUIRE(jobs.workerCount() == TechEngine::JobSystem::DEFAULT_WORKER_COUNT);
     REQUIRE(TechEngine::JobSystem::DEFAULT_WORKER_COUNT == 4);
+}
+
+TEST_CASE("pool workers are registered before construction returns and removed by shutdown", "[core][jobs]") {
+    TechEngine::JobSystem jobs;
+    const std::vector<TechEngine::ThreadInfo> threads = jobs.registeredThreads();
+    REQUIRE(threads.size() == jobs.workerCount());
+    for (std::size_t i = 0; i < jobs.workerCount(); i++) {
+        const auto worker = std::ranges::find(threads, std::format("TEWorker{}", i), &TechEngine::ThreadInfo::name);
+        REQUIRE(worker != threads.end());
+        CHECK(worker->role == TechEngine::ThreadRole::PoolWorker);
+        CHECK(worker->id != std::this_thread::get_id());
+    }
+    jobs.shutdown();
+    jobs.shutdown();
+    CHECK(jobs.registeredThreads().empty());
+}
+
+TEST_CASE("pool workers reject batch waits and still drain their submitted work", "[core][jobs]") {
+    TechEngine::JobSystem jobs{1};
+    const TechEngineTests::AssertHandlerGuard guard;
+    bool childRan = false;
+    bool childWasPending = false;
+    std::array<TechEngine::Task, 1> tasks{[&] {
+        std::array<TechEngine::Task, 1> child{[&] {
+            childRan = true;
+        }};
+        jobs.wait(jobs.submit(child));
+        childWasPending = !childRan;
+    }};
+    jobs.wait(jobs.submit(tasks));
+    jobs.shutdown();
+
+    REQUIRE(TechEngineTests::g_fired.size() == 1);
+    CHECK(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Ensure);
+    CHECK(childWasPending);
+    CHECK(childRan);
 }
 
 TEST_CASE("every task in a batch runs exactly once", "[core][jobs]") {
@@ -199,4 +243,55 @@ TEST_CASE("shutdown drains the queue instead of dropping it", "[core][jobs]") {
     }
 
     REQUIRE(ran.load() == static_cast<int>(TASK_COUNT));
+}
+
+struct RegisteredThreadExitProbe {
+    bool& exited;
+
+    ~RegisteredThreadExitProbe() {
+        exited = true;
+    }
+};
+
+TEMPLATE_TEST_CASE("registration failure joins the thread and unwinds its registration", "[core][jobs][registration]", std::thread, std::jthread) {
+    TechEngine::JobSystem jobs{1};
+    bool exited = false;
+    bool entryCalled = false;
+    bool completionCalled = false;
+    bool standardException = true;
+    SECTION("standard exception") {
+    }
+    SECTION("non-standard exception") {
+        standardException = false;
+    }
+
+    const auto start = [&] {
+        return TechEngine::createRegisteredThread<TestType>(
+            [&]() -> TechEngine::ThreadRegistration {
+                thread_local const RegisteredThreadExitProbe exitProbe{exited};
+                const TechEngine::ThreadRegistration registration = jobs.registerCurrentThread("FailingRegistration", TechEngine::ThreadRole::Dedicated);
+                if (standardException) {
+                    throw std::runtime_error{"registration failed"};
+                }
+                throw 42;
+            },
+            [&](const std::stop_token) {
+                entryCalled = true;
+            },
+            [&](const std::exception_ptr) {
+                completionCalled = true;
+            });
+    };
+
+    if (standardException) {
+        CHECK_THROWS_AS(start(), std::runtime_error);
+    } else {
+        CHECK_THROWS_AS(start(), int);
+    }
+    CHECK(exited);
+    CHECK_FALSE(entryCalled);
+    CHECK_FALSE(completionCalled);
+    const auto registered = jobs.registeredThreads();
+    REQUIRE(registered.size() == 1);
+    CHECK(registered.front().role == TechEngine::ThreadRole::PoolWorker);
 }
