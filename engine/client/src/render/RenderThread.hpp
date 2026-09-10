@@ -40,6 +40,6 @@ namespace TechEngine {
         void stop();
 
     private:
-        void threadMain(DedicatedThreadContext& context, Window& window);
+        void threadMain(const DedicatedThreadContext& context, Window& window);
     };
 }

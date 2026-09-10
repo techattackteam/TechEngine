@@ -12,7 +12,7 @@ techengine_module(core
           src/serialization/Writer.cpp
   HEADERS include/TechEngine/core/Core.hpp
           include/TechEngine/core/EngineContext.hpp
-          include/TechEngine/core/FrameContext.hpp
+          include/TechEngine/core/SimulationContext.hpp
           include/TechEngine/core/events/EventRegistry.hpp
           include/TechEngine/core/events/EventTypeId.hpp
           include/TechEngine/core/events/EventStream.hpp

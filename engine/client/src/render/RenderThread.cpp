@@ -61,7 +61,7 @@ namespace TechEngine {
         return m_framesPerSecond.load(std::memory_order_relaxed);
     }
 
-    void RenderThread::threadMain(DedicatedThreadContext& context, Window& window) {
+    void RenderThread::threadMain(const DedicatedThreadContext& context, Window& window) {
         const std::stop_token stopToken = context.stopToken();
         bool contextClaimed = false;
         std::exception_ptr failure;

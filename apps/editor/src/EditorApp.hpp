@@ -1,7 +1,7 @@
 #pragma once
 
 #include <TechEngine/client/Client.hpp>
-#include <TechEngine/core/FrameContext.hpp>
+#include <TechEngine/core/SimulationContext.hpp>
 
 #include "TechEngine/app/App.hpp"
 #include <project/Project.hpp>
@@ -25,9 +25,11 @@ namespace TechEngine {
     protected:
         void init() override;
 
-        void fixedUpdate(const FrameContext& frame) override;
+        void fixedUpdate(const SimulationContext& frame) override;
 
-        void update(const FrameContext& frame) override;
+        void update(const SimulationContext& frame) override;
+
+        void mainUpdate() override;
 
         void shutdown() override;
 

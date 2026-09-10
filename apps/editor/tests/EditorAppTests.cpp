@@ -17,18 +17,18 @@ namespace {
         using TechEngine::EditorApp::shutdown;
 
         void advanceFrame(double deltaTime) {
-            m_loop.advance(deltaTime, [this](const TechEngine::FrameContext& frame) {
+            m_simulationThread.advance(deltaTime, [this](const TechEngine::SimulationContext& frame) {
                 fixedUpdate(frame);
             });
-            update(m_loop.frame());
+            update(m_simulationThread.step());
         }
 
         bool ratesUpdated() const {
-            return m_loop.ratesUpdated();
+            return m_simulationThread.ratesUpdated();
         }
 
         TechEngine::Role loopRole() const {
-            return m_loop.frame().role;
+            return m_simulationThread.step().role;
         }
 
         void bootstrap() {

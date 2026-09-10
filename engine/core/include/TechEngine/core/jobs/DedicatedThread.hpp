@@ -8,7 +8,7 @@
 #include <thread>
 
 namespace TechEngine {
-    enum class ThreadRole { Host, Dedicated, PoolWorker };
+    enum class ThreadRole { Main, Dedicated, PoolWorker };
 
     struct ThreadInfo {
         std::thread::id id;

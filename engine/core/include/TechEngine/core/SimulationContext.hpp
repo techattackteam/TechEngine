@@ -20,12 +20,12 @@ namespace TechEngine {
         return "Unknown";
     }
 
-    struct FrameContext {
+    struct SimulationContext {
         float deltaTime = 0.0F;
         float fixedDeltaTime = 0.0F;
         float alpha = 0.0F;
         std::uint64_t tick = 0;
-        std::uint64_t frameIndex = 0;
+        std::uint64_t iterationIndex = 0;
         Role role = Role::Client;
         const EngineContext& engine;
     };

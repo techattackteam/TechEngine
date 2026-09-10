@@ -9,11 +9,11 @@ namespace {
         using TechEngine::RuntimeApp::shouldClose;
 
         void advanceFrame() {
-            update(m_loop.frame());
+            update(m_simulationThread.step());
         }
 
         TechEngine::Role loopRole() const {
-            return m_loop.frame().role;
+            return m_simulationThread.step().role;
         }
     };
 }

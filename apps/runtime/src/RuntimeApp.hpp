@@ -19,9 +19,9 @@ namespace TechEngine {
     protected:
         void init() override;
 
-        void fixedUpdate(const FrameContext& frame) override;
+        void fixedUpdate(const SimulationContext& frame) override;
 
-        void update(const FrameContext& frame) override;
+        void update(const SimulationContext& frame) override;
 
         void shutdown() override;
 

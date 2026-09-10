@@ -34,21 +34,23 @@ namespace TechEngine {
         TE_CHECK(m_client.start(m_jobs, 1280, 720, "TechEngine Editor"), "Failed to start the client session");
     }
 
-    void EditorApp::fixedUpdate(const FrameContext&) {
+    void EditorApp::fixedUpdate(const SimulationContext&) {
     }
 
-    void EditorApp::update(const FrameContext& context) {
-        m_client.pollEvents();
-        if (m_loop.ratesUpdated()) {
+    void EditorApp::update(const SimulationContext& context) {
+        if (m_simulationThread.ratesUpdated()) {
             const auto framesPerSecond = static_cast<std::uint64_t>(m_client.renderFramesPerSecond());
-            const auto ticksPerSecond = static_cast<std::uint64_t>(m_loop.ticksPerSecond());
+            const auto ticksPerSecond = static_cast<std::uint64_t>(m_simulationThread.ticksPerSecond());
             m_client.setTitle("TechEngine Editor | FPS: " + std::to_string(framesPerSecond) + " | TPS: " + std::to_string(ticksPerSecond));
         }
         m_client.publish(FrameCommand{
             .clearColor = {0.1f, 0.1f, 0.1f, 1.0f},
             .drawTriangle = true,
-            .frameIndex = context.frameIndex,
+            .frameIndex = context.iterationIndex,
         });
+    }
+    void EditorApp::mainUpdate() {
+        m_client.pollEvents();
     }
 
     void EditorApp::shutdown() {
