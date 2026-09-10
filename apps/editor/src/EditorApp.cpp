@@ -38,11 +38,6 @@ namespace TechEngine {
     }
 
     void EditorApp::update(const SimulationContext& context) {
-        if (m_simulationThread.ratesUpdated()) {
-            const auto framesPerSecond = static_cast<std::uint64_t>(m_client.renderFramesPerSecond());
-            const auto ticksPerSecond = static_cast<std::uint64_t>(m_simulationThread.ticksPerSecond());
-            m_client.setTitle("TechEngine Editor | FPS: " + std::to_string(framesPerSecond) + " | TPS: " + std::to_string(ticksPerSecond));
-        }
         m_client.publish(FrameCommand{
             .clearColor = {0.1f, 0.1f, 0.1f, 1.0f},
             .drawTriangle = true,
@@ -51,6 +46,13 @@ namespace TechEngine {
     }
     void EditorApp::mainUpdate() {
         m_client.pollEvents();
+        const std::uint64_t rateSample = m_simulationThread.rateSampleIndex();
+        if (rateSample != m_lastRateSample) {
+            m_lastRateSample = rateSample;
+            const auto framesPerSecond = static_cast<std::uint64_t>(m_client.renderFramesPerSecond());
+            const auto ticksPerSecond = static_cast<std::uint64_t>(m_simulationThread.ticksPerSecond());
+            m_client.setTitle("TechEngine Editor | FPS: " + std::to_string(framesPerSecond) + " | TPS: " + std::to_string(ticksPerSecond));
+        }
     }
 
     void EditorApp::shutdown() {

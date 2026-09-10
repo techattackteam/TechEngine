@@ -4,6 +4,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <cstdint>
 #include <filesystem>
 #include <string_view>
 
@@ -20,15 +21,16 @@ namespace {
             m_simulationThread.advance(deltaTime, [this](const TechEngine::SimulationContext& frame) {
                 fixedUpdate(frame);
             });
-            update(m_simulationThread.step());
+            update(m_simulationThread.simulationContext());
+            mainUpdate();
         }
 
-        bool ratesUpdated() const {
-            return m_simulationThread.ratesUpdated();
+        std::uint64_t rateSampleIndex() const {
+            return m_simulationThread.rateSampleIndex();
         }
 
         TechEngine::Role loopRole() const {
-            return m_simulationThread.step().role;
+            return m_simulationThread.simulationContext().role;
         }
 
         void bootstrap() {
@@ -99,7 +101,7 @@ TEST_CASE("editor updates through a rate sample and shuts down its client", "[ed
 
     for (int i = 0; i < 8; i++) {
         editor.advanceFrame(0.125);
-        CHECK(editor.ratesUpdated() == (i == 7));
+        CHECK(editor.rateSampleIndex() == (i == 7 ? 1U : 0U));
         CHECK_FALSE(editor.shouldClose());
     }
 

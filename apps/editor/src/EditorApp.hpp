@@ -6,6 +6,7 @@
 #include "TechEngine/app/App.hpp"
 #include <project/Project.hpp>
 
+#include <cstdint>
 #include <filesystem>
 
 namespace TechEngine {
@@ -14,6 +15,7 @@ namespace TechEngine {
         std::filesystem::path m_projectRoot;
         Project m_project;
         Client m_client;
+        std::uint64_t m_lastRateSample = 0;
 
     public:
         explicit EditorApp(std::filesystem::path projectRoot);

@@ -44,10 +44,7 @@ namespace TechEngine {
 
             if (!m_stopRequested.load()) {
                 simulationAttempted = true;
-                if (!m_simulationThread.start(m_jobs, *this)) {
-                    TE_LOGGER_ERROR("App simulation startup failed");
-                    result = 1;
-                } else {
+                if (m_simulationThread.start(m_jobs, *this)) {
                     while (!m_stopRequested.load() && m_simulationThread.completion().status == ThreadCompletionStatus::Running) {
                         if (shouldClose()) {
                             requestStop();
@@ -114,6 +111,10 @@ namespace TechEngine {
             m_stopRequested.store(true);
         }
         m_mainWake.notify_all();
+    }
+
+    bool App::stopRequested() const {
+        return m_stopRequested.load();
     }
 
     void App::mainUpdate() {

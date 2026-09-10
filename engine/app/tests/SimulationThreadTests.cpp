@@ -24,27 +24,27 @@ static LoopEngine g_loopEngine;
 TEST_CASE("loop rates count executed ticks", "[app][loop]") {
     TechEngine::SimulationThread loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, 0.25, 2.0);
     CHECK(loop.ticksPerSecond() == 0.0);
-    CHECK_FALSE(loop.ratesUpdated());
+    CHECK(loop.rateSampleIndex() == 0);
 
     for (int i = 0; i < 8; i++) {
         loop.advance(0.125);
-        CHECK(loop.ratesUpdated() == (i == 7));
+        CHECK(loop.rateSampleIndex() == (i == 7 ? 1U : 0U));
     }
     CHECK(loop.ticksPerSecond() == Catch::Approx(4.0));
 
     loop.advance(0.5);
-    CHECK_FALSE(loop.ratesUpdated());
+    CHECK(loop.rateSampleIndex() == 1);
     CHECK(loop.ticksPerSecond() == Catch::Approx(4.0));
     loop.advance(0.5);
-    CHECK(loop.ratesUpdated());
+    CHECK(loop.rateSampleIndex() == 2);
     CHECK(loop.ticksPerSecond() == Catch::Approx(4.0));
 }
 
 TEST_CASE("loop rates include stalled time beyond the simulation clamp", "[app][loop]") {
     TechEngine::SimulationThread loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, 0.125, 0.25);
     loop.advance(2.0);
-    REQUIRE(loop.ratesUpdated());
-    CHECK(loop.step().tick == 2);
+    REQUIRE(loop.rateSampleIndex() == 1);
+    CHECK(loop.simulationContext().tick == 2);
     CHECK(loop.ticksPerSecond() == Catch::Approx(1.0));
 }
 
@@ -53,10 +53,10 @@ TEST_CASE("zero and negative deltas do not publish or subtract elapsed rate time
     loop.advance(0.5);
     loop.advance(0.0);
     loop.advance(-1.0);
-    CHECK_FALSE(loop.ratesUpdated());
+    CHECK(loop.rateSampleIndex() == 0);
     CHECK(loop.ticksPerSecond() == 0.0);
     loop.advance(0.5);
-    REQUIRE(loop.ratesUpdated());
+    REQUIRE(loop.rateSampleIndex() == 1);
     CHECK(loop.ticksPerSecond() == Catch::Approx(4.0));
 }
 
@@ -67,8 +67,8 @@ TEST_CASE("sixty fixed-step frames run exactly sixty ticks", "[app][loop]") {
         loop.advance(TechEngine::SimulationThread::FIXED_DELTA_TIME);
     }
 
-    REQUIRE(loop.step().tick == 60);
-    REQUIRE(loop.step().iterationIndex == 60);
+    REQUIRE(loop.simulationContext().tick == 60);
+    REQUIRE(loop.simulationContext().iterationIndex == 60);
     REQUIRE(loop.accumulator() == 0.0);
 }
 
@@ -77,8 +77,8 @@ TEST_CASE("one frame worth several fixed steps runs them all", "[app][loop]") {
 
     loop.advance(2.0);
 
-    REQUIRE(loop.step().tick == 4);
-    REQUIRE(loop.step().iterationIndex == 1);
+    REQUIRE(loop.simulationContext().tick == 4);
+    REQUIRE(loop.simulationContext().iterationIndex == 1);
 }
 
 TEST_CASE("sub-step frames accumulate until a step is due", "[app][loop]") {
@@ -86,14 +86,14 @@ TEST_CASE("sub-step frames accumulate until a step is due", "[app][loop]") {
 
     loop.advance(0.25);
 
-    REQUIRE(loop.step().tick == 0);
-    REQUIRE(loop.step().alpha == Catch::Approx(0.5f));
+    REQUIRE(loop.simulationContext().tick == 0);
+    REQUIRE(loop.simulationContext().alpha == Catch::Approx(0.5f));
 
     loop.advance(0.25);
 
-    REQUIRE(loop.step().tick == 1);
-    REQUIRE(loop.step().alpha == Catch::Approx(0.0));
-    REQUIRE(loop.step().iterationIndex == 2);
+    REQUIRE(loop.simulationContext().tick == 1);
+    REQUIRE(loop.simulationContext().alpha == Catch::Approx(0.0));
+    REQUIRE(loop.simulationContext().iterationIndex == 2);
 }
 
 TEST_CASE("iterationIndex counts simulation iterations separately from ticks", "[app][loop]") {
@@ -103,8 +103,8 @@ TEST_CASE("iterationIndex counts simulation iterations separately from ticks", "
     loop.advance(0.1);
     loop.advance(0.1);
 
-    REQUIRE(loop.step().iterationIndex == 3);
-    REQUIRE(loop.step().tick == 0);
+    REQUIRE(loop.simulationContext().iterationIndex == 3);
+    REQUIRE(loop.simulationContext().tick == 0);
 }
 
 TEST_CASE("the loop's state comes only from the deltas fed in", "[app][loop]") {
@@ -120,7 +120,7 @@ TEST_CASE("the loop's state comes only from the deltas fed in", "[app][loop]") {
         second.advance(delta);
     }
 
-    REQUIRE(first.step().tick == second.step().tick);
+    REQUIRE(first.simulationContext().tick == second.simulationContext().tick);
     REQUIRE(first.accumulator() == second.accumulator());
 }
 
@@ -129,8 +129,8 @@ TEST_CASE("a stalled frame is clamped to the ceiling", "[app][loop]") {
 
     loop.advance(60.0);
 
-    REQUIRE(loop.step().tick == 4);
-    REQUIRE(loop.step().deltaTime == Catch::Approx(2.0));
+    REQUIRE(loop.simulationContext().tick == 4);
+    REQUIRE(loop.simulationContext().deltaTime == Catch::Approx(2.0));
 }
 
 TEST_CASE("repeated stalls never grow the accumulator", "[app][loop]") {
@@ -141,7 +141,7 @@ TEST_CASE("repeated stalls never grow the accumulator", "[app][loop]") {
         REQUIRE(loop.accumulator() < 0.5);
     }
 
-    REQUIRE(loop.step().tick == 40);
+    REQUIRE(loop.simulationContext().tick == 40);
 }
 
 TEST_CASE("the default clamp bounds catch-up at fifteen ticks", "[app][loop]") {
@@ -151,8 +151,8 @@ TEST_CASE("the default clamp bounds catch-up at fifteen ticks", "[app][loop]") {
 
     // 14 or 15, not exactly 15: 1/60 has no exact binary form, so the last step of
     // 0.25 sits inside the rounding error. The bound is what matters, not the digit.
-    REQUIRE(loop.step().tick >= 14);
-    REQUIRE(loop.step().tick <= 15);
+    REQUIRE(loop.simulationContext().tick >= 14);
+    REQUIRE(loop.simulationContext().tick <= 15);
     REQUIRE(loop.accumulator() < TechEngine::SimulationThread::FIXED_DELTA_TIME);
 }
 
@@ -173,14 +173,14 @@ TEST_CASE("a zero delta advances the frame but not the tick", "[app][loop]") {
     TechEngine::SimulationThread loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, 0.5, 10.0);
 
     loop.advance(0.25);
-    const std::uint64_t tickBefore = loop.step().tick;
+    const std::uint64_t tickBefore = loop.simulationContext().tick;
     const double accumulatorBefore = loop.accumulator();
 
     loop.advance(0.0);
 
-    REQUIRE(loop.step().tick == tickBefore);
-    REQUIRE(loop.step().iterationIndex == 2);
-    REQUIRE(loop.step().deltaTime == Catch::Approx(0.0));
+    REQUIRE(loop.simulationContext().tick == tickBefore);
+    REQUIRE(loop.simulationContext().iterationIndex == 2);
+    REQUIRE(loop.simulationContext().deltaTime == Catch::Approx(0.0));
     REQUIRE(loop.accumulator() == Catch::Approx(accumulatorBefore));
 }
 
@@ -188,16 +188,16 @@ TEST_CASE("a negative delta is clamped to zero", "[app][loop]") {
     TechEngine::SimulationThread loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, 0.5, 10.0);
 
     loop.advance(0.25);
-    const std::uint64_t tickBefore = loop.step().tick;
+    const std::uint64_t tickBefore = loop.simulationContext().tick;
     const double accumulatorBefore = loop.accumulator();
 
     loop.advance(-1.0);
 
-    REQUIRE(loop.step().tick == tickBefore);
+    REQUIRE(loop.simulationContext().tick == tickBefore);
     REQUIRE(loop.accumulator() >= 0.0);
     REQUIRE(loop.accumulator() == Catch::Approx(accumulatorBefore));
-    REQUIRE(loop.step().deltaTime >= 0.0f);
-    REQUIRE(loop.step().alpha >= 0.0f);
+    REQUIRE(loop.simulationContext().deltaTime >= 0.0f);
+    REQUIRE(loop.simulationContext().alpha >= 0.0f);
 }
 
 // The hook stamps event batches with the frame and tick it reads here, so a stale iterationIndex
@@ -243,8 +243,8 @@ TEST_CASE("a frame with no fixed step never runs the hook", "[app][loop]") {
     });
 
     REQUIRE(invocations == 0);
-    REQUIRE(loop.step().iterationIndex == 1);
-    REQUIRE(loop.step().tick == 0);
+    REQUIRE(loop.simulationContext().iterationIndex == 1);
+    REQUIRE(loop.simulationContext().tick == 0);
 }
 
 TEST_CASE("the published context carries the construction values", "[app][loop]") {
@@ -252,6 +252,6 @@ TEST_CASE("the published context carries the construction values", "[app][loop]"
 
     loop.advance(0.25);
 
-    REQUIRE(loop.step().role == TechEngine::Role::ListenServer);
-    REQUIRE(loop.step().fixedDeltaTime == Catch::Approx(0.5));
+    REQUIRE(loop.simulationContext().role == TechEngine::Role::ListenServer);
+    REQUIRE(loop.simulationContext().fixedDeltaTime == Catch::Approx(0.5));
 }

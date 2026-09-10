@@ -1,8 +1,10 @@
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/app/SimulationThread.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/base/time/Clock.hpp>
 
 #include <chrono>
+#include <condition_variable>
 #include <cstdint>
 #include <exception>
 #include <mutex>
@@ -21,23 +23,13 @@ namespace TechEngine {
         if (m_thread.joinable()) {
             return false;
         }
-        try {
 
-            m_ticksPerSecond.store(0.0, std::memory_order_relaxed);
-            m_thread = jobSystem.createDedicatedThread("TESimulation", ThreadRole::Dedicated, [this, &app](DedicatedThreadContext& context) {
-                threadMain(context, app);
-            });
-            const ThreadStartupResult startup = m_thread.waitUntilReady();
-            if (startup.status == ThreadStartupStatus::Ready) {
-                return true;
-            }
-            if (startup.failure) {
-                std::rethrow_exception(startup.failure);
-            }
-        } catch (const std::exception& error) {
-            TE_LOGGER_ERROR("Simulation thread startup failed: {0}", error.what());
-        } catch (...) {
-            TE_LOGGER_ERROR("Simulation thread startup failed with a non-std exception");
+        m_ticksPerSecond.store(0.0, std::memory_order_relaxed);
+        m_thread = jobSystem.createDedicatedThread("TESimulation", ThreadRole::Dedicated, [this, &app](DedicatedThreadContext& context) {
+            threadMain(context, app);
+        });
+        if (m_thread.waitUntilReady().status == ThreadStartupStatus::Ready) {
+            return true;
         }
 
         stop();
@@ -46,15 +38,11 @@ namespace TechEngine {
 
     void SimulationThread::requestStop() {
         m_thread.requestStop();
-        m_wake.notify_all();
     }
 
     void SimulationThread::stop() {
-        if (m_thread.joinable()) {
-            m_thread.requestStop();
-            m_wake.notify_all();
-            m_thread.join();
-        }
+        m_thread.requestStop();
+        m_thread.join();
     }
 
     ThreadCompletionResult SimulationThread::completion() const {
@@ -66,7 +54,7 @@ namespace TechEngine {
         });
     }
 
-    const SimulationContext& SimulationThread::step() const {
+    const SimulationContext& SimulationThread::simulationContext() const {
         return m_simulationContext;
     }
 
@@ -87,12 +75,7 @@ namespace TechEngine {
         return m_rateSampleIndex;
     }
 
-    bool SimulationThread::ratesUpdated() const {
-        return m_ratesUpdated;
-    }
-
     void SimulationThread::updateRates(double elapsed, std::uint64_t ticks) {
-        m_ratesUpdated = false;
         m_rateElapsed += elapsed;
         m_rateTicks += ticks;
 
@@ -102,39 +85,39 @@ namespace TechEngine {
 
             m_rateElapsed = 0.0;
             m_rateTicks = 0;
-
-            m_ratesUpdated = true;
         }
     }
 
     void SimulationThread::threadMain(const DedicatedThreadContext& context, App& app) {
-        const std::stop_token stopToken = context.stopToken();
-        bool initialized = false;
+        app.simulationInit();
+
         std::exception_ptr failure;
         try {
-            app.simulationInit();
-            initialized = true;
+            const std::stop_token stopToken = context.stopToken();
+            Clock clock;
+            std::mutex waitMutex;
+            std::condition_variable_any wake;
             context.signalReady();
-            Clock::TimePoint previous = m_clock.now();
+            Clock::TimePoint previous = clock.now();
             while (!stopToken.stop_requested()) {
-                m_clock.advanceFrame();
-                setDiagnosticFrame(m_clock.frame());
-                const Clock::TimePoint current = m_clock.now();
+                clock.advanceFrame();
+                setDiagnosticFrame(clock.frame());
+                const Clock::TimePoint current = clock.now();
                 const double frameDeltaTime = std::chrono::duration<double>(current - previous).count();
                 previous = current;
                 const std::uint64_t previousTick = m_simulationContext.tick;
-                const SimulationContext& newContex = advance(frameDeltaTime, [&app](const SimulationContext& fixedStep) {
+                const SimulationContext& newContext = advance(frameDeltaTime, [&app](const SimulationContext& fixedStep) {
                     app.fixedUpdate(fixedStep);
                 });
-                if (newContex.tick > previousTick) {
-                    app.update(newContex);
+                if (newContext.tick > previousTick) {
+                    app.update(newContext);
                 }
 
                 TE_PROFILER_FRAME();
 
                 const Clock::TimePoint nextTick = current + std::chrono::ceil<Clock::TimePoint::duration>(std::chrono::duration<double>(timeUntilNextTick()));
-                std::unique_lock lock{m_waitMutex};
-                m_wake.wait_until(lock, stopToken, nextTick, [] {
+                std::unique_lock lock{waitMutex};
+                wake.wait_until(lock, stopToken, nextTick, [] {
                     return false;
                 });
             }
@@ -142,16 +125,13 @@ namespace TechEngine {
             failure = std::current_exception();
         }
 
-        if (initialized) {
-            try {
-                app.simulationShutdown();
-            } catch (...) {
-                if (!failure) {
-                    failure = std::current_exception();
-                } else {
-                    TE_LOGGER_ERROR("Simulation shutdown also failed; preserving the original simulation failure");
-                }
+        try {
+            app.simulationShutdown();
+        } catch (...) {
+            if (!failure) {
+                throw;
             }
+            TE_LOGGER_ERROR("Simulation shutdown also failed; preserving the original simulation failure");
         }
 
         if (failure) {

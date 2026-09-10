@@ -20,13 +20,12 @@ namespace TechEngine {
     void RuntimeApp::update(const SimulationContext& frame) {
         m_frameCount++;
         TE_LOGGER_INFO("Runtime update: tick {0}, iteration {1}, deltaTime {2}, fixedDeltaTime {3}, alpha {4}, role {5}", frame.tick, frame.iterationIndex, frame.deltaTime, frame.fixedDeltaTime, frame.alpha, toString(frame.role));
+        if (m_frameCount >= 120) {
+            requestStop();
+        }
     }
 
     void RuntimeApp::shutdown() {
-    }
-
-    bool RuntimeApp::shouldClose() const {
-        return m_frameCount >= 120;
     }
 
     Role RuntimeApp::runtimeRole() {

@@ -1,15 +1,12 @@
 #pragma once
 
 #include <TechEngine/base/diagnostics/Profile.hpp>
-#include <TechEngine/base/time/Clock.hpp>
 #include <TechEngine/core/SimulationContext.hpp>
 #include <TechEngine/core/jobs/DedicatedThread.hpp>
 
 #include <atomic>
 #include <concepts>
-#include <condition_variable>
 #include <cstdint>
-#include <mutex>
 
 namespace TechEngine {
     class App;
@@ -17,7 +14,6 @@ namespace TechEngine {
 
     class SimulationThread {
     private:
-        Clock m_clock;
         double m_fixedDeltaTime;
         double m_maxFrameDeltaTime;
         double m_accumulator = 0.0;
@@ -30,10 +26,7 @@ namespace TechEngine {
         std::atomic<std::uint64_t> m_publishedTick = 0;
         std::atomic<double> m_ticksPerSecond = 0.0;
         std::atomic<std::uint64_t> m_rateSampleIndex = 0;
-        bool m_ratesUpdated = false;
 
-        std::mutex m_waitMutex;
-        std::condition_variable_any m_wake;
         DedicatedThread m_thread;
 
     public:
@@ -95,12 +88,10 @@ namespace TechEngine {
             return m_simulationContext;
         }
 
-        // The live frame and accumulator may only be read by the thread advancing the loop.
-        const SimulationContext& step() const;
+        // The live context and accumulator may only be read by the thread advancing the loop.
+        const SimulationContext& simulationContext() const;
 
         double accumulator() const;
-
-        double timeUntilNextTick() const;
 
         std::uint64_t tick() const;
 
@@ -108,10 +99,10 @@ namespace TechEngine {
 
         std::uint64_t rateSampleIndex() const;
 
-        bool ratesUpdated() const;
-
     private:
         void threadMain(const DedicatedThreadContext& context, App& app);
+
+        double timeUntilNextTick() const;
 
         void updateRates(double elapsed, std::uint64_t ticks);
     };

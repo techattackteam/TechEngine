@@ -24,7 +24,5 @@ namespace TechEngine {
         void update(const SimulationContext& frame) override;
 
         void shutdown() override;
-
-        bool shouldClose() const override;
     };
 }

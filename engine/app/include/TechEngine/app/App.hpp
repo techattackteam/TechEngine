@@ -37,6 +37,8 @@ namespace TechEngine {
         void requestStop();
 
     protected:
+        bool stopRequested() const;
+
         virtual void init() = 0;
 
         virtual void mainUpdate();
