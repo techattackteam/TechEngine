@@ -45,6 +45,7 @@ namespace TechEngine {
         });
     }
     void EditorApp::mainUpdate() {
+        App::mainUpdate();
         m_client.pollEvents();
         const std::uint64_t rateSample = m_simulationThread.rateSampleIndex();
         if (rateSample != m_lastRateSample) {
