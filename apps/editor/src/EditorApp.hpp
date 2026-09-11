@@ -13,6 +13,7 @@ namespace TechEngine {
         std::filesystem::path m_projectRoot;
         Project m_project;
         Client m_client;
+        std::string m_appliedTitle;
 
     public:
         explicit EditorApp(std::filesystem::path projectRoot);

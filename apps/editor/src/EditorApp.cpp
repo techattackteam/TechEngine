@@ -53,7 +53,11 @@ namespace TechEngine {
         const auto metrics = timingMetrics();
         const auto fps = static_cast<std::uint64_t>(metrics.render ? metrics.render->framesPerSecond : 0.0);
         const auto tps = static_cast<std::uint64_t>(metrics.simulation.ticksPerSecond);
-        m_client.setTitle("TechEngine Editor | FPS: " + std::to_string(fps) + " | TPS: " + std::to_string(tps));
+        std::string title = "TechEngine Editor | FPS: " + std::to_string(fps) + " | TPS: " + std::to_string(tps);
+        if (title != m_appliedTitle) {
+            m_client.setTitle(title);
+            m_appliedTitle = std::move(title);
+        }
         if (m_client.failed()) {
             requestStop();
         }
