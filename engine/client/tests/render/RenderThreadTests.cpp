@@ -1,4 +1,5 @@
 #include <TechEngine/core/jobs/JobSystem.hpp>
+#include <TechEngine/platform/input/InputBuffer.hpp>
 #include <TechEngine/platform/window/Window.hpp>
 
 #include <render/RenderThread.hpp>
@@ -18,14 +19,16 @@ struct RenderWindowTestScope {
 
 TEST_CASE("Render thread loads GL with its context current", "[client][render][window]") {
     TechEngine::JobSystem jobs{1};
+    TechEngine::Clock clock;
+    TechEngine::InputBuffer input{clock};
     const RenderWindowTestScope scope;
     REQUIRE(TechEngine::Window::initialize());
     TechEngine::Window window;
     REQUIRE(window.open(320, 240, "Render startup test"));
     TechEngine::RenderThread renderer;
-    REQUIRE(renderer.start(jobs, window));
+    REQUIRE(renderer.start(jobs, clock, window, input));
     CHECK(GLAD_GL_VERSION_4_5 != 0);
-    CHECK_FALSE(renderer.start(jobs, window));
+    CHECK_FALSE(renderer.start(jobs, clock, window, input));
     const std::vector<TechEngine::ThreadInfo> registered = jobs.registeredThreads();
     REQUIRE(registered.size() == 2);
     const auto render = std::ranges::find(registered, "TERender", &TechEngine::ThreadInfo::name);
@@ -51,16 +54,18 @@ TEST_CASE("Render thread loads GL with its context current", "[client][render][w
 
 TEST_CASE("Render thread releases its context and joins before window destruction", "[client][render][window]") {
     TechEngine::JobSystem jobs{1};
+    TechEngine::Clock clock;
+    TechEngine::InputBuffer input{clock};
     const RenderWindowTestScope scope;
     REQUIRE(TechEngine::Window::initialize());
     TechEngine::Window window;
     REQUIRE(window.open(320, 240, "Render shutdown test"));
     {
         TechEngine::RenderThread renderer;
-        REQUIRE(renderer.start(jobs, window));
+        REQUIRE(renderer.start(jobs, clock, window, input));
         renderer.stop();
         renderer.stop();
-        REQUIRE(renderer.start(jobs, window));
+        REQUIRE(renderer.start(jobs, clock, window, input));
     }
     window.close();
     CHECK(window.shouldClose());
@@ -68,15 +73,17 @@ TEST_CASE("Render thread releases its context and joins before window destructio
 
 TEST_CASE("Render thread joins after failed startup and can retry", "[client][render][window]") {
     TechEngine::JobSystem jobs{1};
+    TechEngine::Clock clock;
+    TechEngine::InputBuffer input{clock};
     const RenderWindowTestScope scope;
     REQUIRE(TechEngine::Window::initialize());
     TechEngine::Window window;
     TechEngine::RenderThread renderer;
-    CHECK_FALSE(renderer.start(jobs, window));
+    CHECK_FALSE(renderer.start(jobs, clock, window, input));
     REQUIRE(jobs.registeredThreads().size() == 1);
     CHECK(jobs.registeredThreads().front().role == TechEngine::ThreadRole::PoolWorker);
     REQUIRE(window.open(320, 240, "Startup retry test"));
-    REQUIRE(renderer.start(jobs, window));
+    REQUIRE(renderer.start(jobs, clock, window, input));
     renderer.stop();
     REQUIRE(jobs.registeredThreads().size() == 1);
     CHECK(jobs.registeredThreads().front().role == TechEngine::ThreadRole::PoolWorker);

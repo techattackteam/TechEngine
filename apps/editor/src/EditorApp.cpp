@@ -1,63 +1,82 @@
-#include "EditorApp.hpp"
-
+#include <TechEngine/base/diagnostics/Assert.hpp>
+#include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/base/diagnostics/Profile.hpp>
+#include <TechEngine/client/render/RenderSnapshot.hpp>
 #include <TechEngine/platform/Platform.hpp>
 
-#include "TechEngine/base/diagnostics/Assert.hpp"
-#include "TechEngine/base/diagnostics/Log.hpp"
-#include "TechEngine/client/render/FrameCommand.hpp"
+#include <EditorApp.hpp>
 
 #include <cstdint>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
 namespace TechEngine {
-
     EditorApp::EditorApp(std::filesystem::path projectRoot) : App(editorRole()), m_projectRoot(std::move(projectRoot)) {
-    }
-
-    EditorApp::~EditorApp() {
     }
 
     void EditorApp::init() {
         m_mounts.mount("project", m_projectRoot);
         m_mounts.mount("engine", executablePath().parent_path() / "assets");
-
         const ProjectResult loaded = m_project.load(m_files, "project://project.toml");
         TE_CHECK(loaded == ProjectResult::Ok, "Failed to load project.toml under {0} (ProjectResult {1})", m_projectRoot.string(), static_cast<int>(loaded));
-
-        const std::filesystem::path& root = m_project.root();
+        const auto& root = m_project.root();
         m_mounts.mount("shaders", root / "shaders");
         m_mounts.mount("assets", root / "assets" / "common", 0);
         m_mounts.mount("assets", root / "assets" / "client", 100);
-
         TE_LOGGER_INFO("Opened project '{0}' at {1}", m_project.name(), root.string());
-        TE_CHECK(m_client.start(m_jobs, 1280, 720, "TechEngine Editor"), "Failed to start the client session");
-    }
-
-    void EditorApp::fixedUpdate(const FrameContext&) {
-    }
-
-    void EditorApp::update(const FrameContext& context) {
-        m_client.pollEvents();
-        if (m_loop.ratesUpdated()) {
-            const auto framesPerSecond = static_cast<std::uint64_t>(m_client.renderFramesPerSecond());
-            const auto ticksPerSecond = static_cast<std::uint64_t>(m_loop.ticksPerSecond());
-            m_client.setTitle("TechEngine Editor | FPS: " + std::to_string(framesPerSecond) + " | TPS: " + std::to_string(ticksPerSecond));
+        if (!m_client.start(m_engine, m_input, 1280, 720, "TechEngine Editor", [this] {
+                requestStop();
+            })) {
+            throw std::runtime_error{"Failed to start the client session"};
         }
-        m_client.publish(FrameCommand{
-            .clearColor = {0.1f, 0.1f, 0.1f, 1.0f},
+    }
+    void EditorApp::publishSnapshot(const SimulationContext& simulation) {
+        m_client.publish(RenderSnapshot{
+            .clearColor = {0.1F, 0.1F, 0.1F, 1.0F},
             .drawTriangle = true,
-            .frameIndex = context.frameIndex,
+            .tick = simulation.tick,
+            .tickTime = simulation.tickTime,
+            .fixedDeltaTime = simulation.fixedDeltaTime,
+            .timeline = simulation.timeline,
+            .input = simulation.input.held,
         });
     }
-
+    void EditorApp::mainUpdate() {
+        if (stopRequested()) {
+            return;
+        }
+        {
+            TE_PROFILER_SCOPE("Main.WaitEvents");
+            m_client.waitEvents();
+        }
+        const auto metrics = timingMetrics();
+        const auto fps = static_cast<std::uint64_t>(metrics.render ? metrics.render->framesPerSecond : 0.0);
+        const auto tps = static_cast<std::uint64_t>(metrics.simulation.ticksPerSecond);
+        std::string title = "TechEngine Editor | FPS: " + std::to_string(fps) + " | TPS: " + std::to_string(tps);
+        if (title != m_appliedTitle) {
+            m_client.setTitle(title);
+            m_appliedTitle = std::move(title);
+        }
+        if (m_client.failed()) {
+            requestStop();
+        }
+    }
+    void EditorApp::wakeMain() {
+        m_client.wakeMain();
+    }
+    std::optional<RenderTiming> EditorApp::renderTiming() const {
+        return m_client.renderTiming();
+    }
     void EditorApp::shutdown() {
         m_client.stop();
+        if (m_client.failed()) {
+            throw std::runtime_error{"Render thread failed"};
+        }
     }
     bool EditorApp::shouldClose() const {
         return m_client.shouldClose();
     }
-
     Role EditorApp::editorRole() {
         return Role::Client;
     }

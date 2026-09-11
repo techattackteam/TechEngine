@@ -1,3 +1,5 @@
+#include <TechEngine/base/time/Clock.hpp>
+#include <TechEngine/platform/input/InputBuffer.hpp>
 #include <TechEngine/platform/window/Window.hpp>
 
 #include <catch2/catch_test_macros.hpp>
@@ -5,7 +7,9 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#include <atomic>
 #include <barrier>
+#include <chrono>
 #include <string_view>
 #include <thread>
 
@@ -157,4 +161,79 @@ TEST_CASE("Window publishes framebuffer pixels and callback changes to the rende
     REQUIRE(window.open(160, 120, "Reopened framebuffer test"));
     CHECK(window.framebufferSize().width > 0);
     CHECK(window.framebufferSize().height > 0);
+}
+
+TEST_CASE("Window event waiting returns when another thread posts an empty event", "[platform][window]") {
+    const PlatformWindowTestScope scope;
+    REQUIRE(TechEngine::Window::initialize());
+    TechEngine::Window window;
+    REQUIRE(window.open(320, 240, "Wait test"));
+    window.waitEvents(0.0);
+
+    std::atomic<bool> posted = false;
+    const auto started = std::chrono::steady_clock::now();
+    std::jthread waker([&posted] {
+        std::this_thread::sleep_for(std::chrono::milliseconds{50});
+        posted = true;
+        TechEngine::Window::postEmptyEvent();
+    });
+    while (!posted.load()) {
+        window.waitEvents(30.0);
+    }
+    waker.join();
+    CHECK(std::chrono::steady_clock::now() - started < std::chrono::seconds{10});
+}
+
+TEST_CASE("Window callbacks publish input into the attached buffer", "[platform][window][input]") {
+    const PlatformWindowTestScope scope;
+    REQUIRE(TechEngine::Window::initialize());
+    const TechEngine::Clock clock;
+    TechEngine::InputBuffer input{clock};
+    TechEngine::Window window;
+    REQUIRE(window.open(320, 240, "Input test"));
+
+    GLFWwindow* nativeWindow = nullptr;
+    {
+        std::jthread worker([&] {
+            window.makeContextCurrent();
+            nativeWindow = glfwGetCurrentContext();
+            window.releaseContext();
+        });
+    }
+    REQUIRE(nativeWindow != nullptr);
+    const GLFWkeyfun keyCallback = glfwSetKeyCallback(nativeWindow, nullptr);
+    const GLFWmousebuttonfun buttonCallback = glfwSetMouseButtonCallback(nativeWindow, nullptr);
+    const GLFWcursorposfun cursorCallback = glfwSetCursorPosCallback(nativeWindow, nullptr);
+    const GLFWwindowfocusfun focusCallback = glfwSetWindowFocusCallback(nativeWindow, nullptr);
+    REQUIRE(keyCallback != nullptr);
+    REQUIRE(buttonCallback != nullptr);
+    REQUIRE(cursorCallback != nullptr);
+    REQUIRE(focusCallback != nullptr);
+
+    window.setInputBuffer(&input);
+    focusCallback(nativeWindow, GLFW_TRUE);
+    cursorCallback(nativeWindow, 10.0, 10.0);
+    keyCallback(nativeWindow, GLFW_KEY_W, 0, GLFW_PRESS, 0);
+    keyCallback(nativeWindow, GLFW_KEY_W, 0, GLFW_REPEAT, 0);
+    buttonCallback(nativeWindow, GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS, 0);
+    cursorCallback(nativeWindow, 13.0, 6.0);
+    keyCallback(nativeWindow, GLFW_KEY_W, 0, GLFW_RELEASE, 0);
+
+    TechEngine::InputFrame frame;
+    input.consume(frame);
+    REQUIRE(frame.events.size() == 6);
+    CHECK(frame.events[0].kind == TechEngine::InputKind::Focus);
+    CHECK(frame.events[1].kind == TechEngine::InputKind::Focus);
+    CHECK(frame.events[1].pressed);
+    CHECK(frame.events[2].kind == TechEngine::InputKind::Key);
+    CHECK(frame.events[2].pressed);
+    CHECK(frame.events[3].kind == TechEngine::InputKind::Button);
+    CHECK(frame.events[4].kind == TechEngine::InputKind::Motion);
+    CHECK(frame.events[4].x == 3.0);
+    CHECK(frame.events[4].y == -4.0);
+    CHECK(frame.events[5].kind == TechEngine::InputKind::Key);
+    CHECK_FALSE(frame.events[5].pressed);
+    CHECK_FALSE(frame.held.keys.test(GLFW_KEY_W));
+    CHECK(frame.held.buttons.test(GLFW_MOUSE_BUTTON_LEFT));
+    CHECK(input.presentationState().lookX == 3.0);
 }

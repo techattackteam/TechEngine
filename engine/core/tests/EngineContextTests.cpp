@@ -29,7 +29,8 @@ TEST_CASE("a file is read through the context by virtual path", "[core][engineco
     mounts.mount("assets", scratch.root());
     FileAccess files{mounts};
     JobSystem jobs{1};
-    const EngineContext engine{files, jobs};
+    const TechEngine::Clock clock;
+    const EngineContext engine{files, jobs, clock};
 
     std::vector<std::byte> out;
     REQUIRE(engine.files.read("assets://demo.txt", out) == FileResult::Ok);
@@ -43,7 +44,8 @@ TEST_CASE("the context carries its miss results through unchanged", "[core][engi
     mounts.mount("assets", scratch.root());
     FileAccess files{mounts};
     JobSystem jobs{1};
-    const EngineContext engine{files, jobs};
+    const TechEngine::Clock clock;
+    const EngineContext engine{files, jobs, clock};
 
     std::vector<std::byte> out;
     CHECK(engine.files.read("cache://demo.txt", out) == FileResult::NoMount);
@@ -60,7 +62,8 @@ TEST_CASE("the context observes the table it was built over", "[core][enginecont
     MountTable mounts;
     FileAccess files{mounts};
     JobSystem jobs{1};
-    const EngineContext engine{files, jobs};
+    const TechEngine::Clock clock;
+    const EngineContext engine{files, jobs, clock};
 
     std::vector<std::byte> out;
     REQUIRE(engine.files.read("assets://demo.txt", out) == FileResult::NoMount);
@@ -73,7 +76,8 @@ TEST_CASE("work submitted through the context runs on the pool", "[core][enginec
     MountTable mounts;
     FileAccess files{mounts};
     JobSystem jobs{1};
-    const EngineContext engine{files, jobs};
+    const TechEngine::Clock clock;
+    const EngineContext engine{files, jobs, clock};
 
     std::atomic<int> ran = 0;
     std::array<Task, 2> tasks{

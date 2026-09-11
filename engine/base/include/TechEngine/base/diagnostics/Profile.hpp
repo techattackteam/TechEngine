@@ -10,6 +10,7 @@
 #define TE_PROFILER_SCOPE(name) ZoneScopedN(name)
 #define TE_PROFILER_FUNCTION() ZoneScoped
 #define TE_PROFILER_FRAME() FrameMark
+#define TE_PROFILER_FRAME_NAMED(name) FrameMarkNamed(name)
 // The secure forms check the profiler is up before recording. The global operator new
 // replacement runs during CRT static init, which can precede Tracy's own construction.
 #define TE_PROFILER_ALLOC(pointer, size) TracyAlloc(pointer, size)
@@ -21,6 +22,7 @@
 #define TE_PROFILER_SCOPE(name) ((void)0)
 #define TE_PROFILER_FUNCTION() ((void)0)
 #define TE_PROFILER_FRAME() ((void)0)
+#define TE_PROFILER_FRAME_NAMED(name) ((void)0)
 #define TE_PROFILER_ALLOC(pointer, size) ((void)0)
 #define TE_PROFILER_FREE(pointer) ((void)0)
 #define TE_PROFILER_THREAD_NAME(name) ((void)(name))

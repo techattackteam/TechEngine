@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 
@@ -23,6 +24,6 @@ namespace TechEngine {
 
     private:
         TimePoint m_start;
-        std::uint64_t m_frame = 0;
+        std::atomic<std::uint64_t> m_frame = 0;
     };
 }

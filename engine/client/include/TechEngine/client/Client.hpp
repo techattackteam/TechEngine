@@ -1,11 +1,16 @@
 #pragma once
 
+#include <TechEngine/core/TimingMetrics.hpp>
+
+#include <functional>
 #include <memory>
+#include <optional>
 #include <string_view>
 
 namespace TechEngine {
-    struct FrameCommand;
-    class JobSystem;
+    struct RenderSnapshot;
+    struct EngineContext;
+    class InputBuffer;
 
     class Client {
     private:
@@ -25,18 +30,25 @@ namespace TechEngine {
 
         Client& operator=(Client&&) = delete;
 
-        // jobs must outlive the active client session.
-        bool start(JobSystem& jobs, int width, int height, std::string_view title);
+        // Engine services and input must outlive the active session.
+        bool start(const EngineContext& engine, InputBuffer& input, int width, int height, std::string_view title, std::function<void()> onFailure = {});
+        void waitEvents();
 
-        void pollEvents();
+        void waitEvents(double timeoutSeconds);
 
-        void publish(const FrameCommand& command);
+        void wakeMain();
 
-        double renderFramesPerSecond() const;
+        void publish(const RenderSnapshot& snapshot) const;
 
-        void setTitle(std::string_view title);
+        std::optional<RenderTiming> renderTiming() const;
+
+        void setTitle(std::string_view title) const;
+
+        void setVSync(bool enabled) const;
 
         bool shouldClose() const;
+
+        bool failed() const;
 
         void stop();
     };

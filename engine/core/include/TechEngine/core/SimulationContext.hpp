@@ -1,6 +1,8 @@
 #pragma once
 
+#include <TechEngine/base/time/Clock.hpp>
 #include <TechEngine/core/EngineContext.hpp>
+#include <TechEngine/platform/input/InputBuffer.hpp>
 
 #include <cstdint>
 #include <string>
@@ -20,13 +22,13 @@ namespace TechEngine {
         return "Unknown";
     }
 
-    struct FrameContext {
-        float deltaTime = 0.0F;
-        float fixedDeltaTime = 0.0F;
-        float alpha = 0.0F;
+    struct SimulationContext {
+        double fixedDeltaTime = 0.0;
         std::uint64_t tick = 0;
-        std::uint64_t frameIndex = 0;
+        std::uint64_t timeline = 0;
+        Clock::TimePoint tickTime{};
         Role role = Role::Client;
+        const InputFrame& input;
         const EngineContext& engine;
     };
 }

@@ -308,7 +308,7 @@ TEST_CASE("thread registrations copy metadata and clean up after completion", "[
         gate.wait(context.stopToken());
     });
     name = "ChangedName";
-    role = TechEngine::ThreadRole::Host;
+    role = TechEngine::ThreadRole::Main;
     REQUIRE(thread.waitUntilReady().status == TechEngine::ThreadStartupStatus::Ready);
 
     std::vector<TechEngine::ThreadInfo> snapshot = nonPoolThreads(jobs);
@@ -328,17 +328,17 @@ TEST_CASE("thread registrations copy metadata and clean up after completion", "[
 TEST_CASE("host registration is scoped to the calling thread", "[core][jobs][dedicated]") {
     TechEngine::JobSystem jobs{1};
     {
-        const TechEngine::ThreadRegistration registration = jobs.registerCurrentThread("TestHost", TechEngine::ThreadRole::Host);
+        const TechEngine::ThreadRegistration registration = jobs.registerCurrentThread("TestMain", TechEngine::ThreadRole::Main);
         const std::vector<TechEngine::ThreadInfo> snapshot = nonPoolThreads(jobs);
         REQUIRE(snapshot.size() == 1);
         CHECK(snapshot.front().id == std::this_thread::get_id());
-        CHECK(snapshot.front().name == "TestHost");
-        CHECK(snapshot.front().role == TechEngine::ThreadRole::Host);
+        CHECK(snapshot.front().name == "TestMain");
+        CHECK(snapshot.front().role == TechEngine::ThreadRole::Main);
     }
     CHECK(nonPoolThreads(jobs).empty());
 
     try {
-        const TechEngine::ThreadRegistration registration = jobs.registerCurrentThread("UnwindingHost", TechEngine::ThreadRole::Host);
+        const TechEngine::ThreadRegistration registration = jobs.registerCurrentThread("UnwindingMain", TechEngine::ThreadRole::Main);
         throw std::runtime_error{"unwind"};
     } catch (const std::runtime_error&) {
     }
@@ -348,11 +348,11 @@ TEST_CASE("host registration is scoped to the calling thread", "[core][jobs][ded
 TEST_CASE("duplicate registration is rejected without removing the existing scope", "[core][jobs][dedicated]") {
     TechEngine::JobSystem jobs{1};
     const TechEngineTests::FatalAssertGuard guard;
-    const TechEngine::ThreadRegistration registration = jobs.registerCurrentThread("OriginalHost", TechEngine::ThreadRole::Host);
-    REQUIRE_THROWS_AS(jobs.registerCurrentThread("DuplicateHost", TechEngine::ThreadRole::Host), TechEngineTests::AssertFired);
+    const TechEngine::ThreadRegistration registration = jobs.registerCurrentThread("OriginalMain", TechEngine::ThreadRole::Main);
+    REQUIRE_THROWS_AS(jobs.registerCurrentThread("DuplicateMain", TechEngine::ThreadRole::Main), TechEngineTests::AssertFired);
     const std::vector<TechEngine::ThreadInfo> snapshot = nonPoolThreads(jobs);
     REQUIRE(snapshot.size() == 1);
-    CHECK(snapshot.front().name == "OriginalHost");
+    CHECK(snapshot.front().name == "OriginalMain");
 }
 
 TEST_CASE("dedicated threads reject joining themselves", "[core][jobs][dedicated]") {

@@ -2,7 +2,9 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <barrier>
 #include <chrono>
+#include <cstdint>
 #include <thread>
 
 using namespace std::chrono_literals;
@@ -51,6 +53,32 @@ TEST_CASE("frame starts at zero and advances by exactly one", "[base][clock]") {
         clock.advanceFrame();
     }
     REQUIRE(clock.frame() == 11);
+}
+
+TEST_CASE("frame reads stay race-free while one writer advances the counter", "[base][clock][threading]") {
+    TechEngine::Clock clock;
+    constexpr std::uint64_t ADVANCE_COUNT = 20000;
+    std::barrier start{2};
+    bool monotonic = true;
+    {
+        std::jthread writer([&] {
+            start.arrive_and_wait();
+            for (std::uint64_t i = 0; i < ADVANCE_COUNT; i++) {
+                clock.advanceFrame();
+            }
+        });
+        std::jthread reader([&] {
+            start.arrive_and_wait();
+            std::uint64_t previous = 0;
+            for (std::uint64_t i = 0; i < ADVANCE_COUNT; i++) {
+                const std::uint64_t frame = clock.frame();
+                monotonic = monotonic && frame >= previous;
+                previous = frame;
+            }
+        });
+    }
+    CHECK(monotonic);
+    CHECK(clock.frame() == ADVANCE_COUNT);
 }
 
 TEST_CASE("advancing the frame does not disturb elapsed time", "[base][clock]") {

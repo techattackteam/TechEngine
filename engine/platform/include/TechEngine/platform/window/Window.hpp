@@ -6,6 +6,8 @@
 struct GLFWwindow;
 
 namespace TechEngine {
+    class InputBuffer;
+    struct InputEvent;
     using GlProc = void (*)();
     using GlProcLoader = GlProc (*)(const char* name);
 
@@ -19,6 +21,10 @@ namespace TechEngine {
         GLFWwindow* m_window = nullptr;
         mutable std::mutex m_framebufferMutex;
         FramebufferSize m_framebufferSize;
+        InputBuffer* m_input = nullptr;
+        double m_cursorX = 0.0;
+        double m_cursorY = 0.0;
+        bool m_cursorKnown = false;
 
     public:
         Window();
@@ -41,6 +47,16 @@ namespace TechEngine {
 
         void pollEvents();
 
+        void waitEvents();
+
+        void waitEvents(double timeoutSeconds);
+
+        // Callable from any thread, but only between initialize() and terminate().
+        static void postEmptyEvent();
+
+        // The buffer must outlive this window; its callbacks publish on the event-pumping thread.
+        void setInputBuffer(InputBuffer* input);
+
         void setTitle(std::string_view title);
 
         void close();
@@ -61,5 +77,9 @@ namespace TechEngine {
 
     private:
         void framebufferSizeCallback(int width, int height);
+
+        void cursorPositionCallback(double x, double y);
+
+        void publishInput(const InputEvent& event);
     };
 }
