@@ -1,33 +1,45 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
+#include <TechEngine/base/time/RateCounter.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
+#include <TechEngine/platform/input/InputBuffer.hpp>
 #include <TechEngine/platform/window/Window.hpp>
 
 #include <render/RenderThread.hpp>
+#include <render/SnapshotHistory.hpp>
 
 #include <glad/gl.h>
 
 #include <chrono>
 #include <exception>
+#include <utility>
 
 namespace TechEngine {
-    RenderThread::RenderThread() = default;
-
     RenderThread::~RenderThread() {
         stop();
     }
 
-    bool RenderThread::start(JobSystem& jobs, Window& window) {
+    bool RenderThread::start(JobSystem& jobs, const Clock& clock, Window& window, const InputBuffer& input, std::function<void()> onFailure) {
         if (m_thread.joinable()) {
             return false;
         }
-
-        m_framesPerSecond.store(0.0, std::memory_order_relaxed);
+        m_mailbox.reset();
+        {
+            const std::lock_guard lock{m_timingMutex};
+            m_timing = RenderTiming{};
+        }
         try {
-            m_thread = jobs.createDedicatedThread("TERender", ThreadRole::Dedicated, [this, &window](DedicatedThreadContext& context) {
-                threadMain(context, window);
+            m_thread = jobs.createDedicatedThread("TERender", ThreadRole::Dedicated, [this, &clock, &window, &input, notify = std::move(onFailure)](DedicatedThreadContext& context) {
+                try {
+                    threadMain(context, clock, window, input);
+                } catch (...) {
+                    if (notify) {
+                        notify();
+                    }
+                    throw;
+                }
             });
-            const ThreadStartupResult startup = m_thread.waitUntilReady();
+            const auto startup = m_thread.waitUntilReady();
             if (startup.status == ThreadStartupStatus::Ready) {
                 return true;
             }
@@ -39,70 +51,87 @@ namespace TechEngine {
         } catch (...) {
             TE_LOGGER_ERROR("Render thread startup failed with a non-std exception");
         }
-
         stop();
         return false;
     }
 
+    void RenderThread::publish(const RenderSnapshot& snapshot) {
+        m_mailbox.publish(snapshot);
+    }
+    void RenderThread::setVSync(bool enabled) {
+        m_vsync.store(enabled, std::memory_order_relaxed);
+    }
+    ThreadCompletionResult RenderThread::completion() const {
+        return m_thread.completion();
+    }
+    RenderTiming RenderThread::timing() const {
+        const std::lock_guard lock{m_timingMutex};
+        return m_timing;
+    }
     void RenderThread::stop() {
-        if (m_thread.joinable()) {
-            m_thread.requestStop();
-            m_thread.join();
-        }
-        m_commandBuffer.reset();
-        m_framesPerSecond.store(0.0, std::memory_order_relaxed);
+        m_thread.requestStop();
+        m_thread.join();
+        m_mailbox.reset();
     }
 
-    void RenderThread::publish(const FrameCommand& command) {
-        m_commandBuffer.publish(command);
-    }
-
-    double RenderThread::framesPerSecond() const {
-        return m_framesPerSecond.load(std::memory_order_relaxed);
-    }
-
-    void RenderThread::threadMain(const DedicatedThreadContext& context, Window& window) {
-        const std::stop_token stopToken = context.stopToken();
+    void RenderThread::threadMain(const DedicatedThreadContext& context, const Clock& clock, Window& window, const InputBuffer& input) {
         bool contextClaimed = false;
         std::exception_ptr failure;
         try {
             window.makeContextCurrent();
             contextClaimed = true;
-            window.setVSync(true);
-            const GlProcLoader loader = window.processLoader();
+            bool vsync = m_vsync.load(std::memory_order_relaxed);
+            window.setVSync(vsync);
+            const auto loader = window.processLoader();
             const int version = loader != nullptr ? gladLoadGL(loader) : 0;
-            m_commandBuffer.reset();
-            const bool ready = version != 0 && GLAD_GL_VERSION_4_5 != 0 && m_frameRenderer.initialize();
-
-            if (ready) {
+            if (version != 0 && GLAD_GL_VERSION_4_5 != 0 && m_renderer.initialize()) {
+                SnapshotHistory history;
+                RateCounter rate;
+                RenderTiming metrics;
+                auto previousFrame = clock.now();
                 context.signalReady();
-                using RateClock = std::chrono::steady_clock;
-                RateClock::time_point rateStarted = RateClock::now();
-                std::uint64_t renderedFrames = 0;
-                while (!stopToken.stop_requested()) {
+                while (!context.stopToken().stop_requested()) {
+                    const bool requestedVsync = m_vsync.load(std::memory_order_relaxed);
+                    if (requestedVsync != vsync) {
+                        window.setVSync(requestedVsync);
+                        vsync = requestedVsync;
+                    }
+                    const auto started = clock.now();
+                    RenderSnapshot frame;
                     {
-                        TE_PROFILER_SCOPE("RenderThread.Present");
-                        const FrameCommand command = m_commandBuffer.snapshot();
-                        const FramebufferSize size = window.framebufferSize();
-                        m_frameRenderer.draw(command, size);
+                        TE_PROFILER_SCOPE("Render.PrepareFrame");
+                        if (const auto snapshot = m_mailbox.snapshot()) {
+                            history.acquire(*snapshot);
+                        }
+                        frame = history.prepareFrame(started, input.presentationState());
+                    }
+                    {
+                        TE_PROFILER_SCOPE("Render.RenderFrame");
+                        m_renderer.draw(frame, window.framebufferSize());
+                    }
+                    const auto submitted = clock.now();
+                    {
+                        TE_PROFILER_SCOPE("Render.PresentFrame");
                         window.swapBuffers();
                     }
-                    renderedFrames++;
-                    const RateClock::time_point now = RateClock::now();
-                    const double elapsed = std::chrono::duration<double>(now - rateStarted).count();
-                    if (elapsed >= 1.0) {
-                        m_framesPerSecond.store(static_cast<double>(renderedFrames) / elapsed, std::memory_order_relaxed);
-                        renderedFrames = 0;
-                        rateStarted = now;
-                    }
+                    TE_PROFILER_FRAME();
+                    const auto completed = clock.now();
+                    metrics.frame++;
+                    metrics.frameInterval = std::chrono::duration<double>(completed - previousFrame).count();
+                    metrics.renderWorkDuration = std::chrono::duration<double>(submitted - started).count();
+                    metrics.sampledAt = completed;
+                    rate.advance(metrics.frameInterval, 1);
+                    metrics.framesPerSecond = rate.rate();
+                    previousFrame = completed;
+                    const std::lock_guard lock{m_timingMutex};
+                    m_timing = metrics;
                 }
             }
         } catch (...) {
             failure = std::current_exception();
         }
-
         if (contextClaimed) {
-            m_frameRenderer.shutdown();
+            m_renderer.shutdown();
             window.releaseContext();
         }
         if (failure) {

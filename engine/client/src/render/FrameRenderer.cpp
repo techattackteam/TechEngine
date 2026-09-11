@@ -1,5 +1,5 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
-#include <TechEngine/client/render/FrameCommand.hpp>
+#include <TechEngine/client/render/RenderSnapshot.hpp>
 #include <TechEngine/platform/window/Window.hpp>
 
 #include <render/FrameRenderer.hpp>
@@ -86,7 +86,7 @@ namespace TechEngine {
         return true;
     }
 
-    void FrameRenderer::draw(const FrameCommand& command, const FramebufferSize& size) {
+    void FrameRenderer::draw(const RenderSnapshot& command, const FramebufferSize& size) {
         if (size.width == 0 || size.height == 0) {
             return;
         }

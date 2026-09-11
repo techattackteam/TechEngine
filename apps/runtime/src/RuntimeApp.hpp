@@ -1,28 +1,19 @@
 #pragma once
 
-#include "TechEngine/app/App.hpp"
-
-#include <cstdint>
+#include <TechEngine/app/App.hpp>
 
 namespace TechEngine {
     class RuntimeApp : public App {
-    private:
-        std::uint64_t m_frameCount = 0;
-
     public:
         RuntimeApp();
 
-        ~RuntimeApp() override;
+        ~RuntimeApp() override = default;
 
         static Role runtimeRole();
 
     protected:
         void init() override;
 
-        void fixedUpdate(const SimulationContext& frame) override;
-
-        void update(const SimulationContext& frame) override;
-
-        void shutdown() override;
+        void fixedUpdate(const SimulationContext& simulation) override;
     };
 }

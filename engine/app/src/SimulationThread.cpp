@@ -1,46 +1,68 @@
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/app/SimulationThread.hpp>
+#include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
-#include <TechEngine/base/time/Clock.hpp>
+#include <TechEngine/core/jobs/JobSystem.hpp>
 
 #include <chrono>
-#include <condition_variable>
-#include <cstdint>
+#include <cmath>
 #include <exception>
-#include <mutex>
 
 namespace TechEngine {
-    SimulationThread::SimulationThread(const EngineContext& engine, const Role role, const double fixedDeltaTime, const double maxFrameDeltaTime) : m_fixedDeltaTime(fixedDeltaTime), m_maxFrameDeltaTime(maxFrameDeltaTime), m_simulationContext{.engine = engine} {
-        m_simulationContext.role = role;
-        m_simulationContext.fixedDeltaTime = static_cast<float>(fixedDeltaTime);
+    static Clock::TimePoint::duration toClockDuration(double seconds) {
+        return std::chrono::duration_cast<Clock::TimePoint::duration>(std::chrono::duration<double>(seconds));
+    }
+
+    static double toSeconds(Clock::TimePoint::duration duration) {
+        return std::chrono::duration<double>(duration).count();
+    }
+
+    SimulationThread::SimulationThread(const EngineContext& engine, const Role role, const SimulationSettings& settings)
+        : m_fixedDeltaTime(settings.fixedDeltaTime), m_maxElapsedTime(settings.maxElapsedTime), m_input(settings.input), m_diagnosticClock(settings.diagnosticClock), m_context{.fixedDeltaTime = settings.fixedDeltaTime, .role = role, .input = m_inputFrame, .engine = engine} {
+        TE_CHECK(std::isfinite(m_fixedDeltaTime) && m_fixedDeltaTime > 0.0, "Fixed delta time must be finite and positive");
+        TE_CHECK(std::isfinite(m_maxElapsedTime) && m_maxElapsedTime > 0.0, "Maximum elapsed time must be finite and positive");
+        if (m_input != nullptr) {
+            m_inputFrame.events.reserve(m_input->capacity());
+        }
+        restartTimeline(engine.clock.now());
     }
 
     SimulationThread::~SimulationThread() {
         stop();
     }
 
-    bool SimulationThread::start(JobSystem& jobSystem, App& app) {
+    bool SimulationThread::start(JobSystem& jobs, App& app, const bool presentationActive) {
         if (m_thread.joinable()) {
             return false;
         }
-
-        m_ticksPerSecond.store(0.0, std::memory_order_relaxed);
-        m_thread = jobSystem.createDedicatedThread("TESimulation", ThreadRole::Dedicated, [this, &app](DedicatedThreadContext& context) {
-            threadMain(context, app);
+        m_stopRequested.store(false);
+        m_presentationActive = presentationActive;
+        m_thread = jobs.createDedicatedThread("TESimulation", ThreadRole::Dedicated, [this, &app](DedicatedThreadContext& context) {
+            try {
+                threadMain(context, app);
+            } catch (...) {
+                app.requestStop();
+                throw;
+            }
+            app.requestStop();
         });
         if (m_thread.waitUntilReady().status == ThreadStartupStatus::Ready) {
             return true;
         }
-
         stop();
         return false;
     }
 
     void SimulationThread::requestStop() {
-        m_thread.requestStop();
+        {
+            const std::lock_guard lock{m_waitMutex};
+            m_stopRequested.store(true);
+        }
+        m_wake.notify_all();
     }
 
     void SimulationThread::stop() {
+        requestStop();
         m_thread.requestStop();
         m_thread.join();
     }
@@ -49,77 +71,121 @@ namespace TechEngine {
         return m_thread.completion();
     }
 
-    const SimulationContext& SimulationThread::advance(double frameDeltaTime) {
-        return advance(frameDeltaTime, [](const SimulationContext&) {
+    SimulationTiming SimulationThread::timing() const {
+        const std::lock_guard lock{m_timingMutex};
+        return m_timing;
+    }
+
+    void SimulationThread::restartTimeline(const Clock::TimePoint origin) {
+        m_accumulator = 0.0;
+        m_tickWorkDuration = 0.0;
+        m_rate = RateCounter{};
+        m_origin = origin;
+        m_context.tick = 0;
+        m_context.tickTime = origin;
+        m_context.timeline++;
+        m_inputFrame.events.clear();
+        m_inputFrame.held = InputState{};
+        m_inputFrame.recovered = false;
+        const std::lock_guard lock{m_timingMutex};
+        m_timing = SimulationTiming{.timeline = m_context.timeline, .sampledAt = origin};
+    }
+
+    const SimulationContext& SimulationThread::advance(const double elapsed) {
+        return advance(elapsed, [](const SimulationContext&) {
         });
     }
 
     const SimulationContext& SimulationThread::simulationContext() const {
-        return m_simulationContext;
+        return m_context;
     }
 
     double SimulationThread::accumulator() const {
         return m_accumulator;
     }
-    double SimulationThread::timeUntilNextTick() const {
-        return m_fixedDeltaTime - m_accumulator;
-    }
-    std::uint64_t SimulationThread::tick() const {
-        return m_publishedTick.load(std::memory_order_relaxed);
-    }
 
-    double SimulationThread::ticksPerSecond() const {
-        return m_ticksPerSecond;
-    }
-    std::uint64_t SimulationThread::rateSampleIndex() const {
-        return m_rateSampleIndex;
-    }
-
-    void SimulationThread::updateRates(double elapsed, std::uint64_t ticks) {
-        m_rateElapsed += elapsed;
-        m_rateTicks += ticks;
-
-        if (m_rateElapsed >= 1.0) {
-            m_ticksPerSecond = static_cast<double>(m_rateTicks) / m_rateElapsed;
-            m_rateSampleIndex++;
-
-            m_rateElapsed = 0.0;
-            m_rateTicks = 0;
+    double SimulationThread::beginAdvance(double elapsed) {
+        if (!std::isfinite(elapsed) || elapsed < 0.0) {
+            elapsed = 0.0;
         }
+        if (elapsed > m_maxElapsedTime) {
+            m_origin += toClockDuration(elapsed - m_maxElapsedTime);
+            m_context.timeline++;
+            m_accumulator += m_maxElapsedTime;
+        } else {
+            m_accumulator += elapsed;
+        }
+        return elapsed;
+    }
+
+    void SimulationThread::beginTick() {
+        m_accumulator -= m_fixedDeltaTime;
+        m_context.tick++;
+        m_context.tickTime = m_origin + toClockDuration(static_cast<double>(m_context.tick) * m_fixedDeltaTime);
+        if (m_input != nullptr) {
+            m_input->consume(m_inputFrame);
+            if (m_inputFrame.recovered) {
+                TE_LOGGER_WARN("Input overflow: recovered held state after losing sequences {0} through {1}", m_inputFrame.firstLostSequence, m_inputFrame.lastLostSequence);
+            }
+        }
+        m_tickStarted = m_context.engine.clock.now();
+    }
+
+    void SimulationThread::endTick() {
+        m_tickWorkDuration = toSeconds(m_context.engine.clock.now() - m_tickStarted);
+        if (m_diagnosticClock == nullptr) {
+            return;
+        }
+        m_diagnosticClock->advanceFrame();
+        setDiagnosticFrame(m_diagnosticClock->frame());
+        if (m_presentationActive) {
+            TE_PROFILER_FRAME_NAMED("SimulationTicks");
+        } else {
+            TE_PROFILER_FRAME();
+        }
+    }
+
+    void SimulationThread::endAdvance(const double elapsed, const std::uint64_t previousTick) {
+        m_rate.advance(elapsed, m_context.tick - previousTick);
+        const SimulationTiming sample{.tick = m_context.tick, .timeline = m_context.timeline, .ticksPerSecond = m_rate.rate(), .tickWorkDuration = m_tickWorkDuration, .sampledAt = m_context.engine.clock.now()};
+        const std::lock_guard lock{m_timingMutex};
+        m_timing = sample;
+    }
+
+    void SimulationThread::waitForNextTick(const Clock::TimePoint sampled) {
+        TE_PROFILER_SCOPE("Simulation.Wait");
+        const Clock::TimePoint deadline = sampled + std::chrono::ceil<Clock::TimePoint::duration>(std::chrono::duration<double>(m_fixedDeltaTime - m_accumulator));
+        std::unique_lock lock{m_waitMutex};
+        m_wake.wait_until(lock, deadline, [this] {
+            return m_stopRequested.load();
+        });
     }
 
     void SimulationThread::threadMain(const DedicatedThreadContext& context, App& app) {
         app.simulationInit();
-
         std::exception_ptr failure;
         try {
-            const std::stop_token stopToken = context.stopToken();
-            Clock clock;
-            std::mutex waitMutex;
-            std::condition_variable_any wake;
+            restartTimeline(m_context.engine.clock.now());
+            {
+                TE_PROFILER_SCOPE("Simulation.Publish");
+                app.publishSnapshot(m_context);
+            }
             context.signalReady();
-            Clock::TimePoint previous = clock.now();
-            while (!stopToken.stop_requested()) {
-                clock.advanceFrame();
-                setDiagnosticFrame(clock.frame());
-                const Clock::TimePoint current = clock.now();
-                const double frameDeltaTime = std::chrono::duration<double>(current - previous).count();
+
+            const std::stop_token stopToken = context.stopToken();
+            Clock::TimePoint previous = m_origin;
+            while (!m_stopRequested.load() && !app.stopRequested() && !stopToken.stop_requested()) {
+                const Clock::TimePoint current = m_context.engine.clock.now();
+                const std::uint64_t previousTick = m_context.tick;
+                advance(toSeconds(current - previous), [&app](const SimulationContext& simulation) {
+                    app.fixedUpdate(simulation);
+                });
                 previous = current;
-                const std::uint64_t previousTick = m_simulationContext.tick;
-                const SimulationContext& newContext = advance(frameDeltaTime, [&app](const SimulationContext& fixedStep) {
-                    app.fixedUpdate(fixedStep);
-                });
-                if (newContext.tick > previousTick) {
-                    app.update(newContext);
+                if (m_context.tick != previousTick) {
+                    TE_PROFILER_SCOPE("Simulation.Publish");
+                    app.publishSnapshot(m_context);
                 }
-
-                TE_PROFILER_FRAME();
-
-                const Clock::TimePoint nextTick = current + std::chrono::ceil<Clock::TimePoint::duration>(std::chrono::duration<double>(timeUntilNextTick()));
-                std::unique_lock lock{waitMutex};
-                wake.wait_until(lock, stopToken, nextTick, [] {
-                    return false;
-                });
+                waitForNextTick(current);
             }
         } catch (...) {
             failure = std::current_exception();

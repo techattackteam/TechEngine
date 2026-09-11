@@ -13,6 +13,7 @@ techengine_module(core
   HEADERS include/TechEngine/core/Core.hpp
           include/TechEngine/core/EngineContext.hpp
           include/TechEngine/core/SimulationContext.hpp
+          include/TechEngine/core/TimingMetrics.hpp
           include/TechEngine/core/events/EventRegistry.hpp
           include/TechEngine/core/events/EventTypeId.hpp
           include/TechEngine/core/events/EventStream.hpp

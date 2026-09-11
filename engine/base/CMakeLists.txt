@@ -3,6 +3,7 @@ techengine_module(base
           src/diagnostics/Log.cpp
           src/diagnostics/Assert.cpp
           src/time/Clock.cpp
+          src/time/RateCounter.cpp
   HEADERS include/TechEngine/base/Base.hpp
           include/TechEngine/base/diagnostics/Log.hpp
           include/TechEngine/base/diagnostics/Assert.hpp
@@ -11,6 +12,7 @@ techengine_module(base
           include/TechEngine/base/math/Math.hpp
           include/TechEngine/base/stringid/StringId.hpp
           include/TechEngine/base/time/Clock.hpp
+          include/TechEngine/base/time/RateCounter.hpp
   LIBS    glm::glm
   LIBS_PRIVATE spdlog::spdlog)
 
@@ -47,5 +49,6 @@ if(TE_BUILD_TESTS)
           tests/math/MathFormatTests.cpp
           tests/stringid/StringIdTests.cpp
           tests/stringid/StringIdFormatTests.cpp
-          tests/time/ClockTests.cpp)
+          tests/time/ClockTests.cpp
+          tests/time/RateCounterTests.cpp)
 endif()

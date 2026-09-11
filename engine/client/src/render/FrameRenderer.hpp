@@ -4,7 +4,7 @@
 #include <render/VertexArray.hpp>
 
 namespace TechEngine {
-    struct FrameCommand;
+    struct RenderSnapshot;
     struct FramebufferSize;
 
     class FrameRenderer {
@@ -29,7 +29,7 @@ namespace TechEngine {
 
         bool initialize();
 
-        void draw(const FrameCommand& command, const FramebufferSize& size);
+        void draw(const RenderSnapshot& command, const FramebufferSize& size);
 
         void shutdown();
     };

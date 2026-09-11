@@ -1,39 +1,58 @@
 #pragma once
 
 #include <TechEngine/base/diagnostics/Profile.hpp>
+#include <TechEngine/base/time/Clock.hpp>
+#include <TechEngine/base/time/RateCounter.hpp>
 #include <TechEngine/core/SimulationContext.hpp>
+#include <TechEngine/core/TimingMetrics.hpp>
 #include <TechEngine/core/jobs/DedicatedThread.hpp>
+#include <TechEngine/platform/input/InputBuffer.hpp>
 
 #include <atomic>
 #include <concepts>
+#include <condition_variable>
 #include <cstdint>
+#include <mutex>
 
 namespace TechEngine {
     class App;
     class JobSystem;
 
+    struct SimulationSettings {
+        static constexpr double FIXED_DELTA_TIME = 1.0 / 60.0;
+        static constexpr double MAX_ELAPSED_TIME = 0.25;
+
+        double fixedDeltaTime = FIXED_DELTA_TIME;
+        double maxElapsedTime = MAX_ELAPSED_TIME;
+        InputBuffer* input = nullptr;
+        Clock* diagnosticClock = nullptr;
+    };
+
     class SimulationThread {
     private:
         double m_fixedDeltaTime;
-        double m_maxFrameDeltaTime;
+        double m_maxElapsedTime;
+        InputBuffer* m_input;
+        Clock* m_diagnosticClock;
+        bool m_presentationActive = false;
         double m_accumulator = 0.0;
+        Clock::TimePoint m_origin{};
+        Clock::TimePoint m_tickStarted{};
+        double m_tickWorkDuration = 0.0;
+        RateCounter m_rate;
+        InputFrame m_inputFrame;
+        SimulationContext m_context;
 
-        SimulationContext m_simulationContext;
-        double m_rateElapsed = 0.0;
+        mutable std::mutex m_timingMutex;
+        SimulationTiming m_timing;
 
-        std::uint64_t m_rateTicks = 0;
-
-        std::atomic<std::uint64_t> m_publishedTick = 0;
-        std::atomic<double> m_ticksPerSecond = 0.0;
-        std::atomic<std::uint64_t> m_rateSampleIndex = 0;
-
+        std::atomic<bool> m_stopRequested = false;
+        std::mutex m_waitMutex;
+        std::condition_variable m_wake;
         DedicatedThread m_thread;
 
     public:
-        static constexpr double FIXED_DELTA_TIME = 1.0 / 60.0;
-        static constexpr double MAX_FRAME_DELTA_TIME = 0.25;
-
-        SimulationThread(const EngineContext& engine, Role role, double fixedDeltaTime = FIXED_DELTA_TIME, double maxFrameDeltaTime = MAX_FRAME_DELTA_TIME);
+        SimulationThread(const EngineContext& engine, Role role, const SimulationSettings& settings = {});
 
         ~SimulationThread();
 
@@ -45,7 +64,7 @@ namespace TechEngine {
 
         SimulationThread& operator=(SimulationThread&&) = delete;
 
-        bool start(JobSystem& jobs, App& app);
+        bool start(JobSystem& jobs, App& app, bool presentationActive);
 
         void requestStop();
 
@@ -53,57 +72,43 @@ namespace TechEngine {
 
         ThreadCompletionResult completion() const;
 
-        // External callers may advance synchronously only while the dedicated thread is stopped.
-        const SimulationContext& advance(double frameDeltaTime);
+        SimulationTiming timing() const;
+
+        // Everything below is owner-only: a synchronous caller must keep the thread stopped.
+        void restartTimeline(Clock::TimePoint origin);
+
+        const SimulationContext& advance(double elapsed);
 
         template<std::invocable<const SimulationContext&> Step>
-        const SimulationContext& advance(double frameDeltaTime, Step&& onFixedStep) {
+        const SimulationContext& advance(double elapsed, Step&& onFixedStep) {
             TE_PROFILER_FUNCTION();
-
-            if (frameDeltaTime < 0.0) {
-                frameDeltaTime = 0.0;
+            const std::uint64_t previousTick = m_context.tick;
+            const double measured = beginAdvance(elapsed);
+            while (m_accumulator >= m_fixedDeltaTime) {
+                TE_PROFILER_SCOPE("Simulation.Tick");
+                beginTick();
+                onFixedStep(m_context);
+                endTick();
             }
-
-            const double clampedDeltaTime = frameDeltaTime > m_maxFrameDeltaTime ? m_maxFrameDeltaTime : frameDeltaTime;
-            const std::uint64_t previousTick = m_simulationContext.tick;
-
-            m_simulationContext.iterationIndex++;
-            m_simulationContext.deltaTime = static_cast<float>(clampedDeltaTime);
-
-            m_accumulator += clampedDeltaTime;
-
-            {
-                TE_PROFILER_SCOPE("FixedSteps");
-
-                while (m_accumulator >= m_fixedDeltaTime) {
-                    m_accumulator -= m_fixedDeltaTime;
-                    m_simulationContext.tick++;
-                    onFixedStep(m_simulationContext);
-                }
-            }
-
-            m_simulationContext.alpha = static_cast<float>(m_accumulator / m_fixedDeltaTime);
-            updateRates(frameDeltaTime, m_simulationContext.tick - previousTick);
-            m_publishedTick.store(m_simulationContext.tick, std::memory_order_relaxed);
-            return m_simulationContext;
+            endAdvance(measured, previousTick);
+            return m_context;
         }
 
-        // The live context and accumulator may only be read by the thread advancing the loop.
         const SimulationContext& simulationContext() const;
 
         double accumulator() const;
 
-        std::uint64_t tick() const;
-
-        double ticksPerSecond() const;
-
-        std::uint64_t rateSampleIndex() const;
-
     private:
+        double beginAdvance(double elapsed);
+
+        void beginTick();
+
+        void endTick();
+
+        void endAdvance(double elapsed, std::uint64_t previousTick);
+
+        void waitForNextTick(Clock::TimePoint sampled);
+
         void threadMain(const DedicatedThreadContext& context, App& app);
-
-        double timeUntilNextTick() const;
-
-        void updateRates(double elapsed, std::uint64_t ticks);
     };
 }

@@ -1,4 +1,4 @@
-#include <TechEngine/client/render/FrameCommand.hpp>
+#include <TechEngine/client/render/RenderSnapshot.hpp>
 #include <TechEngine/platform/window/Window.hpp>
 
 #include <render/FrameRenderer.hpp>
@@ -138,12 +138,12 @@ TEST_CASE("Frame renderer clears, draws, redraws and resizes on its context owne
                 initialized = renderer.initialize();
             }
             if (initialized) {
-                const TechEngine::FrameCommand clear{{1.0F, 0.0F, 0.0F, 1.0F}, false, 1};
+                const TechEngine::RenderSnapshot clear{{1.0F, 0.0F, 0.0F, 1.0F}, false, 1};
                 renderer.draw(clear, TechEngine::FramebufferSize{IMAGE_SIZE, IMAGE_SIZE});
                 glReadPixels(0, 0, IMAGE_SIZE, IMAGE_SIZE, GL_RGBA, GL_UNSIGNED_BYTE, cleared.data());
                 glGetIntegerv(GL_VIEWPORT, initialViewport.data());
 
-                const TechEngine::FrameCommand draw{{0.0F, 0.0F, 0.0F, 1.0F}, true, 2};
+                const TechEngine::RenderSnapshot draw{{0.0F, 0.0F, 0.0F, 1.0F}, true, 2};
                 renderer.draw(draw, TechEngine::FramebufferSize{IMAGE_SIZE, IMAGE_SIZE});
                 renderer.draw(draw, TechEngine::FramebufferSize{32, 48});
                 glReadPixels(0, 0, IMAGE_SIZE, IMAGE_SIZE, GL_RGBA, GL_UNSIGNED_BYTE, triangle.data());
@@ -153,7 +153,7 @@ TEST_CASE("Frame renderer clears, draws, redraws and resizes on its context owne
                 renderer.draw(draw, TechEngine::FramebufferSize{32, 48});
                 glReadPixels(0, 0, IMAGE_SIZE, IMAGE_SIZE, GL_RGBA, GL_UNSIGNED_BYTE, repeated.data());
 
-                const TechEngine::FrameCommand green{{0.0F, 1.0F, 0.0F, 1.0F}, false, 3};
+                const TechEngine::RenderSnapshot green{{0.0F, 1.0F, 0.0F, 1.0F}, false, 3};
                 renderer.draw(green, TechEngine::FramebufferSize{0, 48});
                 renderer.draw(green, TechEngine::FramebufferSize{32, 0});
                 renderer.draw(green, TechEngine::FramebufferSize{0, 0});

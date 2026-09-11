@@ -18,10 +18,10 @@ namespace TechEngine {
     }
 
     std::uint64_t Clock::frame() const {
-        return m_frame;
+        return m_frame.load(std::memory_order_relaxed);
     }
 
     void Clock::advanceFrame() {
-        m_frame++;
+        m_frame.fetch_add(1, std::memory_order_relaxed);
     }
 }

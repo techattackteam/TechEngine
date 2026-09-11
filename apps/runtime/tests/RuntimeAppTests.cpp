@@ -9,7 +9,9 @@ namespace {
         using TechEngine::RuntimeApp::stopRequested;
 
         void advanceFrame() {
-            update(m_simulationThread.simulationContext());
+            m_simulationThread.advance(TechEngine::SimulationSettings::FIXED_DELTA_TIME, [this](const TechEngine::SimulationContext& simulation) {
+                fixedUpdate(simulation);
+            });
         }
 
         TechEngine::Role loopRole() const {
@@ -24,7 +26,7 @@ TEST_CASE("runtime composes as a client", "[runtime]") {
     REQUIRE(runtime.loopRole() == TechEngine::Role::Client);
 }
 
-TEST_CASE("runtime requests a stop after its 120-frame demo", "[runtime]") {
+TEST_CASE("runtime requests a stop after its 120-tick demo", "[runtime]") {
     RuntimeProbe runtime;
     runtime.init();
     for (int i = 0; i < 120; i++) {
