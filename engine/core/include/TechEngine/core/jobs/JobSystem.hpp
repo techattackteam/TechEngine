@@ -21,7 +21,7 @@ namespace TechEngine {
     struct BatchId {
         constexpr BatchId() = default;
 
-        constexpr explicit BatchId(std::uint64_t value) : m_value{value} {
+        constexpr explicit BatchId(std::uint64_t value) : m_value(value) {
         }
 
         constexpr std::uint64_t value() const {

@@ -10,7 +10,7 @@ namespace TechEngine {
     struct EventTypeId {
         constexpr EventTypeId() = default;
 
-        constexpr explicit EventTypeId(StringId tag) : m_value{tag} {
+        constexpr explicit EventTypeId(StringId tag) : m_value(tag) {
         }
 
         constexpr StringId stringId() const {

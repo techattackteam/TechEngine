@@ -32,7 +32,7 @@ static TechEngine::AssertResponse captureHandler(const TechEngine::AssertContext
 // leak into each other.
 class AssertHandlerGuard {
 public:
-    AssertHandlerGuard() : m_previous{TechEngine::setAssertHandler(&captureHandler)} {
+    AssertHandlerGuard() : m_previous(TechEngine::setAssertHandler(&captureHandler)) {
         g_fired.clear();
     }
 

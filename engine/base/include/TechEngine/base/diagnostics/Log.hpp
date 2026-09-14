@@ -39,7 +39,7 @@ namespace TechEngine {
     public:
         constexpr LogModule() = default;
 
-        constexpr explicit LogModule(std::uint16_t id) : m_id{id} {
+        constexpr explicit LogModule(std::uint16_t id) : m_id(id) {
         }
 
         constexpr std::uint16_t id() const {
@@ -56,7 +56,7 @@ namespace TechEngine {
     public:
         constexpr LogChannel() = default;
 
-        constexpr explicit LogChannel(std::uint16_t id) : m_id{id} {
+        constexpr explicit LogChannel(std::uint16_t id) : m_id(id) {
         }
 
         constexpr std::uint16_t id() const {

@@ -3,7 +3,7 @@
 #include <cstring>
 
 namespace TechEngine {
-    Reader::Reader(const std::span<const std::byte> buffer) : m_buffer{buffer} {
+    Reader::Reader(const std::span<const std::byte> buffer) : m_buffer(buffer) {
     }
 
     void Reader::readHeader(BlobHeader& out) {

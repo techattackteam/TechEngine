@@ -3,7 +3,7 @@
 #include <TechEngine/core/events/EventStreamManager.hpp>
 
 namespace TechEngine {
-    EventStreamManager::EventStreamManager(EventRegistry& registry, const std::size_t initialCapacity) : m_registry{&registry} {
+    EventStreamManager::EventStreamManager(EventRegistry& registry, const std::size_t initialCapacity) : m_registry(&registry) {
         registry.seal();
         m_streams.reserve(registry.typeCount());
 

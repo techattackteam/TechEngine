@@ -2,7 +2,7 @@
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 
 namespace TechEngine {
-    ComponentRegistry::ComponentRegistry(std::uint32_t typeLimit) : m_typeLimit{typeLimit} {
+    ComponentRegistry::ComponentRegistry(std::uint32_t typeLimit) : m_typeLimit(typeLimit) {
         TE_CHECK(typeLimit <= ComponentDenseId::VALUE_COUNT, "Component type limit exceeds the dense id capacity: {0}", typeLimit);
     }
 

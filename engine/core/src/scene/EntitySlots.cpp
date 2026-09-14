@@ -3,7 +3,7 @@
 #include <scene/EntitySlots.hpp>
 
 namespace TechEngine {
-    EntitySlots::EntitySlots(std::uint32_t slotLimit, std::uint32_t generationLimit) : m_slotLimit{slotLimit}, m_generationLimit{generationLimit} {
+    EntitySlots::EntitySlots(std::uint32_t slotLimit, std::uint32_t generationLimit) : m_slotLimit(slotLimit), m_generationLimit(generationLimit) {
     }
 
     Entity EntitySlots::create() {

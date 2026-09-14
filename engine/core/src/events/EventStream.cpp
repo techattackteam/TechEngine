@@ -9,7 +9,7 @@
 namespace TechEngine {
     static constexpr std::size_t INITIAL_MARK_CAPACITY = 64;
 
-    EventStream::EventStream(const EventTypeId id, const std::uint32_t elementSize, const std::uint32_t alignment, const std::size_t initialCapacity) : m_id{id}, m_elementSize{elementSize}, m_alignment{alignment}, m_capacity{initialCapacity} {
+    EventStream::EventStream(const EventTypeId id, const std::uint32_t elementSize, const std::uint32_t alignment, const std::size_t initialCapacity) : m_id(id), m_elementSize(elementSize), m_alignment(alignment), m_capacity(initialCapacity) {
         TE_CHECK(m_elementSize > 0);
         TE_CHECK(m_alignment <= alignof(std::max_align_t));
 
