@@ -8,6 +8,8 @@ techengine_module(core
           src/jobs/DedicatedThreadState.cpp
           src/jobs/JobSystem.cpp
           src/jobs/ThreadRegistration.cpp
+          src/scene/ComponentRegistry.cpp
+          src/scene/EntitySlots.cpp
           src/serialization/Reader.cpp
           src/serialization/Writer.cpp
   HEADERS include/TechEngine/core/Core.hpp
@@ -22,12 +24,16 @@ techengine_module(core
           include/TechEngine/core/jobs/DedicatedThreadContext.hpp
           include/TechEngine/core/jobs/JobSystem.hpp
           include/TechEngine/core/jobs/ThreadRegistration.hpp
+          include/TechEngine/core/scene/ComponentRegistry.hpp
+          include/TechEngine/core/scene/ComponentTypeId.hpp
+          include/TechEngine/core/scene/Entity.hpp
           include/TechEngine/core/serialization/BlobHeader.hpp
           include/TechEngine/core/serialization/Reader.hpp
           include/TechEngine/core/serialization/Visit.hpp
           include/TechEngine/core/serialization/Writer.hpp
           src/jobs/DedicatedThreadState.hpp
           src/jobs/RegisteredThread.hpp
+          src/scene/EntitySlots.hpp
   DEPS    base platform
   LIBS    Jolt                             # authoritative physics (ADR-006 §1)
           Threads::Threads                 # JobSystem's workers; PUBLIC because the header has std::thread
@@ -43,6 +49,8 @@ if(TE_BUILD_TESTS)
           tests/events/EventStreamManagerTests.cpp
           tests/jobs/DedicatedThreadTests.cpp
           tests/jobs/JobSystemTests.cpp
+          tests/scene/ComponentRegistryTests.cpp
+          tests/scene/EntitySlotsTests.cpp
           tests/serialization/VisitTests.cpp
           tests/serialization/WriterReaderTests.cpp)
 endif()
