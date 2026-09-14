@@ -18,7 +18,7 @@ namespace TechEngine {
         }
         TE_CHECK(m_slots.size() < m_slotLimit, "Entity slot limit exceeded after {0} entities", m_slotLimit);
         const std::uint32_t index = static_cast<std::uint32_t>(m_slots.size());
-        m_slots.push_back({0, Entity::NULL_INDEX, true});
+        m_slots.push_back({0, Entity::NULL_INDEX, {}, true});
         m_size++;
         return Entity{index, 0};
     }
@@ -27,6 +27,7 @@ namespace TechEngine {
         if (entity.index < m_slots.size() && m_slots[entity.index].occupied && m_slots[entity.index].generation == entity.generation) {
             Slot& slot = m_slots[entity.index];
             slot.occupied = false;
+            slot.location = {};
 
             if (slot.generation == m_generationLimit) {
                 slot.retired = true;
@@ -47,6 +48,18 @@ namespace TechEngine {
         return entity.index < m_slots.size() && m_slots[entity.index].occupied && m_slots[entity.index].generation == entity.generation;
     }
 
+    const EntityLocation* EntitySlots::location(const Entity entity) const {
+        if (!contains(entity)) {
+            return nullptr;
+        }
+        return &m_slots[entity.index].location;
+    }
+
+    void EntitySlots::setLocation(const Entity entity, const EntityLocation location) {
+        TE_CHECK(contains(entity), "Cannot set the location of a stale entity");
+        m_slots[entity.index].location = location;
+    }
+
     void EntitySlots::clear() {
         m_freeHead = Entity::NULL_INDEX;
 
@@ -55,6 +68,7 @@ namespace TechEngine {
 
             if (slot.occupied) {
                 slot.occupied = false;
+                slot.location = {};
 
                 if (slot.generation == m_generationLimit) {
                     slot.retired = true;

@@ -8,11 +8,19 @@
 #include <vector>
 
 namespace TechEngine {
+    class Archetype;
+
+    struct EntityLocation {
+        Archetype* archetype = nullptr;
+        std::size_t row = 0;
+    };
+
     class EntitySlots {
     private:
         struct Slot {
             std::uint32_t generation = 0;
             std::uint32_t nextFree = Entity::NULL_INDEX;
+            EntityLocation location;
             bool occupied = false;
             bool retired = false;
         };
@@ -31,6 +39,10 @@ namespace TechEngine {
         bool destroy(Entity entity);
 
         bool contains(Entity entity) const;
+
+        const EntityLocation* location(Entity entity) const;
+
+        void setLocation(Entity entity, EntityLocation location);
 
         void clear();
 

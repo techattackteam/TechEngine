@@ -8,6 +8,8 @@ techengine_module(core
           src/jobs/DedicatedThreadState.cpp
           src/jobs/JobSystem.cpp
           src/jobs/ThreadRegistration.cpp
+          src/scene/Archetype.cpp
+          src/scene/ArchetypeStorage.cpp
           src/scene/ComponentRegistry.cpp
           src/scene/EntitySlots.cpp
           src/serialization/Reader.cpp
@@ -25,6 +27,7 @@ techengine_module(core
           include/TechEngine/core/jobs/JobSystem.hpp
           include/TechEngine/core/jobs/ThreadRegistration.hpp
           include/TechEngine/core/scene/ComponentRegistry.hpp
+          include/TechEngine/core/scene/ComponentStorage.hpp
           include/TechEngine/core/scene/ComponentTypeId.hpp
           include/TechEngine/core/scene/Entity.hpp
           include/TechEngine/core/serialization/BlobHeader.hpp
@@ -33,6 +36,8 @@ techengine_module(core
           include/TechEngine/core/serialization/Writer.hpp
           src/jobs/DedicatedThreadState.hpp
           src/jobs/RegisteredThread.hpp
+          src/scene/Archetype.hpp
+          src/scene/ArchetypeStorage.hpp
           src/scene/EntitySlots.hpp
   DEPS    base platform
   LIBS    Jolt                             # authoritative physics (ADR-006 §1)
@@ -49,6 +54,8 @@ if(TE_BUILD_TESTS)
           tests/events/EventStreamManagerTests.cpp
           tests/jobs/DedicatedThreadTests.cpp
           tests/jobs/JobSystemTests.cpp
+          tests/scene/ArchetypeStorageTests.cpp
+          tests/scene/ArchetypeTests.cpp
           tests/scene/ComponentRegistryTests.cpp
           tests/scene/EntitySlotsTests.cpp
           tests/serialization/VisitTests.cpp
