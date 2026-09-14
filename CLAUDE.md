@@ -99,7 +99,8 @@ I get them wrong *by habit*, so knowing where the spec lives isn't enough:
 
 - **No `[[nodiscard]]`.** Anywhere — not on getters, not on queries. → *Attributes*.
 - **Initialize with `=`, not braces.** `std::uint32_t m_alignment = 0;`, never `m_alignment{0}`.
-  Braces only for value-init `{}`, multi-field aggregates, and real constructor calls.
+  Member-init lists use `()`: `: m_id(id)`, not `: m_id{id}`.
+  Braces only for value-init `{}` and multi-field aggregates.
   → *Initialization*.
 - **Internal linkage is `static`, not `namespace {}`.** Never wrap half a `.cpp` in an
   anonymous namespace; it earns its place only around a single `.cpp`-local **type** with a

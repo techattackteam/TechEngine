@@ -1,9 +1,11 @@
 #pragma once
 
+#include <TechEngine/core/scene/ComponentStorage.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <span>
 #include <string>
 #include <string_view>
@@ -15,6 +17,7 @@ namespace TechEngine {
         ComponentTypeId id;
         ComponentDenseId denseId;
         std::string tag;
+        std::unique_ptr<IComponentStorage> (*createStorage)();
     };
 
     class ComponentRegistry {
@@ -31,9 +34,9 @@ namespace TechEngine {
 
         ComponentRegistry& operator=(const ComponentRegistry&) = delete;
 
-        template<typename T>
+        template<ComponentValue T>
         ComponentTypeId registerComponent(std::string_view tag) {
-            const ComponentTypeId id = registerType(tag, internal::g_componentTypeSlot<T>);
+            const ComponentTypeId id = registerType(tag, internal::g_componentTypeSlot<T>, &createComponentStorage<T>);
             internal::g_componentTypeSlot<T> = id;
             return id;
         }
@@ -53,6 +56,6 @@ namespace TechEngine {
         std::size_t typeCount() const;
 
     private:
-        ComponentTypeId registerType(std::string_view tag, ComponentTypeId existingTypeId);
+        ComponentTypeId registerType(std::string_view tag, ComponentTypeId existingTypeId, std::unique_ptr<IComponentStorage> (*createStorage)());
     };
 }

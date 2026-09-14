@@ -34,7 +34,7 @@ namespace TechEngine {
     public:
         template<typename T>
             requires std::convertible_to<const T&, std::string_view>
-        consteval PositionalFormatString(const T& text) : m_inner{text} {
+        consteval PositionalFormatString(const T& text) : m_inner(text) {
             if (internal::hasAutomaticField(std::string_view{text})) {
                 throw "TechEngine format strings index their arguments — write {0}, not {}";
             }

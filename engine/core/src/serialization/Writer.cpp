@@ -2,7 +2,7 @@
 #include <TechEngine/core/serialization/Writer.hpp>
 
 namespace TechEngine {
-    Writer::Writer(std::vector<std::byte>& buffer) : m_buffer{buffer} {
+    Writer::Writer(std::vector<std::byte>& buffer) : m_buffer(buffer) {
     }
 
     void Writer::writeHeader(const std::uint16_t flags) {

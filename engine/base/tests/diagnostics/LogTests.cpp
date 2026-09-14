@@ -49,7 +49,7 @@ static void secondarySink(const TechEngine::LogRecord& record) {
 // leak into each other.
 class SinkGuard {
 public:
-    SinkGuard() : m_previousLevel{TechEngine::minLevel()} {
+    SinkGuard() : m_previousLevel(TechEngine::minLevel()) {
         g_captured.clear();
         TechEngine::addLogSink(&captureSink);
     }

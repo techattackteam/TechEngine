@@ -7,7 +7,7 @@
 namespace TechEngineTests {
     class ScratchDirectory {
     public:
-        explicit ScratchDirectory(std::string_view name) : m_root{std::filesystem::temp_directory_path() / "TechEngineTests" / name} {
+        explicit ScratchDirectory(std::string_view name) : m_root(std::filesystem::temp_directory_path() / "TechEngineTests" / name) {
             std::filesystem::remove_all(m_root);
             std::filesystem::create_directories(m_root);
         }

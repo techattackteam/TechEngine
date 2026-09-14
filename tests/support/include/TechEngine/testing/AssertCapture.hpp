@@ -17,7 +17,7 @@ namespace TechEngineTests {
     // assert what the object looks like *after* a rejection.
     class AssertHandlerGuard {
     public:
-        AssertHandlerGuard() : m_previous{TechEngine::setAssertHandler(&captureHandler)} {
+        AssertHandlerGuard() : m_previous(TechEngine::setAssertHandler(&captureHandler)) {
             g_fired.clear();
         }
 
@@ -55,7 +55,7 @@ namespace TechEngineTests {
     // destructor, and any catch(...) between the check and the test swallows it.
     class FatalAssertGuard {
     public:
-        FatalAssertGuard() : m_previous{TechEngine::setAssertHandler(&throwingHandler)} {
+        FatalAssertGuard() : m_previous(TechEngine::setAssertHandler(&throwingHandler)) {
         }
 
         ~FatalAssertGuard() {
