@@ -15,7 +15,7 @@ namespace TechEngine {
     struct StringId {
         constexpr StringId() = default;
 
-        constexpr explicit StringId(std::string_view tag) {
+        constexpr explicit StringId(const std::string_view tag) {
             std::uint64_t hash = internal::FNV_OFFSET_BASIS;
             for (std::size_t i = 0; i < tag.size(); i++) {
                 hash ^= static_cast<std::uint8_t>(tag[i]);
