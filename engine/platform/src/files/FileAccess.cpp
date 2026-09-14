@@ -29,7 +29,7 @@ namespace TechEngine {
         return FileResult::Ok;
     }
 
-    FileAccess::FileAccess(const MountTable& mounts) : m_mounts{&mounts} {
+    FileAccess::FileAccess(const MountTable& mounts) : m_mounts(&mounts) {
     }
 
     FileResult FileAccess::read(std::string_view virtualPath, std::vector<std::byte>& out) const {

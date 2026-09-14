@@ -12,7 +12,7 @@ namespace TechEngine {
     struct ComponentTypeId {
         constexpr ComponentTypeId() = default;
 
-        constexpr explicit ComponentTypeId(const StringId tag) : m_value{tag} {
+        constexpr explicit ComponentTypeId(const StringId tag) : m_value(tag) {
         }
 
         constexpr StringId stringId() const {
@@ -35,7 +35,7 @@ namespace TechEngine {
 
         constexpr ComponentDenseId() = default;
 
-        constexpr explicit ComponentDenseId(const std::uint16_t value) : m_value{value} {
+        constexpr explicit ComponentDenseId(const std::uint16_t value) : m_value(value) {
         }
 
         constexpr std::uint16_t value() const {

@@ -7,7 +7,7 @@
 #include <utility>
 
 namespace TechEngine {
-    ThreadRegistration::ThreadRegistration(JobSystem& jobs, std::string name, const ThreadRole role) : m_jobs{jobs}, m_threadId{std::this_thread::get_id()} {
+    ThreadRegistration::ThreadRegistration(JobSystem& jobs, std::string name, const ThreadRole role) : m_jobs(jobs), m_threadId(std::this_thread::get_id()) {
         TE_PROFILER_THREAD_NAME(name.c_str());
 
         bool inserted = false;

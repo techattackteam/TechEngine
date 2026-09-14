@@ -39,7 +39,7 @@ namespace TechEngine {
 
             FormatBufferIterator() = default;
 
-            explicit FormatBufferIterator(FormatBuffer& buffer) : m_buffer{&buffer} {
+            explicit FormatBufferIterator(FormatBuffer& buffer) : m_buffer(&buffer) {
             }
 
             const FormatBufferIterator& operator*() const {

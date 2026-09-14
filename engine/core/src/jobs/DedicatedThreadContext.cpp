@@ -5,7 +5,7 @@
 #include <mutex>
 
 namespace TechEngine {
-    DedicatedThreadContext::DedicatedThreadContext(State& state, const std::stop_token stopToken) : m_state{state}, m_stopToken{stopToken} {
+    DedicatedThreadContext::DedicatedThreadContext(State& state, const std::stop_token stopToken) : m_state(state), m_stopToken(stopToken) {
     }
 
     std::stop_token DedicatedThreadContext::stopToken() const {

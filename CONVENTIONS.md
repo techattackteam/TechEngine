@@ -259,7 +259,7 @@ Braces stay where they do something `=` cannot:
 | aggregate with more than one field | `const Vec3 position{1.0f, 2.0f, 3.0f};` |
 | a constructor call, not a value | `std::ifstream file{path};` — `= path` won't compile for an explicit ctor |
 | narrowing you want the compiler to catch | braces; `=` truncates silently |
-| a constructor's member-init list | out of scope — `=` isn't available there. `: m_id{id}` stays |
+| a constructor's member-init list | `: m_id(id)` — parens; braces only for value-init `{}` or aggregate init |
 
 `std::atomic<T> x = value;` is fine — the converting constructor is not `explicit`, so the
 retrofit of `g_minLevel{Level::Trace}` and friends is mechanical.
@@ -269,6 +269,10 @@ which is the wrong mental model for a scalar and the wrong shape next to the cas
 genuinely are construction. Nothing enforces this — no check in our set covers init form.
 
 `base`, `core` and `app` were swept to match on 2026-08-08.
+
+**Member-init lists use `()`, not `{}`.** `= value` is unavailable in an init list, so the
+question is parens vs braces. Parens: `: m_id(id), m_buffer(buffer)`. Braces stay for
+value-init (`: m_data{}`) and aggregate init. Swept 2026-09-14.
 
 ## Loops — post-increment in the `for` step
 
