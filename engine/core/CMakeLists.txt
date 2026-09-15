@@ -26,10 +26,12 @@ techengine_module(core
           include/TechEngine/core/jobs/DedicatedThreadContext.hpp
           include/TechEngine/core/jobs/JobSystem.hpp
           include/TechEngine/core/jobs/ThreadRegistration.hpp
+          include/TechEngine/core/scene/Access.hpp
           include/TechEngine/core/scene/ComponentRegistry.hpp
           include/TechEngine/core/scene/ComponentStorage.hpp
           include/TechEngine/core/scene/ComponentTypeId.hpp
           include/TechEngine/core/scene/Entity.hpp
+          include/TechEngine/core/scene/Query.hpp
           include/TechEngine/core/serialization/BlobHeader.hpp
           include/TechEngine/core/serialization/Reader.hpp
           include/TechEngine/core/serialization/Visit.hpp
@@ -58,6 +60,7 @@ if(TE_BUILD_TESTS)
           tests/scene/ArchetypeTests.cpp
           tests/scene/ComponentRegistryTests.cpp
           tests/scene/EntitySlotsTests.cpp
+          tests/scene/QueryTests.cpp
           tests/serialization/VisitTests.cpp
           tests/serialization/WriterReaderTests.cpp)
 endif()

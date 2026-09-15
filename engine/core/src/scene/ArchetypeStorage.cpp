@@ -13,6 +13,7 @@ namespace TechEngine {
     }
 
     Entity ArchetypeStorage::createEntity() {
+        checkStructuralMutationAllowed();
         Entity entity = m_entities.create();
         Archetype& archetype = getOrCreate({});
         const std::size_t row = archetype.append(entity);
@@ -21,6 +22,7 @@ namespace TechEngine {
     }
 
     bool ArchetypeStorage::destroyEntity(const Entity entity) {
+        checkStructuralMutationAllowed();
         const EntityLocation* location = m_entities.location(entity);
         if (location == nullptr) {
             return false;
@@ -40,9 +42,11 @@ namespace TechEngine {
     }
 
     void ArchetypeStorage::clear() {
+        checkStructuralMutationAllowed();
         m_entities.clear();
         m_archetypesByHash.clear();
         m_archetypes.clear();
+        m_archetypeRevision++;
     }
 
     const EntityLocation* ArchetypeStorage::location(const Entity entity) const {
@@ -79,6 +83,7 @@ namespace TechEngine {
         Archetype* result = archetype.get();
         m_archetypes.push_back(std::move(archetype));
         bucket.push_back(result);
+        m_archetypeRevision++;
         return *result;
     }
 
@@ -116,6 +121,21 @@ namespace TechEngine {
         std::erase(destinationSignature, type);
         Archetype& destination = getOrCreate(std::move(destinationSignature));
         return source.m_removeTransitions.emplace(type, buildEdge(source, destination)).first->second;
+    }
+
+    void ArchetypeStorage::checkStructuralMutationAllowed() const {
+        TE_CHECK(m_iterationDepth.load(std::memory_order_relaxed) == 0, "Structural mutation is prohibited during query iteration");
+    }
+
+    void ArchetypeStorage::beginQueryIteration(void* context) {
+        auto& storage = *static_cast<ArchetypeStorage*>(context);
+        storage.m_iterationDepth.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    void ArchetypeStorage::endQueryIteration(void* context) {
+        auto& storage = *static_cast<ArchetypeStorage*>(context);
+        const std::size_t previousDepth = storage.m_iterationDepth.fetch_sub(1, std::memory_order_relaxed);
+        TE_CHECK(previousDepth > 0, "Query iteration depth underflow");
     }
 
 }
