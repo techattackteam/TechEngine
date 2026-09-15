@@ -3,13 +3,18 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
+#include <TechEngine/core/scene/Query.hpp>
 
 #include <scene/Archetype.hpp>
 #include <scene/EntitySlots.hpp>
 
+#include <atomic>
 #include <cstddef>
+#include <cstdint>
+#include <functional>
 #include <memory>
 #include <span>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -25,9 +30,19 @@ namespace TechEngine {
         std::vector<std::unique_ptr<Archetype>> m_archetypes;
         std::unordered_map<std::size_t, std::vector<Archetype*>> m_archetypesByHash;
         SignatureHasher m_signatureHasher = nullptr;
+        std::uint64_t m_archetypeRevision = 0;
+        std::atomic_size_t m_iterationDepth = 0;
 
     public:
         explicit ArchetypeStorage(ComponentRegistry& registry, SignatureHasher signatureHasher = nullptr);
+
+        ArchetypeStorage(const ArchetypeStorage&) = delete;
+
+        ArchetypeStorage(ArchetypeStorage&&) = delete;
+
+        ArchetypeStorage& operator=(const ArchetypeStorage&) = delete;
+
+        ArchetypeStorage& operator=(ArchetypeStorage&&) = delete;
 
         Entity createEntity();
 
@@ -39,6 +54,7 @@ namespace TechEngine {
 
         template<ComponentValue T>
         bool addComponent(const Entity entity, const T& value) {
+            checkStructuralMutationAllowed();
             const EntityLocation* location = m_entities.location(entity);
             const ComponentDenseId type = denseId<T>();
             if (location == nullptr || location->archetype->contains(type)) {
@@ -55,6 +71,7 @@ namespace TechEngine {
 
         template<ComponentValue T>
         bool removeComponent(const Entity entity) {
+            checkStructuralMutationAllowed();
             const EntityLocation* location = m_entities.location(entity);
             const ComponentDenseId type = denseId<T>();
             if (location == nullptr || !location->archetype->contains(type)) {
@@ -91,6 +108,28 @@ namespace TechEngine {
 
         std::size_t archetypeCount() const;
 
+        template<typename Function>
+        void eachEntity(Function&& function) {
+            beginQueryIteration(this);
+            try {
+                for (const std::unique_ptr<Archetype>& archetype: m_archetypes) {
+                    for (const Entity entity: archetype->entities()) {
+                        std::invoke(function, entity);
+                    }
+                }
+            } catch (...) {
+                endQueryIteration(this);
+                throw;
+            }
+            endQueryIteration(this);
+        }
+
+        template<typename WritableComponents, typename ReadableComponents>
+        Query<WritableComponents, ReadableComponents> query() {
+            using QueryType = Query<WritableComponents, ReadableComponents>;
+            return QueryType(this, &refreshQuery<QueryType>, &beginQueryIteration, &endQueryIteration);
+        }
+
         static std::size_t hashSignature(std::span<const ComponentDenseId> signature);
 
     private:
@@ -108,6 +147,35 @@ namespace TechEngine {
         Archetype::Edge& addEdge(Archetype& source, ComponentDenseId type);
 
         Archetype::Edge& removeEdge(Archetype& source, ComponentDenseId type);
+
+        void checkStructuralMutationAllowed() const;
+
+        static void beginQueryIteration(void* context);
+
+        static void endQueryIteration(void* context);
+
+        template<typename QueryType>
+        static void refreshQuery(void* context, QueryType& query) {
+            auto& storage = *static_cast<ArchetypeStorage*>(context);
+            if (query.m_revision == storage.m_archetypeRevision) {
+                return;
+            }
+
+            query.m_matches.clear();
+            for (const std::unique_ptr<Archetype>& archetype: storage.m_archetypes) {
+                const bool matches = query.matches([&]<typename T>(std::type_identity<T>) {
+                    return archetype->contains(storage.denseId<T>());
+                });
+                if (!matches) {
+                    continue;
+                }
+
+                query.addMatch(&archetype->m_entities, [&]<typename T>(std::type_identity<T>) -> IComponentStorage* {
+                    return archetype->m_columns.at(storage.denseId<T>()).get();
+                });
+            }
+            query.m_revision = storage.m_archetypeRevision;
+        }
 
         template<typename PrepareDestination>
         void move(const Entity entity, const EntityLocation sourceLocation, const Archetype::Edge& edge, PrepareDestination&& prepareDestination) {
