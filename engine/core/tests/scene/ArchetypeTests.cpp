@@ -2,6 +2,7 @@
 
 #include <scene/Archetype.hpp>
 #include <scene/ArchetypeStorage.hpp>
+#include <scene/components/Hierarchy.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -74,9 +75,11 @@ TEST_CASE("an archetype creates one typed column for each signature entry", "[co
 
 TEST_CASE("component insertion order converges on one canonical archetype", "[core][scene][archetype]") {
     TechEngine::ComponentRegistry registry;
+    const TechEngine::ComponentTypeId hierarchyId = registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
     const TechEngine::ComponentTypeId positionId = registry.registerComponent<ArchetypePosition>("Tests.ArchetypePosition");
     const TechEngine::ComponentTypeId velocityId = registry.registerComponent<ArchetypeVelocity>("Tests.ArchetypeVelocity");
     const TechEngine::ComponentTypeId healthId = registry.registerComponent<ArchetypeHealth>("Tests.ArchetypeHealth");
+    const TechEngine::ComponentDenseId hierarchy = registry.find(hierarchyId)->denseId;
     const TechEngine::ComponentDenseId position = registry.find(positionId)->denseId;
     const TechEngine::ComponentDenseId velocity = registry.find(velocityId)->denseId;
     const TechEngine::ComponentDenseId health = registry.find(healthId)->denseId;
@@ -98,10 +101,10 @@ TEST_CASE("component insertion order converges on one canonical archetype", "[co
 
     REQUIRE(archetype == storage.location(second)->archetype);
     REQUIRE(archetype == storage.location(third)->archetype);
-    REQUIRE(archetype->signature().size() == 3);
-    REQUIRE(archetype->signature()[0] == position);
-    REQUIRE(archetype->signature()[1] == velocity);
-    REQUIRE(archetype->signature()[2] == health);
+    std::array expectedSignature{hierarchy, position, velocity, health};
+    std::ranges::sort(expectedSignature);
+    REQUIRE(std::ranges::equal(archetype->signature(), expectedSignature));
+    REQUIRE(archetype->contains(hierarchy));
     REQUIRE(archetype->contains(position));
     REQUIRE(archetype->contains(velocity));
     REQUIRE(archetype->contains(health));

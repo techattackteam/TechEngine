@@ -53,6 +53,11 @@ namespace TechEngine {
         void clear();
 
         template<ComponentValue T>
+        bool addComponent(const Entity entity) {
+            return addComponent<T>(entity, T());
+        }
+
+        template<ComponentValue T>
         bool addComponent(const Entity entity, const T& value) {
             checkStructuralMutationAllowed();
             const EntityLocation* location = m_entities.location(entity);

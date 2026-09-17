@@ -1,6 +1,7 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 
 #include <scene/ArchetypeStorage.hpp>
+#include <scene/components/Hierarchy.hpp>
 
 #include <algorithm>
 #include <utility>
@@ -10,13 +11,23 @@ namespace TechEngine {
         if (m_signatureHasher == nullptr) {
             m_signatureHasher = &hashSignature;
         }
+        // TODO(S6-T9): Register built-in components in the app composition root.
+        if (m_registry->find(componentTypeId<Hierarchy>()) == nullptr) {
+            m_registry->registerComponent<Hierarchy>(Hierarchy::tag);
+        }
     }
 
     Entity ArchetypeStorage::createEntity() {
         checkStructuralMutationAllowed();
+        Archetype& archetype = getOrCreate({denseId<Hierarchy>()});
         Entity entity = m_entities.create();
-        Archetype& archetype = getOrCreate({});
-        const std::size_t row = archetype.append(entity);
+        std::size_t row = 0;
+        try {
+            row = archetype.append(entity);
+        } catch (...) {
+            m_entities.destroy(entity);
+            throw;
+        }
         m_entities.setLocation(entity, {&archetype, row});
         return entity;
     }
