@@ -1,4 +1,5 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
+#include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
 
 #include <scene/ArchetypeStorage.hpp>
@@ -14,10 +15,12 @@ namespace TechEngine {
 
     Scene::~Scene() = default;
 
-    Entity Scene::createEntity() {
+    Entity Scene::createEntity() const {
+        TE_PROFILER_FUNCTION();
         return m_storage->createEntity();
     }
     bool Scene::destroyEntity(Entity entity) {
+        TE_PROFILER_FUNCTION();
         Hierarchy* rootHierarchy = getHierarchy(entity);
         if (rootHierarchy == nullptr) {
             return false;
@@ -58,6 +61,7 @@ namespace TechEngine {
     }
 
     void Scene::clear() {
+        TE_PROFILER_FUNCTION();
         m_storage->clear();
     }
     Entity Scene::getParent(Entity entity) const {
@@ -66,6 +70,7 @@ namespace TechEngine {
         return hierarchy != nullptr ? hierarchy->m_parent : Entity{};
     }
     std::vector<Entity> Scene::getRoots() {
+        TE_PROFILER_FUNCTION();
         std::vector<Entity> result;
         m_storage->eachEntity([&](Entity entity) {
             if (!getParent(entity).valid()) {
@@ -76,6 +81,7 @@ namespace TechEngine {
     }
 
     std::vector<Entity> Scene::getChildren(Entity parent) const {
+        TE_PROFILER_FUNCTION();
         std::vector<Entity> result;
         const Hierarchy* parentHierarchy = this->getHierarchy(parent);
         if (parentHierarchy == nullptr) {
@@ -96,6 +102,7 @@ namespace TechEngine {
     }
 
     bool Scene::setParent(const Entity child, const Entity parent, const std::size_t position) {
+        TE_PROFILER_FUNCTION();
         if (child == parent) {
             return false;
         }

@@ -28,7 +28,7 @@ namespace TechEngine {
 
         Scene& operator=(Scene&&) = delete;
 
-        Entity createEntity();
+        Entity createEntity() const;
 
         bool destroyEntity(Entity entity);
 
