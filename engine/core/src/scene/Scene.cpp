@@ -88,6 +88,8 @@ namespace TechEngine {
             return result;
         }
 
+        result.reserve(parentHierarchy->m_childrenCount);
+
         Entity currentChild = parentHierarchy->m_firstChild;
         while (currentChild.valid()) {
             result.push_back(currentChild);
@@ -113,18 +115,20 @@ namespace TechEngine {
             return false;
         }
 
-        for (Entity ancestor = parent; ancestor.valid();) {
-            if (ancestor == child) {
-                return false;
+        const Entity oldParent = childHierarchy->m_parent;
+        if (oldParent != parent) {
+            for (Entity ancestor = parent; ancestor.valid();) {
+                if (ancestor == child) {
+                    return false;
+                }
+                const Hierarchy* ancestorHierarchy = getHierarchy(ancestor);
+                if (ancestorHierarchy == nullptr) {
+                    return false;
+                }
+                ancestor = ancestorHierarchy->m_parent;
             }
-            const Hierarchy* ancestorHierarchy = getHierarchy(ancestor);
-            if (ancestorHierarchy == nullptr) {
-                return false;
-            }
-            ancestor = ancestorHierarchy->m_parent;
         }
 
-        const Entity oldParent = childHierarchy->m_parent;
         const Entity oldPrevious = childHierarchy->m_previousSibling;
         const Entity oldNext = childHierarchy->m_nextSibling;
         Hierarchy* oldParentHierarchy = oldParent.valid() ? getHierarchy(oldParent) : nullptr;
