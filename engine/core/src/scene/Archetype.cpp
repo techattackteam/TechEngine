@@ -23,7 +23,7 @@ namespace TechEngine {
     }
 
     bool Archetype::contains(const ComponentDenseId type) const {
-        return std::binary_search(m_signature.begin(), m_signature.end(), type);
+        return std::ranges::binary_search(m_signature, type);
     }
 
     std::size_t Archetype::rowCount() const {

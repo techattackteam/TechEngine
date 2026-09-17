@@ -12,6 +12,7 @@ techengine_module(core
           src/scene/ArchetypeStorage.cpp
           src/scene/ComponentRegistry.cpp
           src/scene/EntitySlots.cpp
+          src/scene/Scene.cpp
           src/serialization/Reader.cpp
           src/serialization/Writer.cpp
   HEADERS include/TechEngine/core/Core.hpp
@@ -32,6 +33,7 @@ techengine_module(core
           include/TechEngine/core/scene/ComponentTypeId.hpp
           include/TechEngine/core/scene/Entity.hpp
           include/TechEngine/core/scene/Query.hpp
+          include/TechEngine/core/scene/Scene.hpp
           include/TechEngine/core/serialization/BlobHeader.hpp
           include/TechEngine/core/serialization/Reader.hpp
           include/TechEngine/core/serialization/Visit.hpp
@@ -41,6 +43,7 @@ techengine_module(core
           src/scene/Archetype.hpp
           src/scene/ArchetypeStorage.hpp
           src/scene/EntitySlots.hpp
+          src/scene/components/Hierarchy.hpp
   DEPS    base platform
   LIBS    Jolt                             # authoritative physics (ADR-006 §1)
           Threads::Threads                 # JobSystem's workers; PUBLIC because the header has std::thread
@@ -60,6 +63,7 @@ if(TE_BUILD_TESTS)
           tests/scene/ArchetypeTests.cpp
           tests/scene/ComponentRegistryTests.cpp
           tests/scene/EntitySlotsTests.cpp
+          tests/scene/HierarchyTests.cpp
           tests/scene/QueryTests.cpp
           tests/serialization/VisitTests.cpp
           tests/serialization/WriterReaderTests.cpp)

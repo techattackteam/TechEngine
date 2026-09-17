@@ -35,7 +35,7 @@ namespace TechEngine {
         ComponentRegistry& operator=(const ComponentRegistry&) = delete;
 
         template<ComponentValue T>
-        ComponentTypeId registerComponent(std::string_view tag) {
+        ComponentTypeId registerComponent(const std::string_view tag) {
             const ComponentTypeId id = registerType(tag, internal::g_componentTypeSlot<T>, &createComponentStorage<T>);
             internal::g_componentTypeSlot<T> = id;
             return id;

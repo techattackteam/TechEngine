@@ -155,6 +155,15 @@ static std::size_t collideSignatures(std::span<const TechEngine::ComponentDenseI
     return 1;
 }
 
+static bool g_throwSignatureHash = false;
+
+static std::size_t maybeThrowSignatureHash(std::span<const TechEngine::ComponentDenseId> signature) {
+    if (g_throwSignatureHash) {
+        throw std::runtime_error("signature hashing failed");
+    }
+    return TechEngine::ArchetypeStorage::hashSignature(signature);
+}
+
 TEST_CASE("component registration supplies typed vector storage", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
     const TechEngine::ComponentTypeId positionId = registry.registerComponent<StoragePosition>("Tests.StoragePosition");
@@ -278,6 +287,21 @@ TEST_CASE("full signatures distinguish archetypes with colliding hashes", "[core
     REQUIRE(storage.component<StorageVelocity>(positionEntity) == nullptr);
     REQUIRE(storage.component<StorageVelocity>(velocityEntity)->value == 9);
     REQUIRE(storage.component<StoragePosition>(velocityEntity) == nullptr);
+}
+
+TEST_CASE("failed entity creation leaves no occupied slot", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngine::ArchetypeStorage storage(registry, &maybeThrowSignatureHash);
+
+    {
+        const ArchetypeStorageThrowFlagGuard guard(g_throwSignatureHash);
+        REQUIRE_THROWS_AS(storage.createEntity(), std::runtime_error);
+    }
+
+    const TechEngine::Entity entity = storage.createEntity();
+    REQUIRE(entity.index == 0);
+    REQUIRE(storage.contains(entity));
+    REQUIRE(storage.location(entity)->archetype != nullptr);
 }
 
 TEST_CASE("row counts remain aligned through repeated transitions", "[core][scene]") {
