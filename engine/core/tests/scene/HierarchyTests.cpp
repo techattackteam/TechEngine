@@ -162,6 +162,35 @@ TEST_CASE("reused entity slots do not inherit old hierarchy links", "[core][scen
     REQUIRE_FALSE(scene.setParent(oldChild, root, 0));
 }
 
+TEST_CASE("clearing a scene invalidates hierarchy links and entity handles", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity root = scene.createEntity();
+    const TechEngine::Entity child = scene.createEntity();
+
+    REQUIRE(scene.setParent(child, root, 0));
+    scene.clear();
+
+    REQUIRE_FALSE(scene.contains(root));
+    REQUIRE_FALSE(scene.contains(child));
+    REQUIRE(scene.getRoots().empty());
+    REQUIRE(scene.getChildren(root).empty());
+    REQUIRE_FALSE(scene.getParent(child).valid());
+    REQUIRE_FALSE(scene.destroyEntity(root));
+    REQUIRE_FALSE(scene.unparent(child));
+    REQUIRE_FALSE(scene.reorderChild(child, 0));
+
+    const TechEngine::Entity replacement = scene.createEntity();
+    REQUIRE(scene.contains(replacement));
+    REQUIRE_FALSE(scene.contains(root));
+    REQUIRE_FALSE(scene.contains(child));
+    REQUIRE_FALSE(scene.getParent(replacement).valid());
+    REQUIRE(scene.getChildren(replacement).empty());
+    REQUIRE(scene.getRoots() == std::vector<TechEngine::Entity>{replacement});
+    REQUIRE_FALSE(scene.unparent(replacement));
+    REQUIRE_FALSE(scene.reorderChild(replacement, 0));
+}
+
 TEST_CASE("deep subtree destruction does not depend on recursion depth", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
     TechEngine::Scene scene(registry);
