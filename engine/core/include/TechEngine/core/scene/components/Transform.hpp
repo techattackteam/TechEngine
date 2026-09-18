@@ -34,10 +34,18 @@ namespace TechEngine {
 
         void bind(Scene& scene, Entity entity);
 
+        void assignFrom(const Transform& other) noexcept;
+
         void updateWorld(const Mat4& parentWorldMatrix, const TransformValues& parentWorld);
 
     public:
         static constexpr std::string_view tag = "TechEngine::Transform";
+
+        Transform() = default;
+        Transform(const Transform&) = default;
+        Transform(Transform&&) noexcept = default;
+        Transform& operator=(const Transform& other);
+        Transform& operator=(Transform&& other) noexcept;
 
         bool setLocal(const TransformValues& values);
 

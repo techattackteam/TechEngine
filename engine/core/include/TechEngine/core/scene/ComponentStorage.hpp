@@ -70,7 +70,8 @@ namespace TechEngine {
 
         void eraseSwap(const std::size_t index) override {
             if (index + 1U < m_values.size()) {
-                m_values[index] = std::move(m_values.back());
+                std::destroy_at(&m_values[index]);
+                std::construct_at(&m_values[index], std::move(m_values.back()));
             }
             m_values.pop_back();
         }

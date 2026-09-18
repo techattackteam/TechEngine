@@ -5,14 +5,41 @@
 #include <glm/gtc/quaternion.hpp>
 
 namespace TechEngine {
+    void Transform::assignFrom(const Transform& other) noexcept {
+        if (m_scene != nullptr && m_scene->ownsTransform(m_entity, this)) {
+            m_local = other.m_local;
+            m_scene->propagateTransformSubtree(m_entity);
+            return;
+        }
+
+        m_local = other.m_local;
+        m_world = other.m_world;
+        m_worldMatrix = other.m_worldMatrix;
+        m_scene = other.m_scene;
+        m_entity = other.m_entity;
+    }
+
+    Transform& Transform::operator=(const Transform& other) {
+        if (this != &other) {
+            assignFrom(other);
+        }
+        return *this;
+    }
+
+    Transform& Transform::operator=(Transform&& other) noexcept {
+        if (this != &other) {
+            assignFrom(other);
+        }
+        return *this;
+    }
+
     void Transform::bind(Scene& scene, const Entity entity) {
         m_scene = &scene;
         m_entity = entity;
     }
 
     bool Transform::setLocal(const TransformValues& values) {
-        constexpr float epsilon = 0.0001f;
-        const glm::bvec3 isScaleZero = glm::epsilonEqual(values.scale, glm::vec3(0.0f), epsilon);
+        const glm::bvec3 isScaleZero = glm::equal(values.scale, Vec3(0.0f));
         if (glm::any(isScaleZero) || (m_scene != nullptr && !m_scene->ownsTransform(m_entity, this))) {
             return false;
         }
