@@ -13,6 +13,7 @@ techengine_module(core
           src/scene/ComponentRegistry.cpp
           src/scene/EntitySlots.cpp
           src/scene/Scene.cpp
+          src/scene/Transform.cpp
           src/serialization/Reader.cpp
           src/serialization/Writer.cpp
   HEADERS include/TechEngine/core/Core.hpp
@@ -34,6 +35,7 @@ techengine_module(core
           include/TechEngine/core/scene/Entity.hpp
           include/TechEngine/core/scene/Query.hpp
           include/TechEngine/core/scene/Scene.hpp
+          include/TechEngine/core/scene/Transform.hpp
           include/TechEngine/core/serialization/BlobHeader.hpp
           include/TechEngine/core/serialization/Reader.hpp
           include/TechEngine/core/serialization/Visit.hpp
@@ -65,6 +67,7 @@ if(TE_BUILD_TESTS)
           tests/scene/EntitySlotsTests.cpp
           tests/scene/HierarchyTests.cpp
           tests/scene/QueryTests.cpp
+          tests/scene/TransformTests.cpp
           tests/serialization/VisitTests.cpp
           tests/serialization/WriterReaderTests.cpp)
 endif()
