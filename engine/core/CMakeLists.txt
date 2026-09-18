@@ -35,7 +35,7 @@ techengine_module(core
           include/TechEngine/core/scene/Entity.hpp
           include/TechEngine/core/scene/Query.hpp
           include/TechEngine/core/scene/Scene.hpp
-          include/TechEngine/core/scene/Transform.hpp
+          include/TechEngine/core/scene/components/Transform.hpp
           include/TechEngine/core/serialization/BlobHeader.hpp
           include/TechEngine/core/serialization/Reader.hpp
           include/TechEngine/core/serialization/Visit.hpp
