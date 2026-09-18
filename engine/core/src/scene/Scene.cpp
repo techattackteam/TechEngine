@@ -65,9 +65,11 @@ namespace TechEngine {
 
     Scene::~Scene() = default;
 
-    Entity Scene::createEntity() const {
+    Entity Scene::createEntity() {
         TE_PROFILER_FUNCTION();
-        return m_storage->createEntity();
+        const Entity entity = m_storage->createEntity();
+        getComponent<Transform>(entity).bind(*this, entity);
+        return entity;
     }
     bool Scene::destroyEntity(Entity entity) {
         TE_PROFILER_FUNCTION();
@@ -167,31 +169,44 @@ namespace TechEngine {
     }
 
     void Scene::propagateTransforms() {
-        std::vector<Entity> pending = getRoots();
-        while (!pending.empty()) {
-            const Entity entity = pending.back();
-            pending.pop_back();
+        for (const Entity root: getRoots()) {
+            propagateTransformSubtree(root);
+        }
+    }
+
+    void Scene::propagateTransformSubtree(const Entity root) {
+        TE_PROFILER_FUNCTION();
+        Entity entity = root;
+        while (entity.valid()) {
             Transform& transform = getComponent<Transform>(entity);
             const Hierarchy* hierarchy = getHierarchy(entity);
             TE_CHECK(hierarchy != nullptr, "Entity has no hierarchy during transform propagation");
 
             Mat4 parentWorld(1.0f);
-            TransformValues world = transform.getLocal();
+            TransformValues parentValues;
             if (hierarchy->m_parent.valid()) {
                 const Transform& parentTransform = getComponent<Transform>(hierarchy->m_parent);
                 parentWorld = parentTransform.worldMatrix();
-                world = parentTransform.getWorld() * transform.getLocal();
+                parentValues = parentTransform.getWorld();
             }
-            transform.updateWorldMatrix(parentWorld);
-            world.position = Vec3(transform.worldMatrix()[3]);
-            const bool updated = transform.setWorld(world);
-            TE_CHECK(updated, "Propagated world scale became invalid");
+            transform.updateWorld(parentWorld, parentValues);
 
-            for (Entity child = hierarchy->m_firstChild; child.valid();) {
-                const Hierarchy* childHierarchy = getHierarchy(child);
-                TE_CHECK(childHierarchy != nullptr, "Child became invalid during transform propagation");
-                pending.push_back(child);
-                child = childHierarchy->m_nextSibling;
+            if (hierarchy->m_firstChild.valid()) {
+                entity = hierarchy->m_firstChild;
+                continue;
+            }
+
+            while (entity != root) {
+                const Hierarchy* current = getHierarchy(entity);
+                TE_CHECK(current != nullptr, "Child became invalid during transform propagation");
+                if (current->m_nextSibling.valid()) {
+                    entity = current->m_nextSibling;
+                    break;
+                }
+                entity = current->m_parent;
+            }
+            if (entity == root) {
+                break;
             }
         }
     }
@@ -335,6 +350,9 @@ namespace TechEngine {
             afterHierarchy->m_previousSibling = child;
         }
         parentHierarchy->m_childrenCount++;
+        if (oldParent != parent) {
+            propagateTransformSubtree(child);
+        }
         return true;
     }
 
@@ -392,6 +410,7 @@ namespace TechEngine {
         childHierarchy->m_previousSibling = Entity();
         childHierarchy->m_nextSibling = Entity();
 
+        propagateTransformSubtree(child);
         return true;
     }
 
@@ -428,5 +447,9 @@ namespace TechEngine {
 
     const Hierarchy* Scene::getHierarchy(const Entity entity) const {
         return m_storage->component<Hierarchy>(entity);
+    }
+
+    bool Scene::ownsTransform(const Entity entity, const Transform* transform) const {
+        return m_storage->component<Transform>(entity) == transform;
     }
 }

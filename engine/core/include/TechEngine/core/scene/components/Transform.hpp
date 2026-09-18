@@ -1,6 +1,7 @@
 #pragma once
 
 #include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/core/scene/Entity.hpp>
 
 #include <string_view>
 
@@ -28,6 +29,12 @@ namespace TechEngine {
         TransformValues m_local;
         TransformValues m_world;
         Mat4 m_worldMatrix = Mat4(1.0f);
+        Scene* m_scene = nullptr;
+        Entity m_entity;
+
+        void bind(Scene& scene, Entity entity);
+
+        void updateWorld(const Mat4& parentWorldMatrix, const TransformValues& parentWorld);
 
     public:
         static constexpr std::string_view tag = "TechEngine::Transform";
@@ -35,8 +42,6 @@ namespace TechEngine {
         bool setLocal(const TransformValues& values);
 
         bool setWorld(const TransformValues& values);
-
-        void updateWorldMatrix(const Mat4& parentWorldMatrix);
 
         static Quat fromEulerDegrees(const Vec3& angles);
 

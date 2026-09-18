@@ -12,12 +12,15 @@ namespace TechEngine {
     class ArchetypeStorage;
     class ComponentRegistry;
     class Hierarchy;
+    class Transform;
     struct TransformValues;
 
     enum class ReparentMode { PreserveLocal, PreserveWorld };
 
     class Scene {
     private:
+        friend class Transform;
+
         std::unique_ptr<ArchetypeStorage> m_storage;
 
     public:
@@ -33,7 +36,7 @@ namespace TechEngine {
 
         Scene& operator=(Scene&&) = delete;
 
-        Entity createEntity() const;
+        Entity createEntity();
 
         bool destroyEntity(Entity entity);
 
@@ -90,5 +93,9 @@ namespace TechEngine {
         Hierarchy* getHierarchy(Entity entity);
 
         const Hierarchy* getHierarchy(Entity entity) const;
+
+        bool ownsTransform(Entity entity, const Transform* transform) const;
+
+        void propagateTransformSubtree(Entity root);
     };
 }

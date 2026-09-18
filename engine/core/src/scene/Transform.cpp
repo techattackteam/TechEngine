@@ -1,31 +1,45 @@
+#include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
 namespace TechEngine {
+    void Transform::bind(Scene& scene, const Entity entity) {
+        m_scene = &scene;
+        m_entity = entity;
+    }
+
     bool Transform::setLocal(const TransformValues& values) {
         constexpr float epsilon = 0.0001f;
         const glm::bvec3 isScaleZero = glm::epsilonEqual(values.scale, glm::vec3(0.0f), epsilon);
-        if (glm::any(isScaleZero)) {
+        if (glm::any(isScaleZero) || (m_scene != nullptr && !m_scene->ownsTransform(m_entity, this))) {
             return false;
         }
+
         m_local = values;
+        if (m_scene != nullptr) {
+            m_scene->propagateTransformSubtree(m_entity);
+        }
+
         return true;
     }
 
     bool Transform::setWorld(const TransformValues& values) {
         const glm::bvec3 isScaleZero = glm::equal(values.scale, Vec3(0.0f));
-        if (glm::any(isScaleZero)) {
+        if (glm::any(isScaleZero) || m_scene == nullptr || !m_scene->ownsTransform(m_entity, this)) {
             return false;
         }
-        m_world = values;
-        return true;
+
+        TransformValues local;
+        return m_scene->fromWorldToLocal(m_entity, values, local) && setLocal(local);
     }
 
-    void Transform::updateWorldMatrix(const Mat4& parentWorldMatrix) {
+    void Transform::updateWorld(const Mat4& parentWorldMatrix, const TransformValues& parentWorld) {
         const Mat4 localMatrix = glm::translate(Mat4(1.0f), m_local.position) * glm::mat4_cast(m_local.rotation) * glm::scale(Mat4(1.0f), m_local.scale);
         m_worldMatrix = parentWorldMatrix * localMatrix;
+        m_world = parentWorld * m_local;
+        m_world.position = Vec3(m_worldMatrix[3]);
     }
 
     Quat Transform::fromEulerDegrees(const Vec3& angles) {
