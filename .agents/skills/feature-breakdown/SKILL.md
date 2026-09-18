@@ -19,9 +19,10 @@ and link it from the card.
 Steps:
 1. Start at the system's **design note** in `docs/04 Design Docs/` — its *Decided* rows are
    the reconciled view and the entry point; follow an ADR link only where a decision's
-   **rationale** carries the argument (AGENTS.md rule 2, gate note § *Where plans come
-   from*). No note for a system in play → say so; that gap is itself a Design task. Then
-   check `docs/05 Research/` — flag if research or an ADR is needed BEFORE any
+   **rationale** carries the argument (`AGENTS.md` § *Design and evidence*, gate
+   note § *Where plans come from*). No note for a system in play → say so; that
+   gap is itself a Design task. Then check `docs/05 Research/` — flag if research
+   or an ADR is needed BEFORE any
    implementation, and don't hand-wave those prerequisites. (For a technique, the
    `engine-researcher` agent can evaluate it; for v1 prior art, `v1-reference-miner`.)
 2. Read the relevant code/system docs so the breakdown is grounded.
@@ -48,9 +49,10 @@ Steps:
    scheduled (gate note, Artifact timing). Don't leave the decision in a backlog entry;
    that's the entry-budget tripwire in `Backlog.md`.
 7. If I asked you to record the breakdown, write it to `docs/06 Sprints/Backlog.md`;
-   otherwise, offer to record it there. Do not add to the active sprint unless I say so. **One bullet each: want + `Trigger:` + a link to the
-   artifact — never the decision, the rationale, or a `How:`.** If a breakdown produced
-   thinking worth keeping, it goes in the design note or ADR from step 6; a longer backlog
-   entry is not the fallback. Nothing is planned from that file later — it is read at
-   `$sprint-plan` only to check whether a trigger has fired.
+   otherwise, offer to record it there. Do not add to the active sprint unless I say so.
+   **One bullet per parked item: want + `#prio/…`; add `Trigger:` only when a concrete
+   event matters, and link an existing artifact when one applies.** Keep decisions,
+   rationale and `How:` in the design note or ADR from step 6, never in a longer backlog
+   entry. At `$sprint-plan`, valid fired entries become tasks; the remaining entries
+   are refined by priority and Miguel chooses one to three for the sprint.
 8. Planning only — no implementation.

@@ -40,8 +40,9 @@ Steps:
    - **An open question that blocks one of those** — becomes a **Design** task. An open
      question with nothing waiting on it earns **no card**.
    Follow an ADR link into `docs/03 Architecture/` only when the **rationale** carries the
-   argument (AGENTS.md rule 2). **Never size a card off an ADR body alone** — an Accepted
-   ADR can hold a partially-superseded clause ([[ADR Index]] → *Partial supersessions*); the
+   argument (`AGENTS.md` § *Design and evidence*).
+   **Never size a card off an ADR body alone** — an Accepted ADR can hold a
+   partially-superseded clause ([[ADR Index]] → *Partial supersessions*); the
    design note's *Decided* rows are the reconciled view.
    - **Coverage check.** For each **system** in play, no design note → **say it out loud**
      and put drafting the note in this sprint as a Design task, ordered before the dev work
@@ -58,9 +59,11 @@ Steps:
      actually broken, and Known Issue promotions above. Bugs planned in at the boundary are
      **ordinary sized cards** — they displace nothing, because the sprint is being sized
      fresh around them. Only a bug *arriving mid-sprint* displaces (step 5).
-   - **`docs/06 Sprints/Backlog.md` is read LAST**, and only to ask *"has any trigger
-     fired?"* It is a parking lot of one-line wants — it holds no decisions, so nothing can
-     be planned from it.
+   - **Read `docs/06 Sprints/Backlog.md` last.** Recheck evidence and deduplicate
+     entries whose `Trigger:` has fired; mark every still-valid fired entry for a
+     sprint task. Rank the remaining entries by `#prio/…` for refinement in step 5.
+     An unfired or absent trigger does not prevent selection. The backlog proposes
+     work; it never supplies a settled decision or an implementation spec.
 2. If the current sprint is ending, first help me capture a short retrospective
    using `docs/Templates/Retrospective Template.md` into `docs/07 Journal/`. Cover the
    **final week** in it too (`git log --since="7 days ago" --oneline`) — no separate weekly
@@ -72,7 +75,8 @@ Steps:
 3. **Stale-artifact check** (inherited from `$weekly-review`, which does not run today).
    For features touched this sprint, spot-check their ADR / design note against what
    actually got built: did implementation diverge from the documented end-state? A stale
-   artifact is poisoned ground truth — Codex anchors to the wrong thing (AGENTS.md rule 2).
+   artifact is poisoned ground truth — Codex anchors to the wrong thing
+   (`AGENTS.md` § *Design and evidence*).
    **Also check hub drift:** for touched systems, the design note's *Decided* one-liners vs
    the ADRs they index — the hub pattern reads the note *first*, so a drifted one-liner
    silently overrides the ADR ([[Planning Workflow — Artifact Gate]]). List drift and offer
@@ -81,8 +85,8 @@ Steps:
    `**Reconciled against:** engine <sha> (date)`, `<sha>` = current `origin/master` —
    **only if this step actually ran to completion**. Skipped, partial, or reconciling
    deferred → leave it and say why. A formality stamp is worse than none: it turns
-   "unknown freshness" into a false "checked" that AGENTS.md rule 2 then trusts
-   (ADR-012 §6).
+   "unknown freshness" into a false "checked" that `AGENTS.md` § *Design and
+   evidence* then trusts (ADR-012 §6).
 4. Propose ONE headline goal for the next sprint. Justify it against the roadmap and the
    affected systems' design notes — dropping to their ADRs where a decision's rationale
    carries the argument. Push back if I'm over-scoping.
@@ -93,6 +97,11 @@ Steps:
    Dashboard calendar. Weekend days are a swappable pair, so don't hard-assign Sat/Sun.
    **Deep days are not equal capacity:** Mon/Thu are after the day job → ~1 🟢 each; the
    weekend deep day is a full day → **2–3 🟢**. Count slots that way, not one-per-day.
+   - **Refine the backlog with Miguel after setting the goal.** Turn every valid fired
+     entry from step 1 into a task, including a Design task when an open decision blocks
+     implementation. Review the remaining entries in priority order and choose **one to
+     three** to add this sprint. Re-score and keep useful unselected ideas; remove
+     entries Miguel rejects or that are obsolete.
    - **Artifact gate** (`docs/06 Sprints/Planning Workflow — Artifact Gate.md`) — ADR,
      design note, or neither, by reversibility × blast radius; rarely both. Then apply
      **artifact timing**: flag every artifact-less item that warrants one — **draft the
@@ -121,6 +130,10 @@ Steps:
      each costs 16.1 billed CI minutes and ~15 minutes of Miguel's review. Report-only and
      vault-only Auto cards are free and are not capped.
      Full model: [[Autonomous Lane — Design]].
+   - **Make backlog choices fit the sprint.** Include the valid fired-trigger tasks before
+     the one-to-three discretionary picks. If these tasks do not fit, show the overload and
+     name what would move out; resolve the scope with Miguel before finalizing the plan.
+     Never silently leave a fired entry parked or exceed the real day-type capacity.
    - **Bugs enter two ways, and they behave differently.** Known *at planning* (step 1) → an
      ordinary card, sized in with everything else, nothing displaced. Arriving *mid-sprint* →
      still taken that sprint, but it **displaces**: name what it pushes out (lowest-priority
@@ -130,11 +143,11 @@ Steps:
 6. Create the sprint note from `docs/Templates/Sprint Template.md` and update the roadmap
    and the dashboard — including the Dashboard's **Next ceremony** line, which
    `$weekly-review` would normally roll.
-7. **Cut every pulled item out of `docs/06 Sprints/Backlog.md`** — pulling is a *move, not a
-   copy*. As each task is written, delete its entry. Nothing needs carrying across: entries
-   are one line and hold no decisions, so there is nothing to rescue. If one *does* hold a
-   decision, that's the finding — the entry outgrew the file and its content belongs in the
-   design note or ADR, not in a longer backlog entry.
+7. **Cut every scheduled or rejected item out of `docs/06 Sprints/Backlog.md`.** Pulling is
+   a *move, not a copy*: delete the entry as its task is written. Remove obsolete entries
+   and those Miguel rejects during refinement. Keep still-useful, unselected entries with
+   their updated priority. If an entry holds a decision, move that content to the design
+   note or ADR before cutting it; the backlog is not its durable home.
 8. **Reset `docs/06 Sprints/Sprint Board.md` for the new sprint** — the board shows *live
    state*, never history. It carries exactly **one** Done column, for the sprint in flight.
    Do this only after the retro (step 2) has mined it:

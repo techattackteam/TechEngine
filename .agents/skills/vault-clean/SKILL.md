@@ -19,7 +19,7 @@ outside this vault workflow.
   in `04 Design Docs/` (current shape of each system), [[ADR Index]] (the Accepted set — the
   *why*, so a note and an ADR disagreeing is not automatically the note's fault: check
   *Partial supersessions* **and the ADR's own dated amendments** first), and **today's date**.
-- **Rules:** repo-root `AGENTS.md` → "Token economy — what Codex reads, says, and writes".
+- **Rules:** repo-root `AGENTS.md` § *Design and evidence* and § *Writing*.
 
 Use one short bullet per finding: link the note and explain the proposed action in
 plain sentences. Add group headings only when they help scanning. Do not repeat
@@ -54,9 +54,10 @@ the content being flagged or compress explanations to force one-line entries.
    built that's *still there* is a leak from planning, not routine cleanup. Flag entries
    marked `✅ Scheduled`, already on the [[Sprint Board]], or settled by an Accepted ADR.
    Before proposing a cut, **check the thinking has a durable home** (sprint note, design
-   note, ADR, code) — if the entry is its only home, propose a **move**. Settled-without-
-   building items collapse to a one-line tombstone. A parked item with no `**Trigger:**`
-   is also a finding.
+   note, ADR, code) — if the entry is its only home, propose a **move**. Remove
+   settled entries once their decision has a durable home. A parked item may have no
+   `**Trigger:**`; flag it only if it lacks a `#prio/…` after triage, or if its
+   recorded trigger or evidence has gone stale.
 
 ## Guardrails — do NOT over-clean
 - **Never rewrite an Accepted ADR's body in a cleanup** ([[ADR Index]] § *Amending an

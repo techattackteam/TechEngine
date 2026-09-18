@@ -66,7 +66,8 @@ short bullet; do not pad the entry or compress it to fit an exact line count.
    section, never copy its rationale. If a decision now contradicts an Accepted ADR, that is a
    finding for me, not an edit.
 4. **[[Known Issues]]** — one row per logged-not-fixed finding, using the ID the entry cites.
-5. **[[Backlog]]** — anything discovered mid-card that was not the card (AGENTS.md rule 5).
+5. **[[Backlog]]** — anything discovered mid-card that was not the card
+   (`AGENTS.md` § *Role and ownership*).
 6. **Report**: what you changed, and what needs my call. Then stop.
 
 ## Guardrails

@@ -40,7 +40,8 @@ Then:
 3. **Stale-artifact check.** For features touched this week (from `git log` + the
    sprint board), spot-check their ADR / design note against what actually got built:
    did implementation diverge from the documented end-state? A stale artifact is
-   poisoned ground truth — Codex will anchor to the wrong thing (AGENTS.md rule 2).
+   poisoned ground truth — Codex will anchor to the wrong thing (`AGENTS.md`
+   § *Design and evidence*).
    **Also check hub drift:** for touched systems, the design note's *Decided*
    one-liners vs the ADRs they index — the hub pattern reads the note *first*, so a
    drifted one-liner silently overrides the ADR ([[Planning Workflow — Artifact Gate]]).
@@ -54,7 +55,8 @@ Then:
    `<sha>` = current `origin/master` — **only if step 3 actually ran**. If it was skipped,
    partial, or you deferred the reconciling, leave the stamp where it is and say why.
    A stamp advanced as a formality is worse than no stamp: it converts "unknown freshness"
-   into a false "checked" that AGENTS.md rule 2 will then trust (ADR-012 §6). Advancing it
+   into a false "checked" that `AGENTS.md` § *Design and evidence* will then
+   trust (ADR-012 §6). Advancing it
    is the *output* of the check, never a step in updating the Dashboard.
 5. Keep it short and honest. Flag scope creep or burnout risk if you see it.
 6. Do NOT start any implementation work — this is a planning ritual.
