@@ -1,4 +1,5 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
+#include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <scene/ArchetypeStorage.hpp>
 #include <scene/components/Hierarchy.hpp>
@@ -15,11 +16,14 @@ namespace TechEngine {
         if (m_registry->find(componentTypeId<Hierarchy>()) == nullptr) {
             m_registry->registerComponent<Hierarchy>(Hierarchy::tag);
         }
+        if (m_registry->find(componentTypeId<Transform>()) == nullptr) {
+            m_registry->registerComponent<Transform>(Transform::tag);
+        }
     }
 
     Entity ArchetypeStorage::createEntity() {
         checkStructuralMutationAllowed();
-        Archetype& archetype = getOrCreate({denseId<Hierarchy>()});
+        Archetype& archetype = getOrCreate({denseId<Hierarchy>(), denseId<Transform>()});
         Entity entity = m_entities.create();
         std::size_t row = 0;
         try {
@@ -50,6 +54,35 @@ namespace TechEngine {
 
     bool ArchetypeStorage::contains(const Entity entity) const {
         return m_entities.contains(entity);
+    }
+
+    void* ArchetypeStorage::componentRaw(const Entity entity, const ComponentTypeId type) {
+        const EntityLocation* location = m_entities.location(entity);
+        const ComponentTypeRecord* record = m_registry->find(type);
+        if (location == nullptr || record == nullptr) {
+            return nullptr;
+        }
+
+        const auto column = location->archetype->m_columns.find(record->denseId);
+        if (column == location->archetype->m_columns.end()) {
+            return nullptr;
+        }
+        return column->second->element(location->row);
+    }
+
+    const void* ArchetypeStorage::componentRaw(const Entity entity, const ComponentTypeId type) const {
+        const EntityLocation* location = m_entities.location(entity);
+        const ComponentTypeRecord* record = m_registry->find(type);
+        if (location == nullptr || record == nullptr) {
+            return nullptr;
+        }
+
+        const auto column = location->archetype->m_columns.find(record->denseId);
+        if (column == location->archetype->m_columns.end()) {
+            return nullptr;
+        }
+        const IComponentStorage& storage = *column->second;
+        return storage.element(location->row);
     }
 
     void ArchetypeStorage::clear() {

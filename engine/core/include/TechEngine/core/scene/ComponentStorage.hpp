@@ -24,6 +24,10 @@ namespace TechEngine {
 
         virtual void setCopy(std::size_t destination, const IComponentStorage& source, std::size_t sourceIndex) = 0;
 
+        virtual void* element(std::size_t index) = 0;
+
+        virtual const void* element(std::size_t index) const = 0;
+
         virtual void popBack() noexcept = 0;
 
         virtual void eraseSwap(std::size_t index) = 0;
@@ -52,13 +56,22 @@ namespace TechEngine {
             m_values[destination] = typedSource.m_values[sourceIndex];
         }
 
+        void* element(const std::size_t index) override {
+            return &m_values.at(index);
+        }
+
+        const void* element(const std::size_t index) const override {
+            return &m_values.at(index);
+        }
+
         void popBack() noexcept override {
             m_values.pop_back();
         }
 
         void eraseSwap(const std::size_t index) override {
             if (index + 1U < m_values.size()) {
-                m_values[index] = std::move(m_values.back());
+                std::destroy_at(&m_values[index]);
+                std::construct_at(&m_values[index], std::move(m_values.back()));
             }
             m_values.pop_back();
         }

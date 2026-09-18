@@ -109,6 +109,10 @@ namespace TechEngine {
             return &location->archetype->components<T>(type)[location->row];
         }
 
+        void* componentRaw(Entity entity, ComponentTypeId type);
+
+        const void* componentRaw(Entity entity, ComponentTypeId type) const;
+
         const EntityLocation* location(Entity entity) const;
 
         std::size_t archetypeCount() const;

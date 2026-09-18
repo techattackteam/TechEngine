@@ -1,4 +1,5 @@
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
+#include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <scene/Archetype.hpp>
 #include <scene/ArchetypeStorage.hpp>
@@ -76,10 +77,12 @@ TEST_CASE("an archetype creates one typed column for each signature entry", "[co
 TEST_CASE("component insertion order converges on one canonical archetype", "[core][scene][archetype]") {
     TechEngine::ComponentRegistry registry;
     const TechEngine::ComponentTypeId hierarchyId = registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
+    const TechEngine::ComponentTypeId transformId = registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
     const TechEngine::ComponentTypeId positionId = registry.registerComponent<ArchetypePosition>("Tests.ArchetypePosition");
     const TechEngine::ComponentTypeId velocityId = registry.registerComponent<ArchetypeVelocity>("Tests.ArchetypeVelocity");
     const TechEngine::ComponentTypeId healthId = registry.registerComponent<ArchetypeHealth>("Tests.ArchetypeHealth");
     const TechEngine::ComponentDenseId hierarchy = registry.find(hierarchyId)->denseId;
+    const TechEngine::ComponentDenseId transform = registry.find(transformId)->denseId;
     const TechEngine::ComponentDenseId position = registry.find(positionId)->denseId;
     const TechEngine::ComponentDenseId velocity = registry.find(velocityId)->denseId;
     const TechEngine::ComponentDenseId health = registry.find(healthId)->denseId;
@@ -101,10 +104,11 @@ TEST_CASE("component insertion order converges on one canonical archetype", "[co
 
     REQUIRE(archetype == storage.location(second)->archetype);
     REQUIRE(archetype == storage.location(third)->archetype);
-    std::array expectedSignature{hierarchy, position, velocity, health};
+    std::array expectedSignature{hierarchy, transform, position, velocity, health};
     std::ranges::sort(expectedSignature);
     REQUIRE(std::ranges::equal(archetype->signature(), expectedSignature));
     REQUIRE(archetype->contains(hierarchy));
+    REQUIRE(archetype->contains(transform));
     REQUIRE(archetype->contains(position));
     REQUIRE(archetype->contains(velocity));
     REQUIRE(archetype->contains(health));
