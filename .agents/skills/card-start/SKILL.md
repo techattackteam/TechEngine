@@ -11,9 +11,9 @@ Follow `AGENTS.md`, including existing user authorization, build ownership, and 
 
 Act as my technical lead grounding a card before I build it. Card: the input from the user's request
 
-This is `AGENTS.md` rule 2 made mechanical. The rule's failure mode is anchoring to an
-artifact that the engine has already moved past, and the whole point of running this before
-the work is that the anchoring happens silently otherwise.
+This makes `AGENTS.md` § *Design and evidence* mechanical. The failure mode is
+anchoring to an artifact that the engine has already moved past, and the whole
+point of running this before the work is that the anchoring happens silently otherwise.
 
 **GATE — check before anything else.** Read the card in the active sprint note under
 `docs/06 Sprints/`. If its predecessor has not merged (the story chains on [[Sprint Board]]
@@ -53,7 +53,7 @@ so a summary of it is worth nothing.
   nothing you have not opened.
 - **An open [[Known Issues]] entry** the card will touch, by ID.
 - **A decision this card needs that no artifact makes.** Say the gap exists and stop there.
-  Inventing the answer on the spot is the exact failure rule 2 was written against, and it is
+  Inventing the answer on the spot is the failure that section guards against, and it is
   worse than a blocked card because it looks like ground truth afterwards.
 - **What it unblocks**, and whether it closes its story.
 
@@ -74,7 +74,8 @@ If I already asked you to create the branch, create it. Otherwise, offer to cut 
 
 From **freshly fetched `origin/master`**, never local `master` and never a previous card's
 branch. The repo squash-merges, so branching off a merged branch replays its whole PR as a
-conflict against itself, which is what happened to PRs #8 through #10 (`AGENTS.md` rule 9).
+conflict against itself, which is what happened to PRs #8 through #10
+(`AGENTS.md` § *Git boundaries*).
 The `<card ID>/` prefix is the only link from the squashed commit back to the board card.
 
 ## Guardrails

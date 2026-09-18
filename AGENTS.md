@@ -11,8 +11,8 @@ Read this first each session. TechEngine is Miguel's solo-built C++20 client/ser
   run `git clone git@github.com:techattackteam/TechEngine-vault.git docs` from the engine
   root. Stop if the vault cannot be supplied. For remote setup, read
   `docs/08 AI/Working with Codex — Operating Guide.md` § Remote checkout setup.
-- `.codex/config.toml` requests a 1M-token context window; actual capacity depends on
-  the model. Model and reasoning follow Miguel's selection and personal settings.
+- Model and reasoning follow Miguel's Codex selection and personal settings. Do not
+  pin either or a context window in this project.
 - Workflows live in `.agents/skills/<name>/SKILL.md`: `$card-start`, `$card-review`,
   `$card-close`, `$te-review`, `$arch-review`, `$adr`, `$feature-breakdown`,
   `$weekly-review`, `$sprint-plan`, `$vault-clean`. Resolve paths from the engine root
@@ -86,8 +86,13 @@ do not push speculative commits to watch CI.
 
 Read `CONVENTIONS.md` when writing or reviewing code; it owns the house style and
 undecided *Open* rows. Match the surrounding file (Rule 0); `.clang-format` and
-`.clang-tidy` own the mechanical subset and win conflicts. Keep these corrections
-to recurring AI defaults prominent:
+`.clang-tidy` own the mechanical subset and win conflicts.
+
+Before handing over code, tests, or a code review, check the changed or reviewed lines
+against the applicable `CONVENTIONS.md` rules again. Do not rely on recall from the
+initial read; call out any deliberate exception.
+
+Keep these corrections to recurring AI defaults prominent:
 
 - **No `[[nodiscard]]`**, including getters and queries.
 - **Initialize with `=`**, e.g. `std::uint32_t m_alignment = 0;`. Braces are only for

@@ -26,7 +26,8 @@ restate them; it covers what a formatter cannot decide.
 |---|---|---|
 | Namespace | one flat `TechEngine` | `namespace TechEngine {` |
 | Types (class/struct/enum/alias) | `PascalCase` | `RenderGraph`, `LogRecord` |
-| Functions / methods | `camelCase` | `baseVersion()`, `setMinLevel()` |
+| Functions / methods | `camelCase` | `getParent()`, `setParent()` |
+| Getters | `getSomething()` | `getParent()`, `getChildren()` |
 | Members | `m_camelCase` | `m_frameCount` |
 | Locals / params | `camelCase` | `passIndex` |
 | Files (paired `.hpp`/`.cpp`) | `PascalCase`, match primary type | `Log.hpp` / `Log.cpp` |
@@ -37,6 +38,8 @@ restate them; it covers what a formatter cannot decide.
 | **File-scope mutable state** | `g_camelCase` + `static` | `g_minLevel` |
 
 - **No `te_` / snake_case prefixes on C++ identifiers.** `baseVersion`, not `te_base_version`.
+- Name getters `getSomething()`. Keep predicate names such as `isReady()`, `hasComponent()`
+  and `contains()` for boolean questions.
 - Include path is always `TechEngine/<module>/` — basename-collision-proof (ADR-008 §1).
 - **`TE_` is what separates a macro from a constant** — both are `SCREAMING_SNAKE`, so the
   prefix carries the distinction. A macro has no namespace; the prefix *is* its namespace.
@@ -286,6 +289,19 @@ enforces it — no clang-tidy check in our set covers increment form.
 
 Applies to the `for` step only. In an expression whose value is used, write what the expression
 actually needs.
+
+## Unit tests — try to break the contract
+
+Write the most rigorous tests the unit's contract warrants. Start from its invariants, then
+exercise normal use, legal extremes, invalid inputs, failure and rollback, repeated or
+out-of-order operations, and state and lifetime transitions. Combine conditions that could
+interact; a collection of isolated happy paths is not enough. Push sizes and counts to their
+meaningful limits with deterministic cases, including overflow or exhaustion where relevant.
+
+Assert the resulting state and invariants, including after failure and recovery, not just a
+return value. Seek every plausible edge case for the contract, and record any important gap
+that cannot be tested yet. Each test should be able to catch a real defect rather than mirror
+the implementation or repeat another case.
 
 ## CMake
 
