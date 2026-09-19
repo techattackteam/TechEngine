@@ -21,6 +21,12 @@ namespace TechEngine {
         return nullptr;
     }
 
+    ComponentDenseId ComponentRegistry::denseId(const ComponentTypeId id) const {
+        const ComponentTypeRecord* record = find(id);
+        TE_ASSERT(record != nullptr, "Component type is not registered");
+        return record->denseId;
+    }
+
     std::span<const ComponentTypeRecord> ComponentRegistry::records() const {
         return m_componentRecords;
     }
