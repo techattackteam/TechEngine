@@ -89,6 +89,10 @@ namespace TechEngine {
             return true;
         }
 
+        bool addComponent(Entity entity, ComponentDenseId type, const void* value);
+
+        bool removeComponent(Entity entity, ComponentDenseId type);
+
         template<ComponentValue T>
         T* component(const Entity entity) {
             const EntityLocation* location = m_entities.location(entity);
@@ -116,6 +120,10 @@ namespace TechEngine {
         const EntityLocation* location(Entity entity) const;
 
         std::size_t archetypeCount() const;
+
+        void markChanged(std::span<const ComponentDenseId> types, std::uint64_t tick);
+
+        std::uint64_t getChangeTick(Entity entity, ComponentDenseId type) const;
 
         template<typename Function>
         void eachEntity(Function&& function) {

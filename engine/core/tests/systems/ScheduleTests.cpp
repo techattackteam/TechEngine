@@ -30,7 +30,7 @@ struct ScheduleMaskComponent {
 
 class MovementSystem final : public TechEngine::ISystem {
 public:
-    void update(TechEngine::Scene&, const TechEngine::SimulationContext&) override {
+    void tick(TechEngine::Scene&, const TechEngine::SimulationContext&) override {
     }
 
     std::string_view name() const override {
@@ -40,7 +40,7 @@ public:
 
 class CollisionSystem final : public TechEngine::ISystem {
 public:
-    void update(TechEngine::Scene&, const TechEngine::SimulationContext&) override {
+    void tick(TechEngine::Scene&, const TechEngine::SimulationContext&) override {
     }
 
     std::string_view name() const override {
@@ -50,7 +50,7 @@ public:
 
 class ScriptSystem final : public TechEngine::ISystem {
 public:
-    void update(TechEngine::Scene&, const TechEngine::SimulationContext&) override {
+    void tick(TechEngine::Scene&, const TechEngine::SimulationContext&) override {
     }
 
     std::string_view name() const override {
@@ -61,7 +61,7 @@ public:
 template<std::size_t Index>
 class SchedulePlaceholderSystem final : public TechEngine::ISystem {
 public:
-    void update(TechEngine::Scene&, const TechEngine::SimulationContext&) override {
+    void tick(TechEngine::Scene&, const TechEngine::SimulationContext&) override {
     }
 
     std::string_view name() const override {
@@ -96,6 +96,8 @@ TEST_CASE("schedule registration stores a factory and lowers declared access", "
     REQUIRE(entry.access.reads(registry.find(position)->denseId));
     REQUIRE(entry.access.reads(registry.find(velocity)->denseId));
     REQUIRE_FALSE(entry.access.writes(registry.find(velocity)->denseId));
+    REQUIRE(entry.access.getWrittenTypes().size() == 1);
+    REQUIRE(entry.access.getWrittenTypes().front() == registry.find(position)->denseId);
 }
 
 TEST_CASE("schedule access crosses mask word boundaries without touching neighboring types", "[core][systems]") {

@@ -31,7 +31,7 @@ static constexpr std::array<std::string_view, 5> GRAPH_SYSTEM_NAMES{
 template<std::size_t Index>
 class GraphSystem final : public TechEngine::ISystem {
 public:
-    void update(TechEngine::Scene&, const TechEngine::SimulationContext&) override {
+    void tick(TechEngine::Scene&, const TechEngine::SimulationContext&) override {
     }
 
     std::string_view name() const override {
@@ -81,8 +81,8 @@ static void registerGraphComponents(TechEngine::ComponentRegistry& registry, std
 
 template<typename T>
 static std::optional<std::size_t> findSystemLevel(const TechEngine::TaskGraph& graph) {
-    for (std::size_t levelIndex = 0; levelIndex < graph.levels().size(); levelIndex++) {
-        for (const TechEngine::TaskGraphNode& node: graph.levels()[levelIndex]) {
+    for (std::size_t levelIndex = 0; levelIndex < graph.getLevels().size(); levelIndex++) {
+        for (const TechEngine::TaskGraphNode& node: graph.getLevels()[levelIndex]) {
             if (node.systemType == std::type_index(typeid(T))) {
                 return levelIndex;
             }
@@ -94,7 +94,7 @@ static std::optional<std::size_t> findSystemLevel(const TechEngine::TaskGraph& g
 template<typename T>
 static std::size_t countSystemNodes(const TechEngine::TaskGraph& graph) {
     std::size_t count = 0;
-    for (const TechEngine::TaskGraphLevel& level: graph.levels()) {
+    for (const TechEngine::TaskGraphLevel& level: graph.getLevels()) {
         for (const TechEngine::TaskGraphNode& node: level) {
             if (node.systemType == std::type_index(typeid(T))) {
                 count++;
@@ -121,7 +121,7 @@ TEST_CASE("an empty schedule builds an empty graph and freezes registration", "[
 
     const TechEngine::TaskGraph graph(schedule);
 
-    REQUIRE(graph.levels().empty());
+    REQUIRE(graph.getLevels().empty());
     REQUIRE(schedule.frozen());
     REQUIRE_THROWS_AS(schedule.add<FirstSystem>(), TechEngineTests::AssertFired);
 }
@@ -135,12 +135,12 @@ TEST_CASE("independent systems occupy one level exactly once", "[core][systems][
 
     const TechEngine::TaskGraph graph(schedule);
 
-    REQUIRE(graph.levels().size() == 1);
-    REQUIRE(graph.levels().front().size() == 3);
+    REQUIRE(graph.getLevels().size() == 1);
+    REQUIRE(graph.getLevels().front().size() == 3);
     REQUIRE(countSystemNodes<FirstSystem>(graph) == 1);
     REQUIRE(countSystemNodes<SecondSystem>(graph) == 1);
     REQUIRE(countSystemNodes<ThirdSystem>(graph) == 1);
-    for (const TechEngine::TaskGraphNode& node: graph.levels().front()) {
+    for (const TechEngine::TaskGraphNode& node: graph.getLevels().front()) {
         REQUIRE(node.factory != nullptr);
     }
 }
@@ -153,7 +153,7 @@ TEST_CASE("a schedule frozen by the composition root can still be built", "[core
 
     const TechEngine::TaskGraph graph(schedule);
 
-    REQUIRE(graph.levels().size() == 1);
+    REQUIRE(graph.getLevels().size() == 1);
     REQUIRE(findSystemLevel<FirstSystem>(graph) == 0);
 }
 
@@ -196,7 +196,7 @@ TEST_CASE("conflicts form the worked priority-ordered graph levels", "[core][sys
 
     const TechEngine::TaskGraph graph(schedule);
 
-    REQUIRE(graph.levels().size() == 3);
+    REQUIRE(graph.getLevels().size() == 3);
     REQUIRE(findSystemLevel<FirstSystem>(graph) == 0);
     REQUIRE(findSystemLevel<SecondSystem>(graph) == 1);
     REQUIRE(findSystemLevel<ThirdSystem>(graph) == 1);
@@ -249,7 +249,7 @@ TEST_CASE("equivalent order declarations produce one dependency", "[core][system
 
     const TechEngine::TaskGraph graph(schedule);
 
-    REQUIRE(graph.levels().size() == 2);
+    REQUIRE(graph.getLevels().size() == 2);
     REQUIRE(findSystemLevel<FirstSystem>(graph) == 0);
     REQUIRE(findSystemLevel<SecondSystem>(graph) == 1);
     REQUIRE(countSystemNodes<FirstSystem>(graph) == 1);
@@ -319,7 +319,7 @@ TEST_CASE("an order constraint naming an unregistered system is rejected", "[cor
     schedule.add<SecondSystem>();
     const TechEngine::TaskGraph graph(schedule);
     REQUIRE(schedule.frozen());
-    REQUIRE(graph.levels().size() == 2);
+    REQUIRE(graph.getLevels().size() == 2);
 }
 
 TEST_CASE("the terminal system is a final singleton level after every regular level", "[core][systems][task-graph]") {
@@ -332,11 +332,11 @@ TEST_CASE("the terminal system is a final singleton level after every regular le
 
     const TechEngine::TaskGraph graph(schedule);
 
-    REQUIRE(graph.levels().size() == 3);
+    REQUIRE(graph.getLevels().size() == 3);
     REQUIRE(findSystemLevel<FirstSystem>(graph) == 0);
     REQUIRE(findSystemLevel<SecondSystem>(graph) == 1);
     REQUIRE(findSystemLevel<TerminalSystem>(graph) == 2);
-    REQUIRE(graph.levels().back().size() == 1);
+    REQUIRE(graph.getLevels().back().size() == 1);
 }
 
 TEST_CASE("every conflict-derived edge is logged with its chosen direction", "[core][systems][task-graph]") {

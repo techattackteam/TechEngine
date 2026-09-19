@@ -1,4 +1,5 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
+#include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <scene/ArchetypeStorage.hpp>
@@ -52,6 +53,35 @@ namespace TechEngine {
         return m_entities.destroy(entity);
     }
 
+    bool ArchetypeStorage::addComponent(const Entity entity, const ComponentDenseId type, const void* value) {
+        checkStructuralMutationAllowed();
+        const EntityLocation* location = m_entities.location(entity);
+        if (location == nullptr || location->archetype->contains(type)) {
+            return false;
+        }
+
+        TE_CHECK(m_registry->find(type) != nullptr, "Component type is not registered");
+        TE_CHECK(value != nullptr, "Component value is null");
+        Archetype::Edge& edge = addEdge(*location->archetype, type);
+        move(entity, *location, edge, [type, value](Archetype& destination, const std::size_t destinationRow) {
+            destination.m_columns.at(type)->setCopyFromRaw(destinationRow, value);
+        });
+        return true;
+    }
+
+    bool ArchetypeStorage::removeComponent(const Entity entity, const ComponentDenseId type) {
+        checkStructuralMutationAllowed();
+        const EntityLocation* location = m_entities.location(entity);
+        if (location == nullptr || !location->archetype->contains(type)) {
+            return false;
+        }
+
+        Archetype::Edge& edge = removeEdge(*location->archetype, type);
+        move(entity, *location, edge, [](Archetype&, std::size_t) {
+        });
+        return true;
+    }
+
     bool ArchetypeStorage::contains(const Entity entity) const {
         return m_entities.contains(entity);
     }
@@ -99,6 +129,35 @@ namespace TechEngine {
 
     std::size_t ArchetypeStorage::archetypeCount() const {
         return m_archetypes.size();
+    }
+
+    void ArchetypeStorage::markChanged(const std::span<const ComponentDenseId> types, const std::uint64_t tick) {
+        if (types.empty()) {
+            return;
+        }
+        TE_PROFILER_FUNCTION();
+        for (const ComponentDenseId type: types) {
+            for (const std::unique_ptr<Archetype>& archetype: m_archetypes) {
+                const auto column = archetype->m_columns.find(type);
+                if (column != archetype->m_columns.end()) {
+                    column->second->markChanged(tick);
+                }
+            }
+        }
+    }
+
+    std::uint64_t ArchetypeStorage::getChangeTick(const Entity entity, const ComponentDenseId type) const {
+        const EntityLocation* location = m_entities.location(entity);
+        if (location == nullptr) {
+            return 0;
+        }
+
+        const auto column = location->archetype->m_columns.find(type);
+        if (column == location->archetype->m_columns.end()) {
+            return 0;
+        }
+
+        return column->second->getChangeTick();
     }
 
     std::size_t ArchetypeStorage::hashSignature(const std::span<const ComponentDenseId> signature) {

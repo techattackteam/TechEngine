@@ -33,6 +33,6 @@ namespace TechEngine {
     public:
         explicit TaskGraph(Schedule& schedule);
 
-        std::span<const TaskGraphLevel> levels() const;
+        std::span<const TaskGraphLevel> getLevels() const;
     };
 }
