@@ -201,6 +201,43 @@ TEST_CASE("component transitions preserve shared columns", "[core][scene]") {
     REQUIRE(storage.archetypeCount() == 3);
 }
 
+TEST_CASE("type-erased component transitions use registered dense ids and raw values", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    const TechEngine::ComponentTypeId positionId = registry.registerComponent<StoragePosition>("Tests.StoragePosition");
+    TechEngine::ArchetypeStorage storage(registry);
+    const TechEngine::Entity entity = storage.createEntity();
+    const TechEngine::ComponentDenseId position = registry.denseId(positionId);
+    const StoragePosition value{23};
+
+    REQUIRE(storage.addComponent(entity, position, &value));
+    REQUIRE(storage.component<StoragePosition>(entity)->value == 23);
+
+    REQUIRE(storage.removeComponent(entity, position));
+    REQUIRE(storage.component<StoragePosition>(entity) == nullptr);
+}
+
+TEST_CASE("change stamping reaches every matching archetype column", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    const TechEngine::ComponentTypeId positionId = registry.registerComponent<StoragePosition>("Tests.StoragePosition");
+    const TechEngine::ComponentTypeId velocityId = registry.registerComponent<StorageVelocity>("Tests.StorageVelocity");
+    TechEngine::ArchetypeStorage storage(registry);
+    const TechEngine::Entity first = storage.createEntity();
+    const TechEngine::Entity second = storage.createEntity();
+    REQUIRE(storage.addComponent(first, StoragePosition{1}));
+    REQUIRE(storage.addComponent(second, StoragePosition{2}));
+    REQUIRE(storage.addComponent(second, StorageVelocity{3}));
+    const TechEngine::ComponentDenseId position = registry.find(positionId)->denseId;
+    const TechEngine::ComponentDenseId velocity = registry.find(velocityId)->denseId;
+    const TechEngine::ComponentDenseId written[]{position};
+
+    storage.markChanged(written, 17);
+
+    REQUIRE(storage.getChangeTick(first, position) == 17);
+    REQUIRE(storage.getChangeTick(second, position) == 17);
+    REQUIRE(storage.getChangeTick(first, velocity) == 0);
+    REQUIRE(storage.getChangeTick({}, position) == 0);
+}
+
 TEST_CASE("removing first middle and last rows preserves locations and values", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
     registry.registerComponent<StoragePosition>("Tests.StoragePosition");

@@ -1,7 +1,9 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
+#include <TechEngine/core/scene/SceneCommandBuffer.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
+#include <TechEngine/core/systems/ScheduleAccess.hpp>
 
 #include <scene/ArchetypeStorage.hpp>
 #include <scene/components/Hierarchy.hpp>
@@ -17,6 +19,14 @@
 #include <vector>
 
 namespace TechEngine {
+    struct SceneExecutionState {
+        Scene* scene = nullptr;
+        const ScheduleAccess* access = nullptr;
+        SceneCommandBuffer* commands = nullptr;
+    };
+
+    static thread_local SceneExecutionState g_sceneExecutionState;
+
     static Mat4 transformMatrix(const TransformValues& values) {
         return glm::translate(Mat4(1.0f), values.position) * glm::mat4_cast(values.rotation) * glm::scale(Mat4(1.0f), values.scale);
     }
@@ -60,19 +70,25 @@ namespace TechEngine {
         return true;
     }
 
-    Scene::Scene(ComponentRegistry& registry) : m_storage(std::make_unique<ArchetypeStorage>(registry)) {
+    Scene::Scene(ComponentRegistry& registry) : m_registry(&registry), m_storage(std::make_unique<ArchetypeStorage>(registry)) {
     }
 
     Scene::~Scene() = default;
 
     Entity Scene::createEntity() {
         TE_PROFILER_FUNCTION();
+        if (!immediateStructuralMutationAllowed()) {
+            return {};
+        }
         const Entity entity = m_storage->createEntity();
         getComponent<Transform>(entity).bind(*this, entity);
         return entity;
     }
     bool Scene::destroyEntity(Entity entity) {
         TE_PROFILER_FUNCTION();
+        if (!immediateStructuralMutationAllowed()) {
+            return false;
+        }
         Hierarchy* rootHierarchy = getHierarchy(entity);
         if (rootHierarchy == nullptr) {
             return false;
@@ -114,6 +130,9 @@ namespace TechEngine {
 
     void Scene::clear() {
         TE_PROFILER_FUNCTION();
+        if (!immediateStructuralMutationAllowed()) {
+            return;
+        }
         m_storage->clear();
     }
 
@@ -252,6 +271,9 @@ namespace TechEngine {
 
     bool Scene::setParent(const Entity child, const Entity parent, const std::size_t position) {
         TE_PROFILER_FUNCTION();
+        if (!immediateStructuralMutationAllowed()) {
+            return false;
+        }
         if (child == parent) {
             return false;
         }
@@ -357,6 +379,9 @@ namespace TechEngine {
     }
 
     bool Scene::setParent(const Entity child, const Entity parent, const std::size_t position, const ReparentMode mode) {
+        if (!immediateStructuralMutationAllowed()) {
+            return false;
+        }
         if (mode == ReparentMode::PreserveLocal || getParent(child) == parent) {
             return setParent(child, parent, position);
         }
@@ -381,6 +406,9 @@ namespace TechEngine {
     }
 
     bool Scene::unparent(Entity child) {
+        if (!immediateStructuralMutationAllowed()) {
+            return false;
+        }
         Hierarchy* childHierarchy = this->getHierarchy(child);
         if (childHierarchy == nullptr || !childHierarchy->m_parent.valid()) {
             return false;
@@ -415,6 +443,9 @@ namespace TechEngine {
     }
 
     bool Scene::unparent(const Entity child, const ReparentMode mode) {
+        if (!immediateStructuralMutationAllowed()) {
+            return false;
+        }
         if (mode == ReparentMode::PreserveLocal) {
             return unparent(child);
         }
@@ -433,6 +464,9 @@ namespace TechEngine {
     }
 
     bool Scene::reorderChild(Entity child, std::size_t position) {
+        if (!immediateStructuralMutationAllowed()) {
+            return false;
+        }
         Hierarchy* childHierarchy = this->getHierarchy(child);
         if (childHierarchy == nullptr || !childHierarchy->m_parent.valid()) {
             return false;
@@ -451,5 +485,70 @@ namespace TechEngine {
 
     bool Scene::ownsTransform(const Entity entity, const Transform* transform) const {
         return m_storage->component<Transform>(entity) == transform;
+    }
+
+    SceneCommandBuffer& Scene::getCommands() {
+        TE_CHECK(g_sceneExecutionState.scene == this && g_sceneExecutionState.commands != nullptr, "Scene commands are available only while a system is executing");
+        return *g_sceneExecutionState.commands;
+    }
+
+    bool Scene::immediateStructuralMutationAllowed() const {
+        if (g_sceneExecutionState.scene != this) {
+            return true;
+        }
+        TE_CHECK(false, "Immediate structural mutation is prohibited while a system is executing");
+        return false;
+    }
+
+    void Scene::validateRead(const ComponentTypeId type) const {
+        if (g_sceneExecutionState.scene != this) {
+            return;
+        }
+        const ComponentTypeRecord* record = m_registry->find(type);
+        TE_ASSERT(record != nullptr && g_sceneExecutionState.access->reads(record->denseId), "System read an undeclared component");
+    }
+
+    void Scene::validateWrite(const ComponentTypeId type) {
+        if (g_sceneExecutionState.scene != this) {
+            return;
+        }
+        const ComponentTypeRecord* record = m_registry->find(type);
+        TE_ASSERT(record != nullptr && g_sceneExecutionState.access->writes(record->denseId), "System wrote an undeclared component");
+    }
+
+    std::uint64_t Scene::getChangeTickRaw(const Entity entity, const ComponentTypeId type) const {
+        const ComponentTypeRecord* record = m_registry->find(type);
+        if (record == nullptr) {
+            return 0;
+        }
+        return m_storage->getChangeTick(entity, record->denseId);
+    }
+
+    void Scene::beginSystem(const ScheduleAccess& access, SceneCommandBuffer& commands, const std::uint64_t tick) {
+        TE_CHECK(g_sceneExecutionState.scene == nullptr, "A system execution scope is already active on this thread");
+        g_sceneExecutionState = {this, &access, &commands};
+        m_storage->markChanged(access.getWrittenTypes(), tick);
+    }
+
+    void Scene::endSystem() {
+        TE_CHECK(g_sceneExecutionState.scene == this, "No system execution scope is active for this Scene");
+        g_sceneExecutionState = {};
+    }
+
+    void Scene::applyCommands(SceneCommandBuffer& commands, std::vector<Entity>& spawned) {
+        TE_CHECK(g_sceneExecutionState.scene == nullptr, "Cannot apply structural commands while a system is executing");
+        commands.apply(*this, spawned);
+    }
+
+    bool Scene::applyComponentAddition(const Entity entity, const ComponentTypeId type, const void* value) {
+        const ComponentTypeRecord* record = m_registry->find(type);
+        TE_CHECK(record != nullptr, "Component type is not registered");
+        return m_storage->addComponent(entity, record->denseId, value);
+    }
+
+    bool Scene::applyComponentRemoval(const Entity entity, const ComponentTypeId type) {
+        const ComponentTypeRecord* record = m_registry->find(type);
+        TE_CHECK(record != nullptr, "Component type is not registered");
+        return m_storage->removeComponent(entity, record->denseId);
     }
 }

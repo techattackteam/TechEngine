@@ -12,6 +12,9 @@ namespace TechEngine {
             if (index >= m_writeMask.size()) {
                 m_writeMask.resize(index + 1, 0);
             }
+            if ((m_writeMask[index] & (1ULL << bit)) == 0) {
+                m_writtenTypes.push_back(dense);
+            }
             m_writeMask[index] |= (1ULL << bit);
         }
         for (const ComponentTypeId type: readOnly) {
@@ -59,5 +62,9 @@ namespace TechEngine {
 
     bool ScheduleAccess::touches(const ComponentDenseId denseId) const {
         return reads(denseId) || writes(denseId);
+    }
+
+    std::span<const ComponentDenseId> ScheduleAccess::getWrittenTypes() const {
+        return m_writtenTypes;
     }
 }

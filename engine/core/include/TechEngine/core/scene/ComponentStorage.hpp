@@ -2,6 +2,7 @@
 
 #include <concepts>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <span>
 #include <type_traits>
@@ -24,6 +25,8 @@ namespace TechEngine {
 
         virtual void setCopy(std::size_t destination, const IComponentStorage& source, std::size_t sourceIndex) = 0;
 
+        virtual void setCopyFromRaw(std::size_t destination, const void* source) = 0;
+
         virtual void* element(std::size_t index) = 0;
 
         virtual const void* element(std::size_t index) const = 0;
@@ -31,12 +34,17 @@ namespace TechEngine {
         virtual void popBack() noexcept = 0;
 
         virtual void eraseSwap(std::size_t index) = 0;
+
+        virtual void markChanged(std::uint64_t tick) = 0;
+
+        virtual std::uint64_t getChangeTick() const = 0;
     };
 
     template<ComponentValue T>
     class ComponentStorage final : public IComponentStorage {
     private:
         std::vector<T> m_values;
+        std::uint64_t m_changeTick = 0;
 
     public:
         std::size_t size() const override {
@@ -56,6 +64,10 @@ namespace TechEngine {
             m_values[destination] = typedSource.m_values[sourceIndex];
         }
 
+        void setCopyFromRaw(const std::size_t destination, const void* source) override {
+            m_values[destination] = *static_cast<const T*>(source);
+        }
+
         void* element(const std::size_t index) override {
             return &m_values.at(index);
         }
@@ -66,6 +78,14 @@ namespace TechEngine {
 
         void popBack() noexcept override {
             m_values.pop_back();
+        }
+
+        void markChanged(const std::uint64_t tick) override {
+            m_changeTick = tick;
+        }
+
+        std::uint64_t getChangeTick() const override {
+            return m_changeTick;
         }
 
         void eraseSwap(const std::size_t index) override {

@@ -166,7 +166,8 @@ namespace TechEngine {
         return message;
     }
 
-    std::span<const TaskGraphLevel> TaskGraph::levels() const {
+    std::span<const TaskGraphLevel> TaskGraph::getLevels() const {
         return m_levels;
     }
+
 }
