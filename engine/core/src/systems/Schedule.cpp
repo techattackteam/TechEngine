@@ -7,8 +7,11 @@ namespace TechEngine {
     Schedule::Schedule(const ComponentRegistry& componentRegistry) : m_componentRegistry(&componentRegistry) {
     }
 
-    std::span<const ScheduleEntry> Schedule::entries() const {
+    std::span<const ScheduleEntry> Schedule::getEntries() const {
         return m_entries;
+    }
+    std::unordered_map<std::type_index, std::size_t> Schedule::getEntryByType() const {
+        return m_entryByType;
     }
 
     void Schedule::freeze() {

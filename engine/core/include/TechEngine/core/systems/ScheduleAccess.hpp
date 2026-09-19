@@ -10,6 +10,7 @@
 namespace TechEngine {
     class ComponentRegistry;
     class Schedule;
+    class TaskGraph;
 
     template<typename WritableTypes, typename ReadableTypes>
     struct DeclareAccess;
@@ -24,7 +25,10 @@ namespace TechEngine {
 
         ScheduleAccess(const ComponentRegistry& registry, std::span<const ComponentTypeId> written, std::span<const ComponentTypeId> readOnly);
 
+        bool conflicts(const ScheduleAccess& other) const;
+
         friend class Schedule;
+        friend class TaskGraph;
 
     public:
         ScheduleAccess() = default;

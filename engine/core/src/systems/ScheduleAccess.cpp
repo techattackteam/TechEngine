@@ -1,6 +1,8 @@
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/systems/ScheduleAccess.hpp>
 
+#include <algorithm>
+
 namespace TechEngine {
     ScheduleAccess::ScheduleAccess(const ComponentRegistry& registry, std::span<const ComponentTypeId> written, std::span<const ComponentTypeId> readOnly) {
         for (const ComponentTypeId type: written) {
@@ -21,6 +23,20 @@ namespace TechEngine {
             }
             m_readMask[index] |= (1ULL << bit);
         }
+    }
+
+    bool ScheduleAccess::conflicts(const ScheduleAccess& other) const {
+        const std::size_t wordCount = std::max({m_readMask.size(), m_writeMask.size(), other.m_readMask.size(), other.m_writeMask.size()});
+        for (std::size_t i = 0; i < wordCount; i++) {
+            const std::uint64_t reads = i < m_readMask.size() ? m_readMask[i] : 0;
+            const std::uint64_t writes = i < m_writeMask.size() ? m_writeMask[i] : 0;
+            const std::uint64_t otherReads = i < other.m_readMask.size() ? other.m_readMask[i] : 0;
+            const std::uint64_t otherWrites = i < other.m_writeMask.size() ? other.m_writeMask[i] : 0;
+            if ((writes & (otherReads | otherWrites)) != 0 || (otherWrites & (reads | writes)) != 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     bool ScheduleAccess::reads(const ComponentDenseId denseId) const {

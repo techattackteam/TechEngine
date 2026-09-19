@@ -87,8 +87,8 @@ TEST_CASE("schedule registration stores a factory and lowers declared access", "
 
     schedule.add<MovementSystem>(TechEngine::DeclareAccess<TechEngine::Write<SchedulePosition>, TechEngine::Read<ScheduleVelocity>>{});
 
-    REQUIRE(schedule.entries().size() == 1);
-    const TechEngine::ScheduleEntry& entry = schedule.entries().front();
+    REQUIRE(schedule.getEntries().size() == 1);
+    const TechEngine::ScheduleEntry& entry = schedule.getEntries().front();
     REQUIRE(entry.systemType == std::type_index(typeid(MovementSystem)));
     REQUIRE(entry.factory != nullptr);
     REQUIRE(entry.factory()->name() == "MovementSystem");
@@ -105,7 +105,7 @@ TEST_CASE("schedule access crosses mask word boundaries without touching neighbo
 
     schedule.add<MovementSystem>(TechEngine::DeclareAccess<TechEngine::Write<ScheduleMaskComponent<0>, ScheduleMaskComponent<64>>, TechEngine::Read<ScheduleMaskComponent<1>, ScheduleMaskComponent<63>>>{});
 
-    const TechEngine::ScheduleAccess& access = schedule.entries().front().access;
+    const TechEngine::ScheduleAccess& access = schedule.getEntries().front().access;
     const TechEngine::ComponentDenseId zero = registry.find(TechEngine::componentTypeId<ScheduleMaskComponent<0>>())->denseId;
     const TechEngine::ComponentDenseId one = registry.find(TechEngine::componentTypeId<ScheduleMaskComponent<1>>())->denseId;
     const TechEngine::ComponentDenseId sixtyTwo = registry.find(TechEngine::componentTypeId<ScheduleMaskComponent<62>>())->denseId;
@@ -137,16 +137,16 @@ TEST_CASE("schedule entry metadata is assigned through the registration handle",
     schedule.add<CollisionSystem>().priority(20).after<MovementSystem>();
     schedule.add<ScriptSystem>().slot(TechEngine::Slot::Terminal);
 
-    REQUIRE(schedule.entries().size() == 3);
-    REQUIRE(schedule.entries()[0].priority == 10);
-    REQUIRE(schedule.entries()[0].orderConstraints.size() == 1);
-    REQUIRE(schedule.entries()[0].orderConstraints.front().systemType == std::type_index(typeid(CollisionSystem)));
-    REQUIRE(schedule.entries()[0].orderConstraints.front().order == TechEngine::Order::Before);
-    REQUIRE(schedule.entries()[1].priority == 20);
-    REQUIRE(schedule.entries()[1].orderConstraints.size() == 1);
-    REQUIRE(schedule.entries()[1].orderConstraints.front().systemType == std::type_index(typeid(MovementSystem)));
-    REQUIRE(schedule.entries()[1].orderConstraints.front().order == TechEngine::Order::After);
-    REQUIRE(schedule.entries()[2].slot == TechEngine::Slot::Terminal);
+    REQUIRE(schedule.getEntries().size() == 3);
+    REQUIRE(schedule.getEntries()[0].priority == 10);
+    REQUIRE(schedule.getEntries()[0].orderConstraints.size() == 1);
+    REQUIRE(schedule.getEntries()[0].orderConstraints.front().systemType == std::type_index(typeid(CollisionSystem)));
+    REQUIRE(schedule.getEntries()[0].orderConstraints.front().order == TechEngine::Order::Before);
+    REQUIRE(schedule.getEntries()[1].priority == 20);
+    REQUIRE(schedule.getEntries()[1].orderConstraints.size() == 1);
+    REQUIRE(schedule.getEntries()[1].orderConstraints.front().systemType == std::type_index(typeid(MovementSystem)));
+    REQUIRE(schedule.getEntries()[1].orderConstraints.front().order == TechEngine::Order::After);
+    REQUIRE(schedule.getEntries()[2].slot == TechEngine::Slot::Terminal);
 }
 
 TEST_CASE("a retained registration handle survives later schedule growth", "[core][systems]") {
@@ -157,12 +157,12 @@ TEST_CASE("a retained registration handle survives later schedule growth", "[cor
     addPlaceholderSystems(schedule, std::make_index_sequence<32>{});
     movement.priority(17).before<CollisionSystem>();
 
-    REQUIRE(schedule.entries().size() == 33);
-    REQUIRE(schedule.entries().front().systemType == std::type_index(typeid(MovementSystem)));
-    REQUIRE(schedule.entries().front().priority == 17);
-    REQUIRE(schedule.entries().front().orderConstraints.size() == 1);
-    REQUIRE(schedule.entries().front().orderConstraints.front().systemType == std::type_index(typeid(CollisionSystem)));
-    REQUIRE(schedule.entries().front().orderConstraints.front().order == TechEngine::Order::Before);
+    REQUIRE(schedule.getEntries().size() == 33);
+    REQUIRE(schedule.getEntries().front().systemType == std::type_index(typeid(MovementSystem)));
+    REQUIRE(schedule.getEntries().front().priority == 17);
+    REQUIRE(schedule.getEntries().front().orderConstraints.size() == 1);
+    REQUIRE(schedule.getEntries().front().orderConstraints.front().systemType == std::type_index(typeid(CollisionSystem)));
+    REQUIRE(schedule.getEntries().front().orderConstraints.front().order == TechEngine::Order::Before);
 }
 
 TEST_CASE("a duplicate system is rejected without changing the schedule", "[core][systems]") {
@@ -175,9 +175,9 @@ TEST_CASE("a duplicate system is rejected without changing the schedule", "[core
 
     schedule.add<CollisionSystem>();
 
-    REQUIRE(schedule.entries().size() == 2);
-    REQUIRE(schedule.entries()[0].systemType == std::type_index(typeid(MovementSystem)));
-    REQUIRE(schedule.entries()[1].systemType == std::type_index(typeid(CollisionSystem)));
+    REQUIRE(schedule.getEntries().size() == 2);
+    REQUIRE(schedule.getEntries()[0].systemType == std::type_index(typeid(MovementSystem)));
+    REQUIRE(schedule.getEntries()[1].systemType == std::type_index(typeid(CollisionSystem)));
 }
 
 TEST_CASE("unregistered access is rejected without publishing a partial entry", "[core][systems]") {
@@ -187,10 +187,10 @@ TEST_CASE("unregistered access is rejected without publishing a partial entry", 
     TechEngine::Schedule schedule(registry);
 
     REQUIRE_THROWS_AS(schedule.add<MovementSystem>(TechEngine::DeclareAccess<TechEngine::Write<ScheduleUnregistered>, TechEngine::Read<>>{}), TechEngineTests::AssertFired);
-    REQUIRE(schedule.entries().empty());
+    REQUIRE(schedule.getEntries().empty());
 
     schedule.add<MovementSystem>(TechEngine::DeclareAccess<TechEngine::Write<SchedulePosition>, TechEngine::Read<>>{});
-    REQUIRE(schedule.entries().size() == 1);
+    REQUIRE(schedule.getEntries().size() == 1);
 }
 
 TEST_CASE("a frozen schedule rejects registration and entry mutation", "[core][systems]") {
@@ -206,10 +206,10 @@ TEST_CASE("a frozen schedule rejects registration and entry mutation", "[core][s
     REQUIRE_THROWS_AS(movement.slot(TechEngine::Slot::Terminal), TechEngineTests::AssertFired);
 
     REQUIRE(schedule.frozen());
-    REQUIRE(schedule.entries().size() == 1);
-    REQUIRE(schedule.entries().front().priority == 0);
-    REQUIRE(schedule.entries().front().orderConstraints.empty());
-    REQUIRE(schedule.entries().front().slot == TechEngine::Slot::Regular);
+    REQUIRE(schedule.getEntries().size() == 1);
+    REQUIRE(schedule.getEntries().front().priority == 0);
+    REQUIRE(schedule.getEntries().front().orderConstraints.empty());
+    REQUIRE(schedule.getEntries().front().slot == TechEngine::Slot::Regular);
 }
 
 TEST_CASE("only one terminal entry can be declared", "[core][systems]") {
@@ -222,13 +222,13 @@ TEST_CASE("only one terminal entry can be declared", "[core][systems]") {
     TechEngine::ScheduleRegistration collision = schedule.add<CollisionSystem>();
     REQUIRE_THROWS_AS(collision.slot(TechEngine::Slot::Terminal), TechEngineTests::AssertFired);
 
-    REQUIRE(schedule.entries()[0].slot == TechEngine::Slot::Terminal);
-    REQUIRE(schedule.entries()[1].slot == TechEngine::Slot::Regular);
+    REQUIRE(schedule.getEntries()[0].slot == TechEngine::Slot::Terminal);
+    REQUIRE(schedule.getEntries()[1].slot == TechEngine::Slot::Regular);
 
     script.slot(TechEngine::Slot::Terminal);
     script.slot(TechEngine::Slot::Regular);
     collision.slot(TechEngine::Slot::Terminal);
 
-    REQUIRE(schedule.entries()[0].slot == TechEngine::Slot::Regular);
-    REQUIRE(schedule.entries()[1].slot == TechEngine::Slot::Terminal);
+    REQUIRE(schedule.getEntries()[0].slot == TechEngine::Slot::Regular);
+    REQUIRE(schedule.getEntries()[1].slot == TechEngine::Slot::Terminal);
 }

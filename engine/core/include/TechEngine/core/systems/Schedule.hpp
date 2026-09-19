@@ -15,14 +15,14 @@
 #include <vector>
 
 namespace TechEngine {
+    using SystemFactory = std::unique_ptr<ISystem> (*)();
+
     struct OrderConstraint {
         std::type_index systemType;
         Order order = Order::Before;
 
         bool operator==(const OrderConstraint&) const = default;
     };
-
-    using SystemFactory = std::unique_ptr<ISystem> (*)();
 
     struct ScheduleEntry {
         SystemFactory factory = nullptr;
@@ -55,7 +55,9 @@ namespace TechEngine {
             return addEntry(typeid(T), &createSystem<T>, ScheduleAccess(*m_componentRegistry, written, readOnly));
         }
 
-        std::span<const ScheduleEntry> entries() const;
+        std::span<const ScheduleEntry> getEntries() const;
+
+        std::unordered_map<std::type_index, std::size_t> getEntryByType() const;
 
         void freeze();
 
