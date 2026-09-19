@@ -165,8 +165,6 @@ TEST_CASE("a retained registration handle survives later schedule growth", "[cor
     REQUIRE(schedule.entries().front().orderConstraints.front().order == TechEngine::Order::Before);
 }
 
-#if TE_ASSERT_DEV
-
 TEST_CASE("a duplicate system is rejected without changing the schedule", "[core][systems]") {
     const TechEngineTests::FatalAssertGuard guard;
     TechEngine::ComponentRegistry registry;
@@ -234,5 +232,3 @@ TEST_CASE("only one terminal entry can be declared", "[core][systems]") {
     REQUIRE(schedule.entries()[0].slot == TechEngine::Slot::Regular);
     REQUIRE(schedule.entries()[1].slot == TechEngine::Slot::Terminal);
 }
-
-#endif

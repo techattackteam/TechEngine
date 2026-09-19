@@ -23,7 +23,7 @@ namespace TechEngine {
 
     ComponentDenseId ComponentRegistry::denseId(const ComponentTypeId id) const {
         const ComponentTypeRecord* record = find(id);
-        TE_ASSERT(record != nullptr, "Component type is not registered");
+        TE_CHECK(record != nullptr, "Component type is not registered");
         return record->denseId;
     }
 
