@@ -45,6 +45,8 @@ namespace TechEngine {
 
         const ComponentTypeRecord* find(ComponentDenseId id) const;
 
+        ComponentDenseId denseId(ComponentTypeId id) const;
+
         std::span<const ComponentTypeRecord> records() const;
 
         void freeze();
