@@ -10,7 +10,7 @@ namespace TechEngine {
     public:
         virtual ~ISystem() = default;
 
-        virtual void update(Scene& scene, const SimulationContext& context) = 0;
+        virtual void tick(Scene& scene, const SimulationContext& context) = 0;
 
         virtual std::string_view name() const = 0;
     };

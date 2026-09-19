@@ -13,12 +13,14 @@ techengine_module(core
           src/scene/ComponentRegistry.cpp
           src/scene/EntitySlots.cpp
           src/scene/Scene.cpp
+          src/scene/SceneCommandBuffer.cpp
           src/scene/Transform.cpp
           src/serialization/Reader.cpp
           src/serialization/Writer.cpp
           src/systems/Schedule.cpp
           src/systems/ScheduleAccess.cpp
           src/systems/ScheduleRegistration.cpp
+          src/systems/SerialExecutor.cpp
           src/systems/TaskGraph.cpp
   HEADERS include/TechEngine/core/Core.hpp
           include/TechEngine/core/EngineContext.hpp
@@ -39,6 +41,7 @@ techengine_module(core
           include/TechEngine/core/scene/Entity.hpp
           include/TechEngine/core/scene/Query.hpp
           include/TechEngine/core/scene/Scene.hpp
+          include/TechEngine/core/scene/SceneCommandBuffer.hpp
           include/TechEngine/core/scene/components/Transform.hpp
           include/TechEngine/core/serialization/BlobHeader.hpp
           include/TechEngine/core/serialization/Reader.hpp
@@ -48,6 +51,7 @@ techengine_module(core
           include/TechEngine/core/systems/Schedule.hpp
           include/TechEngine/core/systems/ScheduleAccess.hpp
           include/TechEngine/core/systems/ScheduleRegistration.hpp
+          include/TechEngine/core/systems/SerialExecutor.hpp
           include/TechEngine/core/systems/TaskGraph.hpp
           src/jobs/DedicatedThreadState.hpp
           src/jobs/RegisteredThread.hpp
@@ -80,5 +84,6 @@ if(TE_BUILD_TESTS)
           tests/serialization/VisitTests.cpp
           tests/serialization/WriterReaderTests.cpp
           tests/systems/ScheduleTests.cpp
+          tests/systems/SerialExecutorTests.cpp
           tests/systems/TaskGraphTests.cpp)
 endif()

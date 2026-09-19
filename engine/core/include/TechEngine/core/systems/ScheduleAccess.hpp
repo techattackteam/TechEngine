@@ -22,6 +22,7 @@ namespace TechEngine {
     private:
         std::vector<std::uint64_t> m_readMask;
         std::vector<std::uint64_t> m_writeMask;
+        std::vector<ComponentDenseId> m_writtenTypes;
 
         ScheduleAccess(const ComponentRegistry& registry, std::span<const ComponentTypeId> written, std::span<const ComponentTypeId> readOnly);
 
@@ -38,5 +39,7 @@ namespace TechEngine {
         bool writes(ComponentDenseId type) const;
 
         bool touches(ComponentDenseId type) const;
+
+        std::span<const ComponentDenseId> getWrittenTypes() const;
     };
 }
