@@ -16,6 +16,9 @@ techengine_module(core
           src/scene/Transform.cpp
           src/serialization/Reader.cpp
           src/serialization/Writer.cpp
+          src/systems/Schedule.cpp
+          src/systems/ScheduleAccess.cpp
+          src/systems/ScheduleRegistration.cpp
   HEADERS include/TechEngine/core/Core.hpp
           include/TechEngine/core/EngineContext.hpp
           include/TechEngine/core/SimulationContext.hpp
@@ -40,6 +43,10 @@ techengine_module(core
           include/TechEngine/core/serialization/Reader.hpp
           include/TechEngine/core/serialization/Visit.hpp
           include/TechEngine/core/serialization/Writer.hpp
+          include/TechEngine/core/systems/ISystem.hpp
+          include/TechEngine/core/systems/Schedule.hpp
+          include/TechEngine/core/systems/ScheduleAccess.hpp
+          include/TechEngine/core/systems/ScheduleRegistration.hpp
           src/jobs/DedicatedThreadState.hpp
           src/jobs/RegisteredThread.hpp
           src/scene/Archetype.hpp
@@ -69,5 +76,6 @@ if(TE_BUILD_TESTS)
           tests/scene/QueryTests.cpp
           tests/scene/TransformTests.cpp
           tests/serialization/VisitTests.cpp
-          tests/serialization/WriterReaderTests.cpp)
+          tests/serialization/WriterReaderTests.cpp
+          tests/systems/ScheduleTests.cpp)
 endif()
