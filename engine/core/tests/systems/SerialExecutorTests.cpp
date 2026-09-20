@@ -250,9 +250,9 @@ TEST_CASE("the serial executor walks levels and retains each system instance", "
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
 
-    executor.execute(fixture.scene, fixture.context, barrier);
+    executor.execute(fixture.scene, fixture.context /*, barrier*/);
     fixture.context.tick++;
-    executor.execute(fixture.scene, fixture.context, barrier);
+    executor.execute(fixture.scene, fixture.context /*, barrier*/);
 
     REQUIRE(state.runs == std::vector<std::pair<int, int>>{{1, 1}, {2, 1}, {3, 1}, {1, 2}, {2, 2}, {3, 2}});
 }
@@ -265,7 +265,7 @@ TEST_CASE("an empty graph still reaches the tick barrier", "[core][systems][exec
     BarrierProbe barrier;
     fixture.context.tick = 19;
 
-    executor.execute(fixture.scene, fixture.context, barrier);
+    executor.execute(fixture.scene, fixture.context /*, barrier*/);
 
     REQUIRE(barrier.calls == std::vector<std::string_view>{"assignNetIds", "flushEvents"});
     REQUIRE(barrier.spawned.empty());
@@ -284,7 +284,7 @@ TEST_CASE("spawn and component commands apply in issue order before barrier serv
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
 
-    executor.execute(fixture.scene, fixture.context, barrier);
+    executor.execute(fixture.scene, fixture.context /*, barrier*/);
 
     REQUIRE(barrier.calls == std::vector<std::string_view>{"assignNetIds", "flushEvents"});
     REQUIRE(barrier.spawned.size() == 1);
@@ -295,7 +295,7 @@ TEST_CASE("spawn and component commands apply in issue order before barrier serv
     state.target = entity;
     state.commandMode = ExecutorCommandMode::Replace;
     fixture.context.tick++;
-    executor.execute(fixture.scene, fixture.context, barrier);
+    executor.execute(fixture.scene, fixture.context /*, barrier*/);
 
     REQUIRE(fixture.scene.hasComponent<ExecutorValue>(entity));
     REQUIRE(fixture.scene.getComponent<ExecutorValue>(entity).value == 99);
@@ -310,7 +310,7 @@ TEST_CASE("per-system command buffers merge in graph order", "[core][systems][ex
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
 
-    executor.execute(fixture.scene, fixture.context, barrier);
+    executor.execute(fixture.scene, fixture.context /*, barrier*/);
 
     REQUIRE(barrier.spawned.size() == 2);
     REQUIRE(fixture.scene.getComponent<ExecutorValue>(barrier.spawned[0]).value == 10);
@@ -332,7 +332,7 @@ TEST_CASE("despawn remains invisible until the barrier and validates the hierarc
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
 
-    executor.execute(fixture.scene, fixture.context, barrier);
+    executor.execute(fixture.scene, fixture.context /*, barrier*/);
 
     REQUIRE(state.visibleDuringSystem);
     REQUIRE_FALSE(fixture.scene.contains(parent));
@@ -352,7 +352,7 @@ TEST_CASE("undeclared component access fires the debug assertion without corrupt
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
 
-    executor.execute(fixture.scene, fixture.context, barrier);
+    executor.execute(fixture.scene, fixture.context /*, barrier*/);
 
 #if TE_ASSERT_DEV
     REQUIRE(TechEngineTests::g_fired == std::vector<TechEngine::AssertKind>{TechEngine::AssertKind::Assert});
@@ -360,7 +360,7 @@ TEST_CASE("undeclared component access fires the debug assertion without corrupt
     REQUIRE(TechEngineTests::g_fired.empty());
 #endif
     state.accessMode = ExecutorAccessMode::None;
-    executor.execute(fixture.scene, fixture.context, barrier);
+    executor.execute(fixture.scene, fixture.context /*, barrier*/);
 }
 
 TEST_CASE("write stamps advance for declared writes but not declared reads", "[core][systems][executor]") {
@@ -376,7 +376,7 @@ TEST_CASE("write stamps advance for declared writes but not declared reads", "[c
     state.accessMode = ExecutorAccessMode::None;
     fixture.context.tick = 7;
 
-    writer.execute(fixture.scene, fixture.context, barrier);
+    writer.execute(fixture.scene, fixture.context /*, barrier*/);
 
     REQUIRE(fixture.scene.getChangeTick<TechEngine::Transform>(state.target) == 7);
     REQUIRE(fixture.scene.getChangeTick<ExecutorValue>(state.target) == 0);
@@ -389,7 +389,7 @@ TEST_CASE("write stamps advance for declared writes but not declared reads", "[c
     state.accessMode = ExecutorAccessMode::Read;
     fixture.context.tick = 8;
 
-    reader.execute(fixture.scene, fixture.context, barrier);
+    reader.execute(fixture.scene, fixture.context /*, barrier*/);
 
     REQUIRE(fixture.scene.getChangeTick<TechEngine::Transform>(state.target) == 7);
 }
@@ -406,12 +406,12 @@ TEST_CASE("a failing system discards every pending command and skips the barrier
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
 
-    REQUIRE_THROWS_AS(executor.execute(fixture.scene, fixture.context, barrier), std::runtime_error);
+    REQUIRE_THROWS_AS(executor.execute(fixture.scene, fixture.context /*, barrier*/), std::runtime_error);
     REQUIRE(fixture.scene.contains(state.target));
     REQUIRE(barrier.calls.empty());
 
     state.throwAfterCommand = false;
-    executor.execute(fixture.scene, fixture.context, barrier);
+    executor.execute(fixture.scene, fixture.context /*, barrier*/);
 
     REQUIRE(fixture.scene.contains(state.target));
     REQUIRE(barrier.calls == std::vector<std::string_view>{"assignNetIds", "flushEvents"});
@@ -426,7 +426,7 @@ TEST_CASE("immediate structural mutation is rejected during system execution", "
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
 
-    REQUIRE_THROWS_AS(executor.execute(fixture.scene, fixture.context, barrier), TechEngineTests::AssertFired);
+    REQUIRE_THROWS_AS(executor.execute(fixture.scene, fixture.context /*, barrier*/), TechEngineTests::AssertFired);
     REQUIRE(barrier.calls.empty());
 }
 
@@ -442,6 +442,6 @@ TEST_CASE("a pending entity cannot cross per-system command buffers", "[core][sy
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
 
-    REQUIRE_THROWS_AS(executor.execute(fixture.scene, fixture.context, barrier), TechEngineTests::AssertFired);
+    REQUIRE_THROWS_AS(executor.execute(fixture.scene, fixture.context /*, barrier*/), TechEngineTests::AssertFired);
     REQUIRE(barrier.calls.empty());
 }
