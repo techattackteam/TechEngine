@@ -228,9 +228,8 @@ TEST_CASE("change stamping reaches every matching archetype column", "[core][sce
     REQUIRE(storage.addComponent(second, StorageVelocity{3}));
     const TechEngine::ComponentDenseId position = registry.find(positionId)->denseId;
     const TechEngine::ComponentDenseId velocity = registry.find(velocityId)->denseId;
-    const TechEngine::ComponentDenseId written[]{position};
 
-    storage.markChanged(written, 17);
+    storage.markChanged(position, 17);
 
     REQUIRE(storage.getChangeTick(first, position) == 17);
     REQUIRE(storage.getChangeTick(second, position) == 17);

@@ -90,41 +90,41 @@ namespace TechEngine {
 
     SceneCommandBuffer& SceneCommandBuffer::operator=(SceneCommandBuffer&&) noexcept = default;
 
-    PendingEntity SceneCommandBuffer::spawn() {
+    PendingEntity SceneCommandBuffer::spawn() const {
         TE_CHECK(m_impl->nextPendingIndex != std::numeric_limits<std::uint32_t>::max(), "Pending entity index exhausted");
         const PendingEntity pending(m_impl->id, m_impl->epoch, m_impl->nextPendingIndex++);
         m_impl->commands.push_back({SceneCommandKind::Spawn, pending, {}, Payload{}});
         return pending;
     }
 
-    void SceneCommandBuffer::despawn(const Entity entity) {
+    void SceneCommandBuffer::despawn(const Entity entity) const {
         m_impl->commands.push_back({SceneCommandKind::Despawn, entity, {}, Payload{}});
     }
 
-    void SceneCommandBuffer::despawn(const PendingEntity entity) {
+    void SceneCommandBuffer::despawn(const PendingEntity entity) const {
         TE_CHECK(entity.m_bufferId == m_impl->id && entity.m_epoch == m_impl->epoch, "Pending entity belongs to a different command buffer execution");
         m_impl->commands.push_back({SceneCommandKind::Despawn, entity, {}, Payload{}});
     }
 
-    void SceneCommandBuffer::queueAdd(const Entity entity, const ComponentTypeId type, Payload payload) {
+    void SceneCommandBuffer::queueAdd(const Entity entity, const ComponentTypeId type, Payload payload) const {
         m_impl->commands.push_back({SceneCommandKind::AddComponent, entity, type, std::move(payload)});
     }
 
-    void SceneCommandBuffer::queueAdd(const PendingEntity entity, const ComponentTypeId type, Payload payload) {
+    void SceneCommandBuffer::queueAdd(const PendingEntity entity, const ComponentTypeId type, Payload payload) const {
         TE_CHECK(entity.m_bufferId == m_impl->id && entity.m_epoch == m_impl->epoch, "Pending entity belongs to a different command buffer execution");
         m_impl->commands.push_back({SceneCommandKind::AddComponent, entity, type, std::move(payload)});
     }
 
-    void SceneCommandBuffer::queueRemove(const Entity entity, const ComponentTypeId type) {
+    void SceneCommandBuffer::queueRemove(const Entity entity, const ComponentTypeId type) const {
         m_impl->commands.push_back({SceneCommandKind::RemoveComponent, entity, type, Payload{}});
     }
 
-    void SceneCommandBuffer::queueRemove(const PendingEntity entity, const ComponentTypeId type) {
+    void SceneCommandBuffer::queueRemove(const PendingEntity entity, const ComponentTypeId type) const {
         TE_CHECK(entity.m_bufferId == m_impl->id && entity.m_epoch == m_impl->epoch, "Pending entity belongs to a different command buffer execution");
         m_impl->commands.push_back({SceneCommandKind::RemoveComponent, entity, type, Payload{}});
     }
 
-    void SceneCommandBuffer::apply(Scene& scene, std::vector<Entity>& spawned) {
+    void SceneCommandBuffer::apply(Scene& scene, std::vector<Entity>& spawned) const {
         m_impl->resolvedEntities.clear();
         const auto resolveTarget = [this](const SceneCommandTarget& target) {
             if (std::holds_alternative<Entity>(target)) {
@@ -148,17 +148,17 @@ namespace TechEngine {
                     scene.destroyEntity(resolveTarget(command.target));
                     break;
                 case SceneCommandKind::AddComponent:
-                    scene.applyComponentAddition(resolveTarget(command.target), command.component, command.payload.getValue());
+                    scene.addComponentInternal(resolveTarget(command.target), command.component, command.payload.getValue());
                     break;
                 case SceneCommandKind::RemoveComponent:
-                    scene.applyComponentRemoval(resolveTarget(command.target), command.component);
+                    scene.removeComponentInternal(resolveTarget(command.target), command.component);
                     break;
             }
         }
         discard();
     }
 
-    void SceneCommandBuffer::discard() {
+    void SceneCommandBuffer::discard() const {
         m_impl->commands.clear();
         m_impl->resolvedEntities.clear();
         m_impl->nextPendingIndex = 0;

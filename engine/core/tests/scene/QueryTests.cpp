@@ -1,5 +1,6 @@
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Query.hpp>
+#include <TechEngine/core/scene/components/Hierarchy.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
 #include <scene/ArchetypeStorage.hpp>
@@ -26,8 +27,16 @@ struct QueryHealth {
     int value = 0;
 };
 
+template<typename Component>
+concept WritableQueryComponent = requires { sizeof(TechEngine::Query<TechEngine::Write<Component>, TechEngine::Read<>>); };
+
+template<typename Component>
+concept ReadableQueryComponent = requires { sizeof(TechEngine::Query<TechEngine::Write<>, TechEngine::Read<Component>>); };
+
 static_assert(!std::is_move_constructible_v<TechEngine::ArchetypeStorage>);
 static_assert(!std::is_move_assignable_v<TechEngine::ArchetypeStorage>);
+static_assert(!WritableQueryComponent<TechEngine::Hierarchy>);
+static_assert(ReadableQueryComponent<TechEngine::Hierarchy>);
 
 TEST_CASE("eachEntity visits every live entity across archetypes", "[core][scene]") {
     TechEngine::ComponentRegistry registry;

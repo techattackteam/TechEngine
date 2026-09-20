@@ -52,19 +52,19 @@ namespace TechEngine {
         bool rowCountsMatch() const;
 
         template<ComponentValue T>
-        std::span<T> components(const ComponentDenseId type) {
+        std::span<T> getComponents(const ComponentDenseId type) {
             return static_cast<ComponentStorage<T>&>(*m_columns.at(type)).values();
         }
 
         template<ComponentValue T>
-        std::span<const T> components(const ComponentDenseId type) const {
+        std::span<const T> getComponents(const ComponentDenseId type) const {
             return static_cast<const ComponentStorage<T>&>(*m_columns.at(type)).values();
         }
 
     private:
         void reserve(std::size_t capacity);
 
-        std::size_t append(Entity entity);
+        std::size_t addEntity(Entity entity);
 
         Entity eraseSwap(std::size_t row);
     };

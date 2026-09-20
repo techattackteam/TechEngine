@@ -100,7 +100,7 @@ namespace TechEngine {
             if (location == nullptr || !location->archetype->contains(type)) {
                 return nullptr;
             }
-            return &location->archetype->components<T>(type)[location->row];
+            return &location->archetype->getComponents<T>(type)[location->row];
         }
 
         template<ComponentValue T>
@@ -110,7 +110,7 @@ namespace TechEngine {
             if (location == nullptr || !location->archetype->contains(type)) {
                 return nullptr;
             }
-            return &location->archetype->components<T>(type)[location->row];
+            return &location->archetype->getComponents<T>(type)[location->row];
         }
 
         void* componentRaw(Entity entity, ComponentTypeId type);
@@ -121,7 +121,7 @@ namespace TechEngine {
 
         std::size_t archetypeCount() const;
 
-        void markChanged(std::span<const ComponentDenseId> types, std::uint64_t tick);
+        void markChanged(ComponentDenseId type, std::uint64_t tick);
 
         std::uint64_t getChangeTick(Entity entity, ComponentDenseId type) const;
 
@@ -198,7 +198,7 @@ namespace TechEngine {
         void move(const Entity entity, const EntityLocation sourceLocation, const Archetype::Edge& edge, PrepareDestination&& prepareDestination) {
             Archetype& source = *sourceLocation.archetype;
             Archetype& destination = *edge.destination;
-            const std::size_t destinationRow = destination.append(entity);
+            const std::size_t destinationRow = destination.addEntity(entity);
 
             try {
                 for (const Archetype::ColumnMapping& column: edge.columns) {

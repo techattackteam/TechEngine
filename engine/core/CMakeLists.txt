@@ -42,6 +42,7 @@ techengine_module(core
           include/TechEngine/core/scene/Query.hpp
           include/TechEngine/core/scene/Scene.hpp
           include/TechEngine/core/scene/SceneCommandBuffer.hpp
+          include/TechEngine/core/scene/components/Hierarchy.hpp
           include/TechEngine/core/scene/components/Transform.hpp
           include/TechEngine/core/serialization/BlobHeader.hpp
           include/TechEngine/core/serialization/Reader.hpp
@@ -58,7 +59,6 @@ techengine_module(core
           src/scene/Archetype.hpp
           src/scene/ArchetypeStorage.hpp
           src/scene/EntitySlots.hpp
-          src/scene/components/Hierarchy.hpp
   DEPS    base platform
   LIBS    Jolt                             # authoritative physics (ADR-006 §1)
           Threads::Threads                 # JobSystem's workers; PUBLIC because the header has std::thread

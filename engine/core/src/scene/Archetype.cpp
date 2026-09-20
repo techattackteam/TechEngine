@@ -43,7 +43,7 @@ namespace TechEngine {
         }
     }
 
-    std::size_t Archetype::append(const Entity entity) {
+    std::size_t Archetype::addEntity(const Entity entity) {
         const std::size_t row = m_entities.size();
         m_entities.push_back(entity);
         try {

@@ -1,9 +1,39 @@
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
+#include <TechEngine/core/scene/components/Hierarchy.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <concepts>
 #include <vector>
+
+template<typename Component>
+concept MutableSceneComponent = requires(TechEngine::Scene& scene, const TechEngine::Entity entity) {
+    { scene.getComponent<Component>(entity) } -> std::same_as<Component&>;
+};
+
+template<typename Component>
+concept AddableSceneComponent = requires(TechEngine::Scene& scene, const TechEngine::Entity entity) { scene.addComponent<Component>(entity); };
+
+template<typename Component>
+concept RemovableSceneComponent = requires(TechEngine::Scene& scene, const TechEngine::Entity entity) { scene.removeComponent<Component>(entity); };
+
+static_assert(!MutableSceneComponent<TechEngine::Hierarchy>);
+static_assert(!AddableSceneComponent<TechEngine::Hierarchy>);
+static_assert(!RemovableSceneComponent<TechEngine::Hierarchy>);
+
+TEST_CASE("hierarchy is publicly registerable and readable through Scene", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity entity = scene.createEntity();
+    const TechEngine::Scene& constScene = scene;
+
+    const TechEngine::Hierarchy& hierarchy = scene.getComponent<TechEngine::Hierarchy>(entity);
+
+    REQUIRE(scene.hasComponent<TechEngine::Hierarchy>(entity));
+    REQUIRE(&hierarchy == &constScene.getComponent<TechEngine::Hierarchy>(entity));
+}
 
 TEST_CASE("hierarchy keeps roots and ordered children", "[core][scene]") {
     TechEngine::ComponentRegistry registry;

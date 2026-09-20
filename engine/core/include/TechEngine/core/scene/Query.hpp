@@ -4,8 +4,10 @@
 #include <TechEngine/core/scene/Access.hpp>
 #include <TechEngine/core/scene/ComponentStorage.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
+#include <TechEngine/core/scene/components/Hierarchy.hpp>
 
 #include <array>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -30,6 +32,7 @@ namespace TechEngine {
     class Query;
 
     template<ComponentValue... Written, ComponentValue... ReadOnly>
+        requires((!std::same_as<Written, Hierarchy>) && ...)
     class Query<Write<Written...>, Read<ReadOnly...>> {
     private:
         using QueryType = Query<Write<Written...>, Read<ReadOnly...>>;

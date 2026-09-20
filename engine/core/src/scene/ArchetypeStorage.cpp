@@ -1,9 +1,9 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
+#include <TechEngine/core/scene/components/Hierarchy.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <scene/ArchetypeStorage.hpp>
-#include <scene/components/Hierarchy.hpp>
 
 #include <algorithm>
 #include <utility>
@@ -28,7 +28,7 @@ namespace TechEngine {
         Entity entity = m_entities.create();
         std::size_t row = 0;
         try {
-            row = archetype.append(entity);
+            row = archetype.addEntity(entity);
         } catch (...) {
             m_entities.destroy(entity);
             throw;
@@ -131,17 +131,12 @@ namespace TechEngine {
         return m_archetypes.size();
     }
 
-    void ArchetypeStorage::markChanged(const std::span<const ComponentDenseId> types, const std::uint64_t tick) {
-        if (types.empty()) {
-            return;
-        }
+    void ArchetypeStorage::markChanged(const ComponentDenseId type, const std::uint64_t tick) {
         TE_PROFILER_FUNCTION();
-        for (const ComponentDenseId type: types) {
-            for (const std::unique_ptr<Archetype>& archetype: m_archetypes) {
-                const auto column = archetype->m_columns.find(type);
-                if (column != archetype->m_columns.end()) {
-                    column->second->markChanged(tick);
-                }
+        for (const std::unique_ptr<Archetype>& archetype: m_archetypes) {
+            const auto column = archetype->m_columns.find(type);
+            if (column != archetype->m_columns.end()) {
+                column->second->markChanged(tick);
             }
         }
     }
