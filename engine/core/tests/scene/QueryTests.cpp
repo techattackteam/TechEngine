@@ -1,6 +1,8 @@
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Query.hpp>
+#include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
 #include <scene/ArchetypeStorage.hpp>
@@ -14,6 +16,7 @@
 #include <thread>
 #include <type_traits>
 #include <unordered_set>
+#include <utility>
 
 struct QueryPosition {
     int value = 0;
@@ -104,6 +107,25 @@ TEST_CASE("queries iterate every matching archetype with typed access", "[core][
 
     REQUIRE(movingCount == 1);
     REQUIRE(storage.component<QueryPosition>(moving)->value == 32);
+}
+
+TEST_CASE("scene exposes typed queries without exposing archetype storage", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
+    registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
+    registry.registerComponent<QueryPosition>("Tests.QueryPosition");
+    registry.registerComponent<QueryVelocity>("Tests.QueryVelocity");
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity entity = scene.createEntity();
+    scene.addComponent<QueryPosition>(entity, QueryPosition{2});
+    scene.addComponent<QueryVelocity>(entity, QueryVelocity{3});
+    auto query = scene.query<TechEngine::Write<QueryPosition>, TechEngine::Read<QueryVelocity>>();
+
+    query.each([](TechEngine::Entity, QueryPosition& position, const QueryVelocity& velocity) {
+        position.value += velocity.value;
+    });
+
+    REQUIRE(std::as_const(scene).getComponent<QueryPosition>(entity).value == 5);
 }
 
 TEST_CASE("queries refresh matches when a new archetype appears", "[core][scene]") {

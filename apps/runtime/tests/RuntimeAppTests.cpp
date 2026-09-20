@@ -1,17 +1,24 @@
-#include "RuntimeApp.hpp"
+#include <RuntimeApp.hpp>
 
 #include <catch2/catch_test_macros.hpp>
+
+#include <cstddef>
 
 namespace {
     class RuntimeProbe : public TechEngine::RuntimeApp {
     public:
-        using TechEngine::RuntimeApp::init;
-        using TechEngine::RuntimeApp::stopRequested;
+        void bootstrapSimulation() {
+            finalizeSimulation();
+        }
 
         void advanceFrame() {
             m_simulationThread.advance(TechEngine::SimulationSettings::FIXED_DELTA_TIME, [this](const TechEngine::SimulationContext& simulation) {
-                fixedUpdate(simulation);
+                executeSimulationTick(simulation);
             });
+        }
+
+        std::size_t entityCount() const {
+            return m_scene.getRoots().size();
         }
 
         TechEngine::Role loopRole() const {
@@ -26,12 +33,11 @@ TEST_CASE("runtime composes as a client", "[runtime]") {
     REQUIRE(runtime.loopRole() == TechEngine::Role::Client);
 }
 
-TEST_CASE("runtime requests a stop after its 120-tick demo", "[runtime]") {
+TEST_CASE("runtime executes its configured demo systems through App", "[runtime]") {
     RuntimeProbe runtime;
-    runtime.init();
-    for (int i = 0; i < 120; i++) {
-        REQUIRE_FALSE(runtime.stopRequested());
-        runtime.advanceFrame();
-    }
-    CHECK(runtime.stopRequested());
+    runtime.bootstrapSimulation();
+
+    CHECK(runtime.entityCount() == 0);
+    runtime.advanceFrame();
+    CHECK(runtime.entityCount() == 1);
 }

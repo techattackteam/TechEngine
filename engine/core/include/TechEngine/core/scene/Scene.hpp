@@ -3,6 +3,7 @@
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
+#include <TechEngine/core/scene/Query.hpp>
 #include <TechEngine/core/scene/SceneCommandBuffer.hpp>
 
 #include <concepts>
@@ -17,8 +18,6 @@ namespace TechEngine {
     class ComponentRegistry;
     class Hierarchy;
     class ScheduleAccess;
-    class SerialExecutor;
-    class Transform;
     struct TransformValues;
 
     enum class ReparentMode { PreserveLocal, PreserveWorld };
@@ -31,6 +30,7 @@ namespace TechEngine {
 
         ComponentRegistry* m_registry = nullptr;
         std::unique_ptr<ArchetypeStorage> m_storage;
+        internal::QuerySource* m_querySource = nullptr;
 
     public:
         explicit Scene(ComponentRegistry& registry);
@@ -110,6 +110,18 @@ namespace TechEngine {
         template<typename Component>
         std::uint64_t getChangeTick(const Entity entity) const {
             return getChangeTickRaw(entity, componentTypeId<Component>());
+        }
+
+        template<typename WritableComponents, typename ReadableComponents>
+        Query<WritableComponents, ReadableComponents> query() {
+            using QueryType = Query<WritableComponents, ReadableComponents>;
+            QueryType::forEachWrittenType([this](const ComponentTypeId type) {
+                validateWrite(type);
+            });
+            QueryType::forEachReadOnlyType([this](const ComponentTypeId type) {
+                validateRead(type);
+            });
+            return QueryType(*m_querySource);
         }
 
         SceneCommandBuffer& getCommands();

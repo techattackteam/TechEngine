@@ -39,7 +39,7 @@ namespace TechEngine {
 
     SerialExecutor::~SerialExecutor() = default;
 
-    void SerialExecutor::execute(Scene& scene, const SimulationContext& context, TickBarrierServices& barrier) {
+    void SerialExecutor::execute(Scene& scene, const SimulationContext& context /*, TickBarrierServices& barrier*/) {
         TE_PROFILER_FUNCTION();
         try {
             {
@@ -77,8 +77,8 @@ namespace TechEngine {
         }
         {
             TE_PROFILER_SCOPE("SerialExecutor.BarrierServices");
-            barrier.assignNetIds(scene, m_impl->spawned);
-            barrier.flushEvents(context.engine.clock.frame(), context.tick);
+            // barrier.assignNetIds(scene, m_impl->spawned);
+            // barrier.flushEvents(context.engine.clock.frame(), context.tick);
         }
     }
 

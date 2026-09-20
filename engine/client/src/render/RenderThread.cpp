@@ -58,16 +58,20 @@ namespace TechEngine {
     void RenderThread::publish(const RenderSnapshot& snapshot) {
         m_mailbox.publish(snapshot);
     }
+
     void RenderThread::setVSync(bool enabled) {
         m_vsync.store(enabled, std::memory_order_relaxed);
     }
+
     ThreadCompletionResult RenderThread::completion() const {
         return m_thread.completion();
     }
+
     RenderTiming RenderThread::timing() const {
         const std::lock_guard lock{m_timingMutex};
         return m_timing;
     }
+
     void RenderThread::stop() {
         m_thread.requestStop();
         m_thread.join();

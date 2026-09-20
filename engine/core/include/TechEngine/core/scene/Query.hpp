@@ -3,7 +3,7 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/core/scene/Access.hpp>
 #include <TechEngine/core/scene/ComponentStorage.hpp>
-#include <TechEngine/core/scene/Entity.hpp>
+#include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
 
 #include <array>
@@ -18,7 +18,9 @@
 #include <vector>
 
 namespace TechEngine {
+    class Hierarchy;
     class ArchetypeStorage;
+    class Scene;
 
     namespace internal {
         template<typename... Types>
@@ -26,6 +28,26 @@ namespace TechEngine {
 
         template<typename First, typename... Rest>
         inline constexpr bool UNIQUE_TYPES<First, Rest...> = ((!std::is_same_v<First, Rest>) && ...) && UNIQUE_TYPES<Rest...>;
+
+        class QuerySource {
+        protected:
+            ~QuerySource() = default;
+
+        public:
+            virtual std::uint64_t queryRevision() const = 0;
+
+            virtual std::size_t queryArchetypeCount() const = 0;
+
+            virtual bool queryArchetypeContains(std::size_t archetypeIndex, ComponentTypeId type) const = 0;
+
+            virtual const std::vector<Entity>* queryEntities(std::size_t archetypeIndex) const = 0;
+
+            virtual IComponentStorage* queryColumn(std::size_t archetypeIndex, ComponentTypeId type) = 0;
+
+            virtual void beginQueryIteration() = 0;
+
+            virtual void endQueryIteration() = 0;
+        };
     }
 
     template<typename WritableComponents, typename ReadableComponents>
@@ -35,10 +57,6 @@ namespace TechEngine {
         requires((!std::same_as<Written, Hierarchy>) && ...)
     class Query<Write<Written...>, Read<ReadOnly...>> {
     private:
-        using QueryType = Query<Write<Written...>, Read<ReadOnly...>>;
-        using RefreshMatches = void (*)(void*, QueryType&);
-        using IterationBoundary = void (*)(void*);
-
         struct Match {
             const std::vector<Entity>* entities = nullptr;
             std::array<IComponentStorage*, sizeof...(Written)> writableColumns{};
@@ -47,16 +65,15 @@ namespace TechEngine {
 
         class IterationGuard {
         private:
-            void* m_context = nullptr;
-            IterationBoundary m_end = nullptr;
+            internal::QuerySource* m_source = nullptr;
 
         public:
-            IterationGuard(void* context, const IterationBoundary begin, const IterationBoundary end) : m_context(context), m_end(end) {
-                begin(context);
+            explicit IterationGuard(internal::QuerySource& source) : m_source(&source) {
+                m_source->beginQueryIteration();
             }
 
             ~IterationGuard() {
-                m_end(m_context);
+                m_source->endQueryIteration();
             }
 
             IterationGuard(const IterationGuard&) = delete;
@@ -65,15 +82,13 @@ namespace TechEngine {
         };
 
         friend class ArchetypeStorage;
+        friend class Scene;
 
-        void* m_context = nullptr;
-        RefreshMatches m_refreshMatches = nullptr;
-        IterationBoundary m_beginIteration = nullptr;
-        IterationBoundary m_endIteration = nullptr;
+        internal::QuerySource* m_source = nullptr;
         std::uint64_t m_revision = std::numeric_limits<std::uint64_t>::max();
         std::vector<Match> m_matches;
 
-        Query(void* context, const RefreshMatches refreshMatches, const IterationBoundary beginIteration, const IterationBoundary endIteration) : m_context(context), m_refreshMatches(refreshMatches), m_beginIteration(beginIteration), m_endIteration(endIteration) {
+        explicit Query(internal::QuerySource& source) : m_source(&source) {
         }
 
     public:
@@ -84,29 +99,26 @@ namespace TechEngine {
 
         Query& operator=(const Query&) = delete;
 
-        Query(Query&& other) noexcept : m_context(other.m_context), m_refreshMatches(other.m_refreshMatches), m_beginIteration(other.m_beginIteration), m_endIteration(other.m_endIteration), m_revision(other.m_revision), m_matches(std::move(other.m_matches)) {
-            other.m_context = nullptr;
+        Query(Query&& other) noexcept : m_source(other.m_source), m_revision(other.m_revision), m_matches(std::move(other.m_matches)) {
+            other.m_source = nullptr;
         }
 
         Query& operator=(Query&& other) noexcept {
             if (this == &other) {
                 return *this;
             }
-            m_context = other.m_context;
-            m_refreshMatches = other.m_refreshMatches;
-            m_beginIteration = other.m_beginIteration;
-            m_endIteration = other.m_endIteration;
+            m_source = other.m_source;
             m_revision = other.m_revision;
             m_matches = std::move(other.m_matches);
-            other.m_context = nullptr;
+            other.m_source = nullptr;
             return *this;
         }
 
         template<typename Function>
         void each(Function&& function) {
-            TE_CHECK(m_context != nullptr, "Cannot iterate a moved-from query");
-            m_refreshMatches(m_context, *this);
-            const IterationGuard guard(m_context, m_beginIteration, m_endIteration);
+            TE_CHECK(m_source != nullptr, "Cannot iterate a moved-from query");
+            refreshMatches();
+            const IterationGuard guard(*m_source);
 
             for (const Match& match: m_matches) {
                 auto writable = writableSpans(match, std::index_sequence_for<Written...>{});
@@ -120,14 +132,31 @@ namespace TechEngine {
         }
 
     private:
-        template<typename Contains>
-        bool matches(Contains&& contains) const {
-            return (contains(std::type_identity<Written>{}) && ...) && (contains(std::type_identity<ReadOnly>{}) && ...);
+        template<typename Function>
+        static void forEachWrittenType(Function&& function) {
+            (function(componentTypeId<Written>()), ...);
         }
 
-        template<typename GetColumn>
-        void addMatch(const std::vector<Entity>* entities, GetColumn&& getColumn) {
-            m_matches.push_back({entities, {getColumn(std::type_identity<Written>{})...}, {getColumn(std::type_identity<ReadOnly>{})...}});
+        template<typename Function>
+        static void forEachReadOnlyType(Function&& function) {
+            (function(componentTypeId<ReadOnly>()), ...);
+        }
+
+        void refreshMatches() {
+            if (m_revision == m_source->queryRevision()) {
+                return;
+            }
+
+            m_matches.clear();
+            for (std::size_t archetypeIndex = 0; archetypeIndex < m_source->queryArchetypeCount(); archetypeIndex++) {
+                const bool matches = (m_source->queryArchetypeContains(archetypeIndex, componentTypeId<Written>()) && ...) && (m_source->queryArchetypeContains(archetypeIndex, componentTypeId<ReadOnly>()) && ...);
+                if (!matches) {
+                    continue;
+                }
+
+                m_matches.push_back({m_source->queryEntities(archetypeIndex), {m_source->queryColumn(archetypeIndex, componentTypeId<Written>())...}, {m_source->queryColumn(archetypeIndex, componentTypeId<ReadOnly>())...}});
+            }
+            m_revision = m_source->queryRevision();
         }
 
         template<std::size_t... Indices>

@@ -1,5 +1,6 @@
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
+#include <TechEngine/core/systems/ISystem.hpp>
 #include <TechEngine/platform/files/FileResult.hpp>
 
 #include <catch2/catch_test_macros.hpp>
@@ -38,6 +39,10 @@ namespace {
             registeredDuringShutdown = mainRegistered();
         }
 
+        void configureSimulation() override {
+            configurationCount++;
+        }
+
         bool shouldClose() const override {
             return true;
         }
@@ -66,6 +71,7 @@ namespace {
         bool failInit = false;
         bool registeredDuringInit = false;
         bool registeredDuringShutdown = false;
+        int configurationCount = 0;
     };
 }
 
@@ -77,6 +83,7 @@ TEST_CASE("App scopes main registration across initialization and shutdown", "[a
     CHECK(app.registeredDuringShutdown);
     CHECK_FALSE(app.mainRegistered());
     REQUIRE(app.run() == 0);
+    CHECK(app.configurationCount == 1);
     CHECK_FALSE(app.mainRegistered());
 }
 
@@ -139,15 +146,35 @@ struct AppLifecycleEvent {
     std::uint64_t tick = 0;
 };
 
+static std::function<void(const TechEngine::SimulationContext&)> g_onLifecycleTick;
+
+class AppLifecycleSystem final : public TechEngine::ISystem {
+public:
+    void tick(TechEngine::Scene&, const TechEngine::SimulationContext& simulation) override {
+        if (g_onLifecycleTick) {
+            g_onLifecycleTick(simulation);
+        }
+    }
+
+    std::string_view name() const override {
+        return "AppLifecycleSystem";
+    }
+};
+
 class AppLifecycleProbe : public TechEngine::App {
 public:
     AppLifecycleProbe() : App(TechEngine::Role::DedicatedServer) {
     }
 
+    ~AppLifecycleProbe() override {
+        g_onLifecycleTick = {};
+    }
+
     std::function<void()> onInit;
+    std::function<void()> onConfigureSimulation;
     std::function<void()> onMainUpdate;
     std::function<void()> onSimulationInit;
-    std::function<void(const TechEngine::SimulationContext&)> onFixedUpdate;
+    std::function<void(const TechEngine::SimulationContext&)> onSystemTick;
     std::function<void(const TechEngine::SimulationContext&)> onPublishSnapshot;
     std::function<void()> onSimulationShutdown;
     std::function<void()> onShutdown;
@@ -184,13 +211,26 @@ protected:
         }
     }
 
-    void mainUpdate() override {
+    void configureSimulation() override {
+        if (onConfigureSimulation) {
+            onConfigureSimulation();
+        }
+        g_onLifecycleTick = [this](const TechEngine::SimulationContext& simulation) {
+            record("systemTick", simulation.tick);
+            if (onSystemTick) {
+                onSystemTick(simulation);
+            }
+        };
+        m_schedule.add<AppLifecycleSystem>();
+    }
+
+    void mainThreadUpdate() override {
         record("mainUpdate");
         mainEntered.set();
         if (onMainUpdate) {
             onMainUpdate();
         } else {
-            App::mainUpdate();
+            App::mainThreadUpdate();
         }
     }
 
@@ -203,13 +243,6 @@ protected:
         record("simulationInit");
         if (onSimulationInit) {
             onSimulationInit();
-        }
-    }
-
-    void fixedUpdate(const TechEngine::SimulationContext& simulation) override {
-        record("fixedUpdate", simulation.tick);
-        if (onFixedUpdate) {
-            onFixedUpdate(simulation);
         }
     }
 
@@ -265,7 +298,7 @@ static void checkStopped(const AppLifecycleProbe& app) {
     REQUIRE(simulationShutdown != events.end());
     CHECK(events.back().name == "shutdown");
     CHECK(std::none_of(simulationShutdown + 1, events.end(), [](const auto& event) {
-        return event.name == "fixedUpdate" || event.name == "publishSnapshot";
+        return event.name == "systemTick" || event.name == "publishSnapshot";
     }));
     CHECK(app.dedicatedJoinedBeforeShutdown);
     const auto threads = app.threads();
@@ -333,7 +366,7 @@ TEST_CASE("App runs hooks on their owning threads and publishes after each tick 
     CHECK(events.front().name == "init");
     CHECK(eventCount(app, "mainUpdate") > 0);
     CHECK(eventCount(app, "shouldClose") > 0);
-    CHECK(eventCount(app, "fixedUpdate") >= 3);
+    CHECK(eventCount(app, "systemTick") >= 3);
     CHECK(eventCount(app, "publishSnapshot") >= 2);
 
     std::uint64_t latestFixedTick = 0;
@@ -345,7 +378,7 @@ TEST_CASE("App runs hooks on their owning threads and publishes after each tick 
         } else {
             CHECK(event.thread == simulationThread);
         }
-        if (event.name == "fixedUpdate") {
+        if (event.name == "systemTick") {
             CHECK(publications > 0);
             CHECK(event.tick == latestFixedTick + 1);
             latestFixedTick = event.tick;
@@ -373,7 +406,7 @@ TEST_CASE("App's primary simulation advances the diagnostic counter once per tic
     const TechEngine::TimingMetrics timing = app.timingMetrics();
     CHECK(timing.simulation.tick >= 5);
     CHECK(app.diagnosticFrame() == timing.simulation.tick);
-    CHECK(eventCount(app, "fixedUpdate") == timing.simulation.tick);
+    CHECK(eventCount(app, "systemTick") == timing.simulation.tick);
     CHECK_FALSE(timing.render.has_value());
 }
 
@@ -403,7 +436,7 @@ TEST_CASE("App unwinds only successfully initialized stages", "[app][lifecycle]"
     CHECK(eventCount(app, "init") == 1);
     CHECK(eventCount(app, "simulationInit") == (mainFails ? 0 : 1));
     CHECK(eventCount(app, "publishSnapshot") == (publicationFails ? 1 : 0));
-    CHECK(eventCount(app, "fixedUpdate") == 0);
+    CHECK(eventCount(app, "systemTick") == 0);
     CHECK(eventCount(app, "simulationShutdown") == (publicationFails ? 1 : 0));
     CHECK(eventCount(app, "shutdown") == (mainFails ? 0 : 1));
     const auto threads = app.threads();
@@ -413,6 +446,22 @@ TEST_CASE("App unwinds only successfully initialized stages", "[app][lifecycle]"
     if (!mainFails) {
         CHECK(app.dedicatedJoinedBeforeShutdown);
     }
+}
+
+TEST_CASE("App shuts down initialized main state when simulation configuration fails", "[app][lifecycle]") {
+    AppLifecycleProbe app;
+    app.onConfigureSimulation = [] {
+        throw std::runtime_error{"simulation configuration failed"};
+    };
+
+    CHECK(app.run() != 0);
+    CHECK(eventCount(app, "init") == 1);
+    CHECK(eventCount(app, "simulationInit") == 0);
+    CHECK(eventCount(app, "systemTick") == 0);
+    CHECK(eventCount(app, "publishSnapshot") == 0);
+    CHECK(eventCount(app, "simulationShutdown") == 0);
+    CHECK(eventCount(app, "shutdown") == 1);
+    CHECK(app.dedicatedJoinedBeforeShutdown);
 }
 
 TEST_CASE("App wakes the main thread and shuts down after a simulation failure", "[app][lifecycle]") {
@@ -442,7 +491,7 @@ TEST_CASE("App finishes finite jobs before releasing simulation state", "[app][l
     bool cleanupObservedCompletion = false;
     bool jobObserved = false;
     bool stoppedBeforeRelease = false;
-    app.onFixedUpdate = [&](const TechEngine::SimulationContext& simulation) {
+    app.onSystemTick = [&](const TechEngine::SimulationContext& simulation) {
         std::array<TechEngine::Task, 1> tasks{[&] {
             jobStarted.set();
             jobReleased = releaseJob.wait();
@@ -497,7 +546,7 @@ TEST_CASE("App observes a stop requested before the main thread starts waiting",
 
     REQUIRE(app.run() == 0);
     CHECK(eventCount(app, "simulationInit") == 1);
-    CHECK(eventCount(app, "fixedUpdate") == 0);
+    CHECK(eventCount(app, "systemTick") == 0);
     CHECK(eventCount(app, "simulationShutdown") == 1);
     CHECK(eventCount(app, "shutdown") == 1);
     checkStopped(app);

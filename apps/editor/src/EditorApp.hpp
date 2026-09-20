@@ -25,9 +25,9 @@ namespace TechEngine {
 
         void publishSnapshot(const SimulationContext& simulation) override;
 
-        void mainUpdate() override;
+        void mainThreadUpdate() override;
 
-        void wakeMain() override;
+        void wakeMainThread() override;
 
         std::optional<RenderTiming> renderTiming() const override;
 

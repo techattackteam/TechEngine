@@ -70,7 +70,7 @@ namespace TechEngine {
         return true;
     }
 
-    Scene::Scene(ComponentRegistry& registry) : m_registry(&registry), m_storage(std::make_unique<ArchetypeStorage>(registry)) {
+    Scene::Scene(ComponentRegistry& registry) : m_registry(&registry), m_storage(std::make_unique<ArchetypeStorage>(registry)), m_querySource(m_storage.get()) {
     }
 
     Scene::~Scene() = default;
