@@ -31,7 +31,7 @@ namespace TechEngine {
         Client& operator=(Client&&) = delete;
 
         // Engine services and input must outlive the active session.
-        bool start(const EngineContext& engine, int width, int height, std::string_view title, std::function<void()> onFailure = {});
+        bool start(const EngineContext& engine, InputBuffer& input, int width, int height, std::string_view title, std::function<void()> onFailure = {});
 
         void waitEvents();
 

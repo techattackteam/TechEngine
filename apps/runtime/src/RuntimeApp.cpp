@@ -20,7 +20,7 @@ namespace TechEngine {
     }
 
     void RuntimeApp::init() {
-        if (!m_client.start(m_engine, 1280, 720, "TechEngine Runtime Demo", [this] {
+        if (!m_client.start(m_engine, m_input, 1280, 720, "TechEngine Runtime Demo", [this] {
                 requestStop();
             })) {
             throw std::runtime_error{"Failed to start the client session"};

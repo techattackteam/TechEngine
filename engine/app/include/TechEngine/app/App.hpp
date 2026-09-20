@@ -39,7 +39,7 @@ namespace TechEngine {
         ComponentRegistry m_registry;
         Scene m_scene;
         Schedule m_schedule;
-        EngineContext m_engine{m_files, m_jobs, m_clock, m_input, m_scene, m_registry, m_schedule};
+        EngineContext m_engine{m_files, m_jobs, m_clock};
 
     private:
         std::unique_ptr<TaskGraph> m_taskGraph;

@@ -24,7 +24,7 @@ namespace TechEngine {
         stop();
     }
 
-    bool Client::start(const EngineContext& engine, int width, int height, std::string_view title, std::function<void()> onFailure) {
+    bool Client::start(const EngineContext& engine, InputBuffer& input, int width, int height, std::string_view title, std::function<void()> onFailure) {
         {
             const std::lock_guard lock{m_state->wakeMutex};
             if (m_state->initialized || !Window::initialize()) {
@@ -37,8 +37,8 @@ namespace TechEngine {
                 stop();
                 return false;
             }
-            m_state->window.setInputBuffer(&engine.input);
-            if (!m_state->renderer.start(engine.jobs, engine.clock, m_state->window, engine.input, std::move(onFailure))) {
+            m_state->window.setInputBuffer(&input);
+            if (!m_state->renderer.start(engine.jobs, engine.clock, m_state->window, input, std::move(onFailure))) {
                 stop();
                 return false;
             }

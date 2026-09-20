@@ -25,7 +25,7 @@ namespace TechEngine {
         m_mounts.mount("assets", root / "assets" / "common", 0);
         m_mounts.mount("assets", root / "assets" / "client", 100);
         TE_LOGGER_INFO("Opened project '{0}' at {1}", m_project.name(), root.string());
-        if (!m_client.start(m_engine, 1280, 720, "TechEngine Editor", [this] {
+        if (!m_client.start(m_engine, m_input, 1280, 720, "TechEngine Editor", [this] {
                 requestStop();
             })) {
             throw std::runtime_error{"Failed to start the client session"};
