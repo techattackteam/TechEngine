@@ -18,6 +18,7 @@ namespace TechEngine {
     class ComponentRegistry;
     class Hierarchy;
     class ScheduleAccess;
+    class Transform;
     struct TransformValues;
 
     enum class ReparentMode { PreserveLocal, PreserveWorld };
