@@ -178,7 +178,7 @@ namespace TechEngine {
                 const Clock::TimePoint current = m_context.engine.clock.now();
                 const std::uint64_t previousTick = m_context.tick;
                 advance(toSeconds(current - previous), [&app](const SimulationContext& simulation) {
-                    app.fixedUpdate(simulation);
+                    app.executeSimulationTick(simulation);
                 });
                 previous = current;
                 if (m_context.tick != previousTick) {

@@ -1,4 +1,5 @@
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
+#include <TechEngine/core/scene/components/Hierarchy.hpp>
 #include <TechEngine/core/systems/Schedule.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
@@ -10,6 +11,7 @@
 #include <string_view>
 #include <typeindex>
 #include <utility>
+#include <vector>
 
 struct SchedulePosition {
     float x;
@@ -58,6 +60,11 @@ public:
     }
 };
 
+template<typename System>
+concept CanScheduleHierarchyWrite = requires(TechEngine::Schedule& schedule) { schedule.add<System>(TechEngine::DeclareAccess<TechEngine::Write<TechEngine::Hierarchy>, TechEngine::Read<>>{}); };
+
+static_assert(!CanScheduleHierarchyWrite<MovementSystem>);
+
 template<std::size_t Index>
 class SchedulePlaceholderSystem final : public TechEngine::ISystem {
 public:
@@ -96,8 +103,16 @@ TEST_CASE("schedule registration stores a factory and lowers declared access", "
     REQUIRE(entry.access.reads(registry.find(position)->denseId));
     REQUIRE(entry.access.reads(registry.find(velocity)->denseId));
     REQUIRE_FALSE(entry.access.writes(registry.find(velocity)->denseId));
-    REQUIRE(entry.access.getWrittenTypes().size() == 1);
-    REQUIRE(entry.access.getWrittenTypes().front() == registry.find(position)->denseId);
+    std::vector<TechEngine::ComponentDenseId> writtenTypes;
+    std::vector<TechEngine::ComponentDenseId> readTypes;
+    entry.access.forEachWrittenType([&writtenTypes](const TechEngine::ComponentDenseId type) {
+        writtenTypes.push_back(type);
+    });
+    entry.access.forEachReadType([&readTypes](const TechEngine::ComponentDenseId type) {
+        readTypes.push_back(type);
+    });
+    REQUIRE(writtenTypes == std::vector{registry.find(position)->denseId});
+    REQUIRE(readTypes == std::vector{registry.find(velocity)->denseId});
 }
 
 TEST_CASE("schedule access crosses mask word boundaries without touching neighboring types", "[core][systems]") {
@@ -105,7 +120,7 @@ TEST_CASE("schedule access crosses mask word boundaries without touching neighbo
     registerMaskComponents(registry, std::make_index_sequence<65>{});
     TechEngine::Schedule schedule(registry);
 
-    schedule.add<MovementSystem>(TechEngine::DeclareAccess<TechEngine::Write<ScheduleMaskComponent<0>, ScheduleMaskComponent<64>>, TechEngine::Read<ScheduleMaskComponent<1>, ScheduleMaskComponent<63>>>{});
+    schedule.add<MovementSystem>(TechEngine::DeclareAccess<TechEngine::Write<ScheduleMaskComponent<64>, ScheduleMaskComponent<0>>, TechEngine::Read<ScheduleMaskComponent<63>, ScheduleMaskComponent<1>>>{});
 
     const TechEngine::ScheduleAccess& access = schedule.getEntries().front().access;
     const TechEngine::ComponentDenseId zero = registry.find(TechEngine::componentTypeId<ScheduleMaskComponent<0>>())->denseId;
@@ -129,6 +144,29 @@ TEST_CASE("schedule access crosses mask word boundaries without touching neighbo
     REQUIRE(access.writes(sixtyFour));
     REQUIRE(access.reads(sixtyFour));
     REQUIRE(access.touches(sixtyFour));
+
+    std::vector<TechEngine::ComponentDenseId> writtenTypes;
+    std::vector<TechEngine::ComponentDenseId> readTypes;
+    access.forEachWrittenType([&writtenTypes](const TechEngine::ComponentDenseId type) {
+        writtenTypes.push_back(type);
+    });
+    access.forEachReadType([&readTypes](const TechEngine::ComponentDenseId type) {
+        readTypes.push_back(type);
+    });
+    const std::vector expectedWrittenTypes{zero, sixtyFour};
+    const std::vector expectedReadTypes{one, sixtyThree};
+    REQUIRE(writtenTypes == expectedWrittenTypes);
+    REQUIRE(readTypes == expectedReadTypes);
+
+    const TechEngine::ScheduleAccess empty;
+    std::size_t emptyTypeCount = 0;
+    empty.forEachWrittenType([&emptyTypeCount](TechEngine::ComponentDenseId) {
+        emptyTypeCount++;
+    });
+    empty.forEachReadType([&emptyTypeCount](TechEngine::ComponentDenseId) {
+        emptyTypeCount++;
+    });
+    REQUIRE(emptyTypeCount == 0);
 }
 
 TEST_CASE("schedule entry metadata is assigned through the registration handle", "[core][systems]") {

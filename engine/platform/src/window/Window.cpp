@@ -175,12 +175,7 @@ namespace TechEngine {
         return "Unknown";
     }
 
-    void Window::publishInput(const InputEvent& event) {
-        if (event.kind == InputKind::Motion) {
-            TE_LOGGER_TRACE("Input: {0} dx={1:.1f} dy={2:.1f}", inputKindLabel(event.kind), event.x, event.y);
-        } else {
-            TE_LOGGER_TRACE("Input: {0} code={1} pressed={2}", inputKindLabel(event.kind), event.code, event.pressed);
-        }
+    void Window::publishInput(const InputEvent& event) const {
         if (m_input != nullptr) {
             m_input->publish(event);
         }

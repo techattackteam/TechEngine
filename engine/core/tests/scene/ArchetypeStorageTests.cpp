@@ -2,6 +2,7 @@
 #include <TechEngine/core/scene/ComponentStorage.hpp>
 
 #include <scene/ArchetypeStorage.hpp>
+#include <scene/SceneTestRegistry.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -181,6 +182,7 @@ TEST_CASE("component registration supplies typed vector storage", "[core][scene]
 
 TEST_CASE("component transitions preserve shared columns", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<StoragePosition>("Tests.StoragePosition");
     registry.registerComponent<StorageVelocity>("Tests.StorageVelocity");
     TechEngine::ArchetypeStorage storage(registry);
@@ -203,6 +205,7 @@ TEST_CASE("component transitions preserve shared columns", "[core][scene]") {
 
 TEST_CASE("type-erased component transitions use registered dense ids and raw values", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     const TechEngine::ComponentTypeId positionId = registry.registerComponent<StoragePosition>("Tests.StoragePosition");
     TechEngine::ArchetypeStorage storage(registry);
     const TechEngine::Entity entity = storage.createEntity();
@@ -218,6 +221,7 @@ TEST_CASE("type-erased component transitions use registered dense ids and raw va
 
 TEST_CASE("change stamping reaches every matching archetype column", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     const TechEngine::ComponentTypeId positionId = registry.registerComponent<StoragePosition>("Tests.StoragePosition");
     const TechEngine::ComponentTypeId velocityId = registry.registerComponent<StorageVelocity>("Tests.StorageVelocity");
     TechEngine::ArchetypeStorage storage(registry);
@@ -228,9 +232,8 @@ TEST_CASE("change stamping reaches every matching archetype column", "[core][sce
     REQUIRE(storage.addComponent(second, StorageVelocity{3}));
     const TechEngine::ComponentDenseId position = registry.find(positionId)->denseId;
     const TechEngine::ComponentDenseId velocity = registry.find(velocityId)->denseId;
-    const TechEngine::ComponentDenseId written[]{position};
 
-    storage.markChanged(written, 17);
+    storage.markChanged(position, 17);
 
     REQUIRE(storage.getChangeTick(first, position) == 17);
     REQUIRE(storage.getChangeTick(second, position) == 17);
@@ -240,6 +243,7 @@ TEST_CASE("change stamping reaches every matching archetype column", "[core][sce
 
 TEST_CASE("removing first middle and last rows preserves locations and values", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<StoragePosition>("Tests.StoragePosition");
     TechEngine::ArchetypeStorage storage(registry);
     const TechEngine::Entity first = storage.createEntity();
@@ -287,6 +291,7 @@ TEST_CASE("removing first middle and last rows preserves locations and values", 
 
 TEST_CASE("a component transition repairs the source archetype location", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<StoragePosition>("Tests.StoragePosition");
     registry.registerComponent<StorageVelocity>("Tests.StorageVelocity");
     TechEngine::ArchetypeStorage storage(registry);
@@ -310,6 +315,7 @@ TEST_CASE("a component transition repairs the source archetype location", "[core
 
 TEST_CASE("full signatures distinguish archetypes with colliding hashes", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<StoragePosition>("Tests.StoragePosition");
     registry.registerComponent<StorageVelocity>("Tests.StorageVelocity");
     TechEngine::ArchetypeStorage storage(registry, &collideSignatures);
@@ -328,6 +334,7 @@ TEST_CASE("full signatures distinguish archetypes with colliding hashes", "[core
 
 TEST_CASE("failed entity creation leaves no occupied slot", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::ArchetypeStorage storage(registry, &maybeThrowSignatureHash);
 
     {
@@ -343,6 +350,7 @@ TEST_CASE("failed entity creation leaves no occupied slot", "[core][scene]") {
 
 TEST_CASE("row counts remain aligned through repeated transitions", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<StoragePosition>("Tests.StoragePosition");
     registry.registerComponent<StorageVelocity>("Tests.StorageVelocity");
     TechEngine::ArchetypeStorage storage(registry);
@@ -362,6 +370,7 @@ TEST_CASE("row counts remain aligned through repeated transitions", "[core][scen
 
 TEST_CASE("clearing storage invalidates handles and transition caches", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<StoragePosition>("Tests.StoragePosition");
     TechEngine::ArchetypeStorage storage(registry);
     const TechEngine::Entity stale = storage.createEntity();
@@ -379,6 +388,7 @@ TEST_CASE("clearing storage invalidates handles and transition caches", "[core][
 
 TEST_CASE("throwing default construction rolls back an archetype append", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<StoragePosition>("Tests.StoragePosition");
     registry.registerComponent<StorageWithThrowingDefault>("Tests.StorageWithThrowingDefault");
     TechEngine::ArchetypeStorage storage(registry);
@@ -401,6 +411,7 @@ TEST_CASE("throwing default construction rolls back an archetype append", "[core
 
 TEST_CASE("throwing shared-column copy rolls back a component transition", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<StorageWithThrowingCopy>("Tests.StorageWithThrowingCopy");
     registry.registerComponent<StorageVelocity>("Tests.StorageVelocity");
     TechEngine::ArchetypeStorage storage(registry);
@@ -425,6 +436,7 @@ TEST_CASE("non-trivial component lifetimes balance across transitions", "[core][
     StorageLifetime::liveCount = 0;
     {
         TechEngine::ComponentRegistry registry;
+        TechEngineTests::registerBuiltInSceneComponents(registry);
         registry.registerComponent<StorageLifetime>("Tests.StorageLifetime");
         registry.registerComponent<StoragePosition>("Tests.StoragePosition");
         TechEngine::ArchetypeStorage storage(registry);

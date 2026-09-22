@@ -4,6 +4,7 @@
 #include <TechEngine/testing/AssertCapture.hpp>
 
 #include <scene/ArchetypeStorage.hpp>
+#include <scene/SceneTestRegistry.hpp>
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -44,6 +45,7 @@ static void requireMatrixNear(const TechEngine::Mat4& actual, const TechEngine::
 
 TEST_CASE("new entities carry identity transforms", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::ArchetypeStorage storage(registry);
     const TechEngine::Entity entity = storage.createEntity();
     const TechEngine::Transform* transform = storage.component<TechEngine::Transform>(entity);
@@ -61,6 +63,7 @@ TEST_CASE("new entities carry identity transforms", "[core][scene][transform]") 
 TEST_CASE("Scene getComponent gives typed mutable and const access", "[core][scene][transform]") {
     const TechEngineTests::FatalAssertGuard guard;
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<TransformMarker>("Tests.TransformMarker");
     TechEngine::Scene scene(registry);
     const TechEngine::Entity entity = scene.createEntity();
@@ -81,6 +84,7 @@ TEST_CASE("Scene getComponent gives typed mutable and const access", "[core][sce
 
 TEST_CASE("a copied bound transform cannot write through to its source entity", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity entity = scene.createEntity();
     REQUIRE(scene.getComponent<TechEngine::Transform>(entity).setLocal(values(TechEngine::Vec3(1.0f, 0.0f, 0.0f))));
@@ -93,6 +97,7 @@ TEST_CASE("a copied bound transform cannot write through to its source entity", 
 
 TEST_CASE("assigning a bound transform keeps its entity binding and updates descendants", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity sourceEntity = scene.createEntity();
     const TechEngine::Entity destinationEntity = scene.createEntity();
@@ -130,6 +135,7 @@ TEST_CASE("assigning a bound transform keeps its entity binding and updates desc
 
 TEST_CASE("assignment between scenes keeps the destination scene binding", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene sourceScene(registry);
     TechEngine::Scene destinationScene(registry);
     const TechEngine::Entity sourceEntity = sourceScene.createEntity();
@@ -144,6 +150,7 @@ TEST_CASE("assignment between scenes keeps the destination scene binding", "[cor
 
 TEST_CASE("swapping a component storage row retains the surviving transform binding", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity removed = scene.createEntity();
     const TechEngine::Entity survivor = scene.createEntity();
@@ -160,6 +167,7 @@ TEST_CASE("swapping a component storage row retains the surviving transform bind
 
 TEST_CASE("transform binding survives component storage growth", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity first = scene.createEntity();
     for (int index = 0; index < 64; index++) {
@@ -172,6 +180,7 @@ TEST_CASE("transform binding survives component storage growth", "[core][scene][
 
 TEST_CASE("transform values survive archetype transitions", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<TransformMarker>("Tests.TransformMarker");
     TechEngine::ArchetypeStorage storage(registry);
     const TechEngine::Entity entity = storage.createEntity();
@@ -232,6 +241,7 @@ TEST_CASE("small nonzero local scales are accepted on every axis", "[core][scene
 
 TEST_CASE("local writes immediately propagate through descendants", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity leaf = scene.createEntity();
     const TechEngine::Entity child = scene.createEntity();
@@ -252,6 +262,7 @@ TEST_CASE("local writes immediately propagate through descendants", "[core][scen
 
 TEST_CASE("world edits after an ancestor write use current transforms and update descendants", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity root = scene.createEntity();
     const TechEngine::Entity child = scene.createEntity();
@@ -271,6 +282,7 @@ TEST_CASE("world edits after an ancestor write use current transforms and update
 
 TEST_CASE("propagation composes parent rotation and scale", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity parent = scene.createEntity();
     const TechEngine::Entity child = scene.createEntity();
@@ -289,6 +301,7 @@ TEST_CASE("propagation composes parent rotation and scale", "[core][scene][trans
 
 TEST_CASE("propagation keeps small nonzero world scales", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity parent = scene.createEntity();
     const TechEngine::Entity child = scene.createEntity();
@@ -307,6 +320,7 @@ TEST_CASE("propagation keeps small nonzero world scales", "[core][scene][transfo
 TEST_CASE("preserve-world detach accepts small nonzero world scale", "[core][scene][transform]") {
     const TechEngineTests::FatalAssertGuard guard;
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity parent = scene.createEntity();
     const TechEngine::Entity child = scene.createEntity();
@@ -333,6 +347,7 @@ TEST_CASE("preserve-world detach accepts small nonzero world scale", "[core][sce
 TEST_CASE("preserve-world reparenting accepts small nonzero local scale", "[core][scene][transform]") {
     const TechEngineTests::FatalAssertGuard guard;
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity parent = scene.createEntity();
     const TechEngine::Entity child = scene.createEntity();
@@ -356,6 +371,7 @@ TEST_CASE("preserve-world reparenting accepts small nonzero local scale", "[core
 
 TEST_CASE("preserve-local parenting immediately updates world values", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity firstParent = scene.createEntity();
     const TechEngine::Entity secondParent = scene.createEntity();
@@ -376,6 +392,7 @@ TEST_CASE("preserve-local parenting immediately updates world values", "[core][s
 
 TEST_CASE("preserve-world reparenting and detaching keep the rendered transform", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity firstParent = scene.createEntity();
     const TechEngine::Entity secondParent = scene.createEntity();
@@ -397,6 +414,7 @@ TEST_CASE("preserve-world reparenting and detaching keep the rendered transform"
 
 TEST_CASE("failed preserve-world reparenting leaves topology and transforms intact", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity root = scene.createEntity();
     const TechEngine::Entity child = scene.createEntity();
@@ -417,6 +435,7 @@ TEST_CASE("failed preserve-world reparenting leaves topology and transforms inta
 
 TEST_CASE("preserve-world reparenting rejects unrepresentable shear", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity parent = scene.createEntity();
     const TechEngine::Entity child = scene.createEntity();
@@ -437,6 +456,7 @@ TEST_CASE("preserve-world reparenting rejects unrepresentable shear", "[core][sc
 
 TEST_CASE("preserve-world detach rejects a sheared world transform", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity parent = scene.createEntity();
     const TechEngine::Entity child = scene.createEntity();
@@ -458,6 +478,7 @@ TEST_CASE("preserve-world detach rejects a sheared world transform", "[core][sce
 
 TEST_CASE("world edits use the current parent state", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity parent = scene.createEntity();
     const TechEngine::Entity child = scene.createEntity();
@@ -480,6 +501,7 @@ TEST_CASE("world edits use the current parent state", "[core][scene][transform]"
 
 TEST_CASE("world edits invert the current parent rotation", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity parent = scene.createEntity();
     const TechEngine::Entity child = scene.createEntity();
@@ -494,6 +516,7 @@ TEST_CASE("world edits invert the current parent rotation", "[core][scene][trans
 TEST_CASE("world edits reject zero scale and stale entity lookup", "[core][scene][transform]") {
     const TechEngineTests::FatalAssertGuard guard;
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity entity = scene.createEntity();
     const TechEngine::TransformValues invalid = values(TechEngine::Vec3(1.0f), TechEngine::Quat(1.0f, 0.0f, 0.0f, 0.0f), TechEngine::Vec3(1.0f, 0.0f, 1.0f));
@@ -522,6 +545,7 @@ TEST_CASE("world edits reject zero scale and stale entity lookup", "[core][scene
 
 TEST_CASE("non-uniform parent scale preserves shear in the world matrix", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity parent = scene.createEntity();
     const TechEngine::Entity child = scene.createEntity();
@@ -554,6 +578,7 @@ TEST_CASE("non-uniform parent scale preserves shear in the world matrix", "[core
 
 TEST_CASE("world edits reject local shear without changing the transform", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity parent = scene.createEntity();
     const TechEngine::Entity child = scene.createEntity();
@@ -569,6 +594,7 @@ TEST_CASE("world edits reject local shear without changing the transform", "[cor
 
 TEST_CASE("deep transform propagation does not depend on recursion depth", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     TechEngine::Entity parent = scene.createEntity();
     REQUIRE(scene.getComponent<TechEngine::Transform>(parent).setLocal(values(TechEngine::Vec3(1.0f, 0.0f, 0.0f))));

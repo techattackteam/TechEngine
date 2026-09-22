@@ -1,8 +1,12 @@
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Query.hpp>
+#include <TechEngine/core/scene/Scene.hpp>
+#include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
 #include <scene/ArchetypeStorage.hpp>
+#include <scene/SceneTestRegistry.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -13,6 +17,7 @@
 #include <thread>
 #include <type_traits>
 #include <unordered_set>
+#include <utility>
 
 struct QueryPosition {
     int value = 0;
@@ -26,11 +31,20 @@ struct QueryHealth {
     int value = 0;
 };
 
+template<typename Component>
+concept WritableQueryComponent = requires { sizeof(TechEngine::Query<TechEngine::Write<Component>, TechEngine::Read<>>); };
+
+template<typename Component>
+concept ReadableQueryComponent = requires { sizeof(TechEngine::Query<TechEngine::Write<>, TechEngine::Read<Component>>); };
+
 static_assert(!std::is_move_constructible_v<TechEngine::ArchetypeStorage>);
 static_assert(!std::is_move_assignable_v<TechEngine::ArchetypeStorage>);
+static_assert(!WritableQueryComponent<TechEngine::Hierarchy>);
+static_assert(ReadableQueryComponent<TechEngine::Hierarchy>);
 
 TEST_CASE("eachEntity visits every live entity across archetypes", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<QueryPosition>("Tests.QueryPosition");
     registry.registerComponent<QueryVelocity>("Tests.QueryVelocity");
     TechEngine::ArchetypeStorage storage(registry);
@@ -56,6 +70,7 @@ TEST_CASE("eachEntity visits every live entity across archetypes", "[core][scene
 
 TEST_CASE("queries iterate every matching archetype with typed access", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<QueryPosition>("Tests.QueryPosition");
     registry.registerComponent<QueryVelocity>("Tests.QueryVelocity");
     registry.registerComponent<QueryHealth>("Tests.QueryHealth");
@@ -97,8 +112,27 @@ TEST_CASE("queries iterate every matching archetype with typed access", "[core][
     REQUIRE(storage.component<QueryPosition>(moving)->value == 32);
 }
 
+TEST_CASE("scene exposes typed queries without exposing archetype storage", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    registry.registerComponent<QueryPosition>("Tests.QueryPosition");
+    registry.registerComponent<QueryVelocity>("Tests.QueryVelocity");
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity entity = scene.createEntity();
+    scene.addComponent<QueryPosition>(entity, QueryPosition{2});
+    scene.addComponent<QueryVelocity>(entity, QueryVelocity{3});
+    auto query = scene.query<TechEngine::Write<QueryPosition>, TechEngine::Read<QueryVelocity>>();
+
+    query.each([](TechEngine::Entity, QueryPosition& position, const QueryVelocity& velocity) {
+        position.value += velocity.value;
+    });
+
+    REQUIRE(std::as_const(scene).getComponent<QueryPosition>(entity).value == 5);
+}
+
 TEST_CASE("queries refresh matches when a new archetype appears", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<QueryPosition>("Tests.QueryPosition");
     TechEngine::ArchetypeStorage storage(registry);
     auto query = storage.query<TechEngine::Write<>, TechEngine::Read<QueryPosition>>();
@@ -122,6 +156,7 @@ TEST_CASE("queries refresh matches when a new archetype appears", "[core][scene]
 
 TEST_CASE("queries reacquire spans when an existing archetype grows", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<QueryPosition>("Tests.QueryPosition");
     TechEngine::ArchetypeStorage storage(registry);
     const TechEngine::Entity first = storage.createEntity();
@@ -146,6 +181,7 @@ TEST_CASE("queries reacquire spans when an existing archetype grows", "[core][sc
 
 TEST_CASE("clearing storage invalidates retained query matches", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<QueryPosition>("Tests.QueryPosition");
     TechEngine::ArchetypeStorage storage(registry);
     const TechEngine::Entity stale = storage.createEntity();
@@ -177,6 +213,7 @@ TEST_CASE("clearing storage invalidates retained query matches", "[core][scene]"
 TEST_CASE("structural mutation is rejected during query iteration", "[core][scene]") {
     const TechEngineTests::FatalAssertGuard guard;
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<QueryPosition>("Tests.QueryPosition");
     registry.registerComponent<QueryVelocity>("Tests.QueryVelocity");
     TechEngine::ArchetypeStorage storage(registry);
@@ -237,6 +274,7 @@ TEST_CASE("structural mutation is rejected during query iteration", "[core][scen
 
 TEST_CASE("query iteration state unwinds when a callback throws", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<QueryPosition>("Tests.QueryPosition");
     TechEngine::ArchetypeStorage storage(registry);
     const TechEngine::Entity entity = storage.createEntity();
@@ -254,6 +292,7 @@ TEST_CASE("query iteration state unwinds when a callback throws", "[core][scene]
 
 TEST_CASE("disjoint queries can iterate concurrently", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<QueryPosition>("Tests.QueryPosition");
     registry.registerComponent<QueryVelocity>("Tests.QueryVelocity");
     TechEngine::ArchetypeStorage storage(registry);

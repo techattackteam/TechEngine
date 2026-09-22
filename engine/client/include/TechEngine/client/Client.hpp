@@ -32,6 +32,7 @@ namespace TechEngine {
 
         // Engine services and input must outlive the active session.
         bool start(const EngineContext& engine, InputBuffer& input, int width, int height, std::string_view title, std::function<void()> onFailure = {});
+
         void waitEvents();
 
         void waitEvents(double timeoutSeconds);

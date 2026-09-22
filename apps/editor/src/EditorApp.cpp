@@ -31,6 +31,7 @@ namespace TechEngine {
             throw std::runtime_error{"Failed to start the client session"};
         }
     }
+
     void EditorApp::publishSnapshot(const SimulationContext& simulation) {
         m_client.publish(RenderSnapshot{
             .clearColor = {0.1F, 0.1F, 0.1F, 1.0F},
@@ -42,7 +43,8 @@ namespace TechEngine {
             .input = simulation.input.held,
         });
     }
-    void EditorApp::mainUpdate() {
+
+    void EditorApp::mainThreadUpdate() {
         if (stopRequested()) {
             return;
         }
@@ -62,21 +64,26 @@ namespace TechEngine {
             requestStop();
         }
     }
-    void EditorApp::wakeMain() {
+
+    void EditorApp::wakeMainThread() {
         m_client.wakeMain();
     }
+
     std::optional<RenderTiming> EditorApp::renderTiming() const {
         return m_client.renderTiming();
     }
+
     void EditorApp::shutdown() {
         m_client.stop();
         if (m_client.failed()) {
             throw std::runtime_error{"Render thread failed"};
         }
     }
+
     bool EditorApp::shouldClose() const {
         return m_client.shouldClose();
     }
+
     Role EditorApp::editorRole() {
         return Role::Client;
     }

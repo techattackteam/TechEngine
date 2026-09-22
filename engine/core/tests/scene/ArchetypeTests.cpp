@@ -1,9 +1,10 @@
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
+#include <TechEngine/core/scene/components/Hierarchy.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <scene/Archetype.hpp>
 #include <scene/ArchetypeStorage.hpp>
-#include <scene/components/Hierarchy.hpp>
+#include <scene/SceneTestRegistry.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -28,7 +29,7 @@ struct ArchetypeHealth {
 template<typename T>
 static void requireColumnMatchesLocations(const TechEngine::ArchetypeStorage& storage, const TechEngine::Archetype& archetype, const TechEngine::ComponentDenseId type) {
     const std::span<const TechEngine::Entity> entities = archetype.entities();
-    const std::span<const T> components = archetype.components<T>(type);
+    const std::span<const T> components = archetype.getComponents<T>(type);
 
     REQUIRE(components.size() == entities.size());
     for (std::size_t row = 0; row < entities.size(); row++) {
@@ -67,8 +68,8 @@ TEST_CASE("an archetype creates one typed column for each signature entry", "[co
     REQUIRE(archetype.contains(position));
     REQUIRE_FALSE(archetype.contains(velocity));
     REQUIRE(archetype.contains(health));
-    REQUIRE(archetype.components<ArchetypePosition>(position).empty());
-    REQUIRE(archetype.components<ArchetypeHealth>(health).empty());
+    REQUIRE(archetype.getComponents<ArchetypePosition>(position).empty());
+    REQUIRE(archetype.getComponents<ArchetypeHealth>(health).empty());
     REQUIRE(archetype.entities().empty());
     REQUIRE(archetype.rowCount() == 0);
     REQUIRE(archetype.rowCountsMatch());
@@ -130,6 +131,7 @@ TEST_CASE("component insertion order converges on one canonical archetype", "[co
 
 TEST_CASE("failed component mutations leave the archetype row unchanged", "[core][scene][archetype]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<ArchetypePosition>("Tests.ArchetypePosition");
     registry.registerComponent<ArchetypeVelocity>("Tests.ArchetypeVelocity");
     TechEngine::ArchetypeStorage storage(registry);
@@ -152,6 +154,7 @@ TEST_CASE("failed component mutations leave the archetype row unchanged", "[core
 
 TEST_CASE("transition cycles reuse the same archetype instances", "[core][scene][archetype]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<ArchetypePosition>("Tests.ArchetypePosition");
     registry.registerComponent<ArchetypeVelocity>("Tests.ArchetypeVelocity");
     TechEngine::ArchetypeStorage storage(registry);
@@ -183,6 +186,7 @@ TEST_CASE("transition cycles reuse the same archetype instances", "[core][scene]
 
 TEST_CASE("archetype entity and component rows stay parallel", "[core][scene][archetype]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     const TechEngine::ComponentTypeId positionId = registry.registerComponent<ArchetypePosition>("Tests.ArchetypePosition");
     const TechEngine::ComponentDenseId position = registry.find(positionId)->denseId;
     TechEngine::ArchetypeStorage storage(registry);
@@ -194,7 +198,7 @@ TEST_CASE("archetype entity and component rows stay parallel", "[core][scene][ar
     REQUIRE(storage.addComponent(last, ArchetypePosition{30}));
     const TechEngine::Archetype* archetype = storage.location(first)->archetype;
     const std::span<const TechEngine::Entity> entities = archetype->entities();
-    const std::span<const ArchetypePosition> positions = archetype->components<ArchetypePosition>(position);
+    const std::span<const ArchetypePosition> positions = archetype->getComponents<ArchetypePosition>(position);
 
     REQUIRE(archetype == storage.location(middle)->archetype);
     REQUIRE(archetype == storage.location(last)->archetype);
@@ -209,6 +213,7 @@ TEST_CASE("archetype entity and component rows stay parallel", "[core][scene][ar
 
 TEST_CASE("archetype swap removal moves the tail entity and every column together", "[core][scene][archetype]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     const TechEngine::ComponentTypeId positionId = registry.registerComponent<ArchetypePosition>("Tests.ArchetypePosition");
     const TechEngine::ComponentTypeId velocityId = registry.registerComponent<ArchetypeVelocity>("Tests.ArchetypeVelocity");
     const TechEngine::ComponentDenseId position = registry.find(positionId)->denseId;
@@ -229,14 +234,15 @@ TEST_CASE("archetype swap removal moves the tail entity and every column togethe
     REQUIRE(storage.destroyEntity(middle));
 
     REQUIRE(archetype->entities()[removedRow] == last);
-    REQUIRE(archetype->components<ArchetypePosition>(position)[removedRow].value == static_cast<int>(last.index) + 10);
-    REQUIRE(archetype->components<ArchetypeVelocity>(velocity)[removedRow].value == static_cast<int>(last.index) + 20);
+    REQUIRE(archetype->getComponents<ArchetypePosition>(position)[removedRow].value == static_cast<int>(last.index) + 10);
+    REQUIRE(archetype->getComponents<ArchetypeVelocity>(velocity)[removedRow].value == static_cast<int>(last.index) + 20);
     REQUIRE(archetype->rowCount() == 2);
     REQUIRE(archetype->rowCountsMatch());
 }
 
 TEST_CASE("removing an archetype's only row empties every column", "[core][scene][archetype]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     const TechEngine::ComponentTypeId positionId = registry.registerComponent<ArchetypePosition>("Tests.ArchetypePosition");
     const TechEngine::ComponentTypeId velocityId = registry.registerComponent<ArchetypeVelocity>("Tests.ArchetypeVelocity");
     const TechEngine::ComponentDenseId position = registry.find(positionId)->denseId;
@@ -250,14 +256,15 @@ TEST_CASE("removing an archetype's only row empties every column", "[core][scene
     REQUIRE(storage.destroyEntity(entity));
 
     REQUIRE(archetype->entities().empty());
-    REQUIRE(archetype->components<ArchetypePosition>(position).empty());
-    REQUIRE(archetype->components<ArchetypeVelocity>(velocity).empty());
+    REQUIRE(archetype->getComponents<ArchetypePosition>(position).empty());
+    REQUIRE(archetype->getComponents<ArchetypeVelocity>(velocity).empty());
     REQUIRE(archetype->rowCount() == 0);
     REQUIRE(archetype->rowCountsMatch());
 }
 
 TEST_CASE("mixed migrations and removals preserve every reachable archetype invariant", "[core][scene][archetype]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     const TechEngine::ComponentTypeId positionId = registry.registerComponent<ArchetypePosition>("Tests.ArchetypePosition");
     const TechEngine::ComponentTypeId velocityId = registry.registerComponent<ArchetypeVelocity>("Tests.ArchetypeVelocity");
     const TechEngine::ComponentTypeId healthId = registry.registerComponent<ArchetypeHealth>("Tests.ArchetypeHealth");

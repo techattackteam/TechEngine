@@ -1,12 +1,45 @@
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
+#include <TechEngine/core/scene/components/Hierarchy.hpp>
+
+#include <scene/SceneTestRegistry.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <concepts>
 #include <vector>
+
+template<typename Component>
+concept MutableSceneComponent = requires(TechEngine::Scene& scene, const TechEngine::Entity entity) {
+    { scene.getComponent<Component>(entity) } -> std::same_as<Component&>;
+};
+
+template<typename Component>
+concept AddableSceneComponent = requires(TechEngine::Scene& scene, const TechEngine::Entity entity) { scene.addComponent<Component>(entity); };
+
+template<typename Component>
+concept RemovableSceneComponent = requires(TechEngine::Scene& scene, const TechEngine::Entity entity) { scene.removeComponent<Component>(entity); };
+
+static_assert(!MutableSceneComponent<TechEngine::Hierarchy>);
+static_assert(!AddableSceneComponent<TechEngine::Hierarchy>);
+static_assert(!RemovableSceneComponent<TechEngine::Hierarchy>);
+
+TEST_CASE("hierarchy is publicly registerable and readable through Scene", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity entity = scene.createEntity();
+    const TechEngine::Scene& constScene = scene;
+
+    const TechEngine::Hierarchy& hierarchy = scene.getComponent<TechEngine::Hierarchy>(entity);
+
+    REQUIRE(scene.hasComponent<TechEngine::Hierarchy>(entity));
+    REQUIRE(&hierarchy == &constScene.getComponent<TechEngine::Hierarchy>(entity));
+}
 
 TEST_CASE("hierarchy keeps roots and ordered children", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity root = scene.createEntity();
     const TechEngine::Entity first = scene.createEntity();
@@ -41,6 +74,7 @@ TEST_CASE("hierarchy keeps roots and ordered children", "[core][scene]") {
 
 TEST_CASE("hierarchy rejects cycles without changing links", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity root = scene.createEntity();
     const TechEngine::Entity middle = scene.createEntity();
@@ -62,6 +96,7 @@ TEST_CASE("hierarchy rejects cycles without changing links", "[core][scene]") {
 
 TEST_CASE("reparenting and insertion validate position before changing links", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity left = scene.createEntity();
     const TechEngine::Entity right = scene.createEntity();
@@ -95,6 +130,7 @@ TEST_CASE("reparenting and insertion validate position before changing links", "
 
 TEST_CASE("destroying a subtree preserves its surviving siblings", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity root = scene.createEntity();
     const TechEngine::Entity branch = scene.createEntity();
@@ -117,6 +153,7 @@ TEST_CASE("destroying a subtree preserves its surviving siblings", "[core][scene
 
 TEST_CASE("detached and reparented subtrees survive their former parent", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity root = scene.createEntity();
     const TechEngine::Entity newRoot = scene.createEntity();
@@ -146,6 +183,7 @@ TEST_CASE("detached and reparented subtrees survive their former parent", "[core
 
 TEST_CASE("reused entity slots do not inherit old hierarchy links", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity root = scene.createEntity();
     const TechEngine::Entity oldChild = scene.createEntity();
@@ -164,6 +202,7 @@ TEST_CASE("reused entity slots do not inherit old hierarchy links", "[core][scen
 
 TEST_CASE("clearing a scene invalidates hierarchy links and entity handles", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity root = scene.createEntity();
     const TechEngine::Entity child = scene.createEntity();
@@ -193,6 +232,7 @@ TEST_CASE("clearing a scene invalidates hierarchy links and entity handles", "[c
 
 TEST_CASE("deep subtree destruction does not depend on recursion depth", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     std::vector<TechEngine::Entity> chain;
     chain.reserve(4096);

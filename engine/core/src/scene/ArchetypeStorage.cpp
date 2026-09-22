@@ -1,9 +1,9 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
+#include <TechEngine/core/scene/components/Hierarchy.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <scene/ArchetypeStorage.hpp>
-#include <scene/components/Hierarchy.hpp>
 
 #include <algorithm>
 #include <utility>
@@ -13,13 +13,6 @@ namespace TechEngine {
         if (m_signatureHasher == nullptr) {
             m_signatureHasher = &hashSignature;
         }
-        // TODO(S6-T9): Register built-in components in the app composition root.
-        if (m_registry->find(componentTypeId<Hierarchy>()) == nullptr) {
-            m_registry->registerComponent<Hierarchy>(Hierarchy::tag);
-        }
-        if (m_registry->find(componentTypeId<Transform>()) == nullptr) {
-            m_registry->registerComponent<Transform>(Transform::tag);
-        }
     }
 
     Entity ArchetypeStorage::createEntity() {
@@ -28,7 +21,7 @@ namespace TechEngine {
         Entity entity = m_entities.create();
         std::size_t row = 0;
         try {
-            row = archetype.append(entity);
+            row = archetype.addEntity(entity);
         } catch (...) {
             m_entities.destroy(entity);
             throw;
@@ -131,17 +124,12 @@ namespace TechEngine {
         return m_archetypes.size();
     }
 
-    void ArchetypeStorage::markChanged(const std::span<const ComponentDenseId> types, const std::uint64_t tick) {
-        if (types.empty()) {
-            return;
-        }
+    void ArchetypeStorage::markChanged(const ComponentDenseId type, const std::uint64_t tick) {
         TE_PROFILER_FUNCTION();
-        for (const ComponentDenseId type: types) {
-            for (const std::unique_ptr<Archetype>& archetype: m_archetypes) {
-                const auto column = archetype->m_columns.find(type);
-                if (column != archetype->m_columns.end()) {
-                    column->second->markChanged(tick);
-                }
+        for (const std::unique_ptr<Archetype>& archetype: m_archetypes) {
+            const auto column = archetype->m_columns.find(type);
+            if (column != archetype->m_columns.end()) {
+                column->second->markChanged(tick);
             }
         }
     }
@@ -158,6 +146,26 @@ namespace TechEngine {
         }
 
         return column->second->getChangeTick();
+    }
+
+    std::uint64_t ArchetypeStorage::queryRevision() const {
+        return m_archetypeRevision;
+    }
+
+    std::size_t ArchetypeStorage::queryArchetypeCount() const {
+        return m_archetypes.size();
+    }
+
+    bool ArchetypeStorage::queryArchetypeContains(const std::size_t archetypeIndex, const ComponentTypeId type) const {
+        return m_archetypes[archetypeIndex]->contains(m_registry->denseId(type));
+    }
+
+    const std::vector<Entity>* ArchetypeStorage::queryEntities(const std::size_t archetypeIndex) const {
+        return &m_archetypes[archetypeIndex]->m_entities;
+    }
+
+    IComponentStorage* ArchetypeStorage::queryColumn(const std::size_t archetypeIndex, const ComponentTypeId type) {
+        return m_archetypes[archetypeIndex]->m_columns.at(m_registry->denseId(type)).get();
     }
 
     std::size_t ArchetypeStorage::hashSignature(const std::span<const ComponentDenseId> signature) {
@@ -230,14 +238,12 @@ namespace TechEngine {
         TE_CHECK(m_iterationDepth.load(std::memory_order_relaxed) == 0, "Structural mutation is prohibited during query iteration");
     }
 
-    void ArchetypeStorage::beginQueryIteration(void* context) {
-        auto& storage = *static_cast<ArchetypeStorage*>(context);
-        storage.m_iterationDepth.fetch_add(1, std::memory_order_relaxed);
+    void ArchetypeStorage::beginQueryIteration() {
+        m_iterationDepth.fetch_add(1, std::memory_order_relaxed);
     }
 
-    void ArchetypeStorage::endQueryIteration(void* context) {
-        auto& storage = *static_cast<ArchetypeStorage*>(context);
-        const std::size_t previousDepth = storage.m_iterationDepth.fetch_sub(1, std::memory_order_relaxed);
+    void ArchetypeStorage::endQueryIteration() {
+        const std::size_t previousDepth = m_iterationDepth.fetch_sub(1, std::memory_order_relaxed);
         TE_CHECK(previousDepth > 0, "Query iteration depth underflow");
     }
 

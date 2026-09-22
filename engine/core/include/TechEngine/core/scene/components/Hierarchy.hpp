@@ -6,7 +6,6 @@
 #include <string_view>
 
 namespace TechEngine {
-
     class Hierarchy {
     private:
         friend class Scene;

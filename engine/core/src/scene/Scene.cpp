@@ -2,11 +2,11 @@
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/SceneCommandBuffer.hpp>
+#include <TechEngine/core/scene/components/Hierarchy.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/core/systems/ScheduleAccess.hpp>
 
 #include <scene/ArchetypeStorage.hpp>
-#include <scene/components/Hierarchy.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -70,7 +70,7 @@ namespace TechEngine {
         return true;
     }
 
-    Scene::Scene(ComponentRegistry& registry) : m_registry(&registry), m_storage(std::make_unique<ArchetypeStorage>(registry)) {
+    Scene::Scene(ComponentRegistry& registry) : m_registry(&registry), m_storage(std::make_unique<ArchetypeStorage>(registry)), m_querySource(m_storage.get()) {
     }
 
     Scene::~Scene() = default;
@@ -235,7 +235,7 @@ namespace TechEngine {
 
         return hierarchy != nullptr ? hierarchy->m_parent : Entity{};
     }
-    std::vector<Entity> Scene::getRoots() {
+    std::vector<Entity> Scene::getRoots() const {
         TE_PROFILER_FUNCTION();
         std::vector<Entity> result;
         m_storage->eachEntity([&](Entity entity) {
@@ -492,8 +492,12 @@ namespace TechEngine {
         return *g_sceneExecutionState.commands;
     }
 
+    bool Scene::isSystemExecuting() const {
+        return g_sceneExecutionState.scene == this;
+    }
+
     bool Scene::immediateStructuralMutationAllowed() const {
-        if (g_sceneExecutionState.scene != this) {
+        if (!isSystemExecuting()) {
             return true;
         }
         TE_CHECK(false, "Immediate structural mutation is prohibited while a system is executing");
@@ -527,7 +531,9 @@ namespace TechEngine {
     void Scene::beginSystem(const ScheduleAccess& access, SceneCommandBuffer& commands, const std::uint64_t tick) {
         TE_CHECK(g_sceneExecutionState.scene == nullptr, "A system execution scope is already active on this thread");
         g_sceneExecutionState = {this, &access, &commands};
-        m_storage->markChanged(access.getWrittenTypes(), tick);
+        access.forEachWrittenType([this, tick](const ComponentDenseId type) {
+            m_storage->markChanged(type, tick);
+        });
     }
 
     void Scene::endSystem() {
@@ -540,13 +546,13 @@ namespace TechEngine {
         commands.apply(*this, spawned);
     }
 
-    bool Scene::applyComponentAddition(const Entity entity, const ComponentTypeId type, const void* value) {
+    bool Scene::addComponentInternal(const Entity entity, const ComponentTypeId type, const void* value) const {
         const ComponentTypeRecord* record = m_registry->find(type);
         TE_CHECK(record != nullptr, "Component type is not registered");
         return m_storage->addComponent(entity, record->denseId, value);
     }
 
-    bool Scene::applyComponentRemoval(const Entity entity, const ComponentTypeId type) {
+    bool Scene::removeComponentInternal(const Entity entity, const ComponentTypeId type) const {
         const ComponentTypeRecord* record = m_registry->find(type);
         TE_CHECK(record != nullptr, "Component type is not registered");
         return m_storage->removeComponent(entity, record->denseId);

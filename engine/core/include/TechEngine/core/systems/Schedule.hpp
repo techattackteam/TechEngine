@@ -1,6 +1,7 @@
 #pragma once
 
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
+#include <TechEngine/core/scene/components/Hierarchy.hpp>
 #include <TechEngine/core/systems/ISystem.hpp>
 #include <TechEngine/core/systems/ScheduleAccess.hpp>
 #include <TechEngine/core/systems/ScheduleRegistration.hpp>
@@ -48,7 +49,7 @@ namespace TechEngine {
         Schedule& operator=(const Schedule&) = delete;
 
         template<std::derived_from<ISystem> T, typename... Written, typename... ReadOnly>
-            requires std::default_initializable<T>
+            requires std::default_initializable<T> && ((!std::same_as<Written, Hierarchy>) && ...)
         ScheduleRegistration add(DeclareAccess<Write<Written...>, Read<ReadOnly...>> = {}) {
             const std::array<ComponentTypeId, sizeof...(Written)> written{componentTypeId<Written>()...};
             const std::array<ComponentTypeId, sizeof...(ReadOnly)> readOnly{componentTypeId<ReadOnly>()...};

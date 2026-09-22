@@ -20,7 +20,7 @@
 #include <vector>
 
 namespace TechEngine {
-    class ArchetypeStorage {
+    class ArchetypeStorage : public internal::QuerySource {
     public:
         using SignatureHasher = std::size_t (*)(std::span<const ComponentDenseId>);
 
@@ -100,7 +100,7 @@ namespace TechEngine {
             if (location == nullptr || !location->archetype->contains(type)) {
                 return nullptr;
             }
-            return &location->archetype->components<T>(type)[location->row];
+            return &location->archetype->getComponents<T>(type)[location->row];
         }
 
         template<ComponentValue T>
@@ -110,7 +110,7 @@ namespace TechEngine {
             if (location == nullptr || !location->archetype->contains(type)) {
                 return nullptr;
             }
-            return &location->archetype->components<T>(type)[location->row];
+            return &location->archetype->getComponents<T>(type)[location->row];
         }
 
         void* componentRaw(Entity entity, ComponentTypeId type);
@@ -121,13 +121,13 @@ namespace TechEngine {
 
         std::size_t archetypeCount() const;
 
-        void markChanged(std::span<const ComponentDenseId> types, std::uint64_t tick);
+        void markChanged(ComponentDenseId type, std::uint64_t tick);
 
         std::uint64_t getChangeTick(Entity entity, ComponentDenseId type) const;
 
         template<typename Function>
         void eachEntity(Function&& function) {
-            beginQueryIteration(this);
+            beginQueryIteration();
             try {
                 for (const std::unique_ptr<Archetype>& archetype: m_archetypes) {
                     for (const Entity entity: archetype->entities()) {
@@ -135,16 +135,16 @@ namespace TechEngine {
                     }
                 }
             } catch (...) {
-                endQueryIteration(this);
+                endQueryIteration();
                 throw;
             }
-            endQueryIteration(this);
+            endQueryIteration();
         }
 
         template<typename WritableComponents, typename ReadableComponents>
         Query<WritableComponents, ReadableComponents> query() {
             using QueryType = Query<WritableComponents, ReadableComponents>;
-            return QueryType(this, &refreshQuery<QueryType>, &beginQueryIteration, &endQueryIteration);
+            return QueryType(*this);
         }
 
         static std::size_t hashSignature(std::span<const ComponentDenseId> signature);
@@ -167,38 +167,25 @@ namespace TechEngine {
 
         void checkStructuralMutationAllowed() const;
 
-        static void beginQueryIteration(void* context);
+        std::uint64_t queryRevision() const override;
 
-        static void endQueryIteration(void* context);
+        std::size_t queryArchetypeCount() const override;
 
-        template<typename QueryType>
-        static void refreshQuery(void* context, QueryType& query) {
-            auto& storage = *static_cast<ArchetypeStorage*>(context);
-            if (query.m_revision == storage.m_archetypeRevision) {
-                return;
-            }
+        bool queryArchetypeContains(std::size_t archetypeIndex, ComponentTypeId type) const override;
 
-            query.m_matches.clear();
-            for (const std::unique_ptr<Archetype>& archetype: storage.m_archetypes) {
-                const bool matches = query.matches([&]<typename T>(std::type_identity<T>) {
-                    return archetype->contains(storage.denseId<T>());
-                });
-                if (!matches) {
-                    continue;
-                }
+        const std::vector<Entity>* queryEntities(std::size_t archetypeIndex) const override;
 
-                query.addMatch(&archetype->m_entities, [&]<typename T>(std::type_identity<T>) -> IComponentStorage* {
-                    return archetype->m_columns.at(storage.denseId<T>()).get();
-                });
-            }
-            query.m_revision = storage.m_archetypeRevision;
-        }
+        IComponentStorage* queryColumn(std::size_t archetypeIndex, ComponentTypeId type) override;
+
+        void beginQueryIteration() override;
+
+        void endQueryIteration() override;
 
         template<typename PrepareDestination>
         void move(const Entity entity, const EntityLocation sourceLocation, const Archetype::Edge& edge, PrepareDestination&& prepareDestination) {
             Archetype& source = *sourceLocation.archetype;
             Archetype& destination = *edge.destination;
-            const std::size_t destinationRow = destination.append(entity);
+            const std::size_t destinationRow = destination.addEntity(entity);
 
             try {
                 for (const Archetype::ColumnMapping& column: edge.columns) {

@@ -1,6 +1,6 @@
-#include "EditorApp.hpp"
-
 #include <TechEngine/testing/ScratchDirectory.hpp>
+
+#include <EditorApp.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -22,7 +22,7 @@ namespace {
 
         void advanceFrame(double deltaTime) {
             m_simulationThread.advance(deltaTime, [this](const TechEngine::SimulationContext& frame) {
-                fixedUpdate(frame);
+                executeSimulationTick(frame);
             });
             publishSnapshot(m_simulationThread.simulationContext());
         }
@@ -37,6 +37,7 @@ namespace {
 
         void bootstrap() {
             init();
+            finalizeSimulation();
         }
 
         const TechEngine::MountTable& mounts() const {
@@ -121,7 +122,7 @@ public:
     std::atomic<bool> mainTimedOut = false;
 
 protected:
-    void mainUpdate() override {
+    void mainThreadUpdate() override {
         mainEntered.store(true);
         const auto deadline = m_clock.now() + std::chrono::seconds{5};
         while (!releaseMain.load() && m_clock.now() < deadline) {
@@ -134,9 +135,11 @@ protected:
         }
         m_input.publish(TechEngine::InputEvent{.kind = TechEngine::InputKind::Focus, .pressed = true});
         m_input.publish(TechEngine::InputEvent{.kind = TechEngine::InputKind::Key, .code = 87, .pressed = true});
-        EditorApp::mainUpdate();
+        EditorApp::mainThreadUpdate();
     }
-    void fixedUpdate(const TechEngine::SimulationContext& simulation) override {
+
+    void publishSnapshot(const TechEngine::SimulationContext& simulation) override {
+        EditorApp::publishSnapshot(simulation);
         if (simulation.input.held.keys.test(87)) {
             inputConsumed = true;
             requestStop();

@@ -4,9 +4,11 @@
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <utility>
 #include <vector>
 
 namespace TechEngine {
@@ -96,19 +98,24 @@ namespace TechEngine {
 
         SceneCommandBuffer& operator=(SceneCommandBuffer&&) noexcept;
 
-        PendingEntity spawn();
+        PendingEntity spawn() const;
 
-        void despawn(Entity entity);
+        void despawn(Entity entity) const;
 
-        void despawn(PendingEntity entity);
+        void despawn(PendingEntity entity) const;
 
-        template<ComponentValue Component>
-        void addComponent(const Entity entity, const Component& value = Component{}) {
+    private:
+        template<ComponentValue Component, typename... Arguments>
+            requires std::constructible_from<Component, Arguments...>
+        void addComponent(const Entity entity, Arguments&&... arguments) {
+            Component value = Component(std::forward<Arguments>(arguments)...);
             queueAdd(entity, componentTypeId<Component>(), Payload::copyOf(value));
         }
 
-        template<ComponentValue Component>
-        void addComponent(const PendingEntity entity, const Component& value = Component{}) {
+        template<ComponentValue Component, typename... Arguments>
+            requires std::constructible_from<Component, Arguments...>
+        void addComponent(const PendingEntity entity, Arguments&&... arguments) {
+            Component value = Component(std::forward<Arguments>(arguments)...);
             queueAdd(entity, componentTypeId<Component>(), Payload::copyOf(value));
         }
 
@@ -122,18 +129,17 @@ namespace TechEngine {
             queueRemove(entity, componentTypeId<Component>());
         }
 
-    private:
-        void queueAdd(Entity entity, ComponentTypeId type, Payload payload);
+        void queueAdd(Entity entity, ComponentTypeId type, Payload payload) const;
 
-        void queueAdd(PendingEntity entity, ComponentTypeId type, Payload payload);
+        void queueAdd(PendingEntity entity, ComponentTypeId type, Payload payload) const;
 
-        void queueRemove(Entity entity, ComponentTypeId type);
+        void queueRemove(Entity entity, ComponentTypeId type) const;
 
-        void queueRemove(PendingEntity entity, ComponentTypeId type);
+        void queueRemove(PendingEntity entity, ComponentTypeId type) const;
 
-        void apply(Scene& scene, std::vector<Entity>& spawned);
+        void apply(Scene& scene, std::vector<Entity>& spawned) const;
 
-        void discard();
+        void discard() const;
 
         friend class Scene;
         friend class SerialExecutor;

@@ -3,13 +3,14 @@
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
+#include <TechEngine/core/scene/SceneCommandBuffer.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/core/systems/SerialExecutor.hpp>
 #include <TechEngine/core/systems/TaskGraph.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
-#include "TechEngine/core/scene/SceneCommandBuffer.hpp"
+#include <scene/SceneTestRegistry.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -83,12 +84,12 @@ public:
                 break;
             case ExecutorCommandMode::Spawn: {
                 const TechEngine::PendingEntity entity = scene.getCommands().spawn();
-                scene.getCommands().addComponent(entity, ExecutorValue{41});
+                scene.addComponent<ExecutorValue>(entity, 41);
                 break;
             }
             case ExecutorCommandMode::Replace:
-                scene.getCommands().removeComponent<ExecutorValue>(g_executorState->target);
-                scene.getCommands().addComponent(g_executorState->target, ExecutorValue{99});
+                scene.removeComponent<ExecutorValue>(g_executorState->target);
+                scene.addComponent<ExecutorValue>(g_executorState->target, 99);
                 break;
             case ExecutorCommandMode::Despawn:
                 scene.getCommands().despawn(g_executorState->target);
@@ -167,7 +168,7 @@ public:
 class ForeignPendingConsumerSystem final : public TechEngine::ISystem {
 public:
     void tick(TechEngine::Scene& scene, const TechEngine::SimulationContext&) override {
-        scene.getCommands().addComponent(g_executorState->pending, ExecutorValue{7});
+        scene.addComponent<ExecutorValue>(g_executorState->pending, 7);
     }
 
     std::string_view name() const override {
@@ -180,7 +181,7 @@ class BufferedSpawnSystem final : public TechEngine::ISystem {
 public:
     void tick(TechEngine::Scene& scene, const TechEngine::SimulationContext&) override {
         const TechEngine::PendingEntity entity = scene.getCommands().spawn();
-        scene.getCommands().addComponent(entity, ExecutorValue{Value});
+        scene.addComponent<ExecutorValue>(entity, Value);
     }
 
     std::string_view name() const override {
@@ -220,9 +221,24 @@ public:
     TechEngine::SimulationContext context;
 
     ExecutorFixture() : scene(registry), files(mounts), jobs(1), engine{files, jobs, clock}, context{.fixedDeltaTime = 1.0 / 60.0, .tick = 1, .input = input, .engine = engine} {
+        TechEngineTests::registerBuiltInSceneComponents(registry);
         registry.registerComponent<ExecutorValue>("Test.ExecutorValue");
     }
 };
+
+TEST_CASE("scene component mutation is immediate outside system execution", "[core][systems][executor]") {
+    ExecutorFixture fixture;
+    const TechEngine::Entity entity = fixture.scene.createEntity();
+
+    fixture.scene.addComponent<ExecutorValue>(entity, 17);
+
+    REQUIRE(fixture.scene.hasComponent<ExecutorValue>(entity));
+    REQUIRE(fixture.scene.getComponent<ExecutorValue>(entity).value == 17);
+
+    fixture.scene.removeComponent<ExecutorValue>(entity);
+
+    REQUIRE_FALSE(fixture.scene.hasComponent<ExecutorValue>(entity));
+}
 
 TEST_CASE("the serial executor walks levels and retains each system instance", "[core][systems][executor]") {
     ExecutorFixture fixture;
