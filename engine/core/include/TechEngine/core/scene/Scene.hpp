@@ -73,7 +73,7 @@ namespace TechEngine {
         }
 
         template<ComponentValue Component, typename... Arguments>
-            requires(!std::same_as<Component, Hierarchy>) && std::constructible_from<Component, Arguments...>
+            requires(!std::same_as<Component, Hierarchy>) && (!std::same_as<Component, Transform>) && std::constructible_from<Component, Arguments...>
         void addComponent(const Entity entity, Arguments&&... arguments) {
             if (isSystemExecuting()) {
                 getCommands().addComponent<Component>(entity, std::forward<Arguments>(arguments)...);
@@ -86,13 +86,13 @@ namespace TechEngine {
         // Pending targets preserve barrier order. Redesign spawn to reserve an Entity if this
         // becomes a user-facing problem.
         template<ComponentValue Component, typename... Arguments>
-            requires(!std::same_as<Component, Hierarchy>) && std::constructible_from<Component, Arguments...>
+            requires(!std::same_as<Component, Hierarchy>) && (!std::same_as<Component, Transform>) && std::constructible_from<Component, Arguments...>
         void addComponent(const PendingEntity entity, Arguments&&... arguments) {
             getCommands().addComponent<Component>(entity, std::forward<Arguments>(arguments)...);
         }
 
         template<ComponentValue Component>
-            requires(!std::same_as<Component, Hierarchy>)
+            requires(!std::same_as<Component, Hierarchy>) && (!std::same_as<Component, Transform>)
         void removeComponent(const Entity entity) {
             if (isSystemExecuting()) {
                 getCommands().removeComponent<Component>(entity);

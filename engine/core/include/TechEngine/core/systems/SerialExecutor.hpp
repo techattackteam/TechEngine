@@ -39,6 +39,6 @@ namespace TechEngine {
 
         SerialExecutor& operator=(SerialExecutor&&) = delete;
 
-        void execute(Scene& scene, const SimulationContext& context /*, TickBarrierServices& barrier*/);
+        void execute(Scene& scene, const SimulationContext& context, TickBarrierServices& barrier);
     };
 }

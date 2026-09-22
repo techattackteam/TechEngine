@@ -8,10 +8,21 @@
 #include <diagnostics/Diagnostics.hpp>
 #include <diagnostics/MemoryTracking.hpp>
 
+#include <cstdint>
 #include <exception>
+#include <span>
 #include <string_view>
 
 namespace TechEngine {
+    class NoOpTickBarrierServices final : public TickBarrierServices {
+    public:
+        void assignNetIds(Scene&, std::span<const Entity>) override {
+        }
+
+        void flushEvents(std::uint64_t, std::uint64_t) override {
+        }
+    };
+
     static void reportAppFailure(std::string_view stage, const std::exception_ptr& failure) {
         try {
             std::rethrow_exception(failure);
@@ -89,6 +100,9 @@ namespace TechEngine {
     }
 
     void App::finalizeSimulation() {
+        if (m_simulationFinalized) {
+            return;
+        }
         if (m_registry.find(componentTypeId<Hierarchy>()) == nullptr) {
             m_registry.registerComponent<Hierarchy>(Hierarchy::tag);
         }
@@ -104,7 +118,8 @@ namespace TechEngine {
 
     void App::executeSimulationTick(const SimulationContext& simulation) {
         TE_CHECK(m_serialExecutor != nullptr, "Simulation executor must be finalized before ticking");
-        m_serialExecutor->execute(m_scene, simulation);
+        NoOpTickBarrierServices barrier;
+        m_serialExecutor->execute(m_scene, simulation, barrier);
     }
 
     void App::mainThreadUpdate() {

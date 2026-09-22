@@ -2,6 +2,8 @@
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
 
+#include <scene/SceneTestRegistry.hpp>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <concepts>
@@ -24,7 +26,7 @@ static_assert(!RemovableSceneComponent<TechEngine::Hierarchy>);
 
 TEST_CASE("hierarchy is publicly registerable and readable through Scene", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
-    registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity entity = scene.createEntity();
     const TechEngine::Scene& constScene = scene;
@@ -37,6 +39,7 @@ TEST_CASE("hierarchy is publicly registerable and readable through Scene", "[cor
 
 TEST_CASE("hierarchy keeps roots and ordered children", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity root = scene.createEntity();
     const TechEngine::Entity first = scene.createEntity();
@@ -71,6 +74,7 @@ TEST_CASE("hierarchy keeps roots and ordered children", "[core][scene]") {
 
 TEST_CASE("hierarchy rejects cycles without changing links", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity root = scene.createEntity();
     const TechEngine::Entity middle = scene.createEntity();
@@ -92,6 +96,7 @@ TEST_CASE("hierarchy rejects cycles without changing links", "[core][scene]") {
 
 TEST_CASE("reparenting and insertion validate position before changing links", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity left = scene.createEntity();
     const TechEngine::Entity right = scene.createEntity();
@@ -125,6 +130,7 @@ TEST_CASE("reparenting and insertion validate position before changing links", "
 
 TEST_CASE("destroying a subtree preserves its surviving siblings", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity root = scene.createEntity();
     const TechEngine::Entity branch = scene.createEntity();
@@ -147,6 +153,7 @@ TEST_CASE("destroying a subtree preserves its surviving siblings", "[core][scene
 
 TEST_CASE("detached and reparented subtrees survive their former parent", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity root = scene.createEntity();
     const TechEngine::Entity newRoot = scene.createEntity();
@@ -176,6 +183,7 @@ TEST_CASE("detached and reparented subtrees survive their former parent", "[core
 
 TEST_CASE("reused entity slots do not inherit old hierarchy links", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity root = scene.createEntity();
     const TechEngine::Entity oldChild = scene.createEntity();
@@ -194,6 +202,7 @@ TEST_CASE("reused entity slots do not inherit old hierarchy links", "[core][scen
 
 TEST_CASE("clearing a scene invalidates hierarchy links and entity handles", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity root = scene.createEntity();
     const TechEngine::Entity child = scene.createEntity();
@@ -223,6 +232,7 @@ TEST_CASE("clearing a scene invalidates hierarchy links and entity handles", "[c
 
 TEST_CASE("deep subtree destruction does not depend on recursion depth", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     std::vector<TechEngine::Entity> chain;
     chain.reserve(4096);

@@ -80,6 +80,6 @@ namespace TechEngine {
 
         void cursorPositionCallback(double x, double y);
 
-        void publishInput(const InputEvent& event);
+        void publishInput(const InputEvent& event) const;
     };
 }

@@ -6,6 +6,7 @@
 #include <TechEngine/testing/AssertCapture.hpp>
 
 #include <scene/ArchetypeStorage.hpp>
+#include <scene/SceneTestRegistry.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -43,6 +44,7 @@ static_assert(ReadableQueryComponent<TechEngine::Hierarchy>);
 
 TEST_CASE("eachEntity visits every live entity across archetypes", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<QueryPosition>("Tests.QueryPosition");
     registry.registerComponent<QueryVelocity>("Tests.QueryVelocity");
     TechEngine::ArchetypeStorage storage(registry);
@@ -68,6 +70,7 @@ TEST_CASE("eachEntity visits every live entity across archetypes", "[core][scene
 
 TEST_CASE("queries iterate every matching archetype with typed access", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<QueryPosition>("Tests.QueryPosition");
     registry.registerComponent<QueryVelocity>("Tests.QueryVelocity");
     registry.registerComponent<QueryHealth>("Tests.QueryHealth");
@@ -111,8 +114,7 @@ TEST_CASE("queries iterate every matching archetype with typed access", "[core][
 
 TEST_CASE("scene exposes typed queries without exposing archetype storage", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
-    registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
-    registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<QueryPosition>("Tests.QueryPosition");
     registry.registerComponent<QueryVelocity>("Tests.QueryVelocity");
     TechEngine::Scene scene(registry);
@@ -130,6 +132,7 @@ TEST_CASE("scene exposes typed queries without exposing archetype storage", "[co
 
 TEST_CASE("queries refresh matches when a new archetype appears", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<QueryPosition>("Tests.QueryPosition");
     TechEngine::ArchetypeStorage storage(registry);
     auto query = storage.query<TechEngine::Write<>, TechEngine::Read<QueryPosition>>();
@@ -153,6 +156,7 @@ TEST_CASE("queries refresh matches when a new archetype appears", "[core][scene]
 
 TEST_CASE("queries reacquire spans when an existing archetype grows", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<QueryPosition>("Tests.QueryPosition");
     TechEngine::ArchetypeStorage storage(registry);
     const TechEngine::Entity first = storage.createEntity();
@@ -177,6 +181,7 @@ TEST_CASE("queries reacquire spans when an existing archetype grows", "[core][sc
 
 TEST_CASE("clearing storage invalidates retained query matches", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<QueryPosition>("Tests.QueryPosition");
     TechEngine::ArchetypeStorage storage(registry);
     const TechEngine::Entity stale = storage.createEntity();
@@ -208,6 +213,7 @@ TEST_CASE("clearing storage invalidates retained query matches", "[core][scene]"
 TEST_CASE("structural mutation is rejected during query iteration", "[core][scene]") {
     const TechEngineTests::FatalAssertGuard guard;
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<QueryPosition>("Tests.QueryPosition");
     registry.registerComponent<QueryVelocity>("Tests.QueryVelocity");
     TechEngine::ArchetypeStorage storage(registry);
@@ -268,6 +274,7 @@ TEST_CASE("structural mutation is rejected during query iteration", "[core][scen
 
 TEST_CASE("query iteration state unwinds when a callback throws", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<QueryPosition>("Tests.QueryPosition");
     TechEngine::ArchetypeStorage storage(registry);
     const TechEngine::Entity entity = storage.createEntity();
@@ -285,6 +292,7 @@ TEST_CASE("query iteration state unwinds when a callback throws", "[core][scene]
 
 TEST_CASE("disjoint queries can iterate concurrently", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
     registry.registerComponent<QueryPosition>("Tests.QueryPosition");
     registry.registerComponent<QueryVelocity>("Tests.QueryVelocity");
     TechEngine::ArchetypeStorage storage(registry);
