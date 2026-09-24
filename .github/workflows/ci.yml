@@ -449,7 +449,13 @@ jobs:
         timeout-minutes: 5
         env:
           LIBGL_ALWAYS_SOFTWARE: "1"
-        run: xvfb-run -a ctest --preset ${{ matrix.test }}
+        run: |
+          # Standalone GLFW reproduces llvmpipe's lp_fence_destroy TSan report.
+          # Keep TechEngine instrumented while disabling Mesa workers on this leg.
+          if [[ '${{ matrix.test }}' == linux-tsan ]]; then
+            export LP_NUM_THREADS=0
+          fi
+          xvfb-run -a ctest --preset '${{ matrix.test }}'
 
       - name: ccache stats
         run: ccache -s
