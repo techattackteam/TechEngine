@@ -15,8 +15,8 @@ Read this first each session. TechEngine is Miguel's solo-built C++20 client/ser
   pin either or a context window in this project.
 - Workflows live in `.agents/skills/<name>/SKILL.md`: `$card-start`, `$card-review`,
   `$card-close`, `$te-review`, `$arch-review`, `$adr`, `$feature-breakdown`,
-  `$weekly-review`, `$sprint-plan`, `$vault-clean`. Resolve paths from the engine root
-  and wikilinks within `docs/`. Read a workflow when using it.
+  `$weekly-review`, `$sprint-plan`, `$vault-clean`, `$paper-validate`. Resolve paths
+  from the engine root and wikilinks within `docs/`. Read a workflow when using it.
 - Specialists in `.codex/agents/*.toml` inherit model/reasoning and report only.
   Delegate only when the user asks or the active workflow explicitly calls for
   independent agent work; naming a helper alone does not require spawning it.
