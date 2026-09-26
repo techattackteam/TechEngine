@@ -210,7 +210,7 @@ TEST_CASE("simulations share one clock but only the primary advances its diagnos
 
     CHECK(primary.simulationContext().tick == 3);
     CHECK(secondary.simulationContext().tick == 6);
-    CHECK(diagnostics.frame() == 3);
+    CHECK(diagnostics.tick() == 3);
     CHECK(&primary.simulationContext().engine.clock == &secondary.simulationContext().engine.clock);
 }
 

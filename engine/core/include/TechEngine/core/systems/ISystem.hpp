@@ -4,11 +4,14 @@
 
 namespace TechEngine {
     class Scene;
+    class ScheduleRegistration;
     struct SimulationContext;
 
     class ISystem {
     public:
         virtual ~ISystem() = default;
+
+        virtual void init(ScheduleRegistration& registration) = 0;
 
         virtual void tick(Scene& scene, const SimulationContext& context) = 0;
 

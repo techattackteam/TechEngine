@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <memory>
 #include <span>
 #include <string>
 #include <typeindex>
@@ -20,8 +19,7 @@ namespace TechEngine {
         std::vector<std::string> systemNames;
         systemNames.reserve(entries.size());
         for (const ScheduleEntry& entry: entries) {
-            const std::unique_ptr<ISystem> system = entry.factory();
-            systemNames.emplace_back(system->name());
+            systemNames.push_back(entry.name);
         }
 
         for (std::size_t i = 0; i < entries.size(); i++) {
@@ -98,7 +96,7 @@ namespace TechEngine {
             for (const std::size_t node: ready) {
                 processed[node] = true;
                 processedCount++;
-                level.push_back({entries[node].factory, entries[node].systemType, entries[node].access});
+                level.push_back({entries[node].system.get(), entries[node].systemType, entries[node].access});
             }
             for (const std::size_t node: ready) {
                 for (const std::size_t target: edges[node]) {

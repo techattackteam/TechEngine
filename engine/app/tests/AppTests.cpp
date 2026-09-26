@@ -150,6 +150,9 @@ static std::function<void(const TechEngine::SimulationContext&)> g_onLifecycleTi
 
 class AppLifecycleSystem final : public TechEngine::ISystem {
 public:
+    void init(TechEngine::ScheduleRegistration&) override {
+    }
+
     void tick(TechEngine::Scene&, const TechEngine::SimulationContext& simulation) override {
         if (g_onLifecycleTick) {
             g_onLifecycleTick(simulation);
@@ -196,7 +199,7 @@ public:
     }
 
     std::uint64_t diagnosticFrame() const {
-        return m_clock.frame();
+        return m_clock.tick();
     }
 
     TechEngine::ThreadCompletionResult simulationCompletion() const {

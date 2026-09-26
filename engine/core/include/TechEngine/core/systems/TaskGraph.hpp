@@ -11,7 +11,7 @@
 
 namespace TechEngine {
     struct TaskGraphNode {
-        SystemFactory factory = nullptr;
+        ISystem* system = nullptr;
         std::type_index systemType = typeid(void);
         ScheduleAccess access;
     };
