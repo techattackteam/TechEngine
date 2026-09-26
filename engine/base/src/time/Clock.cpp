@@ -17,11 +17,11 @@ namespace TechEngine {
         return std::chrono::system_clock::now();
     }
 
-    std::uint64_t Clock::frame() const {
-        return m_frame.load(std::memory_order_relaxed);
+    std::uint64_t Clock::tick() const {
+        return m_tick.load(std::memory_order_relaxed);
     }
 
-    void Clock::advanceFrame() {
-        m_frame.fetch_add(1, std::memory_order_relaxed);
+    void Clock::advanceTick() {
+        m_tick.fetch_add(1, std::memory_order_relaxed);
     }
 }

@@ -1,6 +1,5 @@
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/client/render/RenderSnapshot.hpp>
-#include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <RuntimeApp.hpp>
 #include <demo/CollisionSystem.hpp>
@@ -30,10 +29,10 @@ namespace TechEngine {
     void RuntimeApp::configureSimulation() {
         m_registry.registerComponent<Velocity>(Velocity::tag);
         m_registry.registerComponent<RigidBody>(RigidBody::tag);
-        m_schedule.add<MovementSystem>(DeclareAccess<Write<Transform>, Read<Velocity>>{}).priority(10);
-        m_schedule.add<GravitySystem>(DeclareAccess<Write<Velocity>, Read<>>{}).priority(20);
-        m_schedule.add<CollisionSystem>(DeclareAccess<Write<RigidBody>, Read<Transform>>{}).priority(40);
-        m_schedule.add<EntitySpawnSystem>(DeclareAccess<Write<>, Read<Transform>>{}).slot(Slot::Terminal);
+        m_schedule.add<MovementSystem>();
+        m_schedule.add<GravitySystem>();
+        m_schedule.add<CollisionSystem>();
+        m_schedule.add<EntitySpawnSystem>();
     }
 
     void RuntimeApp::publishSnapshot(const SimulationContext& simulation) {

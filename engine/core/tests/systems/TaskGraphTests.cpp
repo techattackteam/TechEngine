@@ -28,9 +28,25 @@ static constexpr std::array<std::string_view, 5> GRAPH_SYSTEM_NAMES{
     "TerminalSystem",
 };
 
+static int g_graphConstructed = 0;
+static int g_graphInitialized = 0;
+static int g_graphDestroyed = 0;
+
 template<std::size_t Index>
 class GraphSystem final : public TechEngine::ISystem {
 public:
+    GraphSystem() {
+        g_graphConstructed++;
+    }
+
+    ~GraphSystem() override {
+        g_graphDestroyed++;
+    }
+
+    void init(TechEngine::ScheduleRegistration&) override {
+        g_graphInitialized++;
+    }
+
     void tick(TechEngine::Scene&, const TechEngine::SimulationContext&) override {
     }
 
@@ -141,7 +157,7 @@ TEST_CASE("independent systems occupy one level exactly once", "[core][systems][
     REQUIRE(countSystemNodes<SecondSystem>(graph) == 1);
     REQUIRE(countSystemNodes<ThirdSystem>(graph) == 1);
     for (const TechEngine::TaskGraphNode& node: graph.getLevels().front()) {
-        REQUIRE(node.factory != nullptr);
+        REQUIRE(node.system != nullptr);
     }
 }
 
@@ -174,8 +190,8 @@ TEST_CASE("conflicts cross access-mask word boundaries without touching neighbor
     TechEngine::ComponentRegistry registry;
     registerGraphComponents(registry, std::make_index_sequence<65>{});
     TechEngine::Schedule schedule(registry);
-    schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<64>>, TechEngine::Read<>>{}).priority(10);
-    schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<64>>>{}).priority(20);
+    schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<64>>, TechEngine::Read<>>{}).setPriority(10);
+    schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<64>>>{}).setPriority(20);
     schedule.add<ThirdSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<63>>>{});
 
     const TechEngine::TaskGraph graph(schedule);
@@ -189,10 +205,10 @@ TEST_CASE("conflicts form the worked priority-ordered graph levels", "[core][sys
     TechEngine::ComponentRegistry registry;
     registerGraphComponents(registry, std::make_index_sequence<4>{});
     TechEngine::Schedule schedule(registry);
-    schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<GraphComponent<1>>>{}).priority(10);
-    schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<1>>, TechEngine::Read<>>{}).priority(20);
-    schedule.add<ThirdSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<GraphComponent<2>>>{}).priority(30);
-    schedule.add<FourthSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<3>>, TechEngine::Read<GraphComponent<0>>>{}).priority(40);
+    schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<GraphComponent<1>>>{}).setPriority(10);
+    schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<1>>, TechEngine::Read<>>{}).setPriority(20);
+    schedule.add<ThirdSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<GraphComponent<2>>>{}).setPriority(30);
+    schedule.add<FourthSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<3>>, TechEngine::Read<GraphComponent<0>>>{}).setPriority(40);
 
     const TechEngine::TaskGraph graph(schedule);
 
@@ -207,8 +223,8 @@ TEST_CASE("lower numeric priority wins regardless of registration order", "[core
     TechEngine::ComponentRegistry registry;
     registerGraphComponents(registry, std::make_index_sequence<1>{});
     TechEngine::Schedule schedule(registry);
-    schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<>>{}).priority(20);
-    schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<0>>>{}).priority(-10);
+    schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<>>{}).setPriority(20);
+    schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<0>>>{}).setPriority(-10);
 
     const TechEngine::TaskGraph graph(schedule);
 
@@ -220,8 +236,8 @@ TEST_CASE("explicit order overrides priority for a conflicting pair", "[core][sy
     TechEngine::ComponentRegistry registry;
     registerGraphComponents(registry, std::make_index_sequence<1>{});
     TechEngine::Schedule schedule(registry);
-    schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<>>{}).priority(20).before<SecondSystem>();
-    schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<0>>>{}).priority(10);
+    schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<>>{}).setPriority(20).before<SecondSystem>();
+    schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<0>>>{}).setPriority(10);
 
     const TechEngine::TaskGraph graph(schedule);
 
@@ -269,6 +285,29 @@ TEST_CASE("equal-priority conflicts fail without freezing the schedule", "[core]
 
     schedule.add<ThirdSystem>();
     REQUIRE(schedule.getEntries().size() == 3);
+}
+
+TEST_CASE("an invalid graph does not construct extra systems and cleans up selected instances", "[core][systems][task-graph]") {
+    const TechEngineTests::FatalAssertGuard guard;
+    g_graphConstructed = 0;
+    g_graphInitialized = 0;
+    g_graphDestroyed = 0;
+    {
+        TechEngine::ComponentRegistry registry;
+        registerGraphComponents(registry, std::make_index_sequence<1>{});
+        TechEngine::Schedule schedule(registry);
+        schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<>>{});
+        schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<0>>>{});
+
+        REQUIRE(g_graphConstructed == 2);
+        REQUIRE(g_graphInitialized == 2);
+        REQUIRE_THROWS_AS(TechEngine::TaskGraph(schedule), TechEngineTests::AssertFired);
+        REQUIRE(g_graphConstructed == 2);
+        REQUIRE(g_graphInitialized == 2);
+        REQUIRE(g_graphDestroyed == 0);
+        REQUIRE_FALSE(schedule.frozen());
+    }
+    REQUIRE(g_graphDestroyed == 2);
 }
 
 TEST_CASE("explicit order resolves an equal-priority conflict", "[core][systems][task-graph]") {
@@ -326,9 +365,9 @@ TEST_CASE("the terminal system is a final singleton level after every regular le
     TechEngine::ComponentRegistry registry;
     registerGraphComponents(registry, std::make_index_sequence<1>{});
     TechEngine::Schedule schedule(registry);
-    schedule.add<TerminalSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<0>>>{}).slot(TechEngine::Slot::Terminal);
-    schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<>>{}).priority(10);
-    schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<0>>>{}).priority(20);
+    schedule.add<TerminalSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<0>>>{}).setSlot(TechEngine::Slot::Terminal);
+    schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<>>{}).setPriority(10);
+    schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<0>>>{}).setPriority(20);
 
     const TechEngine::TaskGraph graph(schedule);
 
@@ -344,9 +383,9 @@ TEST_CASE("every conflict-derived edge is logged with its chosen direction", "[c
     TechEngine::ComponentRegistry registry;
     registerGraphComponents(registry, std::make_index_sequence<2>{});
     TechEngine::Schedule schedule(registry);
-    schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<>>{}).priority(10);
-    schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<1>>, TechEngine::Read<GraphComponent<0>>>{}).priority(20);
-    schedule.add<ThirdSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<1>>>{}).priority(30);
+    schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<>>{}).setPriority(10);
+    schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<1>>, TechEngine::Read<GraphComponent<0>>>{}).setPriority(20);
+    schedule.add<ThirdSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<1>>>{}).setPriority(30);
 
     const TechEngine::TaskGraph graph(schedule);
 

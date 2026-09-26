@@ -136,8 +136,8 @@ namespace TechEngine {
         if (m_diagnosticClock == nullptr) {
             return;
         }
-        m_diagnosticClock->advanceFrame();
-        setDiagnosticFrame(m_diagnosticClock->frame());
+        m_diagnosticClock->advanceTick();
+        setDiagnosticTick(m_diagnosticClock->tick());
         if (m_presentationActive) {
             TE_PROFILER_FRAME_NAMED("SimulationTicks");
         } else {

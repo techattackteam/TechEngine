@@ -16,7 +16,7 @@ namespace TechEngine {
     public:
         struct Node {
             ScheduleAccess access;
-            std::unique_ptr<ISystem> system;
+            ISystem* system = nullptr;
             SceneCommandBuffer commands;
         };
 
@@ -31,7 +31,7 @@ namespace TechEngine {
             Impl::Level level;
             level.reserve(sourceLevel.size());
             for (const TaskGraphNode& sourceNode: sourceLevel) {
-                level.push_back({sourceNode.access, sourceNode.factory(), {}});
+                level.push_back({sourceNode.access, sourceNode.system, {}});
             }
             m_impl->levels.push_back(std::move(level));
         }
@@ -78,7 +78,7 @@ namespace TechEngine {
         {
             TE_PROFILER_SCOPE("SerialExecutor.BarrierServices");
             barrier.assignNetIds(scene, m_impl->spawned);
-            barrier.flushEvents(context.engine.clock.frame(), context.tick);
+            barrier.flushEvents(context.tick);
         }
     }
 

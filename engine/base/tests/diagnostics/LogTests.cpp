@@ -23,7 +23,7 @@
 
 struct CapturedRecord {
     std::chrono::system_clock::time_point time;
-    std::uint64_t frame;
+    std::uint64_t tick;
     TechEngine::Level level;
     TechEngine::LogModule moduleTag;
     TechEngine::LogChannel channel;
@@ -36,7 +36,7 @@ struct CapturedRecord {
 static std::vector<CapturedRecord> g_captured;
 
 static void captureSink(const TechEngine::LogRecord& record) {
-    g_captured.push_back(CapturedRecord{record.time, record.frame, record.level, record.moduleTag, record.channel, std::string{record.message}, std::string{record.file}, std::string{record.function}, record.line});
+    g_captured.push_back(CapturedRecord{record.time, record.tick, record.level, record.moduleTag, record.channel, std::string{record.message}, std::string{record.file}, std::string{record.function}, record.line});
 }
 
 static std::vector<std::string> g_secondary;
@@ -128,16 +128,16 @@ TEST_CASE("function name is trimmed to the identifier", "[base][log]") {
     REQUIRE_FALSE(fn.empty());
 }
 
-TEST_CASE("frame stamp is the value app pushed", "[base][log]") {
+TEST_CASE("tick stamp is the value app pushed", "[base][log]") {
     const SinkGuard guard;
     TechEngine::setMinLevel(TechEngine::Level::Trace);
 
-    TechEngine::setDiagnosticFrame(1043);
+    TechEngine::setDiagnosticTick(1043);
     TE_LOGGER_INFO("stamped");
-    TechEngine::setDiagnosticFrame(0);
+    TechEngine::setDiagnosticTick(0);
 
     REQUIRE(g_captured.size() == 1);
-    REQUIRE(g_captured[0].frame == 1043);
+    REQUIRE(g_captured[0].tick == 1043);
 }
 
 TEST_CASE("macros survive a dangling else", "[base][log]") {
@@ -371,7 +371,7 @@ TEST_CASE("a record carries a wall-clock stamp", "[base][log]") {
 static TechEngine::LogRecord sampleRecord(std::string_view message) {
     return TechEngine::LogRecord{
         .time = std::chrono::system_clock::now(),
-        .frame = 1043,
+        .tick = 1043,
         .level = TechEngine::Level::Info,
         .moduleTag = TechEngine::DEFAULT_MODULE,
         .channel = TechEngine::DEFAULT_CHANNEL,
@@ -401,19 +401,19 @@ TEST_CASE("flatten renders the canonical line", "[base][log][format]") {
     REQUIRE(line[9] == '.');
     REQUIRE(line[13] == ']');
 
-    const std::size_t frame = line.find("[f 1043]");
+    const std::size_t tick = line.find("[t 1043]");
     const std::size_t channel = line.find("[default/default]");
     const std::size_t site = line.find("[renderer.cpp:88:renderScene()]");
     const std::size_t level = line.find("[INFO]");
 
-    REQUIRE(frame != std::string::npos);
+    REQUIRE(tick != std::string::npos);
     REQUIRE(channel != std::string::npos);
     REQUIRE(site != std::string::npos);
     REQUIRE(level != std::string::npos);
 
     // Field order is the contract — a sink or a log grep reads positionally.
-    REQUIRE(frame == 14);
-    REQUIRE(frame < channel);
+    REQUIRE(tick == 14);
+    REQUIRE(tick < channel);
     REQUIRE(channel < site);
     REQUIRE(site < level);
     REQUIRE(line.ends_with("] swapchain 1920x1080"));

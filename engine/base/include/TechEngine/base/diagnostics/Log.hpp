@@ -77,7 +77,7 @@ namespace TechEngine {
     // static strings.
     struct LogRecord {
         std::chrono::system_clock::time_point time;
-        std::uint64_t frame = 0;
+        std::uint64_t tick = 0;
         Level level = Level::Info;
         LogModule moduleTag{};
         LogChannel channel{};
@@ -133,7 +133,7 @@ namespace TechEngine {
 
     void ringClear();
 
-    void setDiagnosticFrame(std::uint64_t frame);
+    void setDiagnosticTick(std::uint64_t tick);
 
     namespace internal {
         void logDispatch(Level level, LogChannel channel, const std::source_location& loc, std::string_view fmtStr, std::format_args args);

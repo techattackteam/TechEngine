@@ -41,21 +41,21 @@ TEST_CASE("each clock measures from its own construction", "[base][clock]") {
     REQUIRE(first.totalTime() > second.totalTime());
 }
 
-TEST_CASE("frame starts at zero and advances by exactly one", "[base][clock]") {
+TEST_CASE("tick starts at zero and advances by exactly one", "[base][clock]") {
     TechEngine::Clock clock;
 
-    REQUIRE(clock.frame() == 0);
+    REQUIRE(clock.tick() == 0);
 
-    clock.advanceFrame();
-    REQUIRE(clock.frame() == 1);
+    clock.advanceTick();
+    REQUIRE(clock.tick() == 1);
 
     for (int i = 0; i < 10; i++) {
-        clock.advanceFrame();
+        clock.advanceTick();
     }
-    REQUIRE(clock.frame() == 11);
+    REQUIRE(clock.tick() == 11);
 }
 
-TEST_CASE("frame reads stay race-free while one writer advances the counter", "[base][clock][threading]") {
+TEST_CASE("tick reads stay race-free while one writer advances the counter", "[base][clock][threading]") {
     TechEngine::Clock clock;
     constexpr std::uint64_t ADVANCE_COUNT = 20000;
     std::barrier start{2};
@@ -64,28 +64,28 @@ TEST_CASE("frame reads stay race-free while one writer advances the counter", "[
         std::jthread writer([&] {
             start.arrive_and_wait();
             for (std::uint64_t i = 0; i < ADVANCE_COUNT; i++) {
-                clock.advanceFrame();
+                clock.advanceTick();
             }
         });
         std::jthread reader([&] {
             start.arrive_and_wait();
             std::uint64_t previous = 0;
             for (std::uint64_t i = 0; i < ADVANCE_COUNT; i++) {
-                const std::uint64_t frame = clock.frame();
-                monotonic = monotonic && frame >= previous;
-                previous = frame;
+                const std::uint64_t tick = clock.tick();
+                monotonic = monotonic && tick >= previous;
+                previous = tick;
             }
         });
     }
     CHECK(monotonic);
-    CHECK(clock.frame() == ADVANCE_COUNT);
+    CHECK(clock.tick() == ADVANCE_COUNT);
 }
 
-TEST_CASE("advancing the frame does not disturb elapsed time", "[base][clock]") {
+TEST_CASE("advancing the tick does not disturb elapsed time", "[base][clock]") {
     TechEngine::Clock clock;
 
     const double before = clock.totalTime();
-    clock.advanceFrame();
+    clock.advanceTick();
 
     REQUIRE(clock.totalTime() >= before);
 }

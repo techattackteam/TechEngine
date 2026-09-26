@@ -1,5 +1,6 @@
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
+#include <TechEngine/core/systems/ScheduleRegistration.hpp>
 
 #include "TechEngine/base/diagnostics/Log.hpp"
 #include <demo/EntitySpawnSystem.hpp>
@@ -7,6 +8,11 @@
 #include <demo/Velocity.hpp>
 
 namespace TechEngine {
+    void EntitySpawnSystem::init(ScheduleRegistration& registration) {
+        registration.access(DeclareAccess<Write<>, Read<Transform>>{});
+        registration.setSlot(Slot::Terminal);
+    }
+
     void EntitySpawnSystem::tick(Scene& scene, const SimulationContext&) {
         TE_PROFILER_FUNCTION();
         if (m_entityCount >= TARGET_ENTITY_COUNT) {

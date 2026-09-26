@@ -1,9 +1,15 @@
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
+#include <TechEngine/core/systems/ScheduleRegistration.hpp>
 
 #include <demo/CollisionSystem.hpp>
 
 namespace TechEngine {
+    void CollisionSystem::init(ScheduleRegistration& registration) {
+        registration.access(DeclareAccess<Write<RigidBody>, Read<Transform>>{});
+        registration.setPriority(40);
+    }
+
     void CollisionSystem::tick(Scene& scene, const SimulationContext&) {
         TE_PROFILER_SCOPE("CollisionSystem::tick");
         if (!m_query.has_value()) {

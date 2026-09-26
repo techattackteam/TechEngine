@@ -13,6 +13,8 @@ namespace TechEngine {
         std::optional<Query<Write<Velocity>, Read<>>> m_query;
 
     public:
+        void init(ScheduleRegistration& registration) override;
+
         void tick(Scene& scene, const SimulationContext& context) override;
 
         std::string_view name() const override;

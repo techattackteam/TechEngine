@@ -35,7 +35,7 @@ namespace TechEngine {
     };
 
     static std::atomic<Level> g_minLevel = Level::Trace;
-    static std::atomic<std::uint64_t> g_frame = 0;
+    static std::atomic<std::uint64_t> g_tick = 0;
     static std::atomic<bool> g_initialized = false;
 
     // Slot 0 is the default module/channel and is never handed out by registration.
@@ -296,8 +296,8 @@ namespace TechEngine {
         return level >= floor;
     }
 
-    void setDiagnosticFrame(std::uint64_t frame) {
-        g_frame.store(frame, std::memory_order_relaxed);
+    void setDiagnosticTick(std::uint64_t tick) {
+        g_tick.store(tick, std::memory_order_relaxed);
     }
 
     static void deliverRecord(const LogRecord& record) {
@@ -330,7 +330,7 @@ namespace TechEngine {
         void logRaw(Level level, LogChannel channel, std::string_view file, std::string_view function, std::uint32_t line, std::string_view message) {
             const LogRecord record{
                 .time = std::chrono::system_clock::now(),
-                .frame = g_frame.load(std::memory_order_relaxed),
+                .tick = g_tick.load(std::memory_order_relaxed),
                 .level = level,
                 .moduleTag = logChannelModule(channel),
                 .channel = channel,
@@ -373,7 +373,7 @@ namespace TechEngine {
 
             const LogRecord record{
                 .time = std::chrono::system_clock::now(),
-                .frame = g_frame.load(std::memory_order_relaxed),
+                .tick = g_tick.load(std::memory_order_relaxed),
                 .level = level,
                 .moduleTag = logChannelModule(channel),
                 .channel = channel,
@@ -394,13 +394,13 @@ namespace TechEngine {
 
             std::format_to(
                 FormatBufferIterator{buffer},
-                "[{0:02}:{1:02}:{2:02}.{3:03}][f {4}][{5}/{6}][{7}:{8}:{9}()][{10}] "
+                "[{0:02}:{1:02}:{2:02}.{3:03}][t {4}][{5}/{6}][{7}:{8}:{9}()][{10}] "
                 "{11}",
                 local.tm_hour,
                 local.tm_min,
                 local.tm_sec,
                 static_cast<int>(sinceEpoch.count() % 1000),
-                record.frame,
+                record.tick,
                 logModuleName(record.moduleTag),
                 logChannelName(record.channel),
                 record.file,

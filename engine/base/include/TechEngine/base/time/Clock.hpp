@@ -18,12 +18,12 @@ namespace TechEngine {
 
         WallPoint wallClock() const;
 
-        std::uint64_t frame() const;
+        std::uint64_t tick() const;
 
-        void advanceFrame();
+        void advanceTick();
 
     private:
         TimePoint m_start;
-        std::atomic<std::uint64_t> m_frame = 0;
+        std::atomic<std::uint64_t> m_tick = 0;
     };
 }

@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <memory>
 #include <span>
+#include <string>
 #include <typeindex>
 #include <unordered_map>
 #include <vector>
@@ -26,8 +27,9 @@ namespace TechEngine {
     };
 
     struct ScheduleEntry {
-        SystemFactory factory = nullptr;
+        std::unique_ptr<ISystem> system;
         std::type_index systemType = typeid(void);
+        std::string name;
         ScheduleAccess access;
         std::vector<OrderConstraint> orderConstraints;
         int priority = 0;
@@ -74,6 +76,8 @@ namespace TechEngine {
         ScheduleRegistration addEntry(std::type_index systemType, SystemFactory factory, ScheduleAccess access);
 
         void setPriority(std::size_t entryIndex, int value);
+
+        void addAccess(std::size_t entryIndex, std::span<const ComponentTypeId> written, std::span<const ComponentTypeId> readOnly);
 
         void setSlot(std::size_t entryIndex, Slot value);
 

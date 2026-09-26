@@ -17,7 +17,7 @@ namespace TechEngine {
 
         virtual void assignNetIds(Scene& scene, std::span<const Entity> spawned) = 0;
 
-        virtual void flushEvents(std::uint64_t frameIndex, std::uint64_t tick) = 0;
+        virtual void flushEvents(std::uint64_t tick) = 0;
     };
 
     class SerialExecutor {

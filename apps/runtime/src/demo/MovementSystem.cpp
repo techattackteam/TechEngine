@@ -1,10 +1,16 @@
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/SimulationContext.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
+#include <TechEngine/core/systems/ScheduleRegistration.hpp>
 
 #include <demo/MovementSystem.hpp>
 
 namespace TechEngine {
+    void MovementSystem::init(ScheduleRegistration& registration) {
+        registration.access(DeclareAccess<Write<Transform>, Read<Velocity>>{});
+        registration.setPriority(10);
+    }
+
     void MovementSystem::tick(Scene& scene, const SimulationContext& context) {
         TE_PROFILER_SCOPE("MovementSystem::tick");
         if (!m_query.has_value()) {

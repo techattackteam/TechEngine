@@ -19,7 +19,7 @@ namespace TechEngine {
         void assignNetIds(Scene&, std::span<const Entity>) override {
         }
 
-        void flushEvents(std::uint64_t, std::uint64_t) override {
+        void flushEvents(std::uint64_t) override {
         }
     };
 

@@ -30,6 +30,8 @@ enum class ExecutorAccessMode { None, Read, Write, UndeclaredRead };
 
 struct ExecutorTestState {
     std::vector<std::pair<int, int>> runs;
+    std::vector<int> constructed;
+    std::vector<int> initialized;
     TechEngine::Entity target;
     TechEngine::PendingEntity pending;
     ExecutorCommandMode commandMode = ExecutorCommandMode::None;
@@ -62,6 +64,14 @@ private:
     int m_runCount = 0;
 
 public:
+    OrderedExecutorSystem() {
+        g_executorState->constructed.push_back(Index);
+    }
+
+    void init(TechEngine::ScheduleRegistration&) override {
+        g_executorState->initialized.push_back(Index);
+    }
+
     void tick(TechEngine::Scene&, const TechEngine::SimulationContext&) override {
         m_runCount++;
         g_executorState->runs.emplace_back(Index, m_runCount);
@@ -78,6 +88,9 @@ using TerminalExecutorSystem = OrderedExecutorSystem<3>;
 
 class CommandExecutorSystem final : public TechEngine::ISystem {
 public:
+    void init(TechEngine::ScheduleRegistration&) override {
+    }
+
     void tick(TechEngine::Scene& scene, const TechEngine::SimulationContext&) override {
         switch (g_executorState->commandMode) {
             case ExecutorCommandMode::None:
@@ -105,6 +118,9 @@ public:
 
 class AccessExecutorSystem final : public TechEngine::ISystem {
 public:
+    void init(TechEngine::ScheduleRegistration&) override {
+    }
+
     void tick(TechEngine::Scene& scene, const TechEngine::SimulationContext&) override {
         switch (g_executorState->accessMode) {
             case ExecutorAccessMode::None:
@@ -130,6 +146,9 @@ public:
 
 class ThrowingExecutorSystem final : public TechEngine::ISystem {
 public:
+    void init(TechEngine::ScheduleRegistration&) override {
+    }
+
     void tick(TechEngine::Scene& scene, const TechEngine::SimulationContext&) override {
         if (!g_executorState->throwAfterCommand) {
             return;
@@ -145,6 +164,9 @@ public:
 
 class ImmediateMutationSystem final : public TechEngine::ISystem {
 public:
+    void init(TechEngine::ScheduleRegistration&) override {
+    }
+
     void tick(TechEngine::Scene& scene, const TechEngine::SimulationContext&) override {
         (void)scene.createEntity();
     }
@@ -156,6 +178,9 @@ public:
 
 class PendingProducerSystem final : public TechEngine::ISystem {
 public:
+    void init(TechEngine::ScheduleRegistration&) override {
+    }
+
     void tick(TechEngine::Scene& scene, const TechEngine::SimulationContext&) override {
         g_executorState->pending = scene.getCommands().spawn();
     }
@@ -167,6 +192,9 @@ public:
 
 class ForeignPendingConsumerSystem final : public TechEngine::ISystem {
 public:
+    void init(TechEngine::ScheduleRegistration&) override {
+    }
+
     void tick(TechEngine::Scene& scene, const TechEngine::SimulationContext&) override {
         scene.addComponent<ExecutorValue>(g_executorState->pending, 7);
     }
@@ -179,6 +207,9 @@ public:
 template<int Value>
 class BufferedSpawnSystem final : public TechEngine::ISystem {
 public:
+    void init(TechEngine::ScheduleRegistration&) override {
+    }
+
     void tick(TechEngine::Scene& scene, const TechEngine::SimulationContext&) override {
         const TechEngine::PendingEntity entity = scene.getCommands().spawn();
         scene.addComponent<ExecutorValue>(entity, Value);
@@ -193,7 +224,6 @@ class BarrierProbe final : public TechEngine::TickBarrierServices {
 public:
     std::vector<TechEngine::Entity> spawned;
     std::vector<std::string_view> calls;
-    std::uint64_t frameIndex = 0;
     std::uint64_t tick = 0;
 
     void assignNetIds(TechEngine::Scene&, const std::span<const TechEngine::Entity> entities) override {
@@ -201,9 +231,8 @@ public:
         spawned.assign(entities.begin(), entities.end());
     }
 
-    void flushEvents(const std::uint64_t currentFrameIndex, const std::uint64_t currentTick) override {
+    void flushEvents(const std::uint64_t currentTick) override {
         calls.push_back("flushEvents");
-        frameIndex = currentFrameIndex;
         tick = currentTick;
     }
 };
@@ -247,11 +276,13 @@ TEST_CASE("the serial executor walks levels and retains each system instance", "
     TechEngine::Schedule schedule(fixture.registry);
     schedule.add<FirstExecutorSystem>().before<SecondExecutorSystem>();
     schedule.add<SecondExecutorSystem>();
-    schedule.add<TerminalExecutorSystem>().slot(TechEngine::Slot::Terminal);
+    schedule.add<TerminalExecutorSystem>().setSlot(TechEngine::Slot::Terminal);
     const TechEngine::TaskGraph graph(schedule);
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
 
+    REQUIRE(state.constructed == std::vector<int>{1, 2, 3});
+    REQUIRE(state.initialized == std::vector<int>{1, 2, 3});
     executor.execute(fixture.scene, fixture.context, barrier);
     fixture.context.tick++;
     executor.execute(fixture.scene, fixture.context, barrier);
@@ -271,7 +302,6 @@ TEST_CASE("an empty graph still reaches the tick barrier", "[core][systems][exec
 
     REQUIRE(barrier.calls == std::vector<std::string_view>{"assignNetIds", "flushEvents"});
     REQUIRE(barrier.spawned.empty());
-    REQUIRE(barrier.frameIndex == fixture.clock.frame());
     REQUIRE(barrier.tick == 19);
 }
 
