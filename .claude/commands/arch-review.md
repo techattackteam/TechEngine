@@ -8,8 +8,9 @@ Act as my technical lead and review the architecture of: $ARGUMENTS
 Focus on design, not style. Read the actual code first (and the relevant
 `docs/04 Design Docs/` note and ADRs).
 
-**Budget:** ≤ 40 lines total. Each risk is **≤ 3 lines** — claim, `file:line`, failure
-scenario. If there are more than 4 risks, report the 4 that matter and say how many you cut.
+**Size:** keep the review short and readable. Give each risk a brief explanation with its
+`file:line` and failure scenario. Report every actionable risk; never cut findings to meet a
+line count. Omit deliverable sections that add nothing.
 
 Deliver:
 1. **What's solid** — worth keeping, don't touch.

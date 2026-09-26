@@ -7,8 +7,9 @@ Help me write an ADR for TechEngine.
 
 Decision / question: $ARGUMENTS
 
-**Budget:** ADR **≤ 120 lines**, no `§` over ~30. Rationale is the one place real prose is
-earned — spend it there and nowhere else. Options as a table, consequences as bullets.
+**Size:** keep the ADR to the decision and its rationale, usually within 120 lines, with no `§`
+over ~30. That is a ceiling, not a target, and never a reason to compress a sentence.
+Rationale is where real prose earns its place. Options as a table, consequences as bullets.
 
 Steps:
 1. Read `docs/03 Architecture/ADR Index.md` for the next number + the **Accepted**
@@ -24,7 +25,7 @@ Steps:
    alternatives fairly and give a recommendation.
 4. Draft the ADR from `docs/Templates/ADR Template.md` as
    `docs/03 Architecture/ADR-NNN — <title>.md` with Status: Proposed.
-   **Scope: decision + rationale + alternatives + reversal triggers, ~150 lines.**
+   **Scope: decision + rationale + alternatives + reversal triggers, within the size above.**
    The *how* — surface tables, diagrams, workflows, instrumentation policy — belongs
    in the system's design note, not here. A mechanism table or diagram sprouting
    inside a § is the peel signal ([[Planning Workflow — Artifact Gate]] § *ADR or

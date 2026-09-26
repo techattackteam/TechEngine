@@ -15,8 +15,9 @@ maintained separately (`/consolidate-memory`).
   *Partial supersessions* **and the ADR's own dated amendments** first), and **today's date**.
 - **Rules:** repo-root `CLAUDE.md` → "Token economy — chat responses AND the vault".
 
-**Budget:** the report is **one line per finding** — `note:line → action`. No per-finding
-paragraphs, no restating the content you're flagging. Group headers only.
+**Report:** one short bullet per finding. Link the note and explain the proposed action in
+plain sentences. Add group headings only when they help scanning. Do not repeat the content
+being flagged, and do not compress explanations to force one-line entries.
 
 ## What to find (scan the whole target)
 1. **Stale / outdated** — content that contradicts the sources of truth: done or dropped
@@ -34,8 +35,9 @@ paragraphs, no restating the content you're flagging. Group headers only.
    renamed notes.
 5. **Orphans / empty** — notes linked from nowhere and reachable by no path, or notes
    that are empty / placeholder-only.
-6. **Bloat** — notes over ~150 lines or covering more than one topic (→ split); append-
-   only growth; prose where a table/bullets would carry it in fewer tokens.
+6. **Bloat** — sections over ~30 lines or notes covering more than one topic (→ split);
+   append-only growth; prose where a table/bullets would be clearer. File length alone is
+   not a reason to split: a long single-topic design note is allowed (`CLAUDE.md`).
    **ADRs are never split** — an ADR is one decision record, and splitting it
    breaks the `§` refs the whole vault cites. But length is still a **signal**: an ADR past
    ~150 lines usually carries *mechanism* that belongs in the system's design note (surface

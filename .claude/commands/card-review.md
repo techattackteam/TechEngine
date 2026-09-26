@@ -1,18 +1,17 @@
 ---
-name: card-review
-description: "Review a TechEngine card's implementation against its acceptance criteria, correctness, conventions, and architecture. Use for card review or pre-merge review of a card; report findings without editing or closing it."
+description: Review a card's implementation against its acceptance criteria, correctness, conventions, and architecture
+argument-hint: "[card ID, e.g. S5-T2, optionally a PR or revision — omit and I'll infer it]"
 ---
 
-# Card review
+Act as my reviewer for a TechEngine card. Target: $ARGUMENTS
 
-Invoke as `$card-review S5-T2`, optionally naming a PR or revision. With no ID,
-infer the card from the current conversation, branch, and active sprint. Ask for
-the ID if several cards fit. A supplied diff can still receive a code-only review;
-state when the card's acceptance criteria could not be assessed.
+With no ID, infer the card from the current conversation, branch, and active sprint. Ask for
+the ID if several cards fit. A supplied diff can still receive a code-only review; state when
+the card's acceptance criteria could not be assessed.
 
-Paths are relative to the engine root. Follow `AGENTS.md`, including build
-ownership and existing authorization. Review only: do not edit files, update the
-board, fix findings, commit, push, or close the card.
+Paths are relative to the engine root. Follow `CLAUDE.md`, including build ownership and
+existing authorization. Review only: do not edit files, update the board, fix findings,
+commit, push, or close the card.
 
 ## Establish the scope
 
@@ -71,5 +70,5 @@ again when the revision changes their behavior. Mark earlier findings resolved,
 still present, or unverified without repeating their full explanation. Reopen
 untouched areas only when new evidence warrants it.
 
-A review request does not require a separate agent. Keep `$te-review` and
-`$arch-review` available for users who request those narrower reviews.
+A review request does not require a separate agent. Keep `/te-review` and
+`/arch-review` available for narrower reviews.

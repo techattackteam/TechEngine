@@ -18,9 +18,10 @@ stale-artifact check is *not* dropped — it's step 3 below.
 
 My input on focus (may be empty): $ARGUMENTS
 
-**Budget:** retro **≤ 80 lines**, no section over ~20. Sprint note = the template's
-skeleton, **one line per task** (title, done-condition, tags). Sprint-review entries are one
-line each. No prose recap of work already recorded elsewhere — link it.
+**Size:** keep the retro short, with no section over ~30 lines. The sprint note is the
+template's skeleton; each task carries its title, done-condition and tags, and may wrap. No
+prose recap of work already recorded elsewhere — link it. Do not fill sections merely to make
+a note look complete, and never compress a sentence to hit a length.
 
 Steps:
 1. **Source the work from design notes** — `docs/06 Sprints/Planning Workflow — Artifact Gate.md`
@@ -62,6 +63,11 @@ Steps:
    anything to cut. **Report the kind mix as numbers** — how many Dev / Design / Bug /
    Process cards closed. Bug load is unplanned work the sprint absorbed, and Process load is
    how much of it wasn't the goal; both are invisible unless counted.
+   **Report the Auto lane's sprint too**, from the run reports in `docs/07 Journal/autoruns/`:
+   the cards it closed, the PRs it opened and whether they merged, the papers it screened,
+   and every run that stopped, with why. A lane that ran and produced nothing is a finding.
+   For the code sweeps, report the modules swept, the lines removed, the findings filed, and
+   each module's line count against its previous sweep, so growth is visible.
 3. **Stale-artifact check** (inherited from `/weekly-review`, which does not run today).
    For features touched this sprint, spot-check their ADR / design note against what
    actually got built: did implementation diverge from the documented end-state? A stale
@@ -104,16 +110,28 @@ Steps:
      format `· P1 · 🟢 Deep`. Design tasks are ordered **before** the story they unblock;
      Process tasks are the **first thing cut** if capacity tightens — call the mix out loud
      when a sprint is more than about a third Process.
-   - **Fill the two lanes separately, attended first.** Size the attended lane against the
-     capacity table exactly as before — the 🤖 Auto lane does **not** raise it. Then make a
-     second pass over what is left and run each candidate through the artifact gate's
-     § *The 🤖 Auto gate* (four questions; one no disqualifies). Process and research cards
-     are the natural population, and moving them is the point: every sustainability overrun
-     of Sprint 04 was process work, not engine work.
-     **Cap the Auto lane at one PR-producing card per weekday**, ~5 per sprint week, because
-     each costs 16.1 billed CI minutes and ~15 minutes of Miguel's review. Report-only and
-     vault-only Auto cards are free and are not capped.
-     Full model: [[Autonomous Lane — Design]].
+   - **Plan the 🤖 Auto lane as its own pass, every sprint.** Full model:
+     [[Autonomous Lane — Design]].
+     - **Check the lane first.** Read its status on the [[Dashboard]] (*Active decisions*) and
+       in [[Autonomous Lane — Routine Prompt]] § *Routine configuration*. If the routine is
+       paused, say so and ask me whether to plan Auto cards anyway. Never skip the lane
+       silently: Sprints 06 and 07 planned none because it was off, and nothing said so.
+     - **Size the attended lane first**, against the capacity table exactly as before. The
+       Auto lane does **not** raise it.
+     - **Then look for Auto work actively**, not only in what is left over. Sources: the
+       sprint's Process and research cards; behaviour-preserving refactors and small fully
+       specified changes named in design notes or [[Known Issues]]; test scaffolding for the
+       sprint's Dev cards; and [[Backlog]] entries whose trigger fired. Run each candidate
+       through the artifact gate's § *The 🤖 Auto gate* (one no disqualifies).
+     - **Moving a card to Auto frees an attended slot.** That is the point of the lane: every
+       sustainability overrun of Sprint 04 was process work, not engine work. Say which
+       attended slots the moves freed.
+     - **Keep Auto code cards off the attended cards' files.** A refactor of a file that an
+       attended card in the same sprint changes will stop at run time.
+     - **Cap PR-producing Auto cards at one per weekday**, ~5 per sprint week, because each
+       costs 16.1 billed CI minutes and ~15 minutes of my review. Report-only and vault-only
+       Auto cards are free and are not capped. Paper screening needs no card; the lane does
+       it when the Auto lane is empty, and so does the afternoon code sweep.
    - **Bugs enter two ways, and they behave differently.** Known *at planning* (step 1) → an
      ordinary card, sized in with everything else, nothing displaced. Arriving *mid-sprint* →
      still taken that sprint, but it **displaces**: name what it pushes out (lowest-priority

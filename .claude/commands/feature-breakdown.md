@@ -6,8 +6,9 @@ argument-hint: "<feature>"
 Break down this feature for TechEngine — as scrum master, **co-create it with me as an
 equal driver** (draft and challenge; I decide scope): $ARGUMENTS
 
-**Budget:** every task is **one line** — title, done-condition, tags. A light design note
-drafted in this pass is **≤ 60 lines**. Rationale belongs in the artifact, not in the card.
+**Size:** each task carries its title, done-condition and tags; let it wrap naturally rather
+than squeezing it onto one line. A light design note drafted in this pass stays short and does
+not fill sections to look complete. Rationale belongs in the artifact, not in the card.
 
 Steps:
 1. Start at the system's **design note** in `docs/04 Design Docs/` — its *Decided* rows are

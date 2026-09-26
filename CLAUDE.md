@@ -41,11 +41,9 @@ independently, so the vault can describe code that has moved on: the Dashboard's
   `engine/{base,platform,core,client,app}` (static libs, strict link order) +
   `apps/{runtime,editor}` (leaf exes) + `sdk/` (INTERFACE target). See
   [ADR-006](docs/03%20Architecture/ADR-006%20—%20v2%20core%20architecture%20&%20module%20layout.md) §1.
-- **Current state:** v2 fresh start. Scaffold built and **green on CI** (both legs);
-  `master` is ruleset-protected — all changes land via PR. Sprint 02 is building
-  `base` (Logger/Assert/Clock) against
-  [ADR-011](docs/03%20Architecture/ADR-011%20—%20Diagnostics%20(Logger%20&%20Assert).md);
-  every other module is still a skeleton and the vertical slice is Sprint 03.
+- **Current state:** `master` is ruleset-protected, so all changes land via PR. The active
+  sprint, focus and blockers live only on the Dashboard's *Now* table; read it there, not
+  from memory of an earlier session.
 
 ## Build & run
 
@@ -154,13 +152,13 @@ half-read file costs far more than the tokens it saved.
 
 ### Chat responses
 
-The hard rules live in the **`techengine` output style**
-([`.claude/output-styles/techengine.md`](.claude/output-styles/techengine.md)). It covers
-readability, length caps, and granularity mirroring. It lives there because a system prompt
-holds where a skimmed file doesn't. **Readability outranks the length caps**: never compress
-a sentence to hit a line count. It must also be the **active** style. If answers start
-running long, or start reading dense, that's the first thing to check (`/output-style`, from
-an interactive terminal). Two rules that are TechEngine-specific and stay here:
+The active output style is **`default`** (set in `.claude/settings.json`). This is a trial:
+newer models write well enough that the custom style may no longer earn its place. The old
+**`techengine`** style is kept at
+[`.claude/output-styles/techengine.md`](.claude/output-styles/techengine.md). If answers start
+running long or reading dense, switch `outputStyle` back to `"techengine"`. Whatever the
+style, **readability outranks brevity**: plain, complete sentences, because English is
+Miguel's second language. Two rules that are TechEngine-specific and stay here:
 
 - Say **what changed** and **what's unverified** — not a tour of every file touched.
 - Never re-explain a decision already written to the vault — link it.
@@ -223,6 +221,7 @@ an interactive terminal). Two rules that are TechEngine-specific and stay here:
    Name it `<card ID>/<slug>` — `S2-T4/assert-tiers`. That name is the **only** link from
    a squashed engine commit back to its board card
    ([ADR-012](docs/03%20Architecture/ADR-012%20—%20Vault%20repository%20split.md) §Consequences).
+   The one exception is the autonomous lane's code sweep: `sweep/<module>-<date>`, with no card.
    **`docs/` is a separate repo** — commit straight to its own `master`, no branch, no PR,
    no CI (ADR-012 §2).
 10. **Commits are authored by Miguel, full stop.** **Never** add a

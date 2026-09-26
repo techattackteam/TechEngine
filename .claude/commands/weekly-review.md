@@ -18,9 +18,9 @@ Context to gather first:
 
 Notes from me about the week: $ARGUMENTS
 
-**Budget:** the review note is **≤ 60 lines**, no section over ~15. Bullets, not prose —
-one line per shipped item, one line per blocker. The sustainability check is 3–4 lines of
-honest assessment, not an essay.
+**Size:** keep the review note short, with no section over ~30 lines. Use bullets: one per
+shipped item and one per blocker, written as full sentences. The sustainability check is a
+brief, honest assessment, not an essay. Never compress a sentence to hit a length.
 
 Then:
 1. Draft this week's review using `docs/Templates/Weekly Review Template.md`:
