@@ -37,7 +37,7 @@ SortIncludes: CaseSensitive
 IncludeBlocks: Regroup
 IncludeIsMainRegex: '(Tests)?$'
 # GOTCHA: the FIRST matching regex wins, so the '.*' catch-all must stay LAST or it
-# swallows every row below it. Reads out of priority order on purpose — that is match
+# swallows every row below it. Reads out of priority order on purpose; that is match
 # order, not sort order.
 # The catch-all means "ours, module-private": a header reached through a target's PRIVATE
 # src dir, e.g. <diagnostics/FormatBuffer.hpp>. Third-party is enumerated above it because

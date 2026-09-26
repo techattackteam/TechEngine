@@ -164,7 +164,7 @@ TEST_CASE("status describes the alias root", "[files][fileaccess]") {
     CHECK(out.isDirectory);
 }
 
-// A raw file_time_type tick count lands in the 1e17–1e18 range on both platforms, so the
+// A raw file_time_type tick count lands in the 1e17-1e18 range on both platforms, so the
 // upper bound is what proves the epoch was actually converted.
 TEST_CASE("status reports lastModified as Unix seconds", "[files][fileaccess]") {
     MountedScratch env{"statusTimestamp"};
@@ -332,7 +332,7 @@ TEST_CASE("read falls through to a lower-priority mount", "[files][fileaccess]")
     CHECK(asString(out) == "from base");
 }
 
-// list does not union overlays — it lists the mount that wins the existence walk, so a file
+// list does not union overlays: it lists the mount that wins the existence walk, so a file
 // only the base mount has is readable but never listed.
 TEST_CASE("list covers only the winning mount", "[files][fileaccess]") {
     const ScratchDirectory base{"listPriorityBase"};

@@ -21,14 +21,14 @@ struct CapturedAssert {
 
 static std::vector<CapturedAssert> g_fired;
 
-// `message` points into assertDispatch's stack buffer — copying is the point of the test,
+// `message` points into assertDispatch's stack buffer; copying is the point of the test,
 // not incidental. Returning {false, false} keeps a fatal TE_CHECK from killing the runner.
 static TechEngine::AssertResponse captureHandler(const TechEngine::AssertContext& context) {
     g_fired.push_back(CapturedAssert{context.kind, std::string{context.condition}, std::string{context.message}, std::string{context.file}, std::string{context.function}, context.line});
     return TechEngine::AssertResponse{false, false};
 }
 
-// Diagnostics state is process-global and Catch2 shares one process — restore it or cases
+// Diagnostics state is process-global and Catch2 shares one process; restore it or cases
 // leak into each other.
 class AssertHandlerGuard {
 public:
@@ -59,7 +59,7 @@ struct CapturedLog {
 
 static std::vector<CapturedLog> g_loggedRecords;
 
-// Copies out immediately — record.message points into the dispatcher's stack buffer and does
+// Copies out immediately: record.message points into the dispatcher's stack buffer and does
 // not outlive this call.
 static void captureLogSink(const TechEngine::LogRecord& record) {
     g_loggedRecords.push_back(CapturedLog{record.level, std::string{record.message}, std::string{record.file}, std::string{record.function}, record.line});
@@ -214,7 +214,7 @@ TEST_CASE("TE_ASSERT follows the per-config gate", "[base][assert]") {
     REQUIRE(g_fired.size() == 1);
     REQUIRE(g_fired.front().kind == TechEngine::AssertKind::Assert);
 #else
-    // Not just "does not report" — the condition must not run at all, which is the whole
+    // Not just "does not report"; the condition must not run at all, which is the whole
     // reason TE_VERIFY exists as a separate tier.
     REQUIRE(calls == 0);
     REQUIRE(g_fired.empty());
@@ -232,7 +232,7 @@ TEST_CASE("TE_ENSURE yields its value and reports once per call site", "[base][a
 }
 
 // GOTCHA: the report-once static is per call site and lives for the process, so every
-// TE_ENSURE below is a one-shot — a new case cannot reuse an existing call site and must
+// TE_ENSURE below is a one-shot: a new case cannot reuse an existing call site and must
 // write its own TE_ENSURE line.
 TEST_CASE("two TE_ENSURE call sites report independently", "[base][assert]") {
     const AssertHandlerGuard guard;
@@ -269,7 +269,7 @@ static int g_handlerEntries = 0;
 
 // Both raises are TE_ENSURE on purpose. The guarded path still reports the nested failure as
 // fatal for a fatal tier, so a nested TE_CHECK aborts the runner rather than failing the
-// case — Ensure is the only tier that is never fatal.
+// case; Ensure is the only tier that is never fatal.
 static TechEngine::AssertResponse recursingHandler(const TechEngine::AssertContext&) {
     ++g_handlerEntries;
     if (g_handlerEntries < 5) {
@@ -309,7 +309,7 @@ TEST_CASE("a throwing handler does not latch the in-flight guard", "[base][asser
 }
 
 // A failure logs Critical through the Logger, flushes, then the response's abortProcess tells
-// the macro whether to abort — this covers the log half; "the default handler asks to abort
+// the macro whether to abort. This covers the log half; "the default handler asks to abort
 // exactly for fatal kinds" already covers abortProcess itself.
 TEST_CASE("the default handler routes the failure through the Logger at Critical", "[base][assert][log]") {
     const LogCaptureGuard logGuard;
@@ -337,7 +337,7 @@ TEST_CASE("a message-less failure still composes a readable Critical line", "[ba
     REQUIRE(g_loggedRecords[0].message == "[CHECK] (device != nullptr)");
 }
 
-// The ring is always-on — not something the handler opts into — so a failure lands there even
+// The ring is always-on (not something the handler opts into) so a failure lands there even
 // with no pluggable sink installed.
 TEST_CASE("a failure's Critical log lands in the always-on ring", "[base][assert][log]") {
     TechEngine::ringClear();

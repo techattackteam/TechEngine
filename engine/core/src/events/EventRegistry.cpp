@@ -35,7 +35,7 @@ namespace TechEngine {
     }
 
     EventTypeId EventRegistry::registerType(std::string_view tag, std::uint32_t size, std::uint32_t alignment, EventWire wire) {
-        if (!TE_ENSURE(!m_sealed, "Event registration is closed — {0} is registered after the streams were built", tag)) {
+        if (!TE_ENSURE(!m_sealed, "Event registration is closed: {0} is registered after the streams were built", tag)) {
             return {};
         }
 
@@ -54,7 +54,7 @@ namespace TechEngine {
             if (registered == tag) {
                 TE_ENSURE(false, "Event tag already registered: {0}", tag);
             } else {
-                TE_ENSURE(false, "StringId collision — {0} and {1} share an id", tag, registered);
+                TE_ENSURE(false, "StringId collision: {0} and {1} share an id", tag, registered);
             }
             return {};
         }

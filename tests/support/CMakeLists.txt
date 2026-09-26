@@ -1,5 +1,5 @@
-# te_test_support — header-only helpers shared by more than one module's suite. Build-only,
-# so it keeps the te_* spelling (B4 — Code Conventions → Target naming scheme) and never
+# te_test_support: header-only helpers shared by more than one module's suite. Build-only,
+# so it keeps the te_* spelling (B4 - Code Conventions → Target naming scheme) and never
 # ships. techengine_test() links it into every suite, so a helper lands here the moment a
 # second module needs it rather than being pasted.
 add_library(te_test_support INTERFACE)

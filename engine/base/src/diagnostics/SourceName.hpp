@@ -10,7 +10,7 @@ namespace TechEngine {
             return slash == std::string_view::npos ? path : path.substr(slash + 1);
         }
 
-        // MSVC's function_name() is a whole signature — "int __cdecl main(void)". Walk back
+        // MSVC's function_name() is a whole signature: "int __cdecl main(void)". Walk back
         // from the first '(' over name characters to recover just the name.
         inline std::string_view shortFunctionName(std::string_view signature) {
             const auto paren = signature.find('(');

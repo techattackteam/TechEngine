@@ -45,7 +45,7 @@ static void secondarySink(const TechEngine::LogRecord& record) {
     g_secondary.push_back(std::string{record.message});
 }
 
-// Diagnostics state is process-global and Catch2 shares one process — restore it or cases
+// Diagnostics state is process-global and Catch2 shares one process; restore it or cases
 // leak into each other.
 class SinkGuard {
 public:
@@ -167,7 +167,7 @@ TEST_CASE("over-long messages truncate rather than overflow", "[base][log]") {
     REQUIRE(g_captured[0].message.ends_with("[truncated]"));
 }
 
-// The gate is per-config — a binary can only assert the config it was built in.
+// The gate is per-config: a binary can only assert the config it was built in.
 TEST_CASE("compile-time level gate matches the build config", "[base][log]") {
     const SinkGuard guard;
     TechEngine::setMinLevel(TechEngine::Level::Trace);
@@ -183,7 +183,7 @@ TEST_CASE("compile-time level gate matches the build config", "[base][log]") {
 
 // The macros gate on this TU's TE_LOG_ACTIVE_LEVEL and Log.cpp gates on the one the library
 // was compiled with. Both come from the same PUBLIC define, so they agree only while it
-// reaches both — and a TU that fell back to the header's default instead fails silently.
+// reaches both, and a TU that fell back to the header's default instead fails silently.
 // Dispatching past the macros is the only way to see the library's half of the gate.
 TEST_CASE("the library gates at the level this TU compiled", "[base][log]") {
     const SinkGuard guard;
@@ -340,7 +340,7 @@ static std::string captureStderr(Body&& body) {
     return contents;
 }
 
-// No SinkGuard — an empty sink set is the whole point. initLogging() is never called from the
+// No SinkGuard: an empty sink set is the whole point. initLogging() is never called from the
 // suite, so nothing else is installed either.
 TEST_CASE("with no sink installed a record still reaches stderr", "[base][log][sink]") {
     const TechEngine::Level previous = TechEngine::minLevel();
@@ -411,7 +411,7 @@ TEST_CASE("flatten renders the canonical line", "[base][log][format]") {
     REQUIRE(site != std::string::npos);
     REQUIRE(level != std::string::npos);
 
-    // Field order is the contract — a sink or a log grep reads positionally.
+    // Field order is the contract: a sink or a log grep reads positionally.
     REQUIRE(tick == 14);
     REQUIRE(tick < channel);
     REQUIRE(channel < site);
@@ -472,7 +472,7 @@ TEST_CASE("registry overflow degrades to the default channel", "[base][log][chan
     REQUIRE(g_captured[0].message == "still delivered");
 }
 
-// The ring is always-on process-global state, not a pluggable sink — it has no guard of its
+// The ring is always-on process-global state, not a pluggable sink; it has no guard of its
 // own to add/remove, so each ring case resets it directly.
 TEST_CASE("the ring captures records even with no sink installed", "[base][log][ring]") {
     TechEngine::ringClear();

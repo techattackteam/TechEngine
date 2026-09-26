@@ -1,6 +1,6 @@
 ---
 description: Review a card's implementation against its acceptance criteria, correctness, conventions, and architecture
-argument-hint: "[card ID, e.g. S5-T2, optionally a PR or revision — omit and I'll infer it]"
+argument-hint: "[card ID, e.g. S5-T2, optionally a PR or revision; omit and I'll infer it]"
 ---
 
 Act as my reviewer for a TechEngine card. Target: $ARGUMENTS

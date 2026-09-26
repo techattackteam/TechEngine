@@ -92,7 +92,7 @@ TEST_CASE("an event is Local unless the call says otherwise", "[core][events]") 
     REQUIRE(registry.find(id)->wire == TechEngine::EventWire::Local);
 }
 
-// An event with no payload ("the game paused") is a legal event, not a degenerate one —
+// An event with no payload ("the game paused") is a legal event, not a degenerate one;
 // sizeof is 1 because C++ has no zero-sized type, and the stream still carries occurrences.
 TEST_CASE("an empty payload is a legal event", "[core][events]") {
     TechEngine::EventRegistry registry;
@@ -144,7 +144,7 @@ TEST_CASE("a duplicate tag is reported and leaves the registry unchanged", "[cor
     REQUIRE_FALSE(TechEngine::eventTypeId<TagSharer>().valid());
 }
 
-// An empty tag hashes to the FNV offset basis, which is a perfectly valid id — so this
+// An empty tag hashes to the FNV offset basis, which is a perfectly valid id, so this
 // cannot ride the id.valid() check; the guard is on the string.
 TEST_CASE("an empty tag is rejected", "[core][events]") {
     const TechEngineTests::AssertHandlerGuard guard;
@@ -193,7 +193,7 @@ TEST_CASE("registration after the seal is rejected", "[core][events]") {
     REQUIRE_FALSE(TechEngine::eventTypeId<AfterSeal>().valid());
 }
 
-// The slot holds the id, never the dense index — that is what lets two registries in one
+// The slot holds the id, never the dense index; that is what lets two registries in one
 // process disagree about stream layout while agreeing about identity.
 TEST_CASE("the same type registered in a second registry keeps its id", "[core][events]") {
     TechEngine::EventRegistry first;

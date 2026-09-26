@@ -1,4 +1,4 @@
-# runtime — shipped standalone: a client, and a listen-server when it also runs
+# runtime: shipped standalone: a client, and a listen-server when it also runs
 # authoritative sim. Composition = app + client + core (ADR-006 §1).
 techengine_app(runtime
   MAIN    src/main.cpp

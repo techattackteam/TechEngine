@@ -1,6 +1,6 @@
 ---
-description: Ground a card I have started — freshness check, design note, open defects, then scaffold (Dev) or propose (planning)
-argument-hint: "[card ID, e.g. S3-T14 — omit and I'll take it from the current branch]"
+description: Ground a card I have started - freshness check, design note, open defects, then scaffold (Dev) or propose (planning)
+argument-hint: "[card ID, e.g. S3-T14; omit and I'll take it from the current branch]"
 ---
 
 Act as my technical lead grounding a card I have just started. Card: $ARGUMENTS
@@ -11,7 +11,7 @@ This is `CLAUDE.md` rule 2 made mechanical. The rule's failure mode is anchoring
 artifact that the engine has already moved past, and the whole point of running this before
 the work is that the anchoring happens silently otherwise.
 
-## Gates — I do these, you check them
+## Gates: I do these, you check them
 
 Starting a card is my call, so the branch and the board move are mine. Check all three before
 anything else. If one fails, say which and stop. Do not fix it for me.
@@ -23,7 +23,7 @@ anything else. If one fails, say which and stop. Do not fix it for me.
 3. **Branch.** `git -C C:/dev/TechEngine fetch origin`, then the current branch must be named
    `<card ID>/<slug>`, and `git -C C:/dev/TechEngine log --oneline origin/master..HEAD` must list
    nothing but this card's own commits. Another card's commits there mean the branch was cut
-   from a merged branch, which replays that PR as a conflict against itself (PRs #8–#10,
+   from a merged branch, which replays that PR as a conflict against itself (PRs #8-#10,
    `CLAUDE.md` rule 9).
 
 ## Gather
@@ -35,13 +35,13 @@ anything else. If one fails, say which and stop. Do not fix it for me.
    `git -C C:/dev/TechEngine log --oneline <sha>..origin/master`
    That is the last engine commit a drift check **actually ran against** (ADR-012 §6). If the
    engine is ahead, every design note is **suspect** and you say so in the brief rather than
-   citing one as current. **Distance is a signal, not proof** — a note may be perfectly fine
+   citing one as current. **Distance is a signal, not proof**: a note may be perfectly fine
    at forty commits or wrong at two, and the stamp cannot tell you which. Judgement still
    applies; the count only says how hard to look.
 3. **The system's design note** in `docs/04 Design Docs/`. Start here, never at the ADRs. Its
    *Decided* rows index the ADR sections, so follow a link only when the **rationale** is what
    you actually need.
-4. **[[Known Issues]]** — the open defects on this system. One of them is often the card's
+4. **[[Known Issues]]**: the open defects on this system. One of them is often the card's
    subject, and more often the thing the card is about to walk into.
 5. **The code the card touches**, at `origin/master`. This is where the checking happens.
 
@@ -71,7 +71,7 @@ artifacts match the tree, and go.
 
 ## Then, by card kind
 
-### Dev card (`T`) — scaffold it
+### Dev card (`T`): scaffold it
 
 Write the smallest scaffold that unblocks me: new files, headers, declarations, signatures,
 CMake wiring, and test cases named after the `done:` clauses. Leave the logic to me. Bodies stay
@@ -84,12 +84,12 @@ empty or stubbed, and a `TODO(<card ID>)` marks each place I fill in.
 - Do not compile it. Hand it over saying plainly that it is unverified.
 - In the response, list the files and say what each stub is waiting for.
 
-### Planning card (`D` or `P`) — propose a solution
+### Planning card (`D` or `P`): propose a solution
 
 Propose how to settle the card's question, grounded in what you gathered. Give at most two
 options, the main difference between them, and your pick with the reason. Say where the
 decision would be recorded (design note, ADR amendment, new ADR), and flag any load-bearing
-choice that needs its own ADR ([[Planning Workflow — Artifact Gate]]).
+choice that needs its own ADR ([[Planning Workflow - Artifact Gate]]).
 
 Stop at the proposal. Write nothing to the vault until I agree on the direction.
 

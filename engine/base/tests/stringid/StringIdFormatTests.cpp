@@ -18,7 +18,7 @@ TEST_CASE("an id composes into a larger format string", "[base][stringid][format
     REQUIRE(std::format("event {0} on frame {1}", TechEngine::StringId{"a"}, 7) == "event 0xaf63dc4c8601ec8c on frame 7");
 }
 
-// Only the runtime half is reachable — a literal spec is rejected during constant
+// Only the runtime half is reachable: a literal spec is rejected during constant
 // evaluation, which is a compile error and cannot be a test case.
 TEST_CASE("a format spec is rejected", "[base][stringid][format]") {
     const TechEngine::StringId id{"a"};

@@ -1,11 +1,11 @@
 ---
-description: Close a merged card — board Done entry, design note, Known Issues, backlog, Dashboard
-argument-hint: "[card ID, e.g. S3-T12 — omit and I'll infer it]"
+description: Close a merged card - board Done entry, design note, Known Issues, backlog, Dashboard
+argument-hint: "[card ID, e.g. S3-T12; omit and I'll infer it]"
 ---
 
 Act as my technical lead closing a **merged** card in TechEngine. Card: $ARGUMENTS
 
-**GATE — check before writing anything.** A card is closed by the merge, not by the work
+**GATE: check before writing anything.** A card is closed by the merge, not by the work
 being finished. Confirm the card's PR is merged into `origin/master`
 (`git fetch origin && git log origin/master --oneline -10`). If it is not merged, stop and
 say so. Nothing below runs on unmerged work.
@@ -53,16 +53,16 @@ it to fit an exact line count.
 
 ## Then write, in this order
 
-1. **[[Sprint Board]]** — move the card out of In Progress into Done, newest at the top, and
+1. **[[Sprint Board]]**: move the card out of In Progress into Done, newest at the top, and
    write the entry.
-2. **The sprint note** — tick the card, and any *Definition of Done* line it satisfies. A DoD
+2. **The sprint note**: tick the card, and any *Definition of Done* line it satisfies. A DoD
    line carries its evidence: date, sha, PR.
-3. **The design note** — record the calls the card made against it, in place. Link the ADR
+3. **The design note**: record the calls the card made against it, in place. Link the ADR
    section, never copy its rationale. If a decision now contradicts an Accepted ADR, that is a
    finding for me, not an edit.
-4. **[[Known Issues]]** — one row per logged-not-fixed finding, using the ID the entry cites.
-5. **[[Backlog]]** — anything discovered mid-card that was not the card (CLAUDE.md rule 5).
-6. **[[Dashboard]]** — bring the *Now* table in line with the board: **Current focus**, and
+4. **[[Known Issues]]**: one row per logged-not-fixed finding, using the ID the entry cites.
+5. **[[Backlog]]**: anything discovered mid-card that was not the card (CLAUDE.md rule 5).
+6. **[[Dashboard]]**: bring the *Now* table in line with the board: **Current focus**, and
    **Top blocker** if this card was the blocker or cleared it. If the card completes a
    milestone, update that milestone's row in *Plan*. Touch nothing else. The stamp, the
    latest-check paragraph and *Health check* belong to the review ceremonies.
@@ -85,4 +85,4 @@ it to fit an exact line count.
   If something is unverified, the entry says so.
 - The vault is its own repo and commits straight to its `master`. Do not commit unless I ask.
 
-This is a bookkeeping ritual — no engine implementation.
+This is a bookkeeping ritual; no engine implementation.

@@ -1,9 +1,9 @@
 # techengine_test(<module>
-#   SOURCES <explicit .cpp list>)   # REQUIRED — no GLOB
+#   SOURCES <explicit .cpp list>)   # REQUIRED, no GLOB
 #
 # Mirrors techengine_module() for a per-module Catch2 exe (ADR-008 §6): builds
 # TechEngine<Module>Tests, links the module + Catch2 + te_warnings, and registers
-# each case with CTest via catch_discover_tests. Per-module exes — never one
+# each case with CTest via catch_discover_tests. Per-module exes, never one
 # monolithic test binary (that reintroduces a god-target, ADR-008 §6).
 #
 # Only defined/used under TE_BUILD_TESTS (Catch2 is fetched behind the same flag).

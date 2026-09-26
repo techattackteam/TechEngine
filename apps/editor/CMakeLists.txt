@@ -1,4 +1,4 @@
-# editor — host of app; owns the asset pipeline (import + bake).
+# editor: host of app; owns the asset pipeline (import + bake).
 # Composition = app + client + core (ADR-006 §1). ADR-017 decided no `tooling` tier is
 # created for now, so editor-only code lives in the app itself.
 techengine_app(editor

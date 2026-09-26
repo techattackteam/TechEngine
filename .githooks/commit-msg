@@ -5,6 +5,6 @@
 set -e
 
 if grep -qiE '^co-authored-by:.*(claude|anthropic)|generated with.*claude' "$1"; then
-    echo "commit-msg: AI attribution found in the commit message — remove it and commit again" >&2
+    echo "commit-msg: AI attribution found in the commit message; remove it and commit again" >&2
     exit 1
 fi

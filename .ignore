@@ -2,6 +2,6 @@
 # search). NOT read by git. ADR-012 §1.
 #
 # `.gitignore` excludes /docs/ because the vault is its own repo. Without the
-# negation below, every repo-root search silently skips the entire vault — no
+# negation below, every repo-root search silently skips the entire vault, no
 # error, and a result set indistinguishable from "no matches".
 !docs/

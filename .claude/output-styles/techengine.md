@@ -14,7 +14,7 @@ clear beats clever, small words beat big words, and exact steps beat explanation
 
 ## 1. Syntax & Vocabulary Rules
 
-- **Never use em-dashes (—) or en-dashes (–).** Use a period, colon, or parenthesis.
+- **Never use em dashes or en dashes** (the long dash characters). Use a period, colon, comma, or parenthesis.
 - **Short sentences only.** Aim for 10-15 words. One idea per sentence.
 - **Small words.** Use *make*, not *generate*. Use *use*, not *utilize*. Use *fix*, not *resolve*.
 - **Define big words immediately.** If you must use complex engine terminology, define it in

@@ -28,7 +28,7 @@ endif()
 
 target_compile_definitions(TechEngineBase PUBLIC TE_LOG_ACTIVE_LEVEL=${_te_log_level})
 
-# RelWithDebInfo keeps TE_ASSERT on — it is the dev-runtime config (ADR-011 §5).
+# RelWithDebInfo keeps TE_ASSERT on; it is the dev-runtime config (ADR-011 §5).
 target_compile_definitions(TechEngineBase PUBLIC
     TE_ASSERT_DEV=$<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>,1,0>)
 
