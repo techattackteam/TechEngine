@@ -1,11 +1,11 @@
 ---
-description: Close a merged card — board Done entry, design note, Known Issues, backlog
-argument-hint: "[card ID, e.g. S3-T12 — omit and I'll infer it]"
+description: Close a merged card - board Done entry, design note, Known Issues, backlog, Dashboard
+argument-hint: "[card ID, e.g. S3-T12; omit and I'll infer it]"
 ---
 
 Act as my technical lead closing a **merged** card in TechEngine. Card: $ARGUMENTS
 
-**GATE — check before writing anything.** A card is closed by the merge, not by the work
+**GATE: check before writing anything.** A card is closed by the merge, not by the work
 being finished. Confirm the card's PR is merged into `origin/master`
 (`git fetch origin && git log origin/master --oneline -10`). If it is not merged, stop and
 say so. Nothing below runs on unmerged work.
@@ -47,24 +47,26 @@ card taught**, which the git history cannot tell me.
 - "All tests pass." CI is the gate; the entry is not where that gets claimed.
 - Rationale already written in an ADR or a design note. Link it.
 
-**If nothing surprised, the entry is three lines. Write three lines.** A padded entry is the
-failure mode this rubric exists to stop, and it is worse than a short one, because it teaches
-me to skim the column.
-
-**Budget:** ~15 lines, and only a card that genuinely fought back reaches that.
+If nothing surprised, keep the entry to a few sentences. A padded entry teaches me to skim
+the column. Give each useful lesson a short bullet; do not pad the entry, and do not compress
+it to fit an exact line count.
 
 ## Then write, in this order
 
-1. **[[Sprint Board]]** — move the card out of In Progress into Done, newest at the top, and
+1. **[[Sprint Board]]**: move the card out of In Progress into Done, newest at the top, and
    write the entry.
-2. **The sprint note** — tick the card, and any *Definition of Done* line it satisfies. A DoD
+2. **The sprint note**: tick the card, and any *Definition of Done* line it satisfies. A DoD
    line carries its evidence: date, sha, PR.
-3. **The design note** — record the calls the card made against it, in place. Link the ADR
+3. **The design note**: record the calls the card made against it, in place. Link the ADR
    section, never copy its rationale. If a decision now contradicts an Accepted ADR, that is a
    finding for me, not an edit.
-4. **[[Known Issues]]** — one row per logged-not-fixed finding, using the ID the entry cites.
-5. **[[Backlog]]** — anything discovered mid-card that was not the card (CLAUDE.md rule 5).
-6. **Report**: what you changed, and what needs my call. Then stop.
+4. **[[Known Issues]]**: one row per logged-not-fixed finding, using the ID the entry cites.
+5. **[[Backlog]]**: anything discovered mid-card that was not the card (CLAUDE.md rule 5).
+6. **[[Dashboard]]**: bring the *Now* table in line with the board: **Current focus**, and
+   **Top blocker** if this card was the blocker or cleared it. If the card completes a
+   milestone, update that milestone's row in *Plan*. Touch nothing else. The stamp, the
+   latest-check paragraph and *Health check* belong to the review ceremonies.
+7. **Report**: what you changed, and what needs my call. Then stop.
 
 ## Guardrails
 
@@ -78,9 +80,9 @@ me to skim the column.
 - **Do not review the code.** Findings come from the card's review, already logged in the PR.
   A fresh defect you spot while reading the diff is not a close finding, and inventing
   [[Known Issues]] rows out of new analysis makes every close an unplanned code review. That
-  is `te-review`'s job. Mention it to me in the report instead.
+  is `/card-review`'s job. Mention it to me in the report instead.
 - **Never claim a build, test or CI result you did not see.** The merged PR is the evidence.
   If something is unverified, the entry says so.
 - The vault is its own repo and commits straight to its `master`. Do not commit unless I ask.
 
-This is a bookkeeping ritual — no engine implementation.
+This is a bookkeeping ritual; no engine implementation.

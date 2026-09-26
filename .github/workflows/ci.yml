@@ -1,13 +1,13 @@
-# TechEngine CI — the enforcement layer (ADR-008 §9). Nothing in ADR-008 is real
+# TechEngine CI: the enforcement layer (ADR-008 §9). Nothing in ADR-008 is real
 # unless a red check here blocks the merge.
 #
 # Legs (ADR-005/008): Win-MSVC + Linux-Clang, each {Debug, Release}; format on Linux;
-# clang-tidy on the Linux leg; sanitizers per-PR (Option A) — ASan/Win, UBSan+TSan/Linux.
+# clang-tidy on the Linux leg; sanitizers per-PR (Option A): ASan/Win, UBSan+TSan/Linux.
 # Stage order per leg (fail cheap first): format/tidy -> build -> ctest (incl. sdk-smoke).
 #
 # Caching: ccache caches BOTH our + dependency compilation on every leg, so pinned deps
 # aren't rebuilt each run. ccache is a compiler *launcher*, which needs Ninja (the VS
-# generator ignores it) — hence Ninja Multi-Config on Windows (ADR-008 §3 Amended) with
+# generator ignores it), hence Ninja Multi-Config on Windows (ADR-008 §3 Amended) with
 # /Z7 embedded debug info (compiler caches can't cache /Zi PDBs). ccache degrades to
 # uncached compilation if its backend is down, so a cache outage never fails the build.
 #
@@ -33,7 +33,7 @@ name: CI
 #
 # GOTCHA: `paths-ignore` skips only when EVERY changed file matches, which is the behaviour
 # this wants. ci-docs.yml cannot be spelled that way, so since 2026-08-29 it carries no path
-# filter and computes the same rule from the real diff in its `scope` job — see the header
+# filter and computes the same rule from the real diff in its `scope` job; see the header
 # there. The list is duplicated below and mirrored a third time as that job's grep: Actions
 # does not support YAML anchors, so three copies is the only spelling. They must stay
 # identical, and the third is a regex rather than a glob list.
@@ -70,13 +70,13 @@ jobs:
           find engine apps sdk \( -name '*.cpp' -o -name '*.hpp' \) -print0 \
             | xargs -0 clang-format --dry-run --Werror
 
-      # A macro has no access control and `internal::` is a convention, not a boundary — so
+      # A macro has no access control and `internal::` is a convention, not a boundary, so
       # the boundary is a red check. Anything reaching into another module's plumbing fails
       # here. Sibling of the te_sdk_smoke leak gate (ADR-008 §7): make the rule structural.
       - name: No reaching into private plumbing
         run: |
           set -o pipefail
-          # <owning dir>:<pattern> — the pattern is legal ONLY inside the owning dir.
+          # <owning dir>:<pattern>, the pattern is legal ONLY inside the owning dir.
           violations=0
           check() {
             owner="$1"; pattern="$2"; label="$3"
@@ -84,7 +84,7 @@ jobs:
                      --include='*.cpp' --include='*.hpp' \
                    | grep -v "^$owner" || true)
             if [ -n "$hits" ]; then
-              echo "::error::$label is private to $owner — use the public API instead:"
+              echo "::error::$label is private to $owner; use the public API instead:"
               echo "$hits"
               violations=1
             fi
@@ -94,7 +94,7 @@ jobs:
           # Two ADR-013 rules at once. Every call site spelling TE_PROFILER_* is what keeps
           # swapping the backend a one-header edit; banning ZoneTransient here is v1's F19
           # (runtime-named zones on a per-frame path) made structural instead of review-only.
-          # This is the only gate on either — CI never compiles TE_PROFILE=ON.
+          # This is the only gate on either: CI never compiles TE_PROFILE=ON.
           check 'engine/base/include/TechEngine/base/diagnostics/' \
                 'ZoneScoped|ZoneTransient|FrameMark|Tracy(Secure)?(Alloc|Free)|tracy/' \
                 'Tracy identifiers (call TE_PROFILER_*)'

@@ -85,7 +85,7 @@ namespace TechEngine {
 
     static constexpr std::size_t CRITICAL_MESSAGE_CAPACITY = ASSERT_MESSAGE_CAPACITY + 128;
 
-    // "[KIND] (cond) message" in one line — the Logger's LogRecord has no condition/kind
+    // "[KIND] (cond) message" in one line: the Logger's LogRecord has no condition/kind
     // fields of its own, so the assert context is flattened into the record's message rather
     // than growing LogRecord for one caller. snprintf, not std::format: context.message is
     // already-formatted, arbitrary text and may itself contain '{'/'}'.

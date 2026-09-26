@@ -15,7 +15,7 @@
 
 // GOTCHA: this is the fallback for a TU that never links base, so the per-config -D never
 // arrives. NDEBUG is the only config signal such a TU has, which puts RelWithDebInfo on Info
-// where the link would have given it Debug — deliberately the quieter side.
+// where the link would have given it Debug, deliberately the quieter side.
 #if !defined(TE_LOG_ACTIVE_LEVEL)
 #if defined(NDEBUG)
 #define TE_LOG_ACTIVE_LEVEL TE_LOG_LEVEL_INFO
@@ -72,7 +72,7 @@ namespace TechEngine {
     inline constexpr LogModule DEFAULT_MODULE{};
     inline constexpr LogChannel DEFAULT_CHANNEL{};
 
-    // `message` points into the dispatch call's stack buffer — a sink that outlives the call
+    // `message` points into the dispatch call's stack buffer; a sink that outlives the call
     // must copy it. `file`/`function` are safe: they are substrings of source_location's
     // static strings.
     struct LogRecord {
@@ -95,7 +95,7 @@ namespace TechEngine {
 
     void flushLogs();
 
-    // `name` is stored, never copied — pass a literal or a static.
+    // `name` is stored, never copied; pass a literal or a static.
     LogModule registerLogModule(std::string_view name, Level defaultLevel = Level::Trace);
 
     LogChannel registerLogChannel(std::string_view name, LogModule moduleTag, Level defaultLevel = Level::Trace);
@@ -126,7 +126,7 @@ namespace TechEngine {
 
     inline constexpr std::size_t LOG_RING_CAPACITY = 64;
 
-    // Always-on process-global state, independent of the pluggable sink set above — every
+    // Always-on process-global state, independent of the pluggable sink set above; every
     // dispatched record lands here regardless of what's registered. This copies out up to
     // `capacity` entries, oldest first, and returns the count actually written.
     std::size_t ringSnapshot(LogRecord* out, std::size_t capacity);
@@ -155,11 +155,11 @@ namespace TechEngine {
 #endif
 
 // TE_LOG_PRIVATE_* are plumbing for the TE_LOGGER_* macros below. Call TE_LOGGER_<LEVEL>
-// instead — these bypass the compile-time level gate, so a direct call ships Trace into a
+// instead; these bypass the compile-time level gate, so a direct call ships Trace into a
 // Release build. The preprocessor has no access control: the name and the CI guard
 // (ci.yml → private-symbols) are the enforcement.
 //
-// The format string rides inside __VA_ARGS__ to avoid __VA_OPT__ — MSVC's traditional
+// The format string rides inside __VA_ARGS__ to avoid __VA_OPT__: MSVC's traditional
 // preprocessor lacks it without /Zc:preprocessor. Don't "fix" this into a named parameter.
 #define TE_LOG_PRIVATE_EMIT(level, channel, ...)                                                             \
     do {                                                                                                     \

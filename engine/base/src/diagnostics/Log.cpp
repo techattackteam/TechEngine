@@ -44,7 +44,7 @@ namespace TechEngine {
     static std::array<LogChannelEntry, MAX_LOG_CHANNELS> g_channels{};
     static std::atomic<std::uint16_t> g_channelCount = 1;
 
-    // A null slot is an empty one — no separate count to keep in step with the array.
+    // A null slot is an empty one: no separate count to keep in step with the array.
     static std::array<std::atomic<LogSinkFn>, MAX_LOG_SINKS> g_sinks{};
 
     struct LogRingEntry {
@@ -52,7 +52,7 @@ namespace TechEngine {
         std::array<char, MESSAGE_CAPACITY> messageStorage{};
     };
 
-    // Always-on process-global state, not a pluggable sink — every dispatched
+    // Always-on process-global state, not a pluggable sink; every dispatched
     // record lands here regardless of what's in g_sinks. Slot choice is a bare fetch_add
     // modulo; two threads racing the same wrapped slot can tear a write. Accepted for a
     // best-effort crash trail, not a linearizable log.
@@ -127,7 +127,7 @@ namespace TechEngine {
     }
 
     // std::localtime shares one static tm across threads; the CRT's reentrant spellings are
-    // the portable fix. Not an OS header — this is the C runtime.
+    // the portable fix. Not an OS header; this is the C runtime.
     static std::tm localTime(std::time_t seconds) {
         std::tm out{};
 #if defined(_WIN32)
@@ -182,7 +182,7 @@ namespace TechEngine {
         const std::uint16_t slot = g_moduleCount.fetch_add(1, std::memory_order_acq_rel);
         if (slot >= MAX_LOG_MODULES) {
             g_moduleCount.store(MAX_LOG_MODULES, std::memory_order_release);
-            std::fprintf(stderr, "[log] module table full — '%.*s' falls back to default\n", static_cast<int>(name.size()), name.data());
+            std::fprintf(stderr, "[log] module table full: '%.*s' falls back to default\n", static_cast<int>(name.size()), name.data());
             return DEFAULT_MODULE;
         }
 
@@ -195,7 +195,7 @@ namespace TechEngine {
         const std::uint16_t slot = g_channelCount.fetch_add(1, std::memory_order_acq_rel);
         if (slot >= MAX_LOG_CHANNELS) {
             g_channelCount.store(MAX_LOG_CHANNELS, std::memory_order_release);
-            std::fprintf(stderr, "[log] channel table full — '%.*s' falls back to default\n", static_cast<int>(name.size()), name.data());
+            std::fprintf(stderr, "[log] channel table full: '%.*s' falls back to default\n", static_cast<int>(name.size()), name.data());
             return DEFAULT_CHANNEL;
         }
 
@@ -241,7 +241,7 @@ namespace TechEngine {
         spdlog::set_default_logger(std::move(logger));
 
         if (!addLogSink(&spdlogSink)) {
-            std::fprintf(stderr, "[log] sink table full — console and file output disabled\n");
+            std::fprintf(stderr, "[log] sink table full: console and file output disabled\n");
         }
     }
 
@@ -322,11 +322,11 @@ namespace TechEngine {
     }
 
     namespace internal {
-        // Assert-only (LogInternal.hpp). `message` is already formatted — this skips
+        // Assert-only (LogInternal.hpp). `message` is already formatted; this skips
         // logDispatch's vformat_to entirely rather than re-formatting finished text, and
         // bypasses isEnabled(): a Critical assert failure must reach the ring/sinks
         // regardless of a channel's runtime filter (unlike TE_LOGGER_CRITICAL, which honours
-        // it) — this is the process's last chance to record why it's about to abort.
+        // it), this is the process's last chance to record why it's about to abort.
         void logRaw(Level level, LogChannel channel, std::string_view file, std::string_view function, std::uint32_t line, std::string_view message) {
             const LogRecord record{
                 .time = std::chrono::system_clock::now(),

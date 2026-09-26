@@ -1,8 +1,8 @@
-# Third-party dependencies — the ONE pinned manifest (ADR-008 §4).
+# Third-party dependencies: the ONE pinned manifest (ADR-008 §4).
 #
 # Every FetchContent_Declare lives here, GIT_TAG-pinned to a tag/commit; a module
 # just names the target it links (in its techengine_module() call). Nothing is
-# vendored except glad2 (ADR-008 §4 case 3) — see external/ and the note at the end.
+# vendored except glad2 (ADR-008 §4 case 3), see external/ and the note at the end.
 #
 # Warning levels ride te_warnings for our targets only; dependencies keep their
 # own warning settings.
@@ -46,7 +46,7 @@ FetchContent_Declare(tomlplusplus
 # --- physics ----------------------------------------------------------------
 # Jolt's CMake lives in the Build/ subdir. Trim its samples/tests/tools.
 # Jolt appends /Zi under GENERATE_DEBUG_SYMBOLS (its default), which ccache refuses to
-# cache (separate-PDB side output) — every Jolt TU then recompiles each CI run. On MSVC
+# cache (separate-PDB side output); every Jolt TU then recompiles each CI run. On MSVC
 # we already get embedded debug info from CMAKE_MSVC_DEBUG_INFORMATION_FORMAT (/Z7), so
 # drop Jolt's own flag there; Clang (-g) caches fine, so leave it on for the Linux legs.
 # Jolt defaults USE_STATIC_MSVC_RUNTIME_LIBRARY ON (/MTd); every other target here is on
@@ -73,7 +73,7 @@ FetchContent_Declare(Jolt
 FetchContent_MakeAvailable(glm spdlog glfw tomlplusplus Jolt)
 
 # toml++ defaults TOML_EXCEPTIONS to 1 whenever the compiler has exceptions, and in that mode
-# `toml::parse_result` is a plain alias for `toml::table` — so a failure check against it
+# `toml::parse_result` is a plain alias for `toml::table`, so a failure check against it
 # compiles, never fires, and `parse()` throws instead. Link this wrapper, never the upstream
 # target directly, so no consumer can pick up the throwing mode by forgetting a define.
 add_library(te_tomlplusplus INTERFACE)
@@ -82,7 +82,7 @@ target_link_libraries(te_tomlplusplus INTERFACE tomlplusplus::tomlplusplus)
 target_compile_definitions(te_tomlplusplus INTERFACE TOML_EXCEPTIONS=0)
 
 # --- audio (single-header) --------------------------------------------------
-# Not a CMake project — populate the source and wrap the include dir in an
+# Not a CMake project: populate the source and wrap the include dir in an
 # INTERFACE target. The MINIAUDIO_IMPLEMENTATION TU lands when client uses audio.
 FetchContent_Declare(miniaudio
   GIT_REPOSITORY https://github.com/mackron/miniaudio.git
@@ -98,12 +98,12 @@ target_include_directories(miniaudio SYSTEM INTERFACE ${miniaudio_SOURCE_DIR})
 
 # --- profiler (opt-in) ------------------------------------------------------
 # Option-guarded like Catch2 below, so a default build fetches nothing. TE_PROFILE is a
-# build option and never a shipping runtime flag — ADR-013 §4.
+# build option and never a shipping runtime flag, ADR-013 §4.
 #
 # The GIT_TAG is a WIRE-PROTOCOL LOCK, not a version preference: Tracy compiles its
 # ProtocolVersion into both sides, so this tag and the Tracy desktop app in use must be
 # the same release or the connection is silently refused. Bumping it means re-downloading
-# the app (ADR-013 §1). Record the version in B3 — Build & Testing Notes.
+# the app (ADR-013 §1). Record the version in B3 - Build & Testing Notes.
 #
 # No SYSTEM re-export here: Tracy already declares its own include dir SYSTEM
 # (its CMakeLists, target_include_directories(TracyClient SYSTEM PUBLIC ...)).
@@ -130,7 +130,7 @@ if(TE_BUILD_TESTS)
   include(Catch)   # provides catch_discover_tests() for techengine_test()
 endif()
 
-# --- glad2 (GL loader) — the ONE vendored dep (ADR-008 §4 case 3) ------------
+# --- glad2 (GL loader): the ONE vendored dep (ADR-008 §4 case 3) ------------
 # Generator: glad2 2.0.8 (pip install glad2==2.0.8).
 # glad --api gl:core=4.5 --extensions= --out-path external/glad --reproducible c
 add_library(TechEngineGlad STATIC ${CMAKE_SOURCE_DIR}/external/glad/src/gl.c)

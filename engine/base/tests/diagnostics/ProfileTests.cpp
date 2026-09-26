@@ -4,7 +4,7 @@
 
 // Nothing to assert on the ON path: the macros evaluate their arguments there by design, and
 // the scope macro needs a literal name. Everything below is inside the guard so the profile
-// presets — the only builds that define this — do not compile two unreferenced helpers into
+// presets (the only builds that define this) do not compile two unreferenced helpers into
 // /W4 /WX.
 #if !defined(TE_PROFILE_ENABLED)
 

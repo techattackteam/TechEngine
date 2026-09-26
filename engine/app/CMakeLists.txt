@@ -5,7 +5,7 @@ techengine_module(app
   DEPS    core base platform)
 
 # app = game loop + composition root, presentation-agnostic (ADR-006 §1/§4).
-# core, base and platform are PUBLIC — SimulationContext and the profiler macros sit in
+# core, base and platform are PUBLIC: SimulationContext and the profiler macros sit in
 # SimulationThread.hpp, and App.hpp owns the input buffer; the exes add client where
 # presentation is wanted.
 

@@ -1,5 +1,5 @@
 # techengine_module(<name>
-#   SOURCES       <explicit .cpp list>        # REQUIRED — no GLOB (ADR-008 §2, kills F6)
+#   SOURCES       <explicit .cpp list>        # REQUIRED, no GLOB (ADR-008 §2, kills F6)
 #   [HEADERS      <headers>]                  # for IDE grouping only
 #   [DEPS         <our modules>]              # PUBLIC  link TechEngine::<m>
 #   [DEPS_PRIVATE <our modules>]              # PRIVATE link TechEngine::<m>
@@ -13,10 +13,10 @@
 #   - te_warnings linkage, C++20, the TechEngine:: alias
 #   - opt-in clang-tidy
 #
-# Naming (B4 — Code Conventions): the real target is PascalCase `TechEngine<Module>`
+# Naming (B4 - Code Conventions): the real target is PascalCase `TechEngine<Module>`
 # (v1 nomenclature, e.g. TechEngineBase), refining the illustrative `te_<module>`
 # spelling in ADR-008 §2. Consumers link the `TechEngine::<module>` alias, never the
-# real name — so the target name is an internal/IDE-facing detail.
+# real name, so the target name is an internal/IDE-facing detail.
 #
 # Visibility rule (ADR-008 §8): PUBLIC if the dep appears in this module's public
 # headers, PRIVATE if only in its .cpp.

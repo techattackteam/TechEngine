@@ -8,17 +8,18 @@ Act as my technical lead and review the architecture of: $ARGUMENTS
 Focus on design, not style. Read the actual code first (and the relevant
 `docs/04 Design Docs/` note and ADRs).
 
-**Budget:** ≤ 40 lines total. Each risk is **≤ 3 lines** — claim, `file:line`, failure
-scenario. If there are more than 4 risks, report the 4 that matter and say how many you cut.
+**Size:** keep the review short and readable. Give each risk a brief explanation with its
+`file:line` and failure scenario. Report every actionable risk; never cut findings to meet a
+line count. Omit deliverable sections that add nothing.
 
 Deliver:
-1. **What's solid** — worth keeping, don't touch.
-2. **Real risks** — each with concrete evidence from the code (file:line) and a
+1. **What's solid**: worth keeping, don't touch.
+2. **Real risks**: each with concrete evidence from the code (file:line) and a
    failure scenario, not vibes.
 3. **Trade-offs** of the current design vs the obvious alternatives.
-4. **Recommendation** — refactor / rewrite / leave alone, with rough cost in
+4. **Recommendation**: refactor / rewrite / leave alone, with rough cost in
    coding sessions. Bias toward refactor unless evidence justifies more.
 5. Whether any of this warrants an **ADR** (and offer to draft it with /adr).
 
-Do not make code changes in this review — it's analysis. If the design doc in
+Do not make code changes in this review; it's analysis. If the design doc in
 `docs/04 Design Docs/` is stale, note what should be updated.

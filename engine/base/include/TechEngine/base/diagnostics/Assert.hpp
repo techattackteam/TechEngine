@@ -70,16 +70,16 @@ namespace TechEngine {
 #define TE_DEBUG_BREAK() ((void)0)
 #endif
 
-// TE_ASSERT_PRIVATE_* are plumbing for the four tiers below — they bypass the per-config
+// TE_ASSERT_PRIVATE_* are plumbing for the four tiers below; they bypass the per-config
 // gate, so a direct call ships a dev-only check into Release. Same enforcement as the
 // Logger's: the name plus ci.yml → private-symbols.
 //
-// GOTCHA: the optional message rides __VA_OPT__, which needs a conforming preprocessor —
+// GOTCHA: the optional message rides __VA_OPT__, which needs a conforming preprocessor;
 // MSVC gets it from /Zc:preprocessor in cmake/warnings.cmake. Drop that flag and the
 // traditional preprocessor quietly swallows the empty __VA_ARGS__'s trailing comma, so
 // Windows stays green while the Clang leg fails on every message-less assert.
-// A condition the compiler can fold — TE_ASSERT(sizeof(T) == 4), or a const local in a
-// test — is a legitimate assert, not the mistake C4127 is hunting for. Suppressed here so
+// A condition the compiler can fold (TE_ASSERT(sizeof(T) == 4), or a const local in a
+// test) is a legitimate assert, not the mistake C4127 is hunting for. Suppressed here so
 // call sites never have to.
 #if defined(_MSC_VER)
 #define TE_ASSERT_PRIVATE_FOLDABLE_BEGIN __pragma(warning(push)) __pragma(warning(disable : 4127))
@@ -114,7 +114,7 @@ namespace TechEngine {
     } while (0)
 
 // Expression form: `cond` is evaluated exactly once and the result is the macro's value.
-// source_location is taken in the argument list, not the body — inside the lambda it would
+// source_location is taken in the argument list, not the body; inside the lambda it would
 // name the lambda, not the failing line.
 #define TE_ASSERT_PRIVATE_EXPR(kind, cond, ...)                                                                             \
     ([&](const ::std::source_location& te_loc_) -> bool {                                                                   \
@@ -127,7 +127,7 @@ namespace TechEngine {
         return false;                                                                                                       \
     }(::std::source_location::current()))
 
-// The report-once static is inside the lambda body, so each expansion gets its own —
+// The report-once static is inside the lambda body, so each expansion gets its own;
 // that is what makes it per-call-site with no shared table.
 #define TE_ASSERT_PRIVATE_ONCE(cond, ...)                                                                                                                 \
     ([&](const ::std::source_location& te_loc_) -> bool {                                                                                                 \
@@ -143,7 +143,7 @@ namespace TechEngine {
         return false;                                                                                                                                     \
     }(::std::source_location::current()))
 
-// never put a side effect in TE_ASSERT — it vanishes in Release. That is what
+// never put a side effect in TE_ASSERT: it vanishes in Release. That is what
 // TE_VERIFY is for.
 #if TE_ASSERT_DEV
 #define TE_ASSERT(cond, ...) TE_ASSERT_PRIVATE_STMT(::TechEngine::AssertKind::Assert, cond, __VA_ARGS__)

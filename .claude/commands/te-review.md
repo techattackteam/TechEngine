@@ -1,15 +1,15 @@
 ---
 description: Review code against CONVENTIONS.md's judgment rows and the ADR structural invariants
-argument-hint: "[file, folder, or module — omit and I'll take the working tree diff]"
+argument-hint: "[file, folder, or module; omit and I'll take the working tree diff]"
 ---
 
 Act as my reviewer for TechEngine house rules. Target: $ARGUMENTS
 
 Read [`CONVENTIONS.md`](CONVENTIONS.md) first. It is the source of truth and this file does not
-restate it — the list below is the **checklist over it**, not a copy, so a rule that changed
+restate it; the list below is the **checklist over it**, not a copy, so a rule that changed
 there wins here.
 
-## Scope — this is the *judgment* layer only
+## Scope: this is the *judgment* layer only
 
 `CONVENTIONS.md` → *Mechanical vs judgment* splits enforcement three ways, and this command is
 the third row. **Do not check what already has a red gate**, because a second opinion on a
@@ -26,7 +26,7 @@ solved problem is how a review becomes noise:
 see a real defect while reading, say it once at the end under *Off-rubric*, then get back to
 the rubric.
 
-## The checklist — rules with no gate but this one
+## The checklist: rules with no gate but this one
 
 **Naming** (`CONVENTIONS.md` → *Naming*, *Names are spelled out*)
 - `m_` on members, `g_` + `static` on file-scope mutable state, `SCREAMING_SNAKE_CASE`
@@ -42,16 +42,16 @@ the rubric.
   with a real same-name-different-type ODR risk, and a more specific type name would not have
   removed the risk.
 
-**Comments** (*Comments*, *Comments never cite the vault*) — usually the richest row
+**Comments** (*Comments*, *Comments never cite the vault*), usually the richest row
 - The bar is *"would a competent reader be wrong without this?"*. Default is **no comment**.
 - Only three things earn one: a gotcha that will bite, a `TODO(S<n>-T<n>)`, a `TODO(D<n>)`.
 - Delete on sight: divider banners, `} // namespace`, file/class/function preambles, per-include
   narration, anything restating the code, rationale copied from the vault.
-- **Any vault citation in `.hpp`/`.cpp`/tests is a finding** — `ADR-011 §2`, `[[Log — Design]]`,
+- **Any vault citation in `.hpp`/`.cpp`/tests is a finding**: `ADR-011 §2`, `[[Log - Design]]`,
   a bare `§ref`. A fresh clone has no `docs/`. `TODO(D1)` and `TODO(S3-T8)` are **not** citations
   and stay.
 
-**Attributes / init / loops** — the three the file says nothing enforces
+**Attributes / init / loops**: the three the file says nothing enforces
 - **No `[[nodiscard]]`**, anywhere.
 - `= value`, not `{value}`. Braces only for bare `{}` value-init, multi-field aggregates, a real
   constructor call, deliberate narrowing checks, and member-init lists.
@@ -70,7 +70,7 @@ the rubric.
 **CMake** (*CMake*)
 - Link the `TechEngine::<module>` alias, never the real target name.
 - `PUBLIC` iff the dep appears in the target's public headers, else `PRIVATE`.
-- Explicit source lists, never `GLOB`. Module lists stay declarative — an `if()` or a loop
+- Explicit source lists, never `GLOB`. Module lists stay declarative; an `if()` or a loop
   belongs in `cmake/*.cmake`.
 
 **Structural invariants** (ADR-006 §1 §3)
@@ -98,12 +98,12 @@ One line per finding: `file:line` → the rule → what to change. Grouped under
 whole pass produces nothing at all, say that plainly too, because a rubric that never fires is
 one I should trim rather than keep running.
 
-## Guardrails — these are the false positives to avoid
+## Guardrails: these are the false positives to avoid
 
 - **Rule 0 wins: match the surrounding file.** If a file is a consistent outlier, the finding is
   *"this file diverges"*, and my call is whether to fix the file or the convention. Never both.
 - **The ADRs' spellings are illustrative, not decisions.** `kFixedDt`, `dt`, `fixedDt`,
-  `te_<module>`, ADR-008 §6's `te_<module>_tests` — all refined by `CONVENTIONS.md`. Flagging
+  `te_<module>`, ADR-008 §6's `te_<module>_tests`, all refined by `CONVENTIONS.md`. Flagging
   code for matching the file instead of the ADR is backwards. The ADR never *decided* those
   spellings, so there is nothing to amend either
   ([[ADR Index]] § *What is not an amendment*).

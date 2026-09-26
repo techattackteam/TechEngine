@@ -2,7 +2,7 @@
 # leg via CMAKE_CXX_CLANG_TIDY; off for _deps).
 #
 # Deliberately CONSERVATIVE to start: high-signal, low-false-positive families only,
-# so the Linux leg stays green (a chronically-red leg silently kills UBSan/TSan —
+# so the Linux leg stays green (a chronically-red leg silently kills UBSan/TSan,
 # ADR-005/008). Identifier-naming enforcement (PascalCase types / camelCase methods /
 # m_ members) is B4's job and lands with the conventions note, not here. Widen the
 # check set as the code stabilizes.

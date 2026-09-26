@@ -64,7 +64,7 @@ techengine_module(core
           Threads::Threads                 # JobSystem's workers; PUBLIC because the header has std::thread
   LIBS_PRIVATE tomlplusplus::tomlplusplus)     # config parsing, .cpp-only
 # Jolt is linked (proves it fetches + builds); its headers land with real physics
-# code — the JPH_* config-define contract is settled then, not in the skeleton.
+# code; the JPH_* config-define contract is settled then, not in the skeleton.
 
 if(TE_BUILD_TESTS)
   techengine_test(core SOURCES

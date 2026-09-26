@@ -118,7 +118,7 @@ namespace TechEngine {
             return FileResult::IoError;
         }
 
-        // file_time_type's epoch is unspecified — MSVC counts from 1601, libstdc++ from 1970.
+        // file_time_type's epoch is unspecified: MSVC counts from 1601, libstdc++ from 1970.
         // An implementation may provide file_clock::to_sys or ::to_utc and need not provide
         // both, so clock_cast is the only portable spelling.
         const auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(writeTime);

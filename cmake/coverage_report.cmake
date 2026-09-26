@@ -29,7 +29,7 @@ endforeach()
 # mapping records for dependency headers they inline.
 #
 # GOTCHA: this was `-ignore-filename-regex=/_deps/`, which is FetchContent's DEFAULT directory
-# and not the one CI uses — ci.yml passes FETCHCONTENT_BASE_DIR=<workspace>/.deps. So it
+# and not the one CI uses; ci.yml passes FETCHCONTENT_BASE_DIR=<workspace>/.deps. So it
 # matched every local run and nothing in CI, and inlined catch2 headers were scored against
 # the merge threshold. The positional root list is the fix: llvm-cov keeps only files under
 # these paths, whatever the deps directory is called.
@@ -112,7 +112,7 @@ ${_te_output}")
 endif()
 
 # The explicit bypass is checked BEFORE the floor, and the order is the point. Both let the
-# run pass, so which one fires changes nothing about the exit code — it changes what the log
+# run pass, so which one fires changes nothing about the exit code; it changes what the log
 # says happened. A human wrote [skip-coverage] on purpose; the floor is an automatic fallback.
 # Reporting the fallback while a deliberate signal sat unread hides whether the signal was
 # even received, which is exactly how the frozen-payload bug stayed invisible.

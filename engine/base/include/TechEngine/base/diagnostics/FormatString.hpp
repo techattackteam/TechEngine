@@ -36,7 +36,7 @@ namespace TechEngine {
             requires std::convertible_to<const T&, std::string_view>
         consteval PositionalFormatString(const T& text) : m_inner(text) {
             if (internal::hasAutomaticField(std::string_view{text})) {
-                throw "TechEngine format strings index their arguments — write {0}, not {}";
+                throw "TechEngine format strings index their arguments: write {0}, not {}";
             }
         }
 
@@ -49,7 +49,7 @@ namespace TechEngine {
     };
 
     // type_identity_t keeps the format string out of deduction, so Args come from the
-    // trailing pack alone — the same shape std::format_string uses.
+    // trailing pack alone, the same shape std::format_string uses.
     template<typename... Args>
     using PositionalFormat = PositionalFormatString<std::type_identity_t<Args>...>;
 }

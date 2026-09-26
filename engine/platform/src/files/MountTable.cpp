@@ -8,7 +8,7 @@
 namespace TechEngine {
     // Windows resolves a wrong-case path happily and Linux does not, so exists() alone gives
     // the two CI legs different answers. Every candidate that exists still has to prove its
-    // spelling matches the bytes on disk — canonical() reports the real on-disk name.
+    // spelling matches the bytes on disk; canonical() reports the real on-disk name.
     static bool matchesOnDiskCase(const MountEntry& entry, std::string_view relative, const std::filesystem::path& candidate) {
         std::error_code ec;
 

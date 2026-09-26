@@ -9,7 +9,7 @@ files=$(git diff --cached --name-only --diff-filter=ACMR -- '*.cpp' '*.hpp')
 [ -z "$files" ] && exit 0
 
 if ! command -v clang-format >/dev/null 2>&1; then
-    echo "pre-commit: clang-format not on PATH — skipping format" >&2
+    echo "pre-commit: clang-format not on PATH, skipping format" >&2
     exit 0
 fi
 
