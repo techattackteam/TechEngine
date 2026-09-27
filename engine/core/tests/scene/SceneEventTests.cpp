@@ -351,3 +351,62 @@ TEST_CASE("a late event registration is rejected without corrupting either Scene
     REQUIRE(state.reads.at(3) == Amounts{9});
     REQUIRE(TechEngineTests::g_fired.size() == firedAfterRegistration + 2);
 }
+
+TEST_CASE("building a Scene's event streams twice is rejected and keeps its staged events", "[core][scene][events]") {
+    const TechEngineTests::AssertHandlerGuard assertGuard;
+    SceneEventFixture fixture;
+    SceneEventTestState state;
+    const SceneEventStateGuard stateGuard(state);
+    fixture.first.buildEventStreams(fixture.events);
+
+    state.publish = 7;
+    fixture.runTick(fixture.first);
+    state.publish.reset();
+
+    fixture.first.buildEventStreams(fixture.events);
+
+    REQUIRE(TechEngineTests::g_fired.size() == 1);
+
+    fixture.first.makeEventsVisible(fixture.context.tick);
+    fixture.context.tick++;
+    fixture.runTick(fixture.first);
+
+    REQUIRE(state.reads.back() == Amounts{7});
+    REQUIRE(TechEngineTests::g_fired.size() == 1);
+}
+
+TEST_CASE("publishing and reading on a Scene without streams are each rejected", "[core][scene][events]") {
+    const TechEngineTests::AssertHandlerGuard assertGuard;
+    SceneEventFixture fixture;
+    SceneEventTestState state;
+    const SceneEventStateGuard stateGuard(state);
+
+    state.publish = 7;
+    fixture.runTick(fixture.first);
+
+    REQUIRE(TechEngineTests::g_fired.size() == 2);
+    REQUIRE(state.reads == std::vector<Amounts>{{}});
+}
+
+TEST_CASE("the barrier on a Scene without streams does nothing and fires nothing", "[core][scene][events]") {
+    const TechEngineTests::AssertHandlerGuard assertGuard;
+    SceneEventFixture fixture;
+    SceneEventTestState state;
+    const SceneEventStateGuard stateGuard(state);
+
+    fixture.first.makeEventsVisible(fixture.context.tick);
+    fixture.first.retireEvents();
+
+    REQUIRE(TechEngineTests::g_fired.empty());
+
+    fixture.first.buildEventStreams(fixture.events);
+    state.publish = 7;
+    fixture.runTick(fixture.first);
+    state.publish.reset();
+    fixture.first.makeEventsVisible(fixture.context.tick);
+    fixture.context.tick++;
+    fixture.runTick(fixture.first);
+
+    REQUIRE(state.reads.back() == Amounts{7});
+    REQUIRE(TechEngineTests::g_fired.empty());
+}
