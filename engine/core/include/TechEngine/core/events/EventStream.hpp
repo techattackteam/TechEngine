@@ -11,11 +11,6 @@
 namespace TechEngine {
     class EventStream {
     private:
-        struct ByteRange {
-            const std::byte* data = nullptr;
-            std::size_t count = 0;
-        };
-
         struct Buffer {
             std::unique_ptr<std::byte[]> storage;
             std::size_t capacity = 0;
@@ -24,7 +19,6 @@ namespace TechEngine {
 
         EventTypeId m_id;
         std::uint32_t m_elementSize = 0;
-        std::uint32_t m_alignment = 0;
         Buffer m_visible;
         Buffer m_staging;
         std::uint64_t m_visibleTick = 0;
@@ -49,15 +43,12 @@ namespace TechEngine {
         template<typename T>
         std::span<const T> read() const {
             TE_ASSERT(m_id == eventTypeId<T>());
-            const ByteRange range = visibleRange();
-            return std::span<const T>{reinterpret_cast<const T*>(range.data), range.count};
+            return std::span<const T>{reinterpret_cast<const T*>(m_visible.storage.get()), m_visible.count};
         }
 
         void makeVisible(std::uint64_t tick);
 
         void retire();
-
-        EventTypeId id() const;
 
         std::size_t visibleCount() const;
 
@@ -68,10 +59,10 @@ namespace TechEngine {
         std::uint64_t visibleTick() const;
 
     private:
+        Buffer makeBuffer(std::size_t capacity) const;
+
         void stage(const void* event);
 
-        ByteRange visibleRange() const;
-
-        void grow(std::size_t minimumCapacity);
+        void grow();
     };
 }

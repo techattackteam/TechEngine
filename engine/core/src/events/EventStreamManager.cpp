@@ -2,6 +2,8 @@
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/events/EventStreamManager.hpp>
 
+#include <utility>
+
 namespace TechEngine {
     EventStreamManager::EventStreamManager(EventRegistry& registry, const std::size_t initialCapacity) : m_registry(&registry) {
         registry.seal();
@@ -33,11 +35,7 @@ namespace TechEngine {
     }
 
     EventStream* EventStreamManager::getStream(const EventTypeId id) {
-        const EventTypeRecord* record = m_registry->find(id);
-        if (!TE_VERIFY(record != nullptr && record->streamIndex < m_streams.size(), "Event type {0} has no stream", id.stringId().value())) {
-            return nullptr;
-        }
-        return &m_streams[record->streamIndex];
+        return const_cast<EventStream*>(std::as_const(*this).getStream(id));
     }
 
     const EventStream* EventStreamManager::getStream(const EventTypeId id) const {

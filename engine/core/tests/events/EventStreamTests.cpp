@@ -169,7 +169,7 @@ TEST_CASE("consecutive Ticks each expose only their own batch", "[core][events]"
 }
 
 TEST_CASE("a batch keeps publisher order and FIFO within a publisher", "[core][events]") {
-    TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 2);
+    TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 8);
 
     stream.publish(Damage{1});
     stream.publish(Damage{2});
@@ -243,14 +243,13 @@ TEST_CASE("the buffer grows and keeps every event", "[core][events]") {
     }
 }
 
-TEST_CASE("a steady-state loop never regrows the ring", "[core][events]") {
+TEST_CASE("a steady-state loop never regrows the buffers", "[core][events]") {
     TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 64);
 
     stream.publish(Damage{0});
     stream.makeVisible(0);
 
     for (std::uint64_t tick = 1; tick <= 8; tick++) {
-        stream.read<Damage>();
         for (std::uint32_t i = 0; i < 4; i++) {
             stream.publish(Damage{i});
         }

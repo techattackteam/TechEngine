@@ -7,14 +7,12 @@
 #include <utility>
 
 namespace TechEngine {
-    EventStream::EventStream(const EventTypeId id, const std::uint32_t elementSize, const std::uint32_t alignment, const std::size_t initialCapacity) : m_id(id), m_elementSize(elementSize), m_alignment(alignment) {
+    EventStream::EventStream(const EventTypeId id, const std::uint32_t elementSize, const std::uint32_t alignment, const std::size_t initialCapacity) : m_id(id), m_elementSize(elementSize) {
         TE_CHECK(m_elementSize > 0);
-        TE_CHECK(m_alignment <= alignof(std::max_align_t));
+        TE_CHECK(alignment <= alignof(std::max_align_t));
 
-        m_visible.storage = std::make_unique<std::byte[]>(initialCapacity * m_elementSize);
-        m_visible.capacity = initialCapacity;
-        m_staging.storage = std::make_unique<std::byte[]>(initialCapacity * m_elementSize);
-        m_staging.capacity = initialCapacity;
+        m_visible = makeBuffer(initialCapacity);
+        m_staging = makeBuffer(initialCapacity);
     }
 
     void EventStream::makeVisible(const std::uint64_t tick) {
@@ -28,10 +26,6 @@ namespace TechEngine {
 
     void EventStream::retire() {
         m_visible.count = 0;
-    }
-
-    EventTypeId EventStream::id() const {
-        return m_id;
     }
 
     std::size_t EventStream::visibleCount() const {
@@ -50,26 +44,25 @@ namespace TechEngine {
         return m_visibleTick;
     }
 
+    EventStream::Buffer EventStream::makeBuffer(const std::size_t capacity) const {
+        return Buffer{std::make_unique<std::byte[]>(capacity * m_elementSize), capacity, 0};
+    }
+
     void EventStream::stage(const void* event) {
         if (m_staging.count == m_staging.capacity) {
-            grow(m_staging.capacity * 2);
+            grow();
         }
 
         std::memcpy(m_staging.storage.get() + m_staging.count * m_elementSize, event, m_elementSize);
         m_staging.count++;
     }
 
-    EventStream::ByteRange EventStream::visibleRange() const {
-        return ByteRange{m_visible.storage.get(), m_visible.count};
-    }
+    void EventStream::grow() {
+        Buffer grown = makeBuffer(std::max<std::size_t>(m_staging.capacity * 2, 1));
 
-    void EventStream::grow(std::size_t minimumCapacity) {
-        const std::size_t newCapacity = std::max<std::size_t>(minimumCapacity, 1);
-        std::unique_ptr<std::byte[]> storage = std::make_unique<std::byte[]>(newCapacity * m_elementSize);
+        std::memcpy(grown.storage.get(), m_staging.storage.get(), m_staging.count * m_elementSize);
+        grown.count = m_staging.count;
 
-        std::memcpy(storage.get(), m_staging.storage.get(), m_staging.count * m_elementSize);
-
-        m_staging.storage = std::move(storage);
-        m_staging.capacity = newCapacity;
+        m_staging = std::move(grown);
     }
 }
