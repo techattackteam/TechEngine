@@ -8,7 +8,6 @@
 #include <diagnostics/Diagnostics.hpp>
 #include <diagnostics/MemoryTracking.hpp>
 
-#include <cstdint>
 #include <exception>
 #include <span>
 #include <string_view>
@@ -17,9 +16,6 @@ namespace TechEngine {
     class NoOpTickBarrierServices final : public TickBarrierServices {
     public:
         void assignNetIds(Scene&, std::span<const Entity>) override {
-        }
-
-        void flushEvents(std::uint64_t) override {
         }
     };
 

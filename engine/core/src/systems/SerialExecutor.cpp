@@ -49,6 +49,13 @@ namespace TechEngine {
                     for (Impl::Node& node: level) {
                         scene.beginSystem(node.access, node.commands, context.tick);
                         try {
+                            for (const TaskGraphEventHandler& eventHandler: node.eventHandlers) {
+                                const std::span<const std::byte> batch = scene.readEventBytes(eventHandler.eventType);
+                                if (batch.empty()) {
+                                    continue;
+                                }
+                                eventHandler.handler(scene, batch);
+                            }
                             node.system->tick(scene, context);
                         } catch (...) {
                             scene.endSystem();
@@ -79,7 +86,8 @@ namespace TechEngine {
         {
             TE_PROFILER_SCOPE("SerialExecutor.BarrierServices");
             barrier.assignNetIds(scene, m_impl->spawned);
-            barrier.flushEvents(context.tick);
+            scene.retireEvents();
+            scene.makeEventsVisible(context.tick);
         }
     }
 

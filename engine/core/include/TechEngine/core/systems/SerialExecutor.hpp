@@ -2,7 +2,6 @@
 
 #include <TechEngine/core/scene/Entity.hpp>
 
-#include <cstdint>
 #include <memory>
 #include <span>
 
@@ -16,8 +15,6 @@ namespace TechEngine {
         virtual ~TickBarrierServices() = default;
 
         virtual void assignNetIds(Scene& scene, std::span<const Entity> spawned) = 0;
-
-        virtual void flushEvents(std::uint64_t tick) = 0;
     };
 
     class SerialExecutor {

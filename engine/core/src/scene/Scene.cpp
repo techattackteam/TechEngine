@@ -541,6 +541,13 @@ namespace TechEngine {
         return m_events.has_value();
     }
 
+    std::span<const std::byte> Scene::readEventBytes(const EventTypeId type) const {
+        if (!TE_VERIFY(m_events.has_value(), "Scene events were used before the Scene's streams were built")) {
+            return {};
+        }
+        return m_events->readBytes(type);
+    }
+
     void Scene::validateRead(const ComponentTypeId type) const {
         if (g_sceneExecutionState.scene != this) {
             return;

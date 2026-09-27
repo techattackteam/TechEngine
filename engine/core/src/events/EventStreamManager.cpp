@@ -14,6 +14,14 @@ namespace TechEngine {
         }
     }
 
+    std::span<const std::byte> EventStreamManager::readBytes(const EventTypeId id) const {
+        const EventStream* stream = getStream(id);
+        if (stream == nullptr) {
+            return {};
+        }
+        return stream->readBytes();
+    }
+
     void EventStreamManager::makeVisible(const std::uint64_t tick) {
         TE_PROFILER_SCOPE("EventStreamManager.MakeVisible");
 

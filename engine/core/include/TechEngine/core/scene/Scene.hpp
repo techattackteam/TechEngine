@@ -3,6 +3,7 @@
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/events/EventRegistry.hpp>
 #include <TechEngine/core/events/EventStreamManager.hpp>
+#include <TechEngine/core/events/EventTypeId.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/scene/Query.hpp>
@@ -142,14 +143,6 @@ namespace TechEngine {
             m_events->publish(event);
         }
 
-        template<typename Event>
-        std::span<const Event> read() const {
-            if (!eventAccessAllowed()) {
-                return {};
-            }
-            return m_events->read<Event>();
-        }
-
         void makeEventsVisible(std::uint64_t tick);
 
         void retireEvents();
@@ -200,6 +193,8 @@ namespace TechEngine {
         bool eventAccessAllowed() const;
 
         bool eventBarrierAllowed() const;
+
+        std::span<const std::byte> readEventBytes(EventTypeId type) const;
 
         void validateRead(ComponentTypeId type) const;
 

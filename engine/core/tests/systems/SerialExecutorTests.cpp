@@ -15,7 +15,6 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstdint>
 #include <span>
 #include <stdexcept>
 #include <string_view>
@@ -225,16 +224,10 @@ class BarrierProbe final : public TechEngine::TickBarrierServices {
 public:
     std::vector<TechEngine::Entity> spawned;
     std::vector<std::string_view> calls;
-    std::uint64_t tick = 0;
 
     void assignNetIds(TechEngine::Scene&, const std::span<const TechEngine::Entity> entities) override {
         calls.push_back("assignNetIds");
         spawned.assign(entities.begin(), entities.end());
-    }
-
-    void flushEvents(const std::uint64_t currentTick) override {
-        calls.push_back("flushEvents");
-        tick = currentTick;
     }
 };
 
@@ -298,13 +291,11 @@ TEST_CASE("an empty graph still reaches the tick barrier", "[core][systems][exec
     const TechEngine::TaskGraph graph(schedule, fixture.events);
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
-    fixture.context.tick = 19;
 
     executor.execute(fixture.scene, fixture.context, barrier);
 
-    REQUIRE(barrier.calls == std::vector<std::string_view>{"assignNetIds", "flushEvents"});
+    REQUIRE(barrier.calls == std::vector<std::string_view>{"assignNetIds"});
     REQUIRE(barrier.spawned.empty());
-    REQUIRE(barrier.tick == 19);
 }
 
 TEST_CASE("spawn and component commands apply in issue order before barrier services", "[core][systems][executor]") {
@@ -320,7 +311,7 @@ TEST_CASE("spawn and component commands apply in issue order before barrier serv
 
     executor.execute(fixture.scene, fixture.context, barrier);
 
-    REQUIRE(barrier.calls == std::vector<std::string_view>{"assignNetIds", "flushEvents"});
+    REQUIRE(barrier.calls == std::vector<std::string_view>{"assignNetIds"});
     REQUIRE(barrier.spawned.size() == 1);
     const TechEngine::Entity entity = barrier.spawned.front();
     REQUIRE(fixture.scene.contains(entity));
@@ -448,7 +439,7 @@ TEST_CASE("a failing system discards every pending command and skips the barrier
     executor.execute(fixture.scene, fixture.context, barrier);
 
     REQUIRE(fixture.scene.contains(state.target));
-    REQUIRE(barrier.calls == std::vector<std::string_view>{"assignNetIds", "flushEvents"});
+    REQUIRE(barrier.calls == std::vector<std::string_view>{"assignNetIds"});
 }
 
 TEST_CASE("immediate structural mutation is rejected during system execution", "[core][systems][executor]") {

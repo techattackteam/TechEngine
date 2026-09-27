@@ -44,6 +44,8 @@ namespace TechEngine {
             return stream->read<T>();
         }
 
+        std::span<const std::byte> readBytes(EventTypeId id) const;
+
         void makeVisible(std::uint64_t tick);
 
         void retire();
