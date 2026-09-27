@@ -1,12 +1,15 @@
 #include <TechEngine/core/events/EventRegistry.hpp>
 #include <TechEngine/core/events/EventStreamManager.hpp>
+#include <TechEngine/core/events/EventTypeId.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string_view>
+#include <vector>
 
 static constexpr std::string_view ALPHA_TAG = "TechEngine.StreamsAlpha";
 static constexpr std::string_view BETA_TAG = "TechEngine.StreamsBeta";
@@ -105,6 +108,46 @@ TEST_CASE("retiring reaches every stream at once", "[core][events]") {
 
     REQUIRE(streams.read<StreamsAlpha>().empty());
     REQUIRE(streams.read<StreamsBeta>().empty());
+}
+
+TEST_CASE("reading bytes by type id sees exactly the typed visible batch", "[core][events]") {
+    TechEngine::EventRegistry registry;
+    registry.registerEvent<StreamsAlpha>(ALPHA_TAG);
+    registry.registerEvent<StreamsBeta>(BETA_TAG);
+    TechEngine::EventStreamManager streams{registry};
+
+    REQUIRE(streams.readBytes(TechEngine::eventTypeId<StreamsAlpha>()).empty());
+
+    streams.publish(StreamsAlpha{7});
+    streams.publish(StreamsAlpha{9});
+    streams.publish(StreamsBeta{99});
+
+    REQUIRE(streams.readBytes(TechEngine::eventTypeId<StreamsAlpha>()).empty());
+
+    streams.makeVisible(1);
+
+    const std::span<const StreamsAlpha> typed = streams.read<StreamsAlpha>();
+    const std::span<const std::byte> bytes = streams.readBytes(TechEngine::eventTypeId<StreamsAlpha>());
+
+    REQUIRE(bytes.size() == 2 * sizeof(StreamsAlpha));
+    REQUIRE(static_cast<const void*>(bytes.data()) == static_cast<const void*>(typed.data()));
+    REQUIRE(streams.readBytes(TechEngine::eventTypeId<StreamsBeta>()).size() == sizeof(StreamsBeta));
+
+    streams.retire();
+
+    REQUIRE(streams.readBytes(TechEngine::eventTypeId<StreamsAlpha>()).empty());
+}
+
+TEST_CASE("reading bytes for a type with no stream is rejected and returns nothing", "[core][events]") {
+    const TechEngineTests::AssertHandlerGuard guard;
+    TechEngine::EventRegistry registry;
+    registry.registerEvent<StreamsAlpha>(ALPHA_TAG);
+    TechEngine::EventStreamManager streams{registry};
+
+    const std::span<const std::byte> missing = streams.readBytes(TechEngine::eventTypeId<StreamsUnregistered>());
+
+    REQUIRE(TechEngineTests::g_fired == std::vector<TechEngine::AssertKind>{TechEngine::AssertKind::Verify});
+    REQUIRE(missing.empty());
 }
 
 // The miss is always-on and survivable: a handler that declines to abort must land on a

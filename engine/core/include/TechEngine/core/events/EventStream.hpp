@@ -46,6 +46,8 @@ namespace TechEngine {
             return std::span<const T>{reinterpret_cast<const T*>(m_visible.storage.get()), m_visible.count};
         }
 
+        std::span<const std::byte> readBytes() const;
+
         void makeVisible(std::uint64_t tick);
 
         void retire();

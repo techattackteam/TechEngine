@@ -15,6 +15,13 @@ namespace TechEngine {
         m_staging = makeBuffer(initialCapacity);
     }
 
+    std::span<const std::byte> EventStream::readBytes() const {
+        if (m_visible.count > 0) {
+            return std::span<const std::byte>{m_visible.storage.get(), m_visible.count * m_elementSize};
+        }
+        return {};
+    }
+
     void EventStream::makeVisible(const std::uint64_t tick) {
         if (!TE_VERIFY(m_visible.count == 0, "Event type {0} made Tick {1} visible before retiring Tick {2}", m_id.stringId().value(), tick, m_visibleTick)) {
             return;
