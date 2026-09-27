@@ -49,12 +49,15 @@ namespace TechEngine {
                     for (Impl::Node& node: level) {
                         scene.beginSystem(node.access, node.commands, context.tick);
                         try {
-                            for (const TaskGraphEventHandler& eventHandler: node.eventHandlers) {
-                                const std::span<const std::byte> batch = scene.readEventBytes(eventHandler.eventType);
-                                if (batch.empty()) {
-                                    continue;
+                            if (!node.eventHandlers.empty()) {
+                                TE_PROFILER_SCOPE("SerialExecutor.EventHandlers");
+                                for (const TaskGraphEventHandler& eventHandler: node.eventHandlers) {
+                                    const std::span<const std::byte> batch = scene.readEventBytes(eventHandler.eventType);
+                                    if (batch.empty()) {
+                                        continue;
+                                    }
+                                    eventHandler.handler(scene, batch);
                                 }
-                                eventHandler.handler(scene, batch);
                             }
                             node.system->tick(scene, context);
                         } catch (...) {

@@ -1,4 +1,5 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
+#include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/events/EventStream.hpp>
 
 #include <algorithm>
@@ -65,6 +66,7 @@ namespace TechEngine {
     }
 
     void EventStream::grow() {
+        TE_PROFILER_SCOPE("EventStream.Grow");
         Buffer grown = makeBuffer(std::max<std::size_t>(m_staging.capacity * 2, 1));
 
         std::memcpy(grown.storage.get(), m_staging.storage.get(), m_staging.count * m_elementSize);
