@@ -404,7 +404,7 @@ TEST_CASE("write stamps advance for declared writes but not declared reads", "[c
     state.target = fixture.scene.createEntity();
     TechEngine::Schedule writeSchedule(fixture.registry);
     writeSchedule.add<AccessExecutorSystem>(TechEngine::DeclareAccess<TechEngine::Write<TechEngine::Transform>, TechEngine::Read<>>{});
-    const TechEngine::TaskGraph writeGraph(writeSchedule);
+    const TechEngine::TaskGraph writeGraph(writeSchedule, fixture.events);
     TechEngine::SerialExecutor writer(writeGraph);
     BarrierProbe barrier;
     state.accessMode = ExecutorAccessMode::None;
@@ -418,7 +418,7 @@ TEST_CASE("write stamps advance for declared writes but not declared reads", "[c
 
     TechEngine::Schedule readSchedule(fixture.registry);
     readSchedule.add<AccessExecutorSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<TechEngine::Transform>>{});
-    const TechEngine::TaskGraph readGraph(readSchedule);
+    const TechEngine::TaskGraph readGraph(readSchedule, fixture.events);
     TechEngine::SerialExecutor reader(readGraph);
     state.accessMode = ExecutorAccessMode::Read;
     fixture.context.tick = 8;
