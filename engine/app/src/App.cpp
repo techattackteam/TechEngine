@@ -110,6 +110,7 @@ namespace TechEngine {
             m_registry.registerComponent<Transform>(Transform::tag);
         }
         configureSimulation();
+        m_scene.buildEventStreams(m_eventRegistry);
         m_registry.freeze();
         m_taskGraph = std::make_unique<TaskGraph>(m_schedule);
         m_serialExecutor = std::make_unique<SerialExecutor>(*m_taskGraph);

@@ -5,6 +5,7 @@
 #include <TechEngine/core/EngineContext.hpp>
 #include <TechEngine/core/SimulationContext.hpp>
 #include <TechEngine/core/TimingMetrics.hpp>
+#include <TechEngine/core/events/EventRegistry.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
@@ -37,6 +38,7 @@ namespace TechEngine {
         Clock m_clock;
         InputBuffer m_input{m_clock};
         ComponentRegistry m_registry;
+        EventRegistry m_eventRegistry;
         Scene m_scene;
         Schedule m_schedule;
         EngineContext m_engine{m_files, m_jobs, m_clock};

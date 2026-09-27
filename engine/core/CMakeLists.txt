@@ -80,6 +80,7 @@ if(TE_BUILD_TESTS)
           tests/scene/EntitySlotsTests.cpp
           tests/scene/HierarchyTests.cpp
           tests/scene/QueryTests.cpp
+          tests/scene/SceneEventTests.cpp
           tests/scene/TransformTests.cpp
           tests/serialization/VisitTests.cpp
           tests/serialization/WriterReaderTests.cpp

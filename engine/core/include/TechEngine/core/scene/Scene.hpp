@@ -1,6 +1,8 @@
 #pragma once
 
 #include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/core/events/EventRegistry.hpp>
+#include <TechEngine/core/events/EventStreamManager.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/scene/Query.hpp>
@@ -10,6 +12,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -32,6 +36,7 @@ namespace TechEngine {
         ComponentRegistry* m_registry = nullptr;
         std::unique_ptr<ArchetypeStorage> m_storage;
         internal::QuerySource* m_querySource = nullptr;
+        std::optional<EventStreamManager> m_events;
 
     public:
         explicit Scene(ComponentRegistry& registry);
@@ -127,6 +132,28 @@ namespace TechEngine {
 
         SceneCommandBuffer& getCommands();
 
+        void buildEventStreams(EventRegistry& registry);
+
+        template<typename Event>
+        void publish(const Event& event) {
+            if (!eventAccessAllowed()) {
+                return;
+            }
+            m_events->publish(event);
+        }
+
+        template<typename Event>
+        std::span<const Event> read() const {
+            if (!eventAccessAllowed()) {
+                return {};
+            }
+            return m_events->read<Event>();
+        }
+
+        void makeEventsVisible(std::uint64_t tick);
+
+        void retireEvents();
+
         bool fromLocalToWorld(Entity entity, Mat4& world) const;
 
         bool fromWorldToLocal(Entity entity, const TransformValues& world, TransformValues& local) const;
@@ -169,6 +196,10 @@ namespace TechEngine {
         bool isSystemExecuting() const;
 
         bool immediateStructuralMutationAllowed() const;
+
+        bool eventAccessAllowed() const;
+
+        bool eventBarrierAllowed() const;
 
         void validateRead(ComponentTypeId type) const;
 

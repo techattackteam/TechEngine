@@ -2,6 +2,7 @@
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/systems/ISystem.hpp>
 #include <TechEngine/platform/files/FileResult.hpp>
+#include <TechEngine/testing/AssertCapture.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
@@ -73,6 +74,37 @@ namespace {
         bool registeredDuringShutdown = false;
         int configurationCount = 0;
     };
+
+    struct AppProbeEvent {
+        std::uint32_t amount;
+    };
+
+    struct AppLateEvent {
+        std::uint32_t amount;
+    };
+
+    class EventProbeApp final : public TechEngine::App {
+    public:
+        EventProbeApp() : App(TechEngine::Role::DedicatedServer) {
+        }
+
+        void init() override {
+        }
+
+        void configureSimulation() override {
+            configuredId = m_eventRegistry.registerEvent<AppProbeEvent>("Test.AppProbeEvent");
+        }
+
+        void finalize() {
+            finalizeSimulation();
+        }
+
+        TechEngine::EventRegistry& eventRegistry() {
+            return m_eventRegistry;
+        }
+
+        TechEngine::EventTypeId configuredId;
+    };
 }
 
 TEST_CASE("App scopes main registration across initialization and shutdown", "[app]") {
@@ -113,6 +145,24 @@ TEST_CASE("a mount added after construction is visible through App's context", "
     // NoMount would mean EngineContext had snapshotted the table instead of referencing it,
     // and init() could then never mount anything the loop reads.
     REQUIRE(result == TechEngine::FileResult::NotFound);
+}
+
+TEST_CASE("App registers event types during configuration and closes registration when it finalizes", "[app]") {
+    EventProbeApp app;
+
+    REQUIRE_FALSE(app.eventRegistry().sealed());
+
+    app.finalize();
+
+    REQUIRE(app.configuredId.valid());
+    REQUIRE(app.eventRegistry().typeCount() == 1);
+    REQUIRE(app.eventRegistry().sealed());
+
+    const TechEngineTests::AssertHandlerGuard guard;
+    const TechEngine::EventTypeId late = app.eventRegistry().registerEvent<AppLateEvent>("Test.AppLateEvent");
+
+    REQUIRE_FALSE(late.valid());
+    REQUIRE(app.eventRegistry().typeCount() == 1);
 }
 
 using namespace std::chrono_literals;
