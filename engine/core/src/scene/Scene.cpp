@@ -492,6 +492,27 @@ namespace TechEngine {
         return *g_sceneExecutionState.commands;
     }
 
+    void Scene::buildEventStreams(EventRegistry& registry) {
+        if (!TE_VERIFY(!m_events.has_value(), "Scene event streams are already built")) {
+            return;
+        }
+        m_events.emplace(registry);
+    }
+
+    void Scene::makeEventsVisible(const std::uint64_t tick) {
+        if (!eventBarrierAllowed()) {
+            return;
+        }
+        m_events->makeVisible(tick);
+    }
+
+    void Scene::retireEvents() {
+        if (!eventBarrierAllowed()) {
+            return;
+        }
+        m_events->retire();
+    }
+
     bool Scene::isSystemExecuting() const {
         return g_sceneExecutionState.scene == this;
     }
@@ -502,6 +523,22 @@ namespace TechEngine {
         }
         TE_CHECK(false, "Immediate structural mutation is prohibited while a system is executing");
         return false;
+    }
+
+    bool Scene::eventAccessAllowed() const {
+        if (!isSystemExecuting()) {
+            TE_CHECK(false, "Scene events are available only while a system is executing");
+            return false;
+        }
+        return TE_VERIFY(m_events.has_value(), "Scene events were used before the Scene's streams were built");
+    }
+
+    bool Scene::eventBarrierAllowed() const {
+        if (isSystemExecuting()) {
+            TE_CHECK(false, "Scene events cannot be made visible or retired while a system is executing");
+            return false;
+        }
+        return m_events.has_value();
     }
 
     void Scene::validateRead(const ComponentTypeId type) const {
