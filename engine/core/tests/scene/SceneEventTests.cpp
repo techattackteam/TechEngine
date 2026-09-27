@@ -133,7 +133,7 @@ public:
         events.registerEvent<SceneEventHit>("Test.SceneEventHit");
         schedule.add<SceneEventPublisherSystem>().before<SceneEventReaderSystem>();
         schedule.add<SceneEventReaderSystem>();
-        graph.emplace(schedule);
+        graph.emplace(schedule, events);
         executor.emplace(*graph);
     }
 

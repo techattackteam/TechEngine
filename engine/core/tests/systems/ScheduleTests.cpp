@@ -1,12 +1,16 @@
+#include <TechEngine/core/events/EventRegistry.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
+#include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
 #include <TechEngine/core/systems/Schedule.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -132,6 +136,56 @@ public:
 
     std::string_view name() const override {
         return "SchedulePlaceholderSystem";
+    }
+};
+
+struct ScheduleHit {
+    std::uint32_t amount;
+};
+
+struct ScheduleHeal {
+    std::uint32_t amount;
+};
+
+struct ScheduleHandlerCall {
+    int handler = 0;
+    const TechEngine::ISystem* instance = nullptr;
+    std::vector<std::uint32_t> amounts;
+
+    bool operator==(const ScheduleHandlerCall&) const = default;
+};
+
+class HandlingSystem final : public TechEngine::ISystem {
+public:
+    static inline std::vector<ScheduleHandlerCall> calls;
+
+    void init(TechEngine::ScheduleRegistration& registration) override {
+        registration.on<ScheduleHit>([this](TechEngine::Scene&, const std::span<const ScheduleHit> hits) {
+            record(1, hits);
+        });
+        registration.on<ScheduleHeal>([this](TechEngine::Scene&, const std::span<const ScheduleHeal> heals) {
+            record(2, heals);
+        });
+        registration.on<ScheduleHit>([this](TechEngine::Scene&, const std::span<const ScheduleHit> hits) {
+            record(3, hits);
+        });
+    }
+
+    void tick(TechEngine::Scene&, const TechEngine::SimulationContext&) override {
+    }
+
+    std::string_view name() const override {
+        return "HandlingSystem";
+    }
+
+private:
+    template<typename Event>
+    void record(const int handler, const std::span<const Event> events) {
+        ScheduleHandlerCall call{handler, this, {}};
+        for (const Event& event: events) {
+            call.amounts.push_back(event.amount);
+        }
+        calls.push_back(std::move(call));
     }
 };
 
@@ -365,4 +419,76 @@ TEST_CASE("only one terminal entry can be declared", "[core][systems]") {
 
     REQUIRE(schedule.getEntries()[0].slot == TechEngine::Slot::Regular);
     REQUIRE(schedule.getEntries()[1].slot == TechEngine::Slot::Terminal);
+}
+
+TEST_CASE("event handlers stay on their persistent instance in startup declaration order", "[core][systems][events]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngine::EventRegistry events;
+    events.registerEvent<ScheduleHit>("Test.ScheduleHit");
+    events.registerEvent<ScheduleHeal>("Test.ScheduleHeal");
+    TechEngine::Scene scene(registry);
+    TechEngine::Schedule schedule(registry);
+    HandlingSystem::calls.clear();
+
+    schedule.add<HandlingSystem>();
+
+    const TechEngine::ScheduleEntry& entry = schedule.getEntries().front();
+    REQUIRE(entry.eventHandlers.size() == 3);
+    REQUIRE(entry.eventHandlers[0].eventType() == TechEngine::eventTypeId<ScheduleHit>());
+    REQUIRE(entry.eventHandlers[1].eventType() == TechEngine::eventTypeId<ScheduleHeal>());
+    REQUIRE(entry.eventHandlers[2].eventType() == TechEngine::eventTypeId<ScheduleHit>());
+
+    const std::array<ScheduleHit, 2> hits{ScheduleHit{5}, ScheduleHit{6}};
+    const std::array<ScheduleHeal, 1> heals{ScheduleHeal{9}};
+    entry.eventHandlers[0].handler(scene, std::as_bytes(std::span(hits)));
+    entry.eventHandlers[1].handler(scene, std::as_bytes(std::span(heals)));
+    entry.eventHandlers[2].handler(scene, std::as_bytes(std::span(hits)));
+
+    const TechEngine::ISystem* instance = entry.system.get();
+    REQUIRE(HandlingSystem::calls == std::vector<ScheduleHandlerCall>{{1, instance, {5, 6}}, {2, instance, {9}}, {3, instance, {5, 6}}});
+}
+
+TEST_CASE("an event handler receives an empty batch as an empty span", "[core][systems][events]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngine::Scene scene(registry);
+    TechEngine::Schedule schedule(registry);
+    HandlingSystem::calls.clear();
+    schedule.add<HandlingSystem>();
+
+    schedule.getEntries().front().eventHandlers[0].handler(scene, {});
+
+    REQUIRE(HandlingSystem::calls.size() == 1);
+    REQUIRE(HandlingSystem::calls.front().amounts.empty());
+}
+
+TEST_CASE("a handler declared on the retained handle before freezing follows the startup handlers", "[core][systems][events]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngine::Schedule schedule(registry);
+    TechEngine::ScheduleRegistration handling = schedule.add<HandlingSystem>();
+
+    handling.on<ScheduleHeal>([](TechEngine::Scene&, std::span<const ScheduleHeal>) {
+    });
+
+    const TechEngine::ScheduleEntry& entry = schedule.getEntries().front();
+    REQUIRE(entry.eventHandlers.size() == 4);
+    REQUIRE(entry.eventHandlers[3].eventType == &TechEngine::eventTypeId<ScheduleHeal>);
+}
+
+TEST_CASE("a frozen schedule rejects a late event handler and keeps the declared ones", "[core][systems][events]") {
+    const TechEngineTests::FatalAssertGuard guard;
+    TechEngine::ComponentRegistry registry;
+    TechEngine::Schedule schedule(registry);
+    TechEngine::ScheduleRegistration handling = schedule.add<HandlingSystem>();
+    schedule.freeze();
+
+    REQUIRE_THROWS_AS(
+        handling.on<ScheduleHit>([](TechEngine::Scene&, std::span<const ScheduleHit>) {
+        }),
+        TechEngineTests::AssertFired);
+
+    const TechEngine::ScheduleEntry& entry = schedule.getEntries().front();
+    REQUIRE(entry.eventHandlers.size() == 3);
+    REQUIRE(entry.eventHandlers[0].eventType == &TechEngine::eventTypeId<ScheduleHit>);
+    REQUIRE(entry.eventHandlers[1].eventType == &TechEngine::eventTypeId<ScheduleHeal>);
+    REQUIRE(entry.eventHandlers[2].eventType == &TechEngine::eventTypeId<ScheduleHit>);
 }

@@ -34,6 +34,7 @@ namespace TechEngine {
         std::vector<OrderConstraint> orderConstraints;
         int priority = 0;
         Slot slot = Slot::Regular;
+        std::vector<EventHandlerDeclaration> eventHandlers;
     };
 
     class Schedule {
@@ -82,6 +83,8 @@ namespace TechEngine {
         void setSlot(std::size_t entryIndex, Slot value);
 
         void addOrder(std::size_t entryIndex, std::type_index systemType, Order order);
+
+        void addEventHandler(std::size_t entryIndex, EventHandlerDeclaration declaration);
 
         friend class ScheduleRegistration;
     };

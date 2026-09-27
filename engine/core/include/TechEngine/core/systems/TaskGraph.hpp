@@ -1,6 +1,8 @@
 #pragma once
 
+#include <TechEngine/core/events/EventTypeId.hpp>
 #include <TechEngine/core/systems/Schedule.hpp>
+#include <TechEngine/core/systems/ScheduleRegistration.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -10,10 +12,18 @@
 #include <vector>
 
 namespace TechEngine {
+    class EventRegistry;
+
+    struct TaskGraphEventHandler {
+        EventTypeId eventType;
+        EventHandler handler;
+    };
+
     struct TaskGraphNode {
         ISystem* system = nullptr;
         std::type_index systemType = typeid(void);
         ScheduleAccess access;
+        std::vector<TaskGraphEventHandler> eventHandlers;
     };
 
     using TaskGraphLevel = std::vector<TaskGraphNode>;
@@ -30,8 +40,10 @@ namespace TechEngine {
 
         std::string cycleMessage(const std::vector<std::size_t>& cycle, const std::vector<std::string>& systemNames);
 
+        std::vector<std::vector<TaskGraphEventHandler>> resolveEventHandlers(std::span<const ScheduleEntry> entries, const EventRegistry& events, const std::vector<std::string>& systemNames);
+
     public:
-        explicit TaskGraph(Schedule& schedule);
+        TaskGraph(Schedule& schedule, const EventRegistry& events);
 
         std::span<const TaskGraphLevel> getLevels() const;
     };
