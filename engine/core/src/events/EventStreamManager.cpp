@@ -2,6 +2,8 @@
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/events/EventStreamManager.hpp>
 
+#include <utility>
+
 namespace TechEngine {
     EventStreamManager::EventStreamManager(EventRegistry& registry, const std::size_t initialCapacity) : m_registry(&registry) {
         registry.seal();
@@ -12,19 +14,19 @@ namespace TechEngine {
         }
     }
 
-    void EventStreamManager::makeVisible(const std::uint64_t frameIndex, const std::uint64_t tick) {
+    void EventStreamManager::makeVisible(const std::uint64_t tick) {
         TE_PROFILER_SCOPE("EventStreamManager.MakeVisible");
 
         for (EventStream& stream: m_streams) {
-            stream.makeVisible(frameIndex, tick);
+            stream.makeVisible(tick);
         }
     }
 
-    void EventStreamManager::retire(const std::uint64_t frameIndex, const std::uint64_t tick) {
+    void EventStreamManager::retire() {
         TE_PROFILER_SCOPE("EventStreamManager.Retire");
 
         for (EventStream& stream: m_streams) {
-            stream.retire(frameIndex, tick);
+            stream.retire();
         }
     }
 
@@ -33,11 +35,7 @@ namespace TechEngine {
     }
 
     EventStream* EventStreamManager::getStream(const EventTypeId id) {
-        const EventTypeRecord* record = m_registry->find(id);
-        if (!TE_VERIFY(record != nullptr && record->streamIndex < m_streams.size(), "Event type {0} has no stream", id.stringId().value())) {
-            return nullptr;
-        }
-        return &m_streams[record->streamIndex];
+        return const_cast<EventStream*>(std::as_const(*this).getStream(id));
     }
 
     const EventStream* EventStreamManager::getStream(const EventTypeId id) const {
