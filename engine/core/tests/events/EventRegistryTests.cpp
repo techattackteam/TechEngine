@@ -5,29 +5,42 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 namespace {
     struct CollisionEnter {
+        static constexpr std::string_view tag = "TechEngine.CollisionEnter";
+
         std::uint32_t entity;
         float impulse;
     };
 
-    struct GamePaused {};
+    struct GamePaused {
+        static constexpr std::string_view tag = "TechEngine.GamePaused";
+    };
 
     struct DamageDealt {
+        static constexpr std::string_view tag = "TechEngine.DamageDealt";
+
         std::uint64_t source;
         std::int32_t amount;
     };
 
     struct TagSharer {
+        static constexpr std::string_view tag = "TechEngine.CollisionEnter";
+
         std::uint32_t value;
     };
 
     struct SecondRegistryEvent {
+        static constexpr std::string_view tag = "TechEngine.SecondRegistryEvent";
+
         std::uint32_t value;
     };
 
     struct LocalByDefault {
+        static constexpr std::string_view tag = "TechEngine.LocalByDefault";
+
         std::uint32_t value;
     };
 
@@ -36,26 +49,49 @@ namespace {
     };
 
     struct RejectedEvent {
+        static constexpr std::string_view tag = "TechEngine.CollisionEnter";
+
         std::uint32_t value;
     };
 
     struct AfterRejection {
+        static constexpr std::string_view tag = "TechEngine.AfterRejection";
+
         std::uint32_t value;
     };
 
     struct EmptyTagEvent {
+        static constexpr std::string_view tag = "";
+
         std::uint32_t value;
     };
 
     struct AfterSeal {
+        static constexpr std::string_view tag = "TechEngine.AfterSeal";
+
         std::uint32_t value;
     };
+
+    struct MissingTag {
+        std::uint32_t value;
+    };
+
+    struct NotTriviallyCopyable {
+        static constexpr std::string_view tag = "TechEngine.NotTriviallyCopyable";
+
+        std::string text;
+    };
 }
+
+static_assert(TechEngine::EventType<CollisionEnter>);
+static_assert(TechEngine::EventType<GamePaused>);
+static_assert(!TechEngine::EventType<MissingTag>);
+static_assert(!TechEngine::EventType<NotTriviallyCopyable>);
 
 TEST_CASE("registerEvent returns the tag's hash and fills the type slot", "[core][events]") {
     TechEngine::EventRegistry registry;
 
-    const TechEngine::EventTypeId id = registry.registerEvent<CollisionEnter>("TechEngine.CollisionEnter");
+    const TechEngine::EventTypeId id = registry.registerEvent<CollisionEnter>();
 
     REQUIRE(id == TechEngine::EventTypeId{TechEngine::StringId{"TechEngine.CollisionEnter"}});
     REQUIRE(TechEngine::eventTypeId<CollisionEnter>() == id);
@@ -65,8 +101,8 @@ TEST_CASE("registerEvent returns the tag's hash and fills the type slot", "[core
 TEST_CASE("dense stream indices are assigned in call order", "[core][events]") {
     TechEngine::EventRegistry registry;
 
-    const TechEngine::EventTypeId paused = registry.registerEvent<GamePaused>("TechEngine.GamePaused");
-    const TechEngine::EventTypeId damage = registry.registerEvent<DamageDealt>("TechEngine.DamageDealt");
+    const TechEngine::EventTypeId paused = registry.registerEvent<GamePaused>();
+    const TechEngine::EventTypeId damage = registry.registerEvent<DamageDealt>();
 
     REQUIRE(registry.find(paused)->streamIndex == 0);
     REQUIRE(registry.find(damage)->streamIndex == 1);
@@ -75,7 +111,7 @@ TEST_CASE("dense stream indices are assigned in call order", "[core][events]") {
 TEST_CASE("the record carries the payload's layout and its wire flag", "[core][events]") {
     TechEngine::EventRegistry registry;
 
-    const TechEngine::EventTypeId id = registry.registerEvent<DamageDealt>("TechEngine.DamageDealt", TechEngine::EventWire::Replicated);
+    const TechEngine::EventTypeId id = registry.registerEvent<DamageDealt>(TechEngine::EventWire::Replicated);
     const TechEngine::EventTypeRecord* record = registry.find(id);
 
     REQUIRE(record != nullptr);
@@ -87,7 +123,7 @@ TEST_CASE("the record carries the payload's layout and its wire flag", "[core][e
 TEST_CASE("an event is Local unless the call says otherwise", "[core][events]") {
     TechEngine::EventRegistry registry;
 
-    const TechEngine::EventTypeId id = registry.registerEvent<LocalByDefault>("TechEngine.LocalByDefault");
+    const TechEngine::EventTypeId id = registry.registerEvent<LocalByDefault>();
 
     REQUIRE(registry.find(id)->wire == TechEngine::EventWire::Local);
 }
@@ -97,7 +133,7 @@ TEST_CASE("an event is Local unless the call says otherwise", "[core][events]") 
 TEST_CASE("an empty payload is a legal event", "[core][events]") {
     TechEngine::EventRegistry registry;
 
-    const TechEngine::EventTypeId id = registry.registerEvent<GamePaused>("TechEngine.GamePaused");
+    const TechEngine::EventTypeId id = registry.registerEvent<GamePaused>();
     const TechEngine::EventTypeRecord* record = registry.find(id);
 
     REQUIRE(record != nullptr);
@@ -112,7 +148,7 @@ TEST_CASE("an unregistered type's slot is the invalid id", "[core][events]") {
 TEST_CASE("tagOf resolves a registered id and misses stay empty", "[core][events]") {
     TechEngine::EventRegistry registry;
 
-    const TechEngine::EventTypeId id = registry.registerEvent<CollisionEnter>("TechEngine.CollisionEnter");
+    const TechEngine::EventTypeId id = registry.registerEvent<CollisionEnter>();
 
     REQUIRE(registry.tagOf(id) == "TechEngine.CollisionEnter");
     REQUIRE(registry.tagOf(TechEngine::EventTypeId{TechEngine::StringId{"TechEngine.NeverRegistered"}}).empty());
@@ -124,7 +160,7 @@ TEST_CASE("tagOf resolves a registered id and misses stay empty", "[core][events
 TEST_CASE("the invalid id resolves to nothing", "[core][events]") {
     TechEngine::EventRegistry registry;
 
-    registry.registerEvent<CollisionEnter>("TechEngine.CollisionEnter");
+    registry.registerEvent<CollisionEnter>();
 
     REQUIRE(registry.find(TechEngine::EventTypeId{}) == nullptr);
     REQUIRE(registry.tagOf(TechEngine::EventTypeId{}).empty());
@@ -134,8 +170,8 @@ TEST_CASE("a duplicate tag is reported and leaves the registry unchanged", "[cor
     const TechEngineTests::AssertHandlerGuard guard;
     TechEngine::EventRegistry registry;
 
-    registry.registerEvent<CollisionEnter>("TechEngine.CollisionEnter");
-    const TechEngine::EventTypeId second = registry.registerEvent<TagSharer>("TechEngine.CollisionEnter");
+    registry.registerEvent<CollisionEnter>();
+    const TechEngine::EventTypeId second = registry.registerEvent<TagSharer>();
 
     REQUIRE(TechEngineTests::g_fired.size() == 1);
     REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Ensure);
@@ -150,7 +186,7 @@ TEST_CASE("an empty tag is rejected", "[core][events]") {
     const TechEngineTests::AssertHandlerGuard guard;
     TechEngine::EventRegistry registry;
 
-    const TechEngine::EventTypeId id = registry.registerEvent<EmptyTagEvent>("");
+    const TechEngine::EventTypeId id = registry.registerEvent<EmptyTagEvent>();
 
     REQUIRE(TechEngineTests::g_fired.size() == 1);
     REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Ensure);
@@ -165,9 +201,9 @@ TEST_CASE("a rejected registration does not consume a stream index", "[core][eve
     const TechEngineTests::AssertHandlerGuard guard;
     TechEngine::EventRegistry registry;
 
-    registry.registerEvent<CollisionEnter>("TechEngine.CollisionEnter");
-    registry.registerEvent<RejectedEvent>("TechEngine.CollisionEnter");
-    const TechEngine::EventTypeId accepted = registry.registerEvent<AfterRejection>("TechEngine.AfterRejection");
+    registry.registerEvent<CollisionEnter>();
+    registry.registerEvent<RejectedEvent>();
+    const TechEngine::EventTypeId accepted = registry.registerEvent<AfterRejection>();
 
     // No fire count here. TE_ENSURE reports once per call site, and the duplicate-tag site is
     // already spent by the case above when the whole exe runs in one process.
@@ -181,9 +217,9 @@ TEST_CASE("registration after the seal is rejected", "[core][events]") {
     const TechEngineTests::AssertHandlerGuard guard;
     TechEngine::EventRegistry registry;
 
-    registry.registerEvent<CollisionEnter>("TechEngine.CollisionEnter");
+    registry.registerEvent<CollisionEnter>();
     registry.seal();
-    const TechEngine::EventTypeId id = registry.registerEvent<AfterSeal>("TechEngine.AfterSeal");
+    const TechEngine::EventTypeId id = registry.registerEvent<AfterSeal>();
 
     REQUIRE(registry.sealed());
     REQUIRE(TechEngineTests::g_fired.size() == 1);
@@ -199,9 +235,9 @@ TEST_CASE("the same type registered in a second registry keeps its id", "[core][
     TechEngine::EventRegistry first;
     TechEngine::EventRegistry second;
 
-    second.registerEvent<GamePaused>("TechEngine.GamePaused");
-    const TechEngine::EventTypeId fromFirst = first.registerEvent<SecondRegistryEvent>("TechEngine.SecondRegistryEvent");
-    const TechEngine::EventTypeId fromSecond = second.registerEvent<SecondRegistryEvent>("TechEngine.SecondRegistryEvent");
+    second.registerEvent<GamePaused>();
+    const TechEngine::EventTypeId fromFirst = first.registerEvent<SecondRegistryEvent>();
+    const TechEngine::EventTypeId fromSecond = second.registerEvent<SecondRegistryEvent>();
 
     REQUIRE(fromFirst == fromSecond);
     REQUIRE(first.find(fromFirst)->streamIndex == 0);

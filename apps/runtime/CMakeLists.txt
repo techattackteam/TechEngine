@@ -9,9 +9,13 @@ techengine_app(runtime
           src/demo/MovementSystem.cpp
   HEADERS src/RuntimeApp.hpp
           src/demo/CollisionSystem.hpp
+          src/demo/EntityDespawned.hpp
+          src/demo/EntitySpawned.hpp
           src/demo/EntitySpawnSystem.hpp
           src/demo/GravitySystem.hpp
+          src/demo/Landed.hpp
           src/demo/MovementSystem.hpp
+          src/demo/Pulse.hpp
           src/demo/RigidBody.hpp
           src/demo/Velocity.hpp
   DEPS    app client core

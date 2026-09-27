@@ -140,10 +140,14 @@ public:
 };
 
 struct ScheduleHit {
+    static constexpr std::string_view tag = "Test.ScheduleHit";
+
     std::uint32_t amount;
 };
 
 struct ScheduleHeal {
+    static constexpr std::string_view tag = "Test.ScheduleHeal";
+
     std::uint32_t amount;
 };
 
@@ -160,13 +164,13 @@ public:
     static inline std::vector<ScheduleHandlerCall> calls;
 
     void init(TechEngine::ScheduleRegistration& registration) override {
-        registration.on<ScheduleHit>([this](TechEngine::Scene&, const std::span<const ScheduleHit> hits) {
+        registration.onEvent<ScheduleHit>([this](TechEngine::Scene&, const std::span<const ScheduleHit> hits) {
             record(1, hits);
         });
-        registration.on<ScheduleHeal>([this](TechEngine::Scene&, const std::span<const ScheduleHeal> heals) {
+        registration.onEvent<ScheduleHeal>([this](TechEngine::Scene&, const std::span<const ScheduleHeal> heals) {
             record(2, heals);
         });
-        registration.on<ScheduleHit>([this](TechEngine::Scene&, const std::span<const ScheduleHit> hits) {
+        registration.onEvent<ScheduleHit>([this](TechEngine::Scene&, const std::span<const ScheduleHit> hits) {
             record(3, hits);
         });
     }
@@ -424,8 +428,8 @@ TEST_CASE("only one terminal entry can be declared", "[core][systems]") {
 TEST_CASE("event handlers stay on their persistent instance in startup declaration order", "[core][systems][events]") {
     TechEngine::ComponentRegistry registry;
     TechEngine::EventRegistry events;
-    events.registerEvent<ScheduleHit>("Test.ScheduleHit");
-    events.registerEvent<ScheduleHeal>("Test.ScheduleHeal");
+    events.registerEvent<ScheduleHit>();
+    events.registerEvent<ScheduleHeal>();
     TechEngine::Scene scene(registry);
     TechEngine::Schedule schedule(registry);
     HandlingSystem::calls.clear();
@@ -466,7 +470,7 @@ TEST_CASE("a handler declared on the retained handle before freezing follows the
     TechEngine::Schedule schedule(registry);
     TechEngine::ScheduleRegistration handling = schedule.add<HandlingSystem>();
 
-    handling.on<ScheduleHeal>([](TechEngine::Scene&, std::span<const ScheduleHeal>) {
+    handling.onEvent<ScheduleHeal>([](TechEngine::Scene&, std::span<const ScheduleHeal>) {
     });
 
     const TechEngine::ScheduleEntry& entry = schedule.getEntries().front();
@@ -482,7 +486,7 @@ TEST_CASE("a frozen schedule rejects a late event handler and keeps the declared
     schedule.freeze();
 
     REQUIRE_THROWS_AS(
-        handling.on<ScheduleHit>([](TechEngine::Scene&, std::span<const ScheduleHit>) {
+        handling.onEvent<ScheduleHit>([](TechEngine::Scene&, std::span<const ScheduleHit>) {
         }),
         TechEngineTests::AssertFired);
 

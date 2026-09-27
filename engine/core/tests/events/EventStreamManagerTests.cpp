@@ -11,15 +11,16 @@
 #include <string_view>
 #include <vector>
 
-static constexpr std::string_view ALPHA_TAG = "TechEngine.StreamsAlpha";
-static constexpr std::string_view BETA_TAG = "TechEngine.StreamsBeta";
-
 namespace {
     struct StreamsAlpha {
+        static constexpr std::string_view tag = "TechEngine.StreamsAlpha";
+
         std::uint32_t amount;
     };
 
     struct StreamsBeta {
+        static constexpr std::string_view tag = "TechEngine.StreamsBeta";
+
         std::uint64_t source;
     };
 
@@ -30,8 +31,8 @@ namespace {
 
 TEST_CASE("the container builds one stream per registered type", "[core][events]") {
     TechEngine::EventRegistry registry;
-    registry.registerEvent<StreamsAlpha>(ALPHA_TAG);
-    registry.registerEvent<StreamsBeta>(BETA_TAG);
+    registry.registerEvent<StreamsAlpha>();
+    registry.registerEvent<StreamsBeta>();
 
     const TechEngine::EventStreamManager streams{registry};
 
@@ -48,7 +49,7 @@ TEST_CASE("an empty registry builds no streams", "[core][events]") {
 
 TEST_CASE("building the streams seals the registry", "[core][events]") {
     TechEngine::EventRegistry registry;
-    registry.registerEvent<StreamsAlpha>(ALPHA_TAG);
+    registry.registerEvent<StreamsAlpha>();
 
     REQUIRE_FALSE(registry.sealed());
 
@@ -59,8 +60,8 @@ TEST_CASE("building the streams seals the registry", "[core][events]") {
 
 TEST_CASE("publish and read reach the type's own stream", "[core][events]") {
     TechEngine::EventRegistry registry;
-    registry.registerEvent<StreamsAlpha>(ALPHA_TAG);
-    registry.registerEvent<StreamsBeta>(BETA_TAG);
+    registry.registerEvent<StreamsAlpha>();
+    registry.registerEvent<StreamsBeta>();
     TechEngine::EventStreamManager streams{registry};
 
     streams.publish(StreamsAlpha{7});
@@ -78,8 +79,8 @@ TEST_CASE("publish and read reach the type's own stream", "[core][events]") {
 
 TEST_CASE("the barrier reaches every stream at once", "[core][events]") {
     TechEngine::EventRegistry registry;
-    registry.registerEvent<StreamsAlpha>(ALPHA_TAG);
-    registry.registerEvent<StreamsBeta>(BETA_TAG);
+    registry.registerEvent<StreamsAlpha>();
+    registry.registerEvent<StreamsBeta>();
     TechEngine::EventStreamManager streams{registry};
 
     streams.publish(StreamsAlpha{1});
@@ -96,8 +97,8 @@ TEST_CASE("the barrier reaches every stream at once", "[core][events]") {
 
 TEST_CASE("retiring reaches every stream at once", "[core][events]") {
     TechEngine::EventRegistry registry;
-    registry.registerEvent<StreamsAlpha>(ALPHA_TAG);
-    registry.registerEvent<StreamsBeta>(BETA_TAG);
+    registry.registerEvent<StreamsAlpha>();
+    registry.registerEvent<StreamsBeta>();
     TechEngine::EventStreamManager streams{registry};
 
     streams.publish(StreamsAlpha{1});
@@ -112,8 +113,8 @@ TEST_CASE("retiring reaches every stream at once", "[core][events]") {
 
 TEST_CASE("reading bytes by type id sees exactly the typed visible batch", "[core][events]") {
     TechEngine::EventRegistry registry;
-    registry.registerEvent<StreamsAlpha>(ALPHA_TAG);
-    registry.registerEvent<StreamsBeta>(BETA_TAG);
+    registry.registerEvent<StreamsAlpha>();
+    registry.registerEvent<StreamsBeta>();
     TechEngine::EventStreamManager streams{registry};
 
     REQUIRE(streams.readBytes(TechEngine::eventTypeId<StreamsAlpha>()).empty());
@@ -141,7 +142,7 @@ TEST_CASE("reading bytes by type id sees exactly the typed visible batch", "[cor
 TEST_CASE("reading bytes for a type with no stream is rejected and returns nothing", "[core][events]") {
     const TechEngineTests::AssertHandlerGuard guard;
     TechEngine::EventRegistry registry;
-    registry.registerEvent<StreamsAlpha>(ALPHA_TAG);
+    registry.registerEvent<StreamsAlpha>();
     TechEngine::EventStreamManager streams{registry};
 
     const std::span<const std::byte> missing = streams.readBytes(TechEngine::eventTypeId<StreamsUnregistered>());
@@ -155,7 +156,7 @@ TEST_CASE("reading bytes for a type with no stream is rejected and returns nothi
 TEST_CASE("a type with no stream is rejected and changes nothing", "[core][events]") {
     const TechEngineTests::AssertHandlerGuard guard;
     TechEngine::EventRegistry registry;
-    registry.registerEvent<StreamsAlpha>(ALPHA_TAG);
+    registry.registerEvent<StreamsAlpha>();
     TechEngine::EventStreamManager streams{registry};
 
     streams.publish(StreamsUnregistered{7});

@@ -65,14 +65,20 @@ using FourthSystem = GraphSystem<3>;
 using TerminalSystem = GraphSystem<4>;
 
 struct GraphHit {
+    static constexpr std::string_view tag = "Test.GraphHit";
+
     std::uint32_t amount;
 };
 
 struct GraphHeal {
+    static constexpr std::string_view tag = "Test.GraphHeal";
+
     std::uint32_t amount;
 };
 
 struct GraphLateHit {
+    static constexpr std::string_view tag = "Test.GraphLateHit";
+
     std::uint32_t amount;
 };
 
@@ -85,11 +91,11 @@ template<std::size_t Index>
 class GraphHandlerSystem final : public TechEngine::ISystem {
 public:
     void init(TechEngine::ScheduleRegistration& registration) override {
-        registration.on<GraphHit>([](TechEngine::Scene&, std::span<const GraphHit>) {
+        registration.onEvent<GraphHit>([](TechEngine::Scene&, std::span<const GraphHit>) {
         });
-        registration.on<GraphHeal>([](TechEngine::Scene&, std::span<const GraphHeal>) {
+        registration.onEvent<GraphHeal>([](TechEngine::Scene&, std::span<const GraphHeal>) {
         });
-        registration.on<GraphHit>([](TechEngine::Scene&, std::span<const GraphHit>) {
+        registration.onEvent<GraphHit>([](TechEngine::Scene&, std::span<const GraphHit>) {
         });
     }
 
@@ -108,7 +114,7 @@ using SecondHandlerSystem = GraphHandlerSystem<1>;
 class LateTypeHandlerSystem final : public TechEngine::ISystem {
 public:
     void init(TechEngine::ScheduleRegistration& registration) override {
-        registration.on<GraphLateHit>([](TechEngine::Scene&, std::span<const GraphLateHit>) {
+        registration.onEvent<GraphLateHit>([](TechEngine::Scene&, std::span<const GraphLateHit>) {
         });
     }
 
@@ -121,8 +127,8 @@ public:
 };
 
 static void registerGraphEvents(TechEngine::EventRegistry& events) {
-    events.registerEvent<GraphHit>("Test.GraphHit");
-    events.registerEvent<GraphHeal>("Test.GraphHeal");
+    events.registerEvent<GraphHit>();
+    events.registerEvent<GraphHeal>();
 }
 
 static std::vector<std::string> g_graphLogMessages;
@@ -509,7 +515,7 @@ TEST_CASE("a handler declared before its event type registers resolves at graph 
     TechEngine::Schedule schedule(registry);
     schedule.add<LateTypeHandlerSystem>();
 
-    const TechEngine::EventTypeId lateHit = events.registerEvent<GraphLateHit>("Test.GraphLateHit");
+    const TechEngine::EventTypeId lateHit = events.registerEvent<GraphLateHit>();
     const TechEngine::TaskGraph graph(schedule, events);
 
     REQUIRE(lateHit.valid());
@@ -541,8 +547,8 @@ TEST_CASE("a handler whose type this registry never registered is rejected and l
     TechEngine::ComponentRegistry registry;
     TechEngine::EventRegistry events;
     TechEngine::EventRegistry other;
-    events.registerEvent<GraphHeal>("Test.GraphHeal");
-    other.registerEvent<GraphHit>("Test.GraphHit");
+    events.registerEvent<GraphHeal>();
+    other.registerEvent<GraphHit>();
     TechEngine::Schedule schedule(registry);
     schedule.add<FirstHandlerSystem>();
     std::optional<TechEngineTests::AssertFired> failure;
@@ -558,7 +564,7 @@ TEST_CASE("a handler whose type this registry never registered is rejected and l
     REQUIRE(failure->message.find("FirstHandlerSystem") != std::string::npos);
     REQUIRE_FALSE(schedule.frozen());
 
-    events.registerEvent<GraphHit>("Test.GraphHit");
+    events.registerEvent<GraphHit>();
     const TechEngine::TaskGraph graph(schedule, events);
 
     REQUIRE(schedule.frozen());

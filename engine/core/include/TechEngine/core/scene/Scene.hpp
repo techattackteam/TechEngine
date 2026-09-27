@@ -135,12 +135,12 @@ namespace TechEngine {
 
         void buildEventStreams(EventRegistry& registry);
 
-        template<typename Event>
-        void publish(const Event& event) {
+        template<EventType Event, typename... Arguments>
+        void publish(Arguments&&... arguments) {
             if (!eventAccessAllowed()) {
                 return;
             }
-            m_events->publish(event);
+            m_events->publish(Event{std::forward<Arguments>(arguments)...});
         }
 
         void makeEventsVisible(std::uint64_t tick);
