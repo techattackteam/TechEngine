@@ -1,8 +1,8 @@
+#include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/systems/ScheduleRegistration.hpp>
 
-#include "TechEngine/base/diagnostics/Log.hpp"
 #include <demo/EntitySpawnSystem.hpp>
 #include <demo/RigidBody.hpp>
 #include <demo/Velocity.hpp>

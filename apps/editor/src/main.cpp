@@ -1,6 +1,6 @@
 #include <TechEngine/app/EntryPoint.hpp>
 
-#include "EditorApp.hpp"
+#include <EditorApp.hpp>
 
 #include <filesystem>
 

@@ -6,6 +6,7 @@
 #include <project/Project.hpp>
 
 #include <filesystem>
+#include <string>
 
 namespace TechEngine {
     class EditorApp : public App {
