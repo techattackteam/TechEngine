@@ -3,10 +3,18 @@
 #include <TechEngine/base/stringid/StringId.hpp>
 
 #include <compare>
+#include <concepts>
 #include <cstddef>
 #include <functional>
+#include <string_view>
+#include <type_traits>
 
 namespace TechEngine {
+    template<typename T>
+    concept EventType = std::is_trivially_copyable_v<T> && requires {
+        { T::tag } -> std::convertible_to<std::string_view>;
+    };
+
     struct EventTypeId {
         constexpr EventTypeId() = default;
 

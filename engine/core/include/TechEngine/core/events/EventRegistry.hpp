@@ -7,7 +7,6 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
@@ -39,11 +38,9 @@ namespace TechEngine {
 
         EventRegistry& operator=(const EventRegistry&) = delete;
 
-        template<typename T>
-        EventTypeId registerEvent(std::string_view tag, EventWire wire = EventWire::Local) {
-            static_assert(std::is_trivially_copyable_v<T>, "An event payload must be trivially copyable");
-
-            const EventTypeId id = registerType(tag, static_cast<std::uint32_t>(sizeof(T)), static_cast<std::uint32_t>(alignof(T)), wire);
+        template<EventType T>
+        EventTypeId registerEvent(EventWire wire = EventWire::Local) {
+            const EventTypeId id = registerType(T::tag, static_cast<std::uint32_t>(sizeof(T)), static_cast<std::uint32_t>(alignof(T)), wire);
             if (id.valid()) {
                 internal::g_eventTypeSlot<T> = id;
             }

@@ -76,10 +76,14 @@ namespace {
     };
 
     struct AppProbeEvent {
+        static constexpr std::string_view tag = "Test.AppProbeEvent";
+
         std::uint32_t amount;
     };
 
     struct AppLateEvent {
+        static constexpr std::string_view tag = "Test.AppLateEvent";
+
         std::uint32_t amount;
     };
 
@@ -92,7 +96,7 @@ namespace {
         }
 
         void configureSimulation() override {
-            configuredId = m_eventRegistry.registerEvent<AppProbeEvent>("Test.AppProbeEvent");
+            configuredId = m_eventRegistry.registerEvent<AppProbeEvent>();
         }
 
         void finalize() {
@@ -159,7 +163,7 @@ TEST_CASE("App registers event types during configuration and closes registratio
     REQUIRE(app.eventRegistry().sealed());
 
     const TechEngineTests::AssertHandlerGuard guard;
-    const TechEngine::EventTypeId late = app.eventRegistry().registerEvent<AppLateEvent>("Test.AppLateEvent");
+    const TechEngine::EventTypeId late = app.eventRegistry().registerEvent<AppLateEvent>();
 
     REQUIRE_FALSE(late.valid());
     REQUIRE(app.eventRegistry().typeCount() == 1);

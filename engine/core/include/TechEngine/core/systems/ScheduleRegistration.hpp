@@ -72,8 +72,8 @@ namespace TechEngine {
             return *this;
         }
 
-        template<typename Event>
-        ScheduleRegistration& on(std::function<void(Scene&, std::span<const Event>)> handler) {
+        template<EventType Event>
+        ScheduleRegistration& onEvent(std::function<void(Scene&, std::span<const Event>)> handler) {
             addEventHandler({&eventTypeId<Event>, [typed = std::move(handler)](Scene& scene, const std::span<const std::byte> bytes) {
                                  typed(scene, std::span<const Event>(reinterpret_cast<const Event*>(bytes.data()), bytes.size() / sizeof(Event)));
                              }});

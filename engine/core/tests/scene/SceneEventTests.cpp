@@ -25,14 +25,20 @@
 #include <vector>
 
 struct SceneEventHit {
+    static constexpr std::string_view tag = "Test.SceneEventHit";
+
     std::uint32_t amount;
 };
 
 struct SceneEventHeal {
+    static constexpr std::string_view tag = "Test.SceneEventHeal";
+
     std::uint32_t amount;
 };
 
 struct SceneEventLate {
+    static constexpr std::string_view tag = "Test.SceneEventLate";
+
     std::uint32_t amount;
 };
 
@@ -86,13 +92,13 @@ public:
 
     void tick(TechEngine::Scene& scene, const TechEngine::SimulationContext& context) override {
         if (g_sceneEventState->publish) {
-            scene.publish(SceneEventHit{*g_sceneEventState->publish});
+            scene.publish<SceneEventHit>(*g_sceneEventState->publish);
         }
         if (g_sceneEventState->publishHeal) {
-            scene.publish(SceneEventHeal{*g_sceneEventState->publishHeal});
+            scene.publish<SceneEventHeal>(*g_sceneEventState->publishHeal);
         }
         if (g_sceneEventState->publishLate) {
-            scene.publish(SceneEventLate{1});
+            scene.publish<SceneEventLate>(1U);
         }
         if (g_sceneEventState->makeVisibleInsideSystem) {
             scene.makeEventsVisible(context.tick);
@@ -110,13 +116,13 @@ public:
 class SceneEventReaderSystem final : public TechEngine::ISystem {
 public:
     void init(TechEngine::ScheduleRegistration& registration) override {
-        registration.on<SceneEventHeal>([](TechEngine::Scene&, std::span<const SceneEventHeal>) {
+        registration.onEvent<SceneEventHeal>([](TechEngine::Scene&, std::span<const SceneEventHeal>) {
             g_sceneEventState->trace.push_back("heal");
         });
-        registration.on<SceneEventHit>([](TechEngine::Scene& scene, const std::span<const SceneEventHit> hits) {
+        registration.onEvent<SceneEventHit>([](TechEngine::Scene& scene, const std::span<const SceneEventHit> hits) {
             g_sceneEventState->trace.push_back("hit");
             for (std::size_t i = 0; i < g_sceneEventState->republishFromHandler; i++) {
-                scene.publish(SceneEventHit{100});
+                scene.publish<SceneEventHit>(100U);
             }
             g_sceneEventState->reads.push_back(amountsOf(hits));
         });
@@ -152,7 +158,7 @@ public:
 class SceneEventTerminalReaderSystem final : public TechEngine::ISystem {
 public:
     void init(TechEngine::ScheduleRegistration& registration) override {
-        registration.setSlot(TechEngine::Slot::Terminal).on<SceneEventHit>([](TechEngine::Scene&, const std::span<const SceneEventHit> hits) {
+        registration.setSlot(TechEngine::Slot::Terminal).onEvent<SceneEventHit>([](TechEngine::Scene&, const std::span<const SceneEventHit> hits) {
             g_sceneEventState->terminalReads.push_back(amountsOf(hits));
         });
     }
@@ -191,8 +197,8 @@ public:
 
     SceneEventFixture() : first(components), second(components), files(mounts), jobs(1), engine{files, jobs, clock}, context{.fixedDeltaTime = 1.0 / 60.0, .tick = 1, .input = input, .engine = engine}, schedule(components) {
         TechEngineTests::registerBuiltInSceneComponents(components);
-        events.registerEvent<SceneEventHit>("Test.SceneEventHit");
-        events.registerEvent<SceneEventHeal>("Test.SceneEventHeal");
+        events.registerEvent<SceneEventHit>();
+        events.registerEvent<SceneEventHeal>();
         schedule.add<SceneEventPublisherSystem>().before<SceneEventReaderSystem>();
         schedule.add<SceneEventReaderSystem>().before<SceneEventFailingSystem>();
         schedule.add<SceneEventFailingSystem>();
@@ -421,7 +427,7 @@ TEST_CASE("publishing outside a system is rejected and stages nothing", "[core][
     const SceneEventStateGuard stateGuard(state);
     fixture.buildStreams();
 
-    fixture.first.publish(SceneEventHit{5});
+    fixture.first.publish<SceneEventHit>(5U);
 
     REQUIRE(TechEngineTests::g_fired.size() == 1);
 
@@ -483,7 +489,7 @@ TEST_CASE("a late event registration is rejected without corrupting either Scene
     const SceneEventStateGuard stateGuard(state);
     fixture.buildStreams();
 
-    const TechEngine::EventTypeId late = fixture.events.registerEvent<SceneEventLate>("Test.SceneEventLate");
+    const TechEngine::EventTypeId late = fixture.events.registerEvent<SceneEventLate>();
 
     REQUIRE_FALSE(late.valid());
     REQUIRE(fixture.events.typeCount() == 2);

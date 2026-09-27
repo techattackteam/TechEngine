@@ -10,16 +10,16 @@
 #include <string_view>
 #include <vector>
 
-static constexpr std::string_view DAMAGE_TAG = "TechEngine.Damage";
-
 struct Damage {
+    static constexpr std::string_view tag = "TechEngine.Damage";
+
     std::uint32_t amount;
 };
 
-template<typename T>
-static TechEngine::EventStream makeStream(std::string_view tag, std::size_t capacity) {
+template<TechEngine::EventType T>
+static TechEngine::EventStream makeStream(std::size_t capacity) {
     TechEngine::EventRegistry registry;
-    const TechEngine::EventTypeId id = registry.registerEvent<T>(tag);
+    const TechEngine::EventTypeId id = registry.registerEvent<T>();
     return TechEngine::EventStream{id, sizeof(T), alignof(T), capacity};
 }
 
@@ -32,7 +32,7 @@ static std::vector<std::uint32_t> amountsOf(std::span<const Damage> events) {
 }
 
 TEST_CASE("a visible batch stays valid while the same type publishes and staging grows", "[core][events]") {
-    TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 2);
+    TechEngine::EventStream stream = makeStream<Damage>(2);
 
     stream.publish(Damage{1});
     stream.publish(Damage{2});
@@ -64,7 +64,7 @@ TEST_CASE("a visible batch stays valid while the same type publishes and staging
 }
 
 TEST_CASE("publishing stages; nothing is visible until the barrier", "[core][events]") {
-    TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 8);
+    TechEngine::EventStream stream = makeStream<Damage>(8);
 
     stream.publish(Damage{7});
 
@@ -78,7 +78,7 @@ TEST_CASE("publishing stages; nothing is visible until the barrier", "[core][eve
 }
 
 TEST_CASE("a visible batch stays until retire is asked", "[core][events]") {
-    TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 8);
+    TechEngine::EventStream stream = makeStream<Damage>(8);
 
     stream.publish(Damage{7});
     stream.makeVisible(1);
@@ -97,7 +97,7 @@ TEST_CASE("a visible batch stays until retire is asked", "[core][events]") {
 }
 
 TEST_CASE("retiring keeps the events staged since the barrier", "[core][events]") {
-    TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 8);
+    TechEngine::EventStream stream = makeStream<Damage>(8);
 
     stream.publish(Damage{1});
     stream.makeVisible(1);
@@ -116,7 +116,7 @@ TEST_CASE("retiring keeps the events staged since the barrier", "[core][events]"
 }
 
 TEST_CASE("the first Tick's retire keeps its own publications", "[core][events]") {
-    TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 8);
+    TechEngine::EventStream stream = makeStream<Damage>(8);
 
     stream.publish(Damage{4});
     stream.retire();
@@ -129,7 +129,7 @@ TEST_CASE("the first Tick's retire keeps its own publications", "[core][events]"
 }
 
 TEST_CASE("a quiet Tick exposes an empty batch", "[core][events]") {
-    TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 8);
+    TechEngine::EventStream stream = makeStream<Damage>(8);
 
     stream.publish(Damage{1});
     stream.makeVisible(1);
@@ -149,7 +149,7 @@ TEST_CASE("a quiet Tick exposes an empty batch", "[core][events]") {
 }
 
 TEST_CASE("consecutive Ticks each expose only their own batch", "[core][events]") {
-    TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 4);
+    TechEngine::EventStream stream = makeStream<Damage>(4);
     std::vector<std::uint32_t> previous;
 
     for (std::uint32_t tick = 1; tick <= 5; tick++) {
@@ -169,7 +169,7 @@ TEST_CASE("consecutive Ticks each expose only their own batch", "[core][events]"
 }
 
 TEST_CASE("a batch keeps publisher order and FIFO within a publisher", "[core][events]") {
-    TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 8);
+    TechEngine::EventStream stream = makeStream<Damage>(8);
 
     stream.publish(Damage{1});
     stream.publish(Damage{2});
@@ -182,7 +182,7 @@ TEST_CASE("a batch keeps publisher order and FIFO within a publisher", "[core][e
 }
 
 TEST_CASE("a batch reports the Tick that made it visible", "[core][events]") {
-    TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 8);
+    TechEngine::EventStream stream = makeStream<Damage>(8);
 
     REQUIRE(stream.visibleTick() == 0);
 
@@ -203,7 +203,7 @@ TEST_CASE("a batch reports the Tick that made it visible", "[core][events]") {
 
 TEST_CASE("making a batch visible before retiring the last one is rejected and changes nothing", "[core][events]") {
     const TechEngineTests::AssertHandlerGuard guard;
-    TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 8);
+    TechEngine::EventStream stream = makeStream<Damage>(8);
 
     stream.publish(Damage{1});
     stream.makeVisible(1);
@@ -225,7 +225,7 @@ TEST_CASE("making a batch visible before retiring the last one is rejected and c
 }
 
 TEST_CASE("the buffer grows and keeps every event", "[core][events]") {
-    TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 2);
+    TechEngine::EventStream stream = makeStream<Damage>(2);
 
     for (std::uint32_t i = 0; i < 5; i++) {
         stream.publish(Damage{i});
@@ -244,7 +244,7 @@ TEST_CASE("the buffer grows and keeps every event", "[core][events]") {
 }
 
 TEST_CASE("a steady-state loop never regrows the buffers", "[core][events]") {
-    TechEngine::EventStream stream = makeStream<Damage>(DAMAGE_TAG, 64);
+    TechEngine::EventStream stream = makeStream<Damage>(64);
 
     stream.publish(Damage{0});
     stream.makeVisible(0);

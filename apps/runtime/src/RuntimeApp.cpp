@@ -3,9 +3,13 @@
 
 #include <RuntimeApp.hpp>
 #include <demo/CollisionSystem.hpp>
+#include <demo/EntityDespawned.hpp>
 #include <demo/EntitySpawnSystem.hpp>
+#include <demo/EntitySpawned.hpp>
 #include <demo/GravitySystem.hpp>
+#include <demo/Landed.hpp>
 #include <demo/MovementSystem.hpp>
+#include <demo/Pulse.hpp>
 #include <demo/RigidBody.hpp>
 #include <demo/Velocity.hpp>
 
@@ -29,6 +33,10 @@ namespace TechEngine {
     void RuntimeApp::configureSimulation() {
         m_registry.registerComponent<Velocity>(Velocity::tag);
         m_registry.registerComponent<RigidBody>(RigidBody::tag);
+        m_eventRegistry.registerEvent<Landed>();
+        m_eventRegistry.registerEvent<EntitySpawned>();
+        m_eventRegistry.registerEvent<EntityDespawned>();
+        m_eventRegistry.registerEvent<Pulse>();
         m_schedule.add<MovementSystem>();
         m_schedule.add<GravitySystem>();
         m_schedule.add<CollisionSystem>();
