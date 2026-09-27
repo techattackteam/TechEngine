@@ -74,15 +74,32 @@ artifacts match the tree, and go.
 ### Dev card (`T`): scaffold it
 
 Write the smallest scaffold that unblocks me: new files, headers, declarations, signatures,
-CMake wiring, and test cases named after the `done:` clauses. Leave the logic to me. Bodies stay
-empty or stubbed, and a `TODO(<card ID>)` marks each place I fill in.
+and CMake wiring. Leave the logic to me. Bodies stay empty or stubbed, and a `TODO(<card ID>)`
+marks each place I fill in.
+
+Then write the card's tests in full. Tests are scaffolding (`CLAUDE.md` *Testing*), and a
+written test is the sharpest statement of what the `done:` clauses mean, so they come with real
+assertions, not empty cases:
+
+- **New cases**, one or more per `done:` clause, named after it. Each asserts the behaviour the
+  clause promises against the scaffolded API, so they fail until I fill the stubs in.
+- **Existing cases the card changes.** Find the tests that exercise the code the card touches
+  and adapt the ones whose expectation the card changes: renamed or removed API, changed
+  semantics. Delete a case only when the behaviour it proves is gone, and say so.
+- Put them in the module's own test exe (`techengine_test()`), in the file that already
+  covers that system, or a sibling file named like its neighbours.
+- If a clause is not unit-testable (rendering, a demo scene), write no fake test for it. Say
+  how it gets verified instead.
+- A test that has to guess at behaviour no artifact decides is the same gap as a guessed
+  signature: report it, do not encode the guess.
 
 - Read `CONVENTIONS.md` and the files you are adding to first, and match them (rule 0).
 - The shape comes from the design note and the card. If the brief found a decision no
   artifact makes, **do not scaffold around it**: a guessed signature looks like ground truth
   afterwards. Report the gap and stop.
 - Do not compile it. Hand it over saying plainly that it is unverified.
-- In the response, list the files and say what each stub is waiting for.
+- In the response, list the files and say what each stub is waiting for, then list the tests:
+  which are new, which were adapted and why, and what each one is meant to prove.
 
 ### Planning card (`D` or `P`): propose a solution
 

@@ -36,17 +36,17 @@ namespace TechEngine {
         }
 
         template<typename T>
-        std::span<const T> read(EventCursor& cursor) const {
+        std::span<const T> read() const {
             const EventStream* stream = getStream(eventTypeId<T>());
             if (stream == nullptr) {
                 return {};
             }
-            return stream->read<T>(cursor);
+            return stream->read<T>();
         }
 
-        void makeVisible(std::uint64_t frameIndex, std::uint64_t tick);
+        void makeVisible(std::uint64_t tick);
 
-        void retire(std::uint64_t frameIndex, std::uint64_t tick);
+        void retire();
 
         std::size_t streamCount() const;
 

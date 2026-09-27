@@ -62,12 +62,10 @@ TEST_CASE("publish and read reach the type's own stream", "[core][events]") {
 
     streams.publish(StreamsAlpha{7});
     streams.publish(StreamsBeta{99});
-    streams.makeVisible(0, 0);
+    streams.makeVisible(1);
 
-    TechEngine::EventCursor alphaCursor;
-    TechEngine::EventCursor betaCursor;
-    const std::span<const StreamsAlpha> alpha = streams.read<StreamsAlpha>(alphaCursor);
-    const std::span<const StreamsBeta> beta = streams.read<StreamsBeta>(betaCursor);
+    const std::span<const StreamsAlpha> alpha = streams.read<StreamsAlpha>();
+    const std::span<const StreamsBeta> beta = streams.read<StreamsBeta>();
 
     REQUIRE(alpha.size() == 1);
     REQUIRE(alpha[0].amount == 7);
@@ -84,16 +82,13 @@ TEST_CASE("the barrier reaches every stream at once", "[core][events]") {
     streams.publish(StreamsAlpha{1});
     streams.publish(StreamsBeta{2});
 
-    TechEngine::EventCursor alphaCursor;
-    TechEngine::EventCursor betaCursor;
+    REQUIRE(streams.read<StreamsAlpha>().empty());
+    REQUIRE(streams.read<StreamsBeta>().empty());
 
-    REQUIRE(streams.read<StreamsAlpha>(alphaCursor).empty());
-    REQUIRE(streams.read<StreamsBeta>(betaCursor).empty());
+    streams.makeVisible(1);
 
-    streams.makeVisible(0, 0);
-
-    REQUIRE(streams.read<StreamsAlpha>(alphaCursor).size() == 1);
-    REQUIRE(streams.read<StreamsBeta>(betaCursor).size() == 1);
+    REQUIRE(streams.read<StreamsAlpha>().size() == 1);
+    REQUIRE(streams.read<StreamsBeta>().size() == 1);
 }
 
 TEST_CASE("retiring reaches every stream at once", "[core][events]") {
@@ -104,15 +99,12 @@ TEST_CASE("retiring reaches every stream at once", "[core][events]") {
 
     streams.publish(StreamsAlpha{1});
     streams.publish(StreamsBeta{2});
-    streams.makeVisible(0, 0);
+    streams.makeVisible(1);
 
-    streams.retire(1, 1);
+    streams.retire();
 
-    TechEngine::EventCursor alphaCursor;
-    TechEngine::EventCursor betaCursor;
-
-    REQUIRE(streams.read<StreamsAlpha>(alphaCursor).empty());
-    REQUIRE(streams.read<StreamsBeta>(betaCursor).empty());
+    REQUIRE(streams.read<StreamsAlpha>().empty());
+    REQUIRE(streams.read<StreamsBeta>().empty());
 }
 
 // The miss is always-on and survivable: a handler that declines to abort must land on a
@@ -125,32 +117,10 @@ TEST_CASE("a type with no stream is rejected and changes nothing", "[core][event
 
     streams.publish(StreamsUnregistered{7});
 
-    TechEngine::EventCursor cursor;
-    const std::span<const StreamsUnregistered> missing = streams.read<StreamsUnregistered>(cursor);
+    const std::span<const StreamsUnregistered> missing = streams.read<StreamsUnregistered>();
 
     REQUIRE(TechEngineTests::g_fired.size() == 2);
     REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Verify);
     REQUIRE(missing.empty());
-    REQUIRE(cursor.sequence == 0);
     REQUIRE(streams.streamCount() == 1);
-}
-
-// The frame shape the driver runs: publish inside a fixed sub-step, read at the tail. The
-// second frame is what proves the cursor parked rather than replaying the batch.
-TEST_CASE("an event published in a sub-step is read once at the frame tail", "[core][events]") {
-    TechEngine::EventRegistry registry;
-    registry.registerEvent<StreamsAlpha>(ALPHA_TAG);
-    TechEngine::EventStreamManager streams{registry};
-    TechEngine::EventCursor cursor;
-
-    streams.publish(StreamsAlpha{5});
-    streams.makeVisible(1, 1);
-    streams.makeVisible(1, 1);
-
-    REQUIRE(streams.read<StreamsAlpha>(cursor).size() == 1);
-
-    streams.retire(1, 1);
-    streams.makeVisible(2, 2);
-
-    REQUIRE(streams.read<StreamsAlpha>(cursor).empty());
 }
