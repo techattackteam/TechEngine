@@ -1,5 +1,6 @@
 #include <TechEngine/core/EngineContext.hpp>
 #include <TechEngine/core/SimulationContext.hpp>
+#include <TechEngine/core/events/EventRegistry.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
@@ -240,6 +241,7 @@ public:
 class ExecutorFixture {
 public:
     TechEngine::ComponentRegistry registry;
+    TechEngine::EventRegistry events;
     TechEngine::Scene scene;
     TechEngine::MountTable mounts;
     TechEngine::FileAccess files;
@@ -277,7 +279,7 @@ TEST_CASE("the serial executor walks levels and retains each system instance", "
     schedule.add<FirstExecutorSystem>().before<SecondExecutorSystem>();
     schedule.add<SecondExecutorSystem>();
     schedule.add<TerminalExecutorSystem>().setSlot(TechEngine::Slot::Terminal);
-    const TechEngine::TaskGraph graph(schedule);
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
 
@@ -293,7 +295,7 @@ TEST_CASE("the serial executor walks levels and retains each system instance", "
 TEST_CASE("an empty graph still reaches the tick barrier", "[core][systems][executor]") {
     ExecutorFixture fixture;
     TechEngine::Schedule schedule(fixture.registry);
-    const TechEngine::TaskGraph graph(schedule);
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
     fixture.context.tick = 19;
@@ -312,7 +314,7 @@ TEST_CASE("spawn and component commands apply in issue order before barrier serv
     state.commandMode = ExecutorCommandMode::Spawn;
     TechEngine::Schedule schedule(fixture.registry);
     schedule.add<CommandExecutorSystem>();
-    const TechEngine::TaskGraph graph(schedule);
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
 
@@ -338,7 +340,7 @@ TEST_CASE("per-system command buffers merge in graph order", "[core][systems][ex
     TechEngine::Schedule schedule(fixture.registry);
     schedule.add<BufferedSpawnSystem<10>>();
     schedule.add<BufferedSpawnSystem<20>>();
-    const TechEngine::TaskGraph graph(schedule);
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
 
@@ -360,7 +362,7 @@ TEST_CASE("despawn remains invisible until the barrier and validates the hierarc
     state.commandMode = ExecutorCommandMode::Despawn;
     TechEngine::Schedule schedule(fixture.registry);
     schedule.add<CommandExecutorSystem>();
-    const TechEngine::TaskGraph graph(schedule);
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
 
@@ -380,7 +382,7 @@ TEST_CASE("undeclared component access fires the debug assertion without corrupt
     state.accessMode = ExecutorAccessMode::UndeclaredRead;
     TechEngine::Schedule schedule(fixture.registry);
     schedule.add<AccessExecutorSystem>();
-    const TechEngine::TaskGraph graph(schedule);
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
 
@@ -402,7 +404,7 @@ TEST_CASE("write stamps advance for declared writes but not declared reads", "[c
     state.target = fixture.scene.createEntity();
     TechEngine::Schedule writeSchedule(fixture.registry);
     writeSchedule.add<AccessExecutorSystem>(TechEngine::DeclareAccess<TechEngine::Write<TechEngine::Transform>, TechEngine::Read<>>{});
-    const TechEngine::TaskGraph writeGraph(writeSchedule);
+    const TechEngine::TaskGraph writeGraph(writeSchedule, fixture.events);
     TechEngine::SerialExecutor writer(writeGraph);
     BarrierProbe barrier;
     state.accessMode = ExecutorAccessMode::None;
@@ -416,7 +418,7 @@ TEST_CASE("write stamps advance for declared writes but not declared reads", "[c
 
     TechEngine::Schedule readSchedule(fixture.registry);
     readSchedule.add<AccessExecutorSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<TechEngine::Transform>>{});
-    const TechEngine::TaskGraph readGraph(readSchedule);
+    const TechEngine::TaskGraph readGraph(readSchedule, fixture.events);
     TechEngine::SerialExecutor reader(readGraph);
     state.accessMode = ExecutorAccessMode::Read;
     fixture.context.tick = 8;
@@ -434,7 +436,7 @@ TEST_CASE("a failing system discards every pending command and skips the barrier
     state.throwAfterCommand = true;
     TechEngine::Schedule schedule(fixture.registry);
     schedule.add<ThrowingExecutorSystem>();
-    const TechEngine::TaskGraph graph(schedule);
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
 
@@ -454,7 +456,7 @@ TEST_CASE("immediate structural mutation is rejected during system execution", "
     ExecutorFixture fixture;
     TechEngine::Schedule schedule(fixture.registry);
     schedule.add<ImmediateMutationSystem>();
-    const TechEngine::TaskGraph graph(schedule);
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
 
@@ -470,7 +472,7 @@ TEST_CASE("a pending entity cannot cross per-system command buffers", "[core][sy
     TechEngine::Schedule schedule(fixture.registry);
     schedule.add<PendingProducerSystem>().before<ForeignPendingConsumerSystem>();
     schedule.add<ForeignPendingConsumerSystem>();
-    const TechEngine::TaskGraph graph(schedule);
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
     TechEngine::SerialExecutor executor(graph);
     BarrierProbe barrier;
 

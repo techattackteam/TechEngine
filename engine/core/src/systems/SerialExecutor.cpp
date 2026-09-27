@@ -18,6 +18,7 @@ namespace TechEngine {
             ScheduleAccess access;
             ISystem* system = nullptr;
             SceneCommandBuffer commands;
+            std::vector<TaskGraphEventHandler> eventHandlers;
         };
 
         using Level = std::vector<Node>;
@@ -31,7 +32,7 @@ namespace TechEngine {
             Impl::Level level;
             level.reserve(sourceLevel.size());
             for (const TaskGraphNode& sourceNode: sourceLevel) {
-                level.push_back({sourceNode.access, sourceNode.system, {}});
+                level.push_back({sourceNode.access, sourceNode.system, {}, sourceNode.eventHandlers});
             }
             m_impl->levels.push_back(std::move(level));
         }

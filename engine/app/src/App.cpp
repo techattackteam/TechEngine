@@ -112,7 +112,7 @@ namespace TechEngine {
         configureSimulation();
         m_scene.buildEventStreams(m_eventRegistry);
         m_registry.freeze();
-        m_taskGraph = std::make_unique<TaskGraph>(m_schedule);
+        m_taskGraph = std::make_unique<TaskGraph>(m_schedule, m_eventRegistry);
         m_serialExecutor = std::make_unique<SerialExecutor>(*m_taskGraph);
         m_simulationFinalized = true;
     }

@@ -1,5 +1,6 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/core/events/EventRegistry.hpp>
 #include <TechEngine/core/systems/TaskGraph.hpp>
 
 #include <algorithm>
@@ -12,7 +13,7 @@
 #include <vector>
 
 namespace TechEngine {
-    TaskGraph::TaskGraph(Schedule& schedule) {
+    TaskGraph::TaskGraph(Schedule& schedule, const EventRegistry& events) {
         const std::span<const ScheduleEntry> entries = schedule.getEntries();
         const std::unordered_map<std::type_index, std::size_t> entryByType = schedule.getEntryByType();
 
@@ -28,6 +29,8 @@ namespace TechEngine {
                 TE_CHECK(entryByType.contains(constraint.systemType), "System {0} has an ordering constraint on unregistered system {1}", systemNames[i], constraint.systemType.name());
             }
         }
+
+        std::vector<std::vector<TaskGraphEventHandler>> eventHandlers = resolveEventHandlers(entries, events, systemNames);
 
         std::vector<std::vector<std::size_t>> edges(entries.size());
         std::vector<std::size_t> indegree(entries.size(), 0);
@@ -96,7 +99,7 @@ namespace TechEngine {
             for (const std::size_t node: ready) {
                 processed[node] = true;
                 processedCount++;
-                level.push_back({entries[node].system.get(), entries[node].systemType, entries[node].access});
+                level.push_back({entries[node].system.get(), entries[node].systemType, entries[node].access, std::move(eventHandlers[node])});
             }
             for (const std::size_t node: ready) {
                 for (const std::size_t target: edges[node]) {
@@ -162,6 +165,25 @@ namespace TechEngine {
             message += systemNames[cycle.front()];
         }
         return message;
+    }
+
+    std::vector<std::vector<TaskGraphEventHandler>> TaskGraph::resolveEventHandlers(const std::span<const ScheduleEntry> entries, const EventRegistry& events, const std::vector<std::string>& systemNames) {
+        std::vector<std::vector<TaskGraphEventHandler>> resolved(entries.size());
+        for (std::size_t i = 0; i < entries.size(); i++) {
+            resolved[i].reserve(entries[i].eventHandlers.size());
+            for (const EventHandlerDeclaration& declaration: entries[i].eventHandlers) {
+                const EventTypeId eventType = declaration.eventType();
+                // Any registry writes the process-wide eventTypeId<T>() slot, so a valid id does not
+                // mean this registry knows the type.
+                const EventTypeRecord* record = events.find(eventType);
+                TE_CHECK(record != nullptr, "System {0} declares a handler for an event type that is not registered", systemNames[i]);
+                if (record == nullptr) {
+                    continue;
+                }
+                resolved[i].push_back({eventType, declaration.handler});
+            }
+        }
+        return resolved;
     }
 
     std::span<const TaskGraphLevel> TaskGraph::getLevels() const {
