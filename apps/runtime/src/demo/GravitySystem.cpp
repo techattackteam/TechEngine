@@ -1,9 +1,9 @@
+#include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/SimulationContext.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/systems/ScheduleRegistration.hpp>
 
-#include "TechEngine/base/diagnostics/Log.hpp"
 #include <demo/GravitySystem.hpp>
 
 namespace TechEngine {
