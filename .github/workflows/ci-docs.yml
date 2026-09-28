@@ -105,4 +105,5 @@ jobs:
           - diff coverage
     steps:
       - name: No code in this change
-        run: echo "Docs-only change: '${{ matrix.context }}' has nothing to build."
+        run: |
+          echo "Docs-only change: '${{ matrix.context }}' has nothing to build."
