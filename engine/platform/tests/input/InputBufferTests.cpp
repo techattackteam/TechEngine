@@ -10,9 +10,10 @@ using TechEngine::InputBuffer;
 using TechEngine::InputEvent;
 using TechEngine::InputFrame;
 using TechEngine::InputKind;
+using TechEngine::Key;
 
-static InputEvent keyEvent(int code, bool pressed) {
-    return InputEvent{.kind = InputKind::Key, .code = code, .pressed = pressed};
+static InputEvent keyEvent(Key key, bool pressed) {
+    return InputEvent{.kind = InputKind::Key, .key = key, .pressed = pressed};
 }
 
 static InputEvent focusEvent(bool focused) {
@@ -28,8 +29,8 @@ TEST_CASE("both edges between two consumes arrive in capture order", "[platform]
     InputBuffer input{clock};
     InputFrame frame;
     input.publish(focusEvent(true));
-    input.publish(keyEvent(65, true));
-    input.publish(keyEvent(65, false));
+    input.publish(keyEvent(Key::A, true));
+    input.publish(keyEvent(Key::A, false));
 
     input.consume(frame);
 
@@ -41,7 +42,7 @@ TEST_CASE("both edges between two consumes arrive in capture order", "[platform]
     CHECK(frame.events[0].sequence < frame.events[1].sequence);
     CHECK(frame.events[1].sequence < frame.events[2].sequence);
     CHECK(frame.events[1].capturedAt <= frame.events[2].capturedAt);
-    CHECK_FALSE(frame.held.keys.test(65));
+    CHECK_FALSE(frame.held.isHeld(Key::A));
 }
 
 TEST_CASE("an event published after a consume belongs to the next consume", "[platform][input]") {
@@ -49,16 +50,16 @@ TEST_CASE("an event published after a consume belongs to the next consume", "[pl
     InputBuffer input{clock};
     InputFrame frame;
     input.publish(focusEvent(true));
-    input.publish(keyEvent(65, true));
+    input.publish(keyEvent(Key::A, true));
     input.consume(frame);
-    REQUIRE(frame.held.keys.test(65));
+    REQUIRE(frame.held.isHeld(Key::A));
 
-    input.publish(keyEvent(65, false));
-    CHECK(frame.held.keys.test(65));
+    input.publish(keyEvent(Key::A, false));
+    CHECK(frame.held.isHeld(Key::A));
 
     input.consume(frame);
     REQUIRE(frame.events.size() == 1);
-    CHECK_FALSE(frame.held.keys.test(65));
+    CHECK_FALSE(frame.held.isHeld(Key::A));
 }
 
 TEST_CASE("held state survives consumes with no new events", "[platform][input]") {
@@ -66,13 +67,13 @@ TEST_CASE("held state survives consumes with no new events", "[platform][input]"
     InputBuffer input{clock};
     InputFrame frame;
     input.publish(focusEvent(true));
-    input.publish(keyEvent(87, true));
+    input.publish(keyEvent(Key::W, true));
     input.consume(frame);
 
     for (int i = 0; i < 5; i++) {
         input.consume(frame);
         CHECK(frame.events.empty());
-        CHECK(frame.held.keys.test(87));
+        CHECK(frame.held.isHeld(Key::W));
     }
 }
 
@@ -83,10 +84,10 @@ TEST_CASE("a dropped release cannot stick after overflow", "[platform][input]") 
     input.publish(focusEvent(true));
     input.consume(frame);
 
-    input.publish(keyEvent(65, true));
-    input.publish(keyEvent(66, true));
-    input.publish(keyEvent(65, false));
-    input.publish(keyEvent(67, true));
+    input.publish(keyEvent(Key::A, true));
+    input.publish(keyEvent(Key::B, true));
+    input.publish(keyEvent(Key::A, false));
+    input.publish(keyEvent(Key::C, true));
     input.consume(frame);
 
     CHECK(frame.recovered);
@@ -94,9 +95,9 @@ TEST_CASE("a dropped release cannot stick after overflow", "[platform][input]") 
     CHECK(frame.recoveryGeneration == 1);
     CHECK(frame.firstLostSequence == 2);
     CHECK(frame.lastLostSequence == 5);
-    CHECK_FALSE(frame.held.keys.test(65));
-    CHECK(frame.held.keys.test(66));
-    CHECK(frame.held.keys.test(67));
+    CHECK_FALSE(frame.held.isHeld(Key::A));
+    CHECK(frame.held.isHeld(Key::B));
+    CHECK(frame.held.isHeld(Key::C));
 }
 
 TEST_CASE("a full queue cannot hide recovery, and normal batches resume after it", "[platform][input]") {
@@ -104,18 +105,18 @@ TEST_CASE("a full queue cannot hide recovery, and normal batches resume after it
     InputBuffer input{clock, 1};
     InputFrame frame;
     input.publish(focusEvent(true));
-    input.publish(keyEvent(65, true));
+    input.publish(keyEvent(Key::A, true));
 
     input.consume(frame);
     CHECK(frame.recovered);
     CHECK(frame.held.focused);
-    CHECK(frame.held.keys.test(65));
+    CHECK(frame.held.isHeld(Key::A));
 
-    input.publish(keyEvent(65, false));
+    input.publish(keyEvent(Key::A, false));
     input.consume(frame);
     CHECK_FALSE(frame.recovered);
     REQUIRE(frame.events.size() == 1);
-    CHECK_FALSE(frame.held.keys.test(65));
+    CHECK_FALSE(frame.held.isHeld(Key::A));
 }
 
 TEST_CASE("focus changes start neutral and keys are ignored while unfocused", "[platform][input]") {
@@ -123,12 +124,12 @@ TEST_CASE("focus changes start neutral and keys are ignored while unfocused", "[
     InputBuffer input{clock};
     InputFrame frame;
     input.publish(focusEvent(true));
-    input.publish(keyEvent(65, true));
+    input.publish(keyEvent(Key::A, true));
     input.consume(frame);
-    REQUIRE(frame.held.keys.test(65));
+    REQUIRE(frame.held.isHeld(Key::A));
 
     input.publish(focusEvent(false));
-    input.publish(keyEvent(66, true));
+    input.publish(keyEvent(Key::B, true));
     input.publish(focusEvent(true));
     input.consume(frame);
 
@@ -170,9 +171,9 @@ TEST_CASE("concurrent input delivery recovers coherently while presentation read
     std::jthread producer{[&] {
         input.publish(focusEvent(true));
         for (int i = 0; i < 20000; i++) {
-            input.publish(keyEvent(65, true));
+            input.publish(keyEvent(Key::A, true));
             input.publish(motionEvent(1.0, 2.0));
-            input.publish(keyEvent(65, false));
+            input.publish(keyEvent(Key::A, false));
         }
         done = true;
     }};
@@ -199,6 +200,6 @@ TEST_CASE("concurrent input delivery recovers coherently while presentation read
     presentation.join();
     input.consume(frame);
     CHECK(coherent.load());
-    CHECK_FALSE(frame.held.keys.test(65));
+    CHECK_FALSE(frame.held.isHeld(Key::A));
     CHECK(frame.held.lookX == 20000.0);
 }
