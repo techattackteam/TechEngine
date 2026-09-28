@@ -36,8 +36,8 @@ static double toSeconds(Clock::TimePoint::duration duration) {
     return std::chrono::duration<double>(duration).count();
 }
 
-static TechEngine::InputEvent keyEvent(int code, bool pressed) {
-    return TechEngine::InputEvent{.kind = TechEngine::InputKind::Key, .code = code, .pressed = pressed};
+static TechEngine::InputEvent keyEvent(TechEngine::Key key, bool pressed) {
+    return TechEngine::InputEvent{.kind = TechEngine::InputKind::Key, .key = key, .pressed = pressed};
 }
 
 static TechEngine::InputEvent focusEvent(bool focused) {
@@ -221,15 +221,15 @@ TEST_CASE("input is consumed immediately before each fixed tick", "[app][loop][i
     std::vector<bool> held;
     const auto record = [&eventCounts, &held](const SimulationContext& simulation) {
         eventCounts.push_back(simulation.input.events.size());
-        held.push_back(simulation.input.held.keys.test(87));
+        held.push_back(simulation.input.held.isHeld(TechEngine::Key::W));
     };
 
     input.publish(focusEvent(true));
-    input.publish(keyEvent(87, true));
-    input.publish(keyEvent(87, false));
+    input.publish(keyEvent(TechEngine::Key::W, true));
+    input.publish(keyEvent(TechEngine::Key::W, false));
     loop.advance(1.0, record);
 
-    input.publish(keyEvent(87, true));
+    input.publish(keyEvent(TechEngine::Key::W, true));
     loop.advance(0.25, record);
     loop.advance(0.25, record);
 

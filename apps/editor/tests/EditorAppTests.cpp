@@ -134,13 +134,13 @@ protected:
             return;
         }
         m_input.publish(TechEngine::InputEvent{.kind = TechEngine::InputKind::Focus, .pressed = true});
-        m_input.publish(TechEngine::InputEvent{.kind = TechEngine::InputKind::Key, .code = 87, .pressed = true});
+        m_input.publish(TechEngine::InputEvent{.kind = TechEngine::InputKind::Key, .key = TechEngine::Key::W, .pressed = true});
         EditorApp::mainThreadUpdate();
     }
 
     void publishSnapshot(const TechEngine::SimulationContext& simulation) override {
         EditorApp::publishSnapshot(simulation);
-        if (simulation.input.held.keys.test(87)) {
+        if (simulation.input.held.isHeld(TechEngine::Key::W)) {
             inputConsumed = true;
             requestStop();
         }

@@ -10,6 +10,7 @@
 #include <atomic>
 #include <barrier>
 #include <chrono>
+#include <cstddef>
 #include <string_view>
 #include <thread>
 
@@ -184,14 +185,14 @@ TEST_CASE("Window event waiting returns when another thread posts an empty event
     CHECK(std::chrono::steady_clock::now() - started < std::chrono::seconds{10});
 }
 
-TEST_CASE("Window callbacks publish input into the attached buffer", "[platform][window][input]") {
-    const PlatformWindowTestScope scope;
-    REQUIRE(TechEngine::Window::initialize());
-    const TechEngine::Clock clock;
-    TechEngine::InputBuffer input{clock};
-    TechEngine::Window window;
-    REQUIRE(window.open(320, 240, "Input test"));
+struct GlfwInputCallbacks {
+    GLFWkeyfun key = nullptr;
+    GLFWmousebuttonfun button = nullptr;
+    GLFWcursorposfun cursor = nullptr;
+    GLFWwindowfocusfun focus = nullptr;
+};
 
+static GLFWwindow* nativeHandle(TechEngine::Window& window) {
     GLFWwindow* nativeWindow = nullptr;
     {
         std::jthread worker([&] {
@@ -200,24 +201,42 @@ TEST_CASE("Window callbacks publish input into the attached buffer", "[platform]
             window.releaseContext();
         });
     }
+    return nativeWindow;
+}
+
+static GlfwInputCallbacks takeInputCallbacks(GLFWwindow* nativeWindow) {
+    return GlfwInputCallbacks{
+        .key = glfwSetKeyCallback(nativeWindow, nullptr),
+        .button = glfwSetMouseButtonCallback(nativeWindow, nullptr),
+        .cursor = glfwSetCursorPosCallback(nativeWindow, nullptr),
+        .focus = glfwSetWindowFocusCallback(nativeWindow, nullptr),
+    };
+}
+
+TEST_CASE("Window callbacks publish input into the attached buffer", "[platform][window][input]") {
+    const PlatformWindowTestScope scope;
+    REQUIRE(TechEngine::Window::initialize());
+    const TechEngine::Clock clock;
+    TechEngine::InputBuffer input{clock};
+    TechEngine::Window window;
+    REQUIRE(window.open(320, 240, "Input test"));
+
+    GLFWwindow* nativeWindow = nativeHandle(window);
     REQUIRE(nativeWindow != nullptr);
-    const GLFWkeyfun keyCallback = glfwSetKeyCallback(nativeWindow, nullptr);
-    const GLFWmousebuttonfun buttonCallback = glfwSetMouseButtonCallback(nativeWindow, nullptr);
-    const GLFWcursorposfun cursorCallback = glfwSetCursorPosCallback(nativeWindow, nullptr);
-    const GLFWwindowfocusfun focusCallback = glfwSetWindowFocusCallback(nativeWindow, nullptr);
-    REQUIRE(keyCallback != nullptr);
-    REQUIRE(buttonCallback != nullptr);
-    REQUIRE(cursorCallback != nullptr);
-    REQUIRE(focusCallback != nullptr);
+    const GlfwInputCallbacks callbacks = takeInputCallbacks(nativeWindow);
+    REQUIRE(callbacks.key != nullptr);
+    REQUIRE(callbacks.button != nullptr);
+    REQUIRE(callbacks.cursor != nullptr);
+    REQUIRE(callbacks.focus != nullptr);
 
     window.setInputBuffer(&input);
-    focusCallback(nativeWindow, GLFW_TRUE);
-    cursorCallback(nativeWindow, 10.0, 10.0);
-    keyCallback(nativeWindow, GLFW_KEY_W, 0, GLFW_PRESS, 0);
-    keyCallback(nativeWindow, GLFW_KEY_W, 0, GLFW_REPEAT, 0);
-    buttonCallback(nativeWindow, GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS, 0);
-    cursorCallback(nativeWindow, 13.0, 6.0);
-    keyCallback(nativeWindow, GLFW_KEY_W, 0, GLFW_RELEASE, 0);
+    callbacks.focus(nativeWindow, GLFW_TRUE);
+    callbacks.cursor(nativeWindow, 10.0, 10.0);
+    callbacks.key(nativeWindow, GLFW_KEY_W, 0, GLFW_PRESS, 0);
+    callbacks.key(nativeWindow, GLFW_KEY_W, 0, GLFW_REPEAT, 0);
+    callbacks.button(nativeWindow, GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS, 0);
+    callbacks.cursor(nativeWindow, 13.0, 6.0);
+    callbacks.key(nativeWindow, GLFW_KEY_W, 0, GLFW_RELEASE, 0);
 
     TechEngine::InputFrame frame;
     input.consume(frame);
@@ -226,14 +245,134 @@ TEST_CASE("Window callbacks publish input into the attached buffer", "[platform]
     CHECK(frame.events[1].kind == TechEngine::InputKind::Focus);
     CHECK(frame.events[1].pressed);
     CHECK(frame.events[2].kind == TechEngine::InputKind::Key);
+    CHECK(frame.events[2].key == TechEngine::Key::W);
     CHECK(frame.events[2].pressed);
     CHECK(frame.events[3].kind == TechEngine::InputKind::Button);
+    CHECK(frame.events[3].button == TechEngine::MouseButton::Left);
+    CHECK(frame.events[3].pressed);
     CHECK(frame.events[4].kind == TechEngine::InputKind::Motion);
     CHECK(frame.events[4].x == 3.0);
     CHECK(frame.events[4].y == -4.0);
     CHECK(frame.events[5].kind == TechEngine::InputKind::Key);
+    CHECK(frame.events[5].key == TechEngine::Key::W);
     CHECK_FALSE(frame.events[5].pressed);
-    CHECK_FALSE(frame.held.keys.test(GLFW_KEY_W));
-    CHECK(frame.held.buttons.test(GLFW_MOUSE_BUTTON_LEFT));
+    CHECK_FALSE(frame.held.isHeld(TechEngine::Key::W));
+    CHECK(frame.held.isHeld(TechEngine::MouseButton::Left));
     CHECK(input.presentationState().lookX == 3.0);
+}
+
+TEST_CASE("Window translates known controls and drops unknown ones before the buffer", "[platform][window][input]") {
+    const PlatformWindowTestScope scope;
+    REQUIRE(TechEngine::Window::initialize());
+    const TechEngine::Clock clock;
+    TechEngine::InputBuffer input{clock};
+    TechEngine::Window window;
+    REQUIRE(window.open(320, 240, "Unknown input test"));
+    GLFWwindow* nativeWindow = nativeHandle(window);
+    REQUIRE(nativeWindow != nullptr);
+    const GlfwInputCallbacks callbacks = takeInputCallbacks(nativeWindow);
+
+    window.setInputBuffer(&input);
+    callbacks.focus(nativeWindow, GLFW_TRUE);
+    callbacks.key(nativeWindow, GLFW_KEY_UNKNOWN, 0, GLFW_PRESS, 0);
+    callbacks.key(nativeWindow, GLFW_KEY_LAST + 1, 0, GLFW_PRESS, 0);
+    callbacks.button(nativeWindow, GLFW_MOUSE_BUTTON_LAST + 1, GLFW_PRESS, 0);
+    callbacks.key(nativeWindow, GLFW_KEY_KP_EQUAL, 0, GLFW_PRESS, 0);
+    callbacks.button(nativeWindow, GLFW_MOUSE_BUTTON_8, GLFW_PRESS, 0);
+    callbacks.key(nativeWindow, GLFW_KEY_UNKNOWN, 0, GLFW_RELEASE, 0);
+
+    TechEngine::InputFrame frame;
+    input.consume(frame);
+    REQUIRE(frame.events.size() == 4);
+    CHECK(frame.events[2].kind == TechEngine::InputKind::Key);
+    CHECK(frame.events[2].key == TechEngine::Key::KeypadEqual);
+    CHECK(frame.events[3].kind == TechEngine::InputKind::Button);
+    CHECK(frame.events[3].button == TechEngine::MouseButton::Extra5);
+    CHECK(frame.events[2].sequence == frame.events[1].sequence + 1);
+    CHECK(frame.events[3].sequence == frame.events[2].sequence + 1);
+    CHECK(frame.held.keys.count() == 1);
+    CHECK(frame.held.buttons.count() == 1);
+    CHECK(frame.held.isHeld(TechEngine::Key::KeypadEqual));
+    CHECK(frame.held.isHeld(TechEngine::MouseButton::Extra5));
+    CHECK(input.presentationState().sequence == frame.events[3].sequence);
+}
+
+TEST_CASE("Window keeps press and release order and never turns GLFW repeat into a press", "[platform][window][input]") {
+    const PlatformWindowTestScope scope;
+    REQUIRE(TechEngine::Window::initialize());
+    const TechEngine::Clock clock;
+    TechEngine::InputBuffer input{clock};
+    TechEngine::Window window;
+    REQUIRE(window.open(320, 240, "Input order test"));
+    GLFWwindow* nativeWindow = nativeHandle(window);
+    REQUIRE(nativeWindow != nullptr);
+    const GlfwInputCallbacks callbacks = takeInputCallbacks(nativeWindow);
+
+    window.setInputBuffer(&input);
+    callbacks.focus(nativeWindow, GLFW_TRUE);
+    callbacks.key(nativeWindow, GLFW_KEY_S, 0, GLFW_REPEAT, 0);
+    callbacks.key(nativeWindow, GLFW_KEY_W, 0, GLFW_PRESS, 0);
+    callbacks.key(nativeWindow, GLFW_KEY_W, 0, GLFW_REPEAT, 0);
+    callbacks.key(nativeWindow, GLFW_KEY_A, 0, GLFW_PRESS, 0);
+    callbacks.key(nativeWindow, GLFW_KEY_W, 0, GLFW_REPEAT, 0);
+    callbacks.button(nativeWindow, GLFW_MOUSE_BUTTON_RIGHT, GLFW_PRESS, 0);
+    callbacks.key(nativeWindow, GLFW_KEY_W, 0, GLFW_RELEASE, 0);
+    callbacks.key(nativeWindow, GLFW_KEY_A, 0, GLFW_REPEAT, 0);
+    callbacks.button(nativeWindow, GLFW_MOUSE_BUTTON_RIGHT, GLFW_RELEASE, 0);
+    callbacks.key(nativeWindow, GLFW_KEY_A, 0, GLFW_RELEASE, 0);
+
+    TechEngine::InputFrame frame;
+    input.consume(frame);
+    REQUIRE(frame.events.size() == 8);
+    CHECK(frame.events[2].key == TechEngine::Key::W);
+    CHECK(frame.events[2].pressed);
+    CHECK(frame.events[3].key == TechEngine::Key::A);
+    CHECK(frame.events[3].pressed);
+    CHECK(frame.events[4].kind == TechEngine::InputKind::Button);
+    CHECK(frame.events[4].button == TechEngine::MouseButton::Right);
+    CHECK(frame.events[4].pressed);
+    CHECK(frame.events[5].key == TechEngine::Key::W);
+    CHECK_FALSE(frame.events[5].pressed);
+    CHECK(frame.events[6].kind == TechEngine::InputKind::Button);
+    CHECK_FALSE(frame.events[6].pressed);
+    CHECK(frame.events[7].key == TechEngine::Key::A);
+    CHECK_FALSE(frame.events[7].pressed);
+    for (std::size_t i = 1; i < frame.events.size(); i++) {
+        CHECK(frame.events[i - 1].sequence < frame.events[i].sequence);
+    }
+    CHECK_FALSE(frame.held.isHeld(TechEngine::Key::S));
+    CHECK(frame.held.keys.none());
+    CHECK(frame.held.buttons.none());
+}
+
+TEST_CASE("Window translated controls reach the presentation copy without a simulation consume", "[platform][window][input]") {
+    const PlatformWindowTestScope scope;
+    REQUIRE(TechEngine::Window::initialize());
+    const TechEngine::Clock clock;
+    TechEngine::InputBuffer input{clock};
+    TechEngine::Window window;
+    REQUIRE(window.open(320, 240, "Presentation input test"));
+    GLFWwindow* nativeWindow = nativeHandle(window);
+    REQUIRE(nativeWindow != nullptr);
+    const GlfwInputCallbacks callbacks = takeInputCallbacks(nativeWindow);
+
+    window.setInputBuffer(&input);
+    callbacks.focus(nativeWindow, GLFW_TRUE);
+    callbacks.key(nativeWindow, GLFW_KEY_W, 0, GLFW_PRESS, 0);
+    callbacks.button(nativeWindow, GLFW_MOUSE_BUTTON_MIDDLE, GLFW_PRESS, 0);
+    CHECK(input.presentationState().isHeld(TechEngine::Key::W));
+    CHECK(input.presentationState().isHeld(TechEngine::MouseButton::Middle));
+
+    TechEngine::InputFrame frame;
+    input.consume(frame);
+    REQUIRE(frame.held.isHeld(TechEngine::Key::W));
+
+    callbacks.key(nativeWindow, GLFW_KEY_W, 0, GLFW_RELEASE, 0);
+    CHECK_FALSE(input.presentationState().isHeld(TechEngine::Key::W));
+    CHECK(input.presentationState().isHeld(TechEngine::MouseButton::Middle));
+    CHECK(frame.held.isHeld(TechEngine::Key::W));
+
+    input.consume(frame);
+    CHECK_FALSE(frame.held.isHeld(TechEngine::Key::W));
+    CHECK(frame.held.isHeld(TechEngine::MouseButton::Middle));
 }

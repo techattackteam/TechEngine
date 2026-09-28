@@ -1,9 +1,10 @@
 #pragma once
 
 #include <TechEngine/base/time/Clock.hpp>
+#include <TechEngine/platform/input/Key.hpp>
+#include <TechEngine/platform/input/MouseButton.hpp>
 
 #include <bitset>
-#include <cstddef>
 #include <cstdint>
 
 namespace TechEngine {
@@ -11,7 +12,8 @@ namespace TechEngine {
 
     struct InputEvent {
         InputKind kind = InputKind::Motion;
-        int code = 0;
+        Key key{};
+        MouseButton button{};
         bool pressed = false;
         double x = 0.0;
         double y = 0.0;
@@ -20,11 +22,8 @@ namespace TechEngine {
     };
 
     struct InputState {
-        static constexpr std::size_t KEY_COUNT = 512;
-        static constexpr std::size_t BUTTON_COUNT = 16;
-
         std::bitset<KEY_COUNT> keys;
-        std::bitset<BUTTON_COUNT> buttons;
+        std::bitset<MOUSE_BUTTON_COUNT> buttons;
         double lookX = 0.0;
         double lookY = 0.0;
         bool focused = false;
@@ -33,5 +32,9 @@ namespace TechEngine {
         Clock::TimePoint capturedAt{};
 
         void apply(const InputEvent& event);
+
+        bool isHeld(Key key) const;
+
+        bool isHeld(MouseButton button) const;
     };
 }

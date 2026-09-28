@@ -2,6 +2,8 @@
 #include <TechEngine/platform/input/InputBuffer.hpp>
 #include <TechEngine/platform/window/Window.hpp>
 
+#include <window/GlfwControls.hpp>
+
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
@@ -49,14 +51,26 @@ namespace TechEngine {
             static_cast<Window*>(glfwGetWindowUserPointer(window))->framebufferSizeCallback(width, height);
         });
 
-        glfwSetKeyCallback(m_window, [](GLFWwindow* window, const int key, int, const int action, int) {
-            if (action != GLFW_REPEAT) {
-                static_cast<Window*>(glfwGetWindowUserPointer(window))->publishInput(InputEvent{.kind = InputKind::Key, .code = key, .pressed = action == GLFW_PRESS});
+        glfwSetKeyCallback(m_window, [](GLFWwindow* window, const int keyCode, int, const int action, int) {
+            if (action == GLFW_PRESS || action == GLFW_RELEASE) {
+                const Window& owner = *static_cast<Window*>(glfwGetWindowUserPointer(window));
+                const Key key = translateGlfwKey(keyCode);
+                if (key == Key::Unknown) {
+                    return;
+                }
+                owner.publishInput(InputEvent{.kind = InputKind::Key, .key = key, .pressed = action == GLFW_PRESS});
             }
         });
 
         glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, const int button, const int action, int) {
-            static_cast<Window*>(glfwGetWindowUserPointer(window))->publishInput(InputEvent{.kind = InputKind::Button, .code = button, .pressed = action == GLFW_PRESS});
+            if (action == GLFW_PRESS || action == GLFW_RELEASE) {
+                const Window& owner = *static_cast<Window*>(glfwGetWindowUserPointer(window));
+                const MouseButton mouseButton = translateGlfwMouseButton(button);
+                if (mouseButton == MouseButton::Unknown) {
+                    return;
+                }
+                owner.publishInput(InputEvent{.kind = InputKind::Button, .button = mouseButton, .pressed = action == GLFW_PRESS});
+            }
         });
 
         glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, const double x, const double y) {
