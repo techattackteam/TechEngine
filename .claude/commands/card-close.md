@@ -10,6 +10,17 @@ being finished. Confirm the card's PR is merged into `origin/master`
 (`git fetch origin && git log origin/master --oneline -10`). If it is not merged, stop and
 say so. Nothing below runs on unmerged work.
 
+**Then check the branch link.** Read the head branch of each merged PR the card is closing
+against: `gh pr view <n> --json headRefName`. The name must start with `<card ID>/`, because
+that prefix is the only link from a squashed commit back to its card. On a mismatch, stop and
+say which PR carries which branch: either the wrong card is being closed, or the PR was cut
+under another name and the link is already lost.
+- **A card that landed in halves passes.** Several merged PRs may carry its prefix, and each
+  is checked on its own. An open PR that also carries the prefix is not a mismatch; whether
+  the card can close yet is the merge gate's call above.
+- **A `sweep/…` branch passes.** It is the autonomous lane's code sweep and has no card, so
+  there is no link to guard and nothing on the board to close.
+
 ## Gather first
 
 - **The card's own text**, in the active sprint note under `docs/06 Sprints/`. Its `done:`
