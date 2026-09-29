@@ -211,25 +211,13 @@ namespace TechEngine {
 
     FileResult FileAccess::copy(const std::string_view from, const std::string_view to) const {
         std::filesystem::path sourcePath;
-        const FileResult resolvedSource = m_mounts->resolveExisting(from, sourcePath);
-        if (resolvedSource != FileResult::Ok) {
-            return resolvedSource;
-        }
-
         std::filesystem::path destinationPath;
-        const FileResult resolvedDestination = m_mounts->resolveForCreate(to, destinationPath);
-        if (resolvedDestination != FileResult::Ok) {
-            return resolvedDestination;
+        const FileResult resolved = resolveTransfer(from, to, sourcePath, destinationPath);
+        if (resolved != FileResult::Ok) {
+            return resolved;
         }
 
         std::error_code ec;
-        if (std::filesystem::exists(destinationPath, ec)) {
-            return FileResult::AlreadyExists;
-        }
-        if (!std::filesystem::exists(destinationPath.parent_path(), ec)) {
-            return FileResult::NotFound;
-        }
-
         if (std::filesystem::is_directory(sourcePath, ec)) {
             std::filesystem::copy(sourcePath, destinationPath, std::filesystem::copy_options::recursive, ec);
         } else {
@@ -240,25 +228,13 @@ namespace TechEngine {
 
     FileResult FileAccess::move(const std::string_view from, const std::string_view to) const {
         std::filesystem::path sourcePath;
-        const FileResult resolvedSource = m_mounts->resolveExisting(from, sourcePath);
-        if (resolvedSource != FileResult::Ok) {
-            return resolvedSource;
-        }
-
         std::filesystem::path destinationPath;
-        const FileResult resolvedDestination = m_mounts->resolveForCreate(to, destinationPath);
-        if (resolvedDestination != FileResult::Ok) {
-            return resolvedDestination;
+        const FileResult resolved = resolveTransfer(from, to, sourcePath, destinationPath);
+        if (resolved != FileResult::Ok) {
+            return resolved;
         }
 
         std::error_code ec;
-        if (std::filesystem::exists(destinationPath, ec)) {
-            return FileResult::AlreadyExists;
-        }
-        if (!std::filesystem::exists(destinationPath.parent_path(), ec)) {
-            return FileResult::NotFound;
-        }
-
         std::filesystem::rename(sourcePath, destinationPath, ec);
         return ec ? FileResult::IoError : FileResult::Ok;
     }
@@ -283,5 +259,26 @@ namespace TechEngine {
 
         std::filesystem::rename(physicalPath, newPath, ec);
         return ec ? FileResult::IoError : FileResult::Ok;
+    }
+
+    FileResult FileAccess::resolveTransfer(const std::string_view from, const std::string_view to, std::filesystem::path& sourcePath, std::filesystem::path& destinationPath) const {
+        const FileResult resolvedSource = m_mounts->resolveExisting(from, sourcePath);
+        if (resolvedSource != FileResult::Ok) {
+            return resolvedSource;
+        }
+
+        const FileResult resolvedDestination = m_mounts->resolveForCreate(to, destinationPath);
+        if (resolvedDestination != FileResult::Ok) {
+            return resolvedDestination;
+        }
+
+        std::error_code ec;
+        if (std::filesystem::exists(destinationPath, ec)) {
+            return FileResult::AlreadyExists;
+        }
+        if (!std::filesystem::exists(destinationPath.parent_path(), ec)) {
+            return FileResult::NotFound;
+        }
+        return FileResult::Ok;
     }
 }

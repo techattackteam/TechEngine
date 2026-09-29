@@ -45,5 +45,8 @@ namespace TechEngine {
         FileResult move(std::string_view from, std::string_view to) const;
 
         FileResult rename(std::string_view virtualPath, std::string_view newName) const;
+
+    private:
+        FileResult resolveTransfer(std::string_view from, std::string_view to, std::filesystem::path& sourcePath, std::filesystem::path& destinationPath) const;
     };
 }

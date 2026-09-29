@@ -82,9 +82,16 @@ in code, the same refinement precedent as `kFixedDt` → `FIXED_DT` and `te_<mod
 
 | Hiding a… | Use | Why |
 |---|---|---|
-| free function | `static` | States the linkage in one word, at the declaration |
+| helper that serves a class's member functions | **private member function**, not `static` | Keeps the helper with the class it serves, and gives it the members without passing them in |
+| free function no class owns | `static` | States the linkage in one word, at the declaration |
 | file-scope variable / constant | `static` | Same, and it stays greppable |
 | **type** | plain declaration in the `.cpp` | `static` doesn't apply to types; a `.cpp`-local type is already unreachable from other TUs via the include graph |
+
+**Private member over `static`:** if a `.cpp` helper exists to serve a class's member
+functions, it is a private member of that class, declared in a trailing `private:` section after
+the public API (`Window.hpp`, `FileAccess.hpp`). That holds even when the class's header is
+public. A `static` free function is only for a helper that no class owns, such as the helpers in
+a `.cpp` that defines only free functions (`VirtualPath.cpp`) or a C callback.
 
 **Why not `namespace {}` by default:** it indents a whole file for no semantic gain; it buries
 the linkage fact at the top of a block instead of on the entity (`static void foo` tells you at

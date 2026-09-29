@@ -30,6 +30,18 @@ namespace {
             mounts.mount("assets", scratch.root());
         }
     };
+
+    struct OverlayScratch {
+        ScratchDirectory base;
+        ScratchDirectory overlay;
+        MountTable mounts;
+        FileAccess files;
+
+        explicit OverlayScratch(std::string_view name) : base{std::string{name} + "Base"}, overlay{std::string{name} + "Overlay"}, files{mounts} {
+            mounts.mount("assets", base.root(), 0);
+            mounts.mount("assets", overlay.root(), 100);
+        }
+    };
 }
 
 static std::string asString(const std::vector<std::byte>& bytes) {
@@ -301,56 +313,38 @@ TEST_CASE("every entry point is case-sensitive", "[files][fileaccess]") {
 }
 
 TEST_CASE("read goes through the mount priority order", "[files][fileaccess]") {
-    const ScratchDirectory base{"readPriorityBase"};
-    const ScratchDirectory overlay{"readPriorityOverlay"};
-    base.writeFile("a.txt", "from base");
-    overlay.writeFile("a.txt", "from overlay");
-
-    MountTable mounts;
-    mounts.mount("assets", base.root(), 0);
-    mounts.mount("assets", overlay.root(), 100);
-    const FileAccess files{mounts};
+    OverlayScratch env{"readPriority"};
+    env.base.writeFile("a.txt", "from base");
+    env.overlay.writeFile("a.txt", "from overlay");
 
     std::vector<std::byte> out;
-    REQUIRE(files.read("assets://a.txt", out) == FileResult::Ok);
+    REQUIRE(env.files.read("assets://a.txt", out) == FileResult::Ok);
     CHECK(asString(out) == "from overlay");
 }
 
 TEST_CASE("read falls through to a lower-priority mount", "[files][fileaccess]") {
-    const ScratchDirectory base{"readFallthroughBase"};
-    const ScratchDirectory overlay{"readFallthroughOverlay"};
-    base.writeFile("a.txt", "from base");
-    overlay.writeFile("b.txt", "from overlay");
-
-    MountTable mounts;
-    mounts.mount("assets", base.root(), 0);
-    mounts.mount("assets", overlay.root(), 100);
-    const FileAccess files{mounts};
+    OverlayScratch env{"readFallthrough"};
+    env.base.writeFile("a.txt", "from base");
+    env.overlay.writeFile("b.txt", "from overlay");
 
     std::vector<std::byte> out;
-    REQUIRE(files.read("assets://a.txt", out) == FileResult::Ok);
+    REQUIRE(env.files.read("assets://a.txt", out) == FileResult::Ok);
     CHECK(asString(out) == "from base");
 }
 
 // list does not union overlays: it lists the mount that wins the existence walk, so a file
 // only the base mount has is readable but never listed.
 TEST_CASE("list covers only the winning mount", "[files][fileaccess]") {
-    const ScratchDirectory base{"listPriorityBase"};
-    const ScratchDirectory overlay{"listPriorityOverlay"};
-    base.writeFile("ui/only-in-base.png", "png");
-    overlay.writeFile("ui/only-in-overlay.png", "png");
-
-    MountTable mounts;
-    mounts.mount("assets", base.root(), 0);
-    mounts.mount("assets", overlay.root(), 100);
-    const FileAccess files{mounts};
+    OverlayScratch env{"listPriority"};
+    env.base.writeFile("ui/only-in-base.png", "png");
+    env.overlay.writeFile("ui/only-in-overlay.png", "png");
 
     std::vector<std::string> out;
-    REQUIRE(files.list("assets://ui", false, out) == FileResult::Ok);
+    REQUIRE(env.files.list("assets://ui", false, out) == FileResult::Ok);
     CHECK(out == std::vector<std::string>{"assets://ui/only-in-overlay.png"});
 
     std::vector<std::byte> bytes;
-    CHECK(files.read("assets://ui/only-in-base.png", bytes) == FileResult::Ok);
+    CHECK(env.files.read("assets://ui/only-in-base.png", bytes) == FileResult::Ok);
 }
 
 static std::vector<std::byte> asBytes(std::string_view text) {
@@ -408,17 +402,11 @@ TEST_CASE("write accepts an empty span and leaves an empty file", "[files][filea
 }
 
 TEST_CASE("write lands in the highest-priority mount", "[files][fileaccess]") {
-    ScratchDirectory base{"writePriorityBase"};
-    ScratchDirectory overlay{"writePriorityOverlay"};
+    OverlayScratch env{"writePriority"};
 
-    MountTable mounts;
-    FileAccess files{mounts};
-    mounts.mount("assets", base.root(), 0);
-    mounts.mount("assets", overlay.root(), 100);
-
-    REQUIRE(files.write("assets://level.bin", asBytes("overlay")) == FileResult::Ok);
-    CHECK(std::filesystem::exists(overlay.root() / "level.bin"));
-    CHECK_FALSE(std::filesystem::exists(base.root() / "level.bin"));
+    REQUIRE(env.files.write("assets://level.bin", asBytes("overlay")) == FileResult::Ok);
+    CHECK(std::filesystem::exists(env.overlay.root() / "level.bin"));
+    CHECK_FALSE(std::filesystem::exists(env.base.root() / "level.bin"));
 }
 
 TEST_CASE("write refuses an unmounted alias, the mount root, and a directory", "[files][fileaccess]") {
@@ -524,17 +512,11 @@ TEST_CASE("copy refuses an existing destination and a missing parent", "[files][
 // way read does. resolveForCreate would stop at the overlay and report NotFound for a file
 // the caller can read.
 TEST_CASE("copy resolves its source through the mount priority order", "[files][fileaccess]") {
-    ScratchDirectory base{"copySourceBase"};
-    ScratchDirectory overlay{"copySourceOverlay"};
-    base.writeFile("ui/icon.png", "from the base mount");
+    OverlayScratch env{"copySource"};
+    env.base.writeFile("ui/icon.png", "from the base mount");
 
-    MountTable mounts;
-    FileAccess files{mounts};
-    mounts.mount("assets", base.root(), 0);
-    mounts.mount("assets", overlay.root(), 100);
-
-    REQUIRE(files.copy("assets://ui/icon.png", "assets://copy.png") == FileResult::Ok);
-    CHECK(std::filesystem::exists(overlay.root() / "copy.png"));
+    REQUIRE(env.files.copy("assets://ui/icon.png", "assets://copy.png") == FileResult::Ok);
+    CHECK(std::filesystem::exists(env.overlay.root() / "copy.png"));
 }
 
 TEST_CASE("move relocates a file and removes the source", "[files][fileaccess]") {
