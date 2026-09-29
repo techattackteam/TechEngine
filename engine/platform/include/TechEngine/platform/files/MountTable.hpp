@@ -26,8 +26,6 @@ namespace TechEngine {
 
         bool unmount(const std::string& alias);
 
-        void clear();
-
         bool hasAlias(std::string_view alias) const;
 
         std::size_t mountCount() const;
