@@ -100,6 +100,8 @@ I get them wrong *by habit*, so knowing where the spec lives isn't enough:
   Member-init lists use `()`: `: m_id(id)`, not `: m_id{id}`.
   Braces only for value-init `{}` and multi-field aggregates.
   → *Initialization*.
+- **A helper for a class's members is a private member function, not a `static` function.**
+  `static` is only for a free function that no class owns. → *Internal linkage*.
 - **Internal linkage is `static`, not `namespace {}`.** Never wrap half a `.cpp` in an
   anonymous namespace; it earns its place only around a single `.cpp`-local **type** with a
   real ODR risk. → *Internal linkage*.

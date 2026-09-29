@@ -57,10 +57,6 @@ namespace TechEngine {
         return removed > 0;
     }
 
-    void MountTable::clear() {
-        m_entries.clear();
-    }
-
     bool MountTable::hasAlias(std::string_view alias) const {
         return std::any_of(m_entries.begin(), m_entries.end(), [alias](const MountEntry& entry) {
             return entry.alias == alias;
