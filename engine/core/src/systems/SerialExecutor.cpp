@@ -3,11 +3,10 @@
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/SceneCommandBuffer.hpp>
 #include <TechEngine/core/systems/ISystem.hpp>
+#include <TechEngine/core/systems/InputNotification.hpp>
 #include <TechEngine/core/systems/ScheduleAccess.hpp>
 #include <TechEngine/core/systems/SerialExecutor.hpp>
 #include <TechEngine/core/systems/TaskGraph.hpp>
-
-#include "TechEngine/core/systems/InputNotification.hpp"
 
 #include <memory>
 #include <utility>

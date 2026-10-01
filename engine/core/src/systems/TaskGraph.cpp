@@ -99,7 +99,7 @@ namespace TechEngine {
             for (const std::size_t node: ready) {
                 processed[node] = true;
                 processedCount++;
-                level.push_back({entries[node].system.get(), entries[node].systemType, entries[node].access, std::move(eventHandlers[node]), std::move(entries[node].inputHandlers)});
+                level.push_back({entries[node].system.get(), entries[node].systemType, entries[node].access, std::move(eventHandlers[node]), entries[node].inputHandlers});
             }
             for (const std::size_t node: ready) {
                 for (const std::size_t target: edges[node]) {
