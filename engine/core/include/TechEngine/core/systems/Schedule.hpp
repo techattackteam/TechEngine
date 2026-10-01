@@ -2,6 +2,7 @@
 
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/systems/EventHandler.hpp>
 #include <TechEngine/core/systems/ISystem.hpp>
 #include <TechEngine/core/systems/ScheduleAccess.hpp>
 #include <TechEngine/core/systems/ScheduleRegistration.hpp>
@@ -34,7 +35,8 @@ namespace TechEngine {
         std::vector<OrderConstraint> orderConstraints;
         int priority = 0;
         Slot slot = Slot::Regular;
-        std::vector<EventHandlerDeclaration> eventHandlers;
+        std::vector<EventHandler> eventHandlers;
+        std::vector<InputHandler> inputHandlers;
     };
 
     class Schedule {
@@ -84,7 +86,9 @@ namespace TechEngine {
 
         void addOrder(std::size_t entryIndex, std::type_index systemType, Order order);
 
-        void addEventHandler(std::size_t entryIndex, EventHandlerDeclaration declaration);
+        void addEventHandler(std::size_t entryIndex, EventHandler handler);
+
+        void addInputHandler(std::size_t entryIndex, InputHandler handler);
 
         friend class ScheduleRegistration;
     };

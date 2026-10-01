@@ -2,6 +2,7 @@
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/systems/InputNotification.hpp>
 #include <TechEngine/core/systems/Schedule.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
@@ -190,6 +191,35 @@ private:
             call.amounts.push_back(event.amount);
         }
         calls.push_back(std::move(call));
+    }
+};
+
+struct ScheduleInputCall {
+    int handler = 0;
+    const TechEngine::ISystem* instance = nullptr;
+    std::uint64_t sequence = 0;
+
+    bool operator==(const ScheduleInputCall&) const = default;
+};
+
+class InputHandlingSystem final : public TechEngine::ISystem {
+public:
+    static inline std::vector<ScheduleInputCall> calls;
+
+    void init(TechEngine::ScheduleRegistration& registration) override {
+        registration.onInput([this](TechEngine::Scene&, const TechEngine::InputNotification& input) {
+            calls.push_back({1, this, input.sequence});
+        });
+        registration.onInput([this](TechEngine::Scene&, const TechEngine::InputNotification& input) {
+            calls.push_back({2, this, input.sequence});
+        });
+    }
+
+    void tick(TechEngine::Scene&, const TechEngine::SimulationContext&) override {
+    }
+
+    std::string_view name() const override {
+        return "InputHandlingSystem";
     }
 };
 
@@ -495,4 +525,56 @@ TEST_CASE("a frozen schedule rejects a late event handler and keeps the declared
     REQUIRE(entry.eventHandlers[0].eventType == &TechEngine::eventTypeId<ScheduleHit>);
     REQUIRE(entry.eventHandlers[1].eventType == &TechEngine::eventTypeId<ScheduleHeal>);
     REQUIRE(entry.eventHandlers[2].eventType == &TechEngine::eventTypeId<ScheduleHit>);
+}
+
+TEST_CASE("input handlers stay on their persistent instance in startup declaration order", "[core][systems][input]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngine::Scene scene(registry);
+    TechEngine::Schedule schedule(registry);
+    InputHandlingSystem::calls.clear();
+
+    schedule.add<InputHandlingSystem>();
+
+    const TechEngine::ScheduleEntry& entry = schedule.getEntries().front();
+    REQUIRE(entry.inputHandlers.size() == 2);
+    REQUIRE(entry.eventHandlers.empty());
+
+    const TechEngine::InputNotification press{.kind = TechEngine::InputNotificationKind::Key, .key = TechEngine::Key::W, .pressed = true, .sequence = 4};
+    entry.inputHandlers[0](scene, press);
+    entry.inputHandlers[1](scene, press);
+
+    const TechEngine::ISystem* instance = entry.system.get();
+    REQUIRE(InputHandlingSystem::calls == std::vector<ScheduleInputCall>{{1, instance, 4}, {2, instance, 4}});
+}
+
+TEST_CASE("an input handler declared on the retained handle before freezing follows the startup handlers", "[core][systems][input]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngine::Scene scene(registry);
+    TechEngine::Schedule schedule(registry);
+    InputHandlingSystem::calls.clear();
+    TechEngine::ScheduleRegistration handling = schedule.add<InputHandlingSystem>();
+
+    handling.onInput([](TechEngine::Scene&, const TechEngine::InputNotification& input) {
+        InputHandlingSystem::calls.push_back({3, nullptr, input.sequence});
+    });
+
+    const TechEngine::ScheduleEntry& entry = schedule.getEntries().front();
+    REQUIRE(entry.inputHandlers.size() == 3);
+    entry.inputHandlers[2](scene, TechEngine::InputNotification{.sequence = 8});
+    REQUIRE(InputHandlingSystem::calls == std::vector<ScheduleInputCall>{{3, nullptr, 8}});
+}
+
+TEST_CASE("a frozen schedule rejects a late input handler and keeps the declared ones", "[core][systems][input]") {
+    const TechEngineTests::FatalAssertGuard guard;
+    TechEngine::ComponentRegistry registry;
+    TechEngine::Schedule schedule(registry);
+    TechEngine::ScheduleRegistration handling = schedule.add<InputHandlingSystem>();
+    schedule.freeze();
+
+    REQUIRE_THROWS_AS(
+        handling.onInput([](TechEngine::Scene&, const TechEngine::InputNotification&) {
+        }),
+        TechEngineTests::AssertFired);
+
+    REQUIRE(schedule.getEntries().front().inputHandlers.size() == 2);
 }

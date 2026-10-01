@@ -1,5 +1,15 @@
 #include <TechEngine/app/SimulationThread.hpp>
 #include <TechEngine/core/EngineContext.hpp>
+#include <TechEngine/core/events/EventRegistry.hpp>
+#include <TechEngine/core/scene/ComponentRegistry.hpp>
+#include <TechEngine/core/scene/Scene.hpp>
+#include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/scene/components/Transform.hpp>
+#include <TechEngine/core/systems/ISystem.hpp>
+#include <TechEngine/core/systems/InputNotification.hpp>
+#include <TechEngine/core/systems/Schedule.hpp>
+#include <TechEngine/core/systems/SerialExecutor.hpp>
+#include <TechEngine/core/systems/TaskGraph.hpp>
 #include <TechEngine/platform/input/InputBuffer.hpp>
 
 #include <catch2/catch_approx.hpp>
@@ -10,6 +20,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
+#include <span>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 using namespace std::chrono_literals;
@@ -43,6 +57,56 @@ static TechEngine::InputEvent keyEvent(TechEngine::Key key, bool pressed) {
 static TechEngine::InputEvent focusEvent(bool focused) {
     return TechEngine::InputEvent{.kind = TechEngine::InputKind::Focus, .pressed = focused};
 }
+
+class InputDeliveryProbeSystem final : public TechEngine::ISystem {
+public:
+    static inline std::vector<std::uint64_t> sequences;
+
+    void init(TechEngine::ScheduleRegistration& registration) override {
+        registration.onInput([](TechEngine::Scene&, const TechEngine::InputNotification& input) {
+            sequences.push_back(input.sequence);
+        });
+    }
+
+    void tick(TechEngine::Scene&, const SimulationContext&) override {
+    }
+
+    std::string_view name() const override {
+        return "InputDeliveryProbeSystem";
+    }
+};
+
+class LoopInputBarrier final : public TechEngine::TickBarrierServices {
+public:
+    void assignNetIds(TechEngine::Scene&, std::span<const TechEngine::Entity>) override {
+    }
+};
+
+class LoopInputDelivery {
+public:
+    TechEngine::ComponentRegistry registry;
+    TechEngine::EventRegistry events;
+    TechEngine::Scene scene;
+    TechEngine::Schedule schedule;
+    std::optional<TechEngine::TaskGraph> graph;
+    std::optional<TechEngine::SerialExecutor> executor;
+    LoopInputBarrier barrier;
+    std::vector<std::vector<std::uint64_t>> deliveredPerTick;
+
+    LoopInputDelivery() : scene(registry), schedule(registry) {
+        registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
+        registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
+        InputDeliveryProbeSystem::sequences.clear();
+        schedule.add<InputDeliveryProbeSystem>();
+        graph.emplace(schedule, events);
+        executor.emplace(*graph);
+    }
+
+    void execute(const SimulationContext& simulation) {
+        executor->execute(scene, simulation, barrier);
+        deliveredPerTick.push_back(std::exchange(InputDeliveryProbeSystem::sequences, {}));
+    }
+};
 
 TEST_CASE("sixty fixed-step advances run exactly sixty ticks", "[app][loop]") {
     SimulationThread loop(g_loopEngine.context, TechEngine::Role::DedicatedServer);
@@ -240,6 +304,41 @@ TEST_CASE("input is consumed immediately before each fixed tick", "[app][loop][i
 
     CHECK(eventCounts == std::vector<std::size_t>{3, 0, 1, 0, 0, 0, 1});
     CHECK(held == std::vector<bool>{false, false, true, true, true, true, false});
+}
+
+TEST_CASE("captured input reaches no handler until a Tick consumes it", "[app][loop][input]") {
+    TechEngine::InputBuffer input{g_loopEngine.clock};
+    SimulationThread loop(g_loopEngine.context, TechEngine::Role::Client, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .input = &input});
+    LoopInputDelivery delivery;
+    const auto step = [&delivery](const SimulationContext& simulation) {
+        delivery.execute(simulation);
+    };
+
+    input.publish(keyEvent(TechEngine::Key::W, true));
+    loop.advance(0.25, step);
+
+    REQUIRE(delivery.deliveredPerTick.empty());
+
+    loop.advance(0.25, step);
+
+    REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{1}});
+}
+
+TEST_CASE("each catch-up Tick delivers only the batch it consumed", "[app][loop][input]") {
+    TechEngine::InputBuffer input{g_loopEngine.clock};
+    SimulationThread loop(g_loopEngine.context, TechEngine::Role::Client, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .input = &input});
+    LoopInputDelivery delivery;
+
+    input.publish(keyEvent(TechEngine::Key::W, true));
+    loop.advance(1.5, [&delivery, &input](const SimulationContext& simulation) {
+        delivery.execute(simulation);
+        if (simulation.tick == 1) {
+            input.publish(keyEvent(TechEngine::Key::W, false));
+        }
+    });
+
+    REQUIRE(loop.simulationContext().tick == 3);
+    REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{1}, {2}, {}});
 }
 
 TEST_CASE("the context carries the construction values", "[app][loop]") {

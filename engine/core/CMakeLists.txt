@@ -48,7 +48,9 @@ techengine_module(core
           include/TechEngine/core/serialization/Reader.hpp
           include/TechEngine/core/serialization/Visit.hpp
           include/TechEngine/core/serialization/Writer.hpp
+          include/TechEngine/core/systems/EventHandler.hpp
           include/TechEngine/core/systems/ISystem.hpp
+          include/TechEngine/core/systems/InputNotification.hpp
           include/TechEngine/core/systems/Schedule.hpp
           include/TechEngine/core/systems/ScheduleAccess.hpp
           include/TechEngine/core/systems/ScheduleRegistration.hpp
@@ -84,6 +86,7 @@ if(TE_BUILD_TESTS)
           tests/scene/TransformTests.cpp
           tests/serialization/VisitTests.cpp
           tests/serialization/WriterReaderTests.cpp
+          tests/systems/InputDeliveryTests.cpp
           tests/systems/ScheduleTests.cpp
           tests/systems/SerialExecutorTests.cpp
           tests/systems/TaskGraphTests.cpp)

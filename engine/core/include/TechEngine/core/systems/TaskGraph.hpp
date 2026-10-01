@@ -1,6 +1,7 @@
 #pragma once
 
 #include <TechEngine/core/events/EventTypeId.hpp>
+#include <TechEngine/core/systems/EventHandler.hpp>
 #include <TechEngine/core/systems/Schedule.hpp>
 #include <TechEngine/core/systems/ScheduleRegistration.hpp>
 
@@ -16,7 +17,7 @@ namespace TechEngine {
 
     struct TaskGraphEventHandler {
         EventTypeId eventType;
-        EventHandler handler;
+        EventCallback handler;
     };
 
     struct TaskGraphNode {
@@ -24,6 +25,7 @@ namespace TechEngine {
         std::type_index systemType = typeid(void);
         ScheduleAccess access;
         std::vector<TaskGraphEventHandler> eventHandlers;
+        std::vector<InputHandler> inputHandlers;
     };
 
     using TaskGraphLevel = std::vector<TaskGraphNode>;

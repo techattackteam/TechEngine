@@ -99,7 +99,7 @@ namespace TechEngine {
             for (const std::size_t node: ready) {
                 processed[node] = true;
                 processedCount++;
-                level.push_back({entries[node].system.get(), entries[node].systemType, entries[node].access, std::move(eventHandlers[node])});
+                level.push_back({entries[node].system.get(), entries[node].systemType, entries[node].access, std::move(eventHandlers[node]), entries[node].inputHandlers});
             }
             for (const std::size_t node: ready) {
                 for (const std::size_t target: edges[node]) {
@@ -171,8 +171,8 @@ namespace TechEngine {
         std::vector<std::vector<TaskGraphEventHandler>> resolved(entries.size());
         for (std::size_t i = 0; i < entries.size(); i++) {
             resolved[i].reserve(entries[i].eventHandlers.size());
-            for (const EventHandlerDeclaration& declaration: entries[i].eventHandlers) {
-                const EventTypeId eventType = declaration.eventType();
+            for (const EventHandler& eventHandler: entries[i].eventHandlers) {
+                const EventTypeId eventType = eventHandler.eventType();
                 // Any registry writes the process-wide eventTypeId<T>() slot, so a valid id does not
                 // mean this registry knows the type.
                 const EventTypeRecord* record = events.find(eventType);
@@ -180,7 +180,7 @@ namespace TechEngine {
                 if (record == nullptr) {
                     continue;
                 }
-                resolved[i].push_back({eventType, declaration.handler});
+                resolved[i].push_back({eventType, eventHandler.handler});
             }
         }
         return resolved;

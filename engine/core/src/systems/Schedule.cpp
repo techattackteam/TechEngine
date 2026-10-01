@@ -86,10 +86,17 @@ namespace TechEngine {
         m_entries.at(entryIndex).orderConstraints.push_back({systemType, order});
     }
 
-    void Schedule::addEventHandler(const std::size_t entryIndex, EventHandlerDeclaration declaration) {
+    void Schedule::addEventHandler(const std::size_t entryIndex, EventHandler handler) {
         TE_CHECK(!m_frozen, "Cannot modify schedule after freezing");
         TE_CHECK(entryIndex < m_entries.size(), "Invalid schedule entry index");
 
-        m_entries.at(entryIndex).eventHandlers.push_back(std::move(declaration));
+        m_entries.at(entryIndex).eventHandlers.push_back(std::move(handler));
+    }
+
+    void Schedule::addInputHandler(const std::size_t entryIndex, InputHandler handler) {
+        TE_CHECK(!m_frozen, "Cannot modify schedule after freezing");
+        TE_CHECK(entryIndex < m_entries.size(), "Invalid schedule entry index");
+
+        m_entries.at(entryIndex).inputHandlers.push_back(std::move(handler));
     }
 }

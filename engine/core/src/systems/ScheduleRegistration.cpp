@@ -17,6 +17,11 @@ namespace TechEngine {
         return *this;
     }
 
+    ScheduleRegistration& ScheduleRegistration::onInput(InputHandler handler) {
+        m_schedule->addInputHandler(m_entryIndex, std::move(handler));
+        return *this;
+    }
+
     void ScheduleRegistration::addAccess(const std::span<const ComponentTypeId> written, const std::span<const ComponentTypeId> readOnly) {
         m_schedule->addAccess(m_entryIndex, written, readOnly);
     }
@@ -25,7 +30,7 @@ namespace TechEngine {
         m_schedule->addOrder(m_entryIndex, systemType, order);
     }
 
-    void ScheduleRegistration::addEventHandler(EventHandlerDeclaration declaration) {
-        m_schedule->addEventHandler(m_entryIndex, std::move(declaration));
+    void ScheduleRegistration::addEventHandler(EventHandler handler) {
+        m_schedule->addEventHandler(m_entryIndex, std::move(handler));
     }
 }

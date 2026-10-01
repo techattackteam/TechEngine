@@ -3,6 +3,7 @@
 #include <TechEngine/core/events/EventTypeId.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/systems/EventHandler.hpp>
 #include <TechEngine/core/systems/ISystem.hpp>
 #include <TechEngine/core/systems/ScheduleAccess.hpp>
 
@@ -17,13 +18,9 @@
 
 namespace TechEngine {
     class Scene;
+    struct InputNotification;
 
-    using EventHandler = std::function<void(Scene&, std::span<const std::byte>)>;
-
-    struct EventHandlerDeclaration {
-        EventTypeId (*eventType)() = nullptr;
-        EventHandler handler;
-    };
+    using InputHandler = std::function<void(Scene&, const InputNotification&)>;
 
     enum class Slot : std::uint8_t {
         Regular,
@@ -80,11 +77,13 @@ namespace TechEngine {
             return *this;
         }
 
+        ScheduleRegistration& onInput(InputHandler handler);
+
     private:
         void addAccess(std::span<const ComponentTypeId> written, std::span<const ComponentTypeId> readOnly);
 
         void addOrder(std::type_index systemType, Order order);
 
-        void addEventHandler(EventHandlerDeclaration declaration);
+        void addEventHandler(EventHandler handler);
     };
 }
