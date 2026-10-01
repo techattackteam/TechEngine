@@ -7,6 +7,8 @@
 #include <TechEngine/core/systems/SerialExecutor.hpp>
 #include <TechEngine/core/systems/TaskGraph.hpp>
 
+#include "TechEngine/core/systems/InputNotification.hpp"
+
 #include <memory>
 #include <utility>
 #include <vector>
@@ -19,12 +21,15 @@ namespace TechEngine {
             ISystem* system = nullptr;
             SceneCommandBuffer commands;
             std::vector<TaskGraphEventHandler> eventHandlers;
+            std::vector<InputHandler> inputHandlers;
         };
 
         using Level = std::vector<Node>;
 
         std::vector<Level> levels;
         std::vector<Entity> spawned;
+
+        InputNotification toNotification(const InputEvent& event);
     };
 
     SerialExecutor::SerialExecutor(const TaskGraph& graph) : m_impl(std::make_unique<Impl>()) {
@@ -32,10 +37,36 @@ namespace TechEngine {
             Impl::Level level;
             level.reserve(sourceLevel.size());
             for (const TaskGraphNode& sourceNode: sourceLevel) {
-                level.push_back({sourceNode.access, sourceNode.system, {}, sourceNode.eventHandlers});
+                level.push_back({sourceNode.access, sourceNode.system, {}, sourceNode.eventHandlers, sourceNode.inputHandlers});
             }
             m_impl->levels.push_back(std::move(level));
         }
+    }
+
+    InputNotification SerialExecutor::Impl::toNotification(const InputEvent& event) {
+        InputNotification notification;
+        notification.sequence = event.sequence;
+        switch (event.kind) {
+            case InputKind::Key:
+                notification.kind = InputNotificationKind::Key;
+                notification.key = event.key;
+                notification.pressed = event.pressed;
+                break;
+            case InputKind::Button:
+                notification.kind = InputNotificationKind::Button;
+                notification.button = event.button;
+                notification.pressed = event.pressed;
+                break;
+            case InputKind::Motion:
+                notification.kind = InputNotificationKind::Motion;
+                notification.x = event.x;
+                notification.y = event.y;
+                break;
+            case InputKind::Focus:
+                notification.kind = InputNotificationKind::Focus;
+                break;
+        }
+        return notification;
     }
 
     SerialExecutor::~SerialExecutor() = default;
@@ -59,6 +90,16 @@ namespace TechEngine {
                                     eventHandler.handler(scene, batch);
                                 }
                             }
+                            if (!node.inputHandlers.empty() && !context.input.events.empty()) {
+                                TE_PROFILER_SCOPE("SerialExecutor.InputHandlers");
+                                for (const InputEvent& event: context.input.events) {
+                                    const InputNotification notification = m_impl->toNotification(event);
+                                    for (const InputHandler& handler: node.inputHandlers) {
+                                        handler(scene, notification);
+                                    }
+                                }
+                            }
+
                             node.system->tick(scene, context);
                         } catch (...) {
                             scene.endSystem();
