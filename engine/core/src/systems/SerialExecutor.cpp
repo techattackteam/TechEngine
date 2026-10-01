@@ -64,6 +64,7 @@ namespace TechEngine {
                 break;
             case InputKind::Focus:
                 notification.kind = InputNotificationKind::Focus;
+                notification.pressed = event.pressed;
                 break;
         }
         return notification;
