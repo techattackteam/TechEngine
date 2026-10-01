@@ -1,6 +1,6 @@
 function(techengine_app name)
   cmake_parse_arguments(TA "" ""
-    "MAIN;SOURCES;HEADERS;DEPS;LIBS;TESTS" ${ARGN})
+    "MAIN;SOURCES;HEADERS;DEPS;LIBS;LIBS_PRIVATE;TESTS" ${ARGN})
 
   if(NOT TA_MAIN)
     message(FATAL_ERROR "techengine_app(${name}): MAIN is required (the .cpp holding main()).")
@@ -35,7 +35,7 @@ function(techengine_app name)
 
   target_link_libraries(${_te_objects}
     PUBLIC  ${_te_deps} ${TA_LIBS}
-    PRIVATE te_warnings)
+    PRIVATE ${TA_LIBS_PRIVATE} te_warnings)
 
   set_target_properties(${_te_objects} PROPERTIES FOLDER "apps")
 
