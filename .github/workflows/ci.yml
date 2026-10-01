@@ -459,3 +459,39 @@ jobs:
 
       - name: ccache stats
         run: ccache -s
+
+  # --- cache pruning ----------------------------------------------------------
+  # Every leg saves a fresh per-sha snapshot, so without this the repo's 10 GB cap fills in
+  # about thirty merges. Keeps the newest entry per key family on THIS run's ref and deletes the
+  # rest; a family is the key minus its trailing hash and sha segments, so `ccache-v2-linux-tsan`,
+  # `deps-Linux` and `mesa-Windows-X64` are one family each. Caches on closed PRs are dropped by
+  # cache-cleanup.yml.
+  #
+  # GOTCHA: ccache-action saves in its POST step, after the leg's last step. Pruning inside a leg
+  # would delete the old snapshot before the new one exists, and a cancelled leg would then leave
+  # the ref with nothing. A separate job that needs every saver runs only once the new one exists.
+  cache-prune:
+    name: prune caches
+    timeout-minutes: 5
+    needs: [build-test, coverage, sanitizers]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Keep the newest entry per family on this ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TE_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          gh cache list --ref "$TE_REF" --limit 1000 --json id,key,createdAt --jq '
+            group_by(.key | sub("(-[0-9a-f]{40,64})+-?$"; ""))
+            | map(sort_by(.createdAt) | reverse | .[1:][])
+            | .[] | "\(.id) \(.key)"' > stale.txt
+          echo "$(wc -l < stale.txt) stale entries on $TE_REF"
+          while read -r id key; do
+            echo "delete $key"
+            gh cache delete "$id" || echo "::warning::could not delete $key"
+          done < stale.txt
