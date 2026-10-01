@@ -8,7 +8,7 @@ techengine_app(editor
   HEADERS src/EditorApp.hpp
           src/project/Project.hpp
   DEPS    app client core
-  LIBS    TechEngine::tomlplusplus
+  LIBS_PRIVATE TechEngine::tomlplusplus
   TESTS   tests/EditorAppTests.cpp
           tests/project/ProjectTests.cpp)
 
