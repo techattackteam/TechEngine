@@ -6,7 +6,7 @@
 #include <cstdint>
 
 namespace TechEngine {
-    enum class InputNotificationKind : std::uint8_t { Key, Button, Motion, Focus };
+    enum class InputNotificationKind : std::uint8_t { Key, Button, Motion, Focus, KeyHold, ButtonHold };
 
     struct InputNotification {
         InputNotificationKind kind = InputNotificationKind::Motion;

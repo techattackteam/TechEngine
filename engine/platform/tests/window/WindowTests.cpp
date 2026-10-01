@@ -240,22 +240,21 @@ TEST_CASE("Window callbacks publish input into the attached buffer", "[platform]
 
     TechEngine::InputFrame frame;
     input.consume(frame);
-    REQUIRE(frame.events.size() == 6);
+    REQUIRE(frame.events.size() == 5);
     CHECK(frame.events[0].kind == TechEngine::InputKind::Focus);
-    CHECK(frame.events[1].kind == TechEngine::InputKind::Focus);
+    CHECK(frame.events[0].pressed);
+    CHECK(frame.events[1].kind == TechEngine::InputKind::Key);
+    CHECK(frame.events[1].key == TechEngine::Key::W);
     CHECK(frame.events[1].pressed);
-    CHECK(frame.events[2].kind == TechEngine::InputKind::Key);
-    CHECK(frame.events[2].key == TechEngine::Key::W);
+    CHECK(frame.events[2].kind == TechEngine::InputKind::Button);
+    CHECK(frame.events[2].button == TechEngine::MouseButton::Left);
     CHECK(frame.events[2].pressed);
-    CHECK(frame.events[3].kind == TechEngine::InputKind::Button);
-    CHECK(frame.events[3].button == TechEngine::MouseButton::Left);
-    CHECK(frame.events[3].pressed);
-    CHECK(frame.events[4].kind == TechEngine::InputKind::Motion);
-    CHECK(frame.events[4].x == 3.0);
-    CHECK(frame.events[4].y == -4.0);
-    CHECK(frame.events[5].kind == TechEngine::InputKind::Key);
-    CHECK(frame.events[5].key == TechEngine::Key::W);
-    CHECK_FALSE(frame.events[5].pressed);
+    CHECK(frame.events[3].kind == TechEngine::InputKind::Motion);
+    CHECK(frame.events[3].x == 3.0);
+    CHECK(frame.events[3].y == -4.0);
+    CHECK(frame.events[4].kind == TechEngine::InputKind::Key);
+    CHECK(frame.events[4].key == TechEngine::Key::W);
+    CHECK_FALSE(frame.events[4].pressed);
     CHECK_FALSE(frame.held.isHeld(TechEngine::Key::W));
     CHECK(frame.held.isHeld(TechEngine::MouseButton::Left));
     CHECK(input.presentationState().lookX == 3.0);
@@ -283,18 +282,20 @@ TEST_CASE("Window translates known controls and drops unknown ones before the bu
 
     TechEngine::InputFrame frame;
     input.consume(frame);
-    REQUIRE(frame.events.size() == 4);
-    CHECK(frame.events[2].kind == TechEngine::InputKind::Key);
-    CHECK(frame.events[2].key == TechEngine::Key::KeypadEqual);
-    CHECK(frame.events[3].kind == TechEngine::InputKind::Button);
-    CHECK(frame.events[3].button == TechEngine::MouseButton::Extra5);
-    CHECK(frame.events[2].sequence == frame.events[1].sequence + 1);
-    CHECK(frame.events[3].sequence == frame.events[2].sequence + 1);
+    REQUIRE(frame.events.size() == 3);
+    CHECK(frame.events[0].kind == TechEngine::InputKind::Focus);
+    CHECK(frame.events[0].pressed);
+    CHECK(frame.events[1].kind == TechEngine::InputKind::Key);
+    CHECK(frame.events[1].key == TechEngine::Key::KeypadEqual);
+    CHECK(frame.events[2].kind == TechEngine::InputKind::Button);
+    CHECK(frame.events[2].button == TechEngine::MouseButton::Extra5);
+    CHECK(frame.events[1].sequence == 3);
+    CHECK(frame.events[2].sequence == 4);
     CHECK(frame.held.keys.count() == 1);
     CHECK(frame.held.buttons.count() == 1);
     CHECK(frame.held.isHeld(TechEngine::Key::KeypadEqual));
     CHECK(frame.held.isHeld(TechEngine::MouseButton::Extra5));
-    CHECK(input.presentationState().sequence == frame.events[3].sequence);
+    CHECK(input.presentationState().sequence == frame.events[2].sequence);
 }
 
 TEST_CASE("Window keeps press and release order and never turns GLFW repeat into a press", "[platform][window][input]") {
@@ -323,20 +324,22 @@ TEST_CASE("Window keeps press and release order and never turns GLFW repeat into
 
     TechEngine::InputFrame frame;
     input.consume(frame);
-    REQUIRE(frame.events.size() == 8);
-    CHECK(frame.events[2].key == TechEngine::Key::W);
+    REQUIRE(frame.events.size() == 7);
+    CHECK(frame.events[0].kind == TechEngine::InputKind::Focus);
+    CHECK(frame.events[0].pressed);
+    CHECK(frame.events[1].key == TechEngine::Key::W);
+    CHECK(frame.events[1].pressed);
+    CHECK(frame.events[2].key == TechEngine::Key::A);
     CHECK(frame.events[2].pressed);
-    CHECK(frame.events[3].key == TechEngine::Key::A);
+    CHECK(frame.events[3].kind == TechEngine::InputKind::Button);
+    CHECK(frame.events[3].button == TechEngine::MouseButton::Right);
     CHECK(frame.events[3].pressed);
-    CHECK(frame.events[4].kind == TechEngine::InputKind::Button);
-    CHECK(frame.events[4].button == TechEngine::MouseButton::Right);
-    CHECK(frame.events[4].pressed);
-    CHECK(frame.events[5].key == TechEngine::Key::W);
+    CHECK(frame.events[4].key == TechEngine::Key::W);
+    CHECK_FALSE(frame.events[4].pressed);
+    CHECK(frame.events[5].kind == TechEngine::InputKind::Button);
     CHECK_FALSE(frame.events[5].pressed);
-    CHECK(frame.events[6].kind == TechEngine::InputKind::Button);
+    CHECK(frame.events[6].key == TechEngine::Key::A);
     CHECK_FALSE(frame.events[6].pressed);
-    CHECK(frame.events[7].key == TechEngine::Key::A);
-    CHECK_FALSE(frame.events[7].pressed);
     for (std::size_t i = 1; i < frame.events.size(); i++) {
         CHECK(frame.events[i - 1].sequence < frame.events[i].sequence);
     }
