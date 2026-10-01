@@ -48,9 +48,14 @@ namespace TechEngine {
             }
         }
         if (!frame.recovered) {
-            for (const InputEvent& event: frame.events) {
-                frame.held.apply(event);
+            std::size_t kept = 0;
+            for (std::size_t i = 0; i < frame.events.size(); i++) {
+                if (frame.held.apply(frame.events[i])) {
+                    frame.events[kept] = frame.events[i];
+                    kept++;
+                }
             }
+            frame.events.resize(kept);
         }
     }
 

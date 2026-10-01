@@ -8,6 +8,7 @@
 #include <TechEngine/core/systems/SerialExecutor.hpp>
 #include <TechEngine/core/systems/TaskGraph.hpp>
 
+#include <cstddef>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -27,8 +28,11 @@ namespace TechEngine {
 
         std::vector<Level> levels;
         std::vector<Entity> spawned;
+        std::vector<InputNotification> holds;
 
         InputNotification toNotification(const InputEvent& event);
+
+        void collectHolds(const InputState& held);
     };
 
     SerialExecutor::SerialExecutor(const TaskGraph& graph) : m_impl(std::make_unique<Impl>()) {
@@ -69,10 +73,31 @@ namespace TechEngine {
         return notification;
     }
 
+    void SerialExecutor::Impl::collectHolds(const InputState& held) {
+        holds.clear();
+        for (std::size_t i = 0; i < KEY_COUNT; i++) {
+            if (held.keys.test(i)) {
+                InputNotification notification;
+                notification.kind = InputNotificationKind::KeyHold;
+                notification.key = static_cast<Key>(i);
+                holds.push_back(notification);
+            }
+        }
+        for (std::size_t i = 0; i < MOUSE_BUTTON_COUNT; i++) {
+            if (held.buttons.test(i)) {
+                InputNotification notification;
+                notification.kind = InputNotificationKind::ButtonHold;
+                notification.button = static_cast<MouseButton>(i);
+                holds.push_back(notification);
+            }
+        }
+    }
+
     SerialExecutor::~SerialExecutor() = default;
 
     void SerialExecutor::execute(Scene& scene, const SimulationContext& context, TickBarrierServices& barrier) {
         TE_PROFILER_FUNCTION();
+        m_impl->collectHolds(context.input.held);
         try {
             {
                 TE_PROFILER_SCOPE("SerialExecutor.Systems");
@@ -90,12 +115,17 @@ namespace TechEngine {
                                     eventHandler.handler(scene, batch);
                                 }
                             }
-                            if (!node.inputHandlers.empty() && !context.input.events.empty()) {
+                            if (!node.inputHandlers.empty() && (!context.input.events.empty() || !m_impl->holds.empty())) {
                                 TE_PROFILER_SCOPE("SerialExecutor.InputHandlers");
                                 for (const InputEvent& event: context.input.events) {
                                     const InputNotification notification = m_impl->toNotification(event);
                                     for (const InputHandler& handler: node.inputHandlers) {
                                         handler(scene, notification);
+                                    }
+                                }
+                                for (const InputNotification& hold: m_impl->holds) {
+                                    for (const InputHandler& handler: node.inputHandlers) {
+                                        handler(scene, hold);
                                     }
                                 }
                             }

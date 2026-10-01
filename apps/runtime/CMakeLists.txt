@@ -6,6 +6,7 @@ techengine_app(runtime
           src/demo/CollisionSystem.cpp
           src/demo/EntitySpawnSystem.cpp
           src/demo/GravitySystem.cpp
+          src/demo/InputLogSystem.cpp
           src/demo/MovementSystem.cpp
   HEADERS src/RuntimeApp.hpp
           src/demo/CollisionSystem.hpp
@@ -13,6 +14,7 @@ techengine_app(runtime
           src/demo/EntitySpawned.hpp
           src/demo/EntitySpawnSystem.hpp
           src/demo/GravitySystem.hpp
+          src/demo/InputLogSystem.hpp
           src/demo/Landed.hpp
           src/demo/MovementSystem.hpp
           src/demo/Pulse.hpp
