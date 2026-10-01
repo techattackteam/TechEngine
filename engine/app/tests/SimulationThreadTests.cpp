@@ -61,9 +61,14 @@ static TechEngine::InputEvent focusEvent(bool focused) {
 class InputDeliveryProbeSystem final : public TechEngine::ISystem {
 public:
     static inline std::vector<std::uint64_t> sequences;
+    static inline std::size_t holds = 0;
 
     void init(TechEngine::ScheduleRegistration& registration) override {
         registration.onInput([](TechEngine::Scene&, const TechEngine::InputNotification& input) {
+            if (input.kind == TechEngine::InputNotificationKind::KeyHold || input.kind == TechEngine::InputNotificationKind::ButtonHold) {
+                holds++;
+                return;
+            }
             sequences.push_back(input.sequence);
         });
     }
@@ -92,11 +97,13 @@ public:
     std::optional<TechEngine::SerialExecutor> executor;
     LoopInputBarrier barrier;
     std::vector<std::vector<std::uint64_t>> deliveredPerTick;
+    std::vector<std::size_t> holdsPerTick;
 
     LoopInputDelivery() : scene(registry), schedule(registry) {
         registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
         registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
         InputDeliveryProbeSystem::sequences.clear();
+        InputDeliveryProbeSystem::holds = 0;
         schedule.add<InputDeliveryProbeSystem>();
         graph.emplace(schedule, events);
         executor.emplace(*graph);
@@ -105,6 +112,7 @@ public:
     void execute(const SimulationContext& simulation) {
         executor->execute(scene, simulation, barrier);
         deliveredPerTick.push_back(std::exchange(InputDeliveryProbeSystem::sequences, {}));
+        holdsPerTick.push_back(std::exchange(InputDeliveryProbeSystem::holds, 0));
     }
 };
 
@@ -314,6 +322,7 @@ TEST_CASE("captured input reaches no handler until a Tick consumes it", "[app][l
         delivery.execute(simulation);
     };
 
+    input.publish(focusEvent(true));
     input.publish(keyEvent(TechEngine::Key::W, true));
     loop.advance(0.25, step);
 
@@ -321,7 +330,8 @@ TEST_CASE("captured input reaches no handler until a Tick consumes it", "[app][l
 
     loop.advance(0.25, step);
 
-    REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{1}});
+    REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{1, 2}});
+    REQUIRE(delivery.holdsPerTick == std::vector<std::size_t>{1});
 }
 
 TEST_CASE("each catch-up Tick delivers only the batch it consumed", "[app][loop][input]") {
@@ -329,6 +339,7 @@ TEST_CASE("each catch-up Tick delivers only the batch it consumed", "[app][loop]
     SimulationThread loop(g_loopEngine.context, TechEngine::Role::Client, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .input = &input});
     LoopInputDelivery delivery;
 
+    input.publish(focusEvent(true));
     input.publish(keyEvent(TechEngine::Key::W, true));
     loop.advance(1.5, [&delivery, &input](const SimulationContext& simulation) {
         delivery.execute(simulation);
@@ -338,7 +349,68 @@ TEST_CASE("each catch-up Tick delivers only the batch it consumed", "[app][loop]
     });
 
     REQUIRE(loop.simulationContext().tick == 3);
-    REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{1}, {2}, {}});
+    REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{1, 2}, {3}, {}});
+    REQUIRE(delivery.holdsPerTick == std::vector<std::size_t>{1, 0, 0});
+}
+
+TEST_CASE("every catch-up Tick reports a held key once, with or without captured events", "[app][loop][input]") {
+    TechEngine::InputBuffer input{g_loopEngine.clock};
+    SimulationThread loop(g_loopEngine.context, TechEngine::Role::Client, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .input = &input});
+    LoopInputDelivery delivery;
+    const auto step = [&delivery](const SimulationContext& simulation) {
+        delivery.execute(simulation);
+    };
+
+    input.publish(focusEvent(true));
+    input.publish(keyEvent(TechEngine::Key::W, true));
+    loop.advance(1.5, step);
+
+    REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{1, 2}, {}, {}});
+    REQUIRE(delivery.holdsPerTick == std::vector<std::size_t>{1, 1, 1});
+}
+
+TEST_CASE("GLFW's post-loss synthetic releases and a duplicate focus reach no handler and leave no key held", "[app][loop][input]") {
+    TechEngine::InputBuffer input{g_loopEngine.clock};
+    SimulationThread loop(g_loopEngine.context, TechEngine::Role::Client, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .input = &input});
+    LoopInputDelivery delivery;
+    const auto step = [&delivery](const SimulationContext& simulation) {
+        delivery.execute(simulation);
+    };
+
+    input.publish(focusEvent(true));
+    input.publish(keyEvent(TechEngine::Key::W, true));
+    loop.advance(0.5, step);
+
+    input.publish(focusEvent(false));
+    input.publish(keyEvent(TechEngine::Key::W, false));
+    input.publish(focusEvent(false));
+    loop.advance(0.5, step);
+
+    input.publish(focusEvent(true));
+    loop.advance(0.5, step);
+
+    REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{1, 2}, {3}, {6}});
+    REQUIRE(delivery.holdsPerTick == std::vector<std::size_t>{1, 0, 0});
+    REQUIRE_FALSE(loop.simulationContext().input.held.isHeld(TechEngine::Key::W));
+}
+
+TEST_CASE("a duplicate focus between Ticks keeps a held key reporting holds", "[app][loop][input]") {
+    TechEngine::InputBuffer input{g_loopEngine.clock};
+    SimulationThread loop(g_loopEngine.context, TechEngine::Role::Client, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .input = &input});
+    LoopInputDelivery delivery;
+    const auto step = [&delivery](const SimulationContext& simulation) {
+        delivery.execute(simulation);
+    };
+
+    input.publish(focusEvent(true));
+    input.publish(keyEvent(TechEngine::Key::W, true));
+    loop.advance(0.5, step);
+
+    input.publish(focusEvent(true));
+    loop.advance(0.5, step);
+
+    REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{1, 2}, {}});
+    REQUIRE(delivery.holdsPerTick == std::vector<std::size_t>{1, 1});
 }
 
 TEST_CASE("the context carries the construction values", "[app][loop]") {

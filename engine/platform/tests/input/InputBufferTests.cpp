@@ -11,9 +11,14 @@ using TechEngine::InputEvent;
 using TechEngine::InputFrame;
 using TechEngine::InputKind;
 using TechEngine::Key;
+using TechEngine::MouseButton;
 
 static InputEvent keyEvent(Key key, bool pressed) {
     return InputEvent{.kind = InputKind::Key, .key = key, .pressed = pressed};
+}
+
+static InputEvent buttonEvent(MouseButton button, bool pressed) {
+    return InputEvent{.kind = InputKind::Button, .button = button, .pressed = pressed};
 }
 
 static InputEvent focusEvent(bool focused) {
@@ -136,6 +141,77 @@ TEST_CASE("focus changes start neutral and keys are ignored while unfocused", "[
     CHECK(frame.held.focused);
     CHECK(frame.held.focusGeneration == 3);
     CHECK(frame.held.keys.none());
+}
+
+TEST_CASE("a consume keeps only the events that changed held state, with their capture sequence", "[platform][input]") {
+    const TechEngine::Clock clock;
+    InputBuffer input{clock};
+    InputFrame frame;
+    input.publish(keyEvent(Key::W, true));
+    input.publish(focusEvent(true));
+    input.publish(focusEvent(true));
+    input.publish(keyEvent(Key::W, true));
+    input.publish(keyEvent(Key::W, false));
+    input.publish(keyEvent(Key::W, false));
+
+    input.consume(frame);
+
+    REQUIRE(frame.events.size() == 3);
+    CHECK(frame.events[0].kind == InputKind::Focus);
+    CHECK(frame.events[0].sequence == 2);
+    CHECK(frame.events[1].kind == InputKind::Key);
+    CHECK(frame.events[1].pressed);
+    CHECK(frame.events[1].sequence == 4);
+    CHECK(frame.events[2].kind == InputKind::Key);
+    CHECK_FALSE(frame.events[2].pressed);
+    CHECK(frame.events[2].sequence == 5);
+    CHECK(frame.held.focusGeneration == 1);
+}
+
+TEST_CASE("GLFW's post-loss synthetic releases are not kept and no control stays held", "[platform][input]") {
+    const TechEngine::Clock clock;
+    InputBuffer input{clock};
+    InputFrame frame;
+    input.publish(focusEvent(true));
+    input.publish(keyEvent(Key::W, true));
+    input.publish(buttonEvent(MouseButton::Left, true));
+    input.consume(frame);
+    REQUIRE(frame.held.isHeld(Key::W));
+
+    input.publish(focusEvent(false));
+    input.publish(keyEvent(Key::W, false));
+    input.publish(buttonEvent(MouseButton::Left, false));
+    input.consume(frame);
+
+    REQUIRE(frame.events.size() == 1);
+    CHECK(frame.events[0].kind == InputKind::Focus);
+    CHECK_FALSE(frame.events[0].pressed);
+    CHECK(frame.held.keys.none());
+    CHECK(frame.held.buttons.none());
+
+    input.publish(focusEvent(true));
+    input.consume(frame);
+
+    REQUIRE(frame.events.size() == 1);
+    CHECK(frame.events[0].pressed);
+    CHECK_FALSE(frame.held.isHeld(Key::W));
+    CHECK_FALSE(frame.held.isHeld(MouseButton::Left));
+}
+
+TEST_CASE("a duplicate focus between consumes keeps a held key held", "[platform][input]") {
+    const TechEngine::Clock clock;
+    InputBuffer input{clock};
+    InputFrame frame;
+    input.publish(focusEvent(true));
+    input.publish(keyEvent(Key::W, true));
+    input.consume(frame);
+
+    input.publish(focusEvent(true));
+    input.consume(frame);
+
+    CHECK(frame.events.empty());
+    CHECK(frame.held.isHeld(Key::W));
+    CHECK(input.presentationState().isHeld(Key::W));
 }
 
 TEST_CASE("presentation look accumulates independently of simulation consumes", "[platform][input]") {

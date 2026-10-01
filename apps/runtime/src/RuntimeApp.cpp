@@ -7,6 +7,7 @@
 #include <demo/EntitySpawnSystem.hpp>
 #include <demo/EntitySpawned.hpp>
 #include <demo/GravitySystem.hpp>
+#include <demo/InputLogSystem.hpp>
 #include <demo/Landed.hpp>
 #include <demo/MovementSystem.hpp>
 #include <demo/Pulse.hpp>
@@ -41,6 +42,7 @@ namespace TechEngine {
         m_schedule.add<GravitySystem>();
         m_schedule.add<CollisionSystem>();
         m_schedule.add<EntitySpawnSystem>();
+        m_schedule.add<InputLogSystem>();
     }
 
     void RuntimeApp::publishSnapshot(const SimulationContext& simulation) {

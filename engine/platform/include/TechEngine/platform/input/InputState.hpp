@@ -31,7 +31,7 @@ namespace TechEngine {
         std::uint64_t sequence = 0;
         Clock::TimePoint capturedAt{};
 
-        void apply(const InputEvent& event);
+        bool apply(const InputEvent& event);
 
         bool isHeld(Key key) const;
 

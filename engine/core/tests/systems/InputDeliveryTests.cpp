@@ -245,6 +245,7 @@ public:
 
     void capture(TechEngine::InputEvent event) {
         event.sequence = ++sequence;
+        input.held.apply(event);
         input.events.push_back(event);
     }
 
@@ -457,7 +458,7 @@ TEST_CASE("a throwing input handler skips its tick, discards pending commands an
     REQUIRE(fixture.barrier.calls == 1);
 }
 
-TEST_CASE("an empty batch calls no input handler but still runs the tick", "[core][systems][input]") {
+TEST_CASE("an empty batch with nothing held calls no input handler but still runs the tick", "[core][systems][input]") {
     InputDeliveryFixture fixture;
     InputDeliveryTestState state;
     const InputDeliveryStateGuard stateGuard(state);
@@ -470,4 +471,152 @@ TEST_CASE("an empty batch calls no input handler but still runs the tick", "[cor
     fixture.runTick(executor);
 
     REQUIRE(state.trace == std::vector<std::string>{ticked(3), ticked(3)});
+}
+
+static std::vector<TechEngine::InputNotificationKind> kindsOf(const std::vector<TechEngine::InputNotification>& received) {
+    std::vector<TechEngine::InputNotificationKind> kinds;
+    for (const TechEngine::InputNotification& notification: received) {
+        kinds.push_back(notification.kind);
+    }
+    return kinds;
+}
+
+TEST_CASE("a press and release in one Tick deliver both edges and no hold notification", "[core][systems][input]") {
+    InputDeliveryFixture fixture;
+    InputDeliveryTestState state;
+    const InputDeliveryStateGuard stateGuard(state);
+    TechEngine::Schedule schedule(fixture.registry);
+    schedule.add<FirstInputReader>();
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
+    TechEngine::SerialExecutor executor(graph);
+
+    fixture.capture(focusEvent(true));
+    fixture.capture(keyEvent(TechEngine::Key::W, true));
+    fixture.capture(keyEvent(TechEngine::Key::W, false));
+    fixture.runTick(executor);
+    fixture.runTick(executor);
+
+    using enum TechEngine::InputNotificationKind;
+    REQUIRE(kindsOf(state.received) == std::vector{Focus, Key, Key});
+    CHECK(state.received[1].pressed);
+    CHECK_FALSE(state.received[2].pressed);
+}
+
+TEST_CASE("a held key reports one hold notification per Tick, including quiet Ticks", "[core][systems][input]") {
+    InputDeliveryFixture fixture;
+    InputDeliveryTestState state;
+    const InputDeliveryStateGuard stateGuard(state);
+    TechEngine::Schedule schedule(fixture.registry);
+    schedule.add<FirstInputReader>();
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
+    TechEngine::SerialExecutor executor(graph);
+    using enum TechEngine::InputNotificationKind;
+
+    fixture.capture(focusEvent(true));
+    fixture.capture(keyEvent(TechEngine::Key::W, true));
+    fixture.runTick(executor);
+    REQUIRE(kindsOf(state.received) == std::vector{Focus, Key, KeyHold});
+    CHECK(state.received[2].key == TechEngine::Key::W);
+
+    for (int i = 0; i < 3; i++) {
+        state.received.clear();
+        fixture.runTick(executor);
+        REQUIRE(kindsOf(state.received) == std::vector{KeyHold});
+        CHECK(state.received[0].key == TechEngine::Key::W);
+    }
+
+    state.received.clear();
+    fixture.capture(keyEvent(TechEngine::Key::W, false));
+    fixture.runTick(executor);
+    REQUIRE(kindsOf(state.received) == std::vector{Key});
+    CHECK_FALSE(state.received[0].pressed);
+
+    state.received.clear();
+    state.trace.clear();
+    fixture.runTick(executor);
+    CHECK(state.received.empty());
+    CHECK(state.trace == std::vector<std::string>{ticked(1)});
+}
+
+TEST_CASE("hold notifications follow captured events in ascending key order, then button order", "[core][systems][input]") {
+    InputDeliveryFixture fixture;
+    InputDeliveryTestState state;
+    const InputDeliveryStateGuard stateGuard(state);
+    TechEngine::Schedule schedule(fixture.registry);
+    schedule.add<FirstInputReader>();
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
+    TechEngine::SerialExecutor executor(graph);
+
+    fixture.capture(focusEvent(true));
+    fixture.capture(buttonEvent(TechEngine::MouseButton::Right, true));
+    fixture.capture(keyEvent(TechEngine::Key::D, true));
+    fixture.capture(buttonEvent(TechEngine::MouseButton::Left, true));
+    fixture.capture(keyEvent(TechEngine::Key::A, true));
+    fixture.capture(keyEvent(TechEngine::Key::Space, true));
+    fixture.capture(motionEvent(1.0, 1.0));
+    fixture.runTick(executor);
+
+    using enum TechEngine::InputNotificationKind;
+    REQUIRE(kindsOf(state.received) == std::vector{Focus, Button, Key, Button, Key, Key, Motion, KeyHold, KeyHold, KeyHold, ButtonHold, ButtonHold});
+    for (std::size_t i = 0; i < 7; i++) {
+        CHECK(state.received[i].sequence == i + 1);
+    }
+    CHECK(state.received[7].key == TechEngine::Key::Space);
+    CHECK(state.received[8].key == TechEngine::Key::A);
+    CHECK(state.received[9].key == TechEngine::Key::D);
+    CHECK(state.received[10].button == TechEngine::MouseButton::Left);
+    CHECK(state.received[11].button == TechEngine::MouseButton::Right);
+}
+
+TEST_CASE("every reader receives the hold notifications at its own slot before its tick", "[core][systems][input]") {
+    InputDeliveryFixture fixture;
+    InputDeliveryTestState state;
+    const InputDeliveryStateGuard stateGuard(state);
+    TechEngine::Schedule schedule(fixture.registry);
+    schedule.add<FirstInputReader>().before<InputBlindSystem>();
+    schedule.add<InputBlindSystem>();
+    schedule.add<SecondInputReader>().setSlot(TechEngine::Slot::Terminal);
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
+    TechEngine::SerialExecutor executor(graph);
+
+    fixture.capture(focusEvent(true));
+    fixture.capture(keyEvent(TechEngine::Key::W, true));
+    fixture.runTick(executor);
+    state.trace.clear();
+    fixture.runTick(executor);
+
+    REQUIRE(state.trace.size() == 5);
+    CHECK(state.trace[0].starts_with("reader1 handler1"));
+    CHECK(state.trace[1] == ticked(1));
+    CHECK(state.trace[2] == ticked(4));
+    CHECK(state.trace[3].starts_with("reader2 handler1"));
+    CHECK(state.trace[4] == ticked(2));
+}
+
+TEST_CASE("a focus loss ends hold notifications in the Tick that captured it", "[core][systems][input]") {
+    InputDeliveryFixture fixture;
+    InputDeliveryTestState state;
+    const InputDeliveryStateGuard stateGuard(state);
+    TechEngine::Schedule schedule(fixture.registry);
+    schedule.add<FirstInputReader>();
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
+    TechEngine::SerialExecutor executor(graph);
+    using enum TechEngine::InputNotificationKind;
+
+    fixture.capture(focusEvent(true));
+    fixture.capture(keyEvent(TechEngine::Key::W, true));
+    fixture.capture(buttonEvent(TechEngine::MouseButton::Left, true));
+    fixture.runTick(executor);
+    state.received.clear();
+
+    fixture.capture(focusEvent(false));
+    fixture.runTick(executor);
+    REQUIRE(kindsOf(state.received) == std::vector{Focus});
+    CHECK_FALSE(state.received[0].pressed);
+
+    state.received.clear();
+    fixture.capture(focusEvent(true));
+    fixture.runTick(executor);
+    REQUIRE(kindsOf(state.received) == std::vector{Focus});
+    CHECK(state.received[0].pressed);
 }
