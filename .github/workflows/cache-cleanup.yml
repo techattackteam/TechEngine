@@ -1,0 +1,31 @@
+# Drops every Actions cache a pull request wrote once it closes, merged or not. A cache saved on
+# `refs/pull/N/merge` is readable only by runs of that same PR, so after close nothing can ever
+# restore it again. Partner to ci.yml's `cache-prune` job, which bounds a ref while it is live.
+
+name: Cache cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup:
+    name: drop PR caches
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Delete every cache on this PR's merge ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TE_REF: refs/pull/${{ github.event.pull_request.number }}/merge
+        run: |
+          set -euo pipefail
+          gh cache list --ref "$TE_REF" --limit 1000 --json id,key --jq '.[] | "\(.id) \(.key)"' > caches.txt
+          echo "$(wc -l < caches.txt) entries on $TE_REF"
+          while read -r id key; do
+            echo "delete $key"
+            gh cache delete "$id" || echo "::warning::could not delete $key"
+          done < caches.txt
