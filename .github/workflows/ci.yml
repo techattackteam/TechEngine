@@ -138,12 +138,20 @@ jobs:
         with:
           arch: x64
 
+      # GOTCHA: the action never runs `apt-get update`. Package versions resolve against the
+      # lists baked into the runner image, and a hit restores the .debs without touching the
+      # mirror at all, which is the point: the mirror is what stalls. The X11/Wayland list is
+      # exactly what GLFW 3.4's CMake checks for; a "headers not found" at configure means
+      # GLFW grew a dependency, so add its -dev package here, not xorg-dev back.
       - name: Install clang + GLFW deps (Linux)
         if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang clang-tidy \
-            xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev \
+        timeout-minutes: 5
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: >-
+            clang clang-tidy libgl1-mesa-dev
+            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev
+            libwayland-bin libwayland-dev libxkbcommon-dev
             xvfb xauth libgl1-mesa-dri mesa-utils
 
       - name: Report software OpenGL capabilities
@@ -283,12 +291,16 @@ jobs:
         uses: lukka/get-cmake@latest
 
       # `llvm` carries llvm-profdata and llvm-cov, which must match clang's major version.
+      # Same cached install as build-test; see the GOTCHA there.
       - name: Install clang + LLVM + GLFW deps
         if: steps.bypass.outputs.skip != 'true'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang llvm \
-            xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev \
+        timeout-minutes: 5
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: >-
+            clang llvm libgl1-mesa-dev
+            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev
+            libwayland-bin libwayland-dev libxkbcommon-dev
             xvfb xauth libgl1-mesa-dri
 
       # Pinned like clang-format is: the threshold is a merge gate, so the tool that
@@ -385,12 +397,16 @@ jobs:
         with:
           arch: x64
 
+      # Same cached install as build-test; see the GOTCHA there.
       - name: Install clang + GLFW deps (Linux)
         if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang \
-            xorg-dev libgl1-mesa-dev libwayland-bin libwayland-dev libxkbcommon-dev \
+        timeout-minutes: 5
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: >-
+            clang libgl1-mesa-dev
+            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev
+            libwayland-bin libwayland-dev libxkbcommon-dev
             xvfb xauth libgl1-mesa-dri
 
       # ccache degrades gracefully: a cold/unreachable cache just compiles slower,
