@@ -189,7 +189,7 @@ static std::size_t countSystemNodes(const TechEngine::TaskGraph& graph) {
     return count;
 }
 
-static std::size_t countExactLog(const std::string_view expected) {
+[[maybe_unused]] static std::size_t countExactLog(const std::string_view expected) {
     std::size_t count = 0;
     for (const std::string& message: g_graphLogMessages) {
         if (message == expected) {
@@ -475,9 +475,13 @@ TEST_CASE("every conflict-derived edge is logged with its chosen direction", "[c
 
     const TechEngine::TaskGraph graph(schedule, events);
 
+#if TE_LOG_ACTIVE_LEVEL <= TE_LOG_LEVEL_INFO
     REQUIRE(g_graphLogMessages.size() == 2);
     REQUIRE(countExactLog("Task graph conflict: FirstSystem -> SecondSystem") == 1);
     REQUIRE(countExactLog("Task graph conflict: SecondSystem -> ThirdSystem") == 1);
+#else
+    REQUIRE(g_graphLogMessages.empty());
+#endif
 }
 
 TEST_CASE("event handlers resolve onto their graph node in declaration order", "[core][systems][task-graph][events]") {

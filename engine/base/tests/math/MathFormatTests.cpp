@@ -44,7 +44,7 @@ TEST_CASE("a vector composes into a larger format string", "[base][math][format]
 }
 
 TEST_CASE("a vector logs through the positional format string", "[base][math][format]") {
-    const TechEngine::Vec3 position{1.0f, 2.0f, 3.0f};
+    [[maybe_unused]] const TechEngine::Vec3 position{1.0f, 2.0f, 3.0f};
 
     TE_LOGGER_INFO("spawned at {0}", position);
 }
