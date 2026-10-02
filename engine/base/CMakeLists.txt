@@ -43,6 +43,7 @@ if(TE_BUILD_TESTS)
   techengine_test(base SOURCES
           tests/BaseTests.cpp
           tests/diagnostics/LogTests.cpp
+          tests/diagnostics/LogFallbackTests.cpp
           tests/diagnostics/AssertTests.cpp
           tests/diagnostics/ProfileTests.cpp
           tests/math/MathTests.cpp
