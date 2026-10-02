@@ -72,7 +72,7 @@ TEST_CASE("positional args reorder and reuse", "[base][log]") {
     const SinkGuard guard;
     TechEngine::setMinLevel(TechEngine::Level::Trace);
 
-    TE_LOGGER_INFO("swapchain {1}x{0} (reuse {1})", 1080, 1920);
+    TE_LOGGER_WARN("swapchain {1}x{0} (reuse {1})", 1080, 1920);
 
     REQUIRE(g_captured.size() == 1);
     REQUIRE(g_captured[0].message == "swapchain 1920x1080 (reuse 1920)");
@@ -105,7 +105,7 @@ TEST_CASE("source_location reaches the record", "[base][log]") {
     TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     const std::uint32_t expectedLine = __LINE__ + 1;
-    TE_LOGGER_INFO("located");
+    TE_LOGGER_WARN("located");
 
     REQUIRE(g_captured.size() == 1);
     REQUIRE(g_captured[0].line == expectedLine);
@@ -118,7 +118,7 @@ TEST_CASE("function name is trimmed to the identifier", "[base][log]") {
     const SinkGuard guard;
     TechEngine::setMinLevel(TechEngine::Level::Trace);
 
-    TE_LOGGER_INFO("named");
+    TE_LOGGER_WARN("named");
 
     REQUIRE(g_captured.size() == 1);
     const std::string& fn = g_captured[0].function;
@@ -133,7 +133,7 @@ TEST_CASE("tick stamp is the value app pushed", "[base][log]") {
     TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     TechEngine::setDiagnosticTick(1043);
-    TE_LOGGER_INFO("stamped");
+    TE_LOGGER_WARN("stamped");
     TechEngine::setDiagnosticTick(0);
 
     REQUIRE(g_captured.size() == 1);
@@ -160,7 +160,7 @@ TEST_CASE("over-long messages truncate rather than overflow", "[base][log]") {
     TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     const std::string huge(4096, 'x');
-    TE_LOGGER_INFO("{0}", huge);
+    TE_LOGGER_WARN("{0}", huge);
 
     REQUIRE(g_captured.size() == 1);
     REQUIRE(g_captured[0].message.size() < huge.size());
@@ -205,8 +205,8 @@ TEST_CASE("two modules log on distinct channels", "[base][log][channel]") {
     const TechEngine::LogChannel render = TechEngine::registerLogChannel("render", client);
     const TechEngine::LogChannel socket = TechEngine::registerLogChannel("socket", net);
 
-    TE_LOGGER_INFO_CH(render, "frame {0}", 1);
-    TE_LOGGER_INFO_CH(socket, "peer {0}", 2);
+    TE_LOGGER_WARN_CH(render, "frame {0}", 1);
+    TE_LOGGER_WARN_CH(socket, "peer {0}", 2);
 
     REQUIRE_FALSE(render == socket);
     REQUIRE(g_captured.size() == 2);
@@ -229,15 +229,15 @@ TEST_CASE("per-channel level filters independently", "[base][log][channel]") {
     const TechEngine::LogModule audio = TechEngine::registerLogModule("audio");
     const TechEngine::LogChannel quiet = TechEngine::registerLogChannel("mixer", audio);
     const TechEngine::LogChannel loud = TechEngine::registerLogChannel("device", audio);
-    TechEngine::setChannelLevel(quiet, TechEngine::Level::Warn);
+    TechEngine::setChannelLevel(quiet, TechEngine::Level::Error);
 
-    TE_LOGGER_INFO_CH(quiet, "dropped");
-    TE_LOGGER_INFO_CH(loud, "kept");
+    TE_LOGGER_WARN_CH(quiet, "dropped");
+    TE_LOGGER_WARN_CH(loud, "kept");
 
     REQUIRE(g_captured.size() == 1);
     REQUIRE(g_captured[0].message == "kept");
     REQUIRE(g_captured[0].channel == loud);
-    REQUIRE(TechEngine::channelLevel(quiet) == TechEngine::Level::Warn);
+    REQUIRE(TechEngine::channelLevel(quiet) == TechEngine::Level::Error);
     REQUIRE(TechEngine::channelLevel(loud) == TechEngine::Level::Trace);
 }
 
@@ -265,7 +265,7 @@ TEST_CASE("unregistered channel falls back to the default", "[base][log][channel
 
     const TechEngine::LogChannel bogus{9999};
 
-    TE_LOGGER_INFO_CH(bogus, "still delivered");
+    TE_LOGGER_WARN_CH(bogus, "still delivered");
 
     REQUIRE(g_captured.size() == 1);
     REQUIRE(g_captured[0].message == "still delivered");
@@ -285,14 +285,14 @@ TEST_CASE("sinks are added, not swapped", "[base][log][sink]") {
 
     REQUIRE(TechEngine::addLogSink(&secondarySink));
 
-    TE_LOGGER_INFO("both");
+    TE_LOGGER_WARN("both");
 
     REQUIRE(g_captured.size() == 1);
     REQUIRE(g_secondary.size() == 1);
 
     REQUIRE(TechEngine::removeLogSink(&secondarySink));
 
-    TE_LOGGER_INFO("only the survivor");
+    TE_LOGGER_WARN("only the survivor");
 
     REQUIRE(g_captured.size() == 2);
     REQUIRE(g_secondary.size() == 1);
@@ -360,8 +360,8 @@ TEST_CASE("a record carries a wall-clock stamp", "[base][log]") {
     const SinkGuard guard;
     TechEngine::setMinLevel(TechEngine::Level::Trace);
 
-    TE_LOGGER_INFO("first");
-    TE_LOGGER_INFO("second");
+    TE_LOGGER_WARN("first");
+    TE_LOGGER_WARN("second");
 
     REQUIRE(g_captured.size() == 2);
     REQUIRE(g_captured[0].time.time_since_epoch().count() > 0);
@@ -466,7 +466,7 @@ TEST_CASE("registry overflow degrades to the default channel", "[base][log][chan
     REQUIRE(TechEngine::logChannelName(first) == "first");
 
     // A full table degrades the channel, never the log line.
-    TE_LOGGER_INFO_CH(last, "still delivered");
+    TE_LOGGER_WARN_CH(last, "still delivered");
 
     REQUIRE(g_captured.size() == 1);
     REQUIRE(g_captured[0].message == "still delivered");
@@ -498,7 +498,7 @@ TEST_CASE("the ring keeps the last LOG_RING_CAPACITY records, oldest evicted fir
 
     const int total = static_cast<int>(TechEngine::LOG_RING_CAPACITY) + 5;
     for (int i = 0; i < total; i++) {
-        TE_LOGGER_INFO("record {0}", i);
+        TE_LOGGER_WARN("record {0}", i);
     }
 
     TechEngine::setMinLevel(previous);
@@ -516,9 +516,9 @@ TEST_CASE("ringSnapshot never writes past the caller's capacity", "[base][log][r
     const TechEngine::Level previous = TechEngine::minLevel();
     TechEngine::setMinLevel(TechEngine::Level::Trace);
 
-    TE_LOGGER_INFO("one");
-    TE_LOGGER_INFO("two");
-    TE_LOGGER_INFO("three");
+    TE_LOGGER_WARN("one");
+    TE_LOGGER_WARN("two");
+    TE_LOGGER_WARN("three");
 
     TechEngine::setMinLevel(previous);
 

@@ -41,7 +41,7 @@ namespace TechEngine {
         }
     }
 
-    void InputLogSystem::onEdge(const std::string& label, const InputNotification& input, std::uint32_t& holds) {
+    void InputLogSystem::onEdge([[maybe_unused]] const std::string& label, const InputNotification& input, std::uint32_t& holds) {
         if (input.pressed) {
             TE_LOGGER_INFO("InputLogSystem: {0} PRESS (#{1}), a single edge; holds follow once per Tick while it stays down", label, input.sequence);
         } else if (holds == 0) {
@@ -52,7 +52,7 @@ namespace TechEngine {
         holds = 0;
     }
 
-    void InputLogSystem::onHold(const std::string& label, std::uint32_t& holds) {
+    void InputLogSystem::onHold([[maybe_unused]] const std::string& label, std::uint32_t& holds) {
         holds++;
         if (holds == 1) {
             TE_LOGGER_INFO("InputLogSystem: {0} HOLD 1, the first Tick that ended with it down", label);
@@ -61,7 +61,7 @@ namespace TechEngine {
         }
     }
 
-    void InputLogSystem::onFocus(const InputNotification& input) {
+    void InputLogSystem::onFocus([[maybe_unused]] const InputNotification& input) {
         TE_LOGGER_INFO("InputLogSystem: FOCUS {0} (#{1}), held controls reset; GLFW's synthetic releases will not arrive", input.pressed ? "GAINED" : "LOST", input.sequence);
         for (std::size_t i = 0; i < KEY_COUNT; i++) {
             if (m_keyHolds[i] > 0) {
