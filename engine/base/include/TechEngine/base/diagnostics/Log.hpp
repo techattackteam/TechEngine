@@ -136,13 +136,13 @@ namespace TechEngine {
     void setDiagnosticTick(std::uint64_t tick);
 
     namespace internal {
-        void logDispatch(Level level, LogChannel channel, const std::source_location& loc, std::string_view fmtStr, std::format_args args);
+        void logDispatch(Level level, LogChannel channel, const std::source_location& location, std::string_view formatString, std::format_args args);
 
         std::size_t flattenRecord(const LogRecord& record, char* out, std::size_t capacity);
 
         template<typename... Args>
-        void logImpl(Level level, LogChannel channel, const std::source_location& loc, PositionalFormat<Args...> fmtStr, Args&&... args) {
-            logDispatch(level, channel, loc, fmtStr.get(), std::make_format_args(args...));
+        void logImpl(Level level, LogChannel channel, const std::source_location& location, PositionalFormat<Args...> formatString, Args&&... args) {
+            logDispatch(level, channel, location, formatString.get(), std::make_format_args(args...));
         }
     }
 }

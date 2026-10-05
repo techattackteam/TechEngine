@@ -343,7 +343,7 @@ namespace TechEngine {
             deliverRecord(record);
         }
 
-        void logDispatch(Level level, LogChannel channel, const std::source_location& loc, std::string_view fmtStr, std::format_args args) {
+        void logDispatch(Level level, LogChannel channel, const std::source_location& location, std::string_view formatString, std::format_args args) {
             if (static_cast<int>(level) < TE_LOG_ACTIVE_LEVEL) {
                 return;
             }
@@ -356,7 +356,7 @@ namespace TechEngine {
             FormatBuffer buffer{storage.data(), storage.size(), 0, false};
 
             try {
-                std::vformat_to(FormatBufferIterator{buffer}, fmtStr, args);
+                std::vformat_to(FormatBufferIterator{buffer}, formatString, args);
             } catch (const std::exception& e) {
                 buffer.size = 0;
                 buffer.truncated = false;
@@ -378,9 +378,9 @@ namespace TechEngine {
                 .moduleTag = logChannelModule(channel),
                 .channel = channel,
                 .message = std::string_view{buffer.data, buffer.size},
-                .file = baseName(loc.file_name()),
-                .function = shortFunctionName(loc.function_name()),
-                .line = static_cast<std::uint32_t>(loc.line()), // line() is uint_least32_t
+                .file = baseName(location.file_name()),
+                .function = shortFunctionName(location.function_name()),
+                .line = static_cast<std::uint32_t>(location.line()), // line() is uint_least32_t
             };
 
             deliverRecord(record);
