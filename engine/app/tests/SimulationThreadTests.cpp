@@ -89,6 +89,8 @@ public:
 
 class LoopInputDelivery {
 public:
+    TechEngine::InputBuffer input{g_loopEngine.clock};
+    SimulationThread loop{g_loopEngine.context, TechEngine::Role::Client, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .input = &input}};
     TechEngine::ComponentRegistry registry;
     TechEngine::EventRegistry events;
     TechEngine::Scene scene;
@@ -113,6 +115,12 @@ public:
         executor->execute(scene, simulation, barrier);
         deliveredPerTick.push_back(std::exchange(InputDeliveryProbeSystem::sequences, {}));
         holdsPerTick.push_back(std::exchange(InputDeliveryProbeSystem::holds, 0));
+    }
+
+    void advance(double elapsed) {
+        loop.advance(elapsed, [this](const SimulationContext& simulation) {
+            execute(simulation);
+        });
     }
 };
 
@@ -315,99 +323,77 @@ TEST_CASE("input is consumed immediately before each fixed tick", "[app][loop][i
 }
 
 TEST_CASE("captured input reaches no handler until a Tick consumes it", "[app][loop][input]") {
-    TechEngine::InputBuffer input{g_loopEngine.clock};
-    SimulationThread loop(g_loopEngine.context, TechEngine::Role::Client, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .input = &input});
     LoopInputDelivery delivery;
-    const auto step = [&delivery](const SimulationContext& simulation) {
-        delivery.execute(simulation);
-    };
 
-    input.publish(focusEvent(true));
-    input.publish(keyEvent(TechEngine::Key::W, true));
-    loop.advance(0.25, step);
+    delivery.input.publish(focusEvent(true));
+    delivery.input.publish(keyEvent(TechEngine::Key::W, true));
+    delivery.advance(0.25);
 
     REQUIRE(delivery.deliveredPerTick.empty());
 
-    loop.advance(0.25, step);
+    delivery.advance(0.25);
 
     REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{1, 2}});
     REQUIRE(delivery.holdsPerTick == std::vector<std::size_t>{1});
 }
 
 TEST_CASE("each catch-up Tick delivers only the batch it consumed", "[app][loop][input]") {
-    TechEngine::InputBuffer input{g_loopEngine.clock};
-    SimulationThread loop(g_loopEngine.context, TechEngine::Role::Client, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .input = &input});
     LoopInputDelivery delivery;
 
-    input.publish(focusEvent(true));
-    input.publish(keyEvent(TechEngine::Key::W, true));
-    loop.advance(1.5, [&delivery, &input](const SimulationContext& simulation) {
+    delivery.input.publish(focusEvent(true));
+    delivery.input.publish(keyEvent(TechEngine::Key::W, true));
+    delivery.loop.advance(1.5, [&delivery](const SimulationContext& simulation) {
         delivery.execute(simulation);
         if (simulation.tick == 1) {
-            input.publish(keyEvent(TechEngine::Key::W, false));
+            delivery.input.publish(keyEvent(TechEngine::Key::W, false));
         }
     });
 
-    REQUIRE(loop.simulationContext().tick == 3);
+    REQUIRE(delivery.loop.simulationContext().tick == 3);
     REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{1, 2}, {3}, {}});
     REQUIRE(delivery.holdsPerTick == std::vector<std::size_t>{1, 0, 0});
 }
 
 TEST_CASE("every catch-up Tick reports a held key once, with or without captured events", "[app][loop][input]") {
-    TechEngine::InputBuffer input{g_loopEngine.clock};
-    SimulationThread loop(g_loopEngine.context, TechEngine::Role::Client, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .input = &input});
     LoopInputDelivery delivery;
-    const auto step = [&delivery](const SimulationContext& simulation) {
-        delivery.execute(simulation);
-    };
 
-    input.publish(focusEvent(true));
-    input.publish(keyEvent(TechEngine::Key::W, true));
-    loop.advance(1.5, step);
+    delivery.input.publish(focusEvent(true));
+    delivery.input.publish(keyEvent(TechEngine::Key::W, true));
+    delivery.advance(1.5);
 
     REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{1, 2}, {}, {}});
     REQUIRE(delivery.holdsPerTick == std::vector<std::size_t>{1, 1, 1});
 }
 
 TEST_CASE("GLFW's post-loss synthetic releases and a duplicate focus reach no handler and leave no key held", "[app][loop][input]") {
-    TechEngine::InputBuffer input{g_loopEngine.clock};
-    SimulationThread loop(g_loopEngine.context, TechEngine::Role::Client, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .input = &input});
     LoopInputDelivery delivery;
-    const auto step = [&delivery](const SimulationContext& simulation) {
-        delivery.execute(simulation);
-    };
 
-    input.publish(focusEvent(true));
-    input.publish(keyEvent(TechEngine::Key::W, true));
-    loop.advance(0.5, step);
+    delivery.input.publish(focusEvent(true));
+    delivery.input.publish(keyEvent(TechEngine::Key::W, true));
+    delivery.advance(0.5);
 
-    input.publish(focusEvent(false));
-    input.publish(keyEvent(TechEngine::Key::W, false));
-    input.publish(focusEvent(false));
-    loop.advance(0.5, step);
+    delivery.input.publish(focusEvent(false));
+    delivery.input.publish(keyEvent(TechEngine::Key::W, false));
+    delivery.input.publish(focusEvent(false));
+    delivery.advance(0.5);
 
-    input.publish(focusEvent(true));
-    loop.advance(0.5, step);
+    delivery.input.publish(focusEvent(true));
+    delivery.advance(0.5);
 
     REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{1, 2}, {3}, {6}});
     REQUIRE(delivery.holdsPerTick == std::vector<std::size_t>{1, 0, 0});
-    REQUIRE_FALSE(loop.simulationContext().input.held.isHeld(TechEngine::Key::W));
+    REQUIRE_FALSE(delivery.loop.simulationContext().input.held.isHeld(TechEngine::Key::W));
 }
 
 TEST_CASE("a duplicate focus between Ticks keeps a held key reporting holds", "[app][loop][input]") {
-    TechEngine::InputBuffer input{g_loopEngine.clock};
-    SimulationThread loop(g_loopEngine.context, TechEngine::Role::Client, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .input = &input});
     LoopInputDelivery delivery;
-    const auto step = [&delivery](const SimulationContext& simulation) {
-        delivery.execute(simulation);
-    };
 
-    input.publish(focusEvent(true));
-    input.publish(keyEvent(TechEngine::Key::W, true));
-    loop.advance(0.5, step);
+    delivery.input.publish(focusEvent(true));
+    delivery.input.publish(keyEvent(TechEngine::Key::W, true));
+    delivery.advance(0.5);
 
-    input.publish(focusEvent(true));
-    loop.advance(0.5, step);
+    delivery.input.publish(focusEvent(true));
+    delivery.advance(0.5);
 
     REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{1, 2}, {}});
     REQUIRE(delivery.holdsPerTick == std::vector<std::size_t>{1, 1});
