@@ -47,13 +47,13 @@ namespace TechEngine {
     AssertHandlerFn assertHandler();
 
     namespace internal {
-        AssertResponse assertDispatch(AssertKind kind, std::string_view condition, const std::source_location& loc, std::string_view fmtStr, std::format_args args);
+        AssertResponse assertDispatch(AssertKind kind, std::string_view condition, const std::source_location& location, std::string_view formatString, std::format_args args);
 
-        AssertResponse assertReport(AssertKind kind, std::string_view condition, const std::source_location& loc);
+        AssertResponse assertReport(AssertKind kind, std::string_view condition, const std::source_location& location);
 
         template<typename... Args>
-        AssertResponse assertReport(AssertKind kind, std::string_view condition, const std::source_location& loc, PositionalFormat<Args...> fmtStr, Args&&... args) {
-            return assertDispatch(kind, condition, loc, fmtStr.get(), std::make_format_args(args...));
+        AssertResponse assertReport(AssertKind kind, std::string_view condition, const std::source_location& location, PositionalFormat<Args...> formatString, Args&&... args) {
+            return assertDispatch(kind, condition, location, formatString.get(), std::make_format_args(args...));
         }
 
         [[noreturn]] void assertAbort();

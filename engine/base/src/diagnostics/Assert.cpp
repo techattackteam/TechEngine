@@ -126,13 +126,13 @@ namespace TechEngine {
     }
 
     namespace internal {
-        AssertResponse assertDispatch(AssertKind kind, std::string_view condition, const std::source_location& loc, std::string_view fmtStr, std::format_args args) {
+        AssertResponse assertDispatch(AssertKind kind, std::string_view condition, const std::source_location& location, std::string_view formatString, std::format_args args) {
             std::array<char, ASSERT_MESSAGE_CAPACITY> storage;
             FormatBuffer buffer{storage.data(), storage.size(), 0, false};
 
-            if (!fmtStr.empty()) {
+            if (!formatString.empty()) {
                 try {
-                    std::vformat_to(FormatBufferIterator{buffer}, fmtStr, args);
+                    std::vformat_to(FormatBufferIterator{buffer}, formatString, args);
                 } catch (const std::exception& e) {
                     buffer.size = 0;
                     buffer.truncated = false;
@@ -152,9 +152,9 @@ namespace TechEngine {
                 kind,
                 condition,
                 std::string_view{storage.data(), buffer.size},
-                baseName(loc.file_name()),
-                shortFunctionName(loc.function_name()),
-                static_cast<std::uint32_t>(loc.line()),
+                baseName(location.file_name()),
+                shortFunctionName(location.function_name()),
+                static_cast<std::uint32_t>(location.line()),
             };
 
             if (t_reporting) {
@@ -166,8 +166,8 @@ namespace TechEngine {
             return assertHandler()(context);
         }
 
-        AssertResponse assertReport(AssertKind kind, std::string_view condition, const std::source_location& loc) {
-            return assertDispatch(kind, condition, loc, std::string_view{}, std::make_format_args());
+        AssertResponse assertReport(AssertKind kind, std::string_view condition, const std::source_location& location) {
+            return assertDispatch(kind, condition, location, std::string_view{}, std::make_format_args());
         }
 
         void assertAbort() {
