@@ -346,6 +346,13 @@ static std::size_t eventCount(const AppLifecycleProbe& app, std::string_view nam
     }));
 }
 
+static void checkOnlyPoolWorkersRegistered(const AppLifecycleProbe& app) {
+    const auto threads = app.threads();
+    CHECK(std::none_of(threads.begin(), threads.end(), [](const auto& thread) {
+        return thread.role != TechEngine::ThreadRole::PoolWorker;
+    }));
+}
+
 static void checkStopped(const AppLifecycleProbe& app) {
     const auto events = app.events();
     REQUIRE(events.size() >= 2);
@@ -358,10 +365,7 @@ static void checkStopped(const AppLifecycleProbe& app) {
         return event.name == "systemTick" || event.name == "publishSnapshot";
     }));
     CHECK(app.dedicatedJoinedBeforeShutdown);
-    const auto threads = app.threads();
-    CHECK(std::none_of(threads.begin(), threads.end(), [](const auto& thread) {
-        return thread.role != TechEngine::ThreadRole::PoolWorker;
-    }));
+    checkOnlyPoolWorkersRegistered(app);
 }
 
 TEST_CASE("App advances simulation while the main thread is stalled", "[app][lifecycle]") {
@@ -496,10 +500,7 @@ TEST_CASE("App unwinds only successfully initialized stages", "[app][lifecycle]"
     CHECK(eventCount(app, "systemTick") == 0);
     CHECK(eventCount(app, "simulationShutdown") == (publicationFails ? 1 : 0));
     CHECK(eventCount(app, "shutdown") == (mainFails ? 0 : 1));
-    const auto threads = app.threads();
-    CHECK(std::none_of(threads.begin(), threads.end(), [](const auto& thread) {
-        return thread.role != TechEngine::ThreadRole::PoolWorker;
-    }));
+    checkOnlyPoolWorkersRegistered(app);
     if (!mainFails) {
         CHECK(app.dedicatedJoinedBeforeShutdown);
     }
@@ -636,10 +637,7 @@ TEST_CASE("App reports main shutdown failure and releases main registration", "[
 
     CHECK(app.run() != 0);
     CHECK(eventCount(app, "shutdown") == 1);
-    const auto threads = app.threads();
-    CHECK(std::none_of(threads.begin(), threads.end(), [](const auto& thread) {
-        return thread.role != TechEngine::ThreadRole::PoolWorker;
-    }));
+    checkOnlyPoolWorkersRegistered(app);
 }
 
 TEST_CASE("App stops simulation when a main update hook throws", "[app][lifecycle]") {

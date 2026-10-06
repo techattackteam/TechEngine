@@ -29,12 +29,10 @@ namespace TechEngine {
 
 #if defined(TE_PROFILE_ENABLED) && !defined(TE_SANITIZER_OWNS_ALLOCATOR)
 
-static void* techEngineAllocate(std::size_t size) {
-    if (size == 0) {
-        size = 1;
-    }
+template<typename Allocate>
+static void* techEngineRetryAllocation(std::size_t size, Allocate allocate) {
     while (true) {
-        void* pointer = std::malloc(size);
+        void* pointer = allocate();
         if (pointer != nullptr) {
             TE_PROFILER_ALLOC(pointer, size);
             return pointer;
@@ -49,41 +47,32 @@ static void* techEngineAllocate(std::size_t size) {
     }
 }
 
+static void* techEngineAllocate(std::size_t size) {
+    if (size == 0) {
+        size = 1;
+    }
+    return techEngineRetryAllocation(size, [size] {
+        return std::malloc(size);
+    });
+}
+
 static void* techEngineAllocateAligned(std::size_t size, std::align_val_t alignment) {
     const std::size_t bytes = static_cast<std::size_t>(alignment);
     if (size == 0) {
         size = bytes;
     }
-    while (true) {
+    return techEngineRetryAllocation(size, [size, bytes] {
 #if defined(_MSC_VER)
-        void* pointer = _aligned_malloc(size, bytes);
+        return _aligned_malloc(size, bytes);
 #else
         // std::aligned_alloc requires the size to be a multiple of the alignment.
         const std::size_t rounded = ((size + bytes - 1) / bytes) * bytes;
-        void* pointer = std::aligned_alloc(bytes, rounded);
+        return std::aligned_alloc(bytes, rounded);
 #endif
-        if (pointer != nullptr) {
-            TE_PROFILER_ALLOC(pointer, size);
-            return pointer;
-        }
-        const std::new_handler handler = std::get_new_handler();
-        if (handler == nullptr) {
-            return nullptr;
-        }
-        handler();
-    }
+    });
 }
 
-static void* techEngineAllocateOrThrow(std::size_t size) {
-    void* pointer = techEngineAllocate(size);
-    if (pointer == nullptr) {
-        throw std::bad_alloc{};
-    }
-    return pointer;
-}
-
-static void* techEngineAllocateAlignedOrThrow(std::size_t size, std::align_val_t alignment) {
-    void* pointer = techEngineAllocateAligned(size, alignment);
+static void* techEngineThrowIfNull(void* pointer) {
     if (pointer == nullptr) {
         throw std::bad_alloc{};
     }
@@ -111,19 +100,19 @@ static void techEngineDeallocateAligned(void* pointer) noexcept {
 }
 
 void* operator new(std::size_t size) {
-    return techEngineAllocateOrThrow(size);
+    return techEngineThrowIfNull(techEngineAllocate(size));
 }
 
 void* operator new[](std::size_t size) {
-    return techEngineAllocateOrThrow(size);
+    return techEngineThrowIfNull(techEngineAllocate(size));
 }
 
 void* operator new(std::size_t size, std::align_val_t alignment) {
-    return techEngineAllocateAlignedOrThrow(size, alignment);
+    return techEngineThrowIfNull(techEngineAllocateAligned(size, alignment));
 }
 
 void* operator new[](std::size_t size, std::align_val_t alignment) {
-    return techEngineAllocateAlignedOrThrow(size, alignment);
+    return techEngineThrowIfNull(techEngineAllocateAligned(size, alignment));
 }
 
 void* operator new(std::size_t size, const std::nothrow_t&) noexcept {
