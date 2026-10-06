@@ -62,11 +62,16 @@ class InputDeliveryProbeSystem final : public TechEngine::ISystem {
 public:
     static inline std::vector<std::uint64_t> sequences;
     static inline std::size_t holds = 0;
+    static inline std::vector<TechEngine::InputNotification> recoveries;
 
     void init(TechEngine::ScheduleRegistration& registration) override {
         registration.onInput([](TechEngine::Scene&, const TechEngine::InputNotification& input) {
             if (input.kind == TechEngine::InputNotificationKind::KeyHold || input.kind == TechEngine::InputNotificationKind::ButtonHold) {
                 holds++;
+                return;
+            }
+            if (input.kind == TechEngine::InputNotificationKind::Recovered) {
+                recoveries.push_back(input);
                 return;
             }
             sequences.push_back(input.sequence);
@@ -83,7 +88,7 @@ public:
 
 class LoopInputDelivery {
 public:
-    TechEngine::InputBuffer input{g_loopEngine.clock};
+    TechEngine::InputBuffer input;
     SimulationThread loop{g_loopEngine.context, TechEngine::Role::Client, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .input = &input}};
     TechEngine::ComponentRegistry registry;
     TechEngine::EventRegistry events;
@@ -94,12 +99,14 @@ public:
     TechEngineTests::NoOpTickBarrier barrier;
     std::vector<std::vector<std::uint64_t>> deliveredPerTick;
     std::vector<std::size_t> holdsPerTick;
+    std::vector<std::vector<TechEngine::InputNotification>> recoveriesPerTick;
 
-    LoopInputDelivery() : scene(registry), schedule(registry) {
+    explicit LoopInputDelivery(std::size_t inputCapacity = TechEngine::InputBuffer::DEFAULT_CAPACITY) : input(g_loopEngine.clock, inputCapacity), scene(registry), schedule(registry) {
         registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
         registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
         InputDeliveryProbeSystem::sequences.clear();
         InputDeliveryProbeSystem::holds = 0;
+        InputDeliveryProbeSystem::recoveries.clear();
         schedule.add<InputDeliveryProbeSystem>();
         graph.emplace(schedule, events);
         executor.emplace(*graph);
@@ -109,6 +116,15 @@ public:
         executor->execute(scene, simulation, barrier);
         deliveredPerTick.push_back(std::exchange(InputDeliveryProbeSystem::sequences, {}));
         holdsPerTick.push_back(std::exchange(InputDeliveryProbeSystem::holds, 0));
+        recoveriesPerTick.push_back(std::exchange(InputDeliveryProbeSystem::recoveries, {}));
+    }
+
+    std::vector<std::size_t> recoveryCounts() const {
+        std::vector<std::size_t> counts;
+        for (const std::vector<TechEngine::InputNotification>& recoveries: recoveriesPerTick) {
+            counts.push_back(recoveries.size());
+        }
+        return counts;
     }
 
     void advance(double elapsed) {
@@ -391,6 +407,77 @@ TEST_CASE("a duplicate focus between Ticks keeps a held key reporting holds", "[
 
     REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{1, 2}, {}});
     REQUIRE(delivery.holdsPerTick == std::vector<std::size_t>{1, 1});
+}
+
+TEST_CASE("a tiny buffer's overflow reaches handlers as one recovery notice, and holds resume after it", "[app][loop][input][overflow]") {
+    LoopInputDelivery delivery{2};
+
+    delivery.input.publish(focusEvent(true));
+    delivery.advance(0.5);
+
+    delivery.input.publish(keyEvent(TechEngine::Key::W, true));
+    delivery.input.publish(keyEvent(TechEngine::Key::B, true));
+    delivery.input.publish(keyEvent(TechEngine::Key::W, false));
+    delivery.input.publish(keyEvent(TechEngine::Key::C, true));
+    delivery.advance(0.5);
+    delivery.advance(0.5);
+
+    delivery.input.publish(keyEvent(TechEngine::Key::B, false));
+    delivery.advance(0.5);
+
+    REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{1}, {}, {}, {6}});
+    REQUIRE(delivery.holdsPerTick == std::vector<std::size_t>{0, 2, 2, 1});
+    REQUIRE(delivery.recoveryCounts() == std::vector<std::size_t>{0, 1, 0, 0});
+    const TechEngine::InputNotification& notice = delivery.recoveriesPerTick[1][0];
+    CHECK(notice.firstLostSequence == 2);
+    CHECK(notice.lastLostSequence == 5);
+    CHECK(notice.pressed);
+    const TechEngine::InputState& held = delivery.loop.simulationContext().input.held;
+    CHECK_FALSE(held.isHeld(TechEngine::Key::W));
+    CHECK_FALSE(held.isHeld(TechEngine::Key::B));
+    CHECK(held.isHeld(TechEngine::Key::C));
+}
+
+TEST_CASE("a release lost to a tiny buffer's overflow still notifies handlers and leaves no key held", "[app][loop][input][overflow]") {
+    LoopInputDelivery delivery{2};
+
+    delivery.input.publish(focusEvent(true));
+    delivery.input.publish(keyEvent(TechEngine::Key::W, true));
+    delivery.advance(0.5);
+
+    delivery.input.publish(keyEvent(TechEngine::Key::W, false));
+    delivery.input.publish(keyEvent(TechEngine::Key::A, true));
+    delivery.input.publish(keyEvent(TechEngine::Key::A, false));
+    delivery.advance(0.5);
+    delivery.advance(0.5);
+
+    REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{1, 2}, {}, {}});
+    REQUIRE(delivery.holdsPerTick == std::vector<std::size_t>{1, 0, 0});
+    REQUIRE(delivery.recoveryCounts() == std::vector<std::size_t>{0, 1, 0});
+    const TechEngine::InputNotification& notice = delivery.recoveriesPerTick[1][0];
+    CHECK(notice.firstLostSequence == 3);
+    CHECK(notice.lastLostSequence == 5);
+    CHECK(notice.pressed);
+    CHECK_FALSE(delivery.loop.simulationContext().input.held.isHeld(TechEngine::Key::W));
+    CHECK_FALSE(delivery.loop.simulationContext().input.held.isHeld(TechEngine::Key::A));
+}
+
+TEST_CASE("an overflow before a catch-up notifies only the first catch-up Tick, and every Tick reports the recovered holds", "[app][loop][input][overflow]") {
+    LoopInputDelivery delivery{2};
+
+    delivery.input.publish(focusEvent(true));
+    delivery.input.publish(keyEvent(TechEngine::Key::W, true));
+    delivery.input.publish(keyEvent(TechEngine::Key::D, true));
+    delivery.advance(1.5);
+
+    REQUIRE(delivery.loop.simulationContext().tick == 3);
+    REQUIRE(delivery.deliveredPerTick == std::vector<std::vector<std::uint64_t>>{{}, {}, {}});
+    REQUIRE(delivery.holdsPerTick == std::vector<std::size_t>{2, 2, 2});
+    REQUIRE(delivery.recoveryCounts() == std::vector<std::size_t>{1, 0, 0});
+    const TechEngine::InputNotification& notice = delivery.recoveriesPerTick[0][0];
+    CHECK(notice.firstLostSequence == 1);
+    CHECK(notice.lastLostSequence == 3);
+    CHECK(notice.pressed);
 }
 
 TEST_CASE("the context carries the construction values", "[app][loop]") {
