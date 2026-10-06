@@ -11,6 +11,7 @@
 #include <TechEngine/core/systems/SerialExecutor.hpp>
 #include <TechEngine/core/systems/TaskGraph.hpp>
 #include <TechEngine/platform/input/InputBuffer.hpp>
+#include <TechEngine/testing/NoOpTickBarrier.hpp>
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -21,7 +22,6 @@
 #include <cstdint>
 #include <limits>
 #include <optional>
-#include <span>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -81,12 +81,6 @@ public:
     }
 };
 
-class LoopInputBarrier final : public TechEngine::TickBarrierServices {
-public:
-    void assignNetIds(TechEngine::Scene&, std::span<const TechEngine::Entity>) override {
-    }
-};
-
 class LoopInputDelivery {
 public:
     TechEngine::InputBuffer input{g_loopEngine.clock};
@@ -97,7 +91,7 @@ public:
     TechEngine::Schedule schedule;
     std::optional<TechEngine::TaskGraph> graph;
     std::optional<TechEngine::SerialExecutor> executor;
-    LoopInputBarrier barrier;
+    TechEngineTests::NoOpTickBarrier barrier;
     std::vector<std::vector<std::uint64_t>> deliveredPerTick;
     std::vector<std::size_t> holdsPerTick;
 

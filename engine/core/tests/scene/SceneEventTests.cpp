@@ -11,6 +11,7 @@
 #include <TechEngine/core/systems/TaskGraph.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
+#include <TechEngine/testing/NoOpTickBarrier.hpp>
 
 #include <scene/SceneTestRegistry.hpp>
 
@@ -171,12 +172,6 @@ public:
     }
 };
 
-class SceneEventBarrier final : public TechEngine::TickBarrierServices {
-public:
-    void assignNetIds(TechEngine::Scene&, std::span<const TechEngine::Entity>) override {
-    }
-};
-
 class SceneEventFixture {
 public:
     TechEngine::ComponentRegistry components;
@@ -193,7 +188,7 @@ public:
     TechEngine::Schedule schedule;
     std::optional<TechEngine::TaskGraph> graph;
     std::optional<TechEngine::SerialExecutor> executor;
-    SceneEventBarrier barrier;
+    TechEngineTests::NoOpTickBarrier barrier;
 
     SceneEventFixture() : first(components), second(components), files(mounts), jobs(1), engine{files, jobs, clock}, context{.fixedDeltaTime = 1.0 / 60.0, .tick = 1, .input = input, .engine = engine}, schedule(components) {
         TechEngineTests::registerBuiltInSceneComponents(components);
