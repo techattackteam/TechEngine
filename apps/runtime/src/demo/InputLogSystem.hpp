@@ -30,6 +30,8 @@ namespace TechEngine {
 
         void onFocus(const InputNotification& input);
 
+        void onRecovered(const InputNotification& input);
+
         std::string keyLabel(Key key) const;
 
         std::string buttonLabel(MouseButton button) const;

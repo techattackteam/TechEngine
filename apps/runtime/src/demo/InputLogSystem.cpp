@@ -38,6 +38,9 @@ namespace TechEngine {
             case InputNotificationKind::ButtonHold:
                 onHold(buttonLabel(input.button), m_buttonHolds[static_cast<std::size_t>(input.button)]);
                 break;
+            case InputNotificationKind::Recovered:
+                onRecovered(input);
+                break;
         }
     }
 
@@ -73,6 +76,12 @@ namespace TechEngine {
                 TE_LOGGER_INFO("InputLogSystem: {0} cleared by the focus change after {1} holds, without a RELEASE", buttonLabel(static_cast<MouseButton>(i)), m_buttonHolds[i]);
             }
         }
+        m_keyHolds.fill(0);
+        m_buttonHolds.fill(0);
+    }
+
+    void InputLogSystem::onRecovered([[maybe_unused]] const InputNotification& input) {
+        TE_LOGGER_INFO("InputLogSystem: RECOVERED after losing #{0} through #{1}, now {2}; held controls reset, and the holds that follow are the recovered state", input.firstLostSequence, input.lastLostSequence, input.pressed ? "focused" : "unfocused");
         m_keyHolds.fill(0);
         m_buttonHolds.fill(0);
     }

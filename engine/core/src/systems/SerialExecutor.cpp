@@ -32,6 +32,8 @@ namespace TechEngine {
 
         InputNotification toNotification(const InputEvent& event);
 
+        InputNotification recoveryNotice(const InputFrame& input);
+
         void collectHolds(const InputState& held);
     };
 
@@ -70,6 +72,15 @@ namespace TechEngine {
                 notification.pressed = event.pressed;
                 break;
         }
+        return notification;
+    }
+
+    InputNotification SerialExecutor::Impl::recoveryNotice(const InputFrame& input) {
+        InputNotification notification;
+        notification.kind = InputNotificationKind::Recovered;
+        notification.pressed = input.held.focused;
+        notification.firstLostSequence = input.firstLostSequence;
+        notification.lastLostSequence = input.lastLostSequence;
         return notification;
     }
 
@@ -115,8 +126,14 @@ namespace TechEngine {
                                     eventHandler.handler(scene, batch);
                                 }
                             }
-                            if (!node.inputHandlers.empty() && (!context.input.events.empty() || !m_impl->holds.empty())) {
+                            if (!node.inputHandlers.empty() && (context.input.recovered || !context.input.events.empty() || !m_impl->holds.empty())) {
                                 TE_PROFILER_SCOPE("SerialExecutor.InputHandlers");
+                                if (context.input.recovered) {
+                                    const InputNotification notice = m_impl->recoveryNotice(context.input);
+                                    for (const InputHandler& handler: node.inputHandlers) {
+                                        handler(scene, notice);
+                                    }
+                                }
                                 for (const InputEvent& event: context.input.events) {
                                     const InputNotification notification = m_impl->toNotification(event);
                                     for (const InputHandler& handler: node.inputHandlers) {

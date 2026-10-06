@@ -249,9 +249,21 @@ public:
         input.events.push_back(event);
     }
 
+    // Mirrors an overflowing InputBuffer: a lost event still changes the held state the frame recovers to.
+    void lose(TechEngine::InputEvent event) {
+        event.sequence = ++sequence;
+        input.held.apply(event);
+        if (!input.recovered) {
+            input.recovered = true;
+            input.firstLostSequence = event.sequence;
+        }
+        input.lastLostSequence = event.sequence;
+    }
+
     void runTick(TechEngine::SerialExecutor& executor) {
         executor.execute(scene, context, barrier);
         input.events.clear();
+        input.recovered = false;
         context.tick++;
     }
 };
@@ -619,4 +631,147 @@ TEST_CASE("a focus loss ends hold notifications in the Tick that captured it", "
     fixture.runTick(executor);
     REQUIRE(kindsOf(state.received) == std::vector{Focus});
     CHECK(state.received[0].pressed);
+}
+
+TEST_CASE("an overflow reaches the handler as one recovery notice with the lost range, before the recovered holds and without invented edges", "[core][systems][input][overflow]") {
+    InputDeliveryFixture fixture;
+    InputDeliveryTestState state;
+    const InputDeliveryStateGuard stateGuard(state);
+    TechEngine::Schedule schedule(fixture.registry);
+    schedule.add<FirstInputReader>();
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
+    TechEngine::SerialExecutor executor(graph);
+    using enum TechEngine::InputNotificationKind;
+
+    fixture.capture(focusEvent(true));
+    fixture.capture(keyEvent(TechEngine::Key::W, true));
+    fixture.runTick(executor);
+    state.received.clear();
+
+    fixture.lose(keyEvent(TechEngine::Key::W, false));
+    fixture.lose(keyEvent(TechEngine::Key::A, true));
+    fixture.lose(buttonEvent(TechEngine::MouseButton::Left, true));
+    fixture.runTick(executor);
+
+    REQUIRE(kindsOf(state.received) == std::vector{Recovered, KeyHold, ButtonHold});
+    CHECK(state.received[0].firstLostSequence == 3);
+    CHECK(state.received[0].lastLostSequence == 5);
+    CHECK(state.received[0].pressed);
+    CHECK(state.received[0].sequence == 0);
+    CHECK(state.received[1].key == TechEngine::Key::A);
+    CHECK(state.received[2].button == TechEngine::MouseButton::Left);
+}
+
+TEST_CASE("a recovery that leaves nothing held still reaches the handler before its tick", "[core][systems][input][overflow]") {
+    InputDeliveryFixture fixture;
+    InputDeliveryTestState state;
+    const InputDeliveryStateGuard stateGuard(state);
+    TechEngine::Schedule schedule(fixture.registry);
+    schedule.add<FirstInputReader>();
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
+    TechEngine::SerialExecutor executor(graph);
+    using enum TechEngine::InputNotificationKind;
+
+    fixture.capture(focusEvent(true));
+    fixture.capture(keyEvent(TechEngine::Key::W, true));
+    fixture.runTick(executor);
+    state.received.clear();
+    state.trace.clear();
+
+    fixture.lose(keyEvent(TechEngine::Key::W, false));
+    fixture.runTick(executor);
+
+    REQUIRE(kindsOf(state.received) == std::vector{Recovered});
+    CHECK(state.received[0].firstLostSequence == 3);
+    CHECK(state.received[0].lastLostSequence == 3);
+    CHECK(state.received[0].pressed);
+    CHECK(state.trace == std::vector<std::string>{handled(1, 1, 0), ticked(1)});
+    CHECK_FALSE(fixture.input.held.isHeld(TechEngine::Key::W));
+}
+
+TEST_CASE("a focus loss inside the lost range shows in the notice and ends the holds", "[core][systems][input][overflow]") {
+    InputDeliveryFixture fixture;
+    InputDeliveryTestState state;
+    const InputDeliveryStateGuard stateGuard(state);
+    TechEngine::Schedule schedule(fixture.registry);
+    schedule.add<FirstInputReader>();
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
+    TechEngine::SerialExecutor executor(graph);
+    using enum TechEngine::InputNotificationKind;
+
+    fixture.capture(focusEvent(true));
+    fixture.capture(keyEvent(TechEngine::Key::W, true));
+    fixture.runTick(executor);
+    state.received.clear();
+
+    fixture.lose(focusEvent(false));
+    fixture.lose(keyEvent(TechEngine::Key::W, false));
+    fixture.runTick(executor);
+
+    REQUIRE(kindsOf(state.received) == std::vector{Recovered});
+    CHECK_FALSE(state.received[0].pressed);
+    CHECK(state.received[0].firstLostSequence == 3);
+    CHECK(state.received[0].lastLostSequence == 4);
+
+    state.received.clear();
+    fixture.runTick(executor);
+    CHECK(state.received.empty());
+}
+
+TEST_CASE("the Tick after a recovery has no notice, its holds resume, and captured sequences continue after the lost range", "[core][systems][input][overflow]") {
+    InputDeliveryFixture fixture;
+    InputDeliveryTestState state;
+    const InputDeliveryStateGuard stateGuard(state);
+    TechEngine::Schedule schedule(fixture.registry);
+    schedule.add<FirstInputReader>();
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
+    TechEngine::SerialExecutor executor(graph);
+    using enum TechEngine::InputNotificationKind;
+
+    fixture.capture(focusEvent(true));
+    fixture.runTick(executor);
+    state.received.clear();
+
+    fixture.lose(keyEvent(TechEngine::Key::W, true));
+    fixture.lose(keyEvent(TechEngine::Key::D, true));
+    fixture.runTick(executor);
+    REQUIRE(kindsOf(state.received) == std::vector{Recovered, KeyHold, KeyHold});
+    CHECK(state.received[1].key == TechEngine::Key::D);
+    CHECK(state.received[2].key == TechEngine::Key::W);
+
+    state.received.clear();
+    fixture.runTick(executor);
+    REQUIRE(kindsOf(state.received) == std::vector{KeyHold, KeyHold});
+
+    state.received.clear();
+    fixture.capture(keyEvent(TechEngine::Key::W, false));
+    fixture.runTick(executor);
+    REQUIRE(kindsOf(state.received) == std::vector{Key, KeyHold});
+    CHECK(state.received[0].sequence == 4);
+    CHECK_FALSE(state.received[0].pressed);
+    CHECK(state.received[1].key == TechEngine::Key::D);
+}
+
+TEST_CASE("every reader receives the recovery notice at its own slot, including the terminal slot", "[core][systems][input][overflow]") {
+    InputDeliveryFixture fixture;
+    InputDeliveryTestState state;
+    const InputDeliveryStateGuard stateGuard(state);
+    TechEngine::Schedule schedule(fixture.registry);
+    schedule.add<FirstInputReader>().before<InputBlindSystem>();
+    schedule.add<InputBlindSystem>();
+    schedule.add<SecondInputReader>().setSlot(TechEngine::Slot::Terminal);
+    const TechEngine::TaskGraph graph(schedule, fixture.events);
+    TechEngine::SerialExecutor executor(graph);
+    using enum TechEngine::InputNotificationKind;
+
+    fixture.capture(focusEvent(true));
+    fixture.runTick(executor);
+    state.received.clear();
+    state.trace.clear();
+
+    fixture.lose(keyEvent(TechEngine::Key::W, true));
+    fixture.runTick(executor);
+
+    REQUIRE(kindsOf(state.received) == std::vector{Recovered, KeyHold});
+    CHECK(state.trace == std::vector<std::string>{handled(1, 1, 0), handled(1, 1, 0), ticked(1), ticked(4), handled(2, 1, 0), handled(2, 1, 0), ticked(2)});
 }
