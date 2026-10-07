@@ -73,6 +73,13 @@ static void bootstrapOffStepBoundary(RuntimeProbe& runtime) {
     REQUIRE(runtime.advanceSteps(0.5) == 0);
 }
 
+static TechEngine::Entity spawnFirstEntity(RuntimeProbe& runtime) {
+    bootstrapOffStepBoundary(runtime);
+    REQUIRE(runtime.advanceSteps(1.0) == 1);
+    REQUIRE(runtime.entities().size() == 1);
+    return runtime.entities().front();
+}
+
 static void runUntilFirstLanding(RuntimeProbe& runtime) {
     bootstrapOffStepBoundary(runtime);
     REQUIRE(runtime.advanceSteps(1.0) == 1);
@@ -115,10 +122,7 @@ TEST_CASE("a demo landing reaches every Landed handler, regular and terminal, in
 
 TEST_CASE("a landed entity survives the Tick it lands in and is destroyed at the next Tick's barrier", "[runtime][events]") {
     RuntimeProbe runtime;
-    bootstrapOffStepBoundary(runtime);
-    REQUIRE(runtime.advanceSteps(1.0) == 1);
-    REQUIRE(runtime.entities().size() == 1);
-    const TechEngine::Entity first = runtime.entities().front();
+    const TechEngine::Entity first = spawnFirstEntity(runtime);
 
     REQUIRE(runtime.advanceSteps(1.0) == 1);
 
@@ -197,10 +201,7 @@ TEST_CASE("a spawn published from the terminal slot reaches a regular-slot handl
 
 TEST_CASE("a despawn published by a handler reaches every handler of its type one Tick later", "[runtime][events]") {
     RuntimeProbe runtime;
-    bootstrapOffStepBoundary(runtime);
-    REQUIRE(runtime.advanceSteps(1.0) == 1);
-    REQUIRE(runtime.entities().size() == 1);
-    const TechEngine::Entity first = runtime.entities().front();
+    const TechEngine::Entity first = spawnFirstEntity(runtime);
 
     REQUIRE(runtime.advanceSteps(2.0) == 2);
 
