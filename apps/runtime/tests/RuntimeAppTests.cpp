@@ -67,10 +67,14 @@ namespace {
 
 using Batches = std::vector<std::size_t>;
 
-static void runUntilFirstLanding(RuntimeProbe& runtime) {
+static void bootstrapOffStepBoundary(RuntimeProbe& runtime) {
     runtime.bootstrapSimulation();
     // Half a step keeps the accumulator off the fixed-step boundary, where float drift would decide the tick count.
     REQUIRE(runtime.advanceSteps(0.5) == 0);
+}
+
+static void runUntilFirstLanding(RuntimeProbe& runtime) {
+    bootstrapOffStepBoundary(runtime);
     REQUIRE(runtime.advanceSteps(1.0) == 1);
     REQUIRE(runtime.advanceSteps(1.0) == 1);
     REQUIRE(runtime.groundedCount() == 1);
@@ -111,8 +115,7 @@ TEST_CASE("a demo landing reaches every Landed handler, regular and terminal, in
 
 TEST_CASE("a landed entity survives the Tick it lands in and is destroyed at the next Tick's barrier", "[runtime][events]") {
     RuntimeProbe runtime;
-    runtime.bootstrapSimulation();
-    REQUIRE(runtime.advanceSteps(0.5) == 0);
+    bootstrapOffStepBoundary(runtime);
     REQUIRE(runtime.advanceSteps(1.0) == 1);
     REQUIRE(runtime.entities().size() == 1);
     const TechEngine::Entity first = runtime.entities().front();
@@ -156,8 +159,7 @@ TEST_CASE("a multi-Tick catch-up delivers each Tick's landing separately in the 
 
 TEST_CASE("every demo landing reaches each handler exactly once and quiet Ticks call no handler", "[runtime][events]") {
     RuntimeProbe runtime;
-    runtime.bootstrapSimulation();
-    REQUIRE(runtime.advanceSteps(0.5) == 0);
+    bootstrapOffStepBoundary(runtime);
 
     for (int i = 0; i < 110; i++) {
         REQUIRE(runtime.advanceSteps(1.0) == 1);
@@ -178,8 +180,7 @@ TEST_CASE("every demo landing reaches each handler exactly once and quiet Ticks 
 
 TEST_CASE("a spawn published from the terminal slot reaches a regular-slot handler in the next Tick", "[runtime][events]") {
     RuntimeProbe runtime;
-    runtime.bootstrapSimulation();
-    REQUIRE(runtime.advanceSteps(0.5) == 0);
+    bootstrapOffStepBoundary(runtime);
 
     REQUIRE(runtime.advanceSteps(1.0) == 1);
 
@@ -196,8 +197,7 @@ TEST_CASE("a spawn published from the terminal slot reaches a regular-slot handl
 
 TEST_CASE("a despawn published by a handler reaches every handler of its type one Tick later", "[runtime][events]") {
     RuntimeProbe runtime;
-    runtime.bootstrapSimulation();
-    REQUIRE(runtime.advanceSteps(0.5) == 0);
+    bootstrapOffStepBoundary(runtime);
     REQUIRE(runtime.advanceSteps(1.0) == 1);
     REQUIRE(runtime.entities().size() == 1);
     const TechEngine::Entity first = runtime.entities().front();
@@ -215,8 +215,7 @@ TEST_CASE("a despawn published by a handler reaches every handler of its type on
 
 TEST_CASE("a burst of pulses every Tick arrives whole and in order, including across a catch-up", "[runtime][events]") {
     RuntimeProbe runtime;
-    runtime.bootstrapSimulation();
-    REQUIRE(runtime.advanceSteps(0.5) == 0);
+    bootstrapOffStepBoundary(runtime);
 
     for (int i = 0; i < 5; i++) {
         REQUIRE(runtime.advanceSteps(1.0) == 1);
