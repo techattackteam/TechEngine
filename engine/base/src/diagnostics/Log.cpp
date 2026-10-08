@@ -367,19 +367,7 @@ namespace TechEngine {
 
             buffer.markTruncated();
 
-            const LogRecord record{
-                .time = std::chrono::system_clock::now(),
-                .tick = g_tick.load(std::memory_order_relaxed),
-                .level = level,
-                .moduleTag = logChannelModule(channel),
-                .channel = channel,
-                .message = std::string_view{buffer.data, buffer.size},
-                .file = baseName(location.file_name()),
-                .function = shortFunctionName(location.function_name()),
-                .line = static_cast<std::uint32_t>(location.line()), // line() is uint_least32_t
-            };
-
-            deliverRecord(record);
+            logRaw(level, channel, baseName(location.file_name()), shortFunctionName(location.function_name()), static_cast<std::uint32_t>(location.line()), std::string_view{buffer.data, buffer.size});
         }
 
         std::size_t flattenRecord(const LogRecord& record, char* out, std::size_t capacity) {
