@@ -274,10 +274,6 @@ namespace TechEngine {
         moduleEntry(moduleTag).level.store(level, std::memory_order_relaxed);
     }
 
-    Level moduleLevel(LogModule moduleTag) {
-        return moduleEntry(moduleTag).level.load(std::memory_order_relaxed);
-    }
-
     void setChannelLevel(LogChannel channel, Level level) {
         channelEntry(channel).level.store(level, std::memory_order_relaxed);
     }
