@@ -8,7 +8,6 @@
 #include <array>
 #include <cstdio>
 #include <cstdlib>
-#include <exception>
 #include <format>
 
 namespace TechEngine {
@@ -131,22 +130,8 @@ namespace TechEngine {
             FormatBuffer buffer{storage.data(), storage.size(), 0, false};
 
             if (!formatString.empty()) {
-                try {
-                    std::vformat_to(FormatBufferIterator{buffer}, formatString, args);
-                } catch (const std::exception& e) {
-                    buffer.size = 0;
-                    buffer.truncated = false;
-                    for (const char c: std::string_view{"<format error: "}) {
-                        buffer.push(c);
-                    }
-                    for (const char c: std::string_view{e.what()}) {
-                        buffer.push(c);
-                    }
-                    buffer.push('>');
-                }
+                buffer.writeFormatted(formatString, args);
             }
-
-            buffer.markTruncated();
 
             const AssertContext context{
                 kind,

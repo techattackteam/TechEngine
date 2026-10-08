@@ -350,22 +350,7 @@ namespace TechEngine {
 
             std::array<char, MESSAGE_CAPACITY> storage;
             FormatBuffer buffer{storage.data(), storage.size(), 0, false};
-
-            try {
-                std::vformat_to(FormatBufferIterator{buffer}, formatString, args);
-            } catch (const std::exception& e) {
-                buffer.size = 0;
-                buffer.truncated = false;
-                for (const char c: std::string_view{"<format error: "}) {
-                    buffer.push(c);
-                }
-                for (const char c: std::string_view{e.what()}) {
-                    buffer.push(c);
-                }
-                buffer.push('>');
-            }
-
-            buffer.markTruncated();
+            buffer.writeFormatted(formatString, args);
 
             logRaw(level, channel, baseName(location.file_name()), shortFunctionName(location.function_name()), static_cast<std::uint32_t>(location.line()), std::string_view{buffer.data, buffer.size});
         }
