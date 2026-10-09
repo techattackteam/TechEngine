@@ -95,7 +95,14 @@ any conflict. **Rule 0: match the surrounding file** over any written rule.
 Only the rules below are repeated here, because they are corrections to AI defaults:
 I get them wrong *by habit*, so knowing where the spec lives isn't enough:
 
-- **No `[[nodiscard]]`.** Anywhere, not on getters, not on queries. → *Attributes*.
+- **No `[[nodiscard]]`.** Anywhere, not on getters, not on queries, not on a fallible
+  function. → *Attributes*.
+- **An expected failure returns `std::error_code`**, never a thrown exception, `std::expected`
+  or a fresh `bool`. → *Error handling*.
+- **No `std::optional` in a signature or a public field.** Return `bool` and fill an
+  out-param; only a private member may hold one. → *`std::optional`*.
+- **No declaration inside an `if` condition.** Declare on its own line, then test it; two
+  results in one scope get two `const` names. → *Conditions*.
 - **Initialize with `=`, not braces.** `std::uint32_t m_alignment = 0;`, never `m_alignment{0}`.
   Member-init lists use `()`: `: m_id(id)`, not `: m_id{id}`.
   Braces only for value-init `{}` and multi-field aggregates.

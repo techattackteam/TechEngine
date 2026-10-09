@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <utility>
 
 namespace TechEngine {
@@ -24,10 +25,11 @@ namespace TechEngine {
     }
 
     void RuntimeApp::init() {
-        if (!m_client.start(m_engine, m_input, 1280, 720, "TechEngine Runtime Demo", [this] {
-                requestStop();
-            })) {
-            throw std::runtime_error{"Failed to start the client session"};
+        const std::error_code startError = m_client.start(m_engine, m_input, 1280, 720, "TechEngine Runtime Demo", [this] {
+            requestStop();
+        });
+        if (startError) {
+            throw std::runtime_error{"Failed to start the client session: " + startError.message()};
         }
     }
 
@@ -66,7 +68,7 @@ namespace TechEngine {
             m_client.waitEvents();
         }
         const auto metrics = timingMetrics();
-        const auto fps = static_cast<std::uint64_t>(metrics.render ? metrics.render->framesPerSecond : 0.0);
+        const auto fps = static_cast<std::uint64_t>(metrics.renderingActive ? metrics.render.framesPerSecond : 0.0);
         const auto tps = static_cast<std::uint64_t>(metrics.simulation.ticksPerSecond);
         std::string title = "TechEngine Runtime Demo | FPS: " + std::to_string(fps) + " | TPS: " + std::to_string(tps);
         if (title != m_appliedTitle) {
@@ -82,8 +84,8 @@ namespace TechEngine {
         m_client.wakeMain();
     }
 
-    std::optional<RenderTiming> RuntimeApp::renderTiming() const {
-        return m_client.renderTiming();
+    bool RuntimeApp::renderTiming(RenderTiming& out) const {
+        return m_client.renderTiming(out);
     }
 
     void RuntimeApp::shutdown() {

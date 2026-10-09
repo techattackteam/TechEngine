@@ -7,12 +7,13 @@
 #include <atomic>
 #include <cstddef>
 #include <string>
+#include <system_error>
 #include <vector>
 
 using TechEngine::BatchId;
 using TechEngine::EngineContext;
 using TechEngine::FileAccess;
-using TechEngine::FileResult;
+using TechEngine::FileError;
 using TechEngine::JobSystem;
 using TechEngine::MountTable;
 using TechEngine::Task;
@@ -33,7 +34,7 @@ TEST_CASE("a file is read through the context by virtual path", "[core][engineco
     const EngineContext engine{files, jobs, clock};
 
     std::vector<std::byte> out;
-    REQUIRE(engine.files.read("assets://demo.txt", out) == FileResult::Ok);
+    REQUIRE(engine.files.read("assets://demo.txt", out) == std::error_code{});
     CHECK(std::string(reinterpret_cast<const char*>(out.data()), out.size()) == "read through a virtual path");
 }
 
@@ -48,9 +49,9 @@ TEST_CASE("the context carries its miss results through unchanged", "[core][engi
     const EngineContext engine{files, jobs, clock};
 
     std::vector<std::byte> out;
-    CHECK(engine.files.read("cache://demo.txt", out) == FileResult::NoMount);
-    CHECK(engine.files.read("assets://demo.txt", out) == FileResult::NotFound);
-    CHECK(engine.files.read("demo.txt", out) == FileResult::InvalidPath);
+    CHECK(engine.files.read("cache://demo.txt", out) == FileError::NoMount);
+    CHECK(engine.files.read("assets://demo.txt", out) == FileError::NotFound);
+    CHECK(engine.files.read("demo.txt", out) == FileError::InvalidPath);
 }
 
 // The context is a non-owning view (ADR-006 §4's F13 rule), so it must observe a mount
@@ -66,10 +67,10 @@ TEST_CASE("the context observes the table it was built over", "[core][enginecont
     const EngineContext engine{files, jobs, clock};
 
     std::vector<std::byte> out;
-    REQUIRE(engine.files.read("assets://demo.txt", out) == FileResult::NoMount);
+    REQUIRE(engine.files.read("assets://demo.txt", out) == FileError::NoMount);
 
     mounts.mount("assets", scratch.root());
-    CHECK(engine.files.read("assets://demo.txt", out) == FileResult::Ok);
+    CHECK(engine.files.read("assets://demo.txt", out) == std::error_code{});
 }
 
 TEST_CASE("work submitted through the context runs on the pool", "[core][enginecontext]") {

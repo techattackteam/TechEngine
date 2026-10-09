@@ -49,7 +49,8 @@ namespace TechEngine {
             }
             if (!stopRequested()) {
                 simulationAttempted = true;
-                if (startSimulation()) {
+                const std::error_code startError = startSimulation();
+                if (!startError) {
                     runMainThread();
                 }
             }
@@ -85,7 +86,10 @@ namespace TechEngine {
     }
 
     TimingMetrics App::timingMetrics() const {
-        return TimingMetrics{m_simulationThread.timing(), renderTiming()};
+        TimingMetrics metrics;
+        metrics.simulation = m_simulationThread.timing();
+        metrics.renderingActive = renderTiming(metrics.render);
+        return metrics;
     }
 
     bool App::stopRequested() const {
@@ -134,8 +138,8 @@ namespace TechEngine {
         return false;
     }
 
-    std::optional<RenderTiming> App::renderTiming() const {
-        return std::nullopt;
+    bool App::renderTiming(RenderTiming&) const {
+        return false;
     }
 
     void App::simulationInit() {
@@ -150,8 +154,13 @@ namespace TechEngine {
     void App::shutdown() {
     }
 
-    bool App::startSimulation() {
-        return m_simulationThread.start(m_jobs, *this, renderTiming().has_value());
+    std::error_code App::startSimulation() {
+        return m_simulationThread.start(m_jobs, *this, renderingActive());
+    }
+
+    bool App::renderingActive() const {
+        RenderTiming timing;
+        return renderTiming(timing);
     }
 
     void App::runMainThread() {

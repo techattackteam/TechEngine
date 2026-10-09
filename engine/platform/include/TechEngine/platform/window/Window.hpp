@@ -1,7 +1,10 @@
 #pragma once
 
+#include <TechEngine/platform/window/WindowError.hpp>
+
 #include <mutex>
 #include <string_view>
+#include <system_error>
 
 struct GLFWwindow;
 
@@ -39,11 +42,11 @@ namespace TechEngine {
 
         Window& operator=(Window&&) = delete;
 
-        static bool initialize();
+        static std::error_code initialize();
 
         static void terminate();
 
-        bool open(int width, int height, std::string_view title);
+        std::error_code open(int width, int height, std::string_view title);
 
         void pollEvents();
 

@@ -3,7 +3,6 @@
 #include <TechEngine/base/time/Clock.hpp>
 
 #include <cstdint>
-#include <optional>
 
 namespace TechEngine {
     struct SimulationTiming {
@@ -24,6 +23,7 @@ namespace TechEngine {
 
     struct TimingMetrics {
         SimulationTiming simulation;
-        std::optional<RenderTiming> render;
+        bool renderingActive = false;
+        RenderTiming render;
     };
 }

@@ -23,33 +23,33 @@ namespace TechEngine {
         return false;
     }
 
-    bool splitVirtualPath(std::string_view virtualPath, VirtualPathParts& out) {
+    std::error_code splitVirtualPath(std::string_view virtualPath, VirtualPathParts& out) {
         if (virtualPath.find('\\') != std::string_view::npos) {
-            return false;
+            return FileError::InvalidPath;
         }
 
         const std::size_t aliasPosition = virtualPath.find("://");
         if (aliasPosition == std::string_view::npos || aliasPosition == 0) {
-            return false;
+            return FileError::InvalidPath;
         }
 
         const std::string_view alias = virtualPath.substr(0, aliasPosition);
         const std::string_view relative = virtualPath.substr(aliasPosition + 3);
 
         if (alias.find('/') != std::string_view::npos || alias.find(':') != std::string_view::npos) {
-            return false;
+            return FileError::InvalidPath;
         }
 
         if (!relative.empty() && (relative.front() == '/' || relative.find(':') != std::string_view::npos)) {
-            return false;
+            return FileError::InvalidPath;
         }
 
         if (hasParentSegment(relative)) {
-            return false;
+            return FileError::InvalidPath;
         }
 
         out.alias = alias;
         out.relative = relative;
-        return true;
+        return {};
     }
 }

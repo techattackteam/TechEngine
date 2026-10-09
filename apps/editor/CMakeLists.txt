@@ -5,11 +5,14 @@ techengine_app(editor
   MAIN    src/main.cpp
   SOURCES src/EditorApp.cpp
           src/project/Project.cpp
+          src/project/ProjectError.cpp
   HEADERS src/EditorApp.hpp
           src/project/Project.hpp
+          src/project/ProjectError.hpp
   DEPS    app client core
   LIBS_PRIVATE TechEngine::tomlplusplus
   TESTS   tests/EditorAppTests.cpp
+          tests/project/ProjectErrorTests.cpp
           tests/project/ProjectTests.cpp)
 
 target_compile_definitions(editor PRIVATE

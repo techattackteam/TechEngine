@@ -13,7 +13,7 @@ namespace TechEngine {
             return;
         }
         if (magic != BLOB_MAGIC) {
-            fail(ReadStatus::BadMagic);
+            fail(ReadError::BadMagic);
             return;
         }
 
@@ -23,7 +23,7 @@ namespace TechEngine {
             return;
         }
         if (formatVersion != BLOB_FORMAT_VERSION) {
-            fail(ReadStatus::BadVersion);
+            fail(ReadError::BadVersion);
             return;
         }
 
@@ -96,7 +96,7 @@ namespace TechEngine {
         }
 
         if (!hasRemaining(length)) {
-            fail(ReadStatus::Truncated);
+            fail(ReadError::Truncated);
             return;
         }
 
@@ -119,11 +119,11 @@ namespace TechEngine {
     }
 
     bool Reader::ok() const {
-        return m_status == ReadStatus::Ok;
+        return !m_error;
     }
 
-    ReadStatus Reader::status() const {
-        return m_status;
+    std::error_code Reader::error() const {
+        return m_error;
     }
 
     std::size_t Reader::remaining() const {
@@ -135,7 +135,7 @@ namespace TechEngine {
             return;
         }
         if (remaining() < byteCount) {
-            fail(ReadStatus::Truncated);
+            fail(ReadError::Truncated);
             return;
         }
         std::memcpy(out, m_buffer.data() + m_position, byteCount);
@@ -149,9 +149,9 @@ namespace TechEngine {
         return false;
     }
 
-    void Reader::fail(const ReadStatus status) {
+    void Reader::fail(const ReadError reason) {
         if (ok()) {
-            m_status = status;
+            m_error = reason;
         }
     }
 }

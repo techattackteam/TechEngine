@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <utility>
 
 namespace TechEngine {
@@ -18,17 +19,18 @@ namespace TechEngine {
     void EditorApp::init() {
         m_mounts.mount("project", m_projectRoot);
         m_mounts.mount("engine", executablePath().parent_path() / "assets");
-        const ProjectResult loaded = m_project.load(m_files, "project://project.toml");
-        TE_CHECK(loaded == ProjectResult::Ok, "Failed to load project.toml under {0} (ProjectResult {1})", m_projectRoot.string(), static_cast<int>(loaded));
+        const std::error_code loadError = m_project.load(m_files, "project://project.toml");
+        TE_CHECK(!loadError, "Failed to load project.toml under {0}: {1}", m_projectRoot.string(), loadError.message());
         const auto& root = m_project.root();
         m_mounts.mount("shaders", root / "shaders");
         m_mounts.mount("assets", root / "assets" / "common", 0);
         m_mounts.mount("assets", root / "assets" / "client", 100);
         TE_LOGGER_INFO("Opened project '{0}' at {1}", m_project.name(), root.string());
-        if (!m_client.start(m_engine, m_input, 1280, 720, "TechEngine Editor", [this] {
-                requestStop();
-            })) {
-            throw std::runtime_error{"Failed to start the client session"};
+        const std::error_code startError = m_client.start(m_engine, m_input, 1280, 720, "TechEngine Editor", [this] {
+            requestStop();
+        });
+        if (startError) {
+            throw std::runtime_error{"Failed to start the client session: " + startError.message()};
         }
     }
 
@@ -53,7 +55,7 @@ namespace TechEngine {
             m_client.waitEvents();
         }
         const auto metrics = timingMetrics();
-        const auto fps = static_cast<std::uint64_t>(metrics.render ? metrics.render->framesPerSecond : 0.0);
+        const auto fps = static_cast<std::uint64_t>(metrics.renderingActive ? metrics.render.framesPerSecond : 0.0);
         const auto tps = static_cast<std::uint64_t>(metrics.simulation.ticksPerSecond);
         std::string title = "TechEngine Editor | FPS: " + std::to_string(fps) + " | TPS: " + std::to_string(tps);
         if (title != m_appliedTitle) {
@@ -69,8 +71,8 @@ namespace TechEngine {
         m_client.wakeMain();
     }
 
-    std::optional<RenderTiming> EditorApp::renderTiming() const {
-        return m_client.renderTiming();
+    bool EditorApp::renderTiming(RenderTiming& out) const {
+        return m_client.renderTiming(out);
     }
 
     void EditorApp::shutdown() {

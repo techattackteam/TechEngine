@@ -104,8 +104,10 @@ namespace TechEngine {
                     RenderSnapshot frame;
                     {
                         TE_PROFILER_SCOPE("Render.PrepareFrame");
-                        if (const auto snapshot = m_mailbox.snapshot()) {
-                            history.acquire(*snapshot);
+                        RenderSnapshot snapshot;
+                        const bool hasSnapshot = m_mailbox.snapshot(snapshot);
+                        if (hasSnapshot) {
+                            history.acquire(snapshot);
                         }
                         frame = history.prepareFrame(started, input.presentationState());
                     }

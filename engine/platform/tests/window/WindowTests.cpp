@@ -12,6 +12,7 @@
 #include <chrono>
 #include <cstddef>
 #include <string_view>
+#include <system_error>
 #include <thread>
 
 struct PlatformWindowTestScope {
@@ -22,24 +23,24 @@ struct PlatformWindowTestScope {
 
 TEST_CASE("Window opens and closes on main without claiming the context", "[platform][window]") {
     const PlatformWindowTestScope scope;
-    REQUIRE(TechEngine::Window::initialize());
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
-    REQUIRE(window.open(320, 240, "Window test"));
+    REQUIRE(window.open(320, 240, "Window test") == std::error_code{});
     CHECK(glfwGetCurrentContext() == nullptr);
     CHECK_FALSE(window.shouldClose());
-    CHECK_FALSE(window.open(320, 240, "Duplicate open"));
+    CHECK(window.open(320, 240, "Duplicate open") == TechEngine::WindowError::AlreadyOpen);
     window.pollEvents();
     CHECK(glfwGetCurrentContext() == nullptr);
     window.close();
     CHECK(window.shouldClose());
     window.close();
-    REQUIRE(window.open(320, 240, "Reopened window"));
+    REQUIRE(window.open(320, 240, "Reopened window") == std::error_code{});
     CHECK(glfwGetCurrentContext() == nullptr);
 }
 
 TEST_CASE("GLFW grows and frees its blocks through the allocator Window installs", "[platform][window]") {
     const PlatformWindowTestScope scope;
-    REQUIRE(TechEngine::Window::initialize());
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     // glfwInit allocates the built-in gamepad mapping table, so every mapping that parses and
     // has an unseen GUID grows that table through the reallocate callback. A mapping that fails
     // to parse raises an error and never reaches it, which is what the error check rules out.
@@ -51,9 +52,9 @@ TEST_CASE("GLFW grows and frees its blocks through the allocator Window installs
 
 TEST_CASE("Window releases a context on its owning worker", "[platform][window]") {
     const PlatformWindowTestScope scope;
-    REQUIRE(TechEngine::Window::initialize());
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
-    REQUIRE(window.open(320, 240, "Context test"));
+    REQUIRE(window.open(320, 240, "Context test") == std::error_code{});
     bool claimed = false;
     bool released = false;
     {
@@ -71,9 +72,9 @@ TEST_CASE("Window releases a context on its owning worker", "[platform][window]"
 
 TEST_CASE("Window title uses the supplied string view and buffers swap on the context owner", "[platform][window]") {
     const PlatformWindowTestScope scope;
-    REQUIRE(TechEngine::Window::initialize());
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
-    REQUIRE(window.open(320, 240, "Original title"));
+    REQUIRE(window.open(320, 240, "Original title") == std::error_code{});
 
     GLFWwindow* nativeWindow = nullptr;
     int swapError = GLFW_NO_ERROR;
@@ -104,11 +105,11 @@ TEST_CASE("Window title uses the supplied string view and buffers swap on the co
 
 TEST_CASE("Window publishes framebuffer pixels and callback changes to the render thread", "[platform][window][framebuffer]") {
     const PlatformWindowTestScope scope;
-    REQUIRE(TechEngine::Window::initialize());
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
     CHECK(window.framebufferSize().width == 0);
     CHECK(window.framebufferSize().height == 0);
-    REQUIRE(window.open(320, 240, "Framebuffer size test"));
+    REQUIRE(window.open(320, 240, "Framebuffer size test") == std::error_code{});
 
     GLFWwindow* nativeWindow = nullptr;
     TechEngine::FramebufferSize observed;
@@ -171,16 +172,16 @@ TEST_CASE("Window publishes framebuffer pixels and callback changes to the rende
     window.close();
     CHECK(window.framebufferSize().width == 0);
     CHECK(window.framebufferSize().height == 0);
-    REQUIRE(window.open(160, 120, "Reopened framebuffer test"));
+    REQUIRE(window.open(160, 120, "Reopened framebuffer test") == std::error_code{});
     CHECK(window.framebufferSize().width > 0);
     CHECK(window.framebufferSize().height > 0);
 }
 
 TEST_CASE("Window event waiting returns when another thread posts an empty event", "[platform][window]") {
     const PlatformWindowTestScope scope;
-    REQUIRE(TechEngine::Window::initialize());
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
-    REQUIRE(window.open(320, 240, "Wait test"));
+    REQUIRE(window.open(320, 240, "Wait test") == std::error_code{});
     window.waitEvents(0.0);
 
     std::atomic<bool> posted = false;
@@ -234,8 +235,8 @@ struct InputWindowFixture {
     GlfwInputCallbacks callbacks;
 
     explicit InputWindowFixture(std::string_view title) {
-        REQUIRE(TechEngine::Window::initialize());
-        REQUIRE(window.open(320, 240, title));
+        REQUIRE(TechEngine::Window::initialize() == std::error_code{});
+        REQUIRE(window.open(320, 240, title) == std::error_code{});
         nativeWindow = nativeHandle(window);
         REQUIRE(nativeWindow != nullptr);
         callbacks = takeInputCallbacks(nativeWindow);

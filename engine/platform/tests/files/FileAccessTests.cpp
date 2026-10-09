@@ -10,10 +10,11 @@
 #include <filesystem>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <vector>
 
 using TechEngine::FileAccess;
-using TechEngine::FileResult;
+using TechEngine::FileError;
 using TechEngine::FileStatus;
 using TechEngine::MountTable;
 using TechEngineTests::ScratchDirectory;
@@ -65,7 +66,7 @@ TEST_CASE("read returns the file's bytes", "[files][fileaccess]") {
     env.scratch.writeFile("ui/icon.png", "the bytes");
 
     std::vector<std::byte> out;
-    REQUIRE(env.files.read("assets://ui/icon.png", out) == FileResult::Ok);
+    REQUIRE(env.files.read("assets://ui/icon.png", out) == std::error_code{});
     CHECK(asString(out) == "the bytes");
 }
 
@@ -77,7 +78,7 @@ TEST_CASE("read is binary-safe", "[files][fileaccess]") {
     env.scratch.writeFile("blob.bin", payload);
 
     std::vector<std::byte> out;
-    REQUIRE(env.files.read("assets://blob.bin", out) == FileResult::Ok);
+    REQUIRE(env.files.read("assets://blob.bin", out) == std::error_code{});
     REQUIRE(out.size() == payload.size());
     CHECK(asString(out) == payload);
 }
@@ -92,7 +93,7 @@ TEST_CASE("read returns a large file whole", "[files][fileaccess]") {
     env.scratch.writeFile("blob.bin", payload);
 
     std::vector<std::byte> out;
-    REQUIRE(env.files.read("assets://blob.bin", out) == FileResult::Ok);
+    REQUIRE(env.files.read("assets://blob.bin", out) == std::error_code{});
     REQUIRE(out.size() == payload.size());
     CHECK(asString(out) == payload);
 }
@@ -102,7 +103,7 @@ TEST_CASE("read replaces the output buffer rather than appending", "[files][file
     env.scratch.writeFile("a.txt", "short");
 
     std::vector<std::byte> out(64, std::byte{0xAB});
-    REQUIRE(env.files.read("assets://a.txt", out) == FileResult::Ok);
+    REQUIRE(env.files.read("assets://a.txt", out) == std::error_code{});
     CHECK(out.size() == 5);
     CHECK(asString(out) == "short");
 }
@@ -112,7 +113,7 @@ TEST_CASE("read accepts an empty file", "[files][fileaccess]") {
     env.scratch.writeFile("empty.txt", "");
 
     std::vector<std::byte> out(8, std::byte{0xAB});
-    REQUIRE(env.files.read("assets://empty.txt", out) == FileResult::Ok);
+    REQUIRE(env.files.read("assets://empty.txt", out) == std::error_code{});
     CHECK(out.empty());
 }
 
@@ -123,16 +124,16 @@ TEST_CASE("read of a directory reports IsADirectory", "[files][fileaccess]") {
     env.scratch.writeFile("ui/icon.png", "png");
 
     std::vector<std::byte> out;
-    CHECK(env.files.read("assets://ui", out) == FileResult::IsADirectory);
+    CHECK(env.files.read("assets://ui", out) == FileError::IsADirectory);
 }
 
 TEST_CASE("read separates its miss kinds and never falls back to a log", "[files][fileaccess]") {
     MountedScratch env{"readMisses"};
 
     std::vector<std::byte> out;
-    CHECK(env.files.read("cache://a.txt", out) == FileResult::NoMount);
-    CHECK(env.files.read("assets://a.txt", out) == FileResult::NotFound);
-    CHECK(env.files.read("a.txt", out) == FileResult::InvalidPath);
+    CHECK(env.files.read("cache://a.txt", out) == FileError::NoMount);
+    CHECK(env.files.read("assets://a.txt", out) == FileError::NotFound);
+    CHECK(env.files.read("a.txt", out) == FileError::InvalidPath);
 }
 
 TEST_CASE("read rejects a path that would escape the mount root", "[files][fileaccess]") {
@@ -140,9 +141,9 @@ TEST_CASE("read rejects a path that would escape the mount root", "[files][filea
     env.scratch.writeFile("a.txt", "text");
 
     std::vector<std::byte> out;
-    CHECK(env.files.read("assets://../a.txt", out) == FileResult::InvalidPath);
-    CHECK(env.files.read("assets://ui/../a.txt", out) == FileResult::InvalidPath);
-    CHECK(env.files.read("assets:///etc/passwd", out) == FileResult::InvalidPath);
+    CHECK(env.files.read("assets://../a.txt", out) == FileError::InvalidPath);
+    CHECK(env.files.read("assets://ui/../a.txt", out) == FileError::InvalidPath);
+    CHECK(env.files.read("assets:///etc/passwd", out) == FileError::InvalidPath);
 }
 
 TEST_CASE("status describes a file", "[files][fileaccess]") {
@@ -150,7 +151,7 @@ TEST_CASE("status describes a file", "[files][fileaccess]") {
     env.scratch.writeFile("a.txt", "12345");
 
     FileStatus out;
-    REQUIRE(env.files.status("assets://a.txt", out) == FileResult::Ok);
+    REQUIRE(env.files.status("assets://a.txt", out) == std::error_code{});
     CHECK(out.physicalPath == env.scratch.root() / "a.txt");
     CHECK_FALSE(out.isDirectory);
     CHECK(out.size == 5);
@@ -161,7 +162,7 @@ TEST_CASE("status describes a directory", "[files][fileaccess]") {
     env.scratch.writeFile("ui/icon.png", "png");
 
     FileStatus out;
-    REQUIRE(env.files.status("assets://ui", out) == FileResult::Ok);
+    REQUIRE(env.files.status("assets://ui", out) == std::error_code{});
     CHECK(out.physicalPath == env.scratch.root() / "ui");
     CHECK(out.isDirectory);
 }
@@ -171,7 +172,7 @@ TEST_CASE("status describes the alias root", "[files][fileaccess]") {
     env.scratch.writeFile("ui/icon.png", "png");
 
     FileStatus out;
-    REQUIRE(env.files.status("assets://", out) == FileResult::Ok);
+    REQUIRE(env.files.status("assets://", out) == std::error_code{});
     CHECK(out.physicalPath == env.scratch.root());
     CHECK(out.isDirectory);
 }
@@ -183,7 +184,7 @@ TEST_CASE("status reports lastModified as Unix seconds", "[files][fileaccess]") 
     env.scratch.writeFile("a.txt", "now");
 
     FileStatus out;
-    REQUIRE(env.files.status("assets://a.txt", out) == FileResult::Ok);
+    REQUIRE(env.files.status("assets://a.txt", out) == std::error_code{});
 
     const auto now = static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
     CHECK(out.lastModified > 1700000000);
@@ -194,9 +195,9 @@ TEST_CASE("status separates its miss kinds", "[files][fileaccess]") {
     MountedScratch env{"statusMisses"};
 
     FileStatus out;
-    CHECK(env.files.status("cache://a.txt", out) == FileResult::NoMount);
-    CHECK(env.files.status("assets://a.txt", out) == FileResult::NotFound);
-    CHECK(env.files.status("a.txt", out) == FileResult::InvalidPath);
+    CHECK(env.files.status("cache://a.txt", out) == FileError::NoMount);
+    CHECK(env.files.status("assets://a.txt", out) == FileError::NotFound);
+    CHECK(env.files.status("a.txt", out) == FileError::InvalidPath);
 }
 
 TEST_CASE("a failed status leaves the output untouched", "[files][fileaccess]") {
@@ -208,7 +209,7 @@ TEST_CASE("a failed status leaves the output untouched", "[files][fileaccess]") 
     out.size = 999;
     out.lastModified = 777;
 
-    REQUIRE(env.files.status("assets://missing.txt", out) == FileResult::NotFound);
+    REQUIRE(env.files.status("assets://missing.txt", out) == FileError::NotFound);
     CHECK(out.physicalPath == std::filesystem::path{"sentinel"});
     CHECK(out.isDirectory);
     CHECK(out.size == 999);
@@ -221,7 +222,7 @@ TEST_CASE("list returns virtual paths, not physical ones", "[files][fileaccess]"
     env.scratch.writeFile("ui/nested/deep.png", "png");
 
     std::vector<std::string> out;
-    REQUIRE(env.files.list("assets://ui", false, out) == FileResult::Ok);
+    REQUIRE(env.files.list("assets://ui", false, out) == std::error_code{});
     std::ranges::sort(out);
     CHECK(out == std::vector<std::string>{"assets://ui/icon.png", "assets://ui/nested"});
 }
@@ -232,7 +233,7 @@ TEST_CASE("list recurses when asked", "[files][fileaccess]") {
     env.scratch.writeFile("ui/nested/deep.png", "png");
 
     std::vector<std::string> out;
-    REQUIRE(env.files.list("assets://ui", true, out) == FileResult::Ok);
+    REQUIRE(env.files.list("assets://ui", true, out) == std::error_code{});
     std::ranges::sort(out);
     CHECK(out == std::vector<std::string>{"assets://ui/icon.png", "assets://ui/nested", "assets://ui/nested/deep.png"});
 }
@@ -242,7 +243,7 @@ TEST_CASE("list of the alias root lists the mount root", "[files][fileaccess]") 
     env.scratch.writeFile("ui/icon.png", "png");
 
     std::vector<std::string> out;
-    REQUIRE(env.files.list("assets://", false, out) == FileResult::Ok);
+    REQUIRE(env.files.list("assets://", false, out) == std::error_code{});
     CHECK(out == std::vector<std::string>{"assets://ui"});
 }
 
@@ -251,7 +252,7 @@ TEST_CASE("list of an empty directory succeeds with no entries", "[files][fileac
     env.scratch.makeDirectory("ui");
 
     std::vector<std::string> out;
-    REQUIRE(env.files.list("assets://ui", false, out) == FileResult::Ok);
+    REQUIRE(env.files.list("assets://ui", false, out) == std::error_code{});
     CHECK(out.empty());
 }
 
@@ -260,7 +261,7 @@ TEST_CASE("list replaces the output vector rather than appending", "[files][file
     env.scratch.writeFile("ui/icon.png", "png");
 
     std::vector<std::string> out{"stale://entry", "another://entry"};
-    REQUIRE(env.files.list("assets://ui", false, out) == FileResult::Ok);
+    REQUIRE(env.files.list("assets://ui", false, out) == std::error_code{});
     CHECK(out == std::vector<std::string>{"assets://ui/icon.png"});
 }
 
@@ -269,16 +270,16 @@ TEST_CASE("list of a file reports NotADirectory", "[files][fileaccess]") {
     env.scratch.writeFile("a.txt", "text");
 
     std::vector<std::string> out;
-    CHECK(env.files.list("assets://a.txt", false, out) == FileResult::NotADirectory);
+    CHECK(env.files.list("assets://a.txt", false, out) == FileError::NotADirectory);
 }
 
 TEST_CASE("list separates its miss kinds", "[files][fileaccess]") {
     MountedScratch env{"listMisses"};
 
     std::vector<std::string> out;
-    CHECK(env.files.list("cache://ui", false, out) == FileResult::NoMount);
-    CHECK(env.files.list("assets://ui", false, out) == FileResult::NotFound);
-    CHECK(env.files.list("ui", false, out) == FileResult::InvalidPath);
+    CHECK(env.files.list("cache://ui", false, out) == FileError::NoMount);
+    CHECK(env.files.list("assets://ui", false, out) == FileError::NotFound);
+    CHECK(env.files.list("ui", false, out) == FileError::InvalidPath);
 }
 
 TEST_CASE("resolve forwards to the mount table", "[files][fileaccess]") {
@@ -286,11 +287,11 @@ TEST_CASE("resolve forwards to the mount table", "[files][fileaccess]") {
     env.scratch.writeFile("a.txt", "text");
 
     std::filesystem::path out;
-    REQUIRE(env.files.resolve("assets://a.txt", out) == FileResult::Ok);
+    REQUIRE(env.files.resolve("assets://a.txt", out) == std::error_code{});
     CHECK(out == env.scratch.root() / "a.txt");
-    CHECK(env.files.resolve("assets://missing.txt", out) == FileResult::NotFound);
-    CHECK(env.files.resolve("cache://a.txt", out) == FileResult::NoMount);
-    CHECK(env.files.resolve("a.txt", out) == FileResult::InvalidPath);
+    CHECK(env.files.resolve("assets://missing.txt", out) == FileError::NotFound);
+    CHECK(env.files.resolve("cache://a.txt", out) == FileError::NoMount);
+    CHECK(env.files.resolve("a.txt", out) == FileError::InvalidPath);
 }
 
 // MountTable pins the rule; these pin that the whole surface goes through it rather than
@@ -300,16 +301,16 @@ TEST_CASE("every entry point is case-sensitive", "[files][fileaccess]") {
     env.scratch.writeFile("ui/icon.png", "png");
 
     std::vector<std::byte> bytes;
-    CHECK(env.files.read("assets://ui/Icon.png", bytes) == FileResult::NotFound);
+    CHECK(env.files.read("assets://ui/Icon.png", bytes) == FileError::NotFound);
 
     FileStatus status;
-    CHECK(env.files.status("assets://UI/icon.png", status) == FileResult::NotFound);
+    CHECK(env.files.status("assets://UI/icon.png", status) == FileError::NotFound);
 
     std::vector<std::string> entries;
-    CHECK(env.files.list("assets://UI", false, entries) == FileResult::NotFound);
+    CHECK(env.files.list("assets://UI", false, entries) == FileError::NotFound);
 
     std::filesystem::path resolved;
-    CHECK(env.files.resolve("assets://ui/ICON.PNG", resolved) == FileResult::NotFound);
+    CHECK(env.files.resolve("assets://ui/ICON.PNG", resolved) == FileError::NotFound);
 }
 
 TEST_CASE("read goes through the mount priority order", "[files][fileaccess]") {
@@ -318,7 +319,7 @@ TEST_CASE("read goes through the mount priority order", "[files][fileaccess]") {
     env.overlay.writeFile("a.txt", "from overlay");
 
     std::vector<std::byte> out;
-    REQUIRE(env.files.read("assets://a.txt", out) == FileResult::Ok);
+    REQUIRE(env.files.read("assets://a.txt", out) == std::error_code{});
     CHECK(asString(out) == "from overlay");
 }
 
@@ -328,7 +329,7 @@ TEST_CASE("read falls through to a lower-priority mount", "[files][fileaccess]")
     env.overlay.writeFile("b.txt", "from overlay");
 
     std::vector<std::byte> out;
-    REQUIRE(env.files.read("assets://a.txt", out) == FileResult::Ok);
+    REQUIRE(env.files.read("assets://a.txt", out) == std::error_code{});
     CHECK(asString(out) == "from base");
 }
 
@@ -340,11 +341,11 @@ TEST_CASE("list covers only the winning mount", "[files][fileaccess]") {
     env.overlay.writeFile("ui/only-in-overlay.png", "png");
 
     std::vector<std::string> out;
-    REQUIRE(env.files.list("assets://ui", false, out) == FileResult::Ok);
+    REQUIRE(env.files.list("assets://ui", false, out) == std::error_code{});
     CHECK(out == std::vector<std::string>{"assets://ui/only-in-overlay.png"});
 
     std::vector<std::byte> bytes;
-    CHECK(env.files.read("assets://ui/only-in-base.png", bytes) == FileResult::Ok);
+    CHECK(env.files.read("assets://ui/only-in-base.png", bytes) == std::error_code{});
 }
 
 static std::vector<std::byte> asBytes(std::string_view text) {
@@ -359,10 +360,10 @@ TEST_CASE("write then read round-trips the bytes", "[files][fileaccess]") {
     MountedScratch env{"writeRoundTrip"};
     const std::vector<std::byte> payload = asBytes("baked level bytes");
 
-    REQUIRE(env.files.write("assets://level.bin", payload) == FileResult::Ok);
+    REQUIRE(env.files.write("assets://level.bin", payload) == std::error_code{});
 
     std::vector<std::byte> out;
-    REQUIRE(env.files.read("assets://level.bin", out) == FileResult::Ok);
+    REQUIRE(env.files.read("assets://level.bin", out) == std::error_code{});
     CHECK(out == payload);
 }
 
@@ -372,10 +373,10 @@ TEST_CASE("write preserves every byte value", "[files][fileaccess]") {
     MountedScratch env{"writeEveryByte"};
     const std::vector<std::byte> payload = asBytes(everyByteValue());
 
-    REQUIRE(env.files.write("assets://raw.bin", payload) == FileResult::Ok);
+    REQUIRE(env.files.write("assets://raw.bin", payload) == std::error_code{});
 
     std::vector<std::byte> out;
-    REQUIRE(env.files.read("assets://raw.bin", out) == FileResult::Ok);
+    REQUIRE(env.files.read("assets://raw.bin", out) == std::error_code{});
     CHECK(out == payload);
 }
 
@@ -384,27 +385,27 @@ TEST_CASE("write truncates an existing file rather than appending", "[files][fil
     env.scratch.writeFile("level.bin", "a much longer previous payload");
 
     const std::vector<std::byte> payload = asBytes("short");
-    REQUIRE(env.files.write("assets://level.bin", payload) == FileResult::Ok);
+    REQUIRE(env.files.write("assets://level.bin", payload) == std::error_code{});
 
     std::vector<std::byte> out;
-    REQUIRE(env.files.read("assets://level.bin", out) == FileResult::Ok);
+    REQUIRE(env.files.read("assets://level.bin", out) == std::error_code{});
     CHECK(asString(out) == "short");
 }
 
 TEST_CASE("write accepts an empty span and leaves an empty file", "[files][fileaccess]") {
     MountedScratch env{"writeEmpty"};
 
-    REQUIRE(env.files.write("assets://empty.bin", {}) == FileResult::Ok);
+    REQUIRE(env.files.write("assets://empty.bin", {}) == std::error_code{});
 
     std::vector<std::byte> out;
-    REQUIRE(env.files.read("assets://empty.bin", out) == FileResult::Ok);
+    REQUIRE(env.files.read("assets://empty.bin", out) == std::error_code{});
     CHECK(out.empty());
 }
 
 TEST_CASE("write lands in the highest-priority mount", "[files][fileaccess]") {
     OverlayScratch env{"writePriority"};
 
-    REQUIRE(env.files.write("assets://level.bin", asBytes("overlay")) == FileResult::Ok);
+    REQUIRE(env.files.write("assets://level.bin", asBytes("overlay")) == std::error_code{});
     CHECK(std::filesystem::exists(env.overlay.root() / "level.bin"));
     CHECK_FALSE(std::filesystem::exists(env.base.root() / "level.bin"));
 }
@@ -413,21 +414,21 @@ TEST_CASE("write refuses an unmounted alias, the mount root, and a directory", "
     MountedScratch env{"writeRefusals"};
     env.scratch.makeDirectory("meshes");
 
-    CHECK(env.files.write("cache://level.bin", asBytes("x")) == FileResult::NoMount);
-    CHECK(env.files.write("assets://", asBytes("x")) == FileResult::InvalidPath);
-    CHECK(env.files.write("assets://meshes", asBytes("x")) == FileResult::IsADirectory);
+    CHECK(env.files.write("cache://level.bin", asBytes("x")) == FileError::NoMount);
+    CHECK(env.files.write("assets://", asBytes("x")) == FileError::InvalidPath);
+    CHECK(env.files.write("assets://meshes", asBytes("x")) == FileError::IsADirectory);
 }
 
 TEST_CASE("write does not create a missing parent directory", "[files][fileaccess]") {
     MountedScratch env{"writeMissingParent"};
 
-    CHECK(env.files.write("assets://absent/level.bin", asBytes("x")) == FileResult::NotFound);
+    CHECK(env.files.write("assets://absent/level.bin", asBytes("x")) == FileError::NotFound);
 }
 
 TEST_CASE("createDirectory creates the directory and its missing parents", "[files][fileaccess]") {
     MountedScratch env{"createDirectoryParents"};
 
-    REQUIRE(env.files.createDirectory("assets://meshes/props/crates") == FileResult::Ok);
+    REQUIRE(env.files.createDirectory("assets://meshes/props/crates") == std::error_code{});
     CHECK(std::filesystem::is_directory(env.scratch.root() / "meshes/props/crates"));
 }
 
@@ -436,15 +437,15 @@ TEST_CASE("createDirectory refuses a destination that already exists", "[files][
     env.scratch.makeDirectory("meshes");
     env.scratch.writeFile("ui/icon.png", "x");
 
-    CHECK(env.files.createDirectory("assets://meshes") == FileResult::AlreadyExists);
-    CHECK(env.files.createDirectory("assets://ui/icon.png") == FileResult::AlreadyExists);
+    CHECK(env.files.createDirectory("assets://meshes") == FileError::AlreadyExists);
+    CHECK(env.files.createDirectory("assets://ui/icon.png") == FileError::AlreadyExists);
 }
 
 TEST_CASE("createDirectory refuses an unmounted alias and the mount root", "[files][fileaccess]") {
     MountedScratch env{"createDirectoryRefusals"};
 
-    CHECK(env.files.createDirectory("cache://meshes") == FileResult::NoMount);
-    CHECK(env.files.createDirectory("assets://") == FileResult::InvalidPath);
+    CHECK(env.files.createDirectory("cache://meshes") == FileError::NoMount);
+    CHECK(env.files.createDirectory("assets://") == FileError::InvalidPath);
 }
 
 TEST_CASE("remove deletes a file and an empty directory", "[files][fileaccess]") {
@@ -452,17 +453,17 @@ TEST_CASE("remove deletes a file and an empty directory", "[files][fileaccess]")
     env.scratch.writeFile("ui/icon.png", "x");
     env.scratch.makeDirectory("empty");
 
-    REQUIRE(env.files.remove("assets://ui/icon.png", false) == FileResult::Ok);
+    REQUIRE(env.files.remove("assets://ui/icon.png", false) == std::error_code{});
     CHECK_FALSE(std::filesystem::exists(env.scratch.root() / "ui/icon.png"));
 
-    REQUIRE(env.files.remove("assets://empty", false) == FileResult::Ok);
+    REQUIRE(env.files.remove("assets://empty", false) == std::error_code{});
     CHECK_FALSE(std::filesystem::exists(env.scratch.root() / "empty"));
 }
 
 TEST_CASE("remove reports a path that is not there", "[files][fileaccess]") {
     MountedScratch env{"removeMissing"};
 
-    CHECK(env.files.remove("assets://absent.bin", false) == FileResult::NotFound);
+    CHECK(env.files.remove("assets://absent.bin", false) == FileError::NotFound);
 }
 
 // The recursive flag is the whole difference: without it a populated directory is refused
@@ -471,10 +472,10 @@ TEST_CASE("remove refuses a non-empty directory unless recursive", "[files][file
     MountedScratch env{"removeNonEmpty"};
     env.scratch.writeFile("meshes/crate.bin", "x");
 
-    CHECK(env.files.remove("assets://meshes", false) == FileResult::NotEmpty);
+    CHECK(env.files.remove("assets://meshes", false) == FileError::NotEmpty);
     CHECK(std::filesystem::exists(env.scratch.root() / "meshes/crate.bin"));
 
-    REQUIRE(env.files.remove("assets://meshes", true) == FileResult::Ok);
+    REQUIRE(env.files.remove("assets://meshes", true) == std::error_code{});
     CHECK_FALSE(std::filesystem::exists(env.scratch.root() / "meshes"));
 }
 
@@ -482,10 +483,10 @@ TEST_CASE("copy duplicates a file and leaves the source in place", "[files][file
     MountedScratch env{"copyFile"};
     env.scratch.writeFile("ui/icon.png", "the bytes");
 
-    REQUIRE(env.files.copy("assets://ui/icon.png", "assets://ui/icon.backup.png") == FileResult::Ok);
+    REQUIRE(env.files.copy("assets://ui/icon.png", "assets://ui/icon.backup.png") == std::error_code{});
 
     std::vector<std::byte> out;
-    REQUIRE(env.files.read("assets://ui/icon.backup.png", out) == FileResult::Ok);
+    REQUIRE(env.files.read("assets://ui/icon.backup.png", out) == std::error_code{});
     CHECK(asString(out) == "the bytes");
     CHECK(std::filesystem::exists(env.scratch.root() / "ui/icon.png"));
 }
@@ -494,7 +495,7 @@ TEST_CASE("copy carries a directory's contents", "[files][fileaccess]") {
     MountedScratch env{"copyDirectory"};
     env.scratch.writeFile("meshes/props/crate.bin", "x");
 
-    REQUIRE(env.files.copy("assets://meshes", "assets://meshes.backup") == FileResult::Ok);
+    REQUIRE(env.files.copy("assets://meshes", "assets://meshes.backup") == std::error_code{});
     CHECK(std::filesystem::exists(env.scratch.root() / "meshes.backup/props/crate.bin"));
 }
 
@@ -503,9 +504,9 @@ TEST_CASE("copy refuses an existing destination and a missing parent", "[files][
     env.scratch.writeFile("ui/icon.png", "x");
     env.scratch.writeFile("ui/taken.png", "y");
 
-    CHECK(env.files.copy("assets://ui/icon.png", "assets://ui/taken.png") == FileResult::AlreadyExists);
-    CHECK(env.files.copy("assets://ui/icon.png", "assets://absent/icon.png") == FileResult::NotFound);
-    CHECK(env.files.copy("assets://absent.png", "assets://ui/copy.png") == FileResult::NotFound);
+    CHECK(env.files.copy("assets://ui/icon.png", "assets://ui/taken.png") == FileError::AlreadyExists);
+    CHECK(env.files.copy("assets://ui/icon.png", "assets://absent/icon.png") == FileError::NotFound);
+    CHECK(env.files.copy("assets://absent.png", "assets://ui/copy.png") == FileError::NotFound);
 }
 
 // The source goes through the read path, so it falls through to a lower-priority mount the
@@ -515,7 +516,7 @@ TEST_CASE("copy resolves its source through the mount priority order", "[files][
     OverlayScratch env{"copySource"};
     env.base.writeFile("ui/icon.png", "from the base mount");
 
-    REQUIRE(env.files.copy("assets://ui/icon.png", "assets://copy.png") == FileResult::Ok);
+    REQUIRE(env.files.copy("assets://ui/icon.png", "assets://copy.png") == std::error_code{});
     CHECK(std::filesystem::exists(env.overlay.root() / "copy.png"));
 }
 
@@ -524,11 +525,11 @@ TEST_CASE("move relocates a file and removes the source", "[files][fileaccess]")
     env.scratch.writeFile("ui/icon.png", "the bytes");
     env.scratch.makeDirectory("sprites");
 
-    REQUIRE(env.files.move("assets://ui/icon.png", "assets://sprites/icon.png") == FileResult::Ok);
+    REQUIRE(env.files.move("assets://ui/icon.png", "assets://sprites/icon.png") == std::error_code{});
     CHECK_FALSE(std::filesystem::exists(env.scratch.root() / "ui/icon.png"));
 
     std::vector<std::byte> out;
-    REQUIRE(env.files.read("assets://sprites/icon.png", out) == FileResult::Ok);
+    REQUIRE(env.files.read("assets://sprites/icon.png", out) == std::error_code{});
     CHECK(asString(out) == "the bytes");
 }
 
@@ -537,8 +538,8 @@ TEST_CASE("move refuses an existing destination and a missing source", "[files][
     env.scratch.writeFile("ui/icon.png", "x");
     env.scratch.writeFile("ui/taken.png", "y");
 
-    CHECK(env.files.move("assets://ui/icon.png", "assets://ui/taken.png") == FileResult::AlreadyExists);
-    CHECK(env.files.move("assets://absent.png", "assets://ui/moved.png") == FileResult::NotFound);
+    CHECK(env.files.move("assets://ui/icon.png", "assets://ui/taken.png") == FileError::AlreadyExists);
+    CHECK(env.files.move("assets://absent.png", "assets://ui/moved.png") == FileError::NotFound);
     CHECK(std::filesystem::exists(env.scratch.root() / "ui/icon.png"));
 }
 
@@ -546,7 +547,7 @@ TEST_CASE("rename changes the name in place", "[files][fileaccess]") {
     MountedScratch env{"renameFile"};
     env.scratch.writeFile("ui/icon.png", "the bytes");
 
-    REQUIRE(env.files.rename("assets://ui/icon.png", "logo.png") == FileResult::Ok);
+    REQUIRE(env.files.rename("assets://ui/icon.png", "logo.png") == std::error_code{});
     CHECK_FALSE(std::filesystem::exists(env.scratch.root() / "ui/icon.png"));
     CHECK(std::filesystem::exists(env.scratch.root() / "ui/logo.png"));
 }
@@ -557,8 +558,8 @@ TEST_CASE("rename refuses a new name carrying a separator", "[files][fileaccess]
     MountedScratch env{"renameSeparator"};
     env.scratch.writeFile("ui/icon.png", "x");
 
-    CHECK(env.files.rename("assets://ui/icon.png", "sprites/logo.png") == FileResult::InvalidPath);
-    CHECK(env.files.rename("assets://ui/icon.png", "") == FileResult::InvalidPath);
+    CHECK(env.files.rename("assets://ui/icon.png", "sprites/logo.png") == FileError::InvalidPath);
+    CHECK(env.files.rename("assets://ui/icon.png", "") == FileError::InvalidPath);
 }
 
 TEST_CASE("rename refuses a name already taken and a missing source", "[files][fileaccess]") {
@@ -566,6 +567,6 @@ TEST_CASE("rename refuses a name already taken and a missing source", "[files][f
     env.scratch.writeFile("ui/icon.png", "x");
     env.scratch.writeFile("ui/logo.png", "y");
 
-    CHECK(env.files.rename("assets://ui/icon.png", "logo.png") == FileResult::AlreadyExists);
-    CHECK(env.files.rename("assets://absent.png", "logo.png") == FileResult::NotFound);
+    CHECK(env.files.rename("assets://ui/icon.png", "logo.png") == FileError::AlreadyExists);
+    CHECK(env.files.rename("assets://absent.png", "logo.png") == FileError::NotFound);
 }

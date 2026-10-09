@@ -31,9 +31,9 @@ namespace TechEngine {
         stop();
     }
 
-    bool SimulationThread::start(JobSystem& jobs, App& app, const bool presentationActive) {
+    std::error_code SimulationThread::start(JobSystem& jobs, App& app, const bool presentationActive) {
         if (m_thread.joinable()) {
-            return false;
+            return SimulationError::AlreadyRunning;
         }
         m_stopRequested.store(false);
         m_presentationActive = presentationActive;
@@ -47,10 +47,10 @@ namespace TechEngine {
             app.requestStop();
         });
         if (m_thread.waitUntilReady().status == ThreadStartupStatus::Ready) {
-            return true;
+            return {};
         }
         stop();
-        return false;
+        return SimulationError::StartupFailed;
     }
 
     void SimulationThread::requestStop() {

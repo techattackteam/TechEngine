@@ -8,6 +8,7 @@
 
 #include <array>
 #include <cstddef>
+#include <system_error>
 #include <thread>
 
 struct FrameRendererWindowScope {
@@ -62,9 +63,9 @@ TEST_CASE("Frame renderer rejects shader failures and can retry initialization",
     }
 
     const FrameRendererWindowScope scope;
-    REQUIRE(TechEngine::Window::initialize());
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
-    REQUIRE(window.open(320, 240, "Shader failure test"));
+    REQUIRE(window.open(320, 240, "Shader failure test") == std::error_code{});
     bool loaded = false;
     bool rejected = false;
     bool recovered = false;
@@ -96,9 +97,9 @@ TEST_CASE("Frame renderer rejects shader failures and can retry initialization",
 
 TEST_CASE("Frame renderer clears, draws, redraws and resizes on its context owner", "[client][render][window]") {
     const FrameRendererWindowScope scope;
-    REQUIRE(TechEngine::Window::initialize());
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
-    REQUIRE(window.open(320, 240, "Frame renderer test"));
+    REQUIRE(window.open(320, 240, "Frame renderer test") == std::error_code{});
 
     constexpr int IMAGE_SIZE = 64;
     using Image = std::array<unsigned char, IMAGE_SIZE * IMAGE_SIZE * 4>;

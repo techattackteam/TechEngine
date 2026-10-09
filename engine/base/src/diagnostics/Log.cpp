@@ -14,6 +14,8 @@
 #include <cstdio>
 #include <ctime>
 #include <memory>
+#include <string>
+#include <system_error>
 #include <vector>
 
 namespace TechEngine {
@@ -145,27 +147,27 @@ namespace TechEngine {
         spdlog::default_logger_raw()->log(toSpdlogLevel(record.level), spdlog::string_view_t{storage.data(), size});
     }
 
-    bool addLogSink(LogSinkFn sink) {
+    std::error_code addLogSink(LogSinkFn sink) {
         if (sink == nullptr) {
-            return false;
+            return LogError::NullSink;
         }
         for (std::atomic<LogSinkFn>& slot: g_sinks) {
             LogSinkFn expected = nullptr;
             if (slot.compare_exchange_strong(expected, sink, std::memory_order_acq_rel)) {
-                return true;
+                return {};
             }
         }
-        return false;
+        return LogError::SinkTableFull;
     }
 
-    bool removeLogSink(LogSinkFn sink) {
+    std::error_code removeLogSink(LogSinkFn sink) {
         for (std::atomic<LogSinkFn>& slot: g_sinks) {
             LogSinkFn expected = sink;
             if (slot.compare_exchange_strong(expected, nullptr, std::memory_order_acq_rel)) {
-                return true;
+                return {};
             }
         }
-        return false;
+        return LogError::SinkNotRegistered;
     }
 
     static LogModuleEntry& moduleEntry(LogModule moduleTag) {
@@ -240,8 +242,9 @@ namespace TechEngine {
         logger->flush_on(spdlog::level::err);
         spdlog::set_default_logger(std::move(logger));
 
-        if (!addLogSink(&spdlogSink)) {
-            std::fprintf(stderr, "[log] sink table full: console and file output disabled\n");
+        const std::error_code sinkError = addLogSink(&spdlogSink);
+        if (sinkError) {
+            std::fprintf(stderr, "[log] console and file output disabled: %s\n", sinkError.message().c_str());
         }
     }
 
@@ -249,8 +252,9 @@ namespace TechEngine {
         if (!g_initialized.exchange(false, std::memory_order_acq_rel)) {
             return;
         }
-        if (!removeLogSink(&spdlogSink)) {
-            std::fprintf(stderr, "[log] failed to remove spdlog sink\n");
+        const std::error_code sinkError = removeLogSink(&spdlogSink);
+        if (sinkError) {
+            std::fprintf(stderr, "[log] failed to remove spdlog sink: %s\n", sinkError.message().c_str());
         }
         spdlog::shutdown();
     }

@@ -24,30 +24,35 @@ namespace TechEngine {
         stop();
     }
 
-    bool Client::start(const EngineContext& engine, InputBuffer& input, int width, int height, std::string_view title, std::function<void()> onFailure) {
+    std::error_code Client::start(const EngineContext& engine, InputBuffer& input, int width, int height, std::string_view title, std::function<void()> onFailure) {
         {
             const std::lock_guard lock{m_state->wakeMutex};
-            if (m_state->initialized || !Window::initialize()) {
-                return false;
+            if (m_state->initialized) {
+                return ClientError::AlreadyStarted;
+            }
+            const std::error_code initializeError = Window::initialize();
+            if (initializeError) {
+                return initializeError;
             }
             m_state->initialized = true;
         }
         try {
-            if (!m_state->window.open(width, height, title)) {
+            const std::error_code openError = m_state->window.open(width, height, title);
+            if (openError) {
                 stop();
-                return false;
+                return openError;
             }
             m_state->window.setInputBuffer(&input);
             if (!m_state->renderer.start(engine.jobs, engine.clock, m_state->window, input, std::move(onFailure))) {
                 stop();
-                return false;
+                return ClientError::RendererStartFailed;
             }
         } catch (...) {
             stop();
             throw;
         }
         m_state->active.store(true);
-        return true;
+        return {};
     }
 
     void Client::waitEvents() {
@@ -73,11 +78,12 @@ namespace TechEngine {
         m_state->renderer.publish(snapshot);
     }
 
-    std::optional<RenderTiming> Client::renderTiming() const {
+    bool Client::renderTiming(RenderTiming& out) const {
         if (!m_state->active.load()) {
-            return std::nullopt;
+            return false;
         }
-        return m_state->renderer.timing();
+        out = m_state->renderer.timing();
+        return true;
     }
 
     void Client::setTitle(std::string_view title) const {

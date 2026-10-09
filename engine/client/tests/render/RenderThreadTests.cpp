@@ -8,6 +8,7 @@
 #include <glad/gl.h>
 
 #include <algorithm>
+#include <system_error>
 #include <thread>
 #include <vector>
 
@@ -22,9 +23,9 @@ TEST_CASE("Render thread loads GL with its context current", "[client][render][w
     TechEngine::Clock clock;
     TechEngine::InputBuffer input{clock};
     const RenderWindowTestScope scope;
-    REQUIRE(TechEngine::Window::initialize());
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
-    REQUIRE(window.open(320, 240, "Render startup test"));
+    REQUIRE(window.open(320, 240, "Render startup test") == std::error_code{});
     TechEngine::RenderThread renderer;
     REQUIRE(renderer.start(jobs, clock, window, input));
     CHECK(GLAD_GL_VERSION_4_5 != 0);
@@ -57,9 +58,9 @@ TEST_CASE("Render thread releases its context and joins before window destructio
     TechEngine::Clock clock;
     TechEngine::InputBuffer input{clock};
     const RenderWindowTestScope scope;
-    REQUIRE(TechEngine::Window::initialize());
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
-    REQUIRE(window.open(320, 240, "Render shutdown test"));
+    REQUIRE(window.open(320, 240, "Render shutdown test") == std::error_code{});
     {
         TechEngine::RenderThread renderer;
         REQUIRE(renderer.start(jobs, clock, window, input));
@@ -76,13 +77,13 @@ TEST_CASE("Render thread joins after failed startup and can retry", "[client][re
     TechEngine::Clock clock;
     TechEngine::InputBuffer input{clock};
     const RenderWindowTestScope scope;
-    REQUIRE(TechEngine::Window::initialize());
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
     TechEngine::RenderThread renderer;
     CHECK_FALSE(renderer.start(jobs, clock, window, input));
     REQUIRE(jobs.registeredThreads().size() == 1);
     CHECK(jobs.registeredThreads().front().role == TechEngine::ThreadRole::PoolWorker);
-    REQUIRE(window.open(320, 240, "Startup retry test"));
+    REQUIRE(window.open(320, 240, "Startup retry test") == std::error_code{});
     REQUIRE(renderer.start(jobs, clock, window, input));
     renderer.stop();
     REQUIRE(jobs.registeredThreads().size() == 1);

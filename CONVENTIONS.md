@@ -248,12 +248,148 @@ whole API surface for. It also reads as attribute-soup next to `constexpr` / `st
 
 - Nothing enforces it either way: `modernize-use-nodiscard` is **not** in `.clang-tidy`, so no
   gate re-adds it.
-- **Revisit only for a fallible API** where the discarded value *is* the error (`std::expected`,
-  a `bool` "did it work"). That is the Error-handling row in *Open* below; decide it there, for
-  that shape, not as a blanket habit. Today's cases are `addLogSink` and `removeLogSink`. Both
-  bools were dropped unremarked until S4-T3; `addLogSink`'s is now checked at its one production
-  call site, and `removeLogSink`'s is an explicit `(void)`. Nothing but review catches the next
-  one, which is the cost this rule accepts.
+- **No exception for fallible APIs either.** A returned `std::error_code` (see *Error handling*)
+  carries no `[[nodiscard]]`. Decided 2026-10-09 (ADR-023 §5), closing the revisit this bullet
+  used to hold. Nothing but review catches a discarded error, which is the cost this rule
+  accepts. `addLogSink` and `removeLogSink` were dropped unremarked until S4-T3; both are now
+  checked in `Log.cpp`.
+
+## Error handling: `std::error_code`
+
+> **An expected runtime failure returns a `std::error_code`.** Decided 2026-10-09
+> ([[ADR-023 - Public error handling]]), for the public headers of every module. The script
+> SDK waits for the scripting ADR.
+
+| What went wrong | Report it with |
+|---|---|
+| A programmer error, impossible if the code is correct | an assert tier ([[Assert - Design]]) |
+| An expected failure: a missing file, malformed bytes, a full table | a `std::error_code` |
+| An unrecoverable failure: allocation, a third-party throw, a dead thread | an exception |
+
+- Each module that reports failures owns **one** error enum and **one** category. The enum
+  starts at **1** and has no `Ok`. Success is `return {};`.
+- Data comes back through an out-param, or through a sticky error on a stateful object
+  (`Reader`).
+- An OS or `std::filesystem` error is **mapped** to the module's own code where it arrives, and
+  the OS detail is logged there. A layer that cannot act on a failure returns it unchanged.
+- In `core`, a `catch` only rolls back and rethrows. Thread and App boundaries catch at the top
+  and hand a `std::exception_ptr` to the owner. No public API throws for an expected failure.
+- **Migrated in one sweep** (ADR-023 §6, amended 2026-10-09). The categories are `LogError`
+  (`base`), `ReadError` (`core`), `FileError` and `WindowError` (`platform`), `ClientError`
+  (`client`), `SimulationError` (`app`) and `ProjectError` (editor). Each has a
+  `*ErrorTests.cpp` that runs `TechEngineTests::checkErrorCategory` over every code.
+- **One known exception:** Scene's and `Transform`'s mutators (`setParent`, `unparent`,
+  `reorderChild`, `destroyEntity`, `fromLocalToWorld`, `fromWorldToLocal`, `setLocal`,
+  `setWorld`) still return `bool`. One `false` there covers several reasons, and each reason
+  needs its lane decided first.
+
+### The worked example
+
+Abridged from the real `FileError.hpp` and `FileError.cpp`:
+
+```cpp
+// TechEngine/platform/files/FileError.hpp
+namespace TechEngine {
+    enum class FileError : std::uint8_t { InvalidPath = 1, NoMount, NotFound, IsADirectory, IoError };
+
+    const std::error_category& fileErrorCategory();
+
+    std::error_code make_error_code(FileError error);
+}
+
+template<>
+struct std::is_error_code_enum<TechEngine::FileError> : std::true_type {};
+```
+
+```cpp
+// platform/src/files/FileError.cpp
+namespace TechEngine {
+    namespace {
+        class FileErrorCategory final : public std::error_category {
+        public:
+            const char* name() const noexcept override {
+                return "file";
+            }
+
+            std::string message(const int value) const override {
+                switch (static_cast<FileError>(value)) {
+                    case FileError::InvalidPath:
+                        return "invalid virtual path";
+                    // one case per code
+                }
+                return "unknown file error";
+            }
+        };
+    }
+
+    const std::error_category& fileErrorCategory() {
+        static const FileErrorCategory category;
+        return category;
+    }
+
+    std::error_code make_error_code(const FileError error) {
+        return {static_cast<int>(error), fileErrorCategory()};
+    }
+}
+```
+
+The function that fails returns the enum value, which converts by itself. The caller declares
+the result on its own line (see *Conditions*):
+
+```cpp
+std::error_code FileAccess::read(std::string_view virtualPath, std::vector<std::byte>& out) const {
+    std::filesystem::path physicalPath;
+    const std::error_code resolveError = m_mounts->resolveExisting(virtualPath, physicalPath);
+    if (resolveError) {
+        return resolveError;
+    }
+
+    std::error_code osError;
+    if (std::filesystem::is_directory(physicalPath, osError)) {
+        return FileError::IsADirectory;
+    }
+    // ...
+    return {};
+}
+
+const std::error_code readError = m_files.read(path, bytes);
+if (readError) {
+    return readError;
+}
+```
+
+### Gotchas
+
+- **Never give a code the value 0.** `if (error)` means "the value is not 0". A `FileError::Ok =
+  0` would also compare **unequal** to a plain `{}`, because the two come from different
+  categories.
+- **Three placements must be exact, or the enum silently stops converting:** `make_error_code`
+  in the enum's namespace (it is found by argument-dependent lookup), the
+  `std::is_error_code_enum` specialization in the header, and **one** category instance (the
+  function-local static). Two instances are two categories, and their codes never compare equal.
+- **`make_error_code` is snake_case on purpose.** The standard library looks it up by that name.
+- **The category class sits in `namespace {}`.** It is the one case *Internal linkage* allows:
+  every module copies this class, and a copy that keeps another module's class name merges
+  silently at link time, so one module prints the other's messages.
+- **`message()` allocates.** Call it on the failure path only. C++20 has no `std::format`
+  support for `std::error_code`, so a log line passes `error.message()`.
+
+## `std::optional`: private members only
+
+**No `std::optional` in a function signature or a public data member.** Decided 2026-10-09
+(ADR-023 §1). A function that may have no value returns `bool` and fills an out-param, the same
+data shape as *Error handling*. A **private** member may still hold one for late construction
+(`Scene::m_events`). It stores the value inline and never allocates. Both alternatives are
+worse there: a `std::unique_ptr` allocates, and a "not built" state inside the type leaks into
+every one of its methods.
+
+- A third-party API that returns one is unwrapped at the call site (`value_or`, or the
+  library's pointer accessor), so the `optional` never reaches our own signatures.
+- **Test fixtures are exempt.** A fixture's fields are public by habit, not API, so a fixture
+  may hold an `optional` for late construction (`SceneEventTests`, `SimulationThreadTests`).
+- `App::renderTiming(out)` and `Client::renderTiming(out)` are the worked example: they return
+  whether a renderer is running. `App::renderingActive()` asks only that question, and
+  `TimingMetrics` carries a `renderingActive` flag beside its `render` value.
 
 ## Initialization: `= value`, not `{value}`
 
@@ -297,6 +433,24 @@ enforces it; no clang-tidy check in our set covers increment form.
 Applies to the `for` step only. In an expression whose value is used, write what the expression
 actually needs.
 
+## Conditions: no declaration inside an `if`
+
+```cpp
+const std::error_code readError = m_files.read(path, bytes);
+if (readError) {
+    return readError;
+}
+```
+
+Not `if (const std::error_code error = m_files.read(path, bytes))`. Decided 2026-10-09. The call
+reads as a statement, and the test reads as a test. The same goes for the C++17 init-statement,
+`if (auto x = f(); x)`.
+
+- **Two results in one scope get two names** (`readError`, `parseError`), both `const`. Never
+  reassign one variable: a reused name means different things on different lines, and a stale
+  value can slip past its check.
+- Nothing enforces it.
+
 ## Unit tests: try to break the contract
 
 Write the most rigorous tests the unit's contract warrants. Start from its invariants, then
@@ -335,7 +489,7 @@ Flag these as they come up; each becomes a rule above.
 | ~~File-scope state prefix~~ | **`g_camelCase`**, ratified Jul 30 | `g_` earns its place: `static` marks linkage but doesn't distinguish mutable state from constants at a glance. |
 | **Ownership / smart pointers** | undecided | Fixes v1 F13. Proposed default: value + **handle** (index + generation); `unique_ptr` = single heap ownership; raw ptr/ref = non-owning, never deletes; `shared_ptr` only for genuine shared + unclear lifetime. Trigger: first real ownership decision. → [[Backlog]] |
 | const-correctness | `misc-const-correctness` on in `.clang-tidy` | Mechanical for locals. Open: params/methods by hand? |
-| Error handling | undecided | Exceptions vs `std::expected` vs error codes. Note `logDispatch` catches to keep diagnostics from killing logic. **Trigger fired twice and the row did not move**: `addLogSink` returns a bare bool, `Reader` carries a sticky `ReadStatus` (ADR-016). Carded at S4-T3 → [[Backlog]] § *etc*; it owns the `[[nodiscard]]` revisit above. |
+| ~~Error handling~~ | **`std::error_code`**, ratified 2026-10-09 | [[ADR-023 - Public error handling]], S7-D3. The rule is *Error handling* above; it also closed the `[[nodiscard]]` revisit and banned `std::optional` from signatures. |
 | ~~**Target naming scheme**~~ | **`te_` = build-only, everything shippable is Pascal**, ratified 2026-08-10 | Shipping libs `TechEngine<Module>` · build-only/interface `te_*` · tests `TechEngine<Module>Tests` · leaf exes bare (`editor`, `runtime`) · alias lowercase `TechEngine::core`. The trigger fired at S3-T13: `te_test_support` (shared test helpers, INTERFACE) took its spelling from the principle with no new decision. Prior spellings that don't match and are not adopted: ADR-008 §6 `te_<module>_tests`, v1's `TechEngineEditor`. |
 
 ## Related

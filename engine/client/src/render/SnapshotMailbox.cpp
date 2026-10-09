@@ -6,9 +6,13 @@ namespace TechEngine {
         m_command = command;
     }
 
-    std::optional<RenderSnapshot> SnapshotMailbox::snapshot() const {
+    bool SnapshotMailbox::snapshot(RenderSnapshot& out) const {
         const std::lock_guard lock{m_mutex};
-        return m_command;
+        if (!m_command.has_value()) {
+            return false;
+        }
+        out = *m_command;
+        return true;
     }
 
     void SnapshotMailbox::reset() {

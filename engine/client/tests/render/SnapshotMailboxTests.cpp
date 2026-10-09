@@ -9,18 +9,30 @@
 
 TEST_CASE("snapshot mailbox is empty until publication and resets between sessions", "[client][snapshot]") {
     TechEngine::SnapshotMailbox mailbox;
-    CHECK_FALSE(mailbox.snapshot());
+    TechEngine::RenderSnapshot empty;
+    CHECK_FALSE(mailbox.snapshot(empty));
     TechEngine::RenderSnapshot value;
     value.tick = 42;
     mailbox.publish(value);
     value.tick = 99;
-    REQUIRE(mailbox.snapshot());
-    CHECK(mailbox.snapshot()->tick == 42);
-    auto copy = *mailbox.snapshot();
+    TechEngine::RenderSnapshot copy;
+    REQUIRE(mailbox.snapshot(copy));
+    CHECK(copy.tick == 42);
     copy.tick = 123;
-    CHECK(mailbox.snapshot()->tick == 42);
+    TechEngine::RenderSnapshot again;
+    REQUIRE(mailbox.snapshot(again));
+    CHECK(again.tick == 42);
     mailbox.reset();
-    CHECK_FALSE(mailbox.snapshot());
+    TechEngine::RenderSnapshot afterReset;
+    CHECK_FALSE(mailbox.snapshot(afterReset));
+}
+
+TEST_CASE("snapshot mailbox leaves the output untouched while empty", "[client][snapshot]") {
+    TechEngine::SnapshotMailbox mailbox;
+    TechEngine::RenderSnapshot out;
+    out.tick = 77;
+    CHECK_FALSE(mailbox.snapshot(out));
+    CHECK(out.tick == 77);
 }
 
 TEST_CASE("snapshot mailbox returns the newest complete value without draining", "[client][snapshot]") {
@@ -30,8 +42,12 @@ TEST_CASE("snapshot mailbox returns the newest complete value without draining",
     mailbox.publish(value);
     value.tick = 103;
     mailbox.publish(value);
-    CHECK(mailbox.snapshot()->tick == 103);
-    CHECK(mailbox.snapshot()->tick == 103);
+    TechEngine::RenderSnapshot first;
+    REQUIRE(mailbox.snapshot(first));
+    CHECK(first.tick == 103);
+    TechEngine::RenderSnapshot second;
+    REQUIRE(mailbox.snapshot(second));
+    CHECK(second.tick == 103);
 }
 
 TEST_CASE("snapshot mailbox never tears tick metadata from its payload", "[client][snapshot]") {
@@ -54,15 +70,19 @@ TEST_CASE("snapshot mailbox never tears tick metadata from its payload", "[clien
             start.arrive_and_wait();
             std::uint64_t previous = 0;
             for (int i = 0; i < 20000; i++) {
-                if (const auto value = mailbox.snapshot()) {
-                    if (value->tick < previous || value->timeline != value->tick || value->clearColor[0] != static_cast<float>(value->tick) || value->tickTime != TechEngine::Clock::TimePoint{std::chrono::seconds{value->tick}}) {
+                TechEngine::RenderSnapshot value;
+                const bool received = mailbox.snapshot(value);
+                if (received) {
+                    if (value.tick < previous || value.timeline != value.tick || value.clearColor[0] != static_cast<float>(value.tick) || value.tickTime != TechEngine::Clock::TimePoint{std::chrono::seconds{value.tick}}) {
                         coherent = false;
                     }
-                    previous = value->tick;
+                    previous = value.tick;
                 }
             }
         }};
     }
     CHECK(coherent.load());
-    CHECK(mailbox.snapshot()->tick == 20000);
+    TechEngine::RenderSnapshot last;
+    REQUIRE(mailbox.snapshot(last));
+    CHECK(last.tick == 20000);
 }

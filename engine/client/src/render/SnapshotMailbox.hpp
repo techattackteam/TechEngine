@@ -14,7 +14,7 @@ namespace TechEngine {
     public:
         void publish(const RenderSnapshot& command);
 
-        std::optional<RenderSnapshot> snapshot() const;
+        bool snapshot(RenderSnapshot& out) const;
 
         void reset();
     };

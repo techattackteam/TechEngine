@@ -15,7 +15,7 @@
 
 using TechEngine::BlobHeader;
 using TechEngine::Reader;
-using TechEngine::ReadStatus;
+using TechEngine::ReadError;
 using TechEngine::StringId;
 using TechEngine::Visitable;
 using TechEngine::Writer;
@@ -179,7 +179,7 @@ TEST_CASE("a truncated buffer fails the whole visit soft", "[core][serialization
     reader.field(restored);
 
     CHECK_FALSE(reader.ok());
-    CHECK(reader.status() == ReadStatus::Truncated);
+    CHECK(reader.error() == ReadError::Truncated);
 }
 
 TEST_CASE("the sticky status lets a visit body check once at the end", "[core][serialization]") {
@@ -191,6 +191,6 @@ TEST_CASE("the sticky status lets a visit body check once at the end", "[core][s
     Reader reader{empty};
     reader.field(restored);
 
-    CHECK(reader.status() == ReadStatus::Truncated);
+    CHECK(reader.error() == ReadError::Truncated);
     CHECK(restored.materialSlot == 99);
 }

@@ -2,23 +2,23 @@
 
 #include <TechEngine/platform/files/FileAccess.hpp>
 
-#include <cstdint>
+#include <project/ProjectError.hpp>
+
 #include <filesystem>
 #include <string>
 #include <string_view>
+#include <system_error>
 
 namespace TechEngine {
-    enum class ProjectResult : std::uint8_t { Ok, ReadFailed, WriteFailed, ParseFailed, SchemaInvalid };
-
     class Project {
     private:
         std::filesystem::path m_root;
         std::string m_name;
 
     public:
-        ProjectResult load(const FileAccess& files, std::string_view manifestPath);
+        std::error_code load(const FileAccess& files, std::string_view manifestPath);
 
-        ProjectResult save(FileAccess& files, std::string_view manifestPath) const;
+        std::error_code save(FileAccess& files, std::string_view manifestPath) const;
 
         const std::filesystem::path& root() const;
 

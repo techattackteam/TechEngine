@@ -1,6 +1,9 @@
 #pragma once
 
+#include <TechEngine/platform/files/FileError.hpp>
+
 #include <string_view>
+#include <system_error>
 
 namespace TechEngine {
     struct VirtualPathParts {
@@ -9,5 +12,5 @@ namespace TechEngine {
     };
 
     // out points into virtualPath; both views dangle the moment it does.
-    bool splitVirtualPath(std::string_view virtualPath, VirtualPathParts& out);
+    std::error_code splitVirtualPath(std::string_view virtualPath, VirtualPathParts& out);
 }
