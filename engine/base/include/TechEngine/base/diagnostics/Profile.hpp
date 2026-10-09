@@ -11,10 +11,10 @@
 #define TE_PROFILER_FUNCTION() ZoneScoped
 #define TE_PROFILER_FRAME() FrameMark
 #define TE_PROFILER_FRAME_NAMED(name) FrameMarkNamed(name)
-// The secure forms check the profiler is up before recording. The global operator new
-// replacement runs during CRT static init, which can precede Tracy's own construction.
-#define TE_PROFILER_ALLOC(pointer, size) TracyAlloc(pointer, size)
-#define TE_PROFILER_FREE(pointer) TracyFree(pointer)
+// Tracy keys a memory pool by the address of its name, not its text. Pass one named constant
+// to every call for a pool; a literal at each call site can split the pool in two.
+#define TE_PROFILER_ALLOC(pointer, size, pool) TracyAllocN(pointer, size, pool)
+#define TE_PROFILER_FREE(pointer, pool) TracyFreeN(pointer, pool)
 #define TE_PROFILER_THREAD_NAME(name) ::tracy::SetThreadName(name)
 
 #else
@@ -23,8 +23,10 @@
 #define TE_PROFILER_FUNCTION() ((void)0)
 #define TE_PROFILER_FRAME() ((void)0)
 #define TE_PROFILER_FRAME_NAMED(name) ((void)0)
-#define TE_PROFILER_ALLOC(pointer, size) ((void)0)
-#define TE_PROFILER_FREE(pointer) ((void)0)
+// The pool is referenced but never evaluated, so a pool constant that only these macros use is
+// not an unused variable when profiling is off.
+#define TE_PROFILER_ALLOC(pointer, size, pool) ((void)sizeof(pool))
+#define TE_PROFILER_FREE(pointer, pool) ((void)sizeof(pool))
 #define TE_PROFILER_THREAD_NAME(name) ((void)(name))
 
 #endif
