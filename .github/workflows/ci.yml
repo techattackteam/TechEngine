@@ -29,7 +29,10 @@ name: CI
 # finds out. Worse, ci-docs.yml hardcodes the nine required context names, so renaming a leg
 # here silently uncovers it and every later docs-only PR hangs unmergeable with no clue why.
 # A workflow-only merge is also excluded by the push filter. Land it alone, then use
-# workflow_dispatch on master and read that run before building on the change.
+# workflow_dispatch on master and read that run before building on the change. A dispatch
+# runs only what a master push runs: clang-format, the four build legs and the cache prune.
+# `diff coverage` and the sanitizer legs are pull_request-only, so an edit to either is first
+# run by the next code PR, not by the dispatch.
 #
 # GOTCHA: `paths-ignore` skips only when EVERY changed file matches, which is the behaviour
 # this wants. ci-docs.yml cannot be spelled that way, so since 2026-08-29 it carries no path
@@ -227,10 +230,14 @@ jobs:
   # threshold would fall every time `client` grows, because rendering is proven by demo
   # scenes and not unit tests, and a gate that is bypassed weekly teaches nothing.
   #
-  # The job runs on every PR and ALWAYS reports its context. A required check skipped by a
-  # JOB-level `if:` does not report one as success, which leaves the PR pending forever rather
-  # than mergeable. So the bypass lives inside the job as a per-STEP guard: the job goes green
-  # either way, and `[skip-coverage]` skips the work rather than the check.
+  # The job runs on every PR and is never skipped. The bypass lives inside it as a per-STEP
+  # guard, so `[skip-coverage]` skips the work and the job still goes green, for two reasons.
+  # A job-level `if:` can only read the frozen event payload (see the GOTCHA below). And
+  # `sanitizers` needs this job to SUCCEED: a skipped `coverage` would skip that matrix job,
+  # which then reports one check named `matrix.name` instead of its three required contexts,
+  # and the PR hangs pending. The `diff coverage` context itself would survive a skip: a plain
+  # job skipped by its `if:` still reports, as `skipped` (measured on #49's push run), and
+  # GitHub documents a skipped required check as passing.
   #
   # The price of that shape, taken deliberately on 2026-08-29: a bypassed run reports no
   # number and uploads no HTML. Before, it built everything and printed the figure it was
@@ -278,9 +285,8 @@ jobs:
           echo "skip=$skip" >> "$GITHUB_OUTPUT"
 
       # GOTCHA: every step below MUST carry this guard, and a new step is not exempt. The
-      # bypass skips STEPS and never the job, because `diff coverage` is a required context
-      # and a job skipped by a job-level `if:` does not report one as `success`. The job has
-      # to run and go green; only the work inside it is optional.
+      # bypass skips STEPS and never the job, for the two reasons in the job's header. The job
+      # has to run and go green; only the work inside it is optional.
       - uses: actions/checkout@v4
         if: steps.bypass.outputs.skip != 'true'
         with:
