@@ -38,7 +38,18 @@ Then:
    List any drift under "Artifact drift"; offer to reconcile (update the living design
    note; a *superseding* ADR if an Accepted decision changed). See
    [[Planning Workflow - Artifact Gate]]. If none, say so.
-4. Update `docs/00 Dashboard/Dashboard.md`: current focus, blockers, health, and
+4. **Backlog witness check.** Read `docs/06 Sprints/Backlog.md` for two things only:
+   - **Unfired triggers:** did one fire this week (from `git log` + the sprint board)? Mark
+     it in place, `**Fired <date>:** <the evidence>`. Pulling it is `/sprint-plan`'s job.
+   - **Fired entries:** re-resolve every `file:line`, symbol and PR the entry cites against
+     `origin/master` by opening the code, not by checking the line exists, and correct the
+     citation in place. Never re-decide a fired trigger.
+   Nothing else re-reads a fired entry between the fire and the pull, and the code keeps
+   moving under it: on 2026-09-04 one pointed at a line that had become blank. List each
+   correction under "Artifact drift". If the cited code is gone or already fixed, list that
+   too and offer to delete the entry; do not delete it unasked. If nothing fired or moved,
+   say so.
+5. Update `docs/00 Dashboard/Dashboard.md`: current focus, blockers, health, and
    **roll the `Next ceremony` line**.
    **Advance the reconciliation stamp**: `**Reconciled against:** engine <sha> (date)`,
    `<sha>` = current `origin/master`, **only if step 3 actually ran**. If it was skipped,
@@ -46,8 +57,8 @@ Then:
    A stamp advanced as a formality is worse than no stamp: it converts "unknown freshness"
    into a false "checked" that CLAUDE.md rule 2 will then trust (ADR-012 §6). Advancing it
    is the *output* of the check, never a step in updating the Dashboard.
-5. If I already ran the review on the other day of this weekend, say so instead of writing
+6. If I already ran the review on the other day of this weekend, say so instead of writing
    a second entry. (The sprint-boundary case is handled by the GATE above; on those
    weekends this command doesn't run at all.)
-6. Keep it short and honest. Flag scope creep or burnout risk if you see it.
-7. Do NOT start any implementation work; this is a planning ritual.
+7. Keep it short and honest. Flag scope creep or burnout risk if you see it.
+8. Do NOT start any implementation work; this is a planning ritual.
