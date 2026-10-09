@@ -36,6 +36,8 @@ TEST_CASE("Compiled-out profiler macros do not evaluate their arguments", "[prof
     TE_PROFILER_FRAME_NAMED(bumpAndName());
     TE_PROFILER_ALLOC(bumpAndPointer(), sizeof(g_sideEffects));
     TE_PROFILER_FREE(bumpAndPointer());
+    TE_PROFILER_ALLOC_NAMED(bumpAndPointer(), sizeof(g_sideEffects), bumpAndName());
+    TE_PROFILER_FREE_NAMED(bumpAndPointer(), bumpAndName());
 
     REQUIRE(g_sideEffects == 0);
 }

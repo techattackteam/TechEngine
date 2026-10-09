@@ -1,4 +1,5 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/platform/input/InputBuffer.hpp>
 #include <TechEngine/platform/window/Window.hpp>
 
@@ -8,11 +9,37 @@
 #include <GLFW/glfw3.h>
 
 #include <cmath>
+#include <cstddef>
+#include <cstdlib>
 #include <string>
 
 namespace TechEngine {
+    static constexpr char GLFW_MEMORY_POOL[] = "GLFW";
+
     static void logGlfwError(int code, const char* description) {
         TE_LOGGER_ERROR("GLFW error {0}: {1}", code, description);
+    }
+
+    static void* allocateGlfwMemory(std::size_t size, void*) {
+        void* block = std::malloc(size);
+        if (block != nullptr) {
+            TE_PROFILER_ALLOC_NAMED(block, size, GLFW_MEMORY_POOL);
+        }
+        return block;
+    }
+
+    static void* reallocateGlfwMemory(void* block, std::size_t size, void*) {
+        void* resized = std::realloc(block, size);
+        if (resized != nullptr) {
+            TE_PROFILER_FREE_NAMED(block, GLFW_MEMORY_POOL);
+            TE_PROFILER_ALLOC_NAMED(resized, size, GLFW_MEMORY_POOL);
+        }
+        return resized;
+    }
+
+    static void deallocateGlfwMemory(void* block, void*) {
+        TE_PROFILER_FREE_NAMED(block, GLFW_MEMORY_POOL);
+        std::free(block);
     }
 
     Window::Window() = default;
@@ -22,7 +49,9 @@ namespace TechEngine {
     }
 
     bool Window::initialize() {
+        const GLFWallocator allocator{.allocate = allocateGlfwMemory, .reallocate = reallocateGlfwMemory, .deallocate = deallocateGlfwMemory, .user = nullptr};
         glfwSetErrorCallback(logGlfwError);
+        glfwInitAllocator(&allocator);
         if (!glfwInit()) {
             return false;
         }
