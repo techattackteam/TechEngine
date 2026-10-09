@@ -23,7 +23,7 @@ namespace TechEngine {
     static void* allocateGlfwMemory(std::size_t size, void*) {
         void* block = std::malloc(size);
         if (block != nullptr) {
-            TE_PROFILER_ALLOC_NAMED(block, size, GLFW_MEMORY_POOL);
+            TE_PROFILER_ALLOC(block, size, GLFW_MEMORY_POOL);
         }
         return block;
     }
@@ -31,14 +31,14 @@ namespace TechEngine {
     static void* reallocateGlfwMemory(void* block, std::size_t size, void*) {
         void* resized = std::realloc(block, size);
         if (resized != nullptr) {
-            TE_PROFILER_FREE_NAMED(block, GLFW_MEMORY_POOL);
-            TE_PROFILER_ALLOC_NAMED(resized, size, GLFW_MEMORY_POOL);
+            TE_PROFILER_FREE(block, GLFW_MEMORY_POOL);
+            TE_PROFILER_ALLOC(resized, size, GLFW_MEMORY_POOL);
         }
         return resized;
     }
 
     static void deallocateGlfwMemory(void* block, void*) {
-        TE_PROFILER_FREE_NAMED(block, GLFW_MEMORY_POOL);
+        TE_PROFILER_FREE(block, GLFW_MEMORY_POOL);
         std::free(block);
     }
 
