@@ -50,6 +50,7 @@ static void secondarySink(const TechEngine::LogRecord& record) {
 class SinkGuard {
 public:
     SinkGuard() : m_previousLevel(TechEngine::minLevel()) {
+        TechEngine::setMinLevel(TechEngine::Level::Trace);
         g_captured.clear();
         TechEngine::addLogSink(&captureSink);
     }
@@ -70,7 +71,6 @@ private:
 
 TEST_CASE("positional args reorder and reuse", "[base][log]") {
     const SinkGuard guard;
-    TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     TE_LOGGER_WARN("swapchain {1}x{0} (reuse {1})", 1080, 1920);
 
@@ -102,7 +102,6 @@ TEST_CASE("Level::Off suppresses everything", "[base][log]") {
 
 TEST_CASE("source_location reaches the record", "[base][log]") {
     const SinkGuard guard;
-    TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     const std::uint32_t expectedLine = __LINE__ + 1;
     TE_LOGGER_WARN("located");
@@ -116,7 +115,6 @@ TEST_CASE("source_location reaches the record", "[base][log]") {
 // carry the bare name so a line reads main.cpp:7:TestFunction().
 TEST_CASE("function name is trimmed to the identifier", "[base][log]") {
     const SinkGuard guard;
-    TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     TE_LOGGER_WARN("named");
 
@@ -130,7 +128,6 @@ TEST_CASE("function name is trimmed to the identifier", "[base][log]") {
 
 TEST_CASE("tick stamp is the value app pushed", "[base][log]") {
     const SinkGuard guard;
-    TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     TechEngine::setDiagnosticTick(1043);
     TE_LOGGER_WARN("stamped");
@@ -142,7 +139,6 @@ TEST_CASE("tick stamp is the value app pushed", "[base][log]") {
 
 TEST_CASE("macros survive a dangling else", "[base][log]") {
     const SinkGuard guard;
-    TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     const bool condition = false;
     if (condition) {
@@ -157,7 +153,6 @@ TEST_CASE("macros survive a dangling else", "[base][log]") {
 
 TEST_CASE("over-long messages truncate rather than overflow", "[base][log]") {
     const SinkGuard guard;
-    TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     const std::string huge(4096, 'x');
     TE_LOGGER_WARN("{0}", huge);
@@ -170,7 +165,6 @@ TEST_CASE("over-long messages truncate rather than overflow", "[base][log]") {
 // The gate is per-config: a binary can only assert the config it was built in.
 TEST_CASE("compile-time level gate matches the build config", "[base][log]") {
     const SinkGuard guard;
-    TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     TE_LOGGER_TRACE("trace {0}", 1);
 
@@ -187,7 +181,6 @@ TEST_CASE("compile-time level gate matches the build config", "[base][log]") {
 // Dispatching past the macros is the only way to see the library's half of the gate.
 TEST_CASE("the library gates at the level this TU compiled", "[base][log]") {
     const SinkGuard guard;
-    TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     for (int level = TE_LOG_LEVEL_TRACE; level <= TE_LOG_LEVEL_CRITICAL; level++) {
         TechEngine::internal::logImpl(static_cast<TechEngine::Level>(level), TechEngine::DEFAULT_CHANNEL, std::source_location::current(), "{0}", level);
@@ -198,7 +191,6 @@ TEST_CASE("the library gates at the level this TU compiled", "[base][log]") {
 
 TEST_CASE("two modules log on distinct channels", "[base][log][channel]") {
     const SinkGuard guard;
-    TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     const TechEngine::LogModule client = TechEngine::registerLogModule("client");
     const TechEngine::LogModule net = TechEngine::registerLogModule("net");
@@ -224,7 +216,6 @@ TEST_CASE("two modules log on distinct channels", "[base][log][channel]") {
 
 TEST_CASE("per-channel level filters independently", "[base][log][channel]") {
     const SinkGuard guard;
-    TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     const TechEngine::LogModule audio = TechEngine::registerLogModule("audio");
     const TechEngine::LogChannel quiet = TechEngine::registerLogChannel("mixer", audio);
@@ -245,7 +236,6 @@ TEST_CASE("per-channel level filters independently", "[base][log][channel]") {
 // case pass for the wrong reason on that leg.
 TEST_CASE("module level is a floor over its channels", "[base][log][channel]") {
     const SinkGuard guard;
-    TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     const TechEngine::LogModule physics = TechEngine::registerLogModule("physics");
     const TechEngine::LogChannel solver = TechEngine::registerLogChannel("solver", physics, TechEngine::Level::Trace);
@@ -261,7 +251,6 @@ TEST_CASE("module level is a floor over its channels", "[base][log][channel]") {
 
 TEST_CASE("unregistered channel falls back to the default", "[base][log][channel]") {
     const SinkGuard guard;
-    TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     const TechEngine::LogChannel bogus{9999};
 
@@ -280,7 +269,6 @@ TEST_CASE("unregistered channel falls back to the default", "[base][log][channel
 
 TEST_CASE("sinks are added, not swapped", "[base][log][sink]") {
     const SinkGuard guard;
-    TechEngine::setMinLevel(TechEngine::Level::Trace);
     g_secondary.clear();
 
     REQUIRE(TechEngine::addLogSink(&secondarySink));
@@ -358,7 +346,6 @@ TEST_CASE("with no sink installed a record still reaches stderr", "[base][log][s
 
 TEST_CASE("a record carries a wall-clock stamp", "[base][log]") {
     const SinkGuard guard;
-    TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     TE_LOGGER_WARN("first");
     TE_LOGGER_WARN("second");
@@ -451,7 +438,6 @@ TEST_CASE("flatten never writes past its buffer", "[base][log][format]") {
 // ctest each case is its own process, so this only constrains a direct exe run.
 TEST_CASE("registry overflow degrades to the default channel", "[base][log][channel]") {
     const SinkGuard guard;
-    TechEngine::setMinLevel(TechEngine::Level::Trace);
 
     const TechEngine::LogModule owner = TechEngine::registerLogModule("overflow");
     const TechEngine::LogChannel first = TechEngine::registerLogChannel("first", owner);

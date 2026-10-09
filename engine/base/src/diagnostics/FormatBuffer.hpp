@@ -1,5 +1,7 @@
 #pragma once
 
+#include <exception>
+#include <format>
 #include <iterator>
 #include <string_view>
 
@@ -30,6 +32,8 @@ namespace TechEngine {
                     push(c);
                 }
             }
+
+            void writeFormatted(std::string_view formatString, std::format_args args);
         };
 
         class FormatBufferIterator {
@@ -64,5 +68,23 @@ namespace TechEngine {
         };
 
         static_assert(std::output_iterator<FormatBufferIterator, char>, "vformat_to needs this to model output_iterator");
+
+        inline void FormatBuffer::writeFormatted(std::string_view formatString, std::format_args args) {
+            try {
+                std::vformat_to(FormatBufferIterator{*this}, formatString, args);
+            } catch (const std::exception& e) {
+                size = 0;
+                truncated = false;
+                for (const char c: std::string_view{"<format error: "}) {
+                    push(c);
+                }
+                for (const char c: std::string_view{e.what()}) {
+                    push(c);
+                }
+                push('>');
+            }
+
+            markTruncated();
+        }
     }
 }
