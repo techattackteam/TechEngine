@@ -29,8 +29,10 @@
 name: CI (docs-only)
 
 # Widened to `.github/workflows/**` on 2026-08-28, so a CI-config-only PR draws no build.
-# That also means THIS file stops being tested by its own PR: get a context name below wrong
-# and the very PR that broke it still reports nine green. See ci.yml's header.
+# Unlike ci.yml, THIS file has no path filter, so its own PR runs the PR's copy of it (#104's
+# fix reported the nine contexts on its own run). A wrong context name below therefore hangs
+# that PR pending. The exception is a PR that also touches code: `scope` stands this file
+# down, so the edit is not exercised until the next no-code PR. See ci.yml's header.
 on:
   pull_request:
     branches: [master]
