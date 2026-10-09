@@ -175,20 +175,6 @@ namespace TechEngine {
         m_cursorKnown = true;
     }
 
-    static const char* inputKindLabel(const InputKind kind) {
-        switch (kind) {
-            case InputKind::Key:
-                return "Key";
-            case InputKind::Button:
-                return "Button";
-            case InputKind::Motion:
-                return "Motion";
-            case InputKind::Focus:
-                return "Focus";
-        }
-        return "Unknown";
-    }
-
     void Window::publishInput(const InputEvent& event) const {
         if (m_input != nullptr) {
             m_input->publish(event);
