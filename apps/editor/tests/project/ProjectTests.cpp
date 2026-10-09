@@ -7,11 +7,13 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <string_view>
+#include <system_error>
 
 using TechEngine::FileAccess;
+using TechEngine::FileError;
 using TechEngine::MountTable;
 using TechEngine::Project;
-using TechEngine::ProjectResult;
+using TechEngine::ProjectError;
 using TechEngineTests::ScratchDirectory;
 
 namespace {
@@ -36,7 +38,7 @@ TEST_CASE("load reads the name and derives the root", "[editor][project]") {
 
     Project project;
 
-    REQUIRE(project.load(env.files, "project://project.toml") == ProjectResult::Ok);
+    REQUIRE(project.load(env.files, "project://project.toml") == std::error_code{});
     CHECK(project.name() == "Sandbox");
     CHECK(project.root() == env.scratch.root());
 }
@@ -47,24 +49,24 @@ TEST_CASE("load returns ParseFailed on a malformed manifest", "[editor][project]
 
     Project project;
 
-    CHECK(project.load(env.files, "project://project.toml") == ProjectResult::ParseFailed);
+    CHECK(project.load(env.files, "project://project.toml") == ProjectError::ParseFailed);
 }
 
-TEST_CASE("load returns ReadFailed when the manifest is missing", "[editor][project]") {
+TEST_CASE("load passes NotFound through when the manifest is missing", "[editor][project]") {
     MountedProject env{"projectLoadMissing"};
 
     Project project;
 
-    CHECK(project.load(env.files, "project://project.toml") == ProjectResult::ReadFailed);
+    CHECK(project.load(env.files, "project://project.toml") == FileError::NotFound);
 }
 
-TEST_CASE("load returns ReadFailed for a manifest path that escapes the root", "[editor][project]") {
+TEST_CASE("load passes InvalidPath through for a manifest path that escapes the root", "[editor][project]") {
     MountedProject env{"projectLoadEscapes"};
     env.scratch.writeFile("project.toml", GOOD_MANIFEST);
 
     Project project;
 
-    CHECK(project.load(env.files, "project://../project.toml") == ProjectResult::ReadFailed);
+    CHECK(project.load(env.files, "project://../project.toml") == FileError::InvalidPath);
 }
 
 TEST_CASE("load returns SchemaInvalid when name is missing", "[editor][project]") {
@@ -73,7 +75,7 @@ TEST_CASE("load returns SchemaInvalid when name is missing", "[editor][project]"
 
     Project project;
 
-    CHECK(project.load(env.files, "project://project.toml") == ProjectResult::SchemaInvalid);
+    CHECK(project.load(env.files, "project://project.toml") == ProjectError::SchemaInvalid);
 }
 
 TEST_CASE("load returns SchemaInvalid when name is not a string", "[editor][project]") {
@@ -82,7 +84,7 @@ TEST_CASE("load returns SchemaInvalid when name is not a string", "[editor][proj
 
     Project project;
 
-    CHECK(project.load(env.files, "project://project.toml") == ProjectResult::SchemaInvalid);
+    CHECK(project.load(env.files, "project://project.toml") == ProjectError::SchemaInvalid);
 }
 
 TEST_CASE("save round-trips through load", "[editor][project]") {
@@ -90,10 +92,10 @@ TEST_CASE("save round-trips through load", "[editor][project]") {
     env.scratch.writeFile("project.toml", GOOD_MANIFEST);
 
     Project source;
-    REQUIRE(source.load(env.files, "project://project.toml") == ProjectResult::Ok);
-    REQUIRE(source.save(env.files, "project://copy.toml") == ProjectResult::Ok);
+    REQUIRE(source.load(env.files, "project://project.toml") == std::error_code{});
+    REQUIRE(source.save(env.files, "project://copy.toml") == std::error_code{});
 
     Project reloaded;
-    REQUIRE(reloaded.load(env.files, "project://copy.toml") == ProjectResult::Ok);
+    REQUIRE(reloaded.load(env.files, "project://copy.toml") == std::error_code{});
     CHECK(reloaded.name() == source.name());
 }

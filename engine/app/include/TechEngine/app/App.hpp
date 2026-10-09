@@ -20,7 +20,7 @@
 #include <condition_variable>
 #include <memory>
 #include <mutex>
-#include <optional>
+#include <system_error>
 
 namespace TechEngine {
     class App {
@@ -81,7 +81,7 @@ namespace TechEngine {
         virtual bool shouldClose() const;
 
         // Read from any thread through timingMetrics(), so an override must be thread-safe.
-        virtual std::optional<RenderTiming> renderTiming() const;
+        virtual bool renderTiming(RenderTiming& out) const;
 
         virtual void simulationInit();
 
@@ -92,7 +92,9 @@ namespace TechEngine {
         virtual void shutdown();
 
     private:
-        bool startSimulation();
+        std::error_code startSimulation();
+
+        bool renderingActive() const;
 
         void runMainThread();
 

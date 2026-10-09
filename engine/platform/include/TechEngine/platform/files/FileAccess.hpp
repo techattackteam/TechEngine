@@ -1,6 +1,6 @@
 #pragma once
 
-#include <TechEngine/platform/files/FileResult.hpp>
+#include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/platform/files/MountTable.hpp>
 
 #include <cstddef>
@@ -9,6 +9,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <vector>
 
 namespace TechEngine {
@@ -26,27 +27,27 @@ namespace TechEngine {
     public:
         explicit FileAccess(const MountTable& mounts);
 
-        FileResult read(std::string_view virtualPath, std::vector<std::byte>& out) const;
+        std::error_code read(std::string_view virtualPath, std::vector<std::byte>& out) const;
 
-        FileResult write(std::string_view virtualPath, std::span<const std::byte> bytes);
+        std::error_code write(std::string_view virtualPath, std::span<const std::byte> bytes);
 
-        FileResult status(std::string_view virtualPath, FileStatus& out) const;
+        std::error_code status(std::string_view virtualPath, FileStatus& out) const;
 
-        FileResult list(std::string_view virtualPath, bool recursive, std::vector<std::string>& out) const;
+        std::error_code list(std::string_view virtualPath, bool recursive, std::vector<std::string>& out) const;
 
-        FileResult resolve(std::string_view virtualPath, std::filesystem::path& out) const;
+        std::error_code resolve(std::string_view virtualPath, std::filesystem::path& out) const;
 
-        FileResult createDirectory(std::string_view virtualPath);
+        std::error_code createDirectory(std::string_view virtualPath);
 
-        FileResult remove(std::string_view virtualPath, bool recursive);
+        std::error_code remove(std::string_view virtualPath, bool recursive);
 
-        FileResult copy(std::string_view from, std::string_view to) const;
+        std::error_code copy(std::string_view from, std::string_view to) const;
 
-        FileResult move(std::string_view from, std::string_view to) const;
+        std::error_code move(std::string_view from, std::string_view to) const;
 
-        FileResult rename(std::string_view virtualPath, std::string_view newName) const;
+        std::error_code rename(std::string_view virtualPath, std::string_view newName) const;
 
     private:
-        FileResult resolveTransfer(std::string_view from, std::string_view to, std::filesystem::path& sourcePath, std::filesystem::path& destinationPath) const;
+        std::error_code resolveTransfer(std::string_view from, std::string_view to, std::filesystem::path& sourcePath, std::filesystem::path& destinationPath) const;
     };
 }

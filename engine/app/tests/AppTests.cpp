@@ -1,7 +1,7 @@
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/systems/ISystem.hpp>
-#include <TechEngine/platform/files/FileResult.hpp>
+#include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
 #include <catch2/catch_test_macros.hpp>
@@ -20,6 +20,7 @@
 #include <mutex>
 #include <stdexcept>
 #include <string_view>
+#include <system_error>
 #include <thread>
 #include <vector>
 
@@ -143,12 +144,12 @@ TEST_CASE("a mount added after construction is visible through App's context", "
     app.table().mount("scratch", std::filesystem::temp_directory_path());
 
     std::filesystem::path resolved;
-    const TechEngine::FileResult result = app.context().files.resolve("scratch://no-such-file", resolved);
+    const std::error_code resolveError = app.context().files.resolve("scratch://no-such-file", resolved);
 
     // NotFound means the context saw the mount and the file was absent, which is the point.
     // NoMount would mean EngineContext had snapshotted the table instead of referencing it,
     // and init() could then never mount anything the loop reads.
-    REQUIRE(result == TechEngine::FileResult::NotFound);
+    REQUIRE(resolveError == TechEngine::FileError::NotFound);
 }
 
 TEST_CASE("App registers event types during configuration and closes registration when it finalizes", "[app]") {
@@ -468,7 +469,7 @@ TEST_CASE("App's primary simulation advances the diagnostic counter once per tic
     CHECK(timing.simulation.tick >= 5);
     CHECK(app.diagnosticFrame() == timing.simulation.tick);
     CHECK(eventCount(app, "systemTick") == timing.simulation.tick);
-    CHECK_FALSE(timing.render.has_value());
+    CHECK_FALSE(timing.renderingActive);
 }
 
 TEST_CASE("App unwinds only successfully initialized stages", "[app][lifecycle]") {

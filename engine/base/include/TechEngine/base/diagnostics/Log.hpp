@@ -1,6 +1,7 @@
 #pragma once
 
 #include <TechEngine/base/diagnostics/FormatString.hpp>
+#include <TechEngine/base/diagnostics/LogError.hpp>
 
 #include <chrono>
 #include <source_location>
@@ -118,9 +119,9 @@ namespace TechEngine {
 
     bool isEnabled(Level level, LogChannel channel = DEFAULT_CHANNEL);
 
-    bool addLogSink(LogSinkFn sink);
+    std::error_code addLogSink(LogSinkFn sink);
 
-    bool removeLogSink(LogSinkFn sink);
+    std::error_code removeLogSink(LogSinkFn sink);
 
     inline constexpr std::size_t LOG_RING_CAPACITY = 64;
 

@@ -5,8 +5,9 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <filesystem>
+#include <system_error>
 
-using TechEngine::FileResult;
+using TechEngine::FileError;
 using TechEngine::MountTable;
 using TechEngineTests::AssertFired;
 using TechEngineTests::FatalAssertGuard;
@@ -83,11 +84,11 @@ TEST_CASE("unmount removes every entry for an alias", "[files][mounttable]") {
     table.mount("assets", "/overlay", 100);
     table.mount("cache", "/cache", 0);
 
-    REQUIRE(table.unmount("assets"));
+    REQUIRE(table.unmount("assets") == std::error_code{});
     CHECK(table.mountCount() == 1);
     CHECK_FALSE(table.hasAlias("assets"));
     CHECK(table.hasAlias("cache"));
-    CHECK_FALSE(table.unmount("assets"));
+    CHECK(table.unmount("assets") == FileError::NoMount);
 }
 
 TEST_CASE("entries are ordered by descending priority, ties in mount order", "[files][mounttable]") {
@@ -113,7 +114,7 @@ TEST_CASE("resolveExisting finds a file under a mounted alias", "[files][mountta
     table.mount("assets", scratch.root());
 
     std::filesystem::path resolved;
-    REQUIRE(table.resolveExisting("assets://ui/icon.png", resolved) == FileResult::Ok);
+    REQUIRE(table.resolveExisting("assets://ui/icon.png", resolved) == std::error_code{});
     CHECK(resolved == scratch.root() / "ui" / "icon.png");
 }
 
@@ -124,7 +125,7 @@ TEST_CASE("resolveExisting resolves an alias-only path to the mount root", "[fil
     table.mount("assets", scratch.root());
 
     std::filesystem::path resolved;
-    REQUIRE(table.resolveExisting("assets://", resolved) == FileResult::Ok);
+    REQUIRE(table.resolveExisting("assets://", resolved) == std::error_code{});
     CHECK(resolved == scratch.root());
 }
 
@@ -135,9 +136,9 @@ TEST_CASE("resolveExisting separates an unknown alias from a missing file", "[fi
     table.mount("assets", scratch.root());
 
     std::filesystem::path resolved;
-    CHECK(table.resolveExisting("cache://ui/icon.png", resolved) == FileResult::NoMount);
-    CHECK(table.resolveExisting("assets://ui/icon.png", resolved) == FileResult::NotFound);
-    CHECK(table.resolveExisting("ui/icon.png", resolved) == FileResult::InvalidPath);
+    CHECK(table.resolveExisting("cache://ui/icon.png", resolved) == FileError::NoMount);
+    CHECK(table.resolveExisting("assets://ui/icon.png", resolved) == FileError::NotFound);
+    CHECK(table.resolveExisting("ui/icon.png", resolved) == FileError::InvalidPath);
 }
 
 TEST_CASE("resolveExisting prefers the highest-priority mount that has the file", "[files][mounttable]") {
@@ -151,7 +152,7 @@ TEST_CASE("resolveExisting prefers the highest-priority mount that has the file"
     table.mount("assets", overlay.root(), 100);
 
     std::filesystem::path resolved;
-    REQUIRE(table.resolveExisting("assets://ui/icon.png", resolved) == FileResult::Ok);
+    REQUIRE(table.resolveExisting("assets://ui/icon.png", resolved) == std::error_code{});
     CHECK(resolved == overlay.root() / "ui" / "icon.png");
 }
 
@@ -165,7 +166,7 @@ TEST_CASE("resolveExisting falls through to a lower-priority mount", "[files][mo
     table.mount("assets", overlay.root(), 100);
 
     std::filesystem::path resolved;
-    REQUIRE(table.resolveExisting("assets://ui/icon.png", resolved) == FileResult::Ok);
+    REQUIRE(table.resolveExisting("assets://ui/icon.png", resolved) == std::error_code{});
     CHECK(resolved == base.root() / "ui" / "icon.png");
 }
 
@@ -179,9 +180,9 @@ TEST_CASE("resolveExisting is case-sensitive", "[files][mounttable]") {
     table.mount("assets", scratch.root());
 
     std::filesystem::path resolved;
-    CHECK(table.resolveExisting("assets://UI/icon.png", resolved) == FileResult::NotFound);
-    CHECK(table.resolveExisting("assets://ui/Icon.png", resolved) == FileResult::NotFound);
-    CHECK(table.resolveExisting("assets://ui/icon.PNG", resolved) == FileResult::NotFound);
+    CHECK(table.resolveExisting("assets://UI/icon.png", resolved) == FileError::NotFound);
+    CHECK(table.resolveExisting("assets://ui/Icon.png", resolved) == FileError::NotFound);
+    CHECK(table.resolveExisting("assets://ui/icon.PNG", resolved) == FileError::NotFound);
 }
 
 TEST_CASE("resolveForCreate returns a path that does not exist yet", "[files][mounttable]") {
@@ -190,7 +191,7 @@ TEST_CASE("resolveForCreate returns a path that does not exist yet", "[files][mo
     table.mount("assets", scratch.root());
 
     std::filesystem::path out;
-    REQUIRE(table.resolveForCreate("assets://baked/level.bin", out) == FileResult::Ok);
+    REQUIRE(table.resolveForCreate("assets://baked/level.bin", out) == std::error_code{});
     CHECK(out == scratch.root() / "baked" / "level.bin");
     CHECK_FALSE(std::filesystem::exists(out));
 }
@@ -201,7 +202,7 @@ TEST_CASE("resolveForCreate takes the top mount and never falls through", "[file
     table.mount("assets", "/overlay", 100);
 
     std::filesystem::path out;
-    REQUIRE(table.resolveForCreate("assets://level.bin", out) == FileResult::Ok);
+    REQUIRE(table.resolveForCreate("assets://level.bin", out) == std::error_code{});
     CHECK(out == std::filesystem::path{"/overlay"} / "level.bin");
 }
 
@@ -210,7 +211,7 @@ TEST_CASE("resolveForCreate rejects the mount root and an unmounted alias", "[fi
     table.mount("assets", "/base");
 
     std::filesystem::path out;
-    CHECK(table.resolveForCreate("assets://", out) == FileResult::InvalidPath);
-    CHECK(table.resolveForCreate("assets://../escape.bin", out) == FileResult::InvalidPath);
-    CHECK(table.resolveForCreate("cache://level.bin", out) == FileResult::NoMount);
+    CHECK(table.resolveForCreate("assets://", out) == FileError::InvalidPath);
+    CHECK(table.resolveForCreate("assets://../escape.bin", out) == FileError::InvalidPath);
+    CHECK(table.resolveForCreate("cache://level.bin", out) == FileError::NoMount);
 }

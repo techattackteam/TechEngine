@@ -1,11 +1,12 @@
 #pragma once
 
+#include <TechEngine/client/ClientError.hpp>
 #include <TechEngine/core/TimingMetrics.hpp>
 
 #include <functional>
 #include <memory>
-#include <optional>
 #include <string_view>
+#include <system_error>
 
 namespace TechEngine {
     struct RenderSnapshot;
@@ -31,7 +32,7 @@ namespace TechEngine {
         Client& operator=(Client&&) = delete;
 
         // Engine services and input must outlive the active session.
-        bool start(const EngineContext& engine, InputBuffer& input, int width, int height, std::string_view title, std::function<void()> onFailure = {});
+        std::error_code start(const EngineContext& engine, InputBuffer& input, int width, int height, std::string_view title, std::function<void()> onFailure = {});
 
         void waitEvents();
 
@@ -41,7 +42,7 @@ namespace TechEngine {
 
         void publish(const RenderSnapshot& snapshot) const;
 
-        std::optional<RenderTiming> renderTiming() const;
+        bool renderTiming(RenderTiming& out) const;
 
         void setTitle(std::string_view title) const;
 

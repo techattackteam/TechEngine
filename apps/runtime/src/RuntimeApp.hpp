@@ -3,7 +3,6 @@
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/client/Client.hpp>
 
-#include <optional>
 #include <string>
 
 namespace TechEngine {
@@ -30,7 +29,7 @@ namespace TechEngine {
 
         void wakeMainThread() override;
 
-        std::optional<RenderTiming> renderTiming() const override;
+        bool renderTiming(RenderTiming& out) const override;
 
         void shutdown() override;
 

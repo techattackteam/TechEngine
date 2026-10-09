@@ -48,27 +48,30 @@ namespace TechEngine {
         close();
     }
 
-    bool Window::initialize() {
+    std::error_code Window::initialize() {
         const GLFWallocator allocator{.allocate = allocateGlfwMemory, .reallocate = reallocateGlfwMemory, .deallocate = deallocateGlfwMemory, .user = nullptr};
         glfwSetErrorCallback(logGlfwError);
         glfwInitAllocator(&allocator);
         if (!glfwInit()) {
-            return false;
+            return WindowError::PlatformInitFailed;
         }
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        return true;
+        return {};
     }
 
-    bool Window::open(int width, int height, std::string_view const title) {
-        if (m_window != nullptr || width <= 0 || height <= 0) {
-            return false;
+    std::error_code Window::open(int width, int height, std::string_view const title) {
+        if (m_window != nullptr) {
+            return WindowError::AlreadyOpen;
+        }
+        if (width <= 0 || height <= 0) {
+            return WindowError::InvalidSize;
         }
         const std::string windowTitle{title};
         m_window = glfwCreateWindow(width, height, windowTitle.c_str(), nullptr, nullptr);
         if (m_window == nullptr) {
-            return false;
+            return WindowError::CreationFailed;
         }
         int framebufferWidth = 0;
         int framebufferHeight = 0;
@@ -110,7 +113,7 @@ namespace TechEngine {
             owner.m_cursorKnown = false;
             owner.publishInput(InputEvent{.kind = InputKind::Focus, .pressed = focused != 0});
         });
-        return true;
+        return {};
     }
 
     void Window::terminate() {

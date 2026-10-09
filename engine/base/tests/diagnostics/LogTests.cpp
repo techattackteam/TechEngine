@@ -271,14 +271,14 @@ TEST_CASE("sinks are added, not swapped", "[base][log][sink]") {
     const SinkGuard guard;
     g_secondary.clear();
 
-    REQUIRE(TechEngine::addLogSink(&secondarySink));
+    REQUIRE(TechEngine::addLogSink(&secondarySink) == std::error_code{});
 
     TE_LOGGER_WARN("both");
 
     REQUIRE(g_captured.size() == 1);
     REQUIRE(g_secondary.size() == 1);
 
-    REQUIRE(TechEngine::removeLogSink(&secondarySink));
+    REQUIRE(TechEngine::removeLogSink(&secondarySink) == std::error_code{});
 
     TE_LOGGER_WARN("only the survivor");
 

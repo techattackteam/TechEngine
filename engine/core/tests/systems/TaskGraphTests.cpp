@@ -165,7 +165,7 @@ static void registerGraphComponents(TechEngine::ComponentRegistry& registry, std
 }
 
 template<typename T>
-static std::optional<std::size_t> findSystemLevel(const TechEngine::TaskGraph& graph) {
+static std::size_t findSystemLevel(const TechEngine::TaskGraph& graph) {
     for (std::size_t levelIndex = 0; levelIndex < graph.getLevels().size(); levelIndex++) {
         for (const TechEngine::TaskGraphNode& node: graph.getLevels()[levelIndex]) {
             if (node.systemType == std::type_index(typeid(T))) {
@@ -173,7 +173,8 @@ static std::optional<std::size_t> findSystemLevel(const TechEngine::TaskGraph& g
             }
         }
     }
-    return std::nullopt;
+    FAIL("The system is in no level of the graph");
+    return graph.getLevels().size();
 }
 
 template<typename T>

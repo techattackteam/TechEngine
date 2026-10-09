@@ -8,6 +8,7 @@
 #include <chrono>
 #include <filesystem>
 #include <string_view>
+#include <system_error>
 #include <thread>
 
 using TechEngineTests::ScratchDirectory;
@@ -89,7 +90,7 @@ TEST_CASE("assets/client shadows assets/common", "[editor]") {
     editor.bootstrap();
 
     std::filesystem::path resolved;
-    REQUIRE(editor.files().resolve("assets://shared.txt", resolved) == TechEngine::FileResult::Ok);
+    REQUIRE(editor.files().resolve("assets://shared.txt", resolved) == std::error_code{});
     CHECK(resolved == client);
 }
 
@@ -157,10 +158,10 @@ TEST_CASE("editor simulation and render progress during a main stall then consum
             std::this_thread::sleep_for(std::chrono::milliseconds{1});
         }
         const auto before = editor.timingMetrics();
-        if (editor.mainEntered.load() && before.render) {
+        if (editor.mainEntered.load() && before.renderingActive) {
             while (std::chrono::steady_clock::now() < deadline) {
                 const auto after = editor.timingMetrics();
-                if (after.render && after.simulation.tick >= before.simulation.tick + 3 && after.render->frame >= before.render->frame + 3) {
+                if (after.renderingActive && after.simulation.tick >= before.simulation.tick + 3 && after.render.frame >= before.render.frame + 3) {
                     progressed = true;
                     break;
                 }
@@ -178,5 +179,5 @@ TEST_CASE("editor simulation and render progress during a main stall then consum
     CHECK(progressed.load());
     CHECK(editor.inputConsumed.load());
     CHECK_FALSE(editor.mainTimedOut.load());
-    CHECK_FALSE(editor.timingMetrics().render);
+    CHECK_FALSE(editor.timingMetrics().renderingActive);
 }

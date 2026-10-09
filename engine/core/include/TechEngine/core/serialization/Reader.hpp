@@ -2,28 +2,23 @@
 
 #include <TechEngine/base/stringid/StringId.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
+#include <TechEngine/core/serialization/ReadError.hpp>
 #include <TechEngine/core/serialization/Visit.hpp>
 
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string>
+#include <system_error>
 #include <type_traits>
 #include <vector>
 
 namespace TechEngine {
-    enum class ReadStatus : std::uint8_t {
-        Ok,
-        Truncated,
-        BadMagic,
-        BadVersion,
-    };
-
     class Reader {
     private:
         std::span<const std::byte> m_buffer;
         std::size_t m_position = 0;
-        ReadStatus m_status = ReadStatus::Ok;
+        std::error_code m_error;
 
     public:
         explicit Reader(std::span<const std::byte> buffer);
@@ -73,7 +68,7 @@ namespace TechEngine {
             }
 
             if (!hasRemaining(static_cast<std::size_t>(count) * sizeof(T))) {
-                fail(ReadStatus::Truncated);
+                fail(ReadError::Truncated);
                 return;
             }
 
@@ -98,7 +93,7 @@ namespace TechEngine {
 
         bool ok() const;
 
-        ReadStatus status() const;
+        std::error_code error() const;
 
         std::size_t remaining() const;
 
@@ -107,6 +102,6 @@ namespace TechEngine {
 
         bool hasRemaining(std::size_t byteCount) const;
 
-        void fail(ReadStatus status);
+        void fail(ReadError reason);
     };
 }

@@ -13,7 +13,7 @@
 
 using TechEngine::BlobHeader;
 using TechEngine::Reader;
-using TechEngine::ReadStatus;
+using TechEngine::ReadError;
 using TechEngine::StringId;
 using TechEngine::Writer;
 
@@ -152,7 +152,7 @@ TEST_CASE("a truncated buffer fails soft", "[core][serialization]") {
     reader.read(value);
 
     CHECK_FALSE(reader.ok());
-    CHECK(reader.status() == ReadStatus::Truncated);
+    CHECK(reader.error() == ReadError::Truncated);
 }
 
 TEST_CASE("a corrupted length prefix fails soft instead of over-reading", "[core][serialization]") {
@@ -168,7 +168,7 @@ TEST_CASE("a corrupted length prefix fails soft instead of over-reading", "[core
     reader.read(text);
 
     CHECK_FALSE(reader.ok());
-    CHECK(reader.status() == ReadStatus::Truncated);
+    CHECK(reader.error() == ReadError::Truncated);
 }
 
 TEST_CASE("the first failure is the one reported", "[core][serialization]") {
@@ -177,12 +177,12 @@ TEST_CASE("the first failure is the one reported", "[core][serialization]") {
 
     BlobHeader header;
     reader.readHeader(header);
-    REQUIRE(reader.status() == ReadStatus::Truncated);
+    REQUIRE(reader.error() == ReadError::Truncated);
 
     std::uint32_t value = 0;
     reader.read(value);
 
-    CHECK(reader.status() == ReadStatus::Truncated);
+    CHECK(reader.error() == ReadError::Truncated);
 }
 
 TEST_CASE("a wrong magic is rejected", "[core][serialization]") {
@@ -197,7 +197,7 @@ TEST_CASE("a wrong magic is rejected", "[core][serialization]") {
     reader.readHeader(header);
 
     CHECK_FALSE(reader.ok());
-    CHECK(reader.status() == ReadStatus::BadMagic);
+    CHECK(reader.error() == ReadError::BadMagic);
 }
 
 TEST_CASE("a wrong format version is rejected", "[core][serialization]") {
@@ -213,5 +213,5 @@ TEST_CASE("a wrong format version is rejected", "[core][serialization]") {
     reader.readHeader(header);
 
     CHECK_FALSE(reader.ok());
-    CHECK(reader.status() == ReadStatus::BadVersion);
+    CHECK(reader.error() == ReadError::BadVersion);
 }

@@ -50,11 +50,14 @@ namespace TechEngine {
         m_entries.push_back(std::move(entry));
     }
 
-    bool MountTable::unmount(const std::string& alias) {
+    std::error_code MountTable::unmount(const std::string& alias) {
         const std::size_t removed = std::erase_if(m_entries, [&alias](const MountEntry& entry) {
             return entry.alias == alias;
         });
-        return removed > 0;
+        if (removed == 0) {
+            return FileError::NoMount;
+        }
+        return {};
     }
 
     bool MountTable::hasAlias(std::string_view alias) const {
@@ -71,10 +74,11 @@ namespace TechEngine {
         return m_entries;
     }
 
-    FileResult MountTable::resolveExisting(std::string_view virtualPath, std::filesystem::path& out) const {
+    std::error_code MountTable::resolveExisting(std::string_view virtualPath, std::filesystem::path& out) const {
         VirtualPathParts parts;
-        if (!splitVirtualPath(virtualPath, parts)) {
-            return FileResult::InvalidPath;
+        const std::error_code splitError = splitVirtualPath(virtualPath, parts);
+        if (splitError) {
+            return splitError;
         }
 
         bool aliasMounted = false;
@@ -95,20 +99,21 @@ namespace TechEngine {
             }
 
             out = candidate;
-            return FileResult::Ok;
+            return {};
         }
 
-        return aliasMounted ? FileResult::NotFound : FileResult::NoMount;
+        return aliasMounted ? FileError::NotFound : FileError::NoMount;
     }
 
-    FileResult MountTable::resolveForCreate(std::string_view virtualPath, std::filesystem::path& out) const {
+    std::error_code MountTable::resolveForCreate(std::string_view virtualPath, std::filesystem::path& out) const {
         VirtualPathParts parts;
-        if (!splitVirtualPath(virtualPath, parts)) {
-            return FileResult::InvalidPath;
+        const std::error_code splitError = splitVirtualPath(virtualPath, parts);
+        if (splitError) {
+            return splitError;
         }
 
         if (parts.relative.empty()) {
-            return FileResult::InvalidPath;
+            return FileError::InvalidPath;
         }
 
         for (const MountEntry& entry: m_entries) {
@@ -117,9 +122,9 @@ namespace TechEngine {
             }
 
             out = entry.physicalRoot / parts.relative;
-            return FileResult::Ok;
+            return {};
         }
 
-        return FileResult::NoMount;
+        return FileError::NoMount;
     }
 }

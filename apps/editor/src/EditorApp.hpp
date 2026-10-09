@@ -30,7 +30,7 @@ namespace TechEngine {
 
         void wakeMainThread() override;
 
-        std::optional<RenderTiming> renderTiming() const override;
+        bool renderTiming(RenderTiming& out) const override;
 
         void shutdown() override;
 

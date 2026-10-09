@@ -15,6 +15,7 @@ techengine_module(core
           src/scene/Scene.cpp
           src/scene/SceneCommandBuffer.cpp
           src/scene/Transform.cpp
+          src/serialization/ReadError.cpp
           src/serialization/Reader.cpp
           src/serialization/Writer.cpp
           src/systems/Schedule.cpp
@@ -45,6 +46,7 @@ techengine_module(core
           include/TechEngine/core/scene/components/Hierarchy.hpp
           include/TechEngine/core/scene/components/Transform.hpp
           include/TechEngine/core/serialization/BlobHeader.hpp
+          include/TechEngine/core/serialization/ReadError.hpp
           include/TechEngine/core/serialization/Reader.hpp
           include/TechEngine/core/serialization/Visit.hpp
           include/TechEngine/core/serialization/Writer.hpp
@@ -84,6 +86,7 @@ if(TE_BUILD_TESTS)
           tests/scene/QueryTests.cpp
           tests/scene/SceneEventTests.cpp
           tests/scene/TransformTests.cpp
+          tests/serialization/ReadErrorTests.cpp
           tests/serialization/VisitTests.cpp
           tests/serialization/WriterReaderTests.cpp
           tests/systems/InputDeliveryTests.cpp

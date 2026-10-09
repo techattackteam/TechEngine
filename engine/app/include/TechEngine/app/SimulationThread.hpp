@@ -1,5 +1,6 @@
 #pragma once
 
+#include <TechEngine/app/SimulationError.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/base/time/Clock.hpp>
 #include <TechEngine/base/time/RateCounter.hpp>
@@ -13,6 +14,7 @@
 #include <condition_variable>
 #include <cstdint>
 #include <mutex>
+#include <system_error>
 
 namespace TechEngine {
     class App;
@@ -64,7 +66,7 @@ namespace TechEngine {
 
         SimulationThread& operator=(SimulationThread&&) = delete;
 
-        bool start(JobSystem& jobs, App& app, bool presentationActive);
+        std::error_code start(JobSystem& jobs, App& app, bool presentationActive);
 
         void requestStop();
 
