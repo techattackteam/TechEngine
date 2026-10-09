@@ -9,7 +9,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <span>
 #include <vector>
 
@@ -18,7 +17,6 @@ namespace TechEngine {
     private:
         static constexpr std::size_t TARGET_ENTITY_COUNT = 100;
         std::size_t m_entityCount = 0;
-        std::optional<Query<Write<>, Read<Transform>>> m_query;
         std::vector<std::size_t> m_landedBatches;
         std::vector<std::size_t> m_pulseBatches;
         std::uint32_t m_nextPulse = 0;
