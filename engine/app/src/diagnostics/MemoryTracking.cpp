@@ -29,12 +29,14 @@ namespace TechEngine {
 
 #if defined(TE_PROFILE_ENABLED) && !defined(TE_SANITIZER_OWNS_ALLOCATOR)
 
+static constexpr char OPERATOR_NEW_MEMORY_POOL[] = "operator new";
+
 template<typename Allocate>
 static void* techEngineRetryAllocation(std::size_t size, Allocate allocate) {
     while (true) {
         void* pointer = allocate();
         if (pointer != nullptr) {
-            TE_PROFILER_ALLOC(pointer, size);
+            TE_PROFILER_ALLOC(pointer, size, OPERATOR_NEW_MEMORY_POOL);
             return pointer;
         }
         // A replacement that skips the handler turns a recoverable OOM into a hard failure
@@ -83,7 +85,7 @@ static void techEngineDeallocate(void* pointer) noexcept {
     if (pointer == nullptr) {
         return;
     }
-    TE_PROFILER_FREE(pointer);
+    TE_PROFILER_FREE(pointer, OPERATOR_NEW_MEMORY_POOL);
     std::free(pointer);
 }
 
@@ -91,7 +93,7 @@ static void techEngineDeallocateAligned(void* pointer) noexcept {
     if (pointer == nullptr) {
         return;
     }
-    TE_PROFILER_FREE(pointer);
+    TE_PROFILER_FREE(pointer, OPERATOR_NEW_MEMORY_POOL);
 #if defined(_MSC_VER)
     _aligned_free(pointer);
 #else
