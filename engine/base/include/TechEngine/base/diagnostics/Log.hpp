@@ -112,8 +112,6 @@ namespace TechEngine {
 
     void setModuleLevel(LogModule moduleTag, Level level);
 
-    Level moduleLevel(LogModule moduleTag);
-
     void setChannelLevel(LogChannel channel, Level level);
 
     Level channelLevel(LogChannel channel);

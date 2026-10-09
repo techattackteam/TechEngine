@@ -274,10 +274,6 @@ namespace TechEngine {
         moduleEntry(moduleTag).level.store(level, std::memory_order_relaxed);
     }
 
-    Level moduleLevel(LogModule moduleTag) {
-        return moduleEntry(moduleTag).level.load(std::memory_order_relaxed);
-    }
-
     void setChannelLevel(LogChannel channel, Level level) {
         channelEntry(channel).level.store(level, std::memory_order_relaxed);
     }
@@ -354,36 +350,9 @@ namespace TechEngine {
 
             std::array<char, MESSAGE_CAPACITY> storage;
             FormatBuffer buffer{storage.data(), storage.size(), 0, false};
+            buffer.writeFormatted(formatString, args);
 
-            try {
-                std::vformat_to(FormatBufferIterator{buffer}, formatString, args);
-            } catch (const std::exception& e) {
-                buffer.size = 0;
-                buffer.truncated = false;
-                for (const char c: std::string_view{"<format error: "}) {
-                    buffer.push(c);
-                }
-                for (const char c: std::string_view{e.what()}) {
-                    buffer.push(c);
-                }
-                buffer.push('>');
-            }
-
-            buffer.markTruncated();
-
-            const LogRecord record{
-                .time = std::chrono::system_clock::now(),
-                .tick = g_tick.load(std::memory_order_relaxed),
-                .level = level,
-                .moduleTag = logChannelModule(channel),
-                .channel = channel,
-                .message = std::string_view{buffer.data, buffer.size},
-                .file = baseName(location.file_name()),
-                .function = shortFunctionName(location.function_name()),
-                .line = static_cast<std::uint32_t>(location.line()), // line() is uint_least32_t
-            };
-
-            deliverRecord(record);
+            logRaw(level, channel, baseName(location.file_name()), shortFunctionName(location.function_name()), static_cast<std::uint32_t>(location.line()), std::string_view{buffer.data, buffer.size});
         }
 
         std::size_t flattenRecord(const LogRecord& record, char* out, std::size_t capacity) {
