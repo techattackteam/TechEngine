@@ -37,6 +37,18 @@ TEST_CASE("Window opens and closes on main without claiming the context", "[plat
     CHECK(glfwGetCurrentContext() == nullptr);
 }
 
+TEST_CASE("GLFW grows and frees its blocks through the allocator Window installs", "[platform][window]") {
+    const PlatformWindowTestScope scope;
+    REQUIRE(TechEngine::Window::initialize());
+    // glfwInit allocates the built-in gamepad mapping table, so every mapping that parses and
+    // has an unseen GUID grows that table through the reallocate callback. A mapping that fails
+    // to parse raises an error and never reaches it, which is what the error check rules out.
+    glfwGetError(nullptr);
+    CHECK(glfwUpdateGamepadMappings("74656368656e67696e65000000000001,TechEngine test pad,a:b0,") == GLFW_TRUE);
+    CHECK(glfwUpdateGamepadMappings("74656368656e67696e65000000000002,TechEngine test pad,a:b0,b:b1,") == GLFW_TRUE);
+    CHECK(glfwGetError(nullptr) == GLFW_NO_ERROR);
+}
+
 TEST_CASE("Window releases a context on its owning worker", "[platform][window]") {
     const PlatformWindowTestScope scope;
     REQUIRE(TechEngine::Window::initialize());
