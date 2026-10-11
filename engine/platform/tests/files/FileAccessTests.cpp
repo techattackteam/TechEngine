@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <limits>
 #include <string>
 #include <string_view>
@@ -285,6 +286,25 @@ TEST_CASE("readRange separates its miss kinds and leaves the output untouched", 
     CHECK(env.files.readRange("a.bin", 0, 1, out) == FileError::InvalidPath);
     CHECK(env.files.readRange("assets://../a.bin", 0, 1, out) == FileError::InvalidPath);
     CHECK(env.files.readRange("assets://ui", 0, 0, out) == FileError::IsADirectory);
+    CHECK(out == UNTOUCHED_SENTINEL);
+}
+
+TEST_CASE("readRange reports a file it cannot open as IoError and leaves the output untouched", "[files][fileaccess][readrange]") {
+    MountedScratch env{"rangeUnreadable"};
+    const std::filesystem::path lockedPath = env.scratch.writeFile("locked.bin", "0123456789");
+    std::filesystem::permissions(lockedPath, std::filesystem::perms::none);
+
+    // Windows maps perms::none to the read-only attribute, and root ignores permissions.
+    if (std::ifstream{lockedPath}.is_open()) {
+        std::filesystem::permissions(lockedPath, std::filesystem::perms::owner_all);
+        SKIP("this platform or user can still open a file with no permissions");
+    }
+
+    std::vector<std::byte> out = UNTOUCHED_SENTINEL;
+    const std::error_code result = env.files.readRange("assets://locked.bin", 0, 4, out);
+    std::filesystem::permissions(lockedPath, std::filesystem::perms::owner_all);
+
+    CHECK(result == FileError::IoError);
     CHECK(out == UNTOUCHED_SENTINEL);
 }
 
