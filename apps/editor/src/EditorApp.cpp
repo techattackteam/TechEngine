@@ -18,7 +18,7 @@ namespace TechEngine {
 
     void EditorApp::init() {
         m_mounts.mount("project", m_projectRoot);
-        m_mounts.mount("engine", executablePath().parent_path() / "assets");
+        m_mounts.mount("engine", executablePath().parent_path() / "engine");
         const std::error_code loadError = m_project.load(m_files, "project://project.toml");
         TE_CHECK(!loadError, "Failed to load project.toml under {0}: {1}", m_projectRoot.string(), loadError.message());
         const auto& root = m_project.root();

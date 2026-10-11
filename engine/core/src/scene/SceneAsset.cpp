@@ -17,7 +17,6 @@
 #include <memory>
 #include <span>
 #include <system_error>
-#include <unordered_map>
 #include <vector>
 
 namespace TechEngine {
@@ -99,9 +98,8 @@ namespace TechEngine {
         }
 
         const ComponentRegistry& registry = *scene.m_registry;
-        std::unordered_map<std::uint32_t, SceneAssetEntity> entitiesById;
+        std::vector<SceneAssetEntity> entities;
         std::vector<std::unique_ptr<IComponentStorage>> scratchValues(registry.typeCount());
-        std::vector<bool> blockSeen(registry.typeCount());
         std::vector<std::byte> payload;
 
         for (std::uint32_t row = 0; row < entityCount; row++) {
@@ -114,25 +112,21 @@ namespace TechEngine {
             if (!reader.ok()) {
                 return fail(reader.error());
             }
-            if (authoringId == NO_PARENT || entitiesById.contains(authoringId)) {
+            if (authoringId != row || (parentId != NO_PARENT && parentId >= row)) {
                 return fail(ReadError::Malformed);
             }
 
             const Entity entity = scene.createEntity();
-            entitiesById.emplace(authoringId, SceneAssetEntity{entity});
+            entities.push_back(SceneAssetEntity{entity});
             if (parentId != NO_PARENT) {
-                const auto parent = entitiesById.find(parentId);
-                if (parent == entitiesById.end()) {
-                    return fail(ReadError::Malformed);
-                }
-                const bool linked = scene.setParent(entity, parent->second.entity, parent->second.childCount);
+                SceneAssetEntity& parent = entities[parentId];
+                const bool linked = scene.setParent(entity, parent.entity, parent.childCount);
                 if (!linked) {
                     return fail(ReadError::Malformed);
                 }
-                parent->second.childCount++;
+                parent.childCount++;
             }
 
-            blockSeen.assign(blockSeen.size(), false);
             for (std::uint32_t block = 0; block < blockCount; block++) {
                 StringId tag;
                 std::uint32_t length = 0;
@@ -152,11 +146,6 @@ namespace TechEngine {
                     TE_LOGGER_WARN("Scene asset {0:#018x}: skipped a block with the unregistered tag {1}", idValue, tag);
                     continue;
                 }
-                if (blockSeen[record->denseId.value()]) {
-                    return fail(ReadError::Malformed);
-                }
-                blockSeen[record->denseId.value()] = true;
-
                 std::unique_ptr<IComponentStorage>& scratch = scratchValues[record->denseId.value()];
                 if (scratch == nullptr) {
                     scratch = record->createStorage();

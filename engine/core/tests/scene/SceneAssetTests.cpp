@@ -314,12 +314,8 @@ TEST_CASE("a scene asset with a broken entity table is Malformed and leaves the 
         bytes = writeRows({{0, 0}});
     }
 
-    SECTION("a duplicate authoring id") {
-        bytes = writeRows({{0, SCENE_ASSET_NO_PARENT}, {0, SCENE_ASSET_NO_PARENT}});
-    }
-
-    SECTION("the reserved id as an authoring id") {
-        bytes = writeRows({{SCENE_ASSET_NO_PARENT, SCENE_ASSET_NO_PARENT}});
+    SECTION("an authoring id that is not its row") {
+        bytes = writeRows({{0, SCENE_ASSET_NO_PARENT}, {2, 0}});
     }
 
     SECTION("bytes after the last entity") {
@@ -330,23 +326,4 @@ TEST_CASE("a scene asset with a broken entity table is Malformed and leaves the 
     REQUIRE(readSceneAsset(bytes, loaded, id) == ReadError::Malformed);
     REQUIRE(loaded.getRoots().empty());
     REQUIRE(id == ResourceId{});
-}
-
-TEST_CASE("a hand-written entity table with sparse authoring ids loads", "[core][scene]") {
-    ComponentRegistry registry;
-    TechEngineTests::registerBuiltInSceneComponents(registry);
-    Scene loaded(registry);
-    ResourceId id;
-
-    const std::vector<std::byte> bytes = writeRows({{40, SCENE_ASSET_NO_PARENT}, {7, 40}, {900, 40}, {3, 7}});
-    const std::error_code readError = readSceneAsset(bytes, loaded, id);
-
-    REQUIRE(!readError);
-    REQUIRE(id == SCENE_ASSET_ID);
-    const std::vector<Entity> roots = loaded.getRoots();
-    REQUIRE(roots.size() == 1);
-    const std::vector<Entity> children = loaded.getChildren(roots[0]);
-    REQUIRE(children.size() == 2);
-    REQUIRE(loaded.getChildren(children[0]).size() == 1);
-    REQUIRE(loaded.getChildren(children[1]).empty());
 }
