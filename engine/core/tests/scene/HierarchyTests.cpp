@@ -7,6 +7,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <concepts>
+#include <cstddef>
 #include <vector>
 
 template<typename Component>
@@ -248,4 +249,99 @@ TEST_CASE("deep subtree destruction does not depend on recursion depth", "[core]
     for (const TechEngine::Entity entity: chain) {
         REQUIRE_FALSE(scene.contains(entity));
     }
+}
+
+TEST_CASE("appending a child lands last after every change to the previous last child", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity root = scene.createEntity();
+    const TechEngine::Entity first = scene.createEntity();
+    const TechEngine::Entity second = scene.createEntity();
+    const TechEngine::Entity third = scene.createEntity();
+    const TechEngine::Entity appended = scene.createEntity();
+    REQUIRE(scene.setParent(first, root, 0));
+    REQUIRE(scene.setParent(second, root, 1));
+    REQUIRE(scene.setParent(third, root, 2));
+
+    SECTION("the last child is unparented") {
+        REQUIRE(scene.unparent(third));
+        REQUIRE(scene.setParent(appended, root, 2));
+
+        const std::vector<TechEngine::Entity> expected{first, second, appended};
+        REQUIRE(scene.getChildren(root) == expected);
+    }
+
+    SECTION("the last child is destroyed") {
+        REQUIRE(scene.destroyEntity(third));
+        REQUIRE(scene.setParent(appended, root, 2));
+
+        const std::vector<TechEngine::Entity> expected{first, second, appended};
+        REQUIRE(scene.getChildren(root) == expected);
+    }
+
+    SECTION("the last child moves to another parent") {
+        const TechEngine::Entity other = scene.createEntity();
+        REQUIRE(scene.setParent(third, other, 0));
+        REQUIRE(scene.setParent(appended, root, 2));
+        const TechEngine::Entity otherAppended = scene.createEntity();
+        REQUIRE(scene.setParent(otherAppended, other, 1));
+
+        const std::vector<TechEngine::Entity> expectedRoot{first, second, appended};
+        const std::vector<TechEngine::Entity> expectedOther{third, otherAppended};
+        REQUIRE(scene.getChildren(root) == expectedRoot);
+        REQUIRE(scene.getChildren(other) == expectedOther);
+    }
+
+    SECTION("the last child is reordered to the front") {
+        REQUIRE(scene.reorderChild(third, 0));
+        REQUIRE(scene.setParent(appended, root, 3));
+
+        const std::vector<TechEngine::Entity> expected{third, first, second, appended};
+        REQUIRE(scene.getChildren(root) == expected);
+    }
+
+    SECTION("a middle child is reordered to the end") {
+        REQUIRE(scene.reorderChild(first, 2));
+        REQUIRE(scene.setParent(appended, root, 3));
+
+        const std::vector<TechEngine::Entity> expected{second, third, first, appended};
+        REQUIRE(scene.getChildren(root) == expected);
+    }
+
+    SECTION("the last child is reordered onto its own position") {
+        REQUIRE(scene.reorderChild(third, 2));
+        REQUIRE(scene.setParent(appended, root, 3));
+
+        const std::vector<TechEngine::Entity> expected{first, second, third, appended};
+        REQUIRE(scene.getChildren(root) == expected);
+    }
+
+    SECTION("every child is removed") {
+        REQUIRE(scene.unparent(third));
+        REQUIRE(scene.unparent(first));
+        REQUIRE(scene.unparent(second));
+        REQUIRE(scene.setParent(appended, root, 0));
+
+        const std::vector<TechEngine::Entity> expected{appended};
+        REQUIRE(scene.getChildren(root) == expected);
+    }
+
+    REQUIRE(scene.getParent(appended) == root);
+}
+
+TEST_CASE("a wide parent keeps the order its children were appended in", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity root = scene.createEntity();
+
+    std::vector<TechEngine::Entity> expected;
+    for (std::size_t i = 0; i < 4096; i++) {
+        const TechEngine::Entity child = scene.createEntity();
+        REQUIRE(scene.setParent(child, root, i));
+        expected.push_back(child);
+    }
+
+    REQUIRE(scene.getChildren(root) == expected);
 }

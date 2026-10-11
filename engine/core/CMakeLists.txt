@@ -13,6 +13,7 @@ techengine_module(core
           src/scene/ComponentRegistry.cpp
           src/scene/EntitySlots.cpp
           src/scene/Scene.cpp
+          src/scene/SceneAsset.cpp
           src/scene/SceneCommandBuffer.cpp
           src/scene/Transform.cpp
           src/serialization/ReadError.cpp
@@ -35,6 +36,7 @@ techengine_module(core
           include/TechEngine/core/jobs/DedicatedThreadContext.hpp
           include/TechEngine/core/jobs/JobSystem.hpp
           include/TechEngine/core/jobs/ThreadRegistration.hpp
+          include/TechEngine/core/resources/ResourceId.hpp
           include/TechEngine/core/scene/Access.hpp
           include/TechEngine/core/scene/ComponentRegistry.hpp
           include/TechEngine/core/scene/ComponentStorage.hpp
@@ -42,6 +44,7 @@ techengine_module(core
           include/TechEngine/core/scene/Entity.hpp
           include/TechEngine/core/scene/Query.hpp
           include/TechEngine/core/scene/Scene.hpp
+          include/TechEngine/core/scene/SceneAsset.hpp
           include/TechEngine/core/scene/SceneCommandBuffer.hpp
           include/TechEngine/core/scene/components/Hierarchy.hpp
           include/TechEngine/core/scene/components/Transform.hpp
@@ -84,6 +87,7 @@ if(TE_BUILD_TESTS)
           tests/scene/EntitySlotsTests.cpp
           tests/scene/HierarchyTests.cpp
           tests/scene/QueryTests.cpp
+          tests/scene/SceneAssetTests.cpp
           tests/scene/SceneEventTests.cpp
           tests/scene/TransformTests.cpp
           tests/serialization/ReadErrorTests.cpp

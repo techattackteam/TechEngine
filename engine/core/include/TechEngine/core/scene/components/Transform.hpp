@@ -41,6 +41,24 @@ namespace TechEngine {
     public:
         static constexpr std::string_view tag = "TechEngine::Transform";
 
+        template<typename Archive>
+        friend void visit(Archive& archive, Transform& value) {
+            static_assert(sizeof(TransformValues) == 40, "TransformValues changed shape; check that visit still covers every field.");
+
+            TransformValues& local = value.m_local;
+            archive.field(local.position.x);
+            archive.field(local.position.y);
+            archive.field(local.position.z);
+            // Named fields keep the bytes independent of GLM's quaternion memory order.
+            archive.field(local.rotation.w);
+            archive.field(local.rotation.x);
+            archive.field(local.rotation.y);
+            archive.field(local.rotation.z);
+            archive.field(local.scale.x);
+            archive.field(local.scale.y);
+            archive.field(local.scale.z);
+        }
+
         Transform() = default;
         Transform(const Transform&) = default;
         Transform(Transform&&) noexcept = default;

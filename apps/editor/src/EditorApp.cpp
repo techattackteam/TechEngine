@@ -22,7 +22,6 @@ namespace TechEngine {
         const std::error_code loadError = m_project.load(m_files, "project://project.toml");
         TE_CHECK(!loadError, "Failed to load project.toml under {0}: {1}", m_projectRoot.string(), loadError.message());
         const auto& root = m_project.root();
-        m_mounts.mount("shaders", root / "shaders");
         m_mounts.mount("assets", root / "assets" / "common", 0);
         m_mounts.mount("assets", root / "assets" / "client", 100);
         TE_LOGGER_INFO("Opened project '{0}' at {1}", m_project.name(), root.string());

@@ -12,6 +12,7 @@ namespace TechEngine {
 
         Entity m_parent;
         Entity m_firstChild;
+        Entity m_lastChild;
         Entity m_nextSibling;
         Entity m_previousSibling;
         std::size_t m_childrenCount = 0;

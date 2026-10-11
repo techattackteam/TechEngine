@@ -18,6 +18,8 @@ namespace TechEngine {
                         return "blob magic does not match";
                     case ReadError::BadVersion:
                         return "blob format version is not supported";
+                    case ReadError::Malformed:
+                        return "blob structure is invalid";
                 }
                 return "unknown read error";
             }
