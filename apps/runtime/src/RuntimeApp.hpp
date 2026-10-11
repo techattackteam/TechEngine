@@ -21,8 +21,6 @@ namespace TechEngine {
     protected:
         void init() override;
 
-        void configureSimulation() override;
-
         void publishSnapshot(const SimulationContext& simulation) override;
 
         void mainThreadUpdate() override;
