@@ -2,17 +2,6 @@
 #include <TechEngine/client/render/RenderSnapshot.hpp>
 
 #include <RuntimeApp.hpp>
-#include <demo/CollisionSystem.hpp>
-#include <demo/EntityDespawned.hpp>
-#include <demo/EntitySpawnSystem.hpp>
-#include <demo/EntitySpawned.hpp>
-#include <demo/GravitySystem.hpp>
-#include <demo/InputLogSystem.hpp>
-#include <demo/Landed.hpp>
-#include <demo/MovementSystem.hpp>
-#include <demo/Pulse.hpp>
-#include <demo/RigidBody.hpp>
-#include <demo/Velocity.hpp>
 
 #include <cstdint>
 #include <stdexcept>
@@ -31,20 +20,6 @@ namespace TechEngine {
         if (startError) {
             throw std::runtime_error{"Failed to start the client session: " + startError.message()};
         }
-    }
-
-    void RuntimeApp::configureSimulation() {
-        m_registry.registerComponent<Velocity>(Velocity::tag);
-        m_registry.registerComponent<RigidBody>(RigidBody::tag);
-        m_eventRegistry.registerEvent<Landed>();
-        m_eventRegistry.registerEvent<EntitySpawned>();
-        m_eventRegistry.registerEvent<EntityDespawned>();
-        m_eventRegistry.registerEvent<Pulse>();
-        m_schedule.add<MovementSystem>();
-        m_schedule.add<GravitySystem>();
-        m_schedule.add<CollisionSystem>();
-        m_schedule.add<EntitySpawnSystem>();
-        m_schedule.add<InputLogSystem>();
     }
 
     void RuntimeApp::publishSnapshot(const SimulationContext& simulation) {
