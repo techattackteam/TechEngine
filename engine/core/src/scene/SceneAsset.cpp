@@ -121,9 +121,7 @@ namespace TechEngine {
             if (parentId != NO_PARENT) {
                 SceneAssetEntity& parent = entities[parentId];
                 const bool linked = scene.setParent(entity, parent.entity, parent.childCount);
-                if (!linked) {
-                    return fail(ReadError::Malformed);
-                }
+                TE_CHECK(linked, "Validated parent link was rejected while reading a scene asset");
                 parent.childCount++;
             }
 
