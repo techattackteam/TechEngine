@@ -25,6 +25,7 @@ using TechEngine::Entity;
 using TechEngine::ReadError;
 using TechEngine::ResourceId;
 using TechEngine::Scene;
+using TechEngine::SceneAsset;
 using TechEngine::Transform;
 using TechEngine::TransformValues;
 using TechEngine::Vec3;
@@ -98,7 +99,7 @@ static std::vector<std::byte> writeSmallHierarchyWithHealth(ComponentRegistry& r
     source.addComponent<SceneAssetHealth>(hierarchy.first, SceneAssetHealth{77});
 
     std::vector<std::byte> bytes;
-    writeSceneAsset(source, SCENE_ASSET_ID, bytes);
+    SceneAsset{SCENE_ASSET_ID}.write(source, bytes);
     return bytes;
 }
 
@@ -124,17 +125,17 @@ TEST_CASE("a small hierarchy round-trips through a scene asset", "[core][scene]"
     const SmallHierarchy written = buildSmallHierarchy(source);
 
     std::vector<std::byte> bytes;
-    writeSceneAsset(source, SCENE_ASSET_ID, bytes);
+    SceneAsset{SCENE_ASSET_ID}.write(source, bytes);
     REQUIRE(!bytes.empty());
 
     ComponentRegistry readRegistry;
     TechEngineTests::registerBuiltInSceneComponents(readRegistry);
     Scene loaded(readRegistry);
-    ResourceId id;
-    const std::error_code readError = readSceneAsset(bytes, loaded, id);
+    SceneAsset asset;
+    const std::error_code readError = asset.read(bytes, loaded);
 
     REQUIRE(!readError);
-    REQUIRE(id == SCENE_ASSET_ID);
+    REQUIRE(asset.id == SCENE_ASSET_ID);
 
     const std::vector<Entity> roots = loaded.getRoots();
     REQUIRE(roots.size() == 1);
@@ -162,14 +163,14 @@ TEST_CASE("an empty scene round-trips through a scene asset", "[core][scene]") {
     const Scene source(registry);
 
     std::vector<std::byte> bytes;
-    writeSceneAsset(source, SCENE_ASSET_ID, bytes);
+    SceneAsset{SCENE_ASSET_ID}.write(source, bytes);
 
     Scene loaded(registry);
-    ResourceId id;
-    const std::error_code readError = readSceneAsset(bytes, loaded, id);
+    SceneAsset asset;
+    const std::error_code readError = asset.read(bytes, loaded);
 
     REQUIRE(!readError);
-    REQUIRE(id == SCENE_ASSET_ID);
+    REQUIRE(asset.id == SCENE_ASSET_ID);
     REQUIRE(loaded.getRoots().empty());
 }
 
@@ -183,8 +184,8 @@ TEST_CASE("every truncation of a scene asset fails soft and leaves the Scene emp
     for (std::size_t length = 0; length < bytes.size(); length++) {
         INFO("truncated to " << length << " of " << bytes.size() << " bytes");
         Scene loaded(registry);
-        ResourceId id;
-        const std::error_code readError = readSceneAsset(std::span<const std::byte>{bytes}.first(length), loaded, id);
+        SceneAsset asset;
+        const std::error_code readError = asset.read(std::span<const std::byte>{bytes}.first(length), loaded);
 
         REQUIRE(readError == ReadError::Truncated);
         REQUIRE(loaded.getRoots().empty());
@@ -195,20 +196,20 @@ TEST_CASE("a scene asset of another kind or version is rejected and leaves the S
     ComponentRegistry registry;
     TechEngineTests::registerBuiltInSceneComponents(registry);
     Scene loaded(registry);
-    ResourceId id;
+    SceneAsset asset;
     std::vector<std::byte> bytes;
     TechEngine::Writer writer{bytes};
 
     SECTION("another kind's magic") {
         writer.writeHeader(TechEngine::BlobKind{TechEngine::SCENE_KIND.magic + 1, TechEngine::SCENE_KIND.version});
 
-        REQUIRE(readSceneAsset(bytes, loaded, id) == ReadError::BadMagic);
+        REQUIRE(asset.read(bytes, loaded) == ReadError::BadMagic);
     }
 
     SECTION("another version") {
         writer.writeHeader(TechEngine::BlobKind{TechEngine::SCENE_KIND.magic, static_cast<std::uint16_t>(TechEngine::SCENE_KIND.version + 1)});
 
-        REQUIRE(readSceneAsset(bytes, loaded, id) == ReadError::BadVersion);
+        REQUIRE(asset.read(bytes, loaded) == ReadError::BadVersion);
     }
 
     REQUIRE(loaded.getRoots().empty());
@@ -223,8 +224,8 @@ TEST_CASE("a block with an unregistered tag is skipped and the rest of the asset
     ComponentRegistry readRegistry;
     TechEngineTests::registerBuiltInSceneComponents(readRegistry);
     Scene loaded(readRegistry);
-    ResourceId id;
-    const std::error_code readError = readSceneAsset(bytes, loaded, id);
+    SceneAsset asset;
+    const std::error_code readError = asset.read(bytes, loaded);
 
     REQUIRE(!readError);
     const std::vector<Entity> roots = loaded.getRoots();
@@ -246,8 +247,8 @@ TEST_CASE("a registered block whose payload does not fill its length is skipped"
     TechEngineTests::registerBuiltInSceneComponents(readRegistry);
     readRegistry.registerComponent<SceneAssetNarrowHealth>("Tests.SceneAssetHealth");
     Scene loaded(readRegistry);
-    ResourceId id;
-    const std::error_code readError = readSceneAsset(bytes, loaded, id);
+    SceneAsset asset;
+    const std::error_code readError = asset.read(bytes, loaded);
 
     REQUIRE(!readError);
     const std::vector<Entity> roots = loaded.getRoots();
@@ -264,14 +265,14 @@ TEST_CASE("reading into a Scene that already holds entities is a programmer erro
     TechEngineTests::registerBuiltInSceneComponents(registry);
     const Scene source(registry);
     std::vector<std::byte> bytes;
-    writeSceneAsset(source, SCENE_ASSET_ID, bytes);
+    SceneAsset{SCENE_ASSET_ID}.write(source, bytes);
 
     Scene loaded(registry);
     loaded.createEntity();
-    ResourceId id;
+    SceneAsset asset;
 
     const TechEngineTests::FatalAssertGuard guard;
-    REQUIRE_THROWS_AS(readSceneAsset(bytes, loaded, id), TechEngineTests::AssertFired);
+    REQUIRE_THROWS_AS(asset.read(bytes, loaded), TechEngineTests::AssertFired);
 }
 
 struct SceneAssetRow {
@@ -299,7 +300,7 @@ TEST_CASE("a scene asset with a broken entity table is Malformed and leaves the 
     ComponentRegistry registry;
     TechEngineTests::registerBuiltInSceneComponents(registry);
     Scene loaded(registry);
-    ResourceId id;
+    SceneAsset asset;
     std::vector<std::byte> bytes;
 
     SECTION("a parent id that names no entity") {
@@ -323,7 +324,7 @@ TEST_CASE("a scene asset with a broken entity table is Malformed and leaves the 
         bytes.push_back(std::byte{0});
     }
 
-    REQUIRE(readSceneAsset(bytes, loaded, id) == ReadError::Malformed);
+    REQUIRE(asset.read(bytes, loaded) == ReadError::Malformed);
     REQUIRE(loaded.getRoots().empty());
-    REQUIRE(id == ResourceId{});
+    REQUIRE(asset.id == ResourceId{});
 }

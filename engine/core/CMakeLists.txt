@@ -1,5 +1,6 @@
 techengine_module(core
   SOURCES src/Core.cpp
+          src/assets/PackSource.cpp
           src/events/EventRegistry.cpp
           src/events/EventStream.cpp
           src/events/EventStreamManager.cpp
@@ -8,6 +9,7 @@ techengine_module(core
           src/jobs/DedicatedThreadState.cpp
           src/jobs/JobSystem.cpp
           src/jobs/ThreadRegistration.cpp
+          src/resources/BootRecord.cpp
           src/resources/PackReader.cpp
           src/resources/PackWriter.cpp
           src/scene/Archetype.cpp
@@ -30,6 +32,8 @@ techengine_module(core
           include/TechEngine/core/EngineContext.hpp
           include/TechEngine/core/SimulationContext.hpp
           include/TechEngine/core/TimingMetrics.hpp
+          include/TechEngine/core/assets/AssetSource.hpp
+          include/TechEngine/core/assets/PackSource.hpp
           include/TechEngine/core/events/EventRegistry.hpp
           include/TechEngine/core/events/EventTypeId.hpp
           include/TechEngine/core/events/EventStream.hpp
@@ -38,8 +42,12 @@ techengine_module(core
           include/TechEngine/core/jobs/DedicatedThreadContext.hpp
           include/TechEngine/core/jobs/JobSystem.hpp
           include/TechEngine/core/jobs/ThreadRegistration.hpp
-          include/TechEngine/core/resources/Pack.hpp
+          include/TechEngine/core/resources/BootRecord.hpp
+          include/TechEngine/core/resources/PackFormat.hpp
+          include/TechEngine/core/resources/PackReader.hpp
+          include/TechEngine/core/resources/PackWriter.hpp
           include/TechEngine/core/resources/ResourceId.hpp
+          include/TechEngine/core/resources/Side.hpp
           include/TechEngine/core/scene/Access.hpp
           include/TechEngine/core/scene/ComponentRegistry.hpp
           include/TechEngine/core/scene/ComponentStorage.hpp
@@ -79,11 +87,13 @@ techengine_module(core
 if(TE_BUILD_TESTS)
   techengine_test(core SOURCES
           tests/EngineContextTests.cpp
+          tests/assets/PackSourceTests.cpp
           tests/events/EventRegistryTests.cpp
           tests/events/EventStreamTests.cpp
           tests/events/EventStreamManagerTests.cpp
           tests/jobs/DedicatedThreadTests.cpp
           tests/jobs/JobSystemTests.cpp
+          tests/resources/BootRecordTests.cpp
           tests/resources/PackTests.cpp
           tests/scene/ArchetypeStorageTests.cpp
           tests/scene/ArchetypeTests.cpp

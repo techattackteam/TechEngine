@@ -1,5 +1,6 @@
 #include <TechEngine/base/diagnostics/Profile.hpp>
-#include <TechEngine/core/resources/Pack.hpp>
+#include <TechEngine/core/resources/PackFormat.hpp>
+#include <TechEngine/core/resources/PackReader.hpp>
 #include <TechEngine/core/serialization/ReadError.hpp>
 #include <TechEngine/core/serialization/Reader.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
@@ -116,6 +117,10 @@ namespace TechEngine {
         }
         out = m_bootRecord;
         return true;
+    }
+
+    const std::vector<PackEntry>& PackReader::getEntries() const {
+        return m_entries;
     }
 
     std::error_code PackReader::read(const PackEntry& entry, std::vector<std::byte>& out) const {
