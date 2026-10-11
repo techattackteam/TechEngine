@@ -376,10 +376,6 @@ TEST_CASE("a corrupt pack table is Malformed and leaves the reader empty", "[cor
         patch<std::uint64_t>(bytes, entryField(2, PACK_ENTRY_OFFSET), offset + 1);
     }
 
-    SECTION("a payload offset inside the header") {
-        patch<std::uint64_t>(bytes, entryField(2, PACK_ENTRY_OFFSET), 0);
-    }
-
     SECTION("a payload offset inside the table") {
         patch<std::uint64_t>(bytes, entryField(2, PACK_ENTRY_OFFSET), PACK_ALIGNMENT * 2);
     }

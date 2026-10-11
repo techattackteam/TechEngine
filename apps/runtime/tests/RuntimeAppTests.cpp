@@ -58,7 +58,6 @@ namespace {
         static constexpr std::uint32_t PULSES_PER_TICK = 500;
 
         void init(TechEngine::ScheduleRegistration& registration) override {
-            registration.setPriority(10);
             registration.onEvent<ProbeDespawned>([this](TechEngine::Scene&, const std::span<const ProbeDespawned> despawns) {
                 for (const ProbeDespawned& despawn: despawns) {
                     m_despawned.push_back(despawn.entity);
@@ -88,7 +87,6 @@ namespace {
 
     public:
         void init(TechEngine::ScheduleRegistration& registration) override {
-            registration.setPriority(20);
             registration.onEvent<ProbeLanded>([this](TechEngine::Scene&, const std::span<const ProbeLanded> landings) {
                 m_landedBatches.push_back(landings.size());
             });
@@ -122,7 +120,6 @@ namespace {
     public:
         void init(TechEngine::ScheduleRegistration& registration) override {
             registration.access(TechEngine::DeclareAccess<TechEngine::Write<FallingBody>, TechEngine::Read<>>{});
-            registration.setPriority(40);
             registration.onEvent<ProbeSpawned>([this](TechEngine::Scene&, const std::span<const ProbeSpawned> spawns) {
                 for (const ProbeSpawned& spawn: spawns) {
                     m_spawnOrdinals.push_back(spawn.ordinal);
