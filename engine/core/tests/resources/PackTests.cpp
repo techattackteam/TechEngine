@@ -1,6 +1,11 @@
 #include <TechEngine/base/stringid/StringId.hpp>
-#include <TechEngine/core/resources/Pack.hpp>
+#include <TechEngine/core/SimulationContext.hpp>
+#include <TechEngine/core/resources/BootRecord.hpp>
+#include <TechEngine/core/resources/PackFormat.hpp>
+#include <TechEngine/core/resources/PackReader.hpp>
+#include <TechEngine/core/resources/PackWriter.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
+#include <TechEngine/core/resources/Side.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
 #include <TechEngine/core/serialization/ReadError.hpp>
 #include <TechEngine/core/serialization/Reader.hpp>
@@ -283,6 +288,37 @@ TEST_CASE("a boot record written into a pack is read back by its range", "[core]
     REQUIRE(reader.find(PACK_SCENE.id, entry));
     REQUIRE(reader.read(entry, out) == std::error_code{});
     CHECK(out == bytesOf(PACK_SCENE.payload));
+}
+
+TEST_CASE("a boot record written into a pack is read back and parsed through the pack reader", "[core][resources]") {
+    PackScratch scratch{"packCarriesBootRecord"};
+    TechEngine::BootRecord written;
+    written.startupScene = PACK_SCENE.id;
+    written.rolePacks = {{TechEngine::Role::Client, {"common.tepack", "client.tepack"}}};
+    written.sides = {{PACK_SCENE.id, TechEngine::Side::Common}, {PACK_MESH.id, TechEngine::Side::Client}};
+    std::vector<std::byte> bootBytes;
+    written.write(bootBytes);
+    scratch.store(writeSamplePack(bootBytes));
+    PackReader reader{scratch.files()};
+    REQUIRE(reader.open(PACK_PATH) == std::error_code{});
+
+    PackEntry bootEntry;
+    REQUIRE(reader.bootRecord(bootEntry));
+    std::vector<std::byte> out;
+    REQUIRE(reader.read(bootEntry, out) == std::error_code{});
+    TechEngine::BootRecord loaded;
+    REQUIRE(loaded.read(out) == std::error_code{});
+
+    CHECK(loaded.startupScene == PACK_SCENE.id);
+    CHECK(loaded.systemSettings.empty());
+    REQUIRE(loaded.rolePacks.size() == 1);
+    CHECK(loaded.rolePacks[0].role == TechEngine::Role::Client);
+    CHECK(loaded.rolePacks[0].packs == written.rolePacks[0].packs);
+    REQUIRE(loaded.sides.size() == 2);
+    CHECK(loaded.sides[0].id == PACK_SCENE.id);
+    CHECK(loaded.sides[0].side == TechEngine::Side::Common);
+    CHECK(loaded.sides[1].id == PACK_MESH.id);
+    CHECK(loaded.sides[1].side == TechEngine::Side::Client);
 }
 
 TEST_CASE("a pack written without a boot record reports none", "[core][resources]") {

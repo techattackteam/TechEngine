@@ -27,7 +27,7 @@ namespace TechEngine {
         std::size_t childCount = 0;
     };
 
-    void writeSceneAsset(const Scene& scene, const ResourceId id, std::vector<std::byte>& out) {
+    void SceneAsset::write(const Scene& scene, std::vector<std::byte>& out) const {
         TE_PROFILER_FUNCTION();
         std::vector<Entity> entities = scene.getRoots();
         std::vector<std::uint32_t> parents(entities.size(), NO_PARENT);
@@ -78,7 +78,7 @@ namespace TechEngine {
         }
     }
 
-    std::error_code readSceneAsset(const std::span<const std::byte> bytes, Scene& scene, ResourceId& id) {
+    std::error_code SceneAsset::read(const std::span<const std::byte> bytes, Scene& scene) {
         TE_PROFILER_FUNCTION();
         TE_CHECK(scene.getRoots().empty(), "A scene asset is read into an empty Scene only");
         const auto fail = [&scene](const std::error_code error) {

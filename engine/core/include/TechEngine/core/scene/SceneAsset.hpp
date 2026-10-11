@@ -13,7 +13,11 @@ namespace TechEngine {
 
     inline constexpr BlobKind SCENE_KIND{0x43534554, 1};
 
-    void writeSceneAsset(const Scene& scene, ResourceId id, std::vector<std::byte>& out);
+    struct SceneAsset {
+        ResourceId id;
 
-    std::error_code readSceneAsset(std::span<const std::byte> bytes, Scene& scene, ResourceId& id);
+        void write(const Scene& scene, std::vector<std::byte>& out) const;
+
+        std::error_code read(std::span<const std::byte> bytes, Scene& scene);
+    };
 }

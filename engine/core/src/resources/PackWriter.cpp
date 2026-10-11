@@ -1,6 +1,8 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
-#include <TechEngine/core/resources/Pack.hpp>
+#include <TechEngine/core/resources/PackFormat.hpp>
+#include <TechEngine/core/resources/PackWriter.hpp>
+#include <TechEngine/core/serialization/BlobHeader.hpp>
 #include <TechEngine/core/serialization/Writer.hpp>
 
 #include <algorithm>
