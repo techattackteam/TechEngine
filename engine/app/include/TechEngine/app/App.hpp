@@ -67,8 +67,6 @@ namespace TechEngine {
 
         virtual void init() = 0;
 
-        virtual void configureSimulation();
-
         void finalizeSimulation();
 
         void executeSimulationTick(const SimulationContext& simulation);

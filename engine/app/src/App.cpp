@@ -96,9 +96,6 @@ namespace TechEngine {
         return m_stopRequested.load();
     }
 
-    void App::configureSimulation() {
-    }
-
     void App::finalizeSimulation() {
         if (m_simulationFinalized) {
             return;
@@ -109,7 +106,6 @@ namespace TechEngine {
         if (m_registry.find(componentTypeId<Transform>()) == nullptr) {
             m_registry.registerComponent<Transform>(Transform::tag);
         }
-        configureSimulation();
         m_scene.buildEventStreams(m_eventRegistry);
         m_registry.freeze();
         m_taskGraph = std::make_unique<TaskGraph>(m_schedule, m_eventRegistry);
