@@ -56,7 +56,6 @@ namespace {
         scratch.makeDirectory("assets/common");
         scratch.makeDirectory("assets/client");
         scratch.makeDirectory("assets/server");
-        scratch.makeDirectory("shaders");
     }
 }
 
@@ -75,9 +74,9 @@ TEST_CASE("init mounts the project set", "[editor]") {
 
     CHECK(editor.mounts().hasAlias("project"));
     CHECK(editor.mounts().hasAlias("engine"));
-    CHECK(editor.mounts().hasAlias("shaders"));
     CHECK(editor.mounts().hasAlias("assets"));
-    CHECK(editor.mounts().mountCount() == 5);
+    CHECK_FALSE(editor.mounts().hasAlias("shaders"));
+    CHECK(editor.mounts().mountCount() == 4);
 }
 
 TEST_CASE("assets/client shadows assets/common", "[editor]") {

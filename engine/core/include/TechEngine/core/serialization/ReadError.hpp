@@ -9,6 +9,7 @@ namespace TechEngine {
         Truncated = 1,
         BadMagic,
         BadVersion,
+        Malformed,
     };
 
     const std::error_category& readErrorCategory();

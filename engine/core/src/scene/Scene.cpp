@@ -308,7 +308,8 @@ namespace TechEngine {
             if (oldParentHierarchy == nullptr || oldParentHierarchy->m_childrenCount == 0 || (oldPrevious.valid() && oldPreviousHierarchy == nullptr) || (oldNext.valid() && oldNextHierarchy == nullptr)) {
                 return false;
             }
-            if ((oldPrevious.valid() && oldPreviousHierarchy->m_nextSibling != child) || (!oldPrevious.valid() && oldParentHierarchy->m_firstChild != child) || (oldNext.valid() && oldNextHierarchy->m_previousSibling != child)) {
+            if ((oldPrevious.valid() && oldPreviousHierarchy->m_nextSibling != child) || (!oldPrevious.valid() && oldParentHierarchy->m_firstChild != child) || (oldNext.valid() && oldNextHierarchy->m_previousSibling != child) ||
+                (!oldNext.valid() && oldParentHierarchy->m_lastChild != child)) {
                 return false;
             }
         } else if (oldPrevious.valid() || oldNext.valid()) {
@@ -322,24 +323,28 @@ namespace TechEngine {
 
         Entity insertionBefore;
         Entity insertionAfter;
-        std::size_t visited = 0;
-        for (Entity current = parentHierarchy->m_firstChild; current.valid();) {
-            const Hierarchy* currentHierarchy = getHierarchy(current);
-            if (currentHierarchy == nullptr) {
+        if (position == destinationCount) {
+            insertionBefore = parentHierarchy->m_lastChild == child ? oldPrevious : parentHierarchy->m_lastChild;
+        } else {
+            std::size_t visited = 0;
+            for (Entity current = parentHierarchy->m_firstChild; current.valid();) {
+                const Hierarchy* currentHierarchy = getHierarchy(current);
+                if (currentHierarchy == nullptr) {
+                    return false;
+                }
+                if (current != child) {
+                    if (visited == position) {
+                        insertionAfter = current;
+                        break;
+                    }
+                    insertionBefore = current;
+                    visited++;
+                }
+                current = currentHierarchy->m_nextSibling;
+            }
+            if (!insertionAfter.valid()) {
                 return false;
             }
-            if (current != child) {
-                if (visited == position) {
-                    insertionAfter = current;
-                    break;
-                }
-                insertionBefore = current;
-                visited++;
-            }
-            current = currentHierarchy->m_nextSibling;
-        }
-        if (!insertionAfter.valid() && visited != position) {
-            return false;
         }
 
         Hierarchy* beforeHierarchy = insertionBefore.valid() ? getHierarchy(insertionBefore) : nullptr;
@@ -356,6 +361,8 @@ namespace TechEngine {
             }
             if (oldNextHierarchy != nullptr) {
                 oldNextHierarchy->m_previousSibling = oldPrevious;
+            } else {
+                oldParentHierarchy->m_lastChild = oldPrevious;
             }
             oldParentHierarchy->m_childrenCount--;
         }
@@ -370,6 +377,8 @@ namespace TechEngine {
         }
         if (afterHierarchy != nullptr) {
             afterHierarchy->m_previousSibling = child;
+        } else {
+            parentHierarchy->m_lastChild = child;
         }
         parentHierarchy->m_childrenCount++;
         if (oldParent != parent) {
@@ -420,7 +429,8 @@ namespace TechEngine {
         if (parentHierarchy == nullptr || parentHierarchy->m_childrenCount == 0 || (childHierarchy->m_previousSibling.valid() && previousSiblingHierarchy == nullptr) || (childHierarchy->m_nextSibling.valid() && nextSiblingHierarchy == nullptr)) {
             return false;
         }
-        if ((previousSiblingHierarchy != nullptr && previousSiblingHierarchy->m_nextSibling != child) || (previousSiblingHierarchy == nullptr && parentHierarchy->m_firstChild != child) || (nextSiblingHierarchy != nullptr && nextSiblingHierarchy->m_previousSibling != child)) {
+        if ((previousSiblingHierarchy != nullptr && previousSiblingHierarchy->m_nextSibling != child) || (previousSiblingHierarchy == nullptr && parentHierarchy->m_firstChild != child) || (nextSiblingHierarchy != nullptr && nextSiblingHierarchy->m_previousSibling != child) ||
+            (nextSiblingHierarchy == nullptr && parentHierarchy->m_lastChild != child)) {
             return false;
         }
 
@@ -431,6 +441,8 @@ namespace TechEngine {
         }
         if (nextSiblingHierarchy != nullptr) {
             nextSiblingHierarchy->m_previousSibling = childHierarchy->m_previousSibling;
+        } else {
+            parentHierarchy->m_lastChild = childHierarchy->m_previousSibling;
         }
         parentHierarchy->m_childrenCount--;
 

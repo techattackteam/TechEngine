@@ -1,9 +1,13 @@
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
+#include <TechEngine/core/serialization/Reader.hpp>
+#include <TechEngine/core/serialization/Writer.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <cstddef>
 #include <cstdint>
+#include <vector>
 
 struct RegistryPosition {
     float x;
@@ -31,6 +35,17 @@ struct RegistryAfterFreeze {
 
 struct RegistryConflictingType {
     std::uint32_t value;
+};
+
+struct RegistryVisited {
+    std::uint32_t health = 0;
+    float speed = 0.0f;
+
+    template<typename Archive>
+    friend void visit(Archive& archive, RegistryVisited& value) {
+        archive.field(value.health);
+        archive.field(value.speed);
+    }
 };
 
 TEST_CASE("component registration bridges a stable tag to a dense id", "[core][scene]") {
@@ -126,4 +141,42 @@ TEST_CASE("a component registry rejects a limit above the dense id capacity", "[
     const TechEngineTests::FatalAssertGuard guard;
 
     REQUIRE_THROWS_AS(TechEngine::ComponentRegistry{TechEngine::ComponentDenseId::VALUE_COUNT + 1U}, TechEngineTests::AssertFired);
+}
+
+TEST_CASE("a component with a visit is registered with payload adapters bound to it", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    const TechEngine::ComponentTypeId id = registry.registerComponent<RegistryVisited>("TechEngine.Visited");
+    const TechEngine::ComponentTypeRecord* record = registry.find(id);
+    REQUIRE(record != nullptr);
+    REQUIRE(record->writePayload != nullptr);
+    REQUIRE(record->readPayload != nullptr);
+
+    const RegistryVisited written{42, 3.5f};
+    std::vector<std::byte> adapterBytes;
+    TechEngine::Writer adapterWriter{adapterBytes};
+    record->writePayload(adapterWriter, &written);
+
+    std::vector<std::byte> fieldBytes;
+    TechEngine::Writer fieldWriter{fieldBytes};
+    fieldWriter.write(written.health);
+    fieldWriter.write(written.speed);
+    REQUIRE(adapterBytes == fieldBytes);
+
+    RegistryVisited read;
+    TechEngine::Reader reader{adapterBytes};
+    record->readPayload(reader, &read);
+    REQUIRE(reader.ok());
+    REQUIRE(reader.remaining() == 0);
+    REQUIRE(read.health == 42);
+    REQUIRE(read.speed == 3.5f);
+}
+
+TEST_CASE("a component without a visit is registered with no payload adapters", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    const TechEngine::ComponentTypeId id = registry.registerComponent<RegistryPosition>("TechEngine.Position");
+    const TechEngine::ComponentTypeRecord* record = registry.find(id);
+
+    REQUIRE(record != nullptr);
+    REQUIRE(record->writePayload == nullptr);
+    REQUIRE(record->readPayload == nullptr);
 }

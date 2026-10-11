@@ -15,6 +15,7 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -22,6 +23,7 @@ namespace TechEngine {
     class ArchetypeStorage;
     class ComponentRegistry;
     class Hierarchy;
+    struct ResourceId;
     class ScheduleAccess;
     class Transform;
     struct TransformValues;
@@ -33,6 +35,8 @@ namespace TechEngine {
         friend class Transform;
         friend class SceneCommandBuffer;
         friend class SerialExecutor;
+        friend void writeSceneAsset(const Scene& scene, ResourceId id, std::vector<std::byte>& out);
+        friend std::error_code readSceneAsset(std::span<const std::byte> bytes, Scene& scene, ResourceId& id);
 
         ComponentRegistry* m_registry = nullptr;
         std::unique_ptr<ArchetypeStorage> m_storage;
