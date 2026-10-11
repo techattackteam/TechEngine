@@ -9,7 +9,8 @@
 using TechEngine::FileError;
 using TechEngine::fileErrorCategory;
 
-static constexpr std::array<FileError, 9> ALL_CODES{FileError::InvalidPath, FileError::NoMount, FileError::NotFound, FileError::IsADirectory, FileError::NotADirectory, FileError::AlreadyExists, FileError::NotEmpty, FileError::AccessDenied, FileError::IoError};
+static constexpr std::array<FileError, 10> ALL_CODES{
+    FileError::InvalidPath, FileError::NoMount, FileError::NotFound, FileError::IsADirectory, FileError::NotADirectory, FileError::AlreadyExists, FileError::NotEmpty, FileError::AccessDenied, FileError::IoError, FileError::OutOfRange};
 
 TEST_CASE("every FileError code converts into the file category", "[files][fileerror]") {
     TechEngineTests::checkErrorCategory<FileError>(ALL_CODES, fileErrorCategory(), "file");

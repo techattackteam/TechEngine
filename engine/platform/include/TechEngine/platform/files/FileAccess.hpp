@@ -29,6 +29,8 @@ namespace TechEngine {
 
         std::error_code read(std::string_view virtualPath, std::vector<std::byte>& out) const;
 
+        std::error_code readRange(std::string_view virtualPath, std::uint64_t offset, std::uint64_t size, std::vector<std::byte>& out) const;
+
         std::error_code write(std::string_view virtualPath, std::span<const std::byte> bytes);
 
         std::error_code status(std::string_view virtualPath, FileStatus& out) const;

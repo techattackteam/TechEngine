@@ -12,6 +12,7 @@
 #include <vector>
 
 using TechEngine::BlobHeader;
+using TechEngine::BlobKind;
 using TechEngine::Reader;
 using TechEngine::ReadError;
 using TechEngine::StringId;
@@ -28,21 +29,63 @@ namespace {
     };
 }
 
-TEST_CASE("the header round-trips through the pair", "[core][serialization]") {
+static constexpr BlobKind TEST_KIND = {'T' | ('E' << 8) | ('S' << 16) | ('T' << 24), 3};
+
+static constexpr BlobKind NEWER_TEST_KIND = {TEST_KIND.magic, 4};
+
+static constexpr BlobKind OTHER_KIND = {'O' | ('T' << 8) | ('H' << 16) | ('R' << 24), 1};
+
+static std::vector<std::byte> headerOnly(const BlobKind& kind) {
     std::vector<std::byte> buffer;
     Writer writer{buffer};
-    writer.writeHeader();
+    writer.writeHeader(kind);
+    return buffer;
+}
+
+TEST_CASE("the header round-trips through the pair", "[core][serialization]") {
+    const std::vector<std::byte> buffer = headerOnly(TEST_KIND);
 
     REQUIRE(buffer.size() == TechEngine::BLOB_HEADER_SIZE);
 
     Reader reader{buffer};
     BlobHeader header;
-    reader.readHeader(header);
+    reader.readHeader(TEST_KIND, header);
 
     REQUIRE(reader.ok());
-    CHECK(header.magic == TechEngine::BLOB_MAGIC);
-    CHECK(header.formatVersion == TechEngine::BLOB_FORMAT_VERSION);
+    CHECK(header.magic == TEST_KIND.magic);
+    CHECK(header.formatVersion == TEST_KIND.version);
     CHECK(header.flags == 0);
+    CHECK(reader.remaining() == 0);
+}
+
+TEST_CASE("the header carries its flags", "[core][serialization]") {
+    std::vector<std::byte> buffer;
+    Writer writer{buffer};
+    writer.writeHeader(TEST_KIND, 0x0102);
+
+    Reader reader{buffer};
+    BlobHeader header;
+    reader.readHeader(TEST_KIND, header);
+
+    REQUIRE(reader.ok());
+    CHECK(header.flags == 0x0102);
+}
+
+TEST_CASE("the header lays out the kind's magic, then its version, little-endian", "[core][serialization]") {
+    const std::vector<std::byte> buffer = headerOnly(TEST_KIND);
+
+    REQUIRE(buffer.size() == TechEngine::BLOB_HEADER_SIZE);
+    CHECK(buffer[0] == std::byte{'T'});
+    CHECK(buffer[1] == std::byte{'E'});
+    CHECK(buffer[2] == std::byte{'S'});
+    CHECK(buffer[3] == std::byte{'T'});
+    CHECK(buffer[4] == std::byte{3});
+    CHECK(buffer[5] == std::byte{0});
+}
+
+TEST_CASE("two kinds write different headers", "[core][serialization]") {
+    CHECK(headerOnly(TEST_KIND) != headerOnly(OTHER_KIND));
+    CHECK(headerOnly(TEST_KIND) != headerOnly(NEWER_TEST_KIND));
 }
 
 TEST_CASE("every primitive round-trips", "[core][serialization]") {
@@ -130,7 +173,7 @@ TEST_CASE("encoding the same input twice produces identical bytes", "[core][seri
     const auto encode = [] {
         std::vector<std::byte> buffer;
         Writer writer{buffer};
-        writer.writeHeader();
+        writer.writeHeader(TEST_KIND);
         writer.write(std::string_view{"deterministic"});
         writer.write(StringId{"TechEngine.Transform"});
         writer.write(1.5);
@@ -176,7 +219,7 @@ TEST_CASE("the first failure is the one reported", "[core][serialization]") {
     Reader reader{empty};
 
     BlobHeader header;
-    reader.readHeader(header);
+    reader.readHeader(TEST_KIND, header);
     REQUIRE(reader.error() == ReadError::Truncated);
 
     std::uint32_t value = 0;
@@ -186,32 +229,106 @@ TEST_CASE("the first failure is the one reported", "[core][serialization]") {
 }
 
 TEST_CASE("a wrong magic is rejected", "[core][serialization]") {
-    std::vector<std::byte> buffer;
-    Writer writer{buffer};
-    writer.writeHeader();
+    std::vector<std::byte> buffer = headerOnly(TEST_KIND);
 
     buffer[0] = std::byte{0x00};
 
     Reader reader{buffer};
     BlobHeader header;
-    reader.readHeader(header);
+    reader.readHeader(TEST_KIND, header);
 
     CHECK_FALSE(reader.ok());
     CHECK(reader.error() == ReadError::BadMagic);
 }
 
 TEST_CASE("a wrong format version is rejected", "[core][serialization]") {
-    std::vector<std::byte> buffer;
-    Writer writer{buffer};
-    writer.writeHeader();
+    std::vector<std::byte> buffer = headerOnly(TEST_KIND);
 
     buffer[4] = std::byte{0xFE};
     buffer[5] = std::byte{0xFF};
 
     Reader reader{buffer};
     BlobHeader header;
-    reader.readHeader(header);
+    reader.readHeader(TEST_KIND, header);
 
     CHECK_FALSE(reader.ok());
     CHECK(reader.error() == ReadError::BadVersion);
+}
+
+TEST_CASE("a blob of another kind fails with BadMagic", "[core][serialization]") {
+    SECTION("an other-kind blob read as the test kind") {
+        const std::vector<std::byte> buffer = headerOnly(OTHER_KIND);
+
+        Reader reader{buffer};
+        BlobHeader header;
+        reader.readHeader(TEST_KIND, header);
+
+        CHECK(reader.error() == ReadError::BadMagic);
+    }
+
+    SECTION("a test-kind blob read as the other kind") {
+        const std::vector<std::byte> buffer = headerOnly(TEST_KIND);
+
+        Reader reader{buffer};
+        BlobHeader header;
+        reader.readHeader(OTHER_KIND, header);
+
+        CHECK(reader.error() == ReadError::BadMagic);
+    }
+}
+
+TEST_CASE("a blob of the right kind at another version fails with BadVersion", "[core][serialization]") {
+    SECTION("a newer blob read by an older reader") {
+        const std::vector<std::byte> buffer = headerOnly(NEWER_TEST_KIND);
+
+        Reader reader{buffer};
+        BlobHeader header;
+        reader.readHeader(TEST_KIND, header);
+
+        CHECK(reader.error() == ReadError::BadVersion);
+    }
+
+    SECTION("an older blob read by a newer reader") {
+        const std::vector<std::byte> buffer = headerOnly(TEST_KIND);
+
+        Reader reader{buffer};
+        BlobHeader header;
+        reader.readHeader(NEWER_TEST_KIND, header);
+
+        CHECK(reader.error() == ReadError::BadVersion);
+    }
+}
+
+static void checkRejectedHeaderChangesNothing(const BlobKind& readAs, const ReadError expected) {
+    std::vector<std::byte> buffer = headerOnly(OTHER_KIND);
+    Writer writer{buffer};
+    writer.write(static_cast<std::uint32_t>(42));
+
+    Reader reader{buffer};
+    BlobHeader header;
+    header.magic = 0xAAAAAAAA;
+    header.formatVersion = 0xBBBB;
+    header.flags = 0xCCCC;
+    reader.readHeader(readAs, header);
+
+    REQUIRE(reader.error() == expected);
+    CHECK(header.magic == 0xAAAAAAAA);
+    CHECK(header.formatVersion == 0xBBBB);
+    CHECK(header.flags == 0xCCCC);
+
+    std::uint32_t value = 7;
+    reader.read(value);
+
+    CHECK(reader.error() == expected);
+    CHECK(value == 7);
+}
+
+TEST_CASE("a rejected header leaves the output untouched and stays failed", "[core][serialization]") {
+    SECTION("rejected for its magic") {
+        checkRejectedHeaderChangesNothing(TEST_KIND, ReadError::BadMagic);
+    }
+
+    SECTION("rejected for its version") {
+        checkRejectedHeaderChangesNothing(BlobKind{OTHER_KIND.magic, 2}, ReadError::BadVersion);
+    }
 }

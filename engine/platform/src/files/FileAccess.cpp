@@ -5,6 +5,7 @@
 #include <fstream>
 #include <ios>
 #include <system_error>
+#include <utility>
 
 namespace TechEngine {
     template<typename Iterator>
@@ -64,6 +65,43 @@ namespace TechEngine {
             out.clear();
             return FileError::IoError;
         }
+        return {};
+    }
+
+    std::error_code FileAccess::readRange(std::string_view virtualPath, std::uint64_t offset, std::uint64_t size, std::vector<std::byte>& out) const {
+        std::filesystem::path physicalPath;
+        const std::error_code resolveError = m_mounts->resolveExisting(virtualPath, physicalPath);
+        if (resolveError) {
+            return resolveError;
+        }
+        std::error_code ec;
+        if (std::filesystem::is_directory(physicalPath, ec)) {
+            return FileError::IsADirectory;
+        }
+
+        std::ifstream file{physicalPath, std::ios::binary | std::ios::ate};
+        if (!file) {
+            return FileError::IoError;
+        }
+
+        const std::streamoff fileSize = file.tellg();
+        if (fileSize < 0) {
+            return FileError::IoError;
+        }
+
+        if (offset + size < offset || offset + size > static_cast<std::uint64_t>(fileSize)) {
+            return FileError::OutOfRange;
+        }
+
+        std::vector<std::byte> bytes(static_cast<std::size_t>(size));
+        if (size > 0) {
+            file.seekg(static_cast<std::streamoff>(offset), std::ios::beg);
+            if (!file.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(size))) {
+                return FileError::IoError;
+            }
+        }
+
+        out = std::move(bytes);
         return {};
     }
 

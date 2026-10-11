@@ -30,6 +30,8 @@ namespace TechEngine {
                         return "access denied";
                     case FileError::IoError:
                         return "I/O error";
+                    case FileError::OutOfRange:
+                        return "byte range extends past the end of the file";
                 }
                 return "unknown file error";
             }

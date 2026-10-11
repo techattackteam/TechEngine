@@ -14,6 +14,7 @@
 #include <vector>
 
 using TechEngine::BlobHeader;
+using TechEngine::BlobKind;
 using TechEngine::Reader;
 using TechEngine::ReadError;
 using TechEngine::StringId;
@@ -106,24 +107,26 @@ TEST_CASE("a non-POD struct round-trips through both archives", "[core][serializ
     CHECK(restored == original);
 }
 
+static constexpr BlobKind MESH_KIND = {'M' | ('E' << 8) | ('S' << 16) | ('H' << 24), 1};
+
 TEST_CASE("a visited struct round-trips behind the blob header", "[core][serialization]") {
     Mesh source = makeMesh();
 
     std::vector<std::byte> buffer;
     Writer writer{buffer};
-    writer.writeHeader();
+    writer.writeHeader(MESH_KIND);
     writer.field(source);
 
     Reader reader{buffer};
     BlobHeader header;
-    reader.readHeader(header);
+    reader.readHeader(MESH_KIND, header);
 
     Mesh restored;
     reader.field(restored);
 
     REQUIRE(reader.ok());
-    CHECK(header.magic == TechEngine::BLOB_MAGIC);
-    CHECK(header.formatVersion == TechEngine::BLOB_FORMAT_VERSION);
+    CHECK(header.magic == MESH_KIND.magic);
+    CHECK(header.formatVersion == MESH_KIND.version);
     CHECK(restored == source);
 }
 
