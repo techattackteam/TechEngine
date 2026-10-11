@@ -27,7 +27,7 @@ namespace TechEngine {
 
         Reader& operator=(const Reader&) = delete;
 
-        void readHeader(BlobHeader& out);
+        void readHeader(const BlobKind& kind, BlobHeader& out);
 
         void read(bool& out);
 

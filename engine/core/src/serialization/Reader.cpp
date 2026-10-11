@@ -6,13 +6,13 @@ namespace TechEngine {
     Reader::Reader(const std::span<const std::byte> buffer) : m_buffer(buffer) {
     }
 
-    void Reader::readHeader(BlobHeader& out) {
+    void Reader::readHeader(const BlobKind& kind, BlobHeader& out) {
         std::uint32_t magic = 0;
         read(magic);
         if (!ok()) {
             return;
         }
-        if (magic != BLOB_MAGIC) {
+        if (magic != kind.magic) {
             fail(ReadError::BadMagic);
             return;
         }
@@ -22,7 +22,7 @@ namespace TechEngine {
         if (!ok()) {
             return;
         }
-        if (formatVersion != BLOB_FORMAT_VERSION) {
+        if (formatVersion != kind.version) {
             fail(ReadError::BadVersion);
             return;
         }

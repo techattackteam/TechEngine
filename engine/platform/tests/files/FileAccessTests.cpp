@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <limits>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -144,6 +145,157 @@ TEST_CASE("read rejects a path that would escape the mount root", "[files][filea
     CHECK(env.files.read("assets://../a.txt", out) == FileError::InvalidPath);
     CHECK(env.files.read("assets://ui/../a.txt", out) == FileError::InvalidPath);
     CHECK(env.files.read("assets:///etc/passwd", out) == FileError::InvalidPath);
+}
+
+static const std::vector<std::byte> UNTOUCHED_SENTINEL(3, std::byte{0xAB});
+
+TEST_CASE("readRange returns the bytes at the offset", "[files][fileaccess][readrange]") {
+    MountedScratch env{"rangeBytes"};
+    env.scratch.writeFile("digits.bin", "0123456789");
+
+    std::vector<std::byte> out;
+    REQUIRE(env.files.readRange("assets://digits.bin", 2, 4, out) == std::error_code{});
+    CHECK(asString(out) == "2345");
+}
+
+TEST_CASE("readRange is binary-safe", "[files][fileaccess][readrange]") {
+    MountedScratch env{"rangeBinary"};
+    const std::string payload = everyByteValue();
+    env.scratch.writeFile("blob.bin", payload);
+
+    std::vector<std::byte> out;
+    REQUIRE(env.files.readRange("assets://blob.bin", 10, 200, out) == std::error_code{});
+    REQUIRE(out.size() == 200);
+    CHECK(asString(out) == payload.substr(10, 200));
+}
+
+TEST_CASE("readRange reaches deep into a large file", "[files][fileaccess][readrange]") {
+    MountedScratch env{"rangeLarge"};
+    std::string payload;
+    payload.reserve(256 * 1024);
+    while (payload.size() < 256 * 1024) {
+        payload += everyByteValue();
+    }
+    env.scratch.writeFile("blob.bin", payload);
+
+    std::vector<std::byte> out;
+    REQUIRE(env.files.readRange("assets://blob.bin", 100003, 50000, out) == std::error_code{});
+    REQUIRE(out.size() == 50000);
+    CHECK(asString(out) == payload.substr(100003, 50000));
+}
+
+TEST_CASE("readRange accepts a range that ends exactly at the end of the file", "[files][fileaccess][readrange]") {
+    MountedScratch env{"rangeToEnd"};
+    env.scratch.writeFile("digits.bin", "0123456789");
+
+    std::vector<std::byte> out;
+    REQUIRE(env.files.readRange("assets://digits.bin", 6, 4, out) == std::error_code{});
+    CHECK(asString(out) == "6789");
+
+    REQUIRE(env.files.readRange("assets://digits.bin", 0, 10, out) == std::error_code{});
+    CHECK(asString(out) == "0123456789");
+}
+
+TEST_CASE("readRange of zero bytes inside the file returns an empty buffer", "[files][fileaccess][readrange]") {
+    MountedScratch env{"rangeEmpty"};
+    env.scratch.writeFile("digits.bin", "0123456789");
+
+    std::vector<std::byte> out = UNTOUCHED_SENTINEL;
+    REQUIRE(env.files.readRange("assets://digits.bin", 3, 0, out) == std::error_code{});
+    CHECK(out.empty());
+
+    out = UNTOUCHED_SENTINEL;
+    REQUIRE(env.files.readRange("assets://digits.bin", 10, 0, out) == std::error_code{});
+    CHECK(out.empty());
+}
+
+TEST_CASE("readRange replaces the output buffer rather than appending", "[files][fileaccess][readrange]") {
+    MountedScratch env{"rangeReplaces"};
+    env.scratch.writeFile("digits.bin", "0123456789");
+
+    std::vector<std::byte> out(64, std::byte{0xAB});
+    REQUIRE(env.files.readRange("assets://digits.bin", 4, 3, out) == std::error_code{});
+    CHECK(out.size() == 3);
+    CHECK(asString(out) == "456");
+}
+
+TEST_CASE("readRange past the end reports OutOfRange and leaves the output untouched", "[files][fileaccess][readrange]") {
+    MountedScratch env{"rangePastEnd"};
+    env.scratch.writeFile("digits.bin", "0123456789");
+
+    std::vector<std::byte> out = UNTOUCHED_SENTINEL;
+
+    SECTION("a range that straddles the end") {
+        CHECK(env.files.readRange("assets://digits.bin", 8, 4, out) == FileError::OutOfRange);
+    }
+
+    SECTION("a range one byte past the end") {
+        CHECK(env.files.readRange("assets://digits.bin", 0, 11, out) == FileError::OutOfRange);
+    }
+
+    SECTION("an offset at the end with a size") {
+        CHECK(env.files.readRange("assets://digits.bin", 10, 1, out) == FileError::OutOfRange);
+    }
+
+    SECTION("an offset beyond the end with no size") {
+        CHECK(env.files.readRange("assets://digits.bin", 11, 0, out) == FileError::OutOfRange);
+    }
+
+    CHECK(out == UNTOUCHED_SENTINEL);
+}
+
+TEST_CASE("readRange reports an offset and size that overflow as OutOfRange", "[files][fileaccess][readrange]") {
+    MountedScratch env{"rangeOverflow"};
+    env.scratch.writeFile("digits.bin", "0123456789");
+
+    constexpr std::uint64_t LARGEST = std::numeric_limits<std::uint64_t>::max();
+    std::vector<std::byte> out = UNTOUCHED_SENTINEL;
+
+    SECTION("the largest offset") {
+        CHECK(env.files.readRange("assets://digits.bin", LARGEST, 2, out) == FileError::OutOfRange);
+    }
+
+    SECTION("the largest size") {
+        CHECK(env.files.readRange("assets://digits.bin", 4, LARGEST, out) == FileError::OutOfRange);
+    }
+
+    CHECK(out == UNTOUCHED_SENTINEL);
+}
+
+TEST_CASE("readRange of an empty file accepts only the empty range", "[files][fileaccess][readrange]") {
+    MountedScratch env{"rangeEmptyFile"};
+    env.scratch.writeFile("empty.bin", "");
+
+    std::vector<std::byte> out = UNTOUCHED_SENTINEL;
+    REQUIRE(env.files.readRange("assets://empty.bin", 0, 0, out) == std::error_code{});
+    CHECK(out.empty());
+
+    out = UNTOUCHED_SENTINEL;
+    CHECK(env.files.readRange("assets://empty.bin", 0, 1, out) == FileError::OutOfRange);
+    CHECK(out == UNTOUCHED_SENTINEL);
+}
+
+TEST_CASE("readRange separates its miss kinds and leaves the output untouched", "[files][fileaccess][readrange]") {
+    MountedScratch env{"rangeMisses"};
+    env.scratch.writeFile("ui/icon.png", "png");
+
+    std::vector<std::byte> out = UNTOUCHED_SENTINEL;
+    CHECK(env.files.readRange("cache://a.bin", 0, 1, out) == FileError::NoMount);
+    CHECK(env.files.readRange("assets://a.bin", 0, 1, out) == FileError::NotFound);
+    CHECK(env.files.readRange("a.bin", 0, 1, out) == FileError::InvalidPath);
+    CHECK(env.files.readRange("assets://../a.bin", 0, 1, out) == FileError::InvalidPath);
+    CHECK(env.files.readRange("assets://ui", 0, 0, out) == FileError::IsADirectory);
+    CHECK(out == UNTOUCHED_SENTINEL);
+}
+
+TEST_CASE("readRange goes through the mount priority order", "[files][fileaccess][readrange]") {
+    OverlayScratch env{"rangePriority"};
+    env.base.writeFile("digits.bin", "0123456789");
+    env.overlay.writeFile("digits.bin", "abcdefghij");
+
+    std::vector<std::byte> out;
+    REQUIRE(env.files.readRange("assets://digits.bin", 2, 3, out) == std::error_code{});
+    CHECK(asString(out) == "cde");
 }
 
 TEST_CASE("status describes a file", "[files][fileaccess]") {

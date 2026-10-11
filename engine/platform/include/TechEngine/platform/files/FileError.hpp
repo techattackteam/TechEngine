@@ -5,7 +5,7 @@
 #include <type_traits>
 
 namespace TechEngine {
-    enum class FileError : std::uint8_t { InvalidPath = 1, NoMount, NotFound, IsADirectory, NotADirectory, AlreadyExists, NotEmpty, AccessDenied, IoError };
+    enum class FileError : std::uint8_t { InvalidPath = 1, NoMount, NotFound, IsADirectory, NotADirectory, AlreadyExists, NotEmpty, AccessDenied, IoError, OutOfRange };
 
     const std::error_category& fileErrorCategory();
 

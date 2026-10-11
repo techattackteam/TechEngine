@@ -5,9 +5,9 @@ namespace TechEngine {
     Writer::Writer(std::vector<std::byte>& buffer) : m_buffer(buffer) {
     }
 
-    void Writer::writeHeader(const std::uint16_t flags) {
-        write(BLOB_MAGIC);
-        write(BLOB_FORMAT_VERSION);
+    void Writer::writeHeader(const BlobKind& kind, const std::uint16_t flags) {
+        write(kind.magic);
+        write(kind.version);
         write(flags);
     }
 

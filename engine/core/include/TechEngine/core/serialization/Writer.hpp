@@ -24,7 +24,7 @@ namespace TechEngine {
 
         Writer& operator=(const Writer&) = delete;
 
-        void writeHeader(std::uint16_t flags = 0);
+        void writeHeader(const BlobKind& kind, std::uint16_t flags = 0);
 
         void write(bool value);
 
