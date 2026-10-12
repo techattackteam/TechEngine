@@ -1,5 +1,6 @@
 #pragma once
 
+#include <TechEngine/base/stringid/StringId.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
 
@@ -12,6 +13,8 @@ namespace TechEngine {
     class Scene;
 
     inline constexpr BlobKind SCENE_KIND{0x43534554, 1};
+
+    inline constexpr StringId SCENE_TYPE_TAG{"TechEngine.Scene"};
 
     struct SceneAsset {
         ResourceId id;

@@ -24,6 +24,9 @@ namespace TechEngine {
         const auto& root = m_project.root();
         m_mounts.mount("assets", root / "assets" / "common", 0);
         m_mounts.mount("assets", root / "assets" / "client", 100);
+        const std::error_code indexError = m_assets.build(m_files, "project://assets");
+        TE_CHECK(!indexError, "Failed to index the assets under {0}: {1}", root.string(), indexError.message());
+        TE_LOGGER_INFO("Indexed {0} assets with {1} duplicates", m_assets.getRecords().size(), m_assets.getDuplicates().size());
         TE_LOGGER_INFO("Opened project '{0}' at {1}", m_project.name(), root.string());
         const std::error_code startError = m_client.start(m_engine, m_input, 1280, 720, "TechEngine Editor", [this] {
             requestStop();
@@ -83,6 +86,10 @@ namespace TechEngine {
 
     bool EditorApp::shouldClose() const {
         return m_client.shouldClose();
+    }
+
+    const AssetIndex& EditorApp::getAssetIndex() const {
+        return m_assets;
     }
 
     Role EditorApp::editorRole() {

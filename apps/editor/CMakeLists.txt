@@ -4,14 +4,20 @@
 techengine_app(editor
   MAIN    src/main.cpp
   SOURCES src/EditorApp.cpp
+          src/assets/AssetIndex.cpp
+          src/assets/LooseSource.cpp
           src/project/Project.cpp
           src/project/ProjectError.cpp
   HEADERS src/EditorApp.hpp
+          src/assets/AssetIndex.hpp
+          src/assets/LooseSource.hpp
           src/project/Project.hpp
           src/project/ProjectError.hpp
   DEPS    app client core
   LIBS_PRIVATE TechEngine::tomlplusplus
   TESTS   tests/EditorAppTests.cpp
+          tests/assets/AssetIndexTests.cpp
+          tests/assets/LooseSourceTests.cpp
           tests/project/ProjectErrorTests.cpp
           tests/project/ProjectTests.cpp)
 

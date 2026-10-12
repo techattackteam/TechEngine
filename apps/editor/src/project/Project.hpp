@@ -1,5 +1,6 @@
 #pragma once
 
+#include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 
 #include <project/ProjectError.hpp>
@@ -14,6 +15,7 @@ namespace TechEngine {
     private:
         std::filesystem::path m_root;
         std::string m_name;
+        ResourceId m_exportStartupScene;
 
     public:
         std::error_code load(const FileAccess& files, std::string_view manifestPath);
@@ -23,5 +25,9 @@ namespace TechEngine {
         const std::filesystem::path& root() const;
 
         const std::string& name() const;
+
+        ResourceId exportStartupScene() const;
+
+        void setExportStartupScene(ResourceId id);
     };
 }

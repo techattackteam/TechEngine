@@ -1,3 +1,4 @@
+#include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/platform/files/MountTable.hpp>
 #include <TechEngine/testing/ScratchDirectory.hpp>
@@ -14,6 +15,7 @@ using TechEngine::FileError;
 using TechEngine::MountTable;
 using TechEngine::Project;
 using TechEngine::ProjectError;
+using TechEngine::ResourceId;
 using TechEngineTests::ScratchDirectory;
 
 namespace {
@@ -98,4 +100,81 @@ TEST_CASE("save round-trips through load", "[editor][project]") {
     Project reloaded;
     REQUIRE(reloaded.load(env.files, "project://copy.toml") == std::error_code{});
     CHECK(reloaded.name() == source.name());
+}
+
+TEST_CASE("load reads an optional exportStartupScene", "[editor][project]") {
+    MountedProject env{"projectLoadExportStartupScene"};
+    env.scratch.writeFile("project.toml", "name = \"Sandbox\"\nexportStartupScene = \"0x3f9a2c41d07e88b5\"\n");
+
+    Project project;
+
+    REQUIRE(project.load(env.files, "project://project.toml") == std::error_code{});
+    CHECK(project.exportStartupScene() == ResourceId(0x3f9a2c41d07e88b5));
+}
+
+TEST_CASE("load leaves exportStartupScene null when the key is absent", "[editor][project]") {
+    MountedProject env{"projectLoadNoExportStartupScene"};
+    env.scratch.writeFile("project.toml", GOOD_MANIFEST);
+
+    Project project;
+
+    REQUIRE(project.load(env.files, "project://project.toml") == std::error_code{});
+    CHECK_FALSE(project.exportStartupScene().valid());
+}
+
+TEST_CASE("load returns SchemaInvalid when exportStartupScene is not a string", "[editor][project]") {
+    MountedProject env{"projectLoadExportStartupSceneInteger"};
+    env.scratch.writeFile("project.toml", "name = \"Sandbox\"\nexportStartupScene = 42\n");
+
+    Project project;
+
+    CHECK(project.load(env.files, "project://project.toml") == ProjectError::SchemaInvalid);
+}
+
+TEST_CASE("load returns SchemaInvalid when exportStartupScene is not a hex id", "[editor][project]") {
+    MountedProject env{"projectLoadExportStartupSceneText"};
+    env.scratch.writeFile("project.toml", "name = \"Sandbox\"\nexportStartupScene = \"level one\"\n");
+
+    Project project;
+
+    CHECK(project.load(env.files, "project://project.toml") == ProjectError::SchemaInvalid);
+}
+
+TEST_CASE("a failed load keeps the previous exportStartupScene and name", "[editor][project]") {
+    MountedProject env{"projectLoadExportStartupSceneKept"};
+    env.scratch.writeFile("project.toml", "name = \"Sandbox\"\nexportStartupScene = \"0x00000000000000aa\"\n");
+    env.scratch.writeFile("broken.toml", "name = \"Other\"\nexportStartupScene = \"level one\"\n");
+
+    Project project;
+    REQUIRE(project.load(env.files, "project://project.toml") == std::error_code{});
+
+    CHECK(project.load(env.files, "project://broken.toml") == ProjectError::SchemaInvalid);
+    CHECK(project.name() == "Sandbox");
+    CHECK(project.exportStartupScene() == ResourceId(0xaa));
+}
+
+TEST_CASE("save round-trips exportStartupScene through load", "[editor][project]") {
+    MountedProject env{"projectSaveExportStartupScene"};
+    env.scratch.writeFile("project.toml", GOOD_MANIFEST);
+
+    Project source;
+    REQUIRE(source.load(env.files, "project://project.toml") == std::error_code{});
+
+    SECTION("a set id, including one with the top bit set") {
+        source.setExportStartupScene(ResourceId(0xf00dcafe12345678));
+        REQUIRE(source.save(env.files, "project://copy.toml") == std::error_code{});
+
+        Project reloaded;
+        REQUIRE(reloaded.load(env.files, "project://copy.toml") == std::error_code{});
+        CHECK(reloaded.exportStartupScene() == ResourceId(0xf00dcafe12345678));
+        CHECK(reloaded.name() == "Sandbox");
+    }
+
+    SECTION("a null id") {
+        REQUIRE(source.save(env.files, "project://copy.toml") == std::error_code{});
+
+        Project reloaded;
+        REQUIRE(reloaded.load(env.files, "project://copy.toml") == std::error_code{});
+        CHECK_FALSE(reloaded.exportStartupScene().valid());
+    }
 }

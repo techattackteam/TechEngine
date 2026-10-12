@@ -1,6 +1,11 @@
+#include <TechEngine/core/resources/ResourceId.hpp>
+#include <TechEngine/core/resources/Side.hpp>
+#include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <EditorApp.hpp>
+#include <assets/AssetIndex.hpp>
+#include <assets/AssetTestFiles.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -77,6 +82,21 @@ TEST_CASE("init mounts the project set", "[editor]") {
     CHECK(editor.mounts().hasAlias("assets"));
     CHECK_FALSE(editor.mounts().hasAlias("shaders"));
     CHECK(editor.mounts().mountCount() == 4);
+}
+
+TEST_CASE("init indexes the project's assets", "[editor]") {
+    ScratchDirectory scratch{"editorIndexesAssets"};
+    writeProjectLayout(scratch);
+    constexpr TechEngine::ResourceId sceneId{0x0123456789abcdef};
+    TechEngineTests::writeBytes(scratch, "assets/common/level.tescene", TechEngineTests::assetBytes(TechEngine::SCENE_KIND, sceneId, "scene"));
+
+    EditorProbe editor{scratch.root()};
+    editor.bootstrap();
+
+    TechEngine::AssetRecord record;
+    REQUIRE(editor.getAssetIndex().find(sceneId, record));
+    CHECK(record.side == TechEngine::Side::Common);
+    CHECK(record.path == "project://assets/common/level.tescene");
 }
 
 TEST_CASE("assets/client shadows assets/common", "[editor]") {
