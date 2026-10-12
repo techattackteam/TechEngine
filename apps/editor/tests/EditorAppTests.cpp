@@ -99,6 +99,17 @@ TEST_CASE("init indexes the project's assets", "[editor]") {
     CHECK(record.path == "project://assets/common/level.tescene");
 }
 
+TEST_CASE("init keeps running when the startup export fails", "[editor][window]") {
+    ScratchDirectory scratch{"editorStartupExportFails"};
+    writeProjectLayout(scratch);
+
+    EditorProbe editor{scratch.root()};
+    editor.bootstrap();
+
+    CHECK_FALSE(editor.shouldClose());
+    editor.shutdown();
+}
+
 TEST_CASE("assets/client shadows assets/common", "[editor]") {
     ScratchDirectory scratch{"editorAssetsOverlay"};
     writeProjectLayout(scratch);

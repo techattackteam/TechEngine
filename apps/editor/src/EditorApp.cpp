@@ -21,6 +21,7 @@ namespace TechEngine {
         m_mounts.mount("engine", executablePath().parent_path() / "engine");
         const std::error_code loadError = m_project.load(m_files, "project://project.toml");
         TE_CHECK(!loadError, "Failed to load project.toml under {0}: {1}", m_projectRoot.string(), loadError.message());
+
         const auto& root = m_project.root();
         m_mounts.mount("assets", root / "assets" / "common", 0);
         m_mounts.mount("assets", root / "assets" / "client", 100);
@@ -28,6 +29,13 @@ namespace TechEngine {
         TE_CHECK(!indexError, "Failed to index the assets under {0}: {1}", root.string(), indexError.message());
         TE_LOGGER_INFO("Indexed {0} assets with {1} duplicates", m_assets.getRecords().size(), m_assets.getDuplicates().size());
         TE_LOGGER_INFO("Opened project '{0}' at {1}", m_project.name(), root.string());
+
+        // TODO: Remove the export step from EditorApp::init() and make it a separate command in the editor UI.
+        const std::error_code exportError = m_project.exportTo(Role::Client, m_assets, m_files, executablePath().parent_path());
+        if (exportError) {
+            TE_LOGGER_ERROR("Failed to export the project to {0}: {1}", executablePath().parent_path().string(), exportError.message());
+        }
+
         const std::error_code startError = m_client.start(m_engine, m_input, 1280, 720, "TechEngine Editor", [this] {
             requestStop();
         });
