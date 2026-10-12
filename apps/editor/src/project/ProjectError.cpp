@@ -15,7 +15,13 @@ namespace TechEngine {
                     case ProjectError::ParseFailed:
                         return "project manifest is not valid TOML";
                     case ProjectError::SchemaInvalid:
-                        return "project manifest has no string name";
+                        return "project manifest does not match its schema";
+                    case ProjectError::NoStartupScene:
+                        return "export target names no startup scene";
+                    case ProjectError::UnknownStartupScene:
+                        return "export target's startup scene is not an indexed asset";
+                    case ProjectError::StartupSceneNotInTarget:
+                        return "export target's startup scene is on a side the target does not ship";
                 }
                 return "unknown project error";
             }
