@@ -2,6 +2,9 @@
 
 #include <toml++/toml.hpp>
 
+#include <charconv>
+#include <cstdint>
+#include <format>
 #include <optional>
 #include <sstream>
 #include <system_error>
@@ -33,14 +36,35 @@ namespace TechEngine {
             return resolveError;
         }
 
+        const auto sceneNode = parsed["exportStartupScene"];
+        ResourceId exportStartupScene;
+        if (sceneNode) {
+            const std::optional<std::string> sceneID = sceneNode.value_exact<std::string>();
+            if (!sceneID || sceneID->size() != 18 || !sceneID->starts_with("0x")) {
+                return ProjectError::SchemaInvalid;
+            }
+
+            std::uint64_t value = 0;
+            const char* const digitsEnd = sceneID->data() + sceneID->size();
+            const std::from_chars_result parsedId = std::from_chars(sceneID->data() + 2, digitsEnd, value, 16);
+            if (parsedId.ec != std::errc{} || parsedId.ptr != digitsEnd) {
+                return ProjectError::SchemaInvalid;
+            }
+            exportStartupScene = ResourceId(value);
+        }
+
         m_root = physical.parent_path();
         m_name = *name;
+        m_exportStartupScene = exportStartupScene;
         return {};
     }
 
     std::error_code Project::save(FileAccess& files, const std::string_view manifestPath) const {
         toml::table manifest;
         manifest.insert_or_assign("name", m_name);
+        if (m_exportStartupScene.valid()) {
+            manifest.insert_or_assign("exportStartupScene", std::format("{:#018x}", m_exportStartupScene.value()));
+        }
 
         std::ostringstream stream;
         stream << manifest;
@@ -61,5 +85,13 @@ namespace TechEngine {
 
     const std::string& Project::name() const {
         return m_name;
+    }
+
+    ResourceId Project::exportStartupScene() const {
+        return m_exportStartupScene;
+    }
+
+    void Project::setExportStartupScene(const ResourceId id) {
+        m_exportStartupScene = id;
     }
 }
