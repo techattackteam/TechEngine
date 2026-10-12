@@ -21,8 +21,10 @@ Steps:
    included. A change needing its own Context and Alternatives is a **superseding** ADR.
    The headline decision in a title is never amendable.
 3. Act as technical lead: lay out the real options with honest trade-offs. Cite
-   evidence (`file:line`). Do not rubber-stamp my preferred option; argue the
-   alternatives fairly and give a recommendation.
+   evidence (`file:line`). Open with the Unity and Unreal baseline, per
+   `docs/08 AI/Technical Lead Charter.md` § *Compare against Unity and Unreal*. Do not
+   rubber-stamp my preferred option; argue the alternatives fairly and give a
+   recommendation.
 4. Draft the ADR from `docs/Templates/ADR Template.md` as
    `docs/03 Architecture/ADR-NNN - <title>.md` with Status: Proposed.
    **Scope: decision + rationale + alternatives + reversal triggers, within the size above.**

@@ -35,6 +35,9 @@ when a technique needs something the current choice can't serve (that trips an A
 
 If a topic spans areas, name all the ADRs it touches.
 
+When the research feeds an ADR or a design-note decision, include the Unity and Unreal
+baseline that `docs/08 AI/Technical Lead Charter.md` § *Compare against Unity and Unreal* asks for.
+
 ## Output shape
 
 1. **Core idea**: a few lines, no fluff.
