@@ -36,6 +36,7 @@ namespace TechEngine {
             return SimulationError::AlreadyRunning;
         }
         m_stopRequested.store(false);
+        m_startupError.clear();
         m_presentationActive = presentationActive;
         m_thread = jobs.createDedicatedThread("TESimulation", ThreadRole::Dedicated, [this, &app](DedicatedThreadContext& context) {
             try {
@@ -102,6 +103,10 @@ namespace TechEngine {
 
     double SimulationThread::accumulator() const {
         return m_accumulator;
+    }
+
+    std::error_code SimulationThread::startupError() const {
+        return m_startupError;
     }
 
     double SimulationThread::beginAdvance(double elapsed) {
@@ -172,20 +177,27 @@ namespace TechEngine {
             }
             context.signalReady();
 
-            const std::stop_token stopToken = context.stopToken();
-            Clock::TimePoint previous = m_origin;
-            while (!m_stopRequested.load() && !app.stopRequested() && !stopToken.stop_requested()) {
-                const Clock::TimePoint current = m_context.engine.clock.now();
-                const std::uint64_t previousTick = m_context.tick;
-                advance(toSeconds(current - previous), [&app](const SimulationContext& simulation) {
-                    app.executeSimulationTick(simulation);
-                });
-                previous = current;
-                if (m_context.tick != previousTick) {
-                    TE_PROFILER_SCOPE("Simulation.Publish");
-                    app.publishSnapshot(m_context);
+            {
+                TE_PROFILER_SCOPE("Simulation.StartupLoad");
+                m_startupError = app.simulationStartupLoad();
+            }
+            if (!m_startupError) {
+                restartTimeline(m_context.engine.clock.now());
+                const std::stop_token stopToken = context.stopToken();
+                Clock::TimePoint previous = m_origin;
+                while (!m_stopRequested.load() && !app.stopRequested() && !stopToken.stop_requested()) {
+                    const Clock::TimePoint current = m_context.engine.clock.now();
+                    const std::uint64_t previousTick = m_context.tick;
+                    advance(toSeconds(current - previous), [&app](const SimulationContext& simulation) {
+                        app.executeSimulationTick(simulation);
+                    });
+                    previous = current;
+                    if (m_context.tick != previousTick) {
+                        TE_PROFILER_SCOPE("Simulation.Publish");
+                        app.publishSnapshot(m_context);
+                    }
+                    waitForNextTick(current);
                 }
-                waitForNextTick(current);
             }
         } catch (...) {
             failure = std::current_exception();

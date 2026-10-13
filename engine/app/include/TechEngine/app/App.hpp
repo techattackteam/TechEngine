@@ -85,6 +85,8 @@ namespace TechEngine {
 
         virtual void simulationInit();
 
+        virtual std::error_code simulationStartupLoad();
+
         virtual void publishSnapshot(const SimulationContext& simulation);
 
         virtual void simulationShutdown();

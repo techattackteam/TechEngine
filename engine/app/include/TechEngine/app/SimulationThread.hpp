@@ -41,6 +41,7 @@ namespace TechEngine {
         Clock::TimePoint m_origin{};
         Clock::TimePoint m_tickStarted{};
         double m_tickWorkDuration = 0.0;
+        std::error_code m_startupError;
         RateCounter m_rate;
         InputFrame m_inputFrame;
         SimulationContext m_context;
@@ -99,6 +100,8 @@ namespace TechEngine {
         const SimulationContext& simulationContext() const;
 
         double accumulator() const;
+
+        std::error_code startupError() const;
 
     private:
         double beginAdvance(double elapsed);

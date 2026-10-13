@@ -232,6 +232,7 @@ public:
     std::function<void()> onConfigureSimulation;
     std::function<void()> onMainUpdate;
     std::function<void()> onSimulationInit;
+    std::function<std::error_code()> onSimulationStartupLoad;
     std::function<void(const TechEngine::SimulationContext&)> onSystemTick;
     std::function<void(const TechEngine::SimulationContext&)> onPublishSnapshot;
     std::function<void()> onSimulationShutdown;
@@ -259,6 +260,10 @@ public:
 
     TechEngine::ThreadCompletionResult simulationCompletion() const {
         return m_simulationThread.completion();
+    }
+
+    std::error_code simulationStartupError() const {
+        return m_simulationThread.startupError();
     }
 
 protected:
@@ -302,6 +307,14 @@ protected:
         if (onSimulationInit) {
             onSimulationInit();
         }
+    }
+
+    std::error_code simulationStartupLoad() override {
+        record("simulationStartupLoad");
+        if (onSimulationStartupLoad) {
+            return onSimulationStartupLoad();
+        }
+        return {};
     }
 
     void publishSnapshot(const TechEngine::SimulationContext& simulation) override {
@@ -497,6 +510,7 @@ TEST_CASE("App unwinds only successfully initialized stages", "[app][lifecycle]"
     CHECK(app.run() != 0);
     CHECK(eventCount(app, "init") == 1);
     CHECK(eventCount(app, "simulationInit") == (mainFails ? 0 : 1));
+    CHECK(eventCount(app, "simulationStartupLoad") == 0);
     CHECK(eventCount(app, "publishSnapshot") == (publicationFails ? 1 : 0));
     CHECK(eventCount(app, "systemTick") == 0);
     CHECK(eventCount(app, "simulationShutdown") == (publicationFails ? 1 : 0));
@@ -536,6 +550,113 @@ TEST_CASE("App wakes the main thread and shuts down after a simulation failure",
     CHECK(app.run() != 0);
     CHECK(mainEntered);
     CHECK(eventCount(app, "publishSnapshot") == 2);
+    CHECK(eventCount(app, "simulationShutdown") == 1);
+    CHECK(eventCount(app, "shutdown") == 1);
+    checkStopped(app);
+}
+
+TEST_CASE("App runs the startup loading phase after readiness and before the first Tick", "[app][lifecycle][loading]") {
+    AppLifecycleProbe app;
+    bool mainEnteredDuringLoad = false;
+    app.onSimulationStartupLoad = [&] {
+        mainEnteredDuringLoad = app.mainEntered.wait();
+        return std::error_code{};
+    };
+    app.onPublishSnapshot = [&](const TechEngine::SimulationContext& simulation) {
+        if (simulation.tick >= 1) {
+            app.requestStop();
+        }
+    };
+
+    REQUIRE(app.run() == 0);
+    CHECK(mainEnteredDuringLoad);
+    CHECK_FALSE(app.simulationStartupError());
+    CHECK(eventCount(app, "simulationStartupLoad") == 1);
+
+    std::vector<AppLifecycleEvent> simulationEvents;
+    for (const auto& event: app.events()) {
+        if (event.name == "simulationInit" || event.name == "publishSnapshot" || event.name == "simulationStartupLoad" || event.name == "systemTick") {
+            simulationEvents.push_back(event);
+        }
+    }
+    REQUIRE(simulationEvents.size() >= 4);
+    CHECK(simulationEvents[0].name == "simulationInit");
+    CHECK(simulationEvents[1].name == "publishSnapshot");
+    CHECK(simulationEvents[1].tick == 0);
+    CHECK(simulationEvents[2].name == "simulationStartupLoad");
+    CHECK(simulationEvents[2].thread == simulationEvents[0].thread);
+    CHECK(simulationEvents[3].name == "systemTick");
+    CHECK(simulationEvents[3].tick == 1);
+    checkStopped(app);
+}
+
+TEST_CASE("App restarts the timeline after a slow startup loading phase, so no catch-up Tick replays it", "[app][lifecycle][loading]") {
+    const std::uint64_t clampedCatchUpTicks = 15;
+    AppLifecycleProbe app;
+    std::chrono::steady_clock::time_point loadFinished{};
+    std::uint64_t initialTimeline = 0;
+    std::uint64_t firstTickTimeline = 0;
+    TechEngine::Clock::TimePoint firstTickTime{};
+    std::uint64_t firstPublishedTick = 0;
+    app.onSimulationStartupLoad = [&] {
+        std::this_thread::sleep_for(400ms);
+        loadFinished = std::chrono::steady_clock::now();
+        return std::error_code{};
+    };
+    app.onSystemTick = [&](const TechEngine::SimulationContext& simulation) {
+        if (simulation.tick == 1) {
+            firstTickTime = simulation.tickTime;
+            firstTickTimeline = simulation.timeline;
+        }
+    };
+    app.onPublishSnapshot = [&](const TechEngine::SimulationContext& simulation) {
+        if (simulation.tick == 0) {
+            initialTimeline = simulation.timeline;
+            return;
+        }
+        if (firstPublishedTick == 0) {
+            firstPublishedTick = simulation.tick;
+        }
+        app.requestStop();
+    };
+
+    REQUIRE(app.run() == 0);
+    CHECK(firstTickTime > loadFinished);
+    CHECK(firstTickTimeline > initialTimeline);
+    CHECK(firstPublishedTick >= 1);
+    CHECK(firstPublishedTick < clampedCatchUpTicks);
+    checkStopped(app);
+}
+
+TEST_CASE("App ends the run with the startup loading phase's error and runs no Tick", "[app][lifecycle][loading]") {
+    AppLifecycleProbe app;
+    const std::error_code loadError = TechEngine::FileError::NotFound;
+    app.onSimulationStartupLoad = [&] {
+        return loadError;
+    };
+
+    CHECK(app.run() != 0);
+    CHECK(app.simulationStartupError() == loadError);
+    CHECK(app.simulationCompletion().status == TechEngine::ThreadCompletionStatus::Completed);
+    CHECK(eventCount(app, "simulationStartupLoad") == 1);
+    CHECK(eventCount(app, "systemTick") == 0);
+    CHECK(eventCount(app, "publishSnapshot") == 1);
+    CHECK(eventCount(app, "simulationShutdown") == 1);
+    CHECK(eventCount(app, "shutdown") == 1);
+    checkStopped(app);
+}
+
+TEST_CASE("App stopped during the startup loading phase ends cleanly without a Tick", "[app][lifecycle][loading]") {
+    AppLifecycleProbe app;
+    app.onSimulationStartupLoad = [&] {
+        app.requestStop();
+        return std::error_code{};
+    };
+
+    CHECK(app.run() == 0);
+    CHECK_FALSE(app.simulationStartupError());
+    CHECK(eventCount(app, "simulationStartupLoad") == 1);
+    CHECK(eventCount(app, "systemTick") == 0);
     CHECK(eventCount(app, "simulationShutdown") == 1);
     CHECK(eventCount(app, "shutdown") == 1);
     checkStopped(app);
