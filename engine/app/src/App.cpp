@@ -145,6 +145,10 @@ namespace TechEngine {
     void App::simulationInit() {
     }
 
+    std::error_code App::simulationStartupLoad() {
+        return {};
+    }
+
     void App::publishSnapshot(const SimulationContext&) {
     }
 
@@ -175,9 +179,13 @@ namespace TechEngine {
 
     bool App::stopSimulation() {
         m_simulationThread.stop();
+        const std::error_code startupError = m_simulationThread.startupError();
+        if (startupError) {
+            TE_LOGGER_ERROR("App simulation startup load failed: {0}", startupError.message());
+        }
         const ThreadCompletionResult completion = m_simulationThread.completion();
         if (completion.status != ThreadCompletionStatus::Failed) {
-            return true;
+            return !startupError;
         }
         if (completion.failure) {
             reportAppFailure("simulation", completion.failure);
