@@ -81,6 +81,22 @@ TEST_CASE("key and mouse button presses are not held while unfocused", "[platfor
     CHECK_FALSE(state.isHeld(MouseButton::Left));
 }
 
+TEST_CASE("an unknown key or mouse button is never held and changes nothing", "[platform][input]") {
+    InputState state;
+    state.apply(focusEvent(true));
+    state.apply(keyEvent(Key::W, true));
+    state.apply(buttonEvent(MouseButton::Left, true));
+
+    CHECK_FALSE(state.apply(keyEvent(Key::Unknown, true)));
+    CHECK_FALSE(state.apply(buttonEvent(MouseButton::Unknown, true)));
+    CHECK_FALSE(state.isHeld(Key::Unknown));
+    CHECK_FALSE(state.isHeld(MouseButton::Unknown));
+    CHECK(state.keys.count() == 1);
+    CHECK(state.buttons.count() == 1);
+    CHECK(state.isHeld(Key::W));
+    CHECK(state.isHeld(MouseButton::Left));
+}
+
 TEST_CASE("apply reports whether the event changed held state", "[platform][input]") {
     InputState state;
     CHECK_FALSE(state.apply(focusEvent(false)));
