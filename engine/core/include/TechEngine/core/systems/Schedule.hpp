@@ -90,6 +90,8 @@ namespace TechEngine {
 
         void addInputHandler(std::size_t entryIndex, InputHandler handler);
 
+        ScheduleEntry& checkedEntry(std::size_t entryIndex);
+
         friend class ScheduleRegistration;
     };
 }

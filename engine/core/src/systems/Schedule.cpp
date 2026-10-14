@@ -42,16 +42,12 @@ namespace TechEngine {
     }
 
     void Schedule::setPriority(const std::size_t entryIndex, const int value) {
-        TE_CHECK(!m_frozen, "Cannot modify schedule after freezing");
-        TE_CHECK(entryIndex < m_entries.size(), "Invalid schedule entry index");
-        m_entries.at(entryIndex).priority = value;
+        checkedEntry(entryIndex).priority = value;
     }
 
     void Schedule::addAccess(const std::size_t entryIndex, const std::span<const ComponentTypeId> written, const std::span<const ComponentTypeId> readOnly) {
-        TE_CHECK(!m_frozen, "Cannot modify schedule after freezing");
-        TE_CHECK(entryIndex < m_entries.size(), "Invalid schedule entry index");
+        ScheduleAccess& access = checkedEntry(entryIndex).access;
         const ScheduleAccess added(*m_componentRegistry, written, readOnly);
-        ScheduleAccess& access = m_entries.at(entryIndex).access;
         for (std::size_t i = 0; i < added.m_writeMask.size(); i++) {
             ScheduleAccess::orWord(access.m_writeMask, i, added.m_writeMask[i]);
         }
@@ -61,8 +57,7 @@ namespace TechEngine {
     }
 
     void Schedule::setSlot(const std::size_t entryIndex, const Slot value) {
-        TE_CHECK(!m_frozen, "Cannot modify schedule after freezing");
-        TE_CHECK(entryIndex < m_entries.size(), "Invalid schedule entry index");
+        ScheduleEntry& entry = checkedEntry(entryIndex);
 
         if (value == Slot::Terminal) {
             for (std::size_t i = 0; i < m_entries.size(); i++) {
@@ -70,27 +65,24 @@ namespace TechEngine {
             }
         }
 
-        m_entries.at(entryIndex).slot = value;
+        entry.slot = value;
     }
 
     void Schedule::addOrder(const std::size_t entryIndex, const std::type_index systemType, const Order order) {
-        TE_CHECK(!m_frozen, "Cannot modify schedule after freezing");
-        TE_CHECK(entryIndex < m_entries.size(), "Invalid schedule entry index");
-
-        m_entries.at(entryIndex).orderConstraints.push_back({systemType, order});
+        checkedEntry(entryIndex).orderConstraints.push_back({systemType, order});
     }
 
     void Schedule::addEventHandler(const std::size_t entryIndex, EventHandler handler) {
-        TE_CHECK(!m_frozen, "Cannot modify schedule after freezing");
-        TE_CHECK(entryIndex < m_entries.size(), "Invalid schedule entry index");
-
-        m_entries.at(entryIndex).eventHandlers.push_back(std::move(handler));
+        checkedEntry(entryIndex).eventHandlers.push_back(std::move(handler));
     }
 
     void Schedule::addInputHandler(const std::size_t entryIndex, InputHandler handler) {
+        checkedEntry(entryIndex).inputHandlers.push_back(std::move(handler));
+    }
+
+    ScheduleEntry& Schedule::checkedEntry(const std::size_t entryIndex) {
         TE_CHECK(!m_frozen, "Cannot modify schedule after freezing");
         TE_CHECK(entryIndex < m_entries.size(), "Invalid schedule entry index");
-
-        m_entries.at(entryIndex).inputHandlers.push_back(std::move(handler));
+        return m_entries.at(entryIndex);
     }
 }
