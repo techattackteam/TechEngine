@@ -52,17 +52,11 @@ namespace TechEngine {
         TE_CHECK(entryIndex < m_entries.size(), "Invalid schedule entry index");
         const ScheduleAccess added(*m_componentRegistry, written, readOnly);
         ScheduleAccess& access = m_entries.at(entryIndex).access;
-        if (added.m_writeMask.size() > access.m_writeMask.size()) {
-            access.m_writeMask.resize(added.m_writeMask.size(), 0);
-        }
-        if (added.m_readMask.size() > access.m_readMask.size()) {
-            access.m_readMask.resize(added.m_readMask.size(), 0);
-        }
         for (std::size_t i = 0; i < added.m_writeMask.size(); i++) {
-            access.m_writeMask[i] |= added.m_writeMask[i];
+            ScheduleAccess::orWord(access.m_writeMask, i, added.m_writeMask[i]);
         }
         for (std::size_t i = 0; i < added.m_readMask.size(); i++) {
-            access.m_readMask[i] |= added.m_readMask[i];
+            ScheduleAccess::orWord(access.m_readMask, i, added.m_readMask[i]);
         }
     }
 
