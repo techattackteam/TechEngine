@@ -1,9 +1,23 @@
+#include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/SimulationContext.hpp>
+#include <TechEngine/core/resources/BootRecord.hpp>
+#include <TechEngine/core/resources/PackWriter.hpp>
+#include <TechEngine/core/resources/ResourceId.hpp>
+#include <TechEngine/core/resources/Side.hpp>
+#include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/scene/Query.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
+#include <TechEngine/core/scene/SceneAsset.hpp>
+#include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/scene/components/Transform.hpp>
+#include <TechEngine/core/serialization/ReadError.hpp>
 #include <TechEngine/core/systems/ISystem.hpp>
 #include <TechEngine/core/systems/ScheduleRegistration.hpp>
+#include <TechEngine/platform/files/FileAccess.hpp>
+#include <TechEngine/platform/files/FileError.hpp>
+#include <TechEngine/platform/files/MountTable.hpp>
+#include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <RuntimeApp.hpp>
 
@@ -12,11 +26,15 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <numeric>
 #include <span>
 #include <string_view>
+#include <system_error>
 #include <typeinfo>
 #include <vector>
+
+using TechEngineTests::ScratchDirectory;
 
 namespace {
     struct FallingBody {
@@ -204,8 +222,32 @@ namespace {
 
     class RuntimeProbe : public TechEngine::RuntimeApp {
     public:
+        using TechEngine::RuntimeApp::mountAssets;
+
+        RuntimeProbe() : RuntimeApp(std::filesystem::path{}) {
+        }
+
+        explicit RuntimeProbe(const std::filesystem::path& folder) : RuntimeApp(folder) {
+        }
+
         void bootstrapSimulation() {
             finalizeSimulation();
+        }
+
+        std::error_code startupLoad() {
+            return simulationStartupLoad();
+        }
+
+        const TechEngine::Scene& scene() const {
+            return m_scene;
+        }
+
+        const TechEngine::MountTable& mounts() const {
+            return m_mounts;
+        }
+
+        const TechEngine::FileAccess& files() const {
+            return m_files;
         }
 
         std::uint64_t advanceSteps(double fixedSteps) {
@@ -295,6 +337,77 @@ static void runUntilFirstLanding(EventRuntimeProbe& runtime) {
     REQUIRE(runtime.advanceSteps(1.0) == 1);
     REQUIRE(runtime.advanceSteps(1.0) == 1);
     REQUIRE(runtime.groundedCount() == 1);
+}
+
+static constexpr TechEngine::ResourceId STARTUP_SCENE_ID = TechEngine::ResourceId(0x5EC0FFEE00000009);
+static constexpr std::string_view STARTUP_SCENE_NAME = "project://assets/common/Startup.tescene";
+
+static TechEngine::TransformValues secondChildLocal() {
+    TechEngine::TransformValues values;
+    values.position = TechEngine::Vec3(1.0f, 2.0f, 3.0f);
+    return values;
+}
+
+static std::vector<std::byte> startupSceneBytes() {
+    TechEngine::ComponentRegistry registry;
+    registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
+    registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity parent = scene.createEntity();
+    const TechEngine::Entity firstChild = scene.createEntity();
+    const TechEngine::Entity secondChild = scene.createEntity();
+    REQUIRE(scene.setParent(firstChild, parent, 0));
+    REQUIRE(scene.setParent(secondChild, parent, 1));
+    REQUIRE(scene.getComponent<TechEngine::Transform>(secondChild).setLocal(secondChildLocal()));
+
+    std::vector<std::byte> bytes;
+    TechEngine::SceneAsset{STARTUP_SCENE_ID}.write(scene, bytes);
+    return bytes;
+}
+
+static TechEngine::BootRecord clientBootRecord(const TechEngine::Side sceneSide) {
+    TechEngine::BootRecord record;
+    record.startupScene = STARTUP_SCENE_ID;
+    record.rolePacks = {{TechEngine::Role::Client, {"common.tepack", "client.tepack"}}};
+    record.sides = {{STARTUP_SCENE_ID, sceneSide}};
+    return record;
+}
+
+static std::vector<std::byte> bootRecordBytes(const TechEngine::BootRecord& record) {
+    std::vector<std::byte> bytes;
+    record.write(bytes);
+    return bytes;
+}
+
+static void writePack(const ScratchDirectory& scratch, const std::string_view name, const std::vector<TechEngine::PackInput>& entries, const std::span<const std::byte> bootRecord) {
+    TechEngine::PackWriter writer;
+    for (const TechEngine::PackInput& entry: entries) {
+        writer.add(entry);
+    }
+    if (!bootRecord.empty()) {
+        writer.setBootRecord(bootRecord);
+    }
+    std::vector<std::byte> bytes;
+    writer.write(bytes);
+    scratch.writeFile(std::filesystem::path("assets") / name, std::string_view(reinterpret_cast<const char*>(bytes.data()), bytes.size()));
+}
+
+static void writeClientExport(const ScratchDirectory& scratch, const TechEngine::Side sceneSide, const std::span<const std::byte> scene) {
+    const std::vector<std::byte> bootRecord = bootRecordBytes(clientBootRecord(sceneSide));
+    const TechEngine::PackInput sceneEntry = {STARTUP_SCENE_ID, TechEngine::SCENE_TYPE_TAG, STARTUP_SCENE_NAME, scene};
+    const bool sceneInCommon = sceneSide == TechEngine::Side::Common;
+    writePack(scratch, "common.tepack", sceneInCommon ? std::vector{sceneEntry} : std::vector<TechEngine::PackInput>{}, bootRecord);
+    writePack(scratch, "client.tepack", sceneInCommon ? std::vector<TechEngine::PackInput>{} : std::vector{sceneEntry}, {});
+}
+
+static void checkStartupScene(const TechEngine::Scene& scene) {
+    const std::vector<TechEngine::Entity> roots = scene.getRoots();
+    REQUIRE(roots.size() == 1);
+    const std::vector<TechEngine::Entity> children = scene.getChildren(roots.front());
+    REQUIRE(children.size() == 2);
+    CHECK(scene.getChildren(children[0]).empty());
+    CHECK(scene.getChildren(children[1]).empty());
+    CHECK(scene.getComponent<TechEngine::Transform>(children[1]).getLocal().position == secondChildLocal().position);
 }
 
 TEST_CASE("runtime composes as a client", "[runtime]") {
@@ -436,4 +549,151 @@ TEST_CASE("a burst of pulses every Tick arrives whole and in order, including ac
 
     CHECK(runtime.system<SpawnSystem>().getPulseBatches() == Batches(9, PulseSystem::PULSES_PER_TICK));
     CHECK(runtime.system<SpawnSystem>().isPulseSequenceIntact());
+}
+
+TEST_CASE("the runtime mounts assets in the assets folder under the folder it is given", "[runtime][load]") {
+    const ScratchDirectory scratch{"runtimeMount"};
+    scratch.writeFile("assets/probe.txt", "packs live here");
+    RuntimeProbe runtime{scratch.root()};
+    runtime.mountAssets();
+
+    REQUIRE(runtime.mounts().hasAlias("assets"));
+    std::vector<std::byte> bytes;
+    REQUIRE(runtime.files().read("assets://probe.txt", bytes) == std::error_code{});
+    CHECK(bytes.size() == std::string_view("packs live here").size());
+}
+
+TEST_CASE("the startup load reads the startup scene from the common pack", "[runtime][load]") {
+    const ScratchDirectory scratch{"runtimeLoadCommon"};
+    const std::vector<std::byte> scene = startupSceneBytes();
+    writeClientExport(scratch, TechEngine::Side::Common, scene);
+    RuntimeProbe runtime{scratch.root()};
+    runtime.mountAssets();
+    runtime.bootstrapSimulation();
+
+    REQUIRE(runtime.startupLoad() == std::error_code{});
+
+    checkStartupScene(runtime.scene());
+}
+
+TEST_CASE("the startup load reads a startup scene that ships in the client pack", "[runtime][load]") {
+    const ScratchDirectory scratch{"runtimeLoadClient"};
+    const std::vector<std::byte> scene = startupSceneBytes();
+    writeClientExport(scratch, TechEngine::Side::Client, scene);
+    RuntimeProbe runtime{scratch.root()};
+    runtime.mountAssets();
+    runtime.bootstrapSimulation();
+
+    REQUIRE(runtime.startupLoad() == std::error_code{});
+
+    checkStartupScene(runtime.scene());
+}
+
+TEST_CASE("a missing common pack ends the startup load with NotFound and loads nothing", "[runtime][load]") {
+    const ScratchDirectory scratch{"runtimeMissingCommon"};
+    scratch.makeDirectory("assets");
+    RuntimeProbe runtime{scratch.root()};
+    runtime.mountAssets();
+    runtime.bootstrapSimulation();
+
+    REQUIRE(runtime.startupLoad() == TechEngine::FileError::NotFound);
+
+    CHECK(runtime.scene().getRoots().empty());
+}
+
+TEST_CASE("a missing client pack ends the startup load with NotFound and loads nothing", "[runtime][load]") {
+    const ScratchDirectory scratch{"runtimeMissingClient"};
+    const std::vector<std::byte> scene = startupSceneBytes();
+    const std::vector<std::byte> bootRecord = bootRecordBytes(clientBootRecord(TechEngine::Side::Common));
+    writePack(scratch, "common.tepack", {{STARTUP_SCENE_ID, TechEngine::SCENE_TYPE_TAG, STARTUP_SCENE_NAME, scene}}, bootRecord);
+    RuntimeProbe runtime{scratch.root()};
+    runtime.mountAssets();
+    runtime.bootstrapSimulation();
+
+    REQUIRE(runtime.startupLoad() == TechEngine::FileError::NotFound);
+
+    CHECK(runtime.scene().getRoots().empty());
+}
+
+TEST_CASE("a common pack without a boot record ends the startup load as Malformed", "[runtime][load]") {
+    const ScratchDirectory scratch{"runtimeNoBootRecord"};
+    const std::vector<std::byte> scene = startupSceneBytes();
+    writePack(scratch, "common.tepack", {{STARTUP_SCENE_ID, TechEngine::SCENE_TYPE_TAG, STARTUP_SCENE_NAME, scene}}, {});
+    writePack(scratch, "client.tepack", {}, {});
+    RuntimeProbe runtime{scratch.root()};
+    runtime.mountAssets();
+    runtime.bootstrapSimulation();
+
+    REQUIRE(runtime.startupLoad() == TechEngine::ReadError::Malformed);
+
+    CHECK(runtime.scene().getRoots().empty());
+}
+
+TEST_CASE("a boot record that does not parse ends the startup load with its read error", "[runtime][load]") {
+    const ScratchDirectory scratch{"runtimeBadBootRecord"};
+    std::vector<std::byte> bootRecord = bootRecordBytes(clientBootRecord(TechEngine::Side::Common));
+    bootRecord.resize(2);
+    writePack(scratch, "common.tepack", {}, bootRecord);
+    writePack(scratch, "client.tepack", {}, {});
+    RuntimeProbe runtime{scratch.root()};
+    runtime.mountAssets();
+    runtime.bootstrapSimulation();
+
+    REQUIRE(runtime.startupLoad() == TechEngine::ReadError::Truncated);
+
+    CHECK(runtime.scene().getRoots().empty());
+}
+
+TEST_CASE("a boot record that names no startup scene ends the startup load as Malformed", "[runtime][load]") {
+    const ScratchDirectory scratch{"runtimeNullStartupScene"};
+    TechEngine::BootRecord record = clientBootRecord(TechEngine::Side::Common);
+    record.startupScene = TechEngine::ResourceId();
+    const std::vector<std::byte> bootRecord = bootRecordBytes(record);
+    const std::vector<std::byte> scene = startupSceneBytes();
+    writePack(scratch, "common.tepack", {{STARTUP_SCENE_ID, TechEngine::SCENE_TYPE_TAG, STARTUP_SCENE_NAME, scene}}, bootRecord);
+    writePack(scratch, "client.tepack", {}, {});
+    RuntimeProbe runtime{scratch.root()};
+    runtime.mountAssets();
+    runtime.bootstrapSimulation();
+
+    REQUIRE(runtime.startupLoad() == TechEngine::ReadError::Malformed);
+
+    CHECK(runtime.scene().getRoots().empty());
+}
+
+TEST_CASE("a startup scene the client's packs do not hold ends the startup load as Malformed", "[runtime][load]") {
+    const ScratchDirectory scratch{"runtimeAbsentStartupScene"};
+    TechEngine::BootRecord record = clientBootRecord(TechEngine::Side::Server);
+
+    SECTION("listed as a server asset") {
+    }
+
+    SECTION("listed nowhere") {
+        record.sides.clear();
+    }
+
+    const std::vector<std::byte> bootRecord = bootRecordBytes(record);
+    writePack(scratch, "common.tepack", {}, bootRecord);
+    writePack(scratch, "client.tepack", {}, {});
+    RuntimeProbe runtime{scratch.root()};
+    runtime.mountAssets();
+    runtime.bootstrapSimulation();
+
+    REQUIRE(runtime.startupLoad() == TechEngine::ReadError::Malformed);
+
+    CHECK(runtime.scene().getRoots().empty());
+}
+
+TEST_CASE("a startup scene that does not parse ends the startup load with its read error and loads nothing", "[runtime][load]") {
+    const ScratchDirectory scratch{"runtimeBadStartupScene"};
+    std::vector<std::byte> scene = startupSceneBytes();
+    scene.resize(4);
+    writeClientExport(scratch, TechEngine::Side::Common, scene);
+    RuntimeProbe runtime{scratch.root()};
+    runtime.mountAssets();
+    runtime.bootstrapSimulation();
+
+    REQUIRE(runtime.startupLoad() == TechEngine::ReadError::Truncated);
+
+    CHECK(runtime.scene().getRoots().empty());
 }
