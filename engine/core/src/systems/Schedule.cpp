@@ -47,13 +47,7 @@ namespace TechEngine {
 
     void Schedule::addAccess(const std::size_t entryIndex, const std::span<const ComponentTypeId> written, const std::span<const ComponentTypeId> readOnly) {
         ScheduleAccess& access = checkedEntry(entryIndex).access;
-        const ScheduleAccess added(*m_componentRegistry, written, readOnly);
-        for (std::size_t i = 0; i < added.m_writeMask.size(); i++) {
-            ScheduleAccess::orWord(access.m_writeMask, i, added.m_writeMask[i]);
-        }
-        for (std::size_t i = 0; i < added.m_readMask.size(); i++) {
-            ScheduleAccess::orWord(access.m_readMask, i, added.m_readMask[i]);
-        }
+        access.merge(ScheduleAccess(*m_componentRegistry, written, readOnly));
     }
 
     void Schedule::setSlot(const std::size_t entryIndex, const Slot value) {

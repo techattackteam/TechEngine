@@ -20,11 +20,21 @@ namespace TechEngine {
     }
 
     bool ScheduleAccess::reads(const ComponentDenseId denseId) const {
-        return hasBit(m_readMask, denseId) || writes(denseId);
+        const std::size_t index = denseId.value() / 64;
+        const std::size_t bit = denseId.value() % 64;
+        if (index < m_readMask.size() && (m_readMask[index] & (1ULL << bit)) != 0) {
+            return true;
+        }
+        return writes(denseId);
     }
 
     bool ScheduleAccess::writes(const ComponentDenseId denseId) const {
-        return hasBit(m_writeMask, denseId);
+        const std::size_t index = denseId.value() / 64;
+        const std::size_t bit = denseId.value() % 64;
+        if (index >= m_writeMask.size()) {
+            return false;
+        }
+        return (m_writeMask[index] & (1ULL << bit)) != 0;
     }
 
     bool ScheduleAccess::touches(const ComponentDenseId denseId) const {
@@ -33,26 +43,37 @@ namespace TechEngine {
 
     ScheduleAccess::ScheduleAccess(const ComponentRegistry& registry, std::span<const ComponentTypeId> written, std::span<const ComponentTypeId> readOnly) {
         for (const ComponentTypeId type: written) {
-            setBit(m_writeMask, registry.denseId(type));
+            const ComponentDenseId dense = registry.denseId(type);
+            const std::size_t index = dense.value() / 64;
+            const std::size_t bit = dense.value() % 64;
+            if (index >= m_writeMask.size()) {
+                m_writeMask.resize(index + 1, 0);
+            }
+            m_writeMask[index] |= (1ULL << bit);
         }
         for (const ComponentTypeId type: readOnly) {
-            setBit(m_readMask, registry.denseId(type));
+            const ComponentDenseId dense = registry.denseId(type);
+            const std::size_t index = dense.value() / 64;
+            const std::size_t bit = dense.value() % 64;
+            if (index >= m_readMask.size()) {
+                m_readMask.resize(index + 1, 0);
+            }
+            m_readMask[index] |= (1ULL << bit);
         }
     }
 
-    bool ScheduleAccess::hasBit(const std::vector<std::uint64_t>& mask, const ComponentDenseId denseId) {
-        const std::size_t wordIndex = denseId.value() / 64;
-        return wordIndex < mask.size() && (mask[wordIndex] & (1ULL << (denseId.value() % 64))) != 0;
-    }
-
-    void ScheduleAccess::setBit(std::vector<std::uint64_t>& mask, const ComponentDenseId denseId) {
-        orWord(mask, denseId.value() / 64, 1ULL << (denseId.value() % 64));
-    }
-
-    void ScheduleAccess::orWord(std::vector<std::uint64_t>& mask, const std::size_t wordIndex, const std::uint64_t bits) {
-        if (wordIndex >= mask.size()) {
-            mask.resize(wordIndex + 1, 0);
+    void ScheduleAccess::merge(const ScheduleAccess& added) {
+        if (added.m_writeMask.size() > m_writeMask.size()) {
+            m_writeMask.resize(added.m_writeMask.size(), 0);
         }
-        mask[wordIndex] |= bits;
+        if (added.m_readMask.size() > m_readMask.size()) {
+            m_readMask.resize(added.m_readMask.size(), 0);
+        }
+        for (std::size_t i = 0; i < added.m_writeMask.size(); i++) {
+            m_writeMask[i] |= added.m_writeMask[i];
+        }
+        for (std::size_t i = 0; i < added.m_readMask.size(); i++) {
+            m_readMask[i] |= added.m_readMask[i];
+        }
     }
 }

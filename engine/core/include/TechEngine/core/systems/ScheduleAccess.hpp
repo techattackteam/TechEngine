@@ -53,11 +53,7 @@ namespace TechEngine {
 
         bool conflicts(const ScheduleAccess& other) const;
 
-        static bool hasBit(const std::vector<std::uint64_t>& mask, ComponentDenseId denseId);
-
-        static void setBit(std::vector<std::uint64_t>& mask, ComponentDenseId denseId);
-
-        static void orWord(std::vector<std::uint64_t>& mask, std::size_t wordIndex, std::uint64_t bits);
+        void merge(const ScheduleAccess& added);
 
         template<typename Function>
         static void forEachType(const std::vector<std::uint64_t>& mask, Function&& function) {
