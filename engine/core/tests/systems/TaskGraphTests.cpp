@@ -4,6 +4,8 @@
 #include <TechEngine/core/systems/TaskGraph.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
+#include <systems/IndexedComponents.hpp>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
@@ -18,9 +20,7 @@
 #include <vector>
 
 template<std::size_t Index>
-struct GraphComponent {
-    std::uint32_t value = 0;
-};
+using GraphComponent = TechEngineTests::IndexedComponent<Index>;
 
 static constexpr std::array<std::string_view, 5> GRAPH_SYSTEM_NAMES{
     "FirstSystem",
@@ -159,11 +159,6 @@ public:
     GraphLogCaptureGuard& operator=(const GraphLogCaptureGuard&) = delete;
 };
 
-template<std::size_t... Indices>
-static void registerGraphComponents(TechEngine::ComponentRegistry& registry, std::index_sequence<Indices...>) {
-    (registry.registerComponent<GraphComponent<Indices>>("Test.GraphComponent." + std::to_string(Indices)), ...);
-}
-
 template<typename T>
 static std::size_t findSystemLevel(const TechEngine::TaskGraph& graph) {
     for (std::size_t levelIndex = 0; levelIndex < graph.getLevels().size(); levelIndex++) {
@@ -249,7 +244,7 @@ TEST_CASE("a schedule frozen by the composition root can still be built", "[core
 TEST_CASE("readers of the same component remain on the same level", "[core][systems][task-graph]") {
     TechEngine::ComponentRegistry registry;
     TechEngine::EventRegistry events;
-    registerGraphComponents(registry, std::make_index_sequence<1>{});
+    TechEngineTests::registerIndexedComponents(registry, std::make_index_sequence<1>{});
     TechEngine::Schedule schedule(registry);
     schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<0>>>{});
     schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<0>>>{});
@@ -263,7 +258,7 @@ TEST_CASE("readers of the same component remain on the same level", "[core][syst
 TEST_CASE("conflicts cross access-mask word boundaries without touching neighboring components", "[core][systems][task-graph]") {
     TechEngine::ComponentRegistry registry;
     TechEngine::EventRegistry events;
-    registerGraphComponents(registry, std::make_index_sequence<65>{});
+    TechEngineTests::registerIndexedComponents(registry, std::make_index_sequence<65>{});
     TechEngine::Schedule schedule(registry);
     schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<64>>, TechEngine::Read<>>{}).setPriority(10);
     schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<64>>>{}).setPriority(20);
@@ -279,7 +274,7 @@ TEST_CASE("conflicts cross access-mask word boundaries without touching neighbor
 TEST_CASE("conflicts form the worked priority-ordered graph levels", "[core][systems][task-graph]") {
     TechEngine::ComponentRegistry registry;
     TechEngine::EventRegistry events;
-    registerGraphComponents(registry, std::make_index_sequence<4>{});
+    TechEngineTests::registerIndexedComponents(registry, std::make_index_sequence<4>{});
     TechEngine::Schedule schedule(registry);
     schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<GraphComponent<1>>>{}).setPriority(10);
     schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<1>>, TechEngine::Read<>>{}).setPriority(20);
@@ -298,7 +293,7 @@ TEST_CASE("conflicts form the worked priority-ordered graph levels", "[core][sys
 TEST_CASE("lower numeric priority wins regardless of registration order", "[core][systems][task-graph]") {
     TechEngine::ComponentRegistry registry;
     TechEngine::EventRegistry events;
-    registerGraphComponents(registry, std::make_index_sequence<1>{});
+    TechEngineTests::registerIndexedComponents(registry, std::make_index_sequence<1>{});
     TechEngine::Schedule schedule(registry);
     schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<>>{}).setPriority(20);
     schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<0>>>{}).setPriority(-10);
@@ -312,7 +307,7 @@ TEST_CASE("lower numeric priority wins regardless of registration order", "[core
 TEST_CASE("explicit order overrides priority for a conflicting pair", "[core][systems][task-graph]") {
     TechEngine::ComponentRegistry registry;
     TechEngine::EventRegistry events;
-    registerGraphComponents(registry, std::make_index_sequence<1>{});
+    TechEngineTests::registerIndexedComponents(registry, std::make_index_sequence<1>{});
     TechEngine::Schedule schedule(registry);
     schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<>>{}).setPriority(20).before<SecondSystem>();
     schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<0>>>{}).setPriority(10);
@@ -356,7 +351,7 @@ TEST_CASE("equal-priority conflicts fail without freezing the schedule", "[core]
     const TechEngineTests::FatalAssertGuard guard;
     TechEngine::ComponentRegistry registry;
     TechEngine::EventRegistry events;
-    registerGraphComponents(registry, std::make_index_sequence<1>{});
+    TechEngineTests::registerIndexedComponents(registry, std::make_index_sequence<1>{});
     TechEngine::Schedule schedule(registry);
     schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<>>{});
     schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<0>>>{});
@@ -376,7 +371,7 @@ TEST_CASE("an invalid graph does not construct extra systems and cleans up selec
     {
         TechEngine::ComponentRegistry registry;
         TechEngine::EventRegistry events;
-        registerGraphComponents(registry, std::make_index_sequence<1>{});
+        TechEngineTests::registerIndexedComponents(registry, std::make_index_sequence<1>{});
         TechEngine::Schedule schedule(registry);
         schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<>>{});
         schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<0>>>{});
@@ -395,7 +390,7 @@ TEST_CASE("an invalid graph does not construct extra systems and cleans up selec
 TEST_CASE("explicit order resolves an equal-priority conflict", "[core][systems][task-graph]") {
     TechEngine::ComponentRegistry registry;
     TechEngine::EventRegistry events;
-    registerGraphComponents(registry, std::make_index_sequence<1>{});
+    TechEngineTests::registerIndexedComponents(registry, std::make_index_sequence<1>{});
     TechEngine::Schedule schedule(registry);
     schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<>>{}).after<SecondSystem>();
     schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<0>>>{});
@@ -449,7 +444,7 @@ TEST_CASE("an order constraint naming an unregistered system is rejected", "[cor
 TEST_CASE("the terminal system is a final singleton level after every regular level", "[core][systems][task-graph]") {
     TechEngine::ComponentRegistry registry;
     TechEngine::EventRegistry events;
-    registerGraphComponents(registry, std::make_index_sequence<1>{});
+    TechEngineTests::registerIndexedComponents(registry, std::make_index_sequence<1>{});
     TechEngine::Schedule schedule(registry);
     schedule.add<TerminalSystem>(TechEngine::DeclareAccess<TechEngine::Write<>, TechEngine::Read<GraphComponent<0>>>{}).setSlot(TechEngine::Slot::Terminal);
     schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<>>{}).setPriority(10);
@@ -468,7 +463,7 @@ TEST_CASE("every conflict-derived edge is logged with its chosen direction", "[c
     const GraphLogCaptureGuard guard;
     TechEngine::ComponentRegistry registry;
     TechEngine::EventRegistry events;
-    registerGraphComponents(registry, std::make_index_sequence<2>{});
+    TechEngineTests::registerIndexedComponents(registry, std::make_index_sequence<2>{});
     TechEngine::Schedule schedule(registry);
     schedule.add<FirstSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<0>>, TechEngine::Read<>>{}).setPriority(10);
     schedule.add<SecondSystem>(TechEngine::DeclareAccess<TechEngine::Write<GraphComponent<1>>, TechEngine::Read<GraphComponent<0>>>{}).setPriority(20);

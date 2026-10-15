@@ -6,6 +6,8 @@
 #include <TechEngine/core/systems/Schedule.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
+#include <systems/IndexedComponents.hpp>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
@@ -13,7 +15,6 @@
 #include <cstdint>
 #include <span>
 #include <stdexcept>
-#include <string>
 #include <string_view>
 #include <typeindex>
 #include <utility>
@@ -32,9 +33,7 @@ struct ScheduleUnregistered {
 };
 
 template<std::size_t Index>
-struct ScheduleMaskComponent {
-    std::uint32_t value;
-};
+using ScheduleMaskComponent = TechEngineTests::IndexedComponent<Index>;
 
 class MovementSystem final : public TechEngine::ISystem {
 public:
@@ -224,11 +223,6 @@ public:
 };
 
 template<std::size_t... Indices>
-static void registerMaskComponents(TechEngine::ComponentRegistry& registry, std::index_sequence<Indices...>) {
-    (registry.registerComponent<ScheduleMaskComponent<Indices>>("Test.ScheduleMask." + std::to_string(Indices)), ...);
-}
-
-template<std::size_t... Indices>
 static void addPlaceholderSystems(TechEngine::Schedule& schedule, std::index_sequence<Indices...>) {
     (schedule.add<SchedulePlaceholderSystem<Indices>>(), ...);
 }
@@ -299,7 +293,7 @@ TEST_CASE("a failed startup declaration removes its entry and destroys its insta
 
 TEST_CASE("schedule access crosses mask word boundaries without touching neighboring types", "[core][systems]") {
     TechEngine::ComponentRegistry registry;
-    registerMaskComponents(registry, std::make_index_sequence<65>{});
+    TechEngineTests::registerIndexedComponents(registry, std::make_index_sequence<65>{});
     TechEngine::Schedule schedule(registry);
 
     schedule.add<MovementSystem>(TechEngine::DeclareAccess<TechEngine::Write<ScheduleMaskComponent<64>, ScheduleMaskComponent<0>>, TechEngine::Read<ScheduleMaskComponent<63>, ScheduleMaskComponent<1>>>{});

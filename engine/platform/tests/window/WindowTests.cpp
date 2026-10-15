@@ -1,6 +1,7 @@
 #include <TechEngine/base/time/Clock.hpp>
 #include <TechEngine/platform/input/InputBuffer.hpp>
 #include <TechEngine/platform/window/Window.hpp>
+#include <TechEngine/testing/WindowTerminateGuard.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -15,14 +16,8 @@
 #include <system_error>
 #include <thread>
 
-struct PlatformWindowTestScope {
-    ~PlatformWindowTestScope() {
-        TechEngine::Window::terminate();
-    }
-};
-
 TEST_CASE("Window opens and closes on main without claiming the context", "[platform][window]") {
-    const PlatformWindowTestScope scope;
+    const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
     REQUIRE(window.open(320, 240, "Window test") == std::error_code{});
@@ -39,7 +34,7 @@ TEST_CASE("Window opens and closes on main without claiming the context", "[plat
 }
 
 TEST_CASE("GLFW grows and frees its blocks through the allocator Window installs", "[platform][window]") {
-    const PlatformWindowTestScope scope;
+    const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     // glfwInit allocates the built-in gamepad mapping table, so every mapping that parses and
     // has an unseen GUID grows that table through the reallocate callback. A mapping that fails
@@ -51,7 +46,7 @@ TEST_CASE("GLFW grows and frees its blocks through the allocator Window installs
 }
 
 TEST_CASE("Window releases a context on its owning worker", "[platform][window]") {
-    const PlatformWindowTestScope scope;
+    const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
     REQUIRE(window.open(320, 240, "Context test") == std::error_code{});
@@ -71,7 +66,7 @@ TEST_CASE("Window releases a context on its owning worker", "[platform][window]"
 }
 
 TEST_CASE("Window title uses the supplied string view and buffers swap on the context owner", "[platform][window]") {
-    const PlatformWindowTestScope scope;
+    const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
     REQUIRE(window.open(320, 240, "Original title") == std::error_code{});
@@ -104,7 +99,7 @@ TEST_CASE("Window title uses the supplied string view and buffers swap on the co
 }
 
 TEST_CASE("Window publishes framebuffer pixels and callback changes to the render thread", "[platform][window][framebuffer]") {
-    const PlatformWindowTestScope scope;
+    const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
     CHECK(window.framebufferSize().width == 0);
@@ -178,7 +173,7 @@ TEST_CASE("Window publishes framebuffer pixels and callback changes to the rende
 }
 
 TEST_CASE("Window event waiting returns when another thread posts an empty event", "[platform][window]") {
-    const PlatformWindowTestScope scope;
+    const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
     REQUIRE(window.open(320, 240, "Wait test") == std::error_code{});
@@ -227,7 +222,7 @@ static GlfwInputCallbacks takeInputCallbacks(GLFWwindow* nativeWindow) {
 }
 
 struct InputWindowFixture {
-    PlatformWindowTestScope scope;
+    TechEngineTests::WindowTerminateGuard scope;
     const TechEngine::Clock clock;
     TechEngine::InputBuffer input{clock};
     TechEngine::Window window;

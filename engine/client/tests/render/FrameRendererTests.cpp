@@ -1,5 +1,6 @@
 #include <TechEngine/client/render/RenderSnapshot.hpp>
 #include <TechEngine/platform/window/Window.hpp>
+#include <TechEngine/testing/WindowTerminateGuard.hpp>
 
 #include <render/FrameRenderer.hpp>
 
@@ -10,12 +11,6 @@
 #include <cstddef>
 #include <system_error>
 #include <thread>
-
-struct FrameRendererWindowScope {
-    ~FrameRendererWindowScope() {
-        TechEngine::Window::terminate();
-    }
-};
 
 enum class FrameShaderFailure { VertexCompile, FragmentCompile, Link };
 
@@ -62,7 +57,7 @@ TEST_CASE("Frame renderer rejects shader failures and can retry initialization",
         failure = FrameShaderFailure::Link;
     }
 
-    const FrameRendererWindowScope scope;
+    const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
     REQUIRE(window.open(320, 240, "Shader failure test") == std::error_code{});
@@ -96,7 +91,7 @@ TEST_CASE("Frame renderer rejects shader failures and can retry initialization",
 }
 
 TEST_CASE("Frame renderer clears, draws, redraws and resizes on its context owner", "[client][render][window]") {
-    const FrameRendererWindowScope scope;
+    const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
     REQUIRE(window.open(320, 240, "Frame renderer test") == std::error_code{});
