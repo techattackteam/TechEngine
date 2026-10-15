@@ -1,6 +1,7 @@
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/platform/input/InputBuffer.hpp>
 #include <TechEngine/platform/window/Window.hpp>
+#include <TechEngine/testing/WindowTerminateGuard.hpp>
 
 #include <render/RenderThread.hpp>
 
@@ -12,17 +13,11 @@
 #include <thread>
 #include <vector>
 
-struct RenderWindowTestScope {
-    ~RenderWindowTestScope() {
-        TechEngine::Window::terminate();
-    }
-};
-
 TEST_CASE("Render thread loads GL with its context current", "[client][render][window]") {
     TechEngine::JobSystem jobs{1};
     TechEngine::Clock clock;
     TechEngine::InputBuffer input{clock};
-    const RenderWindowTestScope scope;
+    const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
     REQUIRE(window.open(320, 240, "Render startup test") == std::error_code{});
@@ -57,7 +52,7 @@ TEST_CASE("Render thread releases its context and joins before window destructio
     TechEngine::JobSystem jobs{1};
     TechEngine::Clock clock;
     TechEngine::InputBuffer input{clock};
-    const RenderWindowTestScope scope;
+    const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
     REQUIRE(window.open(320, 240, "Render shutdown test") == std::error_code{});
@@ -76,7 +71,7 @@ TEST_CASE("Render thread joins after failed startup and can retry", "[client][re
     TechEngine::JobSystem jobs{1};
     TechEngine::Clock clock;
     TechEngine::InputBuffer input{clock};
-    const RenderWindowTestScope scope;
+    const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
     TechEngine::RenderThread renderer;
