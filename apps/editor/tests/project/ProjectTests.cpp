@@ -20,6 +20,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <format>
+#include <fstream>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -73,7 +74,7 @@ namespace {
             m_scratch.makeDirectory("assets/client");
             m_scratch.makeDirectory("assets/server");
             m_mounts.mount("project", m_scratch.root());
-            m_outputMounts.mount("out", outFolder() / "assets");
+            m_outputMounts.mount("out", outFolder() / "Export" / "assets");
 
             m_sceneBytes = assetBytes(SCENE_KIND, EXPORT_SCENE_ID, "startup scene");
             writeBytes(m_scratch, "assets/common/start.tescene", m_sceneBytes);
@@ -212,7 +213,7 @@ TEST_CASE("load reads an optional client startup scene", "[editor][project]") {
     Project project;
 
     REQUIRE(project.load(env.files, "project://project.toml") == std::error_code{});
-    CHECK(project.exportStartupScene(Role::Client) == ResourceId(0x3f9a2c41d07e88b5));
+    CHECK(project.getExportStartupScene(Role::Client) == ResourceId(0x3f9a2c41d07e88b5));
 }
 
 TEST_CASE("load leaves the client startup scene null when the key is absent", "[editor][project]") {
@@ -222,7 +223,7 @@ TEST_CASE("load leaves the client startup scene null when the key is absent", "[
     Project project;
 
     REQUIRE(project.load(env.files, "project://project.toml") == std::error_code{});
-    CHECK_FALSE(project.exportStartupScene(Role::Client).valid());
+    CHECK_FALSE(project.getExportStartupScene(Role::Client).valid());
 }
 
 TEST_CASE("load returns SchemaInvalid when the client startup scene is not a string", "[editor][project]") {
@@ -253,7 +254,7 @@ TEST_CASE("a failed load keeps the previous client startup scene and name", "[ed
 
     CHECK(project.load(env.files, "project://broken.toml") == ProjectError::SchemaInvalid);
     CHECK(project.name() == "Sandbox");
-    CHECK(project.exportStartupScene(Role::Client) == ResourceId(0xaa));
+    CHECK(project.getExportStartupScene(Role::Client) == ResourceId(0xaa));
 }
 
 TEST_CASE("save round-trips the client startup scene through load", "[editor][project]") {
@@ -269,7 +270,7 @@ TEST_CASE("save round-trips the client startup scene through load", "[editor][pr
 
         Project reloaded;
         REQUIRE(reloaded.load(env.files, "project://copy.toml") == std::error_code{});
-        CHECK(reloaded.exportStartupScene(Role::Client) == ResourceId(0xf00dcafe12345678));
+        CHECK(reloaded.getExportStartupScene(Role::Client) == ResourceId(0xf00dcafe12345678));
         CHECK(reloaded.name() == "Sandbox");
     }
 
@@ -278,11 +279,11 @@ TEST_CASE("save round-trips the client startup scene through load", "[editor][pr
 
         Project reloaded;
         REQUIRE(reloaded.load(env.files, "project://copy.toml") == std::error_code{});
-        CHECK_FALSE(reloaded.exportStartupScene(Role::Client).valid());
+        CHECK_FALSE(reloaded.getExportStartupScene(Role::Client).valid());
     }
 }
 
-TEST_CASE("exportTo writes only the client target's packs under <folder>/assets", "[editor][project][export]") {
+TEST_CASE("exportTo writes only the client target's packs under <folder>/<project name>/assets", "[editor][project][export]") {
     ExportScratch scratch{"projectExportWritesPacks"};
     scratch.open(manifestNaming(EXPORT_SCENE_ID));
 
@@ -380,4 +381,34 @@ TEST_CASE("exportTo returns StartupSceneNotInTarget for a client target whose sc
     scratch.open(manifestNaming(EXPORT_SERVER_ID));
 
     CHECK(scratch.runExport() == ProjectError::StartupSceneNotInTarget);
+}
+
+TEST_CASE("exportTo numbers the project folder when that name is taken", "[editor][project][export]") {
+    ExportScratch scratch{"projectExportNumbersFolder"};
+    scratch.open(manifestNaming(EXPORT_SCENE_ID));
+    const std::filesystem::path out = scratch.outFolder();
+    std::filesystem::create_directories(out / "Export");
+    std::filesystem::create_directories(out / "Export(1)");
+    {
+        std::ofstream keep{out / "Export" / "keep.txt"};
+        keep << "keep";
+    }
+
+    REQUIRE(scratch.runExport() == std::error_code{});
+    REQUIRE(scratch.runExport() == std::error_code{});
+
+    CHECK(std::filesystem::exists(out / "Export(2)" / "assets" / "common.tepack"));
+    CHECK(std::filesystem::exists(out / "Export(3)" / "assets" / "common.tepack"));
+    CHECK_FALSE(std::filesystem::exists(out / "Export" / "assets"));
+    CHECK_FALSE(std::filesystem::exists(out / "Export(1)" / "assets"));
+    CHECK(std::filesystem::exists(out / "Export" / "keep.txt"));
+}
+
+TEST_CASE("a failed export claims no project folder", "[editor][project][export]") {
+    ExportScratch scratch{"projectExportFailsCleanly"};
+    scratch.open(GOOD_MANIFEST);
+
+    REQUIRE(scratch.runExport() == ProjectError::NoStartupScene);
+
+    CHECK_FALSE(std::filesystem::exists(scratch.outFolder()));
 }

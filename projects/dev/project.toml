@@ -1,1 +1,4 @@
-name = "Dev"
+name = 'Dev'
+
+[export.client]
+startupScene = '0x4bbddf81d2a7f83c'

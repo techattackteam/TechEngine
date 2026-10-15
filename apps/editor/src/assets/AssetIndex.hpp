@@ -35,11 +35,17 @@ namespace TechEngine {
 
         bool find(ResourceId id, AssetRecord& out) const;
 
+        ResourceId generateId();
+
+        void add(AssetRecord record);
+
         const std::vector<AssetRecord>& getRecords() const;
 
         const std::vector<DuplicateAsset>& getDuplicates() const;
 
     private:
         bool readRecord(const FileAccess& files, const std::string& path, Side side, AssetRecord& out) const;
+
+        bool isTaken(ResourceId id) const;
     };
 }
