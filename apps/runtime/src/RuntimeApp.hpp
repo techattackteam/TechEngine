@@ -2,17 +2,22 @@
 
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/client/Client.hpp>
+#include <TechEngine/core/scene/Entity.hpp>
 
+#include <cstddef>
+#include <filesystem>
 #include <string>
+#include <system_error>
 
 namespace TechEngine {
     class RuntimeApp : public App {
     private:
         Client m_client;
         std::string m_appliedTitle;
+        std::filesystem::path m_folder;
 
     public:
-        RuntimeApp();
+        explicit RuntimeApp(std::filesystem::path folder);
 
         ~RuntimeApp() override = default;
 
@@ -20,6 +25,10 @@ namespace TechEngine {
 
     protected:
         void init() override;
+
+        void mountAssets();
+
+        std::error_code simulationStartupLoad() override;
 
         void publishSnapshot(const SimulationContext& simulation) override;
 
@@ -32,5 +41,8 @@ namespace TechEngine {
         void shutdown() override;
 
         bool shouldClose() const override;
+
+    private:
+        void logSceneTree(Entity entity, std::size_t depth) const;
     };
 }
