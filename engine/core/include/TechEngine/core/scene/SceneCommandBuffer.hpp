@@ -105,27 +105,15 @@ namespace TechEngine {
         void despawn(PendingEntity entity) const;
 
     private:
-        template<ComponentValue Component, typename... Arguments>
+        template<ComponentValue Component, typename Target, typename... Arguments>
             requires std::constructible_from<Component, Arguments...>
-        void addComponent(const Entity entity, Arguments&&... arguments) {
+        void addComponent(const Target entity, Arguments&&... arguments) {
             Component value = Component(std::forward<Arguments>(arguments)...);
             queueAdd(entity, componentTypeId<Component>(), Payload::copyOf(value));
         }
 
-        template<ComponentValue Component, typename... Arguments>
-            requires std::constructible_from<Component, Arguments...>
-        void addComponent(const PendingEntity entity, Arguments&&... arguments) {
-            Component value = Component(std::forward<Arguments>(arguments)...);
-            queueAdd(entity, componentTypeId<Component>(), Payload::copyOf(value));
-        }
-
-        template<ComponentValue Component>
-        void removeComponent(const Entity entity) {
-            queueRemove(entity, componentTypeId<Component>());
-        }
-
-        template<ComponentValue Component>
-        void removeComponent(const PendingEntity entity) {
+        template<ComponentValue Component, typename Target>
+        void removeComponent(const Target entity) {
             queueRemove(entity, componentTypeId<Component>());
         }
 

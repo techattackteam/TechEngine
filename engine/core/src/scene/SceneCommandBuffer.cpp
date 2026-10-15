@@ -72,6 +72,10 @@ namespace TechEngine {
         std::uint32_t nextPendingIndex = 0;
         std::vector<Command> commands;
         std::vector<Entity> resolvedEntities;
+
+        void checkPending(const PendingEntity entity) const {
+            TE_CHECK(entity.m_bufferId == id && entity.m_epoch == epoch, "Pending entity belongs to a different command buffer execution");
+        }
     };
 
     PendingEntity::PendingEntity(const std::uint64_t bufferId, const std::uint64_t epoch, const std::uint32_t index) : m_bufferId(bufferId), m_epoch(epoch), m_index(index) {
@@ -102,7 +106,7 @@ namespace TechEngine {
     }
 
     void SceneCommandBuffer::despawn(const PendingEntity entity) const {
-        TE_CHECK(entity.m_bufferId == m_impl->id && entity.m_epoch == m_impl->epoch, "Pending entity belongs to a different command buffer execution");
+        m_impl->checkPending(entity);
         m_impl->commands.push_back({SceneCommandKind::Despawn, entity, {}, Payload{}});
     }
 
@@ -111,7 +115,7 @@ namespace TechEngine {
     }
 
     void SceneCommandBuffer::queueAdd(const PendingEntity entity, const ComponentTypeId type, Payload payload) const {
-        TE_CHECK(entity.m_bufferId == m_impl->id && entity.m_epoch == m_impl->epoch, "Pending entity belongs to a different command buffer execution");
+        m_impl->checkPending(entity);
         m_impl->commands.push_back({SceneCommandKind::AddComponent, entity, type, std::move(payload)});
     }
 
@@ -120,7 +124,7 @@ namespace TechEngine {
     }
 
     void SceneCommandBuffer::queueRemove(const PendingEntity entity, const ComponentTypeId type) const {
-        TE_CHECK(entity.m_bufferId == m_impl->id && entity.m_epoch == m_impl->epoch, "Pending entity belongs to a different command buffer execution");
+        m_impl->checkPending(entity);
         m_impl->commands.push_back({SceneCommandKind::RemoveComponent, entity, type, Payload{}});
     }
 
@@ -131,7 +135,7 @@ namespace TechEngine {
                 return std::get<Entity>(target);
             }
             const PendingEntity pending = std::get<PendingEntity>(target);
-            TE_CHECK(pending.m_bufferId == m_impl->id && pending.m_epoch == m_impl->epoch, "Pending entity belongs to a different command buffer execution");
+            m_impl->checkPending(pending);
             TE_CHECK(pending.m_index < m_impl->resolvedEntities.size(), "Pending entity has not been spawned yet");
             return m_impl->resolvedEntities[pending.m_index];
         };
