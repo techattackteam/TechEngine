@@ -1,16 +1,14 @@
 #include <TechEngine/base/stringid/StringId.hpp>
-#include <TechEngine/core/EngineContext.hpp>
 #include <TechEngine/core/SimulationContext.hpp>
 #include <TechEngine/core/events/EventRegistry.hpp>
-#include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/systems/ISystem.hpp>
 #include <TechEngine/core/systems/Schedule.hpp>
 #include <TechEngine/core/systems/SerialExecutor.hpp>
 #include <TechEngine/core/systems/TaskGraph.hpp>
-#include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
+#include <TechEngine/testing/EngineServices.hpp>
 #include <TechEngine/testing/NoOpTickBarrier.hpp>
 
 #include <scene/SceneTestRegistry.hpp>
@@ -172,25 +170,18 @@ public:
     }
 };
 
-class SceneEventFixture {
+class SceneEventFixture : public TechEngineTests::EngineServices {
 public:
     TechEngine::ComponentRegistry components;
     TechEngine::EventRegistry events;
     TechEngine::Scene first;
     TechEngine::Scene second;
-    TechEngine::MountTable mounts;
-    TechEngine::FileAccess files;
-    TechEngine::JobSystem jobs;
-    TechEngine::Clock clock;
-    TechEngine::EngineContext engine;
-    TechEngine::InputFrame input;
-    TechEngine::SimulationContext context;
     TechEngine::Schedule schedule;
     std::optional<TechEngine::TaskGraph> graph;
     std::optional<TechEngine::SerialExecutor> executor;
     TechEngineTests::NoOpTickBarrier barrier;
 
-    SceneEventFixture() : first(components), second(components), files(mounts), jobs(1), engine{files, jobs, clock}, context{.fixedDeltaTime = 1.0 / 60.0, .tick = 1, .input = input, .engine = engine}, schedule(components) {
+    SceneEventFixture() : first(components), second(components), schedule(components) {
         TechEngineTests::registerBuiltInSceneComponents(components);
         events.registerEvent<SceneEventHit>();
         events.registerEvent<SceneEventHeal>();

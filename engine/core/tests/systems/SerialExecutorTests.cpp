@@ -1,15 +1,13 @@
-#include <TechEngine/core/EngineContext.hpp>
 #include <TechEngine/core/SimulationContext.hpp>
 #include <TechEngine/core/events/EventRegistry.hpp>
-#include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/SceneCommandBuffer.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/core/systems/SerialExecutor.hpp>
 #include <TechEngine/core/systems/TaskGraph.hpp>
-#include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
+#include <TechEngine/testing/EngineServices.hpp>
 
 #include <scene/SceneTestRegistry.hpp>
 
@@ -231,20 +229,13 @@ public:
     }
 };
 
-class ExecutorFixture {
+class ExecutorFixture : public TechEngineTests::EngineServices {
 public:
     TechEngine::ComponentRegistry registry;
     TechEngine::EventRegistry events;
     TechEngine::Scene scene;
-    TechEngine::MountTable mounts;
-    TechEngine::FileAccess files;
-    TechEngine::JobSystem jobs;
-    TechEngine::Clock clock;
-    TechEngine::EngineContext engine;
-    TechEngine::InputFrame input;
-    TechEngine::SimulationContext context;
 
-    ExecutorFixture() : scene(registry), files(mounts), jobs(1), engine{files, jobs, clock}, context{.fixedDeltaTime = 1.0 / 60.0, .tick = 1, .input = input, .engine = engine} {
+    ExecutorFixture() : scene(registry) {
         TechEngineTests::registerBuiltInSceneComponents(registry);
         registry.registerComponent<ExecutorValue>("Test.ExecutorValue");
     }
