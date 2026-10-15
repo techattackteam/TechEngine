@@ -8,25 +8,31 @@
 
 #include <filesystem>
 #include <string>
+#include <system_error>
 
 namespace TechEngine {
     class EditorApp : public App {
     private:
         std::filesystem::path m_projectRoot;
+        std::filesystem::path m_exportFolder;
         Project m_project;
         AssetIndex m_assets;
         Client m_client;
         std::string m_appliedTitle;
 
     public:
-        explicit EditorApp(std::filesystem::path projectRoot);
+        EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder);
+
         ~EditorApp() override = default;
+
         static Role editorRole();
 
         const AssetIndex& getAssetIndex() const;
 
     protected:
         void init() override;
+
+        std::error_code simulationStartupLoad() override;
 
         void publishSnapshot(const SimulationContext& simulation) override;
 
@@ -39,5 +45,10 @@ namespace TechEngine {
         void shutdown() override;
 
         bool shouldClose() const override;
+
+    private:
+        void createStartupScene();
+
+        ResourceId writeStartupScene();
     };
 }

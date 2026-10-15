@@ -26,14 +26,17 @@ namespace TechEngine {
 
         std::error_code save(FileAccess& files, std::string_view manifestPath) const;
 
-        std::error_code exportTo(Role target, const AssetIndex& index, const FileAccess& files, const std::filesystem::path& folder) const;
+        std::error_code exportTo(Role target, const AssetIndex& index, const FileAccess& files, const std::filesystem::path& exportFolder) const;
 
         const std::filesystem::path& root() const;
 
         const std::string& name() const;
 
-        ResourceId exportStartupScene(Role target) const;
+        ResourceId getExportStartupScene(Role target) const;
 
         void setExportStartupScene(Role target, ResourceId id);
+
+    private:
+        std::error_code findFreeExportFolder(const FileAccess& output, std::string& out) const;
     };
 }

@@ -1,8 +1,10 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
+#include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/core/SimulationContext.hpp>
 #include <TechEngine/core/resources/BootRecord.hpp>
 #include <TechEngine/core/resources/PackWriter.hpp>
 #include <TechEngine/core/resources/Side.hpp>
+#include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/platform/files/MountTable.hpp>
 
 #include <assets/AssetIndex.hpp>
@@ -125,14 +127,14 @@ namespace TechEngine {
         return {};
     }
 
-    std::error_code Project::exportTo(const Role target, const AssetIndex& index, const FileAccess& files, const std::filesystem::path& folder) const {
+    std::error_code Project::exportTo(const Role target, const AssetIndex& index, const FileAccess& files, const std::filesystem::path& exportFolder) const {
         const auto exportTarget = std::ranges::find(EXPORT_TARGETS, target, &ExportTargetSides::role);
         TE_CHECK(exportTarget != EXPORT_TARGETS.end(), "Export target {0} is not built yet", static_cast<int>(target));
         const auto ships = [&exportTarget](const Side side) {
             return side == Side::Common || (side == Side::Client && exportTarget->shipsClient) || (side == Side::Server && exportTarget->shipsServer);
         };
 
-        const ResourceId startupScene = exportStartupScene(target);
+        const ResourceId startupScene = getExportStartupScene(target);
         if (!startupScene.valid()) {
             return ProjectError::NoStartupScene;
         }
@@ -178,9 +180,16 @@ namespace TechEngine {
         }
 
         MountTable outputMounts;
-        outputMounts.mount("export", folder);
+        outputMounts.mount("export", exportFolder);
         FileAccess output{outputMounts};
-        const std::error_code directoryError = output.createDirectory("export://assets");
+        std::string projectFolder;
+        const std::error_code folderError = findFreeExportFolder(output, projectFolder);
+        if (folderError) {
+            return folderError;
+        }
+
+        const std::string assetsFolder = "export://" + projectFolder + "/assets";
+        const std::error_code directoryError = output.createDirectory(assetsFolder);
         if (directoryError) {
             return directoryError;
         }
@@ -188,11 +197,12 @@ namespace TechEngine {
         for (const ExportPack& pack: packs) {
             std::vector<std::byte> bytes;
             pack.writer.write(bytes);
-            const std::error_code writeError = output.write(std::string("export://assets/") + pack.file.name, bytes);
+            const std::error_code writeError = output.write(assetsFolder + "/" + pack.file.name, bytes);
             if (writeError) {
                 return writeError;
             }
         }
+        TE_LOGGER_INFO("Exported the project to {0}", (exportFolder / projectFolder).string());
         return {};
     }
 
@@ -206,12 +216,28 @@ namespace TechEngine {
 
     // TODO: keep a startup scene per export target, and load and save each `[export.<target>]`
     // table, when the server targets land.
-    ResourceId Project::exportStartupScene(const Role target) const {
+    ResourceId Project::getExportStartupScene(const Role target) const {
         return target == Role::Client ? m_clientStartupScene : ResourceId{};
     }
 
     void Project::setExportStartupScene(const Role target, const ResourceId id) {
         TE_CHECK(target == Role::Client, "Only the client export target exists so far");
         m_clientStartupScene = id;
+    }
+
+    std::error_code Project::findFreeExportFolder(const FileAccess& output, std::string& out) const {
+        std::string candidate = m_name;
+        for (int copy = 1;; copy++) {
+            FileStatus status;
+            const std::error_code statusError = output.status("export://" + candidate, status);
+            if (statusError == FileError::NotFound) {
+                out = std::move(candidate);
+                return {};
+            }
+            if (statusError) {
+                return statusError;
+            }
+            candidate = m_name + "(" + std::to_string(copy) + ")";
+        }
     }
 }

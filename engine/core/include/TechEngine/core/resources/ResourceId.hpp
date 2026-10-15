@@ -7,6 +7,7 @@
 
 namespace TechEngine {
     struct ResourceId {
+
         constexpr ResourceId() = default;
 
         constexpr explicit ResourceId(const std::uint64_t value) : m_value(value) {

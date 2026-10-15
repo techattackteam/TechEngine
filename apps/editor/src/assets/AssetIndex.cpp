@@ -1,3 +1,4 @@
+#include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
@@ -10,6 +11,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <random>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -102,6 +104,24 @@ namespace TechEngine {
         return true;
     }
 
+    ResourceId AssetIndex::generateId() {
+        std::random_device device;
+        ResourceId id;
+        do {
+            const std::uint64_t high = device();
+            const std::uint64_t low = device();
+            id = ResourceId((high << 32) | low);
+        } while (!id.valid() || isTaken(id));
+        return id;
+    }
+
+    void AssetIndex::add(AssetRecord record) {
+        TE_CHECK(record.id.valid(), "Asset index: {0} has a null ID", record.path);
+        TE_CHECK(!isTaken(record.id), "Asset index: ID {0:#018x} of {1} is already in the index", record.id.value(), record.path);
+        const auto position = std::ranges::lower_bound(m_records, record.id, {}, &AssetRecord::id);
+        m_records.insert(position, std::move(record));
+    }
+
     const std::vector<AssetRecord>& AssetIndex::getRecords() const {
         return m_records;
     }
@@ -162,5 +182,13 @@ namespace TechEngine {
         out.side = side;
         out.path = path;
         return true;
+    }
+
+    bool AssetIndex::isTaken(const ResourceId id) const {
+        const auto record = std::ranges::lower_bound(m_records, id, {}, &AssetRecord::id);
+        if (record != m_records.end() && record->id == id) {
+            return true;
+        }
+        return std::ranges::find(m_duplicates, id, &DuplicateAsset::id) != m_duplicates.end();
     }
 }

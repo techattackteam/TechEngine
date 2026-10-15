@@ -5,6 +5,7 @@
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/platform/files/MountTable.hpp>
+#include <TechEngine/testing/AssertCapture.hpp>
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <assets/AssetIndex.hpp>
@@ -12,9 +13,11 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <initializer_list>
 #include <string_view>
 #include <system_error>
 #include <vector>
@@ -195,4 +198,101 @@ TEST_CASE("build returns the listing error when a side folder is missing", "[edi
 
     AssetIndex index;
     CHECK(index.build(env.files(), INDEX_ASSETS_ROOT) == FileError::NotFound);
+}
+
+TEST_CASE("generateId returns a non-null id that the index does not hold", "[editor][assets]") {
+    const IndexScratch env{"assetIndexGenerateId"};
+    env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
+    env.writeScene("assets/common/original.tescene", DUPLICATED_ID);
+    env.writeScene("assets/client/copy.tescene", DUPLICATED_ID);
+
+    AssetIndex index;
+    REQUIRE(index.build(env.files(), INDEX_ASSETS_ROOT) == std::error_code{});
+
+    for (int i = 0; i < 256; i++) {
+        const ResourceId id = index.generateId();
+        AssetRecord record;
+        REQUIRE(id.valid());
+        REQUIRE_FALSE(index.find(id, record));
+        REQUIRE(id != DUPLICATED_ID);
+    }
+}
+
+TEST_CASE("add keeps the records sorted by id and findable", "[editor][assets]") {
+    const IndexScratch env{"assetIndexAdd"};
+    env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
+    env.writeScene("assets/client/menu.tescene", CLIENT_SCENE_ID);
+
+    AssetIndex index;
+    REQUIRE(index.build(env.files(), INDEX_ASSETS_ROOT) == std::error_code{});
+
+    const AssetRecord last{ResourceId(0x9000000000000009), SCENE_TYPE_TAG, Side::Server, "project://assets/server/last.tescene"};
+    const AssetRecord first{ResourceId(0x0000000000000001), SCENE_TYPE_TAG, Side::Common, "project://assets/common/first.tescene"};
+    const AssetRecord between{ResourceId(0x1800000000000018), SCENE_TYPE_TAG, Side::Client, "project://assets/client/between.tescene"};
+    index.add(last);
+    index.add(first);
+    index.add(between);
+
+    REQUIRE(index.getRecords().size() == 5);
+    CHECK(std::ranges::is_sorted(index.getRecords(), {}, &AssetRecord::id));
+
+    for (const AssetRecord& added: {last, first, between}) {
+        AssetRecord found;
+        REQUIRE(index.find(added.id, found));
+        CHECK(found.typeTag == added.typeTag);
+        CHECK(found.side == added.side);
+        CHECK(found.path == added.path);
+    }
+
+    AssetRecord built;
+    REQUIRE(index.find(COMMON_SCENE_ID, built));
+    CHECK(built.path == "project://assets/common/level.tescene");
+    REQUIRE(index.find(CLIENT_SCENE_ID, built));
+    CHECK(built.path == "project://assets/client/menu.tescene");
+}
+
+TEST_CASE("add on an index that was never built holds the one record", "[editor][assets]") {
+    AssetIndex index;
+    const AssetRecord record{COMMON_SCENE_ID, SCENE_TYPE_TAG, Side::Common, "project://assets/common/level.tescene"};
+
+    index.add(record);
+
+    REQUIRE(index.getRecords().size() == 1);
+    AssetRecord found;
+    REQUIRE(index.find(COMMON_SCENE_ID, found));
+    CHECK(found.path == record.path);
+}
+
+TEST_CASE("add rejects a null, indexed or duplicated id and leaves the index unchanged", "[editor][assets]") {
+    const IndexScratch env{"assetIndexAddRejects"};
+    env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
+    env.writeScene("assets/common/original.tescene", DUPLICATED_ID);
+    env.writeScene("assets/client/copy.tescene", DUPLICATED_ID);
+
+    AssetIndex index;
+    REQUIRE(index.build(env.files(), INDEX_ASSETS_ROOT) == std::error_code{});
+    REQUIRE(index.getRecords().size() == 1);
+    REQUIRE(index.getDuplicates().size() == 1);
+    const TechEngineTests::FatalAssertGuard guard;
+
+    SECTION("a null id") {
+        const AssetRecord nullId{ResourceId(), SCENE_TYPE_TAG, Side::Common, "project://assets/common/null.tescene"};
+        REQUIRE_THROWS_AS(index.add(nullId), TechEngineTests::AssertFired);
+    }
+
+    SECTION("an id already indexed") {
+        const AssetRecord indexed{COMMON_SCENE_ID, SCENE_TYPE_TAG, Side::Client, "project://assets/client/again.tescene"};
+        REQUIRE_THROWS_AS(index.add(indexed), TechEngineTests::AssertFired);
+    }
+
+    SECTION("an id reported as a duplicate") {
+        const AssetRecord duplicated{DUPLICATED_ID, SCENE_TYPE_TAG, Side::Common, "project://assets/common/third.tescene"};
+        REQUIRE_THROWS_AS(index.add(duplicated), TechEngineTests::AssertFired);
+    }
+
+    REQUIRE(index.getRecords().size() == 1);
+    CHECK(index.getRecords().front().path == "project://assets/common/level.tescene");
+    CHECK(index.getDuplicates().size() == 1);
+    AssetRecord record;
+    CHECK_FALSE(index.find(DUPLICATED_ID, record));
 }
