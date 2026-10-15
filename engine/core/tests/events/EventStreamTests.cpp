@@ -2,6 +2,8 @@
 #include <TechEngine/core/events/EventStream.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
+#include <events/EventAmounts.hpp>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstddef>
@@ -23,14 +25,6 @@ static TechEngine::EventStream makeStream(std::size_t capacity) {
     return TechEngine::EventStream{id, sizeof(T), alignof(T), capacity};
 }
 
-static std::vector<std::uint32_t> amountsOf(std::span<const Damage> events) {
-    std::vector<std::uint32_t> amounts;
-    for (const Damage& event: events) {
-        amounts.push_back(event.amount);
-    }
-    return amounts;
-}
-
 TEST_CASE("a visible batch stays valid while the same type publishes and staging grows", "[core][events]") {
     TechEngine::EventStream stream = makeStream<Damage>(2);
 
@@ -48,14 +42,14 @@ TEST_CASE("a visible batch stays valid while the same type publishes and staging
     }
 
     REQUIRE(handled == std::vector<std::uint32_t>{1, 2});
-    REQUIRE(amountsOf(visible) == std::vector<std::uint32_t>{1, 2});
+    REQUIRE(TechEngineTests::amountsOf(visible) == std::vector<std::uint32_t>{1, 2});
     REQUIRE(stream.visibleCount() == 2);
     REQUIRE(stream.stagedCount() == 64);
 
     stream.retire();
     stream.makeVisible(2);
 
-    const std::vector<std::uint32_t> next = amountsOf(stream.read<Damage>());
+    const std::vector<std::uint32_t> next = TechEngineTests::amountsOf(stream.read<Damage>());
     REQUIRE(next.size() == 64);
     REQUIRE(next.front() == 100);
     REQUIRE(next[31] == 131);
@@ -83,12 +77,12 @@ TEST_CASE("a visible batch stays until retire is asked", "[core][events]") {
     stream.publish(Damage{7});
     stream.makeVisible(1);
 
-    REQUIRE(amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{7});
-    REQUIRE(amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{7});
+    REQUIRE(TechEngineTests::amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{7});
+    REQUIRE(TechEngineTests::amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{7});
 
     stream.publish(Damage{8});
 
-    REQUIRE(amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{7});
+    REQUIRE(TechEngineTests::amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{7});
 
     stream.retire();
 
@@ -111,7 +105,7 @@ TEST_CASE("retiring keeps the events staged since the barrier", "[core][events]"
 
     stream.makeVisible(2);
 
-    REQUIRE(amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{2, 3});
+    REQUIRE(TechEngineTests::amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{2, 3});
     REQUIRE(stream.stagedCount() == 0);
 }
 
@@ -125,7 +119,7 @@ TEST_CASE("the first Tick's retire keeps its own publications", "[core][events]"
 
     stream.makeVisible(1);
 
-    REQUIRE(amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{4});
+    REQUIRE(TechEngineTests::amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{4});
 }
 
 TEST_CASE("a quiet Tick exposes an empty batch", "[core][events]") {
@@ -145,7 +139,7 @@ TEST_CASE("a quiet Tick exposes an empty batch", "[core][events]") {
     stream.retire();
     stream.makeVisible(3);
 
-    REQUIRE(amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{5});
+    REQUIRE(TechEngineTests::amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{5});
 }
 
 TEST_CASE("consecutive Ticks each expose only their own batch", "[core][events]") {
@@ -153,7 +147,7 @@ TEST_CASE("consecutive Ticks each expose only their own batch", "[core][events]"
     std::vector<std::uint32_t> previous;
 
     for (std::uint32_t tick = 1; tick <= 5; tick++) {
-        REQUIRE(amountsOf(stream.read<Damage>()) == previous);
+        REQUIRE(TechEngineTests::amountsOf(stream.read<Damage>()) == previous);
 
         previous.clear();
         for (std::uint32_t i = 0; i < tick; i++) {
@@ -165,7 +159,7 @@ TEST_CASE("consecutive Ticks each expose only their own batch", "[core][events]"
         stream.makeVisible(tick);
     }
 
-    REQUIRE(amountsOf(stream.read<Damage>()) == previous);
+    REQUIRE(TechEngineTests::amountsOf(stream.read<Damage>()) == previous);
 }
 
 TEST_CASE("a batch keeps publisher order and FIFO within a publisher", "[core][events]") {
@@ -178,7 +172,7 @@ TEST_CASE("a batch keeps publisher order and FIFO within a publisher", "[core][e
     stream.publish(Damage{11});
     stream.makeVisible(1);
 
-    REQUIRE(amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{1, 2, 3, 10, 11});
+    REQUIRE(TechEngineTests::amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{1, 2, 3, 10, 11});
 }
 
 TEST_CASE("a batch reports the Tick that made it visible", "[core][events]") {
@@ -212,7 +206,7 @@ TEST_CASE("making a batch visible before retiring the last one is rejected and c
 
     REQUIRE(TechEngineTests::g_fired.size() == 1);
     REQUIRE(TechEngineTests::g_fired.front() == TechEngine::AssertKind::Verify);
-    REQUIRE(amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{1});
+    REQUIRE(TechEngineTests::amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{1});
     REQUIRE(stream.stagedCount() == 1);
     REQUIRE(stream.visibleTick() == 1);
 
@@ -220,7 +214,7 @@ TEST_CASE("making a batch visible before retiring the last one is rejected and c
     stream.makeVisible(2);
 
     REQUIRE(TechEngineTests::g_fired.size() == 1);
-    REQUIRE(amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{2});
+    REQUIRE(TechEngineTests::amountsOf(stream.read<Damage>()) == std::vector<std::uint32_t>{2});
     REQUIRE(stream.visibleTick() == 2);
 }
 

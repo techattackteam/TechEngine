@@ -11,6 +11,7 @@
 #include <TechEngine/testing/EngineServices.hpp>
 #include <TechEngine/testing/NoOpTickBarrier.hpp>
 
+#include <events/EventAmounts.hpp>
 #include <scene/SceneTestRegistry.hpp>
 
 #include <catch2/catch_test_macros.hpp>
@@ -75,15 +76,6 @@ public:
     SceneEventStateGuard& operator=(const SceneEventStateGuard&) = delete;
 };
 
-template<typename Event>
-static Amounts amountsOf(const std::span<const Event> events) {
-    Amounts amounts;
-    for (const Event& event: events) {
-        amounts.push_back(event.amount);
-    }
-    return amounts;
-}
-
 class SceneEventPublisherSystem final : public TechEngine::ISystem {
 public:
     void init(TechEngine::ScheduleRegistration&) override {
@@ -123,7 +115,7 @@ public:
             for (std::size_t i = 0; i < g_sceneEventState->republishFromHandler; i++) {
                 scene.publish<SceneEventHit>(100U);
             }
-            g_sceneEventState->reads.push_back(amountsOf(hits));
+            g_sceneEventState->reads.push_back(TechEngineTests::amountsOf(hits));
         });
     }
 
@@ -158,7 +150,7 @@ class SceneEventTerminalReaderSystem final : public TechEngine::ISystem {
 public:
     void init(TechEngine::ScheduleRegistration& registration) override {
         registration.setSlot(TechEngine::Slot::Terminal).onEvent<SceneEventHit>([](TechEngine::Scene&, const std::span<const SceneEventHit> hits) {
-            g_sceneEventState->terminalReads.push_back(amountsOf(hits));
+            g_sceneEventState->terminalReads.push_back(TechEngineTests::amountsOf(hits));
         });
     }
 
