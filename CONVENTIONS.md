@@ -371,6 +371,12 @@ if (readError) {
 - **The category class sits in `namespace {}`.** It is the one case *Internal linkage* allows:
   every module copies this class, and a copy that keeps another module's class name merges
   silently at link time, so one module prints the other's messages.
+- **Migrating a `bool` return inverts every caller that tests it, and they still compile.**
+  `true` meant success; an empty code means success and converts to `false`. So
+  `REQUIRE(f())` now passes only when `f` fails, and `if (!f())` runs its failure branch on
+  success. Find every caller before changing the return type, and rewrite each one through a
+  named result (see *Conditions*). S7-D3's migration (#124) had seven such sites, and its grep
+  missed six of them.
 - **`message()` allocates.** Call it on the failure path only. C++20 has no `std::format`
   support for `std::error_code`, so a log line passes `error.message()`.
 
