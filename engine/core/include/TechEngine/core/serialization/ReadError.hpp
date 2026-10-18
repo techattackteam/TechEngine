@@ -10,6 +10,8 @@ namespace TechEngine {
         BadMagic,
         BadVersion,
         Malformed,
+        UnknownResource,
+        CyclicReference,
     };
 
     const std::error_category& readErrorCategory();

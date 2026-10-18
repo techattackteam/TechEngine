@@ -94,6 +94,9 @@ jobs:
           }
           check 'engine/base/' 'TE_LOG_PRIVATE_' 'TE_LOG_PRIVATE_* (call TE_LOGGER_<LEVEL>)'
           check 'engine/base/' '\binternal::log' 'TechEngine::internal log plumbing'
+          check 'engine/core/include/TechEngine/core/' \
+                '\binternal::g_(componentTypeSlot|resourceTypeTag)' \
+                'the per-type registration slots (call componentTypeId<T>() or resourceTypeTag<T>())'
           # Two ADR-013 rules at once. Every call site spelling TE_PROFILER_* is what keeps
           # swapping the backend a one-header edit; banning ZoneTransient here is v1's F19
           # (runtime-named zones on a per-frame path) made structural instead of review-only.

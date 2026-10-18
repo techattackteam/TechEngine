@@ -12,6 +12,8 @@ techengine_module(core
           src/resources/BootRecord.cpp
           src/resources/PackReader.cpp
           src/resources/PackWriter.cpp
+          src/resources/ResourceCache.cpp
+          src/resources/ResourceSlots.cpp
           src/scene/Archetype.cpp
           src/scene/ArchetypeStorage.cpp
           src/scene/ComponentRegistry.cpp
@@ -46,6 +48,8 @@ techengine_module(core
           include/TechEngine/core/resources/PackFormat.hpp
           include/TechEngine/core/resources/PackReader.hpp
           include/TechEngine/core/resources/PackWriter.hpp
+          include/TechEngine/core/resources/ResourceCache.hpp
+          include/TechEngine/core/resources/ResourceHandle.hpp
           include/TechEngine/core/resources/ResourceId.hpp
           include/TechEngine/core/resources/Side.hpp
           include/TechEngine/core/scene/Access.hpp
@@ -74,6 +78,7 @@ techengine_module(core
           include/TechEngine/core/systems/TaskGraph.hpp
           src/jobs/DedicatedThreadState.hpp
           src/jobs/RegisteredThread.hpp
+          src/resources/ResourceSlots.hpp
           src/scene/Archetype.hpp
           src/scene/ArchetypeStorage.hpp
           src/scene/EntitySlots.hpp
@@ -95,6 +100,8 @@ if(TE_BUILD_TESTS)
           tests/jobs/JobSystemTests.cpp
           tests/resources/BootRecordTests.cpp
           tests/resources/PackTests.cpp
+          tests/resources/ResourceCacheTests.cpp
+          tests/resources/ResourceSlotsTests.cpp
           tests/scene/ArchetypeStorageTests.cpp
           tests/scene/ArchetypeTests.cpp
           tests/scene/ComponentRegistryTests.cpp
