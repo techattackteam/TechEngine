@@ -42,7 +42,7 @@ namespace TechEngine {
         EventRegistry m_eventRegistry;
         Scene m_scene;
         Schedule m_schedule;
-        ResourceCache m_resources;
+        ResourceCache m_resources{m_jobs};
         EngineContext m_engine{m_files, m_jobs, m_clock};
 
     private:

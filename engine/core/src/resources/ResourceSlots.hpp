@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <system_error>
 #include <vector>
 
 namespace TechEngine {
@@ -20,10 +21,12 @@ namespace TechEngine {
         StringId typeTag;
         std::unique_ptr<void, ResourcePayloadDeleter> payload{nullptr, nullptr};
         std::vector<ResourceSlotId> dependencies;
+        std::error_code error;
         std::uint32_t acquires = 0;
         std::uint32_t generation = 0;
         std::uint32_t nextFree = ResourceSlotId::NULL_INDEX;
         ResourceState state = ResourceState::Pending;
+        bool loading = false;
         bool occupied = false;
     };
 
