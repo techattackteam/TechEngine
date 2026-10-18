@@ -7,6 +7,7 @@
 #include <TechEngine/core/TimingMetrics.hpp>
 #include <TechEngine/core/events/EventRegistry.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
+#include <TechEngine/core/resources/ResourceCache.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/systems/Schedule.hpp>
@@ -41,6 +42,7 @@ namespace TechEngine {
         EventRegistry m_eventRegistry;
         Scene m_scene;
         Schedule m_schedule;
+        ResourceCache m_resources;
         EngineContext m_engine{m_files, m_jobs, m_clock};
 
     private:

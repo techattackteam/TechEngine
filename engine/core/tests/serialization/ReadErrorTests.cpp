@@ -16,7 +16,7 @@ using TechEngine::ReadError;
 using TechEngine::readErrorCategory;
 using TechEngine::Writer;
 
-static constexpr std::array<ReadError, 4> ALL_CODES{ReadError::Truncated, ReadError::BadMagic, ReadError::BadVersion, ReadError::Malformed};
+static constexpr std::array<ReadError, 5> ALL_CODES{ReadError::Truncated, ReadError::BadMagic, ReadError::BadVersion, ReadError::Malformed, ReadError::UnknownResource};
 
 TEST_CASE("every ReadError code converts into the read category", "[core][serialization][readerror]") {
     TechEngineTests::checkErrorCategory<ReadError>(ALL_CODES, readErrorCategory(), "read");

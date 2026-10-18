@@ -20,6 +20,8 @@ namespace TechEngine {
                         return "blob format version is not supported";
                     case ReadError::Malformed:
                         return "blob structure is invalid";
+                    case ReadError::UnknownResource:
+                        return "no asset source holds this resource id";
                 }
                 return "unknown read error";
             }

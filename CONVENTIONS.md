@@ -129,6 +129,9 @@ first (`LogFormatBuffer`, not `FormatBuffer`), that removes the risk without the
 - **File / class / function preambles** explaining purpose. The name and the header do that.
 - **Per-line or per-include narration**: never annotate `#include`s (`// core -> base`).
 - **Anything restating the code**, including "why this obvious idiom".
+- **A `GOTCHA:` (or `NOTE:`, `IMPORTANT:`) label**: "gotcha" names the category of comment that
+  earns its place, not a word to write. State the fact plainly. This one also holds in CMake,
+  CI and config files.
 
 Prefer a self-explanatory name over a comment explaining a bad one.
 

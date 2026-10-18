@@ -46,7 +46,7 @@ the rubric.
 - The bar is *"would a competent reader be wrong without this?"*. Default is **no comment**.
 - Only three things earn one: a gotcha that will bite, a `TODO(S<n>-T<n>)`, a `TODO(D<n>)`.
 - Delete on sight: divider banners, `} // namespace`, file/class/function preambles, per-include
-  narration, anything restating the code, rationale copied from the vault.
+  narration, anything restating the code, rationale copied from the vault, a `GOTCHA:` label.
 - **Any vault citation in `.hpp`/`.cpp`/tests is a finding**: `ADR-011 §2`, `[[Log - Design]]`,
   a bare `§ref`. A fresh clone has no `docs/`. `TODO(D1)` and `TODO(S3-T8)` are **not** citations
   and stay.

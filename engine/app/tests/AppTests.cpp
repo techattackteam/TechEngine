@@ -1,5 +1,8 @@
 #include <TechEngine/app/App.hpp>
+#include <TechEngine/base/stringid/StringId.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
+#include <TechEngine/core/resources/ResourceCache.hpp>
+#include <TechEngine/core/serialization/BlobHeader.hpp>
 #include <TechEngine/core/systems/ISystem.hpp>
 #include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
@@ -18,6 +21,7 @@
 #include <filesystem>
 #include <functional>
 #include <mutex>
+#include <span>
 #include <stdexcept>
 #include <string_view>
 #include <system_error>
@@ -110,6 +114,42 @@ namespace {
 
         TechEngine::EventTypeId configuredId;
     };
+
+    struct AppProbeResource {
+        std::uint32_t value = 0;
+    };
+
+    constexpr TechEngine::BlobKind APP_PROBE_RESOURCE_KIND{0x50504152, 1};
+
+    constexpr TechEngine::StringId APP_PROBE_RESOURCE_TYPE_TAG{"Test.AppProbeResource"};
+
+    std::error_code loadAppProbeResource(std::span<const std::byte>, void*, std::vector<TechEngine::ResourceId>&) {
+        return {};
+    }
+
+    class ResourceProbeApp : public TechEngine::App {
+    public:
+        ResourceProbeApp() : App(TechEngine::Role::DedicatedServer) {
+        }
+
+        void init() override {
+        }
+
+        void configureSimulation() override {
+            m_resources.registerLoader<AppProbeResource>(APP_PROBE_RESOURCE_KIND, APP_PROBE_RESOURCE_TYPE_TAG, &loadAppProbeResource);
+            closedDuringConfiguration = m_resources.loadersClosed();
+        }
+
+        void finalize() {
+            finalizeSimulation();
+        }
+
+        TechEngine::ResourceCache& resources() {
+            return m_resources;
+        }
+
+        bool closedDuringConfiguration = false;
+    };
 }
 
 TEST_CASE("App scopes main registration across initialization and shutdown", "[app]") {
@@ -168,6 +208,20 @@ TEST_CASE("App registers event types during configuration and closes registratio
 
     REQUIRE_FALSE(late.valid());
     REQUIRE(app.eventRegistry().typeCount() == 1);
+}
+
+TEST_CASE("App closes resource loader registration when it finalizes", "[app][resources]") {
+    ResourceProbeApp app;
+
+    REQUIRE_FALSE(app.resources().loadersClosed());
+
+    app.finalize();
+
+    REQUIRE_FALSE(app.closedDuringConfiguration);
+    REQUIRE(app.resources().loadersClosed());
+
+    const TechEngineTests::FatalAssertGuard guard;
+    REQUIRE_THROWS_AS(app.resources().registerLoader<AppProbeResource>(APP_PROBE_RESOURCE_KIND, APP_PROBE_RESOURCE_TYPE_TAG, &loadAppProbeResource), TechEngineTests::AssertFired);
 }
 
 using namespace std::chrono_literals;
