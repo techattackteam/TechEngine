@@ -1,6 +1,11 @@
+#include <TechEngine/base/diagnostics/Assert.hpp>
+
 #include <resources/ResourceSlots.hpp>
 
 namespace TechEngine {
+    ResourceSlots::ResourceSlots(const std::uint32_t slotLimit, const std::uint32_t generationLimit) : m_slotLimit(slotLimit), m_generationLimit(generationLimit) {
+    }
+
     ResourceSlotId ResourceSlots::create() {
         if (m_freeHead != ResourceSlotId::NULL_INDEX) {
             const std::uint32_t index = m_freeHead;
@@ -12,6 +17,7 @@ namespace TechEngine {
             return ResourceSlotId{index, reused.generation};
         }
 
+        TE_CHECK(m_slotCount < m_slotLimit, "Resource slot limit exceeded after {0} slots", m_slotLimit);
         if (m_slotCount % ENTRIES_PER_BLOCK == 0) {
             m_blocks.push_back(std::make_unique<std::array<ResourceEntry, ENTRIES_PER_BLOCK>>());
         }
@@ -30,10 +36,15 @@ namespace TechEngine {
 
         ResourceEntry& entry = getResourceEntry(slot.index);
         const std::uint32_t generation = entry.generation;
+        // A slot whose generation can no longer advance is retired instead of recycled: reusing
+        // it would let a handle from its last life resolve against the next entry.
+        const bool retiring = generation == m_generationLimit;
         entry = ResourceEntry{};
-        entry.generation = generation + 1;
-        entry.nextFree = m_freeHead;
-        m_freeHead = slot.index;
+        entry.generation = retiring ? generation : generation + 1;
+        if (!retiring) {
+            entry.nextFree = m_freeHead;
+            m_freeHead = slot.index;
+        }
         m_liveCount--;
         return true;
     }
@@ -65,10 +76,12 @@ namespace TechEngine {
     }
 
     ResourceEntry& ResourceSlots::getResourceEntry(const std::uint32_t index) {
-        return m_blocks[index / ENTRIES_PER_BLOCK]->at(index % ENTRIES_PER_BLOCK);
+        TE_ASSERT(index < m_slotCount, "Resource slot index {0} is past the {1} slots that exist", index, m_slotCount);
+        return (*m_blocks[index / ENTRIES_PER_BLOCK])[index % ENTRIES_PER_BLOCK];
     }
 
     const ResourceEntry& ResourceSlots::getResourceEntry(const std::uint32_t index) const {
-        return m_blocks[index / ENTRIES_PER_BLOCK]->at(index % ENTRIES_PER_BLOCK);
+        TE_ASSERT(index < m_slotCount, "Resource slot index {0} is past the {1} slots that exist", index, m_slotCount);
+        return (*m_blocks[index / ENTRIES_PER_BLOCK])[index % ENTRIES_PER_BLOCK];
     }
 }

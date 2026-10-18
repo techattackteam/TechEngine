@@ -81,3 +81,35 @@ TEST_CASE("an entry pointer stays valid while the blocks grow around it", "[core
         REQUIRE(slots.find(slot) != nullptr);
     }
 }
+
+TEST_CASE("creating past the slot limit reports a check instead of a null index", "[core][resources][slots]") {
+    const TechEngineTests::FatalAssertGuard guard;
+    ResourceSlots slots{2};
+
+    const ResourceSlotId first = slots.create();
+    const ResourceSlotId second = slots.create();
+    REQUIRE_THROWS_AS(slots.create(), TechEngineTests::AssertFired);
+
+    REQUIRE(slots.size() == 2);
+    REQUIRE(slots.find(first) != nullptr);
+    REQUIRE(slots.find(second) != nullptr);
+}
+
+TEST_CASE("a slot at its generation limit is retired rather than reused", "[core][resources][slots]") {
+    const TechEngineTests::FatalAssertGuard guard;
+    ResourceSlots slots{ResourceSlotId::NULL_INDEX, 1};
+
+    const ResourceSlotId first = slots.create();
+    REQUIRE(slots.destroy(first));
+    const ResourceSlotId reused = slots.create();
+    REQUIRE(reused.index == first.index);
+    REQUIRE(reused.generation == 1);
+
+    REQUIRE(slots.destroy(reused));
+    const ResourceSlotId afterRetirement = slots.create();
+
+    REQUIRE(afterRetirement.index != first.index);
+    REQUIRE(slots.find(first) == nullptr);
+    REQUIRE(slots.find(reused) == nullptr);
+    REQUIRE(slots.size() == 1);
+}

@@ -47,6 +47,7 @@ namespace TechEngine {
         std::unique_ptr<ResourceSlots> m_slots;
         std::unordered_map<ResourceId, ResourceSlotId> m_byId;
         std::vector<TypeRecord> m_types;
+        std::vector<ResourceSlotId> m_pendingLoads;
         std::vector<ResourceSlotId> m_pendingFrees;
         bool m_loadersClosed = false;
 
@@ -125,5 +126,13 @@ namespace TechEngine {
         bool entryState(ResourceSlotId slot, ResourceState& out) const;
 
         bool entryAcquireCount(ResourceSlotId slot, std::uint32_t& out) const;
+
+        std::error_code loadEntry(ResourceSlotId slot, std::vector<std::byte>& bytes, std::vector<ResourceId>& dependencies);
+
+        void freeEntry(ResourceSlotId slot);
+
+        bool reaches(ResourceSlotId from, ResourceSlotId target) const;
+
+        const TypeRecord* findTypeForBytes(std::span<const std::byte> bytes) const;
     };
 }

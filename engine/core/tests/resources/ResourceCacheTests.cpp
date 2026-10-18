@@ -372,6 +372,34 @@ TEST_CASE("a failed loader ends the phase with its error and marks the entry fai
     REQUIRE(harness.cache.resolve(handle) == nullptr);
 }
 
+TEST_CASE("a resource that references itself fails the phase as a cycle", "[core][resources][cache]") {
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "root", {ROOT_ID});
+
+    const ResourceHandle<CacheResource> handle = harness.request(ROOT_ID);
+
+    REQUIRE(harness.cache.runLoadingPhase() == ReadError::CyclicReference);
+    REQUIRE(harness.state(handle) == ResourceState::Failed);
+    REQUIRE(harness.cache.resolve(handle) == nullptr);
+    REQUIRE(harness.acquireCount(handle) == 1);
+}
+
+TEST_CASE("a cycle between two resources fails the phase and leaves the counts balanced", "[core][resources][cache]") {
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "root", {DEPENDENCY_ID});
+    harness.source.addAsset(DEPENDENCY_ID, "dependency", {ROOT_ID});
+
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+
+    REQUIRE(harness.cache.runLoadingPhase() == ReadError::CyclicReference);
+
+    const ResourceHandle<CacheResource> dependency = harness.request(DEPENDENCY_ID);
+    REQUIRE(harness.state(dependency) == ResourceState::Failed);
+    REQUIRE(harness.state(root) == ResourceState::Ready);
+    REQUIRE(harness.acquireCount(root) == 1);
+    REQUIRE(harness.acquireCount(dependency) == 2);
+}
+
 TEST_CASE("loader registration is rejected once the cache has closed it", "[core][resources][cache]") {
     const TechEngineTests::FatalAssertGuard guard;
     CacheHarness harness;

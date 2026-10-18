@@ -11,6 +11,7 @@ namespace TechEngine {
         BadVersion,
         Malformed,
         UnknownResource,
+        CyclicReference,
     };
 
     const std::error_category& readErrorCategory();

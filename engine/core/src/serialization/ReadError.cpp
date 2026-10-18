@@ -22,6 +22,8 @@ namespace TechEngine {
                         return "blob structure is invalid";
                     case ReadError::UnknownResource:
                         return "no asset source holds this resource id";
+                    case ReadError::CyclicReference:
+                        return "resource references form a cycle";
                 }
                 return "unknown read error";
             }
