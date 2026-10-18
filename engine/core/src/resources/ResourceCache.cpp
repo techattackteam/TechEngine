@@ -1,4 +1,5 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
+#include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/core/assets/AssetSource.hpp>
 #include <TechEngine/core/resources/ResourceCache.hpp>
 #include <TechEngine/core/serialization/ReadError.hpp>
@@ -16,10 +17,12 @@
 #include <vector>
 
 namespace TechEngine {
-    ResourceCache::ResourceCache() : m_slots(std::make_unique<ResourceSlots>()) {
+    ResourceCache::ResourceCache(JobSystem& jobs) : m_jobs(&jobs), m_slots(std::make_unique<ResourceSlots>()) {
     }
 
-    ResourceCache::~ResourceCache() = default;
+    ResourceCache::~ResourceCache() {
+        shutdown();
+    }
 
     void ResourceCache::setSource(const AssetSource& source) {
         m_source = &source;
@@ -124,38 +127,180 @@ namespace TechEngine {
         return true;
     }
 
-    std::error_code ResourceCache::runLoadingPhase() {
-        std::vector<std::byte> bytes;
-        std::vector<ResourceId> dependencies;
-
-        // Loading an entry appends its dependencies to m_pendingLoads, so the index walks on
-        // into them as the next round and the phase ends only when nothing is left pending.
-        std::size_t next = 0;
-        while (next < m_pendingLoads.size()) {
-            const ResourceSlotId slot = m_pendingLoads[next];
-            next++;
-            const std::error_code loadError = loadEntry(slot, bytes, dependencies);
-            if (loadError) {
-                m_pendingLoads.erase(m_pendingLoads.begin(), m_pendingLoads.begin() + static_cast<std::ptrdiff_t>(next));
-                return loadError;
-            }
+    bool ResourceCache::entryError(ResourceSlotId slot, std::error_code& out) const {
+        const ResourceEntry* entry = m_slots->find(slot);
+        if (entry == nullptr) {
+            return false;
         }
 
-        m_pendingLoads.clear();
-        drainFrees();
+        out = entry->error;
+        return true;
+    }
+
+    void ResourceCache::submitLoads() {
+        std::vector<ResourceSlotId> pending;
+        pending.swap(m_pendingLoads);
+
+        std::vector<Task> tasks;
+        tasks.reserve(pending.size());
+        for (const ResourceSlotId slot: pending) {
+            ResourceEntry* entry = m_slots->find(slot);
+            if (entry == nullptr || entry->state != ResourceState::Pending || entry->loading) {
+                continue;
+            }
+
+            entry->loading = true;
+            tasks.emplace_back([this, entry, slot] {
+                runLoadTask(*entry, slot);
+            });
+        }
+
+        const BatchId batch = m_jobs->submit(tasks);
+        if (batch.valid()) {
+            m_inFlightBatches.push_back(batch);
+        }
+    }
+
+    std::error_code ResourceCache::removeCompletions() {
+        std::vector<LoadCompletion> completions;
+        {
+            std::lock_guard<std::mutex> lock(m_completionMutex);
+            completions.swap(m_completions);
+        }
+        std::error_code firstError;
+        for (const LoadCompletion& completion: completions) {
+            const std::error_code publishError = publishCompletion(completion);
+            if (!firstError && publishError) {
+                firstError = publishError;
+            }
+        }
+        return firstError;
+    }
+
+    std::error_code ResourceCache::publishCompletion(const LoadCompletion& completion) {
+        ResourceEntry* entry = m_slots->find(completion.slot);
+        if (entry == nullptr) {
+            return {};
+        }
+
+        entry->loading = false;
+        if (entry->error) {
+            entry->state = ResourceState::Failed;
+            return entry->error;
+        }
+
+        entry->state = ResourceState::Ready;
+        for (const ResourceId dependency: completion.dependencies) {
+            ResourceSlotId dependencySlot;
+            const std::error_code dependencyError = requestEntry(dependency, StringId{}, dependencySlot);
+            if (dependencyError) {
+                entry->state = ResourceState::Failed;
+                entry->error = dependencyError;
+                return dependencyError;
+            }
+            if (reaches(dependencySlot, completion.slot)) {
+                releaseEntry(dependencySlot);
+                entry->state = ResourceState::Failed;
+                entry->error = ReadError::CyclicReference;
+                return entry->error;
+            }
+            entry->dependencies.push_back(dependencySlot);
+        }
+
         return {};
     }
 
+    void ResourceCache::runLoadTask(ResourceEntry& entry, const ResourceSlotId slot) {
+        std::vector<std::byte> bytes;
+        std::vector<ResourceId> dependencies;
+        std::error_code loadError = m_source->read(entry.id, bytes);
+        if (!loadError) {
+            const TypeRecord* record = findTypeForBytes(bytes);
+            if (record == nullptr) {
+                loadError = ReadError::BadMagic;
+            } else {
+                TE_CHECK(entry.typeTag == StringId{} || entry.typeTag == record->typeTag, "Resource {0:#018x} was requested as {1}, but it holds {2}", entry.id.value(), entry.typeTag, record->typeTag);
+                void* payload = record->createPayload();
+                loadError = record->load(bytes, payload, dependencies);
+                if (loadError) {
+                    record->destroyPayload(payload);
+                } else {
+                    entry.payload = std::unique_ptr<void, ResourcePayloadDeleter>{payload, record->destroyPayload};
+                    entry.typeTag = record->typeTag;
+                }
+            }
+        }
+
+        entry.error = loadError;
+        {
+            const std::lock_guard lock{m_completionMutex};
+            m_completions.push_back(LoadCompletion{slot, std::move(dependencies)});
+        }
+    }
+
+    void ResourceCache::shutdown() {
+        for (const BatchId batch: m_inFlightBatches) {
+            m_jobs->wait(batch);
+        }
+        m_inFlightBatches.clear();
+
+        for (const auto& [id, slot]: m_byId) {
+            const ResourceEntry* entry = m_slots->find(slot);
+            if (entry != nullptr && entry->acquires > 0) {
+                TE_LOGGER_WARN("Resource {0:#018x} was not released before cache shutdown", id.value());
+            }
+        }
+    }
+
+    std::error_code ResourceCache::runLoadingPhase() {
+        std::error_code firstError;
+        while (true) {
+            submitLoads();
+            for (const BatchId batch: m_inFlightBatches) {
+                m_jobs->wait(batch);
+            }
+            m_inFlightBatches.clear();
+
+            const std::error_code completionError = removeCompletions();
+            if (!firstError && completionError) {
+                firstError = completionError;
+            }
+
+            bool loading = false;
+            for (const auto& [id, slot]: m_byId) {
+                const ResourceEntry* entry = m_slots->find(slot);
+                if (entry != nullptr && entry->loading) {
+                    loading = true;
+                    break;
+                }
+            }
+            if (!loading && m_pendingLoads.empty()) {
+                break;
+            }
+        }
+
+        drainFrees();
+        return firstError;
+    }
+
     void ResourceCache::drainFrees() {
-        // Freeing an entry releases its dependencies, which queues more frees, so a whole tree
-        // goes in one drain instead of one level per phase.
+        std::vector<ResourceSlotId> deferred;
         while (!m_pendingFrees.empty()) {
             std::vector<ResourceSlotId> draining;
             draining.swap(m_pendingFrees);
             for (const ResourceSlotId slot: draining) {
+                ResourceEntry* entry = m_slots->find(slot);
+                if (entry == nullptr) {
+                    continue;
+                }
+                if (entry->loading || entry->acquires > 0) {
+                    deferred.push_back(slot);
+                    continue;
+                }
                 freeEntry(slot);
             }
         }
+        m_pendingFrees.insert(m_pendingFrees.end(), deferred.begin(), deferred.end());
     }
 
     std::error_code ResourceCache::loadEntry(const ResourceSlotId slot, std::vector<std::byte>& bytes, std::vector<ResourceId>& dependencies) {

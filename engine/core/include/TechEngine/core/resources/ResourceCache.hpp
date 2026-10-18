@@ -1,6 +1,7 @@
 #pragma once
 
 #include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/resources/ResourceHandle.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
@@ -8,6 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <span>
 #include <system_error>
 #include <unordered_map>
@@ -16,6 +18,7 @@
 namespace TechEngine {
     class AssetSource;
     class ResourceSlots;
+    struct ResourceEntry;
 
     enum class ResourceState : std::uint8_t { Pending, Ready, Failed, AbsentForRole };
 
@@ -43,16 +46,25 @@ namespace TechEngine {
             void (*destroyPayload)(void*) = nullptr;
         };
 
+        struct LoadCompletion {
+            ResourceSlotId slot;
+            std::vector<ResourceId> dependencies;
+        };
+
+        JobSystem* m_jobs = nullptr;
         const AssetSource* m_source = nullptr;
         std::unique_ptr<ResourceSlots> m_slots;
         std::unordered_map<ResourceId, ResourceSlotId> m_byId;
         std::vector<TypeRecord> m_types;
         std::vector<ResourceSlotId> m_pendingLoads;
         std::vector<ResourceSlotId> m_pendingFrees;
+        std::vector<BatchId> m_inFlightBatches;
+        std::mutex m_completionMutex;
+        std::vector<LoadCompletion> m_completions;
         bool m_loadersClosed = false;
 
     public:
-        ResourceCache();
+        explicit ResourceCache(JobSystem& jobs);
 
         ~ResourceCache();
 
@@ -100,9 +112,20 @@ namespace TechEngine {
             return entryAcquireCount(handle.slot(), out);
         }
 
+        template<typename T>
+        bool getError(const ResourceHandle<T> handle, std::error_code& out) const {
+            return entryError(handle.slot(), out);
+        }
+
+        void submitLoads();
+
+        std::error_code removeCompletions();
+
         std::error_code runLoadingPhase();
 
         void drainFrees();
+
+        void shutdown();
 
     private:
         template<typename T>
@@ -126,6 +149,14 @@ namespace TechEngine {
         bool entryState(ResourceSlotId slot, ResourceState& out) const;
 
         bool entryAcquireCount(ResourceSlotId slot, std::uint32_t& out) const;
+
+        bool entryError(ResourceSlotId slot, std::error_code& out) const;
+
+        // Runs on a pool worker, so it may touch only `entry` and the completion queue. The
+        // owner grows m_slots while tasks run, and looking any entry up from here races it.
+        void runLoadTask(ResourceEntry& entry, ResourceSlotId slot);
+
+        std::error_code publishCompletion(const LoadCompletion& completion);
 
         std::error_code loadEntry(ResourceSlotId slot, std::vector<std::byte>& bytes, std::vector<ResourceId>& dependencies);
 

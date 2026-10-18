@@ -211,6 +211,7 @@ namespace TechEngine {
             }
             TE_LOGGER_ERROR("Simulation shutdown also failed; preserving the original simulation failure");
         }
+        app.m_resources.shutdown();
 
         if (failure) {
             std::rethrow_exception(failure);

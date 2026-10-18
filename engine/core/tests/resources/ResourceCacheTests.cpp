@@ -1,5 +1,7 @@
+#include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/stringid/StringId.hpp>
 #include <TechEngine/core/assets/AssetSource.hpp>
+#include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/resources/ResourceCache.hpp>
 #include <TechEngine/core/resources/ResourceHandle.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
@@ -12,13 +14,20 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
 #include <cstddef>
 #include <cstdint>
+#include <format>
 #include <initializer_list>
+#include <mutex>
 #include <span>
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <thread>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -39,9 +48,13 @@ using TechEngine::StringId;
 using TechEngine::Writer;
 
 static constexpr BlobKind CACHE_RESOURCE_KIND{0x43525443, 1};
+static constexpr BlobKind GATED_RESOURCE_KIND{0x47525443, 1};
 
 static constexpr StringId CACHE_RESOURCE_TYPE_TAG{"Tests.CacheResource"};
 static constexpr StringId CACHE_LATE_TYPE_TAG{"Tests.CacheLateResource"};
+static constexpr StringId GATED_RESOURCE_TYPE_TAG{"Tests.GatedResource"};
+
+static constexpr std::chrono::seconds GATE_TIMEOUT{5};
 
 struct CacheResource {
     std::string label;
@@ -51,13 +64,16 @@ struct CacheLateResource {
     std::string label;
 };
 
-static std::error_code loadCacheResource(const std::span<const std::byte> bytes, void* payload, std::vector<ResourceId>& dependencies) {
+struct GatedResource {
+    std::string label;
+};
+
+static std::error_code readTestResource(const BlobKind& kind, const std::span<const std::byte> bytes, std::string& label, std::vector<ResourceId>& dependencies) {
     Reader reader{bytes};
     BlobHeader header;
-    reader.readHeader(CACHE_RESOURCE_KIND, header);
+    reader.readHeader(kind, header);
     std::uint64_t id = 0;
     reader.read(id);
-    std::string label;
     reader.read(label);
     std::uint32_t dependencyCount = 0;
     reader.read(dependencyCount);
@@ -69,14 +85,125 @@ static std::error_code loadCacheResource(const std::span<const std::byte> bytes,
     if (!reader.ok()) {
         return reader.error();
     }
+    return {};
+}
+
+static std::error_code loadCacheResource(const std::span<const std::byte> bytes, void* payload, std::vector<ResourceId>& dependencies) {
+    std::string label;
+    const std::error_code readError = readTestResource(CACHE_RESOURCE_KIND, bytes, label, dependencies);
+    if (readError) {
+        return readError;
+    }
     static_cast<CacheResource*>(payload)->label = std::move(label);
     return {};
 }
 
-static std::vector<std::byte> makeResourceBytes(const ResourceId id, const std::string_view label, const std::initializer_list<ResourceId> dependencies) {
+static std::mutex g_gateMutex;
+static std::condition_variable g_gateChanged;
+static std::uint32_t g_gateArrivals = 0;
+static std::uint32_t g_gatePassAt = 0;
+static bool g_gateOpen = false;
+static std::atomic<std::uint32_t> g_gateTimeouts = 0;
+static std::atomic<std::uint32_t> g_gateFinished = 0;
+
+static std::error_code loadGatedResource(const std::span<const std::byte> bytes, void* payload, std::vector<ResourceId>& dependencies) {
+    {
+        std::unique_lock lock{g_gateMutex};
+        g_gateArrivals++;
+        g_gateChanged.notify_all();
+        const bool passed = g_gateChanged.wait_for(lock, GATE_TIMEOUT, [] {
+            return g_gateOpen || (g_gatePassAt != 0 && g_gateArrivals >= g_gatePassAt);
+        });
+        if (!passed) {
+            g_gateTimeouts++;
+        }
+    }
+
+    std::string label;
+    const std::error_code readError = readTestResource(GATED_RESOURCE_KIND, bytes, label, dependencies);
+    if (!readError) {
+        static_cast<GatedResource*>(payload)->label = std::move(label);
+    }
+    g_gateFinished++;
+    return readError;
+}
+
+// Declare it after the CacheHarness: it opens the gate when destroyed, and the cache's
+// destructor waits for every gated task, so the other order never returns.
+class LoadGateGuard {
+public:
+    explicit LoadGateGuard(const std::uint32_t passAt = 0) {
+        const std::lock_guard lock{g_gateMutex};
+        g_gateArrivals = 0;
+        g_gatePassAt = passAt;
+        g_gateOpen = false;
+        g_gateTimeouts = 0;
+        g_gateFinished = 0;
+    }
+
+    ~LoadGateGuard() {
+        open();
+    }
+
+    LoadGateGuard(const LoadGateGuard&) = delete;
+
+    LoadGateGuard& operator=(const LoadGateGuard&) = delete;
+
+    void open() const {
+        {
+            const std::lock_guard lock{g_gateMutex};
+            g_gateOpen = true;
+        }
+        g_gateChanged.notify_all();
+    }
+
+    bool waitForArrivals(const std::uint32_t count) const {
+        std::unique_lock lock{g_gateMutex};
+        return g_gateChanged.wait_for(lock, GATE_TIMEOUT, [count] {
+            return g_gateArrivals >= count;
+        });
+    }
+};
+
+static std::vector<std::string> g_cacheLogMessages;
+
+static void captureCacheLog(const TechEngine::LogRecord& record) {
+    g_cacheLogMessages.emplace_back(record.message);
+}
+
+class CacheLogCaptureGuard {
+private:
+    TechEngine::Level m_previousLevel;
+
+public:
+    CacheLogCaptureGuard() : m_previousLevel(TechEngine::minLevel()) {
+        g_cacheLogMessages.clear();
+        TechEngine::setMinLevel(TechEngine::Level::Trace);
+        (void)TechEngine::addLogSink(&captureCacheLog);
+    }
+
+    ~CacheLogCaptureGuard() {
+        (void)TechEngine::removeLogSink(&captureCacheLog);
+        TechEngine::setMinLevel(m_previousLevel);
+        g_cacheLogMessages.clear();
+    }
+
+    CacheLogCaptureGuard(const CacheLogCaptureGuard&) = delete;
+
+    CacheLogCaptureGuard& operator=(const CacheLogCaptureGuard&) = delete;
+};
+
+static bool logNames(const ResourceId id) {
+    const std::string idText = std::format("{:#018x}", id.value());
+    return std::ranges::any_of(g_cacheLogMessages, [&idText](const std::string& message) {
+        return message.find(idText) != std::string::npos;
+    });
+}
+
+static std::vector<std::byte> makeResourceBytes(const BlobKind& kind, const ResourceId id, const std::string_view label, const std::initializer_list<ResourceId> dependencies) {
     std::vector<std::byte> bytes;
     Writer writer{bytes};
-    writer.writeHeader(CACHE_RESOURCE_KIND);
+    writer.writeHeader(kind);
     writer.write(id.value());
     writer.write(label);
     writer.write(static_cast<std::uint32_t>(dependencies.size()));
@@ -93,11 +220,15 @@ private:
 
 public:
     void addAsset(const ResourceId id, const std::string_view label, const std::initializer_list<ResourceId> dependencies) {
-        m_assets[id] = makeResourceBytes(id, label, dependencies);
+        m_assets[id] = makeResourceBytes(CACHE_RESOURCE_KIND, id, label, dependencies);
+    }
+
+    void addGatedAsset(const ResourceId id, const std::string_view label) {
+        m_assets[id] = makeResourceBytes(GATED_RESOURCE_KIND, id, label, {});
     }
 
     void addTruncatedAsset(const ResourceId id) {
-        std::vector<std::byte> bytes = makeResourceBytes(id, "truncated", {});
+        std::vector<std::byte> bytes = makeResourceBytes(CACHE_RESOURCE_KIND, id, "truncated", {});
         bytes.resize(bytes.size() - 4);
         m_assets[id] = std::move(bytes);
     }
@@ -128,31 +259,49 @@ public:
 
 class CacheHarness {
 public:
+    TechEngine::JobSystem jobs;
     CacheSource source;
-    ResourceCache cache;
+    ResourceCache cache{jobs};
 
     CacheHarness() {
         cache.setSource(source);
         cache.registerLoader<CacheResource>(CACHE_RESOURCE_KIND, CACHE_RESOURCE_TYPE_TAG, &loadCacheResource);
+        cache.registerLoader<GatedResource>(GATED_RESOURCE_KIND, GATED_RESOURCE_TYPE_TAG, &loadGatedResource);
     }
 
-    ResourceHandle<CacheResource> request(const ResourceId id) {
-        ResourceHandle<CacheResource> handle;
+    template<typename T = CacheResource>
+    ResourceHandle<T> request(const ResourceId id) {
+        ResourceHandle<T> handle;
         const std::error_code requestError = cache.request(id, handle);
         REQUIRE(requestError == std::error_code{});
         return handle;
     }
 
-    ResourceState state(const ResourceHandle<CacheResource> handle) {
+    template<typename T>
+    ResourceState state(const ResourceHandle<T> handle) {
         ResourceState out = ResourceState::Pending;
         REQUIRE(cache.getState(handle, out));
         return out;
     }
 
-    std::uint32_t acquireCount(const ResourceHandle<CacheResource> handle) {
+    template<typename T>
+    std::uint32_t acquireCount(const ResourceHandle<T> handle) {
         std::uint32_t out = 0;
         REQUIRE(cache.getAcquireCount(handle, out));
         return out;
+    }
+
+    template<typename T>
+    std::error_code error(const ResourceHandle<T> handle) {
+        std::error_code out;
+        REQUIRE(cache.getError(handle, out));
+        return out;
+    }
+
+    template<typename T>
+    bool exists(const ResourceHandle<T> handle) {
+        ResourceState out = ResourceState::Pending;
+        return cache.getState(handle, out);
     }
 };
 
@@ -162,6 +311,8 @@ static constexpr ResourceId LEAF_ID{0x1003};
 static constexpr ResourceId SECOND_ROOT_ID{0x1004};
 static constexpr ResourceId UNKNOWN_ID{0x2001};
 static constexpr ResourceId SERVER_ID{0x2002};
+static constexpr ResourceId GATED_ID{0x3001};
+static constexpr ResourceId SECOND_GATED_ID{0x3002};
 
 TEST_CASE("an unknown id fails at once and creates no entry", "[core][resources][cache]") {
     CacheHarness harness;
@@ -398,6 +549,166 @@ TEST_CASE("a cycle between two resources fails the phase and leaves the counts b
     REQUIRE(harness.state(root) == ResourceState::Ready);
     REQUIRE(harness.acquireCount(root) == 1);
     REQUIRE(harness.acquireCount(dependency) == 2);
+}
+
+TEST_CASE("the loads of one round run at the same time on the job system", "[core][resources][cache]") {
+    CacheHarness harness;
+    harness.source.addGatedAsset(GATED_ID, "first");
+    harness.source.addGatedAsset(SECOND_GATED_ID, "second");
+    const LoadGateGuard gate{2};
+
+    const ResourceHandle<GatedResource> first = harness.request<GatedResource>(GATED_ID);
+    const ResourceHandle<GatedResource> second = harness.request<GatedResource>(SECOND_GATED_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+
+    REQUIRE(g_gateTimeouts.load() == 0);
+    REQUIRE(g_gateFinished.load() == 2);
+    REQUIRE(harness.state(first) == ResourceState::Ready);
+    REQUIRE(harness.state(second) == ResourceState::Ready);
+    REQUIRE(harness.cache.resolve(first) != nullptr);
+    REQUIRE(harness.cache.resolve(first)->label == "first");
+    REQUIRE(harness.cache.resolve(second) != nullptr);
+    REQUIRE(harness.cache.resolve(second)->label == "second");
+}
+
+TEST_CASE("a submitted load stays pending until a drain publishes it", "[core][resources][cache]") {
+    CacheHarness harness;
+    harness.source.addGatedAsset(GATED_ID, "gated");
+    const LoadGateGuard gate;
+    const ResourceHandle<GatedResource> handle = harness.request<GatedResource>(GATED_ID);
+
+    harness.cache.submitLoads();
+    REQUIRE(gate.waitForArrivals(1));
+
+    REQUIRE(harness.cache.removeCompletions() == std::error_code{});
+    REQUIRE(harness.state(handle) == ResourceState::Pending);
+    REQUIRE(harness.cache.resolve(handle) == nullptr);
+
+    gate.open();
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+
+    REQUIRE(g_gateArrivals == 1);
+    REQUIRE(harness.state(handle) == ResourceState::Ready);
+    REQUIRE(harness.cache.resolve(handle) != nullptr);
+    REQUIRE(harness.cache.resolve(handle)->label == "gated");
+}
+
+TEST_CASE("a failed load keeps its error on its entry while the phase finishes every round", "[core][resources][cache]") {
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "root", {DEPENDENCY_ID});
+    harness.source.addAsset(DEPENDENCY_ID, "dependency", {});
+    harness.source.addTruncatedAsset(SECOND_ROOT_ID);
+
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+    const ResourceHandle<CacheResource> broken = harness.request(SECOND_ROOT_ID);
+
+    REQUIRE(harness.cache.runLoadingPhase() == ReadError::Truncated);
+
+    REQUIRE(harness.state(broken) == ResourceState::Failed);
+    REQUIRE(harness.error(broken) == ReadError::Truncated);
+    REQUIRE(harness.cache.resolve(broken) == nullptr);
+    REQUIRE(harness.state(root) == ResourceState::Ready);
+    REQUIRE(harness.error(root) == std::error_code{});
+    const ResourceHandle<CacheResource> dependency = harness.request(DEPENDENCY_ID);
+    REQUIRE(harness.state(dependency) == ResourceState::Ready);
+
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    REQUIRE(harness.state(broken) == ResourceState::Failed);
+    REQUIRE(harness.error(broken) == ReadError::Truncated);
+}
+
+TEST_CASE("a stale handle reports no error", "[core][resources][cache]") {
+    CacheHarness harness;
+    harness.source.addTruncatedAsset(ROOT_ID);
+    const ResourceHandle<CacheResource> handle = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == ReadError::Truncated);
+
+    harness.cache.release(handle);
+    harness.cache.drainFrees();
+
+    std::error_code out;
+    REQUIRE_FALSE(harness.cache.getError(handle, out));
+}
+
+TEST_CASE("an entry still loading defers its free, and the drain does not wait for its task", "[core][resources][cache]") {
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "root", {});
+    harness.source.addGatedAsset(GATED_ID, "gated");
+    const ResourceHandle<CacheResource> ready = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+
+    const LoadGateGuard gate;
+    const ResourceHandle<GatedResource> loading = harness.request<GatedResource>(GATED_ID);
+    harness.cache.submitLoads();
+    REQUIRE(gate.waitForArrivals(1));
+
+    harness.cache.release(ready);
+    harness.cache.release(loading);
+    harness.cache.drainFrees();
+
+    REQUIRE(g_gateFinished.load() == 0);
+    REQUIRE_FALSE(harness.exists(ready));
+    REQUIRE(harness.exists(loading));
+    REQUIRE(harness.acquireCount(loading) == 0);
+
+    gate.open();
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+
+    REQUIRE_FALSE(harness.exists(loading));
+    REQUIRE(harness.cache.resolve(loading) == nullptr);
+}
+
+TEST_CASE("an entry requested again before its deferred free is kept", "[core][resources][cache]") {
+    CacheHarness harness;
+    harness.source.addGatedAsset(GATED_ID, "gated");
+    const LoadGateGuard gate;
+    const ResourceHandle<GatedResource> first = harness.request<GatedResource>(GATED_ID);
+    harness.cache.submitLoads();
+    REQUIRE(gate.waitForArrivals(1));
+
+    harness.cache.release(first);
+    harness.cache.drainFrees();
+    const ResourceHandle<GatedResource> second = harness.request<GatedResource>(GATED_ID);
+
+    gate.open();
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+
+    REQUIRE(second == first);
+    REQUIRE(harness.acquireCount(second) == 1);
+    REQUIRE(harness.state(second) == ResourceState::Ready);
+    REQUIRE(harness.cache.resolve(second) != nullptr);
+    REQUIRE(g_gateArrivals == 1);
+}
+
+TEST_CASE("shutdown waits for loads in flight and logs every entry still acquired", "[core][resources][cache]") {
+    const CacheLogCaptureGuard logs;
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "held", {});
+    harness.source.addAsset(SECOND_ROOT_ID, "released", {});
+    harness.source.addGatedAsset(GATED_ID, "gated");
+    harness.request(ROOT_ID);
+    const ResourceHandle<CacheResource> released = harness.request(SECOND_ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    harness.cache.release(released);
+
+    const LoadGateGuard gate;
+    harness.request<GatedResource>(GATED_ID);
+    harness.cache.submitLoads();
+    REQUIRE(gate.waitForArrivals(1));
+
+    {
+        const std::jthread opener{[&gate] {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            gate.open();
+        }};
+        harness.cache.shutdown();
+        REQUIRE(g_gateFinished.load() == 1);
+    }
+
+    REQUIRE(g_gateTimeouts.load() == 0);
+    REQUIRE(logNames(ROOT_ID));
+    REQUIRE(logNames(GATED_ID));
+    REQUIRE_FALSE(logNames(SECOND_ROOT_ID));
 }
 
 TEST_CASE("loader registration is rejected once the cache has closed it", "[core][resources][cache]") {
