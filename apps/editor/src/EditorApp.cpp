@@ -49,12 +49,12 @@ namespace TechEngine {
         }
     }
 
-    std::error_code EditorApp::simulationStartupLoad() {
+    std::error_code EditorApp::simulationStartupLoad(Scene& scene) {
         if (m_project.getExportStartupScene(Role::Client).valid()) {
-            // TODO: read the startup scene into m_scene with SceneAsset::read, so the editor opens on
-            // it. Until then a later launch leaves m_scene empty.
+            // TODO: read the startup scene into the scene with SceneAsset::read, so the editor opens on
+            // it. Until then a later launch leaves the scene empty.
         } else {
-            createStartupScene();
+            createStartupScene(scene);
         }
 
         // TODO: Remove the export step from the startup load and make it a separate command in the editor UI.
@@ -125,7 +125,7 @@ namespace TechEngine {
         return Role::Client;
     }
 
-    void EditorApp::createStartupScene() {
+    void EditorApp::createStartupScene(Scene& scene) {
         const std::vector<AssetRecord>& records = m_assets.getRecords();
         const auto existing = std::ranges::find(records, STARTUP_SCENE_PATH, &AssetRecord::path);
         ResourceId id;
@@ -133,7 +133,7 @@ namespace TechEngine {
             TE_LOGGER_WARN("{0} names no startup scene, so the existing {1} becomes it", MANIFEST_PATH, STARTUP_SCENE_PATH);
             id = existing->id;
         } else {
-            id = writeStartupScene();
+            id = writeStartupScene(scene);
         }
 
         m_project.setExportStartupScene(Role::Client, id);
@@ -143,22 +143,22 @@ namespace TechEngine {
 
     // TODO: move the id, file write and index record into a shared create function when the next
     // asset kind gets its writer, so the content browser can create scenes through it too.
-    ResourceId EditorApp::writeStartupScene() {
+    ResourceId EditorApp::writeStartupScene(Scene& scene) {
         FileStatus status;
         const std::error_code statusError = m_files.status(STARTUP_SCENE_PATH, status);
         TE_CHECK(statusError == FileError::NotFound, "{0} exists but is not an indexed asset, so it is not overwritten", STARTUP_SCENE_PATH);
 
-        const Entity parent = m_scene.createEntity();
-        const Entity firstChild = m_scene.createEntity();
-        const Entity secondChild = m_scene.createEntity();
-        const bool firstParented = m_scene.setParent(firstChild, parent, 0);
+        const Entity parent = scene.createEntity();
+        const Entity firstChild = scene.createEntity();
+        const Entity secondChild = scene.createEntity();
+        const bool firstParented = scene.setParent(firstChild, parent, 0);
         TE_CHECK(firstParented, "Failed to parent the startup scene's first child");
-        const bool secondParented = m_scene.setParent(secondChild, parent, 1);
+        const bool secondParented = scene.setParent(secondChild, parent, 1);
         TE_CHECK(secondParented, "Failed to parent the startup scene's second child");
 
         const ResourceId id = m_assets.generateId();
         std::vector<std::byte> bytes;
-        SceneAsset{id}.write(m_scene, bytes);
+        SceneAsset{id}.write(scene, bytes);
         const std::error_code writeError = m_files.write(STARTUP_SCENE_PATH, bytes);
         TE_CHECK(!writeError, "Failed to write the startup scene to {0}: {1}", STARTUP_SCENE_PATH, writeError.message());
 

@@ -8,6 +8,7 @@
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/platform/files/MountTable.hpp>
+#include <TechEngine/testing/AppTestAccess.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
@@ -28,6 +29,7 @@
 #include <thread>
 #include <vector>
 
+using TechEngineTests::AppTestAccess;
 using TechEngineTests::ScratchDirectory;
 
 namespace {
@@ -58,7 +60,7 @@ namespace {
         }
 
         std::error_code startupLoad() {
-            return simulationStartupLoad();
+            return AppTestAccess::simulationStartupLoad(*this);
         }
 
         void bootstrap() {
@@ -68,7 +70,7 @@ namespace {
         }
 
         const TechEngine::Scene& scene() const {
-            return m_scene;
+            return AppTestAccess::scene(*this);
         }
 
         const TechEngine::MountTable& mounts() const {

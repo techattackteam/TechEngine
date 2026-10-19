@@ -41,7 +41,7 @@ namespace TechEngine {
         m_mounts.mount("assets", m_folder / "assets");
     }
 
-    std::error_code RuntimeApp::simulationStartupLoad() {
+    std::error_code RuntimeApp::simulationStartupLoad(Scene& scene) {
         PackReader common(m_files);
         const std::error_code commonError = common.open(COMMON_PACK_PATH);
         if (commonError) {
@@ -86,25 +86,25 @@ namespace TechEngine {
         if (sceneReadError) {
             return sceneReadError;
         }
-        SceneAsset scene;
-        const std::error_code sceneParseError = scene.read(sceneBytes, m_scene);
+        SceneAsset sceneAsset;
+        const std::error_code sceneParseError = sceneAsset.read(sceneBytes, scene);
         if (sceneParseError) {
             TE_LOGGER_ERROR("The startup scene {0:#018x} does not parse: {1}", record.startupScene.value(), sceneParseError.message());
             return sceneParseError;
         }
-        const std::vector<Entity> roots = m_scene.getRoots();
+        const std::vector<Entity> roots = scene.getRoots();
         TE_LOGGER_INFO("Loaded the startup scene {0:#018x} with {1} root entities", record.startupScene.value(), roots.size());
         for (const Entity root: roots) {
-            logSceneTree(root, 1);
+            logSceneTree(scene, root, 1);
         }
         return {};
     }
 
-    void RuntimeApp::logSceneTree(const Entity entity, const std::size_t depth) const {
-        const Vec3& position = m_scene.getComponent<Transform>(entity).getLocal().position;
+    void RuntimeApp::logSceneTree(const Scene& scene, const Entity entity, const std::size_t depth) const {
+        const Vec3& position = scene.getComponent<Transform>(entity).getLocal().position;
         TE_LOGGER_INFO("{0}Entity {1}:{2} at ({3}, {4}, {5})", std::string(depth * 2, ' '), entity.index, entity.generation, position.x, position.y, position.z);
-        for (const Entity child: m_scene.getChildren(entity)) {
-            logSceneTree(child, depth + 1);
+        for (const Entity child: scene.getChildren(entity)) {
+            logSceneTree(scene, child, depth + 1);
         }
     }
 

@@ -146,7 +146,7 @@ namespace TechEngine {
     void App::simulationInit() {
     }
 
-    std::error_code App::simulationStartupLoad() {
+    std::error_code App::simulationStartupLoad(Scene&) {
         return {};
     }
 

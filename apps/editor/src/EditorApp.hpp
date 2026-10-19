@@ -32,7 +32,7 @@ namespace TechEngine {
     protected:
         void init() override;
 
-        std::error_code simulationStartupLoad() override;
+        std::error_code simulationStartupLoad(Scene& scene) override;
 
         void publishSnapshot(const SimulationContext& simulation) override;
 
@@ -47,8 +47,8 @@ namespace TechEngine {
         bool shouldClose() const override;
 
     private:
-        void createStartupScene();
+        void createStartupScene(Scene& scene);
 
-        ResourceId writeStartupScene();
+        ResourceId writeStartupScene(Scene& scene);
     };
 }

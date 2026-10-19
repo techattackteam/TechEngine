@@ -179,7 +179,7 @@ namespace TechEngine {
 
             {
                 TE_PROFILER_SCOPE("Simulation.StartupLoad");
-                m_startupError = app.simulationStartupLoad();
+                m_startupError = app.simulationStartupLoad(app.m_scene);
             }
             if (!m_startupError) {
                 restartTimeline(m_context.engine.clock.now());
