@@ -24,7 +24,8 @@ anything else. If one fails, say which and stop. Do not fix it for me.
    `<card ID>/<slug>`, and `git -C C:/dev/TechEngine log --oneline origin/master..HEAD` must list
    nothing but this card's own commits. Another card's commits there mean the branch was cut
    from a merged branch, which replays that PR as a conflict against itself (PRs #8-#10,
-   `CLAUDE.md` rule 9).
+   `CLAUDE.md` rule 9). A vault-only Design or Process card skips this gate: its work lands as
+   vault commits, with no branch.
 
 ## Gather
 
@@ -110,9 +111,23 @@ choice that needs its own ADR ([[Planning Workflow - Artifact Gate]]).
 
 Stop at the proposal. Write nothing to the vault until I agree on the direction.
 
+## When the Auto lane runs this
+
+The unattended lane runs this before it works a 🤖 Auto card. Nobody is there to answer, so:
+
+- **Check the order gate only.** The lane moves its own card and cuts its own branch, at the
+  routine prompt's steps, so the board and branch gates do not apply.
+- **Gather in full.** Nobody corrects a stale note mid-run, so freshness matters more here.
+- **The brief goes into the run report**, under the card, and only when it found something.
+  Clean ground gets one line.
+- **Skip *Then, by card kind*.** An Auto card is fully specified when it is cut, so the lane
+  does the work itself instead of scaffolding or proposing. A decision no artifact makes means
+  the card was mis-scoped: stop and report it.
+
 ## Guardrails
 
-- **Never cut the branch or move the card.** Those are the gates, and they are mine.
+- **Never cut the branch or move the card.** Those are the gates, and they are mine. The Auto
+  lane is the one exception, above.
 - **Never advance the `Reconciled against` stamp.** You are reading it, not answering it. It
   moves only as the output of `/weekly-review`'s real drift check (ADR-012 §6).
 - **Report drift, do not sweep it.** If a note is wrong, say so. You may fix the specific rows
