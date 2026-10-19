@@ -14,7 +14,7 @@ static std::string readLogFile(const std::filesystem::path& path) {
     return std::string{std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>()};
 }
 
-// GOTCHA: the only case in the engine that installs the spdlog sink, and so the only writer of
+// The only case in the engine that installs the spdlog sink, and so the only writer of
 // logs/techengine.log, a path relative to the working directory ctest gives this exe, which is
 // this module's binary dir. A second case writing it would race this one under `ctest -j`.
 //

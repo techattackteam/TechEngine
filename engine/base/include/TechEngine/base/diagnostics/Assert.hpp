@@ -74,7 +74,7 @@ namespace TechEngine {
 // gate, so a direct call ships a dev-only check into Release. Same enforcement as the
 // Logger's: the name plus ci.yml → private-symbols.
 //
-// GOTCHA: the optional message rides __VA_OPT__, which needs a conforming preprocessor;
+// The optional message rides __VA_OPT__, which needs a conforming preprocessor;
 // MSVC gets it from /Zc:preprocessor in cmake/warnings.cmake. Drop that flag and the
 // traditional preprocessor quietly swallows the empty __VA_ARGS__'s trailing comma, so
 // Windows stays green while the Clang leg fails on every message-less assert.
