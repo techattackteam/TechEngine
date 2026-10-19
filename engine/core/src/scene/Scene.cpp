@@ -117,7 +117,7 @@ namespace TechEngine {
             return false;
         }
 
-        for (auto it = subtree.rbegin(); it != subtree.rend(); it++) {
+        for (auto it = subtree.rbegin(); it != subtree.rend(); ++it) {
             const bool removed = m_storage->destroyEntity(*it);
             TE_CHECK(removed, "Collected subtree entity became invalid during destruction");
         }
