@@ -17,6 +17,7 @@
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/platform/files/MountTable.hpp>
+#include <TechEngine/testing/AppTestAccess.hpp>
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <RuntimeApp.hpp>
@@ -34,6 +35,7 @@
 #include <typeinfo>
 #include <vector>
 
+using TechEngineTests::AppTestAccess;
 using TechEngineTests::ScratchDirectory;
 
 namespace {
@@ -235,11 +237,11 @@ namespace {
         }
 
         std::error_code startupLoad() {
-            return simulationStartupLoad();
+            return AppTestAccess::simulationStartupLoad(*this);
         }
 
         const TechEngine::Scene& scene() const {
-            return m_scene;
+            return AppTestAccess::scene(*this);
         }
 
         const TechEngine::MountTable& mounts() const {
@@ -259,15 +261,15 @@ namespace {
         }
 
         std::size_t entityCount() const {
-            return m_scene.getRoots().size();
+            return scene().getRoots().size();
         }
 
         std::vector<TechEngine::Entity> entities() const {
-            return m_scene.getRoots();
+            return scene().getRoots();
         }
 
         bool contains(const TechEngine::Entity entity) const {
-            return m_scene.contains(entity);
+            return scene().contains(entity);
         }
 
         std::size_t systemCount() const {
@@ -287,7 +289,7 @@ namespace {
     public:
         std::size_t groundedCount() {
             std::size_t grounded = 0;
-            m_scene.query<TechEngine::Write<>, TechEngine::Read<FallingBody>>().each([&grounded](const TechEngine::Entity, const FallingBody& body) {
+            AppTestAccess::scene(*this).query<TechEngine::Write<>, TechEngine::Read<FallingBody>>().each([&grounded](const TechEngine::Entity, const FallingBody& body) {
                 if (body.grounded) {
                     grounded++;
                 }

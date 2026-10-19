@@ -5,6 +5,7 @@
 #include <TechEngine/core/serialization/BlobHeader.hpp>
 #include <TechEngine/core/systems/ISystem.hpp>
 #include <TechEngine/platform/files/FileError.hpp>
+#include <TechEngine/testing/AppTestAccess.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
 #include <catch2/catch_test_macros.hpp>
@@ -150,6 +151,19 @@ namespace {
 
         bool closedDuringConfiguration = false;
     };
+
+    class SceneReachProbe : public TechEngine::App {
+    public:
+        template<typename Probe = SceneReachProbe>
+        static constexpr bool reachesScene() {
+            return requires(Probe& probe) { probe.m_scene; };
+        }
+
+        template<typename Probe = SceneReachProbe>
+        static constexpr bool reachesSchedule() {
+            return requires(Probe& probe) { probe.m_schedule; };
+        }
+    };
 }
 
 TEST_CASE("App scopes main registration across initialization and shutdown", "[app]") {
@@ -176,6 +190,11 @@ TEST_CASE("the subclass's role reaches the loop App owns", "[app]") {
     const ProbeApp app{TechEngine::Role::DedicatedServer};
 
     REQUIRE(app.loopRole() == TechEngine::Role::DedicatedServer);
+}
+
+TEST_CASE("an App subclass cannot name App's scene", "[app]") {
+    STATIC_CHECK(SceneReachProbe::reachesSchedule());
+    STATIC_CHECK_FALSE(SceneReachProbe::reachesScene());
 }
 
 TEST_CASE("a mount added after construction is visible through App's context", "[app]") {
@@ -256,13 +275,15 @@ struct AppLifecycleEvent {
 };
 
 static std::function<void(const TechEngine::SimulationContext&)> g_onLifecycleTick;
+static const TechEngine::Scene* g_tickedScene = nullptr;
 
 class AppLifecycleSystem final : public TechEngine::ISystem {
 public:
     void init(TechEngine::ScheduleRegistration&) override {
     }
 
-    void tick(TechEngine::Scene&, const TechEngine::SimulationContext& simulation) override {
+    void tick(TechEngine::Scene& scene, const TechEngine::SimulationContext& simulation) override {
+        g_tickedScene = &scene;
         if (g_onLifecycleTick) {
             g_onLifecycleTick(simulation);
         }
@@ -280,6 +301,7 @@ public:
 
     ~AppLifecycleProbe() override {
         g_onLifecycleTick = {};
+        g_tickedScene = nullptr;
     }
 
     std::function<void()> onInit;
@@ -294,6 +316,7 @@ public:
     AppLifecycleSignal mainEntered;
     AppLifecycleSignal simulationStopped;
     bool dedicatedJoinedBeforeShutdown = false;
+    const TechEngine::Scene* loadedScene = nullptr;
 
     std::vector<AppLifecycleEvent> events() const {
         std::lock_guard const lock{m_eventsMutex};
@@ -363,8 +386,9 @@ protected:
         }
     }
 
-    std::error_code simulationStartupLoad() override {
+    std::error_code simulationStartupLoad(TechEngine::Scene& scene) override {
         record("simulationStartupLoad");
+        loadedScene = &scene;
         if (onSimulationStartupLoad) {
             return onSimulationStartupLoad();
         }
@@ -641,6 +665,21 @@ TEST_CASE("App runs the startup loading phase after readiness and before the fir
     CHECK(simulationEvents[2].thread == simulationEvents[0].thread);
     CHECK(simulationEvents[3].name == "systemTick");
     CHECK(simulationEvents[3].tick == 1);
+    checkStopped(app);
+}
+
+TEST_CASE("App hands the startup loading phase the scene its Ticks run on", "[app][lifecycle][loading]") {
+    AppLifecycleProbe app;
+    app.onPublishSnapshot = [&](const TechEngine::SimulationContext& simulation) {
+        if (simulation.tick >= 1) {
+            app.requestStop();
+        }
+    };
+
+    REQUIRE(app.run() == 0);
+    REQUIRE(app.loadedScene != nullptr);
+    CHECK(app.loadedScene == g_tickedScene);
+    CHECK(app.loadedScene == &TechEngineTests::AppTestAccess::scene(app));
     checkStopped(app);
 }
 

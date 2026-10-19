@@ -3,6 +3,7 @@
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/client/Client.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
+#include <TechEngine/core/scene/Scene.hpp>
 
 #include <cstddef>
 #include <filesystem>
@@ -28,7 +29,7 @@ namespace TechEngine {
 
         void mountAssets();
 
-        std::error_code simulationStartupLoad() override;
+        std::error_code simulationStartupLoad(Scene& scene) override;
 
         void publishSnapshot(const SimulationContext& simulation) override;
 
@@ -43,6 +44,6 @@ namespace TechEngine {
         bool shouldClose() const override;
 
     private:
-        void logSceneTree(Entity entity, std::size_t depth) const;
+        void logSceneTree(const Scene& scene, Entity entity, std::size_t depth) const;
     };
 }
