@@ -28,7 +28,7 @@ endforeach()
 # Deps are never instrumented (the flags ride te_warnings), but our own TUs still carry
 # mapping records for dependency headers they inline.
 #
-# GOTCHA: this was `-ignore-filename-regex=/_deps/`, which is FetchContent's DEFAULT directory
+# This was `-ignore-filename-regex=/_deps/`, which is FetchContent's DEFAULT directory
 # and not the one CI uses; ci.yml passes FETCHCONTENT_BASE_DIR=<workspace>/.deps. So it
 # matched every local run and nothing in CI, and inlined catch2 headers were scored against
 # the merge threshold. The positional root list is the fix: llvm-cov keeps only files under

@@ -2,8 +2,10 @@
 # unless a red check here blocks the merge.
 #
 # Legs (ADR-005/008): Win-MSVC + Linux-Clang, each {Debug, Release}; format on Linux;
-# clang-tidy on the Linux leg; sanitizers per-PR (Option A): ASan/Win, UBSan+TSan/Linux.
-# Stage order per leg (fail cheap first): format/tidy -> build -> ctest (incl. sdk-smoke).
+# clang-tidy on the Linux leg; sanitizers: ASan/Win, UBSan+TSan/Linux; diff coverage on Linux.
+# Every leg waits only for clang-format, then all of them run side by side.
+# Every leg also runs on master pushes, so master holds a warm ccache for each and a PR's first
+# push restores it. Only the diff coverage gate itself is pull_request-only.
 #
 # Caching: ccache caches BOTH our + dependency compilation on every leg, so pinned deps
 # aren't rebuilt each run. ccache is a compiler *launcher*, which needs Ninja (the VS
@@ -11,7 +13,7 @@
 # /Z7 embedded debug info (compiler caches can't cache /Zi PDBs). ccache degrades to
 # uncached compilation if its backend is down, so a cache outage never fails the build.
 #
-# NOTE: the ccache wiring is verified by its first PR run, not locally. The Ninja
+# The ccache wiring is verified by its first PR run, not locally. The Ninja
 # generator + MSVC flags themselves are verified locally.
 
 name: CI
@@ -23,18 +25,17 @@ name: CI
 # added to the list later. Self-review (ADR-009) is untouched: none of the three carry engine
 # code to review for correctness.
 #
-# GOTCHA, and this is the sharp one: `.github/workflows/` is in that list, so A CHANGE TO
-# THIS FILE IS NEVER TESTED BY THIS FILE. Break the YAML, rename a leg, drop a job, and the
-# PR still shows nine green checks from the stand-in and merges clean. The next PR is what
-# finds out. Worse, ci-docs.yml hardcodes the nine required context names, so renaming a leg
-# here silently uncovers it and every later docs-only PR hangs unmergeable with no clue why.
-# A workflow-only merge is also excluded by the push filter. Land it alone, then use
-# workflow_dispatch on master and read that run before building on the change. A dispatch
-# runs only what a master push runs: clang-format, the four build legs and the cache prune.
-# `diff coverage` and the sanitizer legs are pull_request-only, so an edit to either is first
-# run by the next code PR, not by the dispatch.
+# `.github/workflows/` is in that list, so A CHANGE TO THIS FILE IS NEVER TESTED BY THIS FILE.
+# Break the YAML, rename a leg, drop a job, and the PR still shows nine green checks from the
+# stand-in and merges clean. The next PR is what finds out. Worse, ci-docs.yml hardcodes the
+# nine required context names, so renaming a leg here silently uncovers it and every later
+# docs-only PR hangs unmergeable with no clue why. A workflow-only merge is also excluded by the
+# push filter. Land it alone, then use workflow_dispatch on master and read that run before
+# building on the change. A dispatch runs what a master push runs: every leg and the cache
+# prune, with the diff coverage gate skipped. An edit to that gate is first run by the next
+# code PR, not by the dispatch.
 #
-# GOTCHA: `paths-ignore` skips only when EVERY changed file matches, which is the behaviour
+# `paths-ignore` skips only when EVERY changed file matches, which is the behaviour
 # this wants. ci-docs.yml cannot be spelled that way, so since 2026-08-29 it carries no path
 # filter and computes the same rule from the real diff in its `scope` job; see the header
 # there. The list is duplicated below and mirrored a third time as that job's grep: Actions
@@ -110,18 +111,9 @@ jobs:
   build-test:
     name: ${{ matrix.name }}
     timeout-minutes: 20
-    # Gated behind the two cheap checks so a formatting slip or an under-covered diff never
-    # pays for seven more legs, three of them Windows at 2x (ADR-008 §9's cost trigger).
-    #
-    # GOTCHA: coverage is pull_request-only, so a push to master SKIPS it, and a skipped
-    # dependency skips everything downstream by default. That would kill the master
-    # backstop silently. Hence the explicit result checks: skipped is fine here, failed
-    # is not. !cancelled() is what stops GitHub applying its own implicit success() gate.
-    needs: [format, coverage]
-    if: >-
-      ${{ !cancelled()
-          && needs.format.result == 'success'
-          && needs.coverage.result != 'failure' }}
+    # Waits for clang-format only. diff coverage runs beside this job and blocks the merge
+    # through its own required check, so no leg waits minutes for it.
+    needs: format
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -144,7 +136,7 @@ jobs:
         with:
           arch: x64
 
-      # GOTCHA: the action never runs `apt-get update`. Package versions resolve against the
+      # The action never runs `apt-get update`. Package versions resolve against the
       # lists baked into the runner image, and a hit restores the .debs without touching the
       # mirror at all, which is the point: the mirror is what stalls. The X11/Wayland list is
       # exactly what GLFW 3.4's CMake checks for; a "headers not found" at configure means
@@ -233,20 +225,19 @@ jobs:
   # threshold would fall every time `client` grows, because rendering is proven by demo
   # scenes and not unit tests, and a gate that is bypassed weekly teaches nothing.
   #
-  # The job runs on every PR and is never skipped. The bypass lives inside it as a per-STEP
-  # guard, so `[skip-coverage]` skips the work and the job still goes green, for two reasons.
-  # A job-level `if:` can only read the frozen event payload (see the GOTCHA below). And
-  # `sanitizers` needs this job to SUCCEED: a skipped `coverage` would skip that matrix job,
-  # which then reports one check named `matrix.name` instead of its three required contexts,
-  # and the PR hangs pending. The `diff coverage` context itself would survive a skip: a plain
-  # job skipped by its `if:` still reports, as `skipped` (measured on #49's push run), and
-  # GitHub documents a skipped required check as passing.
+  # No other leg waits for this job; it runs beside them and blocks the merge on its own.
   #
-  # The price of that shape, taken deliberately on 2026-08-29: a bypassed run reports no
-  # number and uploads no HTML. Before, it built everything and printed the figure it was
-  # about to ignore, which cost ~2 minutes of runner time per bypassed run.
+  # On a master push or a dispatch there is no diff to score, so the job only builds and saves
+  # its ccache, which every PR's first push then restores. The bypass, the Coverage step and
+  # the upload are pull_request-only for that reason.
   #
-  # GOTCHA that cost a debugging session: the bypass USED to read
+  # The bypass lives inside the job as a per-STEP guard, so `[skip-coverage]` skips the work
+  # and the job still goes green: a job-level `if:` can only read the frozen event payload (see
+  # below). The price, taken deliberately on 2026-08-29: a bypassed run reports no number and
+  # uploads no HTML. Before, it built everything and printed the figure it was about to ignore,
+  # which cost ~2 minutes of runner time per bypassed run.
+  #
+  # This cost a debugging session: the bypass USED to read
   # `github.event.pull_request.body`, which is the event payload and is frozen at the moment
   # the event fired. Adding `[skip-coverage]` to an open PR did nothing, and "Re-run all
   # jobs" replays that same stale payload, so the description was invisible no matter how
@@ -257,7 +248,6 @@ jobs:
     name: diff coverage
     timeout-minutes: 20
     needs: format
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -267,16 +257,18 @@ jobs:
       # bypassed run used to spend two minutes on clang, diff-cover and an instrumented
       # build to reach a conclusion it already had.
       #
-      # It needs no checkout: `gh` talks to the API, and GH_REPO says which repo.
+      # It needs no checkout: `gh` talks to the API, and GH_REPO says which repo. A push has no
+      # PR to read, so the step is skipped, its output is empty and every guard below passes.
       - name: Check the bypass
         id: bypass
+        if: github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TE_PR: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
-          # The LIVE description, never github.event.pull_request.body. See the GOTCHA above.
+          # The LIVE description, never github.event.pull_request.body. See the job header.
           body=$(gh pr view "$TE_PR" --json body --jq .body)
           skip=false
           case "$body" in
@@ -287,9 +279,9 @@ jobs:
           esac
           echo "skip=$skip" >> "$GITHUB_OUTPUT"
 
-      # GOTCHA: every step below MUST carry this guard, and a new step is not exempt. The
-      # bypass skips STEPS and never the job, for the two reasons in the job's header. The job
-      # has to run and go green; only the work inside it is optional.
+      # Every step below MUST carry this guard, and a new step is not exempt. The bypass skips
+      # STEPS and never the job, for the reason in the job's header. The job has to run and go
+      # green; only the work inside it is optional.
       - uses: actions/checkout@v4
         if: steps.bypass.outputs.skip != 'true'
         with:
@@ -300,7 +292,7 @@ jobs:
         uses: lukka/get-cmake@latest
 
       # `llvm` carries llvm-profdata and llvm-cov, which must match clang's major version.
-      # Same cached install as build-test; see the GOTCHA there.
+      # Same cached install as build-test; see the comment there.
       - name: Install clang + LLVM + GLFW deps
         if: steps.bypass.outputs.skip != 'true'
         timeout-minutes: 5
@@ -352,7 +344,7 @@ jobs:
       # TE_COVERAGE_BYPASS is deliberately absent: CI bypasses by not reaching this step at
       # all, so the cmake-side bypass exists for local runs only.
       - name: Coverage
-        if: steps.bypass.outputs.skip != 'true'
+        if: github.event_name == 'pull_request' && steps.bypass.outputs.skip != 'true'
         timeout-minutes: 5
         env:
           TE_COVERAGE_BASE: origin/${{ github.base_ref }}
@@ -362,7 +354,7 @@ jobs:
         run: xvfb-run -a cmake --build --preset linux-coverage --target coverage
 
       - name: Upload the browsable report
-        if: always() && steps.bypass.outputs.skip != 'true'
+        if: always() && github.event_name == 'pull_request' && steps.bypass.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-html
@@ -373,18 +365,14 @@ jobs:
         if: steps.bypass.outputs.skip != 'true'
         run: ccache -s
 
-  # --- sanitizers, all per-PR (ADR-008 §9 Option A) --------------------------
+  # --- sanitizers, on PRs and on master --------------------------------------
   sanitizers:
     name: ${{ matrix.name }}
     timeout-minutes: 20
-    # PR-only (ADR-008 §9 Option A / ADR-009 §4): a squash-merge to master was already
-    # sanitized on its up-to-date PR, so the push backstop skips the sanitizer trio.
-    needs: [format, coverage]
-    if: >-
-      ${{ !cancelled()
-          && github.event_name == 'pull_request'
-          && needs.format.result == 'success'
-          && needs.coverage.result == 'success' }}
+    # Also runs on master pushes. Not to re-check the merge, which its PR already sanitized,
+    # but to save the ccache that the next PR's first push restores. A PR can read only its own
+    # ref's caches and master's, so without this run every PR built these legs cold.
+    needs: format
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -406,7 +394,7 @@ jobs:
         with:
           arch: x64
 
-      # Same cached install as build-test; see the GOTCHA there.
+      # Same cached install as build-test; see the comment there.
       - name: Install clang + GLFW deps (Linux)
         if: runner.os == 'Linux'
         timeout-minutes: 5
@@ -489,10 +477,11 @@ jobs:
   # Every leg saves a fresh per-sha snapshot, so without this the repo's 10 GB cap fills in
   # about thirty merges. Keeps the newest entry per key family on THIS run's ref and deletes the
   # rest; a family is the key minus its trailing hash and sha segments, so `ccache-v2-linux-tsan`,
-  # `deps-Linux` and `mesa-Windows-X64` are one family each. Caches on closed PRs are dropped by
-  # cache-cleanup.yml.
+  # `deps-Linux` and `mesa-Windows-X64` are one family each. On master that is one snapshot per
+  # leg, all eight legs included. A cancelled run skips this job, and the next run's prune
+  # deletes what it left. Caches on closed PRs are dropped by cache-cleanup.yml.
   #
-  # GOTCHA: ccache-action saves in its POST step, after the leg's last step. Pruning inside a leg
+  # ccache-action saves in its POST step, after the leg's last step. Pruning inside a leg
   # would delete the old snapshot before the new one exists, and a cancelled leg would then leave
   # the ref with nothing. A separate job that needs every saver runs only once the new one exists.
   cache-prune:

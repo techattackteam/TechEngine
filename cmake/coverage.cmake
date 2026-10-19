@@ -24,7 +24,7 @@ endif()
 target_compile_options(te_warnings INTERFACE -fprofile-instr-generate -fcoverage-mapping)
 target_link_options(te_warnings INTERFACE -fprofile-instr-generate)
 
-# GOTCHA: llvm-profdata/llvm-cov must match the Clang major version that compiled, or the
+# llvm-profdata/llvm-cov must match the Clang major version that compiled, or the
 # merge fails with an unsupported-profile-version error. Searching the compiler's own bin
 # directory first is what keeps them aligned when several LLVM versions are installed.
 get_filename_component(_te_llvm_bin "${CMAKE_CXX_COMPILER}" DIRECTORY)
