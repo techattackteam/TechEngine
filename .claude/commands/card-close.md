@@ -8,7 +8,9 @@ Act as my technical lead closing a **merged** card in TechEngine. Card: $ARGUMEN
 **GATE: check before writing anything.** A card is closed by the merge, not by the work
 being finished. Confirm the card's PR is merged into `origin/master`
 (`git fetch origin && git log origin/master --oneline -10`). If it is not merged, stop and
-say so. Nothing below runs on unmerged work.
+say so. Nothing below runs on unmerged work. A vault-only Design or Process card has no PR:
+its gate is its work commit on the vault's `origin/master`, and the branch check below does not
+apply.
 
 **Then check the branch link.** Read the head branch of each merged PR the card is closing
 against: `gh pr view <n> --json headRefName`. The name must start with `<card ID>/`, because
@@ -64,8 +66,8 @@ it to fit an exact line count.
 
 ## Then write, in this order
 
-1. **[[Sprint Board]]**: move the card out of In Progress into Done, newest at the top, and
-   write the entry.
+1. **[[Sprint Board]]**: move the card out of In Progress or Review / Demo into Done, newest at
+   the top, and write the entry.
 2. **The sprint note**: tick the card, and any *Definition of Done* line it satisfies. A DoD
    line carries its evidence: date, sha, PR.
 3. **The design note**: record the calls the card made against it, in place. Link the ADR
@@ -78,6 +80,18 @@ it to fit an exact line count.
    milestone, update that milestone's row in *Plan*. Touch nothing else. The stamp, the
    latest-check paragraph and *Health check* belong to the review ceremonies.
 7. **Report**: what you changed, and what needs my call. Then stop.
+
+## When the Auto lane runs this
+
+The unattended lane closes its own cards only: a 🤖 Auto card a fire worked, once the gate
+above passes. It never closes an attended card, even a merged one; that close stays in my
+session, where the context for the entry is.
+
+- Every step above applies, the Dashboard's *Current focus* included.
+- Step 7's report goes under *Needs you* in the run report, and the close's vault edits are
+  committed with that report.
+- An entry built only from the card, the PR and the diff says so when the PR has no review
+  conversation, because then nothing records what was rejected along the way.
 
 ## Guardrails
 
