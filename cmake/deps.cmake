@@ -72,6 +72,11 @@ FetchContent_Declare(Jolt
 
 FetchContent_MakeAvailable(glm spdlog glfw tomlplusplus Jolt)
 
+# Jolt precompiles Jolt.h for all 138 of its TUs, and ccache refuses every PCH build and use
+# under its default sloppiness, so Jolt recompiled in full on every CI run. Without the PCH
+# every Jolt TU is a cache hit; a cold build pays about 30 s more.
+set_target_properties(Jolt PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
+
 # toml++ defaults TOML_EXCEPTIONS to 1 whenever the compiler has exceptions, and in that mode
 # `toml::parse_result` is a plain alias for `toml::table`, so a failure check against it
 # compiles, never fires, and `parse()` throws instead. Link this wrapper, never the upstream
