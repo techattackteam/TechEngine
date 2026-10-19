@@ -12,7 +12,7 @@
 # `linux TSan` never reported at all. Seven of the nine required contexts are matrix legs,
 # so gating with `if:` would hang every docs-only PR.
 #
-# GOTCHA: the names below are load-bearing. A required status check matches on the context
+# The names below are load-bearing. A required status check matches on the context
 # string, so each entry must equal a `name:` ci.yml produces, character for character. Rename
 # a leg there and this file silently stops covering it; the failure shows up as a docs PR
 # that will not merge. The list is the ruleset's, verified against
