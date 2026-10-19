@@ -34,7 +34,7 @@ namespace TechEngineTests {
         TechEngine::AssertHandlerFn m_previous;
     };
 
-    // GOTCHA: AssertContext's condition and message are views into a stack buffer inside
+    // AssertContext's condition and message are views into a stack buffer inside
     // assertDispatch. They dangle the moment the throw unwinds it, so copy, never view.
     struct AssertFired {
         TechEngine::AssertKind kind;

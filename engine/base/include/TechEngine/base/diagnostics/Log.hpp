@@ -14,7 +14,7 @@
 #define TE_LOG_LEVEL_CRITICAL 5
 #define TE_LOG_LEVEL_OFF 6
 
-// GOTCHA: this is the fallback for a TU that never links base, so the per-config -D never
+// This is the fallback for a TU that never links base, so the per-config -D never
 // arrives. NDEBUG is the only config signal such a TU has, which puts RelWithDebInfo on Info
 // where the link would have given it Debug, deliberately the quieter side.
 #if !defined(TE_LOG_ACTIVE_LEVEL)
@@ -146,7 +146,7 @@ namespace TechEngine {
     }
 }
 
-// GOTCHA: define TE_LOG_CHANNEL *before* including this header, or the fallback below wins
+// Define TE_LOG_CHANNEL *before* including this header, or the fallback below wins
 // and your later #define is a redefinition. One channel per TU is the intended shape; reach
 // for TE_LOGGER_<LEVEL>_CH only for the cross-cutting exception.
 #if !defined(TE_LOG_CHANNEL)

@@ -231,7 +231,7 @@ TEST_CASE("TE_ENSURE yields its value and reports once per call site", "[base][a
     REQUIRE(g_fired.size() == 1);
 }
 
-// GOTCHA: the report-once static is per call site and lives for the process, so every
+// The report-once static is per call site and lives for the process, so every
 // TE_ENSURE below is a one-shot: a new case cannot reuse an existing call site and must
 // write its own TE_ENSURE line.
 TEST_CASE("two TE_ENSURE call sites report independently", "[base][assert]") {
