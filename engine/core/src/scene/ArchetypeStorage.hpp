@@ -152,9 +152,7 @@ namespace TechEngine {
     private:
         template<ComponentValue T>
         ComponentDenseId denseId() const {
-            const ComponentTypeRecord* record = m_registry->find(componentTypeId<T>());
-            TE_CHECK(record != nullptr, "Component type is not registered");
-            return record->denseId;
+            return m_registry->denseId(componentTypeId<T>());
         }
 
         Archetype& getOrCreate(ComponentSignature signature);
