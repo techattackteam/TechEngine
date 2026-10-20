@@ -158,8 +158,6 @@ namespace TechEngine {
 
         std::error_code publishCompletion(const LoadCompletion& completion);
 
-        std::error_code loadEntry(ResourceSlotId slot, std::vector<std::byte>& bytes, std::vector<ResourceId>& dependencies);
-
         void freeEntry(ResourceSlotId slot);
 
         bool reaches(ResourceSlotId from, ResourceSlotId target) const;
