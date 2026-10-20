@@ -1,4 +1,5 @@
 #include <TechEngine/core/EngineContext.hpp>
+#include <TechEngine/testing/EngineServices.hpp>
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <catch2/catch_test_macros.hpp>
@@ -12,11 +13,9 @@
 
 using TechEngine::BatchId;
 using TechEngine::EngineContext;
-using TechEngine::FileAccess;
 using TechEngine::FileError;
-using TechEngine::JobSystem;
-using TechEngine::MountTable;
 using TechEngine::Task;
+using TechEngineTests::EngineServices;
 using TechEngineTests::ScratchDirectory;
 
 // F30's regression test: core holds the context, platform holds the implementation, and no
@@ -26,12 +25,9 @@ TEST_CASE("a file is read through the context by virtual path", "[core][engineco
     const ScratchDirectory scratch{"engineContextRead"};
     scratch.writeFile("demo.txt", "read through a virtual path");
 
-    MountTable mounts;
-    mounts.mount("assets", scratch.root());
-    FileAccess files{mounts};
-    JobSystem jobs{1};
-    const TechEngine::Clock clock;
-    const EngineContext engine{files, jobs, clock};
+    EngineServices services;
+    services.mounts.mount("assets", scratch.root());
+    const EngineContext& engine = services.engine;
 
     std::vector<std::byte> out;
     REQUIRE(engine.files.read("assets://demo.txt", out) == std::error_code{});
@@ -41,12 +37,9 @@ TEST_CASE("a file is read through the context by virtual path", "[core][engineco
 TEST_CASE("the context carries its miss results through unchanged", "[core][enginecontext]") {
     const ScratchDirectory scratch{"engineContextMisses"};
 
-    MountTable mounts;
-    mounts.mount("assets", scratch.root());
-    FileAccess files{mounts};
-    JobSystem jobs{1};
-    const TechEngine::Clock clock;
-    const EngineContext engine{files, jobs, clock};
+    EngineServices services;
+    services.mounts.mount("assets", scratch.root());
+    const EngineContext& engine = services.engine;
 
     std::vector<std::byte> out;
     CHECK(engine.files.read("cache://demo.txt", out) == FileError::NoMount);
@@ -60,25 +53,19 @@ TEST_CASE("the context observes the table it was built over", "[core][enginecont
     const ScratchDirectory scratch{"engineContextLateMount"};
     scratch.writeFile("demo.txt", "late");
 
-    MountTable mounts;
-    FileAccess files{mounts};
-    JobSystem jobs{1};
-    const TechEngine::Clock clock;
-    const EngineContext engine{files, jobs, clock};
+    EngineServices services;
+    const EngineContext& engine = services.engine;
 
     std::vector<std::byte> out;
     REQUIRE(engine.files.read("assets://demo.txt", out) == FileError::NoMount);
 
-    mounts.mount("assets", scratch.root());
+    services.mounts.mount("assets", scratch.root());
     CHECK(engine.files.read("assets://demo.txt", out) == std::error_code{});
 }
 
 TEST_CASE("work submitted through the context runs on the pool", "[core][enginecontext]") {
-    MountTable mounts;
-    FileAccess files{mounts};
-    JobSystem jobs{1};
-    const TechEngine::Clock clock;
-    const EngineContext engine{files, jobs, clock};
+    const EngineServices services;
+    const EngineContext& engine = services.engine;
 
     std::atomic<int> ran = 0;
     std::array<Task, 2> tasks{
