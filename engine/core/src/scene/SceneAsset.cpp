@@ -127,17 +127,11 @@ namespace TechEngine {
 
             for (std::uint32_t block = 0; block < blockCount; block++) {
                 StringId tag;
-                std::uint32_t length = 0;
                 reader.read(tag);
-                reader.read(length);
+                reader.readSpan(payload);
                 if (!reader.ok()) {
                     return fail(reader.error());
                 }
-                if (reader.remaining() < length) {
-                    return fail(ReadError::Truncated);
-                }
-                payload.resize(length);
-                reader.readBytes(payload);
 
                 const ComponentTypeRecord* record = registry.find(ComponentTypeId{tag});
                 if (record == nullptr || record->readPayload == nullptr) {
