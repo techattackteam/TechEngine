@@ -84,8 +84,6 @@ namespace TechEngine {
             writeSpan(std::span<const T>{values});
         }
 
-        std::size_t size() const;
-
     private:
         void appendRaw(const void* data, std::size_t byteCount);
     };

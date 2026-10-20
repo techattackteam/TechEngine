@@ -78,10 +78,6 @@ namespace TechEngine {
         appendRaw(bytes.data(), bytes.size());
     }
 
-    std::size_t Writer::size() const {
-        return m_buffer.size();
-    }
-
     void Writer::appendRaw(const void* data, const std::size_t byteCount) {
         m_buffer.insert(m_buffer.end(), static_cast<const std::byte*>(data), static_cast<const std::byte*>(data) + byteCount);
     }
