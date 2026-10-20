@@ -19,8 +19,6 @@ namespace TechEngine {
 
         virtual std::size_t size() const = 0;
 
-        virtual void reserve(std::size_t capacity) = 0;
-
         virtual void appendDefault() = 0;
 
         virtual void setCopy(std::size_t destination, const IComponentStorage& source, std::size_t sourceIndex) = 0;
@@ -49,10 +47,6 @@ namespace TechEngine {
     public:
         std::size_t size() const override {
             return m_values.size();
-        }
-
-        void reserve(const std::size_t capacity) override {
-            m_values.reserve(capacity);
         }
 
         void appendDefault() override {
