@@ -6,6 +6,7 @@
 #include <TechEngine/core/systems/Schedule.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
+#include <events/EventAmounts.hpp>
 #include <systems/IndexedComponents.hpp>
 
 #include <catch2/catch_test_macros.hpp>
@@ -17,7 +18,6 @@
 #include <stdexcept>
 #include <string_view>
 #include <typeindex>
-#include <utility>
 #include <vector>
 
 struct SchedulePosition {
@@ -185,11 +185,7 @@ public:
 private:
     template<typename Event>
     void record(const int handler, const std::span<const Event> events) {
-        ScheduleHandlerCall call{handler, this, {}};
-        for (const Event& event: events) {
-            call.amounts.push_back(event.amount);
-        }
-        calls.push_back(std::move(call));
+        calls.push_back(ScheduleHandlerCall{handler, this, TechEngineTests::amountsOf(events)});
     }
 };
 
