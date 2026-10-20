@@ -80,17 +80,7 @@ namespace TechEngine {
     }
 
     void* ArchetypeStorage::componentRaw(const Entity entity, const ComponentTypeId type) {
-        const EntityLocation* location = m_entities.location(entity);
-        const ComponentTypeRecord* record = m_registry->find(type);
-        if (location == nullptr || record == nullptr) {
-            return nullptr;
-        }
-
-        const auto column = location->archetype->m_columns.find(record->denseId);
-        if (column == location->archetype->m_columns.end()) {
-            return nullptr;
-        }
-        return column->second->element(location->row);
+        return const_cast<void*>(std::as_const(*this).componentRaw(entity, type));
     }
 
     const void* ArchetypeStorage::componentRaw(const Entity entity, const ComponentTypeId type) const {
