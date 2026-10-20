@@ -603,14 +603,10 @@ namespace TechEngine {
     }
 
     bool Scene::addComponentInternal(const Entity entity, const ComponentTypeId type, const void* value) const {
-        const ComponentTypeRecord* record = m_registry->find(type);
-        TE_CHECK(record != nullptr, "Component type is not registered");
-        return m_storage->addComponent(entity, record->denseId, value);
+        return m_storage->addComponent(entity, m_registry->denseId(type), value);
     }
 
     bool Scene::removeComponentInternal(const Entity entity, const ComponentTypeId type) const {
-        const ComponentTypeRecord* record = m_registry->find(type);
-        TE_CHECK(record != nullptr, "Component type is not registered");
-        return m_storage->removeComponent(entity, record->denseId);
+        return m_storage->removeComponent(entity, m_registry->denseId(type));
     }
 }

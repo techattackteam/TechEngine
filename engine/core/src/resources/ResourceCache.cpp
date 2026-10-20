@@ -303,56 +303,6 @@ namespace TechEngine {
         m_pendingFrees.insert(m_pendingFrees.end(), deferred.begin(), deferred.end());
     }
 
-    std::error_code ResourceCache::loadEntry(const ResourceSlotId slot, std::vector<std::byte>& bytes, std::vector<ResourceId>& dependencies) {
-        ResourceEntry* entry = m_slots->find(slot);
-        if (entry == nullptr || entry->state != ResourceState::Pending) {
-            return {};
-        }
-
-        bytes.clear();
-        const std::error_code readError = m_source->read(entry->id, bytes);
-        if (readError) {
-            entry->state = ResourceState::Failed;
-            return readError;
-        }
-
-        const TypeRecord* record = findTypeForBytes(bytes);
-        if (record == nullptr) {
-            entry->state = ResourceState::Failed;
-            return ReadError::BadMagic;
-        }
-        TE_CHECK(entry->typeTag == StringId{} || entry->typeTag == record->typeTag, "Resource {0:#018x} was requested as {1}, but it holds {2}", entry->id.value(), entry->typeTag, record->typeTag);
-
-        dependencies.clear();
-        void* payload = record->createPayload();
-        const std::error_code loadError = record->load(bytes, payload, dependencies);
-        if (loadError) {
-            record->destroyPayload(payload);
-            entry->state = ResourceState::Failed;
-            return loadError;
-        }
-
-        entry->payload = std::unique_ptr<void, ResourcePayloadDeleter>{payload, record->destroyPayload};
-        entry->typeTag = record->typeTag;
-        entry->state = ResourceState::Ready;
-
-        for (const ResourceId dependency: dependencies) {
-            ResourceSlotId dependencySlot;
-            const std::error_code dependencyError = requestEntry(dependency, StringId{}, dependencySlot);
-            if (dependencyError) {
-                entry->state = ResourceState::Failed;
-                return dependencyError;
-            }
-            if (reaches(dependencySlot, slot)) {
-                releaseEntry(dependencySlot);
-                entry->state = ResourceState::Failed;
-                return ReadError::CyclicReference;
-            }
-            entry->dependencies.push_back(dependencySlot);
-        }
-        return {};
-    }
-
     void ResourceCache::freeEntry(const ResourceSlotId slot) {
         ResourceEntry* entry = m_slots->find(slot);
         if (entry == nullptr || entry->acquires > 0) {

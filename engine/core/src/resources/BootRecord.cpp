@@ -76,18 +76,12 @@ namespace TechEngine {
         for (std::uint32_t index = 0; index < sectionCount; index++) {
             StringId tag;
             std::uint16_t version = 0;
-            std::uint32_t length = 0;
             reader.read(tag);
             reader.read(version);
-            reader.read(length);
+            reader.readSpan(payload);
             if (!reader.ok()) {
                 return reader.error();
             }
-            if (reader.remaining() < length) {
-                return ReadError::Truncated;
-            }
-            payload.resize(length);
-            reader.readBytes(payload);
 
             const bool known = tag == BOOT_STARTUP_SCENE_SECTION || tag == BOOT_SYSTEM_SETTINGS_SECTION || tag == BOOT_ROLE_PACKS_SECTION || tag == BOOT_SIDES_SECTION;
             if (!known) {

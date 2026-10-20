@@ -65,8 +65,6 @@ namespace TechEngine {
 
         bool frozen() const;
 
-        std::string_view tagOf(ComponentTypeId id) const;
-
         std::size_t typeCount() const;
 
     private:

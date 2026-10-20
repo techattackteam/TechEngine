@@ -39,14 +39,6 @@ namespace TechEngine {
         return m_frozen;
     }
 
-    std::string_view ComponentRegistry::tagOf(const ComponentTypeId id) const {
-        const auto it = m_indexById.find(id);
-        if (it != m_indexById.end()) {
-            return m_componentRecords[it->second].tag;
-        }
-        return {};
-    }
-
     std::size_t ComponentRegistry::typeCount() const {
         return m_componentRecords.size();
     }

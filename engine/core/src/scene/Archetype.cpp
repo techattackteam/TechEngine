@@ -36,13 +36,6 @@ namespace TechEngine {
         });
     }
 
-    void Archetype::reserve(const std::size_t capacity) {
-        m_entities.reserve(capacity);
-        for (auto& entry: m_columns) {
-            entry.second->reserve(capacity);
-        }
-    }
-
     std::size_t Archetype::addEntity(const Entity entity) {
         const std::size_t row = m_entities.size();
         m_entities.push_back(entity);

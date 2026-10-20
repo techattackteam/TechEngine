@@ -62,8 +62,6 @@ namespace TechEngine {
         }
 
     private:
-        void reserve(std::size_t capacity);
-
         std::size_t addEntity(Entity entity);
 
         Entity eraseSwap(std::size_t row);
