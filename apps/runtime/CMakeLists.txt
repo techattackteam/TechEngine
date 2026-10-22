@@ -4,5 +4,5 @@ techengine_app(runtime
   MAIN    src/main.cpp
   SOURCES src/RuntimeApp.cpp
   HEADERS src/RuntimeApp.hpp
-  DEPS    app client core
+  DEPS    clientapp app core
   TESTS   tests/RuntimeAppTests.cpp)

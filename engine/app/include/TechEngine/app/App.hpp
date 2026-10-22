@@ -36,7 +36,6 @@ namespace TechEngine {
         std::atomic<bool> m_stopRequested = false;
         std::mutex m_mainMutex;
         std::condition_variable m_mainWake;
-        Scene m_scene;
 
     protected:
         MountTable m_mounts;
@@ -46,6 +45,11 @@ namespace TechEngine {
         InputBuffer m_input{m_clock};
         ComponentRegistry m_registry;
         EventRegistry m_eventRegistry;
+
+    private:
+        Scene m_scene;
+
+    protected:
         Schedule m_schedule;
         ResourceCache m_resources{m_jobs};
         EngineContext m_engine{m_files, m_jobs, m_clock};
