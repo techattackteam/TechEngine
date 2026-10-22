@@ -13,7 +13,7 @@ techengine_app(editor
           src/assets/LooseSource.hpp
           src/project/Project.hpp
           src/project/ProjectError.hpp
-  DEPS    app client core
+  DEPS    clientapp app core
   LIBS_PRIVATE TechEngine::tomlplusplus
   TESTS   tests/EditorAppTests.cpp
           tests/assets/AssetIndexTests.cpp

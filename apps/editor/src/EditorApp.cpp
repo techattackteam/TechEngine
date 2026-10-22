@@ -1,7 +1,5 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
-#include <TechEngine/base/diagnostics/Profile.hpp>
-#include <TechEngine/client/render/RenderSnapshot.hpp>
 #include <TechEngine/core/resources/Side.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/platform/Platform.hpp>
@@ -12,8 +10,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -24,7 +20,7 @@ namespace TechEngine {
     static constexpr std::string_view MANIFEST_PATH = "project://project.toml";
     static constexpr std::string_view STARTUP_SCENE_PATH = "project://assets/common/Startup.tescene";
 
-    EditorApp::EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder) : App(editorRole()), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)) {
+    EditorApp::EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder) : ClientApp(Role::Client, "TechEngine Editor"), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)) {
     }
 
     void EditorApp::init() {
@@ -41,12 +37,7 @@ namespace TechEngine {
         TE_LOGGER_INFO("Indexed {0} assets with {1} duplicates", m_assets.getRecords().size(), m_assets.getDuplicates().size());
         TE_LOGGER_INFO("Opened project '{0}' at {1}", m_project.name(), root.string());
 
-        const std::error_code startError = m_client.start(m_engine, m_input, 1280, 720, "TechEngine Editor", [this] {
-            requestStop();
-        });
-        if (startError) {
-            throw std::runtime_error{"Failed to start the client session: " + startError.message()};
-        }
+        startClient();
     }
 
     std::error_code EditorApp::simulationStartupLoad(Scene& scene) {
@@ -65,64 +56,8 @@ namespace TechEngine {
         return {};
     }
 
-    void EditorApp::publishSnapshot(const SimulationContext& simulation) {
-        m_client.publish(RenderSnapshot{
-            .clearColor = {0.1F, 0.1F, 0.1F, 1.0F},
-            .drawTriangle = true,
-            .tick = simulation.tick,
-            .tickTime = simulation.tickTime,
-            .fixedDeltaTime = simulation.fixedDeltaTime,
-            .timeline = simulation.timeline,
-            .input = simulation.input.held,
-        });
-    }
-
-    void EditorApp::mainThreadUpdate() {
-        if (stopRequested()) {
-            return;
-        }
-        {
-            TE_PROFILER_SCOPE("Main.WaitEvents");
-            m_client.waitEvents();
-        }
-        const auto metrics = timingMetrics();
-        const auto fps = static_cast<std::uint64_t>(metrics.renderingActive ? metrics.render.framesPerSecond : 0.0);
-        const auto tps = static_cast<std::uint64_t>(metrics.simulation.ticksPerSecond);
-        std::string title = "TechEngine Editor | FPS: " + std::to_string(fps) + " | TPS: " + std::to_string(tps);
-        if (title != m_appliedTitle) {
-            m_client.setTitle(title);
-            m_appliedTitle = std::move(title);
-        }
-        if (m_client.failed()) {
-            requestStop();
-        }
-    }
-
-    void EditorApp::wakeMainThread() {
-        m_client.wakeMain();
-    }
-
-    bool EditorApp::renderTiming(RenderTiming& out) const {
-        return m_client.renderTiming(out);
-    }
-
-    void EditorApp::shutdown() {
-        m_client.stop();
-        if (m_client.failed()) {
-            throw std::runtime_error{"Render thread failed"};
-        }
-    }
-
-    bool EditorApp::shouldClose() const {
-        return m_client.shouldClose();
-    }
-
     const AssetIndex& EditorApp::getAssetIndex() const {
         return m_assets;
-    }
-
-    Role EditorApp::editorRole() {
-        return Role::Client;
     }
 
     void EditorApp::createStartupScene(Scene& scene) {
