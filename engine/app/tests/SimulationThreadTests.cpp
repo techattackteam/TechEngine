@@ -1,5 +1,4 @@
 #include <TechEngine/app/SimulationThread.hpp>
-#include <TechEngine/core/EngineContext.hpp>
 #include <TechEngine/core/events/EventRegistry.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
@@ -11,6 +10,7 @@
 #include <TechEngine/core/systems/SerialExecutor.hpp>
 #include <TechEngine/core/systems/TaskGraph.hpp>
 #include <TechEngine/platform/input/InputBuffer.hpp>
+#include <TechEngine/testing/EngineServices.hpp>
 #include <TechEngine/testing/NoOpTickBarrier.hpp>
 
 #include <catch2/catch_approx.hpp>
@@ -32,19 +32,9 @@ using TechEngine::SimulationContext;
 using TechEngine::SimulationSettings;
 using TechEngine::SimulationThread;
 
-namespace {
-    struct LoopEngine {
-        TechEngine::MountTable mounts;
-        TechEngine::FileAccess files{mounts};
-        TechEngine::JobSystem jobs{4};
-        Clock clock;
-        TechEngine::EngineContext context{files, jobs, clock};
-    };
-}
-
 // The loop only carries the context to its hook; no case here reads files through it, so one
 // empty mount table and one shared clock serve the whole suite.
-static LoopEngine g_loopEngine;
+static TechEngineTests::EngineServices g_loopEngine;
 
 static double toSeconds(Clock::TimePoint::duration duration) {
     return std::chrono::duration<double>(duration).count();
@@ -89,7 +79,7 @@ public:
 class LoopInputDelivery {
 public:
     TechEngine::InputBuffer input;
-    SimulationThread loop{g_loopEngine.context, TechEngine::Role::Client, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .input = &input}};
+    SimulationThread loop{g_loopEngine.engine, TechEngine::Role::Client, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .input = &input}};
     TechEngine::ComponentRegistry registry;
     TechEngine::EventRegistry events;
     TechEngine::Scene scene;
@@ -135,7 +125,7 @@ public:
 };
 
 TEST_CASE("sixty fixed-step advances run exactly sixty ticks", "[app][loop]") {
-    SimulationThread loop(g_loopEngine.context, TechEngine::Role::DedicatedServer);
+    SimulationThread loop(g_loopEngine.engine, TechEngine::Role::DedicatedServer);
 
     for (int i = 0; i < 60; i++) {
         loop.advance(SimulationSettings::FIXED_DELTA_TIME);
@@ -146,7 +136,7 @@ TEST_CASE("sixty fixed-step advances run exactly sixty ticks", "[app][loop]") {
 }
 
 TEST_CASE("one advance worth several fixed steps runs each tick in order", "[app][loop]") {
-    SimulationThread loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0});
+    SimulationThread loop(g_loopEngine.engine, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0});
     std::vector<std::uint64_t> ticks;
 
     loop.advance(2.0, [&ticks](const SimulationContext& simulation) {
@@ -157,7 +147,7 @@ TEST_CASE("one advance worth several fixed steps runs each tick in order", "[app
 }
 
 TEST_CASE("sub-step advances accumulate until a step is due", "[app][loop]") {
-    SimulationThread loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0});
+    SimulationThread loop(g_loopEngine.engine, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0});
     int invocations = 0;
     const auto count = [&invocations](const SimulationContext&) {
         invocations++;
@@ -177,8 +167,8 @@ TEST_CASE("sub-step advances accumulate until a step is due", "[app][loop]") {
 TEST_CASE("the simulation's state comes only from the elapsed time fed in", "[app][loop]") {
     const std::array<double, 8> deltas{0.004, 0.021, 0.0166, 0.033, 0.008, 0.05, 0.0009, 0.017};
 
-    SimulationThread first(g_loopEngine.context, TechEngine::Role::DedicatedServer);
-    SimulationThread second(g_loopEngine.context, TechEngine::Role::DedicatedServer);
+    SimulationThread first(g_loopEngine.engine, TechEngine::Role::DedicatedServer);
+    SimulationThread second(g_loopEngine.engine, TechEngine::Role::DedicatedServer);
 
     for (const double delta: deltas) {
         first.advance(delta);
@@ -192,7 +182,7 @@ TEST_CASE("the simulation's state comes only from the elapsed time fed in", "[ap
 }
 
 TEST_CASE("a stall is clamped without skipping tick numbers", "[app][loop]") {
-    SimulationThread loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 2.0});
+    SimulationThread loop(g_loopEngine.engine, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 2.0});
     const std::uint64_t timeline = loop.simulationContext().timeline;
     std::vector<std::uint64_t> ticks;
 
@@ -205,7 +195,7 @@ TEST_CASE("a stall is clamped without skipping tick numbers", "[app][loop]") {
 }
 
 TEST_CASE("repeated stalls never grow the accumulator", "[app][loop]") {
-    SimulationThread loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 2.0});
+    SimulationThread loop(g_loopEngine.engine, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 2.0});
 
     for (int i = 0; i < 10; i++) {
         loop.advance(60.0);
@@ -216,7 +206,7 @@ TEST_CASE("repeated stalls never grow the accumulator", "[app][loop]") {
 }
 
 TEST_CASE("the default clamp bounds catch-up at fifteen ticks", "[app][loop]") {
-    SimulationThread loop(g_loopEngine.context, TechEngine::Role::DedicatedServer);
+    SimulationThread loop(g_loopEngine.engine, TechEngine::Role::DedicatedServer);
 
     loop.advance(2.0);
 
@@ -228,7 +218,7 @@ TEST_CASE("the default clamp bounds catch-up at fifteen ticks", "[app][loop]") {
 }
 
 TEST_CASE("negative and non-finite elapsed time count as zero", "[app][loop]") {
-    SimulationThread loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0});
+    SimulationThread loop(g_loopEngine.engine, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0});
     loop.advance(0.25);
     const std::uint64_t timeline = loop.simulationContext().timeline;
 
@@ -242,7 +232,7 @@ TEST_CASE("negative and non-finite elapsed time count as zero", "[app][loop]") {
 }
 
 TEST_CASE("tick boundary times stay one fixed step apart through catch-up", "[app][loop]") {
-    SimulationThread loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0});
+    SimulationThread loop(g_loopEngine.engine, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0});
     const Clock::TimePoint origin{1000s};
     loop.restartTimeline(origin);
     std::vector<Clock::TimePoint> boundaries;
@@ -259,7 +249,7 @@ TEST_CASE("tick boundary times stay one fixed step apart through catch-up", "[ap
 }
 
 TEST_CASE("a clamped stall shifts later boundaries and starts a new timeline", "[app][loop]") {
-    SimulationThread loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 1.0});
+    SimulationThread loop(g_loopEngine.engine, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 1.0});
     const Clock::TimePoint origin{1000s};
     loop.restartTimeline(origin);
     loop.advance(1.0);
@@ -275,7 +265,7 @@ TEST_CASE("a clamped stall shifts later boundaries and starts a new timeline", "
 
 TEST_CASE("tick rates count completed ticks over unclamped elapsed time", "[app][loop]") {
     SECTION("steady advances") {
-        SimulationThread loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.25, .maxElapsedTime = 2.0});
+        SimulationThread loop(g_loopEngine.engine, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.25, .maxElapsedTime = 2.0});
         for (int i = 0; i < 8; i++) {
             loop.advance(0.125);
         }
@@ -283,7 +273,7 @@ TEST_CASE("tick rates count completed ticks over unclamped elapsed time", "[app]
         CHECK(loop.timing().ticksPerSecond == Catch::Approx(4.0));
     }
     SECTION("a stall beyond the clamp") {
-        SimulationThread loop(g_loopEngine.context, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.125, .maxElapsedTime = 0.25});
+        SimulationThread loop(g_loopEngine.engine, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.125, .maxElapsedTime = 0.25});
         loop.advance(2.0);
         CHECK(loop.timing().tick == 2);
         CHECK(loop.timing().ticksPerSecond == Catch::Approx(1.0));
@@ -292,8 +282,8 @@ TEST_CASE("tick rates count completed ticks over unclamped elapsed time", "[app]
 
 TEST_CASE("simulations share one clock but only the primary advances its diagnostic counter", "[app][loop]") {
     Clock diagnostics;
-    SimulationThread primary(g_loopEngine.context, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .diagnosticClock = &diagnostics});
-    SimulationThread secondary(g_loopEngine.context, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.25, .maxElapsedTime = 10.0});
+    SimulationThread primary(g_loopEngine.engine, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .diagnosticClock = &diagnostics});
+    SimulationThread secondary(g_loopEngine.engine, TechEngine::Role::DedicatedServer, {.fixedDeltaTime = 0.25, .maxElapsedTime = 10.0});
 
     primary.advance(1.5);
     secondary.advance(1.5);
@@ -306,7 +296,7 @@ TEST_CASE("simulations share one clock but only the primary advances its diagnos
 
 TEST_CASE("input is consumed immediately before each fixed tick", "[app][loop][input]") {
     TechEngine::InputBuffer input{g_loopEngine.clock};
-    SimulationThread loop(g_loopEngine.context, TechEngine::Role::Client, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .input = &input});
+    SimulationThread loop(g_loopEngine.engine, TechEngine::Role::Client, {.fixedDeltaTime = 0.5, .maxElapsedTime = 10.0, .input = &input});
     std::vector<std::size_t> eventCounts;
     std::vector<bool> held;
     const auto record = [&eventCounts, &held](const SimulationContext& simulation) {
@@ -481,7 +471,7 @@ TEST_CASE("an overflow before a catch-up notifies only the first catch-up Tick, 
 }
 
 TEST_CASE("the context carries the construction values", "[app][loop]") {
-    SimulationThread loop(g_loopEngine.context, TechEngine::Role::ListenServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 2.0});
+    SimulationThread loop(g_loopEngine.engine, TechEngine::Role::ListenServer, {.fixedDeltaTime = 0.5, .maxElapsedTime = 2.0});
 
     loop.advance(0.25);
 
