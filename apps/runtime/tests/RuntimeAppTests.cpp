@@ -30,6 +30,7 @@
 #include <filesystem>
 #include <numeric>
 #include <span>
+#include <stdexcept>
 #include <string_view>
 #include <system_error>
 #include <typeinfo>
@@ -317,6 +318,15 @@ namespace {
             m_schedule.add<SpawnSystem>();
         }
     };
+
+    class RuntimeClientProbe final : public TechEngine::RuntimeApp {
+    public:
+        using TechEngine::RuntimeApp::init;
+        using TechEngine::RuntimeApp::RuntimeApp;
+        using TechEngine::RuntimeApp::shouldClose;
+        using TechEngine::RuntimeApp::shutdown;
+        using TechEngine::RuntimeApp::startClient;
+    };
 }
 
 using Batches = std::vector<std::size_t>;
@@ -416,6 +426,21 @@ TEST_CASE("runtime composes as a client", "[runtime]") {
     const RuntimeProbe runtime;
 
     REQUIRE(runtime.loopRole() == TechEngine::Role::Client);
+}
+
+TEST_CASE("runtime init starts the client, and a second start throws without stopping it", "[runtime][window]") {
+    const ScratchDirectory scratch{"runtimeInitStartsClient"};
+    RuntimeClientProbe runtime{scratch.root()};
+    CHECK(runtime.shouldClose());
+
+    runtime.init();
+    REQUIRE_FALSE(runtime.shouldClose());
+
+    CHECK_THROWS_AS(runtime.startClient(), std::runtime_error);
+    CHECK_FALSE(runtime.shouldClose());
+
+    runtime.shutdown();
+    CHECK(runtime.shouldClose());
 }
 
 TEST_CASE("runtime configures no systems and no event types of its own", "[runtime]") {
