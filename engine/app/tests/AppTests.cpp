@@ -438,6 +438,14 @@ static std::size_t eventCount(const AppLifecycleProbe& app, std::string_view nam
     }));
 }
 
+static void stopAtTick(AppLifecycleProbe& app, std::uint64_t tick) {
+    app.onPublishSnapshot = [&app, tick](const TechEngine::SimulationContext& simulation) {
+        if (simulation.tick >= tick) {
+            app.requestStop();
+        }
+    };
+}
+
 static void checkOnlyPoolWorkersRegistered(const AppLifecycleProbe& app) {
     const auto threads = app.threads();
     CHECK(std::none_of(threads.begin(), threads.end(), [](const auto& thread) {
@@ -502,11 +510,7 @@ TEST_CASE("App advances simulation while the main thread is stalled", "[app][lif
 TEST_CASE("App runs hooks on their owning threads and publishes after each tick batch", "[app][lifecycle]") {
     AppLifecycleProbe app;
     const auto mainThread = std::this_thread::get_id();
-    app.onPublishSnapshot = [&](const TechEngine::SimulationContext& simulation) {
-        if (simulation.tick >= 3) {
-            app.requestStop();
-        }
-    };
+    stopAtTick(app, 3);
 
     REQUIRE(app.run() == 0);
     const auto events = app.events();
@@ -549,11 +553,7 @@ TEST_CASE("App runs hooks on their owning threads and publishes after each tick 
 
 TEST_CASE("App's primary simulation advances the diagnostic counter once per tick", "[app][lifecycle]") {
     AppLifecycleProbe app;
-    app.onPublishSnapshot = [&](const TechEngine::SimulationContext& simulation) {
-        if (simulation.tick >= 5) {
-            app.requestStop();
-        }
-    };
+    stopAtTick(app, 5);
 
     REQUIRE(app.run() == 0);
     const TechEngine::TimingMetrics timing = app.timingMetrics();
@@ -640,11 +640,7 @@ TEST_CASE("App runs the startup loading phase after readiness and before the fir
         mainEnteredDuringLoad = app.mainEntered.wait();
         return std::error_code{};
     };
-    app.onPublishSnapshot = [&](const TechEngine::SimulationContext& simulation) {
-        if (simulation.tick >= 1) {
-            app.requestStop();
-        }
-    };
+    stopAtTick(app, 1);
 
     REQUIRE(app.run() == 0);
     CHECK(mainEnteredDuringLoad);
@@ -670,11 +666,7 @@ TEST_CASE("App runs the startup loading phase after readiness and before the fir
 
 TEST_CASE("App hands the startup loading phase the scene its Ticks run on", "[app][lifecycle][loading]") {
     AppLifecycleProbe app;
-    app.onPublishSnapshot = [&](const TechEngine::SimulationContext& simulation) {
-        if (simulation.tick >= 1) {
-            app.requestStop();
-        }
-    };
+    stopAtTick(app, 1);
 
     REQUIRE(app.run() == 0);
     REQUIRE(app.loadedScene != nullptr);
