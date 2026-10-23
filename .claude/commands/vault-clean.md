@@ -30,9 +30,8 @@ being flagged, and do not compress explanations to force one-line entries.
 3. **Redundant**: the same fact in more than one note, or content restating `CLAUDE.md`,
    an ADR, or the code. It should be a `[[link]]` / `file:line`, not a copy.
 4. **Broken links**: `[[wikilinks]]` to notes that don't exist; `file:line` refs whose
-   file is missing (**v2 is greenfield: most v2 code paths won't resolve yet**; don't
-   "fix" a path that's legitimately not-written-yet, just flag it); links to archived or
-   renamed notes.
+   file is missing (a design note may name a path ahead of its code; don't "fix" a path
+   that is legitimately not written yet, just flag it); links to archived or renamed notes.
 5. **Orphans / empty**: notes linked from nowhere and reachable by no path, or notes
    that are empty / placeholder-only.
 6. **Bloat**: sections over ~30 lines or notes covering more than one topic (→ split);

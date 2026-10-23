@@ -57,8 +57,12 @@ Then:
    A stamp advanced as a formality is worse than no stamp: it converts "unknown freshness"
    into a false "checked" that CLAUDE.md rule 2 will then trust (ADR-012 §6). Advancing it
    is the *output* of the check, never a step in updating the Dashboard.
-6. If I already ran the review on the other day of this weekend, say so instead of writing
+6. **Set up week 2.** This review is the weekend before the sprint's week 2, so check that
+   the two standing cards are on the board (`Prep brief for Sprint <n+1>` and
+   `Prepare Sprint <n+1>`) and name the week-2 slot the prep takes, Tuesday to Friday. List
+   the lane PRs waiting on my review, so they get a 🟡 slot instead of piling up.
+7. If I already ran the review on the other day of this weekend, say so instead of writing
    a second entry. (The sprint-boundary case is handled by the GATE above; on those
    weekends this command doesn't run at all.)
-7. Keep it short and honest. Flag scope creep or burnout risk if you see it.
-8. Do NOT start any implementation work; this is a planning ritual.
+8. Keep it short and honest. Flag scope creep or burnout risk if you see it.
+9. Do NOT start any implementation work; this is a planning ritual.

@@ -82,7 +82,8 @@ Other presets: `windows-release`, `windows-asan`, and the Linux legs
     exchange the rule is built on. This applies **only** to a scheduled cloud
     routine, never to an attended session, and never to Windows or the sanitizer
     legs. See `docs/08 AI/Autonomous Lane - Design.md`.
-- Tests exist and run under CTest (`TechEngineBaseTests`, `sdk-smoke`), see "Testing".
+- Tests run under CTest: one exe per module (`TechEngine<Module>Tests`) plus `sdk-smoke`; see
+  "Testing".
 - **CI minutes are a live budget** (~2k/mo, Windows billed 2×). Don't push
   speculative commits to watch CI.
 
@@ -172,13 +173,10 @@ half-read file costs far more than the tokens it saved.
 
 ### Chat responses
 
-The active output style is **`default`** (set in `.claude/settings.json`). This is a trial:
-newer models write well enough that the custom style may no longer earn its place. The old
-**`techengine`** style is kept at
-[`.claude/output-styles/techengine.md`](.claude/output-styles/techengine.md). If answers start
-running long or reading dense, switch `outputStyle` back to `"techengine"`. Whatever the
-style, **readability outranks brevity**: plain, complete sentences, because English is
-Miguel's second language. Two rules that are TechEngine-specific and stay here:
+The output style is **`default`** (`.claude/settings.json`), kept on 2026-10-23 after a trial;
+the old custom `techengine` style was removed and lives only in git history. **Readability
+outranks brevity**: plain, complete sentences, because English is Miguel's second language.
+Two rules that are TechEngine-specific and stay here:
 
 - Say **what changed** and **what's unverified**, not a tour of every file touched.
 - Never re-explain a decision already written to the vault; link it.
@@ -263,8 +261,8 @@ Miguel's second language. Two rules that are TechEngine-specific and stay here:
 
 ## Testing (first-class from line one)
 
-Catch2 v3 + CTest, **per-module test exes** (`TechEngineBaseTests`, via
-`techengine_test()`, add a sibling per module, not one central suite).
+Catch2 v3 + CTest, **per-module test exes** (`TechEngine<Module>Tests`, via
+`techengine_test()`, a sibling per module, not one central suite).
 `TechEngineSDKSmoke` (ctest name `sdk-smoke`) compiles a sample script against
 `TechEngine::sdk` **alone**; a private type leaking into the SDK fails CI (the F11 acid
 test). Both run in CI on every leg.
@@ -280,22 +278,17 @@ prove rather than reporting a pass. The unattended lane runs them (see "Build & 
 
 ## Sustainable pace (this matters as much as the code)
 
-Deep work happens **Mon / Thu + one weekend day**, but the weekend deep day is a **full
-day (2-3 deep tasks)**, while Mon/Thu are one after-job evening block (~1 deep task each);
-size plans accordingly. **Fri is moderate**; **Tue is light**
-(docs, reading, small fixes); **Wed is relaxed** (recovery); the **other weekend day is
-off** (usually Sat, karting). Weekend days are a swappable pair, not fixed: don't assume
-Sat is off or that Sun is the working day. Ceremonies anchor to the **weekend**, not a
-weekday: `/weekly-review` once per weekend, `/sprint-plan` every **2nd** weekend *instead of*
-that weekend's review (it absorbs it; never run both). The one weekday ceremony is
-`/sprint-prep`, a standing card in week 2 (Tue to Fri) that decides and drafts the next sprint
-so `/sprint-plan` only fits it. Sprints
-are **2 weeks, Sat → Fri**; the planning weekend is **day 1 of the new sprint** and stays a
-dev day. Sprints do **not** track calendar months; never derive a date from the month; the
-sprint note's own range is the source of truth.
-Full weekly rhythm + the weekend rule live on the vault Dashboard. When a session is running long or
-scope is creeping, **say so and suggest stopping**: a stalled rewrite or a
-burned-out maintainer ends this project faster than any bug.
+The week's shape, the capacity table, the sprint length and every ceremony's timing live in
+the Dashboard's § *Rhythm*, their one home. Read them there. Three things are repeated here
+because I get them wrong by habit:
+
+- **Weekday deep is not weekend deep.** Mon and Thu are one evening after the day job, about
+  1 🟢 each; the weekend deep day is a full day, 2-3 🟢. Count slots that way.
+- **Weekend days are a swappable pair.** Never assume Sat is the day off.
+- **Sprint dates come from the sprint note**, never from the calendar month.
+
+When a session is running long or scope is creeping, **say so and suggest stopping**: a
+stalled rewrite or a burned-out maintainer ends this project faster than any bug.
 
 ## Role
 

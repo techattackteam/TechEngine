@@ -30,8 +30,8 @@ Steps:
    **Scope: decision + rationale + alternatives + reversal triggers, within the size above.**
    The *how* (surface tables, diagrams, workflows, instrumentation policy) belongs
    in the system's design note, not here. A mechanism table or diagram sprouting
-   inside a § is the peel signal ([[Planning Workflow - Artifact Gate]] § *ADR or
-   design note*). Update the note's *Decided* rows (one-liners + §refs) in the same
+   inside a § is the peel signal ([[Planning Workflow - Artifact Gate]] § *An ADR or
+   a design note, rarely both*). Update the note's *Decided* rows (one-liners + §refs) in the same
    session; ADR-013 vs [[Profiler - Design]] is the counter-example: the ADR
    ballooned and the note duplicated its diagrams.
 5. Add it to `docs/03 Architecture/ADR Index.md`.

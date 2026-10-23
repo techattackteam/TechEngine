@@ -133,7 +133,8 @@ The unattended lane runs this before it works a 🤖 Auto card. Nobody is there 
 - **Never cut the branch or move the card.** Those are the gates, and they are mine. The Auto
   lane is the one exception, above.
 - **Never advance the `Reconciled against` stamp.** You are reading it, not answering it. It
-  moves only as the output of `/weekly-review`'s real drift check (ADR-012 §6).
+  moves only as the output of a real drift check in `/weekly-review` or `/sprint-plan`
+  (ADR-012 §6).
 - **Report drift, do not sweep it.** If a note is wrong, say so. You may fix the specific rows
   this card depends on if I ask, but a broad reconciliation is `/vault-clean` and
   `/weekly-review`, and doing it here hides the drift from the check that is supposed to

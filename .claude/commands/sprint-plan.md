@@ -70,12 +70,10 @@ Steps:
 4. **Confirm the headline goal** the prep proposed. Re-open it only if the last days of the
    closing sprint changed the picture, and push back if I'm over-scoping.
 5. **Fit the draft to capacity**, as equal drivers: I decide what drops.
-   - **Count my slots by the real weekly rhythm** (deep Mon/Thu + one weekend day; moderate
-     Fri; light Tue; relaxed Wed; the other weekend day off), the Dashboard calendar.
-     Weekend days are a swappable pair, so don't hard-assign Sat/Sun. **Deep days are not
-     equal capacity:** Mon/Thu are after the day job → ~1 🟢 each; the weekend deep day is a
-     full day → **2-3 🟢**. My attended cards are 🟢 and 🟠; my 🟡 slots go to reviewing the
-     lanes' PRs, at ~15 minutes per 🤖 Auto PR and 30-45 per 🤖 Claude PR.
+   - **Count my slots from [[Dashboard]] § *Rhythm*'s capacity table**, with weekday deep
+     and weekend deep counted apart (CLAUDE.md § *Sustainable pace*). My attended cards are
+     🟢 and 🟠; my 🟡 slots go to reviewing the lanes' PRs, at ~15 minutes per 🤖 Auto PR and
+     30-45 per 🤖 Claude PR.
    - **The lanes do not raise my capacity**, and they have their own limit: one PR per fire,
      shared by 🤖 Auto and 🤖 Claude cards, ~5 per sprint week. Report-only and vault-only
      Auto cards are free. Check the lane's status on the [[Dashboard]] and in
