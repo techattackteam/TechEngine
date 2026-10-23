@@ -412,6 +412,11 @@ static void writeClientExport(const ScratchDirectory& scratch, const TechEngine:
     writePack(scratch, "client.tepack", sceneInCommon ? std::vector<TechEngine::PackInput>{} : std::vector{sceneEntry}, {});
 }
 
+static void prepareStartupLoad(RuntimeProbe& runtime) {
+    runtime.mountAssets();
+    runtime.bootstrapSimulation();
+}
+
 static void checkStartupScene(const TechEngine::Scene& scene) {
     const std::vector<TechEngine::Entity> roots = scene.getRoots();
     REQUIRE(roots.size() == 1);
@@ -595,8 +600,7 @@ TEST_CASE("the startup load reads the startup scene from the common pack", "[run
     const std::vector<std::byte> scene = startupSceneBytes();
     writeClientExport(scratch, TechEngine::Side::Common, scene);
     RuntimeProbe runtime{scratch.root()};
-    runtime.mountAssets();
-    runtime.bootstrapSimulation();
+    prepareStartupLoad(runtime);
 
     REQUIRE(runtime.startupLoad() == std::error_code{});
 
@@ -608,8 +612,7 @@ TEST_CASE("the startup load reads a startup scene that ships in the client pack"
     const std::vector<std::byte> scene = startupSceneBytes();
     writeClientExport(scratch, TechEngine::Side::Client, scene);
     RuntimeProbe runtime{scratch.root()};
-    runtime.mountAssets();
-    runtime.bootstrapSimulation();
+    prepareStartupLoad(runtime);
 
     REQUIRE(runtime.startupLoad() == std::error_code{});
 
@@ -620,8 +623,7 @@ TEST_CASE("a missing common pack ends the startup load with NotFound and loads n
     const ScratchDirectory scratch{"runtimeMissingCommon"};
     scratch.makeDirectory("assets");
     RuntimeProbe runtime{scratch.root()};
-    runtime.mountAssets();
-    runtime.bootstrapSimulation();
+    prepareStartupLoad(runtime);
 
     REQUIRE(runtime.startupLoad() == TechEngine::FileError::NotFound);
 
@@ -634,8 +636,7 @@ TEST_CASE("a missing client pack ends the startup load with NotFound and loads n
     const std::vector<std::byte> bootRecord = bootRecordBytes(clientBootRecord(TechEngine::Side::Common));
     writePack(scratch, "common.tepack", {{STARTUP_SCENE_ID, TechEngine::SCENE_TYPE_TAG, STARTUP_SCENE_NAME, scene}}, bootRecord);
     RuntimeProbe runtime{scratch.root()};
-    runtime.mountAssets();
-    runtime.bootstrapSimulation();
+    prepareStartupLoad(runtime);
 
     REQUIRE(runtime.startupLoad() == TechEngine::FileError::NotFound);
 
@@ -648,8 +649,7 @@ TEST_CASE("a common pack without a boot record ends the startup load as Malforme
     writePack(scratch, "common.tepack", {{STARTUP_SCENE_ID, TechEngine::SCENE_TYPE_TAG, STARTUP_SCENE_NAME, scene}}, {});
     writePack(scratch, "client.tepack", {}, {});
     RuntimeProbe runtime{scratch.root()};
-    runtime.mountAssets();
-    runtime.bootstrapSimulation();
+    prepareStartupLoad(runtime);
 
     REQUIRE(runtime.startupLoad() == TechEngine::ReadError::Malformed);
 
@@ -663,8 +663,7 @@ TEST_CASE("a boot record that does not parse ends the startup load with its read
     writePack(scratch, "common.tepack", {}, bootRecord);
     writePack(scratch, "client.tepack", {}, {});
     RuntimeProbe runtime{scratch.root()};
-    runtime.mountAssets();
-    runtime.bootstrapSimulation();
+    prepareStartupLoad(runtime);
 
     REQUIRE(runtime.startupLoad() == TechEngine::ReadError::Truncated);
 
@@ -680,8 +679,7 @@ TEST_CASE("a boot record that names no startup scene ends the startup load as Ma
     writePack(scratch, "common.tepack", {{STARTUP_SCENE_ID, TechEngine::SCENE_TYPE_TAG, STARTUP_SCENE_NAME, scene}}, bootRecord);
     writePack(scratch, "client.tepack", {}, {});
     RuntimeProbe runtime{scratch.root()};
-    runtime.mountAssets();
-    runtime.bootstrapSimulation();
+    prepareStartupLoad(runtime);
 
     REQUIRE(runtime.startupLoad() == TechEngine::ReadError::Malformed);
 
@@ -703,8 +701,7 @@ TEST_CASE("a startup scene the client's packs do not hold ends the startup load 
     writePack(scratch, "common.tepack", {}, bootRecord);
     writePack(scratch, "client.tepack", {}, {});
     RuntimeProbe runtime{scratch.root()};
-    runtime.mountAssets();
-    runtime.bootstrapSimulation();
+    prepareStartupLoad(runtime);
 
     REQUIRE(runtime.startupLoad() == TechEngine::ReadError::Malformed);
 
@@ -717,8 +714,7 @@ TEST_CASE("a startup scene that does not parse ends the startup load with its re
     scene.resize(4);
     writeClientExport(scratch, TechEngine::Side::Common, scene);
     RuntimeProbe runtime{scratch.root()};
-    runtime.mountAssets();
-    runtime.bootstrapSimulation();
+    prepareStartupLoad(runtime);
 
     REQUIRE(runtime.startupLoad() == TechEngine::ReadError::Truncated);
 

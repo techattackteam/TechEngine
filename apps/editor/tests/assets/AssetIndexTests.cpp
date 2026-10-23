@@ -62,6 +62,12 @@ public:
         return m_files;
     }
 
+    AssetIndex buildIndex() const {
+        AssetIndex index;
+        REQUIRE(index.build(m_files, INDEX_ASSETS_ROOT) == std::error_code{});
+        return index;
+    }
+
     void writeScene(const std::filesystem::path& relative, const ResourceId id) const {
         writeBytes(m_scratch, relative, assetBytes(SCENE_KIND, id, "scene payload"));
     }
@@ -78,8 +84,7 @@ TEST_CASE("build records each asset's type tag, path and side on all three sides
     env.writeScene("assets/client/menu.tescene", CLIENT_SCENE_ID);
     env.writeScene("assets/server/arena.tescene", SERVER_SCENE_ID);
 
-    AssetIndex index;
-    REQUIRE(index.build(env.files(), INDEX_ASSETS_ROOT) == std::error_code{});
+    const AssetIndex index = env.buildIndex();
 
     CHECK(index.getRecords().size() == 3);
     CHECK(index.getDuplicates().empty());
@@ -106,8 +111,7 @@ TEST_CASE("build reads assets in subfolders of a side", "[editor][assets]") {
     const IndexScratch env{"assetIndexNested"};
     env.writeScene("assets/client/levels/deep/nested.tescene", NESTED_SCENE_ID);
 
-    AssetIndex index;
-    REQUIRE(index.build(env.files(), INDEX_ASSETS_ROOT) == std::error_code{});
+    const AssetIndex index = env.buildIndex();
 
     AssetRecord record;
     REQUIRE(index.find(NESTED_SCENE_ID, record));
@@ -128,8 +132,7 @@ TEST_CASE("build skips every file that is not an asset it knows and still succee
     writeBytes(env.scratch(), "assets/common/newer.tescene", assetBytes(BlobKind{SCENE_KIND.magic, static_cast<std::uint16_t>(SCENE_KIND.version + 1)}, ResourceId(0x7000000000000007), "x"));
     writeBytes(env.scratch(), "assets/common/null-id.tescene", assetBytes(SCENE_KIND, ResourceId(), "x"));
 
-    AssetIndex index;
-    REQUIRE(index.build(env.files(), INDEX_ASSETS_ROOT) == std::error_code{});
+    const AssetIndex index = env.buildIndex();
 
     REQUIRE(index.getRecords().size() == 1);
     CHECK(index.getRecords().front().id == COMMON_SCENE_ID);
@@ -150,8 +153,7 @@ TEST_CASE("a duplicate id is reported with both paths and indexed under neither"
         env.writeScene("assets/common/original.tescene", DUPLICATED_ID);
         env.writeScene("assets/client/copy.tescene", DUPLICATED_ID);
 
-        AssetIndex index;
-        REQUIRE(index.build(env.files(), INDEX_ASSETS_ROOT) == std::error_code{});
+        const AssetIndex index = env.buildIndex();
 
         REQUIRE(index.getDuplicates().size() == 1);
         const DuplicateAsset& duplicate = index.getDuplicates().front();
@@ -170,8 +172,7 @@ TEST_CASE("a duplicate id is reported with both paths and indexed under neither"
         env.writeScene("assets/server/a.tescene", DUPLICATED_ID);
         env.writeScene("assets/server/b.tescene", DUPLICATED_ID);
 
-        AssetIndex index;
-        REQUIRE(index.build(env.files(), INDEX_ASSETS_ROOT) == std::error_code{});
+        const AssetIndex index = env.buildIndex();
 
         REQUIRE(index.getDuplicates().size() == 1);
         CHECK(index.getDuplicates().front().id == DUPLICATED_ID);
@@ -185,8 +186,7 @@ TEST_CASE("a duplicate id is reported with both paths and indexed under neither"
 TEST_CASE("build on a project with empty sides indexes nothing", "[editor][assets]") {
     const IndexScratch env{"assetIndexEmpty"};
 
-    AssetIndex index;
-    REQUIRE(index.build(env.files(), INDEX_ASSETS_ROOT) == std::error_code{});
+    const AssetIndex index = env.buildIndex();
 
     CHECK(index.getRecords().empty());
     CHECK(index.getDuplicates().empty());
@@ -206,8 +206,7 @@ TEST_CASE("generateId returns a non-null id that the index does not hold", "[edi
     env.writeScene("assets/common/original.tescene", DUPLICATED_ID);
     env.writeScene("assets/client/copy.tescene", DUPLICATED_ID);
 
-    AssetIndex index;
-    REQUIRE(index.build(env.files(), INDEX_ASSETS_ROOT) == std::error_code{});
+    AssetIndex index = env.buildIndex();
 
     for (int i = 0; i < 256; i++) {
         const ResourceId id = index.generateId();
@@ -223,8 +222,7 @@ TEST_CASE("add keeps the records sorted by id and findable", "[editor][assets]")
     env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
     env.writeScene("assets/client/menu.tescene", CLIENT_SCENE_ID);
 
-    AssetIndex index;
-    REQUIRE(index.build(env.files(), INDEX_ASSETS_ROOT) == std::error_code{});
+    AssetIndex index = env.buildIndex();
 
     const AssetRecord last{ResourceId(0x9000000000000009), SCENE_TYPE_TAG, Side::Server, "project://assets/server/last.tescene"};
     const AssetRecord first{ResourceId(0x0000000000000001), SCENE_TYPE_TAG, Side::Common, "project://assets/common/first.tescene"};
@@ -269,8 +267,7 @@ TEST_CASE("add rejects a null, indexed or duplicated id and leaves the index unc
     env.writeScene("assets/common/original.tescene", DUPLICATED_ID);
     env.writeScene("assets/client/copy.tescene", DUPLICATED_ID);
 
-    AssetIndex index;
-    REQUIRE(index.build(env.files(), INDEX_ASSETS_ROOT) == std::error_code{});
+    AssetIndex index = env.buildIndex();
     REQUIRE(index.getRecords().size() == 1);
     REQUIRE(index.getDuplicates().size() == 1);
     const TechEngineTests::FatalAssertGuard guard;
