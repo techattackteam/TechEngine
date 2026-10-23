@@ -104,6 +104,15 @@ namespace {
         return project.getExportStartupScene(TechEngine::Role::Client);
     }
 
+    void checkParentWithTwoChildren(const TechEngine::Scene& scene) {
+        const std::vector<TechEngine::Entity> roots = scene.getRoots();
+        REQUIRE(roots.size() == 1);
+        const std::vector<TechEngine::Entity> children = scene.getChildren(roots[0]);
+        REQUIRE(children.size() == 2);
+        CHECK(scene.getChildren(children[0]).empty());
+        CHECK(scene.getChildren(children[1]).empty());
+    }
+
     std::ptrdiff_t fileCount(const std::filesystem::path& directory) {
         return std::distance(std::filesystem::directory_iterator{directory}, std::filesystem::directory_iterator{});
     }
@@ -185,22 +194,12 @@ TEST_CASE("the startup load creates a startup scene when the project names none"
         REQUIRE(asset.read(bytes, scene) == std::error_code{});
         CHECK(asset.id == id);
 
-        const std::vector<TechEngine::Entity> roots = scene.getRoots();
-        REQUIRE(roots.size() == 1);
-        const std::vector<TechEngine::Entity> children = scene.getChildren(roots[0]);
-        REQUIRE(children.size() == 2);
-        CHECK(scene.getChildren(children[0]).empty());
-        CHECK(scene.getChildren(children[1]).empty());
+        checkParentWithTwoChildren(scene);
         CHECK(fileCount(scratch.root() / "assets" / "common") == 1);
     }
 
     SECTION("it leaves the scene in the editor's live scene") {
-        const std::vector<TechEngine::Entity> roots = editor.scene().getRoots();
-        REQUIRE(roots.size() == 1);
-        const std::vector<TechEngine::Entity> children = editor.scene().getChildren(roots[0]);
-        REQUIRE(children.size() == 2);
-        CHECK(editor.scene().getChildren(children[0]).empty());
-        CHECK(editor.scene().getChildren(children[1]).empty());
+        checkParentWithTwoChildren(editor.scene());
     }
 
     SECTION("it adds the scene to the id index") {
