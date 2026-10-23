@@ -8,7 +8,9 @@ this first, every session. It exists to keep quality high and mistakes rare.
 TechEngine is a solo-built, professional-scope **client/server 3D game engine**
 in modern C++. Long-term goal: turn it into a company. The full project brain
 (vision, roadmap, architecture, sprints) lives in the Obsidian vault at
-**`docs/`**. Start at `docs/00 Dashboard/Dashboard.md`.
+**`docs/`**. Start at `docs/00 Dashboard/Dashboard.md`. **Product direction** (who the engine is
+for, the reference game TechAttack, what each system must support) lives in `docs/01 Product/`;
+Miguel is its product owner.
 
 **The vault is a separate repo, cloned in place** ([ADR-012](docs/03%20Architecture/ADR-012%20-%20Vault%20repository%20split.md)).
 A fresh engine clone has no `docs/` until you add it, and nothing will tell you it is
@@ -151,6 +153,23 @@ In an attended session Claude's job is:
 
 If a request is ambiguous between "write this for me" and "help me write this," ask.
 
+## Product checkpoints (when to stop and point at a PO command)
+
+Miguel is the product owner (`docs/01 Product/`). He asked to be reminded when a product step is
+owed, instead of going straight into implementation or a plan that skips it. So, **before**
+doing the work, say in one line which command is owed and why, then let him decide. Never
+refuse the work; the reminder is the job.
+
+| When this happens | Point at |
+|---|---|
+| He asks to design, implement or ADR a system that has **no capability brief** in `docs/01 Product/Capabilities/` | `/brief <system>` |
+| An idea or feature appears that is **not on the Capability Map**: his, a viewer's, or one a card uncovered | `/triage <idea>`, before any design or scheduling |
+| Planning picks work that is **not the Roadmap's next goal or its Alongside**, or that Principles P1 rejects | `/triage`, or `/product-review` if the order itself looks wrong |
+| A sprint is about to **end a Roadmap goal** with no showcase outline in `docs/01 Product/Showcases/` | `/showcase <goal>` |
+| A **quarter or a phase is opening**, or a parked product decision's trigger has fired | `/product-review` |
+
+Plumbing, refactors, bug fixes and work inside an existing brief need no checkpoint.
+
 ## Token economy: what Claude reads, says, and writes
 
 All three are paid for every session, and chat and the vault are both read by human AND AI.
@@ -207,7 +226,9 @@ Two rules that are TechEngine-specific and stay here:
 2. **Ground answers in the artifact, not the moment.** When Miguel asks about a
    feature mid-implementation, **start at the system's design note** in
    `docs/04 Design Docs/`: its *Decided* section indexes the ADR decisions; follow an
-   ADR link only when the rationale matters. No note yet → the ADRs directly. If a
+   ADR link only when the rationale matters. No note yet → the ADRs directly. For *what* a
+   system must support, as opposed to how, start at `docs/01 Product/Capability Map.md` and
+   the system's brief. If a
    feature is load-bearing enough to warrant an artifact but none exists, that's a
    gap: say so and design it, **don't hallucinate the goal on the spot.** The
    artifact gate ([[Planning Workflow - Artifact Gate]]) decides what each item gets.
@@ -222,7 +243,8 @@ Two rules that are TechEngine-specific and stay here:
 3. **Refactor by default; rewrite only with evidence.** A rewrite needs
    documented, concrete pain, not "this feels messy." (See `docs` Principles.)
 4. **ADR before load-bearing decisions.** If a choice will be hard to reverse,
-   draft an ADR in `docs/03 Architecture/` before building on it.
+   draft an ADR in `docs/03 Architecture/` before building on it. A system ADR starts from
+   the system's capability brief; with none, the brief is owed first.
 5. **One task per session.** Keep scope tight. If new work appears mid-task, note
    it in `docs/06 Sprints/Backlog.md` instead of chasing it.
 6. **Never overstate verification.** Claude's default is **unverified**; say so

@@ -42,9 +42,13 @@ anything else. If one fails, say which and stop. Do not fix it for me.
 3. **The system's design note** in `docs/04 Design Docs/`. Start here, never at the ADRs. Its
    *Decided* rows index the ADR sections, so follow a link only when the **rationale** is what
    you actually need.
-4. **[[Known Issues]]**: the open defects on this system. One of them is often the card's
+4. **The system's capability brief** in `docs/01 Product/Capabilities/`, when the card adds
+   something users will see. If the card adds a capability and no brief covers it, say that
+   `/brief` (or `/triage`, for something the Capability Map does not list) is owed before
+   building it (CLAUDE.md § *Product checkpoints*).
+5. **[[Known Issues]]**: the open defects on this system. One of them is often the card's
    subject, and more often the thing the card is about to walk into.
-5. **The code the card touches**, at `origin/master`. This is where the checking happens.
+6. **The code the card touches**, at `origin/master`. This is where the checking happens.
 
 ## The brief
 

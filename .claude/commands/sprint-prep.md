@@ -34,8 +34,9 @@ If gate 1 or 2 fails, say which and stop. Do not fix it for me.
    claim you use against the design note or the code before relying on it.
 2. **Source the work from design notes**: `docs/06 Sprints/Planning Workflow - Artifact Gate.md`
    § *Where plans come from* is the rule; this step executes it. Read
-   `docs/02 Roadmap/Roadmap.md`, the current quarter note and the active sprint for
-   direction. Then, for each system in play, **start at its design note in
+   `docs/02 Roadmap/Roadmap.md` (the next goal is the first unfinished one on the ladder),
+   `docs/01 Product/Capability Map.md` for what its systems must support, the current quarter
+   note and the active sprint. Then, for each system in play, **start at its design note in
    `docs/04 Design Docs/`** and work the two sources in order:
    - **Decided ∧ unbuilt ∧ has a consumer now**: the delta between the note's *Decided*
      rows and the code. This is the queue; these become **Dev** tasks.
@@ -56,8 +57,18 @@ If gate 1 or 2 fails, say which and stop. Do not fix it for me.
      promotions above. They are ordinary cards and displace nothing.
    - **`docs/06 Sprints/Backlog.md` is read LAST**, and only to ask *"has any trigger
      fired?"* It holds no decisions, so nothing can be planned from it.
-3. **Propose ONE headline goal** for the next sprint. Justify it against the roadmap and the
-   affected systems' design notes. Push back if I'm over-scoping.
+3. **Propose ONE headline goal** for the next sprint. A Roadmap goal is about a month, so a
+   sprint usually delivers its first or second half; say which. Justify it against the
+   Capability Map and the affected systems' design notes. Push back if I'm over-scoping.
+   - **Brief check.** For each system whose ADR the goal needs, is there a brief in
+     `docs/01 Product/Capabilities/`? No → a Design card to write it, ordered before the ADR
+     card ([[Planning Workflow - Artifact Gate]] § *Coverage check: a system with no capability
+     brief*). The card runs `/brief <system>`: I decide its content; you interview me.
+   - **Showcase card.** When the sprint ends a Roadmap goal, draft the card that records and
+     publishes its showcase ([[Channel]] § *How a video fits the plan*), and run `/showcase`
+     with me so the card has its outline.
+   - **Off-map work.** A candidate the Capability Map does not list goes through `/triage`
+     before it becomes a draft card.
 4. **Settle the decisions the goal needs**, by the artifact gate, per item:
    - **Light** (a short note, the call is essentially clear): decide it with me now and
      write it into the design note in this session.

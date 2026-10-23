@@ -16,6 +16,9 @@ as `/sprint-prep`: the goal, the decisions and the draft cards (2026-10-23,
 [[Planning Workflow - Artifact Gate]] § *Decide first, then plan*). This session reviews the
 sprint that ended, then turns the draft into the new sprint. It does not design.
 
+**When this boundary opens a quarter or a phase, `/product-review` runs first**, and this
+session plans from what it changed.
+
 **This command absorbs `/weekly-review` on a boundary weekend; do not run both** (decided
 2026-07-26). The retro covers the same ground at sprint scope, and running both wrote two
 journal entries and updated the dashboard twice before I got to code. The weekly review's
@@ -53,6 +56,8 @@ Steps:
    how many I reversed in review, and any card it stopped on. Reversals are the measure of
    whether its gate is drawn in the right place.
    **Report the prep**: which day it ran, and how many of its drafts survived step 1 unchanged.
+   **Report the showcase**: if the sprint ended a Roadmap goal, whether its video is out, and if
+   not, why.
 3. **Stale-artifact check** (inherited from `/weekly-review`, which does not run today).
    For features touched this sprint, spot-check their ADR / design note against what
    actually got built: did implementation diverge from the documented end-state? A stale
@@ -84,6 +89,8 @@ Steps:
      Day-1 Design cards come first, and the stories they unblock stay unsized.
    - **Process cards are the first thing cut** if capacity tightens; call the mix out loud
      when a sprint is more than about a third Process.
+   - **A sprint that ends a Roadmap goal keeps its showcase card.** If capacity is short, cut
+     scope from the goal and split it ([[Roadmap]] § *Guardrails*), never the video.
    - **Bugs enter two ways, and they behave differently.** Known *at planning* → an ordinary
      card, sized in with everything else, nothing displaced. Arriving *mid-sprint* → still
      taken that sprint, but it **displaces**: name what it pushes out (lowest-priority

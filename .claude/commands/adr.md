@@ -14,6 +14,9 @@ Rationale is where real prose earns its place. Options as a table, consequences 
 Steps:
 1. Read `docs/03 Architecture/ADR Index.md` for the next number + the **Accepted**
    set. Read any relevant code so the ADR is grounded in reality (cite `file:line`).
+   **For a system ADR, read its capability brief in `docs/01 Product/Capabilities/` first**:
+   it holds the requirements the options are judged against. If there is none, stop and say
+   one is owed (Principles P3); process ADRs are exempt.
 2. Check the decision against the Accepted ADRs (the `adr-consistency-checker` agent
    can do this): flag contradictions. If this changes an Accepted ADR, apply
    [[ADR Index]] § *Amending an Accepted ADR*. A change that fits one dated header entry,

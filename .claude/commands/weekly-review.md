@@ -60,7 +60,9 @@ Then:
 6. **Set up week 2.** This review is the weekend before the sprint's week 2, so check that
    the two standing cards are on the board (`Prep brief for Sprint <n+1>` and
    `Prepare Sprint <n+1>`) and name the week-2 slot the prep takes, Tuesday to Friday. List
-   the lane PRs waiting on my review, so they get a 🟡 slot instead of piling up.
+   the lane PRs waiting on my review, so they get a 🟡 slot instead of piling up. If this
+   sprint ends a Roadmap goal, check its showcase outline exists (`/showcase`). If the next
+   boundary opens a quarter or a phase, say that `/product-review` runs before `/sprint-plan`.
 7. If I already ran the review on the other day of this weekend, say so instead of writing
    a second entry. (The sprint-boundary case is handled by the GATE above; on those
    weekends this command doesn't run at all.)

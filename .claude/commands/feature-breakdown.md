@@ -11,8 +11,10 @@ than squeezing it onto one line. A light design note drafted in this pass stays 
 not fill sections to look complete. Rationale belongs in the artifact, not in the card.
 
 Steps:
-1. Start at the system's **design note** in `docs/04 Design Docs/`: its *Decided* rows are
-   the reconciled view and the entry point; follow an ADR link only where a decision's
+1. Start at what the system must support: its section of `docs/01 Product/Capability Map.md`
+   and its brief in `docs/01 Product/Capabilities/` when one exists. Then its **design note**
+   in `docs/04 Design Docs/`: its *Decided* rows are the reconciled view and the entry
+   point; follow an ADR link only where a decision's
    **rationale** carries the argument (CLAUDE.md rule 2, gate note § *Where plans come
    from*). No note for a system in play → say so; that gap is itself a Design task. Then
    check `docs/05 Research/`, flag if research or an ADR is needed BEFORE any
