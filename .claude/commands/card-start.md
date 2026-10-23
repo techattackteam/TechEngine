@@ -123,6 +123,10 @@ The unattended lane runs this before it works a 🤖 Auto card. Nobody is there 
 - **Skip *Then, by card kind*.** An Auto card is fully specified when it is cut, so the lane
   does the work itself instead of scaffolding or proposing. A decision no artifact makes means
   the card was mis-scoped: stop and report it.
+- **A 🤖 Claude card is the exception to that last line.** The lane implements it and may
+  take the decisions [[Planning Workflow - Artifact Gate]] § *The 🤖 Claude gate* allows,
+  each listed in the PR. A gap that the gate keeps for me (an ADR-level decision) still
+  stops it, with the question and a proposed answer in the report.
 
 ## Guardrails
 
@@ -137,4 +141,6 @@ The unattended lane runs this before it works a 🤖 Auto card. Nobody is there 
 - **Do not amend an Accepted ADR while grounding a card.** A design note disagreeing with
   its ADR is drift to **report**. Filing the amendment is part of the card's work, if it is
   anyone's ([[ADR Index]] § *Amending an Accepted ADR*).
-- **No engine logic.** A scaffold is structure. Anything that decides behaviour is mine.
+- **No engine logic unless I ask for it.** A scaffold is structure, and anything else that
+  decides behaviour is mine. When I ask you to fill in a specific function, do that one and
+  hand it back; do not take over the card. A 🤖 Claude card is yours, above.

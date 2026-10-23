@@ -11,6 +11,11 @@ the new sprint**, not the tail of the old one, and it is still a dev day; keep t
 tight. Set the new sprint's date range from that rule: start = this Saturday, end = the
 Friday 2 weeks out. **Never derive sprint dates from the calendar month.**
 
+**This is the fitting half of planning.** The thinking half ran in week 2 of the closing sprint
+as `/sprint-prep`: the goal, the decisions and the draft cards (2026-10-23,
+[[Planning Workflow - Artifact Gate]] § *Decide first, then plan*). This session reviews the
+sprint that ended, then turns the draft into the new sprint. It does not design.
+
 **This command absorbs `/weekly-review` on a boundary weekend; do not run both** (decided
 2026-07-26). The retro covers the same ground at sprint scope, and running both wrote two
 journal entries and updated the dashboard twice before I got to code. The weekly review's
@@ -24,37 +29,13 @@ prose recap of work already recorded elsewhere; link it. Do not fill sections me
 a note look complete, and never compress a sentence to hit a length.
 
 Steps:
-1. **Source the work from design notes**: `docs/06 Sprints/Planning Workflow - Artifact Gate.md`
-   § *Where plans come from* is the rule; this step executes it. Read
-   `docs/02 Roadmap/Roadmap.md`, the current quarter note and the active sprint for
-   direction. Then, for each system in play, **start at its design note in
-   `docs/04 Design Docs/`** and work the two sources in order:
-   - **Decided ∧ unbuilt ∧ has a consumer now**: the delta between the note's *Decided*
-     rows and the code. This is the queue; these become **Dev** tasks.
-   - **An open question that blocks one of those**: becomes a **Design** task. An open
-     question with nothing waiting on it earns **no card**.
-   Follow an ADR link into `docs/03 Architecture/` only when the **rationale** carries the
-   argument (CLAUDE.md rule 2). **Never size a card off an ADR body alone**: an Accepted
-   ADR can hold a partially-superseded clause ([[ADR Index]] → *Partial supersessions*); the
-   design note's *Decided* rows are the reconciled view.
-   - **Coverage check.** For each **system** in play, no design note → **say it out loud**
-     and put drafting the note in this sprint as a Design task, ordered before the dev work
-     it grounds. Read the ADR directly meanwhile; that's the fallback, not the plan.
-     Process/meta ADRs (004, 009, 012) have no system and never trigger this.
-   - **`docs/03 Architecture/Known Issues.md`**: one question: *does any `D<n>` block or
-     touch what we're planning?* Blocks → a Dev card ordered before it. Touches the same
-     files → no card, it rides along in that PR. Neither → it stays; that's the list working,
-     not a backlog of unfixed work. A `D<n>` whose condition has actually **fired** is no
-     longer latent: promote it to a **Bug** card and delete the entry.
-   - **Known bugs → `B` cards, planned in like any other work.** A bug is anything that
-     misbehaves *now*. Sweep three places: any **unfixed `B` card from the closing sprint**
-     (it carries, see step 8), anything the retro or the stale-artifact check surfaced as
-     actually broken, and Known Issue promotions above. Bugs planned in at the boundary are
-     **ordinary sized cards**: they displace nothing, because the sprint is being sized
-     fresh around them. Only a bug *arriving mid-sprint* displaces (step 5).
-   - **`docs/06 Sprints/Backlog.md` is read LAST**, and only to ask *"has any trigger
-     fired?"* It is a parking lot of one-line wants; it holds no decisions, so nothing can
-     be planned from it.
+1. **Load the draft cut.** Read the closing sprint note's `#### Sprint <n+1>'s cut`, which
+   the `Prepare Sprint <n+1>` card wrote, and the prep brief it started from. Then check what
+   moved since the prep ran: cards that merged or rolled over after it, a bug that arrived,
+   a [[Known Issues]] entry that fired. Adjust the draft for those and say what changed.
+   **If no prep ran** (the card was dropped, or its slot was lost), run `/sprint-prep`'s
+   steps 2 to 6 here first, and record it in the retro: a boundary that has to design is
+   the failure this split exists to prevent.
 2. If the current sprint is ending, first help me capture a short retrospective
    using `docs/Templates/Retrospective Template.md` into `docs/07 Journal/`. Cover the
    **final week** in it too (`git log --since="7 days ago" --oneline`), no separate weekly
@@ -68,6 +49,10 @@ Steps:
    and every run that stopped, with why. A lane that ran and produced nothing is a finding.
    For the code sweeps, report the modules swept, the lines removed, the findings filed, and
    each module's line count against its previous sweep, so growth is visible.
+   **Report each 🤖 Claude feature**: whether it shipped, its PRs, the decisions it took and
+   how many I reversed in review, and any card it stopped on. Reversals are the measure of
+   whether its gate is drawn in the right place.
+   **Report the prep**: which day it ran, and how many of its drafts survived step 1 unchanged.
 3. **Stale-artifact check** (inherited from `/weekly-review`, which does not run today).
    For features touched this sprint, spot-check their ADR / design note against what
    actually got built: did implementation diverge from the documented end-state? A stale
@@ -82,71 +67,49 @@ Steps:
    deferred → leave it and say why. A formality stamp is worse than none: it turns
    "unknown freshness" into a false "checked" that CLAUDE.md rule 2 then trusts
    (ADR-012 §6).
-4. Propose ONE headline goal for the next sprint. Justify it against the roadmap and the
-   affected systems' design notes, dropping to their ADRs where a decision's rationale
-   carries the argument. Push back if I'm over-scoping.
-5. **Co-create** the Epic → Story → Task breakdown with me as an equal driver: draft
-   and challenge, I decide scope. Every task must fit one 2-6h coding session with a
-   clear done-condition. Size the sprint to my real weekly rhythm (deep Mon/Thu + one
-   weekend day; moderate Fri; light Tue; relaxed Wed; the other weekend day off), the
-   Dashboard calendar. Weekend days are a swappable pair, so don't hard-assign Sat/Sun.
-   **Deep days are not equal capacity:** Mon/Thu are after the day job → ~1 🟢 each; the
-   weekend deep day is a full day → **2-3 🟢**. Count slots that way, not one-per-day.
-   - **Artifact gate** (`docs/06 Sprints/Planning Workflow - Artifact Gate.md`): ADR,
-     design note, or neither, by reversibility × blast radius; rarely both. Then apply
-     **artifact timing**: flag every artifact-less item that warrants one: **draft the
-     light ones with me now, in this session**; heavy ones (ADR / needs a spike) become
-     a sprint task ordered before the impl task they unblock.
-   - **Heavy-gated stories stay unsized**: where the gate demanded an ADR (or a
-     spike-gated note), the breakdown **stops at that artifact's task**: the story below it
-     goes into the sprint note named and roughly counted (`~2-3 tasks · size after ADR-NNN`),
-     with no done-conditions, and cutting its cards is part of the artifact task's own
-     done-condition. Sizing them now writes cards the ADR will overturn (S2-T2's `fmt` seam);
-see the gate note § *Don't size past an open decision*. Do not "helpfully" fill them
-     in to make the sprint note look complete.
-   - **Kind, priority + weight on every task**: the **kind lives in the card ID**
-     (`S3-T4` Dev · `S3-D1` Design · `S3-B1` Bug · `S3-P2` Process), then `P1/P2/P3` and a
-     weight (🟢 Deep / 🟠 Moderate / 🟡 Light / 🤖 Auto) matching the day-type it fits. Tag
-     format `· P1 · 🟢 Deep`. Design tasks are ordered **before** the story they unblock;
-     Process tasks are the **first thing cut** if capacity tightens; call the mix out loud
+4. **Confirm the headline goal** the prep proposed. Re-open it only if the last days of the
+   closing sprint changed the picture, and push back if I'm over-scoping.
+5. **Fit the draft to capacity**, as equal drivers: I decide what drops.
+   - **Count my slots by the real weekly rhythm** (deep Mon/Thu + one weekend day; moderate
+     Fri; light Tue; relaxed Wed; the other weekend day off), the Dashboard calendar.
+     Weekend days are a swappable pair, so don't hard-assign Sat/Sun. **Deep days are not
+     equal capacity:** Mon/Thu are after the day job → ~1 🟢 each; the weekend deep day is a
+     full day → **2-3 🟢**. My attended cards are 🟢 and 🟠; my 🟡 slots go to reviewing the
+     lanes' PRs, at ~15 minutes per 🤖 Auto PR and 30-45 per 🤖 Claude PR.
+   - **The lanes do not raise my capacity**, and they have their own limit: one PR per fire,
+     shared by 🤖 Auto and 🤖 Claude cards, ~5 per sprint week. Report-only and vault-only
+     Auto cards are free. Check the lane's status on the [[Dashboard]] and in
+     [[Autonomous Lane - Routine Prompt]] § *Routine configuration*; if it is paused, say so
+     and ask me whether to plan lane cards anyway.
+   - **Assign IDs**: the kind lives in the card ID (`S3-T4` Dev · `S3-D1` Design · `S3-B1`
+     Bug · `S3-P2` Process), then the draft's `P1/P2/P3` and weight, as `· P1 · 🟢 Deep`.
+     Day-1 Design cards come first, and the stories they unblock stay unsized.
+   - **Process cards are the first thing cut** if capacity tightens; call the mix out loud
      when a sprint is more than about a third Process.
-   - **Plan the 🤖 Auto lane as its own pass, every sprint.** Full model:
-     [[Autonomous Lane - Design]].
-     - **Check the lane first.** Read its status on the [[Dashboard]] (*Active decisions*) and
-       in [[Autonomous Lane - Routine Prompt]] § *Routine configuration*. If the routine is
-       paused, say so and ask me whether to plan Auto cards anyway. Never skip the lane
-       silently: Sprints 06 and 07 planned none because it was off, and nothing said so.
-     - **Size the attended lane first**, against the capacity table exactly as before. The
-       Auto lane does **not** raise it.
-     - **Then look for Auto work actively**, not only in what is left over. Sources: the
-       sprint's Process and research cards; behaviour-preserving refactors and small fully
-       specified changes named in design notes or [[Known Issues]]; test scaffolding for the
-       sprint's Dev cards; and [[Backlog]] entries whose trigger fired. Run each candidate
-       through the artifact gate's § *The 🤖 Auto gate* (one no disqualifies).
-     - **Moving a card to Auto frees an attended slot.** That is the point of the lane: every
-       sustainability overrun of Sprint 04 was process work, not engine work. Say which
-       attended slots the moves freed.
-     - **Keep Auto code cards off the attended cards' files.** A refactor of a file that an
-       attended card in the same sprint changes will stop at run time.
-     - **Cap PR-producing Auto cards at one per weekday**, ~5 per sprint week, because each
-       costs 16.1 billed CI minutes and ~15 minutes of my review. Report-only and vault-only
-       Auto cards are free and are not capped. Paper screening needs no card; the lane does
-       it when the Auto lane is empty, and so does the afternoon code sweep.
-   - **Bugs enter two ways, and they behave differently.** Known *at planning* (step 1) → an
-     ordinary card, sized in with everything else, nothing displaced. Arriving *mid-sprint* →
-     still taken that sprint, but it **displaces**: name what it pushes out (lowest-priority
+   - **Bugs enter two ways, and they behave differently.** Known *at planning* → an ordinary
+     card, sized in with everything else, nothing displaced. Arriving *mid-sprint* → still
+     taken that sprint, but it **displaces**: name what it pushes out (lowest-priority
      Process first) rather than stacking it on top, since piling unplanned work onto a full
      sprint is the refill reflex the Sprint 01 retro flagged. Record the mid-sprint kind the
      way T13-T15 were: a dated scope-change note in the sprint file.
-6. Create the sprint note from `docs/Templates/Sprint Template.md` and update the roadmap
+6. **Plant the two standing cards** in the new sprint, so the next prep is on the board from
+   day 1:
+   - `S<n>-P<k> · Prep brief for Sprint <n+1> · P2 · 🤖 Auto`, report-only. done: a run report
+     lists the *Decided* rows with no code behind them, the open questions blocking them, the
+     fired [[Backlog]] triggers and candidate 🤖 Claude features, and decides nothing. **Not
+     before the Monday of week 2**: a fire before that leaves it in To Do.
+   - `S<n>-D<k> · Prepare Sprint <n+1> · P1 · 🟠 Moderate · 2-3h`. done: `/sprint-prep`
+     wrote the next sprint's goal and draft cut into this sprint note. Runs in week 2, Tuesday
+     to Friday, after the brief when it exists.
+7. Create the sprint note from `docs/Templates/Sprint Template.md` and update the roadmap
    and the dashboard, including the Dashboard's **Next ceremony** line, which
    `/weekly-review` would normally roll.
-7. **Cut every pulled item out of `docs/06 Sprints/Backlog.md`**: pulling is a *move, not a
+8. **Cut every pulled item out of `docs/06 Sprints/Backlog.md`**: pulling is a *move, not a
    copy*. As each task is written, delete its entry. Nothing needs carrying across: entries
    are one line and hold no decisions, so there is nothing to rescue. If one *does* hold a
    decision, that's the finding: the entry outgrew the file and its content belongs in the
    design note or ADR, not in a longer backlog entry.
-8. **Reset `docs/06 Sprints/Sprint Board.md` for the new sprint**: the board shows *live
+9. **Reset `docs/06 Sprints/Sprint Board.md` for the new sprint**: the board shows *live
    state*, never history. It carries exactly **one** Done column, for the sprint in flight.
    Do this only after the retro (step 2) has mined it:
    - Fold the closing sprint's Done cards into that sprint note's `## Sprint review`
@@ -165,7 +128,8 @@ see the gate note § *Don't size past an open decision*. Do not "helpfully" fill
    Never open a second Done column to keep old cards around, and **never add a column for a
    task kind**; kind lives in the card ID (a column would be a second home for the same
    fact, and it hides that a Design card is sprint-bound critical-path work). **The same
-   applies to the 🤖 Auto lane: no column for it either.** Lane is a weight, it already shows
-   in the card's tag, and a column would be that second home. If a card in a closing column
-   has no home in a sprint note, that's a gap: say so and place it before cutting.
-9. This is planning only; no implementation.
+   applies to the 🤖 Auto and 🤖 Claude lanes: no column for either.** Lane is a weight, it
+   already shows in the card's tag, and a column would be that second home. If a card in a
+   closing column has no home in a sprint note, that's a gap: say so and place it before
+   cutting.
+10. This is planning only; no implementation.
