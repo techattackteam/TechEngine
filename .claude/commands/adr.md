@@ -14,6 +14,9 @@ Rationale is where real prose earns its place. Options as a table, consequences 
 Steps:
 1. Read `docs/03 Architecture/ADR Index.md` for the next number + the **Accepted**
    set. Read any relevant code so the ADR is grounded in reality (cite `file:line`).
+   **For a system ADR, read its capability brief in `docs/01 Product/Capabilities/` first**:
+   it holds the requirements the options are judged against. If there is none, stop and say
+   one is owed (Principles P3); process ADRs are exempt.
 2. Check the decision against the Accepted ADRs (the `adr-consistency-checker` agent
    can do this): flag contradictions. If this changes an Accepted ADR, apply
    [[ADR Index]] § *Amending an Accepted ADR*. A change that fits one dated header entry,
@@ -30,8 +33,8 @@ Steps:
    **Scope: decision + rationale + alternatives + reversal triggers, within the size above.**
    The *how* (surface tables, diagrams, workflows, instrumentation policy) belongs
    in the system's design note, not here. A mechanism table or diagram sprouting
-   inside a § is the peel signal ([[Planning Workflow - Artifact Gate]] § *ADR or
-   design note*). Update the note's *Decided* rows (one-liners + §refs) in the same
+   inside a § is the peel signal ([[Planning Workflow - Artifact Gate]] § *An ADR or
+   a design note, rarely both*). Update the note's *Decided* rows (one-liners + §refs) in the same
    session; ADR-013 vs [[Profiler - Design]] is the counter-example: the ADR
    ballooned and the note duplicated its diagrams.
 5. Add it to `docs/03 Architecture/ADR Index.md`.

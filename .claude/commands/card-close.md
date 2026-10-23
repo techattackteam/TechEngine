@@ -60,9 +60,10 @@ card taught**, which the git history cannot tell me.
 - "All tests pass." CI is the gate; the entry is not where that gets claimed.
 - Rationale already written in an ADR or a design note. Link it.
 
-If nothing surprised, keep the entry to a few sentences. A padded entry teaches me to skim
-the column. Give each useful lesson a short bullet; do not pad the entry, and do not compress
-it to fit an exact line count.
+**Keep it to about five lines**: the card line with its PR and date, then the deviations. If
+nothing surprised, one sentence is the whole entry. A lesson that needs more room belongs in the
+design note or a [[Known Issues]] row, linked from the entry. A padded entry teaches me to skim
+the column; never compress a sentence to fit, cut a point instead.
 
 ## Then write, in this order
 
@@ -75,16 +76,18 @@ it to fit an exact line count.
    finding for me, not an edit.
 4. **[[Known Issues]]**: one row per logged-not-fixed finding, using the ID the entry cites.
 5. **[[Backlog]]**: anything discovered mid-card that was not the card (CLAUDE.md rule 5).
-6. **[[Dashboard]]**: bring the *Now* table in line with the board: **Current focus**, and
-   **Top blocker** if this card was the blocker or cleared it. If the card completes a
+6. **[[Dashboard]]**: bring the *Now* table in line with the board. **Rewrite Current focus,
+   never append to it**: two or three sentences on what is in flight and what comes next. The
+   history of closed cards is the board's and the sprint note's job. Update **Top blocker** if
+   this card was the blocker or cleared it. If the card completes a
    milestone, update that milestone's row in *Plan*. Touch nothing else. The stamp, the
    latest-check paragraph and *Health check* belong to the review ceremonies.
 7. **Report**: what you changed, and what needs my call. Then stop.
 
 ## When the Auto lane runs this
 
-The unattended lane closes its own cards only: a 🤖 Auto card a fire worked, once the gate
-above passes. It never closes an attended card, even a merged one; that close stays in my
+The unattended lane closes its own cards only: a 🤖 Auto or 🤖 Claude card a fire worked, once
+the gate above passes. It never closes an attended card, even a merged one; that close stays in my
 session, where the context for the entry is.
 
 - Every step above applies, the Dashboard's *Current focus* included.
@@ -92,11 +95,13 @@ session, where the context for the entry is.
   committed with that report.
 - An entry built only from the card, the PR and the diff says so when the PR has no review
   conversation, because then nothing records what was rejected along the way.
+- **A 🤖 Claude card's entry names every decision I reversed in review**, from the PR's
+  *Decisions I took* and its conversation. Reversals are what the retro counts.
 
 ## Guardrails
 
-- **Never advance the Dashboard's `Reconciled against` stamp.** That is `/weekly-review`'s
-  output, and only after a real drift check. A stamp advanced as a formality converts unknown
+- **Never advance the Dashboard's `Reconciled against` stamp.** That is the output of
+  `/weekly-review` or `/sprint-plan`, and only after a real drift check. A stamp advanced as a formality converts unknown
   freshness into a false "checked" (ADR-012 §6).
 - **Do not amend an Accepted ADR during a close.** A card whose *work* was an amendment
   already landed it in its own PR. If closing reveals an ADR that now owes one, that is a

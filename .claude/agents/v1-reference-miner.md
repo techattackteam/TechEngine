@@ -15,14 +15,14 @@ propose v2 design or edit anything.
 
 ## Where v1 lives (important)
 
-v2 is greenfield: **v1 code is NOT in the working tree.** It exists only on the
-**`v1-reference` git tag**. So:
+**v1 code is NOT in the working tree.** The tree holds v2, which was written from scratch. v1
+exists only on the **`v1-reference` git tag**. So:
 
 - Search v1: `git grep -n "<pattern>" v1-reference -- '<optional pathspec>'`
 - List v1 files: `git ls-tree -r --name-only v1-reference`
 - Read a v1 file (or lines): `git show v1-reference:<path>`
 
-The working-tree tools (Grep/Glob/Read) see only the **v2 vault (`docs/`)**; use
+The working-tree tools (Grep/Glob/Read) see v2's code and the vault (`docs/`), never v1. Use
 them for the audit notes, not for v1 source.
 
 ## Method

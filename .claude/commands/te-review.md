@@ -19,10 +19,11 @@ solved problem is how a review becomes noise:
 |---|---|---|
 | Formatting, include **order** and grouping | `.clang-format` + the CI format gate | indent, braces, column limit, `IncludeCategories` |
 | bugprone / performance / const-correctness of locals | `.clang-tidy`, Linux leg | its whole check set |
-| A private type leaking into the SDK | `te_sdk_smoke` (ADR-008 §7) | the leak itself |
+| A private type leaking into the SDK | `TechEngineSDKSmoke`, ctest `sdk-smoke` (ADR-008 §7) | the leak itself |
 | Reaching into private plumbing | `ci.yml` → *No reaching into private plumbing* | the greps it already runs |
 
-**Not a bug hunt either.** Correctness, logic errors and edge cases are `/code-review`. If you
+**Not a bug hunt either.** Correctness, logic errors and edge cases are `/code-review` and
+`/card-review`. If you
 see a real defect while reading, say it once at the end under *Off-rubric*, then get back to
 the rubric.
 
@@ -81,8 +82,9 @@ the rubric.
 
 ## Open rows are a different finding
 
-`CONVENTIONS.md` → *Open* lists rules that are deliberately undecided: ownership and smart
-pointers, error handling, const-correctness of params and methods.
+`CONVENTIONS.md` → *Open* lists rules that are deliberately undecided. Read the table for the
+live set; at the time of writing it is ownership and smart pointers, and const-correctness of
+params and methods.
 
 Code that lands on one of these is **not a violation**. It is the **trigger firing**, and the
 finding is that `CONVENTIONS.md` now owes a decided row. Report it separately from violations,

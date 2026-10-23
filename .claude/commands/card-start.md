@@ -42,9 +42,13 @@ anything else. If one fails, say which and stop. Do not fix it for me.
 3. **The system's design note** in `docs/04 Design Docs/`. Start here, never at the ADRs. Its
    *Decided* rows index the ADR sections, so follow a link only when the **rationale** is what
    you actually need.
-4. **[[Known Issues]]**: the open defects on this system. One of them is often the card's
+4. **The system's capability brief** in `docs/01 Product/Capabilities/`, when the card adds
+   something users will see. If the card adds a capability and no brief covers it, say that
+   `/brief` (or `/triage`, for something the Capability Map does not list) is owed before
+   building it (CLAUDE.md § *Product checkpoints*).
+5. **[[Known Issues]]**: the open defects on this system. One of them is often the card's
    subject, and more often the thing the card is about to walk into.
-5. **The code the card touches**, at `origin/master`. This is where the checking happens.
+6. **The code the card touches**, at `origin/master`. This is where the checking happens.
 
 ## The brief
 
@@ -123,13 +127,18 @@ The unattended lane runs this before it works a 🤖 Auto card. Nobody is there 
 - **Skip *Then, by card kind*.** An Auto card is fully specified when it is cut, so the lane
   does the work itself instead of scaffolding or proposing. A decision no artifact makes means
   the card was mis-scoped: stop and report it.
+- **A 🤖 Claude card is the exception to that last line.** The lane implements it and may
+  take the decisions [[Planning Workflow - Artifact Gate]] § *The 🤖 Claude gate* allows,
+  each listed in the PR. A gap that the gate keeps for me (an ADR-level decision) still
+  stops it, with the question and a proposed answer in the report.
 
 ## Guardrails
 
 - **Never cut the branch or move the card.** Those are the gates, and they are mine. The Auto
   lane is the one exception, above.
 - **Never advance the `Reconciled against` stamp.** You are reading it, not answering it. It
-  moves only as the output of `/weekly-review`'s real drift check (ADR-012 §6).
+  moves only as the output of a real drift check in `/weekly-review` or `/sprint-plan`
+  (ADR-012 §6).
 - **Report drift, do not sweep it.** If a note is wrong, say so. You may fix the specific rows
   this card depends on if I ask, but a broad reconciliation is `/vault-clean` and
   `/weekly-review`, and doing it here hides the drift from the check that is supposed to
@@ -137,4 +146,6 @@ The unattended lane runs this before it works a 🤖 Auto card. Nobody is there 
 - **Do not amend an Accepted ADR while grounding a card.** A design note disagreeing with
   its ADR is drift to **report**. Filing the amendment is part of the card's work, if it is
   anyone's ([[ADR Index]] § *Amending an Accepted ADR*).
-- **No engine logic.** A scaffold is structure. Anything that decides behaviour is mine.
+- **No engine logic unless I ask for it.** A scaffold is structure, and anything else that
+  decides behaviour is mine. When I ask you to fill in a specific function, do that one and
+  hand it back; do not take over the card. A 🤖 Claude card is yours, above.

@@ -49,7 +49,7 @@ restate them; it covers what a formatter cannot decide.
   precedent by which `TechEngine<Module>` refines ADR-008 §2's `te_<module>`. An ADR is not
   amended for a spelling it never decided, so read `kFixedDt` there as `FIXED_DELTA_TIME`
   (see *Names are spelled out*).
-- **Gotcha:** all-caps identifiers are macro territory to the preprocessor, so a constant can be
+- **All-caps identifiers are macro territory to the preprocessor**, so a constant can be
   clobbered by a third-party or OS macro of the same name (Windows headers define `ERROR`,
   `DELETE`, `MAX_PATH`, …). Avoid bare single-word names that read like OS macros; prefer a
   qualifying word (`MESSAGE_CAPACITY`, not `CAPACITY`).
@@ -72,7 +72,7 @@ genuinely unwieldy, and then abbreviate the *whole* codebase's way, not that fil
 | A term of art whose expansion is worse | `alpha`, not `interpolationFactor`; `tick`, not `simulationStepIndex` |
 
 **The ADRs and design notes write `dt` / `fixedDt`.** Read them as `deltaTime` / `fixedDeltaTime`
-in code, the same refinement precedent as `kFixedDt` → `FIXED_DT` and `te_<module>` →
+in code, the same refinement precedent as `kFixedDt` → `FIXED_DELTA_TIME` and `te_<module>` →
 `TechEngine<Module>` above. An ADR is not amended for a spelling it never decided.
 
 ## Internal linkage: `static`, not `namespace {}`
@@ -174,7 +174,7 @@ template must be visible). So:
 - **Guard it in CI.** `ci.yml` → *No reaching into private plumbing* greps for each private
   pattern outside its owning module and fails the build. Add a `check` line when you add a
   private symbol; a rule with no red check rots (ADR-008 §9), and this is the same move as the
-  `te_sdk_smoke` leak gate (ADR-008 §7).
+  `TechEngineSDKSmoke` leak gate (ctest `sdk-smoke`, ADR-008 §7).
 
 **Why it matters beyond tidiness:** `TE_LOG_PRIVATE_EMIT` bypasses the compile-time level gate,
 so a direct call ships `Trace` logging into a Release build; the macro is not merely internal,

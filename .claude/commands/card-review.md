@@ -47,6 +47,11 @@ commit, push, or close the card.
 - **Evidence.** Confirm findings in the actual execution path before reporting.
   A code finding needs an exact location and a triggering scenario. A convention
   finding needs the applicable rule. Label estimates and unresolved questions.
+- **A 🤖 Claude card's decisions.** Read the PR's *Decisions I took* against
+  `docs/06 Sprints/Planning Workflow - Artifact Gate.md` § *The 🤖 Claude gate*. Flag a
+  listed decision that the gate keeps for me (ADR-level, or one that changes a *Decided*
+  row), and a decision the code takes that the list leaves out. For each listed one, say
+  whether you would keep it; accepting or reversing it stays mine.
 
 ## Report once
 

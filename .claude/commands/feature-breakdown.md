@@ -11,8 +11,10 @@ than squeezing it onto one line. A light design note drafted in this pass stays 
 not fill sections to look complete. Rationale belongs in the artifact, not in the card.
 
 Steps:
-1. Start at the system's **design note** in `docs/04 Design Docs/`: its *Decided* rows are
-   the reconciled view and the entry point; follow an ADR link only where a decision's
+1. Start at what the system must support: its section of `docs/01 Product/Capability Map.md`
+   and its brief in `docs/01 Product/Capabilities/` when one exists. Then its **design note**
+   in `docs/04 Design Docs/`: its *Decided* rows are the reconciled view and the entry
+   point; follow an ADR link only where a decision's
    **rationale** carries the argument (CLAUDE.md rule 2, gate note § *Where plans come
    from*). No note for a system in play → say so; that gap is itself a Design task. Then
    check `docs/05 Research/`, flag if research or an ADR is needed BEFORE any
@@ -24,7 +26,7 @@ Steps:
    blast radius whether it needs an ADR, a design note, or **neither** (the default).
    Rarely both. Don't reflexively mint an ADR per feature; don't skip one a
    hard-to-reverse cross-module decision needs. Mark the chosen artifact **light**
-   (short note, drafted at Sunday planning) or **heavy** (ADR / needs a spike → its own
+   (short note, drafted in this pass, step 6) or **heavy** (ADR / needs a spike → its own
    task, ordered before the impl task it unblocks).
 4. Produce Epic → Stories → Tasks together. Each **task** must fit one 2-6h coding
    session and have an explicit done-condition. Note dependencies and ordering
@@ -34,8 +36,9 @@ Steps:
    done-conditions; cutting them belongs to the artifact task's own done-condition (gate
    note § *Don't size past an open decision*). Give every task a **kind in its ID**
    (`S3-T4` Dev · `S3-D1` Design · `S3-B1` Bug · `S3-P2` Process) plus **priority + weight**:
-   `P1/P2/P3` and 🟢 Deep / 🟠 Moderate / 🟡 Light (day-fit), per the gate note, so tasks
-   can be picked by the day's energy. Format `· P1 · 🟢 Deep`.
+   `P1/P2/P3` and a weight per the gate note: 🟢 Deep / 🟠 Moderate / 🟡 Light by day-fit,
+   or 🤖 Auto / 🤖 Claude for the unattended lane. Say when a story looks like a good
+   🤖 Claude feature; picking it is mine. Format `· P1 · 🟢 Deep`.
 5. Call out the riskiest/most-uncertain task and suggest a spike to de-risk it.
 6. **If the gate chose a light design note, draft it in this same pass** from
    `docs/Templates/Design Doc Template.md`; light artifacts are *made in the session*, not
@@ -46,5 +49,5 @@ Steps:
    artifact, never the decision, the rationale, or a `How:`.** If a breakdown produced
    thinking worth keeping, it goes in the design note or ADR from step 6; a longer backlog
    entry is not the fallback. Nothing is planned from that file later; it is read at
-   `/sprint-plan` only to check whether a trigger has fired.
+   `/sprint-prep` only to check whether a trigger has fired.
 8. Planning only; no implementation.
