@@ -1,5 +1,9 @@
+#include <TechEngine/core/resources/ResourceHandle.hpp>
+#include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
+#include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/serialization/Reader.hpp>
+#include <TechEngine/core/serialization/ReferenceVisitor.hpp>
 #include <TechEngine/core/serialization/Writer.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
@@ -45,6 +49,29 @@ struct RegistryVisited {
     friend void visit(Archive& archive, RegistryVisited& value) {
         archive.field(value.health);
         archive.field(value.speed);
+    }
+};
+
+struct RegistryLinked {
+    std::uint32_t health = 0;
+    TechEngine::Entity target;
+
+    template<typename Archive>
+    friend void visit(Archive& archive, RegistryLinked& value) {
+        archive.field(value.health);
+        archive.field(value.target);
+    }
+};
+
+class RegistryEntityRecorder final : public TechEngine::ReferenceVisitor {
+public:
+    std::vector<TechEngine::Entity> entities;
+
+    void visitEntity(TechEngine::Entity& value) override {
+        entities.push_back(value);
+    }
+
+    void visitAsset(TechEngine::ResourceId, TechEngine::ResourceSlotId&) override {
     }
 };
 
@@ -150,6 +177,7 @@ TEST_CASE("a component with a visit is registered with payload adapters bound to
     REQUIRE(record != nullptr);
     REQUIRE(record->writePayload != nullptr);
     REQUIRE(record->readPayload != nullptr);
+    REQUIRE(record->visitReferences != nullptr);
 
     const RegistryVisited written{42, 3.5f};
     std::vector<std::byte> adapterBytes;
@@ -179,4 +207,23 @@ TEST_CASE("a component without a visit is registered with no payload adapters", 
     REQUIRE(record != nullptr);
     REQUIRE(record->writePayload == nullptr);
     REQUIRE(record->readPayload == nullptr);
+    REQUIRE(record->visitReferences == nullptr);
+}
+
+TEST_CASE("a component's reference adapter walks the component it is handed", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    const TechEngine::ComponentTypeId id = registry.registerComponent<RegistryLinked>("TechEngine.Linked");
+    const TechEngine::ComponentTypeRecord* record = registry.find(id);
+    REQUIRE(record != nullptr);
+    REQUIRE(record->visitReferences != nullptr);
+
+    RegistryLinked linked;
+    linked.health = 3;
+    linked.target = TechEngine::Entity{6, 2};
+    RegistryEntityRecorder visitor;
+    record->visitReferences(visitor, &linked);
+
+    const std::vector<TechEngine::Entity> expected{TechEngine::Entity{6, 2}};
+    REQUIRE(visitor.entities == expected);
+    REQUIRE(linked.health == 3);
 }

@@ -74,6 +74,10 @@ namespace TechEngine {
         write(value.value());
     }
 
+    void Writer::write(const Entity value) {
+        write(value.index);
+    }
+
     void Writer::writeBytes(const std::span<const std::byte> bytes) {
         appendRaw(bytes.data(), bytes.size());
     }

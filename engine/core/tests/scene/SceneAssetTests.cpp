@@ -2,6 +2,7 @@
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/assets/AssetSource.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
+#include <TechEngine/core/resources/AssetRef.hpp>
 #include <TechEngine/core/resources/ResourceCache.hpp>
 #include <TechEngine/core/resources/ResourceHandle.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
@@ -25,6 +26,7 @@
 #include <format>
 #include <span>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <unordered_map>
 #include <unordered_set>
@@ -32,6 +34,7 @@
 #include <vector>
 
 using TechEngine::AssetAvailability;
+using TechEngine::AssetRef;
 using TechEngine::ComponentRegistry;
 using TechEngine::Entity;
 using TechEngine::ReadError;
@@ -119,7 +122,7 @@ static std::vector<std::byte> writeSmallHierarchyWithHealth(ComponentRegistry& r
     return bytes;
 }
 
-TEST_CASE("Transform carries payload adapters and Hierarchy does not", "[core][scene]") {
+TEST_CASE("Transform carries payload and reference adapters and Hierarchy does not", "[core][scene]") {
     ComponentRegistry registry;
     TechEngineTests::registerBuiltInSceneComponents(registry);
 
@@ -130,8 +133,10 @@ TEST_CASE("Transform carries payload adapters and Hierarchy does not", "[core][s
     REQUIRE(hierarchy != nullptr);
     CHECK(transform->writePayload != nullptr);
     CHECK(transform->readPayload != nullptr);
+    CHECK(transform->visitReferences != nullptr);
     CHECK(hierarchy->writePayload == nullptr);
     CHECK(hierarchy->readPayload == nullptr);
+    CHECK(hierarchy->visitReferences == nullptr);
 }
 
 TEST_CASE("a small hierarchy round-trips through a scene asset", "[core][scene]") {
@@ -614,4 +619,280 @@ TEST_CASE("loading a scene that is still held warns, returns AlreadyLoaded and l
 
     ResourceState state = ResourceState::Pending;
     REQUIRE_FALSE(harness.cache.getState(held, state));
+}
+
+struct SceneAssetLinkedAsset {};
+
+struct SceneAssetLink {
+    std::uint32_t value = 0;
+    Entity target;
+    AssetRef<SceneAssetLinkedAsset> asset;
+
+    template<typename Archive>
+    friend void visit(Archive& archive, SceneAssetLink& link) {
+        archive.field(link.value);
+        archive.field(link.target);
+        archive.field(link.asset);
+    }
+};
+
+static constexpr std::string_view SCENE_ASSET_LINK_TAG = "Tests.SceneAssetLink";
+
+static constexpr ResourceId LINKED_ASSET_ID{0xA55E7000000000A1};
+
+static constexpr ResourceId SECOND_LINKED_ASSET_ID{0xA55E7000000000A2};
+
+static void registerLinkComponents(ComponentRegistry& registry) {
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    registry.registerComponent<SceneAssetLink>(SCENE_ASSET_LINK_TAG);
+}
+
+// Recycled slots give every loaded entity an index that is not its row and a generation above
+// zero, so a read that leaves a raw Entity{row, 0} in a field never equals the entity it names.
+static void recycleEntitySlots(Scene& scene, const std::size_t count) {
+    std::vector<Entity> created;
+    for (std::size_t i = 0; i < count; i++) {
+        created.push_back(scene.createEntity());
+    }
+    for (const Entity entity: created) {
+        REQUIRE(scene.destroyEntity(entity));
+    }
+}
+
+static SmallHierarchy getLoadedSmallHierarchy(const Scene& scene) {
+    const std::vector<Entity> roots = scene.getRoots();
+    REQUIRE(roots.size() == 1);
+    const std::vector<Entity> children = scene.getChildren(roots[0]);
+    REQUIRE(children.size() == 3);
+    const std::vector<Entity> grandchildren = scene.getChildren(children[1]);
+    REQUIRE(grandchildren.size() == 1);
+    return SmallHierarchy{roots[0], children[0], children[1], children[2], grandchildren[0]};
+}
+
+static SmallHierarchy readIntoRecycledScene(const std::vector<std::byte>& bytes, Scene& loaded) {
+    recycleEntitySlots(loaded, 8);
+    SceneAsset asset;
+    const std::error_code readError = asset.read(bytes, loaded);
+    REQUIRE(!readError);
+    return getLoadedSmallHierarchy(loaded);
+}
+
+static std::vector<std::byte> writeLinkedSmallHierarchy(ComponentRegistry& registry) {
+    Scene source(registry);
+    const SmallHierarchy hierarchy = buildSmallHierarchy(source);
+    source.addComponent<SceneAssetLink>(hierarchy.root, SceneAssetLink{1, hierarchy.grandchild, {LINKED_ASSET_ID, {}}});
+    source.addComponent<SceneAssetLink>(hierarchy.first, SceneAssetLink{2, Entity{}, {}});
+    source.addComponent<SceneAssetLink>(hierarchy.second, SceneAssetLink{3, hierarchy.second, {SECOND_LINKED_ASSET_ID, {}}});
+    source.addComponent<SceneAssetLink>(hierarchy.grandchild, SceneAssetLink{5, hierarchy.root, {LINKED_ASSET_ID, {}}});
+
+    std::vector<std::byte> bytes;
+    SceneAsset{SCENE_ASSET_ID}.write(source, bytes);
+    return bytes;
+}
+
+TEST_CASE("an Entity field saves its target's row and reads back as that loaded entity", "[core][scene]") {
+    ComponentRegistry writeRegistry;
+    registerLinkComponents(writeRegistry);
+    const std::vector<std::byte> bytes = writeLinkedSmallHierarchy(writeRegistry);
+
+    ComponentRegistry readRegistry;
+    registerLinkComponents(readRegistry);
+    Scene loaded(readRegistry);
+    const SmallHierarchy hierarchy = readIntoRecycledScene(bytes, loaded);
+
+    SECTION("a reference to a later row") {
+        const SceneAssetLink& link = loaded.getComponent<SceneAssetLink>(hierarchy.root);
+        CHECK(link.value == 1);
+        CHECK(link.target == hierarchy.grandchild);
+    }
+
+    SECTION("a reference to an earlier row, row zero") {
+        const SceneAssetLink& link = loaded.getComponent<SceneAssetLink>(hierarchy.grandchild);
+        CHECK(link.value == 5);
+        CHECK(link.target == hierarchy.root);
+    }
+
+    SECTION("a reference to its own entity") {
+        const SceneAssetLink& link = loaded.getComponent<SceneAssetLink>(hierarchy.second);
+        CHECK(link.value == 3);
+        CHECK(link.target == hierarchy.second);
+    }
+
+    SECTION("an entity that had no link still has none") {
+        CHECK_FALSE(loaded.hasComponent<SceneAssetLink>(hierarchy.third));
+    }
+}
+
+TEST_CASE("an AssetRef field saves its id and reads back with that id and an empty handle", "[core][scene]") {
+    ComponentRegistry writeRegistry;
+    registerLinkComponents(writeRegistry);
+    const std::vector<std::byte> bytes = writeLinkedSmallHierarchy(writeRegistry);
+
+    ComponentRegistry readRegistry;
+    registerLinkComponents(readRegistry);
+    Scene loaded(readRegistry);
+    const SmallHierarchy hierarchy = readIntoRecycledScene(bytes, loaded);
+
+    const SceneAssetLink& rootLink = loaded.getComponent<SceneAssetLink>(hierarchy.root);
+    const SceneAssetLink& secondLink = loaded.getComponent<SceneAssetLink>(hierarchy.second);
+    const SceneAssetLink& grandchildLink = loaded.getComponent<SceneAssetLink>(hierarchy.grandchild);
+    CHECK(rootLink.asset.id == LINKED_ASSET_ID);
+    CHECK(secondLink.asset.id == SECOND_LINKED_ASSET_ID);
+    CHECK(grandchildLink.asset.id == LINKED_ASSET_ID);
+    CHECK_FALSE(rootLink.asset.handle.valid());
+    CHECK_FALSE(secondLink.asset.handle.valid());
+    CHECK_FALSE(grandchildLink.asset.handle.valid());
+}
+
+TEST_CASE("an AssetRef's handle never reaches the scene asset's bytes", "[core][scene]") {
+    ComponentRegistry registry;
+    registerLinkComponents(registry);
+    Scene source(registry);
+    const Entity entity = source.createEntity();
+    source.addComponent<SceneAssetLink>(entity, SceneAssetLink{1, Entity{}, {LINKED_ASSET_ID, {}}});
+
+    std::vector<std::byte> withoutHandle;
+    SceneAsset{SCENE_ASSET_ID}.write(source, withoutHandle);
+    source.getComponent<SceneAssetLink>(entity).asset.handle = ResourceHandle<SceneAssetLinkedAsset>{3, 1};
+    std::vector<std::byte> withHandle;
+    SceneAsset{SCENE_ASSET_ID}.write(source, withHandle);
+
+    REQUIRE(withHandle == withoutHandle);
+}
+
+TEST_CASE("empty Entity and AssetRef fields round-trip as empty", "[core][scene]") {
+    ComponentRegistry writeRegistry;
+    registerLinkComponents(writeRegistry);
+    const std::vector<std::byte> bytes = writeLinkedSmallHierarchy(writeRegistry);
+
+    ComponentRegistry readRegistry;
+    registerLinkComponents(readRegistry);
+    Scene loaded(readRegistry);
+    const SmallHierarchy hierarchy = readIntoRecycledScene(bytes, loaded);
+
+    const SceneAssetLink& link = loaded.getComponent<SceneAssetLink>(hierarchy.first);
+    CHECK(link.value == 2);
+    CHECK(link.target == Entity{});
+    CHECK(link.asset == AssetRef<SceneAssetLinkedAsset>{});
+}
+
+TEST_CASE("writing a scene leaves the live scene's reference fields untouched", "[core][scene]") {
+    ComponentRegistry registry;
+    registerLinkComponents(registry);
+    Scene source(registry);
+    const SmallHierarchy hierarchy = buildSmallHierarchy(source);
+    const ResourceHandle<SceneAssetLinkedAsset> liveHandle{3, 1};
+    source.addComponent<SceneAssetLink>(hierarchy.first, SceneAssetLink{2, hierarchy.grandchild, {LINKED_ASSET_ID, liveHandle}});
+
+    std::vector<std::byte> bytes;
+    SceneAsset{SCENE_ASSET_ID}.write(source, bytes);
+
+    const SceneAssetLink& link = source.getComponent<SceneAssetLink>(hierarchy.first);
+    CHECK(link.target == hierarchy.grandchild);
+    CHECK(link.asset.id == LINKED_ASSET_ID);
+    CHECK(link.asset.handle == liveHandle);
+}
+
+TEST_CASE("an Entity field whose target is not in the scene saves as empty and warns", "[core][scene]") {
+    const SceneLoadLogCaptureGuard logs;
+    ComponentRegistry registry;
+    registerLinkComponents(registry);
+    Scene source(registry);
+    const SmallHierarchy written = buildSmallHierarchy(source);
+    const Entity gone = source.createEntity();
+    REQUIRE(source.destroyEntity(gone));
+    source.addComponent<SceneAssetLink>(written.root, SceneAssetLink{1, gone, {}});
+
+    std::vector<std::byte> bytes;
+    SceneAsset{SCENE_ASSET_ID}.write(source, bytes);
+
+    REQUIRE(sceneLoadLogNames(SCENE_ASSET_ID));
+    Scene loaded(registry);
+    const SmallHierarchy hierarchy = readIntoRecycledScene(bytes, loaded);
+    const SceneAssetLink& link = loaded.getComponent<SceneAssetLink>(hierarchy.root);
+    CHECK(link.value == 1);
+    CHECK(link.target == Entity{});
+}
+
+static std::vector<std::byte> writeOneLinkRow(const std::uint32_t entityCount, const std::uint32_t targetRow) {
+    std::vector<std::byte> payload;
+    TechEngine::Writer payloadWriter{payload};
+    payloadWriter.write(static_cast<std::uint32_t>(0));
+    payloadWriter.write(targetRow);
+    payloadWriter.write(static_cast<std::uint64_t>(0));
+
+    std::vector<std::byte> bytes;
+    TechEngine::Writer writer{bytes};
+    writer.writeHeader(TechEngine::SCENE_KIND);
+    writer.write(SCENE_ASSET_ID.value());
+    writer.write(entityCount);
+    for (std::uint32_t row = 0; row < entityCount; row++) {
+        writer.write(row);
+        writer.write(SCENE_ASSET_NO_PARENT);
+        if (row == 0) {
+            writer.write(static_cast<std::uint32_t>(1));
+            writer.write(TechEngine::StringId{SCENE_ASSET_LINK_TAG});
+            writer.write(static_cast<std::uint32_t>(payload.size()));
+            writer.writeBytes(payload);
+        } else {
+            writer.write(static_cast<std::uint32_t>(0));
+        }
+    }
+    return bytes;
+}
+
+TEST_CASE("an Entity row past the last entity is Malformed and leaves the Scene empty", "[core][scene]") {
+    ComponentRegistry registry;
+    registerLinkComponents(registry);
+    Scene loaded(registry);
+    SceneAsset asset;
+    std::vector<std::byte> bytes;
+
+    SECTION("the row one past the last entity") {
+        bytes = writeOneLinkRow(2, 2);
+    }
+
+    SECTION("a row far past the last entity") {
+        bytes = writeOneLinkRow(2, 100);
+    }
+
+    REQUIRE(asset.read(bytes, loaded) == ReadError::Malformed);
+    REQUIRE(loaded.getRoots().empty());
+    REQUIRE(asset.id == ResourceId{});
+}
+
+TEST_CASE("a hand-written null row reads back as an empty Entity", "[core][scene]") {
+    ComponentRegistry registry;
+    registerLinkComponents(registry);
+    Scene loaded(registry);
+    SceneAsset asset;
+    const std::vector<std::byte> bytes = writeOneLinkRow(2, SCENE_ASSET_NO_PARENT);
+
+    const std::error_code readError = asset.read(bytes, loaded);
+
+    REQUIRE(!readError);
+    const std::vector<Entity> roots = loaded.getRoots();
+    REQUIRE(roots.size() == 2);
+    const auto linked = std::ranges::find_if(roots, [&loaded](const Entity entity) {
+        return loaded.hasComponent<SceneAssetLink>(entity);
+    });
+    REQUIRE(linked != roots.end());
+    CHECK(loaded.getComponent<SceneAssetLink>(*linked).target == Entity{});
+}
+
+TEST_CASE("every truncation of a scene asset with reference fields fails soft and leaves the Scene empty", "[core][scene]") {
+    ComponentRegistry registry;
+    registerLinkComponents(registry);
+    const std::vector<std::byte> bytes = writeLinkedSmallHierarchy(registry);
+    REQUIRE(!bytes.empty());
+
+    for (std::size_t length = 0; length < bytes.size(); length++) {
+        INFO("truncated to " << length << " of " << bytes.size() << " bytes");
+        Scene loaded(registry);
+        SceneAsset asset;
+        const std::error_code readError = asset.read(std::span<const std::byte>{bytes}.first(length), loaded);
+
+        REQUIRE(readError == ReadError::Truncated);
+        REQUIRE(loaded.getRoots().empty());
+    }
 }

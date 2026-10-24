@@ -114,6 +114,16 @@ namespace TechEngine {
         out = StringId::fromValue(raw);
     }
 
+    void Reader::read(Entity& out) {
+        std::uint32_t row = 0;
+        read(row);
+        if (!ok()) {
+            return;
+        }
+
+        out = Entity{row, 0};
+    }
+
     void Reader::readBytes(const std::span<std::byte> out) {
         takeRaw(out.data(), out.size());
     }

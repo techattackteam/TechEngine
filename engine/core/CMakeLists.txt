@@ -21,6 +21,8 @@ techengine_module(core
           src/scene/EntitySlots.cpp
           src/scene/Scene.cpp
           src/scene/SceneAsset.cpp
+          src/scene/SceneAssetRowReader.cpp
+          src/scene/SceneAssetRowWriter.cpp
           src/scene/SceneCommandBuffer.cpp
           src/scene/Transform.cpp
           src/serialization/ReadError.cpp
@@ -46,6 +48,7 @@ techengine_module(core
           include/TechEngine/core/jobs/JobSystem.hpp
           include/TechEngine/core/jobs/ThreadRegistration.hpp
           include/TechEngine/core/mesh/Mesh.hpp
+          include/TechEngine/core/resources/AssetRef.hpp
           include/TechEngine/core/resources/BootRecord.hpp
           include/TechEngine/core/resources/PackFormat.hpp
           include/TechEngine/core/resources/PackReader.hpp
@@ -68,6 +71,7 @@ techengine_module(core
           include/TechEngine/core/serialization/BlobHeader.hpp
           include/TechEngine/core/serialization/ReadError.hpp
           include/TechEngine/core/serialization/Reader.hpp
+          include/TechEngine/core/serialization/ReferenceVisitor.hpp
           include/TechEngine/core/serialization/Visit.hpp
           include/TechEngine/core/serialization/Writer.hpp
           include/TechEngine/core/systems/EventHandler.hpp
@@ -84,6 +88,9 @@ techengine_module(core
           src/scene/Archetype.hpp
           src/scene/ArchetypeStorage.hpp
           src/scene/EntitySlots.hpp
+          src/scene/SceneAssetEntity.hpp
+          src/scene/SceneAssetRowReader.hpp
+          src/scene/SceneAssetRowWriter.hpp
   DEPS    base platform
   LIBS    Jolt                             # authoritative physics (ADR-006 §1)
           Threads::Threads                 # JobSystem's workers; PUBLIC because the header has std::thread
@@ -115,6 +122,7 @@ if(TE_BUILD_TESTS)
           tests/scene/SceneEventTests.cpp
           tests/scene/TransformTests.cpp
           tests/serialization/ReadErrorTests.cpp
+          tests/serialization/ReferenceVisitorTests.cpp
           tests/serialization/VisitTests.cpp
           tests/serialization/WriterReaderTests.cpp
           tests/systems/InputDeliveryTests.cpp
