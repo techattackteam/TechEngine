@@ -24,7 +24,7 @@ namespace TechEngine {
         void write(std::vector<std::byte>& out) const;
 
         std::error_code read(std::span<const std::byte> bytes);
-    };
 
-    std::error_code loadMesh(std::span<const std::byte> bytes, void* payload, std::vector<ResourceId>& dependencies);
+        static std::error_code loadPayload(std::span<const std::byte> bytes, void* payload, std::vector<ResourceId>& dependencies);
+    };
 }

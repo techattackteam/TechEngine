@@ -383,7 +383,7 @@ public:
 
     SceneLoadHarness() {
         cache.setSource(source);
-        cache.registerLoader<SceneBytes>(TechEngine::SCENE_KIND, TechEngine::SCENE_TYPE_TAG, &TechEngine::loadSceneBytes);
+        cache.registerLoader<SceneBytes>(TechEngine::SCENE_KIND, TechEngine::SCENE_TYPE_TAG, &SceneBytes::loadPayload);
     }
 
     std::uint32_t acquireCount(const ResourceHandle<SceneBytes> handle) const {
@@ -425,7 +425,7 @@ TEST_CASE("the scene loader keeps the bytes as its payload and names no dependen
     SceneBytes payload;
     std::vector<ResourceId> dependencies;
 
-    REQUIRE(TechEngine::loadSceneBytes(bytes, &payload, dependencies) == std::error_code{});
+    REQUIRE(SceneBytes::loadPayload(bytes, &payload, dependencies) == std::error_code{});
 
     REQUIRE(payload.bytes == bytes);
     REQUIRE(dependencies.empty());

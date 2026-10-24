@@ -55,7 +55,7 @@ namespace TechEngine {
         return {};
     }
 
-    std::error_code loadMesh(const std::span<const std::byte> bytes, void* payload, std::vector<ResourceId>& dependencies) {
+    std::error_code Mesh::loadPayload(const std::span<const std::byte> bytes, void* payload, std::vector<ResourceId>& dependencies) {
         Mesh* mesh = static_cast<Mesh*>(payload);
         dependencies.clear();
         return mesh->read(bytes);

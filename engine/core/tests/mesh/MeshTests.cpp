@@ -90,7 +90,7 @@ public:
 
     MeshLoadHarness() {
         cache.setSource(source);
-        cache.registerLoader<Mesh>(TechEngine::MESH_KIND, TechEngine::MESH_TYPE_TAG, &TechEngine::loadMesh);
+        cache.registerLoader<Mesh>(TechEngine::MESH_KIND, TechEngine::MESH_TYPE_TAG, &Mesh::loadPayload);
     }
 };
 
@@ -169,7 +169,7 @@ TEST_CASE("the mesh loader decodes its bytes into the payload and names no depen
     Mesh payload;
     std::vector<ResourceId> dependencies{ResourceId{0x6D65736800000003}};
 
-    REQUIRE(TechEngine::loadMesh(writeMesh(makeTriangle()), &payload, dependencies) == std::error_code{});
+    REQUIRE(Mesh::loadPayload(writeMesh(makeTriangle()), &payload, dependencies) == std::error_code{});
 
     checkTriangle(payload);
     CHECK(dependencies.empty());
