@@ -107,6 +107,33 @@ namespace TechEngine {
         return entry->payload.get();
     }
 
+    void* ResourceCache::resolvePayload(const ResourceSlotId slot, const StringId typeTag) {
+        ResourceEntry* entry = m_slots->find(slot);
+        if (entry == nullptr || entry->state != ResourceState::Ready) {
+            return nullptr;
+        }
+
+        TE_CHECK(entry->typeTag == typeTag, "Resource {0:#018x} is resolved as {1}, but it was loaded as {2}", entry->id.value(), typeTag, entry->typeTag);
+        return entry->payload.get();
+    }
+
+    std::error_code ResourceCache::addEntryDependency(const ResourceSlotId holder, const ResourceId dependency) {
+        ResourceEntry* entry = m_slots->find(holder);
+        TE_CHECK(entry != nullptr, "A dependency is added to a resource slot that no longer exists");
+        TE_CHECK(entry->state == ResourceState::Ready, "Resource {0:#018x} gets a dependency before it is Ready", entry->id.value());
+        ResourceSlotId dependencySlot;
+        const std::error_code dependencyError = requestEntry(dependency, StringId{}, dependencySlot);
+        if (dependencyError) {
+            return dependencyError;
+        }
+        if (reaches(dependencySlot, holder)) {
+            releaseEntry(dependencySlot);
+            return ReadError::CyclicReference;
+        }
+        entry->dependencies.push_back(dependencySlot);
+        return {};
+    }
+
     bool ResourceCache::entryState(const ResourceSlotId slot, ResourceState& out) const {
         const ResourceEntry* entry = m_slots->find(slot);
         if (entry == nullptr) {
@@ -191,20 +218,12 @@ namespace TechEngine {
 
         entry->state = ResourceState::Ready;
         for (const ResourceId dependency: completion.dependencies) {
-            ResourceSlotId dependencySlot;
-            const std::error_code dependencyError = requestEntry(dependency, StringId{}, dependencySlot);
+            const std::error_code dependencyError = addEntryDependency(completion.slot, dependency);
             if (dependencyError) {
                 entry->state = ResourceState::Failed;
                 entry->error = dependencyError;
                 return dependencyError;
             }
-            if (reaches(dependencySlot, completion.slot)) {
-                releaseEntry(dependencySlot);
-                entry->state = ResourceState::Failed;
-                entry->error = ReadError::CyclicReference;
-                return entry->error;
-            }
-            entry->dependencies.push_back(dependencySlot);
         }
 
         return {};

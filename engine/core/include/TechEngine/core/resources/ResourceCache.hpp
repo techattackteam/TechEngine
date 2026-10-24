@@ -13,6 +13,7 @@
 #include <span>
 #include <system_error>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace TechEngine {
@@ -117,6 +118,22 @@ namespace TechEngine {
             return entryError(handle.slot(), out);
         }
 
+        template<typename T>
+        std::error_code addDependency(const ResourceHandle<T> holder, const ResourceId dependency) {
+            return addEntryDependency(holder.slot(), dependency);
+        }
+
+        template<typename T>
+        bool takePayload(const ResourceHandle<T> handle, T& out) {
+            T* payload = static_cast<T*>(resolvePayload(handle.slot(), resourceTypeTag<T>()));
+            if (payload == nullptr) {
+                return false;
+            }
+            out = std::move(*payload);
+            *payload = T{};
+            return true;
+        }
+
         void submitLoads();
 
         std::error_code removeCompletions();
@@ -145,6 +162,10 @@ namespace TechEngine {
         void releaseEntry(ResourceSlotId slot);
 
         const void* resolvePayload(ResourceSlotId slot, StringId typeTag) const;
+
+        void* resolvePayload(ResourceSlotId slot, StringId typeTag);
+
+        std::error_code addEntryDependency(ResourceSlotId holder, ResourceId dependency);
 
         bool entryState(ResourceSlotId slot, ResourceState& out) const;
 
