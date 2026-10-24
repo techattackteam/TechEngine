@@ -9,6 +9,7 @@ techengine_module(core
           src/jobs/DedicatedThreadState.cpp
           src/jobs/JobSystem.cpp
           src/jobs/ThreadRegistration.cpp
+          src/mesh/Mesh.cpp
           src/resources/BootRecord.cpp
           src/resources/PackReader.cpp
           src/resources/PackWriter.cpp
@@ -44,6 +45,7 @@ techengine_module(core
           include/TechEngine/core/jobs/DedicatedThreadContext.hpp
           include/TechEngine/core/jobs/JobSystem.hpp
           include/TechEngine/core/jobs/ThreadRegistration.hpp
+          include/TechEngine/core/mesh/Mesh.hpp
           include/TechEngine/core/resources/BootRecord.hpp
           include/TechEngine/core/resources/PackFormat.hpp
           include/TechEngine/core/resources/PackReader.hpp
@@ -98,6 +100,7 @@ if(TE_BUILD_TESTS)
           tests/events/EventStreamManagerTests.cpp
           tests/jobs/DedicatedThreadTests.cpp
           tests/jobs/JobSystemTests.cpp
+          tests/mesh/MeshTests.cpp
           tests/resources/BootRecordTests.cpp
           tests/resources/PackTests.cpp
           tests/resources/ResourceCacheTests.cpp
