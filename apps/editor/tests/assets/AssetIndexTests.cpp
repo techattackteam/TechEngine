@@ -1,3 +1,4 @@
+#include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/resources/Side.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
@@ -28,6 +29,8 @@ using TechEngine::BlobKind;
 using TechEngine::DuplicateAsset;
 using TechEngine::FileAccess;
 using TechEngine::FileError;
+using TechEngine::MESH_KIND;
+using TechEngine::MESH_TYPE_TAG;
 using TechEngine::MountTable;
 using TechEngine::ResourceId;
 using TechEngine::SCENE_KIND;
@@ -44,6 +47,7 @@ static constexpr ResourceId CLIENT_SCENE_ID{0x2000000000000002};
 static constexpr ResourceId SERVER_SCENE_ID{0x3000000000000003};
 static constexpr ResourceId NESTED_SCENE_ID{0x4000000000000004};
 static constexpr ResourceId DUPLICATED_ID{0x5000000000000005};
+static constexpr ResourceId COMMON_MESH_ID{0x7100000000000071};
 
 class IndexScratch {
 public:
@@ -105,6 +109,21 @@ TEST_CASE("build records each asset's type tag, path and side on all three sides
     REQUIRE(index.find(SERVER_SCENE_ID, server));
     CHECK(server.side == Side::Server);
     CHECK(server.path == "project://assets/server/arena.tescene");
+}
+
+TEST_CASE("build records a mesh under the mesh type tag", "[editor][assets]") {
+    const IndexScratch env{"assetIndexMesh"};
+    env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
+    writeBytes(env.scratch(), "assets/common/triangle.temesh", assetBytes(MESH_KIND, COMMON_MESH_ID, "mesh payload"));
+
+    const AssetIndex index = env.buildIndex();
+
+    CHECK(index.getRecords().size() == 2);
+    AssetRecord mesh;
+    REQUIRE(index.find(COMMON_MESH_ID, mesh));
+    CHECK(mesh.typeTag == MESH_TYPE_TAG);
+    CHECK(mesh.side == Side::Common);
+    CHECK(mesh.path == "project://assets/common/triangle.temesh");
 }
 
 TEST_CASE("build reads assets in subfolders of a side", "[editor][assets]") {
