@@ -1,7 +1,10 @@
+#include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/SimulationContext.hpp>
 #include <TechEngine/core/resources/BootRecord.hpp>
 #include <TechEngine/core/resources/PackWriter.hpp>
+#include <TechEngine/core/resources/ResourceCache.hpp>
+#include <TechEngine/core/resources/ResourceHandle.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/resources/Side.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
@@ -24,13 +27,16 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <format>
 #include <numeric>
 #include <span>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <system_error>
 #include <typeinfo>
@@ -253,6 +259,19 @@ namespace {
             return m_files;
         }
 
+        const TechEngine::ResourceCache& resources() const {
+            return m_resources;
+        }
+
+        TechEngine::ResourceHandle<TechEngine::SceneBytes> sceneHandle() const {
+            return m_sceneHandle;
+        }
+
+        void shutdownSimulation() {
+            simulationShutdown();
+            m_resources.shutdown();
+        }
+
         std::uint64_t advanceSteps(double fixedSteps) {
             const std::uint64_t before = m_simulationThread.simulationContext().tick;
             m_simulationThread.advance(fixedSteps * TechEngine::SimulationSettings::FIXED_DELTA_TIME, [this](const TechEngine::SimulationContext& simulation) {
@@ -410,6 +429,41 @@ static void writeClientExport(const ScratchDirectory& scratch, const TechEngine:
     const bool sceneInCommon = sceneSide == TechEngine::Side::Common;
     writePack(scratch, "common.tepack", sceneInCommon ? std::vector{sceneEntry} : std::vector<TechEngine::PackInput>{}, bootRecord);
     writePack(scratch, "client.tepack", sceneInCommon ? std::vector<TechEngine::PackInput>{} : std::vector{sceneEntry}, {});
+}
+
+static std::vector<std::string> g_runtimeLogMessages;
+
+static void captureRuntimeLog(const TechEngine::LogRecord& record) {
+    g_runtimeLogMessages.emplace_back(record.message);
+}
+
+class RuntimeLogCaptureGuard {
+private:
+    TechEngine::Level m_previousLevel;
+
+public:
+    RuntimeLogCaptureGuard() : m_previousLevel(TechEngine::minLevel()) {
+        g_runtimeLogMessages.clear();
+        TechEngine::setMinLevel(TechEngine::Level::Trace);
+        (void)TechEngine::addLogSink(&captureRuntimeLog);
+    }
+
+    ~RuntimeLogCaptureGuard() {
+        (void)TechEngine::removeLogSink(&captureRuntimeLog);
+        TechEngine::setMinLevel(m_previousLevel);
+        g_runtimeLogMessages.clear();
+    }
+
+    RuntimeLogCaptureGuard(const RuntimeLogCaptureGuard&) = delete;
+
+    RuntimeLogCaptureGuard& operator=(const RuntimeLogCaptureGuard&) = delete;
+};
+
+static bool runtimeLogNames(const TechEngine::ResourceId id) {
+    const std::string idText = std::format("{:#018x}", id.value());
+    return std::ranges::any_of(g_runtimeLogMessages, [&idText](const std::string& message) {
+        return message.find(idText) != std::string::npos;
+    });
 }
 
 static void prepareStartupLoad(RuntimeProbe& runtime) {
@@ -619,6 +673,42 @@ TEST_CASE("the startup load reads a startup scene that ships in the client pack"
     checkStartupScene(runtime.scene());
 }
 
+TEST_CASE("the startup load holds the startup scene as one Ready cache entry", "[runtime][load]") {
+    const ScratchDirectory scratch{"runtimeLoadHoldsScene"};
+    const std::vector<std::byte> scene = startupSceneBytes();
+    writeClientExport(scratch, TechEngine::Side::Common, scene);
+    RuntimeProbe runtime{scratch.root()};
+    prepareStartupLoad(runtime);
+
+    REQUIRE(runtime.startupLoad() == std::error_code{});
+
+    const TechEngine::ResourceHandle<TechEngine::SceneBytes> handle = runtime.sceneHandle();
+    REQUIRE(handle.valid());
+    TechEngine::ResourceState state = TechEngine::ResourceState::Pending;
+    REQUIRE(runtime.resources().getState(handle, state));
+    REQUIRE(state == TechEngine::ResourceState::Ready);
+    std::uint32_t acquires = 0;
+    REQUIRE(runtime.resources().getAcquireCount(handle, acquires));
+    REQUIRE(acquires == 1);
+    checkStartupScene(runtime.scene());
+}
+
+TEST_CASE("simulation shutdown releases the startup scene, so the cache's shutdown log names nothing", "[runtime][load]") {
+    const RuntimeLogCaptureGuard logs;
+    const ScratchDirectory scratch{"runtimeShutdownReleasesScene"};
+    const std::vector<std::byte> scene = startupSceneBytes();
+    writeClientExport(scratch, TechEngine::Side::Common, scene);
+    RuntimeProbe runtime{scratch.root()};
+    prepareStartupLoad(runtime);
+    REQUIRE(runtime.startupLoad() == std::error_code{});
+    REQUIRE(runtime.sceneHandle().valid());
+    g_runtimeLogMessages.clear();
+
+    runtime.shutdownSimulation();
+
+    REQUIRE_FALSE(runtimeLogNames(STARTUP_SCENE_ID));
+}
+
 TEST_CASE("a missing common pack ends the startup load with NotFound and loads nothing", "[runtime][load]") {
     const ScratchDirectory scratch{"runtimeMissingCommon"};
     scratch.makeDirectory("assets");
@@ -719,4 +809,5 @@ TEST_CASE("a startup scene that does not parse ends the startup load with its re
     REQUIRE(runtime.startupLoad() == TechEngine::ReadError::Truncated);
 
     CHECK(runtime.scene().getRoots().empty());
+    CHECK_FALSE(runtime.sceneHandle().valid());
 }

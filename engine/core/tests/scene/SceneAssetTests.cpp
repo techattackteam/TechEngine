@@ -1,4 +1,9 @@
+#include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/core/assets/AssetSource.hpp>
+#include <TechEngine/core/jobs/JobSystem.hpp>
+#include <TechEngine/core/resources/ResourceCache.hpp>
+#include <TechEngine/core/resources/ResourceHandle.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
@@ -13,19 +18,30 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <format>
 #include <span>
+#include <string>
 #include <system_error>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
 #include <vector>
 
+using TechEngine::AssetAvailability;
 using TechEngine::ComponentRegistry;
 using TechEngine::Entity;
 using TechEngine::ReadError;
+using TechEngine::ResourceCache;
+using TechEngine::ResourceHandle;
 using TechEngine::ResourceId;
+using TechEngine::ResourceState;
 using TechEngine::Scene;
 using TechEngine::SceneAsset;
+using TechEngine::SceneBytes;
 using TechEngine::Transform;
 using TechEngine::TransformValues;
 using TechEngine::Vec3;
@@ -327,4 +343,275 @@ TEST_CASE("a scene asset with a broken entity table is Malformed and leaves the 
     REQUIRE(asset.read(bytes, loaded) == ReadError::Malformed);
     REQUIRE(loaded.getRoots().empty());
     REQUIRE(asset.id == ResourceId{});
+}
+
+class SceneLoadSource final : public TechEngine::AssetSource {
+private:
+    std::unordered_map<ResourceId, std::vector<std::byte>> m_assets;
+    std::unordered_set<ResourceId> m_absentForRole;
+
+public:
+    void addAsset(const ResourceId id, std::vector<std::byte> bytes) {
+        m_assets[id] = std::move(bytes);
+    }
+
+    void addAbsentForRole(const ResourceId id) {
+        m_absentForRole.insert(id);
+    }
+
+    AssetAvailability find(const ResourceId id) const override {
+        if (m_assets.contains(id)) {
+            return AssetAvailability::Present;
+        }
+        if (m_absentForRole.contains(id)) {
+            return AssetAvailability::AbsentForRole;
+        }
+        return AssetAvailability::Unknown;
+    }
+
+    std::error_code read(const ResourceId id, std::vector<std::byte>& out) const override {
+        out = m_assets.at(id);
+        return {};
+    }
+};
+
+class SceneLoadHarness {
+public:
+    TechEngine::JobSystem jobs;
+    SceneLoadSource source;
+    ResourceCache cache{jobs};
+
+    SceneLoadHarness() {
+        cache.setSource(source);
+        cache.registerLoader<SceneBytes>(TechEngine::SCENE_KIND, TechEngine::SCENE_TYPE_TAG, &TechEngine::loadSceneBytes);
+    }
+
+    std::uint32_t acquireCount(const ResourceHandle<SceneBytes> handle) const {
+        std::uint32_t out = 0;
+        REQUIRE(cache.getAcquireCount(handle, out));
+        return out;
+    }
+
+    std::uint32_t countAfterRequestingAgain(const ResourceId id) {
+        ResourceHandle<SceneBytes> again;
+        REQUIRE(cache.request(id, again) == std::error_code{});
+        return acquireCount(again);
+    }
+};
+
+static std::vector<std::byte> writeSmallHierarchy(const ResourceId id = SCENE_ASSET_ID) {
+    ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    Scene source(registry);
+    buildSmallHierarchy(source);
+
+    std::vector<std::byte> bytes;
+    SceneAsset{id}.write(source, bytes);
+    return bytes;
+}
+
+static void checkSmallHierarchyShape(const Scene& scene) {
+    const std::vector<Entity> roots = scene.getRoots();
+    REQUIRE(roots.size() == 1);
+    const std::vector<Entity> children = scene.getChildren(roots.front());
+    REQUIRE(children.size() == 3);
+    CHECK(scene.getChildren(children[0]).empty());
+    CHECK(scene.getChildren(children[1]).size() == 1);
+    CHECK(scene.getChildren(children[2]).empty());
+}
+
+TEST_CASE("the scene loader keeps the bytes as its payload and names no dependencies", "[core][scene][resources]") {
+    const std::vector<std::byte> bytes = writeSmallHierarchy();
+    SceneBytes payload;
+    std::vector<ResourceId> dependencies;
+
+    REQUIRE(TechEngine::loadSceneBytes(bytes, &payload, dependencies) == std::error_code{});
+
+    REQUIRE(payload.bytes == bytes);
+    REQUIRE(dependencies.empty());
+}
+
+TEST_CASE("load streams a scene into the live Scene and returns a Ready handle that holds it", "[core][scene][resources]") {
+    SceneLoadHarness harness;
+    harness.source.addAsset(SCENE_ASSET_ID, writeSmallHierarchy());
+    ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    Scene scene(registry);
+    ResourceHandle<SceneBytes> handle;
+
+    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, scene, handle) == std::error_code{});
+
+    REQUIRE(handle.valid());
+    ResourceState state = ResourceState::Pending;
+    REQUIRE(harness.cache.getState(handle, state));
+    REQUIRE(state == ResourceState::Ready);
+    REQUIRE(harness.acquireCount(handle) == 1);
+    checkSmallHierarchyShape(scene);
+}
+
+TEST_CASE("load frees the scene's bytes once they are streamed", "[core][scene][resources]") {
+    SceneLoadHarness harness;
+    harness.source.addAsset(SCENE_ASSET_ID, writeSmallHierarchy());
+    ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    Scene scene(registry);
+    ResourceHandle<SceneBytes> handle;
+
+    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, scene, handle) == std::error_code{});
+
+    const SceneBytes* left = harness.cache.resolve(handle);
+    REQUIRE(left != nullptr);
+    REQUIRE(left->bytes.empty());
+    REQUIRE(left->bytes.capacity() == 0);
+}
+
+TEST_CASE("releasing a loaded scene's handle frees its entry in the next drain", "[core][scene][resources]") {
+    SceneLoadHarness harness;
+    harness.source.addAsset(SCENE_ASSET_ID, writeSmallHierarchy());
+    ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    Scene scene(registry);
+    ResourceHandle<SceneBytes> handle;
+    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, scene, handle) == std::error_code{});
+
+    harness.cache.release(handle);
+    harness.cache.drainFrees();
+
+    ResourceState state = ResourceState::Pending;
+    REQUIRE_FALSE(harness.cache.getState(handle, state));
+}
+
+TEST_CASE("a scene the source does not know fails the load with UnknownResource and holds nothing", "[core][scene][resources]") {
+    SceneLoadHarness harness;
+    ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    Scene scene(registry);
+    ResourceHandle<SceneBytes> handle;
+
+    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, scene, handle) == ReadError::UnknownResource);
+
+    REQUIRE_FALSE(handle.valid());
+    REQUIRE(scene.getRoots().empty());
+}
+
+TEST_CASE("a scene absent for this role fails the load, leaves the Scene empty and holds nothing", "[core][scene][resources]") {
+    SceneLoadHarness harness;
+    harness.source.addAbsentForRole(SCENE_ASSET_ID);
+    ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    Scene scene(registry);
+    ResourceHandle<SceneBytes> handle;
+
+    const std::error_code loadError = SceneAsset{SCENE_ASSET_ID}.load(harness.cache, scene, handle);
+
+    REQUIRE(loadError != std::error_code{});
+    REQUIRE_FALSE(handle.valid());
+    REQUIRE(scene.getRoots().empty());
+    REQUIRE(harness.countAfterRequestingAgain(SCENE_ASSET_ID) == 1);
+}
+
+TEST_CASE("a scene whose bytes do not parse fails the load with its read error and holds nothing", "[core][scene][resources]") {
+    SceneLoadHarness harness;
+    std::vector<std::byte> bytes = writeSmallHierarchy();
+    bytes.resize(bytes.size() - 1);
+    harness.source.addAsset(SCENE_ASSET_ID, std::move(bytes));
+    ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    Scene scene(registry);
+    ResourceHandle<SceneBytes> handle;
+
+    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, scene, handle) == ReadError::Truncated);
+
+    REQUIRE_FALSE(handle.valid());
+    REQUIRE(scene.getRoots().empty());
+    REQUIRE(harness.countAfterRequestingAgain(SCENE_ASSET_ID) == 1);
+}
+
+static constexpr ResourceId SECOND_SCENE_ASSET_ID{0x5EC0FFEE87654321};
+
+static std::vector<std::string> g_sceneLoadLogMessages;
+
+static void captureSceneLoadLog(const TechEngine::LogRecord& record) {
+    g_sceneLoadLogMessages.emplace_back(record.message);
+}
+
+class SceneLoadLogCaptureGuard {
+private:
+    TechEngine::Level m_previousLevel;
+
+public:
+    SceneLoadLogCaptureGuard() : m_previousLevel(TechEngine::minLevel()) {
+        g_sceneLoadLogMessages.clear();
+        TechEngine::setMinLevel(TechEngine::Level::Trace);
+        (void)TechEngine::addLogSink(&captureSceneLoadLog);
+    }
+
+    ~SceneLoadLogCaptureGuard() {
+        (void)TechEngine::removeLogSink(&captureSceneLoadLog);
+        TechEngine::setMinLevel(m_previousLevel);
+        g_sceneLoadLogMessages.clear();
+    }
+
+    SceneLoadLogCaptureGuard(const SceneLoadLogCaptureGuard&) = delete;
+
+    SceneLoadLogCaptureGuard& operator=(const SceneLoadLogCaptureGuard&) = delete;
+};
+
+static bool sceneLoadLogNames(const ResourceId id) {
+    const std::string idText = std::format("{:#018x}", id.value());
+    return std::ranges::any_of(g_sceneLoadLogMessages, [&idText](const std::string& message) {
+        return message.find(idText) != std::string::npos;
+    });
+}
+
+TEST_CASE("a scene released but not yet drained loads again from its source", "[core][scene][resources]") {
+    SceneLoadHarness harness;
+    harness.source.addAsset(SCENE_ASSET_ID, writeSmallHierarchy(SCENE_ASSET_ID));
+    harness.source.addAsset(SECOND_SCENE_ASSET_ID, writeSmallHierarchy(SECOND_SCENE_ASSET_ID));
+    ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    Scene first(registry);
+    Scene second(registry);
+    Scene firstAgain(registry);
+    ResourceHandle<SceneBytes> firstHandle;
+    ResourceHandle<SceneBytes> secondHandle;
+    ResourceHandle<SceneBytes> firstAgainHandle;
+    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, first, firstHandle) == std::error_code{});
+    REQUIRE(SceneAsset{SECOND_SCENE_ASSET_ID}.load(harness.cache, second, secondHandle) == std::error_code{});
+    harness.cache.release(firstHandle);
+
+    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, firstAgain, firstAgainHandle) == std::error_code{});
+
+    REQUIRE(firstAgainHandle.valid());
+    REQUIRE(harness.acquireCount(firstAgainHandle) == 1);
+    checkSmallHierarchyShape(firstAgain);
+    REQUIRE(harness.acquireCount(secondHandle) == 1);
+}
+
+TEST_CASE("loading a scene that is still held warns, returns AlreadyLoaded and leaves the held handle alone", "[core][scene][resources]") {
+    const SceneLoadLogCaptureGuard logs;
+    SceneLoadHarness harness;
+    harness.source.addAsset(SCENE_ASSET_ID, writeSmallHierarchy());
+    ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    Scene first(registry);
+    Scene second(registry);
+    ResourceHandle<SceneBytes> held;
+    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, first, held) == std::error_code{});
+    const ResourceHandle<SceneBytes> original = held;
+    g_sceneLoadLogMessages.clear();
+
+    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, second, held) == ReadError::AlreadyLoaded);
+
+    REQUIRE(sceneLoadLogNames(SCENE_ASSET_ID));
+    REQUIRE(held == original);
+    REQUIRE(harness.acquireCount(held) == 1);
+    REQUIRE(second.getRoots().empty());
+    checkSmallHierarchyShape(first);
+
+    harness.cache.release(held);
+    harness.cache.drainFrees();
+
+    ResourceState state = ResourceState::Pending;
+    REQUIRE_FALSE(harness.cache.getState(held, state));
 }

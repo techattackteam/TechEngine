@@ -1,6 +1,7 @@
 #pragma once
 
 #include <TechEngine/clientapp/ClientApp.hpp>
+#include <TechEngine/core/assets/PackSource.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
 
@@ -12,6 +13,7 @@ namespace TechEngine {
     class RuntimeApp : public ClientApp {
     private:
         std::filesystem::path m_folder;
+        PackSource m_source;
 
     public:
         explicit RuntimeApp(std::filesystem::path folder);
@@ -22,6 +24,8 @@ namespace TechEngine {
         void init() override;
 
         void mountAssets();
+
+        void configureSimulation() override;
 
         std::error_code simulationStartupLoad(Scene& scene) override;
 

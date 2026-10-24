@@ -154,6 +154,8 @@ namespace TechEngine {
     }
 
     void App::simulationShutdown() {
+        m_resources.release(m_sceneHandle);
+        m_sceneHandle = {};
     }
 
     void App::shutdown() {

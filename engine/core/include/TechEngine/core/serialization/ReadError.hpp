@@ -12,6 +12,7 @@ namespace TechEngine {
         Malformed,
         UnknownResource,
         CyclicReference,
+        AlreadyLoaded,
     };
 
     const std::error_category& readErrorCategory();

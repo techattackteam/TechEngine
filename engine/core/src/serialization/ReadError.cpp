@@ -24,6 +24,8 @@ namespace TechEngine {
                         return "no asset source holds this resource id";
                     case ReadError::CyclicReference:
                         return "resource references form a cycle";
+                    case ReadError::AlreadyLoaded:
+                        return "resource is already loaded and held";
                 }
                 return "unknown read error";
             }

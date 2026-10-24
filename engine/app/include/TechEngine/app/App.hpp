@@ -8,6 +8,7 @@
 #include <TechEngine/core/events/EventRegistry.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/resources/ResourceCache.hpp>
+#include <TechEngine/core/resources/ResourceHandle.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/systems/Schedule.hpp>
@@ -28,6 +29,8 @@ namespace TechEngineTests {
 }
 
 namespace TechEngine {
+    struct SceneBytes;
+
     class App {
         friend class SimulationThread;
         friend class TechEngineTests::AppTestAccess;
@@ -52,6 +55,7 @@ namespace TechEngine {
     protected:
         Schedule m_schedule;
         ResourceCache m_resources{m_jobs};
+        ResourceHandle<SceneBytes> m_sceneHandle;
         EngineContext m_engine{m_files, m_jobs, m_clock};
 
     private:
@@ -100,6 +104,7 @@ namespace TechEngine {
 
         virtual void publishSnapshot(const SimulationContext& simulation);
 
+        // An override must call this one, or the scene's entry is still counted at cache shutdown.
         virtual void simulationShutdown();
 
         virtual void shutdown();

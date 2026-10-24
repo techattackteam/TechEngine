@@ -20,7 +20,7 @@ namespace TechEngine {
     static constexpr std::string_view ASSETS_DIRECTORY = "assets://";
     static constexpr std::string_view COMMON_PACK_PATH = "assets://common.tepack";
 
-    RuntimeApp::RuntimeApp(std::filesystem::path folder) : ClientApp(Role::Client, "TechEngine Runtime Demo"), m_folder(std::move(folder)) {
+    RuntimeApp::RuntimeApp(std::filesystem::path folder) : ClientApp(Role::Client, "TechEngine Runtime Demo"), m_folder(std::move(folder)), m_source(m_files) {
     }
 
     void RuntimeApp::init() {
@@ -30,6 +30,11 @@ namespace TechEngine {
 
     void RuntimeApp::mountAssets() {
         m_mounts.mount("assets", m_folder / "assets");
+    }
+
+    void RuntimeApp::configureSimulation() {
+        ClientApp::configureSimulation();
+        m_resources.registerLoader<SceneBytes>(SCENE_KIND, SCENE_TYPE_TAG, &loadSceneBytes);
     }
 
     std::error_code RuntimeApp::simulationStartupLoad(Scene& scene) {
@@ -61,28 +66,23 @@ namespace TechEngine {
             return ReadError::Malformed;
         }
 
-        PackSource source(m_files);
-        const std::error_code sourceError = source.open(record, Role::Client, ASSETS_DIRECTORY);
+        m_resources.setSource(m_source);
+        const std::error_code sourceError = m_source.open(record, Role::Client, ASSETS_DIRECTORY);
         if (sourceError) {
             TE_LOGGER_ERROR("Failed to open the client's packs under {0}: {1}", ASSETS_DIRECTORY, sourceError.message());
             return sourceError;
         }
-        if (source.find(record.startupScene) != AssetAvailability::Present) {
+        if (m_source.find(record.startupScene) != AssetAvailability::Present) {
             TE_LOGGER_ERROR("The client's packs do not hold the startup scene {0:#018x}", record.startupScene.value());
             return ReadError::Malformed;
         }
 
-        std::vector<std::byte> sceneBytes;
-        const std::error_code sceneReadError = source.read(record.startupScene, sceneBytes);
-        if (sceneReadError) {
-            return sceneReadError;
+        const std::error_code loadError = SceneAsset{record.startupScene}.load(m_resources, scene, m_sceneHandle);
+        if (loadError) {
+            TE_LOGGER_ERROR("The startup scene {0:#018x} does not load: {1}", record.startupScene.value(), loadError.message());
+            return loadError;
         }
-        SceneAsset sceneAsset;
-        const std::error_code sceneParseError = sceneAsset.read(sceneBytes, scene);
-        if (sceneParseError) {
-            TE_LOGGER_ERROR("The startup scene {0:#018x} does not parse: {1}", record.startupScene.value(), sceneParseError.message());
-            return sceneParseError;
-        }
+
         const std::vector<Entity> roots = scene.getRoots();
         TE_LOGGER_INFO("Loaded the startup scene {0:#018x} with {1} root entities", record.startupScene.value(), roots.size());
         for (const Entity root: roots) {

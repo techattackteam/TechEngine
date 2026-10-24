@@ -2,6 +2,7 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/resources/ResourceCache.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/ComponentStorage.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
@@ -170,6 +171,62 @@ namespace TechEngine {
 
         scene.propagateTransforms();
         id = ResourceId{idValue};
+        return {};
+    }
+
+    std::error_code SceneAsset::load(ResourceCache& cache, Scene& scene, ResourceHandle<SceneBytes>& out) const {
+        // A released scene still waiting for a drain has already given up its bytes, so it must
+        // be freed before the request, or the request revives it with nothing to stream.
+        cache.drainFrees();
+
+        ResourceHandle<SceneBytes> handle;
+        const std::error_code requestError = cache.request(id, handle);
+        if (requestError) {
+            return requestError;
+        }
+
+        std::uint32_t acquires = 0;
+        const bool counted = cache.getAcquireCount(handle, acquires);
+        if (counted && acquires > 1) {
+            cache.release(handle);
+            TE_LOGGER_WARN("Scene {0:#018x} is already loaded and held, so it is not loaded again", id.value());
+            return ReadError::AlreadyLoaded;
+        }
+
+        const std::error_code phaseError = cache.runLoadingPhase();
+        if (phaseError) {
+            cache.release(handle);
+            return phaseError;
+        }
+
+        ResourceState state = ResourceState::Pending;
+        const bool found = cache.getState(handle, state);
+        if (!found || state != ResourceState::Ready) {
+            cache.release(handle);
+            return ReadError::Malformed;
+        }
+
+        SceneBytes bytes;
+        const bool taken = cache.takePayload(handle, bytes);
+        if (!taken) {
+            cache.release(handle);
+            return ReadError::Malformed;
+        }
+
+        SceneAsset parsed;
+        const std::error_code readError = parsed.read(bytes.bytes, scene);
+        if (readError) {
+            cache.release(handle);
+            return readError;
+        }
+        out = handle;
+        return {};
+    }
+
+    std::error_code loadSceneBytes(const std::span<const std::byte> bytes, void* payload, std::vector<ResourceId>& dependencies) {
+        SceneBytes* sceneBytes = static_cast<SceneBytes*>(payload);
+        sceneBytes->bytes.assign(bytes.begin(), bytes.end());
+        dependencies.clear();
         return {};
     }
 }
