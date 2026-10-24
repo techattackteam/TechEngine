@@ -223,7 +223,7 @@ namespace TechEngine {
         return {};
     }
 
-    std::error_code loadSceneBytes(const std::span<const std::byte> bytes, void* payload, std::vector<ResourceId>& dependencies) {
+    std::error_code SceneBytes::loadPayload(const std::span<const std::byte> bytes, void* payload, std::vector<ResourceId>& dependencies) {
         SceneBytes* sceneBytes = static_cast<SceneBytes*>(payload);
         sceneBytes->bytes.assign(bytes.begin(), bytes.end());
         dependencies.clear();

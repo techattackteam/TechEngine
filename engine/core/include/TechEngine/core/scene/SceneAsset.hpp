@@ -22,9 +22,9 @@ namespace TechEngine {
     // bare byte vector here would claim that tag for every resource that keeps raw bytes.
     struct SceneBytes {
         std::vector<std::byte> bytes;
-    };
 
-    std::error_code loadSceneBytes(std::span<const std::byte> bytes, void* payload, std::vector<ResourceId>& dependencies);
+        static std::error_code loadPayload(std::span<const std::byte> bytes, void* payload, std::vector<ResourceId>& dependencies);
+    };
 
     struct SceneAsset {
         ResourceId id;

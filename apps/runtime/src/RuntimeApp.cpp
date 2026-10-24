@@ -34,7 +34,7 @@ namespace TechEngine {
 
     void RuntimeApp::configureSimulation() {
         ClientApp::configureSimulation();
-        m_resources.registerLoader<SceneBytes>(SCENE_KIND, SCENE_TYPE_TAG, &loadSceneBytes);
+        m_resources.registerLoader<SceneBytes>(SCENE_KIND, SCENE_TYPE_TAG, &SceneBytes::loadPayload);
     }
 
     std::error_code RuntimeApp::simulationStartupLoad(Scene& scene) {
