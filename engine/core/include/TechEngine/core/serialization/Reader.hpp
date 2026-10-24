@@ -1,8 +1,11 @@
 #pragma once
 
 #include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/resources/AssetRef.hpp>
+#include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
 #include <TechEngine/core/serialization/ReadError.hpp>
+#include <TechEngine/core/serialization/ReferenceVisitor.hpp>
 #include <TechEngine/core/serialization/Visit.hpp>
 
 #include <cstddef>
@@ -55,6 +58,20 @@ namespace TechEngine {
 
         void read(StringId& out);
 
+        // Reads a row into Entity{row, 0}, which names no live entity until the scene reader's
+        // second pass maps it.
+        void read(Entity& out);
+
+        template<typename T>
+        void read(AssetRef<T>& out) {
+            std::uint64_t id = 0;
+            read(id);
+            if (!ok()) {
+                return;
+            }
+            out = AssetRef<T>{ResourceId{id}, {}};
+        }
+
         void readBytes(std::span<std::byte> out);
 
         template<typename T>
@@ -88,6 +105,7 @@ namespace TechEngine {
 
         template<typename T>
         void field(std::vector<T>& values) {
+            static_assert(!ReferenceField<T>, "A vector of Entity or AssetRef would bulk-copy live handles past the reference walk; hold single fields instead.");
             readSpan(values);
         }
 

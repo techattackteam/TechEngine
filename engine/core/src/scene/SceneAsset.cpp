@@ -13,31 +13,37 @@
 #include <TechEngine/core/serialization/Reader.hpp>
 #include <TechEngine/core/serialization/Writer.hpp>
 
+#include <scene/SceneAssetEntity.hpp>
+#include <scene/SceneAssetRowReader.hpp>
+#include <scene/SceneAssetRowWriter.hpp>
+
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <span>
 #include <system_error>
+#include <unordered_map>
 #include <vector>
 
 namespace TechEngine {
     static constexpr std::uint32_t NO_PARENT = 0xFFFFFFFF;
 
-    struct SceneAssetEntity {
-        Entity entity;
-        std::size_t childCount = 0;
-    };
-
     void SceneAsset::write(const Scene& scene, std::vector<std::byte>& out) const {
         TE_PROFILER_FUNCTION();
         std::vector<Entity> entities = scene.getRoots();
         std::vector<std::uint32_t> parents(entities.size(), NO_PARENT);
+
+        std::unordered_map<Entity, std::uint32_t> rows;
+        SceneAssetRowWriter rowWriter{rows, id};
+
         for (std::size_t index = 0; index < entities.size(); index++) {
             const std::vector<Entity> children = scene.getChildren(entities[index]);
             for (const Entity child: children) {
                 entities.push_back(child);
                 parents.push_back(static_cast<std::uint32_t>(index));
             }
+
+            rows[entities[index]] = static_cast<std::uint32_t>(index);
         }
         TE_CHECK(entities.size() < NO_PARENT, "A scene asset holds at most {0} entities, the Scene has {1}", NO_PARENT - 1, entities.size());
 
@@ -48,6 +54,7 @@ namespace TechEngine {
 
         std::vector<std::byte> blocks;
         std::vector<std::byte> payload;
+        std::vector<std::unique_ptr<IComponentStorage>> scratchValues(scene.m_registry->typeCount());
         for (std::size_t index = 0; index < entities.size(); index++) {
             blocks.clear();
             Writer blockWriter{blocks};
@@ -61,9 +68,21 @@ namespace TechEngine {
                     continue;
                 }
 
+                const void* written = component;
+                if (record.visitReferences != nullptr) {
+                    std::unique_ptr<IComponentStorage>& scratch = scratchValues[record.denseId.value()];
+                    if (scratch == nullptr) {
+                        scratch = record.createStorage();
+                        scratch->appendDefault();
+                    }
+                    scratch->setCopyFromRaw(0, component);
+                    record.visitReferences(rowWriter, scratch->element(0));
+                    written = scratch->element(0);
+                }
+
                 payload.clear();
                 Writer payloadWriter{payload};
-                record.writePayload(payloadWriter, component);
+                record.writePayload(payloadWriter, written);
                 TE_CHECK(payload.size() <= BLOB_MAX_COUNT, "A {0} payload of {1} bytes exceeds the u32 block length", record.tag, payload.size());
 
                 blockWriter.write(record.id.stringId());
@@ -166,6 +185,23 @@ namespace TechEngine {
             }
         }
         if (reader.remaining() != 0) {
+            return fail(ReadError::Malformed);
+        }
+
+        SceneAssetRowReader rowReader{entities};
+        for (const SceneAssetEntity& loaded: entities) {
+            for (const ComponentTypeRecord& record: registry.records()) {
+                if (record.visitReferences == nullptr) {
+                    continue;
+                }
+                void* component = scene.componentRaw(loaded.entity, record.id);
+                if (component == nullptr) {
+                    continue;
+                }
+                record.visitReferences(rowReader, component);
+            }
+        }
+        if (rowReader.isMalformed()) {
             return fail(ReadError::Malformed);
         }
 

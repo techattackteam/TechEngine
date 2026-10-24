@@ -1,4 +1,8 @@
 #include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/resources/AssetRef.hpp>
+#include <TechEngine/core/resources/ResourceHandle.hpp>
+#include <TechEngine/core/resources/ResourceId.hpp>
+#include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
 #include <TechEngine/core/serialization/Reader.hpp>
 #include <TechEngine/core/serialization/Writer.hpp>
@@ -11,10 +15,14 @@
 #include <string>
 #include <vector>
 
+using TechEngine::AssetRef;
 using TechEngine::BlobHeader;
 using TechEngine::BlobKind;
+using TechEngine::Entity;
 using TechEngine::Reader;
 using TechEngine::ReadError;
+using TechEngine::ResourceHandle;
+using TechEngine::ResourceId;
 using TechEngine::StringId;
 using TechEngine::Writer;
 
@@ -27,6 +35,8 @@ namespace {
 
         bool operator==(const Pixel&) const = default;
     };
+
+    struct ReferencedAsset {};
 }
 
 static constexpr BlobKind TEST_KIND = {'T' | ('E' << 8) | ('S' << 16) | ('T' << 24), 3};
@@ -331,4 +341,100 @@ TEST_CASE("a rejected header leaves the output untouched and stays failed", "[co
     SECTION("rejected for its version") {
         checkRejectedHeaderChangesNothing(BlobKind{OTHER_KIND.magic, 2}, ReadError::BadVersion);
     }
+}
+
+TEST_CASE("an Entity writes its index as a u32 and reads back as Entity{index, 0}", "[core][serialization]") {
+    std::vector<std::byte> buffer;
+    Writer writer{buffer};
+    writer.write(Entity{5, 3});
+
+    std::vector<std::byte> indexOnly;
+    Writer indexWriter{indexOnly};
+    indexWriter.write(static_cast<std::uint32_t>(5));
+    REQUIRE(buffer == indexOnly);
+
+    Reader reader{buffer};
+    Entity restored{9, 9};
+    reader.read(restored);
+
+    REQUIRE(reader.ok());
+    CHECK(restored == Entity{5, 0});
+    CHECK(reader.remaining() == 0);
+}
+
+TEST_CASE("an empty Entity round-trips as empty", "[core][serialization]") {
+    std::vector<std::byte> buffer;
+    Writer writer{buffer};
+    writer.write(Entity{});
+
+    Reader reader{buffer};
+    Entity restored{9, 9};
+    reader.read(restored);
+
+    REQUIRE(reader.ok());
+    CHECK(restored == Entity{});
+    CHECK_FALSE(restored.valid());
+}
+
+TEST_CASE("a truncated Entity fails soft and leaves the output untouched", "[core][serialization]") {
+    std::vector<std::byte> buffer;
+    Writer writer{buffer};
+    writer.write(Entity{5, 0});
+    buffer.resize(buffer.size() - 1);
+
+    Reader reader{buffer};
+    Entity restored{9, 9};
+    reader.read(restored);
+
+    CHECK(reader.error() == ReadError::Truncated);
+    CHECK(restored == Entity{9, 9});
+}
+
+TEST_CASE("an AssetRef writes only its id and reads back with an empty handle", "[core][serialization]") {
+    const AssetRef<ReferencedAsset> written{ResourceId{0x1122334455667788}, ResourceHandle<ReferencedAsset>{4, 2}};
+    std::vector<std::byte> buffer;
+    Writer writer{buffer};
+    writer.write(written);
+
+    std::vector<std::byte> idOnly;
+    Writer idWriter{idOnly};
+    idWriter.write(static_cast<std::uint64_t>(0x1122334455667788));
+    REQUIRE(buffer == idOnly);
+
+    Reader reader{buffer};
+    AssetRef<ReferencedAsset> restored{ResourceId{1}, ResourceHandle<ReferencedAsset>{7, 7}};
+    reader.read(restored);
+
+    REQUIRE(reader.ok());
+    CHECK(restored.id == written.id);
+    CHECK_FALSE(restored.handle.valid());
+    CHECK(reader.remaining() == 0);
+}
+
+TEST_CASE("an empty AssetRef round-trips as empty", "[core][serialization]") {
+    std::vector<std::byte> buffer;
+    Writer writer{buffer};
+    writer.write(AssetRef<ReferencedAsset>{});
+
+    Reader reader{buffer};
+    AssetRef<ReferencedAsset> restored{ResourceId{1}, ResourceHandle<ReferencedAsset>{7, 7}};
+    reader.read(restored);
+
+    REQUIRE(reader.ok());
+    CHECK(restored == AssetRef<ReferencedAsset>{});
+}
+
+TEST_CASE("a truncated AssetRef fails soft and leaves the output untouched", "[core][serialization]") {
+    std::vector<std::byte> buffer;
+    Writer writer{buffer};
+    writer.write(AssetRef<ReferencedAsset>{ResourceId{0x1122334455667788}, ResourceHandle<ReferencedAsset>{}});
+    buffer.resize(buffer.size() - 1);
+
+    Reader reader{buffer};
+    const AssetRef<ReferencedAsset> original{ResourceId{1}, ResourceHandle<ReferencedAsset>{7, 7}};
+    AssetRef<ReferencedAsset> restored = original;
+    reader.read(restored);
+
+    CHECK(reader.error() == ReadError::Truncated);
+    CHECK(restored == original);
 }

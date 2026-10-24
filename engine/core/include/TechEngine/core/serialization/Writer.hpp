@@ -2,7 +2,10 @@
 
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/resources/AssetRef.hpp>
+#include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
+#include <TechEngine/core/serialization/ReferenceVisitor.hpp>
 #include <TechEngine/core/serialization/Visit.hpp>
 
 #include <cstddef>
@@ -54,6 +57,15 @@ namespace TechEngine {
 
         void write(StringId value);
 
+        // Writes only the index. A live Entity must first be rewritten to Entity{row, 0} by the
+        // scene writer's reference walk, or its slot index lands on disk as if it were a row.
+        void write(Entity value);
+
+        template<typename T>
+        void write(const AssetRef<T>& value) {
+            write(value.id.value());
+        }
+
         void writeBytes(std::span<const std::byte> bytes);
 
         template<typename T>
@@ -81,6 +93,7 @@ namespace TechEngine {
 
         template<typename T>
         void field(std::vector<T>& values) {
+            static_assert(!ReferenceField<T>, "A vector of Entity or AssetRef would bulk-copy live handles past the reference walk; hold single fields instead.");
             writeSpan(std::span<const T>{values});
         }
 
