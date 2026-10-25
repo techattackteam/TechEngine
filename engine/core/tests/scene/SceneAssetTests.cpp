@@ -1,5 +1,6 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/base/stringid/StringId.hpp>
 #include <TechEngine/core/assets/AssetSource.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/resources/AssetRef.hpp>
@@ -11,6 +12,7 @@
 #include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
+#include <TechEngine/core/serialization/BlobHeader.hpp>
 #include <TechEngine/core/serialization/ReadError.hpp>
 #include <TechEngine/core/serialization/Writer.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
@@ -24,6 +26,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <initializer_list>
 #include <span>
 #include <string>
 #include <string_view>
@@ -621,7 +624,16 @@ TEST_CASE("loading a scene that is still held warns, returns AlreadyLoaded and l
     REQUIRE_FALSE(harness.cache.getState(held, state));
 }
 
-struct SceneAssetLinkedAsset {};
+struct SceneAssetLinkedAsset {
+    static std::error_code loadPayload(std::span<const std::byte>, void*, std::vector<ResourceId>& dependencies) {
+        dependencies.clear();
+        return {};
+    }
+};
+
+static constexpr TechEngine::BlobKind LINKED_ASSET_KIND{0x4B4E4C54, 1};
+
+static constexpr TechEngine::StringId LINKED_ASSET_TYPE_TAG{"Tests.SceneAssetLinkedAsset"};
 
 struct SceneAssetLink {
     std::uint32_t value = 0;
@@ -895,4 +907,217 @@ TEST_CASE("every truncation of a scene asset with reference fields fails soft an
         REQUIRE(readError == ReadError::Truncated);
         REQUIRE(loaded.getRoots().empty());
     }
+}
+
+static std::vector<std::byte> writeLinkedAsset() {
+    std::vector<std::byte> bytes;
+    TechEngine::Writer writer{bytes};
+    writer.writeHeader(LINKED_ASSET_KIND);
+    return bytes;
+}
+
+static std::vector<std::byte> writeLinkedScene() {
+    ComponentRegistry registry;
+    registerLinkComponents(registry);
+    return writeLinkedSmallHierarchy(registry);
+}
+
+static void registerLinkedAssetLoader(ResourceCache& cache) {
+    cache.registerLoader<SceneAssetLinkedAsset>(LINKED_ASSET_KIND, LINKED_ASSET_TYPE_TAG, &SceneAssetLinkedAsset::loadPayload);
+}
+
+static std::uint32_t linkedAcquireCount(const ResourceCache& cache, const ResourceHandle<SceneAssetLinkedAsset> handle) {
+    std::uint32_t out = 0;
+    REQUIRE(cache.getAcquireCount(handle, out));
+    return out;
+}
+
+static ResourceState linkedState(const ResourceCache& cache, const ResourceHandle<SceneAssetLinkedAsset> handle) {
+    ResourceState out = ResourceState::Pending;
+    REQUIRE(cache.getState(handle, out));
+    return out;
+}
+
+TEST_CASE("load acquires each distinct referenced id once, as a dependency of the scene", "[core][scene][resources]") {
+    SceneLoadHarness harness;
+    registerLinkedAssetLoader(harness.cache);
+    harness.source.addAsset(SCENE_ASSET_ID, writeLinkedScene());
+    harness.source.addAsset(LINKED_ASSET_ID, writeLinkedAsset());
+    harness.source.addAsset(SECOND_LINKED_ASSET_ID, writeLinkedAsset());
+    ComponentRegistry registry;
+    registerLinkComponents(registry);
+    Scene scene(registry);
+    ResourceHandle<SceneBytes> handle;
+
+    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, scene, handle) == std::error_code{});
+
+    const SmallHierarchy hierarchy = getLoadedSmallHierarchy(scene);
+    const ResourceHandle<SceneAssetLinkedAsset> linked = scene.getComponent<SceneAssetLink>(hierarchy.root).asset.handle;
+    const ResourceHandle<SceneAssetLinkedAsset> secondLinked = scene.getComponent<SceneAssetLink>(hierarchy.second).asset.handle;
+    REQUIRE(linkedAcquireCount(harness.cache, linked) == 1);
+    REQUIRE(linkedAcquireCount(harness.cache, secondLinked) == 1);
+    REQUIRE(harness.acquireCount(handle) == 1);
+}
+
+TEST_CASE("load fills each AssetRef handle with its Ready entry and leaves empty fields empty", "[core][scene][resources]") {
+    SceneLoadHarness harness;
+    registerLinkedAssetLoader(harness.cache);
+    harness.source.addAsset(SCENE_ASSET_ID, writeLinkedScene());
+    harness.source.addAsset(LINKED_ASSET_ID, writeLinkedAsset());
+    harness.source.addAsset(SECOND_LINKED_ASSET_ID, writeLinkedAsset());
+    ComponentRegistry registry;
+    registerLinkComponents(registry);
+    Scene scene(registry);
+    ResourceHandle<SceneBytes> handle;
+
+    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, scene, handle) == std::error_code{});
+
+    const SmallHierarchy hierarchy = getLoadedSmallHierarchy(scene);
+    const SceneAssetLink& rootLink = scene.getComponent<SceneAssetLink>(hierarchy.root);
+    const SceneAssetLink& firstLink = scene.getComponent<SceneAssetLink>(hierarchy.first);
+    const SceneAssetLink& secondLink = scene.getComponent<SceneAssetLink>(hierarchy.second);
+    const SceneAssetLink& grandchildLink = scene.getComponent<SceneAssetLink>(hierarchy.grandchild);
+
+    CHECK(rootLink.asset.id == LINKED_ASSET_ID);
+    REQUIRE(rootLink.asset.handle.valid());
+    REQUIRE(secondLink.asset.handle.valid());
+    CHECK(grandchildLink.asset.handle == rootLink.asset.handle);
+    CHECK(secondLink.asset.handle != rootLink.asset.handle);
+    CHECK(linkedState(harness.cache, rootLink.asset.handle) == ResourceState::Ready);
+    CHECK(linkedState(harness.cache, secondLink.asset.handle) == ResourceState::Ready);
+    CHECK(harness.cache.resolve(rootLink.asset.handle) != nullptr);
+    CHECK(harness.cache.resolve(secondLink.asset.handle) != nullptr);
+    CHECK(firstLink.asset == AssetRef<SceneAssetLinkedAsset>{});
+    CHECK(rootLink.target == hierarchy.grandchild);
+}
+
+TEST_CASE("releasing a loaded scene releases its references in the same drain, and shutdown names none of them", "[core][scene][resources]") {
+    const SceneLoadLogCaptureGuard logs;
+    SceneLoadHarness harness;
+    registerLinkedAssetLoader(harness.cache);
+    harness.source.addAsset(SCENE_ASSET_ID, writeLinkedScene());
+    harness.source.addAsset(LINKED_ASSET_ID, writeLinkedAsset());
+    harness.source.addAsset(SECOND_LINKED_ASSET_ID, writeLinkedAsset());
+    ComponentRegistry registry;
+    registerLinkComponents(registry);
+    Scene scene(registry);
+    ResourceHandle<SceneBytes> handle;
+    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, scene, handle) == std::error_code{});
+    const SmallHierarchy hierarchy = getLoadedSmallHierarchy(scene);
+    const ResourceHandle<SceneAssetLinkedAsset> linked = scene.getComponent<SceneAssetLink>(hierarchy.root).asset.handle;
+    const ResourceHandle<SceneAssetLinkedAsset> secondLinked = scene.getComponent<SceneAssetLink>(hierarchy.second).asset.handle;
+
+    harness.cache.release(handle);
+    harness.cache.drainFrees();
+
+    ResourceState state = ResourceState::Pending;
+    REQUIRE_FALSE(harness.cache.getState(handle, state));
+    REQUIRE_FALSE(harness.cache.getState(linked, state));
+    REQUIRE_FALSE(harness.cache.getState(secondLinked, state));
+
+    g_sceneLoadLogMessages.clear();
+    harness.cache.shutdown();
+
+    REQUIRE_FALSE(sceneLoadLogNames(SCENE_ASSET_ID));
+    REQUIRE_FALSE(sceneLoadLogNames(LINKED_ASSET_ID));
+    REQUIRE_FALSE(sceneLoadLogNames(SECOND_LINKED_ASSET_ID));
+}
+
+TEST_CASE("a reference that fails to load fails the load, leaves the Scene empty and holds nothing", "[core][scene][resources]") {
+    SceneLoadHarness harness;
+    registerLinkedAssetLoader(harness.cache);
+    harness.source.addAsset(SCENE_ASSET_ID, writeLinkedScene());
+    harness.source.addAsset(LINKED_ASSET_ID, {});
+    harness.source.addAsset(SECOND_LINKED_ASSET_ID, writeLinkedAsset());
+    ComponentRegistry registry;
+    registerLinkComponents(registry);
+    Scene scene(registry);
+    ResourceHandle<SceneBytes> handle;
+
+    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, scene, handle) == ReadError::BadMagic);
+
+    REQUIRE_FALSE(handle.valid());
+    REQUIRE(scene.getRoots().empty());
+
+    harness.cache.drainFrees();
+
+    REQUIRE(harness.countAfterRequestingAgain(SCENE_ASSET_ID) == 1);
+    for (const ResourceId id: {LINKED_ASSET_ID, SECOND_LINKED_ASSET_ID}) {
+        INFO("reference " << id.value());
+        ResourceHandle<SceneAssetLinkedAsset> again;
+        REQUIRE(harness.cache.request(id, again) == std::error_code{});
+        CHECK(linkedAcquireCount(harness.cache, again) == 1);
+        CHECK(linkedState(harness.cache, again) == ResourceState::Pending);
+    }
+}
+
+TEST_CASE("a referenced id the source does not know fails the load with UnknownResource and leaves the Scene empty", "[core][scene][resources]") {
+    SceneLoadHarness harness;
+    registerLinkedAssetLoader(harness.cache);
+    harness.source.addAsset(SCENE_ASSET_ID, writeLinkedScene());
+    harness.source.addAsset(LINKED_ASSET_ID, writeLinkedAsset());
+    ComponentRegistry registry;
+    registerLinkComponents(registry);
+    Scene scene(registry);
+    ResourceHandle<SceneBytes> handle;
+
+    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, scene, handle) == ReadError::UnknownResource);
+
+    REQUIRE_FALSE(handle.valid());
+    REQUIRE(scene.getRoots().empty());
+
+    harness.cache.drainFrees();
+
+    REQUIRE(harness.countAfterRequestingAgain(SCENE_ASSET_ID) == 1);
+    ResourceHandle<SceneAssetLinkedAsset> again;
+    REQUIRE(harness.cache.request(LINKED_ASSET_ID, again) == std::error_code{});
+    CHECK(linkedAcquireCount(harness.cache, again) == 1);
+}
+
+TEST_CASE("a scene that references itself fails the load with CyclicReference and leaves the Scene empty", "[core][scene][resources]") {
+    ComponentRegistry writeRegistry;
+    registerLinkComponents(writeRegistry);
+    Scene source(writeRegistry);
+    const Entity root = source.createEntity();
+    source.addComponent<SceneAssetLink>(root, SceneAssetLink{1, Entity{}, {SCENE_ASSET_ID, {}}});
+    std::vector<std::byte> bytes;
+    SceneAsset{SCENE_ASSET_ID}.write(source, bytes);
+
+    SceneLoadHarness harness;
+    registerLinkedAssetLoader(harness.cache);
+    harness.source.addAsset(SCENE_ASSET_ID, std::move(bytes));
+    ComponentRegistry registry;
+    registerLinkComponents(registry);
+    Scene scene(registry);
+    ResourceHandle<SceneBytes> handle;
+
+    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, scene, handle) == ReadError::CyclicReference);
+
+    REQUIRE_FALSE(handle.valid());
+    REQUIRE(scene.getRoots().empty());
+
+    harness.cache.drainFrees();
+
+    REQUIRE(harness.countAfterRequestingAgain(SCENE_ASSET_ID) == 1);
+}
+
+TEST_CASE("a reference absent for this role does not fail the load, and its handle names the absent entry", "[core][scene][resources]") {
+    SceneLoadHarness harness;
+    registerLinkedAssetLoader(harness.cache);
+    harness.source.addAsset(SCENE_ASSET_ID, writeLinkedScene());
+    harness.source.addAsset(LINKED_ASSET_ID, writeLinkedAsset());
+    harness.source.addAbsentForRole(SECOND_LINKED_ASSET_ID);
+    ComponentRegistry registry;
+    registerLinkComponents(registry);
+    Scene scene(registry);
+    ResourceHandle<SceneBytes> handle;
+
+    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, scene, handle) == std::error_code{});
+
+    const SmallHierarchy hierarchy = getLoadedSmallHierarchy(scene);
+    const ResourceHandle<SceneAssetLinkedAsset> absent = scene.getComponent<SceneAssetLink>(hierarchy.second).asset.handle;
+    REQUIRE(absent.valid());
+    CHECK(linkedState(harness.cache, absent) == ResourceState::AbsentForRole);
+    CHECK(linkedAcquireCount(harness.cache, absent) == 1);
+    CHECK(harness.cache.resolve(absent) == nullptr);
 }

@@ -21,6 +21,8 @@ techengine_module(core
           src/scene/EntitySlots.cpp
           src/scene/Scene.cpp
           src/scene/SceneAsset.cpp
+          src/scene/SceneAssetHandleFiller.cpp
+          src/scene/SceneAssetIdCollector.cpp
           src/scene/SceneAssetRowReader.cpp
           src/scene/SceneAssetRowWriter.cpp
           src/scene/SceneCommandBuffer.cpp
@@ -90,6 +92,8 @@ techengine_module(core
           src/scene/ArchetypeStorage.hpp
           src/scene/EntitySlots.hpp
           src/scene/SceneAssetEntity.hpp
+          src/scene/SceneAssetHandleFiller.hpp
+          src/scene/SceneAssetIdCollector.hpp
           src/scene/SceneAssetRowReader.hpp
           src/scene/SceneAssetRowWriter.hpp
   DEPS    base platform

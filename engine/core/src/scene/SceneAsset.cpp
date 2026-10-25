@@ -14,6 +14,8 @@
 #include <TechEngine/core/serialization/Writer.hpp>
 
 #include <scene/SceneAssetEntity.hpp>
+#include <scene/SceneAssetHandleFiller.hpp>
+#include <scene/SceneAssetIdCollector.hpp>
 #include <scene/SceneAssetRowReader.hpp>
 #include <scene/SceneAssetRowWriter.hpp>
 
@@ -255,8 +257,57 @@ namespace TechEngine {
             cache.release(handle);
             return readError;
         }
+        const std::error_code acquireError = acquireReferences(cache, scene, handle);
+        if (acquireError) {
+            scene.clear();
+            cache.release(handle);
+            return acquireError;
+        }
         out = handle;
         return {};
+    }
+
+    std::error_code SceneAsset::acquireReferences(ResourceCache& cache, Scene& scene, const ResourceHandle<SceneBytes> handle) const {
+        SceneAssetIdCollector collector;
+        visitReferences(scene, collector);
+
+        std::unordered_map<ResourceId, ResourceSlotId> slots;
+        for (const ResourceId reference: collector.getIds()) {
+            ResourceSlotId slot;
+            const std::error_code dependencyError = cache.addDependency(handle, reference, slot);
+            if (dependencyError) {
+                return dependencyError;
+            }
+            slots.emplace(reference, slot);
+        }
+
+        const std::error_code phaseError = cache.runLoadingPhase();
+        if (phaseError) {
+            return phaseError;
+        }
+
+        SceneAssetHandleFiller filler{slots};
+        visitReferences(scene, filler);
+        return {};
+    }
+
+    void SceneAsset::visitReferences(Scene& scene, ReferenceVisitor& visitor) const {
+        std::vector<Entity> entities = scene.getRoots();
+        for (std::size_t index = 0; index < entities.size(); index++) {
+            const std::vector<Entity> children = scene.getChildren(entities[index]);
+            entities.insert(entities.end(), children.begin(), children.end());
+
+            for (const ComponentTypeRecord& record: scene.m_registry->records()) {
+                if (record.visitReferences == nullptr) {
+                    continue;
+                }
+                void* component = scene.componentRaw(entities[index], record.id);
+                if (component == nullptr) {
+                    continue;
+                }
+                record.visitReferences(visitor, component);
+            }
+        }
     }
 
     std::error_code SceneBytes::loadPayload(const std::span<const std::byte> bytes, void* payload, std::vector<ResourceId>& dependencies) {

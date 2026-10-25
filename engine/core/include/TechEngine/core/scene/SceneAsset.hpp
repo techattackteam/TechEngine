@@ -11,6 +11,7 @@
 #include <vector>
 
 namespace TechEngine {
+    class ReferenceVisitor;
     class ResourceCache;
     class Scene;
 
@@ -34,5 +35,10 @@ namespace TechEngine {
         std::error_code read(std::span<const std::byte> bytes, Scene& scene);
 
         std::error_code load(ResourceCache& cache, Scene& scene, ResourceHandle<SceneBytes>& out) const;
+
+    private:
+        std::error_code acquireReferences(ResourceCache& cache, Scene& scene, ResourceHandle<SceneBytes> handle) const;
+
+        void visitReferences(Scene& scene, ReferenceVisitor& visitor) const;
     };
 }
