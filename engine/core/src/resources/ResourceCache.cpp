@@ -117,20 +117,19 @@ namespace TechEngine {
         return entry->payload.get();
     }
 
-    std::error_code ResourceCache::addEntryDependency(const ResourceSlotId holder, const ResourceId dependency) {
+    std::error_code ResourceCache::addEntryDependency(const ResourceSlotId holder, const ResourceId dependency, ResourceSlotId& out) {
         ResourceEntry* entry = m_slots->find(holder);
         TE_CHECK(entry != nullptr, "A dependency is added to a resource slot that no longer exists");
         TE_CHECK(entry->state == ResourceState::Ready, "Resource {0:#018x} gets a dependency before it is Ready", entry->id.value());
-        ResourceSlotId dependencySlot;
-        const std::error_code dependencyError = requestEntry(dependency, StringId{}, dependencySlot);
+        const std::error_code dependencyError = requestEntry(dependency, StringId{}, out);
         if (dependencyError) {
             return dependencyError;
         }
-        if (reaches(dependencySlot, holder)) {
-            releaseEntry(dependencySlot);
+        if (reaches(out, holder)) {
+            releaseEntry(out);
             return ReadError::CyclicReference;
         }
-        entry->dependencies.push_back(dependencySlot);
+        entry->dependencies.push_back(out);
         return {};
     }
 
@@ -218,7 +217,8 @@ namespace TechEngine {
 
         entry->state = ResourceState::Ready;
         for (const ResourceId dependency: completion.dependencies) {
-            const std::error_code dependencyError = addEntryDependency(completion.slot, dependency);
+            ResourceSlotId dependencySlot;
+            const std::error_code dependencyError = addEntryDependency(completion.slot, dependency, dependencySlot);
             if (dependencyError) {
                 entry->state = ResourceState::Failed;
                 entry->error = dependencyError;

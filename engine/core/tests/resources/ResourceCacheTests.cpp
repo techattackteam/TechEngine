@@ -43,6 +43,7 @@ using TechEngine::ReadError;
 using TechEngine::ResourceCache;
 using TechEngine::ResourceHandle;
 using TechEngine::ResourceId;
+using TechEngine::ResourceSlotId;
 using TechEngine::ResourceState;
 using TechEngine::StringId;
 using TechEngine::Writer;
@@ -728,8 +729,9 @@ TEST_CASE("a dependency added to a Ready entry loads in the next loading phase",
     harness.source.addAsset(DEPENDENCY_ID, "dependency", {});
     const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
     REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    ResourceSlotId added;
 
-    REQUIRE(harness.cache.addDependency(root, DEPENDENCY_ID) == std::error_code{});
+    REQUIRE(harness.cache.addDependency(root, DEPENDENCY_ID, added) == std::error_code{});
 
     const ResourceHandle<CacheResource> dependency = harness.request(DEPENDENCY_ID);
     REQUIRE(harness.state(root) == ResourceState::Ready);
@@ -750,7 +752,8 @@ TEST_CASE("an added dependency is released with its holder, beside the ones its 
     harness.source.addAsset(LEAF_ID, "leaf", {});
     const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
     REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
-    REQUIRE(harness.cache.addDependency(root, LEAF_ID) == std::error_code{});
+    ResourceSlotId added;
+    REQUIRE(harness.cache.addDependency(root, LEAF_ID, added) == std::error_code{});
     REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
     const ResourceHandle<CacheResource> dependency = harness.request(DEPENDENCY_ID);
     const ResourceHandle<CacheResource> leaf = harness.request(LEAF_ID);
@@ -777,8 +780,9 @@ TEST_CASE("adding an unknown id returns UnknownResource, holds nothing and leave
     harness.source.addAsset(ROOT_ID, "root", {});
     const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
     REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    ResourceSlotId added;
 
-    REQUIRE(harness.cache.addDependency(root, UNKNOWN_ID) == ReadError::UnknownResource);
+    REQUIRE(harness.cache.addDependency(root, UNKNOWN_ID, added) == ReadError::UnknownResource);
 
     REQUIRE(harness.state(root) == ResourceState::Ready);
     REQUIRE(harness.error(root) == std::error_code{});
@@ -799,8 +803,9 @@ TEST_CASE("adding a dependency that closes a cycle returns CyclicReference and r
     const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
     REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
     const ResourceHandle<CacheResource> dependency = harness.request(DEPENDENCY_ID);
+    ResourceSlotId added;
 
-    REQUIRE(harness.cache.addDependency(dependency, ROOT_ID) == ReadError::CyclicReference);
+    REQUIRE(harness.cache.addDependency(dependency, ROOT_ID, added) == ReadError::CyclicReference);
 
     REQUIRE(harness.acquireCount(root) == 1);
     REQUIRE(harness.acquireCount(dependency) == 2);
@@ -820,8 +825,9 @@ TEST_CASE("an entry added as its own dependency returns CyclicReference and keep
     harness.source.addAsset(ROOT_ID, "root", {});
     const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
     REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    ResourceSlotId added;
 
-    REQUIRE(harness.cache.addDependency(root, ROOT_ID) == ReadError::CyclicReference);
+    REQUIRE(harness.cache.addDependency(root, ROOT_ID, added) == ReadError::CyclicReference);
 
     REQUIRE(harness.acquireCount(root) == 1);
     REQUIRE(harness.state(root) == ResourceState::Ready);
@@ -838,8 +844,37 @@ TEST_CASE("adding a dependency to an entry that is not Ready is a programmer err
     harness.source.addAsset(ROOT_ID, "root", {});
     harness.source.addAsset(DEPENDENCY_ID, "dependency", {});
     const ResourceHandle<CacheResource> pending = harness.request(ROOT_ID);
+    ResourceSlotId added;
 
-    REQUIRE_THROWS_AS(harness.cache.addDependency(pending, DEPENDENCY_ID), TechEngineTests::AssertFired);
+    REQUIRE_THROWS_AS(harness.cache.addDependency(pending, DEPENDENCY_ID, added), TechEngineTests::AssertFired);
+}
+
+TEST_CASE("an added dependency hands back the slot of the entry it acquired", "[core][resources][cache]") {
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "root", {});
+    harness.source.addAsset(DEPENDENCY_ID, "dependency", {});
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+
+    SECTION("a dependency the cache did not hold yet") {
+        ResourceSlotId added;
+        REQUIRE(harness.cache.addDependency(root, DEPENDENCY_ID, added) == std::error_code{});
+
+        const ResourceHandle<CacheResource> dependency = harness.request(DEPENDENCY_ID);
+        REQUIRE(added.valid());
+        REQUIRE(added == dependency.slot());
+    }
+
+    SECTION("a dependency the cache already holds") {
+        const ResourceHandle<CacheResource> held = harness.request(DEPENDENCY_ID);
+        REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+        ResourceSlotId added;
+
+        REQUIRE(harness.cache.addDependency(root, DEPENDENCY_ID, added) == std::error_code{});
+
+        REQUIRE(added == held.slot());
+        REQUIRE(harness.acquireCount(held) == 2);
+    }
 }
 
 TEST_CASE("taking a Ready payload moves it out and leaves the entry Ready with a default payload", "[core][resources][cache]") {

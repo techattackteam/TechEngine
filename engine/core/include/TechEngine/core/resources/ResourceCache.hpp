@@ -119,8 +119,8 @@ namespace TechEngine {
         }
 
         template<typename T>
-        std::error_code addDependency(const ResourceHandle<T> holder, const ResourceId dependency) {
-            return addEntryDependency(holder.slot(), dependency);
+        std::error_code addDependency(const ResourceHandle<T> holder, const ResourceId dependency, ResourceSlotId& out) {
+            return addEntryDependency(holder.slot(), dependency, out);
         }
 
         template<typename T>
@@ -165,7 +165,7 @@ namespace TechEngine {
 
         void* resolvePayload(ResourceSlotId slot, StringId typeTag);
 
-        std::error_code addEntryDependency(ResourceSlotId holder, ResourceId dependency);
+        std::error_code addEntryDependency(ResourceSlotId holder, ResourceId dependency, ResourceSlotId& out);
 
         bool entryState(ResourceSlotId slot, ResourceState& out) const;
 
