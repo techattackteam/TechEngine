@@ -1,3 +1,6 @@
+#include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/core/mesh/Mesh.hpp>
+#include <TechEngine/core/mesh/MeshReference.hpp>
 #include <TechEngine/core/resources/PackReader.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/resources/Side.hpp>
@@ -22,6 +25,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <iterator>
 #include <string_view>
@@ -86,6 +90,8 @@ namespace {
     constexpr std::string_view STARTUP_SCENE_FILE = "assets/common/Startup.tescene";
     constexpr std::string_view STARTUP_SCENE_PATH = "project://assets/common/Startup.tescene";
     constexpr std::string_view MANIFEST_PATH = "project://project.toml";
+    constexpr std::string_view TRIANGLE_MESH_FILE = "assets/client/Triangle.temesh";
+    constexpr std::string_view TRIANGLE_MESH_PATH = "project://assets/client/Triangle.temesh";
 
     void writeProjectLayout(const ScratchDirectory& scratch) {
         scratch.writeFile("project.toml", DEV_MANIFEST);
@@ -111,6 +117,18 @@ namespace {
         REQUIRE(children.size() == 2);
         CHECK(scene.getChildren(children[0]).empty());
         CHECK(scene.getChildren(children[1]).empty());
+    }
+
+    TechEngine::ResourceId meshReferenceOnRoot(const TechEngine::Scene& scene) {
+        const std::vector<TechEngine::Entity> roots = scene.getRoots();
+        REQUIRE(roots.size() == 1);
+        REQUIRE(scene.hasComponent<TechEngine::MeshReference>(roots[0]));
+        const TechEngine::MeshReference& reference = scene.getComponent<TechEngine::MeshReference>(roots[0]);
+        CHECK_FALSE(reference.mesh.handle.valid());
+        for (const TechEngine::Entity child: scene.getChildren(roots[0])) {
+            CHECK_FALSE(scene.hasComponent<TechEngine::MeshReference>(child));
+        }
+        return reference.mesh.id;
     }
 
     std::ptrdiff_t fileCount(const std::filesystem::path& directory) {
@@ -189,6 +207,7 @@ TEST_CASE("the startup load creates a startup scene when the project names none"
         TechEngine::ComponentRegistry registry;
         registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
         registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
+        registry.registerComponent<TechEngine::MeshReference>(TechEngine::MeshReference::tag);
         TechEngine::Scene scene(registry);
         TechEngine::SceneAsset asset;
         REQUIRE(asset.read(bytes, scene) == std::error_code{});
@@ -196,10 +215,35 @@ TEST_CASE("the startup load creates a startup scene when the project names none"
 
         checkParentWithTwoChildren(scene);
         CHECK(fileCount(scratch.root() / "assets" / "common") == 1);
+
+        TechEngine::AssetRecord mesh;
+        REQUIRE(editor.getAssetIndex().find(meshReferenceOnRoot(scene), mesh));
+        CHECK(mesh.path == TRIANGLE_MESH_PATH);
+    }
+
+    SECTION("it writes the triangle as a mesh asset to assets/client") {
+        std::vector<std::byte> bytes;
+        REQUIRE(editor.files().read(TRIANGLE_MESH_PATH, bytes) == std::error_code{});
+        TechEngine::Mesh mesh;
+        REQUIRE(mesh.read(bytes) == std::error_code{});
+        CHECK(mesh.id.valid());
+        CHECK(mesh.id != savedStartupScene(scratch));
+        CHECK(mesh.positions == std::vector<TechEngine::Vec3>{TechEngine::Vec3(-0.5f, -0.5f, 0.0f), TechEngine::Vec3(0.5f, -0.5f, 0.0f), TechEngine::Vec3(0.0f, 0.5f, 0.0f)});
+        CHECK(mesh.indices == std::vector<std::uint32_t>{0, 1, 2});
+        CHECK(fileCount(scratch.root() / "assets" / "client") == 1);
+
+        TechEngine::AssetRecord record;
+        REQUIRE(editor.getAssetIndex().find(mesh.id, record));
+        CHECK(record.typeTag == TechEngine::MESH_TYPE_TAG);
+        CHECK(record.side == TechEngine::Side::Client);
+        CHECK(record.path == TRIANGLE_MESH_PATH);
     }
 
     SECTION("it leaves the scene in the editor's live scene") {
         checkParentWithTwoChildren(editor.scene());
+        TechEngine::AssetRecord mesh;
+        REQUIRE(editor.getAssetIndex().find(meshReferenceOnRoot(editor.scene()), mesh));
+        CHECK(mesh.path == TRIANGLE_MESH_PATH);
     }
 
     SECTION("it adds the scene to the id index") {
@@ -209,7 +253,7 @@ TEST_CASE("the startup load creates a startup scene when the project names none"
         CHECK(record.typeTag == TechEngine::SCENE_TYPE_TAG);
         CHECK(record.side == TechEngine::Side::Common);
         CHECK(record.path == STARTUP_SCENE_PATH);
-        CHECK(editor.getAssetIndex().getRecords().size() == 1);
+        CHECK(editor.getAssetIndex().getRecords().size() == 2);
     }
 
     SECTION("the startup export packs it into the export folder") {
@@ -240,11 +284,13 @@ TEST_CASE("a later launch finds the saved startup scene and creates nothing", "[
 
     std::vector<std::byte> firstScene;
     std::vector<std::byte> firstManifest;
+    std::vector<std::byte> firstMesh;
     {
         EditorProbe first{scratch.root(), exportFolder};
         first.bootstrap();
         REQUIRE(first.files().read(STARTUP_SCENE_PATH, firstScene) == std::error_code{});
         REQUIRE(first.files().read(MANIFEST_PATH, firstManifest) == std::error_code{});
+        REQUIRE(first.files().read(TRIANGLE_MESH_PATH, firstMesh) == std::error_code{});
         first.shutdown();
     }
     const TechEngine::ResourceId firstId = savedStartupScene(scratch);
@@ -255,13 +301,17 @@ TEST_CASE("a later launch finds the saved startup scene and creates nothing", "[
 
     std::vector<std::byte> secondScene;
     std::vector<std::byte> secondManifest;
+    std::vector<std::byte> secondMesh;
     REQUIRE(second.files().read(STARTUP_SCENE_PATH, secondScene) == std::error_code{});
     REQUIRE(second.files().read(MANIFEST_PATH, secondManifest) == std::error_code{});
+    REQUIRE(second.files().read(TRIANGLE_MESH_PATH, secondMesh) == std::error_code{});
     CHECK(secondScene == firstScene);
     CHECK(secondManifest == firstManifest);
+    CHECK(secondMesh == firstMesh);
     CHECK(savedStartupScene(scratch) == firstId);
-    CHECK(second.getAssetIndex().getRecords().size() == 1);
+    CHECK(second.getAssetIndex().getRecords().size() == 2);
     CHECK(fileCount(scratch.root() / "assets" / "common") == 1);
+    CHECK(fileCount(scratch.root() / "assets" / "client") == 1);
     second.shutdown();
 }
 
@@ -316,6 +366,50 @@ TEST_CASE("the startup load does not overwrite a Startup.tescene the index skipp
     std::vector<std::byte> after;
     REQUIRE(editor.files().read(STARTUP_SCENE_PATH, after) == std::error_code{});
     CHECK(after == original);
+    CHECK_FALSE(savedStartupScene(scratch).valid());
+    CHECK_FALSE(std::filesystem::exists(scratch.root() / TRIANGLE_MESH_FILE));
+    CHECK(editor.getAssetIndex().getRecords().empty());
+    CHECK(editor.scene().getRoots().empty());
+    editor.shutdown();
+}
+
+TEST_CASE("a new startup scene reuses an indexed Triangle.temesh", "[editor][window]") {
+    ScratchDirectory scratch{"editorReusesTriangleMesh"};
+    writeProjectLayout(scratch);
+    constexpr TechEngine::ResourceId meshId{0x0abcdef012345678};
+    const std::vector<std::byte> original = TechEngineTests::assetBytes(TechEngine::MESH_KIND, meshId, "mesh");
+    TechEngineTests::writeBytes(scratch, TRIANGLE_MESH_FILE, original);
+
+    EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
+    editor.bootstrap();
+
+    std::vector<std::byte> after;
+    REQUIRE(editor.files().read(TRIANGLE_MESH_PATH, after) == std::error_code{});
+    CHECK(after == original);
+    CHECK(meshReferenceOnRoot(editor.scene()) == meshId);
+    CHECK(savedStartupScene(scratch).valid());
+    CHECK(editor.getAssetIndex().getRecords().size() == 2);
+    CHECK(fileCount(scratch.root() / "assets" / "client") == 1);
+    editor.shutdown();
+}
+
+TEST_CASE("the startup load does not overwrite a Triangle.temesh the index skipped", "[editor][window]") {
+    ScratchDirectory scratch{"editorKeepsUnindexedTriangleMesh"};
+    writeProjectLayout(scratch);
+    const std::vector<std::byte> original = TechEngineTests::assetBytes(TechEngine::MESH_KIND, TechEngine::ResourceId(), "mesh");
+    TechEngineTests::writeBytes(scratch, TRIANGLE_MESH_FILE, original);
+
+    EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
+    editor.prepare();
+    {
+        const TechEngineTests::FatalAssertGuard guard;
+        REQUIRE_THROWS_AS(editor.startupLoad(), TechEngineTests::AssertFired);
+    }
+
+    std::vector<std::byte> after;
+    REQUIRE(editor.files().read(TRIANGLE_MESH_PATH, after) == std::error_code{});
+    CHECK(after == original);
+    CHECK_FALSE(std::filesystem::exists(scratch.root() / STARTUP_SCENE_FILE));
     CHECK_FALSE(savedStartupScene(scratch).valid());
     CHECK(editor.getAssetIndex().getRecords().empty());
     CHECK(editor.scene().getRoots().empty());
