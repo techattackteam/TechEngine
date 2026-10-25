@@ -5,8 +5,12 @@
 #include <assets/AssetIndex.hpp>
 #include <project/Project.hpp>
 
+#include <cstddef>
 #include <filesystem>
+#include <functional>
+#include <string_view>
 #include <system_error>
+#include <vector>
 
 namespace TechEngine {
     class EditorApp : public ClientApp {
@@ -26,11 +30,19 @@ namespace TechEngine {
     protected:
         void init() override;
 
+        void configureSimulation() override;
+
         std::error_code simulationStartupLoad(Scene& scene) override;
 
     private:
         void createStartupScene(Scene& scene);
 
         ResourceId writeStartupScene(Scene& scene);
+
+        ResourceId findOrCreateTriangleMesh();
+
+        ResourceId createAsset(std::string_view path, StringId typeTag, Side side, const std::function<void(ResourceId, std::vector<std::byte>&)>& write);
+
+        void requireNewAssetPath(std::string_view path) const;
     };
 }

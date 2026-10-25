@@ -48,6 +48,7 @@ techengine_module(core
           include/TechEngine/core/jobs/JobSystem.hpp
           include/TechEngine/core/jobs/ThreadRegistration.hpp
           include/TechEngine/core/mesh/Mesh.hpp
+          include/TechEngine/core/mesh/MeshRenderer.hpp
           include/TechEngine/core/resources/AssetRef.hpp
           include/TechEngine/core/resources/BootRecord.hpp
           include/TechEngine/core/resources/PackFormat.hpp

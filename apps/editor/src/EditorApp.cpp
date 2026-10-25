@@ -1,5 +1,9 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/core/mesh/Mesh.hpp>
+#include <TechEngine/core/mesh/MeshRenderer.hpp>
+#include <TechEngine/core/resources/AssetRef.hpp>
 #include <TechEngine/core/resources/Side.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/platform/Platform.hpp>
@@ -10,6 +14,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <functional>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -19,6 +24,7 @@
 namespace TechEngine {
     static constexpr std::string_view MANIFEST_PATH = "project://project.toml";
     static constexpr std::string_view STARTUP_SCENE_PATH = "project://assets/common/Startup.tescene";
+    static constexpr std::string_view TRIANGLE_MESH_PATH = "project://assets/client/Triangle.temesh";
 
     EditorApp::EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder) : ClientApp(Role::Client, "TechEngine Editor"), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)) {
     }
@@ -38,6 +44,11 @@ namespace TechEngine {
         TE_LOGGER_INFO("Opened project '{0}' at {1}", m_project.name(), root.string());
 
         startClient();
+    }
+
+    void EditorApp::configureSimulation() {
+        ClientApp::configureSimulation();
+        m_registry.registerComponent<MeshRenderer>(MeshRenderer::tag);
     }
 
     std::error_code EditorApp::simulationStartupLoad(Scene& scene) {
@@ -76,12 +87,10 @@ namespace TechEngine {
         TE_CHECK(!saveError, "Failed to save {0}: {1}", MANIFEST_PATH, saveError.message());
     }
 
-    // TODO: move the id, file write and index record into a shared create function when the next
-    // asset kind gets its writer, so the content browser can create scenes through it too.
     ResourceId EditorApp::writeStartupScene(Scene& scene) {
-        FileStatus status;
-        const std::error_code statusError = m_files.status(STARTUP_SCENE_PATH, status);
-        TE_CHECK(statusError == FileError::NotFound, "{0} exists but is not an indexed asset, so it is not overwritten", STARTUP_SCENE_PATH);
+        // Checked before the mesh is created, so a refused scene leaves no mesh behind.
+        requireNewAssetPath(STARTUP_SCENE_PATH);
+        const ResourceId meshId = findOrCreateTriangleMesh();
 
         const Entity parent = scene.createEntity();
         const Entity firstChild = scene.createEntity();
@@ -90,19 +99,49 @@ namespace TechEngine {
         TE_CHECK(firstParented, "Failed to parent the startup scene's first child");
         const bool secondParented = scene.setParent(secondChild, parent, 1);
         TE_CHECK(secondParented, "Failed to parent the startup scene's second child");
+        scene.addComponent<MeshRenderer>(parent, MeshRenderer{AssetRef<Mesh>{meshId, {}}});
+
+        return createAsset(STARTUP_SCENE_PATH, SCENE_TYPE_TAG, Side::Common, [&scene](const ResourceId id, std::vector<std::byte>& bytes) {
+            SceneAsset{id}.write(scene, bytes);
+        });
+    }
+
+    ResourceId EditorApp::findOrCreateTriangleMesh() {
+        const std::vector<AssetRecord>& records = m_assets.getRecords();
+        const auto existing = std::ranges::find_if(records, [](const AssetRecord& record) {
+            return record.path == TRIANGLE_MESH_PATH && record.typeTag == MESH_TYPE_TAG;
+        });
+        if (existing != records.end()) {
+            return existing->id;
+        }
+
+        return createAsset(TRIANGLE_MESH_PATH, MESH_TYPE_TAG, Side::Client, [](const ResourceId id, std::vector<std::byte>& bytes) {
+            const Mesh mesh{id, {Vec3(-0.5f, -0.5f, 0.0f), Vec3(0.5f, -0.5f, 0.0f), Vec3(0.0f, 0.5f, 0.0f)}, {0, 1, 2}};
+            mesh.write(bytes);
+        });
+    }
+
+    ResourceId EditorApp::createAsset(const std::string_view path, const StringId typeTag, const Side side, const std::function<void(ResourceId, std::vector<std::byte>&)>& write) {
+        requireNewAssetPath(path);
 
         const ResourceId id = m_assets.generateId();
         std::vector<std::byte> bytes;
-        SceneAsset{id}.write(scene, bytes);
-        const std::error_code writeError = m_files.write(STARTUP_SCENE_PATH, bytes);
-        TE_CHECK(!writeError, "Failed to write the startup scene to {0}: {1}", STARTUP_SCENE_PATH, writeError.message());
+        write(id, bytes);
+        const std::error_code writeError = m_files.write(path, bytes);
+        TE_CHECK(!writeError, "Failed to write {0}: {1}", path, writeError.message());
 
         AssetRecord record;
         record.id = id;
-        record.typeTag = SCENE_TYPE_TAG;
-        record.side = Side::Common;
-        record.path = std::string(STARTUP_SCENE_PATH);
+        record.typeTag = typeTag;
+        record.side = side;
+        record.path = std::string(path);
         m_assets.add(std::move(record));
         return id;
+    }
+
+    void EditorApp::requireNewAssetPath(const std::string_view path) const {
+        FileStatus status;
+        const std::error_code statusError = m_files.status(path, status);
+        TE_CHECK(statusError == FileError::NotFound, "{0} exists but is not an indexed asset, so it is not overwritten", path);
     }
 }
