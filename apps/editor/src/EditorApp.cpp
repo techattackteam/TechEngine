@@ -2,7 +2,7 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
-#include <TechEngine/core/mesh/MeshReference.hpp>
+#include <TechEngine/core/mesh/MeshRenderer.hpp>
 #include <TechEngine/core/resources/AssetRef.hpp>
 #include <TechEngine/core/resources/Side.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
@@ -48,7 +48,7 @@ namespace TechEngine {
 
     void EditorApp::configureSimulation() {
         ClientApp::configureSimulation();
-        m_registry.registerComponent<MeshReference>(MeshReference::tag);
+        m_registry.registerComponent<MeshRenderer>(MeshRenderer::tag);
     }
 
     std::error_code EditorApp::simulationStartupLoad(Scene& scene) {
@@ -99,7 +99,7 @@ namespace TechEngine {
         TE_CHECK(firstParented, "Failed to parent the startup scene's first child");
         const bool secondParented = scene.setParent(secondChild, parent, 1);
         TE_CHECK(secondParented, "Failed to parent the startup scene's second child");
-        scene.addComponent<MeshReference>(parent, MeshReference{AssetRef<Mesh>{meshId, {}}});
+        scene.addComponent<MeshRenderer>(parent, MeshRenderer{AssetRef<Mesh>{meshId, {}}});
 
         return createAsset(STARTUP_SCENE_PATH, SCENE_TYPE_TAG, Side::Common, [&scene](const ResourceId id, std::vector<std::byte>& bytes) {
             SceneAsset{id}.write(scene, bytes);

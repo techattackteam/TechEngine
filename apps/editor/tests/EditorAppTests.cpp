@@ -1,6 +1,6 @@
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
-#include <TechEngine/core/mesh/MeshReference.hpp>
+#include <TechEngine/core/mesh/MeshRenderer.hpp>
 #include <TechEngine/core/resources/PackReader.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/resources/Side.hpp>
@@ -119,16 +119,16 @@ namespace {
         CHECK(scene.getChildren(children[1]).empty());
     }
 
-    TechEngine::ResourceId meshReferenceOnRoot(const TechEngine::Scene& scene) {
+    TechEngine::ResourceId meshRendererOnRoot(const TechEngine::Scene& scene) {
         const std::vector<TechEngine::Entity> roots = scene.getRoots();
         REQUIRE(roots.size() == 1);
-        REQUIRE(scene.hasComponent<TechEngine::MeshReference>(roots[0]));
-        const TechEngine::MeshReference& reference = scene.getComponent<TechEngine::MeshReference>(roots[0]);
-        CHECK_FALSE(reference.mesh.handle.valid());
+        REQUIRE(scene.hasComponent<TechEngine::MeshRenderer>(roots[0]));
+        const TechEngine::MeshRenderer& renderer = scene.getComponent<TechEngine::MeshRenderer>(roots[0]);
+        CHECK_FALSE(renderer.mesh.handle.valid());
         for (const TechEngine::Entity child: scene.getChildren(roots[0])) {
-            CHECK_FALSE(scene.hasComponent<TechEngine::MeshReference>(child));
+            CHECK_FALSE(scene.hasComponent<TechEngine::MeshRenderer>(child));
         }
-        return reference.mesh.id;
+        return renderer.mesh.id;
     }
 
     std::ptrdiff_t fileCount(const std::filesystem::path& directory) {
@@ -207,7 +207,7 @@ TEST_CASE("the startup load creates a startup scene when the project names none"
         TechEngine::ComponentRegistry registry;
         registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
         registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
-        registry.registerComponent<TechEngine::MeshReference>(TechEngine::MeshReference::tag);
+        registry.registerComponent<TechEngine::MeshRenderer>(TechEngine::MeshRenderer::tag);
         TechEngine::Scene scene(registry);
         TechEngine::SceneAsset asset;
         REQUIRE(asset.read(bytes, scene) == std::error_code{});
@@ -217,7 +217,7 @@ TEST_CASE("the startup load creates a startup scene when the project names none"
         CHECK(fileCount(scratch.root() / "assets" / "common") == 1);
 
         TechEngine::AssetRecord mesh;
-        REQUIRE(editor.getAssetIndex().find(meshReferenceOnRoot(scene), mesh));
+        REQUIRE(editor.getAssetIndex().find(meshRendererOnRoot(scene), mesh));
         CHECK(mesh.path == TRIANGLE_MESH_PATH);
     }
 
@@ -242,7 +242,7 @@ TEST_CASE("the startup load creates a startup scene when the project names none"
     SECTION("it leaves the scene in the editor's live scene") {
         checkParentWithTwoChildren(editor.scene());
         TechEngine::AssetRecord mesh;
-        REQUIRE(editor.getAssetIndex().find(meshReferenceOnRoot(editor.scene()), mesh));
+        REQUIRE(editor.getAssetIndex().find(meshRendererOnRoot(editor.scene()), mesh));
         CHECK(mesh.path == TRIANGLE_MESH_PATH);
     }
 
@@ -386,7 +386,7 @@ TEST_CASE("a new startup scene reuses an indexed Triangle.temesh", "[editor][win
     std::vector<std::byte> after;
     REQUIRE(editor.files().read(TRIANGLE_MESH_PATH, after) == std::error_code{});
     CHECK(after == original);
-    CHECK(meshReferenceOnRoot(editor.scene()) == meshId);
+    CHECK(meshRendererOnRoot(editor.scene()) == meshId);
     CHECK(savedStartupScene(scratch).valid());
     CHECK(editor.getAssetIndex().getRecords().size() == 2);
     CHECK(fileCount(scratch.root() / "assets" / "client") == 1);

@@ -7,13 +7,13 @@
 namespace TechEngine {
     struct Mesh;
 
-    struct MeshReference {
-        static constexpr std::string_view tag = "TechEngine::MeshReference";
+    struct MeshRenderer {
+        static constexpr std::string_view tag = "TechEngine::MeshRenderer";
 
         AssetRef<Mesh> mesh;
 
         template<typename Archive>
-        friend void visit(Archive& archive, MeshReference& value) {
+        friend void visit(Archive& archive, MeshRenderer& value) {
             archive.field(value.mesh);
         }
     };
