@@ -8,10 +8,13 @@
 #include <string_view>
 #include <system_error>
 
+struct GLFWwindow;
+
 namespace TechEngine {
     struct RenderSnapshot;
     struct EngineContext;
     class InputBuffer;
+    class ImGuiHook;
 
     class Client {
     private:
@@ -31,8 +34,8 @@ namespace TechEngine {
 
         Client& operator=(Client&&) = delete;
 
-        // Engine services and input must outlive the active session.
-        std::error_code start(const EngineContext& engine, InputBuffer& input, int width, int height, std::string_view title, std::function<void()> onFailure = {});
+        // Engine services, input and the ImGui hook must outlive the active session.
+        std::error_code start(const EngineContext& engine, InputBuffer& input, int width, int height, std::string_view title, std::function<void()> onFailure = {}, ImGuiHook* imguiHook = nullptr);
 
         void waitEvents();
 
@@ -51,6 +54,8 @@ namespace TechEngine {
         bool shouldClose() const;
 
         bool failed() const;
+
+        GLFWwindow* nativeWindow() const;
 
         void stop();
     };

@@ -15,6 +15,7 @@ namespace TechEngine {
     class JobSystem;
     class Window;
     class InputBuffer;
+    class ImGuiHook;
 
     class RenderThread {
     private:
@@ -38,7 +39,7 @@ namespace TechEngine {
 
         RenderThread& operator=(RenderThread&&) = delete;
 
-        bool start(JobSystem& jobs, const Clock& clock, Window& window, const InputBuffer& input, std::function<void()> onFailure = {});
+        bool start(JobSystem& jobs, const Clock& clock, Window& window, const InputBuffer& input, std::function<void()> onFailure = {}, ImGuiHook* imguiHook = nullptr);
 
         void publish(const RenderSnapshot& snapshot);
 
@@ -51,6 +52,6 @@ namespace TechEngine {
         void stop();
 
     private:
-        void threadMain(const DedicatedThreadContext& context, const Clock& clock, Window& window, const InputBuffer& input);
+        void threadMain(const DedicatedThreadContext& context, const Clock& clock, Window& window, const InputBuffer& input, ImGuiHook* imguiHook);
     };
 }

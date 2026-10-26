@@ -1,6 +1,7 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/base/time/RateCounter.hpp>
+#include <TechEngine/client/render/ImGuiHook.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/platform/input/InputBuffer.hpp>
 #include <TechEngine/platform/window/Window.hpp>
@@ -19,7 +20,7 @@ namespace TechEngine {
         stop();
     }
 
-    bool RenderThread::start(JobSystem& jobs, const Clock& clock, Window& window, const InputBuffer& input, std::function<void()> onFailure) {
+    bool RenderThread::start(JobSystem& jobs, const Clock& clock, Window& window, const InputBuffer& input, std::function<void()> onFailure, ImGuiHook* imguiHook) {
         if (m_thread.joinable()) {
             return false;
         }
@@ -29,9 +30,9 @@ namespace TechEngine {
             m_timing = RenderTiming{};
         }
         try {
-            m_thread = jobs.createDedicatedThread("TERender", ThreadRole::Dedicated, [this, &clock, &window, &input, notify = std::move(onFailure)](DedicatedThreadContext& context) {
+            m_thread = jobs.createDedicatedThread("TERender", ThreadRole::Dedicated, [this, &clock, &window, &input, imguiHook, notify = std::move(onFailure)](DedicatedThreadContext& context) {
                 try {
-                    threadMain(context, clock, window, input);
+                    threadMain(context, clock, window, input, imguiHook);
                 } catch (...) {
                     if (notify) {
                         notify();
@@ -78,8 +79,9 @@ namespace TechEngine {
         m_mailbox.reset();
     }
 
-    void RenderThread::threadMain(const DedicatedThreadContext& context, const Clock& clock, Window& window, const InputBuffer& input) {
+    void RenderThread::threadMain(const DedicatedThreadContext& context, const Clock& clock, Window& window, const InputBuffer& input, ImGuiHook* imguiHook) {
         bool contextClaimed = false;
+        bool imguiStarted = false;
         std::exception_ptr failure;
         try {
             window.makeContextCurrent();
@@ -93,7 +95,12 @@ namespace TechEngine {
                 RateCounter rate;
                 RenderTiming metrics;
                 auto previousFrame = clock.now();
+                if (imguiHook != nullptr) {
+                    imguiHook->start();
+                    imguiStarted = true;
+                }
                 context.signalReady();
+
                 while (!context.stopToken().stop_requested()) {
                     const bool requestedVsync = m_vsync.load(std::memory_order_relaxed);
                     if (requestedVsync != vsync) {
@@ -115,6 +122,10 @@ namespace TechEngine {
                         TE_PROFILER_SCOPE("Render.RenderFrame");
                         m_renderer.draw(frame, window.framebufferSize());
                     }
+                    if (imguiStarted) {
+                        imguiHook->draw();
+                    }
+
                     const auto submitted = clock.now();
                     {
                         TE_PROFILER_SCOPE("Render.PresentFrame");
@@ -137,6 +148,9 @@ namespace TechEngine {
             failure = std::current_exception();
         }
         if (contextClaimed) {
+            if (imguiStarted) {
+                imguiHook->stop();
+            }
             m_renderer.shutdown();
             window.releaseContext();
         }

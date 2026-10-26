@@ -8,12 +8,15 @@ techengine_app(editor
           src/assets/LooseSource.cpp
           src/project/Project.cpp
           src/project/ProjectError.cpp
+          src/ui/ImGuiBridge.cpp
   HEADERS src/EditorApp.hpp
           src/assets/AssetIndex.hpp
           src/assets/LooseSource.hpp
           src/project/Project.hpp
           src/project/ProjectError.hpp
+          src/ui/ImGuiBridge.hpp
   DEPS    clientapp app core
+  LIBS    TechEngine::imgui
   LIBS_PRIVATE TechEngine::tomlplusplus
   TESTS   tests/EditorAppTests.cpp
           tests/assets/AssetIndexTests.cpp

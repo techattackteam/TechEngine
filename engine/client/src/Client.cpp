@@ -24,7 +24,7 @@ namespace TechEngine {
         stop();
     }
 
-    std::error_code Client::start(const EngineContext& engine, InputBuffer& input, int width, int height, std::string_view title, std::function<void()> onFailure) {
+    std::error_code Client::start(const EngineContext& engine, InputBuffer& input, int width, int height, std::string_view title, std::function<void()> onFailure, ImGuiHook* imguiHook) {
         {
             const std::lock_guard lock{m_state->wakeMutex};
             if (m_state->initialized) {
@@ -43,7 +43,7 @@ namespace TechEngine {
                 return openError;
             }
             m_state->window.setInputBuffer(&input);
-            if (!m_state->renderer.start(engine.jobs, engine.clock, m_state->window, input, std::move(onFailure))) {
+            if (!m_state->renderer.start(engine.jobs, engine.clock, m_state->window, input, std::move(onFailure), imguiHook)) {
                 stop();
                 return ClientError::RendererStartFailed;
             }
@@ -100,6 +100,10 @@ namespace TechEngine {
 
     bool Client::failed() const {
         return m_state->renderer.completion().status == ThreadCompletionStatus::Failed;
+    }
+
+    GLFWwindow* Client::nativeWindow() const {
+        return m_state->window.nativeWindow();
     }
 
     void Client::stop() {

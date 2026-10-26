@@ -48,6 +48,8 @@ IncludeCategories:
     Priority: 1
   - Regex: '^<(GLFW|Jolt|catch2|glad|glm|miniaudio|spdlog|toml\+\+|tracy)/' # third-party
     Priority: 3
+  - Regex: '^<imgui[a-z0-9_]*\.h>$'                                    # third-party: ImGui has no root folder
+    Priority: 3
   - Regex: '^<[a-z_]+>$'                                               # std: one lowercase word, no slash or dot
     Priority: 4
   - Regex: '.*'                                                        # ours: module-private

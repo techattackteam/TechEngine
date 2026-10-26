@@ -12,6 +12,10 @@
 
 #include <EditorApp.hpp>
 
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_internal.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <functional>
@@ -29,6 +33,10 @@ namespace TechEngine {
     EditorApp::EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder) : ClientApp(Role::Client, "TechEngine Editor"), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)), m_source(m_files, m_assets) {
     }
 
+    EditorApp::~EditorApp() {
+        stopImGui();
+    }
+
     void EditorApp::init() {
         m_mounts.mount("project", m_projectRoot);
         m_mounts.mount("engine", executablePath().parent_path() / "engine");
@@ -43,7 +51,10 @@ namespace TechEngine {
         TE_LOGGER_INFO("Indexed {0} assets with {1} duplicates", m_assets.getRecords().size(), m_assets.getDuplicates().size());
         TE_LOGGER_INFO("Opened project '{0}' at {1}", m_project.name(), root.string());
 
-        startClient();
+        // The hook's start runs inside startClient() and needs the context; the platform backend needs the open window.
+        createImGuiContext();
+        startClient(&m_imguiBridge);
+        initImGuiPlatform();
     }
 
     void EditorApp::configureSimulation() {
@@ -75,8 +86,62 @@ namespace TechEngine {
         return {};
     }
 
+    void EditorApp::mainThreadUpdate() {
+        ClientApp::mainThreadUpdate();
+        buildImGuiFrame();
+    }
+
+    void EditorApp::shutdown() {
+        stopImGui();
+        ClientApp::shutdown();
+    }
+
     const AssetIndex& EditorApp::getAssetIndex() const {
         return m_assets;
+    }
+
+    void EditorApp::createImGuiContext() {
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        io.IniFilename = nullptr;
+    }
+
+    void EditorApp::initImGuiPlatform() {
+        const bool initialized = ImGui_ImplGlfw_InitForOpenGL(nativeWindow(), true);
+        TE_CHECK(initialized, "Failed to init ImGui_ImplGlfw");
+    }
+
+    void EditorApp::buildImGuiFrame() {
+        if (stopRequested()) {
+            return;
+        }
+
+        m_imguiBridge.beginFrame();
+        const ImGuiContext& context = *ImGui::GetCurrentContext();
+        const bool hadInput = !context.InputEventsQueue.empty();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        ImGui::ShowDemoWindow();
+        ImGui::Render();
+        m_imguiBridge.publish(*ImGui::GetDrawData());
+
+        // NewFrame trickles queued input, so a press and release in one wake take two frames.
+        const bool inputLeft = !context.InputEventsQueue.empty();
+        if (hadInput || inputLeft || ImGui::IsAnyItemActive()) {
+            wakeMainThread();
+        }
+    }
+
+    void EditorApp::stopImGui() {
+        const bool hasContext = ImGui::GetCurrentContext() != nullptr;
+        if (hasContext && ImGui::GetIO().BackendPlatformUserData != nullptr) {
+            ImGui_ImplGlfw_Shutdown();
+        }
+        stopClient();
+        if (hasContext) {
+            ImGui::DestroyContext();
+        }
     }
 
     void EditorApp::createStartupScene(Scene& scene) {
