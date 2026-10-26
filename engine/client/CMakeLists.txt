@@ -10,6 +10,7 @@ techengine_module(client
         HEADERS include/TechEngine/client/Client.hpp
         include/TechEngine/client/ClientError.hpp
         src/render/SnapshotHistory.hpp
+        include/TechEngine/client/render/ImGuiHook.hpp
         include/TechEngine/client/render/RenderSnapshot.hpp
         src/render/Buffer.hpp
         src/render/SnapshotMailbox.hpp

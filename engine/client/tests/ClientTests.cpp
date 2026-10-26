@@ -3,12 +3,15 @@
 #include <TechEngine/platform/window/WindowError.hpp>
 #include <TechEngine/testing/EngineServices.hpp>
 
+#include <render/RecordingImGuiHook.hpp>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <chrono>
 #include <cstdint>
 #include <system_error>
 #include <thread>
+#include <vector>
 
 static std::uint64_t renderedFrame(const TechEngine::Client& client) {
     TechEngine::RenderTiming timing;
@@ -74,4 +77,24 @@ TEST_CASE("client render pacing can toggle vsync without a simulation publicatio
     CHECK_FALSE(client.failed());
     TechEngine::RenderTiming stopped;
     CHECK_FALSE(client.renderTiming(stopped));
+}
+
+TEST_CASE("Client hands its ImGui hook to the render thread and exposes its window to main only while started", "[client][window]") {
+    TechEngineTests::EngineServices services;
+    TechEngine::InputBuffer input{services.clock};
+    TechEngineTests::RecordingImGuiHook hook;
+    TechEngine::Client client;
+    CHECK(client.nativeWindow() == nullptr);
+    REQUIRE(client.start(services.engine, input, 320, 240, "ImGui hook client test", {}, &hook) == std::error_code{});
+    CHECK(client.nativeWindow() != nullptr);
+    REQUIRE(hook.waitForDraws(1));
+    client.stop();
+    CHECK(client.nativeWindow() == nullptr);
+    CHECK_FALSE(client.failed());
+
+    const std::vector<TechEngineTests::ImGuiHookCall> calls = hook.calls();
+    REQUIRE(calls.size() >= 3);
+    CHECK(calls.front().name == "start");
+    CHECK(calls.back().name == "stop");
+    CHECK(calls.front().thread != std::this_thread::get_id());
 }

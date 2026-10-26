@@ -23,6 +23,7 @@
 #include <project/Project.hpp>
 
 #include <catch2/catch_test_macros.hpp>
+#include <imgui.h>
 
 #include <atomic>
 #include <chrono>
@@ -544,6 +545,48 @@ TEST_CASE("editor updates through a rate sample and shuts down its client", "[ed
     editor.shutdown();
     CHECK(editor.shouldClose());
     editor.shutdown();
+}
+
+TEST_CASE("the editor holds one ImGui context with both backends from init until shutdown", "[editor][window][imgui]") {
+    ScratchDirectory scratch{"editorImGuiLifecycle"};
+    writeProjectLayout(scratch);
+    EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
+    CHECK(ImGui::GetCurrentContext() == nullptr);
+    editor.bootstrap();
+
+    REQUIRE(ImGui::GetCurrentContext() != nullptr);
+    const ImGuiIO& io = ImGui::GetIO();
+    REQUIRE(io.BackendRendererName != nullptr);
+    CHECK(std::string_view{io.BackendRendererName} == "imgui_impl_opengl3");
+    REQUIRE(io.BackendPlatformName != nullptr);
+    CHECK(std::string_view{io.BackendPlatformName}.starts_with("imgui_impl_glfw"));
+    CHECK(io.IniFilename == nullptr);
+    CHECK((io.ConfigFlags & ImGuiConfigFlags_DockingEnable) != 0);
+
+    editor.shutdown();
+    CHECK(ImGui::GetCurrentContext() == nullptr);
+    CHECK(editor.shouldClose());
+    editor.shutdown();
+    CHECK(ImGui::GetCurrentContext() == nullptr);
+}
+
+TEST_CASE("an editor destroyed without shutdown stops its client and releases ImGui for the next one", "[editor][window][imgui]") {
+    ScratchDirectory scratch{"editorImGuiDestroyed"};
+    writeProjectLayout(scratch);
+    {
+        EditorProbe editor{scratch.root(), scratch.makeDirectory("firstExport")};
+        editor.bootstrap();
+        REQUIRE(ImGui::GetCurrentContext() != nullptr);
+    }
+    CHECK(ImGui::GetCurrentContext() == nullptr);
+
+    EditorProbe next{scratch.root(), scratch.makeDirectory("secondExport")};
+    next.bootstrap();
+    REQUIRE(ImGui::GetCurrentContext() != nullptr);
+    REQUIRE(ImGui::GetIO().BackendPlatformName != nullptr);
+    CHECK_FALSE(next.shouldClose());
+    next.shutdown();
+    CHECK(ImGui::GetCurrentContext() == nullptr);
 }
 
 class EditorStallProbe : public TechEngine::EditorApp {

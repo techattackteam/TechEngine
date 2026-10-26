@@ -78,6 +78,8 @@ namespace TechEngine {
 
         GlProcLoader processLoader() const;
 
+        GLFWwindow* nativeWindow() const;
+
     private:
         void framebufferSizeCallback(int width, int height);
 

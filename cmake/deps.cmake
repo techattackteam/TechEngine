@@ -37,6 +37,17 @@ FetchContent_Declare(glfw
   GIT_TAG        3.4
   GIT_SHALLOW    TRUE)
 
+# --- editor UI --------------------------------------------------------------
+# Neither repo is a CMake project, so the library is built here, and only the editor links it.
+# imgui_club has no tags, so it pins a full commit, and a commit pin cannot be a shallow clone.
+FetchContent_Declare(imgui
+  GIT_REPOSITORY https://github.com/ocornut/imgui.git
+  GIT_TAG        v1.93.0-docking
+  GIT_SHALLOW    TRUE)
+FetchContent_Declare(imgui_club
+  GIT_REPOSITORY https://github.com/ocornut/imgui_club.git
+  GIT_TAG        b083116866e05e0d4bccb2c7f28d94a76ee4965e)
+
 # --- config serialization (header-only) -------------------------------------
 FetchContent_Declare(tomlplusplus
   GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
@@ -70,7 +81,7 @@ FetchContent_Declare(Jolt
   GIT_SHALLOW    TRUE
   SOURCE_SUBDIR  Build)
 
-FetchContent_MakeAvailable(glm spdlog glfw tomlplusplus Jolt)
+FetchContent_MakeAvailable(glm spdlog glfw imgui imgui_club tomlplusplus Jolt)
 
 # Jolt precompiles Jolt.h for all 138 of its TUs, and ccache refuses every PCH build and use
 # under its default sloppiness, so Jolt recompiled in full on every CI run. Without the PCH
@@ -85,6 +96,22 @@ add_library(te_tomlplusplus INTERFACE)
 add_library(TechEngine::tomlplusplus ALIAS te_tomlplusplus)
 target_link_libraries(te_tomlplusplus INTERFACE tomlplusplus::tomlplusplus)
 target_compile_definitions(te_tomlplusplus INTERFACE TOML_EXCEPTIONS=0)
+
+# The GL backend embeds its own loader, which dlopens libGL on Linux; glad stays private to client.
+add_library(TechEngineImGui STATIC
+  ${imgui_SOURCE_DIR}/imgui.cpp
+  ${imgui_SOURCE_DIR}/imgui_demo.cpp
+  ${imgui_SOURCE_DIR}/imgui_draw.cpp
+  ${imgui_SOURCE_DIR}/imgui_tables.cpp
+  ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+  ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+  ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp)
+add_library(TechEngine::imgui ALIAS TechEngineImGui)
+target_include_directories(TechEngineImGui SYSTEM PUBLIC
+  ${imgui_SOURCE_DIR}
+  ${imgui_SOURCE_DIR}/backends
+  ${imgui_club_SOURCE_DIR}/imgui_threaded_rendering)
+target_link_libraries(TechEngineImGui PRIVATE glfw ${CMAKE_DL_LIBS})
 
 # --- audio (single-header) --------------------------------------------------
 # Not a CMake project: populate the source and wrap the include dir in an

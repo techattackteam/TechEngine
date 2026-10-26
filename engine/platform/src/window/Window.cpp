@@ -193,6 +193,10 @@ namespace TechEngine {
         return glfwGetProcAddress;
     }
 
+    GLFWwindow* Window::nativeWindow() const {
+        return m_window;
+    }
+
     void Window::framebufferSizeCallback(int width, int height) {
         const std::lock_guard lock{m_framebufferMutex};
         m_framebufferSize = FramebufferSize{width, height};

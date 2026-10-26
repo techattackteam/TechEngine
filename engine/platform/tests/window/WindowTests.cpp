@@ -33,6 +33,21 @@ TEST_CASE("Window opens and closes on main without claiming the context", "[plat
     CHECK(glfwGetCurrentContext() == nullptr);
 }
 
+TEST_CASE("Window exposes its native handle only while open", "[platform][window]") {
+    const TechEngineTests::WindowTerminateGuard scope;
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
+    TechEngine::Window window;
+    CHECK(window.nativeWindow() == nullptr);
+    REQUIRE(window.open(320, 240, "Native handle test") == std::error_code{});
+    GLFWwindow* const native = window.nativeWindow();
+    REQUIRE(native != nullptr);
+    CHECK_FALSE(window.shouldClose());
+    glfwSetWindowShouldClose(native, GLFW_TRUE);
+    CHECK(window.shouldClose());
+    window.close();
+    CHECK(window.nativeWindow() == nullptr);
+}
+
 TEST_CASE("GLFW grows and frees its blocks through the allocator Window installs", "[platform][window]") {
     const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});

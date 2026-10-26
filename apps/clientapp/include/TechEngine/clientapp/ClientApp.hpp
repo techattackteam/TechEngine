@@ -18,7 +18,13 @@ namespace TechEngine {
         ~ClientApp() override = default;
 
     protected:
-        void startClient();
+        // The ImGui hook must outlive the client session.
+        void startClient(ImGuiHook* imguiHook = nullptr);
+
+        // Never throws, unlike shutdown(), so a subclass destructor can end the session before its ImGui hook dies.
+        void stopClient();
+
+        GLFWwindow* nativeWindow() const;
 
         void publishSnapshot(const SimulationContext& simulation) override;
 

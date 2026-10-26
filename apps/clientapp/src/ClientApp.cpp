@@ -12,13 +12,28 @@ namespace TechEngine {
     ClientApp::ClientApp(const Role role, std::string title) : App(role), m_title(std::move(title)) {
     }
 
-    void ClientApp::startClient() {
-        const std::error_code startError = m_client.start(m_engine, m_input, 1280, 720, m_title, [this] {
-            requestStop();
-        });
+    void ClientApp::startClient(ImGuiHook* imguiHook) {
+        const std::error_code startError = m_client.start(
+            m_engine,
+            m_input,
+            1280,
+            720,
+            m_title,
+            [this] {
+                requestStop();
+            },
+            imguiHook);
         if (startError) {
             throw std::runtime_error{"Failed to start the client session: " + startError.message()};
         }
+    }
+
+    void ClientApp::stopClient() {
+        m_client.stop();
+    }
+
+    GLFWwindow* ClientApp::nativeWindow() const {
+        return m_client.nativeWindow();
     }
 
     void ClientApp::publishSnapshot(const SimulationContext& simulation) {
@@ -63,7 +78,7 @@ namespace TechEngine {
     }
 
     void ClientApp::shutdown() {
-        m_client.stop();
+        stopClient();
         if (m_client.failed()) {
             throw std::runtime_error{"Render thread failed"};
         }
