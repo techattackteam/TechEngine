@@ -156,6 +156,9 @@ namespace TechEngine {
     void App::simulationShutdown() {
         m_resources.release(m_sceneHandle);
         m_sceneHandle = {};
+        // A released scene holds its references until its entry is freed, so without this drain
+        // the cache's shutdown log reports every one of them as a leak.
+        m_resources.drainFrees();
     }
 
     void App::shutdown() {

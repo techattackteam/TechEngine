@@ -22,6 +22,8 @@ namespace TechEngine {
                         return "export target's startup scene is not an indexed asset";
                     case ProjectError::StartupSceneNotInTarget:
                         return "export target's startup scene is on a side the target does not ship";
+                    case ProjectError::UnknownReference:
+                        return "export target's startup scene references an asset that is not indexed";
                 }
                 return "unknown project error";
             }

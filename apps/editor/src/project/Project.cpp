@@ -4,6 +4,9 @@
 #include <TechEngine/core/resources/BootRecord.hpp>
 #include <TechEngine/core/resources/PackWriter.hpp>
 #include <TechEngine/core/resources/Side.hpp>
+#include <TechEngine/core/scene/ComponentRegistry.hpp>
+#include <TechEngine/core/scene/Scene.hpp>
+#include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/platform/files/MountTable.hpp>
 
@@ -19,6 +22,7 @@
 #include <cstdint>
 #include <format>
 #include <optional>
+#include <span>
 #include <sstream>
 #include <string>
 #include <system_error>
@@ -127,7 +131,7 @@ namespace TechEngine {
         return {};
     }
 
-    std::error_code Project::exportTo(const Role target, const AssetIndex& index, const FileAccess& files, const std::filesystem::path& exportFolder) const {
+    std::error_code Project::exportTo(const Role target, const AssetIndex& index, const FileAccess& files, ComponentRegistry& registry, const std::filesystem::path& exportFolder) const {
         const auto exportTarget = std::ranges::find(EXPORT_TARGETS, target, &ExportTargetSides::role);
         TE_CHECK(exportTarget != EXPORT_TARGETS.end(), "Export target {0} is not built yet", static_cast<int>(target));
         const auto ships = [&exportTarget](const Side side) {
@@ -153,6 +157,24 @@ namespace TechEngine {
             return readError;
         }
 
+        std::vector<AssetRecord> reached;
+        const std::error_code reachError = collectReachedAssets(scene, scenePayload, index, registry, reached);
+        if (reachError) {
+            return reachError;
+        }
+
+        std::vector<std::vector<std::byte>> payloads(reached.size());
+        payloads[0] = std::move(scenePayload);
+        for (std::size_t i = 1; i < reached.size(); i++) {
+            if (!ships(reached[i].side)) {
+                continue;
+            }
+            const std::error_code assetReadError = files.read(reached[i].path, payloads[i]);
+            if (assetReadError) {
+                return assetReadError;
+            }
+        }
+
         std::vector<ExportPack> packs;
         RolePacks rolePacks;
         rolePacks.role = target;
@@ -166,13 +188,17 @@ namespace TechEngine {
         BootRecord bootRecord;
         bootRecord.startupScene = scene.id;
         bootRecord.rolePacks = {rolePacks};
-        bootRecord.sides = {{scene.id, scene.side}};
+        for (const AssetRecord& record: reached) {
+            bootRecord.sides.push_back({record.id, record.side});
+        }
         std::vector<std::byte> bootBytes;
         bootRecord.write(bootBytes);
 
         for (ExportPack& pack: packs) {
-            if (pack.file.side == scene.side) {
-                pack.writer.add({scene.id, scene.typeTag, scene.path, scenePayload});
+            for (std::size_t i = 0; i < reached.size(); i++) {
+                if (pack.file.side == reached[i].side) {
+                    pack.writer.add({reached[i].id, reached[i].typeTag, reached[i].path, payloads[i]});
+                }
             }
             if (pack.file.side == Side::Common) {
                 pack.writer.setBootRecord(bootBytes);
@@ -223,6 +249,33 @@ namespace TechEngine {
     void Project::setExportStartupScene(const Role target, const ResourceId id) {
         TE_CHECK(target == Role::Client, "Only the client export target exists so far");
         m_clientStartupScene = id;
+    }
+
+    std::error_code Project::collectReachedAssets(const AssetRecord& scene, const std::span<const std::byte> sceneBytes, const AssetIndex& index, ComponentRegistry& registry, std::vector<AssetRecord>& out) const {
+        Scene parsed(registry);
+        SceneAsset asset;
+        const std::error_code parseError = asset.read(sceneBytes, parsed);
+        if (parseError) {
+            return parseError;
+        }
+        std::vector<ResourceId> references;
+        asset.collectReferences(parsed, references);
+
+        std::vector<AssetRecord> reached = {scene};
+        for (const ResourceId reference: references) {
+            // PackWriter::add rejects an id added twice. The runtime's load fails this scene as cyclic.
+            if (reference == scene.id) {
+                continue;
+            }
+            AssetRecord record;
+            if (!index.find(reference, record)) {
+                TE_LOGGER_ERROR("The startup scene {0:#018x} references {1:#018x}, which is not an indexed asset", scene.id.value(), reference.value());
+                return ProjectError::UnknownReference;
+            }
+            reached.push_back(std::move(record));
+        }
+        out = std::move(reached);
+        return {};
     }
 
     std::error_code Project::findFreeExportFolder(const FileAccess& output, std::string& out) const {

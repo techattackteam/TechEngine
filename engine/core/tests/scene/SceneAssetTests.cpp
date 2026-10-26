@@ -1121,3 +1121,15 @@ TEST_CASE("a reference absent for this role does not fail the load, and its hand
     CHECK(linkedAcquireCount(harness.cache, absent) == 1);
     CHECK(harness.cache.resolve(absent) == nullptr);
 }
+
+TEST_CASE("collectReferences lists each distinct referenced id once, in walk order, and skips empty fields", "[core][scene]") {
+    ComponentRegistry registry;
+    registerLinkComponents(registry);
+    Scene scene(registry);
+    readIntoRecycledScene(writeLinkedSmallHierarchy(registry), scene);
+
+    std::vector<ResourceId> references;
+    SceneAsset{SCENE_ASSET_ID}.collectReferences(scene, references);
+
+    CHECK(references == std::vector<ResourceId>{LINKED_ASSET_ID, SECOND_LINKED_ASSET_ID});
+}

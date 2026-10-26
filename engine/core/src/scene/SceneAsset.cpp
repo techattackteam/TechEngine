@@ -268,11 +268,11 @@ namespace TechEngine {
     }
 
     std::error_code SceneAsset::acquireReferences(ResourceCache& cache, Scene& scene, const ResourceHandle<SceneBytes> handle) const {
-        SceneAssetIdCollector collector;
-        visitReferences(scene, collector);
+        std::vector<ResourceId> references;
+        collectReferences(scene, references);
 
         std::unordered_map<ResourceId, ResourceSlotId> slots;
-        for (const ResourceId reference: collector.getIds()) {
+        for (const ResourceId reference: references) {
             ResourceSlotId slot;
             const std::error_code dependencyError = cache.addDependency(handle, reference, slot);
             if (dependencyError) {
@@ -289,6 +289,12 @@ namespace TechEngine {
         SceneAssetHandleFiller filler{slots};
         visitReferences(scene, filler);
         return {};
+    }
+
+    void SceneAsset::collectReferences(Scene& scene, std::vector<ResourceId>& out) const {
+        SceneAssetIdCollector collector;
+        visitReferences(scene, collector);
+        out = collector.getIds();
     }
 
     void SceneAsset::visitReferences(Scene& scene, ReferenceVisitor& visitor) const {

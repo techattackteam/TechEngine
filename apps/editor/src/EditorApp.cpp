@@ -68,7 +68,7 @@ namespace TechEngine {
         }
 
         // TODO: Remove the export step from the startup load and make it a separate command in the editor UI.
-        const std::error_code exportError = m_project.exportTo(Role::Client, m_assets, m_files, m_exportFolder);
+        const std::error_code exportError = m_project.exportTo(Role::Client, m_assets, m_files, m_registry, m_exportFolder);
         if (exportError) {
             TE_LOGGER_ERROR("Failed to export the project to {0}: {1}", m_exportFolder.string(), exportError.message());
         }

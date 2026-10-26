@@ -36,6 +36,8 @@ namespace TechEngine {
 
         std::error_code load(ResourceCache& cache, Scene& scene, ResourceHandle<SceneBytes>& out) const;
 
+        void collectReferences(Scene& scene, std::vector<ResourceId>& out) const;
+
     private:
         std::error_code acquireReferences(ResourceCache& cache, Scene& scene, ResourceHandle<SceneBytes> handle) const;
 
