@@ -2,6 +2,8 @@
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/mesh/MeshRenderer.hpp>
 #include <TechEngine/core/resources/PackReader.hpp>
+#include <TechEngine/core/resources/ResourceCache.hpp>
+#include <TechEngine/core/resources/ResourceHandle.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/resources/Side.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
@@ -83,6 +85,14 @@ namespace {
 
         const TechEngine::FileAccess& files() const {
             return m_files;
+        }
+
+        const TechEngine::ResourceCache& resources() const {
+            return m_resources;
+        }
+
+        TechEngine::ResourceHandle<TechEngine::SceneBytes> sceneHandle() const {
+            return m_sceneHandle;
         }
     };
 
@@ -313,6 +323,75 @@ TEST_CASE("a later launch finds the saved startup scene and creates nothing", "[
     CHECK(fileCount(scratch.root() / "assets" / "common") == 1);
     CHECK(fileCount(scratch.root() / "assets" / "client") == 1);
     second.shutdown();
+}
+
+TEST_CASE("a later launch opens on the saved startup scene through the cache", "[editor][window]") {
+    ScratchDirectory scratch{"editorLoadsStartupScene"};
+    writeProjectLayout(scratch);
+    const std::filesystem::path exportFolder = scratch.makeDirectory("export");
+
+    TechEngine::ResourceId meshId;
+    {
+        EditorProbe first{scratch.root(), exportFolder};
+        first.bootstrap();
+        meshId = meshRendererOnRoot(first.scene());
+        CHECK_FALSE(first.sceneHandle().valid());
+        first.shutdown();
+    }
+    REQUIRE(meshId.valid());
+
+    EditorProbe second{scratch.root(), exportFolder};
+    second.bootstrap();
+
+    checkParentWithTwoChildren(second.scene());
+
+    SECTION("it holds the scene as one Ready cache entry") {
+        const TechEngine::ResourceHandle<TechEngine::SceneBytes> handle = second.sceneHandle();
+        REQUIRE(handle.valid());
+        TechEngine::ResourceState state = TechEngine::ResourceState::Pending;
+        REQUIRE(second.resources().getState(handle, state));
+        CHECK(state == TechEngine::ResourceState::Ready);
+        std::uint32_t acquires = 0;
+        REQUIRE(second.resources().getAcquireCount(handle, acquires));
+        CHECK(acquires == 1);
+    }
+
+    SECTION("it acquires the mesh its root references and fills the handle") {
+        const std::vector<TechEngine::Entity> roots = second.scene().getRoots();
+        REQUIRE(roots.size() == 1);
+        REQUIRE(second.scene().hasComponent<TechEngine::MeshRenderer>(roots[0]));
+        const TechEngine::MeshRenderer& renderer = second.scene().getComponent<TechEngine::MeshRenderer>(roots[0]);
+        CHECK(renderer.mesh.id == meshId);
+        REQUIRE(renderer.mesh.handle.valid());
+
+        TechEngine::ResourceState state = TechEngine::ResourceState::Pending;
+        REQUIRE(second.resources().getState(renderer.mesh.handle, state));
+        CHECK(state == TechEngine::ResourceState::Ready);
+        const TechEngine::Mesh* mesh = second.resources().resolve(renderer.mesh.handle);
+        REQUIRE(mesh != nullptr);
+        CHECK(mesh->id == meshId);
+        CHECK(mesh->positions == std::vector<TechEngine::Vec3>{TechEngine::Vec3(-0.5f, -0.5f, 0.0f), TechEngine::Vec3(0.5f, -0.5f, 0.0f), TechEngine::Vec3(0.0f, 0.5f, 0.0f)});
+        CHECK(mesh->indices == std::vector<std::uint32_t>{0, 1, 2});
+    }
+
+    second.shutdown();
+}
+
+TEST_CASE("a named startup scene that does not parse leaves the editor open on an empty scene", "[editor][window]") {
+    ScratchDirectory scratch{"editorStartupSceneDoesNotParse"};
+    writeProjectLayout(scratch);
+    constexpr TechEngine::ResourceId sceneId{0x0123456789abcdef};
+    scratch.writeFile("project.toml", "name = \"Dev\"\n\n[export.client]\nstartupScene = \"0x0123456789abcdef\"\n");
+    TechEngineTests::writeBytes(scratch, STARTUP_SCENE_FILE, TechEngineTests::assetBytes(TechEngine::SCENE_KIND, sceneId, "not a scene"));
+
+    EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
+    editor.bootstrap();
+
+    CHECK(editor.scene().getRoots().empty());
+    CHECK_FALSE(editor.sceneHandle().valid());
+    CHECK(savedStartupScene(scratch) == sceneId);
+    CHECK_FALSE(editor.shouldClose());
+    editor.shutdown();
 }
 
 TEST_CASE("the startup load creates nothing when the project already names a startup scene", "[editor][window]") {

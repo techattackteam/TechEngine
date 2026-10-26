@@ -3,6 +3,7 @@
 #include <TechEngine/clientapp/ClientApp.hpp>
 
 #include <assets/AssetIndex.hpp>
+#include <assets/LooseSource.hpp>
 #include <project/Project.hpp>
 
 #include <cstddef>
@@ -19,6 +20,7 @@ namespace TechEngine {
         std::filesystem::path m_exportFolder;
         Project m_project;
         AssetIndex m_assets;
+        LooseSource m_source;
 
     public:
         EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder);
