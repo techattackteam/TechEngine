@@ -26,7 +26,7 @@ namespace TechEngine {
     static constexpr std::string_view STARTUP_SCENE_PATH = "project://assets/common/Startup.tescene";
     static constexpr std::string_view TRIANGLE_MESH_PATH = "project://assets/client/Triangle.temesh";
 
-    EditorApp::EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder) : ClientApp(Role::Client, "TechEngine Editor"), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)) {
+    EditorApp::EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder) : ClientApp(Role::Client, "TechEngine Editor"), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)), m_source(m_files, m_assets) {
     }
 
     void EditorApp::init() {
@@ -49,12 +49,20 @@ namespace TechEngine {
     void EditorApp::configureSimulation() {
         ClientApp::configureSimulation();
         m_registry.registerComponent<MeshRenderer>(MeshRenderer::tag);
+        m_resources.registerLoader<SceneBytes>(SCENE_KIND, SCENE_TYPE_TAG, &SceneBytes::loadPayload);
+        m_resources.registerLoader<Mesh>(MESH_KIND, MESH_TYPE_TAG, &Mesh::loadPayload);
     }
 
     std::error_code EditorApp::simulationStartupLoad(Scene& scene) {
-        if (m_project.getExportStartupScene(Role::Client).valid()) {
-            // TODO: read the startup scene into the scene with SceneAsset::read, so the editor opens on
-            // it. Until then a later launch leaves the scene empty.
+        m_resources.setSource(m_source);
+        const ResourceId startupScene = m_project.getExportStartupScene(Role::Client);
+        if (startupScene.valid()) {
+            const std::error_code loadError = SceneAsset{startupScene}.load(m_resources, scene, m_sceneHandle);
+            if (loadError) {
+                TE_LOGGER_ERROR("The startup scene {0:#018x} does not load, so the editor opens on an empty scene: {1}", startupScene.value(), loadError.message());
+            } else {
+                TE_LOGGER_INFO("Opened the startup scene {0:#018x} with {1} root entities", startupScene.value(), scene.getRoots().size());
+            }
         } else {
             createStartupScene(scene);
         }
