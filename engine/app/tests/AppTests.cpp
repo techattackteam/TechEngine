@@ -1,4 +1,7 @@
 #include <TechEngine/app/App.hpp>
+#include <TechEngine/app/Command.hpp>
+#include <TechEngine/app/SimulationError.hpp>
+#include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/stringid/StringId.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/resources/ResourceCache.hpp>
@@ -14,6 +17,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <cctype>
 #include <chrono>
 #include <condition_variable>
 #include <cstddef>
@@ -21,9 +25,11 @@
 #include <exception>
 #include <filesystem>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <span>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <system_error>
 #include <thread>
@@ -903,5 +909,228 @@ TEST_CASE("App reports simulation shutdown failures without replacing an earlier
     } else {
         CHECK_THROWS_WITH(std::rethrow_exception(completion.failure), "simulation shutdown failed");
     }
+    checkStopped(app);
+}
+
+struct AppCommandRecord {
+    int id = 0;
+    const TechEngine::Scene* scene = nullptr;
+    std::size_t loadsBefore = 0;
+    std::size_t ticksBefore = 0;
+};
+
+class AppCommandLog {
+public:
+    void applied(const AppCommandRecord& record) {
+        std::lock_guard const lock{m_mutex};
+        m_applied.push_back(record);
+    }
+
+    void destroyed() {
+        std::lock_guard const lock{m_mutex};
+        m_destroyed++;
+    }
+
+    std::vector<AppCommandRecord> appliedRecords() const {
+        std::lock_guard const lock{m_mutex};
+        return m_applied;
+    }
+
+    int destroyedCount() const {
+        std::lock_guard const lock{m_mutex};
+        return m_destroyed;
+    }
+
+private:
+    mutable std::mutex m_mutex;
+    std::vector<AppCommandRecord> m_applied;
+    int m_destroyed = 0;
+};
+
+class AppProbeCommand final : public TechEngine::Command {
+public:
+    AppProbeCommand(const int id, AppCommandLog& log, const AppLifecycleProbe& app) : m_id(id), m_log(log), m_app(app) {
+    }
+
+    ~AppProbeCommand() override {
+        m_log.destroyed();
+    }
+
+    void apply(TechEngine::Scene& scene) override {
+        m_log.applied({.id = m_id, .scene = &scene, .loadsBefore = eventCount(m_app, "simulationStartupLoad"), .ticksBefore = eventCount(m_app, "systemTick")});
+    }
+
+private:
+    int m_id;
+    AppCommandLog& m_log;
+    const AppLifecycleProbe& m_app;
+};
+
+static std::error_code submitProbe(AppLifecycleProbe& app, const int id, AppCommandLog& log) {
+    return app.submitCommand(std::make_unique<AppProbeCommand>(id, log, app));
+}
+
+static std::mutex g_appWarningsMutex;
+static std::vector<std::string> g_appWarnings;
+
+static void captureAppWarning(const TechEngine::LogRecord& record) {
+    if (record.level != TechEngine::Level::Warn) {
+        return;
+    }
+    std::lock_guard const lock{g_appWarningsMutex};
+    g_appWarnings.emplace_back(record.message);
+}
+
+class AppWarningCapture {
+public:
+    AppWarningCapture() : m_previousLevel(TechEngine::minLevel()) {
+        clear();
+        TechEngine::setMinLevel(TechEngine::Level::Warn);
+        (void)TechEngine::addLogSink(&captureAppWarning);
+    }
+
+    ~AppWarningCapture() {
+        (void)TechEngine::removeLogSink(&captureAppWarning);
+        TechEngine::setMinLevel(m_previousLevel);
+        clear();
+    }
+
+    AppWarningCapture(const AppWarningCapture&) = delete;
+
+    AppWarningCapture& operator=(const AppWarningCapture&) = delete;
+
+    std::vector<std::string> containing(std::string_view text) const {
+        std::lock_guard const lock{g_appWarningsMutex};
+        std::vector<std::string> matches;
+        for (const std::string& warning: g_appWarnings) {
+            const auto found = std::ranges::search(warning, text, [](const char left, const char right) {
+                return std::tolower(static_cast<unsigned char>(left)) == std::tolower(static_cast<unsigned char>(right));
+            });
+            if (!found.empty()) {
+                matches.push_back(warning);
+            }
+        }
+        return matches;
+    }
+
+private:
+    static void clear() {
+        std::lock_guard const lock{g_appWarningsMutex};
+        g_appWarnings.clear();
+    }
+
+    TechEngine::Level m_previousLevel;
+};
+
+TEST_CASE("App applies submitted commands to the live scene in FIFO order before that loop pass's ticks", "[app][lifecycle][commands]") {
+    const AppWarningCapture warnings;
+    AppLifecycleProbe app;
+    AppCommandLog log;
+    std::vector<std::error_code> submitErrors;
+    app.onSimulationStartupLoad = [&] {
+        for (int id = 1; id <= 3; id++) {
+            submitErrors.push_back(submitProbe(app, id, log));
+        }
+        return std::error_code{};
+    };
+    stopAtTick(app, 2);
+
+    REQUIRE(app.run() == 0);
+    REQUIRE(submitErrors.size() == 3);
+    for (const std::error_code& submitError: submitErrors) {
+        CHECK_FALSE(submitError);
+    }
+    const std::vector<AppCommandRecord> applied = log.appliedRecords();
+    REQUIRE(applied.size() == 3);
+    for (std::size_t i = 0; i < applied.size(); i++) {
+        CHECK(applied[i].id == static_cast<int>(i) + 1);
+        CHECK(applied[i].scene == &TechEngineTests::AppTestAccess::scene(app));
+        CHECK(applied[i].loadsBefore == 1);
+        CHECK(applied[i].ticksBefore == 0);
+    }
+    CHECK(log.destroyedCount() == 3);
+    CHECK(warnings.containing("cancel").empty());
+    checkStopped(app);
+}
+
+TEST_CASE("App rejects and never applies a command submitted before the run or after stop is requested", "[app][lifecycle][commands]") {
+    AppLifecycleProbe app;
+    AppCommandLog log;
+    const std::error_code beforeRunError = submitProbe(app, 0, log);
+    std::error_code duringStopError;
+    app.onSimulationStartupLoad = [&] {
+        app.requestStop();
+        duringStopError = submitProbe(app, 1, log);
+        return std::error_code{};
+    };
+
+    REQUIRE(app.run() == 0);
+    const std::error_code afterRunError = submitProbe(app, 2, log);
+
+    CHECK(beforeRunError == TechEngine::SimulationError::CommandQueueClosed);
+    CHECK(duringStopError == TechEngine::SimulationError::CommandQueueClosed);
+    CHECK(afterRunError == TechEngine::SimulationError::CommandQueueClosed);
+    CHECK(log.appliedRecords().empty());
+    CHECK(log.destroyedCount() == 3);
+    checkStopped(app);
+}
+
+TEST_CASE("App accepts commands again on its next run", "[app][lifecycle][commands]") {
+    AppLifecycleProbe app;
+    AppCommandLog log;
+    app.onSimulationStartupLoad = [&] {
+        app.requestStop();
+        return std::error_code{};
+    };
+    REQUIRE(app.run() == 0);
+
+    std::error_code secondRunError = TechEngine::SimulationError::CommandQueueClosed;
+    app.onSimulationStartupLoad = [&] {
+        secondRunError = submitProbe(app, 1, log);
+        return std::error_code{};
+    };
+    stopAtTick(app, 1);
+
+    REQUIRE(app.run() == 0);
+    CHECK_FALSE(secondRunError);
+    const std::vector<AppCommandRecord> applied = log.appliedRecords();
+    REQUIRE(applied.size() == 1);
+    CHECK(applied.front().id == 1);
+}
+
+TEST_CASE("App reports commands accepted but not applied at shutdown as cancelled", "[app][lifecycle][commands]") {
+    const AppWarningCapture warnings;
+    AppLifecycleProbe app;
+    AppCommandLog log;
+    std::vector<std::error_code> submitErrors;
+    bool loadFails = false;
+    SECTION("stop is requested during the startup load") {
+    }
+    SECTION("the startup load fails") {
+        loadFails = true;
+    }
+    app.onSimulationStartupLoad = [&]() -> std::error_code {
+        for (int id = 1; id <= 2; id++) {
+            submitErrors.push_back(submitProbe(app, id, log));
+        }
+        if (loadFails) {
+            return TechEngine::FileError::NotFound;
+        }
+        app.requestStop();
+        return {};
+    };
+
+    const int result = app.run();
+
+    CHECK(result == (loadFails ? 1 : 0));
+    REQUIRE(submitErrors.size() == 2);
+    for (const std::error_code& submitError: submitErrors) {
+        CHECK_FALSE(submitError);
+    }
+    CHECK(log.appliedRecords().empty());
+    CHECK(log.destroyedCount() == 2);
+    const std::vector<std::string> cancelled = warnings.containing("cancel");
+    REQUIRE(cancelled.size() == 1);
+    CHECK(cancelled.front().find('2') != std::string::npos);
     checkStopped(app);
 }

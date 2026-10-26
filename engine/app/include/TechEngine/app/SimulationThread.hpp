@@ -52,6 +52,7 @@ namespace TechEngine {
         std::atomic<bool> m_stopRequested = false;
         std::mutex m_waitMutex;
         std::condition_variable m_wake;
+        bool m_commandsPending = false;
         DedicatedThread m_thread;
 
     public:
@@ -70,6 +71,8 @@ namespace TechEngine {
         std::error_code start(JobSystem& jobs, App& app, bool presentationActive);
 
         void requestStop();
+
+        void wakeForCommands();
 
         void stop();
 

@@ -16,6 +16,10 @@ namespace TechEngine {
                         return "simulation thread is already running";
                     case SimulationError::StartupFailed:
                         return "simulation thread failed to start";
+                    case SimulationError::CommandQueueFull:
+                        return "command queue is full";
+                    case SimulationError::CommandQueueClosed:
+                        return "command queue is closed";
                 }
                 return "unknown simulation error";
             }

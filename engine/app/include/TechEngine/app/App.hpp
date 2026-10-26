@@ -1,5 +1,7 @@
 #pragma once
 
+#include <TechEngine/app/Command.hpp>
+#include <TechEngine/app/CommandQueue.hpp>
 #include <TechEngine/app/SimulationThread.hpp>
 #include <TechEngine/base/time/Clock.hpp>
 #include <TechEngine/core/EngineContext.hpp>
@@ -39,6 +41,7 @@ namespace TechEngine {
         std::atomic<bool> m_stopRequested = false;
         std::mutex m_mainMutex;
         std::condition_variable m_mainWake;
+        CommandQueue m_commandQueue;
 
     protected:
         MountTable m_mounts;
@@ -74,6 +77,8 @@ namespace TechEngine {
         int run();
 
         void requestStop();
+
+        std::error_code submitCommand(std::unique_ptr<Command> command);
 
         TimingMetrics timingMetrics() const;
 
@@ -115,6 +120,10 @@ namespace TechEngine {
         bool renderingActive() const;
 
         void runMainThread();
+
+        void applyCommands();
+
+        void cancelCommands();
 
         bool stopSimulation();
     };
