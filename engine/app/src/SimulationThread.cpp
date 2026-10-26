@@ -62,6 +62,14 @@ namespace TechEngine {
         m_wake.notify_all();
     }
 
+    void SimulationThread::wakeForCommands() {
+        {
+            const std::lock_guard lock{m_waitMutex};
+            m_commandsPending = true;
+        }
+        m_wake.notify_all();
+    }
+
     void SimulationThread::stop() {
         requestStop();
         m_thread.requestStop();
@@ -162,7 +170,7 @@ namespace TechEngine {
         const Clock::TimePoint deadline = sampled + std::chrono::ceil<Clock::TimePoint::duration>(std::chrono::duration<double>(m_fixedDeltaTime - m_accumulator));
         std::unique_lock lock{m_waitMutex};
         m_wake.wait_until(lock, deadline, [this] {
-            return m_stopRequested.load();
+            return m_stopRequested.load() || m_commandsPending;
         });
     }
 
@@ -175,6 +183,7 @@ namespace TechEngine {
                 TE_PROFILER_SCOPE("Simulation.Publish");
                 app.publishSnapshot(m_context);
             }
+            app.m_commandQueue.open();
             context.signalReady();
 
             {
@@ -186,6 +195,12 @@ namespace TechEngine {
                 const std::stop_token stopToken = context.stopToken();
                 Clock::TimePoint previous = m_origin;
                 while (!m_stopRequested.load() && !app.stopRequested() && !stopToken.stop_requested()) {
+                    {
+                        const std::lock_guard lock{m_waitMutex};
+                        m_commandsPending = false;
+                    }
+                    app.applyCommands();
+
                     const Clock::TimePoint current = m_context.engine.clock.now();
                     const std::uint64_t previousTick = m_context.tick;
                     advance(toSeconds(current - previous), [&app](const SimulationContext& simulation) {
@@ -203,6 +218,7 @@ namespace TechEngine {
             failure = std::current_exception();
         }
 
+        app.cancelCommands();
         try {
             app.simulationShutdown();
         } catch (...) {

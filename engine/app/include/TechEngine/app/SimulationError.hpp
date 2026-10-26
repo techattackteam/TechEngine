@@ -5,7 +5,7 @@
 #include <type_traits>
 
 namespace TechEngine {
-    enum class SimulationError : std::uint8_t { AlreadyRunning = 1, StartupFailed };
+    enum class SimulationError : std::uint8_t { AlreadyRunning = 1, StartupFailed, CommandQueueFull, CommandQueueClosed };
 
     const std::error_category& simulationErrorCategory();
 

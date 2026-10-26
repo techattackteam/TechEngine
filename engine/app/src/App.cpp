@@ -9,8 +9,11 @@
 #include <diagnostics/MemoryTracking.hpp>
 
 #include <exception>
+#include <memory>
 #include <span>
 #include <string_view>
+#include <utility>
+#include <vector>
 
 namespace TechEngine {
     class NoOpTickBarrierServices final : public TickBarrierServices {
@@ -81,8 +84,17 @@ namespace TechEngine {
             m_stopRequested.store(true);
         }
         m_mainWake.notify_all();
+        m_commandQueue.close();
         wakeMainThread();
         m_simulationThread.requestStop();
+    }
+
+    std::error_code App::submitCommand(std::unique_ptr<Command> command) {
+        const std::error_code submitError = m_commandQueue.submit(std::move(command));
+        if (!submitError) {
+            m_simulationThread.wakeForCommands();
+        }
+        return submitError;
     }
 
     TimingMetrics App::timingMetrics() const {
@@ -181,6 +193,24 @@ namespace TechEngine {
             }
             mainThreadUpdate();
         }
+    }
+
+    void App::applyCommands() {
+        std::vector<std::unique_ptr<Command>> batch;
+        m_commandQueue.consume(batch);
+        for (auto& command: batch) {
+            command->apply(m_scene);
+        }
+    }
+
+    void App::cancelCommands() {
+        m_commandQueue.close();
+        std::vector<std::unique_ptr<Command>> batch;
+        m_commandQueue.consume(batch);
+        if (batch.empty()) {
+            return;
+        }
+        TE_LOGGER_WARN("Cancelled {0} commands", batch.size());
     }
 
     bool App::stopSimulation() {
