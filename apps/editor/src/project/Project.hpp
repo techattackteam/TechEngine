@@ -5,14 +5,19 @@
 
 #include <project/ProjectError.hpp>
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <span>
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <vector>
 
 namespace TechEngine {
     class AssetIndex;
+    class ComponentRegistry;
+    struct AssetRecord;
     enum class Role : std::uint8_t;
 
     class Project {
@@ -26,7 +31,7 @@ namespace TechEngine {
 
         std::error_code save(FileAccess& files, std::string_view manifestPath) const;
 
-        std::error_code exportTo(Role target, const AssetIndex& index, const FileAccess& files, const std::filesystem::path& exportFolder) const;
+        std::error_code exportTo(Role target, const AssetIndex& index, const FileAccess& files, ComponentRegistry& registry, const std::filesystem::path& exportFolder) const;
 
         const std::filesystem::path& root() const;
 
@@ -37,6 +42,8 @@ namespace TechEngine {
         void setExportStartupScene(Role target, ResourceId id);
 
     private:
+        std::error_code collectReachedAssets(const AssetRecord& scene, std::span<const std::byte> sceneBytes, const AssetIndex& index, ComponentRegistry& registry, std::vector<AssetRecord>& out) const;
+
         std::error_code findFreeExportFolder(const FileAccess& output, std::string& out) const;
     };
 }

@@ -1,6 +1,9 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/SimulationContext.hpp>
+#include <TechEngine/core/mesh/Mesh.hpp>
+#include <TechEngine/core/mesh/MeshRenderer.hpp>
+#include <TechEngine/core/resources/AssetRef.hpp>
 #include <TechEngine/core/resources/BootRecord.hpp>
 #include <TechEngine/core/resources/PackWriter.hpp>
 #include <TechEngine/core/resources/ResourceCache.hpp>
@@ -810,4 +813,85 @@ TEST_CASE("a startup scene that does not parse ends the startup load with its re
 
     CHECK(runtime.scene().getRoots().empty());
     CHECK_FALSE(runtime.sceneHandle().valid());
+}
+
+static constexpr TechEngine::ResourceId TRIANGLE_MESH_ID = TechEngine::ResourceId(0x3E5400000000000A);
+static constexpr std::string_view TRIANGLE_MESH_NAME = "project://assets/client/Triangle.temesh";
+
+static const std::vector<TechEngine::Vec3> TRIANGLE_POSITIONS = {TechEngine::Vec3(-0.5f, -0.5f, 0.0f), TechEngine::Vec3(0.5f, -0.5f, 0.0f), TechEngine::Vec3(0.0f, 0.5f, 0.0f)};
+
+static std::vector<std::byte> meshSceneBytes() {
+    TechEngine::ComponentRegistry registry;
+    registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
+    registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
+    registry.registerComponent<TechEngine::MeshRenderer>(TechEngine::MeshRenderer::tag);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity root = scene.createEntity();
+    scene.addComponent<TechEngine::MeshRenderer>(root, TechEngine::MeshRenderer{TechEngine::AssetRef<TechEngine::Mesh>{TRIANGLE_MESH_ID, {}}});
+
+    std::vector<std::byte> bytes;
+    TechEngine::SceneAsset{STARTUP_SCENE_ID}.write(scene, bytes);
+    return bytes;
+}
+
+static std::vector<std::byte> triangleMeshBytes() {
+    const TechEngine::Mesh mesh{TRIANGLE_MESH_ID, TRIANGLE_POSITIONS, {0, 1, 2}};
+    std::vector<std::byte> bytes;
+    mesh.write(bytes);
+    return bytes;
+}
+
+static void writeClientExportWithMesh(const ScratchDirectory& scratch, const std::span<const std::byte> scene, const std::span<const std::byte> mesh) {
+    TechEngine::BootRecord record = clientBootRecord(TechEngine::Side::Common);
+    record.sides.push_back({TRIANGLE_MESH_ID, TechEngine::Side::Client});
+    const std::vector<std::byte> bootRecord = bootRecordBytes(record);
+    writePack(scratch, "common.tepack", {{STARTUP_SCENE_ID, TechEngine::SCENE_TYPE_TAG, STARTUP_SCENE_NAME, scene}}, bootRecord);
+    writePack(scratch, "client.tepack", {{TRIANGLE_MESH_ID, TechEngine::MESH_TYPE_TAG, TRIANGLE_MESH_NAME, mesh}}, {});
+}
+
+TEST_CASE("the startup load acquires the mesh the startup scene references from the client pack", "[runtime][load]") {
+    const RuntimeLogCaptureGuard logs;
+    const ScratchDirectory scratch{"runtimeLoadMesh"};
+    const std::vector<std::byte> scene = meshSceneBytes();
+    const std::vector<std::byte> mesh = triangleMeshBytes();
+    writeClientExportWithMesh(scratch, scene, mesh);
+    RuntimeProbe runtime{scratch.root()};
+    prepareStartupLoad(runtime);
+
+    REQUIRE(runtime.startupLoad() == std::error_code{});
+
+    const std::vector<TechEngine::Entity> roots = runtime.scene().getRoots();
+    REQUIRE(roots.size() == 1);
+    REQUIRE(runtime.scene().hasComponent<TechEngine::MeshRenderer>(roots[0]));
+    const TechEngine::AssetRef<TechEngine::Mesh>& reference = runtime.scene().getComponent<TechEngine::MeshRenderer>(roots[0]).mesh;
+    CHECK(reference.id == TRIANGLE_MESH_ID);
+    REQUIRE(reference.handle.valid());
+
+    SECTION("the mesh is Ready, held once, and holds the triangle") {
+        TechEngine::ResourceState state = TechEngine::ResourceState::Pending;
+        REQUIRE(runtime.resources().getState(reference.handle, state));
+        CHECK(state == TechEngine::ResourceState::Ready);
+        std::uint32_t acquires = 0;
+        REQUIRE(runtime.resources().getAcquireCount(reference.handle, acquires));
+        CHECK(acquires == 1);
+        const TechEngine::Mesh* loaded = runtime.resources().resolve(reference.handle);
+        REQUIRE(loaded != nullptr);
+        CHECK(loaded->id == TRIANGLE_MESH_ID);
+        CHECK(loaded->positions == TRIANGLE_POSITIONS);
+        CHECK(loaded->indices == std::vector<std::uint32_t>{0, 1, 2});
+    }
+
+    SECTION("the startup log names the scene and the mesh") {
+        CHECK(runtimeLogNames(STARTUP_SCENE_ID));
+        CHECK(runtimeLogNames(TRIANGLE_MESH_ID));
+    }
+
+    SECTION("simulation shutdown releases both, so the cache's shutdown log names neither") {
+        g_runtimeLogMessages.clear();
+
+        runtime.shutdownSimulation();
+
+        CHECK_FALSE(runtimeLogNames(STARTUP_SCENE_ID));
+        CHECK_FALSE(runtimeLogNames(TRIANGLE_MESH_ID));
+    }
 }

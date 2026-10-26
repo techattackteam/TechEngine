@@ -284,6 +284,24 @@ TEST_CASE("the startup load creates a startup scene when the project names none"
         CHECK(std::filesystem::exists(exportFolder / "Dev" / "assets" / "client.tepack"));
     }
 
+    SECTION("the startup export packs the mesh the scene references into client.tepack") {
+        const TechEngine::ResourceId meshId = meshRendererOnRoot(editor.scene());
+        TechEngine::MountTable exportMounts;
+        exportMounts.mount("export", exportFolder);
+        const TechEngine::FileAccess exportFiles{exportMounts};
+        TechEngine::PackReader client{exportFiles};
+        REQUIRE(client.open("export://Dev/assets/client.tepack") == std::error_code{});
+
+        TechEngine::PackEntry entry;
+        REQUIRE(client.find(meshId, entry));
+        CHECK(entry.typeTag == TechEngine::MESH_TYPE_TAG);
+        std::vector<std::byte> packed;
+        REQUIRE(client.read(entry, packed) == std::error_code{});
+        std::vector<std::byte> onDisk;
+        REQUIRE(editor.files().read(TRIANGLE_MESH_PATH, onDisk) == std::error_code{});
+        CHECK(packed == onDisk);
+    }
+
     editor.shutdown();
 }
 

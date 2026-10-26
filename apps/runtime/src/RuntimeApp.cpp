@@ -1,6 +1,9 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/assets/PackSource.hpp>
+#include <TechEngine/core/mesh/Mesh.hpp>
+#include <TechEngine/core/mesh/MeshRenderer.hpp>
+#include <TechEngine/core/resources/AssetRef.hpp>
 #include <TechEngine/core/resources/BootRecord.hpp>
 #include <TechEngine/core/resources/PackReader.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
@@ -34,7 +37,9 @@ namespace TechEngine {
 
     void RuntimeApp::configureSimulation() {
         ClientApp::configureSimulation();
+        m_registry.registerComponent<MeshRenderer>(MeshRenderer::tag);
         m_resources.registerLoader<SceneBytes>(SCENE_KIND, SCENE_TYPE_TAG, &SceneBytes::loadPayload);
+        m_resources.registerLoader<Mesh>(MESH_KIND, MESH_TYPE_TAG, &Mesh::loadPayload);
     }
 
     std::error_code RuntimeApp::simulationStartupLoad(Scene& scene) {
@@ -94,6 +99,15 @@ namespace TechEngine {
     void RuntimeApp::logSceneTree(const Scene& scene, const Entity entity, const std::size_t depth) const {
         const Vec3& position = scene.getComponent<Transform>(entity).getLocal().position;
         TE_LOGGER_INFO("{0}Entity {1}:{2} at ({3}, {4}, {5})", std::string(depth * 2, ' '), entity.index, entity.generation, position.x, position.y, position.z);
+        if (scene.hasComponent<MeshRenderer>(entity)) {
+            const AssetRef<Mesh>& reference = scene.getComponent<MeshRenderer>(entity).mesh;
+            const Mesh* mesh = reference.handle.valid() ? m_resources.resolve(reference.handle) : nullptr;
+            if (mesh != nullptr) {
+                TE_LOGGER_INFO("{0}Mesh {1:#018x} with {2} positions and {3} indices", std::string(depth * 2 + 2, ' '), reference.id.value(), mesh->positions.size(), mesh->indices.size());
+            } else {
+                TE_LOGGER_INFO("{0}Mesh {1:#018x}, not loaded", std::string(depth * 2 + 2, ' '), reference.id.value());
+            }
+        }
         for (const Entity child: scene.getChildren(entity)) {
             logSceneTree(scene, child, depth + 1);
         }

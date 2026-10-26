@@ -8,7 +8,7 @@
 
 using TechEngine::ProjectError;
 
-static constexpr std::array<ProjectError, 5> ALL_CODES{ProjectError::ParseFailed, ProjectError::SchemaInvalid, ProjectError::NoStartupScene, ProjectError::UnknownStartupScene, ProjectError::StartupSceneNotInTarget};
+static constexpr std::array<ProjectError, 6> ALL_CODES{ProjectError::ParseFailed, ProjectError::SchemaInvalid, ProjectError::NoStartupScene, ProjectError::UnknownStartupScene, ProjectError::StartupSceneNotInTarget, ProjectError::UnknownReference};
 
 TEST_CASE("every ProjectError code converts into the project category", "[editor][project][projecterror]") {
     TechEngineTests::checkErrorCategory<ProjectError>(ALL_CODES, TechEngine::projectErrorCategory(), "project");
