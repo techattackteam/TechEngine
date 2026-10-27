@@ -3,9 +3,11 @@
 #include <TechEngine/app/SimulationError.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/assets/AssetSource.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/resources/ResourceCache.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
+#include <TechEngine/core/serialization/Writer.hpp>
 #include <TechEngine/core/systems/ISystem.hpp>
 #include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/testing/AppTestAccess.hpp>
@@ -1133,4 +1135,89 @@ TEST_CASE("App reports commands accepted but not applied at shutdown as cancelle
     REQUIRE(cancelled.size() == 1);
     CHECK(cancelled.front().find('2') != std::string::npos);
     checkStopped(app);
+}
+
+constexpr TechEngine::ResourceId APP_HELD_RESOURCE_ID{0xA001};
+
+class AppHeldResourceSource final : public TechEngine::AssetSource {
+public:
+    TechEngine::AssetAvailability find(const TechEngine::ResourceId id) const override {
+        return id == APP_HELD_RESOURCE_ID ? TechEngine::AssetAvailability::Present : TechEngine::AssetAvailability::Unknown;
+    }
+
+    std::error_code read(const TechEngine::ResourceId id, std::vector<std::byte>& out) const override {
+        if (id != APP_HELD_RESOURCE_ID) {
+            return TechEngine::FileError::NotFound;
+        }
+        out.clear();
+        TechEngine::Writer writer{out};
+        writer.writeHeader(APP_PROBE_RESOURCE_KIND);
+        return {};
+    }
+};
+
+class AppHeldResourceProbe final : public TechEngine::App {
+public:
+    AppHeldResourceProbe(const AppWarningCapture& warnings, const bool releaseOnShutdown) : App(TechEngine::Role::DedicatedServer), m_warnings(warnings), m_releaseOnShutdown(releaseOnShutdown) {
+    }
+
+    TechEngine::ResourceState loadedState = TechEngine::ResourceState::Pending;
+    std::size_t warningsAtSimulationShutdown = 0;
+
+protected:
+    void init() override {
+    }
+
+    void configureSimulation() override {
+        m_resources.setSource(m_source);
+        m_resources.registerLoader<AppProbeResource>(APP_PROBE_RESOURCE_KIND, APP_PROBE_RESOURCE_TYPE_TAG, &loadAppProbeResource);
+    }
+
+    std::error_code simulationStartupLoad(TechEngine::Scene&) override {
+        const std::error_code requestError = m_resources.request(APP_HELD_RESOURCE_ID, m_held);
+        if (requestError) {
+            return requestError;
+        }
+        const std::error_code loadError = m_resources.runLoadingPhase();
+        m_resources.getState(m_held, loadedState);
+        requestStop();
+        return loadError;
+    }
+
+    void simulationShutdown() override {
+        warningsAtSimulationShutdown = m_warnings.containing("not released").size();
+        if (m_releaseOnShutdown) {
+            m_resources.release(m_held);
+            m_held = {};
+        }
+        App::simulationShutdown();
+    }
+
+private:
+    const AppWarningCapture& m_warnings;
+    bool m_releaseOnShutdown;
+    AppHeldResourceSource m_source;
+    TechEngine::ResourceHandle<AppProbeResource> m_held;
+};
+
+TEST_CASE("App's releases in simulation shutdown land before the cache logs what is still counted", "[app][lifecycle][resources]") {
+    const AppWarningCapture warnings;
+    bool releaseOnShutdown = true;
+    SECTION("the app releases its resource in simulation shutdown") {
+    }
+    SECTION("the app keeps its resource past simulation shutdown") {
+        releaseOnShutdown = false;
+    }
+    AppHeldResourceProbe app{warnings, releaseOnShutdown};
+
+    REQUIRE(app.run() == 0);
+    CHECK(app.loadedState == TechEngine::ResourceState::Ready);
+    CHECK(app.warningsAtSimulationShutdown == 0);
+    const std::vector<std::string> leaks = warnings.containing("not released");
+    if (releaseOnShutdown) {
+        CHECK(leaks.empty());
+    } else {
+        REQUIRE(leaks.size() == 1);
+        CHECK(leaks.front().find("a001") != std::string::npos);
+    }
 }
