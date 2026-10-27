@@ -14,7 +14,7 @@ namespace TechEngine {
 
         template<typename Archive>
         friend void visit(Archive& archive, MeshRenderer& value) {
-            archive.field(value.mesh);
+            archive.field("mesh", value.mesh);
         }
     };
 }

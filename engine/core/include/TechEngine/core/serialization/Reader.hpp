@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <span>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <type_traits>
 #include <vector>
@@ -107,6 +108,11 @@ namespace TechEngine {
         void field(std::vector<T>& values) {
             static_assert(!ReferenceField<T>, "A vector of Entity or AssetRef would bulk-copy live handles past the reference walk; hold single fields instead.");
             readSpan(values);
+        }
+
+        template<typename T>
+        void field(std::string_view, T& value) {
+            field(value);
         }
 
         bool ok() const;

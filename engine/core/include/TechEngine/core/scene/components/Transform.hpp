@@ -46,17 +46,17 @@ namespace TechEngine {
             static_assert(sizeof(TransformValues) == 40, "TransformValues changed shape; check that visit still covers every field.");
 
             TransformValues& local = value.m_local;
-            archive.field(local.position.x);
-            archive.field(local.position.y);
-            archive.field(local.position.z);
+            archive.field("position.x", local.position.x);
+            archive.field("position.y", local.position.y);
+            archive.field("position.z", local.position.z);
             // Named fields keep the bytes independent of GLM's quaternion memory order.
-            archive.field(local.rotation.w);
-            archive.field(local.rotation.x);
-            archive.field(local.rotation.y);
-            archive.field(local.rotation.z);
-            archive.field(local.scale.x);
-            archive.field(local.scale.y);
-            archive.field(local.scale.z);
+            archive.field("rotation.w", local.rotation.w);
+            archive.field("rotation.x", local.rotation.x);
+            archive.field("rotation.y", local.rotation.y);
+            archive.field("rotation.z", local.rotation.z);
+            archive.field("scale.x", local.scale.x);
+            archive.field("scale.y", local.scale.y);
+            archive.field("scale.z", local.scale.z);
         }
 
         Transform() = default;
