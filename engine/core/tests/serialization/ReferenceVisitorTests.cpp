@@ -26,8 +26,8 @@ struct ReferenceVisitorNested {
 
     template<typename Archive>
     friend void visit(Archive& archive, ReferenceVisitorNested& value) {
-        archive.field(value.count);
-        archive.field(value.owner);
+        archive.field("count", value.count);
+        archive.field("owner", value.owner);
     }
 };
 
@@ -42,13 +42,13 @@ struct ReferenceVisitorSample {
 
     template<typename Archive>
     friend void visit(Archive& archive, ReferenceVisitorSample& value) {
-        archive.field(value.value);
-        archive.field(value.first);
-        archive.field(value.weight);
-        archive.field(value.asset);
-        archive.field(value.indices);
-        archive.field(value.nested);
-        archive.field(value.second);
+        archive.field("value", value.value);
+        archive.field("first", value.first);
+        archive.field("weight", value.weight);
+        archive.field("asset", value.asset);
+        archive.field("indices", value.indices);
+        archive.field("nested", value.nested);
+        archive.field("second", value.second);
     }
 };
 

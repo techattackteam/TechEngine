@@ -57,7 +57,7 @@ struct SceneAssetHealth {
 
     template<typename Archive>
     friend void visit(Archive& archive, SceneAssetHealth& health) {
-        archive.field(health.value);
+        archive.field("value", health.value);
     }
 };
 
@@ -66,7 +66,7 @@ struct SceneAssetNarrowHealth {
 
     template<typename Archive>
     friend void visit(Archive& archive, SceneAssetNarrowHealth& health) {
-        archive.field(health.value);
+        archive.field("value", health.value);
     }
 };
 
@@ -642,9 +642,9 @@ struct SceneAssetLink {
 
     template<typename Archive>
     friend void visit(Archive& archive, SceneAssetLink& link) {
-        archive.field(link.value);
-        archive.field(link.target);
-        archive.field(link.asset);
+        archive.field("value", link.value);
+        archive.field("target", link.target);
+        archive.field("asset", link.asset);
     }
 };
 

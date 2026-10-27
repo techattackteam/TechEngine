@@ -7,6 +7,7 @@
 #include <TechEngine/core/serialization/Visit.hpp>
 
 #include <concepts>
+#include <string_view>
 
 namespace TechEngine {
     template<typename T>
@@ -25,6 +26,11 @@ namespace TechEngine {
             if constexpr (Visitable<T, ReferenceVisitor>) {
                 visit(*this, value);
             }
+        }
+
+        template<typename T>
+        void field(std::string_view, T& value) {
+            field(value);
         }
 
         void field(Entity& value) {

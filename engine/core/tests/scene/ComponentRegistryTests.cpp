@@ -47,8 +47,8 @@ struct RegistryVisited {
 
     template<typename Archive>
     friend void visit(Archive& archive, RegistryVisited& value) {
-        archive.field(value.health);
-        archive.field(value.speed);
+        archive.field("health", value.health);
+        archive.field("speed", value.speed);
     }
 };
 
@@ -58,8 +58,8 @@ struct RegistryLinked {
 
     template<typename Archive>
     friend void visit(Archive& archive, RegistryLinked& value) {
-        archive.field(value.health);
-        archive.field(value.target);
+        archive.field("health", value.health);
+        archive.field("target", value.target);
     }
 };
 

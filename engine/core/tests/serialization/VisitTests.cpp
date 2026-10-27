@@ -51,23 +51,23 @@ namespace {
     void visit(Archive& archive, Bounds& value) {
         static_assert(sizeof(Bounds) == 24, "Bounds changed shape; check that visit still covers every field.");
 
-        archive.field(value.minX);
-        archive.field(value.minY);
-        archive.field(value.minZ);
-        archive.field(value.maxX);
-        archive.field(value.maxY);
-        archive.field(value.maxZ);
+        archive.field("minX", value.minX);
+        archive.field("minY", value.minY);
+        archive.field("minZ", value.minZ);
+        archive.field("maxX", value.maxX);
+        archive.field("maxY", value.maxY);
+        archive.field("maxZ", value.maxZ);
     }
 
     // No sizeof guard: a type holding std::string or std::vector has a different sizeof per
     // standard library and per config, so pinning a constant here goes red on another leg.
     template<typename Archive>
     void visit(Archive& archive, Mesh& value) {
-        archive.field(value.id);
-        archive.field(value.name);
-        archive.field(value.bounds);
-        archive.field(value.indices);
-        archive.field(value.materialSlot);
+        archive.field("id", value.id);
+        archive.field("name", value.name);
+        archive.field("bounds", value.bounds);
+        archive.field("indices", value.indices);
+        archive.field("materialSlot", value.materialSlot);
     }
 
     Mesh makeMesh() {

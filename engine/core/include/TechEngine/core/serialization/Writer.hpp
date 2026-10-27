@@ -97,6 +97,11 @@ namespace TechEngine {
             writeSpan(std::span<const T>{values});
         }
 
+        template<typename T>
+        void field(std::string_view, T& value) {
+            field(value);
+        }
+
     private:
         void appendRaw(const void* data, std::size_t byteCount);
     };
