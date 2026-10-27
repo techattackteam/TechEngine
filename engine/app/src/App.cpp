@@ -12,6 +12,7 @@
 #include <memory>
 #include <span>
 #include <string_view>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -111,6 +112,10 @@ namespace TechEngine {
     void App::configureSimulation() {
     }
 
+    bool App::simulationTicks() const {
+        return true;
+    }
+
     void App::finalizeSimulation() {
         if (m_simulationFinalized) {
             return;
@@ -165,6 +170,9 @@ namespace TechEngine {
     void App::publishSnapshot(const SimulationContext&) {
     }
 
+    void App::publishEdits() {
+    }
+
     void App::simulationShutdown() {
         m_resources.release(m_sceneHandle);
         m_sceneHandle = {};
@@ -195,12 +203,20 @@ namespace TechEngine {
         }
     }
 
-    void App::applyCommands() {
+    bool App::applyCommands() {
         std::vector<std::unique_ptr<Command>> batch;
         m_commandQueue.consume(batch);
+        if (batch.empty()) {
+            return false;
+        }
         for (auto& command: batch) {
             command->apply(m_scene);
         }
+        const std::error_code loadError = m_resources.runLoadingPhase();
+        if (loadError) {
+            TE_LOGGER_WARN("Loading after {0} commands failed: {1}", batch.size(), loadError.message());
+        }
+        return true;
     }
 
     void App::cancelCommands() {

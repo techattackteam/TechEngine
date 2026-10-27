@@ -36,6 +36,8 @@ namespace TechEngine {
 
         void configureSimulation() override;
 
+        bool simulationTicks() const override;
+
         std::error_code simulationStartupLoad(Scene& scene) override;
 
         void mainThreadUpdate() override;

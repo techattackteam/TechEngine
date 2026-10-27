@@ -55,6 +55,8 @@ namespace TechEngine {
         createImGuiContext();
         startClient(&m_imguiBridge);
         initImGuiPlatform();
+        // Nothing consumes the input buffer while the simulation is Stopped, so an attached one fills until it overflows.
+        detachInput();
     }
 
     void EditorApp::configureSimulation() {
@@ -62,6 +64,10 @@ namespace TechEngine {
         m_registry.registerComponent<MeshRenderer>(MeshRenderer::tag);
         m_resources.registerLoader<SceneBytes>(SCENE_KIND, SCENE_TYPE_TAG, &SceneBytes::loadPayload);
         m_resources.registerLoader<Mesh>(MESH_KIND, MESH_TYPE_TAG, &Mesh::loadPayload);
+    }
+
+    bool EditorApp::simulationTicks() const {
+        return false;
     }
 
     std::error_code EditorApp::simulationStartupLoad(Scene& scene) {

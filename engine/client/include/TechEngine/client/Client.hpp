@@ -51,6 +51,8 @@ namespace TechEngine {
 
         void setVSync(bool enabled) const;
 
+        void detachInput();
+
         bool shouldClose() const;
 
         bool failed() const;

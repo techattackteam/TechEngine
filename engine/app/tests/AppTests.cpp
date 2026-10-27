@@ -319,10 +319,12 @@ public:
     std::function<std::error_code()> onSimulationStartupLoad;
     std::function<void(const TechEngine::SimulationContext&)> onSystemTick;
     std::function<void(const TechEngine::SimulationContext&)> onPublishSnapshot;
+    std::function<void()> onPublishEdits;
     std::function<void()> onSimulationShutdown;
     std::function<void()> onShutdown;
     AppLifecycleSignal mainEntered;
     AppLifecycleSignal simulationStopped;
+    bool ticks = true;
     bool dedicatedJoinedBeforeShutdown = false;
     const TechEngine::Scene* loadedScene = nullptr;
 
@@ -351,6 +353,10 @@ public:
         return m_simulationThread.startupError();
     }
 
+    void wakeSimulation() {
+        m_simulationThread.wakeForCommands();
+    }
+
 protected:
     void init() override {
         record("init");
@@ -370,6 +376,10 @@ protected:
             }
         };
         m_schedule.add<AppLifecycleSystem>();
+    }
+
+    bool simulationTicks() const override {
+        return ticks;
     }
 
     void mainThreadUpdate() override {
@@ -407,6 +417,13 @@ protected:
         record("publishSnapshot", simulation.tick);
         if (onPublishSnapshot) {
             onPublishSnapshot(simulation);
+        }
+    }
+
+    void publishEdits() override {
+        record("publishEdits");
+        if (onPublishEdits) {
+            onPublishEdits();
         }
     }
 
@@ -470,7 +487,7 @@ static void checkStopped(const AppLifecycleProbe& app) {
     REQUIRE(simulationShutdown != events.end());
     CHECK(events.back().name == "shutdown");
     CHECK(std::none_of(simulationShutdown + 1, events.end(), [](const auto& event) {
-        return event.name == "systemTick" || event.name == "publishSnapshot";
+        return event.name == "systemTick" || event.name == "publishSnapshot" || event.name == "publishEdits";
     }));
     CHECK(app.dedicatedJoinedBeforeShutdown);
     checkOnlyPoolWorkersRegistered(app);
@@ -1024,7 +1041,7 @@ private:
     TechEngine::Level m_previousLevel;
 };
 
-TEST_CASE("App applies submitted commands to the live scene in FIFO order before that loop pass's ticks", "[app][lifecycle][commands]") {
+TEST_CASE("App applies submitted commands to the live scene in FIFO order and publishes the batch once, before that loop pass's ticks", "[app][lifecycle][commands]") {
     const AppWarningCapture warnings;
     AppLifecycleProbe app;
     AppCommandLog log;
@@ -1052,6 +1069,12 @@ TEST_CASE("App applies submitted commands to the live scene in FIFO order before
     }
     CHECK(log.destroyedCount() == 3);
     CHECK(warnings.containing("cancel").empty());
+    CHECK(eventCount(app, "publishEdits") == 1);
+    const auto events = app.events();
+    const auto published = std::ranges::find(events, std::string_view{"publishEdits"}, &AppLifecycleEvent::name);
+    const auto firstTick = std::ranges::find(events, std::string_view{"systemTick"}, &AppLifecycleEvent::name);
+    REQUIRE(published != events.end());
+    CHECK(published < firstTick);
     checkStopped(app);
 }
 
@@ -1074,6 +1097,7 @@ TEST_CASE("App rejects and never applies a command submitted before the run or a
     CHECK(afterRunError == TechEngine::SimulationError::CommandQueueClosed);
     CHECK(log.appliedRecords().empty());
     CHECK(log.destroyedCount() == 3);
+    CHECK(eventCount(app, "publishEdits") == 0);
     checkStopped(app);
 }
 
@@ -1134,6 +1158,133 @@ TEST_CASE("App reports commands accepted but not applied at shutdown as cancelle
     const std::vector<std::string> cancelled = warnings.containing("cancel");
     REQUIRE(cancelled.size() == 1);
     CHECK(cancelled.front().find('2') != std::string::npos);
+    CHECK(eventCount(app, "publishEdits") == 0);
+    checkStopped(app);
+}
+
+static bool stopIdle(AppLifecycleProbe& app) {
+    app.requestStop();
+    const bool stopped = app.simulationStopped.wait();
+    if (!stopped) {
+        // Rescues a thread that missed the stop, so the case fails instead of hanging the suite.
+        app.wakeSimulation();
+    }
+    return stopped;
+}
+
+TEST_CASE("an App whose simulation does not tick runs no Tick across a wait", "[app][lifecycle][idle]") {
+    AppLifecycleProbe app;
+    app.ticks = false;
+    AppLifecycleSignal loaded;
+    app.onSimulationStartupLoad = [&loaded] {
+        loaded.set();
+        return std::error_code{};
+    };
+    bool loadedInTime = false;
+    bool stoppedInTime = false;
+    std::jthread controller{[&] {
+        loadedInTime = loaded.wait();
+        if (loadedInTime) {
+            std::this_thread::sleep_for(250ms);
+        }
+        stoppedInTime = stopIdle(app);
+    }};
+
+    const int result = app.run();
+    controller.join();
+    CHECK(result == 0);
+    CHECK(loadedInTime);
+    CHECK(stoppedInTime);
+    CHECK(eventCount(app, "systemTick") == 0);
+    CHECK(eventCount(app, "publishSnapshot") == 1);
+    CHECK(eventCount(app, "publishEdits") == 0);
+    CHECK(app.simulationTick() == 0);
+    checkStopped(app);
+}
+
+TEST_CASE("an idle App applies each submitted command and publishes it within one wake", "[app][lifecycle][idle][commands]") {
+    const AppWarningCapture warnings;
+    AppLifecycleProbe app;
+    app.ticks = false;
+    AppCommandLog log;
+    AppLifecycleSignal loaded;
+    AppLifecycleSignal firstPublished;
+    AppLifecycleSignal secondPublished;
+    int publications = 0;
+    app.onSimulationStartupLoad = [&loaded] {
+        loaded.set();
+        return std::error_code{};
+    };
+    app.onPublishEdits = [&] {
+        publications++;
+        if (publications == 1) {
+            firstPublished.set();
+        } else if (publications == 2) {
+            secondPublished.set();
+        }
+    };
+    std::error_code firstSubmitError = TechEngine::SimulationError::CommandQueueClosed;
+    std::error_code secondSubmitError = TechEngine::SimulationError::CommandQueueClosed;
+    bool firstInTime = false;
+    bool secondInTime = false;
+    bool stoppedInTime = false;
+    std::jthread controller{[&] {
+        if (loaded.wait()) {
+            firstSubmitError = submitProbe(app, 1, log);
+            firstInTime = firstPublished.wait();
+            // Submitted after the first publication, so with no tick deadline only the wake can apply it.
+            secondSubmitError = submitProbe(app, 2, log);
+            secondInTime = secondPublished.wait();
+        }
+        stoppedInTime = stopIdle(app);
+    }};
+
+    const int result = app.run();
+    controller.join();
+    CHECK(result == 0);
+    CHECK_FALSE(firstSubmitError);
+    CHECK_FALSE(secondSubmitError);
+    CHECK(firstInTime);
+    CHECK(secondInTime);
+    CHECK(stoppedInTime);
+    const std::vector<AppCommandRecord> applied = log.appliedRecords();
+    REQUIRE(applied.size() == 2);
+    for (std::size_t i = 0; i < applied.size(); i++) {
+        CHECK(applied[i].id == static_cast<int>(i) + 1);
+        CHECK(applied[i].scene == &TechEngineTests::AppTestAccess::scene(app));
+        CHECK(applied[i].ticksBefore == 0);
+    }
+    CHECK(eventCount(app, "publishEdits") == 2);
+    CHECK(eventCount(app, "systemTick") == 0);
+    CHECK(log.destroyedCount() == 2);
+    CHECK(warnings.containing("cancel").empty());
+    checkStopped(app);
+}
+
+TEST_CASE("stop wakes an idle App's simulation thread", "[app][lifecycle][idle]") {
+    AppLifecycleProbe app;
+    app.ticks = false;
+    AppLifecycleSignal loaded;
+    app.onSimulationStartupLoad = [&loaded] {
+        loaded.set();
+        return std::error_code{};
+    };
+    bool loadedInTime = false;
+    bool stoppedInTime = false;
+    std::jthread controller{[&] {
+        loadedInTime = loaded.wait();
+        if (loadedInTime) {
+            std::this_thread::sleep_for(50ms);
+        }
+        stoppedInTime = stopIdle(app);
+    }};
+
+    const int result = app.run();
+    controller.join();
+    CHECK(result == 0);
+    CHECK(loadedInTime);
+    CHECK(stoppedInTime);
+    CHECK(eventCount(app, "systemTick") == 0);
     checkStopped(app);
 }
 

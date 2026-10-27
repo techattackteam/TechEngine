@@ -94,6 +94,10 @@ namespace TechEngine {
         m_state->renderer.setVSync(enabled);
     }
 
+    void Client::detachInput() {
+        m_state->window.setInputBuffer(nullptr);
+    }
+
     bool Client::shouldClose() const {
         return !m_state->active.load() || m_state->window.shouldClose();
     }

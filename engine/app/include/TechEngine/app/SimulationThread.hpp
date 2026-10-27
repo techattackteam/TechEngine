@@ -117,6 +117,8 @@ namespace TechEngine {
 
         void waitForNextTick(Clock::TimePoint sampled);
 
+        void waitForCommands();
+
         void threadMain(const DedicatedThreadContext& context, App& app);
     };
 }

@@ -36,6 +36,10 @@ namespace TechEngine {
         return m_client.nativeWindow();
     }
 
+    void ClientApp::detachInput() {
+        m_client.detachInput();
+    }
+
     void ClientApp::publishSnapshot(const SimulationContext& simulation) {
         m_client.publish(RenderSnapshot{
             .clearColor = {0.1F, 0.1F, 0.1F, 1.0F},

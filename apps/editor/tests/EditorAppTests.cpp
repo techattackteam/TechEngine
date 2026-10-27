@@ -45,6 +45,7 @@ namespace {
         using TechEngine::EditorApp::EditorApp;
         using TechEngine::EditorApp::shouldClose;
         using TechEngine::EditorApp::shutdown;
+        using TechEngine::EditorApp::simulationTicks;
 
         void advanceFrame(double deltaTime) {
             m_simulationThread.advance(deltaTime, [this](const TechEngine::SimulationContext& frame) {
@@ -151,6 +152,12 @@ TEST_CASE("editor hosts a client", "[editor]") {
     const EditorProbe editor{std::filesystem::path{}, std::filesystem::path{}};
 
     REQUIRE(editor.loopRole() == TechEngine::Role::Client);
+}
+
+TEST_CASE("the editor says its simulation does not tick", "[editor]") {
+    const EditorProbe editor{std::filesystem::path{}, std::filesystem::path{}};
+
+    CHECK_FALSE(editor.simulationTicks());
 }
 
 TEST_CASE("init mounts the project set", "[editor]") {
@@ -592,12 +599,18 @@ TEST_CASE("an editor destroyed without shutdown stops its client and releases Im
 class EditorStallProbe : public TechEngine::EditorApp {
 public:
     using EditorApp::EditorApp;
+    std::atomic<bool> startupLoaded = false;
     std::atomic<bool> mainEntered = false;
     std::atomic<bool> releaseMain = false;
-    std::atomic<bool> inputConsumed = false;
     std::atomic<bool> mainTimedOut = false;
 
 protected:
+    std::error_code simulationStartupLoad(TechEngine::Scene& scene) override {
+        const std::error_code loadError = EditorApp::simulationStartupLoad(scene);
+        startupLoaded.store(true);
+        return loadError;
+    }
+
     void mainThreadUpdate() override {
         mainEntered.store(true);
         const auto deadline = m_clock.now() + std::chrono::seconds{5};
@@ -609,51 +622,44 @@ protected:
             requestStop();
             return;
         }
-        m_input.publish(TechEngine::InputEvent{.kind = TechEngine::InputKind::Focus, .pressed = true});
-        m_input.publish(TechEngine::InputEvent{.kind = TechEngine::InputKind::Key, .key = TechEngine::Key::W, .pressed = true});
         EditorApp::mainThreadUpdate();
-    }
-
-    void publishSnapshot(const TechEngine::SimulationContext& simulation) override {
-        EditorApp::publishSnapshot(simulation);
-        if (simulation.input.held.isHeld(TechEngine::Key::W)) {
-            inputConsumed = true;
-            requestStop();
-        }
     }
 };
 
-TEST_CASE("editor simulation and render progress during a main stall then consume delayed input", "[editor][window][integration]") {
+TEST_CASE("editor render progresses during a main stall while its simulation stays idle", "[editor][window][integration]") {
     ScratchDirectory scratch{"editorThreadedStall"};
     writeProjectLayout(scratch);
     EditorStallProbe editor{scratch.root(), scratch.makeDirectory("export")};
-    std::atomic<bool> progressed = false;
+    std::atomic<bool> rendered = false;
+    std::atomic<bool> tickStayed = false;
     std::jthread controller{[&] {
         const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
-        while (!editor.mainEntered.load() && std::chrono::steady_clock::now() < deadline) {
+        while ((!editor.mainEntered.load() || !editor.startupLoaded.load()) && std::chrono::steady_clock::now() < deadline) {
             std::this_thread::sleep_for(std::chrono::milliseconds{1});
         }
         const auto before = editor.timingMetrics();
-        if (editor.mainEntered.load() && before.renderingActive) {
+        // A ticking loop would run about 15 Ticks in this window, so a quick render alone proves nothing.
+        const auto earliest = std::chrono::steady_clock::now() + std::chrono::milliseconds{250};
+        if (editor.mainEntered.load() && editor.startupLoaded.load() && before.renderingActive) {
             while (std::chrono::steady_clock::now() < deadline) {
                 const auto after = editor.timingMetrics();
-                if (after.renderingActive && after.simulation.tick >= before.simulation.tick + 3 && after.render.frame >= before.render.frame + 3) {
-                    progressed = true;
+                if (std::chrono::steady_clock::now() >= earliest && after.renderingActive && after.render.frame >= before.render.frame + 3) {
+                    rendered = true;
+                    tickStayed = after.simulation.tick == before.simulation.tick;
                     break;
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds{1});
             }
         }
         editor.releaseMain = true;
-        if (!progressed.load()) {
-            editor.requestStop();
-        }
+        editor.requestStop();
     }};
     const int result = editor.run();
     controller.join();
     CHECK(result == 0);
-    CHECK(progressed.load());
-    CHECK(editor.inputConsumed.load());
+    CHECK(rendered.load());
+    CHECK(tickStayed.load());
+    CHECK(editor.timingMetrics().simulation.tick == 0);
     CHECK_FALSE(editor.mainTimedOut.load());
     CHECK_FALSE(editor.timingMetrics().renderingActive);
 }
