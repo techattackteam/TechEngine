@@ -23,6 +23,8 @@
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/platform/files/MountTable.hpp>
+#include <TechEngine/platform/input/InputState.hpp>
+#include <TechEngine/platform/input/Key.hpp>
 #include <TechEngine/testing/AppTestAccess.hpp>
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
@@ -31,6 +33,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
+#include <atomic>
+#include <chrono>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -42,6 +46,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <thread>
 #include <typeinfo>
 #include <vector>
 
@@ -235,6 +240,7 @@ namespace {
     class RuntimeProbe : public TechEngine::RuntimeApp {
     public:
         using TechEngine::RuntimeApp::mountAssets;
+        using TechEngine::RuntimeApp::simulationTicks;
 
         RuntimeProbe() : RuntimeApp(std::filesystem::path{}) {
         }
@@ -488,6 +494,12 @@ TEST_CASE("runtime composes as a client", "[runtime]") {
     const RuntimeProbe runtime;
 
     REQUIRE(runtime.loopRole() == TechEngine::Role::Client);
+}
+
+TEST_CASE("the runtime says its simulation ticks", "[runtime]") {
+    const RuntimeProbe runtime;
+
+    CHECK(runtime.simulationTicks());
 }
 
 TEST_CASE("runtime init starts the client, and a second start throws without stopping it", "[runtime][window]") {
@@ -894,4 +906,75 @@ TEST_CASE("the startup load acquires the mesh the startup scene references from 
         CHECK_FALSE(runtimeLogNames(STARTUP_SCENE_ID));
         CHECK_FALSE(runtimeLogNames(TRIANGLE_MESH_ID));
     }
+}
+
+class RuntimeStallProbe final : public TechEngine::RuntimeApp {
+public:
+    using RuntimeApp::RuntimeApp;
+    using RuntimeApp::simulationTicks;
+    std::atomic<bool> mainEntered = false;
+    std::atomic<bool> releaseMain = false;
+    std::atomic<bool> inputConsumed = false;
+    std::atomic<bool> mainTimedOut = false;
+
+protected:
+    void mainThreadUpdate() override {
+        mainEntered.store(true);
+        const auto deadline = m_clock.now() + std::chrono::seconds{5};
+        while (!releaseMain.load() && m_clock.now() < deadline) {
+            std::this_thread::sleep_for(std::chrono::milliseconds{1});
+        }
+        if (!releaseMain.load()) {
+            mainTimedOut = true;
+            requestStop();
+            return;
+        }
+        m_input.publish(TechEngine::InputEvent{.kind = TechEngine::InputKind::Focus, .pressed = true});
+        m_input.publish(TechEngine::InputEvent{.kind = TechEngine::InputKind::Key, .key = TechEngine::Key::W, .pressed = true});
+        RuntimeApp::mainThreadUpdate();
+    }
+
+    void publishSnapshot(const TechEngine::SimulationContext& simulation) override {
+        RuntimeApp::publishSnapshot(simulation);
+        if (simulation.input.held.isHeld(TechEngine::Key::W)) {
+            inputConsumed = true;
+            requestStop();
+        }
+    }
+};
+
+TEST_CASE("runtime simulation and render progress during a main stall then consume delayed input", "[runtime][window][integration]") {
+    const ScratchDirectory scratch{"runtimeThreadedStall"};
+    writeClientExport(scratch, TechEngine::Side::Common, startupSceneBytes());
+    RuntimeStallProbe runtime{scratch.root()};
+    REQUIRE(runtime.simulationTicks());
+    std::atomic<bool> progressed = false;
+    std::jthread controller{[&] {
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
+        while (!runtime.mainEntered.load() && std::chrono::steady_clock::now() < deadline) {
+            std::this_thread::sleep_for(std::chrono::milliseconds{1});
+        }
+        const auto before = runtime.timingMetrics();
+        if (runtime.mainEntered.load() && before.renderingActive) {
+            while (std::chrono::steady_clock::now() < deadline) {
+                const auto after = runtime.timingMetrics();
+                if (after.renderingActive && after.simulation.tick >= before.simulation.tick + 3 && after.render.frame >= before.render.frame + 3) {
+                    progressed = true;
+                    break;
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds{1});
+            }
+        }
+        runtime.releaseMain = true;
+        if (!progressed.load()) {
+            runtime.requestStop();
+        }
+    }};
+    const int result = runtime.run();
+    controller.join();
+    CHECK(result == 0);
+    CHECK(progressed.load());
+    CHECK(runtime.inputConsumed.load());
+    CHECK_FALSE(runtime.mainTimedOut.load());
+    CHECK_FALSE(runtime.timingMetrics().renderingActive);
 }

@@ -26,6 +26,8 @@ namespace TechEngine {
 
         GLFWwindow* nativeWindow() const;
 
+        void detachInput();
+
         void publishSnapshot(const SimulationContext& simulation) override;
 
         void mainThreadUpdate() override;

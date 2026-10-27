@@ -174,6 +174,13 @@ namespace TechEngine {
         });
     }
 
+    void SimulationThread::waitForCommands() {
+        std::unique_lock lock{m_waitMutex};
+        m_wake.wait(lock, [this] {
+            return m_stopRequested.load() || m_commandsPending;
+        });
+    }
+
     void SimulationThread::threadMain(const DedicatedThreadContext& context, App& app) {
         app.simulationInit();
         std::exception_ptr failure;
@@ -191,6 +198,7 @@ namespace TechEngine {
                 m_startupError = app.simulationStartupLoad(app.m_scene);
             }
             if (!m_startupError) {
+                const bool ticks = app.simulationTicks();
                 restartTimeline(m_context.engine.clock.now());
                 const std::stop_token stopToken = context.stopToken();
                 Clock::TimePoint previous = m_origin;
@@ -199,7 +207,15 @@ namespace TechEngine {
                         const std::lock_guard lock{m_waitMutex};
                         m_commandsPending = false;
                     }
-                    app.applyCommands();
+                    const bool applied = app.applyCommands();
+                    if (applied) {
+                        TE_PROFILER_SCOPE("Simulation.PublishEdits");
+                        app.publishEdits();
+                    }
+                    if (!ticks) {
+                        waitForCommands();
+                        continue;
+                    }
 
                     const Clock::TimePoint current = m_context.engine.clock.now();
                     const std::uint64_t previousTick = m_context.tick;
