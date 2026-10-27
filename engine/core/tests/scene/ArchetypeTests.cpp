@@ -1,5 +1,6 @@
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <scene/Archetype.hpp>
@@ -79,11 +80,13 @@ TEST_CASE("component insertion order converges on one canonical archetype", "[co
     TechEngine::ComponentRegistry registry;
     const TechEngine::ComponentTypeId hierarchyId = registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
     const TechEngine::ComponentTypeId transformId = registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
+    const TechEngine::ComponentTypeId nameId = registry.registerComponent<TechEngine::Name>(TechEngine::Name::tag);
     const TechEngine::ComponentTypeId positionId = registry.registerComponent<ArchetypePosition>("Tests.ArchetypePosition");
     const TechEngine::ComponentTypeId velocityId = registry.registerComponent<ArchetypeVelocity>("Tests.ArchetypeVelocity");
     const TechEngine::ComponentTypeId healthId = registry.registerComponent<ArchetypeHealth>("Tests.ArchetypeHealth");
     const TechEngine::ComponentDenseId hierarchy = registry.find(hierarchyId)->denseId;
     const TechEngine::ComponentDenseId transform = registry.find(transformId)->denseId;
+    const TechEngine::ComponentDenseId name = registry.find(nameId)->denseId;
     const TechEngine::ComponentDenseId position = registry.find(positionId)->denseId;
     const TechEngine::ComponentDenseId velocity = registry.find(velocityId)->denseId;
     const TechEngine::ComponentDenseId health = registry.find(healthId)->denseId;
@@ -105,11 +108,12 @@ TEST_CASE("component insertion order converges on one canonical archetype", "[co
 
     REQUIRE(archetype == storage.location(second)->archetype);
     REQUIRE(archetype == storage.location(third)->archetype);
-    std::array expectedSignature{hierarchy, transform, position, velocity, health};
+    std::array expectedSignature{hierarchy, transform, name, position, velocity, health};
     std::ranges::sort(expectedSignature);
     REQUIRE(std::ranges::equal(archetype->signature(), expectedSignature));
     REQUIRE(archetype->contains(hierarchy));
     REQUIRE(archetype->contains(transform));
+    REQUIRE(archetype->contains(name));
     REQUIRE(archetype->contains(position));
     REQUIRE(archetype->contains(velocity));
     REQUIRE(archetype->contains(health));

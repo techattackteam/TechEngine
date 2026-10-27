@@ -10,6 +10,7 @@
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/platform/files/MountTable.hpp>
@@ -225,6 +226,7 @@ TEST_CASE("the startup load creates a startup scene when the project names none"
         TechEngine::ComponentRegistry registry;
         registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
         registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
+        registry.registerComponent<TechEngine::Name>(TechEngine::Name::tag);
         registry.registerComponent<TechEngine::MeshRenderer>(TechEngine::MeshRenderer::tag);
         TechEngine::Scene scene(registry);
         TechEngine::SceneAsset asset;

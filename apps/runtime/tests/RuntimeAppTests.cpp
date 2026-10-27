@@ -16,6 +16,7 @@
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/core/serialization/ReadError.hpp>
 #include <TechEngine/core/systems/ISystem.hpp>
@@ -392,6 +393,7 @@ static std::vector<std::byte> startupSceneBytes() {
     TechEngine::ComponentRegistry registry;
     registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
     registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
+    registry.registerComponent<TechEngine::Name>(TechEngine::Name::tag);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity parent = scene.createEntity();
     const TechEngine::Entity firstChild = scene.createEntity();
@@ -399,6 +401,9 @@ static std::vector<std::byte> startupSceneBytes() {
     REQUIRE(scene.setParent(firstChild, parent, 0));
     REQUIRE(scene.setParent(secondChild, parent, 1));
     REQUIRE(scene.getComponent<TechEngine::Transform>(secondChild).setLocal(secondChildLocal()));
+    scene.getComponent<TechEngine::Name>(parent).value = "Parent";
+    scene.getComponent<TechEngine::Name>(firstChild).value = "First child";
+    scene.getComponent<TechEngine::Name>(secondChild).value = "Second child";
 
     std::vector<std::byte> bytes;
     TechEngine::SceneAsset{STARTUP_SCENE_ID}.write(scene, bytes);
@@ -472,6 +477,13 @@ static bool runtimeLogNames(const TechEngine::ResourceId id) {
     const std::string idText = std::format("{:#018x}", id.value());
     return std::ranges::any_of(g_runtimeLogMessages, [&idText](const std::string& message) {
         return message.find(idText) != std::string::npos;
+    });
+}
+
+static bool runtimeLogPrintsEntity(const TechEngine::Entity entity, const std::string_view name) {
+    const std::string indexText = std::format("{}:{}", entity.index, entity.generation);
+    return std::ranges::any_of(g_runtimeLogMessages, [&indexText, name](const std::string& message) {
+        return message.find(indexText) != std::string::npos && message.find(name) != std::string::npos;
     });
 }
 
@@ -676,6 +688,25 @@ TEST_CASE("the startup load reads the startup scene from the common pack", "[run
     checkStartupScene(runtime.scene());
 }
 
+TEST_CASE("the startup log prints each entity's name beside its index", "[runtime][load]") {
+    const RuntimeLogCaptureGuard logs;
+    const ScratchDirectory scratch{"runtimeLogNames"};
+    const std::vector<std::byte> scene = startupSceneBytes();
+    writeClientExport(scratch, TechEngine::Side::Common, scene);
+    RuntimeProbe runtime{scratch.root()};
+    prepareStartupLoad(runtime);
+
+    REQUIRE(runtime.startupLoad() == std::error_code{});
+
+    const std::vector<TechEngine::Entity> roots = runtime.scene().getRoots();
+    REQUIRE(roots.size() == 1);
+    const std::vector<TechEngine::Entity> children = runtime.scene().getChildren(roots.front());
+    REQUIRE(children.size() == 2);
+    CHECK(runtimeLogPrintsEntity(roots.front(), "Parent"));
+    CHECK(runtimeLogPrintsEntity(children[0], "First child"));
+    CHECK(runtimeLogPrintsEntity(children[1], "Second child"));
+}
+
 TEST_CASE("the startup load reads a startup scene that ships in the client pack", "[runtime][load]") {
     const ScratchDirectory scratch{"runtimeLoadClient"};
     const std::vector<std::byte> scene = startupSceneBytes();
@@ -836,6 +867,7 @@ static std::vector<std::byte> meshSceneBytes() {
     TechEngine::ComponentRegistry registry;
     registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
     registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
+    registry.registerComponent<TechEngine::Name>(TechEngine::Name::tag);
     registry.registerComponent<TechEngine::MeshRenderer>(TechEngine::MeshRenderer::tag);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity root = scene.createEntity();

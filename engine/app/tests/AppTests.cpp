@@ -6,6 +6,8 @@
 #include <TechEngine/core/assets/AssetSource.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/resources/ResourceCache.hpp>
+#include <TechEngine/core/scene/Scene.hpp>
+#include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
 #include <TechEngine/core/serialization/Writer.hpp>
 #include <TechEngine/core/systems/ISystem.hpp>
@@ -235,6 +237,17 @@ TEST_CASE("App registers event types during configuration and closes registratio
 
     REQUIRE_FALSE(late.valid());
     REQUIRE(app.eventRegistry().typeCount() == 1);
+}
+
+TEST_CASE("App registers Name when it finalizes, so every entity its scene creates is named", "[app]") {
+    EventProbeApp app;
+    app.finalize();
+    TechEngine::Scene& scene = TechEngineTests::AppTestAccess::scene(app);
+
+    const TechEngine::Entity entity = scene.createEntity();
+
+    REQUIRE(scene.hasComponent<TechEngine::Name>(entity));
+    CHECK(scene.getComponent<TechEngine::Name>(entity).value == "Entity");
 }
 
 TEST_CASE("App closes resource loader registration when it finalizes", "[app][resources]") {

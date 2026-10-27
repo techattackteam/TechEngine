@@ -1,6 +1,7 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <scene/ArchetypeStorage.hpp>
@@ -17,7 +18,7 @@ namespace TechEngine {
 
     Entity ArchetypeStorage::createEntity() {
         checkStructuralMutationAllowed();
-        Archetype& archetype = getOrCreate({denseId<Hierarchy>(), denseId<Transform>()});
+        Archetype& archetype = getOrCreate({denseId<Hierarchy>(), denseId<Transform>(), denseId<Name>()});
         Entity entity = m_entities.create();
         std::size_t row = 0;
         try {

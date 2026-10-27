@@ -3,6 +3,7 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <diagnostics/Diagnostics.hpp>
@@ -125,6 +126,9 @@ namespace TechEngine {
         }
         if (m_registry.find(componentTypeId<Transform>()) == nullptr) {
             m_registry.registerComponent<Transform>(Transform::tag);
+        }
+        if (m_registry.find(componentTypeId<Name>()) == nullptr) {
+            m_registry.registerComponent<Name>(Name::tag);
         }
         configureSimulation();
         m_resources.closeLoaders();

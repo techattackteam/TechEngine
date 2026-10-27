@@ -3,6 +3,7 @@
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/core/systems/ISystem.hpp>
 #include <TechEngine/core/systems/InputNotification.hpp>
@@ -94,6 +95,7 @@ public:
     explicit LoopInputDelivery(std::size_t inputCapacity = TechEngine::InputBuffer::DEFAULT_CAPACITY) : input(g_loopEngine.clock, inputCapacity), scene(registry), schedule(registry) {
         registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
         registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
+        registry.registerComponent<TechEngine::Name>(TechEngine::Name::tag);
         InputDeliveryProbeSystem::sequences.clear();
         InputDeliveryProbeSystem::holds = 0;
         InputDeliveryProbeSystem::recoveries.clear();
