@@ -11,6 +11,7 @@
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
 #include <TechEngine/core/serialization/ReadError.hpp>
@@ -40,6 +41,7 @@ using TechEngine::AssetAvailability;
 using TechEngine::AssetRef;
 using TechEngine::ComponentRegistry;
 using TechEngine::Entity;
+using TechEngine::Name;
 using TechEngine::ReadError;
 using TechEngine::ResourceCache;
 using TechEngine::ResourceHandle;
@@ -1132,4 +1134,50 @@ TEST_CASE("collectReferences lists each distinct referenced id once, in walk ord
     SceneAsset{SCENE_ASSET_ID}.collectReferences(scene, references);
 
     CHECK(references == std::vector<ResourceId>{LINKED_ASSET_ID, SECOND_LINKED_ASSET_ID});
+}
+
+TEST_CASE("names round-trip through a scene asset, including an empty name and two equal names", "[core][scene]") {
+    ComponentRegistry writeRegistry;
+    TechEngineTests::registerBuiltInSceneComponents(writeRegistry);
+    Scene source(writeRegistry);
+    const SmallHierarchy written = buildSmallHierarchy(source);
+    source.getComponent<Name>(written.root).value = "Root";
+    source.getComponent<Name>(written.first).value = "Crate";
+    source.getComponent<Name>(written.second).value = "";
+    source.getComponent<Name>(written.third).value = "Crate";
+
+    std::vector<std::byte> bytes;
+    SceneAsset{SCENE_ASSET_ID}.write(source, bytes);
+    ComponentRegistry readRegistry;
+    TechEngineTests::registerBuiltInSceneComponents(readRegistry);
+    Scene loaded(readRegistry);
+    SceneAsset asset;
+    const std::error_code readError = asset.read(bytes, loaded);
+
+    REQUIRE(!readError);
+    const SmallHierarchy readHierarchy = getLoadedSmallHierarchy(loaded);
+    CHECK(loaded.getComponent<Name>(readHierarchy.root).value == "Root");
+    CHECK(loaded.getComponent<Name>(readHierarchy.first).value == "Crate");
+    CHECK(loaded.getComponent<Name>(readHierarchy.second).value.empty());
+    CHECK(loaded.getComponent<Name>(readHierarchy.third).value == "Crate");
+    CHECK(loaded.getComponent<Name>(readHierarchy.grandchild).value == "Entity");
+}
+
+TEST_CASE("a scene asset with no Name blocks loads every entity with the default name", "[core][scene]") {
+    const std::vector<std::byte> bytes = writeRows({{0, SCENE_ASSET_NO_PARENT}, {1, 0}, {2, 0}});
+    ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    Scene loaded(registry);
+    SceneAsset asset;
+
+    const std::error_code readError = asset.read(bytes, loaded);
+
+    REQUIRE(!readError);
+    const std::vector<Entity> roots = loaded.getRoots();
+    REQUIRE(roots.size() == 1);
+    const std::vector<Entity> children = loaded.getChildren(roots[0]);
+    REQUIRE(children.size() == 2);
+    CHECK(loaded.getComponent<Name>(roots[0]).value == "Entity");
+    CHECK(loaded.getComponent<Name>(children[0]).value == "Entity");
+    CHECK(loaded.getComponent<Name>(children[1]).value == "Entity");
 }

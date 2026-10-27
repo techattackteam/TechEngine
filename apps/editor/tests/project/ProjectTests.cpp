@@ -14,6 +14,7 @@
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/core/serialization/ReadError.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
@@ -85,6 +86,7 @@ namespace {
     void registerExportComponents(ComponentRegistry& registry) {
         registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
         registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
+        registry.registerComponent<TechEngine::Name>(TechEngine::Name::tag);
         registry.registerComponent<TechEngine::MeshRenderer>(TechEngine::MeshRenderer::tag);
     }
 

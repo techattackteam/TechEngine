@@ -7,6 +7,7 @@
 #include <TechEngine/core/resources/BootRecord.hpp>
 #include <TechEngine/core/resources/PackReader.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
+#include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/core/serialization/ReadError.hpp>
 
@@ -98,7 +99,9 @@ namespace TechEngine {
 
     void RuntimeApp::logSceneTree(const Scene& scene, const Entity entity, const std::size_t depth) const {
         const Vec3& position = scene.getComponent<Transform>(entity).getLocal().position;
-        TE_LOGGER_INFO("{0}Entity {1}:{2} at ({3}, {4}, {5})", std::string(depth * 2, ' '), entity.index, entity.generation, position.x, position.y, position.z);
+        const Name& nameComponent = scene.getComponent<Name>(entity);
+        std::string name = nameComponent.value;
+        TE_LOGGER_INFO("{0}Entity {1} {2}:{3} at ({4}, {5}, {6})", std::string(depth * 2, ' '), name, entity.index, entity.generation, position.x, position.y, position.z);
         if (scene.hasComponent<MeshRenderer>(entity)) {
             const AssetRef<Mesh>& reference = scene.getComponent<MeshRenderer>(entity).mesh;
             const Mesh* mesh = reference.handle.valid() ? m_resources.resolve(reference.handle) : nullptr;

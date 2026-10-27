@@ -70,6 +70,7 @@ techengine_module(core
           include/TechEngine/core/scene/SceneAsset.hpp
           include/TechEngine/core/scene/SceneCommandBuffer.hpp
           include/TechEngine/core/scene/components/Hierarchy.hpp
+          include/TechEngine/core/scene/components/Name.hpp
           include/TechEngine/core/scene/components/Transform.hpp
           include/TechEngine/core/serialization/BlobHeader.hpp
           include/TechEngine/core/serialization/ReadError.hpp
@@ -122,6 +123,7 @@ if(TE_BUILD_TESTS)
           tests/scene/ComponentRegistryTests.cpp
           tests/scene/EntitySlotsTests.cpp
           tests/scene/HierarchyTests.cpp
+          tests/scene/NameTests.cpp
           tests/scene/QueryTests.cpp
           tests/scene/SceneAssetTests.cpp
           tests/scene/SceneEventTests.cpp
