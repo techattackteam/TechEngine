@@ -185,6 +185,29 @@ TEST_CASE("resolveExisting is case-sensitive", "[files][mounttable]") {
     CHECK(table.resolveExisting("assets://ui/icon.PNG", resolved) == FileError::NotFound);
 }
 
+TEST_CASE("resolveExisting resolves through a directory symlink below the mount root", "[files][mounttable]") {
+    const ScratchDirectory scratch{"resolveSymlink"};
+    const ScratchDirectory target{"resolveSymlinkTarget"};
+    target.writeFile("textures/icon.png", "png");
+
+    std::error_code linkError;
+    std::filesystem::create_directory_symlink(target.root() / "textures", scratch.root() / "ui", linkError);
+    if (linkError) {
+        SKIP("this platform or user cannot create a directory symlink: " << linkError.message());
+    }
+
+    MountTable table;
+    table.mount("assets", scratch.root());
+
+    std::filesystem::path resolved;
+    REQUIRE(table.resolveExisting("assets://ui/icon.png", resolved) == std::error_code{});
+    CHECK(resolved == scratch.root() / "ui" / "icon.png");
+
+    CHECK(table.resolveExisting("assets://UI/icon.png", resolved) == FileError::NotFound);
+    CHECK(table.resolveExisting("assets://ui/Icon.png", resolved) == FileError::NotFound);
+    CHECK(table.resolveExisting("assets://textures/icon.png", resolved) == FileError::NotFound);
+}
+
 TEST_CASE("resolveForCreate returns a path that does not exist yet", "[files][mounttable]") {
     ScratchDirectory scratch{"resolveForCreateMissing"};
     MountTable table;
