@@ -1,3 +1,4 @@
+#include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/platform/files/VirtualPath.hpp>
 
@@ -13,6 +14,7 @@ namespace TechEngine {
         std::error_code ec;
         Iterator it{root, ec};
         if (ec) {
+            TE_LOGGER_WARN("Failed to list {0}: {1}", root.string(), ec.message());
             return FileError::IoError;
         }
 
@@ -24,6 +26,7 @@ namespace TechEngine {
 
             it.increment(ec);
             if (ec) {
+                TE_LOGGER_WARN("Failed to list {0}: {1}", root.string(), ec.message());
                 return FileError::IoError;
             }
         }
@@ -47,11 +50,13 @@ namespace TechEngine {
 
         std::ifstream file{physicalPath, std::ios::binary | std::ios::ate};
         if (!file) {
+            TE_LOGGER_WARN("Failed to open {0} for reading", physicalPath.string());
             return FileError::IoError;
         }
 
         const std::streamoff size = file.tellg();
         if (size < 0) {
+            TE_LOGGER_WARN("Failed to get the size of {0}", physicalPath.string());
             return FileError::IoError;
         }
 
@@ -63,6 +68,7 @@ namespace TechEngine {
         file.seekg(0, std::ios::beg);
         if (!file.read(reinterpret_cast<char*>(out.data()), static_cast<std::streamsize>(size))) {
             out.clear();
+            TE_LOGGER_WARN("Failed to read {0}", physicalPath.string());
             return FileError::IoError;
         }
         return {};
@@ -81,11 +87,13 @@ namespace TechEngine {
 
         std::ifstream file{physicalPath, std::ios::binary | std::ios::ate};
         if (!file) {
+            TE_LOGGER_WARN("Failed to open {0} for reading", physicalPath.string());
             return FileError::IoError;
         }
 
         const std::streamoff fileSize = file.tellg();
         if (fileSize < 0) {
+            TE_LOGGER_WARN("Failed to get the size of {0}", physicalPath.string());
             return FileError::IoError;
         }
 
@@ -97,6 +105,7 @@ namespace TechEngine {
         if (size > 0) {
             file.seekg(static_cast<std::streamoff>(offset), std::ios::beg);
             if (!file.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(size))) {
+                TE_LOGGER_WARN("Failed to read {0} bytes at offset {1} of {2}", size, offset, physicalPath.string());
                 return FileError::IoError;
             }
         }
@@ -123,11 +132,13 @@ namespace TechEngine {
         }
 
         if (!bytes.empty() && !file.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()))) {
+            TE_LOGGER_WARN("Failed to write {0}", physicalPath.string());
             return FileError::IoError;
         }
 
         file.close();
         if (!file) {
+            TE_LOGGER_WARN("Failed to close {0} after writing", physicalPath.string());
             return FileError::IoError;
         }
         return {};
@@ -143,6 +154,7 @@ namespace TechEngine {
         std::error_code ec;
         const bool isDirectory = std::filesystem::is_directory(physicalPath, ec);
         if (ec) {
+            TE_LOGGER_WARN("Failed to check whether {0} is a directory: {1}", physicalPath.string(), ec.message());
             return FileError::IoError;
         }
 
@@ -150,12 +162,14 @@ namespace TechEngine {
         if (!isDirectory) {
             size = std::filesystem::file_size(physicalPath, ec);
             if (ec) {
+                TE_LOGGER_WARN("Failed to get the size of {0}: {1}", physicalPath.string(), ec.message());
                 return FileError::IoError;
             }
         }
 
         const std::filesystem::file_time_type writeTime = std::filesystem::last_write_time(physicalPath, ec);
         if (ec) {
+            TE_LOGGER_WARN("Failed to get the write time of {0}: {1}", physicalPath.string(), ec.message());
             return FileError::IoError;
         }
 
@@ -187,6 +201,7 @@ namespace TechEngine {
         std::error_code ec;
         const bool isDirectory = std::filesystem::is_directory(physicalPath, ec);
         if (ec) {
+            TE_LOGGER_WARN("Failed to check whether {0} is a directory: {1}", physicalPath.string(), ec.message());
             return FileError::IoError;
         }
         if (!isDirectory) {
@@ -225,6 +240,7 @@ namespace TechEngine {
 
         std::filesystem::create_directories(physicalPath, ec);
         if (ec) {
+            TE_LOGGER_WARN("Failed to create the directory {0}: {1}", physicalPath.string(), ec.message());
             return FileError::IoError;
         }
         return {};
@@ -252,6 +268,7 @@ namespace TechEngine {
             std::filesystem::remove(physicalPath, ec);
         }
         if (ec) {
+            TE_LOGGER_WARN("Failed to remove {0}: {1}", physicalPath.string(), ec.message());
             return FileError::IoError;
         }
         return {};
@@ -272,6 +289,7 @@ namespace TechEngine {
             std::filesystem::copy_file(sourcePath, destinationPath, ec);
         }
         if (ec) {
+            TE_LOGGER_WARN("Failed to copy {0} to {1}: {2}", sourcePath.string(), destinationPath.string(), ec.message());
             return FileError::IoError;
         }
         return {};
@@ -288,6 +306,7 @@ namespace TechEngine {
         std::error_code ec;
         std::filesystem::rename(sourcePath, destinationPath, ec);
         if (ec) {
+            TE_LOGGER_WARN("Failed to move {0} to {1}: {2}", sourcePath.string(), destinationPath.string(), ec.message());
             return FileError::IoError;
         }
         return {};
@@ -313,6 +332,7 @@ namespace TechEngine {
 
         std::filesystem::rename(physicalPath, newPath, ec);
         if (ec) {
+            TE_LOGGER_WARN("Failed to rename {0} to {1}: {2}", physicalPath.string(), newPath.string(), ec.message());
             return FileError::IoError;
         }
         return {};
