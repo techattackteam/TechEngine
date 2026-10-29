@@ -210,7 +210,7 @@ namespace TechEngine {
                     const bool applied = app.applyCommands();
                     if (applied) {
                         TE_PROFILER_SCOPE("Simulation.PublishEdits");
-                        app.publishEdits();
+                        app.publishEdits(app.m_scene);
                     }
                     if (!ticks) {
                         waitForCommands();

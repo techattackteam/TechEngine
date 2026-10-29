@@ -30,7 +30,8 @@ namespace TechEngine {
     static constexpr std::string_view STARTUP_SCENE_PATH = "project://assets/common/Startup.tescene";
     static constexpr std::string_view TRIANGLE_MESH_PATH = "project://assets/client/Triangle.temesh";
 
-    EditorApp::EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder) : ClientApp(Role::Client, "TechEngine Editor"), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)), m_source(m_files, m_assets) {
+    EditorApp::EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder)
+        : ClientApp(Role::Client, "TechEngine Editor"), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)), m_source(m_files, m_assets), m_commands(*this, m_session), m_panels(m_commands) {
     }
 
     EditorApp::~EditorApp() {
@@ -89,12 +90,26 @@ namespace TechEngine {
         if (exportError) {
             TE_LOGGER_ERROR("Failed to export the project to {0}: {1}", m_exportFolder.string(), exportError.message());
         }
+
+        // Stopped, the editor gets no batch until the first edit, so without this the panels start empty.
+        publishEdits(scene);
         return {};
     }
 
     void EditorApp::mainThreadUpdate() {
         ClientApp::mainThreadUpdate();
         buildImGuiFrame();
+    }
+
+    void EditorApp::publishEdits(const Scene& scene) {
+        EditorSnapshot snapshot;
+        m_session.buildSnapshot(scene, snapshot);
+        m_snapshotSlot.publish(std::move(snapshot));
+        wakeMainThread();
+    }
+
+    bool EditorApp::takeSnapshot(EditorSnapshot& out) {
+        return m_snapshotSlot.take(out);
     }
 
     void EditorApp::shutdown() {
@@ -123,12 +138,13 @@ namespace TechEngine {
             return;
         }
 
+        takeSnapshot(m_snapshot);
         m_imguiBridge.beginFrame();
         const ImGuiContext& context = *ImGui::GetCurrentContext();
         const bool hadInput = !context.InputEventsQueue.empty();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        ImGui::ShowDemoWindow();
+        m_panels.draw(m_snapshot);
         ImGui::Render();
         m_imguiBridge.publish(*ImGui::GetDrawData());
 

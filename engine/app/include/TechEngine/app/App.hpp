@@ -112,7 +112,7 @@ namespace TechEngine {
 
         virtual void publishSnapshot(const SimulationContext& simulation);
 
-        virtual void publishEdits();
+        virtual void publishEdits(const Scene& scene);
 
         // An override must call this one, or the scene's entry is still counted at cache shutdown.
         virtual void simulationShutdown();
