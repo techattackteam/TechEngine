@@ -32,6 +32,17 @@ static EditorSnapshot twoRoots() {
     return snapshot;
 }
 
+static constexpr Entity PARENT{10, 0};
+static constexpr Entity FIRST{11, 0};
+static constexpr Entity SECOND{12, 0};
+static constexpr Entity THIRD{13, 0};
+
+static EditorSnapshot threeSiblings() {
+    EditorSnapshot snapshot;
+    snapshot.hierarchy = {row(PARENT, 0, 3), row(FIRST, 1, 0), row(SECOND, 1, 0), row(THIRD, 1, 0)};
+    return snapshot;
+}
+
 TEST_CASE("a drop onto the dragged entity itself is refused", "[editor][edit]") {
     const EditorSnapshot snapshot = twoRoots();
 
@@ -84,4 +95,101 @@ TEST_CASE("an empty snapshot has no subtrees", "[editor][edit]") {
     const EditorSnapshot snapshot{};
 
     CHECK_FALSE(snapshot.isInSubtree(ROOT, ROOT));
+}
+
+TEST_CASE("findRow gives a listed entity's row and refuses an unlisted or stale one", "[editor][edit]") {
+    const EditorSnapshot snapshot = twoRoots();
+    std::size_t index = 99;
+
+    REQUIRE(snapshot.findRow(SECOND_CHILD, index));
+    CHECK(index == 3);
+    REQUIRE(snapshot.findRow(ROOT, index));
+    CHECK(index == 0);
+
+    index = 99;
+    CHECK_FALSE(snapshot.findRow(Entity{9, 0}, index));
+    CHECK_FALSE(snapshot.findRow(Entity{0, 1}, index));
+    CHECK_FALSE(snapshot.findRow(Entity{}, index));
+    CHECK(index == 99);
+}
+
+TEST_CASE("a row's parent is the nearest row above it one level up", "[editor][edit]") {
+    const EditorSnapshot snapshot = twoRoots();
+
+    CHECK_FALSE(snapshot.getParentOfRow(0).valid());
+    CHECK(snapshot.getParentOfRow(1) == ROOT);
+    CHECK(snapshot.getParentOfRow(2) == CHILD);
+    CHECK(snapshot.getParentOfRow(3) == ROOT);
+    CHECK_FALSE(snapshot.getParentOfRow(4).valid());
+}
+
+TEST_CASE("a row's sibling index skips the deeper rows between siblings", "[editor][edit]") {
+    const EditorSnapshot snapshot = twoRoots();
+
+    CHECK(snapshot.getSiblingIndexOfRow(1) == 0);
+    CHECK(snapshot.getSiblingIndexOfRow(2) == 0);
+    CHECK(snapshot.getSiblingIndexOfRow(3) == 1);
+    CHECK(snapshot.getSiblingIndexOfRow(0) == 0);
+}
+
+TEST_CASE("a drop under a new parent keeps the gap as the position", "[editor][edit]") {
+    const EditorSnapshot snapshot = twoRoots();
+    std::size_t position = 99;
+
+    REQUIRE(snapshot.resolveDrop(GRANDCHILD, OTHER_ROOT, 0, position));
+    CHECK(position == 0);
+    REQUIRE(snapshot.resolveDrop(GRANDCHILD, ROOT, 1, position));
+    CHECK(position == 1);
+}
+
+TEST_CASE("a drop inside the same parent counts the position among the other children", "[editor][edit]") {
+    const EditorSnapshot snapshot = threeSiblings();
+    std::size_t position = 99;
+
+    SECTION("moving down lands one gap earlier") {
+        REQUIRE(snapshot.resolveDrop(FIRST, PARENT, 2, position));
+        CHECK(position == 1);
+        REQUIRE(snapshot.resolveDrop(FIRST, PARENT, 3, position));
+        CHECK(position == 2);
+    }
+
+    SECTION("moving up keeps the gap") {
+        REQUIRE(snapshot.resolveDrop(THIRD, PARENT, 0, position));
+        CHECK(position == 0);
+        REQUIRE(snapshot.resolveDrop(THIRD, PARENT, 1, position));
+        CHECK(position == 1);
+    }
+
+    SECTION("the gaps just above and below the dragged entity change nothing") {
+        CHECK_FALSE(snapshot.resolveDrop(SECOND, PARENT, 1, position));
+        CHECK_FALSE(snapshot.resolveDrop(SECOND, PARENT, 2, position));
+        CHECK_FALSE(snapshot.resolveDrop(FIRST, PARENT, 0, position));
+    }
+}
+
+TEST_CASE("a drop into the dragged entity's own subtree is refused", "[editor][edit]") {
+    const EditorSnapshot snapshot = twoRoots();
+    std::size_t position = 99;
+
+    CHECK_FALSE(snapshot.resolveDrop(ROOT, ROOT, 0, position));
+    CHECK_FALSE(snapshot.resolveDrop(ROOT, CHILD, 0, position));
+    CHECK_FALSE(snapshot.resolveDrop(ROOT, GRANDCHILD, 0, position));
+    CHECK(position == 99);
+}
+
+TEST_CASE("only a child can be dropped at the root, because roots have no order", "[editor][edit]") {
+    const EditorSnapshot snapshot = twoRoots();
+    std::size_t position = 99;
+
+    CHECK(snapshot.resolveDrop(CHILD, Entity{}, 0, position));
+    CHECK_FALSE(snapshot.resolveDrop(OTHER_ROOT, Entity{}, 0, position));
+    CHECK_FALSE(snapshot.resolveDrop(ROOT, Entity{}, 1, position));
+}
+
+TEST_CASE("a drop of an entity the snapshot does not list is refused", "[editor][edit]") {
+    const EditorSnapshot snapshot = twoRoots();
+    std::size_t position = 99;
+
+    CHECK_FALSE(snapshot.resolveDrop(Entity{9, 0}, ROOT, 0, position));
+    CHECK(position == 99);
 }

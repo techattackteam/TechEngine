@@ -24,5 +24,15 @@ namespace TechEngine {
         std::uint64_t savedRevision = 0;
 
         bool isInSubtree(Entity entity, Entity root) const;
+
+        bool findRow(Entity entity, std::size_t& out) const;
+
+        Entity getParentOfRow(std::size_t row) const;
+
+        std::size_t getSiblingIndexOfRow(std::size_t row) const;
+
+        // gap counts parent's children as drawn, dragged included; Scene counts a position among
+        // the other children, so a move down inside the same parent lands one gap earlier.
+        bool resolveDrop(Entity dragged, Entity parent, std::size_t gap, std::size_t& position) const;
     };
 }

@@ -38,6 +38,7 @@ techengine_app(editor
           tests/assets/AssetIndexTests.cpp
           tests/assets/LooseSourceTests.cpp
           tests/edit/EditSessionTests.cpp
+          tests/edit/EditorCommandsTests.cpp
           tests/edit/EditorSnapshotSlotTests.cpp
           tests/edit/EditorSnapshotTests.cpp
           tests/edit/HierarchyCommandsTests.cpp

@@ -35,61 +35,6 @@ namespace TechEngine {
         return 0;
     }
 
-    static bool findRow(const EditorSnapshot& snapshot, const Entity entity, std::size_t& out) {
-        for (std::size_t index = 0; index < snapshot.hierarchy.size(); index++) {
-            if (snapshot.hierarchy[index].entity == entity) {
-                out = index;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    static Entity parentOfRow(const EditorSnapshot& snapshot, const std::size_t rowIndex) {
-        const std::vector<HierarchyRow>& rows = snapshot.hierarchy;
-        for (std::size_t previous = rowIndex; previous > 0; previous--) {
-            if (rows[previous - 1].depth + 1 == rows[rowIndex].depth) {
-                return rows[previous - 1].entity;
-            }
-        }
-        return {};
-    }
-
-    static std::size_t siblingIndexOfRow(const EditorSnapshot& snapshot, const std::size_t rowIndex) {
-        const std::vector<HierarchyRow>& rows = snapshot.hierarchy;
-        const std::uint32_t depth = rows[rowIndex].depth;
-        std::size_t siblingsBefore = 0;
-        for (std::size_t previous = rowIndex; previous > 0 && rows[previous - 1].depth >= depth; previous--) {
-            if (rows[previous - 1].depth == depth) {
-                siblingsBefore++;
-            }
-        }
-        return siblingsBefore;
-    }
-
-    // gap counts parent's children as drawn, dragged included; Scene counts a position among the
-    // other children, so a move down inside the same parent lands one gap earlier.
-    static bool resolveDrop(const EditorSnapshot& snapshot, const Entity dragged, const Entity parent, const std::size_t gap, std::size_t& position) {
-        std::size_t draggedRow = 0;
-        const bool found = findRow(snapshot, dragged, draggedRow);
-        if (!found || (parent.valid() && snapshot.isInSubtree(parent, dragged))) {
-            return false;
-        }
-
-        const Entity currentParent = parentOfRow(snapshot, draggedRow);
-        if (currentParent != parent) {
-            position = gap;
-            return true;
-        }
-        // Roots have no order in Scene, so a root can only move under another entity.
-        if (!parent.valid()) {
-            return false;
-        }
-        const std::size_t current = siblingIndexOfRow(snapshot, draggedRow);
-        position = current < gap ? gap - 1 : gap;
-        return position != current;
-    }
-
     HierarchyPanel::HierarchyPanel(EditorCommands& commands) : Panel("Hierarchy"), m_commands(&commands) {
     }
 
@@ -283,8 +228,8 @@ namespace TechEngine {
         float lineY = 0.0f;
         bool insertion = true;
         if (mouseY < rowMin.y + edge) {
-            parent = parentOfRow(snapshot, rowIndex);
-            gap = siblingIndexOfRow(snapshot, rowIndex);
+            parent = snapshot.getParentOfRow(rowIndex);
+            gap = snapshot.getSiblingIndexOfRow(rowIndex);
             lineY = rowMin.y;
         } else if (mouseY > rowMax.y - edge) {
             lineY = rowMax.y;
@@ -293,15 +238,15 @@ namespace TechEngine {
                 gap = 0;
                 lineDepth = row.depth + 1;
             } else {
-                parent = parentOfRow(snapshot, rowIndex);
-                gap = siblingIndexOfRow(snapshot, rowIndex) + 1;
+                parent = snapshot.getParentOfRow(rowIndex);
+                gap = snapshot.getSiblingIndexOfRow(rowIndex) + 1;
             }
         } else {
             insertion = false;
         }
 
         std::size_t position = 0;
-        const bool allowed = resolveDrop(snapshot, dragged, parent, gap, position);
+        const bool allowed = snapshot.resolveDrop(dragged, parent, gap, position);
         if (!allowed) {
             return;
         }
@@ -327,7 +272,7 @@ namespace TechEngine {
             Entity dragged;
             std::size_t position = 0;
             const bool dragging = readEntityPayload(ImGui::GetDragDropPayload(), dragged);
-            const bool allowed = dragging && resolveDrop(snapshot, dragged, Entity{}, 0, position);
+            const bool allowed = dragging && snapshot.resolveDrop(dragged, Entity{}, 0, position);
             if (allowed) {
                 const ImVec2 spaceMin = ImGui::GetItemRectMin();
                 const ImVec2 spaceMax = ImGui::GetItemRectMax();
@@ -372,7 +317,7 @@ namespace TechEngine {
 
     void HierarchyPanel::beginRename(const EditorSnapshot& snapshot, const Entity entity) {
         std::size_t rowIndex = 0;
-        const bool found = findRow(snapshot, entity, rowIndex);
+        const bool found = snapshot.findRow(entity, rowIndex);
         if (!found) {
             return;
         }

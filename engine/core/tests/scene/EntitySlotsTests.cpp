@@ -5,12 +5,30 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <format>
+#include <string>
+
 TEST_CASE("the default entity is null", "[core][scene]") {
     const TechEngineTests::FatalAssertGuard guard;
     const TechEngine::Entity entity;
 
     REQUIRE_FALSE(entity.valid());
     REQUIRE(entity.index == TechEngine::Entity::NULL_INDEX);
+}
+
+TEST_CASE("an entity formats as its index and generation", "[core][scene]") {
+    const TechEngine::Entity entity{3, 1};
+    const TechEngine::Entity null;
+
+    CHECK(std::format("{}", entity) == "3:1");
+    CHECK(std::format("{0} and {0}", entity) == "3:1 and 3:1");
+    CHECK(std::format("{}", null) == std::to_string(TechEngine::Entity::NULL_INDEX) + ":0");
+}
+
+TEST_CASE("an entity refuses a format spec", "[core][scene]") {
+    const TechEngine::Entity entity{3, 1};
+
+    CHECK_THROWS_AS(std::vformat("{:x}", std::make_format_args(entity)), std::format_error);
 }
 
 TEST_CASE("creating an entity returns a live handle", "[core][scene]") {

@@ -276,6 +276,16 @@ TEST_CASE("reparent that the scene refuses changes nothing", "[editor][edit][com
         reparent.apply(edit.scene);
     }
 
+    SECTION("the empty entity as the child") {
+        ReparentEntityCommand reparent{edit.session, Entity{}, a, 0};
+        reparent.apply(edit.scene);
+    }
+
+    SECTION("a root moved to the root") {
+        ReparentEntityCommand reparent{edit.session, a, Entity{}, 0};
+        reparent.apply(edit.scene);
+    }
+
     CHECK(edit.scene.getRoots() == std::vector<Entity>{a});
     CHECK(edit.scene.getParent(b) == a);
     CHECK(edit.scene.getParent(c) == b);
