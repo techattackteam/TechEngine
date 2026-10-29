@@ -174,7 +174,7 @@ namespace TechEngine {
     void App::publishSnapshot(const SimulationContext&) {
     }
 
-    void App::publishEdits() {
+    void App::publishEdits(const Scene&) {
     }
 
     void App::simulationShutdown() {

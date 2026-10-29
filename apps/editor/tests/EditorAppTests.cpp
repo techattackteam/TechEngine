@@ -21,6 +21,7 @@
 #include <EditorApp.hpp>
 #include <assets/AssetIndex.hpp>
 #include <assets/AssetTestFiles.hpp>
+#include <edit/EditorSnapshot.hpp>
 #include <project/Project.hpp>
 
 #include <catch2/catch_test_macros.hpp>
@@ -44,9 +45,11 @@ namespace {
     class EditorProbe : public TechEngine::EditorApp {
     public:
         using TechEngine::EditorApp::EditorApp;
+        using TechEngine::EditorApp::publishEdits;
         using TechEngine::EditorApp::shouldClose;
         using TechEngine::EditorApp::shutdown;
         using TechEngine::EditorApp::simulationTicks;
+        using TechEngine::EditorApp::takeSnapshot;
 
         void advanceFrame(double deltaTime) {
             m_simulationThread.advance(deltaTime, [this](const TechEngine::SimulationContext& frame) {
@@ -596,6 +599,75 @@ TEST_CASE("an editor destroyed without shutdown stops its client and releases Im
     CHECK_FALSE(next.shouldClose());
     next.shutdown();
     CHECK(ImGui::GetCurrentContext() == nullptr);
+}
+
+static void checkStartupSnapshot(const TechEngine::EditorSnapshot& snapshot, const TechEngine::Scene& scene) {
+    const std::vector<TechEngine::Entity> roots = scene.getRoots();
+    REQUIRE(roots.size() == 1);
+    const std::vector<TechEngine::Entity> children = scene.getChildren(roots[0]);
+    REQUIRE(children.size() == 2);
+    REQUIRE(snapshot.hierarchy.size() == 3);
+    CHECK(snapshot.hierarchy[0].entity == roots[0]);
+    CHECK(snapshot.hierarchy[0].depth == 0);
+    CHECK(snapshot.hierarchy[0].childCount == 2);
+    CHECK(snapshot.hierarchy[1].entity == children[0]);
+    CHECK(snapshot.hierarchy[1].depth == 1);
+    CHECK(snapshot.hierarchy[2].entity == children[1]);
+    CHECK(snapshot.hierarchy[2].depth == 1);
+    for (const TechEngine::HierarchyRow& row: snapshot.hierarchy) {
+        CHECK(row.name == "Entity");
+    }
+    CHECK_FALSE(snapshot.selected.valid());
+    CHECK(snapshot.editRevision == snapshot.savedRevision);
+}
+
+TEST_CASE("the startup load publishes the scene it creates for main to take once", "[editor][window]") {
+    ScratchDirectory scratch{"editorPublishesCreatedSnapshot"};
+    writeProjectLayout(scratch);
+    EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
+    editor.bootstrap();
+
+    TechEngine::EditorSnapshot snapshot;
+    REQUIRE(editor.takeSnapshot(snapshot));
+    checkStartupSnapshot(snapshot, editor.scene());
+    CHECK_FALSE(editor.takeSnapshot(snapshot));
+    editor.shutdown();
+}
+
+TEST_CASE("a later launch publishes the startup scene it loads through the cache", "[editor][window]") {
+    ScratchDirectory scratch{"editorPublishesLoadedSnapshot"};
+    writeProjectLayout(scratch);
+    const std::filesystem::path exportFolder = scratch.makeDirectory("export");
+    {
+        EditorProbe first{scratch.root(), exportFolder};
+        first.bootstrap();
+        first.shutdown();
+    }
+
+    EditorProbe second{scratch.root(), exportFolder};
+    second.bootstrap();
+
+    TechEngine::EditorSnapshot snapshot;
+    REQUIRE(second.takeSnapshot(snapshot));
+    checkStartupSnapshot(snapshot, second.scene());
+    second.shutdown();
+}
+
+TEST_CASE("each publishEdits hands main one snapshot of the live scene", "[editor][window]") {
+    ScratchDirectory scratch{"editorPublishEdits"};
+    writeProjectLayout(scratch);
+    EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
+    editor.bootstrap();
+    TechEngine::EditorSnapshot startup;
+    REQUIRE(editor.takeSnapshot(startup));
+
+    editor.publishEdits(editor.scene());
+
+    TechEngine::EditorSnapshot published;
+    REQUIRE(editor.takeSnapshot(published));
+    checkStartupSnapshot(published, editor.scene());
+    CHECK_FALSE(editor.takeSnapshot(published));
+    editor.shutdown();
 }
 
 class EditorStallProbe : public TechEngine::EditorApp {

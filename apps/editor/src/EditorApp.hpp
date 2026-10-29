@@ -4,8 +4,13 @@
 
 #include <assets/AssetIndex.hpp>
 #include <assets/LooseSource.hpp>
+#include <edit/EditSession.hpp>
+#include <edit/EditorCommands.hpp>
+#include <edit/EditorSnapshot.hpp>
+#include <edit/EditorSnapshotSlot.hpp>
 #include <project/Project.hpp>
 #include <ui/ImGuiBridge.hpp>
+#include <ui/PanelsManager.hpp>
 
 #include <cstddef>
 #include <filesystem>
@@ -23,6 +28,13 @@ namespace TechEngine {
         AssetIndex m_assets;
         LooseSource m_source;
         ImGuiBridge m_imguiBridge;
+        // Simulation thread only: commands and publishEdits read and write it there.
+        EditSession m_session;
+        EditorSnapshotSlot m_snapshotSlot;
+        // Main thread only.
+        EditorSnapshot m_snapshot;
+        EditorCommands m_commands;
+        PanelsManager m_panels;
 
     public:
         EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder);
@@ -41,6 +53,10 @@ namespace TechEngine {
         std::error_code simulationStartupLoad(Scene& scene) override;
 
         void mainThreadUpdate() override;
+
+        void publishEdits(const Scene& scene) override;
+
+        bool takeSnapshot(EditorSnapshot& out);
 
         void shutdown() override;
 

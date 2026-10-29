@@ -340,6 +340,7 @@ public:
     bool ticks = true;
     bool dedicatedJoinedBeforeShutdown = false;
     const TechEngine::Scene* loadedScene = nullptr;
+    const TechEngine::Scene* publishedScene = nullptr;
 
     std::vector<AppLifecycleEvent> events() const {
         std::lock_guard const lock{m_eventsMutex};
@@ -433,8 +434,9 @@ protected:
         }
     }
 
-    void publishEdits() override {
+    void publishEdits(const TechEngine::Scene& scene) override {
         record("publishEdits");
+        publishedScene = &scene;
         if (onPublishEdits) {
             onPublishEdits();
         }
@@ -1083,6 +1085,7 @@ TEST_CASE("App applies submitted commands to the live scene in FIFO order and pu
     CHECK(log.destroyedCount() == 3);
     CHECK(warnings.containing("cancel").empty());
     CHECK(eventCount(app, "publishEdits") == 1);
+    CHECK(app.publishedScene == &TechEngineTests::AppTestAccess::scene(app));
     const auto events = app.events();
     const auto published = std::ranges::find(events, std::string_view{"publishEdits"}, &AppLifecycleEvent::name);
     const auto firstTick = std::ranges::find(events, std::string_view{"systemTick"}, &AppLifecycleEvent::name);
