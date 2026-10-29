@@ -1,9 +1,12 @@
+#include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
+#include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <edit/EditTestScene.hpp>
 #include <edit/EditorSnapshot.hpp>
 #include <edit/HierarchyCommands.hpp>
 
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include <vector>
@@ -15,6 +18,9 @@ using TechEngine::Entity;
 using TechEngine::RenameEntityCommand;
 using TechEngine::ReparentEntityCommand;
 using TechEngine::SelectEntityCommand;
+using TechEngine::Transform;
+using TechEngine::TransformValues;
+using TechEngine::Vec3;
 using TechEngineTests::EditTestScene;
 using TechEngineTests::rowFor;
 
@@ -184,6 +190,61 @@ TEST_CASE("reparent with no parent makes the entity a root and keeps its own sub
     CHECK(rowFor(after, child).depth == 0);
     CHECK(rowFor(after, grandchild).depth == 1);
     CHECK(after.editRevision > before.editRevision);
+}
+
+TEST_CASE("reparent to the current parent reorders, counting the position among the other children", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity parent = edit.createNamed("Parent");
+    const Entity first = edit.createNamed("First", parent);
+    const Entity second = edit.createNamed("Second", parent);
+    const Entity third = edit.createNamed("Third", parent);
+    const EditorSnapshot before = edit.snapshot();
+
+    SECTION("moving down one place") {
+        ReparentEntityCommand reparent{edit.session, first, parent, 1};
+        reparent.apply(edit.scene);
+
+        CHECK(edit.scene.getChildren(parent) == std::vector<Entity>{second, first, third});
+    }
+
+    SECTION("moving to the end") {
+        ReparentEntityCommand reparent{edit.session, first, parent, 2};
+        reparent.apply(edit.scene);
+
+        CHECK(edit.scene.getChildren(parent) == std::vector<Entity>{second, third, first});
+    }
+
+    SECTION("moving up to the top") {
+        ReparentEntityCommand reparent{edit.session, third, parent, 0};
+        reparent.apply(edit.scene);
+
+        CHECK(edit.scene.getChildren(parent) == std::vector<Entity>{third, first, second});
+    }
+
+    const EditorSnapshot after = edit.snapshot();
+    CHECK(rowFor(after, parent).childCount == 3);
+    CHECK(after.editRevision > before.editRevision);
+}
+
+TEST_CASE("reparent with no parent keeps the entity where it is in the world", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity parent = edit.createNamed("Parent");
+    const Entity child = edit.createNamed("Child", parent);
+    TransformValues parentLocal;
+    parentLocal.position = Vec3(5.0f, 0.0f, 0.0f);
+    REQUIRE(edit.scene.getComponent<Transform>(parent).setLocal(parentLocal));
+    TransformValues childLocal;
+    childLocal.position = Vec3(1.0f, 2.0f, 0.0f);
+    REQUIRE(edit.scene.getComponent<Transform>(child).setLocal(childLocal));
+
+    ReparentEntityCommand reparent{edit.session, child, Entity{}, 0};
+    reparent.apply(edit.scene);
+
+    REQUIRE_FALSE(edit.scene.getParent(child).valid());
+    const Vec3 position = edit.scene.getComponent<Transform>(child).getLocal().position;
+    CHECK(position.x == Catch::Approx(6.0f).margin(1e-5));
+    CHECK(position.y == Catch::Approx(2.0f).margin(1e-5));
+    CHECK(position.z == Catch::Approx(0.0f).margin(1e-5));
 }
 
 TEST_CASE("reparent that the scene refuses changes nothing", "[editor][edit][commands]") {

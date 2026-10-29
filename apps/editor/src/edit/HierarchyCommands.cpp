@@ -17,7 +17,7 @@ namespace TechEngine {
         if (m_parent.valid()) {
             const bool parented = scene.setParent(newEntity, m_parent, 0, ReparentMode::PreserveWorld);
             if (!parented) {
-                TE_LOGGER_ERROR("Failed to parent new entity {0} under {1}", newEntity, m_parent);
+                TE_LOGGER_WARN("Failed to parent new entity {0} under {1}", newEntity, m_parent);
                 scene.destroyEntity(newEntity);
                 return;
             }
@@ -65,11 +65,15 @@ namespace TechEngine {
             return;
         }
         if (!m_parent.valid()) {
-            scene.unparent(m_child);
+            const bool unparented = scene.unparent(m_child, ReparentMode::PreserveWorld);
+            if (!unparented) {
+                TE_LOGGER_WARN("Failed to make entity {0} a root", m_child);
+                return;
+            }
         } else {
             const bool parented = scene.setParent(m_child, m_parent, m_position, ReparentMode::PreserveWorld);
             if (!parented) {
-                TE_LOGGER_ERROR("Failed to reparent entity {0} under {1} at position {2}", m_child, m_parent, m_position);
+                TE_LOGGER_WARN("Failed to reparent entity {0} under {1} at position {2}", m_child, m_parent, m_position);
                 return;
             }
         }
@@ -103,7 +107,7 @@ namespace TechEngine {
         }
 
         if (!scene.contains(m_entity)) {
-            m_session->setSelected(m_session->getSelected());
+            TE_LOGGER_WARN("SelectEntityCommand applied with a dead entity {0}", m_entity);
             return;
         }
 
