@@ -15,7 +15,6 @@ struct CapturedAssert {
     std::string condition;
     std::string message;
     std::string file;
-    std::string function;
     std::uint32_t line;
 };
 
@@ -24,7 +23,7 @@ static std::vector<CapturedAssert> g_fired;
 // `message` points into assertDispatch's stack buffer; copying is the point of the test,
 // not incidental. Returning {false, false} keeps a fatal TE_CHECK from killing the runner.
 static TechEngine::AssertResponse captureHandler(const TechEngine::AssertContext& context) {
-    g_fired.push_back(CapturedAssert{context.kind, std::string{context.condition}, std::string{context.message}, std::string{context.file}, std::string{context.function}, context.line});
+    g_fired.push_back(CapturedAssert{context.kind, std::string{context.condition}, std::string{context.message}, std::string{context.file}, context.line});
     return TechEngine::AssertResponse{false, false};
 }
 
@@ -53,7 +52,6 @@ struct CapturedLog {
     TechEngine::Level level;
     std::string message;
     std::string file;
-    std::string function;
     std::uint32_t line;
 };
 
@@ -62,7 +60,7 @@ static std::vector<CapturedLog> g_loggedRecords;
 // Copies out immediately: record.message points into the dispatcher's stack buffer and does
 // not outlive this call.
 static void captureLogSink(const TechEngine::LogRecord& record) {
-    g_loggedRecords.push_back(CapturedLog{record.level, std::string{record.message}, std::string{record.file}, std::string{record.function}, record.line});
+    g_loggedRecords.push_back(CapturedLog{record.level, std::string{record.message}, std::string{record.file}, record.line});
 }
 
 class LogCaptureGuard {
