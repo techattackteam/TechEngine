@@ -90,9 +90,9 @@ struct std::formatter<glm::mat<C, R, T, Q>> {
     auto format(const glm::mat<C, R, T, Q>& value, std::format_context& context) const {
         auto out = std::format_to(context.out(), "{0}mat", TechEngine::internal::mathTypePrefix<T>());
         if constexpr (C == R) {
-            out = std::format_to(out, "{1}(", TechEngine::internal::mathTypePrefix<T>(), C);
+            out = std::format_to(out, "{0}(", C);
         } else {
-            out = std::format_to(out, "{1}x{2}(", TechEngine::internal::mathTypePrefix<T>(), C, R);
+            out = std::format_to(out, "{0}x{1}(", C, R);
         }
         for (glm::length_t i = 0; i < C; i++) {
             if (i > 0) {
