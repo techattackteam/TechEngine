@@ -8,25 +8,33 @@
 namespace TechEngine {
     // Windows resolves a wrong-case path happily and Linux does not, so exists() alone gives
     // the two CI legs different answers. Every candidate that exists still has to prove its
-    // spelling matches the bytes on disk; canonical() reports the real on-disk name.
-    static bool matchesOnDiskCase(const MountEntry& entry, std::string_view relative, const std::filesystem::path& candidate) {
-        std::error_code ec;
+    // spelling, one component at a time against its directory's listing. canonical() would
+    // also resolve symlinks, so a link below the root would never match the logical path.
+    static bool matchesOnDiskCase(const MountEntry& entry, std::string_view relative) {
+        std::filesystem::path directory = entry.physicalRoot;
+        for (const std::filesystem::path& component: std::filesystem::path(relative)) {
+            if (component.empty() || component == ".") {
+                continue;
+            }
 
-        const std::filesystem::path actual = std::filesystem::canonical(candidate, ec);
-        if (ec) {
-            return false;
-        }
-
-        std::filesystem::path root = entry.canonicalRoot;
-        if (root.empty()) {
-            root = std::filesystem::canonical(entry.physicalRoot, ec);
-            if (ec) {
+            std::error_code ec;
+            std::filesystem::directory_iterator it(directory, ec);
+            const std::filesystem::directory_iterator end;
+            bool found = false;
+            while (!ec && it != end) {
+                if (it->path().filename() == component) {
+                    found = true;
+                    break;
+                }
+                it.increment(ec);
+            }
+            if (!found) {
                 return false;
             }
-        }
 
-        const std::filesystem::path expected = relative.empty() ? root : root / relative;
-        return actual == expected.lexically_normal();
+            directory /= component;
+        }
+        return true;
     }
 
     void MountTable::mount(const std::string& alias, const std::filesystem::path& physicalRoot, int priority) {
@@ -94,7 +102,7 @@ namespace TechEngine {
             if (!std::filesystem::exists(candidate, ec)) {
                 continue;
             }
-            if (!matchesOnDiskCase(entry, parts.relative, candidate)) {
+            if (!matchesOnDiskCase(entry, parts.relative)) {
                 continue;
             }
 
