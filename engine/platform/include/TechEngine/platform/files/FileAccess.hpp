@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <iosfwd>
 #include <span>
 #include <string>
 #include <string_view>
@@ -50,6 +51,8 @@ namespace TechEngine {
         std::error_code rename(std::string_view virtualPath, std::string_view newName) const;
 
     private:
+        std::error_code openForRead(std::string_view virtualPath, std::filesystem::path& physicalPath, std::ifstream& file, std::uint64_t& size) const;
+
         std::error_code resolveTransfer(std::string_view from, std::string_view to, std::filesystem::path& sourcePath, std::filesystem::path& destinationPath) const;
     };
 }

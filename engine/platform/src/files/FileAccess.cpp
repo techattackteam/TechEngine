@@ -38,26 +38,11 @@ namespace TechEngine {
 
     std::error_code FileAccess::read(std::string_view virtualPath, std::vector<std::byte>& out) const {
         std::filesystem::path physicalPath;
-        const std::error_code resolveError = m_mounts->resolveExisting(virtualPath, physicalPath);
-        if (resolveError) {
-            return resolveError;
-        }
-
-        std::error_code ec;
-        if (std::filesystem::is_directory(physicalPath, ec)) {
-            return FileError::IsADirectory;
-        }
-
-        std::ifstream file{physicalPath, std::ios::binary | std::ios::ate};
-        if (!file) {
-            TE_LOGGER_WARN("Failed to open {0} for reading", physicalPath.string());
-            return FileError::IoError;
-        }
-
-        const std::streamoff size = file.tellg();
-        if (size < 0) {
-            TE_LOGGER_WARN("Failed to get the size of {0}", physicalPath.string());
-            return FileError::IoError;
+        std::ifstream file;
+        std::uint64_t size = 0;
+        const std::error_code openError = openForRead(virtualPath, physicalPath, file, size);
+        if (openError) {
+            return openError;
         }
 
         out.resize(static_cast<std::size_t>(size));
@@ -76,28 +61,14 @@ namespace TechEngine {
 
     std::error_code FileAccess::readRange(std::string_view virtualPath, std::uint64_t offset, std::uint64_t size, std::vector<std::byte>& out) const {
         std::filesystem::path physicalPath;
-        const std::error_code resolveError = m_mounts->resolveExisting(virtualPath, physicalPath);
-        if (resolveError) {
-            return resolveError;
-        }
-        std::error_code ec;
-        if (std::filesystem::is_directory(physicalPath, ec)) {
-            return FileError::IsADirectory;
+        std::ifstream file;
+        std::uint64_t fileSize = 0;
+        const std::error_code openError = openForRead(virtualPath, physicalPath, file, fileSize);
+        if (openError) {
+            return openError;
         }
 
-        std::ifstream file{physicalPath, std::ios::binary | std::ios::ate};
-        if (!file) {
-            TE_LOGGER_WARN("Failed to open {0} for reading", physicalPath.string());
-            return FileError::IoError;
-        }
-
-        const std::streamoff fileSize = file.tellg();
-        if (fileSize < 0) {
-            TE_LOGGER_WARN("Failed to get the size of {0}", physicalPath.string());
-            return FileError::IoError;
-        }
-
-        if (offset + size < offset || offset + size > static_cast<std::uint64_t>(fileSize)) {
+        if (offset + size < offset || offset + size > fileSize) {
             return FileError::OutOfRange;
         }
 
@@ -335,6 +306,33 @@ namespace TechEngine {
             TE_LOGGER_WARN("Failed to rename {0} to {1}: {2}", physicalPath.string(), newPath.string(), ec.message());
             return FileError::IoError;
         }
+        return {};
+    }
+
+    std::error_code FileAccess::openForRead(const std::string_view virtualPath, std::filesystem::path& physicalPath, std::ifstream& file, std::uint64_t& size) const {
+        const std::error_code resolveError = m_mounts->resolveExisting(virtualPath, physicalPath);
+        if (resolveError) {
+            return resolveError;
+        }
+
+        std::error_code ec;
+        if (std::filesystem::is_directory(physicalPath, ec)) {
+            return FileError::IsADirectory;
+        }
+
+        file.open(physicalPath, std::ios::binary | std::ios::ate);
+        if (!file) {
+            TE_LOGGER_WARN("Failed to open {0} for reading", physicalPath.string());
+            return FileError::IoError;
+        }
+
+        const std::streamoff end = file.tellg();
+        if (end < 0) {
+            TE_LOGGER_WARN("Failed to get the size of {0}", physicalPath.string());
+            return FileError::IoError;
+        }
+
+        size = static_cast<std::uint64_t>(end);
         return {};
     }
 
