@@ -152,7 +152,7 @@ namespace TechEngine {
     private:
         template<ComponentValue T>
         ComponentDenseId denseId() const {
-            return m_registry->denseId(componentTypeId<T>());
+            return m_registry->getDenseId(componentTypeId<T>());
         }
 
         Archetype& getOrCreate(ComponentSignature signature);

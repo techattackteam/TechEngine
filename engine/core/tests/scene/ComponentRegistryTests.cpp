@@ -7,6 +7,8 @@
 #include <TechEngine/core/serialization/Writer.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
+#include <serialization/FieldRecorder.hpp>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstddef>
@@ -60,6 +62,34 @@ struct RegistryLinked {
     friend void visit(Archive& archive, RegistryLinked& value) {
         archive.field("health", value.health);
         archive.field("target", value.target);
+    }
+};
+
+struct RegistryAssignCounted {
+    std::uint32_t health = 0;
+    int assignments = 0;
+
+    RegistryAssignCounted() = default;
+
+    RegistryAssignCounted(const RegistryAssignCounted&) = default;
+
+    RegistryAssignCounted(RegistryAssignCounted&&) noexcept = default;
+
+    RegistryAssignCounted& operator=(const RegistryAssignCounted& other) {
+        health = other.health;
+        assignments++;
+        return *this;
+    }
+
+    RegistryAssignCounted& operator=(RegistryAssignCounted&& other) noexcept {
+        health = other.health;
+        assignments++;
+        return *this;
+    }
+
+    template<typename Archive>
+    friend void visit(Archive& archive, RegistryAssignCounted& value) {
+        archive.field("health", value.health);
     }
 };
 
@@ -226,4 +256,55 @@ TEST_CASE("a component's reference adapter walks the component it is handed", "[
     const std::vector<TechEngine::Entity> expected{TechEngine::Entity{6, 2}};
     REQUIRE(visitor.entities == expected);
     REQUIRE(linked.health == 3);
+}
+
+TEST_CASE("a component with a visit is registered with both field walks, and one without has neither", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    const TechEngine::ComponentTypeRecord* visited = registry.find(registry.registerComponent<RegistryVisited>("TechEngine.Visited"));
+    const TechEngine::ComponentTypeRecord* plain = registry.find(registry.registerComponent<RegistryPosition>("TechEngine.Position"));
+    REQUIRE(visited != nullptr);
+    REQUIRE(plain != nullptr);
+
+    CHECK(visited->visitFields != nullptr);
+    CHECK(visited->editFields != nullptr);
+    CHECK(plain->visitFields == nullptr);
+    CHECK(plain->editFields == nullptr);
+}
+
+TEST_CASE("a component's field walk visits the component it is handed, in place and in visit order", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    const TechEngine::ComponentTypeRecord* record = registry.find(registry.registerComponent<RegistryAssignCounted>("TechEngine.AssignCounted"));
+    REQUIRE(record != nullptr);
+    REQUIRE(record->visitFields != nullptr);
+
+    RegistryAssignCounted component;
+    component.health = 7;
+    TechEngineTests::FieldRecorder recorder;
+    recorder.writeName = "health";
+    recorder.writeValue = 9.0;
+    record->visitFields(recorder, &component);
+
+    const std::vector<TechEngineTests::RecordedField> expected{{"health", "uint32"}};
+    CHECK(recorder.fields == expected);
+    CHECK(component.health == 9);
+    CHECK(component.assignments == 0);
+}
+
+TEST_CASE("a component's edit walk writes through a copy and assigns it back once", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    const TechEngine::ComponentTypeRecord* record = registry.find(registry.registerComponent<RegistryAssignCounted>("TechEngine.AssignCounted"));
+    REQUIRE(record != nullptr);
+    REQUIRE(record->editFields != nullptr);
+
+    RegistryAssignCounted component;
+    component.health = 7;
+    TechEngineTests::FieldRecorder recorder;
+    recorder.writeName = "health";
+    recorder.writeValue = 9.0;
+    record->editFields(recorder, &component);
+
+    const std::vector<TechEngineTests::RecordedField> expected{{"health", "uint32"}};
+    CHECK(recorder.fields == expected);
+    CHECK(component.health == 9);
+    CHECK(component.assignments == 1);
 }

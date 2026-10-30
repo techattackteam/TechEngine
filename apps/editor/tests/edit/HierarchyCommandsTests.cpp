@@ -2,6 +2,7 @@
 #include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 
+#include <edit/EditRecord.hpp>
 #include <edit/EditTestScene.hpp>
 #include <edit/EditorSnapshot.hpp>
 #include <edit/HierarchyCommands.hpp>
@@ -9,6 +10,7 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
+#include <variant>
 #include <vector>
 
 using TechEngine::CreateEntityCommand;
@@ -16,6 +18,7 @@ using TechEngine::DestroyEntityCommand;
 using TechEngine::EditorSnapshot;
 using TechEngine::Entity;
 using TechEngine::RenameEntityCommand;
+using TechEngine::RenameRecord;
 using TechEngine::ReparentEntityCommand;
 using TechEngine::SelectEntityCommand;
 using TechEngine::Transform;
@@ -307,6 +310,31 @@ TEST_CASE("rename changes only that entity's name and raises the edit revision",
     CHECK(rowFor(after, renamed).name == "New");
     CHECK(rowFor(after, other).name == "Old");
     CHECK(after.editRevision > before.editRevision);
+}
+
+TEST_CASE("rename records the name it replaces", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity entity = edit.createNamed("Old");
+
+    RenameEntityCommand rename{edit.session, entity, "New"};
+    rename.apply(edit.scene);
+
+    REQUIRE(edit.session.getRecords().size() == 1);
+    REQUIRE(std::holds_alternative<RenameRecord>(edit.session.getRecords()[0]));
+    const RenameRecord& record = std::get<RenameRecord>(edit.session.getRecords()[0]);
+    CHECK(record.entity == entity);
+    CHECK(record.oldName == "Old");
+}
+
+TEST_CASE("rename of an entity that is not alive records nothing", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity dead = edit.createNamed("Dead");
+    REQUIRE(edit.scene.destroyEntity(dead));
+
+    RenameEntityCommand rename{edit.session, dead, "New"};
+    rename.apply(edit.scene);
+
+    CHECK(edit.session.getRecords().empty());
 }
 
 TEST_CASE("rename accepts an empty name and a name another entity already has", "[editor][edit][commands]") {

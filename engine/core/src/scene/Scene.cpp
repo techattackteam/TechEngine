@@ -1,8 +1,10 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
+#include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/SceneCommandBuffer.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/core/systems/ScheduleAccess.hpp>
 
@@ -142,6 +144,25 @@ namespace TechEngine {
 
     const void* Scene::componentRaw(const Entity entity, const ComponentTypeId type) const {
         return m_storage->componentRaw(entity, type);
+    }
+
+    bool Scene::addComponentRaw(const Entity entity, const ComponentTypeId type) {
+        const ComponentTypeRecord* record = m_registry->find(type);
+        if (record == nullptr || isBuiltInComponent(type)) {
+            return false;
+        }
+
+        const std::unique_ptr<IComponentStorage> scratch = record->createStorage();
+        scratch->appendDefault();
+        return addComponentInternal(entity, type, scratch->element(0));
+    }
+
+    bool Scene::removeComponentRaw(const Entity entity, const ComponentTypeId type) {
+        if (m_registry->find(type) == nullptr || isBuiltInComponent(type)) {
+            return false;
+        }
+
+        return removeComponentInternal(entity, type);
     }
 
     void* Scene::componentRawChecked(const Entity entity, const ComponentTypeId type) {
@@ -603,10 +624,14 @@ namespace TechEngine {
     }
 
     bool Scene::addComponentInternal(const Entity entity, const ComponentTypeId type, const void* value) const {
-        return m_storage->addComponent(entity, m_registry->denseId(type), value);
+        return m_storage->addComponent(entity, m_registry->getDenseId(type), value);
     }
 
     bool Scene::removeComponentInternal(const Entity entity, const ComponentTypeId type) const {
-        return m_storage->removeComponent(entity, m_registry->denseId(type));
+        return m_storage->removeComponent(entity, m_registry->getDenseId(type));
+    }
+
+    bool Scene::isBuiltInComponent(const ComponentTypeId type) const {
+        return type == componentTypeId<Hierarchy>() || type == componentTypeId<Transform>() || type == componentTypeId<Name>();
     }
 }

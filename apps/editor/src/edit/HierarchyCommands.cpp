@@ -93,7 +93,12 @@ namespace TechEngine {
         if (name.value == m_name) {
             return;
         }
+
+        RenameRecord record;
+        record.entity = m_entity;
+        record.oldName = std::move(name.value);
         name.value = std::move(m_name);
+        m_session->record(std::move(record));
         m_session->recordSceneChange();
     }
 

@@ -209,7 +209,7 @@ TEST_CASE("type-erased component transitions use registered dense ids and raw va
     const TechEngine::ComponentTypeId positionId = registry.registerComponent<StoragePosition>("Tests.StoragePosition");
     TechEngine::ArchetypeStorage storage(registry);
     const TechEngine::Entity entity = storage.createEntity();
-    const TechEngine::ComponentDenseId position = registry.denseId(positionId);
+    const TechEngine::ComponentDenseId position = registry.getDenseId(positionId);
     const StoragePosition value{23};
 
     REQUIRE(storage.addComponent(entity, position, &value));

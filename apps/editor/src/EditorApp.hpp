@@ -13,6 +13,7 @@
 #include <ui/PanelsManager.hpp>
 
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <string_view>
@@ -30,6 +31,7 @@ namespace TechEngine {
         ImGuiBridge m_imguiBridge;
         // Simulation thread only: commands and publishEdits read and write it there.
         EditSession m_session;
+        std::uint64_t m_loggedEditRevision = 0;
         EditorSnapshotSlot m_snapshotSlot;
         // Main thread only.
         EditorSnapshot m_snapshot;
@@ -57,6 +59,8 @@ namespace TechEngine {
         void publishEdits(const Scene& scene) override;
 
         bool takeSnapshot(EditorSnapshot& out);
+
+        void logSelectedTransform(const Scene& scene, const EditorSnapshot& snapshot);
 
         void shutdown() override;
 

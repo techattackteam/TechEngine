@@ -6,6 +6,7 @@
 #include <TechEngine/core/resources/AssetRef.hpp>
 #include <TechEngine/core/resources/Side.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
+#include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/platform/Platform.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/platform/files/FileError.hpp>
@@ -31,7 +32,7 @@ namespace TechEngine {
     static constexpr std::string_view TRIANGLE_MESH_PATH = "project://assets/client/Triangle.temesh";
 
     EditorApp::EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder)
-        : ClientApp(Role::Client, "TechEngine Editor"), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)), m_source(m_files, m_assets), m_commands(*this, m_session), m_panels(m_commands) {
+        : ClientApp(Role::Client, "TechEngine Editor"), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)), m_source(m_files, m_assets), m_commands(*this, m_session, m_registry), m_panels(m_commands) {
     }
 
     EditorApp::~EditorApp() {
@@ -103,9 +104,39 @@ namespace TechEngine {
 
     void EditorApp::publishEdits(const Scene& scene) {
         EditorSnapshot snapshot;
-        m_session.buildSnapshot(scene, snapshot);
+        m_session.buildSnapshot(scene, m_registry, snapshot);
+        logSelectedTransform(scene, snapshot);
         m_snapshotSlot.publish(std::move(snapshot));
         wakeMainThread();
+    }
+
+    void EditorApp::logSelectedTransform(const Scene& scene, const EditorSnapshot& snapshot) {
+        const Entity selected = snapshot.selected;
+        if (snapshot.editRevision == m_loggedEditRevision || !scene.contains(selected)) {
+            return;
+        }
+        m_loggedEditRevision = snapshot.editRevision;
+
+        // Read from the live Scene after the batch, so the world values show the scene's own propagation.
+        const Transform& transform = scene.getComponent<Transform>(selected);
+        const TransformValues& local = transform.getLocal();
+        const Vec3 euler = Transform::toEulerDegrees(local.rotation);
+        const Vec3 world = transform.getWorld().position;
+        TE_LOGGER_INFO(
+            "Scene: entity {0} local position ({1:.3f}, {2:.3f}, {3:.3f}) rotation ({4:.3f}, {5:.3f}, {6:.3f}) scale ({7:.3f}, {8:.3f}, {9:.3f}), world position ({10:.3f}, {11:.3f}, {12:.3f})",
+            selected,
+            local.position.x,
+            local.position.y,
+            local.position.z,
+            euler.x,
+            euler.y,
+            euler.z,
+            local.scale.x,
+            local.scale.y,
+            local.scale.z,
+            world.x,
+            world.y,
+            world.z);
     }
 
     bool EditorApp::takeSnapshot(EditorSnapshot& out) {
@@ -150,6 +181,7 @@ namespace TechEngine {
 
         // NewFrame trickles queued input, so a press and release in one wake take two frames.
         const bool inputLeft = !context.InputEventsQueue.empty();
+        // TODO(S9-T17): wake for an active item only while a mouse button is down; a focused text field keeps IsAnyItemActive() true.
         if (hadInput || inputLeft || ImGui::IsAnyItemActive()) {
             wakeMainThread();
         }

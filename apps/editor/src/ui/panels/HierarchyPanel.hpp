@@ -3,9 +3,9 @@
 #include <TechEngine/core/scene/Entity.hpp>
 
 #include <ui/panels/Panel.hpp>
+#include <ui/widgets/TextEditField.hpp>
 
 #include <cstddef>
-#include <string>
 #include <unordered_set>
 #include <vector>
 
@@ -20,9 +20,7 @@ namespace TechEngine {
         std::vector<std::size_t> m_visibleRows;
         Entity m_menuTarget;
         Entity m_renaming;
-        std::string m_renameBuffer;
-        bool m_renameFocusRequested = false;
-        bool m_renameActivated = false;
+        TextEditField m_renameField;
 
     public:
         explicit HierarchyPanel(EditorCommands& commands);
