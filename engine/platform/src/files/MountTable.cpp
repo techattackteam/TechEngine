@@ -42,13 +42,7 @@ namespace TechEngine {
         TE_CHECK(alias.find('/') == std::string::npos, "A mount alias must not contain '/': {0}", alias);
         TE_CHECK(alias.find(':') == std::string::npos, "A mount alias must not contain ':'. Mount it without the separator: {0}", alias);
 
-        std::error_code ec;
-        std::filesystem::path canonicalRoot = std::filesystem::canonical(physicalRoot, ec);
-        if (ec) {
-            canonicalRoot.clear();
-        }
-
-        MountEntry entry{alias, physicalRoot, std::move(canonicalRoot), priority};
+        MountEntry entry{alias, physicalRoot, priority};
         for (auto it = m_entries.begin(); it != m_entries.end(); ++it) {
             if (it->priority < priority) {
                 m_entries.insert(it, std::move(entry));
