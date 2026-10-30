@@ -215,18 +215,6 @@ struct GlfwInputCallbacks {
     GLFWwindowfocusfun focus = nullptr;
 };
 
-static GLFWwindow* nativeHandle(TechEngine::Window& window) {
-    GLFWwindow* nativeWindow = nullptr;
-    {
-        std::jthread worker([&] {
-            window.makeContextCurrent();
-            nativeWindow = glfwGetCurrentContext();
-            window.releaseContext();
-        });
-    }
-    return nativeWindow;
-}
-
 static GlfwInputCallbacks takeInputCallbacks(GLFWwindow* nativeWindow) {
     return GlfwInputCallbacks{
         .key = glfwSetKeyCallback(nativeWindow, nullptr),
@@ -247,7 +235,7 @@ struct InputWindowFixture {
     explicit InputWindowFixture(std::string_view title) {
         REQUIRE(TechEngine::Window::initialize() == std::error_code{});
         REQUIRE(window.open(320, 240, title) == std::error_code{});
-        nativeWindow = nativeHandle(window);
+        nativeWindow = window.nativeWindow();
         REQUIRE(nativeWindow != nullptr);
         callbacks = takeInputCallbacks(nativeWindow);
         window.setInputBuffer(&input);
