@@ -63,6 +63,15 @@ static std::string everyByteValue() {
     return payload;
 }
 
+static std::string largePayload() {
+    std::string payload;
+    payload.reserve(256 * 1024);
+    while (payload.size() < 256 * 1024) {
+        payload += everyByteValue();
+    }
+    return payload;
+}
+
 TEST_CASE("read returns the file's bytes", "[files][fileaccess]") {
     MountedScratch env{"readBytes"};
     env.scratch.writeFile("ui/icon.png", "the bytes");
@@ -87,11 +96,7 @@ TEST_CASE("read is binary-safe", "[files][fileaccess]") {
 
 TEST_CASE("read returns a large file whole", "[files][fileaccess]") {
     MountedScratch env{"readLarge"};
-    std::string payload;
-    payload.reserve(256 * 1024);
-    while (payload.size() < 256 * 1024) {
-        payload += everyByteValue();
-    }
+    const std::string payload = largePayload();
     env.scratch.writeFile("blob.bin", payload);
 
     std::vector<std::byte> out;
@@ -172,11 +177,7 @@ TEST_CASE("readRange is binary-safe", "[files][fileaccess][readrange]") {
 
 TEST_CASE("readRange reaches deep into a large file", "[files][fileaccess][readrange]") {
     MountedScratch env{"rangeLarge"};
-    std::string payload;
-    payload.reserve(256 * 1024);
-    while (payload.size() < 256 * 1024) {
-        payload += everyByteValue();
-    }
+    const std::string payload = largePayload();
     env.scratch.writeFile("blob.bin", payload);
 
     std::vector<std::byte> out;
