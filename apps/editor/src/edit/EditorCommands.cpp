@@ -4,12 +4,13 @@
 
 #include <edit/EditorCommands.hpp>
 #include <edit/HierarchyCommands.hpp>
+#include <edit/InspectorCommands.hpp>
 
 #include <system_error>
 #include <utility>
 
 namespace TechEngine {
-    EditorCommands::EditorCommands(App& app, EditSession& session) : m_app(&app), m_session(&session) {
+    EditorCommands::EditorCommands(App& app, EditSession& session, const ComponentRegistry& registry) : m_app(&app), m_session(&session), m_registry(&registry) {
     }
 
     void EditorCommands::create(const Entity parent) {
@@ -30,6 +31,18 @@ namespace TechEngine {
 
     void EditorCommands::select(const Entity entity) {
         submit(std::make_unique<SelectEntityCommand>(*m_session, entity));
+    }
+
+    void EditorCommands::setField(const Entity entity, const ComponentTypeId component, const std::uint32_t field, FieldValue value) {
+        submit(std::make_unique<SetFieldCommand>(*m_session, *m_registry, entity, component, field, std::move(value)));
+    }
+
+    void EditorCommands::addComponent(const Entity entity, const ComponentTypeId component) {
+        submit(std::make_unique<AddComponentCommand>(*m_session, entity, component));
+    }
+
+    void EditorCommands::removeComponent(const Entity entity, const ComponentTypeId component) {
+        submit(std::make_unique<RemoveComponentCommand>(*m_session, *m_registry, entity, component));
     }
 
     void EditorCommands::submit(std::unique_ptr<Command> command) {

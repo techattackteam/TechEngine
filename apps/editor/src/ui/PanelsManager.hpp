@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ui/panels/HierarchyPanel.hpp>
+#include <ui/panels/InspectorPanel.hpp>
 
 #include <imgui.h>
 
@@ -11,6 +12,7 @@ namespace TechEngine {
     class PanelsManager {
     private:
         HierarchyPanel m_hierarchy;
+        InspectorPanel m_inspector;
 
     public:
         explicit PanelsManager(EditorCommands& commands);

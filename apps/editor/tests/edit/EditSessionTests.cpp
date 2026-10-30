@@ -1,22 +1,60 @@
+#include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/resources/ResourceId.hpp>
+#include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
+#include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/scene/components/Name.hpp>
+#include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <edit/EditSession.hpp>
 #include <edit/EditTestScene.hpp>
 #include <edit/EditorSnapshot.hpp>
+#include <edit/FieldValue.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <string_view>
+#include <variant>
 #include <vector>
 
+using TechEngine::ComponentRow;
 using TechEngine::EditorSnapshot;
 using TechEngine::Entity;
+using TechEngine::FieldKind;
+using TechEngine::FieldRow;
+using TechEngine::FieldValue;
 using TechEngine::HierarchyRow;
+using TechEngine::Quat;
+using TechEngine::Transform;
+using TechEngine::Vec3;
+using TechEngineTests::componentRowFor;
 using TechEngineTests::EditTestScene;
+using TechEngineTests::findComponentRow;
+using TechEngineTests::InspectedSample;
 using TechEngineTests::rowFor;
 using TechEngineTests::rowIndex;
+using TechEngineTests::SAMPLE_ASSET_FIELD;
+using TechEngineTests::SAMPLE_COUNT_FIELD;
+using TechEngineTests::SAMPLE_ENABLED_FIELD;
+using TechEngineTests::SAMPLE_FIELD_COUNT;
+using TechEngineTests::SAMPLE_FLOAT_FIELD;
+using TechEngineTests::SAMPLE_GROUP_FIELD;
+using TechEngineTests::SAMPLE_INDICES_FIELD;
+using TechEngineTests::SAMPLE_INT16_FIELD;
+using TechEngineTests::SAMPLE_INT64_FIELD;
+using TechEngineTests::SAMPLE_INT8_FIELD;
+using TechEngineTests::SAMPLE_LABEL_FIELD;
+using TechEngineTests::SAMPLE_LAYER_FIELD;
+using TechEngineTests::SAMPLE_TARGET_FIELD;
+using TechEngineTests::SAMPLE_UINT16_FIELD;
+using TechEngineTests::SAMPLE_UINT32_FIELD;
+using TechEngineTests::SAMPLE_UINT64_FIELD;
+using TechEngineTests::SAMPLE_WEIGHT_FIELD;
+using TechEngineTests::TRANSFORM_FIELD_COUNT;
 
 static void checkRow(const HierarchyRow& row, const Entity entity, const std::uint32_t depth, const std::string_view name, const std::size_t childCount) {
     CHECK(row.entity == entity);
@@ -129,11 +167,169 @@ TEST_CASE("building into a snapshot that already holds rows replaces them", "[ed
     EditTestScene edit;
     const Entity a = edit.createNamed("A");
     edit.createNamed("B", a);
+    edit.session.setSelected(a);
     EditorSnapshot snapshot;
-    edit.session.buildSnapshot(edit.scene, snapshot);
+    edit.session.buildSnapshot(edit.scene, edit.getRegistry(), snapshot);
 
-    edit.session.buildSnapshot(edit.scene, snapshot);
+    edit.session.buildSnapshot(edit.scene, edit.getRegistry(), snapshot);
 
     REQUIRE(snapshot.hierarchy.size() == 2);
     CHECK(rowFor(snapshot, a).childCount == 1);
+    REQUIRE(snapshot.components.size() == 1);
+    CHECK(snapshot.components[0].fields.size() == TRANSFORM_FIELD_COUNT);
+    CHECK(snapshot.addable.size() == 1);
+}
+
+TEST_CASE("with no selection the snapshot lists no components", "[editor][edit]") {
+    EditTestScene edit;
+    edit.createNamed("A");
+
+    const EditorSnapshot snapshot = edit.snapshot();
+
+    CHECK(snapshot.components.empty());
+}
+
+TEST_CASE("the selected entity's Transform is published as its ten local values in visit order", "[editor][edit]") {
+    EditTestScene edit;
+    const Entity entity = edit.createNamed("A");
+    REQUIRE(edit.scene.getComponent<Transform>(entity).setLocal({Vec3(1.0f, 2.0f, 3.0f), Quat(1.0f, 0.0f, 0.0f, 0.0f), Vec3(4.0f, 5.0f, 6.0f)}));
+    edit.session.setSelected(entity);
+
+    const EditorSnapshot snapshot = edit.snapshot();
+
+    const ComponentRow& transform = componentRowFor(snapshot, TechEngine::componentTypeId<Transform>());
+    CHECK(transform.tag == Transform::tag);
+    const std::vector<std::string> expectedNames{"position.x", "position.y", "position.z", "rotation.w", "rotation.x", "rotation.y", "rotation.z", "scale.x", "scale.y", "scale.z"};
+    const std::vector<float> expectedValues{1.0f, 2.0f, 3.0f, 1.0f, 0.0f, 0.0f, 0.0f, 4.0f, 5.0f, 6.0f};
+    REQUIRE(transform.fields.size() == TRANSFORM_FIELD_COUNT);
+    for (std::size_t i = 0; i < transform.fields.size(); i++) {
+        const FieldRow& field = transform.fields[i];
+        CHECK(field.index == i);
+        CHECK(field.name == expectedNames[i]);
+        CHECK(field.kind == FieldKind::Float);
+        REQUIRE(std::holds_alternative<float>(field.value));
+        CHECK(std::get<float>(field.value) == expectedValues[i]);
+    }
+}
+
+TEST_CASE("Name and Hierarchy never appear among the selected entity's components", "[editor][edit]") {
+    EditTestScene edit;
+    const Entity parent = edit.createNamed("Parent");
+    const Entity child = edit.createNamed("Child", parent);
+    edit.session.setSelected(child);
+
+    const EditorSnapshot snapshot = edit.snapshot();
+
+    CHECK(findComponentRow(snapshot, TechEngine::componentTypeId<TechEngine::Name>()) == nullptr);
+    CHECK(findComponentRow(snapshot, TechEngine::componentTypeId<TechEngine::Hierarchy>()) == nullptr);
+    CHECK(findComponentRow(snapshot, TechEngine::componentTypeId<Transform>()) != nullptr);
+}
+
+TEST_CASE("Transform is published as not removable and any other component as removable", "[editor][edit]") {
+    EditTestScene edit;
+    const Entity entity = edit.createNamed("A");
+    edit.scene.addComponent<InspectedSample>(entity);
+    edit.session.setSelected(entity);
+
+    const EditorSnapshot snapshot = edit.snapshot();
+
+    CHECK_FALSE(componentRowFor(snapshot, TechEngine::componentTypeId<Transform>()).removable);
+    CHECK(componentRowFor(snapshot, TechEngine::componentTypeId<InspectedSample>()).removable);
+}
+
+TEST_CASE("the snapshot offers the registered types the selected entity lacks, never a built-in", "[editor][edit]") {
+    EditTestScene edit;
+    const Entity entity = edit.createNamed("A");
+    edit.session.setSelected(entity);
+
+    SECTION("an entity without the sample is offered the sample alone") {
+        const EditorSnapshot snapshot = edit.snapshot();
+
+        REQUIRE(snapshot.addable.size() == 1);
+        CHECK(snapshot.addable[0].type == TechEngine::componentTypeId<InspectedSample>());
+        CHECK(snapshot.addable[0].tag == InspectedSample::tag);
+    }
+
+    SECTION("an entity that holds the sample is offered nothing") {
+        edit.scene.addComponent<InspectedSample>(entity);
+
+        CHECK(edit.snapshot().addable.empty());
+    }
+}
+
+TEST_CASE("each field row holds its kind and the value the inspector shows", "[editor][edit]") {
+    EditTestScene edit;
+    const Entity target = edit.createNamed("Target");
+    const Entity entity = edit.createNamed("Holder");
+    edit.scene.addComponent<InspectedSample>(entity);
+    InspectedSample& sample = edit.scene.getComponent<InspectedSample>(entity);
+    sample.target = target;
+    sample.asset.id = TechEngine::ResourceId{0xA55E7};
+    edit.session.setSelected(entity);
+
+    const EditorSnapshot snapshot = edit.snapshot();
+
+    const ComponentRow& row = componentRowFor(snapshot, TechEngine::componentTypeId<InspectedSample>());
+    REQUIRE(row.fields.size() == SAMPLE_FIELD_COUNT);
+    const auto checkField = [&](const std::uint32_t index, const std::string_view name, const FieldKind kind, const FieldValue& value) {
+        const FieldRow& field = row.fields[index];
+        CHECK(field.index == index);
+        CHECK(field.name == name);
+        CHECK(field.kind == kind);
+        CHECK(field.value == value);
+    };
+    checkField(SAMPLE_ENABLED_FIELD, "enabled", FieldKind::Bool, FieldValue{true});
+    checkField(SAMPLE_COUNT_FIELD, "count", FieldKind::Int32, FieldValue{std::int32_t{3}});
+    checkField(SAMPLE_LAYER_FIELD, "layer", FieldKind::UInt8, FieldValue{std::uint8_t{1}});
+    checkField(SAMPLE_WEIGHT_FIELD, "weight", FieldKind::Double, FieldValue{0.5});
+    checkField(SAMPLE_LABEL_FIELD, "label", FieldKind::String, FieldValue{std::string("Sample")});
+    checkField(SAMPLE_GROUP_FIELD, "group", FieldKind::StringId, FieldValue{TechEngine::StringId("Group").value()});
+    checkField(SAMPLE_TARGET_FIELD, "target", FieldKind::Entity, FieldValue{std::string("Target")});
+    checkField(SAMPLE_ASSET_FIELD, "asset", FieldKind::Asset, FieldValue{std::uint64_t{0xA55E7}});
+    checkField(SAMPLE_INDICES_FIELD, "indices", FieldKind::Bulk, FieldValue{std::uint64_t{3}});
+    checkField(SAMPLE_FLOAT_FIELD, "floatField", FieldKind::Float, FieldValue{1.5f});
+    checkField(SAMPLE_INT8_FIELD, "int8Field", FieldKind::Int8, FieldValue{std::int8_t{-8}});
+    checkField(SAMPLE_INT16_FIELD, "int16Field", FieldKind::Int16, FieldValue{std::int16_t{-16}});
+    checkField(SAMPLE_UINT16_FIELD, "uint16Field", FieldKind::UInt16, FieldValue{std::uint16_t{16}});
+    checkField(SAMPLE_UINT32_FIELD, "uint32Field", FieldKind::UInt32, FieldValue{std::uint32_t{32}});
+    checkField(SAMPLE_INT64_FIELD, "int64Field", FieldKind::Int64, FieldValue{std::int64_t{-64}});
+    checkField(SAMPLE_UINT64_FIELD, "uint64Field", FieldKind::UInt64, FieldValue{std::uint64_t{64}});
+}
+
+TEST_CASE("an Entity field with no live target is published with an empty name", "[editor][edit]") {
+    EditTestScene edit;
+    const Entity entity = edit.createNamed("Holder");
+    edit.scene.addComponent<InspectedSample>(entity);
+    edit.session.setSelected(entity);
+
+    SECTION("the empty entity") {
+        const EditorSnapshot snapshot = edit.snapshot();
+
+        const FieldRow& target = componentRowFor(snapshot, TechEngine::componentTypeId<InspectedSample>()).fields[SAMPLE_TARGET_FIELD];
+        CHECK(target.kind == FieldKind::Entity);
+        CHECK(target.value == FieldValue{std::string()});
+    }
+
+    SECTION("a target that was destroyed") {
+        const Entity target = edit.createNamed("Gone");
+        edit.scene.getComponent<InspectedSample>(entity).target = target;
+        REQUIRE(edit.scene.destroyEntity(target));
+
+        const EditorSnapshot snapshot = edit.snapshot();
+
+        const FieldRow& row = componentRowFor(snapshot, TechEngine::componentTypeId<InspectedSample>()).fields[SAMPLE_TARGET_FIELD];
+        CHECK(row.value == FieldValue{std::string()});
+    }
+}
+
+TEST_CASE("a selection whose entity is gone publishes no components and nothing to add", "[editor][edit]") {
+    EditTestScene edit;
+    const Entity entity = edit.createNamed("A");
+    edit.session.setSelected(entity);
+    REQUIRE(edit.scene.destroyEntity(entity));
+
+    const EditorSnapshot snapshot = edit.snapshot();
+
+    CHECK(snapshot.components.empty());
+    CHECK(snapshot.addable.empty());
 }

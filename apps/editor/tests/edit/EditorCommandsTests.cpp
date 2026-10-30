@@ -1,12 +1,16 @@
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/core/scene/ComponentRegistry.hpp>
+#include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
+#include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/testing/AppTestAccess.hpp>
 
 #include <edit/EditSession.hpp>
 #include <edit/EditorCommands.hpp>
 #include <edit/EditorSnapshot.hpp>
+#include <edit/FieldValue.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -14,8 +18,10 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <cstdint>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <thread>
 #include <vector>
@@ -23,8 +29,28 @@
 using TechEngine::EditorCommands;
 using TechEngine::EditorSnapshot;
 using TechEngine::Entity;
+using TechEngine::FieldValue;
 
 static constexpr std::chrono::seconds COMMAND_TIMEOUT{5};
+
+struct CommandsProbeComponent {
+    static constexpr std::string_view tag = "Tests.CommandsProbeComponent";
+
+    std::uint32_t value = 0;
+
+    template<typename Archive>
+    friend void visit(Archive& archive, CommandsProbeComponent& component) {
+        archive.field("value", component.value);
+    }
+};
+
+static const TechEngine::ComponentRow* findProbeRow(const EditorSnapshot& snapshot, const TechEngine::ComponentTypeId type) {
+    const auto row = std::ranges::find(snapshot.components, type, &TechEngine::ComponentRow::type);
+    if (row == snapshot.components.end()) {
+        return nullptr;
+    }
+    return &*row;
+}
 
 class CommandsAppProbe : public TechEngine::App {
 private:
@@ -41,6 +67,10 @@ public:
     CommandsAppProbe() : App(TechEngine::Role::DedicatedServer) {
     }
 
+    const TechEngine::ComponentRegistry& getRegistry() const {
+        return m_registry;
+    }
+
     bool waitForPublishes(const int count, EditorSnapshot& out) {
         std::unique_lock lock{m_mutex};
         const bool reached = m_published.wait_for(lock, COMMAND_TIMEOUT, [this, count] {
@@ -54,6 +84,10 @@ protected:
     void init() override {
     }
 
+    void configureSimulation() override {
+        m_registry.registerComponent<CommandsProbeComponent>(CommandsProbeComponent::tag);
+    }
+
     bool simulationTicks() const override {
         return false;
     }
@@ -65,7 +99,7 @@ protected:
 
     void publishEdits(const TechEngine::Scene& scene) override {
         EditorSnapshot snapshot;
-        session.buildSnapshot(scene, snapshot);
+        session.buildSnapshot(scene, m_registry, snapshot);
         {
             const std::lock_guard lock{m_mutex};
             m_latest = std::move(snapshot);
@@ -113,7 +147,7 @@ public:
 
 TEST_CASE("every sender method reaches the live scene through the running simulation", "[editor][edit][commands][integration]") {
     CommandsAppProbe app;
-    EditorCommands commands{app, app.session};
+    EditorCommands commands{app, app.session, app.getRegistry()};
     bool startedInTime = false;
     std::vector<bool> stepsInTime;
     std::vector<EditorSnapshot> steps;
@@ -141,6 +175,12 @@ TEST_CASE("every sender method reaches the live scene through the running simula
             step();
             commands.select(child);
             step();
+            commands.setField(child, TechEngine::componentTypeId<TechEngine::Transform>(), 0, FieldValue{2.0f});
+            step();
+            commands.addComponent(child, TechEngine::componentTypeId<CommandsProbeComponent>());
+            step();
+            commands.removeComponent(child, TechEngine::componentTypeId<CommandsProbeComponent>());
+            step();
             commands.reparent(child, Entity{}, 0);
             step();
             commands.destroy(parent);
@@ -152,11 +192,13 @@ TEST_CASE("every sender method reaches the live scene through the running simula
     controller.join();
 
     REQUIRE(startedInTime);
-    REQUIRE(steps.size() == 6);
+    REQUIRE(steps.size() == 9);
     CHECK(std::ranges::all_of(stepsInTime, [](const bool inTime) {
         return inTime;
     }));
 
+    const TechEngine::ComponentTypeId transformType = TechEngine::componentTypeId<TechEngine::Transform>();
+    const TechEngine::ComponentTypeId probeType = TechEngine::componentTypeId<CommandsProbeComponent>();
     REQUIRE(steps[0].hierarchy.size() == 1);
     const Entity parent = steps[0].hierarchy[0].entity;
     REQUIRE(steps[1].hierarchy.size() == 2);
@@ -167,15 +209,25 @@ TEST_CASE("every sender method reaches the live scene through the running simula
     CHECK(steps[2].hierarchy[1].name == "Renamed");
     CHECK(steps[3].selected == child);
     CHECK(steps[3].editRevision == steps[2].editRevision);
-    CHECK(steps[4].hierarchy.size() == 2);
-    CHECK(std::ranges::all_of(steps[4].hierarchy, [](const TechEngine::HierarchyRow& row) {
+    CHECK(findProbeRow(steps[3], transformType) != nullptr);
+
+    const TechEngine::ComponentRow* edited = findProbeRow(steps[4], transformType);
+    REQUIRE(edited != nullptr);
+    REQUIRE_FALSE(edited->fields.empty());
+    CHECK(edited->fields[0].value == FieldValue{2.0f});
+    CHECK(steps[4].editRevision > steps[3].editRevision);
+    CHECK(findProbeRow(steps[5], probeType) != nullptr);
+    CHECK(findProbeRow(steps[6], probeType) == nullptr);
+
+    CHECK(steps[7].hierarchy.size() == 2);
+    CHECK(std::ranges::all_of(steps[7].hierarchy, [](const TechEngine::HierarchyRow& row) {
         return row.depth == 0;
     }));
 
-    REQUIRE(steps[5].hierarchy.size() == 1);
-    CHECK(steps[5].hierarchy[0].entity == child);
-    CHECK(steps[5].hierarchy[0].name == "Renamed");
-    CHECK(steps[5].selected == child);
+    REQUIRE(steps[8].hierarchy.size() == 1);
+    CHECK(steps[8].hierarchy[0].entity == child);
+    CHECK(steps[8].hierarchy[0].name == "Renamed");
+    CHECK(steps[8].selected == child);
     const TechEngine::Scene& scene = TechEngineTests::AppTestAccess::scene(app);
     CHECK_FALSE(scene.contains(parent));
     CHECK(scene.contains(child));
@@ -184,17 +236,20 @@ TEST_CASE("every sender method reaches the live scene through the running simula
 TEST_CASE("a sender on an app that is not running applies nothing and logs the refusal", "[editor][edit][commands]") {
     const EditorCommandsLogCapture logs;
     CommandsAppProbe app;
-    EditorCommands commands{app, app.session};
+    EditorCommands commands{app, app.session, app.getRegistry()};
 
     commands.create(Entity{});
     commands.destroy(Entity{0, 0});
     commands.reparent(Entity{0, 0}, Entity{}, 0);
     commands.rename(Entity{0, 0}, "Name");
     commands.select(Entity{0, 0});
+    commands.setField(Entity{0, 0}, TechEngine::ComponentTypeId{}, 0, FieldValue{1.0f});
+    commands.addComponent(Entity{0, 0}, TechEngine::ComponentTypeId{});
+    commands.removeComponent(Entity{0, 0}, TechEngine::ComponentTypeId{});
 
     CHECK(TechEngineTests::AppTestAccess::scene(app).getRoots().empty());
     const auto refusals = std::ranges::count_if(g_editorCommandsLog, [](const std::string& message) {
         return message.find("refused an edit") != std::string::npos;
     });
-    CHECK(refusals == 5);
+    CHECK(refusals == 8);
 }

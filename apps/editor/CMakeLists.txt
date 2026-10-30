@@ -10,27 +10,44 @@ techengine_app(editor
           src/edit/EditorCommands.cpp
           src/edit/EditorSnapshot.cpp
           src/edit/EditorSnapshotSlot.cpp
+          src/edit/FieldCollector.cpp
+          src/edit/FieldSetter.cpp
+          src/edit/FieldValue.cpp
           src/edit/HierarchyCommands.cpp
+          src/edit/InspectorCommands.cpp
           src/project/Project.cpp
           src/project/ProjectError.cpp
           src/ui/ImGuiBridge.cpp
           src/ui/PanelsManager.cpp
           src/ui/panels/HierarchyPanel.cpp
+          src/ui/panels/InspectorPanel.cpp
           src/ui/panels/Panel.cpp
+          src/ui/widgets/DragControls.cpp
+          src/ui/widgets/PropertyTable.cpp
+          src/ui/widgets/TextEditField.cpp
   HEADERS src/EditorApp.hpp
           src/assets/AssetIndex.hpp
           src/assets/LooseSource.hpp
+          src/edit/EditRecord.hpp
           src/edit/EditSession.hpp
           src/edit/EditorCommands.hpp
           src/edit/EditorSnapshot.hpp
           src/edit/EditorSnapshotSlot.hpp
+          src/edit/FieldCollector.hpp
+          src/edit/FieldSetter.hpp
+          src/edit/FieldValue.hpp
           src/edit/HierarchyCommands.hpp
+          src/edit/InspectorCommands.hpp
           src/project/Project.hpp
           src/project/ProjectError.hpp
           src/ui/ImGuiBridge.hpp
           src/ui/PanelsManager.hpp
           src/ui/panels/HierarchyPanel.hpp
+          src/ui/panels/InspectorPanel.hpp
           src/ui/panels/Panel.hpp
+          src/ui/widgets/DragControls.hpp
+          src/ui/widgets/PropertyTable.hpp
+          src/ui/widgets/TextEditField.hpp
   DEPS    clientapp app core
   LIBS    TechEngine::imgui
   LIBS_PRIVATE TechEngine::tomlplusplus
@@ -41,7 +58,9 @@ techengine_app(editor
           tests/edit/EditorCommandsTests.cpp
           tests/edit/EditorSnapshotSlotTests.cpp
           tests/edit/EditorSnapshotTests.cpp
+          tests/edit/FieldValueTests.cpp
           tests/edit/HierarchyCommandsTests.cpp
+          tests/edit/InspectorCommandsTests.cpp
           tests/project/ProjectErrorTests.cpp
           tests/project/ProjectTests.cpp)
 

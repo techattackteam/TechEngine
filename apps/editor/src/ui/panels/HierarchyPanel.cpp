@@ -26,15 +26,6 @@ namespace TechEngine {
         return true;
     }
 
-    static int resizeRenameBuffer(ImGuiInputTextCallbackData* data) {
-        if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
-            std::string* buffer = static_cast<std::string*>(data->UserData);
-            buffer->resize(static_cast<std::size_t>(data->BufTextLen));
-            data->Buf = buffer->data();
-        }
-        return 0;
-    }
-
     HierarchyPanel::HierarchyPanel(EditorCommands& commands) : Panel("Hierarchy"), m_commands(&commands) {
     }
 
@@ -188,21 +179,13 @@ namespace TechEngine {
     void HierarchyPanel::drawRenameField(const HierarchyRow& row) {
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetTreeNodeToLabelSpacing());
         ImGui::SetNextItemWidth(-FLT_MIN);
-        if (m_renameFocusRequested) {
-            ImGui::SetKeyboardFocusHere();
-            m_renameFocusRequested = false;
-        }
-        const ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CallbackResize;
-        const bool entered = ImGui::InputText("##rename", m_renameBuffer.data(), m_renameBuffer.capacity() + 1, flags, resizeRenameBuffer, &m_renameBuffer);
-        const bool active = ImGui::IsItemActive();
-        m_renameActivated = m_renameActivated || active;
-        // The focus request activates the field on a later frame, so it is finished only once it was active and no longer is.
-        if (!entered && (!m_renameActivated || active)) {
+        std::string name;
+        const bool finished = m_renameField.draw("##rename", row.name, name);
+        if (!finished) {
             return;
         }
 
         // Escape restores the old name before the field deactivates, so a cancelled rename sends nothing.
-        const std::string name = m_renameBuffer.c_str();
         if (name != row.name) {
             m_commands->rename(m_renaming, name);
         }
@@ -322,9 +305,7 @@ namespace TechEngine {
             return;
         }
         m_renaming = entity;
-        m_renameBuffer = snapshot.hierarchy[rowIndex].name;
-        m_renameFocusRequested = true;
-        m_renameActivated = false;
+        m_renameField.requestFocus();
     }
 
     void HierarchyPanel::createChild(const Entity parent) {

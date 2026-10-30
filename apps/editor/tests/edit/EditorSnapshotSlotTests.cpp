@@ -1,7 +1,10 @@
+#include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 
 #include <edit/EditorSnapshot.hpp>
 #include <edit/EditorSnapshotSlot.hpp>
+#include <edit/FieldValue.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -47,7 +50,7 @@ TEST_CASE("take returns the newest of two publishes, then nothing until the next
     CHECK(out.editRevision == 3);
 }
 
-TEST_CASE("a taken snapshot carries every row, the selection and both revisions", "[editor][edit]") {
+TEST_CASE("a taken snapshot carries every row, the components, the selection and both revisions", "[editor][edit]") {
     EditorSnapshotSlot slot;
     EditorSnapshot published;
     HierarchyRow parent;
@@ -60,12 +63,34 @@ TEST_CASE("a taken snapshot carries every row, the selection and both revisions"
     child.name = "Child";
     published.hierarchy = {parent, child};
     published.selected = child.entity;
+    TechEngine::FieldRow field;
+    field.index = 2;
+    field.name = "position.z";
+    field.kind = TechEngine::FieldKind::Float;
+    field.value = 3.0f;
+    TechEngine::ComponentRow component;
+    component.type = TechEngine::ComponentTypeId{TechEngine::StringId("Tests.Inspected")};
+    component.tag = "Tests.Inspected";
+    component.fields = {field};
+    published.components = {component};
+    published.addable = {TechEngine::ComponentChoice{TechEngine::ComponentTypeId{TechEngine::StringId("Tests.Addable")}, "Tests.Addable"}};
     published.editRevision = 5;
     published.savedRevision = 4;
     slot.publish(published);
 
     EditorSnapshot out;
     REQUIRE(slot.take(out));
+
+    REQUIRE(out.components.size() == 1);
+    CHECK(out.components[0].type == component.type);
+    CHECK(out.components[0].tag == "Tests.Inspected");
+    REQUIRE(out.components[0].fields.size() == 1);
+    CHECK(out.components[0].fields[0].index == 2);
+    CHECK(out.components[0].fields[0].name == "position.z");
+    CHECK(out.components[0].fields[0].kind == TechEngine::FieldKind::Float);
+    CHECK(out.components[0].fields[0].value == TechEngine::FieldValue{3.0f});
+    REQUIRE(out.addable.size() == 1);
+    CHECK(out.addable[0].tag == "Tests.Addable");
 
     REQUIRE(out.hierarchy.size() == 2);
     CHECK(out.hierarchy[0].entity == parent.entity);

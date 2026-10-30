@@ -116,6 +116,16 @@ namespace TechEngine {
             getCommands().removeComponent<Component>(entity);
         }
 
+        // Invalidated by any structural change: creating or destroying an entity, or adding or removing a component.
+        void* componentRaw(Entity entity, ComponentTypeId type);
+
+        const void* componentRaw(Entity entity, ComponentTypeId type) const;
+
+        // Both refuse Hierarchy, Transform and Name, as the typed calls do at compile time.
+        bool addComponentRaw(Entity entity, ComponentTypeId type);
+
+        bool removeComponentRaw(Entity entity, ComponentTypeId type);
+
         template<typename Component>
         std::uint64_t getChangeTick(const Entity entity) const {
             return getChangeTickRaw(entity, componentTypeId<Component>());
@@ -172,10 +182,6 @@ namespace TechEngine {
         bool reorderChild(Entity child, std::size_t position);
 
     private:
-        void* componentRaw(Entity entity, ComponentTypeId type);
-
-        const void* componentRaw(Entity entity, ComponentTypeId type) const;
-
         void* componentRawChecked(Entity entity, ComponentTypeId type);
 
         const void* componentRawChecked(Entity entity, ComponentTypeId type) const;
@@ -213,5 +219,7 @@ namespace TechEngine {
         bool addComponentInternal(Entity entity, ComponentTypeId type, const void* value) const;
 
         bool removeComponentInternal(Entity entity, ComponentTypeId type) const;
+
+        bool isBuiltInComponent(ComponentTypeId type) const;
     };
 }

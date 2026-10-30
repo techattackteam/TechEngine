@@ -21,7 +21,7 @@ namespace TechEngine {
         return nullptr;
     }
 
-    ComponentDenseId ComponentRegistry::denseId(const ComponentTypeId id) const {
+    ComponentDenseId ComponentRegistry::getDenseId(const ComponentTypeId id) const {
         const ComponentTypeRecord* record = find(id);
         TE_CHECK(record != nullptr, "Component type is not registered");
         return record->denseId;
@@ -44,7 +44,14 @@ namespace TechEngine {
     }
 
     ComponentTypeId ComponentRegistry::registerType(
-        const std::string_view tag, const ComponentTypeId existingTypeId, std::unique_ptr<IComponentStorage> (*createStorage)(), void (*writePayload)(Writer&, const void*), void (*readPayload)(Reader&, void*), void (*visitReferences)(ReferenceVisitor&, void*)) {
+        const std::string_view tag,
+        const ComponentTypeId existingTypeId,
+        std::unique_ptr<IComponentStorage> (*createStorage)(),
+        void (*writePayload)(Writer&, const void*),
+        void (*readPayload)(Reader&, void*),
+        void (*visitReferences)(ReferenceVisitor&, void*),
+        void (*visitFields)(FieldVisitor&, void*),
+        void (*editFields)(FieldVisitor&, void*)) {
         TE_CHECK(!m_frozen, "Component registration is closed - {0} is registered after the registry was frozen", tag);
         TE_CHECK(!tag.empty(), "A component tag must not be empty");
 
@@ -60,7 +67,7 @@ namespace TechEngine {
         const auto recordIndex = static_cast<std::uint16_t>(m_componentRecords.size());
         const ComponentDenseId denseId{recordIndex};
 
-        m_componentRecords.emplace_back(typeId, denseId, std::string{tag}, createStorage, writePayload, readPayload, visitReferences);
+        m_componentRecords.emplace_back(typeId, denseId, std::string{tag}, createStorage, writePayload, readPayload, visitReferences, visitFields, editFields);
         m_indexById.emplace(typeId, recordIndex);
         return typeId;
     }

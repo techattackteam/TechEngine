@@ -73,6 +73,7 @@ techengine_module(core
           include/TechEngine/core/scene/components/Name.hpp
           include/TechEngine/core/scene/components/Transform.hpp
           include/TechEngine/core/serialization/BlobHeader.hpp
+          include/TechEngine/core/serialization/FieldVisitor.hpp
           include/TechEngine/core/serialization/ReadError.hpp
           include/TechEngine/core/serialization/Reader.hpp
           include/TechEngine/core/serialization/ReferenceVisitor.hpp
@@ -126,8 +127,10 @@ if(TE_BUILD_TESTS)
           tests/scene/NameTests.cpp
           tests/scene/QueryTests.cpp
           tests/scene/SceneAssetTests.cpp
+          tests/scene/SceneComponentTests.cpp
           tests/scene/SceneEventTests.cpp
           tests/scene/TransformTests.cpp
+          tests/serialization/FieldVisitorTests.cpp
           tests/serialization/ReadErrorTests.cpp
           tests/serialization/ReferenceVisitorTests.cpp
           tests/serialization/VisitTests.cpp

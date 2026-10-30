@@ -33,10 +33,10 @@ namespace TechEngine {
 
     ScheduleAccess::ScheduleAccess(const ComponentRegistry& registry, std::span<const ComponentTypeId> written, std::span<const ComponentTypeId> readOnly) {
         for (const ComponentTypeId type: written) {
-            setBit(m_writeMask, registry.denseId(type));
+            setBit(m_writeMask, registry.getDenseId(type));
         }
         for (const ComponentTypeId type: readOnly) {
-            setBit(m_readMask, registry.denseId(type));
+            setBit(m_readMask, registry.getDenseId(type));
         }
     }
 

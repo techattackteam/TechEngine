@@ -6,6 +6,7 @@
 
 #include <scene/ArchetypeStorage.hpp>
 #include <scene/SceneTestRegistry.hpp>
+#include <serialization/FieldRecorder.hpp>
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -626,4 +627,30 @@ TEST_CASE("deep transform propagation does not depend on recursion depth", "[cor
 
     scene.propagateTransforms();
     requireVectorNear(scene.getComponent<TechEngine::Transform>(parent).getWorld().position, TechEngine::Vec3(4096.0f, 0.0f, 0.0f));
+}
+
+TEST_CASE("a field edit through the edit walk updates the world values of the entity and its descendants", "[core][scene][transform]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity root = scene.createEntity();
+    const TechEngine::Entity child = scene.createEntity();
+    REQUIRE(scene.setParent(child, root));
+    REQUIRE(scene.getComponent<TechEngine::Transform>(child).setLocal(values(TechEngine::Vec3(0.0f, 2.0f, 0.0f))));
+    const TechEngine::ComponentTypeRecord* record = registry.find(TechEngine::componentTypeId<TechEngine::Transform>());
+    REQUIRE(record != nullptr);
+    REQUIRE(record->editFields != nullptr);
+
+    TechEngineTests::FieldRecorder recorder;
+    recorder.writeName = "position.x";
+    recorder.writeValue = 5.0;
+    record->editFields(recorder, scene.componentRaw(root, TechEngine::componentTypeId<TechEngine::Transform>()));
+
+    const TechEngine::Transform& rootTransform = scene.getComponent<TechEngine::Transform>(root);
+    requireVectorNear(rootTransform.getLocal().position, TechEngine::Vec3(5.0f, 0.0f, 0.0f));
+    REQUIRE(rootTransform.getLocal().rotation == TechEngine::Quat(1.0f, 0.0f, 0.0f, 0.0f));
+    REQUIRE(rootTransform.getLocal().scale == TechEngine::Vec3(1.0f));
+    requireVectorNear(rootTransform.getWorld().position, TechEngine::Vec3(5.0f, 0.0f, 0.0f));
+    requireVectorNear(scene.getComponent<TechEngine::Transform>(child).getLocal().position, TechEngine::Vec3(0.0f, 2.0f, 0.0f));
+    requireVectorNear(scene.getComponent<TechEngine::Transform>(child).getWorld().position, TechEngine::Vec3(5.0f, 2.0f, 0.0f));
 }

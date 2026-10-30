@@ -148,7 +148,7 @@ namespace TechEngine {
     }
 
     bool ArchetypeStorage::queryArchetypeContains(const std::size_t archetypeIndex, const ComponentTypeId type) const {
-        return m_archetypes[archetypeIndex]->contains(m_registry->denseId(type));
+        return m_archetypes[archetypeIndex]->contains(m_registry->getDenseId(type));
     }
 
     const std::vector<Entity>* ArchetypeStorage::queryEntities(const std::size_t archetypeIndex) const {
@@ -156,7 +156,7 @@ namespace TechEngine {
     }
 
     IComponentStorage* ArchetypeStorage::queryColumn(const std::size_t archetypeIndex, const ComponentTypeId type) {
-        return m_archetypes[archetypeIndex]->m_columns.at(m_registry->denseId(type)).get();
+        return m_archetypes[archetypeIndex]->m_columns.at(m_registry->getDenseId(type)).get();
     }
 
     std::size_t ArchetypeStorage::hashSignature(const std::span<const ComponentDenseId> signature) {
