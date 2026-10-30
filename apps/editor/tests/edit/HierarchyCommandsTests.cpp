@@ -346,15 +346,17 @@ TEST_CASE("rename accepts an empty name and a name another entity already has", 
         RenameEntityCommand rename{edit.session, second, ""};
         rename.apply(edit.scene);
 
-        CHECK(rowFor(edit.snapshot(), second).name.empty());
+        const EditorSnapshot after = edit.snapshot();
+        CHECK(rowFor(after, second).name.empty());
     }
 
     SECTION("a repeated name") {
         RenameEntityCommand rename{edit.session, second, "Taken"};
         rename.apply(edit.scene);
 
-        CHECK(rowFor(edit.snapshot(), second).name == "Taken");
-        CHECK(rowFor(edit.snapshot(), first).name == "Taken");
+        const EditorSnapshot after = edit.snapshot();
+        CHECK(rowFor(after, second).name == "Taken");
+        CHECK(rowFor(after, first).name == "Taken");
     }
 }
 

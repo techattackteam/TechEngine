@@ -192,7 +192,8 @@ TEST_CASE("set field writes every editable kind, including the fields after the 
 
     const std::span<const EditRecord> records = edit.session.getRecords();
     REQUIRE(records.size() == edits.size());
-    const ComponentRow& row = componentRowFor(edit.snapshot(), sampleType());
+    const EditorSnapshot after = edit.snapshot();
+    const ComponentRow& row = componentRowFor(after, sampleType());
     for (std::size_t i = 0; i < edits.size(); i++) {
         const FieldEditRecord* record = std::get_if<FieldEditRecord>(&records[i]);
         REQUIRE(record != nullptr);

@@ -134,9 +134,13 @@ namespace TechEngineTests {
         return static_cast<std::size_t>(row - snapshot.hierarchy.begin());
     }
 
+    // The row helpers point into the snapshot they are given, so a temporary one, such as
+    // edit.snapshot() passed straight in, would leave the result dangling. Those overloads are deleted.
     inline const TechEngine::HierarchyRow& rowFor(const TechEngine::EditorSnapshot& snapshot, const TechEngine::Entity entity) {
         return snapshot.hierarchy[rowIndex(snapshot, entity)];
     }
+
+    const TechEngine::HierarchyRow& rowFor(TechEngine::EditorSnapshot&& snapshot, TechEngine::Entity entity) = delete;
 
     inline const TechEngine::ComponentRow* findComponentRow(const TechEngine::EditorSnapshot& snapshot, const TechEngine::ComponentTypeId type) {
         const auto row = std::ranges::find(snapshot.components, type, &TechEngine::ComponentRow::type);
@@ -146,9 +150,13 @@ namespace TechEngineTests {
         return &*row;
     }
 
+    const TechEngine::ComponentRow* findComponentRow(TechEngine::EditorSnapshot&& snapshot, TechEngine::ComponentTypeId type) = delete;
+
     inline const TechEngine::ComponentRow& componentRowFor(const TechEngine::EditorSnapshot& snapshot, const TechEngine::ComponentTypeId type) {
         const TechEngine::ComponentRow* row = findComponentRow(snapshot, type);
         REQUIRE(row != nullptr);
         return *row;
     }
+
+    const TechEngine::ComponentRow& componentRowFor(TechEngine::EditorSnapshot&& snapshot, TechEngine::ComponentTypeId type) = delete;
 }
