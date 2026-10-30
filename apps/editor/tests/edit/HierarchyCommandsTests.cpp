@@ -358,7 +358,7 @@ TEST_CASE("rename accepts an empty name and a name another entity already has", 
     }
 }
 
-TEST_CASE("rename to the current name keeps the edit revision", "[editor][edit][commands]") {
+TEST_CASE("rename to the current name keeps the edit revision and records nothing", "[editor][edit][commands]") {
     EditTestScene edit;
     const Entity entity = edit.createNamed("Same");
     const EditorSnapshot before = edit.snapshot();
@@ -367,6 +367,7 @@ TEST_CASE("rename to the current name keeps the edit revision", "[editor][edit][
     rename.apply(edit.scene);
 
     CHECK(edit.snapshot().editRevision == before.editRevision);
+    CHECK(edit.session.getRecords().empty());
 }
 
 TEST_CASE("rename of an entity that is not alive changes nothing", "[editor][edit][commands]") {

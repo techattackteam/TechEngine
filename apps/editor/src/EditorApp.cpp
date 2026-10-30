@@ -122,7 +122,7 @@ namespace TechEngine {
         const TransformValues& local = transform.getLocal();
         const Vec3 euler = Transform::toEulerDegrees(local.rotation);
         const Vec3 world = transform.getWorld().position;
-        TE_LOGGER_INFO(
+        TE_LOGGER_DEBUG(
             "Scene: entity {0} local position ({1:.3f}, {2:.3f}, {3:.3f}) rotation ({4:.3f}, {5:.3f}, {6:.3f}) scale ({7:.3f}, {8:.3f}, {9:.3f}), world position ({10:.3f}, {11:.3f}, {12:.3f})",
             selected,
             local.position.x,
@@ -179,10 +179,9 @@ namespace TechEngine {
         ImGui::Render();
         m_imguiBridge.publish(*ImGui::GetDrawData());
 
-        // NewFrame trickles queued input, so a press and release in one wake take two frames.
         const bool inputLeft = !context.InputEventsQueue.empty();
-        // TODO(S9-T17): wake for an active item only while a mouse button is down; a focused text field keeps IsAnyItemActive() true.
-        if (hadInput || inputLeft || ImGui::IsAnyItemActive()) {
+        const bool holdingItem = ImGui::IsAnyItemActive() && ImGui::IsMouseDown(ImGuiMouseButton_Left);
+        if (hadInput || inputLeft || holdingItem) {
             wakeMainThread();
         }
     }

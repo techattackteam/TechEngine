@@ -61,7 +61,8 @@ namespace TechEngine {
     void EditSession::collectComponents(const Scene& scene, const ComponentRegistry& registry, EditorSnapshot& out) const {
         out.components.clear();
         out.addable.clear();
-        if (!m_selected.valid()) {
+        // contains(), not valid(): a selection whose entity died would otherwise offer every type to add.
+        if (!scene.contains(m_selected)) {
             return;
         }
 

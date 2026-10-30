@@ -68,6 +68,8 @@ namespace TechEngine {
             return id;
         }
 
+        // A record pointer, and the span from records(), dangle after the next registration, which can
+        // reallocate the records. Once the registry is frozen they never move.
         const ComponentTypeRecord* find(ComponentTypeId id) const;
 
         const ComponentTypeRecord* find(ComponentDenseId id) const;

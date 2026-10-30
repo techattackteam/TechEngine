@@ -37,6 +37,14 @@ namespace TechEngineTests {
         TechEngine::Entity target;
         TechEngine::AssetRef<InspectedAsset> asset;
         std::vector<std::uint32_t> indices = {1, 2, 3};
+        // Editable fields after the read-only ones, so a test proves that every read-only field still takes its index.
+        float floatField = 1.5f;
+        std::int8_t int8Field = -8;
+        std::int16_t int16Field = -16;
+        std::uint16_t uint16Field = 16;
+        std::uint32_t uint32Field = 32;
+        std::int64_t int64Field = -64;
+        std::uint64_t uint64Field = 64;
 
         template<typename Archive>
         friend void visit(Archive& archive, InspectedSample& value) {
@@ -49,6 +57,13 @@ namespace TechEngineTests {
             archive.field("target", value.target);
             archive.field("asset", value.asset);
             archive.field("indices", value.indices);
+            archive.field("floatField", value.floatField);
+            archive.field("int8Field", value.int8Field);
+            archive.field("int16Field", value.int16Field);
+            archive.field("uint16Field", value.uint16Field);
+            archive.field("uint32Field", value.uint32Field);
+            archive.field("int64Field", value.int64Field);
+            archive.field("uint64Field", value.uint64Field);
         }
     };
 
@@ -61,7 +76,14 @@ namespace TechEngineTests {
     inline constexpr std::uint32_t SAMPLE_TARGET_FIELD = 6;
     inline constexpr std::uint32_t SAMPLE_ASSET_FIELD = 7;
     inline constexpr std::uint32_t SAMPLE_INDICES_FIELD = 8;
-    inline constexpr std::uint32_t SAMPLE_FIELD_COUNT = 9;
+    inline constexpr std::uint32_t SAMPLE_FLOAT_FIELD = 9;
+    inline constexpr std::uint32_t SAMPLE_INT8_FIELD = 10;
+    inline constexpr std::uint32_t SAMPLE_INT16_FIELD = 11;
+    inline constexpr std::uint32_t SAMPLE_UINT16_FIELD = 12;
+    inline constexpr std::uint32_t SAMPLE_UINT32_FIELD = 13;
+    inline constexpr std::uint32_t SAMPLE_INT64_FIELD = 14;
+    inline constexpr std::uint32_t SAMPLE_UINT64_FIELD = 15;
+    inline constexpr std::uint32_t SAMPLE_FIELD_COUNT = 16;
 
     inline constexpr std::uint32_t TRANSFORM_POSITION_X_FIELD = 0;
     inline constexpr std::uint32_t TRANSFORM_POSITION_Y_FIELD = 1;

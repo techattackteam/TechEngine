@@ -41,11 +41,18 @@ using TechEngineTests::SAMPLE_ASSET_FIELD;
 using TechEngineTests::SAMPLE_COUNT_FIELD;
 using TechEngineTests::SAMPLE_ENABLED_FIELD;
 using TechEngineTests::SAMPLE_FIELD_COUNT;
+using TechEngineTests::SAMPLE_FLOAT_FIELD;
 using TechEngineTests::SAMPLE_GROUP_FIELD;
 using TechEngineTests::SAMPLE_INDICES_FIELD;
+using TechEngineTests::SAMPLE_INT16_FIELD;
+using TechEngineTests::SAMPLE_INT64_FIELD;
+using TechEngineTests::SAMPLE_INT8_FIELD;
 using TechEngineTests::SAMPLE_LABEL_FIELD;
 using TechEngineTests::SAMPLE_LAYER_FIELD;
 using TechEngineTests::SAMPLE_TARGET_FIELD;
+using TechEngineTests::SAMPLE_UINT16_FIELD;
+using TechEngineTests::SAMPLE_UINT32_FIELD;
+using TechEngineTests::SAMPLE_UINT64_FIELD;
 using TechEngineTests::SAMPLE_WEIGHT_FIELD;
 using TechEngineTests::TRANSFORM_FIELD_COUNT;
 
@@ -280,4 +287,49 @@ TEST_CASE("each field row holds its kind and the value the inspector shows", "[e
     checkField(SAMPLE_TARGET_FIELD, "target", FieldKind::Entity, FieldValue{std::string("Target")});
     checkField(SAMPLE_ASSET_FIELD, "asset", FieldKind::Asset, FieldValue{std::uint64_t{0xA55E7}});
     checkField(SAMPLE_INDICES_FIELD, "indices", FieldKind::Bulk, FieldValue{std::uint64_t{3}});
+    checkField(SAMPLE_FLOAT_FIELD, "floatField", FieldKind::Float, FieldValue{1.5f});
+    checkField(SAMPLE_INT8_FIELD, "int8Field", FieldKind::Int8, FieldValue{std::int8_t{-8}});
+    checkField(SAMPLE_INT16_FIELD, "int16Field", FieldKind::Int16, FieldValue{std::int16_t{-16}});
+    checkField(SAMPLE_UINT16_FIELD, "uint16Field", FieldKind::UInt16, FieldValue{std::uint16_t{16}});
+    checkField(SAMPLE_UINT32_FIELD, "uint32Field", FieldKind::UInt32, FieldValue{std::uint32_t{32}});
+    checkField(SAMPLE_INT64_FIELD, "int64Field", FieldKind::Int64, FieldValue{std::int64_t{-64}});
+    checkField(SAMPLE_UINT64_FIELD, "uint64Field", FieldKind::UInt64, FieldValue{std::uint64_t{64}});
+}
+
+TEST_CASE("an Entity field with no live target is published with an empty name", "[editor][edit]") {
+    EditTestScene edit;
+    const Entity entity = edit.createNamed("Holder");
+    edit.scene.addComponent<InspectedSample>(entity);
+    edit.session.setSelected(entity);
+
+    SECTION("the empty entity") {
+        const EditorSnapshot snapshot = edit.snapshot();
+
+        const FieldRow& target = componentRowFor(snapshot, TechEngine::componentTypeId<InspectedSample>()).fields[SAMPLE_TARGET_FIELD];
+        CHECK(target.kind == FieldKind::Entity);
+        CHECK(target.value == FieldValue{std::string()});
+    }
+
+    SECTION("a target that was destroyed") {
+        const Entity target = edit.createNamed("Gone");
+        edit.scene.getComponent<InspectedSample>(entity).target = target;
+        REQUIRE(edit.scene.destroyEntity(target));
+
+        const EditorSnapshot snapshot = edit.snapshot();
+
+        const FieldRow& row = componentRowFor(snapshot, TechEngine::componentTypeId<InspectedSample>()).fields[SAMPLE_TARGET_FIELD];
+        CHECK(row.value == FieldValue{std::string()});
+    }
+}
+
+TEST_CASE("a selection whose entity is gone publishes no components and nothing to add", "[editor][edit]") {
+    EditTestScene edit;
+    const Entity entity = edit.createNamed("A");
+    edit.session.setSelected(entity);
+    REQUIRE(edit.scene.destroyEntity(entity));
+
+    const EditorSnapshot snapshot = edit.snapshot();
+
+    CHECK(snapshot.components.empty());
+    CHECK(snapshot.addable.empty());
 }

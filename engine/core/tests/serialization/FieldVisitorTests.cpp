@@ -143,6 +143,32 @@ TEST_CASE("the field visitor sees every field once, in visit order, with its nam
     CHECK(recorder.fields == expected);
 }
 
+TEST_CASE("an empty Entity and an empty AssetRef are still visited, so the fields after them keep their positions", "[core][serialization]") {
+    FieldVisitorSample sample;
+    sample.target = Entity{};
+    sample.asset = AssetRef<FieldVisitorAsset>{};
+    FieldRecorder recorder;
+
+    visit(recorder, sample);
+
+    REQUIRE(recorder.fields.size() == 16);
+    CHECK(recorder.fields[13] == RecordedField{"target", "entity"});
+    CHECK(recorder.fields[14] == RecordedField{"asset", "asset"});
+    CHECK(recorder.fields[15] == RecordedField{"indices", "bulk"});
+    CHECK(recorder.entities == std::vector<Entity>{Entity{}});
+    CHECK(recorder.assets == std::vector<ResourceId>{ResourceId{}});
+}
+
+TEST_CASE("an empty vector is still visited, with a count of zero", "[core][serialization]") {
+    FieldVisitorSample sample;
+    sample.indices.clear();
+    FieldRecorder recorder;
+
+    visit(recorder, sample);
+
+    CHECK(recorder.bulkCounts == std::vector<std::size_t>{0});
+}
+
 TEST_CASE("a nested visited type's fields are walked in place, between their neighbours", "[core][serialization]") {
     FieldVisitorOuter outer;
     FieldRecorder recorder;

@@ -58,6 +58,7 @@ techengine_app(editor
           tests/edit/EditorCommandsTests.cpp
           tests/edit/EditorSnapshotSlotTests.cpp
           tests/edit/EditorSnapshotTests.cpp
+          tests/edit/FieldValueTests.cpp
           tests/edit/HierarchyCommandsTests.cpp
           tests/edit/InspectorCommandsTests.cpp
           tests/project/ProjectErrorTests.cpp

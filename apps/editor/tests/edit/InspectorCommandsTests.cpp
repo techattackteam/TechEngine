@@ -1,4 +1,5 @@
 #include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/base/stringid/StringId.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
@@ -18,6 +19,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
+#include <span>
 #include <string>
 #include <utility>
 #include <variant>
@@ -26,6 +29,7 @@
 using TechEngine::AddComponentCommand;
 using TechEngine::ComponentAddedRecord;
 using TechEngine::ComponentRemovedRecord;
+using TechEngine::ComponentRow;
 using TechEngine::ComponentTypeId;
 using TechEngine::EditorSnapshot;
 using TechEngine::EditRecord;
@@ -43,11 +47,21 @@ using TechEngineTests::findComponentRow;
 using TechEngineTests::InspectedSample;
 using TechEngineTests::SAMPLE_ASSET_FIELD;
 using TechEngineTests::SAMPLE_COUNT_FIELD;
+using TechEngineTests::SAMPLE_ENABLED_FIELD;
 using TechEngineTests::SAMPLE_FIELD_COUNT;
+using TechEngineTests::SAMPLE_FLOAT_FIELD;
 using TechEngineTests::SAMPLE_GROUP_FIELD;
 using TechEngineTests::SAMPLE_INDICES_FIELD;
+using TechEngineTests::SAMPLE_INT16_FIELD;
+using TechEngineTests::SAMPLE_INT64_FIELD;
+using TechEngineTests::SAMPLE_INT8_FIELD;
 using TechEngineTests::SAMPLE_LABEL_FIELD;
+using TechEngineTests::SAMPLE_LAYER_FIELD;
 using TechEngineTests::SAMPLE_TARGET_FIELD;
+using TechEngineTests::SAMPLE_UINT16_FIELD;
+using TechEngineTests::SAMPLE_UINT32_FIELD;
+using TechEngineTests::SAMPLE_UINT64_FIELD;
+using TechEngineTests::SAMPLE_WEIGHT_FIELD;
 using TechEngineTests::TRANSFORM_FIELD_COUNT;
 using TechEngineTests::TRANSFORM_POSITION_X_FIELD;
 using TechEngineTests::TRANSFORM_POSITION_Y_FIELD;
@@ -121,7 +135,7 @@ TEST_CASE("a Transform field edit updates the world values of the entity and its
     CHECK(edit.scene.getComponent<Transform>(child).getWorld().scale.x == Catch::Approx(2.0f));
 }
 
-TEST_CASE("set field to the value the field already holds keeps the edit revision", "[editor][edit][commands]") {
+TEST_CASE("set field to the value the field already holds keeps the edit revision and records nothing", "[editor][edit][commands]") {
     EditTestScene edit;
     const Entity entity = edit.createNamed("A");
     const EditorSnapshot before = edit.snapshot();
@@ -129,22 +143,100 @@ TEST_CASE("set field to the value the field already holds keeps the edit revisio
     applySetField(edit, entity, transformType(), TRANSFORM_POSITION_Y_FIELD, FieldValue{0.0f});
 
     CHECK(edit.snapshot().editRevision == before.editRevision);
+    CHECK(edit.session.getRecords().empty());
 }
 
-TEST_CASE("set field writes every editable kind, a string included", "[editor][edit][commands]") {
+TEST_CASE("set field writes every editable kind, including the fields after the read-only ones", "[editor][edit][commands]") {
     EditTestScene edit;
     const Entity entity = edit.createNamed("A");
     edit.scene.addComponent<InspectedSample>(entity);
+    edit.session.setSelected(entity);
 
-    applySetField(edit, entity, sampleType(), SAMPLE_COUNT_FIELD, FieldValue{std::int32_t{-9}});
-    applySetField(edit, entity, sampleType(), SAMPLE_LABEL_FIELD, FieldValue{std::string("Changed")});
+    struct FieldEdit {
+        std::uint32_t field = 0;
+        FieldValue value;
+        FieldValue oldValue;
+    };
+    const std::vector<FieldEdit> edits = {
+        {SAMPLE_ENABLED_FIELD, FieldValue{false}, FieldValue{true}},
+        {SAMPLE_COUNT_FIELD, FieldValue{std::numeric_limits<std::int32_t>::min()}, FieldValue{std::int32_t{3}}},
+        {SAMPLE_LAYER_FIELD, FieldValue{std::numeric_limits<std::uint8_t>::max()}, FieldValue{std::uint8_t{1}}},
+        {SAMPLE_WEIGHT_FIELD, FieldValue{-2.25}, FieldValue{0.5}},
+        {SAMPLE_LABEL_FIELD, FieldValue{std::string("Changed")}, FieldValue{std::string("Sample")}},
+        {SAMPLE_FLOAT_FIELD, FieldValue{4.5f}, FieldValue{1.5f}},
+        {SAMPLE_INT8_FIELD, FieldValue{std::numeric_limits<std::int8_t>::min()}, FieldValue{std::int8_t{-8}}},
+        {SAMPLE_INT16_FIELD, FieldValue{std::numeric_limits<std::int16_t>::max()}, FieldValue{std::int16_t{-16}}},
+        {SAMPLE_UINT16_FIELD, FieldValue{std::numeric_limits<std::uint16_t>::max()}, FieldValue{std::uint16_t{16}}},
+        {SAMPLE_UINT32_FIELD, FieldValue{std::numeric_limits<std::uint32_t>::max()}, FieldValue{std::uint32_t{32}}},
+        {SAMPLE_INT64_FIELD, FieldValue{std::numeric_limits<std::int64_t>::min()}, FieldValue{std::int64_t{-64}}},
+        {SAMPLE_UINT64_FIELD, FieldValue{std::numeric_limits<std::uint64_t>::max()}, FieldValue{std::uint64_t{64}}},
+    };
+
+    for (const FieldEdit& fieldEdit: edits) {
+        applySetField(edit, entity, sampleType(), fieldEdit.field, fieldEdit.value);
+    }
 
     const InspectedSample& sample = edit.scene.getComponent<InspectedSample>(entity);
-    CHECK(sample.count == -9);
+    CHECK_FALSE(sample.enabled);
+    CHECK(sample.count == std::numeric_limits<std::int32_t>::min());
+    CHECK(sample.layer == std::numeric_limits<std::uint8_t>::max());
+    CHECK(sample.weight == -2.25);
     CHECK(sample.label == "Changed");
-    REQUIRE(edit.session.getRecords().size() == 2);
-    CHECK(std::get<FieldEditRecord>(edit.session.getRecords()[0]).oldValue == FieldValue{std::int32_t{3}});
-    CHECK(std::get<FieldEditRecord>(edit.session.getRecords()[1]).oldValue == FieldValue{std::string("Sample")});
+    CHECK(sample.floatField == 4.5f);
+    CHECK(sample.int8Field == std::numeric_limits<std::int8_t>::min());
+    CHECK(sample.int16Field == std::numeric_limits<std::int16_t>::max());
+    CHECK(sample.uint16Field == std::numeric_limits<std::uint16_t>::max());
+    CHECK(sample.uint32Field == std::numeric_limits<std::uint32_t>::max());
+    CHECK(sample.int64Field == std::numeric_limits<std::int64_t>::min());
+    CHECK(sample.uint64Field == std::numeric_limits<std::uint64_t>::max());
+
+    const std::span<const EditRecord> records = edit.session.getRecords();
+    REQUIRE(records.size() == edits.size());
+    const ComponentRow& row = componentRowFor(edit.snapshot(), sampleType());
+    for (std::size_t i = 0; i < edits.size(); i++) {
+        const FieldEditRecord* record = std::get_if<FieldEditRecord>(&records[i]);
+        REQUIRE(record != nullptr);
+        CHECK(record->field == edits[i].field);
+        CHECK(record->oldValue == edits[i].oldValue);
+        CHECK(row.fields[edits[i].field].value == edits[i].value);
+    }
+}
+
+TEST_CASE("set field refuses Name, which only a rename may change", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity entity = edit.createNamed("Kept");
+    const EditorSnapshot before = edit.snapshot();
+
+    applySetField(edit, entity, TechEngine::componentTypeId<TechEngine::Name>(), 0, FieldValue{std::string("Changed")});
+
+    CHECK(edit.scene.getComponent<TechEngine::Name>(entity).value == "Kept");
+    CHECK(edit.session.getRecords().empty());
+    CHECK(edit.snapshot().editRevision == before.editRevision);
+}
+
+TEST_CASE("set field, add and remove refuse a type the registry does not know, and record nothing", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity entity = edit.createNamed("A");
+    const ComponentTypeId unknown{TechEngine::StringId("Tests.Unregistered")};
+    const EditorSnapshot before = edit.snapshot();
+
+    SECTION("set field") {
+        applySetField(edit, entity, unknown, 0, FieldValue{1.0f});
+    }
+
+    SECTION("add") {
+        AddComponentCommand command{edit.session, entity, unknown};
+        command.apply(edit.scene);
+    }
+
+    SECTION("remove") {
+        RemoveComponentCommand command{edit.session, edit.getRegistry(), entity, unknown};
+        command.apply(edit.scene);
+    }
+
+    CHECK(edit.scene.contains(entity));
+    CHECK(edit.session.getRecords().empty());
+    CHECK(edit.snapshot().editRevision == before.editRevision);
 }
 
 TEST_CASE("set field refuses a value whose type differs from the field's, and changes nothing", "[editor][edit][commands]") {

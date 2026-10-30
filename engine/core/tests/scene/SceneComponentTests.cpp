@@ -1,3 +1,5 @@
+#include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/base/stringid/StringId.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
@@ -92,18 +94,41 @@ TEST_CASE("addComponentRaw refuses a type the entity already holds and a dead en
     }
 }
 
-TEST_CASE("removeComponentRaw takes the component off and refuses one the entity lacks", "[core][scene]") {
+TEST_CASE("removeComponentRaw takes the component off, keeps the others and refuses one the entity lacks", "[core][scene]") {
     SceneRawFixture fixture;
     Scene& scene = fixture.scene;
     const Entity entity = scene.createEntity();
+    scene.getComponent<TechEngine::Name>(entity).value = "Kept";
+    REQUIRE(scene.getComponent<TechEngine::Transform>(entity).setLocal({TechEngine::Vec3(1.0f, 2.0f, 3.0f), TechEngine::Quat(1.0f, 0.0f, 0.0f, 0.0f), TechEngine::Vec3(1.0f)}));
     scene.addComponent<SceneRawComponent>(entity);
+    scene.addComponent<SceneRawOther>(entity);
+    scene.getComponent<SceneRawOther>(entity).value = 5;
 
     REQUIRE(scene.removeComponentRaw(entity, fixture.rawType));
     CHECK_FALSE(scene.hasComponent<SceneRawComponent>(entity));
     CHECK(scene.contains(entity));
+    REQUIRE(scene.hasComponent<SceneRawOther>(entity));
+    CHECK(scene.getComponent<SceneRawOther>(entity).value == 5);
+    CHECK(scene.getComponent<TechEngine::Name>(entity).value == "Kept");
+    CHECK(scene.getComponent<TechEngine::Transform>(entity).getLocal().position == TechEngine::Vec3(1.0f, 2.0f, 3.0f));
 
     CHECK_FALSE(scene.removeComponentRaw(entity, fixture.rawType));
-    CHECK_FALSE(scene.removeComponentRaw(entity, fixture.otherType));
+
+    const Entity dead = scene.createEntity();
+    REQUIRE(scene.destroyEntity(dead));
+    CHECK_FALSE(scene.removeComponentRaw(dead, fixture.otherType));
+}
+
+TEST_CASE("the raw add and remove refuse a type the registry does not know", "[core][scene]") {
+    SceneRawFixture fixture;
+    Scene& scene = fixture.scene;
+    const Entity entity = scene.createEntity();
+    const ComponentTypeId unknown{TechEngine::StringId("Tests.SceneRawUnregistered")};
+
+    CHECK_FALSE(scene.addComponentRaw(entity, unknown));
+    CHECK_FALSE(scene.removeComponentRaw(entity, unknown));
+    CHECK(scene.componentRaw(entity, unknown) == nullptr);
+    CHECK(scene.contains(entity));
 }
 
 TEST_CASE("the raw add and remove refuse Hierarchy, Transform and Name, which every entity keeps", "[core][scene]") {

@@ -1,6 +1,7 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
+#include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/serialization/Writer.hpp>
 
 #include <edit/EditRecord.hpp>
@@ -27,6 +28,12 @@ namespace TechEngine {
 
         if (record->editFields == nullptr) {
             TE_LOGGER_WARN("Component type {0} has no editable fields", m_component.stringId());
+            return;
+        }
+
+        // Name has a visit, so it has an edit walk, but a rename must go through RenameEntityCommand and leave a RenameRecord.
+        if (m_component == componentTypeId<Name>()) {
+            TE_LOGGER_WARN("SetFieldCommand: Name is changed only by a rename");
             return;
         }
 
@@ -66,7 +73,7 @@ namespace TechEngine {
             return;
         }
         const FieldRow& row = rows[m_field];
-        TE_LOGGER_INFO("Set {0}.{1} on entity {2}: {3} -> {4}", record.tag, row.name, m_entity, describeFieldValue(setter.getOldValue()), describeFieldValue(row.value));
+        TE_LOGGER_DEBUG("Set {0}.{1} on entity {2}: {3} -> {4}", record.tag, row.name, m_entity, describeFieldValue(setter.getOldValue()), describeFieldValue(row.value));
     }
 
     AddComponentCommand::AddComponentCommand(EditSession& session, const Entity entity, const ComponentTypeId component) : m_session(&session), m_entity(entity), m_component(component) {

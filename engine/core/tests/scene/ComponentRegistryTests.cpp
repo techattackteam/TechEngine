@@ -260,8 +260,11 @@ TEST_CASE("a component's reference adapter walks the component it is handed", "[
 
 TEST_CASE("a component with a visit is registered with both field walks, and one without has neither", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
-    const TechEngine::ComponentTypeRecord* visited = registry.find(registry.registerComponent<RegistryVisited>("TechEngine.Visited"));
-    const TechEngine::ComponentTypeRecord* plain = registry.find(registry.registerComponent<RegistryPosition>("TechEngine.Position"));
+    // A registration can reallocate the records, so both are found only after both are registered.
+    const TechEngine::ComponentTypeId visitedId = registry.registerComponent<RegistryVisited>("TechEngine.Visited");
+    const TechEngine::ComponentTypeId plainId = registry.registerComponent<RegistryPosition>("TechEngine.Position");
+    const TechEngine::ComponentTypeRecord* visited = registry.find(visitedId);
+    const TechEngine::ComponentTypeRecord* plain = registry.find(plainId);
     REQUIRE(visited != nullptr);
     REQUIRE(plain != nullptr);
 
