@@ -12,6 +12,7 @@
 #include <TechEngine/platform/files/FileError.hpp>
 
 #include <EditorApp.hpp>
+#include <ui/EditorTheme.hpp>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -175,6 +176,7 @@ namespace TechEngine {
 
     void EditorApp::createImGuiContext() {
         ImGui::CreateContext();
+        applyEditorTheme();
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
         io.IniFilename = nullptr;
