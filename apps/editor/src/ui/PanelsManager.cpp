@@ -21,6 +21,8 @@ namespace TechEngine {
         drawDockSpace();
         m_hierarchy.draw(snapshot);
         m_inspector.draw(snapshot);
+        m_sceneView.draw(snapshot);
+        m_gameView.draw(snapshot);
     }
 
     void PanelsManager::drawMainMenuBar() {
@@ -61,6 +63,8 @@ namespace TechEngine {
         const ImGuiID right = ImGui::DockBuilderSplitNode(centre, ImGuiDir_Right, INSPECTOR_WIDTH_RATIO, nullptr, &centre);
         ImGui::DockBuilderDockWindow(m_hierarchy.getName().c_str(), left);
         ImGui::DockBuilderDockWindow(m_inspector.getName().c_str(), right);
+        ImGui::DockBuilderDockWindow(m_sceneView.getName().c_str(), centre);
+        ImGui::DockBuilderDockWindow(m_gameView.getName().c_str(), centre);
         ImGui::DockBuilderFinish(dockSpaceId);
     }
 }

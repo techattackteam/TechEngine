@@ -35,6 +35,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <iterator>
+#include <string>
 #include <string_view>
 #include <system_error>
 #include <thread>
@@ -115,6 +116,10 @@ namespace {
     constexpr std::string_view MANIFEST_PATH = "project://project.toml";
     constexpr std::string_view TRIANGLE_MESH_FILE = "assets/client/Triangle.temesh";
     constexpr std::string_view TRIANGLE_MESH_PATH = "project://assets/client/Triangle.temesh";
+    constexpr std::string_view PANEL_LAYOUT_FILE = "editorSettings/layout.ini";
+    constexpr std::string_view PANEL_LAYOUT_PATH = "project://editorSettings/layout.ini";
+    constexpr std::string_view SAVED_HIERARCHY = "[Window][Hierarchy]\nPos=10,20\nSize=300,400\nCollapsed=0\n";
+    constexpr std::string_view MOVED_INSPECTOR = "[Window][Inspector]\nPos=30,40\nSize=200,300\nCollapsed=0\n";
 
     void writeProjectLayout(const ScratchDirectory& scratch) {
         scratch.writeFile("project.toml", DEV_MANIFEST);
@@ -131,6 +136,19 @@ namespace {
         REQUIRE(project.load(files, MANIFEST_PATH) == std::error_code{});
         CHECK(project.name() == "Dev");
         return project.getExportStartupScene(TechEngine::Role::Client);
+    }
+
+    std::string readPanelLayout(const ScratchDirectory& scratch) {
+        TechEngine::MountTable mounts;
+        mounts.mount("project", scratch.root());
+        const TechEngine::FileAccess files{mounts};
+        std::vector<std::byte> bytes;
+        REQUIRE(files.read(PANEL_LAYOUT_PATH, bytes) == std::error_code{});
+        return std::string(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+    }
+
+    bool contains(const std::string_view text, const std::string_view part) {
+        return text.find(part) != std::string_view::npos;
     }
 
     void checkParentWithTwoChildren(const TechEngine::Scene& scene) {
@@ -612,6 +630,60 @@ TEST_CASE("an editor destroyed without shutdown stops its client and releases Im
     CHECK_FALSE(next.shouldClose());
     next.shutdown();
     CHECK(ImGui::GetCurrentContext() == nullptr);
+}
+
+TEST_CASE("a saved panel layout is in ImGui before the first frame", "[editor][window][imgui][layout]") {
+    ScratchDirectory scratch{"editorLoadsPanelLayout"};
+    writeProjectLayout(scratch);
+    scratch.writeFile(PANEL_LAYOUT_FILE, SAVED_HIERARCHY);
+    EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
+    editor.bootstrap();
+
+    const std::string_view live = ImGui::SaveIniSettingsToMemory();
+    CHECK(contains(live, "[Window][Hierarchy]"));
+    CHECK(contains(live, "Pos=10,20"));
+    editor.shutdown();
+}
+
+TEST_CASE("shutdown writes the panel layout into a new editorSettings folder", "[editor][window][imgui][layout]") {
+    ScratchDirectory scratch{"editorWritesPanelLayout"};
+    writeProjectLayout(scratch);
+    EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
+    editor.bootstrap();
+    CHECK_FALSE(std::filesystem::exists(scratch.root() / "editorSettings"));
+
+    editor.shutdown();
+    CHECK(std::filesystem::is_regular_file(scratch.root() / "editorSettings" / "layout.ini"));
+}
+
+TEST_CASE("shutdown saves the live panel layout over the one it loaded", "[editor][window][imgui][layout]") {
+    ScratchDirectory scratch{"editorSavesLivePanelLayout"};
+    writeProjectLayout(scratch);
+    scratch.writeFile(PANEL_LAYOUT_FILE, SAVED_HIERARCHY);
+    EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
+    editor.bootstrap();
+    ImGui::LoadIniSettingsFromMemory(MOVED_INSPECTOR.data(), MOVED_INSPECTOR.size());
+
+    editor.shutdown();
+    const std::string saved = readPanelLayout(scratch);
+    CHECK(contains(saved, "[Window][Hierarchy]"));
+    CHECK(contains(saved, "Pos=10,20"));
+    CHECK(contains(saved, "[Window][Inspector]"));
+    CHECK(contains(saved, "Pos=30,40"));
+}
+
+TEST_CASE("an editor destroyed without shutdown still saves its panel layout", "[editor][window][imgui][layout]") {
+    ScratchDirectory scratch{"editorDestroyedSavesPanelLayout"};
+    writeProjectLayout(scratch);
+    {
+        EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
+        editor.bootstrap();
+        ImGui::LoadIniSettingsFromMemory(MOVED_INSPECTOR.data(), MOVED_INSPECTOR.size());
+    }
+
+    const std::string saved = readPanelLayout(scratch);
+    CHECK(contains(saved, "[Window][Inspector]"));
+    CHECK(contains(saved, "Pos=30,40"));
 }
 
 static void checkStartupSnapshot(const TechEngine::EditorSnapshot& snapshot, const TechEngine::Scene& scene) {
