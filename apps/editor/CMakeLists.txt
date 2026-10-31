@@ -19,6 +19,7 @@ techengine_app(editor
           src/project/Project.cpp
           src/project/ProjectError.cpp
           src/ui/ClosePrompt.cpp
+          src/ui/EditorTheme.cpp
           src/ui/ImGuiBridge.cpp
           src/ui/PanelsManager.cpp
           src/ui/panels/GameViewPanel.cpp
@@ -46,6 +47,7 @@ techengine_app(editor
           src/project/Project.hpp
           src/project/ProjectError.hpp
           src/ui/ClosePrompt.hpp
+          src/ui/EditorTheme.hpp
           src/ui/ImGuiBridge.hpp
           src/ui/PanelsManager.hpp
           src/ui/panels/GameViewPanel.hpp

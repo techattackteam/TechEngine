@@ -148,18 +148,24 @@ namespace TechEngine {
         } else {
             ImGui::SetNextItemOpen(!m_collapsed.contains(row.entity), ImGuiCond_Always);
         }
-        if (row.entity == snapshot.selected) {
+        const bool selected = row.entity == snapshot.selected;
+        if (selected) {
             flags |= ImGuiTreeNodeFlags_Selected;
+            // HeaderHovered is a gray, so a hovered selected row would otherwise lose its selection color.
+            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::GetStyle().Colors[ImGuiCol_Header]);
         }
 
         const bool open = ImGui::TreeNodeEx("##row", flags, "%s", row.name.c_str());
+        if (selected) {
+            ImGui::PopStyleColor();
+        }
         if (ImGui::IsItemToggledOpen()) {
             if (open) {
                 m_collapsed.erase(row.entity);
             } else {
                 m_collapsed.insert(row.entity);
             }
-        } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && row.entity != snapshot.selected) {
+        } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !selected) {
             m_commands->select(row.entity);
         }
         const bool menuRequested = ImGui::IsItemClicked(ImGuiMouseButton_Right);
