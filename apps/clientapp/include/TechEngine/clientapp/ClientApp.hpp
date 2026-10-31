@@ -11,6 +11,8 @@ namespace TechEngine {
         Client m_client;
         std::string m_title;
         std::string m_appliedTitle;
+        // Main thread only.
+        bool m_pollNextUpdate = false;
 
     public:
         ClientApp(Role role, std::string title);
@@ -37,6 +39,9 @@ namespace TechEngine {
         void publishSnapshot(const SimulationContext& simulation) override;
 
         void mainThreadUpdate() override;
+
+        // Main thread only. Another thread wakes main through wakeMainThread().
+        void requestMainFrame();
 
         void wakeMainThread() override;
 

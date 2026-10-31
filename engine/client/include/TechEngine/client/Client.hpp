@@ -37,6 +37,8 @@ namespace TechEngine {
         // Engine services, input and the ImGui hook must outlive the active session.
         std::error_code start(const EngineContext& engine, InputBuffer& input, int width, int height, std::string_view title, std::function<void()> onFailure = {}, ImGuiHook* imguiHook = nullptr);
 
+        void pollEvents();
+
         void waitEvents();
 
         void waitEvents(double timeoutSeconds);

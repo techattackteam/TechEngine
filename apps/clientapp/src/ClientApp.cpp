@@ -65,7 +65,11 @@ namespace TechEngine {
         if (stopRequested()) {
             return;
         }
-        {
+        if (m_pollNextUpdate) {
+            m_pollNextUpdate = false;
+            TE_PROFILER_SCOPE("Main.PollEvents");
+            m_client.pollEvents();
+        } else {
             TE_PROFILER_SCOPE("Main.WaitEvents");
             m_client.waitEvents();
         }
@@ -73,6 +77,10 @@ namespace TechEngine {
         if (m_client.failed()) {
             requestStop();
         }
+    }
+
+    void ClientApp::requestMainFrame() {
+        m_pollNextUpdate = true;
     }
 
     void ClientApp::wakeMainThread() {

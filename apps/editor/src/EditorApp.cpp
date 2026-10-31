@@ -250,7 +250,7 @@ namespace TechEngine {
         const bool inputLeft = !context.InputEventsQueue.empty();
         const bool holdingItem = ImGui::IsAnyItemActive() && ImGui::IsMouseDown(ImGuiMouseButton_Left);
         if (hadInput || inputLeft || holdingItem) {
-            wakeMainThread();
+            requestMainFrame();
         }
     }
 
