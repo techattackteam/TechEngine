@@ -21,9 +21,11 @@ techengine_app(editor
           src/ui/ClosePrompt.cpp
           src/ui/ImGuiBridge.cpp
           src/ui/PanelsManager.cpp
+          src/ui/panels/GameViewPanel.cpp
           src/ui/panels/HierarchyPanel.cpp
           src/ui/panels/InspectorPanel.cpp
           src/ui/panels/Panel.cpp
+          src/ui/panels/SceneViewPanel.cpp
           src/ui/widgets/DragControls.cpp
           src/ui/widgets/PropertyTable.cpp
           src/ui/widgets/TextEditField.cpp
@@ -46,9 +48,11 @@ techengine_app(editor
           src/ui/ClosePrompt.hpp
           src/ui/ImGuiBridge.hpp
           src/ui/PanelsManager.hpp
+          src/ui/panels/GameViewPanel.hpp
           src/ui/panels/HierarchyPanel.hpp
           src/ui/panels/InspectorPanel.hpp
           src/ui/panels/Panel.hpp
+          src/ui/panels/SceneViewPanel.hpp
           src/ui/widgets/DragControls.hpp
           src/ui/widgets/PropertyTable.hpp
           src/ui/widgets/TextEditField.hpp

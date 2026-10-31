@@ -74,6 +74,10 @@ namespace TechEngine {
 
         void initImGuiPlatform();
 
+        void loadLayout();
+
+        void saveLayout();
+
         void handleCloseRequest();
 
         void buildImGuiFrame();

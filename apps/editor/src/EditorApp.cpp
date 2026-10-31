@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <functional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -31,6 +32,8 @@ namespace TechEngine {
     static constexpr std::string_view MANIFEST_PATH = "project://project.toml";
     static constexpr std::string_view STARTUP_SCENE_PATH = "project://assets/common/Startup.tescene";
     static constexpr std::string_view TRIANGLE_MESH_PATH = "project://assets/client/Triangle.temesh";
+    static constexpr std::string_view LAYOUT_FOLDER = "project://editorSettings";
+    static constexpr std::string_view LAYOUT_PATH = "project://editorSettings/layout.ini";
 
     EditorApp::EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder)
         : ClientApp(Role::Client, std::string(EDITOR_TITLE)), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)), m_source(m_files, m_assets), m_commands(*this, m_session, m_registry, m_files), m_panels(m_commands) {
@@ -56,6 +59,8 @@ namespace TechEngine {
 
         // The hook's start runs inside startClient() and needs the context; the platform backend needs the open window.
         createImGuiContext();
+        // The first NewFrame builds the default layout when no dock node exists, so a later load loses to it.
+        loadLayout();
         startClient(&m_imguiBridge);
         initImGuiPlatform();
         // Nothing consumes the input buffer while the simulation is Stopped, so an attached one fills until it overflows.
@@ -180,9 +185,41 @@ namespace TechEngine {
         TE_CHECK(initialized, "Failed to init ImGui_ImplGlfw");
     }
 
+    void EditorApp::loadLayout() {
+        std::vector<std::byte> bytes;
+        const std::error_code readError = m_files.read(LAYOUT_PATH, bytes);
+        if (readError == FileError::NotFound) {
+            return;
+        }
+        if (readError) {
+            TE_LOGGER_WARN("Failed to read {0}, so the editor opens on the default layout: {1}", LAYOUT_PATH, readError.message());
+            return;
+        }
+        // LoadIniSettingsFromMemory reads a size of 0 as "up to the terminating zero", and an empty file has no data pointer.
+        if (!bytes.empty()) {
+            ImGui::LoadIniSettingsFromMemory(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+        }
+    }
+
+    void EditorApp::saveLayout() {
+        ImGui::GetIO().WantSaveIniSettings = false;
+        std::size_t size = 0;
+        const char* text = ImGui::SaveIniSettingsToMemory(&size);
+
+        const std::error_code folderError = m_files.createDirectory(LAYOUT_FOLDER);
+        if (folderError && folderError != FileError::AlreadyExists) {
+            TE_LOGGER_WARN("Failed to create {0}, so the layout is not saved: {1}", LAYOUT_FOLDER, folderError.message());
+            return;
+        }
+        const std::span bytes{reinterpret_cast<const std::byte*>(text), size};
+        const std::error_code writeError = m_files.write(LAYOUT_PATH, bytes);
+        if (writeError) {
+            TE_LOGGER_WARN("Failed to save the layout to {0}: {1}", LAYOUT_PATH, writeError.message());
+        }
+    }
+
     void EditorApp::handleCloseRequest() {
         if (m_snapshot.hasUnsavedEdits()) {
-            // Cancel the close and open the close prompt
             cancelClose();
             m_closePrompt.open();
         }
@@ -204,6 +241,9 @@ namespace TechEngine {
         drawClosePrompt();
         ImGui::Render();
         m_imguiBridge.publish(*ImGui::GetDrawData());
+        if (ImGui::GetIO().WantSaveIniSettings) {
+            saveLayout();
+        }
 
         const bool inputLeft = !context.InputEventsQueue.empty();
         const bool holdingItem = ImGui::IsAnyItemActive() && ImGui::IsMouseDown(ImGuiMouseButton_Left);
@@ -242,6 +282,8 @@ namespace TechEngine {
         }
         stopClient();
         if (hasContext) {
+            // ImGui raises WantSaveIniSettings only seconds after a change, so a panel moved just before closing is still unsaved.
+            saveLayout();
             ImGui::DestroyContext();
         }
     }

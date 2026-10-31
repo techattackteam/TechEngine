@@ -202,9 +202,11 @@ jobs:
         shell: pwsh
         run: ./.github/scripts/Setup-Mesa.ps1 -TestPreset '${{ matrix.test }}'
 
+      # No step timeout on any ctest step: it would cap the whole suite, which outgrew 5 minutes
+      # under ASan. A hung test is caught per test by catch_discover_tests' TIMEOUT 60, and the
+      # job's timeout-minutes caps the rest.
       - name: Test (ctest incl. sdk-smoke)
         if: runner.os == 'Windows'
-        timeout-minutes: 5
         env:
           GALLIUM_DRIVER: llvmpipe
           LIBGL_ALWAYS_SOFTWARE: "1"
@@ -212,7 +214,6 @@ jobs:
 
       - name: Test under Xvfb (ctest incl. sdk-smoke)
         if: runner.os == 'Linux'
-        timeout-minutes: 5
         env:
           LIBGL_ALWAYS_SOFTWARE: "1"
         run: xvfb-run -a ctest --preset ${{ matrix.test }}
@@ -345,7 +346,6 @@ jobs:
       # all, so the cmake-side bypass exists for local runs only.
       - name: Coverage
         if: github.event_name == 'pull_request' && steps.bypass.outputs.skip != 'true'
-        timeout-minutes: 5
         env:
           TE_COVERAGE_BASE: origin/${{ github.base_ref }}
           TE_COVERAGE_THRESHOLD: "85"
@@ -451,7 +451,6 @@ jobs:
 
       - name: Test
         if: runner.os == 'Windows'
-        timeout-minutes: 5
         env:
           GALLIUM_DRIVER: llvmpipe
           LIBGL_ALWAYS_SOFTWARE: "1"
@@ -459,7 +458,6 @@ jobs:
 
       - name: Test under Xvfb
         if: runner.os == 'Linux'
-        timeout-minutes: 5
         env:
           LIBGL_ALWAYS_SOFTWARE: "1"
         run: |
