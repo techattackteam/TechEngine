@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <limits>
 #include <string>
 #include <string_view>
@@ -596,6 +597,39 @@ TEST_CASE("write does not create a missing parent directory", "[files][fileacces
     MountedScratch env{"writeMissingParent"};
 
     CHECK(env.files.write("assets://absent/level.bin", asBytes("x")) == FileError::NotFound);
+    CHECK_FALSE(std::filesystem::exists(env.scratch.root() / "absent"));
+}
+
+TEST_CASE("write leaves nothing but the target file beside it", "[files][fileaccess]") {
+    MountedScratch env{"writeLeavesNoTemporary"};
+
+    SECTION("a new file") {
+        REQUIRE(env.files.write("assets://level.bin", asBytes("first")) == std::error_code{});
+    }
+
+    SECTION("a file replaced twice") {
+        env.scratch.writeFile("level.bin", "previous");
+        REQUIRE(env.files.write("assets://level.bin", asBytes("second")) == std::error_code{});
+        REQUIRE(env.files.write("assets://level.bin", asBytes("third")) == std::error_code{});
+    }
+
+    const auto entries = std::distance(std::filesystem::directory_iterator{env.scratch.root()}, std::filesystem::directory_iterator{});
+    CHECK(entries == 1);
+    CHECK(std::filesystem::is_regular_file(env.scratch.root() / "level.bin"));
+}
+
+TEST_CASE("a write that cannot finish leaves the existing file whole", "[files][fileaccess]") {
+    MountedScratch env{"writeFailureKeepsOldFile"};
+    env.scratch.writeFile("level.bin", "the only copy of the user's work");
+    // A directory where write puts its partial bytes makes the write fail before the target is touched.
+    env.scratch.makeDirectory("level.bin.tewrite");
+
+    CHECK(env.files.write("assets://level.bin", asBytes("replacement")) == FileError::IoError);
+
+    std::vector<std::byte> out;
+    REQUIRE(env.files.read("assets://level.bin", out) == std::error_code{});
+    CHECK(asString(out) == "the only copy of the user's work");
+    CHECK(std::filesystem::is_directory(env.scratch.root() / "level.bin.tewrite"));
 }
 
 TEST_CASE("createDirectory creates the directory and its missing parents", "[files][fileaccess]") {

@@ -4,8 +4,11 @@
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
+#include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
+#include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/testing/AppTestAccess.hpp>
+#include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <edit/EditSession.hpp>
 #include <edit/EditorCommands.hpp>
@@ -18,7 +21,9 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <mutex>
 #include <string>
 #include <string_view>
@@ -69,6 +74,18 @@ public:
 
     const TechEngine::ComponentRegistry& getRegistry() const {
         return m_registry;
+    }
+
+    TechEngine::FileAccess& getFiles() {
+        return m_files;
+    }
+
+    void mountProject(const std::filesystem::path& root) {
+        m_mounts.mount("project", root);
+    }
+
+    bool isStopRequested() const {
+        return stopRequested();
     }
 
     bool waitForPublishes(const int count, EditorSnapshot& out) {
@@ -147,7 +164,7 @@ public:
 
 TEST_CASE("every sender method reaches the live scene through the running simulation", "[editor][edit][commands][integration]") {
     CommandsAppProbe app;
-    EditorCommands commands{app, app.session, app.getRegistry()};
+    EditorCommands commands{app, app.session, app.getRegistry(), app.getFiles()};
     bool startedInTime = false;
     std::vector<bool> stepsInTime;
     std::vector<EditorSnapshot> steps;
@@ -236,7 +253,7 @@ TEST_CASE("every sender method reaches the live scene through the running simula
 TEST_CASE("a sender on an app that is not running applies nothing and logs the refusal", "[editor][edit][commands]") {
     const EditorCommandsLogCapture logs;
     CommandsAppProbe app;
-    EditorCommands commands{app, app.session, app.getRegistry()};
+    EditorCommands commands{app, app.session, app.getRegistry(), app.getFiles()};
 
     commands.create(Entity{});
     commands.destroy(Entity{0, 0});
@@ -246,10 +263,73 @@ TEST_CASE("a sender on an app that is not running applies nothing and logs the r
     commands.setField(Entity{0, 0}, TechEngine::ComponentTypeId{}, 0, FieldValue{1.0f});
     commands.addComponent(Entity{0, 0}, TechEngine::ComponentTypeId{});
     commands.removeComponent(Entity{0, 0}, TechEngine::ComponentTypeId{});
+    commands.save();
+    commands.saveAndClose();
 
     CHECK(TechEngineTests::AppTestAccess::scene(app).getRoots().empty());
     const auto refusals = std::ranges::count_if(g_editorCommandsLog, [](const std::string& message) {
         return message.find("refused an edit") != std::string::npos;
     });
-    CHECK(refusals == 8);
+    CHECK(refusals == 10);
+}
+
+TEST_CASE("save and save and close reach the live scene through the running simulation", "[editor][edit][commands][save][integration]") {
+    const TechEngineTests::ScratchDirectory scratch{"editorCommandsSave"};
+    constexpr TechEngine::ResourceId sceneId{0x5a5a5a5a00000002};
+    constexpr std::string_view scenePath = "project://Saved.tescene";
+    CommandsAppProbe app;
+    app.mountProject(scratch.root());
+    app.session.setSceneFile({sceneId, std::string(scenePath)});
+    EditorCommands commands{app, app.session, app.getRegistry(), app.getFiles()};
+    bool startedInTime = false;
+    std::vector<bool> stepsInTime;
+    std::vector<EditorSnapshot> steps;
+    bool stoppedAfterSave = true;
+    bool stoppedAfterSaveAndClose = false;
+
+    std::jthread controller{[&] {
+        startedInTime = waitForStartup(app);
+        int expected = 0;
+        const auto step = [&] {
+            expected++;
+            EditorSnapshot snapshot;
+            stepsInTime.push_back(app.waitForPublishes(expected, snapshot));
+            steps.push_back(snapshot);
+        };
+        if (startedInTime) {
+            commands.create(Entity{});
+            step();
+            commands.save();
+            step();
+            stoppedAfterSave = app.isStopRequested();
+            commands.create(Entity{});
+            step();
+            commands.saveAndClose();
+            step();
+            stoppedAfterSaveAndClose = app.isStopRequested();
+        }
+        app.requestStop();
+    }};
+    REQUIRE(app.run() == 0);
+    controller.join();
+
+    REQUIRE(startedInTime);
+    REQUIRE(steps.size() == 4);
+    CHECK(std::ranges::all_of(stepsInTime, [](const bool inTime) {
+        return inTime;
+    }));
+    CHECK(steps[0].hasUnsavedEdits());
+    CHECK_FALSE(steps[1].hasUnsavedEdits());
+    CHECK(steps[1].savedRevision == steps[0].editRevision);
+    CHECK_FALSE(stoppedAfterSave);
+    CHECK(steps[2].hasUnsavedEdits());
+    CHECK_FALSE(steps[3].hasUnsavedEdits());
+    CHECK(stoppedAfterSaveAndClose);
+
+    std::vector<std::byte> bytes;
+    REQUIRE(app.getFiles().read(scenePath, bytes) == std::error_code{});
+    std::vector<std::byte> expectedBytes;
+    TechEngine::SceneAsset{sceneId}.write(TechEngineTests::AppTestAccess::scene(app), expectedBytes);
+    CHECK(bytes == expectedBytes);
+    CHECK(TechEngineTests::AppTestAccess::scene(app).getRoots().size() == 2);
 }

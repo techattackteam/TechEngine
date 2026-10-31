@@ -9,6 +9,8 @@
 #include <utility>
 
 namespace TechEngine {
+    static constexpr std::string_view WRITE_TEMPORARY_SUFFIX = ".tewrite";
+
     template<typename Iterator>
     static std::error_code collectEntries(const std::filesystem::path& root, const std::string& base, std::vector<std::string>& out) {
         std::error_code ec;
@@ -97,19 +99,38 @@ namespace TechEngine {
             return FileError::IsADirectory;
         }
 
-        std::ofstream file{physicalPath, std::ios::binary | std::ios::trunc};
+        // Writing in place would destroy the old file the moment the stream truncates it, so a
+        // failed write goes to a sibling and only a finished one replaces the target.
+        std::filesystem::path temporaryPath = physicalPath;
+        temporaryPath += WRITE_TEMPORARY_SUFFIX;
+        std::ofstream file{temporaryPath, std::ios::binary | std::ios::trunc};
         if (!file) {
-            return FileError::NotFound;
+            if (!std::filesystem::exists(physicalPath.parent_path(), ec)) {
+                return FileError::NotFound;
+            }
+            TE_LOGGER_WARN("Failed to open {0} for writing", temporaryPath.string());
+            return FileError::IoError;
         }
 
         if (!bytes.empty() && !file.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()))) {
-            TE_LOGGER_WARN("Failed to write {0}", physicalPath.string());
+            TE_LOGGER_WARN("Failed to write {0}", temporaryPath.string());
+            file.close();
+            discardTemporary(temporaryPath);
             return FileError::IoError;
         }
 
         file.close();
         if (!file) {
-            TE_LOGGER_WARN("Failed to close {0} after writing", physicalPath.string());
+            TE_LOGGER_WARN("Failed to close {0} after writing", temporaryPath.string());
+            discardTemporary(temporaryPath);
+            return FileError::IoError;
+        }
+
+        std::error_code renameError;
+        std::filesystem::rename(temporaryPath, physicalPath, renameError);
+        if (renameError) {
+            TE_LOGGER_WARN("Failed to replace {0} with {1}: {2}", physicalPath.string(), temporaryPath.string(), renameError.message());
+            discardTemporary(temporaryPath);
             return FileError::IoError;
         }
         return {};
@@ -334,6 +355,14 @@ namespace TechEngine {
 
         size = static_cast<std::uint64_t>(end);
         return {};
+    }
+
+    void FileAccess::discardTemporary(const std::filesystem::path& temporaryPath) const {
+        std::error_code removeError;
+        std::filesystem::remove(temporaryPath, removeError);
+        if (removeError) {
+            TE_LOGGER_WARN("Failed to remove the partial write {0}: {1}", temporaryPath.string(), removeError.message());
+        }
     }
 
     std::error_code FileAccess::resolveTransfer(const std::string_view from, const std::string_view to, std::filesystem::path& sourcePath, std::filesystem::path& destinationPath) const {

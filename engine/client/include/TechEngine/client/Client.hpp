@@ -53,6 +53,8 @@ namespace TechEngine {
 
         void detachInput();
 
+        void cancelClose() const;
+
         bool shouldClose() const;
 
         bool failed() const;

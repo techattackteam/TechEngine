@@ -164,6 +164,12 @@ namespace TechEngine {
         framebufferSizeCallback(0, 0);
     }
 
+    void Window::cancelClose() {
+        if (m_window != nullptr) {
+            glfwSetWindowShouldClose(m_window, false);
+        }
+    }
+
     bool Window::shouldClose() const {
         return m_window == nullptr || glfwWindowShouldClose(m_window) != 0;
     }
