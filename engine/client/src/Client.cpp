@@ -55,6 +55,12 @@ namespace TechEngine {
         return {};
     }
 
+    void Client::pollEvents() {
+        if (m_state->active.load()) {
+            m_state->window.pollEvents();
+        }
+    }
+
     void Client::waitEvents() {
         if (m_state->active.load()) {
             m_state->window.waitEvents();
