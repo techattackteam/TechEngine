@@ -33,8 +33,11 @@ namespace TechEngine {
     }
 
     bool EditSession::getSceneFile(SceneFile& out) const {
+        if (m_sceneFile.path.empty()) {
+            return false;
+        }
         out = m_sceneFile;
-        return !out.path.empty();
+        return true;
     }
 
     void EditSession::record(EditRecord record) {
