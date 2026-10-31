@@ -24,6 +24,22 @@ namespace TechEngine {
         m_editRevision++;
     }
 
+    void EditSession::recordSave() {
+        m_savedRevision = m_editRevision;
+    }
+
+    void EditSession::setSceneFile(SceneFile file) {
+        m_sceneFile = std::move(file);
+    }
+
+    bool EditSession::getSceneFile(SceneFile& out) const {
+        if (m_sceneFile.path.empty()) {
+            return false;
+        }
+        out = m_sceneFile;
+        return true;
+    }
+
     void EditSession::record(EditRecord record) {
         m_records.push_back(std::move(record));
     }
@@ -61,7 +77,6 @@ namespace TechEngine {
     void EditSession::collectComponents(const Scene& scene, const ComponentRegistry& registry, EditorSnapshot& out) const {
         out.components.clear();
         out.addable.clear();
-        // contains(), not valid(): a selection whose entity died would otherwise offer every type to add.
         if (!scene.contains(m_selected)) {
             return;
         }

@@ -1,3 +1,4 @@
+#include <edit/EditorCommands.hpp>
 #include <ui/PanelsManager.hpp>
 
 #include <imgui.h>
@@ -9,14 +10,37 @@ namespace TechEngine {
     // Split from what the hierarchy leaves, so 0.25 of the remaining 80% is a fifth of the window.
     static constexpr float INSPECTOR_WIDTH_RATIO = 0.25f;
 
-    PanelsManager::PanelsManager(EditorCommands& commands) : m_hierarchy(commands), m_inspector(commands) {
+    PanelsManager::PanelsManager(EditorCommands& commands) : m_commands(&commands), m_hierarchy(commands), m_inspector(commands) {
     }
 
     void PanelsManager::draw(const EditorSnapshot& snapshot) {
+        // The menu bar takes its height from the viewport's work area, which the dockspace then fills.
+        drawMainMenuBar();
+        handleShortcuts();
         // A dockspace hosts only the windows submitted after it in the same frame.
         drawDockSpace();
         m_hierarchy.draw(snapshot);
         m_inspector.draw(snapshot);
+    }
+
+    void PanelsManager::drawMainMenuBar() {
+        if (!ImGui::BeginMainMenuBar()) {
+            return;
+        }
+        if (ImGui::BeginMenu("File")) {
+            // The shortcut text is only drawn; handleShortcuts() is what reacts to Ctrl+S.
+            if (ImGui::MenuItem("Save", "Ctrl+S")) {
+                m_commands->save();
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+
+    void PanelsManager::handleShortcuts() {
+        if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_S, ImGuiInputFlags_RouteGlobal)) {
+            m_commands->save();
+        }
     }
 
     void PanelsManager::drawDockSpace() {

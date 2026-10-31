@@ -54,5 +54,7 @@ namespace TechEngine {
         std::error_code openForRead(std::string_view virtualPath, std::filesystem::path& physicalPath, std::ifstream& file, std::uint64_t& size) const;
 
         std::error_code resolveTransfer(std::string_view from, std::string_view to, std::filesystem::path& sourcePath, std::filesystem::path& destinationPath) const;
+
+        void discardTemporary(const std::filesystem::path& temporaryPath) const;
     };
 }

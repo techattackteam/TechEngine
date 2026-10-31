@@ -22,11 +22,13 @@
 #include <assets/AssetIndex.hpp>
 #include <assets/AssetTestFiles.hpp>
 #include <edit/EditorSnapshot.hpp>
+#include <edit/SaveSceneCommand.hpp>
 #include <project/Project.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 #include <imgui.h>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstddef>
@@ -100,6 +102,11 @@ namespace {
         TechEngine::ResourceHandle<TechEngine::SceneBytes> sceneHandle() const {
             return m_sceneHandle;
         }
+
+        void saveScene() {
+            TechEngine::SaveSceneCommand command{getSession(), m_files, *this, TechEngine::AfterSave::KeepOpen};
+            command.apply(AppTestAccess::scene(*this));
+        }
     };
 
     constexpr std::string_view DEV_MANIFEST = "name = \"Dev\"\n";
@@ -145,6 +152,12 @@ namespace {
             CHECK_FALSE(scene.hasComponent<TechEngine::MeshRenderer>(child));
         }
         return renderer.mesh.id;
+    }
+
+    bool hasRootNamed(const TechEngine::Scene& scene, const std::string_view name) {
+        return std::ranges::any_of(scene.getRoots(), [&scene, name](const TechEngine::Entity root) {
+            return scene.getComponent<TechEngine::Name>(root).value == name;
+        });
     }
 
     std::ptrdiff_t fileCount(const std::filesystem::path& directory) {
@@ -736,4 +749,103 @@ TEST_CASE("editor render progresses during a main stall while its simulation sta
     CHECK(editor.timingMetrics().simulation.tick == 0);
     CHECK_FALSE(editor.mainTimedOut.load());
     CHECK_FALSE(editor.timingMetrics().renderingActive);
+}
+
+TEST_CASE("a save writes the live scene over the startup scene the editor created, and a later launch opens on it", "[editor][window][save]") {
+    ScratchDirectory scratch{"editorSavesCreatedStartupScene"};
+    writeProjectLayout(scratch);
+    const std::filesystem::path exportFolder = scratch.makeDirectory("export");
+
+    TechEngine::ResourceId createdId;
+    {
+        EditorProbe first{scratch.root(), exportFolder};
+        first.bootstrap();
+        createdId = savedStartupScene(scratch);
+        TechEngine::Scene& scene = AppTestAccess::scene(first);
+        const TechEngine::Entity added = scene.createEntity();
+        REQUIRE(added.valid());
+        scene.getComponent<TechEngine::Name>(added).value = "Added";
+
+        first.saveScene();
+        first.shutdown();
+    }
+    REQUIRE(createdId.valid());
+
+    EditorProbe second{scratch.root(), exportFolder};
+    second.bootstrap();
+
+    CHECK(second.scene().getRoots().size() == 2);
+    CHECK(hasRootNamed(second.scene(), "Added"));
+    CHECK(savedStartupScene(scratch) == createdId);
+    CHECK(fileCount(scratch.root() / "assets" / "common") == 1);
+    second.shutdown();
+}
+
+TEST_CASE("a save writes over the startup scene a later launch loaded", "[editor][window][save]") {
+    ScratchDirectory scratch{"editorSavesLoadedStartupScene"};
+    writeProjectLayout(scratch);
+    const std::filesystem::path exportFolder = scratch.makeDirectory("export");
+    {
+        EditorProbe first{scratch.root(), exportFolder};
+        first.bootstrap();
+        first.shutdown();
+    }
+    {
+        EditorProbe second{scratch.root(), exportFolder};
+        second.bootstrap();
+        TechEngine::Scene& scene = AppTestAccess::scene(second);
+        const std::vector<TechEngine::Entity> roots = scene.getRoots();
+        REQUIRE(roots.size() == 1);
+        scene.getComponent<TechEngine::Name>(roots[0]).value = "Renamed";
+
+        second.saveScene();
+        second.shutdown();
+    }
+
+    EditorProbe third{scratch.root(), exportFolder};
+    third.bootstrap();
+
+    checkParentWithTwoChildren(third.scene());
+    CHECK(hasRootNamed(third.scene(), "Renamed"));
+    CHECK(fileCount(scratch.root() / "assets" / "common") == 1);
+    third.shutdown();
+}
+
+TEST_CASE("the editor refuses to save over a named startup scene that did not load", "[editor][window][save]") {
+    ScratchDirectory scratch{"editorRefusesSaveOverUnloadedScene"};
+    writeProjectLayout(scratch);
+    constexpr TechEngine::ResourceId sceneId{0x0123456789abcdef};
+    scratch.writeFile("project.toml", "name = \"Dev\"\n\n[export.client]\nstartupScene = \"0x0123456789abcdef\"\n");
+    const std::vector<std::byte> original = TechEngineTests::assetBytes(TechEngine::SCENE_KIND, sceneId, "not a scene");
+    TechEngineTests::writeBytes(scratch, STARTUP_SCENE_FILE, original);
+
+    EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
+    editor.bootstrap();
+    REQUIRE(editor.scene().getRoots().empty());
+
+    editor.saveScene();
+
+    std::vector<std::byte> after;
+    REQUIRE(editor.files().read(STARTUP_SCENE_PATH, after) == std::error_code{});
+    CHECK(after == original);
+    editor.shutdown();
+}
+
+TEST_CASE("the editor refuses to save over an adopted Startup.tescene it has not loaded", "[editor][window][save]") {
+    ScratchDirectory scratch{"editorRefusesSaveOverAdoptedScene"};
+    writeProjectLayout(scratch);
+    constexpr TechEngine::ResourceId sceneId{0x0fedcba987654321};
+    const std::vector<std::byte> original = TechEngineTests::assetBytes(TechEngine::SCENE_KIND, sceneId, "scene");
+    TechEngineTests::writeBytes(scratch, STARTUP_SCENE_FILE, original);
+
+    EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
+    editor.bootstrap();
+    REQUIRE(editor.scene().getRoots().empty());
+
+    editor.saveScene();
+
+    std::vector<std::byte> after;
+    REQUIRE(editor.files().read(STARTUP_SCENE_PATH, after) == std::error_code{});
+    CHECK(after == original);
+    editor.shutdown();
 }

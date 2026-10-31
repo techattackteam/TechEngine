@@ -163,6 +163,71 @@ TEST_CASE("the snapshot carries the session's selection and both revisions", "[e
     }
 }
 
+TEST_CASE("a recorded save makes the revisions equal until the next scene change", "[editor][edit][save]") {
+    EditTestScene edit;
+    CHECK_FALSE(edit.snapshot().hasUnsavedEdits());
+
+    edit.session.recordSceneChange();
+    edit.session.recordSceneChange();
+    const EditorSnapshot edited = edit.snapshot();
+    REQUIRE(edited.hasUnsavedEdits());
+
+    edit.session.recordSave();
+    const EditorSnapshot saved = edit.snapshot();
+    CHECK(saved.savedRevision == saved.editRevision);
+    CHECK(saved.editRevision == edited.editRevision);
+    CHECK_FALSE(saved.hasUnsavedEdits());
+
+    SECTION("a later scene change marks the scene unsaved again") {
+        edit.session.recordSceneChange();
+
+        const EditorSnapshot changed = edit.snapshot();
+        CHECK(changed.savedRevision == saved.savedRevision);
+        CHECK(changed.hasUnsavedEdits());
+    }
+
+    SECTION("a second save with nothing changed keeps the revisions") {
+        edit.session.recordSave();
+
+        const EditorSnapshot again = edit.snapshot();
+        CHECK(again.editRevision == saved.editRevision);
+        CHECK(again.savedRevision == saved.savedRevision);
+    }
+
+    SECTION("a selection after the save leaves it clean") {
+        edit.session.setSelected(edit.createNamed("A"));
+
+        CHECK_FALSE(edit.snapshot().hasUnsavedEdits());
+    }
+}
+
+TEST_CASE("a snapshot is unsaved exactly while its revisions differ", "[editor][edit][save]") {
+    EditorSnapshot snapshot;
+    CHECK_FALSE(snapshot.hasUnsavedEdits());
+
+    snapshot.editRevision = 3;
+    snapshot.savedRevision = 2;
+    CHECK(snapshot.hasUnsavedEdits());
+
+    snapshot.savedRevision = 3;
+    CHECK_FALSE(snapshot.hasUnsavedEdits());
+}
+
+TEST_CASE("a session has no scene file until one is set, then holds the last one set", "[editor][edit][save]") {
+    TechEngine::EditSession session;
+    TechEngine::SceneFile file;
+    file.path = "unchanged";
+    CHECK_FALSE(session.getSceneFile(file));
+    CHECK(file.path == "unchanged");
+
+    session.setSceneFile({TechEngine::ResourceId{0x11}, "project://assets/common/First.tescene"});
+    session.setSceneFile({TechEngine::ResourceId{0x22}, "project://assets/common/Second.tescene"});
+
+    REQUIRE(session.getSceneFile(file));
+    CHECK(file.id == TechEngine::ResourceId{0x22});
+    CHECK(file.path == "project://assets/common/Second.tescene");
+}
+
 TEST_CASE("building into a snapshot that already holds rows replaces them", "[editor][edit]") {
     EditTestScene edit;
     const Entity a = edit.createNamed("A");

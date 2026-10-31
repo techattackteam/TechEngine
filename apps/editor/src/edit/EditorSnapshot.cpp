@@ -1,6 +1,13 @@
 #include <edit/EditorSnapshot.hpp>
 
 namespace TechEngine {
+    bool EditorSnapshot::hasUnsavedEdits() const {
+        if (editRevision != savedRevision) {
+            return true;
+        }
+        return false;
+    }
+
     bool EditorSnapshot::isInSubtree(const Entity entity, const Entity root) const {
         if (!root.valid()) {
             return false;

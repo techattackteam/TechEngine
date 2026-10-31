@@ -27,12 +27,13 @@
 #include <vector>
 
 namespace TechEngine {
+    static constexpr std::string_view EDITOR_TITLE = "TechEngine Editor";
     static constexpr std::string_view MANIFEST_PATH = "project://project.toml";
     static constexpr std::string_view STARTUP_SCENE_PATH = "project://assets/common/Startup.tescene";
     static constexpr std::string_view TRIANGLE_MESH_PATH = "project://assets/client/Triangle.temesh";
 
     EditorApp::EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder)
-        : ClientApp(Role::Client, "TechEngine Editor"), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)), m_source(m_files, m_assets), m_commands(*this, m_session, m_registry), m_panels(m_commands) {
+        : ClientApp(Role::Client, std::string(EDITOR_TITLE)), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)), m_source(m_files, m_assets), m_commands(*this, m_session, m_registry, m_files), m_panels(m_commands) {
     }
 
     EditorApp::~EditorApp() {
@@ -81,6 +82,13 @@ namespace TechEngine {
                 TE_LOGGER_ERROR("The startup scene {0:#018x} does not load, so the editor opens on an empty scene: {1}", startupScene.value(), loadError.message());
             } else {
                 TE_LOGGER_INFO("Opened the startup scene {0:#018x} with {1} root entities", startupScene.value(), scene.getRoots().size());
+                AssetRecord record;
+                const bool indexed = m_assets.find(startupScene, record);
+                if (indexed) {
+                    m_session.setSceneFile(SceneFile{startupScene, record.path});
+                } else {
+                    TE_LOGGER_WARN("The startup scene {0:#018x} loaded but is not in the asset index, so it cannot be saved", startupScene.value());
+                }
             }
         } else {
             createStartupScene(scene);
@@ -99,6 +107,10 @@ namespace TechEngine {
 
     void EditorApp::mainThreadUpdate() {
         ClientApp::mainThreadUpdate();
+        // Before the loop's next shouldClose() check, which would stop the app without asking.
+        if (shouldClose()) {
+            handleCloseRequest();
+        }
         buildImGuiFrame();
     }
 
@@ -143,6 +155,10 @@ namespace TechEngine {
         return m_snapshotSlot.take(out);
     }
 
+    EditSession& EditorApp::getSession() {
+        return m_session;
+    }
+
     void EditorApp::shutdown() {
         stopImGui();
         ClientApp::shutdown();
@@ -164,18 +180,28 @@ namespace TechEngine {
         TE_CHECK(initialized, "Failed to init ImGui_ImplGlfw");
     }
 
+    void EditorApp::handleCloseRequest() {
+        if (m_snapshot.hasUnsavedEdits()) {
+            // Cancel the close and open the close prompt
+            cancelClose();
+            m_closePrompt.open();
+        }
+    }
+
     void EditorApp::buildImGuiFrame() {
         if (stopRequested()) {
             return;
         }
 
         takeSnapshot(m_snapshot);
+        updateTitle();
         m_imguiBridge.beginFrame();
         const ImGuiContext& context = *ImGui::GetCurrentContext();
         const bool hadInput = !context.InputEventsQueue.empty();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         m_panels.draw(m_snapshot);
+        drawClosePrompt();
         ImGui::Render();
         m_imguiBridge.publish(*ImGui::GetDrawData());
 
@@ -183,6 +209,29 @@ namespace TechEngine {
         const bool holdingItem = ImGui::IsAnyItemActive() && ImGui::IsMouseDown(ImGuiMouseButton_Left);
         if (hadInput || inputLeft || holdingItem) {
             wakeMainThread();
+        }
+    }
+
+    void EditorApp::updateTitle() {
+        std::string title(EDITOR_TITLE);
+        if (m_snapshot.hasUnsavedEdits()) {
+            title += "*";
+        }
+        setTitle(std::move(title));
+    }
+
+    void EditorApp::drawClosePrompt() {
+        const CloseChoice choice = m_closePrompt.draw();
+        switch (choice) {
+            case CloseChoice::Save:
+                m_commands.saveAndClose();
+                break;
+            case CloseChoice::Discard:
+                requestStop();
+                break;
+            case CloseChoice::Cancel:
+            case CloseChoice::None:
+                break;
         }
     }
 
@@ -206,6 +255,7 @@ namespace TechEngine {
             id = existing->id;
         } else {
             id = writeStartupScene(scene);
+            m_session.setSceneFile(SceneFile{id, std::string(STARTUP_SCENE_PATH)});
         }
 
         m_project.setExportStartupScene(Role::Client, id);

@@ -28,6 +28,12 @@ namespace TechEngine {
 
         void detachInput();
 
+        // A close the render thread caused cannot be cancelled: shouldClose() stays true.
+        void cancelClose();
+
+        // Applied at once, so a caller that runs after mainThreadUpdate() is not one wake behind.
+        void setTitle(std::string title);
+
         void publishSnapshot(const SimulationContext& simulation) override;
 
         void mainThreadUpdate() override;
@@ -39,5 +45,8 @@ namespace TechEngine {
         void shutdown() override;
 
         bool shouldClose() const override;
+
+    private:
+        void applyTitle();
     };
 }

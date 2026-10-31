@@ -15,8 +15,10 @@ techengine_app(editor
           src/edit/FieldValue.cpp
           src/edit/HierarchyCommands.cpp
           src/edit/InspectorCommands.cpp
+          src/edit/SaveSceneCommand.cpp
           src/project/Project.cpp
           src/project/ProjectError.cpp
+          src/ui/ClosePrompt.cpp
           src/ui/ImGuiBridge.cpp
           src/ui/PanelsManager.cpp
           src/ui/panels/HierarchyPanel.cpp
@@ -38,8 +40,10 @@ techengine_app(editor
           src/edit/FieldValue.hpp
           src/edit/HierarchyCommands.hpp
           src/edit/InspectorCommands.hpp
+          src/edit/SaveSceneCommand.hpp
           src/project/Project.hpp
           src/project/ProjectError.hpp
+          src/ui/ClosePrompt.hpp
           src/ui/ImGuiBridge.hpp
           src/ui/PanelsManager.hpp
           src/ui/panels/HierarchyPanel.hpp
@@ -61,6 +65,7 @@ techengine_app(editor
           tests/edit/FieldValueTests.cpp
           tests/edit/HierarchyCommandsTests.cpp
           tests/edit/InspectorCommandsTests.cpp
+          tests/edit/SaveSceneCommandTests.cpp
           tests/project/ProjectErrorTests.cpp
           tests/project/ProjectTests.cpp)
 

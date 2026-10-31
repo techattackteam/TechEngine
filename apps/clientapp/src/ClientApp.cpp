@@ -40,6 +40,15 @@ namespace TechEngine {
         m_client.detachInput();
     }
 
+    void ClientApp::cancelClose() {
+        m_client.cancelClose();
+    }
+
+    void ClientApp::setTitle(std::string title) {
+        m_title = std::move(title);
+        applyTitle();
+    }
+
     void ClientApp::publishSnapshot(const SimulationContext& simulation) {
         m_client.publish(RenderSnapshot{
             .clearColor = {0.1F, 0.1F, 0.1F, 1.0F},
@@ -60,14 +69,7 @@ namespace TechEngine {
             TE_PROFILER_SCOPE("Main.WaitEvents");
             m_client.waitEvents();
         }
-        const auto metrics = timingMetrics();
-        const auto fps = static_cast<std::uint64_t>(metrics.renderingActive ? metrics.render.framesPerSecond : 0.0);
-        const auto tps = static_cast<std::uint64_t>(metrics.simulation.ticksPerSecond);
-        std::string title = m_title + " | FPS: " + std::to_string(fps) + " | TPS: " + std::to_string(tps);
-        if (title != m_appliedTitle) {
-            m_client.setTitle(title);
-            m_appliedTitle = std::move(title);
-        }
+        applyTitle();
         if (m_client.failed()) {
             requestStop();
         }
@@ -90,5 +92,16 @@ namespace TechEngine {
 
     bool ClientApp::shouldClose() const {
         return m_client.shouldClose();
+    }
+
+    void ClientApp::applyTitle() {
+        const auto metrics = timingMetrics();
+        const auto fps = static_cast<std::uint64_t>(metrics.renderingActive ? metrics.render.framesPerSecond : 0.0);
+        const auto tps = static_cast<std::uint64_t>(metrics.simulation.ticksPerSecond);
+        std::string title = m_title + " | FPS: " + std::to_string(fps) + " | TPS: " + std::to_string(tps);
+        if (title != m_appliedTitle) {
+            m_client.setTitle(title);
+            m_appliedTitle = std::move(title);
+        }
     }
 }

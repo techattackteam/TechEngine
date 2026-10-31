@@ -48,6 +48,52 @@ TEST_CASE("Window exposes its native handle only while open", "[platform][window
     CHECK(window.nativeWindow() == nullptr);
 }
 
+TEST_CASE("Window cancels a close request only while it is open", "[platform][window]") {
+    const TechEngineTests::WindowTerminateGuard scope;
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
+    TechEngine::Window window;
+
+    window.cancelClose();
+    CHECK(window.shouldClose());
+
+    REQUIRE(window.open(320, 240, "Cancel close test") == std::error_code{});
+    GLFWwindow* const native = window.nativeWindow();
+    REQUIRE(native != nullptr);
+
+    SECTION("a requested close is cleared and the window stays open") {
+        glfwSetWindowShouldClose(native, GLFW_TRUE);
+        REQUIRE(window.shouldClose());
+
+        window.cancelClose();
+
+        CHECK_FALSE(window.shouldClose());
+        CHECK(window.nativeWindow() == native);
+    }
+
+    SECTION("a cancel with no close requested changes nothing") {
+        window.cancelClose();
+
+        CHECK_FALSE(window.shouldClose());
+    }
+
+    SECTION("a second close request after a cancel is seen again") {
+        glfwSetWindowShouldClose(native, GLFW_TRUE);
+        window.cancelClose();
+        glfwSetWindowShouldClose(native, GLFW_TRUE);
+
+        CHECK(window.shouldClose());
+    }
+
+    SECTION("a closed window stays closed after a cancel") {
+        window.close();
+
+        window.cancelClose();
+
+        CHECK(window.shouldClose());
+        CHECK(window.nativeWindow() == nullptr);
+    }
+}
+
 TEST_CASE("GLFW grows and frees its blocks through the allocator Window installs", "[platform][window]") {
     const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});

@@ -5,12 +5,13 @@
 #include <edit/EditorCommands.hpp>
 #include <edit/HierarchyCommands.hpp>
 #include <edit/InspectorCommands.hpp>
+#include <edit/SaveSceneCommand.hpp>
 
 #include <system_error>
 #include <utility>
 
 namespace TechEngine {
-    EditorCommands::EditorCommands(App& app, EditSession& session, const ComponentRegistry& registry) : m_app(&app), m_session(&session), m_registry(&registry) {
+    EditorCommands::EditorCommands(App& app, EditSession& session, const ComponentRegistry& registry, FileAccess& files) : m_app(&app), m_session(&session), m_registry(&registry), m_files(&files) {
     }
 
     void EditorCommands::create(const Entity parent) {
@@ -43,6 +44,14 @@ namespace TechEngine {
 
     void EditorCommands::removeComponent(const Entity entity, const ComponentTypeId component) {
         submit(std::make_unique<RemoveComponentCommand>(*m_session, *m_registry, entity, component));
+    }
+
+    void EditorCommands::save() {
+        submit(std::make_unique<SaveSceneCommand>(*m_session, *m_files, *m_app, AfterSave::KeepOpen));
+    }
+
+    void EditorCommands::saveAndClose() {
+        submit(std::make_unique<SaveSceneCommand>(*m_session, *m_files, *m_app, AfterSave::Close));
     }
 
     void EditorCommands::submit(std::unique_ptr<Command> command) {

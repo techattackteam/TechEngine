@@ -9,6 +9,7 @@
 #include <edit/EditorSnapshot.hpp>
 #include <edit/EditorSnapshotSlot.hpp>
 #include <project/Project.hpp>
+#include <ui/ClosePrompt.hpp>
 #include <ui/ImGuiBridge.hpp>
 #include <ui/PanelsManager.hpp>
 
@@ -37,6 +38,7 @@ namespace TechEngine {
         EditorSnapshot m_snapshot;
         EditorCommands m_commands;
         PanelsManager m_panels;
+        ClosePrompt m_closePrompt;
 
     public:
         EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder);
@@ -62,6 +64,9 @@ namespace TechEngine {
 
         void logSelectedTransform(const Scene& scene, const EditorSnapshot& snapshot);
 
+        // Simulation thread only, or before the simulation starts.
+        EditSession& getSession();
+
         void shutdown() override;
 
     private:
@@ -69,7 +74,13 @@ namespace TechEngine {
 
         void initImGuiPlatform();
 
+        void handleCloseRequest();
+
         void buildImGuiFrame();
+
+        void updateTitle();
+
+        void drawClosePrompt();
 
         void stopImGui();
 

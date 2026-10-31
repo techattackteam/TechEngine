@@ -98,6 +98,10 @@ namespace TechEngine {
         m_state->window.setInputBuffer(nullptr);
     }
 
+    void Client::cancelClose() const {
+        m_state->window.cancelClose();
+    }
+
     bool Client::shouldClose() const {
         return !m_state->active.load() || m_state->window.shouldClose();
     }

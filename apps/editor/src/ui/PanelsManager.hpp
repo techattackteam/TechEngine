@@ -11,6 +11,7 @@ namespace TechEngine {
 
     class PanelsManager {
     private:
+        EditorCommands* m_commands = nullptr;
         HierarchyPanel m_hierarchy;
         InspectorPanel m_inspector;
 
@@ -20,6 +21,10 @@ namespace TechEngine {
         void draw(const EditorSnapshot& snapshot);
 
     private:
+        void drawMainMenuBar();
+
+        void handleShortcuts();
+
         void drawDockSpace();
 
         void buildDefaultLayout(ImGuiID dockSpaceId);

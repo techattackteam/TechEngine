@@ -48,6 +48,8 @@ namespace TechEngine {
         std::uint64_t editRevision = 0;
         std::uint64_t savedRevision = 0;
 
+        bool hasUnsavedEdits() const;
+
         bool isInSubtree(Entity entity, Entity root) const;
 
         bool findRow(Entity entity, std::size_t& out) const;

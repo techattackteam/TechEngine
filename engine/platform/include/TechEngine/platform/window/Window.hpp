@@ -64,6 +64,8 @@ namespace TechEngine {
 
         void close();
 
+        void cancelClose();
+
         bool shouldClose() const;
 
         FramebufferSize framebufferSize() const;
