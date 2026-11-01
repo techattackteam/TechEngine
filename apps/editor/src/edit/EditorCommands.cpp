@@ -18,20 +18,20 @@ namespace TechEngine {
         submit(std::make_unique<CreateEntityCommand>(*m_session, parent));
     }
 
-    void EditorCommands::destroy(const Entity entity) {
-        submit(std::make_unique<DestroyEntityCommand>(*m_session, entity));
+    void EditorCommands::destroy(std::vector<Entity> entities) {
+        submit(std::make_unique<DestroyEntityCommand>(*m_session, std::move(entities)));
     }
 
-    void EditorCommands::reparent(const Entity child, const Entity parent, const std::size_t position) {
-        submit(std::make_unique<ReparentEntityCommand>(*m_session, child, parent, position));
+    void EditorCommands::reparent(std::vector<Entity> children, const Entity parent, const std::size_t position) {
+        submit(std::make_unique<ReparentEntityCommand>(*m_session, std::move(children), parent, position));
     }
 
     void EditorCommands::rename(const Entity entity, std::string name) {
         submit(std::make_unique<RenameEntityCommand>(*m_session, entity, std::move(name)));
     }
 
-    void EditorCommands::select(const Entity entity) {
-        submit(std::make_unique<SelectEntityCommand>(*m_session, entity));
+    void EditorCommands::select(std::vector<Entity> selection, const Entity active, const std::uint64_t sequence) {
+        submit(std::make_unique<SelectEntityCommand>(*m_session, std::move(selection), active, sequence));
     }
 
     void EditorCommands::setField(const Entity entity, const ComponentTypeId component, const std::uint32_t field, FieldValue value) {

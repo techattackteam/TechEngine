@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 using TechEngine::EditorSnapshot;
 using TechEngine::Entity;
@@ -192,4 +193,124 @@ TEST_CASE("a drop of an entity the snapshot does not list is refused", "[editor]
 
     CHECK_FALSE(snapshot.resolveDrop(Entity{9, 0}, ROOT, 0, position));
     CHECK(position == 99);
+}
+
+TEST_CASE("the topmost selected entities leave out every selected descendant, in hierarchy order", "[editor][edit]") {
+    const EditorSnapshot snapshot = twoRoots();
+    std::vector<Entity> topmost = {Entity{9, 0}};
+
+    SECTION("an ancestor and its descendants, given out of order") {
+        snapshot.collectTopmost(std::vector<Entity>{GRANDCHILD, OTHER_ROOT, CHILD, ROOT}, topmost);
+
+        CHECK(topmost == std::vector<Entity>{ROOT, OTHER_ROOT});
+    }
+
+    SECTION("siblings and a cousin with no selected ancestor") {
+        snapshot.collectTopmost(std::vector<Entity>{SECOND_CHILD, GRANDCHILD}, topmost);
+
+        CHECK(topmost == std::vector<Entity>{GRANDCHILD, SECOND_CHILD});
+    }
+
+    SECTION("a selected grandchild whose parent is not selected but whose grandparent is") {
+        snapshot.collectTopmost(std::vector<Entity>{GRANDCHILD, ROOT}, topmost);
+
+        CHECK(topmost == std::vector<Entity>{ROOT});
+    }
+
+    SECTION("an entity the snapshot does not list") {
+        snapshot.collectTopmost(std::vector<Entity>{Entity{9, 0}, CHILD, Entity{1, 1}}, topmost);
+
+        CHECK(topmost == std::vector<Entity>{CHILD});
+    }
+
+    SECTION("an empty selection") {
+        snapshot.collectTopmost(std::vector<Entity>{}, topmost);
+
+        CHECK(topmost.empty());
+    }
+}
+
+TEST_CASE("a drop of several counts the position among the parent's children that are not dragged", "[editor][edit]") {
+    const EditorSnapshot snapshot = threeSiblings();
+    std::size_t position = 99;
+
+    SECTION("the first and the last to the end") {
+        REQUIRE(snapshot.resolveDrop(std::vector<Entity>{FIRST, THIRD}, PARENT, 3, position));
+        CHECK(position == 1);
+    }
+
+    SECTION("the first and the last between the first and the second") {
+        REQUIRE(snapshot.resolveDrop(std::vector<Entity>{FIRST, THIRD}, PARENT, 1, position));
+        CHECK(position == 0);
+    }
+
+    SECTION("the second and the last to the top") {
+        REQUIRE(snapshot.resolveDrop(std::vector<Entity>{SECOND, THIRD}, PARENT, 0, position));
+        CHECK(position == 0);
+    }
+}
+
+TEST_CASE("a drop of several that leaves them all where they are is refused", "[editor][edit]") {
+    const EditorSnapshot snapshot = threeSiblings();
+    std::size_t position = 99;
+
+    CHECK_FALSE(snapshot.resolveDrop(std::vector<Entity>{FIRST, SECOND}, PARENT, 0, position));
+    CHECK_FALSE(snapshot.resolveDrop(std::vector<Entity>{FIRST, SECOND}, PARENT, 1, position));
+    CHECK_FALSE(snapshot.resolveDrop(std::vector<Entity>{FIRST, SECOND}, PARENT, 2, position));
+}
+
+TEST_CASE("a drop of several under a new parent keeps the gap as the position", "[editor][edit]") {
+    const EditorSnapshot snapshot = twoRoots();
+    std::size_t position = 99;
+
+    REQUIRE(snapshot.resolveDrop(std::vector<Entity>{GRANDCHILD, OTHER_ROOT}, SECOND_CHILD, 0, position));
+    CHECK(position == 0);
+}
+
+TEST_CASE("a drop of several into any dragged subtree is refused", "[editor][edit]") {
+    const EditorSnapshot snapshot = twoRoots();
+    std::size_t position = 99;
+
+    CHECK_FALSE(snapshot.resolveDrop(std::vector<Entity>{CHILD, OTHER_ROOT}, GRANDCHILD, 0, position));
+    CHECK_FALSE(snapshot.resolveDrop(std::vector<Entity>{CHILD, OTHER_ROOT}, CHILD, 0, position));
+    CHECK_FALSE(snapshot.resolveDrop(std::vector<Entity>{SECOND_CHILD, OTHER_ROOT}, OTHER_ROOT, 0, position));
+    CHECK(position == 99);
+}
+
+TEST_CASE("a drop of several with one the snapshot does not list is refused", "[editor][edit]") {
+    const EditorSnapshot snapshot = twoRoots();
+    std::size_t position = 99;
+
+    CHECK_FALSE(snapshot.resolveDrop(std::vector<Entity>{GRANDCHILD, Entity{9, 0}}, OTHER_ROOT, 0, position));
+    CHECK(position == 99);
+}
+
+TEST_CASE("a drop of several at the root is allowed while one of them is a child", "[editor][edit]") {
+    const EditorSnapshot snapshot = twoRoots();
+    std::size_t position = 99;
+
+    SECTION("two children") {
+        REQUIRE(snapshot.resolveDrop(std::vector<Entity>{GRANDCHILD, SECOND_CHILD}, Entity{}, 0, position));
+        CHECK(position == 0);
+    }
+
+    SECTION("a child beside a root") {
+        REQUIRE(snapshot.resolveDrop(std::vector<Entity>{SECOND_CHILD, OTHER_ROOT}, Entity{}, 0, position));
+        CHECK(position == 0);
+    }
+
+    SECTION("only roots") {
+        CHECK_FALSE(snapshot.resolveDrop(std::vector<Entity>{ROOT, OTHER_ROOT}, Entity{}, 0, position));
+        CHECK(position == 99);
+    }
+}
+
+TEST_CASE("a drop of several counts only the parent's direct children, skipping deeper rows", "[editor][edit]") {
+    const EditorSnapshot snapshot = twoRoots();
+    std::size_t position = 99;
+
+    REQUIRE(snapshot.resolveDrop(std::vector<Entity>{SECOND_CHILD, OTHER_ROOT}, ROOT, 0, position));
+    CHECK(position == 0);
+    REQUIRE(snapshot.resolveDrop(std::vector<Entity>{GRANDCHILD, OTHER_ROOT}, ROOT, 2, position));
+    CHECK(position == 2);
 }

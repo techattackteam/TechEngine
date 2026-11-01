@@ -702,7 +702,7 @@ static void checkStartupSnapshot(const TechEngine::EditorSnapshot& snapshot, con
     for (const TechEngine::HierarchyRow& row: snapshot.hierarchy) {
         CHECK(row.name == "Entity");
     }
-    CHECK_FALSE(snapshot.selected.valid());
+    CHECK(snapshot.selection.empty());
     CHECK(snapshot.editRevision == snapshot.savedRevision);
 }
 

@@ -12,6 +12,7 @@
 #include <chrono>
 #include <cstdint>
 #include <thread>
+#include <vector>
 
 using TechEngine::EditorSnapshot;
 using TechEngine::EditorSnapshotSlot;
@@ -62,7 +63,9 @@ TEST_CASE("a taken snapshot carries every row, the components, the selection and
     child.depth = 1;
     child.name = "Child";
     published.hierarchy = {parent, child};
-    published.selected = child.entity;
+    published.selection = {parent.entity, child.entity};
+    published.active = child.entity;
+    published.selectionSequence = 3;
     TechEngine::FieldRow field;
     field.index = 2;
     field.name = "position.z";
@@ -99,7 +102,9 @@ TEST_CASE("a taken snapshot carries every row, the components, the selection and
     CHECK(out.hierarchy[1].entity == child.entity);
     CHECK(out.hierarchy[1].depth == 1);
     CHECK(out.hierarchy[1].name == "Child");
-    CHECK(out.selected == child.entity);
+    CHECK(out.selection == std::vector<Entity>{parent.entity, child.entity});
+    CHECK(out.active == child.entity);
+    CHECK(out.selectionSequence == 3);
     CHECK(out.editRevision == 5);
     CHECK(out.savedRevision == 4);
 }

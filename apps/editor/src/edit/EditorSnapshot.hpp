@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -41,7 +42,10 @@ namespace TechEngine {
         // Depth-first: a row's subtree is the run of rows after it with a greater depth. Roots come
         // in storage order, which changes when an entity is destroyed or moves to another archetype.
         std::vector<HierarchyRow> hierarchy;
-        Entity selected;
+        std::vector<Entity> selection;
+        Entity active;
+        // Main draws its own set, not this one, until this reaches the sequence main last sent.
+        std::uint64_t selectionSequence = 0;
         // Name is left out: the inspector renames through RenameEntityCommand, never a set-field command.
         std::vector<ComponentRow> components;
         std::vector<ComponentChoice> addable;
@@ -61,5 +65,12 @@ namespace TechEngine {
         // gap counts parent's children as drawn, dragged included; Scene counts a position among
         // the other children, so a move down inside the same parent lands one gap earlier.
         bool resolveDrop(Entity dragged, Entity parent, std::size_t gap, std::size_t& position) const;
+
+        // dragged is in hierarchy order. position counts among parent's children that are not dragged. A drop at the
+        // root is allowed while any dragged entity is a child, and its position is 0.
+        bool resolveDrop(std::span<const Entity> dragged, Entity parent, std::size_t gap, std::size_t& position) const;
+
+        // Hierarchy order; an entity with a selected ancestor, or one this snapshot does not list, is left out.
+        void collectTopmost(std::span<const Entity> selection, std::vector<Entity>& out) const;
     };
 }

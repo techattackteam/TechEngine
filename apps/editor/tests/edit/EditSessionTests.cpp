@@ -14,6 +14,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -69,7 +70,7 @@ TEST_CASE("an empty scene publishes no rows, no selection and equal revisions", 
     const EditorSnapshot snapshot = edit.snapshot();
 
     CHECK(snapshot.hierarchy.empty());
-    CHECK_FALSE(snapshot.selected.valid());
+    CHECK(snapshot.selection.empty());
     CHECK(snapshot.editRevision == snapshot.savedRevision);
 }
 
@@ -135,11 +136,14 @@ TEST_CASE("the snapshot carries the session's selection and both revisions", "[e
     const EditorSnapshot before = edit.snapshot();
 
     SECTION("a selection is published without a revision change") {
-        edit.session.setSelected(a);
+        const Entity b = edit.createNamed("B");
+        edit.session.setSelection({a, b}, b, 7);
 
         const EditorSnapshot selected = edit.snapshot();
 
-        CHECK(selected.selected == a);
+        CHECK(std::ranges::is_permutation(selected.selection, std::vector<Entity>{a, b}));
+        CHECK(selected.active == b);
+        CHECK(selected.selectionSequence == 7);
         CHECK(selected.editRevision == before.editRevision);
         CHECK(selected.savedRevision == before.savedRevision);
     }
@@ -152,15 +156,77 @@ TEST_CASE("the snapshot carries the session's selection and both revisions", "[e
         CHECK(changed.editRevision > before.editRevision);
         CHECK(changed.savedRevision == before.savedRevision);
         CHECK(changed.editRevision != changed.savedRevision);
-        CHECK_FALSE(changed.selected.valid());
+        CHECK(changed.selection.empty());
+        CHECK_FALSE(changed.active.valid());
     }
 
-    SECTION("an empty entity clears the selection") {
-        edit.session.setSelected(a);
-        edit.session.setSelected(Entity{});
+    SECTION("an empty set clears the selection") {
+        edit.session.setSelection({a}, a, 1);
+        edit.session.setSelection({}, Entity{}, 2);
 
-        CHECK_FALSE(edit.snapshot().selected.valid());
+        const EditorSnapshot cleared = edit.snapshot();
+        CHECK(cleared.selection.empty());
+        CHECK_FALSE(cleared.active.valid());
+        CHECK(cleared.selectionSequence == 2);
     }
+}
+
+TEST_CASE("a select replaces the set, and an older sequence never overwrites a newer one", "[editor][edit]") {
+    EditTestScene edit;
+    const Entity a = edit.createNamed("A");
+    const Entity b = edit.createNamed("B");
+    const Entity c = edit.createNamed("C");
+
+    edit.session.setSelection({a, b}, a, 1);
+    edit.session.setSelection({c}, c, 2);
+
+    CHECK(std::ranges::equal(edit.session.getSelection(), std::vector<Entity>{c}));
+    CHECK(edit.session.getActive() == c);
+    CHECK(edit.session.getSelectionSequence() == 2);
+
+    SECTION("an older sequence changes nothing") {
+        edit.session.setSelection({a, b}, b, 1);
+
+        CHECK(std::ranges::equal(edit.session.getSelection(), std::vector<Entity>{c}));
+        CHECK(edit.session.getActive() == c);
+        CHECK(edit.session.getSelectionSequence() == 2);
+    }
+
+    SECTION("a newer sequence replaces it, even after a gap") {
+        edit.session.setSelection({a, b}, b, 9);
+
+        CHECK(std::ranges::is_permutation(edit.session.getSelection(), std::vector<Entity>{a, b}));
+        CHECK(edit.session.getActive() == b);
+        CHECK(edit.session.getSelectionSequence() == 9);
+    }
+}
+
+TEST_CASE("removing the dead from the selection keeps the live entities and the sequence", "[editor][edit]") {
+    EditTestScene edit;
+    const Entity a = edit.createNamed("A");
+    const Entity b = edit.createNamed("B");
+    const Entity c = edit.createNamed("C");
+    edit.session.setSelection({a, b, c}, a, 4);
+
+    SECTION("an entity that is not active") {
+        REQUIRE(edit.scene.destroyEntity(b));
+        edit.session.removeDeadFromSelection(edit.scene);
+
+        CHECK(std::ranges::is_permutation(edit.session.getSelection(), std::vector<Entity>{a, c}));
+        CHECK(edit.session.getActive() == a);
+    }
+
+    SECTION("every selected entity") {
+        REQUIRE(edit.scene.destroyEntity(a));
+        REQUIRE(edit.scene.destroyEntity(b));
+        REQUIRE(edit.scene.destroyEntity(c));
+        edit.session.removeDeadFromSelection(edit.scene);
+
+        CHECK(edit.session.getSelection().empty());
+        CHECK_FALSE(edit.session.getActive().valid());
+    }
+
+    CHECK(edit.session.getSelectionSequence() == 4);
 }
 
 TEST_CASE("a recorded save makes the revisions equal until the next scene change", "[editor][edit][save]") {
@@ -195,7 +261,7 @@ TEST_CASE("a recorded save makes the revisions equal until the next scene change
     }
 
     SECTION("a selection after the save leaves it clean") {
-        edit.session.setSelected(edit.createNamed("A"));
+        edit.selectOnly(edit.createNamed("A"));
 
         CHECK_FALSE(edit.snapshot().hasUnsavedEdits());
     }
@@ -232,7 +298,7 @@ TEST_CASE("building into a snapshot that already holds rows replaces them", "[ed
     EditTestScene edit;
     const Entity a = edit.createNamed("A");
     edit.createNamed("B", a);
-    edit.session.setSelected(a);
+    edit.selectOnly(a);
     EditorSnapshot snapshot;
     edit.session.buildSnapshot(edit.scene, edit.getRegistry(), snapshot);
 
@@ -258,7 +324,7 @@ TEST_CASE("the selected entity's Transform is published as its ten local values 
     EditTestScene edit;
     const Entity entity = edit.createNamed("A");
     REQUIRE(edit.scene.getComponent<Transform>(entity).setLocal({Vec3(1.0f, 2.0f, 3.0f), Quat(1.0f, 0.0f, 0.0f, 0.0f), Vec3(4.0f, 5.0f, 6.0f)}));
-    edit.session.setSelected(entity);
+    edit.selectOnly(entity);
 
     const EditorSnapshot snapshot = edit.snapshot();
 
@@ -281,7 +347,7 @@ TEST_CASE("Name and Hierarchy never appear among the selected entity's component
     EditTestScene edit;
     const Entity parent = edit.createNamed("Parent");
     const Entity child = edit.createNamed("Child", parent);
-    edit.session.setSelected(child);
+    edit.selectOnly(child);
 
     const EditorSnapshot snapshot = edit.snapshot();
 
@@ -294,7 +360,7 @@ TEST_CASE("Transform is published as not removable and any other component as re
     EditTestScene edit;
     const Entity entity = edit.createNamed("A");
     edit.scene.addComponent<InspectedSample>(entity);
-    edit.session.setSelected(entity);
+    edit.selectOnly(entity);
 
     const EditorSnapshot snapshot = edit.snapshot();
 
@@ -305,7 +371,7 @@ TEST_CASE("Transform is published as not removable and any other component as re
 TEST_CASE("the snapshot offers the registered types the selected entity lacks, never a built-in", "[editor][edit]") {
     EditTestScene edit;
     const Entity entity = edit.createNamed("A");
-    edit.session.setSelected(entity);
+    edit.selectOnly(entity);
 
     SECTION("an entity without the sample is offered the sample alone") {
         const EditorSnapshot snapshot = edit.snapshot();
@@ -330,7 +396,7 @@ TEST_CASE("each field row holds its kind and the value the inspector shows", "[e
     InspectedSample& sample = edit.scene.getComponent<InspectedSample>(entity);
     sample.target = target;
     sample.asset.id = TechEngine::ResourceId{0xA55E7};
-    edit.session.setSelected(entity);
+    edit.selectOnly(entity);
 
     const EditorSnapshot snapshot = edit.snapshot();
 
@@ -365,7 +431,7 @@ TEST_CASE("an Entity field with no live target is published with an empty name",
     EditTestScene edit;
     const Entity entity = edit.createNamed("Holder");
     edit.scene.addComponent<InspectedSample>(entity);
-    edit.session.setSelected(entity);
+    edit.selectOnly(entity);
 
     SECTION("the empty entity") {
         const EditorSnapshot snapshot = edit.snapshot();
@@ -390,7 +456,7 @@ TEST_CASE("an Entity field with no live target is published with an empty name",
 TEST_CASE("a selection whose entity is gone publishes no components and nothing to add", "[editor][edit]") {
     EditTestScene edit;
     const Entity entity = edit.createNamed("A");
-    edit.session.setSelected(entity);
+    edit.selectOnly(entity);
     REQUIRE(edit.scene.destroyEntity(entity));
 
     const EditorSnapshot snapshot = edit.snapshot();

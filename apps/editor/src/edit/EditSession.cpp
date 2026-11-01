@@ -8,16 +8,39 @@
 #include <edit/EditorSnapshot.hpp>
 #include <edit/FieldCollector.hpp>
 
+#include <algorithm>
 #include <functional>
 #include <utility>
 
 namespace TechEngine {
-    void EditSession::setSelected(const Entity entity) {
-        m_selected = entity;
+    void EditSession::setSelection(std::vector<Entity> selection, const Entity active, const std::uint64_t sequence) {
+        if (sequence < m_selectionSequence) {
+            return;
+        }
+        m_selection = std::move(selection);
+        m_active = active;
+        m_selectionSequence = sequence;
     }
 
-    Entity EditSession::getSelected() const {
-        return m_selected;
+    std::span<const Entity> EditSession::getSelection() const {
+        return m_selection;
+    }
+
+    Entity EditSession::getActive() const {
+        return m_active;
+    }
+
+    std::uint64_t EditSession::getSelectionSequence() const {
+        return m_selectionSequence;
+    }
+
+    void EditSession::removeDeadFromSelection(const Scene& scene) {
+        std::erase_if(m_selection, [&](const Entity entity) {
+            return !scene.contains(entity);
+        });
+        if (!scene.contains(m_active)) {
+            m_active = {};
+        }
     }
 
     void EditSession::recordSceneChange() {
@@ -68,7 +91,9 @@ namespace TechEngine {
             appendSubtree(root, 0);
         }
 
-        out.selected = m_selected;
+        out.selection = m_selection;
+        out.active = m_active;
+        out.selectionSequence = m_selectionSequence;
         collectComponents(scene, registry, out);
         out.editRevision = m_editRevision;
         out.savedRevision = m_savedRevision;
@@ -77,7 +102,7 @@ namespace TechEngine {
     void EditSession::collectComponents(const Scene& scene, const ComponentRegistry& registry, EditorSnapshot& out) const {
         out.components.clear();
         out.addable.clear();
-        if (!scene.contains(m_selected)) {
+        if (!scene.contains(m_active)) {
             return;
         }
 
@@ -85,7 +110,7 @@ namespace TechEngine {
         const ComponentTypeId transformType = componentTypeId<Transform>();
         const ComponentTypeId nameType = componentTypeId<Name>();
         for (const ComponentTypeRecord& record: registry.records()) {
-            const void* component = scene.componentRaw(m_selected, record.id);
+            const void* component = scene.componentRaw(m_active, record.id);
             if (component != nullptr) {
                 if (!record.visitFields || record.id == hierarchyType || record.id == nameType) {
                     continue;
