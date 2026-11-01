@@ -84,7 +84,7 @@ TEST_CASE("set field changes exactly one field, publishes the new row and record
     EditTestScene edit;
     const Entity entity = edit.createNamed("A");
     REQUIRE(edit.scene.getComponent<Transform>(entity).setLocal({Vec3(1.0f, 2.0f, 3.0f), TechEngine::Quat(1.0f, 0.0f, 0.0f, 0.0f), Vec3(1.0f)}));
-    edit.session.setSelected(entity);
+    edit.selectOnly(entity);
     const EditorSnapshot before = edit.snapshot();
 
     applySetField(edit, entity, transformType(), TRANSFORM_POSITION_X_FIELD, FieldValue{5.0f});
@@ -150,7 +150,7 @@ TEST_CASE("set field writes every editable kind, including the fields after the 
     EditTestScene edit;
     const Entity entity = edit.createNamed("A");
     edit.scene.addComponent<InspectedSample>(entity);
-    edit.session.setSelected(entity);
+    edit.selectOnly(entity);
 
     struct FieldEdit {
         std::uint32_t field = 0;
@@ -319,7 +319,7 @@ TEST_CASE("set field that names no live field changes nothing and records nothin
 TEST_CASE("add component gives the entity a default one, publishes it and records the add", "[editor][edit][commands]") {
     EditTestScene edit;
     const Entity entity = edit.createNamed("A");
-    edit.session.setSelected(entity);
+    edit.selectOnly(entity);
     const EditorSnapshot before = edit.snapshot();
 
     AddComponentCommand command{edit.session, entity, sampleType()};
@@ -380,7 +380,7 @@ TEST_CASE("remove component takes it off, records its payload and raises the edi
     const Entity entity = edit.createNamed("A");
     edit.scene.addComponent<InspectedSample>(entity);
     edit.scene.getComponent<InspectedSample>(entity).label = "Removed";
-    edit.session.setSelected(entity);
+    edit.selectOnly(entity);
     const TechEngine::ComponentTypeRecord* typeRecord = edit.getRegistry().find(sampleType());
     REQUIRE(typeRecord != nullptr);
     std::vector<std::byte> expectedPayload;

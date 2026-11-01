@@ -101,6 +101,7 @@ namespace TechEngineTests {
     class EditTestScene {
     private:
         TechEngine::ComponentRegistry m_registry;
+        std::uint64_t m_selectionSequence = 0;
 
     public:
         TechEngine::Scene scene{registerEditComponents(m_registry)};
@@ -119,6 +120,11 @@ namespace TechEngineTests {
                 REQUIRE(parented);
             }
             return entity;
+        }
+
+        void selectOnly(const TechEngine::Entity entity) {
+            m_selectionSequence++;
+            session.setSelection({entity}, entity, m_selectionSequence);
         }
 
         TechEngine::EditorSnapshot snapshot() const {

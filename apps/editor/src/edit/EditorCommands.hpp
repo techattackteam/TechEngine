@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace TechEngine {
     class App;
@@ -30,13 +31,13 @@ namespace TechEngine {
 
         void create(Entity parent);
 
-        void destroy(Entity entity);
+        void destroy(std::vector<Entity> entities);
 
-        void reparent(Entity child, Entity parent, std::size_t position);
+        void reparent(std::vector<Entity> children, Entity parent, std::size_t position);
 
         void rename(Entity entity, std::string name);
 
-        void select(Entity entity);
+        void select(std::vector<Entity> selection, Entity active, std::uint64_t sequence);
 
         void setField(Entity entity, ComponentTypeId component, std::uint32_t field, FieldValue value);
 

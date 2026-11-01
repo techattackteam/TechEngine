@@ -190,7 +190,7 @@ TEST_CASE("every sender method reaches the live scene through the running simula
 
             commands.rename(child, "Renamed");
             step();
-            commands.select(child);
+            commands.select({child}, child, 1);
             step();
             commands.setField(child, TechEngine::componentTypeId<TechEngine::Transform>(), 0, FieldValue{2.0f});
             step();
@@ -198,9 +198,9 @@ TEST_CASE("every sender method reaches the live scene through the running simula
             step();
             commands.removeComponent(child, TechEngine::componentTypeId<CommandsProbeComponent>());
             step();
-            commands.reparent(child, Entity{}, 0);
+            commands.reparent({child}, Entity{}, 0);
             step();
-            commands.destroy(parent);
+            commands.destroy({parent});
             step();
         }
         app.requestStop();
@@ -224,7 +224,9 @@ TEST_CASE("every sender method reaches the live scene through the running simula
     CHECK(steps[1].hierarchy[1].depth == 1);
     REQUIRE(steps[2].hierarchy.size() == 2);
     CHECK(steps[2].hierarchy[1].name == "Renamed");
-    CHECK(steps[3].selected == child);
+    CHECK(steps[3].selection == std::vector<Entity>{child});
+    CHECK(steps[3].active == child);
+    CHECK(steps[3].selectionSequence == 1);
     CHECK(steps[3].editRevision == steps[2].editRevision);
     CHECK(findProbeRow(steps[3], transformType) != nullptr);
 
@@ -244,7 +246,8 @@ TEST_CASE("every sender method reaches the live scene through the running simula
     REQUIRE(steps[8].hierarchy.size() == 1);
     CHECK(steps[8].hierarchy[0].entity == child);
     CHECK(steps[8].hierarchy[0].name == "Renamed");
-    CHECK(steps[8].selected == child);
+    CHECK(steps[8].selection == std::vector<Entity>{child});
+    CHECK(steps[8].active == child);
     const TechEngine::Scene& scene = TechEngineTests::AppTestAccess::scene(app);
     CHECK_FALSE(scene.contains(parent));
     CHECK(scene.contains(child));
@@ -256,10 +259,10 @@ TEST_CASE("a sender on an app that is not running applies nothing and logs the r
     EditorCommands commands{app, app.session, app.getRegistry(), app.getFiles()};
 
     commands.create(Entity{});
-    commands.destroy(Entity{0, 0});
-    commands.reparent(Entity{0, 0}, Entity{}, 0);
+    commands.destroy({Entity{0, 0}});
+    commands.reparent({Entity{0, 0}}, Entity{}, 0);
     commands.rename(Entity{0, 0}, "Name");
-    commands.select(Entity{0, 0});
+    commands.select({Entity{0, 0}}, Entity{0, 0}, 1);
     commands.setField(Entity{0, 0}, TechEngine::ComponentTypeId{}, 0, FieldValue{1.0f});
     commands.addComponent(Entity{0, 0}, TechEngine::ComponentTypeId{});
     commands.removeComponent(Entity{0, 0}, TechEngine::ComponentTypeId{});

@@ -1,5 +1,7 @@
 #include <edit/EditorSnapshot.hpp>
 
+#include <algorithm>
+
 namespace TechEngine {
     bool EditorSnapshot::hasUnsavedEdits() const {
         if (editRevision != savedRevision) {
@@ -91,5 +93,79 @@ namespace TechEngine {
         const std::size_t current = getSiblingIndexOfRow(draggedRow);
         position = current < gap ? gap - 1 : gap;
         return position != current;
+    }
+
+    bool EditorSnapshot::resolveDrop(const std::span<const Entity> dragged, const Entity parent, const std::size_t gap, std::size_t& position) const {
+        if (dragged.empty()) {
+            return false;
+        }
+
+        bool anyChild = false;
+        for (const Entity entity: dragged) {
+            std::size_t row = 0;
+            const bool found = findRow(entity, row);
+            if (!found) {
+                return false;
+            }
+            if (isInSubtree(parent, entity)) {
+                return false;
+            }
+            if (hierarchy[row].depth > 0) {
+                anyChild = true;
+            }
+        }
+
+        // Roots have no order in Scene, so a drop at the root only moves the dragged entities that are children.
+        if (!parent.valid()) {
+            if (!anyChild) {
+                return false;
+            }
+            position = 0;
+            return true;
+        }
+
+        std::size_t parentRow = 0;
+        const bool parentListed = findRow(parent, parentRow);
+        if (!parentListed) {
+            return false;
+        }
+        const std::uint32_t childDepth = hierarchy[parentRow].depth + 1;
+        std::vector<Entity> children;
+        for (std::size_t row = parentRow + 1; row < hierarchy.size() && hierarchy[row].depth >= childDepth; row++) {
+            if (hierarchy[row].depth == childDepth) {
+                children.push_back(hierarchy[row].entity);
+            }
+        }
+
+        std::vector<Entity> remaining;
+        std::size_t beforeGap = 0;
+        for (std::size_t index = 0; index < children.size(); index++) {
+            const Entity child = children[index];
+            const bool isDragged = std::find(dragged.begin(), dragged.end(), child) != dragged.end();
+            if (index < gap && !isDragged) {
+                beforeGap++;
+            }
+            if (!isDragged) {
+                remaining.push_back(child);
+            }
+        }
+
+        position = beforeGap;
+        remaining.insert(remaining.begin() + static_cast<std::ptrdiff_t>(position), dragged.begin(), dragged.end());
+        return remaining != children;
+    }
+
+    void EditorSnapshot::collectTopmost(const std::span<const Entity> selection, std::vector<Entity>& out) const {
+        out.clear();
+        std::vector<bool> selectedPath;
+        for (const HierarchyRow& row: hierarchy) {
+            selectedPath.resize(row.depth + 1);
+            const bool selected = std::find(selection.begin(), selection.end(), row.entity) != selection.end();
+            const bool selectedAncestor = row.depth > 0 && selectedPath[row.depth - 1];
+            selectedPath[row.depth] = selected || selectedAncestor;
+            if (selected && !selectedAncestor) {
+                out.push_back(row.entity);
+            }
+        }
     }
 }

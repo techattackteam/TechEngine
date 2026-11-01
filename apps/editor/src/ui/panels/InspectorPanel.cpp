@@ -66,18 +66,22 @@ namespace TechEngine {
     }
 
     void InspectorPanel::onDraw(const EditorSnapshot& snapshot) {
-        if (!snapshot.selected.valid()) {
+        if (snapshot.selection.size() > 1) {
+            ImGui::TextDisabled("%zu entities selected", snapshot.selection.size());
             return;
         }
-        if (snapshot.selected != m_textFieldsEntity) {
+        if (!snapshot.active.valid()) {
+            return;
+        }
+        if (snapshot.active != m_textFieldsEntity) {
             m_textFields.clear();
-            m_textFieldsEntity = snapshot.selected;
+            m_textFieldsEntity = snapshot.active;
         }
 
         m_labelWidth = measureLabelWidth(snapshot);
         drawName(snapshot);
         for (const ComponentRow& component: snapshot.components) {
-            drawComponent(snapshot.selected, component);
+            drawComponent(snapshot.active, component);
         }
         drawAddMenu(snapshot);
     }
@@ -98,7 +102,7 @@ namespace TechEngine {
 
     void InspectorPanel::drawName(const EditorSnapshot& snapshot) {
         std::size_t row = 0;
-        const bool found = snapshot.findRow(snapshot.selected, row);
+        const bool found = snapshot.findRow(snapshot.active, row);
         if (!found) {
             return;
         }
@@ -106,7 +110,7 @@ namespace TechEngine {
         const std::string& name = snapshot.hierarchy[row].name;
         // The selection can change while a name is being typed, so the rename goes to the entity the edit started on.
         if (!m_nameField.isEditing()) {
-            m_nameEntity = snapshot.selected;
+            m_nameEntity = snapshot.active;
         }
         ImGui::SetNextItemWidth(-FLT_MIN);
         std::string edited;
@@ -306,7 +310,7 @@ namespace TechEngine {
             ImGui::PushID(choice.tag.c_str());
             const std::string name(getDisplayName(choice.tag));
             if (ImGui::MenuItem(name.c_str())) {
-                m_commands->addComponent(snapshot.selected, choice.type);
+                m_commands->addComponent(snapshot.active, choice.type);
             }
             ImGui::PopID();
         }

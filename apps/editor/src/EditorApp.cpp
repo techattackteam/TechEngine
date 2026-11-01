@@ -129,7 +129,7 @@ namespace TechEngine {
     }
 
     void EditorApp::logSelectedTransform(const Scene& scene, const EditorSnapshot& snapshot) {
-        const Entity selected = snapshot.selected;
+        const Entity selected = snapshot.active;
         if (snapshot.editRevision == m_loggedEditRevision || !scene.contains(selected)) {
             return;
         }

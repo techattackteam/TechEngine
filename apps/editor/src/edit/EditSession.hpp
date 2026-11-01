@@ -22,7 +22,9 @@ namespace TechEngine {
 
     class EditSession {
     private:
-        Entity m_selected;
+        std::vector<Entity> m_selection;
+        Entity m_active;
+        std::uint64_t m_selectionSequence = 0;
         // Set only while the live scene is the one in this file, so a save never overwrites a file the editor did not load.
         SceneFile m_sceneFile;
         std::vector<EditRecord> m_records;
@@ -30,9 +32,16 @@ namespace TechEngine {
         std::uint64_t m_savedRevision = 0;
 
     public:
-        void setSelected(Entity entity);
+        // A sequence older than the last one applied changes nothing.
+        void setSelection(std::vector<Entity> selection, Entity active, std::uint64_t sequence);
 
-        Entity getSelected() const;
+        std::span<const Entity> getSelection() const;
+
+        Entity getActive() const;
+
+        std::uint64_t getSelectionSequence() const;
+
+        void removeDeadFromSelection(const Scene& scene);
 
         void recordSceneChange();
 
