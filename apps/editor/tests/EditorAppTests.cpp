@@ -39,6 +39,7 @@
 #include <string_view>
 #include <system_error>
 #include <thread>
+#include <utility>
 #include <vector>
 
 using TechEngineTests::AppTestAccess;
@@ -47,7 +48,9 @@ using TechEngineTests::ScratchDirectory;
 namespace {
     class EditorProbe : public TechEngine::EditorApp {
     public:
-        using TechEngine::EditorApp::EditorApp;
+        EditorProbe(std::filesystem::path projectRoot, const std::filesystem::path& exportFolder) : EditorApp(std::move(projectRoot), exportFolder, exportFolder / "runtime") {
+        }
+
         using TechEngine::EditorApp::publishEdits;
         using TechEngine::EditorApp::shouldClose;
         using TechEngine::EditorApp::shutdown;
@@ -102,6 +105,10 @@ namespace {
 
         TechEngine::ResourceHandle<TechEngine::SceneBytes> sceneHandle() const {
             return m_sceneHandle;
+        }
+
+        void exportProject() {
+            makeExportCommand()->apply(AppTestAccess::scene(*this));
         }
 
         void saveScene() {
@@ -224,7 +231,7 @@ TEST_CASE("init indexes the project's assets", "[editor]") {
     CHECK(record.path == "project://assets/common/level.tescene");
 }
 
-TEST_CASE("the editor keeps running when the startup export fails", "[editor][window]") {
+TEST_CASE("the editor keeps running with a startup scene it cannot find, and its startup load exports nothing", "[editor][window]") {
     ScratchDirectory scratch{"editorStartupExportFails"};
     writeProjectLayout(scratch);
     scratch.writeFile("project.toml", "name = \"Dev\"\n\n[export.client]\nstartupScene = \"0x00000000000000aa\"\n");
@@ -310,7 +317,13 @@ TEST_CASE("the startup load creates a startup scene when the project names none"
         CHECK(editor.getAssetIndex().getRecords().size() == 2);
     }
 
-    SECTION("the startup export packs it into the export folder") {
+    SECTION("the startup load exports nothing") {
+        CHECK_FALSE(std::filesystem::exists(exportFolder / "Dev"));
+    }
+
+    SECTION("File, Export packs it into the export folder") {
+        scratch.writeFile("export/runtime", "runtime");
+        editor.exportProject();
         const TechEngine::ResourceId id = savedStartupScene(scratch);
         TechEngine::MountTable exportMounts;
         exportMounts.mount("export", exportFolder);
@@ -328,7 +341,9 @@ TEST_CASE("the startup load creates a startup scene when the project names none"
         CHECK(std::filesystem::exists(exportFolder / "Dev" / "assets" / "client.tepack"));
     }
 
-    SECTION("the startup export packs the mesh the scene references into client.tepack") {
+    SECTION("File, Export packs the mesh the scene references into client.tepack") {
+        scratch.writeFile("export/runtime", "runtime");
+        editor.exportProject();
         const TechEngine::ResourceId meshId = meshRendererOnRoot(editor.scene());
         TechEngine::MountTable exportMounts;
         exportMounts.mount("export", exportFolder);
@@ -788,7 +803,8 @@ protected:
 TEST_CASE("editor render progresses during a main stall while its simulation stays idle", "[editor][window][integration]") {
     ScratchDirectory scratch{"editorThreadedStall"};
     writeProjectLayout(scratch);
-    EditorStallProbe editor{scratch.root(), scratch.makeDirectory("export")};
+    const std::filesystem::path exportFolder = scratch.makeDirectory("export");
+    EditorStallProbe editor{scratch.root(), exportFolder, exportFolder / "runtime"};
     std::atomic<bool> rendered = false;
     std::atomic<bool> tickStayed = false;
     std::jthread controller{[&] {

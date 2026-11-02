@@ -23,6 +23,8 @@
 
 #include <assets/AssetIndex.hpp>
 #include <assets/AssetTestFiles.hpp>
+#include <edit/EditSession.hpp>
+#include <edit/ExportCommand.hpp>
 #include <project/Project.hpp>
 
 #include <catch2/catch_test_macros.hpp>
@@ -32,6 +34,7 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <iterator>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -83,6 +86,8 @@ namespace {
     constexpr ResourceId EXPORT_SERVER_MESH_ID{0x6600000000000006};
     constexpr ResourceId EXPORT_LINKED_SCENE_ID{0x7700000000000007};
 
+    constexpr std::string_view RUNTIME_STAND_IN = "a stand-in for the runtime executable";
+
     void registerExportComponents(ComponentRegistry& registry) {
         registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
         registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
@@ -117,6 +122,7 @@ namespace {
             writeBytes(m_scratch, "assets/common/start.tescene", m_sceneBytes);
             writeBytes(m_scratch, "assets/client/menu.tescene", sceneReferencing(EXPORT_CLIENT_ID, {}));
             writeBytes(m_scratch, "assets/server/arena.tescene", sceneReferencing(EXPORT_SERVER_ID, {}));
+            m_scratch.writeFile("bin/runtime", RUNTIME_STAND_IN);
         }
 
         void writeAsset(const std::string_view relative, const std::vector<std::byte>& bytes) const {
@@ -130,11 +136,21 @@ namespace {
         }
 
         std::error_code runExport() {
-            return m_project.exportTo(Role::Client, m_index, m_files, m_registry, outFolder());
+            return m_project.exportTo(Role::Client, m_index, m_files, m_registry, runtimePath(), outFolder());
+        }
+
+        void applyExportCommand(const TechEngine::EditSession& session) {
+            TechEngine::Scene unused(m_registry);
+            TechEngine::ExportCommand command{session, m_project, m_index, m_files, m_registry, runtimePath(), outFolder()};
+            command.apply(unused);
         }
 
         std::filesystem::path outFolder() const {
             return m_scratch.root() / "export";
+        }
+
+        std::filesystem::path runtimePath() const {
+            return m_scratch.root() / "bin" / "runtime";
         }
 
         const FileAccess& outputFiles() const {
@@ -425,25 +441,151 @@ TEST_CASE("exportTo returns StartupSceneNotInTarget for a client target whose sc
     CHECK(scratch.runExport() == ProjectError::StartupSceneNotInTarget);
 }
 
-TEST_CASE("exportTo numbers the project folder when that name is taken", "[editor][project][export]") {
-    ExportScratch scratch{"projectExportNumbersFolder"};
+TEST_CASE("a repeat export reuses the project folder and keeps the files it does not own", "[editor][project][export]") {
+    ExportScratch scratch{"projectExportReusesFolder"};
     scratch.open(manifestNaming(EXPORT_SCENE_ID));
     const std::filesystem::path out = scratch.outFolder();
-    std::filesystem::create_directories(out / "Export");
-    std::filesystem::create_directories(out / "Export(1)");
+    std::filesystem::create_directories(out / "Export" / "assets");
     {
         std::ofstream keep{out / "Export" / "keep.txt"};
         keep << "keep";
+        std::ofstream stale{out / "Export" / "assets" / "server.tepack"};
+        stale << "a pack this target does not ship";
+        std::ofstream oldRuntime{out / "Export" / "runtime"};
+        oldRuntime << "an older runtime";
     }
 
     REQUIRE(scratch.runExport() == std::error_code{});
     REQUIRE(scratch.runExport() == std::error_code{});
 
-    CHECK(std::filesystem::exists(out / "Export(2)" / "assets" / "common.tepack"));
-    CHECK(std::filesystem::exists(out / "Export(3)" / "assets" / "common.tepack"));
-    CHECK_FALSE(std::filesystem::exists(out / "Export" / "assets"));
-    CHECK_FALSE(std::filesystem::exists(out / "Export(1)" / "assets"));
+    std::vector<std::filesystem::path> folders;
+    for (const std::filesystem::directory_entry& entry: std::filesystem::directory_iterator(out)) {
+        folders.push_back(entry.path().filename());
+    }
+    CHECK(folders == std::vector<std::filesystem::path>{"Export"});
     CHECK(std::filesystem::exists(out / "Export" / "keep.txt"));
+    CHECK(std::filesystem::exists(out / "Export" / "assets" / "common.tepack"));
+    CHECK(std::filesystem::exists(out / "Export" / "assets" / "client.tepack"));
+    CHECK_FALSE(std::filesystem::exists(out / "Export" / "assets" / "server.tepack"));
+    CHECK(std::filesystem::file_size(out / "Export" / "runtime") == RUNTIME_STAND_IN.size());
+    CHECK(scratch.readBootRecord().startupScene == EXPORT_SCENE_ID);
+}
+
+TEST_CASE("exportTo puts the runtime beside the target's assets folder", "[editor][project][export]") {
+    ExportScratch scratch{"projectExportCopiesRuntime"};
+    scratch.open(manifestNaming(EXPORT_SCENE_ID));
+
+    REQUIRE(scratch.runExport() == std::error_code{});
+
+    const std::filesystem::path copied = scratch.outFolder() / "Export" / "runtime";
+    REQUIRE(std::filesystem::is_regular_file(copied));
+    std::ifstream file{copied, std::ios::binary};
+    const std::string contents{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+    CHECK(contents == RUNTIME_STAND_IN);
+}
+
+TEST_CASE("the copied runtime keeps the source's permissions, execute bit included", "[editor][project][export]") {
+    ExportScratch scratch{"projectExportKeepsExecuteBit"};
+    scratch.open(manifestNaming(EXPORT_SCENE_ID));
+    std::filesystem::permissions(scratch.runtimePath(), std::filesystem::perms::owner_exec, std::filesystem::perm_options::add);
+
+    REQUIRE(scratch.runExport() == std::error_code{});
+
+    const std::filesystem::perms source = std::filesystem::status(scratch.runtimePath()).permissions();
+    const std::filesystem::perms copied = std::filesystem::status(scratch.outFolder() / "Export" / "runtime").permissions();
+    CHECK(copied == source);
+#if !defined(_WIN32)
+    CHECK((copied & std::filesystem::perms::owner_exec) != std::filesystem::perms::none);
+#endif
+}
+
+TEST_CASE("exportTo returns NotFound when the runtime is missing, and claims no folder", "[editor][project][export]") {
+    ExportScratch scratch{"projectExportMissingRuntime"};
+    scratch.open(manifestNaming(EXPORT_SCENE_ID));
+    std::filesystem::remove(scratch.runtimePath());
+
+    CHECK(scratch.runExport() == FileError::NotFound);
+
+    CHECK_FALSE(std::filesystem::exists(scratch.outFolder()));
+}
+
+TEST_CASE("exportTo refuses a runtime path that is a folder, and claims no folder", "[editor][project][export]") {
+    ExportScratch scratch{"projectExportRuntimeIsFolder"};
+    scratch.open(manifestNaming(EXPORT_SCENE_ID));
+    std::filesystem::remove(scratch.runtimePath());
+    std::filesystem::create_directories(scratch.runtimePath());
+
+    CHECK(scratch.runExport() == FileError::IsADirectory);
+
+    CHECK_FALSE(std::filesystem::exists(scratch.outFolder()));
+}
+
+TEST_CASE("the export command exports the saved files with or without unsaved edits", "[editor][project][export]") {
+    ExportScratch scratch{"projectExportCommand"};
+    scratch.open(manifestNaming(EXPORT_SCENE_ID));
+    TechEngine::EditSession session;
+
+    SECTION("no unsaved edits") {
+        scratch.applyExportCommand(session);
+    }
+
+    SECTION("unsaved edits") {
+        session.recordSceneChange();
+        REQUIRE(session.hasUnsavedEdits());
+        scratch.applyExportCommand(session);
+    }
+
+    CHECK(scratch.readBootRecord().startupScene == EXPORT_SCENE_ID);
+    CHECK(std::filesystem::exists(scratch.outFolder() / "Export" / "runtime"));
+}
+
+TEST_CASE("a failed export command writes nothing", "[editor][project][export]") {
+    ExportScratch scratch{"projectExportCommandFails"};
+    scratch.open(GOOD_MANIFEST);
+    const TechEngine::EditSession session;
+
+    scratch.applyExportCommand(session);
+
+    CHECK_FALSE(std::filesystem::exists(scratch.outFolder()));
+}
+
+TEST_CASE("the dev project exports into a folder the runtime opens beside itself", "[editor][project][export]") {
+    const ScratchDirectory scratch{"projectExportDevProject"};
+    const std::filesystem::path runtimePath = scratch.writeFile("bin/runtime", RUNTIME_STAND_IN);
+    MountTable mounts;
+    FileAccess files{mounts};
+    mounts.mount("project", TE_EDITOR_DEFAULT_PROJECT_ROOT);
+    Project project;
+    REQUIRE(project.load(files, "project://project.toml") == std::error_code{});
+    AssetIndex index;
+    REQUIRE(index.build(files, "project://assets") == std::error_code{});
+    ComponentRegistry registry;
+    registerExportComponents(registry);
+
+    REQUIRE(project.exportTo(Role::Client, index, files, registry, runtimePath, scratch.root() / "out") == std::error_code{});
+
+    const std::filesystem::path runtimeFolder = scratch.root() / "out" / project.name();
+    CHECK(std::filesystem::is_regular_file(runtimeFolder / "runtime"));
+    MountTable runtimeMounts;
+    runtimeMounts.mount("assets", runtimeFolder / "assets");
+    const FileAccess runtimeFiles{runtimeMounts};
+    PackReader common{runtimeFiles};
+    REQUIRE(common.open("assets://common.tepack") == std::error_code{});
+    PackEntry bootEntry;
+    REQUIRE(common.bootRecord(bootEntry));
+    std::vector<std::byte> bootBytes;
+    REQUIRE(common.read(bootEntry, bootBytes) == std::error_code{});
+    BootRecord record;
+    REQUIRE(record.read(bootBytes) == std::error_code{});
+    CHECK(record.startupScene == project.getExportStartupScene(Role::Client));
+
+    PackSource source{runtimeFiles};
+    REQUIRE(source.open(record, Role::Client, "assets://") == std::error_code{});
+    REQUIRE(source.find(record.startupScene) == AssetAvailability::Present);
+    std::vector<std::byte> sceneBytes;
+    REQUIRE(source.read(record.startupScene, sceneBytes) == std::error_code{});
+    TechEngine::Scene scene(registry);
+    CHECK(TechEngine::SceneAsset{}.read(sceneBytes, scene) == std::error_code{});
 }
 
 TEST_CASE("a failed export claims no project folder", "[editor][project][export]") {

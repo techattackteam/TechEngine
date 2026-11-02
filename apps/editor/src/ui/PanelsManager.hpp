@@ -7,6 +7,8 @@
 
 #include <imgui.h>
 
+#include <functional>
+
 namespace TechEngine {
     class EditorCommands;
     struct EditorSnapshot;
@@ -14,13 +16,14 @@ namespace TechEngine {
     class PanelsManager {
     private:
         EditorCommands* m_commands = nullptr;
+        std::function<void()> m_exportProject;
         HierarchyPanel m_hierarchy;
         InspectorPanel m_inspector;
         SceneViewPanel m_sceneView;
         GameViewPanel m_gameView;
 
     public:
-        explicit PanelsManager(EditorCommands& commands);
+        PanelsManager(EditorCommands& commands, std::function<void()> exportProject);
 
         void draw(const EditorSnapshot& snapshot);
 

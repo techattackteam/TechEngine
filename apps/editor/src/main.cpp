@@ -8,5 +8,7 @@
 int main(int argc, char** argv) {
     const std::filesystem::path projectRoot = argc > 1 ? argv[1] : TE_EDITOR_DEFAULT_PROJECT_ROOT;
 
-    return TechEngine::runApp<TechEngine::EditorApp>(projectRoot, TechEngine::executablePath().parent_path());
+    const std::filesystem::path executableFolder = TechEngine::executablePath().parent_path();
+
+    return TechEngine::runApp<TechEngine::EditorApp>(projectRoot, executableFolder, executableFolder / TE_EDITOR_RUNTIME_FILE_NAME);
 }

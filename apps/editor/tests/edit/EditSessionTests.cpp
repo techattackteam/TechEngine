@@ -279,6 +279,24 @@ TEST_CASE("a snapshot is unsaved exactly while its revisions differ", "[editor][
     CHECK_FALSE(snapshot.hasUnsavedEdits());
 }
 
+TEST_CASE("a session has unsaved edits from a scene change until the next save", "[editor][edit][save]") {
+    TechEngine::EditSession session;
+    CHECK_FALSE(session.hasUnsavedEdits());
+
+    session.recordSceneChange();
+    session.recordSceneChange();
+    CHECK(session.hasUnsavedEdits());
+
+    session.recordSave();
+    CHECK_FALSE(session.hasUnsavedEdits());
+
+    session.recordSave();
+    CHECK_FALSE(session.hasUnsavedEdits());
+
+    session.recordSceneChange();
+    CHECK(session.hasUnsavedEdits());
+}
+
 TEST_CASE("a session has no scene file until one is set, then holds the last one set", "[editor][edit][save]") {
     TechEngine::EditSession session;
     TechEngine::SceneFile file;

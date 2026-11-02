@@ -10,6 +10,7 @@ techengine_app(editor
           src/edit/EditorCommands.cpp
           src/edit/EditorSnapshot.cpp
           src/edit/EditorSnapshotSlot.cpp
+          src/edit/ExportCommand.cpp
           src/edit/FieldCollector.cpp
           src/edit/FieldSetter.cpp
           src/edit/FieldValue.cpp
@@ -38,6 +39,7 @@ techengine_app(editor
           src/edit/EditorCommands.hpp
           src/edit/EditorSnapshot.hpp
           src/edit/EditorSnapshotSlot.hpp
+          src/edit/ExportCommand.hpp
           src/edit/FieldCollector.hpp
           src/edit/FieldSetter.hpp
           src/edit/FieldValue.hpp
@@ -75,7 +77,13 @@ techengine_app(editor
           tests/project/ProjectErrorTests.cpp
           tests/project/ProjectTests.cpp)
 
-target_compile_definitions(editor PRIVATE
+# On the object library, so the editor's tests can export the dev project too.
+target_compile_definitions(te_editor_objects PUBLIC
   TE_EDITOR_DEFAULT_PROJECT_ROOT="${PROJECT_SOURCE_DIR}/projects/dev")
+target_compile_definitions(editor PRIVATE
+  TE_EDITOR_RUNTIME_FILE_NAME="$<TARGET_FILE_NAME:runtime>")
+
+# File -> Export copies the runtime from the editor's folder.
+add_dependencies(editor runtime)
 
 # Slice 2+: tooling deps (ImGui, ImGuizmo, assimp, stb) link here only.
