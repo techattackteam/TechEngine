@@ -76,7 +76,7 @@ jobs:
 
       # A macro has no access control and `internal::` is a convention, not a boundary, so
       # the boundary is a red check. Anything reaching into another module's plumbing fails
-      # here. Sibling of the te_sdk_smoke leak gate (ADR-008 §7): make the rule structural.
+      # here. Sibling of the TechEngineSDKSmoke leak gate (ADR-008 §7): make the rule structural.
       - name: No reaching into private plumbing
         run: |
           set -o pipefail

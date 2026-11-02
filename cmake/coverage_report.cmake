@@ -73,10 +73,14 @@ set(_te_markdown "${TE_COV_DIR}/diff-coverage.md")
 # --exclude repeats the lcov's test filter rather than trusting it. A changed file absent
 # from the report is diff-cover's decision to make, not ours, and this takes the decision
 # away: the paths are excluded by name whatever the report holds.
+#
+# apps/editor/src/ui/ is left out of the verdict but not the report: no test draws ImGui, so
+# logic placed there goes unscored. Logic a test can reach belongs in apps/editor/src/edit/.
 execute_process(COMMAND "${TE_DIFF_COVER}" "${_te_lcov}"
                         "--compare-branch=${_te_base}"
                         "--fail-under=${_te_threshold}"
                         "--exclude" "*/tests/*" "tests/*"
+                                    "*/apps/editor/src/ui/*" "apps/editor/src/ui/*"
                         "--format" "markdown:${_te_markdown}"
                 WORKING_DIRECTORY "${TE_SOURCE_DIR}"
                 OUTPUT_VARIABLE _te_output ECHO_OUTPUT_VARIABLE
