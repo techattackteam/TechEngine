@@ -1,5 +1,6 @@
 #pragma once
 
+#include <TechEngine/app/Command.hpp>
 #include <TechEngine/clientapp/ClientApp.hpp>
 
 #include <assets/AssetIndex.hpp>
@@ -17,6 +18,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <memory>
 #include <string_view>
 #include <system_error>
 #include <vector>
@@ -26,6 +28,7 @@ namespace TechEngine {
     private:
         std::filesystem::path m_projectRoot;
         std::filesystem::path m_exportFolder;
+        std::filesystem::path m_runtimePath;
         Project m_project;
         AssetIndex m_assets;
         LooseSource m_source;
@@ -41,7 +44,7 @@ namespace TechEngine {
         ClosePrompt m_closePrompt;
 
     public:
-        EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder);
+        EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder, std::filesystem::path runtimePath);
 
         ~EditorApp() override;
 
@@ -67,6 +70,8 @@ namespace TechEngine {
         // Simulation thread only, or before the simulation starts.
         EditSession& getSession();
 
+        std::unique_ptr<Command> makeExportCommand();
+
         void shutdown() override;
 
     private:
@@ -85,6 +90,8 @@ namespace TechEngine {
         void updateTitle();
 
         void drawClosePrompt();
+
+        void exportProject();
 
         void stopImGui();
 

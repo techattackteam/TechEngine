@@ -51,6 +51,10 @@ namespace TechEngine {
         m_savedRevision = m_editRevision;
     }
 
+    bool EditSession::hasUnsavedEdits() const {
+        return m_editRevision != m_savedRevision;
+    }
+
     void EditSession::setSceneFile(SceneFile file) {
         m_sceneFile = std::move(file);
     }

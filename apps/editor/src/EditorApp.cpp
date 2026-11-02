@@ -12,6 +12,7 @@
 #include <TechEngine/platform/files/FileError.hpp>
 
 #include <EditorApp.hpp>
+#include <edit/ExportCommand.hpp>
 #include <ui/EditorTheme.hpp>
 
 #include <imgui.h>
@@ -21,6 +22,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <functional>
+#include <memory>
 #include <span>
 #include <string>
 #include <string_view>
@@ -36,8 +38,11 @@ namespace TechEngine {
     static constexpr std::string_view LAYOUT_FOLDER = "project://editorSettings";
     static constexpr std::string_view LAYOUT_PATH = "project://editorSettings/layout.ini";
 
-    EditorApp::EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder)
-        : ClientApp(Role::Client, std::string(EDITOR_TITLE)), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)), m_source(m_files, m_assets), m_commands(*this, m_session, m_registry, m_files), m_panels(m_commands) {
+    EditorApp::EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder, std::filesystem::path runtimePath)
+        : ClientApp(Role::Client, std::string(EDITOR_TITLE)), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)), m_runtimePath(std::move(runtimePath)), m_source(m_files, m_assets), m_commands(*this, m_session, m_registry, m_files),
+          m_panels(m_commands, [this] {
+              exportProject();
+          }) {
     }
 
     EditorApp::~EditorApp() {
@@ -100,12 +105,6 @@ namespace TechEngine {
             createStartupScene(scene);
         }
 
-        // TODO: Remove the export step from the startup load and make it a separate command in the editor UI.
-        const std::error_code exportError = m_project.exportTo(Role::Client, m_assets, m_files, m_registry, m_exportFolder);
-        if (exportError) {
-            TE_LOGGER_ERROR("Failed to export the project to {0}: {1}", m_exportFolder.string(), exportError.message());
-        }
-
         // Stopped, the editor gets no batch until the first edit, so without this the panels start empty.
         publishEdits(scene);
         return {};
@@ -163,6 +162,10 @@ namespace TechEngine {
 
     EditSession& EditorApp::getSession() {
         return m_session;
+    }
+
+    std::unique_ptr<Command> EditorApp::makeExportCommand() {
+        return std::make_unique<ExportCommand>(m_session, m_project, m_assets, m_files, m_registry, m_runtimePath, m_exportFolder);
     }
 
     void EditorApp::shutdown() {
@@ -274,6 +277,13 @@ namespace TechEngine {
             case CloseChoice::Cancel:
             case CloseChoice::None:
                 break;
+        }
+    }
+
+    void EditorApp::exportProject() {
+        const std::error_code submitError = submitCommand(makeExportCommand());
+        if (submitError) {
+            TE_LOGGER_WARN("The simulation refused the export: {0}", submitError.message());
         }
     }
 

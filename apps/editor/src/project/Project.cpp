@@ -131,7 +131,7 @@ namespace TechEngine {
         return {};
     }
 
-    std::error_code Project::exportTo(const Role target, const AssetIndex& index, const FileAccess& files, ComponentRegistry& registry, const std::filesystem::path& exportFolder) const {
+    std::error_code Project::exportTo(const Role target, const AssetIndex& index, const FileAccess& files, ComponentRegistry& registry, const std::filesystem::path& runtimePath, const std::filesystem::path& exportFolder) const {
         const auto exportTarget = std::ranges::find(EXPORT_TARGETS, target, &ExportTargetSides::role);
         TE_CHECK(exportTarget != EXPORT_TARGETS.end(), "Export target {0} is not built yet", static_cast<int>(target));
         const auto ships = [&exportTarget](const Side side) {
@@ -206,18 +206,37 @@ namespace TechEngine {
         }
 
         MountTable outputMounts;
+        outputMounts.mount("runtime", runtimePath.parent_path());
         outputMounts.mount("export", exportFolder);
         FileAccess output{outputMounts};
-        std::string projectFolder;
-        const std::error_code folderError = findFreeExportFolder(output, projectFolder);
-        if (folderError) {
+
+        const std::string runtimeName = runtimePath.filename().string();
+        FileStatus runtimeStatus;
+        const std::error_code runtimeError = output.status("runtime://" + runtimeName, runtimeStatus);
+        if (runtimeError) {
+            TE_LOGGER_ERROR("The runtime executable {0} cannot be copied into the export: {1}", runtimePath.string(), runtimeError.message());
+            return runtimeError;
+        }
+        if (runtimeStatus.isDirectory) {
+            return FileError::IsADirectory;
+        }
+
+        const std::string projectFolder = "export://" + m_name;
+        const std::error_code folderError = output.createDirectory(projectFolder);
+        if (folderError && folderError != FileError::AlreadyExists) {
             return folderError;
         }
 
-        const std::string assetsFolder = "export://" + projectFolder + "/assets";
-        const std::error_code directoryError = output.createDirectory(assetsFolder);
-        if (directoryError) {
-            return directoryError;
+        // Windows locks a running executable, so a runtime still running fails here, before any pack changes.
+        const std::error_code replaceError = replaceRuntime(output, projectFolder, runtimeName);
+        if (replaceError) {
+            return replaceError;
+        }
+
+        const std::string assetsFolder = projectFolder + "/assets";
+        const std::error_code assetsError = output.createDirectory(assetsFolder);
+        if (assetsError && assetsError != FileError::AlreadyExists) {
+            return assetsError;
         }
 
         for (const ExportPack& pack: packs) {
@@ -228,7 +247,16 @@ namespace TechEngine {
                 return writeError;
             }
         }
-        TE_LOGGER_INFO("Exported the project to {0}", (exportFolder / projectFolder).string());
+        for (const ExportPackFile& file: PACK_FILES) {
+            if (ships(file.side)) {
+                continue;
+            }
+            const std::error_code removeError = output.remove(assetsFolder + "/" + file.name, false);
+            if (removeError && removeError != FileError::NotFound) {
+                return removeError;
+            }
+        }
+        TE_LOGGER_INFO("Exported the project to {0}", (exportFolder / m_name).string());
         return {};
     }
 
@@ -278,19 +306,13 @@ namespace TechEngine {
         return {};
     }
 
-    std::error_code Project::findFreeExportFolder(const FileAccess& output, std::string& out) const {
-        std::string candidate = m_name;
-        for (int copy = 1;; copy++) {
-            FileStatus status;
-            const std::error_code statusError = output.status("export://" + candidate, status);
-            if (statusError == FileError::NotFound) {
-                out = std::move(candidate);
-                return {};
-            }
-            if (statusError) {
-                return statusError;
-            }
-            candidate = m_name + "(" + std::to_string(copy) + ")";
+    std::error_code Project::replaceRuntime(FileAccess& output, const std::string& projectFolder, const std::string& runtimeName) const {
+        const std::string destination = projectFolder + "/" + runtimeName;
+        const std::error_code removeError = output.remove(destination, false);
+        if (removeError && removeError != FileError::NotFound) {
+            TE_LOGGER_ERROR("Failed to replace the runtime in {0}: {1}", destination, removeError.message());
+            return removeError;
         }
+        return output.copy("runtime://" + runtimeName, destination);
     }
 }

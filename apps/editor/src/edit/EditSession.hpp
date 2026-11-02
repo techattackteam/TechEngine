@@ -47,6 +47,8 @@ namespace TechEngine {
 
         void recordSave();
 
+        bool hasUnsavedEdits() const;
+
         void setSceneFile(SceneFile file);
 
         bool getSceneFile(SceneFile& out) const;
