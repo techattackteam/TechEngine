@@ -17,18 +17,19 @@ namespace TechEngine {
     private:
         EditorCommands* m_commands = nullptr;
         std::function<void()> m_exportProject;
+        std::function<void()> m_runProject;
         HierarchyPanel m_hierarchy;
         InspectorPanel m_inspector;
         SceneViewPanel m_sceneView;
         GameViewPanel m_gameView;
 
     public:
-        PanelsManager(EditorCommands& commands, std::function<void()> exportProject);
+        PanelsManager(EditorCommands& commands, std::function<void()> exportProject, std::function<void()> runProject);
 
-        void draw(const EditorSnapshot& snapshot);
+        void draw(const EditorSnapshot& snapshot, bool canRun);
 
     private:
-        void drawMainMenuBar();
+        void drawMainMenuBar(bool canRun);
 
         void handleShortcuts();
 

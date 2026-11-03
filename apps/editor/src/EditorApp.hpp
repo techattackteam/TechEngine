@@ -2,6 +2,7 @@
 
 #include <TechEngine/app/Command.hpp>
 #include <TechEngine/clientapp/ClientApp.hpp>
+#include <TechEngine/platform/process/Process.hpp>
 
 #include <assets/AssetIndex.hpp>
 #include <assets/LooseSource.hpp>
@@ -14,6 +15,7 @@
 #include <ui/ImGuiBridge.hpp>
 #include <ui/PanelsManager.hpp>
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -29,6 +31,10 @@ namespace TechEngine {
         std::filesystem::path m_projectRoot;
         std::filesystem::path m_exportFolder;
         std::filesystem::path m_runtimePath;
+        std::filesystem::path m_exportedRuntimePath;
+        enum class RunExport : std::uint8_t { None, Succeeded, Failed };
+        // Stored on the simulation thread when Run's export finishes, taken on main.
+        std::atomic<RunExport> m_runExport = RunExport::None;
         Project m_project;
         AssetIndex m_assets;
         LooseSource m_source;
@@ -42,6 +48,9 @@ namespace TechEngine {
         EditorCommands m_commands;
         PanelsManager m_panels;
         ClosePrompt m_closePrompt;
+        // Main thread only.
+        Process m_runtime;
+        bool m_runPending = false;
 
     public:
         EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder, std::filesystem::path runtimePath);
@@ -70,7 +79,21 @@ namespace TechEngine {
         // Simulation thread only, or before the simulation starts.
         EditSession& getSession();
 
-        std::unique_ptr<Command> makeExportCommand();
+        std::unique_ptr<Command> makeExportCommand(std::function<void(bool exported)> onFinished);
+
+        std::unique_ptr<Command> makeRunCommand();
+
+        // Main thread only.
+        void exportProject();
+
+        // Main thread only.
+        bool canRun() const;
+
+        // Main thread only.
+        void runProject();
+
+        // Main thread only.
+        void pollRuntime();
 
         void shutdown() override;
 
@@ -91,7 +114,7 @@ namespace TechEngine {
 
         void drawClosePrompt();
 
-        void exportProject();
+        void startRuntime();
 
         void stopImGui();
 
