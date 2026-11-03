@@ -32,8 +32,9 @@ namespace TechEngine {
         std::filesystem::path m_exportFolder;
         std::filesystem::path m_runtimePath;
         std::filesystem::path m_exportedRuntimePath;
-        // Set on the simulation thread by a successful export, read on main.
-        std::atomic<bool> m_runtimeExported = false;
+        enum class RunExport : std::uint8_t { None, Succeeded, Failed };
+        // Stored on the simulation thread when Run's export finishes, taken on main.
+        std::atomic<RunExport> m_runExport = RunExport::None;
         Project m_project;
         AssetIndex m_assets;
         LooseSource m_source;
@@ -49,6 +50,7 @@ namespace TechEngine {
         ClosePrompt m_closePrompt;
         // Main thread only.
         Process m_runtime;
+        bool m_runPending = false;
 
     public:
         EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder, std::filesystem::path runtimePath);
@@ -77,7 +79,12 @@ namespace TechEngine {
         // Simulation thread only, or before the simulation starts.
         EditSession& getSession();
 
-        std::unique_ptr<Command> makeExportCommand();
+        std::unique_ptr<Command> makeExportCommand(std::function<void(bool exported)> onFinished);
+
+        std::unique_ptr<Command> makeRunCommand();
+
+        // Main thread only.
+        void exportProject();
 
         // Main thread only.
         bool canRun() const;
@@ -107,7 +114,7 @@ namespace TechEngine {
 
         void drawClosePrompt();
 
-        void exportProject();
+        void startRuntime();
 
         void stopImGui();
 

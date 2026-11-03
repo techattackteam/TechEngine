@@ -2,8 +2,8 @@
 
 #include <TechEngine/app/Command.hpp>
 
-#include <atomic>
 #include <filesystem>
+#include <functional>
 
 namespace TechEngine {
     class AssetIndex;
@@ -21,12 +21,12 @@ namespace TechEngine {
         ComponentRegistry* m_registry = nullptr;
         std::filesystem::path m_runtimePath;
         std::filesystem::path m_exportFolder;
-        std::atomic<bool>* m_exported = nullptr;
+        std::function<void(bool exported)> m_onFinished;
 
     public:
-        ExportCommand(const EditSession& session, const Project& project, const AssetIndex& index, const FileAccess& files, ComponentRegistry& registry, std::filesystem::path runtimePath, std::filesystem::path exportFolder, std::atomic<bool>& exported);
+        ExportCommand(const EditSession& session, const Project& project, const AssetIndex& index, const FileAccess& files, ComponentRegistry& registry, std::filesystem::path runtimePath, std::filesystem::path exportFolder, std::function<void(bool exported)> onFinished);
 
-        // Exports the saved files, not the live scene. Sets the exported flag only on success.
+        // Exports the saved files, not the live scene. onFinished, when set, runs on the simulation thread.
         void apply(Scene& scene) override;
     };
 }

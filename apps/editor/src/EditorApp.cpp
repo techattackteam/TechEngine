@@ -68,8 +68,6 @@ namespace TechEngine {
         TE_LOGGER_INFO("Indexed {0} assets with {1} duplicates", m_assets.getRecords().size(), m_assets.getDuplicates().size());
         TE_LOGGER_INFO("Opened project '{0}' at {1}", m_project.name(), root.string());
         m_exportedRuntimePath = m_exportFolder / m_project.name() / m_runtimePath.filename();
-        std::error_code exportedError;
-        m_runtimeExported = std::filesystem::is_regular_file(m_exportedRuntimePath, exportedError);
 
         // The hook's start runs inside startClient() and needs the context; the platform backend needs the open window.
         createImGuiContext();
@@ -173,21 +171,29 @@ namespace TechEngine {
         return m_session;
     }
 
-    std::unique_ptr<Command> EditorApp::makeExportCommand() {
-        return std::make_unique<ExportCommand>(m_session, m_project, m_assets, m_files, m_registry, m_runtimePath, m_exportFolder, m_runtimeExported);
+    std::unique_ptr<Command> EditorApp::makeExportCommand(std::function<void(bool exported)> onFinished) {
+        return std::make_unique<ExportCommand>(m_session, m_project, m_assets, m_files, m_registry, m_runtimePath, m_exportFolder, std::move(onFinished));
+    }
+
+    std::unique_ptr<Command> EditorApp::makeRunCommand() {
+        return makeExportCommand([this](const bool exported) {
+            m_runExport.store(exported ? RunExport::Succeeded : RunExport::Failed);
+            wakeMainThread();
+        });
     }
 
     bool EditorApp::canRun() const {
-        return m_runtimeExported.load() && !m_runtime.isRunning();
+        return !m_runPending && !m_runtime.isRunning();
     }
 
     void EditorApp::runProject() {
-        const std::error_code startError = m_runtime.start(m_exportedRuntimePath, m_exportedRuntimePath.parent_path());
-        if (startError) {
-            TE_LOGGER_ERROR("Failed to start the runtime at {0}: {1}", m_exportedRuntimePath.string(), startError.message());
-            return;
+        // Set before the submit, because the simulation thread can finish the export before submitCommand returns.
+        m_runPending = true;
+        const std::error_code submitError = submitCommand(makeRunCommand());
+        if (submitError) {
+            m_runPending = false;
+            TE_LOGGER_WARN("The simulation refused the export Run starts with: {0}", submitError.message());
         }
-        TE_LOGGER_INFO("Started the runtime at {0}", m_exportedRuntimePath.string());
     }
 
     void EditorApp::shutdown() {
@@ -303,13 +309,32 @@ namespace TechEngine {
     }
 
     void EditorApp::exportProject() {
-        const std::error_code submitError = submitCommand(makeExportCommand());
+        const std::error_code submitError = submitCommand(makeExportCommand({}));
         if (submitError) {
             TE_LOGGER_WARN("The simulation refused the export: {0}", submitError.message());
         }
     }
 
+    void EditorApp::startRuntime() {
+        const std::error_code startError = m_runtime.start(m_exportedRuntimePath, m_exportedRuntimePath.parent_path());
+        if (startError) {
+            TE_LOGGER_ERROR("Failed to start the runtime at {0}: {1}", m_exportedRuntimePath.string(), startError.message());
+            return;
+        }
+        TE_LOGGER_INFO("Started the runtime at {0}", m_exportedRuntimePath.string());
+    }
+
     void EditorApp::pollRuntime() {
+        const RunExport runExport = m_runExport.exchange(RunExport::None);
+        if (runExport != RunExport::None) {
+            m_runPending = false;
+            if (runExport == RunExport::Succeeded) {
+                startRuntime();
+            } else {
+                TE_LOGGER_ERROR("Run did not start the runtime, because its export failed");
+            }
+        }
+
         // An idle editor waits for its next event, so an exit while nothing happens is logged on the next one.
         int exitCode = 0;
         const bool exited = m_runtime.pollExit(exitCode);

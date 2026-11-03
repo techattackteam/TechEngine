@@ -111,7 +111,15 @@ namespace {
         }
 
         void exportProject() {
-            makeExportCommand()->apply(AppTestAccess::scene(*this));
+            makeExportCommand({})->apply(AppTestAccess::scene(*this));
+        }
+
+        void submitExport() {
+            TechEngine::EditorApp::exportProject();
+        }
+
+        void applyRunCommand() {
+            makeRunCommand()->apply(AppTestAccess::scene(*this));
         }
 
         void saveScene() {
@@ -367,44 +375,59 @@ TEST_CASE("the startup load creates a startup scene when the project names none"
     editor.shutdown();
 }
 
-TEST_CASE("File, Run is enabled once an export holds a runtime, and stays enabled when the runtime fails to start", "[editor][window][run]") {
-    ScratchDirectory scratch{"editorRunEnabled"};
+TEST_CASE("File, Export and File, Run export nothing when the simulation refuses the command, and Run stays enabled", "[editor][window][run]") {
+    ScratchDirectory scratch{"editorRunRefused"};
     writeProjectLayout(scratch);
     const std::filesystem::path exportFolder = scratch.makeDirectory("export");
     scratch.writeFile("export/runtime", "runtime");
+    EditorProbe editor{scratch.root(), exportFolder};
+    editor.bootstrap();
+    CHECK(editor.canRun());
 
-    SECTION("with no earlier export, an export enables it") {
-        EditorProbe editor{scratch.root(), exportFolder};
-        editor.bootstrap();
-        CHECK_FALSE(editor.canRun());
+    editor.submitExport();
+    editor.runProject();
 
-        editor.exportProject();
-        CHECK(editor.canRun());
+    CHECK(editor.canRun());
+    CHECK_FALSE(std::filesystem::exists(exportFolder / "Dev"));
+    editor.shutdown();
+}
 
-        editor.runProject();
-        CHECK(editor.canRun());
-        editor.shutdown();
-    }
+TEST_CASE("File, Run starts nothing when its export fails", "[editor][window][run]") {
+    ScratchDirectory scratch{"editorRunExportFails"};
+    writeProjectLayout(scratch);
+    scratch.writeFile("project.toml", "name = \"Dev\"\n\n[export.client]\nstartupScene = \"0x00000000000000aa\"\n");
+    const std::filesystem::path exportFolder = scratch.makeDirectory("export");
+    scratch.writeFile("export/runtime", "runtime");
+    EditorProbe editor{scratch.root(), exportFolder};
+    editor.bootstrap();
 
-    SECTION("an export an earlier launch wrote enables it at startup") {
-        scratch.writeFile("export/Dev/runtime", "runtime");
-        EditorProbe editor{scratch.root(), exportFolder};
-        editor.bootstrap();
-        CHECK(editor.canRun());
-        editor.shutdown();
-    }
+    editor.applyRunCommand();
+    editor.pollRuntime();
 
-    SECTION("a folder where the runtime should be does not enable it") {
-        scratch.makeDirectory("export/Dev/runtime");
-        EditorProbe editor{scratch.root(), exportFolder};
-        editor.bootstrap();
-        CHECK_FALSE(editor.canRun());
-        editor.shutdown();
-    }
+    CHECK(editor.canRun());
+    CHECK_FALSE(std::filesystem::exists(exportFolder / "Dev"));
+    editor.shutdown();
+}
+
+TEST_CASE("File, Run exports first and stays enabled when the exported runtime fails to start", "[editor][window][run]") {
+    ScratchDirectory scratch{"editorRunStartFails"};
+    writeProjectLayout(scratch);
+    const std::filesystem::path exportFolder = scratch.makeDirectory("export");
+    scratch.writeFile("export/runtime", "runtime");
+    EditorProbe editor{scratch.root(), exportFolder};
+    editor.bootstrap();
+
+    editor.applyRunCommand();
+    editor.pollRuntime();
+
+    CHECK(std::filesystem::exists(exportFolder / "Dev" / "assets" / "common.tepack"));
+    CHECK(std::filesystem::exists(exportFolder / "Dev" / "runtime"));
+    CHECK(editor.canRun());
+    editor.shutdown();
 }
 
 #if !defined(_WIN32)
-TEST_CASE("File, Run starts the exported runtime and is disabled until it exits", "[editor][window][run]") {
+TEST_CASE("File, Run exports, starts the exported runtime and is disabled until it exits", "[editor][window][run]") {
     ScratchDirectory scratch{"editorRunStarts"};
     writeProjectLayout(scratch);
     const std::filesystem::path exportFolder = scratch.makeDirectory("export");
@@ -412,10 +435,11 @@ TEST_CASE("File, Run starts the exported runtime and is disabled until it exits"
     std::filesystem::permissions(runtime, std::filesystem::perms::owner_all);
     EditorProbe editor{scratch.root(), exportFolder};
     editor.bootstrap();
-    editor.exportProject();
-    REQUIRE(editor.canRun());
+    REQUIRE_FALSE(std::filesystem::exists(exportFolder / "Dev"));
 
-    editor.runProject();
+    editor.applyRunCommand();
+    editor.pollRuntime();
+    CHECK(std::filesystem::exists(exportFolder / "Dev" / "assets" / "common.tepack"));
     CHECK_FALSE(editor.canRun());
 
     const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
