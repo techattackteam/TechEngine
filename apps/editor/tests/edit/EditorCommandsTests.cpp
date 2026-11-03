@@ -188,19 +188,21 @@ TEST_CASE("every sender method reaches the live scene through the running simula
             const EditorSnapshot withChild = step();
             const Entity child = withChild.hierarchy.size() < 2 ? Entity{} : withChild.hierarchy[1].entity;
 
-            commands.rename(child, "Renamed");
+            commands.rename({child}, "Renamed");
             step();
             commands.select({child}, child, 1);
             step();
-            commands.setField(child, TechEngine::componentTypeId<TechEngine::Transform>(), 0, FieldValue{2.0f});
+            commands.setField({child}, TechEngine::componentTypeId<TechEngine::Transform>(), 0, FieldValue{2.0f});
             step();
-            commands.addComponent(child, TechEngine::componentTypeId<CommandsProbeComponent>());
+            commands.addComponent({child}, TechEngine::componentTypeId<CommandsProbeComponent>());
             step();
-            commands.removeComponent(child, TechEngine::componentTypeId<CommandsProbeComponent>());
+            commands.removeComponent({child}, TechEngine::componentTypeId<CommandsProbeComponent>());
             step();
             commands.reparent({child}, Entity{}, 0);
             step();
             commands.destroy({parent});
+            step();
+            commands.setRotationAxis({child}, child, TechEngine::Transform::fromEulerDegrees(TechEngine::Vec3(0.0f, 45.0f, 0.0f)), 1, 45.0f);
             step();
         }
         app.requestStop();
@@ -209,7 +211,7 @@ TEST_CASE("every sender method reaches the live scene through the running simula
     controller.join();
 
     REQUIRE(startedInTime);
-    REQUIRE(steps.size() == 9);
+    REQUIRE(steps.size() == 10);
     CHECK(std::ranges::all_of(stepsInTime, [](const bool inTime) {
         return inTime;
     }));
@@ -248,6 +250,16 @@ TEST_CASE("every sender method reaches the live scene through the running simula
     CHECK(steps[8].hierarchy[0].name == "Renamed");
     CHECK(steps[8].selection == std::vector<Entity>{child});
     CHECK(steps[8].active == child);
+
+    const TechEngine::ComponentRow* rotated = findProbeRow(steps[9], transformType);
+    REQUIRE(rotated != nullptr);
+    REQUIRE(rotated->fields.size() == 10);
+    const TechEngine::Quat expected = TechEngine::Transform::fromEulerDegrees(TechEngine::Vec3(0.0f, 45.0f, 0.0f));
+    CHECK(rotated->fields[3].value == FieldValue{expected.w});
+    CHECK(rotated->fields[4].value == FieldValue{expected.x});
+    CHECK(rotated->fields[5].value == FieldValue{expected.y});
+    CHECK(rotated->fields[6].value == FieldValue{expected.z});
+    CHECK(steps[9].editRevision > steps[8].editRevision);
     const TechEngine::Scene& scene = TechEngineTests::AppTestAccess::scene(app);
     CHECK_FALSE(scene.contains(parent));
     CHECK(scene.contains(child));
@@ -261,11 +273,12 @@ TEST_CASE("a sender on an app that is not running applies nothing and logs the r
     commands.create(Entity{});
     commands.destroy({Entity{0, 0}});
     commands.reparent({Entity{0, 0}}, Entity{}, 0);
-    commands.rename(Entity{0, 0}, "Name");
+    commands.rename({Entity{0, 0}}, "Name");
     commands.select({Entity{0, 0}}, Entity{0, 0}, 1);
-    commands.setField(Entity{0, 0}, TechEngine::ComponentTypeId{}, 0, FieldValue{1.0f});
-    commands.addComponent(Entity{0, 0}, TechEngine::ComponentTypeId{});
-    commands.removeComponent(Entity{0, 0}, TechEngine::ComponentTypeId{});
+    commands.setField({Entity{0, 0}}, TechEngine::ComponentTypeId{}, 0, FieldValue{1.0f});
+    commands.setRotationAxis({Entity{0, 0}}, Entity{0, 0}, TechEngine::Quat(1.0f, 0.0f, 0.0f, 0.0f), 0, 1.0f);
+    commands.addComponent({Entity{0, 0}}, TechEngine::ComponentTypeId{});
+    commands.removeComponent({Entity{0, 0}}, TechEngine::ComponentTypeId{});
     commands.save();
     commands.saveAndClose();
 
@@ -273,7 +286,7 @@ TEST_CASE("a sender on an app that is not running applies nothing and logs the r
     const auto refusals = std::ranges::count_if(g_editorCommandsLog, [](const std::string& message) {
         return message.find("refused an edit") != std::string::npos;
     });
-    CHECK(refusals == 10);
+    CHECK(refusals == 11);
 }
 
 TEST_CASE("save and save and close reach the live scene through the running simulation", "[editor][edit][commands][save][integration]") {

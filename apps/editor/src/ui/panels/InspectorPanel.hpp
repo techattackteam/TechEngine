@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <string_view>
 #include <unordered_map>
+#include <vector>
 
 namespace TechEngine {
     class EditorCommands;
@@ -24,7 +25,7 @@ namespace TechEngine {
         EditorCommands* m_commands = nullptr;
         float m_labelWidth = 0.0f;
         TextEditField m_nameField;
-        Entity m_nameEntity;
+        std::vector<Entity> m_nameEntities;
         std::unordered_map<ImGuiID, TextEditField> m_textFields;
         Entity m_textFieldsEntity;
         // Euler angles are kept across frames, because decomposing the quaternion each frame can flip
@@ -45,23 +46,27 @@ namespace TechEngine {
 
         void drawName(const EditorSnapshot& snapshot);
 
-        void drawComponent(Entity entity, const ComponentRow& component);
+        void drawComponent(const EditorSnapshot& snapshot, const ComponentRow& component);
 
-        void drawComponentMenu(Entity entity, const ComponentRow& component, float rightX);
+        void drawComponentMenu(const EditorSnapshot& snapshot, const ComponentRow& component, float rightX);
 
-        void drawTransform(Entity entity, const ComponentRow& component);
+        void drawTransform(const EditorSnapshot& snapshot, const ComponentRow& component);
 
         void drawMeshRenderer(const ComponentRow& component);
 
-        void drawFields(Entity entity, const ComponentRow& component);
+        void drawFields(const EditorSnapshot& snapshot, const ComponentRow& component);
 
-        void drawField(Entity entity, ComponentTypeId component, const FieldRow& field);
+        void drawField(const EditorSnapshot& snapshot, ComponentTypeId component, const FieldRow& field);
+
+        static void drawReadOnlyField(const FieldRow& field);
 
         void drawAddMenu(const EditorSnapshot& snapshot);
 
         void syncEuler(Entity entity, const Quat& rotation);
 
-        void sendVec3(Entity entity, std::uint32_t firstField, const Vec3& values, const std::array<bool, 3>& changedAxes);
+        void sendVec3(const std::vector<Entity>& entities, std::uint32_t firstField, const Vec3& values, const std::array<bool, 3>& changedAxes);
+
+        static std::array<bool, 3> getMixedAxes(const ComponentRow& component, std::uint32_t firstField);
 
         static std::string_view getDisplayName(std::string_view tag);
 

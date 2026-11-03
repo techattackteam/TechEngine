@@ -43,7 +43,7 @@ namespace TechEngine {
         return changed;
     }
 
-    bool drawVec3Control(const char* id, Vec3& values, const float resetValue, std::array<bool, 3>& changedAxes) {
+    bool drawVec3Control(const char* id, Vec3& values, const float resetValue, const std::array<bool, 3>& mixedAxes, std::array<bool, 3>& changedAxes) {
         ImGui::PushID(id);
         const float lineHeight = ImGui::GetFrameHeight();
         const ImVec2 letterSize(lineHeight, lineHeight);
@@ -70,7 +70,9 @@ namespace TechEngine {
 
             ImGui::SameLine(0.0f, 0.0f);
             ImGui::SetNextItemWidth(dragWidth);
+            ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, mixedAxes[axis]);
             const bool dragged = dragScalar("##drag", ImGuiDataType_Float, &values[component], VEC3_DRAG_SPEED, VEC3_FORMAT);
+            ImGui::PopItemFlag();
             changedAxes[axis] = changedAxes[axis] || dragged;
             changed = changed || changedAxes[axis];
             ImGui::PopID();

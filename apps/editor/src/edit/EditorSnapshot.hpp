@@ -5,6 +5,7 @@
 
 #include <edit/FieldValue.hpp>
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -24,6 +25,7 @@ namespace TechEngine {
         std::string name;
         FieldKind kind = FieldKind::Bool;
         FieldValue value;
+        bool mixed = false;
     };
 
     struct ComponentRow {
@@ -48,11 +50,15 @@ namespace TechEngine {
         std::uint64_t selectionSequence = 0;
         // Name is left out: the inspector renames through RenameEntityCommand, never a set-field command.
         std::vector<ComponentRow> components;
+        // Euler X, Y and Z of Transform's rotation. The quaternion fields' own mixed flags say nothing about one axis.
+        std::array<bool, 3> rotationAxesMixed{};
         std::vector<ComponentChoice> addable;
         std::uint64_t editRevision = 0;
         std::uint64_t savedRevision = 0;
 
         bool hasUnsavedEdits() const;
+
+        bool hasMixedNames() const;
 
         bool isInSubtree(Entity entity, Entity root) const;
 

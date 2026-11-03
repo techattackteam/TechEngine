@@ -15,6 +15,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -481,4 +482,146 @@ TEST_CASE("a selection whose entity is gone publishes no components and nothing 
 
     CHECK(snapshot.components.empty());
     CHECK(snapshot.addable.empty());
+}
+
+static void setEuler(EditTestScene& edit, const Entity entity, const Vec3& degrees) {
+    REQUIRE(edit.scene.getComponent<Transform>(entity).setLocal({Vec3(0.0f), Transform::fromEulerDegrees(degrees), Vec3(1.0f)}));
+}
+
+TEST_CASE("with several selected the snapshot lists only the components they all have, and offers what one of them lacks", "[editor][edit]") {
+    EditTestScene edit;
+    const Entity holds = edit.createNamed("Holds");
+    const Entity lacks = edit.createNamed("Lacks");
+    edit.scene.addComponent<InspectedSample>(holds);
+    edit.select({holds, lacks}, holds);
+
+    SECTION("one of them lacks the sample") {
+        const EditorSnapshot snapshot = edit.snapshot();
+
+        CHECK(findComponentRow(snapshot, TechEngine::componentTypeId<InspectedSample>()) == nullptr);
+        CHECK(findComponentRow(snapshot, TechEngine::componentTypeId<Transform>()) != nullptr);
+        REQUIRE(snapshot.addable.size() == 1);
+        CHECK(snapshot.addable[0].type == TechEngine::componentTypeId<InspectedSample>());
+    }
+
+    SECTION("the active entity is the one that lacks it") {
+        edit.select({holds, lacks}, lacks);
+
+        const EditorSnapshot snapshot = edit.snapshot();
+
+        CHECK(findComponentRow(snapshot, TechEngine::componentTypeId<InspectedSample>()) == nullptr);
+        REQUIRE(snapshot.addable.size() == 1);
+        CHECK(snapshot.addable[0].type == TechEngine::componentTypeId<InspectedSample>());
+    }
+
+    SECTION("both hold it") {
+        edit.scene.addComponent<InspectedSample>(lacks);
+
+        const EditorSnapshot snapshot = edit.snapshot();
+
+        CHECK(findComponentRow(snapshot, TechEngine::componentTypeId<InspectedSample>()) != nullptr);
+        CHECK(snapshot.addable.empty());
+    }
+}
+
+TEST_CASE("a field row is mixed only when a value differs, and holds the active entity's value", "[editor][edit]") {
+    EditTestScene edit;
+    const Entity active = edit.createNamed("Active");
+    const Entity second = edit.createNamed("Second");
+    const Entity third = edit.createNamed("Third");
+    REQUIRE(edit.scene.getComponent<Transform>(active).setLocal({Vec3(1.0f, 2.0f, 3.0f), Quat(1.0f, 0.0f, 0.0f, 0.0f), Vec3(1.0f)}));
+    REQUIRE(edit.scene.getComponent<Transform>(second).setLocal({Vec3(1.0f, 5.0f, 3.0f), Quat(1.0f, 0.0f, 0.0f, 0.0f), Vec3(1.0f)}));
+    REQUIRE(edit.scene.getComponent<Transform>(third).setLocal({Vec3(1.0f, 2.0f, 4.0f), Quat(1.0f, 0.0f, 0.0f, 0.0f), Vec3(1.0f)}));
+    for (const Entity entity: {active, second, third}) {
+        edit.scene.addComponent<InspectedSample>(entity);
+    }
+    edit.scene.getComponent<InspectedSample>(third).count = 9;
+
+    SECTION("three selected, the active one not first") {
+        edit.select({second, active, third}, active);
+
+        const EditorSnapshot snapshot = edit.snapshot();
+
+        const ComponentRow& transform = componentRowFor(snapshot, TechEngine::componentTypeId<Transform>());
+        REQUIRE(transform.fields.size() == TRANSFORM_FIELD_COUNT);
+        CHECK_FALSE(transform.fields[0].mixed);
+        CHECK(transform.fields[1].mixed);
+        CHECK(transform.fields[1].value == FieldValue{2.0f});
+        CHECK(transform.fields[2].mixed);
+        CHECK(transform.fields[2].value == FieldValue{3.0f});
+        for (std::size_t i = 3; i < transform.fields.size(); i++) {
+            CHECK_FALSE(transform.fields[i].mixed);
+        }
+
+        const ComponentRow& sample = componentRowFor(snapshot, TechEngine::componentTypeId<InspectedSample>());
+        REQUIRE(sample.fields.size() == SAMPLE_FIELD_COUNT);
+        for (const FieldRow& field: sample.fields) {
+            CHECK(field.mixed == (field.index == SAMPLE_COUNT_FIELD));
+        }
+        CHECK(sample.fields[SAMPLE_COUNT_FIELD].value == FieldValue{std::int32_t{3}});
+    }
+
+    SECTION("one selected") {
+        edit.selectOnly(second);
+
+        const EditorSnapshot snapshot = edit.snapshot();
+
+        for (const ComponentRow& component: snapshot.components) {
+            for (const FieldRow& field: component.fields) {
+                CHECK_FALSE(field.mixed);
+            }
+        }
+    }
+}
+
+TEST_CASE("a rotation axis is mixed only when its angle differs beyond display precision", "[editor][edit]") {
+    EditTestScene edit;
+    const Entity active = edit.createNamed("Active");
+    const Entity other = edit.createNamed("Other");
+    setEuler(edit, active, Vec3(10.0f, 20.0f, 30.0f));
+    edit.select({active, other}, active);
+
+    SECTION("one axis differs") {
+        setEuler(edit, other, Vec3(10.0f, 20.0f, 45.0f));
+
+        CHECK(edit.snapshot().rotationAxesMixed == std::array<bool, 3>{false, false, true});
+    }
+
+    SECTION("every axis differs") {
+        setEuler(edit, other, Vec3(-10.0f, -20.0f, -30.0f));
+
+        CHECK(edit.snapshot().rotationAxesMixed == std::array<bool, 3>{true, true, true});
+    }
+
+    SECTION("an angle closer than the 0.01 the inspector shows") {
+        setEuler(edit, other, Vec3(10.001f, 20.0f, 30.0f));
+
+        CHECK(edit.snapshot().rotationAxesMixed == std::array<bool, 3>{false, false, false});
+    }
+
+    SECTION("180 and -180 degrees are the same angle") {
+        setEuler(edit, active, Vec3(0.0f, 0.0f, 180.0f));
+        setEuler(edit, other, Vec3(0.0f, 0.0f, -180.0f));
+
+        CHECK(edit.snapshot().rotationAxesMixed == std::array<bool, 3>{false, false, false});
+    }
+
+    SECTION("one selected") {
+        setEuler(edit, other, Vec3(-10.0f, -20.0f, -30.0f));
+        edit.selectOnly(active);
+
+        CHECK(edit.snapshot().rotationAxesMixed == std::array<bool, 3>{false, false, false});
+    }
+
+    SECTION("a rebuild for a selection that agrees clears the flags") {
+        setEuler(edit, other, Vec3(-10.0f, -20.0f, -30.0f));
+        EditorSnapshot snapshot;
+        edit.session.buildSnapshot(edit.scene, edit.getRegistry(), snapshot);
+        REQUIRE(snapshot.rotationAxesMixed == std::array<bool, 3>{true, true, true});
+        setEuler(edit, other, Vec3(10.0f, 20.0f, 30.0f));
+
+        edit.session.buildSnapshot(edit.scene, edit.getRegistry(), snapshot);
+
+        CHECK(snapshot.rotationAxesMixed == std::array<bool, 3>{false, false, false});
+    }
 }

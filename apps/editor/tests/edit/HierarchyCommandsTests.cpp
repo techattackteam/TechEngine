@@ -15,13 +15,16 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
+#include <span>
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
 using TechEngine::CreateEntityCommand;
 using TechEngine::DestroyEntityCommand;
 using TechEngine::EditorSnapshot;
+using TechEngine::EditRecord;
 using TechEngine::Entity;
 using TechEngine::RenameEntityCommand;
 using TechEngine::RenameRecord;
@@ -447,7 +450,7 @@ TEST_CASE("a move of several inside their own parent counts the position among t
 }
 
 static void flattenScaleX(EditTestScene& edit, const Entity entity) {
-    TechEngine::SetFieldCommand flatten{edit.session, edit.getRegistry(), entity, TechEngine::componentTypeId<Transform>(), TechEngineTests::TRANSFORM_SCALE_X_FIELD, TechEngine::FieldValue{0.0f}};
+    TechEngine::SetFieldCommand flatten{edit.session, edit.getRegistry(), {entity}, TechEngine::componentTypeId<Transform>(), TechEngineTests::TRANSFORM_SCALE_X_FIELD, TechEngine::FieldValue{0.0f}};
     flatten.apply(edit.scene);
     REQUIRE(edit.scene.getComponent<Transform>(entity).getLocal().scale.x == 0.0f);
 }
@@ -540,7 +543,7 @@ TEST_CASE("rename changes only that entity's name and raises the edit revision",
     const Entity other = edit.createNamed("Old");
     const EditorSnapshot before = edit.snapshot();
 
-    RenameEntityCommand rename{edit.session, renamed, "New"};
+    RenameEntityCommand rename{edit.session, {renamed}, "New"};
     rename.apply(edit.scene);
 
     const EditorSnapshot after = edit.snapshot();
@@ -553,7 +556,7 @@ TEST_CASE("rename records the name it replaces", "[editor][edit][commands]") {
     EditTestScene edit;
     const Entity entity = edit.createNamed("Old");
 
-    RenameEntityCommand rename{edit.session, entity, "New"};
+    RenameEntityCommand rename{edit.session, {entity}, "New"};
     rename.apply(edit.scene);
 
     REQUIRE(edit.session.getRecords().size() == 1);
@@ -568,7 +571,7 @@ TEST_CASE("rename of an entity that is not alive records nothing", "[editor][edi
     const Entity dead = edit.createNamed("Dead");
     REQUIRE(edit.scene.destroyEntity(dead));
 
-    RenameEntityCommand rename{edit.session, dead, "New"};
+    RenameEntityCommand rename{edit.session, {dead}, "New"};
     rename.apply(edit.scene);
 
     CHECK(edit.session.getRecords().empty());
@@ -580,7 +583,7 @@ TEST_CASE("rename accepts an empty name and a name another entity already has", 
     const Entity second = edit.createNamed("Second");
 
     SECTION("an empty name") {
-        RenameEntityCommand rename{edit.session, second, ""};
+        RenameEntityCommand rename{edit.session, {second}, ""};
         rename.apply(edit.scene);
 
         const EditorSnapshot after = edit.snapshot();
@@ -588,7 +591,7 @@ TEST_CASE("rename accepts an empty name and a name another entity already has", 
     }
 
     SECTION("a repeated name") {
-        RenameEntityCommand rename{edit.session, second, "Taken"};
+        RenameEntityCommand rename{edit.session, {second}, "Taken"};
         rename.apply(edit.scene);
 
         const EditorSnapshot after = edit.snapshot();
@@ -602,7 +605,7 @@ TEST_CASE("rename to the current name keeps the edit revision and records nothin
     const Entity entity = edit.createNamed("Same");
     const EditorSnapshot before = edit.snapshot();
 
-    RenameEntityCommand rename{edit.session, entity, "Same"};
+    RenameEntityCommand rename{edit.session, {entity}, "Same"};
     rename.apply(edit.scene);
 
     CHECK(edit.snapshot().editRevision == before.editRevision);
@@ -617,12 +620,12 @@ TEST_CASE("rename of an entity that is not alive changes nothing", "[editor][edi
     const EditorSnapshot before = edit.snapshot();
 
     SECTION("a destroyed entity") {
-        RenameEntityCommand rename{edit.session, dead, "New"};
+        RenameEntityCommand rename{edit.session, {dead}, "New"};
         rename.apply(edit.scene);
     }
 
     SECTION("the empty entity") {
-        RenameEntityCommand rename{edit.session, Entity{}, "New"};
+        RenameEntityCommand rename{edit.session, {Entity{}}, "New"};
         rename.apply(edit.scene);
     }
 
@@ -630,6 +633,52 @@ TEST_CASE("rename of an entity that is not alive changes nothing", "[editor][edi
     REQUIRE(after.hierarchy.size() == 1);
     CHECK(rowFor(after, alive).name == "Alive");
     CHECK(after.editRevision == before.editRevision);
+}
+
+TEST_CASE("a rename of several gives each the name and records every name it replaced", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity first = edit.createNamed("First");
+    const Entity kept = edit.createNamed("Kept");
+    const Entity third = edit.createNamed("Third");
+    const Entity untouched = edit.createNamed("Untouched");
+    const EditorSnapshot before = edit.snapshot();
+
+    RenameEntityCommand rename{edit.session, {first, kept, third}, "Kept"};
+    rename.apply(edit.scene);
+
+    const EditorSnapshot after = edit.snapshot();
+    CHECK(rowFor(after, first).name == "Kept");
+    CHECK(rowFor(after, kept).name == "Kept");
+    CHECK(rowFor(after, third).name == "Kept");
+    CHECK(rowFor(after, untouched).name == "Untouched");
+    CHECK(after.editRevision > before.editRevision);
+
+    const std::span<const EditRecord> records = edit.session.getRecords();
+    REQUIRE(records.size() == 2);
+    std::vector<std::pair<Entity, std::string>> replaced;
+    for (const EditRecord& record: records) {
+        REQUIRE(std::holds_alternative<RenameRecord>(record));
+        const RenameRecord& renamed = std::get<RenameRecord>(record);
+        replaced.emplace_back(renamed.entity, renamed.oldName);
+    }
+    std::ranges::sort(replaced, {}, &std::pair<Entity, std::string>::second);
+    CHECK(replaced == std::vector<std::pair<Entity, std::string>>{{first, "First"}, {third, "Third"}});
+}
+
+TEST_CASE("a rename of several skips a dead entity and renames the rest", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity alive = edit.createNamed("Alive");
+    const Entity dead = edit.createNamed("Dead");
+    REQUIRE(edit.scene.destroyEntity(dead));
+
+    RenameEntityCommand rename{edit.session, {dead, alive}, "New"};
+    rename.apply(edit.scene);
+
+    const EditorSnapshot after = edit.snapshot();
+    CHECK(rowFor(after, alive).name == "New");
+    REQUIRE(edit.session.getRecords().size() == 1);
+    REQUIRE(std::holds_alternative<RenameRecord>(edit.session.getRecords()[0]));
+    CHECK(std::get<RenameRecord>(edit.session.getRecords()[0]).entity == alive);
 }
 
 TEST_CASE("a select replaces the whole set and keeps the edit revision", "[editor][edit][commands]") {

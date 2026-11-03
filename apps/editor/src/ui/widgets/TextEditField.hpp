@@ -16,6 +16,8 @@ namespace TechEngine {
 
         // Shows text until the user activates the field. Returns true once, on the frame the edit
         // ends, with the final text in out; Escape ends it with the text it started from.
-        bool draw(const char* label, const std::string& text, std::string& out);
+        // A mixed field shows a dash, and returns true only for Enter or a changed text, because Enter on
+        // an unchanged text still has to reach the entities whose text differs.
+        bool draw(const char* label, const std::string& text, std::string& out, bool mixed = false);
     };
 }

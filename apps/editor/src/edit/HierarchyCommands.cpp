@@ -162,26 +162,37 @@ namespace TechEngine {
         return position;
     }
 
-    RenameEntityCommand::RenameEntityCommand(EditSession& session, const Entity entity, std::string name) : m_session(&session), m_entity(entity), m_name(std::move(name)) {
+    RenameEntityCommand::RenameEntityCommand(EditSession& session, std::vector<Entity> entities, std::string name) : m_session(&session), m_entities(std::move(entities)), m_name(std::move(name)) {
     }
 
     void RenameEntityCommand::apply(Scene& scene) {
-        if (!scene.contains(m_entity)) {
-            TE_LOGGER_WARN("RenameEntityCommand applied with a dead or invalid entity");
-            return;
+        bool changed = false;
+        for (Entity entity: m_entities) {
+            if (!entity.valid()) {
+                TE_LOGGER_WARN("RenameEntityCommand applied with an invalid entity");
+                continue;
+            }
+            if (!scene.contains(entity)) {
+                TE_LOGGER_WARN("RenameEntityCommand applied with a dead entity");
+                continue;
+            }
+
+            Name& name = scene.getComponent<Name>(entity);
+            if (name.value == m_name) {
+                continue;
+            }
+
+            RenameRecord record;
+            record.entity = entity;
+            record.oldName = std::move(name.value);
+            name.value = m_name;
+            m_session->record(std::move(record));
+            changed = true;
         }
 
-        Name& name = scene.getComponent<Name>(m_entity);
-        if (name.value == m_name) {
-            return;
+        if (changed) {
+            m_session->recordSceneChange();
         }
-
-        RenameRecord record;
-        record.entity = m_entity;
-        record.oldName = std::move(name.value);
-        name.value = std::move(m_name);
-        m_session->record(std::move(record));
-        m_session->recordSceneChange();
     }
 
     SelectEntityCommand::SelectEntityCommand(EditSession& session, std::vector<Entity> selection, const Entity active, const std::uint64_t sequence) : m_session(&session), m_selection(std::move(selection)), m_active(active), m_sequence(sequence) {

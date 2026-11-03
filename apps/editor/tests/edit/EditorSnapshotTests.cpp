@@ -314,3 +314,48 @@ TEST_CASE("a drop of several counts only the parent's direct children, skipping 
     REQUIRE(snapshot.resolveDrop(std::vector<Entity>{GRANDCHILD, OTHER_ROOT}, ROOT, 2, position));
     CHECK(position == 2);
 }
+
+TEST_CASE("the names are mixed only when two selected entities' names differ", "[editor][edit]") {
+    EditorSnapshot snapshot = threeSiblings();
+    snapshot.hierarchy[0].name = "Parent";
+    snapshot.hierarchy[1].name = "Same";
+    snapshot.hierarchy[2].name = "Same";
+    snapshot.hierarchy[3].name = "Other";
+
+    SECTION("two with the same name, beside an unselected parent named otherwise") {
+        snapshot.selection = {FIRST, SECOND};
+
+        CHECK_FALSE(snapshot.hasMixedNames());
+    }
+
+    SECTION("one name differs") {
+        snapshot.selection = {FIRST, SECOND, THIRD};
+
+        CHECK(snapshot.hasMixedNames());
+    }
+
+    SECTION("the differing name comes first") {
+        snapshot.selection = {THIRD, FIRST};
+
+        CHECK(snapshot.hasMixedNames());
+    }
+
+    SECTION("an empty name and another name") {
+        snapshot.hierarchy[1].name.clear();
+        snapshot.selection = {FIRST, SECOND};
+
+        CHECK(snapshot.hasMixedNames());
+    }
+
+    SECTION("one selected") {
+        snapshot.selection = {THIRD};
+
+        CHECK_FALSE(snapshot.hasMixedNames());
+    }
+
+    SECTION("no selection") {
+        snapshot.selection.clear();
+
+        CHECK_FALSE(snapshot.hasMixedNames());
+    }
+}

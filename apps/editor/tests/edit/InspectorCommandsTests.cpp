@@ -17,6 +17,7 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -36,8 +37,11 @@ using TechEngine::EditRecord;
 using TechEngine::Entity;
 using TechEngine::FieldEditRecord;
 using TechEngine::FieldValue;
+using TechEngine::Quat;
 using TechEngine::RemoveComponentCommand;
+using TechEngine::RotationEditRecord;
 using TechEngine::SetFieldCommand;
+using TechEngine::SetRotationAxisCommand;
 using TechEngine::Transform;
 using TechEngine::TransformValues;
 using TechEngine::Vec3;
@@ -76,7 +80,7 @@ static ComponentTypeId sampleType() {
 }
 
 static void applySetField(EditTestScene& edit, const Entity entity, const ComponentTypeId component, const std::uint32_t field, FieldValue value) {
-    SetFieldCommand command{edit.session, edit.getRegistry(), entity, component, field, std::move(value)};
+    SetFieldCommand command{edit.session, edit.getRegistry(), {entity}, component, field, std::move(value)};
     command.apply(edit.scene);
 }
 
@@ -226,12 +230,12 @@ TEST_CASE("set field, add and remove refuse a type the registry does not know, a
     }
 
     SECTION("add") {
-        AddComponentCommand command{edit.session, entity, unknown};
+        AddComponentCommand command{edit.session, {entity}, unknown};
         command.apply(edit.scene);
     }
 
     SECTION("remove") {
-        RemoveComponentCommand command{edit.session, edit.getRegistry(), entity, unknown};
+        RemoveComponentCommand command{edit.session, edit.getRegistry(), {entity}, unknown};
         command.apply(edit.scene);
     }
 
@@ -322,7 +326,7 @@ TEST_CASE("add component gives the entity a default one, publishes it and record
     edit.selectOnly(entity);
     const EditorSnapshot before = edit.snapshot();
 
-    AddComponentCommand command{edit.session, entity, sampleType()};
+    AddComponentCommand command{edit.session, {entity}, sampleType()};
     command.apply(edit.scene);
 
     REQUIRE(edit.scene.hasComponent<InspectedSample>(entity));
@@ -347,17 +351,17 @@ TEST_CASE("add component refuses a built-in, a type the entity holds and a dead 
     const EditorSnapshot before = edit.snapshot();
 
     SECTION("Transform") {
-        AddComponentCommand command{edit.session, entity, transformType()};
+        AddComponentCommand command{edit.session, {entity}, transformType()};
         command.apply(edit.scene);
     }
 
     SECTION("Name") {
-        AddComponentCommand command{edit.session, entity, TechEngine::componentTypeId<TechEngine::Name>()};
+        AddComponentCommand command{edit.session, {entity}, TechEngine::componentTypeId<TechEngine::Name>()};
         command.apply(edit.scene);
     }
 
     SECTION("a type the entity already holds") {
-        AddComponentCommand command{edit.session, entity, sampleType()};
+        AddComponentCommand command{edit.session, {entity}, sampleType()};
         command.apply(edit.scene);
 
         CHECK(edit.scene.getComponent<InspectedSample>(entity).count == 11);
@@ -367,7 +371,7 @@ TEST_CASE("add component refuses a built-in, a type the entity holds and a dead 
         const Entity dead = edit.createNamed("Dead");
         REQUIRE(edit.scene.destroyEntity(dead));
 
-        AddComponentCommand command{edit.session, dead, sampleType()};
+        AddComponentCommand command{edit.session, {dead}, sampleType()};
         command.apply(edit.scene);
     }
 
@@ -388,7 +392,7 @@ TEST_CASE("remove component takes it off, records its payload and raises the edi
     typeRecord->writePayload(writer, &edit.scene.getComponent<InspectedSample>(entity));
     const EditorSnapshot before = edit.snapshot();
 
-    RemoveComponentCommand command{edit.session, edit.getRegistry(), entity, sampleType()};
+    RemoveComponentCommand command{edit.session, edit.getRegistry(), {entity}, sampleType()};
     command.apply(edit.scene);
 
     CHECK_FALSE(edit.scene.hasComponent<InspectedSample>(entity));
@@ -413,31 +417,291 @@ TEST_CASE("remove component refuses the built-ins and a type the entity lacks, a
     const EditorSnapshot before = edit.snapshot();
 
     SECTION("Transform") {
-        RemoveComponentCommand command{edit.session, edit.getRegistry(), entity, transformType()};
+        RemoveComponentCommand command{edit.session, edit.getRegistry(), {entity}, transformType()};
         command.apply(edit.scene);
 
         CHECK(edit.scene.hasComponent<Transform>(entity));
     }
 
     SECTION("Name") {
-        RemoveComponentCommand command{edit.session, edit.getRegistry(), entity, TechEngine::componentTypeId<TechEngine::Name>()};
+        RemoveComponentCommand command{edit.session, edit.getRegistry(), {entity}, TechEngine::componentTypeId<TechEngine::Name>()};
         command.apply(edit.scene);
 
         CHECK(edit.scene.getComponent<TechEngine::Name>(entity).value == "A");
     }
 
     SECTION("Hierarchy") {
-        RemoveComponentCommand command{edit.session, edit.getRegistry(), entity, TechEngine::componentTypeId<TechEngine::Hierarchy>()};
+        RemoveComponentCommand command{edit.session, edit.getRegistry(), {entity}, TechEngine::componentTypeId<TechEngine::Hierarchy>()};
         command.apply(edit.scene);
 
         CHECK(edit.scene.getParent(entity) == parent);
     }
 
     SECTION("a type the entity lacks") {
-        RemoveComponentCommand command{edit.session, edit.getRegistry(), entity, sampleType()};
+        RemoveComponentCommand command{edit.session, edit.getRegistry(), {entity}, sampleType()};
         command.apply(edit.scene);
     }
 
     CHECK(edit.session.getRecords().empty());
     CHECK(edit.snapshot().editRevision == before.editRevision);
+}
+
+template<typename Record>
+static const Record* findRecord(const std::span<const EditRecord> records, const Entity entity) {
+    for (const EditRecord& record: records) {
+        const Record* typed = std::get_if<Record>(&record);
+        if (typed != nullptr && typed->entity == entity) {
+            return typed;
+        }
+    }
+    return nullptr;
+}
+
+static void setEuler(EditTestScene& edit, const Entity entity, const Vec3& degrees) {
+    REQUIRE(edit.scene.getComponent<Transform>(entity).setLocal({Vec3(0.0f), Transform::fromEulerDegrees(degrees), Vec3(1.0f)}));
+}
+
+static void checkEuler(const EditTestScene& edit, const Entity entity, const Vec3& degrees) {
+    const Vec3 actual = Transform::toEulerDegrees(edit.scene.getComponent<Transform>(entity).getLocal().rotation);
+    CHECK(actual.x == Catch::Approx(degrees.x).margin(1e-3));
+    CHECK(actual.y == Catch::Approx(degrees.y).margin(1e-3));
+    CHECK(actual.z == Catch::Approx(degrees.z).margin(1e-3));
+}
+
+TEST_CASE("a set field over three entities changes that field on each and leaves three records", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const std::vector<Entity> entities = {edit.createNamed("A"), edit.createNamed("B"), edit.createNamed("C")};
+    for (std::size_t i = 0; i < entities.size(); i++) {
+        const float offset = static_cast<float>(i + 1);
+        REQUIRE(edit.scene.getComponent<Transform>(entities[i]).setLocal({Vec3(offset, offset * 10.0f, offset * 100.0f), Quat(1.0f, 0.0f, 0.0f, 0.0f), Vec3(1.0f)}));
+    }
+    const EditorSnapshot before = edit.snapshot();
+
+    SetFieldCommand command{edit.session, edit.getRegistry(), entities, transformType(), TRANSFORM_POSITION_X_FIELD, FieldValue{5.0f}};
+    command.apply(edit.scene);
+
+    const std::span<const EditRecord> records = edit.session.getRecords();
+    CHECK(records.size() == entities.size());
+    for (std::size_t i = 0; i < entities.size(); i++) {
+        const float offset = static_cast<float>(i + 1);
+        CHECK(edit.scene.getComponent<Transform>(entities[i]).getLocal().position == Vec3(5.0f, offset * 10.0f, offset * 100.0f));
+        const FieldEditRecord* record = findRecord<FieldEditRecord>(records, entities[i]);
+        REQUIRE(record != nullptr);
+        CHECK(record->component == transformType());
+        CHECK(record->field == TRANSFORM_POSITION_X_FIELD);
+        CHECK(record->oldValue == FieldValue{offset});
+    }
+    CHECK(edit.snapshot().editRevision > before.editRevision);
+}
+
+TEST_CASE("a set field over several skips an entity that holds the value, is dead or lacks the component, and edits the rest", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity edited = edit.createNamed("Edited");
+    const Entity holds = edit.createNamed("Holds");
+    const Entity lacks = edit.createNamed("Lacks");
+    const Entity dead = edit.createNamed("Dead");
+    edit.scene.addComponent<InspectedSample>(edited);
+    edit.scene.addComponent<InspectedSample>(holds);
+    edit.scene.addComponent<InspectedSample>(dead);
+    edit.scene.getComponent<InspectedSample>(holds).count = 7;
+    REQUIRE(edit.scene.destroyEntity(dead));
+    const EditorSnapshot before = edit.snapshot();
+
+    SetFieldCommand command{edit.session, edit.getRegistry(), {edited, holds, lacks, dead}, sampleType(), SAMPLE_COUNT_FIELD, FieldValue{std::int32_t{7}}};
+    command.apply(edit.scene);
+
+    CHECK(edit.scene.getComponent<InspectedSample>(edited).count == 7);
+    CHECK(edit.scene.getComponent<InspectedSample>(holds).count == 7);
+    CHECK_FALSE(edit.scene.hasComponent<InspectedSample>(lacks));
+    REQUIRE(edit.session.getRecords().size() == 1);
+    const FieldEditRecord* record = findRecord<FieldEditRecord>(edit.session.getRecords(), edited);
+    REQUIRE(record != nullptr);
+    CHECK(record->oldValue == FieldValue{std::int32_t{3}});
+    CHECK(edit.snapshot().editRevision > before.editRevision);
+}
+
+TEST_CASE("an add over a mixed selection adds only where the type is missing", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity holds = edit.createNamed("Holds");
+    const Entity first = edit.createNamed("First");
+    const Entity second = edit.createNamed("Second");
+    edit.scene.addComponent<InspectedSample>(holds);
+    edit.scene.getComponent<InspectedSample>(holds).count = 11;
+    const EditorSnapshot before = edit.snapshot();
+
+    AddComponentCommand command{edit.session, {holds, first, second}, sampleType()};
+    command.apply(edit.scene);
+
+    CHECK(edit.scene.getComponent<InspectedSample>(holds).count == 11);
+    REQUIRE(edit.scene.hasComponent<InspectedSample>(first));
+    REQUIRE(edit.scene.hasComponent<InspectedSample>(second));
+    CHECK(edit.scene.getComponent<InspectedSample>(first).count == InspectedSample{}.count);
+    CHECK(edit.scene.getComponent<InspectedSample>(second).count == InspectedSample{}.count);
+
+    const std::span<const EditRecord> records = edit.session.getRecords();
+    CHECK(records.size() == 2);
+    CHECK(findRecord<ComponentAddedRecord>(records, holds) == nullptr);
+    const ComponentAddedRecord* addedFirst = findRecord<ComponentAddedRecord>(records, first);
+    const ComponentAddedRecord* addedSecond = findRecord<ComponentAddedRecord>(records, second);
+    REQUIRE(addedFirst != nullptr);
+    REQUIRE(addedSecond != nullptr);
+    CHECK(addedFirst->component == sampleType());
+    CHECK(addedSecond->component == sampleType());
+    CHECK(edit.snapshot().editRevision > before.editRevision);
+}
+
+TEST_CASE("a remove over several removes from all and records each one's payload", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity first = edit.createNamed("First");
+    const Entity second = edit.createNamed("Second");
+    edit.scene.addComponent<InspectedSample>(first);
+    edit.scene.addComponent<InspectedSample>(second);
+    edit.scene.getComponent<InspectedSample>(first).label = "First";
+    edit.scene.getComponent<InspectedSample>(second).label = "Second";
+    const TechEngine::ComponentTypeRecord* typeRecord = edit.getRegistry().find(sampleType());
+    REQUIRE(typeRecord != nullptr);
+    std::vector<std::byte> firstPayload;
+    std::vector<std::byte> secondPayload;
+    TechEngine::Writer firstWriter{firstPayload};
+    TechEngine::Writer secondWriter{secondPayload};
+    typeRecord->writePayload(firstWriter, &edit.scene.getComponent<InspectedSample>(first));
+    typeRecord->writePayload(secondWriter, &edit.scene.getComponent<InspectedSample>(second));
+    REQUIRE(firstPayload != secondPayload);
+    const EditorSnapshot before = edit.snapshot();
+
+    RemoveComponentCommand command{edit.session, edit.getRegistry(), {first, second}, sampleType()};
+    command.apply(edit.scene);
+
+    CHECK_FALSE(edit.scene.hasComponent<InspectedSample>(first));
+    CHECK_FALSE(edit.scene.hasComponent<InspectedSample>(second));
+    const std::span<const EditRecord> records = edit.session.getRecords();
+    CHECK(records.size() == 2);
+    const ComponentRemovedRecord* removedFirst = findRecord<ComponentRemovedRecord>(records, first);
+    const ComponentRemovedRecord* removedSecond = findRecord<ComponentRemovedRecord>(records, second);
+    REQUIRE(removedFirst != nullptr);
+    REQUIRE(removedSecond != nullptr);
+    CHECK(removedFirst->payload == firstPayload);
+    CHECK(removedSecond->payload == secondPayload);
+    CHECK(edit.snapshot().editRevision > before.editRevision);
+}
+
+TEST_CASE("a rotation axis edit keeps each entity's other two axes", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity active = edit.createNamed("Active");
+    const Entity other = edit.createNamed("Other");
+    const Entity third = edit.createNamed("Third");
+    setEuler(edit, active, Vec3(10.0f, 20.0f, 30.0f));
+    setEuler(edit, other, Vec3(40.0f, 50.0f, 60.0f));
+    setEuler(edit, third, Vec3(-70.0f, -10.0f, 120.0f));
+    const std::array<Entity, 3> entities = {active, other, third};
+    std::array<Quat, 3> oldRotations{};
+    for (std::size_t i = 0; i < entities.size(); i++) {
+        oldRotations[i] = edit.scene.getComponent<Transform>(entities[i]).getLocal().rotation;
+    }
+    const EditorSnapshot before = edit.snapshot();
+
+    std::uint32_t axis = 0;
+    float degrees = 0.0f;
+    std::array<Vec3, 3> expected{};
+    SECTION("X") {
+        axis = 0;
+        degrees = 0.0f;
+        expected = {Vec3(0.0f, 20.0f, 30.0f), Vec3(0.0f, 50.0f, 60.0f), Vec3(0.0f, -10.0f, 120.0f)};
+    }
+    SECTION("Y") {
+        axis = 1;
+        degrees = 15.0f;
+        expected = {Vec3(10.0f, 15.0f, 30.0f), Vec3(40.0f, 15.0f, 60.0f), Vec3(-70.0f, 15.0f, 120.0f)};
+    }
+    SECTION("Z") {
+        axis = 2;
+        degrees = -45.0f;
+        expected = {Vec3(10.0f, 20.0f, -45.0f), Vec3(40.0f, 50.0f, -45.0f), Vec3(-70.0f, -10.0f, -45.0f)};
+    }
+    const Quat activeRotation = Transform::fromEulerDegrees(expected[0]);
+
+    SetRotationAxisCommand command{edit.session, edit.getRegistry(), {active, other, third}, active, activeRotation, axis, degrees};
+    command.apply(edit.scene);
+
+    CHECK(edit.scene.getComponent<Transform>(active).getLocal().rotation == activeRotation);
+    checkEuler(edit, other, expected[1]);
+    checkEuler(edit, third, expected[2]);
+    const std::span<const EditRecord> records = edit.session.getRecords();
+    CHECK(records.size() == entities.size());
+    for (std::size_t i = 0; i < entities.size(); i++) {
+        const RotationEditRecord* record = findRecord<RotationEditRecord>(records, entities[i]);
+        REQUIRE(record != nullptr);
+        CHECK(record->oldRotation == oldRotations[i]);
+    }
+    CHECK(edit.snapshot().editRevision > before.editRevision);
+}
+
+TEST_CASE("a rotation axis edit that leaves the rotation as it was records nothing and keeps the edit revision", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity entity = edit.createNamed("A");
+    setEuler(edit, entity, Vec3(10.0f, 20.0f, 30.0f));
+    const Quat current = edit.scene.getComponent<Transform>(entity).getLocal().rotation;
+    const EditorSnapshot before = edit.snapshot();
+
+    SetRotationAxisCommand command{edit.session, edit.getRegistry(), {entity}, entity, current, 0, 10.0f};
+    command.apply(edit.scene);
+
+    CHECK(edit.scene.getComponent<Transform>(entity).getLocal().rotation == current);
+    CHECK(edit.session.getRecords().empty());
+    CHECK(edit.snapshot().editRevision == before.editRevision);
+}
+
+TEST_CASE("a rotation axis edit skips a dead entity and still edits the rest", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity active = edit.createNamed("Active");
+    const Entity dead = edit.createNamed("Dead");
+    REQUIRE(edit.scene.destroyEntity(dead));
+    const Quat activeRotation = Transform::fromEulerDegrees(Vec3(0.0f, 30.0f, 0.0f));
+
+    SetRotationAxisCommand command{edit.session, edit.getRegistry(), {active, dead}, active, activeRotation, 1, 30.0f};
+    command.apply(edit.scene);
+
+    CHECK(edit.scene.getComponent<Transform>(active).getLocal().rotation == activeRotation);
+    REQUIRE(edit.session.getRecords().size() == 1);
+    CHECK(findRecord<RotationEditRecord>(edit.session.getRecords(), active) != nullptr);
+}
+
+TEST_CASE("a rotation axis edit rotates an entity whose scale has a zero axis", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity active = edit.createNamed("Active");
+    const Entity other = edit.createNamed("Other");
+    for (const Entity entity: {active, other}) {
+        applySetField(edit, entity, transformType(), TRANSFORM_SCALE_X_FIELD, FieldValue{0.0f});
+        REQUIRE(edit.scene.getComponent<Transform>(entity).getLocal().scale.x == 0.0f);
+    }
+    const EditorSnapshot before = edit.snapshot();
+    const Quat activeRotation = Transform::fromEulerDegrees(Vec3(0.0f, 30.0f, 0.0f));
+
+    SetRotationAxisCommand command{edit.session, edit.getRegistry(), {active, other}, active, activeRotation, 1, 30.0f};
+    command.apply(edit.scene);
+
+    CHECK(edit.scene.getComponent<Transform>(active).getLocal().rotation == activeRotation);
+    checkEuler(edit, other, Vec3(0.0f, 30.0f, 0.0f));
+    CHECK(edit.scene.getComponent<Transform>(active).getLocal().scale.x == 0.0f);
+    CHECK(edit.scene.getComponent<Transform>(other).getLocal().scale.x == 0.0f);
+    CHECK(findRecord<RotationEditRecord>(edit.session.getRecords(), active) != nullptr);
+    CHECK(findRecord<RotationEditRecord>(edit.session.getRecords(), other) != nullptr);
+    CHECK(edit.snapshot().editRevision > before.editRevision);
+}
+
+TEST_CASE("a remove over several skips an entity it cannot remove from and removes from the rest", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity lacks = edit.createNamed("Lacks");
+    const Entity holds = edit.createNamed("Holds");
+    edit.scene.addComponent<InspectedSample>(holds);
+    const EditorSnapshot before = edit.snapshot();
+
+    RemoveComponentCommand command{edit.session, edit.getRegistry(), {lacks, holds}, sampleType()};
+    command.apply(edit.scene);
+
+    CHECK_FALSE(edit.scene.hasComponent<InspectedSample>(holds));
+    REQUIRE(edit.session.getRecords().size() == 1);
+    CHECK(findRecord<ComponentRemovedRecord>(edit.session.getRecords(), holds) != nullptr);
+    CHECK(findRecord<ComponentRemovedRecord>(edit.session.getRecords(), lacks) == nullptr);
+    CHECK(edit.snapshot().editRevision > before.editRevision);
 }

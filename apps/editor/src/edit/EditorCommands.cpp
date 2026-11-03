@@ -26,24 +26,28 @@ namespace TechEngine {
         submit(std::make_unique<ReparentEntityCommand>(*m_session, std::move(children), parent, position));
     }
 
-    void EditorCommands::rename(const Entity entity, std::string name) {
-        submit(std::make_unique<RenameEntityCommand>(*m_session, entity, std::move(name)));
+    void EditorCommands::rename(std::vector<Entity> entities, std::string name) {
+        submit(std::make_unique<RenameEntityCommand>(*m_session, std::move(entities), std::move(name)));
     }
 
     void EditorCommands::select(std::vector<Entity> selection, const Entity active, const std::uint64_t sequence) {
         submit(std::make_unique<SelectEntityCommand>(*m_session, std::move(selection), active, sequence));
     }
 
-    void EditorCommands::setField(const Entity entity, const ComponentTypeId component, const std::uint32_t field, FieldValue value) {
-        submit(std::make_unique<SetFieldCommand>(*m_session, *m_registry, entity, component, field, std::move(value)));
+    void EditorCommands::setField(std::vector<Entity> entities, const ComponentTypeId component, const std::uint32_t field, FieldValue value) {
+        submit(std::make_unique<SetFieldCommand>(*m_session, *m_registry, std::move(entities), component, field, std::move(value)));
     }
 
-    void EditorCommands::addComponent(const Entity entity, const ComponentTypeId component) {
-        submit(std::make_unique<AddComponentCommand>(*m_session, entity, component));
+    void EditorCommands::setRotationAxis(std::vector<Entity> entities, const Entity active, const Quat activeRotation, const std::uint32_t axis, const float degrees) {
+        submit(std::make_unique<SetRotationAxisCommand>(*m_session, *m_registry, std::move(entities), active, activeRotation, axis, degrees));
     }
 
-    void EditorCommands::removeComponent(const Entity entity, const ComponentTypeId component) {
-        submit(std::make_unique<RemoveComponentCommand>(*m_session, *m_registry, entity, component));
+    void EditorCommands::addComponent(std::vector<Entity> entities, const ComponentTypeId component) {
+        submit(std::make_unique<AddComponentCommand>(*m_session, std::move(entities), component));
+    }
+
+    void EditorCommands::removeComponent(std::vector<Entity> entities, const ComponentTypeId component) {
+        submit(std::make_unique<RemoveComponentCommand>(*m_session, *m_registry, std::move(entities), component));
     }
 
     void EditorCommands::save() {
