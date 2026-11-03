@@ -58,14 +58,17 @@ namespace TechEngine {
     };
 
     // Always-on process-global state, not a pluggable sink; every dispatched
-    // record lands here regardless of what's in g_sinks. Slot choice is a bare fetch_add
-    // modulo; two threads racing the same wrapped slot can tear a write. Accepted for a
-    // best-effort crash trail, not a linearizable log.
+    // record lands here regardless of what's in g_sinks. The ring has its own lock, not
+    // g_sinkMutex: a record logged inside a sink's write lands here while its thread already
+    // holds g_sinkMutex.
     static std::array<LogRingEntry, LOG_RING_CAPACITY> g_ring{};
-    static std::atomic<std::uint64_t> g_ringWritten = 0;
+    static std::uint64_t g_ringWritten = 0;
+    static std::mutex g_ringMutex;
 
     static void ringWrite(const LogRecord& record) {
-        const std::uint64_t index = g_ringWritten.fetch_add(1, std::memory_order_relaxed);
+        const std::lock_guard<std::mutex> lock{g_ringMutex};
+        const std::uint64_t index = g_ringWritten;
+        g_ringWritten++;
         LogRingEntry& entry = g_ring[static_cast<std::size_t>(index % LOG_RING_CAPACITY)];
 
         const std::size_t copySize = std::min(record.message.size(), entry.messageStorage.size());
@@ -76,7 +79,8 @@ namespace TechEngine {
     }
 
     std::size_t ringSnapshot(LogRecord* out, std::size_t capacity) {
-        const std::uint64_t written = g_ringWritten.load(std::memory_order_relaxed);
+        const std::lock_guard<std::mutex> lock{g_ringMutex};
+        const std::uint64_t written = g_ringWritten;
         const std::size_t available = static_cast<std::size_t>(std::min<std::uint64_t>(written, LOG_RING_CAPACITY));
         const std::size_t count = std::min(available, capacity);
         const std::uint64_t start = written - count;
@@ -88,7 +92,8 @@ namespace TechEngine {
     }
 
     void ringClear() {
-        g_ringWritten.store(0, std::memory_order_relaxed);
+        const std::lock_guard<std::mutex> lock{g_ringMutex};
+        g_ringWritten = 0;
     }
 
     static spdlog::level::level_enum toSpdlogLevel(Level level) {
