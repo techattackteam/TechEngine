@@ -12,12 +12,14 @@ namespace TechEngine {
 
             std::string message(const int value) const override {
                 switch (static_cast<LogError>(value)) {
-                    case LogError::NullSink:
-                        return "log sink is null";
                     case LogError::SinkTableFull:
                         return "log sink table is full";
                     case LogError::SinkNotRegistered:
                         return "log sink is not registered";
+                    case LogError::SinkAlreadyRegistered:
+                        return "log sink is already registered";
+                    case LogError::InsideSink:
+                        return "log sinks cannot change from inside a sink's write";
                 }
                 return "unknown log error";
             }
