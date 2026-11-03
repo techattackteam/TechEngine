@@ -58,11 +58,11 @@ namespace TechEngine {
     class RenameEntityCommand final : public Command {
     private:
         EditSession* m_session = nullptr;
-        Entity m_entity;
+        std::vector<Entity> m_entities;
         std::string m_name;
 
     public:
-        RenameEntityCommand(EditSession& session, Entity entity, std::string name);
+        RenameEntityCommand(EditSession& session, std::vector<Entity> entities, std::string name);
 
         void apply(Scene& scene) override;
     };

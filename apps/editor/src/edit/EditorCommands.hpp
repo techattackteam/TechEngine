@@ -1,5 +1,6 @@
 #pragma once
 
+#include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 
@@ -35,15 +36,17 @@ namespace TechEngine {
 
         void reparent(std::vector<Entity> children, Entity parent, std::size_t position);
 
-        void rename(Entity entity, std::string name);
+        void rename(std::vector<Entity> entities, std::string name);
 
         void select(std::vector<Entity> selection, Entity active, std::uint64_t sequence);
 
-        void setField(Entity entity, ComponentTypeId component, std::uint32_t field, FieldValue value);
+        void setField(std::vector<Entity> entities, ComponentTypeId component, std::uint32_t field, FieldValue value);
 
-        void addComponent(Entity entity, ComponentTypeId component);
+        void setRotationAxis(std::vector<Entity> entities, Entity active, Quat activeRotation, std::uint32_t axis, float degrees);
 
-        void removeComponent(Entity entity, ComponentTypeId component);
+        void addComponent(std::vector<Entity> entities, ComponentTypeId component);
+
+        void removeComponent(std::vector<Entity> entities, ComponentTypeId component);
 
         void save();
 

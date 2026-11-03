@@ -13,7 +13,7 @@ namespace TechEngine {
     bool dragScalar(const char* label, ImGuiDataType type, void* value, float speed, const char* format = nullptr);
 
     // An X, Y and Z drag across the available width, each behind a coloured axis letter that resets
-    // that axis to resetValue when clicked. changedAxes says which axes changed:
+    // that axis to resetValue when clicked. A mixed axis shows a dash. changedAxes says which axes changed:
     // comparing with the snapshot misses a drag back to a value the simulation has not applied yet.
-    bool drawVec3Control(const char* id, Vec3& values, float resetValue, std::array<bool, 3>& changedAxes);
+    bool drawVec3Control(const char* id, Vec3& values, float resetValue, const std::array<bool, 3>& mixedAxes, std::array<bool, 3>& changedAxes);
 }

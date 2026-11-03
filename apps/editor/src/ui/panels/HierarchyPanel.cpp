@@ -290,7 +290,7 @@ namespace TechEngine {
 
         // Escape restores the old name before the field deactivates, so a cancelled rename sends nothing.
         if (name != row.name) {
-            m_commands->rename(m_renaming, name);
+            m_commands->rename({m_renaming}, name);
         }
         m_renaming = {};
     }

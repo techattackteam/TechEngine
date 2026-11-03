@@ -23,7 +23,7 @@ namespace TechEngine {
         return m_activated;
     }
 
-    bool TextEditField::draw(const char* label, const std::string& text, std::string& out) {
+    bool TextEditField::draw(const char* label, const std::string& text, std::string& out, const bool mixed) {
         if (!m_activated) {
             m_buffer = text;
         }
@@ -33,7 +33,9 @@ namespace TechEngine {
         }
 
         const ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CallbackResize;
+        ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, mixed);
         const bool entered = ImGui::InputText(label, m_buffer.data(), m_buffer.capacity() + 1, flags, resizeTextBuffer, &m_buffer);
+        ImGui::PopItemFlag();
         const bool active = ImGui::IsItemActive();
         m_activated = m_activated || active;
         // A focus request activates the field on a later frame, so an edit ends only once the field was active and no longer is.
@@ -43,6 +45,6 @@ namespace TechEngine {
 
         out = m_buffer.c_str();
         m_activated = false;
-        return true;
+        return !mixed || entered || out != text;
     }
 }

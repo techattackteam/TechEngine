@@ -13,6 +13,8 @@
 namespace TechEngine {
     class ComponentRegistry;
     class Scene;
+    struct ComponentRow;
+    struct ComponentTypeRecord;
     struct EditorSnapshot;
 
     struct SceneFile {
@@ -61,5 +63,9 @@ namespace TechEngine {
 
     private:
         void collectComponents(const Scene& scene, const ComponentRegistry& registry, EditorSnapshot& out) const;
+
+        void markMixedFields(const Scene& scene, const ComponentTypeRecord& record, ComponentRow& row) const;
+
+        void markMixedRotationAxes(const Scene& scene, EditorSnapshot& out) const;
     };
 }

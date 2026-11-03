@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace TechEngineTests {
@@ -125,6 +126,11 @@ namespace TechEngineTests {
         void selectOnly(const TechEngine::Entity entity) {
             m_selectionSequence++;
             session.setSelection({entity}, entity, m_selectionSequence);
+        }
+
+        void select(std::vector<TechEngine::Entity> selection, const TechEngine::Entity active) {
+            m_selectionSequence++;
+            session.setSelection(std::move(selection), active, m_selectionSequence);
         }
 
         TechEngine::EditorSnapshot snapshot() const {

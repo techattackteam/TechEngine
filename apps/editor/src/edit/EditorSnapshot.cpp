@@ -10,6 +10,26 @@ namespace TechEngine {
         return false;
     }
 
+    bool EditorSnapshot::hasMixedNames() const {
+        const std::string* firstName = nullptr;
+        for (const Entity entity: selection) {
+            std::size_t row = 0;
+            const bool found = findRow(entity, row);
+            if (!found) {
+                continue;
+            }
+            const std::string& rowName = hierarchy[row].name;
+            if (firstName == nullptr) {
+                firstName = &rowName;
+                continue;
+            }
+            if (rowName != *firstName) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     bool EditorSnapshot::isInSubtree(const Entity entity, const Entity root) const {
         if (!root.valid()) {
             return false;

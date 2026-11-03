@@ -1,3 +1,4 @@
+#include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
@@ -9,10 +10,15 @@
 #include <edit/FieldCollector.hpp>
 
 #include <algorithm>
+#include <cmath>
+#include <cstddef>
 #include <functional>
 #include <utility>
 
 namespace TechEngine {
+    // Must match the inspector's EULER_DISPLAY_EPSILON: half of the 0.01 that "%.2f" shows, so angles that print the same are never mixed.
+    static constexpr float EULER_MIXED_EPSILON = 0.005f;
+
     void EditSession::setSelection(std::vector<Entity> selection, const Entity active, const std::uint64_t sequence) {
         if (sequence < m_selectionSequence) {
             return;
@@ -105,7 +111,9 @@ namespace TechEngine {
 
     void EditSession::collectComponents(const Scene& scene, const ComponentRegistry& registry, EditorSnapshot& out) const {
         out.components.clear();
+        out.rotationAxesMixed = {};
         out.addable.clear();
+        // contains(), not valid(): a selection whose entity died would otherwise offer every type to add.
         if (!scene.contains(m_active)) {
             return;
         }
@@ -114,27 +122,72 @@ namespace TechEngine {
         const ComponentTypeId transformType = componentTypeId<Transform>();
         const ComponentTypeId nameType = componentTypeId<Name>();
         for (const ComponentTypeRecord& record: registry.records()) {
-            const void* component = scene.componentRaw(m_active, record.id);
-            if (component != nullptr) {
-                if (!record.visitFields || record.id == hierarchyType || record.id == nameType) {
-                    continue;
+            if (!record.visitFields || record.id == hierarchyType || record.id == nameType) {
+                continue;
+            }
+
+            bool allHave = true;
+            for (const Entity entity: m_selection) {
+                if (scene.contains(entity) && scene.componentRaw(entity, record.id) == nullptr) {
+                    allHave = false;
+                    break;
                 }
+            }
 
-                ComponentRow& row = out.components.emplace_back();
-                row.type = record.id;
-                row.tag = record.tag;
-                row.removable = record.id != transformType;
-
-                FieldCollector collector(scene, row.fields);
-                record.visitFields(collector, const_cast<void*>(component));
+            const void* activeComponent = scene.componentRaw(m_active, record.id);
+            if (!allHave || activeComponent == nullptr) {
+                if (record.id != transformType) {
+                    out.addable.push_back({record.id, record.tag});
+                }
                 continue;
             }
 
-            if (!record.visitFields || record.id == hierarchyType || record.id == transformType || record.id == nameType) {
+            ComponentRow& row = out.components.emplace_back();
+            row.type = record.id;
+            row.tag = record.tag;
+            row.removable = record.id != transformType;
+
+            FieldCollector collector(scene, row.fields);
+            record.visitFields(collector, const_cast<void*>(activeComponent));
+            markMixedFields(scene, record, row);
+            if (record.id == transformType) {
+                markMixedRotationAxes(scene, out);
+            }
+        }
+    }
+
+    void EditSession::markMixedFields(const Scene& scene, const ComponentTypeRecord& record, ComponentRow& row) const {
+        std::vector<FieldRow> otherFields;
+        for (const Entity entity: m_selection) {
+            if (entity == m_active || !scene.contains(entity)) {
                 continue;
             }
 
-            out.addable.push_back({record.id, record.tag});
+            otherFields.clear();
+            FieldCollector collector(scene, otherFields);
+            record.visitFields(collector, const_cast<void*>(scene.componentRaw(entity, record.id)));
+            for (std::size_t i = 0; i < row.fields.size() && i < otherFields.size(); i++) {
+                if (otherFields[i].value != row.fields[i].value) {
+                    row.fields[i].mixed = true;
+                }
+            }
+        }
+    }
+
+    void EditSession::markMixedRotationAxes(const Scene& scene, EditorSnapshot& out) const {
+        const Vec3 activeAngles = Transform::toEulerDegrees(scene.getComponent<Transform>(m_active).getLocal().rotation);
+        for (const Entity entity: m_selection) {
+            if (entity == m_active || !scene.contains(entity)) {
+                continue;
+            }
+
+            const Vec3 angles = Transform::toEulerDegrees(scene.getComponent<Transform>(entity).getLocal().rotation);
+            for (int axis = 0; axis < 3; axis++) {
+                const float difference = std::fmod(std::abs(angles[axis] - activeAngles[axis]), 360.0f);
+                if (std::min(difference, 360.0f - difference) >= EULER_MIXED_EPSILON) {
+                    out.rotationAxesMixed[static_cast<std::size_t>(axis)] = true;
+                }
+            }
         }
     }
 }

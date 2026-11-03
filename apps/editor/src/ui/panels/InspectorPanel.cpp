@@ -66,10 +66,6 @@ namespace TechEngine {
     }
 
     void InspectorPanel::onDraw(const EditorSnapshot& snapshot) {
-        if (snapshot.selection.size() > 1) {
-            ImGui::TextDisabled("%zu entities selected", snapshot.selection.size());
-            return;
-        }
         if (!snapshot.active.valid()) {
             return;
         }
@@ -81,7 +77,7 @@ namespace TechEngine {
         m_labelWidth = measureLabelWidth(snapshot);
         drawName(snapshot);
         for (const ComponentRow& component: snapshot.components) {
-            drawComponent(snapshot.active, component);
+            drawComponent(snapshot, component);
         }
         drawAddMenu(snapshot);
     }
@@ -108,20 +104,21 @@ namespace TechEngine {
         }
 
         const std::string& name = snapshot.hierarchy[row].name;
-        // The selection can change while a name is being typed, so the rename goes to the entity the edit started on.
+        // The selection can change while a name is being typed, so the rename goes to the entities the edit started on.
         if (!m_nameField.isEditing()) {
-            m_nameEntity = snapshot.active;
+            m_nameEntities = snapshot.selection;
         }
+        const bool mixed = snapshot.hasMixedNames();
         ImGui::SetNextItemWidth(-FLT_MIN);
         std::string edited;
-        const bool finished = m_nameField.draw("##EntityName", name, edited);
-        if (finished && edited != name) {
-            m_commands->rename(m_nameEntity, edited);
+        const bool finished = m_nameField.draw("##EntityName", name, edited, mixed);
+        if (finished && (mixed || edited != name)) {
+            m_commands->rename(m_nameEntities, edited);
         }
         ImGui::Separator();
     }
 
-    void InspectorPanel::drawComponent(const Entity entity, const ComponentRow& component) {
+    void InspectorPanel::drawComponent(const EditorSnapshot& snapshot, const ComponentRow& component) {
         ImGui::PushID(component.tag.c_str());
         const float rightX = ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x;
         // NoTreePushOnOpen keeps the body at the header's left edge instead of one indent in, and needs no TreePop.
@@ -129,17 +126,17 @@ namespace TechEngine {
         const std::string_view name = getDisplayName(component.tag);
         const bool open = ImGui::TreeNodeEx("##component", flags, "%.*s", static_cast<int>(name.size()), name.data());
         if (component.removable) {
-            drawComponentMenu(entity, component, rightX);
+            drawComponentMenu(snapshot, component, rightX);
         }
 
         if (open) {
             if (beginPropertyTable("##properties", m_labelWidth)) {
                 if (component.type == componentTypeId<Transform>()) {
-                    drawTransform(entity, component);
+                    drawTransform(snapshot, component);
                 } else if (component.type == componentTypeId<MeshRenderer>()) {
                     drawMeshRenderer(component);
                 } else {
-                    drawFields(entity, component);
+                    drawFields(snapshot, component);
                 }
                 endPropertyTable();
             }
@@ -147,7 +144,7 @@ namespace TechEngine {
         ImGui::PopID();
     }
 
-    void InspectorPanel::drawComponentMenu(const Entity entity, const ComponentRow& component, const float rightX) {
+    void InspectorPanel::drawComponentMenu(const EditorSnapshot& snapshot, const ComponentRow& component, const float rightX) {
         const float buttonSize = ImGui::GetFrameHeight();
         ImGui::SameLine(rightX - buttonSize);
         if (ImGui::Button("-", ImVec2(buttonSize, buttonSize))) {
@@ -157,21 +154,21 @@ namespace TechEngine {
             return;
         }
         if (ImGui::MenuItem("Remove Component")) {
-            m_commands->removeComponent(entity, component.type);
+            m_commands->removeComponent(snapshot.selection, component.type);
         }
         ImGui::EndPopup();
     }
 
-    void InspectorPanel::drawTransform(const Entity entity, const ComponentRow& component) {
+    void InspectorPanel::drawTransform(const EditorSnapshot& snapshot, const ComponentRow& component) {
         std::array<float, TRANSFORM_FIELD_COUNT> values{};
         if (component.fields.size() != TRANSFORM_FIELD_COUNT) {
-            drawFields(entity, component);
+            drawFields(snapshot, component);
             return;
         }
         for (std::size_t i = 0; i < TRANSFORM_FIELD_COUNT; i++) {
             const float* value = std::get_if<float>(&component.fields[i].value);
             if (value == nullptr) {
-                drawFields(entity, component);
+                drawFields(snapshot, component);
                 return;
             }
             values[i] = *value;
@@ -180,28 +177,28 @@ namespace TechEngine {
         std::array<bool, 3> changedAxes{};
         Vec3 position(values[0], values[1], values[2]);
         propertyRow("Translation");
-        if (drawVec3Control("##translation", position, 0.0f, changedAxes)) {
-            sendVec3(entity, TRANSFORM_POSITION_FIELD, position, changedAxes);
+        if (drawVec3Control("##translation", position, 0.0f, getMixedAxes(component, TRANSFORM_POSITION_FIELD), changedAxes)) {
+            sendVec3(snapshot.selection, TRANSFORM_POSITION_FIELD, position, changedAxes);
         }
 
-        syncEuler(entity, Quat(values[3], values[4], values[5], values[6]));
+        syncEuler(snapshot.active, Quat(values[TRANSFORM_ROTATION_FIELD], values[TRANSFORM_ROTATION_FIELD + 1], values[TRANSFORM_ROTATION_FIELD + 2], values[TRANSFORM_ROTATION_FIELD + 3]));
         Vec3 euler = m_euler;
         propertyRow("Rotation");
-        if (drawVec3Control("##rotation", euler, 0.0f, changedAxes)) {
+        if (drawVec3Control("##rotation", euler, 0.0f, snapshot.rotationAxesMixed, changedAxes)) {
             m_euler = euler;
             m_eulerRotation = Transform::fromEulerDegrees(euler);
             m_rotationPending = true;
-            // Every component of the quaternion moves with any Euler angle, and the snapshot may still hold an older one, so all four are sent.
-            const std::array<float, 4> rotation = {m_eulerRotation.w, m_eulerRotation.x, m_eulerRotation.y, m_eulerRotation.z};
-            for (std::uint32_t i = 0; i < rotation.size(); i++) {
-                m_commands->setField(entity, componentTypeId<Transform>(), TRANSFORM_ROTATION_FIELD + i, FieldValue{rotation[i]});
+            for (std::uint32_t axis = 0; axis < changedAxes.size(); axis++) {
+                if (changedAxes[axis]) {
+                    m_commands->setRotationAxis(snapshot.selection, snapshot.active, m_eulerRotation, axis, euler[static_cast<int>(axis)]);
+                }
             }
         }
 
         Vec3 scale(values[7], values[8], values[9]);
         propertyRow("Scale");
-        if (drawVec3Control("##scale", scale, 1.0f, changedAxes)) {
-            sendVec3(entity, TRANSFORM_SCALE_FIELD, scale, changedAxes);
+        if (drawVec3Control("##scale", scale, 1.0f, getMixedAxes(component, TRANSFORM_SCALE_FIELD), changedAxes)) {
+            sendVec3(snapshot.selection, TRANSFORM_SCALE_FIELD, scale, changedAxes);
         }
     }
 
@@ -212,30 +209,34 @@ namespace TechEngine {
         }
 
         propertyRow("Mesh");
-        if (mesh == nullptr || *mesh == 0) {
+        if (mesh != nullptr && component.fields[MESH_RENDERER_MESH_FIELD].mixed) {
+            ImGui::TextDisabled("-");
+        } else if (mesh == nullptr || *mesh == 0) {
             ImGui::TextDisabled("None");
         } else {
             ImGui::TextDisabled("%016llx", static_cast<unsigned long long>(*mesh));
         }
     }
 
-    void InspectorPanel::drawFields(const Entity entity, const ComponentRow& component) {
+    void InspectorPanel::drawFields(const EditorSnapshot& snapshot, const ComponentRow& component) {
         for (const FieldRow& field: component.fields) {
-            drawField(entity, component.type, field);
+            drawField(snapshot, component.type, field);
         }
     }
 
-    void InspectorPanel::drawField(const Entity entity, const ComponentTypeId component, const FieldRow& field) {
+    void InspectorPanel::drawField(const EditorSnapshot& snapshot, const ComponentTypeId component, const FieldRow& field) {
         ImGui::PushID(static_cast<int>(field.index));
         propertyRow(field.name.c_str());
         ImGui::SetNextItemWidth(-FLT_MIN);
+        ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, field.mixed);
 
         switch (field.kind) {
             case FieldKind::Bool: {
                 const bool* shown = std::get_if<bool>(&field.value);
                 bool value = shown != nullptr && *shown;
                 if (ImGui::Checkbox("##value", &value)) {
-                    m_commands->setField(entity, component, field.index, FieldValue{value});
+                    // A click on a mixed box would otherwise flip the active entity's value, so it checks every entity instead.
+                    m_commands->setField(snapshot.selection, component, field.index, FieldValue{field.mixed || value});
                 }
                 break;
             }
@@ -255,7 +256,7 @@ namespace TechEngine {
                         if constexpr (std::is_arithmetic_v<T> && !std::is_same_v<T, bool>) {
                             const float speed = std::is_floating_point_v<T> ? FLOAT_DRAG_SPEED : INTEGER_DRAG_SPEED;
                             if (dragScalar("##value", toImGuiDataType<T>(), &value, speed)) {
-                                m_commands->setField(entity, component, field.index, FieldValue{value});
+                                m_commands->setField(snapshot.selection, component, field.index, FieldValue{value});
                             }
                         }
                     },
@@ -269,12 +270,30 @@ namespace TechEngine {
                 }
                 TextEditField& textField = m_textFields[ImGui::GetID("##value")];
                 std::string edited;
-                const bool finished = textField.draw("##value", *text, edited);
-                if (finished && edited != *text) {
-                    m_commands->setField(entity, component, field.index, FieldValue{edited});
+                const bool finished = textField.draw("##value", *text, edited, field.mixed);
+                if (finished && (field.mixed || edited != *text)) {
+                    m_commands->setField(snapshot.selection, component, field.index, FieldValue{edited});
                 }
                 break;
             }
+            case FieldKind::StringId:
+            case FieldKind::Asset:
+            case FieldKind::Entity:
+            case FieldKind::Bulk:
+                drawReadOnlyField(field);
+                break;
+        }
+        ImGui::PopItemFlag();
+        ImGui::PopID();
+    }
+
+    void InspectorPanel::drawReadOnlyField(const FieldRow& field) {
+        if (field.mixed) {
+            ImGui::TextDisabled("-");
+            return;
+        }
+
+        switch (field.kind) {
             case FieldKind::StringId:
             case FieldKind::Asset: {
                 const std::uint64_t* value = std::get_if<std::uint64_t>(&field.value);
@@ -291,8 +310,9 @@ namespace TechEngine {
                 ImGui::TextDisabled("%llu elements", static_cast<unsigned long long>(count != nullptr ? *count : 0));
                 break;
             }
+            default:
+                break;
         }
-        ImGui::PopID();
     }
 
     void InspectorPanel::drawAddMenu(const EditorSnapshot& snapshot) {
@@ -310,7 +330,7 @@ namespace TechEngine {
             ImGui::PushID(choice.tag.c_str());
             const std::string name(getDisplayName(choice.tag));
             if (ImGui::MenuItem(name.c_str())) {
-                m_commands->addComponent(snapshot.active, choice.type);
+                m_commands->addComponent(snapshot.selection, choice.type);
             }
             ImGui::PopID();
         }
@@ -336,12 +356,20 @@ namespace TechEngine {
         }
     }
 
-    void InspectorPanel::sendVec3(const Entity entity, const std::uint32_t firstField, const Vec3& values, const std::array<bool, 3>& changedAxes) {
+    void InspectorPanel::sendVec3(const std::vector<Entity>& entities, const std::uint32_t firstField, const Vec3& values, const std::array<bool, 3>& changedAxes) {
         for (std::uint32_t axis = 0; axis < changedAxes.size(); axis++) {
             if (changedAxes[axis]) {
-                m_commands->setField(entity, componentTypeId<Transform>(), firstField + axis, FieldValue{values[static_cast<int>(axis)]});
+                m_commands->setField(entities, componentTypeId<Transform>(), firstField + axis, FieldValue{values[static_cast<int>(axis)]});
             }
         }
+    }
+
+    std::array<bool, 3> InspectorPanel::getMixedAxes(const ComponentRow& component, const std::uint32_t firstField) {
+        std::array<bool, 3> mixed{};
+        for (std::size_t axis = 0; axis < mixed.size(); axis++) {
+            mixed[axis] = component.fields[firstField + axis].mixed;
+        }
+        return mixed;
     }
 
     Vec3 InspectorPanel::roundNearZero(const Vec3& angles) {

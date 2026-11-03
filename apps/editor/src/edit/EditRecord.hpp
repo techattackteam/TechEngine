@@ -1,5 +1,6 @@
 #pragma once
 
+#include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 
@@ -17,6 +18,11 @@ namespace TechEngine {
         ComponentTypeId component;
         std::uint32_t field = 0;
         FieldValue oldValue;
+    };
+
+    struct RotationEditRecord {
+        Entity entity;
+        Quat oldRotation = Quat(1.0f, 0.0f, 0.0f, 0.0f);
     };
 
     struct RenameRecord {
@@ -37,5 +43,5 @@ namespace TechEngine {
         std::vector<std::byte> payload;
     };
 
-    using EditRecord = std::variant<FieldEditRecord, RenameRecord, ComponentAddedRecord, ComponentRemovedRecord>;
+    using EditRecord = std::variant<FieldEditRecord, RotationEditRecord, RenameRecord, ComponentAddedRecord, ComponentRemovedRecord>;
 }
