@@ -30,6 +30,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
+#include <atomic>
 #include <cstddef>
 #include <filesystem>
 #include <format>
@@ -141,7 +142,7 @@ namespace {
 
         void applyExportCommand(const TechEngine::EditSession& session) {
             TechEngine::Scene unused(m_registry);
-            TechEngine::ExportCommand command{session, m_project, m_index, m_files, m_registry, runtimePath(), outFolder()};
+            TechEngine::ExportCommand command{session, m_project, m_index, m_files, m_registry, runtimePath(), outFolder(), m_exported};
             command.apply(unused);
         }
 
@@ -159,6 +160,10 @@ namespace {
 
         const std::vector<std::byte>& sceneBytes() const {
             return m_sceneBytes;
+        }
+
+        bool exported() const {
+            return m_exported.load();
         }
 
         BootRecord readBootRecord() const {
@@ -183,6 +188,7 @@ namespace {
         AssetIndex m_index;
         ComponentRegistry m_registry;
         std::vector<std::byte> m_sceneBytes;
+        std::atomic<bool> m_exported = false;
     };
 }
 
@@ -537,6 +543,7 @@ TEST_CASE("the export command exports the saved files with or without unsaved ed
 
     CHECK(scratch.readBootRecord().startupScene == EXPORT_SCENE_ID);
     CHECK(std::filesystem::exists(scratch.outFolder() / "Export" / "runtime"));
+    CHECK(scratch.exported());
 }
 
 TEST_CASE("a failed export command writes nothing", "[editor][project][export]") {
@@ -547,6 +554,7 @@ TEST_CASE("a failed export command writes nothing", "[editor][project][export]")
     scratch.applyExportCommand(session);
 
     CHECK_FALSE(std::filesystem::exists(scratch.outFolder()));
+    CHECK_FALSE(scratch.exported());
 }
 
 TEST_CASE("the dev project exports into a folder the runtime opens beside itself", "[editor][project][export]") {

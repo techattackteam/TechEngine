@@ -40,9 +40,14 @@ namespace TechEngine {
 
     EditorApp::EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder, std::filesystem::path runtimePath)
         : ClientApp(Role::Client, std::string(EDITOR_TITLE)), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)), m_runtimePath(std::move(runtimePath)), m_source(m_files, m_assets), m_commands(*this, m_session, m_registry, m_files),
-          m_panels(m_commands, [this] {
-              exportProject();
-          }) {
+          m_panels(
+              m_commands,
+              [this] {
+                  exportProject();
+              },
+              [this] {
+                  runProject();
+              }) {
     }
 
     EditorApp::~EditorApp() {
@@ -62,6 +67,9 @@ namespace TechEngine {
         TE_CHECK(!indexError, "Failed to index the assets under {0}: {1}", root.string(), indexError.message());
         TE_LOGGER_INFO("Indexed {0} assets with {1} duplicates", m_assets.getRecords().size(), m_assets.getDuplicates().size());
         TE_LOGGER_INFO("Opened project '{0}' at {1}", m_project.name(), root.string());
+        m_exportedRuntimePath = m_exportFolder / m_project.name() / m_runtimePath.filename();
+        std::error_code exportedError;
+        m_runtimeExported = std::filesystem::is_regular_file(m_exportedRuntimePath, exportedError);
 
         // The hook's start runs inside startClient() and needs the context; the platform backend needs the open window.
         createImGuiContext();
@@ -112,6 +120,7 @@ namespace TechEngine {
 
     void EditorApp::mainThreadUpdate() {
         ClientApp::mainThreadUpdate();
+        pollRuntime();
         // Before the loop's next shouldClose() check, which would stop the app without asking.
         if (shouldClose()) {
             handleCloseRequest();
@@ -165,7 +174,20 @@ namespace TechEngine {
     }
 
     std::unique_ptr<Command> EditorApp::makeExportCommand() {
-        return std::make_unique<ExportCommand>(m_session, m_project, m_assets, m_files, m_registry, m_runtimePath, m_exportFolder);
+        return std::make_unique<ExportCommand>(m_session, m_project, m_assets, m_files, m_registry, m_runtimePath, m_exportFolder, m_runtimeExported);
+    }
+
+    bool EditorApp::canRun() const {
+        return m_runtimeExported.load() && !m_runtime.isRunning();
+    }
+
+    void EditorApp::runProject() {
+        const std::error_code startError = m_runtime.start(m_exportedRuntimePath, m_exportedRuntimePath.parent_path());
+        if (startError) {
+            TE_LOGGER_ERROR("Failed to start the runtime at {0}: {1}", m_exportedRuntimePath.string(), startError.message());
+            return;
+        }
+        TE_LOGGER_INFO("Started the runtime at {0}", m_exportedRuntimePath.string());
     }
 
     void EditorApp::shutdown() {
@@ -242,7 +264,7 @@ namespace TechEngine {
         const bool hadInput = !context.InputEventsQueue.empty();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        m_panels.draw(m_snapshot);
+        m_panels.draw(m_snapshot, canRun());
         drawClosePrompt();
         ImGui::Render();
         m_imguiBridge.publish(*ImGui::GetDrawData());
@@ -284,6 +306,15 @@ namespace TechEngine {
         const std::error_code submitError = submitCommand(makeExportCommand());
         if (submitError) {
             TE_LOGGER_WARN("The simulation refused the export: {0}", submitError.message());
+        }
+    }
+
+    void EditorApp::pollRuntime() {
+        // An idle editor waits for its next event, so an exit while nothing happens is logged on the next one.
+        int exitCode = 0;
+        const bool exited = m_runtime.pollExit(exitCode);
+        if (exited) {
+            TE_LOGGER_INFO("The runtime exited with code {0}", exitCode);
         }
     }
 

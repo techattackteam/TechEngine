@@ -2,6 +2,7 @@
 
 #include <TechEngine/app/Command.hpp>
 #include <TechEngine/clientapp/ClientApp.hpp>
+#include <TechEngine/platform/process/Process.hpp>
 
 #include <assets/AssetIndex.hpp>
 #include <assets/LooseSource.hpp>
@@ -14,6 +15,7 @@
 #include <ui/ImGuiBridge.hpp>
 #include <ui/PanelsManager.hpp>
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -29,6 +31,9 @@ namespace TechEngine {
         std::filesystem::path m_projectRoot;
         std::filesystem::path m_exportFolder;
         std::filesystem::path m_runtimePath;
+        std::filesystem::path m_exportedRuntimePath;
+        // Set on the simulation thread by a successful export, read on main.
+        std::atomic<bool> m_runtimeExported = false;
         Project m_project;
         AssetIndex m_assets;
         LooseSource m_source;
@@ -42,6 +47,8 @@ namespace TechEngine {
         EditorCommands m_commands;
         PanelsManager m_panels;
         ClosePrompt m_closePrompt;
+        // Main thread only.
+        Process m_runtime;
 
     public:
         EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder, std::filesystem::path runtimePath);
@@ -71,6 +78,15 @@ namespace TechEngine {
         EditSession& getSession();
 
         std::unique_ptr<Command> makeExportCommand();
+
+        // Main thread only.
+        bool canRun() const;
+
+        // Main thread only.
+        void runProject();
+
+        // Main thread only.
+        void pollRuntime();
 
         void shutdown() override;
 

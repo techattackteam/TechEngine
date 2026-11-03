@@ -12,12 +12,13 @@ namespace TechEngine {
     // Split from what the hierarchy leaves, so 0.25 of the remaining 80% is a fifth of the window.
     static constexpr float INSPECTOR_WIDTH_RATIO = 0.25f;
 
-    PanelsManager::PanelsManager(EditorCommands& commands, std::function<void()> exportProject) : m_commands(&commands), m_exportProject(std::move(exportProject)), m_hierarchy(commands), m_inspector(commands) {
+    PanelsManager::PanelsManager(EditorCommands& commands, std::function<void()> exportProject, std::function<void()> runProject)
+        : m_commands(&commands), m_exportProject(std::move(exportProject)), m_runProject(std::move(runProject)), m_hierarchy(commands), m_inspector(commands) {
     }
 
-    void PanelsManager::draw(const EditorSnapshot& snapshot) {
+    void PanelsManager::draw(const EditorSnapshot& snapshot, const bool canRun) {
         // The menu bar takes its height from the viewport's work area, which the dockspace then fills.
-        drawMainMenuBar();
+        drawMainMenuBar(canRun);
         handleShortcuts();
         // A dockspace hosts only the windows submitted after it in the same frame.
         drawDockSpace();
@@ -27,7 +28,7 @@ namespace TechEngine {
         m_gameView.draw(snapshot);
     }
 
-    void PanelsManager::drawMainMenuBar() {
+    void PanelsManager::drawMainMenuBar(const bool canRun) {
         if (!ImGui::BeginMainMenuBar()) {
             return;
         }
@@ -38,6 +39,9 @@ namespace TechEngine {
             }
             if (ImGui::MenuItem("Export")) {
                 m_exportProject();
+            }
+            if (ImGui::MenuItem("Run", nullptr, false, canRun)) {
+                m_runProject();
             }
             ImGui::EndMenu();
         }

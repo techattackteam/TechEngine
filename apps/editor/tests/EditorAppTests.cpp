@@ -51,7 +51,10 @@ namespace {
         EditorProbe(std::filesystem::path projectRoot, const std::filesystem::path& exportFolder) : EditorApp(std::move(projectRoot), exportFolder, exportFolder / "runtime") {
         }
 
+        using TechEngine::EditorApp::canRun;
+        using TechEngine::EditorApp::pollRuntime;
         using TechEngine::EditorApp::publishEdits;
+        using TechEngine::EditorApp::runProject;
         using TechEngine::EditorApp::shouldClose;
         using TechEngine::EditorApp::shutdown;
         using TechEngine::EditorApp::simulationTicks;
@@ -363,6 +366,68 @@ TEST_CASE("the startup load creates a startup scene when the project names none"
 
     editor.shutdown();
 }
+
+TEST_CASE("File, Run is enabled once an export holds a runtime, and stays enabled when the runtime fails to start", "[editor][window][run]") {
+    ScratchDirectory scratch{"editorRunEnabled"};
+    writeProjectLayout(scratch);
+    const std::filesystem::path exportFolder = scratch.makeDirectory("export");
+    scratch.writeFile("export/runtime", "runtime");
+
+    SECTION("with no earlier export, an export enables it") {
+        EditorProbe editor{scratch.root(), exportFolder};
+        editor.bootstrap();
+        CHECK_FALSE(editor.canRun());
+
+        editor.exportProject();
+        CHECK(editor.canRun());
+
+        editor.runProject();
+        CHECK(editor.canRun());
+        editor.shutdown();
+    }
+
+    SECTION("an export an earlier launch wrote enables it at startup") {
+        scratch.writeFile("export/Dev/runtime", "runtime");
+        EditorProbe editor{scratch.root(), exportFolder};
+        editor.bootstrap();
+        CHECK(editor.canRun());
+        editor.shutdown();
+    }
+
+    SECTION("a folder where the runtime should be does not enable it") {
+        scratch.makeDirectory("export/Dev/runtime");
+        EditorProbe editor{scratch.root(), exportFolder};
+        editor.bootstrap();
+        CHECK_FALSE(editor.canRun());
+        editor.shutdown();
+    }
+}
+
+#if !defined(_WIN32)
+TEST_CASE("File, Run starts the exported runtime and is disabled until it exits", "[editor][window][run]") {
+    ScratchDirectory scratch{"editorRunStarts"};
+    writeProjectLayout(scratch);
+    const std::filesystem::path exportFolder = scratch.makeDirectory("export");
+    const std::filesystem::path runtime = scratch.writeFile("export/runtime", "#!/bin/sh\necho ran > ranHere.txt\nexit 3\n");
+    std::filesystem::permissions(runtime, std::filesystem::perms::owner_all);
+    EditorProbe editor{scratch.root(), exportFolder};
+    editor.bootstrap();
+    editor.exportProject();
+    REQUIRE(editor.canRun());
+
+    editor.runProject();
+    CHECK_FALSE(editor.canRun());
+
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+    while (!editor.canRun() && std::chrono::steady_clock::now() < deadline) {
+        editor.pollRuntime();
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    CHECK(editor.canRun());
+    CHECK(std::filesystem::exists(exportFolder / "Dev" / "ranHere.txt"));
+    editor.shutdown();
+}
+#endif
 
 TEST_CASE("a later launch finds the saved startup scene and creates nothing", "[editor][window]") {
     ScratchDirectory scratch{"editorReusesStartupScene"};

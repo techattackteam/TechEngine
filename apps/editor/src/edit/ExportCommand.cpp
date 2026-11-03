@@ -9,8 +9,8 @@
 #include <utility>
 
 namespace TechEngine {
-    ExportCommand::ExportCommand(const EditSession& session, const Project& project, const AssetIndex& index, const FileAccess& files, ComponentRegistry& registry, std::filesystem::path runtimePath, std::filesystem::path exportFolder)
-        : m_session(&session), m_project(&project), m_index(&index), m_files(&files), m_registry(&registry), m_runtimePath(std::move(runtimePath)), m_exportFolder(std::move(exportFolder)) {
+    ExportCommand::ExportCommand(const EditSession& session, const Project& project, const AssetIndex& index, const FileAccess& files, ComponentRegistry& registry, std::filesystem::path runtimePath, std::filesystem::path exportFolder, std::atomic<bool>& exported)
+        : m_session(&session), m_project(&project), m_index(&index), m_files(&files), m_registry(&registry), m_runtimePath(std::move(runtimePath)), m_exportFolder(std::move(exportFolder)), m_exported(&exported) {
     }
 
     void ExportCommand::apply(Scene&) {
@@ -20,6 +20,8 @@ namespace TechEngine {
         const std::error_code exportError = m_project->exportTo(Role::Client, *m_index, *m_files, *m_registry, m_runtimePath, m_exportFolder);
         if (exportError) {
             TE_LOGGER_ERROR("Failed to export the project to {0}: {1}", m_exportFolder.string(), exportError.message());
+            return;
         }
+        m_exported->store(true);
     }
 }
