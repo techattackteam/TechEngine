@@ -108,13 +108,7 @@ namespace TechEngine {
     }
 
     void* ResourceCache::resolvePayload(const ResourceSlotId slot, const StringId typeTag) {
-        ResourceEntry* entry = m_slots->find(slot);
-        if (entry == nullptr || entry->state != ResourceState::Ready) {
-            return nullptr;
-        }
-
-        TE_CHECK(entry->typeTag == typeTag, "Resource {0:#018x} is resolved as {1}, but it was loaded as {2}", entry->id.value(), typeTag, entry->typeTag);
-        return entry->payload.get();
+        return const_cast<void*>(std::as_const(*this).resolvePayload(slot, typeTag));
     }
 
     std::error_code ResourceCache::addEntryDependency(const ResourceSlotId holder, const ResourceId dependency, ResourceSlotId& out) {
