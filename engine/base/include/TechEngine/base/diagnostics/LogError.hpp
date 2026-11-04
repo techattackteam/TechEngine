@@ -5,7 +5,7 @@
 #include <type_traits>
 
 namespace TechEngine {
-    enum class LogError : std::uint8_t { NullSink = 1, SinkTableFull, SinkNotRegistered };
+    enum class LogError : std::uint8_t { SinkTableFull = 1, SinkNotRegistered, SinkAlreadyRegistered, InsideSink };
 
     const std::error_category& logErrorCategory();
 

@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <ctime>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -47,7 +48,9 @@ namespace TechEngine {
     static std::atomic<std::uint16_t> g_channelCount = 1;
 
     // A null slot is an empty one: no separate count to keep in step with the array.
-    static std::array<std::atomic<LogSinkFn>, MAX_LOG_SINKS> g_sinks{};
+    static std::array<LogSink*, MAX_LOG_SINKS> g_sinks{};
+    static std::mutex g_sinkMutex;
+    static thread_local bool g_insideSinkWrite = false;
 
     struct LogRingEntry {
         LogRecord record{};
@@ -55,14 +58,17 @@ namespace TechEngine {
     };
 
     // Always-on process-global state, not a pluggable sink; every dispatched
-    // record lands here regardless of what's in g_sinks. Slot choice is a bare fetch_add
-    // modulo; two threads racing the same wrapped slot can tear a write. Accepted for a
-    // best-effort crash trail, not a linearizable log.
+    // record lands here regardless of what's in g_sinks. The ring has its own lock, not
+    // g_sinkMutex: a record logged inside a sink's write lands here while its thread already
+    // holds g_sinkMutex.
     static std::array<LogRingEntry, LOG_RING_CAPACITY> g_ring{};
-    static std::atomic<std::uint64_t> g_ringWritten = 0;
+    static std::uint64_t g_ringWritten = 0;
+    static std::mutex g_ringMutex;
 
     static void ringWrite(const LogRecord& record) {
-        const std::uint64_t index = g_ringWritten.fetch_add(1, std::memory_order_relaxed);
+        const std::lock_guard<std::mutex> lock{g_ringMutex};
+        const std::uint64_t index = g_ringWritten;
+        g_ringWritten++;
         LogRingEntry& entry = g_ring[static_cast<std::size_t>(index % LOG_RING_CAPACITY)];
 
         const std::size_t copySize = std::min(record.message.size(), entry.messageStorage.size());
@@ -73,7 +79,8 @@ namespace TechEngine {
     }
 
     std::size_t ringSnapshot(LogRecord* out, std::size_t capacity) {
-        const std::uint64_t written = g_ringWritten.load(std::memory_order_relaxed);
+        const std::lock_guard<std::mutex> lock{g_ringMutex};
+        const std::uint64_t written = g_ringWritten;
         const std::size_t available = static_cast<std::size_t>(std::min<std::uint64_t>(written, LOG_RING_CAPACITY));
         const std::size_t count = std::min(available, capacity);
         const std::uint64_t start = written - count;
@@ -85,7 +92,8 @@ namespace TechEngine {
     }
 
     void ringClear() {
-        g_ringWritten.store(0, std::memory_order_relaxed);
+        const std::lock_guard<std::mutex> lock{g_ringMutex};
+        g_ringWritten = 0;
     }
 
     static spdlog::level::level_enum toSpdlogLevel(Level level) {
@@ -140,30 +148,45 @@ namespace TechEngine {
         return out;
     }
 
-    static void spdlogSink(const LogRecord& record) {
-        std::array<char, MESSAGE_CAPACITY + 256> storage;
-        const std::size_t size = internal::flattenRecord(record, storage.data(), storage.size());
+    class SpdlogSink final : public LogSink {
+    public:
+        void write(const LogRecord& record) noexcept override {
+            std::array<char, MESSAGE_CAPACITY + 256> storage;
+            const std::size_t size = internal::flattenRecord(record, storage.data(), storage.size());
 
-        spdlog::default_logger_raw()->log(toSpdlogLevel(record.level), spdlog::string_view_t{storage.data(), size});
-    }
-
-    std::error_code addLogSink(LogSinkFn sink) {
-        if (sink == nullptr) {
-            return LogError::NullSink;
+            spdlog::default_logger_raw()->log(toSpdlogLevel(record.level), spdlog::string_view_t{storage.data(), size});
         }
-        for (std::atomic<LogSinkFn>& slot: g_sinks) {
-            LogSinkFn expected = nullptr;
-            if (slot.compare_exchange_strong(expected, sink, std::memory_order_acq_rel)) {
+    };
+
+    static SpdlogSink g_spdlogSink;
+
+    std::error_code addLogSink(LogSink& sink) {
+        if (g_insideSinkWrite) {
+            return LogError::InsideSink;
+        }
+
+        const std::lock_guard<std::mutex> lock{g_sinkMutex};
+        if (std::ranges::find(g_sinks, &sink) != g_sinks.end()) {
+            return LogError::SinkAlreadyRegistered;
+        }
+        for (LogSink*& slot: g_sinks) {
+            if (slot == nullptr) {
+                slot = &sink;
                 return {};
             }
         }
         return LogError::SinkTableFull;
     }
 
-    std::error_code removeLogSink(LogSinkFn sink) {
-        for (std::atomic<LogSinkFn>& slot: g_sinks) {
-            LogSinkFn expected = sink;
-            if (slot.compare_exchange_strong(expected, nullptr, std::memory_order_acq_rel)) {
+    std::error_code removeLogSink(LogSink& sink) {
+        if (g_insideSinkWrite) {
+            return LogError::InsideSink;
+        }
+        const std::lock_guard<std::mutex> lock{g_sinkMutex};
+        for (LogSink*& slot: g_sinks) {
+            if (slot == &sink) {
+                slot = nullptr;
+
                 return {};
             }
         }
@@ -242,7 +265,7 @@ namespace TechEngine {
         logger->flush_on(spdlog::level::err);
         spdlog::set_default_logger(std::move(logger));
 
-        const std::error_code sinkError = addLogSink(&spdlogSink);
+        const std::error_code sinkError = addLogSink(g_spdlogSink);
         if (sinkError) {
             std::fprintf(stderr, "[log] console and file output disabled: %s\n", sinkError.message().c_str());
         }
@@ -252,7 +275,7 @@ namespace TechEngine {
         if (!g_initialized.exchange(false, std::memory_order_acq_rel)) {
             return;
         }
-        const std::error_code sinkError = removeLogSink(&spdlogSink);
+        const std::error_code sinkError = removeLogSink(g_spdlogSink);
         if (sinkError) {
             std::fprintf(stderr, "[log] failed to remove spdlog sink: %s\n", sinkError.message().c_str());
         }
@@ -300,25 +323,35 @@ namespace TechEngine {
         g_tick.store(tick, std::memory_order_relaxed);
     }
 
-    static void deliverRecord(const LogRecord& record) {
-        ringWrite(record);
-
-        bool delivered = false;
-        for (const std::atomic<LogSinkFn>& slot: g_sinks) {
-            const LogSinkFn sink = slot.load(std::memory_order_acquire);
-            if (sink != nullptr) {
-                sink(record);
-                delivered = true;
-            }
-        }
-
-        if (delivered) {
-            return;
-        }
-
+    static void writeStderr(const LogRecord& record) {
         std::array<char, MESSAGE_CAPACITY + 256> line;
         const std::size_t size = internal::flattenRecord(record, line.data(), line.size());
         std::fprintf(stderr, "%.*s\n", static_cast<int>(size), line.data());
+    }
+
+    static void deliverRecord(const LogRecord& record) {
+        ringWrite(record);
+        if (g_insideSinkWrite) {
+            writeStderr(record);
+            return;
+        }
+
+        bool delivered = false;
+        g_insideSinkWrite = true;
+        {
+            const std::lock_guard<std::mutex> lock{g_sinkMutex};
+            for (LogSink* sink: g_sinks) {
+                if (sink != nullptr) {
+                    sink->write(record);
+                    delivered = true;
+                }
+            }
+        }
+        g_insideSinkWrite = false;
+
+        if (!delivered) {
+            writeStderr(record);
+        }
     }
 
     namespace internal {

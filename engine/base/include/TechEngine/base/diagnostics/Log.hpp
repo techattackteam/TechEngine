@@ -88,7 +88,15 @@ namespace TechEngine {
         std::uint32_t line = 0;
     };
 
-    using LogSinkFn = void (*)(const LogRecord&);
+    // write runs under the delivery lock that addLogSink and removeLogSink also take. A write
+    // that waits on another thread's log call deadlocks. Logging from inside write reaches only
+    // the ring and stderr, and adding or removing a sink there returns LogError::InsideSink.
+    class LogSink {
+    public:
+        virtual ~LogSink() = default;
+
+        virtual void write(const LogRecord& record) noexcept = 0;
+    };
 
     void initLogging();
 
@@ -119,9 +127,10 @@ namespace TechEngine {
 
     bool isEnabled(Level level, LogChannel channel = DEFAULT_CHANNEL);
 
-    std::error_code addLogSink(LogSinkFn sink);
+    std::error_code addLogSink(LogSink& sink);
 
-    std::error_code removeLogSink(LogSinkFn sink);
+    // Once this returns, no thread is inside sink.write and the caller may destroy it.
+    std::error_code removeLogSink(LogSink& sink);
 
     inline constexpr std::size_t LOG_RING_CAPACITY = 64;
 

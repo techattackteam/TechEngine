@@ -3,6 +3,7 @@
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
+#include <TechEngine/testing/LogCapture.hpp>
 
 #include <edit/EditRecord.hpp>
 #include <edit/EditTestScene.hpp>
@@ -35,34 +36,6 @@ using TechEngine::TransformValues;
 using TechEngine::Vec3;
 using TechEngineTests::EditTestScene;
 using TechEngineTests::rowFor;
-
-static std::vector<std::string> g_hierarchyCommandsLog;
-
-static void captureHierarchyCommandsLog(const TechEngine::LogRecord& record) {
-    g_hierarchyCommandsLog.emplace_back(record.message);
-}
-
-class HierarchyCommandsLogCapture {
-private:
-    TechEngine::Level m_previousLevel;
-
-public:
-    HierarchyCommandsLogCapture() : m_previousLevel(TechEngine::minLevel()) {
-        g_hierarchyCommandsLog.clear();
-        TechEngine::setMinLevel(TechEngine::Level::Warn);
-        (void)TechEngine::addLogSink(&captureHierarchyCommandsLog);
-    }
-
-    ~HierarchyCommandsLogCapture() {
-        (void)TechEngine::removeLogSink(&captureHierarchyCommandsLog);
-        TechEngine::setMinLevel(m_previousLevel);
-        g_hierarchyCommandsLog.clear();
-    }
-
-    HierarchyCommandsLogCapture(const HierarchyCommandsLogCapture&) = delete;
-
-    HierarchyCommandsLogCapture& operator=(const HierarchyCommandsLogCapture&) = delete;
-};
 
 TEST_CASE("create with no parent adds one root named Entity and raises the edit revision", "[editor][edit][commands]") {
     EditTestScene edit;
@@ -175,7 +148,7 @@ TEST_CASE("destroy drops the destroyed entities from the selection and keeps the
 }
 
 TEST_CASE("deleting a selected parent and its selected child is one command with no warning", "[editor][edit][commands]") {
-    const HierarchyCommandsLogCapture logs;
+    const TechEngineTests::LogCaptureGuard logs{TechEngine::Level::Warn};
     EditTestScene edit;
     const Entity parent = edit.createNamed("Parent");
     const Entity child = edit.createNamed("Child", parent);
@@ -199,7 +172,7 @@ TEST_CASE("deleting a selected parent and its selected child is one command with
     const EditorSnapshot after = edit.snapshot();
     CHECK(after.selection.empty());
     CHECK(after.editRevision > before.editRevision);
-    CHECK(g_hierarchyCommandsLog.empty());
+    CHECK(logs.getMessages().empty());
 }
 
 TEST_CASE("destroy of an entity that is not alive changes nothing", "[editor][edit][commands]") {

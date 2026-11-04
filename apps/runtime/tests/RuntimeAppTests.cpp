@@ -27,6 +27,7 @@
 #include <TechEngine/platform/input/InputState.hpp>
 #include <TechEngine/platform/input/Key.hpp>
 #include <TechEngine/testing/AppTestAccess.hpp>
+#include <TechEngine/testing/LogCapture.hpp>
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <RuntimeApp.hpp>
@@ -445,44 +446,16 @@ static void writeClientExport(const ScratchDirectory& scratch, const TechEngine:
     writePack(scratch, "client.tepack", sceneInCommon ? std::vector<TechEngine::PackInput>{} : std::vector{sceneEntry}, {});
 }
 
-static std::vector<std::string> g_runtimeLogMessages;
-
-static void captureRuntimeLog(const TechEngine::LogRecord& record) {
-    g_runtimeLogMessages.emplace_back(record.message);
-}
-
-class RuntimeLogCaptureGuard {
-private:
-    TechEngine::Level m_previousLevel;
-
-public:
-    RuntimeLogCaptureGuard() : m_previousLevel(TechEngine::minLevel()) {
-        g_runtimeLogMessages.clear();
-        TechEngine::setMinLevel(TechEngine::Level::Trace);
-        (void)TechEngine::addLogSink(&captureRuntimeLog);
-    }
-
-    ~RuntimeLogCaptureGuard() {
-        (void)TechEngine::removeLogSink(&captureRuntimeLog);
-        TechEngine::setMinLevel(m_previousLevel);
-        g_runtimeLogMessages.clear();
-    }
-
-    RuntimeLogCaptureGuard(const RuntimeLogCaptureGuard&) = delete;
-
-    RuntimeLogCaptureGuard& operator=(const RuntimeLogCaptureGuard&) = delete;
-};
-
-static bool runtimeLogNames(const TechEngine::ResourceId id) {
+static bool runtimeLogNames(const TechEngineTests::LogCaptureGuard& logs, const TechEngine::ResourceId id) {
     const std::string idText = std::format("{:#018x}", id.value());
-    return std::ranges::any_of(g_runtimeLogMessages, [&idText](const std::string& message) {
+    return std::ranges::any_of(logs.getMessages(), [&idText](const std::string& message) {
         return message.find(idText) != std::string::npos;
     });
 }
 
-static bool runtimeLogPrintsEntity(const TechEngine::Entity entity, const std::string_view name) {
+static bool runtimeLogPrintsEntity(const TechEngineTests::LogCaptureGuard& logs, const TechEngine::Entity entity, const std::string_view name) {
     const std::string indexText = std::format("{}:{}", entity.index, entity.generation);
-    return std::ranges::any_of(g_runtimeLogMessages, [&indexText, name](const std::string& message) {
+    return std::ranges::any_of(logs.getMessages(), [&indexText, name](const std::string& message) {
         return message.find(indexText) != std::string::npos && message.find(name) != std::string::npos;
     });
 }
@@ -689,7 +662,7 @@ TEST_CASE("the startup load reads the startup scene from the common pack", "[run
 }
 
 TEST_CASE("the startup log prints each entity's name beside its index", "[runtime][load]") {
-    const RuntimeLogCaptureGuard logs;
+    const TechEngineTests::LogCaptureGuard logs;
     const ScratchDirectory scratch{"runtimeLogNames"};
     const std::vector<std::byte> scene = startupSceneBytes();
     writeClientExport(scratch, TechEngine::Side::Common, scene);
@@ -702,9 +675,9 @@ TEST_CASE("the startup log prints each entity's name beside its index", "[runtim
     REQUIRE(roots.size() == 1);
     const std::vector<TechEngine::Entity> children = runtime.scene().getChildren(roots.front());
     REQUIRE(children.size() == 2);
-    CHECK(runtimeLogPrintsEntity(roots.front(), "Parent"));
-    CHECK(runtimeLogPrintsEntity(children[0], "First child"));
-    CHECK(runtimeLogPrintsEntity(children[1], "Second child"));
+    CHECK(runtimeLogPrintsEntity(logs, roots.front(), "Parent"));
+    CHECK(runtimeLogPrintsEntity(logs, children[0], "First child"));
+    CHECK(runtimeLogPrintsEntity(logs, children[1], "Second child"));
 }
 
 TEST_CASE("the startup load reads a startup scene that ships in the client pack", "[runtime][load]") {
@@ -740,7 +713,7 @@ TEST_CASE("the startup load holds the startup scene as one Ready cache entry", "
 }
 
 TEST_CASE("simulation shutdown releases the startup scene, so the cache's shutdown log names nothing", "[runtime][load]") {
-    const RuntimeLogCaptureGuard logs;
+    TechEngineTests::LogCaptureGuard logs;
     const ScratchDirectory scratch{"runtimeShutdownReleasesScene"};
     const std::vector<std::byte> scene = startupSceneBytes();
     writeClientExport(scratch, TechEngine::Side::Common, scene);
@@ -748,11 +721,11 @@ TEST_CASE("simulation shutdown releases the startup scene, so the cache's shutdo
     prepareStartupLoad(runtime);
     REQUIRE(runtime.startupLoad() == std::error_code{});
     REQUIRE(runtime.sceneHandle().valid());
-    g_runtimeLogMessages.clear();
+    logs.clear();
 
     runtime.shutdownSimulation();
 
-    REQUIRE_FALSE(runtimeLogNames(STARTUP_SCENE_ID));
+    REQUIRE_FALSE(runtimeLogNames(logs, STARTUP_SCENE_ID));
 }
 
 TEST_CASE("a missing common pack ends the startup load with NotFound and loads nothing", "[runtime][load]") {
@@ -894,7 +867,7 @@ static void writeClientExportWithMesh(const ScratchDirectory& scratch, const std
 }
 
 TEST_CASE("the startup load acquires the mesh the startup scene references from the client pack", "[runtime][load]") {
-    const RuntimeLogCaptureGuard logs;
+    TechEngineTests::LogCaptureGuard logs;
     const ScratchDirectory scratch{"runtimeLoadMesh"};
     const std::vector<std::byte> scene = meshSceneBytes();
     const std::vector<std::byte> mesh = triangleMeshBytes();
@@ -926,17 +899,17 @@ TEST_CASE("the startup load acquires the mesh the startup scene references from 
     }
 
     SECTION("the startup log names the scene and the mesh") {
-        CHECK(runtimeLogNames(STARTUP_SCENE_ID));
-        CHECK(runtimeLogNames(TRIANGLE_MESH_ID));
+        CHECK(runtimeLogNames(logs, STARTUP_SCENE_ID));
+        CHECK(runtimeLogNames(logs, TRIANGLE_MESH_ID));
     }
 
     SECTION("simulation shutdown releases both, so the cache's shutdown log names neither") {
-        g_runtimeLogMessages.clear();
+        logs.clear();
 
         runtime.shutdownSimulation();
 
-        CHECK_FALSE(runtimeLogNames(STARTUP_SCENE_ID));
-        CHECK_FALSE(runtimeLogNames(TRIANGLE_MESH_ID));
+        CHECK_FALSE(runtimeLogNames(logs, STARTUP_SCENE_ID));
+        CHECK_FALSE(runtimeLogNames(logs, TRIANGLE_MESH_ID));
     }
 }
 

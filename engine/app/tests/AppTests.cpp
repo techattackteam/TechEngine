@@ -14,6 +14,7 @@
 #include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/testing/AppTestAccess.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
+#include <TechEngine/testing/LogCapture.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
@@ -1004,60 +1005,24 @@ static std::error_code submitProbe(AppLifecycleProbe& app, const int id, AppComm
     return app.submitCommand(std::make_unique<AppProbeCommand>(id, log, app));
 }
 
-static std::mutex g_appWarningsMutex;
-static std::vector<std::string> g_appWarnings;
-
-static void captureAppWarning(const TechEngine::LogRecord& record) {
-    if (record.level != TechEngine::Level::Warn) {
-        return;
+static std::vector<std::string> warningsContaining(const TechEngineTests::LogCaptureGuard& logs, const std::string_view text) {
+    std::vector<std::string> matches;
+    for (const TechEngineTests::CapturedLog& record: logs.getRecords()) {
+        if (record.level != TechEngine::Level::Warn) {
+            continue;
+        }
+        const auto found = std::ranges::search(record.message, text, [](const char left, const char right) {
+            return std::tolower(static_cast<unsigned char>(left)) == std::tolower(static_cast<unsigned char>(right));
+        });
+        if (!found.empty()) {
+            matches.push_back(record.message);
+        }
     }
-    std::lock_guard const lock{g_appWarningsMutex};
-    g_appWarnings.emplace_back(record.message);
+    return matches;
 }
 
-class AppWarningCapture {
-public:
-    AppWarningCapture() : m_previousLevel(TechEngine::minLevel()) {
-        clear();
-        TechEngine::setMinLevel(TechEngine::Level::Warn);
-        (void)TechEngine::addLogSink(&captureAppWarning);
-    }
-
-    ~AppWarningCapture() {
-        (void)TechEngine::removeLogSink(&captureAppWarning);
-        TechEngine::setMinLevel(m_previousLevel);
-        clear();
-    }
-
-    AppWarningCapture(const AppWarningCapture&) = delete;
-
-    AppWarningCapture& operator=(const AppWarningCapture&) = delete;
-
-    std::vector<std::string> containing(std::string_view text) const {
-        std::lock_guard const lock{g_appWarningsMutex};
-        std::vector<std::string> matches;
-        for (const std::string& warning: g_appWarnings) {
-            const auto found = std::ranges::search(warning, text, [](const char left, const char right) {
-                return std::tolower(static_cast<unsigned char>(left)) == std::tolower(static_cast<unsigned char>(right));
-            });
-            if (!found.empty()) {
-                matches.push_back(warning);
-            }
-        }
-        return matches;
-    }
-
-private:
-    static void clear() {
-        std::lock_guard const lock{g_appWarningsMutex};
-        g_appWarnings.clear();
-    }
-
-    TechEngine::Level m_previousLevel;
-};
-
 TEST_CASE("App applies submitted commands to the live scene in FIFO order and publishes the batch once, before that loop pass's ticks", "[app][lifecycle][commands]") {
-    const AppWarningCapture warnings;
+    const TechEngineTests::LogCaptureGuard warnings{TechEngine::Level::Warn};
     AppLifecycleProbe app;
     AppCommandLog log;
     std::vector<std::error_code> submitErrors;
@@ -1083,7 +1048,7 @@ TEST_CASE("App applies submitted commands to the live scene in FIFO order and pu
         CHECK(applied[i].ticksBefore == 0);
     }
     CHECK(log.destroyedCount() == 3);
-    CHECK(warnings.containing("cancel").empty());
+    CHECK(warningsContaining(warnings, "cancel").empty());
     CHECK(eventCount(app, "publishEdits") == 1);
     CHECK(app.publishedScene == &TechEngineTests::AppTestAccess::scene(app));
     const auto events = app.events();
@@ -1141,7 +1106,7 @@ TEST_CASE("App accepts commands again on its next run", "[app][lifecycle][comman
 }
 
 TEST_CASE("App reports commands accepted but not applied at shutdown as cancelled", "[app][lifecycle][commands]") {
-    const AppWarningCapture warnings;
+    const TechEngineTests::LogCaptureGuard warnings{TechEngine::Level::Warn};
     AppLifecycleProbe app;
     AppCommandLog log;
     std::vector<std::error_code> submitErrors;
@@ -1171,7 +1136,7 @@ TEST_CASE("App reports commands accepted but not applied at shutdown as cancelle
     }
     CHECK(log.appliedRecords().empty());
     CHECK(log.destroyedCount() == 2);
-    const std::vector<std::string> cancelled = warnings.containing("cancel");
+    const std::vector<std::string> cancelled = warningsContaining(warnings, "cancel");
     REQUIRE(cancelled.size() == 1);
     CHECK(cancelled.front().find('2') != std::string::npos);
     CHECK(eventCount(app, "publishEdits") == 0);
@@ -1219,7 +1184,7 @@ TEST_CASE("an App whose simulation does not tick runs no Tick across a wait", "[
 }
 
 TEST_CASE("an idle App applies each submitted command and publishes it within one wake", "[app][lifecycle][idle][commands]") {
-    const AppWarningCapture warnings;
+    const TechEngineTests::LogCaptureGuard warnings{TechEngine::Level::Warn};
     AppLifecycleProbe app;
     app.ticks = false;
     AppCommandLog log;
@@ -1273,7 +1238,7 @@ TEST_CASE("an idle App applies each submitted command and publishes it within on
     CHECK(eventCount(app, "publishEdits") == 2);
     CHECK(eventCount(app, "systemTick") == 0);
     CHECK(log.destroyedCount() == 2);
-    CHECK(warnings.containing("cancel").empty());
+    CHECK(warningsContaining(warnings, "cancel").empty());
     checkStopped(app);
 }
 
@@ -1325,7 +1290,7 @@ public:
 
 class AppHeldResourceProbe final : public TechEngine::App {
 public:
-    AppHeldResourceProbe(const AppWarningCapture& warnings, const bool releaseOnShutdown) : App(TechEngine::Role::DedicatedServer), m_warnings(warnings), m_releaseOnShutdown(releaseOnShutdown) {
+    AppHeldResourceProbe(const TechEngineTests::LogCaptureGuard& warnings, const bool releaseOnShutdown) : App(TechEngine::Role::DedicatedServer), m_warnings(warnings), m_releaseOnShutdown(releaseOnShutdown) {
     }
 
     TechEngine::ResourceState loadedState = TechEngine::ResourceState::Pending;
@@ -1352,7 +1317,7 @@ protected:
     }
 
     void simulationShutdown() override {
-        warningsAtSimulationShutdown = m_warnings.containing("not released").size();
+        warningsAtSimulationShutdown = warningsContaining(m_warnings, "not released").size();
         if (m_releaseOnShutdown) {
             m_resources.release(m_held);
             m_held = {};
@@ -1361,14 +1326,14 @@ protected:
     }
 
 private:
-    const AppWarningCapture& m_warnings;
+    const TechEngineTests::LogCaptureGuard& m_warnings;
     bool m_releaseOnShutdown;
     AppHeldResourceSource m_source;
     TechEngine::ResourceHandle<AppProbeResource> m_held;
 };
 
 TEST_CASE("App's releases in simulation shutdown land before the cache logs what is still counted", "[app][lifecycle][resources]") {
-    const AppWarningCapture warnings;
+    const TechEngineTests::LogCaptureGuard warnings{TechEngine::Level::Warn};
     bool releaseOnShutdown = true;
     SECTION("the app releases its resource in simulation shutdown") {
     }
@@ -1380,7 +1345,7 @@ TEST_CASE("App's releases in simulation shutdown land before the cache logs what
     REQUIRE(app.run() == 0);
     CHECK(app.loadedState == TechEngine::ResourceState::Ready);
     CHECK(app.warningsAtSimulationShutdown == 0);
-    const std::vector<std::string> leaks = warnings.containing("not released");
+    const std::vector<std::string> leaks = warningsContaining(warnings, "not released");
     if (releaseOnShutdown) {
         CHECK(leaks.empty());
     } else {

@@ -3,6 +3,7 @@
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/systems/TaskGraph.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
+#include <TechEngine/testing/LogCapture.hpp>
 
 #include <systems/IndexedComponents.hpp>
 
@@ -131,34 +132,6 @@ static void registerGraphEvents(TechEngine::EventRegistry& events) {
     events.registerEvent<GraphHeal>();
 }
 
-static std::vector<std::string> g_graphLogMessages;
-
-static void captureGraphLog(const TechEngine::LogRecord& record) {
-    g_graphLogMessages.emplace_back(record.message);
-}
-
-class GraphLogCaptureGuard {
-private:
-    TechEngine::Level m_previousLevel;
-
-public:
-    GraphLogCaptureGuard() : m_previousLevel(TechEngine::minLevel()) {
-        g_graphLogMessages.clear();
-        TechEngine::setMinLevel(TechEngine::Level::Trace);
-        (void)TechEngine::addLogSink(&captureGraphLog);
-    }
-
-    ~GraphLogCaptureGuard() {
-        (void)TechEngine::removeLogSink(&captureGraphLog);
-        TechEngine::setMinLevel(m_previousLevel);
-        g_graphLogMessages.clear();
-    }
-
-    GraphLogCaptureGuard(const GraphLogCaptureGuard&) = delete;
-
-    GraphLogCaptureGuard& operator=(const GraphLogCaptureGuard&) = delete;
-};
-
 template<typename T>
 static std::size_t findSystemLevel(const TechEngine::TaskGraph& graph) {
     for (std::size_t levelIndex = 0; levelIndex < graph.getLevels().size(); levelIndex++) {
@@ -185,9 +158,9 @@ static std::size_t countSystemNodes(const TechEngine::TaskGraph& graph) {
     return count;
 }
 
-[[maybe_unused]] static std::size_t countExactLog(const std::string_view expected) {
+[[maybe_unused]] static std::size_t countExactLog(const TechEngineTests::LogCaptureGuard& logs, const std::string_view expected) {
     std::size_t count = 0;
-    for (const std::string& message: g_graphLogMessages) {
+    for (const std::string& message: logs.getMessages()) {
         if (message == expected) {
             count++;
         }
@@ -460,7 +433,7 @@ TEST_CASE("the terminal system is a final singleton level after every regular le
 }
 
 TEST_CASE("every conflict-derived edge is logged with its chosen direction", "[core][systems][task-graph]") {
-    const GraphLogCaptureGuard guard;
+    const TechEngineTests::LogCaptureGuard guard;
     TechEngine::ComponentRegistry registry;
     TechEngine::EventRegistry events;
     TechEngineTests::registerIndexedComponents(registry, std::make_index_sequence<2>{});
@@ -472,11 +445,11 @@ TEST_CASE("every conflict-derived edge is logged with its chosen direction", "[c
     const TechEngine::TaskGraph graph(schedule, events);
 
 #if TE_LOG_ACTIVE_LEVEL <= TE_LOG_LEVEL_INFO
-    REQUIRE(g_graphLogMessages.size() == 2);
-    REQUIRE(countExactLog("Task graph conflict: FirstSystem -> SecondSystem") == 1);
-    REQUIRE(countExactLog("Task graph conflict: SecondSystem -> ThirdSystem") == 1);
+    REQUIRE(guard.getMessages().size() == 2);
+    REQUIRE(countExactLog(guard, "Task graph conflict: FirstSystem -> SecondSystem") == 1);
+    REQUIRE(countExactLog(guard, "Task graph conflict: SecondSystem -> ThirdSystem") == 1);
 #else
-    REQUIRE(g_graphLogMessages.empty());
+    REQUIRE(guard.getMessages().empty());
 #endif
 }
 
@@ -526,7 +499,7 @@ TEST_CASE("a handler declared before its event type registers resolves at graph 
 
 TEST_CASE("handlers on the same event type add no conflict edge", "[core][systems][task-graph][events]") {
     const TechEngineTests::FatalAssertGuard guard;
-    const GraphLogCaptureGuard logGuard;
+    const TechEngineTests::LogCaptureGuard logGuard;
     TechEngine::ComponentRegistry registry;
     TechEngine::EventRegistry events;
     registerGraphEvents(events);
@@ -539,7 +512,7 @@ TEST_CASE("handlers on the same event type add no conflict edge", "[core][system
     REQUIRE(graph.getLevels().size() == 1);
     REQUIRE(countSystemNodes<FirstHandlerSystem>(graph) == 1);
     REQUIRE(countSystemNodes<SecondHandlerSystem>(graph) == 1);
-    REQUIRE(g_graphLogMessages.empty());
+    REQUIRE(logGuard.getMessages().empty());
 }
 
 TEST_CASE("a handler whose type this registry never registered is rejected and leaves the schedule mutable", "[core][systems][task-graph][events]") {
