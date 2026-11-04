@@ -18,7 +18,6 @@
 #include <vector>
 
 namespace TechEngine {
-    class Hierarchy;
     class ArchetypeStorage;
     class Scene;
 
