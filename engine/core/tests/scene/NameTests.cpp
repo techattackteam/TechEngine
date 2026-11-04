@@ -7,30 +7,11 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include <concepts>
-
-template<typename Component>
-concept WritableNameComponent = requires(TechEngine::Scene& scene, const TechEngine::Entity entity) {
-    { scene.getComponent<Component>(entity) } -> std::same_as<Component&>;
-};
-
-template<typename Component>
-concept AddableNameComponent = requires(TechEngine::Scene& scene, const TechEngine::Entity entity) { scene.addComponent<Component>(entity); };
-
-template<typename Component>
-concept AddableToPendingNameComponent = requires(TechEngine::Scene& scene, const TechEngine::PendingEntity entity) { scene.addComponent<Component>(entity); };
-
-template<typename Component>
-concept RemovableNameComponent = requires(TechEngine::Scene& scene, const TechEngine::Entity entity) { scene.removeComponent<Component>(entity); };
-
-template<typename Component>
-concept RemovableFromPendingNameComponent = requires(TechEngine::Scene& scene, const TechEngine::PendingEntity entity) { scene.removeComponent<Component>(entity); };
-
-static_assert(WritableNameComponent<TechEngine::Name>);
-static_assert(!AddableNameComponent<TechEngine::Name>);
-static_assert(!AddableToPendingNameComponent<TechEngine::Name>);
-static_assert(!RemovableNameComponent<TechEngine::Name>);
-static_assert(!RemovableFromPendingNameComponent<TechEngine::Name>);
+static_assert(TechEngineTests::WritableSceneComponent<TechEngine::Name>);
+static_assert(!TechEngineTests::AddableSceneComponent<TechEngine::Name>);
+static_assert(!TechEngineTests::AddableToPendingSceneComponent<TechEngine::Name>);
+static_assert(!TechEngineTests::RemovableSceneComponent<TechEngine::Name>);
+static_assert(!TechEngineTests::RemovableFromPendingSceneComponent<TechEngine::Name>);
 
 TEST_CASE("every new entity carries a Name called Entity", "[core][scene]") {
     TechEngine::ComponentRegistry registry;

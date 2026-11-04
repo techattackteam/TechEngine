@@ -12,28 +12,15 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <cmath>
-#include <concepts>
 #include <numbers>
 #include <utility>
 #include <vector>
 
-template<typename Component>
-concept AddableTransformComponent = requires(TechEngine::Scene& scene, const TechEngine::Entity entity) { scene.addComponent<Component>(entity); };
-
-template<typename Component>
-concept AddableToPendingTransformComponent = requires(TechEngine::Scene& scene, const TechEngine::PendingEntity entity) { scene.addComponent<Component>(entity); };
-
-template<typename Component>
-concept RemovableTransformComponent = requires(TechEngine::Scene& scene, const TechEngine::Entity entity) { scene.removeComponent<Component>(entity); };
-
-template<typename Component>
-concept RemovableFromPendingTransformComponent = requires(TechEngine::Scene& scene, const TechEngine::PendingEntity entity) { scene.removeComponent<Component>(entity); };
-
 static_assert(TechEngine::ComponentValue<TechEngine::Transform>);
-static_assert(!AddableTransformComponent<TechEngine::Transform>);
-static_assert(!AddableToPendingTransformComponent<TechEngine::Transform>);
-static_assert(!RemovableTransformComponent<TechEngine::Transform>);
-static_assert(!RemovableFromPendingTransformComponent<TechEngine::Transform>);
+static_assert(!TechEngineTests::AddableSceneComponent<TechEngine::Transform>);
+static_assert(!TechEngineTests::AddableToPendingSceneComponent<TechEngine::Transform>);
+static_assert(!TechEngineTests::RemovableSceneComponent<TechEngine::Transform>);
+static_assert(!TechEngineTests::RemovableFromPendingSceneComponent<TechEngine::Transform>);
 
 struct TransformMarker {
     int value = 0;
