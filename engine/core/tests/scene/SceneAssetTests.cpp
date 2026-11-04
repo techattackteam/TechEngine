@@ -17,6 +17,7 @@
 #include <TechEngine/core/serialization/ReadError.hpp>
 #include <TechEngine/core/serialization/Writer.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
+#include <TechEngine/testing/LogCapture.hpp>
 
 #include <scene/SceneTestRegistry.hpp>
 
@@ -539,37 +540,9 @@ TEST_CASE("a scene whose bytes do not parse fails the load with its read error a
 
 static constexpr ResourceId SECOND_SCENE_ASSET_ID{0x5EC0FFEE87654321};
 
-static std::vector<std::string> g_sceneLoadLogMessages;
-
-static void captureSceneLoadLog(const TechEngine::LogRecord& record) {
-    g_sceneLoadLogMessages.emplace_back(record.message);
-}
-
-class SceneLoadLogCaptureGuard {
-private:
-    TechEngine::Level m_previousLevel;
-
-public:
-    SceneLoadLogCaptureGuard() : m_previousLevel(TechEngine::minLevel()) {
-        g_sceneLoadLogMessages.clear();
-        TechEngine::setMinLevel(TechEngine::Level::Trace);
-        (void)TechEngine::addLogSink(&captureSceneLoadLog);
-    }
-
-    ~SceneLoadLogCaptureGuard() {
-        (void)TechEngine::removeLogSink(&captureSceneLoadLog);
-        TechEngine::setMinLevel(m_previousLevel);
-        g_sceneLoadLogMessages.clear();
-    }
-
-    SceneLoadLogCaptureGuard(const SceneLoadLogCaptureGuard&) = delete;
-
-    SceneLoadLogCaptureGuard& operator=(const SceneLoadLogCaptureGuard&) = delete;
-};
-
-static bool sceneLoadLogNames(const ResourceId id) {
+static bool sceneLoadLogNames(const TechEngineTests::LogCaptureGuard& logs, const ResourceId id) {
     const std::string idText = std::format("{:#018x}", id.value());
-    return std::ranges::any_of(g_sceneLoadLogMessages, [&idText](const std::string& message) {
+    return std::ranges::any_of(logs.getMessages(), [&idText](const std::string& message) {
         return message.find(idText) != std::string::npos;
     });
 }
@@ -599,7 +572,7 @@ TEST_CASE("a scene released but not yet drained loads again from its source", "[
 }
 
 TEST_CASE("loading a scene that is still held warns, returns AlreadyLoaded and leaves the held handle alone", "[core][scene][resources]") {
-    const SceneLoadLogCaptureGuard logs;
+    TechEngineTests::LogCaptureGuard logs;
     SceneLoadHarness harness;
     harness.source.addAsset(SCENE_ASSET_ID, writeSmallHierarchy());
     ComponentRegistry registry;
@@ -609,11 +582,11 @@ TEST_CASE("loading a scene that is still held warns, returns AlreadyLoaded and l
     ResourceHandle<SceneBytes> held;
     REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, first, held) == std::error_code{});
     const ResourceHandle<SceneBytes> original = held;
-    g_sceneLoadLogMessages.clear();
+    logs.clear();
 
     REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, second, held) == ReadError::AlreadyLoaded);
 
-    REQUIRE(sceneLoadLogNames(SCENE_ASSET_ID));
+    REQUIRE(sceneLoadLogNames(logs, SCENE_ASSET_ID));
     REQUIRE(held == original);
     REQUIRE(harness.acquireCount(held) == 1);
     REQUIRE(second.getRoots().empty());
@@ -808,7 +781,7 @@ TEST_CASE("writing a scene leaves the live scene's reference fields untouched", 
 }
 
 TEST_CASE("an Entity field whose target is not in the scene saves as empty and warns", "[core][scene]") {
-    const SceneLoadLogCaptureGuard logs;
+    const TechEngineTests::LogCaptureGuard logs;
     ComponentRegistry registry;
     registerLinkComponents(registry);
     Scene source(registry);
@@ -820,7 +793,7 @@ TEST_CASE("an Entity field whose target is not in the scene saves as empty and w
     std::vector<std::byte> bytes;
     SceneAsset{SCENE_ASSET_ID}.write(source, bytes);
 
-    REQUIRE(sceneLoadLogNames(SCENE_ASSET_ID));
+    REQUIRE(sceneLoadLogNames(logs, SCENE_ASSET_ID));
     Scene loaded(registry);
     const SmallHierarchy hierarchy = readIntoRecycledScene(bytes, loaded);
     const SceneAssetLink& link = loaded.getComponent<SceneAssetLink>(hierarchy.root);
@@ -994,7 +967,7 @@ TEST_CASE("load fills each AssetRef handle with its Ready entry and leaves empty
 }
 
 TEST_CASE("releasing a loaded scene releases its references in the same drain, and shutdown names none of them", "[core][scene][resources]") {
-    const SceneLoadLogCaptureGuard logs;
+    TechEngineTests::LogCaptureGuard logs;
     SceneLoadHarness harness;
     registerLinkedAssetLoader(harness.cache);
     harness.source.addAsset(SCENE_ASSET_ID, writeLinkedScene());
@@ -1017,12 +990,12 @@ TEST_CASE("releasing a loaded scene releases its references in the same drain, a
     REQUIRE_FALSE(harness.cache.getState(linked, state));
     REQUIRE_FALSE(harness.cache.getState(secondLinked, state));
 
-    g_sceneLoadLogMessages.clear();
+    logs.clear();
     harness.cache.shutdown();
 
-    REQUIRE_FALSE(sceneLoadLogNames(SCENE_ASSET_ID));
-    REQUIRE_FALSE(sceneLoadLogNames(LINKED_ASSET_ID));
-    REQUIRE_FALSE(sceneLoadLogNames(SECOND_LINKED_ASSET_ID));
+    REQUIRE_FALSE(sceneLoadLogNames(logs, SCENE_ASSET_ID));
+    REQUIRE_FALSE(sceneLoadLogNames(logs, LINKED_ASSET_ID));
+    REQUIRE_FALSE(sceneLoadLogNames(logs, SECOND_LINKED_ASSET_ID));
 }
 
 TEST_CASE("a reference that fails to load fails the load, leaves the Scene empty and holds nothing", "[core][scene][resources]") {

@@ -1,18 +1,25 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/base/diagnostics/LogError.hpp>
+#include <TechEngine/testing/LogCapture.hpp>
 
 #include <diagnostics/FormatBuffer.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
+#include <atomic>
 #include <chrono>
+#include <cstddef>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <memory>
 #include <source_location>
+#include <stop_token>
 #include <string>
 #include <system_error>
+#include <thread>
 #include <vector>
 
 #if defined(_WIN32)
@@ -21,105 +28,121 @@
 #include <unistd.h>
 #endif
 
-struct CapturedRecord {
-    std::chrono::system_clock::time_point time;
-    std::uint64_t tick;
-    TechEngine::Level level;
-    TechEngine::LogModule moduleTag;
-    TechEngine::LogChannel channel;
-    std::string message;
-    std::string file;
-    std::string function;
-    std::uint32_t line;
-};
+static constexpr int LOGGING_THREADS = 4;
+static constexpr int RECORDS_PER_THREAD = 500;
+static constexpr std::size_t RECORDS_AFTER_REMOVAL = 1000;
+static constexpr std::chrono::seconds LOGGER_TIMEOUT{5};
 
-static std::vector<CapturedRecord> g_captured;
-
-static void captureSink(const TechEngine::LogRecord& record) {
-    g_captured.push_back(CapturedRecord{record.time, record.tick, record.level, record.moduleTag, record.channel, std::string{record.message}, std::string{record.file}, std::string{record.function}, record.line});
-}
-
-static std::vector<std::string> g_secondary;
-
-static void secondarySink(const TechEngine::LogRecord& record) {
-    g_secondary.push_back(std::string{record.message});
-}
-
-// Diagnostics state is process-global and Catch2 shares one process; restore it or cases
-// leak into each other.
-class SinkGuard {
+class CountingSink final : public TechEngine::LogSink {
 public:
-    SinkGuard() : m_previousLevel(TechEngine::minLevel()) {
-        TechEngine::setMinLevel(TechEngine::Level::Trace);
-        g_captured.clear();
-        TechEngine::addLogSink(&captureSink);
+    void write(const TechEngine::LogRecord&) noexcept override {
+        m_count.fetch_add(1, std::memory_order_relaxed);
     }
 
-    ~SinkGuard() {
-        TechEngine::removeLogSink(&captureSink);
-        TechEngine::setMinLevel(m_previousLevel);
-        g_captured.clear();
+    std::size_t getCount() const {
+        return m_count.load(std::memory_order_relaxed);
     }
-
-    SinkGuard(const SinkGuard&) = delete;
-
-    SinkGuard& operator=(const SinkGuard&) = delete;
 
 private:
-    TechEngine::Level m_previousLevel;
+    std::atomic<std::size_t> m_count = 0;
 };
 
+// The sink table is process-global, so a sink must leave it even when a REQUIRE ends the case
+// early; one left behind dangles for every later case in the same run.
+class SinkRegistration {
+public:
+    explicit SinkRegistration(TechEngine::LogSink& sink) : m_sink(sink) {
+        (void)TechEngine::addLogSink(m_sink);
+    }
+
+    ~SinkRegistration() {
+        if (!m_removed) {
+            (void)TechEngine::removeLogSink(m_sink);
+        }
+    }
+
+    SinkRegistration(const SinkRegistration&) = delete;
+
+    SinkRegistration& operator=(const SinkRegistration&) = delete;
+
+    std::error_code remove() {
+        m_removed = true;
+        return TechEngine::removeLogSink(m_sink);
+    }
+
+private:
+    TechEngine::LogSink& m_sink;
+    bool m_removed = false;
+};
+
+template<typename Predicate>
+static bool waitUntil(Predicate&& predicate) {
+    const auto deadline = std::chrono::steady_clock::now() + LOGGER_TIMEOUT;
+    while (!predicate()) {
+        if (std::chrono::steady_clock::now() >= deadline) {
+            return false;
+        }
+        std::this_thread::yield();
+    }
+    return true;
+}
+
 TEST_CASE("positional args reorder and reuse", "[base][log]") {
-    const SinkGuard guard;
+    const TechEngineTests::LogCaptureGuard guard;
 
     TE_LOGGER_WARN("swapchain {1}x{0} (reuse {1})", 1080, 1920);
 
-    REQUIRE(g_captured.size() == 1);
-    REQUIRE(g_captured[0].message == "swapchain 1920x1080 (reuse 1920)");
+    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    REQUIRE(captured.size() == 1);
+    REQUIRE(captured[0].message == "swapchain 1920x1080 (reuse 1920)");
 }
 
 TEST_CASE("runtime min level suppresses below-threshold records", "[base][log]") {
-    const SinkGuard guard;
+    const TechEngineTests::LogCaptureGuard guard;
     TechEngine::setMinLevel(TechEngine::Level::Warn);
 
     TE_LOGGER_INFO("dropped {0}", 1);
     TE_LOGGER_WARN("kept {0}", 2);
     TE_LOGGER_ERROR("kept {0}", 3);
 
-    REQUIRE(g_captured.size() == 2);
-    REQUIRE(g_captured[0].level == TechEngine::Level::Warn);
-    REQUIRE(g_captured[1].level == TechEngine::Level::Error);
+    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    REQUIRE(captured.size() == 2);
+    REQUIRE(captured[0].level == TechEngine::Level::Warn);
+    REQUIRE(captured[1].level == TechEngine::Level::Error);
 }
 
 TEST_CASE("Level::Off suppresses everything", "[base][log]") {
-    const SinkGuard guard;
+    const TechEngineTests::LogCaptureGuard guard;
     TechEngine::setMinLevel(TechEngine::Level::Off);
 
     TE_LOGGER_CRITICAL("not delivered");
 
-    REQUIRE(g_captured.empty());
+    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    REQUIRE(captured.empty());
 }
 
 TEST_CASE("source_location reaches the record", "[base][log]") {
-    const SinkGuard guard;
+    const TechEngineTests::LogCaptureGuard guard;
 
     const std::uint32_t expectedLine = __LINE__ + 1;
     TE_LOGGER_WARN("located");
 
-    REQUIRE(g_captured.size() == 1);
-    REQUIRE(g_captured[0].line == expectedLine);
-    REQUIRE(g_captured[0].file == "LogTests.cpp");
+    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    REQUIRE(captured.size() == 1);
+    REQUIRE(captured[0].line == expectedLine);
+    REQUIRE(captured[0].file == "LogTests.cpp");
 }
 
 // MSVC hands source_location the whole signature ("void __cdecl f(void)"); the record must
 // carry the bare name so a line reads main.cpp:7:TestFunction().
 TEST_CASE("function name is trimmed to the identifier", "[base][log]") {
-    const SinkGuard guard;
+    const TechEngineTests::LogCaptureGuard guard;
 
     TE_LOGGER_WARN("named");
 
-    REQUIRE(g_captured.size() == 1);
-    const std::string& fn = g_captured[0].function;
+    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    REQUIRE(captured.size() == 1);
+    const std::string& fn = captured[0].function;
     REQUIRE(fn.find(' ') == std::string::npos);
     REQUIRE(fn.find('(') == std::string::npos);
     REQUIRE(fn.find("__cdecl") == std::string::npos);
@@ -127,18 +150,19 @@ TEST_CASE("function name is trimmed to the identifier", "[base][log]") {
 }
 
 TEST_CASE("tick stamp is the value app pushed", "[base][log]") {
-    const SinkGuard guard;
+    const TechEngineTests::LogCaptureGuard guard;
 
     TechEngine::setDiagnosticTick(1043);
     TE_LOGGER_WARN("stamped");
     TechEngine::setDiagnosticTick(0);
 
-    REQUIRE(g_captured.size() == 1);
-    REQUIRE(g_captured[0].tick == 1043);
+    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    REQUIRE(captured.size() == 1);
+    REQUIRE(captured[0].tick == 1043);
 }
 
 TEST_CASE("macros survive a dangling else", "[base][log]") {
-    const SinkGuard guard;
+    const TechEngineTests::LogCaptureGuard guard;
 
     const bool condition = false;
     if (condition) {
@@ -147,31 +171,34 @@ TEST_CASE("macros survive a dangling else", "[base][log]") {
         TE_LOGGER_WARN("else branch");
     }
 
-    REQUIRE(g_captured.size() == 1);
-    REQUIRE(g_captured[0].level == TechEngine::Level::Warn);
+    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    REQUIRE(captured.size() == 1);
+    REQUIRE(captured[0].level == TechEngine::Level::Warn);
 }
 
 TEST_CASE("over-long messages truncate rather than overflow", "[base][log]") {
-    const SinkGuard guard;
+    const TechEngineTests::LogCaptureGuard guard;
 
     const std::string huge(4096, 'x');
     TE_LOGGER_WARN("{0}", huge);
 
-    REQUIRE(g_captured.size() == 1);
-    REQUIRE(g_captured[0].message.size() < huge.size());
-    REQUIRE(g_captured[0].message.ends_with("[truncated]"));
+    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    REQUIRE(captured.size() == 1);
+    REQUIRE(captured[0].message.size() < huge.size());
+    REQUIRE(captured[0].message.ends_with("[truncated]"));
 }
 
 // The gate is per-config: a binary can only assert the config it was built in.
 TEST_CASE("compile-time level gate matches the build config", "[base][log]") {
-    const SinkGuard guard;
+    const TechEngineTests::LogCaptureGuard guard;
 
     TE_LOGGER_TRACE("trace {0}", 1);
 
+    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
 #if TE_LOG_ACTIVE_LEVEL <= TE_LOG_LEVEL_TRACE
-    REQUIRE(g_captured.size() == 1);
+    REQUIRE(captured.size() == 1);
 #else
-    REQUIRE(g_captured.empty());
+    REQUIRE(captured.empty());
 #endif
 }
 
@@ -180,17 +207,18 @@ TEST_CASE("compile-time level gate matches the build config", "[base][log]") {
 // reaches both, and a TU that fell back to the header's default instead fails silently.
 // Dispatching past the macros is the only way to see the library's half of the gate.
 TEST_CASE("the library gates at the level this TU compiled", "[base][log]") {
-    const SinkGuard guard;
+    const TechEngineTests::LogCaptureGuard guard;
 
     for (int level = TE_LOG_LEVEL_TRACE; level <= TE_LOG_LEVEL_CRITICAL; level++) {
         TechEngine::internal::logImpl(static_cast<TechEngine::Level>(level), TechEngine::DEFAULT_CHANNEL, std::source_location::current(), "{0}", level);
     }
 
-    REQUIRE(g_captured.size() == static_cast<std::size_t>(TE_LOG_LEVEL_CRITICAL - TE_LOG_ACTIVE_LEVEL + 1));
+    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    REQUIRE(captured.size() == static_cast<std::size_t>(TE_LOG_LEVEL_CRITICAL - TE_LOG_ACTIVE_LEVEL + 1));
 }
 
 TEST_CASE("two modules log on distinct channels", "[base][log][channel]") {
-    const SinkGuard guard;
+    const TechEngineTests::LogCaptureGuard guard;
 
     const TechEngine::LogModule client = TechEngine::registerLogModule("client");
     const TechEngine::LogModule net = TechEngine::registerLogModule("net");
@@ -201,12 +229,13 @@ TEST_CASE("two modules log on distinct channels", "[base][log][channel]") {
     TE_LOGGER_WARN_CH(socket, "peer {0}", 2);
 
     REQUIRE_FALSE(render == socket);
-    REQUIRE(g_captured.size() == 2);
+    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    REQUIRE(captured.size() == 2);
 
-    REQUIRE(g_captured[0].channel == render);
-    REQUIRE(g_captured[0].moduleTag == client);
-    REQUIRE(g_captured[1].channel == socket);
-    REQUIRE(g_captured[1].moduleTag == net);
+    REQUIRE(captured[0].channel == render);
+    REQUIRE(captured[0].moduleTag == client);
+    REQUIRE(captured[1].channel == socket);
+    REQUIRE(captured[1].moduleTag == net);
 
     REQUIRE(TechEngine::logChannelName(render) == "render");
     REQUIRE(TechEngine::logChannelName(socket) == "socket");
@@ -215,7 +244,7 @@ TEST_CASE("two modules log on distinct channels", "[base][log][channel]") {
 }
 
 TEST_CASE("per-channel level filters independently", "[base][log][channel]") {
-    const SinkGuard guard;
+    const TechEngineTests::LogCaptureGuard guard;
 
     const TechEngine::LogModule audio = TechEngine::registerLogModule("audio");
     const TechEngine::LogChannel quiet = TechEngine::registerLogChannel("mixer", audio);
@@ -225,9 +254,10 @@ TEST_CASE("per-channel level filters independently", "[base][log][channel]") {
     TE_LOGGER_WARN_CH(quiet, "dropped");
     TE_LOGGER_WARN_CH(loud, "kept");
 
-    REQUIRE(g_captured.size() == 1);
-    REQUIRE(g_captured[0].message == "kept");
-    REQUIRE(g_captured[0].channel == loud);
+    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    REQUIRE(captured.size() == 1);
+    REQUIRE(captured[0].message == "kept");
+    REQUIRE(captured[0].channel == loud);
     REQUIRE(TechEngine::channelLevel(quiet) == TechEngine::Level::Error);
     REQUIRE(TechEngine::channelLevel(loud) == TechEngine::Level::Trace);
 }
@@ -235,7 +265,7 @@ TEST_CASE("per-channel level filters independently", "[base][log][channel]") {
 // Info rather than Trace on purpose: Trace is compiled out in Release, which would make the
 // case pass for the wrong reason on that leg.
 TEST_CASE("module level is a floor over its channels", "[base][log][channel]") {
-    const SinkGuard guard;
+    const TechEngineTests::LogCaptureGuard guard;
 
     const TechEngine::LogModule physics = TechEngine::registerLogModule("physics");
     const TechEngine::LogChannel solver = TechEngine::registerLogChannel("solver", physics, TechEngine::Level::Trace);
@@ -244,48 +274,104 @@ TEST_CASE("module level is a floor over its channels", "[base][log][channel]") {
     TE_LOGGER_INFO_CH(solver, "dropped by the module floor");
     TE_LOGGER_ERROR_CH(solver, "kept");
 
-    REQUIRE(g_captured.size() == 1);
-    REQUIRE(g_captured[0].level == TechEngine::Level::Error);
+    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    REQUIRE(captured.size() == 1);
+    REQUIRE(captured[0].level == TechEngine::Level::Error);
     REQUIRE(TechEngine::channelLevel(solver) == TechEngine::Level::Trace);
 }
 
 TEST_CASE("unregistered channel falls back to the default", "[base][log][channel]") {
-    const SinkGuard guard;
+    const TechEngineTests::LogCaptureGuard guard;
 
     const TechEngine::LogChannel bogus{9999};
 
     TE_LOGGER_WARN_CH(bogus, "still delivered");
 
-    REQUIRE(g_captured.size() == 1);
-    REQUIRE(g_captured[0].message == "still delivered");
+    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    REQUIRE(captured.size() == 1);
+    REQUIRE(captured[0].message == "still delivered");
 
     // The record keeps the handle it was given; only the lookup falls back, so an out-of-range
     // id can never index the table.
-    REQUIRE(g_captured[0].channel == bogus);
-    REQUIRE(g_captured[0].moduleTag == TechEngine::DEFAULT_MODULE);
+    REQUIRE(captured[0].channel == bogus);
+    REQUIRE(captured[0].moduleTag == TechEngine::DEFAULT_MODULE);
     REQUIRE(TechEngine::logChannelName(bogus) == "default");
     REQUIRE(TechEngine::channelLevel(bogus) == TechEngine::channelLevel(TechEngine::DEFAULT_CHANNEL));
 }
 
 TEST_CASE("sinks are added, not swapped", "[base][log][sink]") {
-    const SinkGuard guard;
-    g_secondary.clear();
-
-    REQUIRE(TechEngine::addLogSink(&secondarySink) == std::error_code{});
+    const TechEngineTests::LogCaptureGuard survivor;
+    TechEngineTests::LogCaptureGuard removed;
 
     TE_LOGGER_WARN("both");
 
-    REQUIRE(g_captured.size() == 1);
-    REQUIRE(g_secondary.size() == 1);
+    REQUIRE(survivor.getRecords().size() == 1);
+    REQUIRE(removed.getRecords().size() == 1);
 
-    REQUIRE(TechEngine::removeLogSink(&secondarySink) == std::error_code{});
+    REQUIRE(TechEngine::removeLogSink(removed) == std::error_code{});
 
     TE_LOGGER_WARN("only the survivor");
 
-    REQUIRE(g_captured.size() == 2);
-    REQUIRE(g_secondary.size() == 1);
+    REQUIRE(survivor.getRecords().size() == 2);
+    REQUIRE(removed.getRecords().size() == 1);
+}
 
-    g_secondary.clear();
+TEST_CASE("two sinks see the same records in the same order", "[base][log][sink][threads]") {
+    const TechEngineTests::LogCaptureGuard first;
+    const TechEngineTests::LogCaptureGuard second;
+
+    std::vector<std::jthread> loggers;
+    for (int thread = 0; thread < LOGGING_THREADS; thread++) {
+        loggers.emplace_back([thread] {
+            for (int record = 0; record < RECORDS_PER_THREAD; record++) {
+                TE_LOGGER_WARN("thread {0} record {1}", thread, record);
+            }
+        });
+    }
+    for (std::jthread& logger: loggers) {
+        logger.join();
+    }
+
+    const std::vector<std::string> firstMessages = first.getMessages();
+    REQUIRE(firstMessages.size() == static_cast<std::size_t>(LOGGING_THREADS * RECORDS_PER_THREAD));
+    REQUIRE(firstMessages == second.getMessages());
+}
+
+TEST_CASE("after removeLogSink returns, the removed sink gets nothing and can be destroyed", "[base][log][sink][threads]") {
+    // Keeps the loggers' records off stderr once the removed sink is gone.
+    CountingSink anchor;
+    const SinkRegistration anchorRegistration{anchor};
+    auto removed = std::make_unique<CountingSink>();
+    SinkRegistration removedRegistration{*removed};
+
+    std::vector<std::jthread> loggers;
+    for (int thread = 0; thread < LOGGING_THREADS; thread++) {
+        loggers.emplace_back([](const std::stop_token stop) {
+            while (!stop.stop_requested()) {
+                TE_LOGGER_WARN("busy");
+            }
+        });
+    }
+
+    REQUIRE(waitUntil([&removed] {
+        return removed->getCount() > 0;
+    }));
+    REQUIRE(removedRegistration.remove() == std::error_code{});
+    const std::size_t countAtRemoval = removed->getCount();
+
+    const std::size_t anchorAtRemoval = anchor.getCount();
+    REQUIRE(waitUntil([&anchor, anchorAtRemoval] {
+        return anchor.getCount() > anchorAtRemoval + RECORDS_AFTER_REMOVAL;
+    }));
+    REQUIRE(removed->getCount() == countAtRemoval);
+
+    // Nothing is asserted after the reset: a late write into the freed sink is ASan's and
+    // TSan's to report.
+    removed.reset();
+    const std::size_t anchorAtDestruction = anchor.getCount();
+    REQUIRE(waitUntil([&anchor, anchorAtDestruction] {
+        return anchor.getCount() > anchorAtDestruction + RECORDS_AFTER_REMOVAL;
+    }));
 }
 
 // stderr is a process-wide descriptor: freopen can point it at a file, but nothing portable
@@ -328,7 +414,7 @@ static std::string captureStderr(Body&& body) {
     return contents;
 }
 
-// No SinkGuard: an empty sink set is the whole point. initLogging() is never called from the
+// No capture guard: an empty sink set is the whole point. initLogging() is never called from the
 // suite, so nothing else is installed either.
 TEST_CASE("with no sink installed a record still reaches stderr", "[base][log][sink]") {
     const TechEngine::Level previous = TechEngine::minLevel();
@@ -344,15 +430,92 @@ TEST_CASE("with no sink installed a record still reaches stderr", "[base][log][s
     REQUIRE(captured.find("LogTests.cpp") != std::string::npos);
 }
 
-TEST_CASE("a record carries a wall-clock stamp", "[base][log]") {
-    const SinkGuard guard;
+class ReentrantSink final : public TechEngine::LogSink {
+public:
+    void write(const TechEngine::LogRecord& record) noexcept override {
+        if (record.message == "outer") {
+            TE_LOGGER_WARN("inner {0}", 1);
+        }
+    }
+};
+
+TEST_CASE("a record logged inside a write reaches the ring and stderr, not the sinks", "[base][log][sink]") {
+    TechEngine::ringClear();
+    const TechEngineTests::LogCaptureGuard capture;
+    ReentrantSink reentrant;
+    const SinkRegistration registration{reentrant};
+
+    const std::string captured = captureStderr([] {
+        TE_LOGGER_WARN("outer");
+    });
+
+    REQUIRE(captured.find("inner 1") != std::string::npos);
+    REQUIRE(capture.getMessages() == std::vector<std::string>{"outer"});
+
+    std::array<TechEngine::LogRecord, TechEngine::LOG_RING_CAPACITY> snapshot{};
+    const std::size_t count = TechEngine::ringSnapshot(snapshot.data(), snapshot.size());
+    REQUIRE(count == 2);
+    REQUIRE(snapshot[0].message == "outer");
+    REQUIRE(snapshot[1].message == "inner 1");
+}
+
+class SinkChangingSink final : public TechEngine::LogSink {
+public:
+    void write(const TechEngine::LogRecord&) noexcept override {
+        m_writes++;
+        if (m_writes == 1) {
+            m_addError = TechEngine::addLogSink(m_unregistered);
+            m_removeError = TechEngine::removeLogSink(*this);
+        }
+    }
+
+    std::size_t getWrites() const {
+        return m_writes;
+    }
+
+    std::size_t getUnregisteredWrites() const {
+        return m_unregistered.getCount();
+    }
+
+    std::error_code getAddError() const {
+        return m_addError;
+    }
+
+    std::error_code getRemoveError() const {
+        return m_removeError;
+    }
+
+private:
+    CountingSink m_unregistered;
+    std::size_t m_writes = 0;
+    std::error_code m_addError;
+    std::error_code m_removeError;
+};
+
+TEST_CASE("adding or removing a sink inside a write returns InsideSink", "[base][log][sink]") {
+    SinkChangingSink changing;
+    SinkRegistration registration{changing};
 
     TE_LOGGER_WARN("first");
     TE_LOGGER_WARN("second");
 
-    REQUIRE(g_captured.size() == 2);
-    REQUIRE(g_captured[0].time.time_since_epoch().count() > 0);
-    REQUIRE(g_captured[1].time >= g_captured[0].time);
+    REQUIRE(changing.getAddError() == TechEngine::LogError::InsideSink);
+    REQUIRE(changing.getRemoveError() == TechEngine::LogError::InsideSink);
+    REQUIRE(changing.getWrites() == 2);
+    REQUIRE(changing.getUnregisteredWrites() == 0);
+    REQUIRE(registration.remove() == std::error_code{});
+}
+
+TEST_CASE("a record carries a wall-clock stamp", "[base][log]") {
+    const TechEngineTests::LogCaptureGuard guard;
+
+    TE_LOGGER_WARN("first");
+    TE_LOGGER_WARN("second");
+
+    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    REQUIRE(captured.size() == 2);
+    REQUIRE(captured[0].time.time_since_epoch().count() > 0);
+    REQUIRE(captured[1].time >= captured[0].time);
 }
 
 static TechEngine::LogRecord sampleRecord(std::string_view message) {
@@ -437,7 +600,7 @@ TEST_CASE("flatten never writes past its buffer", "[base][log][format]") {
 // Last on purpose: it exhausts the channel table, and registration is never unwound. Under
 // ctest each case is its own process, so this only constrains a direct exe run.
 TEST_CASE("registry overflow degrades to the default channel", "[base][log][channel]") {
-    const SinkGuard guard;
+    const TechEngineTests::LogCaptureGuard guard;
 
     const TechEngine::LogModule owner = TechEngine::registerLogModule("overflow");
     const TechEngine::LogChannel first = TechEngine::registerLogChannel("first", owner);
@@ -454,8 +617,9 @@ TEST_CASE("registry overflow degrades to the default channel", "[base][log][chan
     // A full table degrades the channel, never the log line.
     TE_LOGGER_WARN_CH(last, "still delivered");
 
-    REQUIRE(g_captured.size() == 1);
-    REQUIRE(g_captured[0].message == "still delivered");
+    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    REQUIRE(captured.size() == 1);
+    REQUIRE(captured[0].message == "still delivered");
 }
 
 // The ring is always-on process-global state, not a pluggable sink; it has no guard of its

@@ -1,5 +1,6 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/testing/LogCapture.hpp>
 
 #include <diagnostics/FormatBuffer.hpp>
 
@@ -46,38 +47,6 @@ public:
 
 private:
     TechEngine::AssertHandlerFn m_previous;
-};
-
-struct CapturedLog {
-    TechEngine::Level level;
-    std::string message;
-    std::string file;
-    std::uint32_t line;
-};
-
-static std::vector<CapturedLog> g_loggedRecords;
-
-// Copies out immediately: record.message points into the dispatcher's stack buffer and does
-// not outlive this call.
-static void captureLogSink(const TechEngine::LogRecord& record) {
-    g_loggedRecords.push_back(CapturedLog{record.level, std::string{record.message}, std::string{record.file}, record.line});
-}
-
-class LogCaptureGuard {
-public:
-    LogCaptureGuard() {
-        g_loggedRecords.clear();
-        TechEngine::addLogSink(&captureLogSink);
-    }
-
-    ~LogCaptureGuard() {
-        TechEngine::removeLogSink(&captureLogSink);
-        g_loggedRecords.clear();
-    }
-
-    LogCaptureGuard(const LogCaptureGuard&) = delete;
-
-    LogCaptureGuard& operator=(const LogCaptureGuard&) = delete;
 };
 
 TEST_CASE("setAssertHandler returns the previous handler", "[base][assert]") {
@@ -310,29 +279,31 @@ TEST_CASE("a throwing handler does not latch the in-flight guard", "[base][asser
 // the macro whether to abort. This covers the log half; "the default handler asks to abort
 // exactly for fatal kinds" already covers abortProcess itself.
 TEST_CASE("the default handler routes the failure through the Logger at Critical", "[base][assert][log]") {
-    const LogCaptureGuard logGuard;
+    const TechEngineTests::LogCaptureGuard logGuard;
 
     const TechEngine::AssertContext context{TechEngine::AssertKind::Ensure, "budget <= max", "over by 3", "AssertTests.cpp", "test", 42};
     const TechEngine::AssertResponse response = TechEngine::defaultAssertHandler(context);
 
     REQUIRE_FALSE(response.abortProcess);
-    REQUIRE(g_loggedRecords.size() == 1);
-    REQUIRE(g_loggedRecords[0].level == TechEngine::Level::Critical);
-    REQUIRE(g_loggedRecords[0].file == "AssertTests.cpp");
-    REQUIRE(g_loggedRecords[0].line == 42);
-    REQUIRE(g_loggedRecords[0].message.find("ENSURE") != std::string::npos);
-    REQUIRE(g_loggedRecords[0].message.find("budget <= max") != std::string::npos);
-    REQUIRE(g_loggedRecords[0].message.find("over by 3") != std::string::npos);
+    const std::vector<TechEngineTests::CapturedLog> loggedRecords = logGuard.getRecords();
+    REQUIRE(loggedRecords.size() == 1);
+    REQUIRE(loggedRecords[0].level == TechEngine::Level::Critical);
+    REQUIRE(loggedRecords[0].file == "AssertTests.cpp");
+    REQUIRE(loggedRecords[0].line == 42);
+    REQUIRE(loggedRecords[0].message.find("ENSURE") != std::string::npos);
+    REQUIRE(loggedRecords[0].message.find("budget <= max") != std::string::npos);
+    REQUIRE(loggedRecords[0].message.find("over by 3") != std::string::npos);
 }
 
 TEST_CASE("a message-less failure still composes a readable Critical line", "[base][assert][log]") {
-    const LogCaptureGuard logGuard;
+    const TechEngineTests::LogCaptureGuard logGuard;
 
     const TechEngine::AssertContext context{TechEngine::AssertKind::Check, "device != nullptr", "", "AssertTests.cpp", "test", 7};
     TechEngine::defaultAssertHandler(context);
 
-    REQUIRE(g_loggedRecords.size() == 1);
-    REQUIRE(g_loggedRecords[0].message == "[CHECK] (device != nullptr)");
+    const std::vector<TechEngineTests::CapturedLog> loggedRecords = logGuard.getRecords();
+    REQUIRE(loggedRecords.size() == 1);
+    REQUIRE(loggedRecords[0].message == "[CHECK] (device != nullptr)");
 }
 
 // The ring is always-on (not something the handler opts into) so a failure lands there even

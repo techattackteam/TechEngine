@@ -8,6 +8,7 @@
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/testing/AppTestAccess.hpp>
+#include <TechEngine/testing/LogCapture.hpp>
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <edit/EditSession.hpp>
@@ -134,34 +135,6 @@ static bool waitForStartup(const CommandsAppProbe& app) {
     return app.startupLoaded.load();
 }
 
-static std::vector<std::string> g_editorCommandsLog;
-
-static void captureEditorCommandsLog(const TechEngine::LogRecord& record) {
-    g_editorCommandsLog.emplace_back(record.message);
-}
-
-class EditorCommandsLogCapture {
-private:
-    TechEngine::Level m_previousLevel;
-
-public:
-    EditorCommandsLogCapture() : m_previousLevel(TechEngine::minLevel()) {
-        g_editorCommandsLog.clear();
-        TechEngine::setMinLevel(TechEngine::Level::Trace);
-        (void)TechEngine::addLogSink(&captureEditorCommandsLog);
-    }
-
-    ~EditorCommandsLogCapture() {
-        (void)TechEngine::removeLogSink(&captureEditorCommandsLog);
-        TechEngine::setMinLevel(m_previousLevel);
-        g_editorCommandsLog.clear();
-    }
-
-    EditorCommandsLogCapture(const EditorCommandsLogCapture&) = delete;
-
-    EditorCommandsLogCapture& operator=(const EditorCommandsLogCapture&) = delete;
-};
-
 TEST_CASE("every sender method reaches the live scene through the running simulation", "[editor][edit][commands][integration]") {
     CommandsAppProbe app;
     EditorCommands commands{app, app.session, app.getRegistry(), app.getFiles()};
@@ -266,7 +239,7 @@ TEST_CASE("every sender method reaches the live scene through the running simula
 }
 
 TEST_CASE("a sender on an app that is not running applies nothing and logs the refusal", "[editor][edit][commands]") {
-    const EditorCommandsLogCapture logs;
+    const TechEngineTests::LogCaptureGuard logs;
     CommandsAppProbe app;
     EditorCommands commands{app, app.session, app.getRegistry(), app.getFiles()};
 
@@ -283,7 +256,7 @@ TEST_CASE("a sender on an app that is not running applies nothing and logs the r
     commands.saveAndClose();
 
     CHECK(TechEngineTests::AppTestAccess::scene(app).getRoots().empty());
-    const auto refusals = std::ranges::count_if(g_editorCommandsLog, [](const std::string& message) {
+    const auto refusals = std::ranges::count_if(logs.getMessages(), [](const std::string& message) {
         return message.find("refused an edit") != std::string::npos;
     });
     CHECK(refusals == 11);

@@ -11,6 +11,7 @@
 #include <TechEngine/core/serialization/Writer.hpp>
 #include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
+#include <TechEngine/testing/LogCapture.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -166,37 +167,9 @@ public:
     }
 };
 
-static std::vector<std::string> g_cacheLogMessages;
-
-static void captureCacheLog(const TechEngine::LogRecord& record) {
-    g_cacheLogMessages.emplace_back(record.message);
-}
-
-class CacheLogCaptureGuard {
-private:
-    TechEngine::Level m_previousLevel;
-
-public:
-    CacheLogCaptureGuard() : m_previousLevel(TechEngine::minLevel()) {
-        g_cacheLogMessages.clear();
-        TechEngine::setMinLevel(TechEngine::Level::Trace);
-        (void)TechEngine::addLogSink(&captureCacheLog);
-    }
-
-    ~CacheLogCaptureGuard() {
-        (void)TechEngine::removeLogSink(&captureCacheLog);
-        TechEngine::setMinLevel(m_previousLevel);
-        g_cacheLogMessages.clear();
-    }
-
-    CacheLogCaptureGuard(const CacheLogCaptureGuard&) = delete;
-
-    CacheLogCaptureGuard& operator=(const CacheLogCaptureGuard&) = delete;
-};
-
-static bool logNames(const ResourceId id) {
+static bool logNames(const TechEngineTests::LogCaptureGuard& logs, const ResourceId id) {
     const std::string idText = std::format("{:#018x}", id.value());
-    return std::ranges::any_of(g_cacheLogMessages, [&idText](const std::string& message) {
+    return std::ranges::any_of(logs.getMessages(), [&idText](const std::string& message) {
         return message.find(idText) != std::string::npos;
     });
 }
@@ -682,7 +655,7 @@ TEST_CASE("an entry requested again before its deferred free is kept", "[core][r
 }
 
 TEST_CASE("shutdown waits for loads in flight and logs every entry still acquired", "[core][resources][cache]") {
-    const CacheLogCaptureGuard logs;
+    const TechEngineTests::LogCaptureGuard logs;
     CacheHarness harness;
     harness.source.addAsset(ROOT_ID, "held", {});
     harness.source.addAsset(SECOND_ROOT_ID, "released", {});
@@ -707,9 +680,9 @@ TEST_CASE("shutdown waits for loads in flight and logs every entry still acquire
     }
 
     REQUIRE(g_gateTimeouts.load() == 0);
-    REQUIRE(logNames(ROOT_ID));
-    REQUIRE(logNames(GATED_ID));
-    REQUIRE_FALSE(logNames(SECOND_ROOT_ID));
+    REQUIRE(logNames(logs, ROOT_ID));
+    REQUIRE(logNames(logs, GATED_ID));
+    REQUIRE_FALSE(logNames(logs, SECOND_ROOT_ID));
 }
 
 TEST_CASE("loader registration is rejected once the cache has closed it", "[core][resources][cache]") {
