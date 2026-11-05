@@ -2,6 +2,8 @@
 
 #include <resources/ResourceSlots.hpp>
 
+#include <utility>
+
 namespace TechEngine {
     ResourceSlots::ResourceSlots(const std::uint32_t slotLimit, const std::uint32_t generationLimit) : m_slotLimit(slotLimit), m_generationLimit(generationLimit) {
     }
@@ -50,10 +52,7 @@ namespace TechEngine {
     }
 
     ResourceEntry* ResourceSlots::find(const ResourceSlotId slot) {
-        if (!isSlotValid(slot)) {
-            return nullptr;
-        }
-        return &getResourceEntry(slot.index);
+        return const_cast<ResourceEntry*>(std::as_const(*this).find(slot));
     }
 
     const ResourceEntry* ResourceSlots::find(const ResourceSlotId slot) const {
@@ -76,8 +75,7 @@ namespace TechEngine {
     }
 
     ResourceEntry& ResourceSlots::getResourceEntry(const std::uint32_t index) {
-        TE_ASSERT(index < m_slotCount, "Resource slot index {0} is past the {1} slots that exist", index, m_slotCount);
-        return (*m_blocks[index / ENTRIES_PER_BLOCK])[index % ENTRIES_PER_BLOCK];
+        return const_cast<ResourceEntry&>(std::as_const(*this).getResourceEntry(index));
     }
 
     const ResourceEntry& ResourceSlots::getResourceEntry(const std::uint32_t index) const {

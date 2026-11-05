@@ -55,9 +55,7 @@ namespace TechEngine {
         std::uint64_t id = 0;
         {
             std::lock_guard const lock{m_mutex};
-            if (!m_running) {
-                id = 0;
-            } else {
+            if (m_running) {
                 id = m_nextBatchId++;
                 m_pendingBatches.emplace(id, tasks.size());
                 for (Task& task: tasks) {
