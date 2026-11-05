@@ -1,6 +1,5 @@
 #include <edit/ConsoleLog.hpp>
 
-#include <array>
 #include <utility>
 
 namespace TechEngine {
@@ -13,12 +12,12 @@ namespace TechEngine {
 
     std::error_code ConsoleLog::start() {
         m_mainThread = std::this_thread::get_id();
-        std::array<LogRecord, LOG_RING_CAPACITY> ring{};
-        const std::size_t count = ringSnapshot(ring.data(), ring.size());
+        std::vector<StoredLogRecord> ring;
+        ringSnapshot(ring);
         {
             const std::lock_guard lock(m_mutex);
-            for (std::size_t i = 0; i < count; i++) {
-                push(ring[i]);
+            for (StoredLogRecord& record: ring) {
+                push(std::move(record));
             }
         }
         const std::error_code addError = addLogSink(*this);
@@ -54,10 +53,11 @@ namespace TechEngine {
     }
 
     void ConsoleLog::write(const LogRecord& record) noexcept {
+        StoredLogRecord stored(record);
         bool wake = false;
         {
             const std::lock_guard lock(m_mutex);
-            push(record);
+            push(std::move(stored));
             if (record.level >= Level::Warn && std::this_thread::get_id() != m_mainThread) {
                 wake = !m_wakePending.exchange(true);
             }
@@ -67,11 +67,11 @@ namespace TechEngine {
         }
     }
 
-    void ConsoleLog::push(const LogRecord& record) {
+    void ConsoleLog::push(StoredLogRecord record) {
         if (m_queue.size() >= QUEUE_CAPACITY) {
             m_queue.pop_front();
             m_dropped++;
         }
-        m_queue.emplace_back(record);
+        m_queue.push_back(std::move(record));
     }
 }

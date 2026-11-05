@@ -1,12 +1,12 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/base/diagnostics/StoredLogRecord.hpp>
 #include <TechEngine/testing/LogCapture.hpp>
 
 #include <diagnostics/FormatBuffer.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
-#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -314,10 +314,10 @@ TEST_CASE("a failure's Critical log lands in the always-on ring", "[base][assert
     const TechEngine::AssertContext context{TechEngine::AssertKind::Check, "device != nullptr", "", "AssertTests.cpp", "test", 7};
     TechEngine::defaultAssertHandler(context);
 
-    std::array<TechEngine::LogRecord, TechEngine::LOG_RING_CAPACITY> snapshot{};
-    const std::size_t count = TechEngine::ringSnapshot(snapshot.data(), snapshot.size());
+    std::vector<TechEngine::StoredLogRecord> snapshot;
+    TechEngine::ringSnapshot(snapshot);
 
-    REQUIRE(count >= 1);
-    REQUIRE(snapshot[count - 1].level == TechEngine::Level::Critical);
-    REQUIRE(snapshot[count - 1].line == 7);
+    REQUIRE_FALSE(snapshot.empty());
+    REQUIRE(snapshot.back().level == TechEngine::Level::Critical);
+    REQUIRE(snapshot.back().line == 7);
 }

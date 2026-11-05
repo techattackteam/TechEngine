@@ -5,6 +5,7 @@
 
 #include <chrono>
 #include <source_location>
+#include <vector>
 
 #define TE_LOG_LEVEL_TRACE 0
 #define TE_LOG_LEVEL_DEBUG 1
@@ -134,10 +135,12 @@ namespace TechEngine {
 
     inline constexpr std::size_t LOG_RING_CAPACITY = 64;
 
+    struct StoredLogRecord;
+
     // Always-on process-global state, independent of the pluggable sink set above; every
-    // dispatched record lands here regardless of what's registered. This copies out up to
-    // `capacity` entries, oldest first, and returns the count actually written.
-    std::size_t ringSnapshot(LogRecord* out, std::size_t capacity);
+    // dispatched record lands here regardless of what's registered. This appends the ring's
+    // records to out, oldest first. It allocates, so a crash path must not read the ring through it.
+    void ringSnapshot(std::vector<StoredLogRecord>& out);
 
     void ringClear();
 

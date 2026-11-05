@@ -3,7 +3,6 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include <array>
 #include <chrono>
 #include <string>
 
@@ -49,19 +48,4 @@ TEST_CASE("a stored record keeps its message after the buffer it was logged from
 
     CHECK(stored.message == "the original message");
     CHECK(stored.message.data() != buffer.data());
-}
-
-TEST_CASE("a record logged through a macro is stored with its message after the call returns", "[base][log][stored]") {
-    TechEngine::ringClear();
-    TE_LOGGER_WARN("stored from the ring {0}", 7);
-
-    std::array<LogRecord, 1> ring{};
-    REQUIRE(TechEngine::ringSnapshot(ring.data(), ring.size()) == 1);
-    const StoredLogRecord stored(ring[0]);
-    TechEngine::ringClear();
-    TE_LOGGER_WARN("a later record that reuses the ring's slot");
-
-    CHECK(stored.message == "stored from the ring 7");
-    CHECK(stored.level == Level::Warn);
-    CHECK(stored.file == "StoredLogRecordTests.cpp");
 }

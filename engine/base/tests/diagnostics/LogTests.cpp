@@ -1,5 +1,6 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/diagnostics/LogError.hpp>
+#include <TechEngine/base/diagnostics/StoredLogRecord.hpp>
 #include <TechEngine/testing/LogCapture.hpp>
 
 #include <diagnostics/FormatBuffer.hpp>
@@ -453,9 +454,9 @@ TEST_CASE("a record logged inside a write reaches the ring and stderr, not the s
     REQUIRE(captured.find("inner 1") != std::string::npos);
     REQUIRE(capture.getMessages() == std::vector<std::string>{"outer"});
 
-    std::array<TechEngine::LogRecord, TechEngine::LOG_RING_CAPACITY> snapshot{};
-    const std::size_t count = TechEngine::ringSnapshot(snapshot.data(), snapshot.size());
-    REQUIRE(count == 2);
+    std::vector<TechEngine::StoredLogRecord> snapshot;
+    TechEngine::ringSnapshot(snapshot);
+    REQUIRE(snapshot.size() == 2);
     REQUIRE(snapshot[0].message == "outer");
     REQUIRE(snapshot[1].message == "inner 1");
 }
@@ -634,10 +635,10 @@ TEST_CASE("the ring captures records even with no sink installed", "[base][log][
 
     TechEngine::setMinLevel(previous);
 
-    std::array<TechEngine::LogRecord, 1> snapshot{};
-    const std::size_t count = TechEngine::ringSnapshot(snapshot.data(), snapshot.size());
+    std::vector<TechEngine::StoredLogRecord> snapshot;
+    TechEngine::ringSnapshot(snapshot);
 
-    REQUIRE(count == 1);
+    REQUIRE(snapshot.size() == 1);
     REQUIRE(snapshot[0].message == "no sink needed");
     REQUIRE(snapshot[0].level == TechEngine::Level::Warn);
 }
@@ -654,29 +655,76 @@ TEST_CASE("the ring keeps the last LOG_RING_CAPACITY records, oldest evicted fir
 
     TechEngine::setMinLevel(previous);
 
-    std::array<TechEngine::LogRecord, TechEngine::LOG_RING_CAPACITY> snapshot{};
-    const std::size_t count = TechEngine::ringSnapshot(snapshot.data(), snapshot.size());
+    std::vector<TechEngine::StoredLogRecord> snapshot;
+    TechEngine::ringSnapshot(snapshot);
 
-    REQUIRE(count == TechEngine::LOG_RING_CAPACITY);
-    REQUIRE(snapshot[0].message == "record 5");
-    REQUIRE(snapshot[count - 1].message == "record " + std::to_string(total - 1));
+    REQUIRE(snapshot.size() == TechEngine::LOG_RING_CAPACITY);
+    REQUIRE(snapshot.front().message == "record 5");
+    REQUIRE(snapshot.back().message == "record " + std::to_string(total - 1));
 }
 
-TEST_CASE("ringSnapshot never writes past the caller's capacity", "[base][log][ring]") {
+TEST_CASE("ringSnapshot appends to the records already in out", "[base][log][ring]") {
     TechEngine::ringClear();
-    const TechEngine::Level previous = TechEngine::minLevel();
-    TechEngine::setMinLevel(TechEngine::Level::Trace);
-
     TE_LOGGER_WARN("one");
     TE_LOGGER_WARN("two");
-    TE_LOGGER_WARN("three");
 
-    TechEngine::setMinLevel(previous);
+    std::vector<TechEngine::StoredLogRecord> snapshot;
+    TechEngine::ringSnapshot(snapshot);
+    TechEngine::ringSnapshot(snapshot);
 
-    std::array<TechEngine::LogRecord, 2> snapshot{};
-    const std::size_t count = TechEngine::ringSnapshot(snapshot.data(), snapshot.size());
+    REQUIRE(snapshot.size() == 4);
+    REQUIRE(snapshot[0].message == "one");
+    REQUIRE(snapshot[1].message == "two");
+    REQUIRE(snapshot[2].message == "one");
+    REQUIRE(snapshot[3].message == "two");
+}
 
-    REQUIRE(count == 2);
-    REQUIRE(snapshot[0].message == "two");
-    REQUIRE(snapshot[1].message == "three");
+TEST_CASE("a ring snapshot keeps its messages after later records reuse every slot", "[base][log][ring]") {
+    TechEngine::ringClear();
+    TE_LOGGER_WARN("kept {0}", 1);
+    TE_LOGGER_WARN("kept {0}", 2);
+
+    std::vector<TechEngine::StoredLogRecord> snapshot;
+    TechEngine::ringSnapshot(snapshot);
+    for (std::size_t i = 0; i < TechEngine::LOG_RING_CAPACITY; i++) {
+        TE_LOGGER_WARN("overwrite {0}", i);
+    }
+
+    REQUIRE(snapshot.size() == 2);
+    REQUIRE(snapshot[0].message == "kept 1");
+    REQUIRE(snapshot[1].message == "kept 2");
+}
+
+class DiscardingSink final : public TechEngine::LogSink {
+public:
+    void write(const TechEngine::LogRecord&) noexcept override {
+    }
+};
+
+TEST_CASE("a ring snapshot taken while another thread logs reads every message whole", "[base][log][ring]") {
+    TechEngine::ringClear();
+    DiscardingSink discarding;
+    REQUIRE(TechEngine::addLogSink(discarding) == std::error_code{});
+    std::atomic<bool> stop = false;
+    std::atomic<std::size_t> logged = 0;
+    std::thread logger([&stop, &logged] {
+        while (!stop.load()) {
+            TE_LOGGER_WARN("worker record {0}", logged.load());
+            logged++;
+        }
+    });
+    while (logged.load() < TechEngine::LOG_RING_CAPACITY) {
+        std::this_thread::yield();
+    }
+
+    for (int round = 0; round < 200; round++) {
+        std::vector<TechEngine::StoredLogRecord> snapshot;
+        TechEngine::ringSnapshot(snapshot);
+        for (const TechEngine::StoredLogRecord& record: snapshot) {
+            CHECK(record.message.starts_with("worker record "));
+        }
+    }
+    stop.store(true);
+    logger.join();
+    CHECK(TechEngine::removeLogSink(discarding) == std::error_code{});
 }

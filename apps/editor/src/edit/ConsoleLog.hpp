@@ -44,6 +44,6 @@ namespace TechEngine {
         void write(const LogRecord& record) noexcept override;
 
     private:
-        void push(const LogRecord& record);
+        void push(StoredLogRecord record);
     };
 }
