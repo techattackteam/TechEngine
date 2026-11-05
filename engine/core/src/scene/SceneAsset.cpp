@@ -191,18 +191,7 @@ namespace TechEngine {
         }
 
         SceneAssetRowReader rowReader{entities};
-        for (const SceneAssetEntity& loaded: entities) {
-            for (const ComponentTypeRecord& record: registry.records()) {
-                if (record.visitReferences == nullptr) {
-                    continue;
-                }
-                void* component = scene.componentRaw(loaded.entity, record.id);
-                if (component == nullptr) {
-                    continue;
-                }
-                record.visitReferences(rowReader, component);
-            }
-        }
+        visitReferences(scene, rowReader);
         if (rowReader.isMalformed()) {
             return fail(ReadError::Malformed);
         }
