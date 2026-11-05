@@ -3,6 +3,7 @@ techengine_module(base
           src/diagnostics/Log.cpp
           src/diagnostics/LogError.cpp
           src/diagnostics/Assert.cpp
+          src/diagnostics/StoredLogRecord.cpp
           src/time/Clock.cpp
           src/time/RateCounter.cpp
   HEADERS include/TechEngine/base/Base.hpp
@@ -11,6 +12,7 @@ techengine_module(base
           include/TechEngine/base/diagnostics/Assert.hpp
           include/TechEngine/base/diagnostics/FormatString.hpp
           include/TechEngine/base/diagnostics/Profile.hpp
+          include/TechEngine/base/diagnostics/StoredLogRecord.hpp
           include/TechEngine/base/math/Math.hpp
           include/TechEngine/base/stringid/StringId.hpp
           include/TechEngine/base/time/Clock.hpp
@@ -49,6 +51,7 @@ if(TE_BUILD_TESTS)
           tests/diagnostics/LogFallbackTests.cpp
           tests/diagnostics/AssertTests.cpp
           tests/diagnostics/ProfileTests.cpp
+          tests/diagnostics/StoredLogRecordTests.cpp
           tests/math/MathTests.cpp
           tests/math/MathFormatTests.cpp
           tests/stringid/StringIdTests.cpp

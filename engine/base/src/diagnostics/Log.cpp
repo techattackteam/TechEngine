@@ -1,4 +1,5 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/base/diagnostics/StoredLogRecord.hpp>
 
 #include <diagnostics/FormatBuffer.hpp>
 #include <diagnostics/LogInternal.hpp>
@@ -78,17 +79,16 @@ namespace TechEngine {
         entry.record.message = std::string_view{entry.messageStorage.data(), copySize};
     }
 
-    std::size_t ringSnapshot(LogRecord* out, std::size_t capacity) {
+    void ringSnapshot(std::vector<StoredLogRecord>& out) {
+        out.reserve(out.size() + LOG_RING_CAPACITY);
         const std::lock_guard<std::mutex> lock{g_ringMutex};
         const std::uint64_t written = g_ringWritten;
-        const std::size_t available = static_cast<std::size_t>(std::min<std::uint64_t>(written, LOG_RING_CAPACITY));
-        const std::size_t count = std::min(available, capacity);
+        const std::size_t count = static_cast<std::size_t>(std::min<std::uint64_t>(written, LOG_RING_CAPACITY));
         const std::uint64_t start = written - count;
 
         for (std::size_t i = 0; i < count; i++) {
-            out[i] = g_ring[static_cast<std::size_t>((start + i) % LOG_RING_CAPACITY)].record;
+            out.emplace_back(g_ring[static_cast<std::size_t>((start + i) % LOG_RING_CAPACITY)].record);
         }
-        return count;
     }
 
     void ringClear() {

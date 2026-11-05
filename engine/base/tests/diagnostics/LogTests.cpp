@@ -1,5 +1,6 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/diagnostics/LogError.hpp>
+#include <TechEngine/base/diagnostics/StoredLogRecord.hpp>
 #include <TechEngine/testing/LogCapture.hpp>
 
 #include <diagnostics/FormatBuffer.hpp>
@@ -18,6 +19,7 @@
 #include <source_location>
 #include <stop_token>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <thread>
 #include <vector>
@@ -92,7 +94,7 @@ TEST_CASE("positional args reorder and reuse", "[base][log]") {
 
     TE_LOGGER_WARN("swapchain {1}x{0} (reuse {1})", 1080, 1920);
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].message == "swapchain 1920x1080 (reuse 1920)");
 }
@@ -105,7 +107,7 @@ TEST_CASE("runtime min level suppresses below-threshold records", "[base][log]")
     TE_LOGGER_WARN("kept {0}", 2);
     TE_LOGGER_ERROR("kept {0}", 3);
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 2);
     REQUIRE(captured[0].level == TechEngine::Level::Warn);
     REQUIRE(captured[1].level == TechEngine::Level::Error);
@@ -117,7 +119,7 @@ TEST_CASE("Level::Off suppresses everything", "[base][log]") {
 
     TE_LOGGER_CRITICAL("not delivered");
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.empty());
 }
 
@@ -127,7 +129,7 @@ TEST_CASE("source_location reaches the record", "[base][log]") {
     const std::uint32_t expectedLine = __LINE__ + 1;
     TE_LOGGER_WARN("located");
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].line == expectedLine);
     REQUIRE(captured[0].file == "LogTests.cpp");
@@ -140,12 +142,12 @@ TEST_CASE("function name is trimmed to the identifier", "[base][log]") {
 
     TE_LOGGER_WARN("named");
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
-    const std::string& fn = captured[0].function;
-    REQUIRE(fn.find(' ') == std::string::npos);
-    REQUIRE(fn.find('(') == std::string::npos);
-    REQUIRE(fn.find("__cdecl") == std::string::npos);
+    const std::string_view fn = captured[0].function;
+    REQUIRE(fn.find(' ') == std::string_view::npos);
+    REQUIRE(fn.find('(') == std::string_view::npos);
+    REQUIRE(fn.find("__cdecl") == std::string_view::npos);
     REQUIRE_FALSE(fn.empty());
 }
 
@@ -156,7 +158,7 @@ TEST_CASE("tick stamp is the value app pushed", "[base][log]") {
     TE_LOGGER_WARN("stamped");
     TechEngine::setDiagnosticTick(0);
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].tick == 1043);
 }
@@ -171,7 +173,7 @@ TEST_CASE("macros survive a dangling else", "[base][log]") {
         TE_LOGGER_WARN("else branch");
     }
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].level == TechEngine::Level::Warn);
 }
@@ -182,7 +184,7 @@ TEST_CASE("over-long messages truncate rather than overflow", "[base][log]") {
     const std::string huge(4096, 'x');
     TE_LOGGER_WARN("{0}", huge);
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].message.size() < huge.size());
     REQUIRE(captured[0].message.ends_with("[truncated]"));
@@ -194,7 +196,7 @@ TEST_CASE("compile-time level gate matches the build config", "[base][log]") {
 
     TE_LOGGER_TRACE("trace {0}", 1);
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
 #if TE_LOG_ACTIVE_LEVEL <= TE_LOG_LEVEL_TRACE
     REQUIRE(captured.size() == 1);
 #else
@@ -213,7 +215,7 @@ TEST_CASE("the library gates at the level this TU compiled", "[base][log]") {
         TechEngine::internal::logImpl(static_cast<TechEngine::Level>(level), TechEngine::DEFAULT_CHANNEL, std::source_location::current(), "{0}", level);
     }
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == static_cast<std::size_t>(TE_LOG_LEVEL_CRITICAL - TE_LOG_ACTIVE_LEVEL + 1));
 }
 
@@ -229,7 +231,7 @@ TEST_CASE("two modules log on distinct channels", "[base][log][channel]") {
     TE_LOGGER_WARN_CH(socket, "peer {0}", 2);
 
     REQUIRE_FALSE(render == socket);
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 2);
 
     REQUIRE(captured[0].channel == render);
@@ -254,7 +256,7 @@ TEST_CASE("per-channel level filters independently", "[base][log][channel]") {
     TE_LOGGER_WARN_CH(quiet, "dropped");
     TE_LOGGER_WARN_CH(loud, "kept");
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].message == "kept");
     REQUIRE(captured[0].channel == loud);
@@ -274,7 +276,7 @@ TEST_CASE("module level is a floor over its channels", "[base][log][channel]") {
     TE_LOGGER_INFO_CH(solver, "dropped by the module floor");
     TE_LOGGER_ERROR_CH(solver, "kept");
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].level == TechEngine::Level::Error);
     REQUIRE(TechEngine::channelLevel(solver) == TechEngine::Level::Trace);
@@ -287,7 +289,7 @@ TEST_CASE("unregistered channel falls back to the default", "[base][log][channel
 
     TE_LOGGER_WARN_CH(bogus, "still delivered");
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].message == "still delivered");
 
@@ -452,9 +454,9 @@ TEST_CASE("a record logged inside a write reaches the ring and stderr, not the s
     REQUIRE(captured.find("inner 1") != std::string::npos);
     REQUIRE(capture.getMessages() == std::vector<std::string>{"outer"});
 
-    std::array<TechEngine::LogRecord, TechEngine::LOG_RING_CAPACITY> snapshot{};
-    const std::size_t count = TechEngine::ringSnapshot(snapshot.data(), snapshot.size());
-    REQUIRE(count == 2);
+    std::vector<TechEngine::StoredLogRecord> snapshot;
+    TechEngine::ringSnapshot(snapshot);
+    REQUIRE(snapshot.size() == 2);
     REQUIRE(snapshot[0].message == "outer");
     REQUIRE(snapshot[1].message == "inner 1");
 }
@@ -512,7 +514,7 @@ TEST_CASE("a record carries a wall-clock stamp", "[base][log]") {
     TE_LOGGER_WARN("first");
     TE_LOGGER_WARN("second");
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 2);
     REQUIRE(captured[0].time.time_since_epoch().count() > 0);
     REQUIRE(captured[1].time >= captured[0].time);
@@ -617,7 +619,7 @@ TEST_CASE("registry overflow degrades to the default channel", "[base][log][chan
     // A full table degrades the channel, never the log line.
     TE_LOGGER_WARN_CH(last, "still delivered");
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].message == "still delivered");
 }
@@ -633,10 +635,10 @@ TEST_CASE("the ring captures records even with no sink installed", "[base][log][
 
     TechEngine::setMinLevel(previous);
 
-    std::array<TechEngine::LogRecord, 1> snapshot{};
-    const std::size_t count = TechEngine::ringSnapshot(snapshot.data(), snapshot.size());
+    std::vector<TechEngine::StoredLogRecord> snapshot;
+    TechEngine::ringSnapshot(snapshot);
 
-    REQUIRE(count == 1);
+    REQUIRE(snapshot.size() == 1);
     REQUIRE(snapshot[0].message == "no sink needed");
     REQUIRE(snapshot[0].level == TechEngine::Level::Warn);
 }
@@ -653,29 +655,76 @@ TEST_CASE("the ring keeps the last LOG_RING_CAPACITY records, oldest evicted fir
 
     TechEngine::setMinLevel(previous);
 
-    std::array<TechEngine::LogRecord, TechEngine::LOG_RING_CAPACITY> snapshot{};
-    const std::size_t count = TechEngine::ringSnapshot(snapshot.data(), snapshot.size());
+    std::vector<TechEngine::StoredLogRecord> snapshot;
+    TechEngine::ringSnapshot(snapshot);
 
-    REQUIRE(count == TechEngine::LOG_RING_CAPACITY);
-    REQUIRE(snapshot[0].message == "record 5");
-    REQUIRE(snapshot[count - 1].message == "record " + std::to_string(total - 1));
+    REQUIRE(snapshot.size() == TechEngine::LOG_RING_CAPACITY);
+    REQUIRE(snapshot.front().message == "record 5");
+    REQUIRE(snapshot.back().message == "record " + std::to_string(total - 1));
 }
 
-TEST_CASE("ringSnapshot never writes past the caller's capacity", "[base][log][ring]") {
+TEST_CASE("ringSnapshot appends to the records already in out", "[base][log][ring]") {
     TechEngine::ringClear();
-    const TechEngine::Level previous = TechEngine::minLevel();
-    TechEngine::setMinLevel(TechEngine::Level::Trace);
-
     TE_LOGGER_WARN("one");
     TE_LOGGER_WARN("two");
-    TE_LOGGER_WARN("three");
 
-    TechEngine::setMinLevel(previous);
+    std::vector<TechEngine::StoredLogRecord> snapshot;
+    TechEngine::ringSnapshot(snapshot);
+    TechEngine::ringSnapshot(snapshot);
 
-    std::array<TechEngine::LogRecord, 2> snapshot{};
-    const std::size_t count = TechEngine::ringSnapshot(snapshot.data(), snapshot.size());
+    REQUIRE(snapshot.size() == 4);
+    REQUIRE(snapshot[0].message == "one");
+    REQUIRE(snapshot[1].message == "two");
+    REQUIRE(snapshot[2].message == "one");
+    REQUIRE(snapshot[3].message == "two");
+}
 
-    REQUIRE(count == 2);
-    REQUIRE(snapshot[0].message == "two");
-    REQUIRE(snapshot[1].message == "three");
+TEST_CASE("a ring snapshot keeps its messages after later records reuse every slot", "[base][log][ring]") {
+    TechEngine::ringClear();
+    TE_LOGGER_WARN("kept {0}", 1);
+    TE_LOGGER_WARN("kept {0}", 2);
+
+    std::vector<TechEngine::StoredLogRecord> snapshot;
+    TechEngine::ringSnapshot(snapshot);
+    for (std::size_t i = 0; i < TechEngine::LOG_RING_CAPACITY; i++) {
+        TE_LOGGER_WARN("overwrite {0}", i);
+    }
+
+    REQUIRE(snapshot.size() == 2);
+    REQUIRE(snapshot[0].message == "kept 1");
+    REQUIRE(snapshot[1].message == "kept 2");
+}
+
+class DiscardingSink final : public TechEngine::LogSink {
+public:
+    void write(const TechEngine::LogRecord&) noexcept override {
+    }
+};
+
+TEST_CASE("a ring snapshot taken while another thread logs reads every message whole", "[base][log][ring]") {
+    TechEngine::ringClear();
+    DiscardingSink discarding;
+    REQUIRE(TechEngine::addLogSink(discarding) == std::error_code{});
+    std::atomic<bool> stop = false;
+    std::atomic<std::size_t> logged = 0;
+    std::thread logger([&stop, &logged] {
+        while (!stop.load()) {
+            TE_LOGGER_WARN("worker record {0}", logged.load());
+            logged++;
+        }
+    });
+    while (logged.load() < TechEngine::LOG_RING_CAPACITY) {
+        std::this_thread::yield();
+    }
+
+    for (int round = 0; round < 200; round++) {
+        std::vector<TechEngine::StoredLogRecord> snapshot;
+        TechEngine::ringSnapshot(snapshot);
+        for (const TechEngine::StoredLogRecord& record: snapshot) {
+            CHECK(record.message.starts_with("worker record "));
+        }
+    }
+    stop.store(true);
+    logger.join();
+    CHECK(TechEngine::removeLogSink(discarding) == std::error_code{});
 }

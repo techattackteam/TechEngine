@@ -1007,7 +1007,7 @@ static std::error_code submitProbe(AppLifecycleProbe& app, const int id, AppComm
 
 static std::vector<std::string> warningsContaining(const TechEngineTests::LogCaptureGuard& logs, const std::string_view text) {
     std::vector<std::string> matches;
-    for (const TechEngineTests::CapturedLog& record: logs.getRecords()) {
+    for (const TechEngine::StoredLogRecord& record: logs.getRecords()) {
         if (record.level != TechEngine::Level::Warn) {
             continue;
         }
