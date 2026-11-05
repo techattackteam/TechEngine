@@ -6,6 +6,7 @@ techengine_app(editor
   SOURCES src/EditorApp.cpp
           src/assets/AssetIndex.cpp
           src/assets/LooseSource.cpp
+          src/edit/ConsoleLog.cpp
           src/edit/EditSession.cpp
           src/edit/EditorCommands.cpp
           src/edit/EditorSnapshot.cpp
@@ -34,6 +35,7 @@ techengine_app(editor
   HEADERS src/EditorApp.hpp
           src/assets/AssetIndex.hpp
           src/assets/LooseSource.hpp
+          src/edit/ConsoleLog.hpp
           src/edit/EditRecord.hpp
           src/edit/EditSession.hpp
           src/edit/EditorCommands.hpp
@@ -66,6 +68,7 @@ techengine_app(editor
   TESTS   tests/EditorAppTests.cpp
           tests/assets/AssetIndexTests.cpp
           tests/assets/LooseSourceTests.cpp
+          tests/edit/ConsoleLogTests.cpp
           tests/edit/EditSessionTests.cpp
           tests/edit/EditorCommandsTests.cpp
           tests/edit/EditorSnapshotSlotTests.cpp

@@ -285,7 +285,7 @@ TEST_CASE("the default handler routes the failure through the Logger at Critical
     const TechEngine::AssertResponse response = TechEngine::defaultAssertHandler(context);
 
     REQUIRE_FALSE(response.abortProcess);
-    const std::vector<TechEngineTests::CapturedLog> loggedRecords = logGuard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> loggedRecords = logGuard.getRecords();
     REQUIRE(loggedRecords.size() == 1);
     REQUIRE(loggedRecords[0].level == TechEngine::Level::Critical);
     REQUIRE(loggedRecords[0].file == "AssertTests.cpp");
@@ -301,7 +301,7 @@ TEST_CASE("a message-less failure still composes a readable Critical line", "[ba
     const TechEngine::AssertContext context{TechEngine::AssertKind::Check, "device != nullptr", "", "AssertTests.cpp", "test", 7};
     TechEngine::defaultAssertHandler(context);
 
-    const std::vector<TechEngineTests::CapturedLog> loggedRecords = logGuard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> loggedRecords = logGuard.getRecords();
     REQUIRE(loggedRecords.size() == 1);
     REQUIRE(loggedRecords[0].message == "[CHECK] (device != nullptr)");
 }

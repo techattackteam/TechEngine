@@ -18,6 +18,7 @@
 #include <source_location>
 #include <stop_token>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <thread>
 #include <vector>
@@ -92,7 +93,7 @@ TEST_CASE("positional args reorder and reuse", "[base][log]") {
 
     TE_LOGGER_WARN("swapchain {1}x{0} (reuse {1})", 1080, 1920);
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].message == "swapchain 1920x1080 (reuse 1920)");
 }
@@ -105,7 +106,7 @@ TEST_CASE("runtime min level suppresses below-threshold records", "[base][log]")
     TE_LOGGER_WARN("kept {0}", 2);
     TE_LOGGER_ERROR("kept {0}", 3);
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 2);
     REQUIRE(captured[0].level == TechEngine::Level::Warn);
     REQUIRE(captured[1].level == TechEngine::Level::Error);
@@ -117,7 +118,7 @@ TEST_CASE("Level::Off suppresses everything", "[base][log]") {
 
     TE_LOGGER_CRITICAL("not delivered");
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.empty());
 }
 
@@ -127,7 +128,7 @@ TEST_CASE("source_location reaches the record", "[base][log]") {
     const std::uint32_t expectedLine = __LINE__ + 1;
     TE_LOGGER_WARN("located");
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].line == expectedLine);
     REQUIRE(captured[0].file == "LogTests.cpp");
@@ -140,12 +141,12 @@ TEST_CASE("function name is trimmed to the identifier", "[base][log]") {
 
     TE_LOGGER_WARN("named");
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
-    const std::string& fn = captured[0].function;
-    REQUIRE(fn.find(' ') == std::string::npos);
-    REQUIRE(fn.find('(') == std::string::npos);
-    REQUIRE(fn.find("__cdecl") == std::string::npos);
+    const std::string_view fn = captured[0].function;
+    REQUIRE(fn.find(' ') == std::string_view::npos);
+    REQUIRE(fn.find('(') == std::string_view::npos);
+    REQUIRE(fn.find("__cdecl") == std::string_view::npos);
     REQUIRE_FALSE(fn.empty());
 }
 
@@ -156,7 +157,7 @@ TEST_CASE("tick stamp is the value app pushed", "[base][log]") {
     TE_LOGGER_WARN("stamped");
     TechEngine::setDiagnosticTick(0);
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].tick == 1043);
 }
@@ -171,7 +172,7 @@ TEST_CASE("macros survive a dangling else", "[base][log]") {
         TE_LOGGER_WARN("else branch");
     }
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].level == TechEngine::Level::Warn);
 }
@@ -182,7 +183,7 @@ TEST_CASE("over-long messages truncate rather than overflow", "[base][log]") {
     const std::string huge(4096, 'x');
     TE_LOGGER_WARN("{0}", huge);
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].message.size() < huge.size());
     REQUIRE(captured[0].message.ends_with("[truncated]"));
@@ -194,7 +195,7 @@ TEST_CASE("compile-time level gate matches the build config", "[base][log]") {
 
     TE_LOGGER_TRACE("trace {0}", 1);
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
 #if TE_LOG_ACTIVE_LEVEL <= TE_LOG_LEVEL_TRACE
     REQUIRE(captured.size() == 1);
 #else
@@ -213,7 +214,7 @@ TEST_CASE("the library gates at the level this TU compiled", "[base][log]") {
         TechEngine::internal::logImpl(static_cast<TechEngine::Level>(level), TechEngine::DEFAULT_CHANNEL, std::source_location::current(), "{0}", level);
     }
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == static_cast<std::size_t>(TE_LOG_LEVEL_CRITICAL - TE_LOG_ACTIVE_LEVEL + 1));
 }
 
@@ -229,7 +230,7 @@ TEST_CASE("two modules log on distinct channels", "[base][log][channel]") {
     TE_LOGGER_WARN_CH(socket, "peer {0}", 2);
 
     REQUIRE_FALSE(render == socket);
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 2);
 
     REQUIRE(captured[0].channel == render);
@@ -254,7 +255,7 @@ TEST_CASE("per-channel level filters independently", "[base][log][channel]") {
     TE_LOGGER_WARN_CH(quiet, "dropped");
     TE_LOGGER_WARN_CH(loud, "kept");
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].message == "kept");
     REQUIRE(captured[0].channel == loud);
@@ -274,7 +275,7 @@ TEST_CASE("module level is a floor over its channels", "[base][log][channel]") {
     TE_LOGGER_INFO_CH(solver, "dropped by the module floor");
     TE_LOGGER_ERROR_CH(solver, "kept");
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].level == TechEngine::Level::Error);
     REQUIRE(TechEngine::channelLevel(solver) == TechEngine::Level::Trace);
@@ -287,7 +288,7 @@ TEST_CASE("unregistered channel falls back to the default", "[base][log][channel
 
     TE_LOGGER_WARN_CH(bogus, "still delivered");
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].message == "still delivered");
 
@@ -512,7 +513,7 @@ TEST_CASE("a record carries a wall-clock stamp", "[base][log]") {
     TE_LOGGER_WARN("first");
     TE_LOGGER_WARN("second");
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 2);
     REQUIRE(captured[0].time.time_since_epoch().count() > 0);
     REQUIRE(captured[1].time >= captured[0].time);
@@ -617,7 +618,7 @@ TEST_CASE("registry overflow degrades to the default channel", "[base][log][chan
     // A full table degrades the channel, never the log line.
     TE_LOGGER_WARN_CH(last, "still delivered");
 
-    const std::vector<TechEngineTests::CapturedLog> captured = guard.getRecords();
+    const std::vector<TechEngine::StoredLogRecord> captured = guard.getRecords();
     REQUIRE(captured.size() == 1);
     REQUIRE(captured[0].message == "still delivered");
 }

@@ -6,6 +6,7 @@
 
 #include <assets/AssetIndex.hpp>
 #include <assets/LooseSource.hpp>
+#include <edit/ConsoleLog.hpp>
 #include <edit/EditSession.hpp>
 #include <edit/EditorCommands.hpp>
 #include <edit/EditorSnapshot.hpp>
@@ -51,6 +52,7 @@ namespace TechEngine {
         // Main thread only.
         Process m_runtime;
         bool m_runPending = false;
+        ConsoleLog m_console;
 
     public:
         EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder, std::filesystem::path runtimePath);

@@ -47,7 +47,10 @@ namespace TechEngine {
               },
               [this] {
                   runProject();
-              }) {
+              }),
+          m_console([this] {
+              wakeMainThread();
+          }) {
     }
 
     EditorApp::~EditorApp() {
@@ -55,6 +58,10 @@ namespace TechEngine {
     }
 
     void EditorApp::init() {
+        const std::error_code consoleError = m_console.start();
+        if (consoleError) {
+            TE_LOGGER_WARN("The console shows no log, because its sink did not register: {0}", consoleError.message());
+        }
         m_mounts.mount("project", m_projectRoot);
         m_mounts.mount("engine", executablePath().parent_path() / "engine");
         const std::error_code loadError = m_project.load(m_files, MANIFEST_PATH);
@@ -197,6 +204,12 @@ namespace TechEngine {
     }
 
     void EditorApp::shutdown() {
+        // Before stopImGui(): the client holds its wake lock while GLFW may log an error, and a
+        // console write from another thread takes that lock to wake main.
+        const std::error_code consoleError = m_console.stop();
+        if (consoleError) {
+            TE_LOGGER_WARN("Failed to remove the console's log sink: {0}", consoleError.message());
+        }
         stopImGui();
         ClientApp::shutdown();
     }
@@ -263,6 +276,9 @@ namespace TechEngine {
             return;
         }
 
+        // TODO(S10-T12): the console's store takes these records.
+        std::vector<StoredLogRecord> consoleRecords;
+        m_console.drain(consoleRecords);
         takeSnapshot(m_snapshot);
         updateTitle();
         m_imguiBridge.beginFrame();
