@@ -1,6 +1,7 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
+#include <TechEngine/core/model/Model.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
 #include <TechEngine/core/serialization/Reader.hpp>
@@ -30,9 +31,10 @@ namespace TechEngine {
         std::string_view folder;
     };
 
-    static constexpr std::array<IndexedAssetKind, 2> INDEXED_ASSET_KINDS{{
+    static constexpr std::array<IndexedAssetKind, 3> INDEXED_ASSET_KINDS{{
         {SCENE_KIND, SCENE_TYPE_TAG},
         {MESH_KIND, MESH_TYPE_TAG},
+        {MODEL_KIND, MODEL_TYPE_TAG},
     }};
 
     static constexpr std::array<IndexedSide, 3> INDEXED_SIDES{{

@@ -1,5 +1,6 @@
 techengine_module(core
   SOURCES src/Core.cpp
+          src/assets/ImportBlock.cpp
           src/assets/PackSource.cpp
           src/events/EventRegistry.cpp
           src/events/EventStream.cpp
@@ -10,6 +11,7 @@ techengine_module(core
           src/jobs/JobSystem.cpp
           src/jobs/ThreadRegistration.cpp
           src/mesh/Mesh.cpp
+          src/model/Model.cpp
           src/resources/BootRecord.cpp
           src/resources/PackReader.cpp
           src/resources/PackWriter.cpp
@@ -40,6 +42,7 @@ techengine_module(core
           include/TechEngine/core/SimulationContext.hpp
           include/TechEngine/core/TimingMetrics.hpp
           include/TechEngine/core/assets/AssetSource.hpp
+          include/TechEngine/core/assets/ImportBlock.hpp
           include/TechEngine/core/assets/PackSource.hpp
           include/TechEngine/core/events/EventRegistry.hpp
           include/TechEngine/core/events/EventTypeId.hpp
@@ -51,6 +54,7 @@ techengine_module(core
           include/TechEngine/core/jobs/ThreadRegistration.hpp
           include/TechEngine/core/mesh/Mesh.hpp
           include/TechEngine/core/mesh/MeshRenderer.hpp
+          include/TechEngine/core/model/Model.hpp
           include/TechEngine/core/resources/AssetRef.hpp
           include/TechEngine/core/resources/BootRecord.hpp
           include/TechEngine/core/resources/PackFormat.hpp
@@ -109,6 +113,7 @@ techengine_module(core
 if(TE_BUILD_TESTS)
   techengine_test(core SOURCES
           tests/EngineContextTests.cpp
+          tests/assets/ImportBlockTests.cpp
           tests/assets/PackSourceTests.cpp
           tests/events/EventRegistryTests.cpp
           tests/events/EventStreamTests.cpp
@@ -116,6 +121,7 @@ if(TE_BUILD_TESTS)
           tests/jobs/DedicatedThreadTests.cpp
           tests/jobs/JobSystemTests.cpp
           tests/mesh/MeshTests.cpp
+          tests/model/ModelTests.cpp
           tests/resources/BootRecordTests.cpp
           tests/resources/PackTests.cpp
           tests/resources/ResourceCacheTests.cpp
