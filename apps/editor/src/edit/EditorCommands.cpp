@@ -42,6 +42,10 @@ namespace TechEngine {
         submit(std::make_unique<SetRotationAxisCommand>(*m_session, *m_registry, std::move(entities), active, activeRotation, axis, degrees));
     }
 
+    void EditorCommands::setWorldAxis(std::vector<Entity> entities, const Entity active, const Quat activeRotation, const TransformPart part, const std::uint32_t axis, const float value) {
+        submit(std::make_unique<SetWorldAxisCommand>(*m_session, std::move(entities), active, activeRotation, part, axis, value));
+    }
+
     void EditorCommands::addComponent(std::vector<Entity> entities, const ComponentTypeId component) {
         submit(std::make_unique<AddComponentCommand>(*m_session, std::move(entities), component));
     }

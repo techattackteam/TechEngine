@@ -1,5 +1,6 @@
 #pragma once
 
+#include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 
@@ -35,6 +36,15 @@ namespace TechEngine {
         std::vector<FieldRow> fields;
     };
 
+    struct TransformRow {
+        Vec3 position = Vec3(0.0f);
+        Quat rotation = Quat(1.0f, 0.0f, 0.0f, 0.0f);
+        Vec3 scale = Vec3(1.0f);
+        std::array<bool, 3> positionMixed{};
+        std::array<bool, 3> rotationAxesMixed{};
+        std::array<bool, 3> scaleMixed{};
+    };
+
     struct ComponentChoice {
         ComponentTypeId type;
         std::string tag;
@@ -52,6 +62,8 @@ namespace TechEngine {
         std::vector<ComponentRow> components;
         // Euler X, Y and Z of Transform's rotation. The quaternion fields' own mixed flags say nothing about one axis.
         std::array<bool, 3> rotationAxesMixed{};
+        // The active entity's world values, filled only while components lists Transform.
+        TransformRow world;
         std::vector<ComponentChoice> addable;
         std::uint64_t editRevision = 0;
         std::uint64_t savedRevision = 0;

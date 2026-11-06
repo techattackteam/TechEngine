@@ -5,6 +5,7 @@
 
 #include <edit/EditRecord.hpp>
 
+#include <array>
 #include <cstdint>
 #include <span>
 #include <string>
@@ -66,6 +67,8 @@ namespace TechEngine {
 
         void markMixedFields(const Scene& scene, const ComponentTypeRecord& record, ComponentRow& row) const;
 
-        void markMixedRotationAxes(const Scene& scene, EditorSnapshot& out) const;
+        void collectWorldTransform(const Scene& scene, EditorSnapshot& out) const;
+
+        void markMixedRotationAxes(const Scene& scene, bool world, std::array<bool, 3>& out) const;
     };
 }

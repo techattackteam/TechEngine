@@ -112,6 +112,7 @@ namespace TechEngine {
     void EditSession::collectComponents(const Scene& scene, const ComponentRegistry& registry, EditorSnapshot& out) const {
         out.components.clear();
         out.rotationAxesMixed = {};
+        out.world = {};
         out.addable.clear();
         // contains(), not valid(): a selection whose entity died would otherwise offer every type to add.
         if (!scene.contains(m_active)) {
@@ -151,7 +152,8 @@ namespace TechEngine {
             record.visitFields(collector, const_cast<void*>(activeComponent));
             markMixedFields(scene, record, row);
             if (record.id == transformType) {
-                markMixedRotationAxes(scene, out);
+                markMixedRotationAxes(scene, false, out.rotationAxesMixed);
+                collectWorldTransform(scene, out);
             }
         }
     }
@@ -174,18 +176,46 @@ namespace TechEngine {
         }
     }
 
-    void EditSession::markMixedRotationAxes(const Scene& scene, EditorSnapshot& out) const {
-        const Vec3 activeAngles = Transform::toEulerDegrees(scene.getComponent<Transform>(m_active).getLocal().rotation);
+    void EditSession::collectWorldTransform(const Scene& scene, EditorSnapshot& out) const {
+        const TransformValues& active = scene.getComponent<Transform>(m_active).getWorld();
+        out.world.position = active.position;
+        out.world.rotation = active.rotation;
+        out.world.scale = active.scale;
         for (const Entity entity: m_selection) {
             if (entity == m_active || !scene.contains(entity)) {
                 continue;
             }
 
-            const Vec3 angles = Transform::toEulerDegrees(scene.getComponent<Transform>(entity).getLocal().rotation);
+            const TransformValues& world = scene.getComponent<Transform>(entity).getWorld();
+            for (int axis = 0; axis < 3; axis++) {
+                const std::size_t index = static_cast<std::size_t>(axis);
+                if (world.position[axis] != active.position[axis]) {
+                    out.world.positionMixed[index] = true;
+                }
+                if (world.scale[axis] != active.scale[axis]) {
+                    out.world.scaleMixed[index] = true;
+                }
+            }
+        }
+        markMixedRotationAxes(scene, true, out.world.rotationAxesMixed);
+    }
+
+    void EditSession::markMixedRotationAxes(const Scene& scene, const bool world, std::array<bool, 3>& out) const {
+        const Transform& activeTransform = scene.getComponent<Transform>(m_active);
+        const Quat& activeRotation = world ? activeTransform.getWorld().rotation : activeTransform.getLocal().rotation;
+        const Vec3 activeAngles = Transform::toEulerDegrees(activeRotation);
+        for (const Entity entity: m_selection) {
+            if (entity == m_active || !scene.contains(entity)) {
+                continue;
+            }
+
+            const Transform& transform = scene.getComponent<Transform>(entity);
+            const Quat& rotation = world ? transform.getWorld().rotation : transform.getLocal().rotation;
+            const Vec3 angles = Transform::toEulerDegrees(rotation);
             for (int axis = 0; axis < 3; axis++) {
                 const float difference = std::fmod(std::abs(angles[axis] - activeAngles[axis]), 360.0f);
                 if (std::min(difference, 360.0f - difference) >= EULER_MIXED_EPSILON) {
-                    out.rotationAxesMixed[static_cast<std::size_t>(axis)] = true;
+                    out[static_cast<std::size_t>(axis)] = true;
                 }
             }
         }

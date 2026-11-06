@@ -3,6 +3,7 @@
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
+#include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <edit/FieldValue.hpp>
 
@@ -25,6 +26,11 @@ namespace TechEngine {
         Quat oldRotation = Quat(1.0f, 0.0f, 0.0f, 0.0f);
     };
 
+    struct LocalTransformRecord {
+        Entity entity;
+        TransformValues oldLocal;
+    };
+
     struct RenameRecord {
         Entity entity;
         std::string oldName;
@@ -43,5 +49,5 @@ namespace TechEngine {
         std::vector<std::byte> payload;
     };
 
-    using EditRecord = std::variant<FieldEditRecord, RotationEditRecord, RenameRecord, ComponentAddedRecord, ComponentRemovedRecord>;
+    using EditRecord = std::variant<FieldEditRecord, RotationEditRecord, RenameRecord, ComponentAddedRecord, ComponentRemovedRecord, LocalTransformRecord>;
 }
