@@ -4,6 +4,7 @@
 #include <edit/EditorCommands.hpp>
 #include <edit/EditorSnapshot.hpp>
 #include <edit/FieldValue.hpp>
+#include <edit/InspectorCommands.hpp>
 #include <ui/panels/InspectorPanel.hpp>
 #include <ui/widgets/DragControls.hpp>
 #include <ui/widgets/PropertyTable.hpp>
@@ -23,9 +24,11 @@
 namespace TechEngine {
     static constexpr const char* COMPONENT_MENU = "InspectorComponentMenu";
     static constexpr const char* ADD_COMPONENT_MENU = "InspectorAddComponentMenu";
-    static constexpr std::array<const char*, 4> FIXED_LABELS = {"Translation", "Rotation", "Scale", "Mesh"};
+    static constexpr std::array<const char*, 5> FIXED_LABELS = {"Mode", "Translation", "Rotation", "Scale", "Mesh"};
     // Half of the 0.01 that "%.2f" shows: anything closer to zero would print as -0.00.
     static constexpr float EULER_DISPLAY_EPSILON = 0.005f;
+    // A world rotation comes back as parent times a decomposed local one, so it never matches the one sent exactly.
+    static constexpr float WORLD_ROTATION_TOLERANCE = 1e-4f;
     static constexpr float FLOAT_DRAG_SPEED = 0.1f;
     static constexpr float INTEGER_DRAG_SPEED = 1.0f;
 
@@ -174,31 +177,56 @@ namespace TechEngine {
             values[i] = *value;
         }
 
-        std::array<bool, 3> changedAxes{};
-        Vec3 position(values[0], values[1], values[2]);
-        propertyRow("Translation");
-        if (drawVec3Control("##translation", position, 0.0f, getMixedAxes(component, TRANSFORM_POSITION_FIELD), changedAxes)) {
-            sendVec3(snapshot.selection, TRANSFORM_POSITION_FIELD, position, changedAxes);
+        propertyRow("Mode");
+        drawModeToggle();
+
+        TransformRow shown = snapshot.world;
+        if (!m_worldMode) {
+            shown.position = Vec3(values[TRANSFORM_POSITION_FIELD], values[TRANSFORM_POSITION_FIELD + 1], values[TRANSFORM_POSITION_FIELD + 2]);
+            shown.rotation = Quat(values[TRANSFORM_ROTATION_FIELD], values[TRANSFORM_ROTATION_FIELD + 1], values[TRANSFORM_ROTATION_FIELD + 2], values[TRANSFORM_ROTATION_FIELD + 3]);
+            shown.scale = Vec3(values[TRANSFORM_SCALE_FIELD], values[TRANSFORM_SCALE_FIELD + 1], values[TRANSFORM_SCALE_FIELD + 2]);
+            shown.positionMixed = getMixedAxes(component, TRANSFORM_POSITION_FIELD);
+            shown.rotationAxesMixed = snapshot.rotationAxesMixed;
+            shown.scaleMixed = getMixedAxes(component, TRANSFORM_SCALE_FIELD);
         }
 
-        syncEuler(snapshot.active, Quat(values[TRANSFORM_ROTATION_FIELD], values[TRANSFORM_ROTATION_FIELD + 1], values[TRANSFORM_ROTATION_FIELD + 2], values[TRANSFORM_ROTATION_FIELD + 3]));
+        std::array<bool, 3> changedAxes{};
+        Vec3 position = shown.position;
+        propertyRow("Translation");
+        if (drawVec3Control("##translation", position, 0.0f, shown.positionMixed, changedAxes)) {
+            sendAxes(snapshot, TransformPart::Position, position, changedAxes);
+        }
+
+        syncEuler(snapshot.active, shown.rotation);
         Vec3 euler = m_euler;
         propertyRow("Rotation");
-        if (drawVec3Control("##rotation", euler, 0.0f, snapshot.rotationAxesMixed, changedAxes)) {
+        if (drawVec3Control("##rotation", euler, 0.0f, shown.rotationAxesMixed, changedAxes)) {
             m_euler = euler;
             m_eulerRotation = Transform::fromEulerDegrees(euler);
             m_rotationPending = true;
-            for (std::uint32_t axis = 0; axis < changedAxes.size(); axis++) {
-                if (changedAxes[axis]) {
-                    m_commands->setRotationAxis(snapshot.selection, snapshot.active, m_eulerRotation, axis, euler[static_cast<int>(axis)]);
-                }
-            }
+            sendAxes(snapshot, TransformPart::Rotation, euler, changedAxes);
         }
 
-        Vec3 scale(values[7], values[8], values[9]);
+        Vec3 scale = shown.scale;
         propertyRow("Scale");
-        if (drawVec3Control("##scale", scale, 1.0f, getMixedAxes(component, TRANSFORM_SCALE_FIELD), changedAxes)) {
-            sendVec3(snapshot.selection, TRANSFORM_SCALE_FIELD, scale, changedAxes);
+        if (drawVec3Control("##scale", scale, 1.0f, shown.scaleMixed, changedAxes)) {
+            sendAxes(snapshot, TransformPart::Scale, scale, changedAxes);
+        }
+    }
+
+    void InspectorPanel::drawModeToggle() {
+        bool worldMode = m_worldMode;
+        if (ImGui::RadioButton("Local", !worldMode)) {
+            worldMode = false;
+        }
+        ImGui::SameLine();
+        if (ImGui::RadioButton("World", worldMode)) {
+            worldMode = true;
+        }
+        if (worldMode != m_worldMode) {
+            m_worldMode = worldMode;
+            // The Euler cache holds the other mode's angles, so the next sync takes this mode's rotation afresh.
+            m_eulerEntity = Entity();
         }
     }
 
@@ -347,7 +375,10 @@ namespace TechEngine {
         }
         // Until the snapshot shows the rotation that was sent, an older one is only the simulation lagging behind.
         if (m_rotationPending) {
-            m_rotationPending = rotation != m_eulerRotation;
+            if (isSentRotation(rotation)) {
+                m_rotationPending = false;
+                m_eulerRotation = rotation;
+            }
             return;
         }
         if (rotation != m_eulerRotation) {
@@ -356,10 +387,40 @@ namespace TechEngine {
         }
     }
 
-    void InspectorPanel::sendVec3(const std::vector<Entity>& entities, const std::uint32_t firstField, const Vec3& values, const std::array<bool, 3>& changedAxes) {
+    bool InspectorPanel::isSentRotation(const Quat& rotation) const {
+        if (!m_worldMode) {
+            return rotation == m_eulerRotation;
+        }
+        // q and -q are the same rotation.
+        const float sign = glm::dot(rotation, m_eulerRotation) < 0.0f ? -1.0f : 1.0f;
+        for (int i = 0; i < 4; i++) {
+            if (std::abs(rotation[i] - sign * m_eulerRotation[i]) > WORLD_ROTATION_TOLERANCE) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void InspectorPanel::sendAxes(const EditorSnapshot& snapshot, const TransformPart part, const Vec3& values, const std::array<bool, 3>& changedAxes) {
         for (std::uint32_t axis = 0; axis < changedAxes.size(); axis++) {
-            if (changedAxes[axis]) {
-                m_commands->setField(entities, componentTypeId<Transform>(), firstField + axis, FieldValue{values[static_cast<int>(axis)]});
+            if (!changedAxes[axis]) {
+                continue;
+            }
+            const float value = values[static_cast<int>(axis)];
+            if (m_worldMode) {
+                m_commands->setWorldAxis(snapshot.selection, snapshot.active, m_eulerRotation, part, axis, value);
+                continue;
+            }
+            switch (part) {
+                case TransformPart::Position:
+                    m_commands->setField(snapshot.selection, componentTypeId<Transform>(), TRANSFORM_POSITION_FIELD + axis, FieldValue{value});
+                    break;
+                case TransformPart::Rotation:
+                    m_commands->setRotationAxis(snapshot.selection, snapshot.active, m_eulerRotation, axis, value);
+                    break;
+                case TransformPart::Scale:
+                    m_commands->setField(snapshot.selection, componentTypeId<Transform>(), TRANSFORM_SCALE_FIELD + axis, FieldValue{value});
+                    break;
             }
         }
     }

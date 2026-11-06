@@ -18,6 +18,7 @@ namespace TechEngine {
     class ComponentRegistry;
     class EditSession;
     class FileAccess;
+    enum class TransformPart : std::uint8_t;
 
     class EditorCommands {
     private:
@@ -43,6 +44,8 @@ namespace TechEngine {
         void setField(std::vector<Entity> entities, ComponentTypeId component, std::uint32_t field, FieldValue value);
 
         void setRotationAxis(std::vector<Entity> entities, Entity active, Quat activeRotation, std::uint32_t axis, float degrees);
+
+        void setWorldAxis(std::vector<Entity> entities, Entity active, Quat activeRotation, TransformPart part, std::uint32_t axis, float value);
 
         void addComponent(std::vector<Entity> entities, ComponentTypeId component);
 

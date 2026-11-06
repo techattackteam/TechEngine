@@ -625,3 +625,42 @@ TEST_CASE("a rotation axis is mixed only when its angle differs beyond display p
         CHECK(snapshot.rotationAxesMixed == std::array<bool, 3>{false, false, false});
     }
 }
+
+TEST_CASE("the snapshot publishes the active entity's world values and marks a world axis mixed only where it differs", "[editor][edit]") {
+    EditTestScene edit;
+    const Entity parent = edit.createNamed("Parent");
+    const Entity active = edit.createNamed("Active", parent);
+    const Entity other = edit.createNamed("Other");
+    REQUIRE(edit.scene.getComponent<Transform>(parent).setLocal({Vec3(10.0f, 0.0f, 0.0f), Quat(1.0f, 0.0f, 0.0f, 0.0f), Vec3(2.0f)}));
+    REQUIRE(edit.scene.getComponent<Transform>(active).setLocal({Vec3(1.0f, 0.0f, 0.0f), Quat(1.0f, 0.0f, 0.0f, 0.0f), Vec3(1.0f)}));
+    REQUIRE(edit.scene.getComponent<Transform>(other).setLocal({Vec3(12.0f, 5.0f, 0.0f), Transform::fromEulerDegrees(Vec3(0.0f, 0.0f, 30.0f)), Vec3(2.0f, 1.0f, 2.0f)}));
+
+    SECTION("one selected") {
+        edit.selectOnly(active);
+        const EditorSnapshot snapshot = edit.snapshot();
+
+        CHECK(snapshot.world.position == Vec3(12.0f, 0.0f, 0.0f));
+        CHECK(snapshot.world.rotation == Quat(1.0f, 0.0f, 0.0f, 0.0f));
+        CHECK(snapshot.world.scale == Vec3(2.0f));
+        CHECK(snapshot.world.positionMixed == std::array<bool, 3>{false, false, false});
+        CHECK(snapshot.world.rotationAxesMixed == std::array<bool, 3>{false, false, false});
+        CHECK(snapshot.world.scaleMixed == std::array<bool, 3>{false, false, false});
+    }
+
+    SECTION("several selected") {
+        edit.select({active, other}, active);
+        const EditorSnapshot snapshot = edit.snapshot();
+
+        CHECK(snapshot.world.position == Vec3(12.0f, 0.0f, 0.0f));
+        CHECK(snapshot.world.positionMixed == std::array<bool, 3>{false, true, false});
+        CHECK(snapshot.world.rotationAxesMixed == std::array<bool, 3>{false, false, true});
+        CHECK(snapshot.world.scaleMixed == std::array<bool, 3>{false, true, false});
+        CHECK(snapshot.rotationAxesMixed == std::array<bool, 3>{false, false, true});
+    }
+
+    SECTION("no selection") {
+        edit.select({}, Entity());
+
+        CHECK(edit.snapshot().world.position == Vec3(0.0f));
+    }
+}
