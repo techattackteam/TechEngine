@@ -113,6 +113,36 @@ target_include_directories(TechEngineImGui SYSTEM PUBLIC
   ${imgui_club_SOURCE_DIR}/imgui_threaded_rendering)
 target_link_libraries(TechEngineImGui PRIVATE glfw ${CMAKE_DL_LIBS})
 
+# --- model import (editor only) ---------------------------------------------
+# Three assimp defaults reach past its own targets, so they are off: a GLOBAL ccache launcher
+# stacked on CI's own, a cached CMAKE_DEBUG_POSTFIX that renames every library declared after
+# it, and on Linux a system zlib that nothing pins.
+# On MSVC assimp appends /Zi to its Debug flags with no option to stop it, the same PDB output
+# ccache refuses for Jolt above.
+# TODO(S10-T13): read the win Debug leg's ccache hit rate on a warm run before closing.
+set(BUILD_SHARED_LIBS                     OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_GLTF_IMPORTER            ON  CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_FBX_IMPORTER             ON  CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_OBJ_IMPORTER             ON  CACHE BOOL "" FORCE)
+set(ASSIMP_NO_EXPORT                      ON  CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_TESTS                    OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ASSIMP_TOOLS             OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_SAMPLES                  OFF CACHE BOOL "" FORCE)
+set(ASSIMP_INSTALL                        OFF CACHE BOOL "" FORCE)
+set(ASSIMP_INSTALL_PDB                    OFF CACHE BOOL "" FORCE)
+set(ASSIMP_WARNINGS_AS_ERRORS             OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_USE_CCACHE               OFF CACHE BOOL "" FORCE)
+set(ASSIMP_INJECT_DEBUG_POSTFIX           OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ZLIB                     ON  CACHE BOOL "" FORCE)
+set(ASSIMP_IGNORE_GIT_HASH                ON  CACHE BOOL "" FORCE)
+FetchContent_Declare(assimp
+  GIT_REPOSITORY https://github.com/assimp/assimp.git
+  GIT_TAG        v6.0.5
+  GIT_SHALLOW    TRUE)
+FetchContent_MakeAvailable(assimp)
+
 # --- audio (single-header) --------------------------------------------------
 # Not a CMake project: populate the source and wrap the include dir in an
 # INTERFACE target. The MINIAUDIO_IMPLEMENTATION TU lands when client uses audio.
