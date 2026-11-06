@@ -117,9 +117,6 @@ target_link_libraries(TechEngineImGui PRIVATE glfw ${CMAKE_DL_LIBS})
 # Three assimp defaults reach past its own targets, so they are off: a GLOBAL ccache launcher
 # stacked on CI's own, a cached CMAKE_DEBUG_POSTFIX that renames every library declared after
 # it, and on Linux a system zlib that nothing pins.
-# On MSVC assimp appends /Zi to its Debug flags with no option to stop it, the same PDB output
-# ccache refuses for Jolt above.
-# TODO(S10-T13): read the win Debug leg's ccache hit rate on a warm run before closing.
 set(BUILD_SHARED_LIBS                     OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_GLTF_IMPORTER            ON  CACHE BOOL "" FORCE)
