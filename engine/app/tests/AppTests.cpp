@@ -337,6 +337,7 @@ public:
     std::function<void()> onSimulationShutdown;
     std::function<void()> onShutdown;
     AppLifecycleSignal mainEntered;
+    AppLifecycleSignal startupLoadEntered;
     AppLifecycleSignal simulationStopped;
     bool ticks = true;
     bool dedicatedJoinedBeforeShutdown = false;
@@ -422,6 +423,7 @@ protected:
     std::error_code simulationStartupLoad(TechEngine::Scene& scene) override {
         record("simulationStartupLoad");
         loadedScene = &scene;
+        startupLoadEntered.set();
         if (onSimulationStartupLoad) {
             return onSimulationStartupLoad();
         }
@@ -1156,15 +1158,10 @@ static bool stopIdle(AppLifecycleProbe& app) {
 TEST_CASE("an App whose simulation does not tick runs no Tick across a wait", "[app][lifecycle][idle]") {
     AppLifecycleProbe app;
     app.ticks = false;
-    AppLifecycleSignal loaded;
-    app.onSimulationStartupLoad = [&loaded] {
-        loaded.set();
-        return std::error_code{};
-    };
     bool loadedInTime = false;
     bool stoppedInTime = false;
     std::jthread controller{[&] {
-        loadedInTime = loaded.wait();
+        loadedInTime = app.startupLoadEntered.wait();
         if (loadedInTime) {
             std::this_thread::sleep_for(250ms);
         }
@@ -1188,14 +1185,9 @@ TEST_CASE("an idle App applies each submitted command and publishes it within on
     AppLifecycleProbe app;
     app.ticks = false;
     AppCommandLog log;
-    AppLifecycleSignal loaded;
     AppLifecycleSignal firstPublished;
     AppLifecycleSignal secondPublished;
     int publications = 0;
-    app.onSimulationStartupLoad = [&loaded] {
-        loaded.set();
-        return std::error_code{};
-    };
     app.onPublishEdits = [&] {
         publications++;
         if (publications == 1) {
@@ -1210,7 +1202,7 @@ TEST_CASE("an idle App applies each submitted command and publishes it within on
     bool secondInTime = false;
     bool stoppedInTime = false;
     std::jthread controller{[&] {
-        if (loaded.wait()) {
+        if (app.startupLoadEntered.wait()) {
             firstSubmitError = submitProbe(app, 1, log);
             firstInTime = firstPublished.wait();
             // Submitted after the first publication, so with no tick deadline only the wake can apply it.
@@ -1245,15 +1237,10 @@ TEST_CASE("an idle App applies each submitted command and publishes it within on
 TEST_CASE("stop wakes an idle App's simulation thread", "[app][lifecycle][idle]") {
     AppLifecycleProbe app;
     app.ticks = false;
-    AppLifecycleSignal loaded;
-    app.onSimulationStartupLoad = [&loaded] {
-        loaded.set();
-        return std::error_code{};
-    };
     bool loadedInTime = false;
     bool stoppedInTime = false;
     std::jthread controller{[&] {
-        loadedInTime = loaded.wait();
+        loadedInTime = app.startupLoadEntered.wait();
         if (loadedInTime) {
             std::this_thread::sleep_for(50ms);
         }
