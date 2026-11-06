@@ -1,4 +1,5 @@
 #include <TechEngine/core/mesh/Mesh.hpp>
+#include <TechEngine/core/model/Model.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/resources/Side.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
@@ -31,6 +32,8 @@ using TechEngine::FileAccess;
 using TechEngine::FileError;
 using TechEngine::MESH_KIND;
 using TechEngine::MESH_TYPE_TAG;
+using TechEngine::MODEL_KIND;
+using TechEngine::MODEL_TYPE_TAG;
 using TechEngine::MountTable;
 using TechEngine::ResourceId;
 using TechEngine::SCENE_KIND;
@@ -48,6 +51,7 @@ static constexpr ResourceId SERVER_SCENE_ID{0x3000000000000003};
 static constexpr ResourceId NESTED_SCENE_ID{0x4000000000000004};
 static constexpr ResourceId DUPLICATED_ID{0x5000000000000005};
 static constexpr ResourceId COMMON_MESH_ID{0x7100000000000071};
+static constexpr ResourceId COMMON_MODEL_ID{0x7200000000000072};
 
 class IndexScratch {
 public:
@@ -124,6 +128,21 @@ TEST_CASE("build records a mesh under the mesh type tag", "[editor][assets]") {
     CHECK(mesh.typeTag == MESH_TYPE_TAG);
     CHECK(mesh.side == Side::Common);
     CHECK(mesh.path == "project://assets/common/triangle.temesh");
+}
+
+TEST_CASE("build records a model in its import folder under the model type tag", "[editor][assets]") {
+    const IndexScratch env{"assetIndexModel"};
+    env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
+    writeBytes(env.scratch(), "assets/common/Kart/Kart.temodel", assetBytes(MODEL_KIND, COMMON_MODEL_ID, "model payload"));
+
+    const AssetIndex index = env.buildIndex();
+
+    CHECK(index.getRecords().size() == 2);
+    AssetRecord model;
+    REQUIRE(index.find(COMMON_MODEL_ID, model));
+    CHECK(model.typeTag == MODEL_TYPE_TAG);
+    CHECK(model.side == Side::Common);
+    CHECK(model.path == "project://assets/common/Kart/Kart.temodel");
 }
 
 TEST_CASE("build reads assets in subfolders of a side", "[editor][assets]") {
