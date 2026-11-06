@@ -42,6 +42,7 @@ namespace TechEngine {
         : ClientApp(Role::Client, std::string(EDITOR_TITLE)), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)), m_runtimePath(std::move(runtimePath)), m_source(m_files, m_assets), m_commands(*this, m_session, m_registry, m_files),
           m_panels(
               m_commands,
+              m_consoleHistory,
               [this] {
                   exportProject();
               },
@@ -276,9 +277,9 @@ namespace TechEngine {
             return;
         }
 
-        // TODO(S10-T12): the console's store takes these records.
         std::vector<StoredLogRecord> consoleRecords;
-        m_console.drain(consoleRecords);
+        const std::size_t droppedRecords = m_console.drain(consoleRecords);
+        m_consoleHistory.add(std::move(consoleRecords), droppedRecords);
         takeSnapshot(m_snapshot);
         updateTitle();
         m_imguiBridge.beginFrame();
