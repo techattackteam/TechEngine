@@ -430,7 +430,9 @@ TEST_CASE("File, Run exports, starts the exported runtime and is disabled until 
     ScratchDirectory scratch{"editorRunStarts"};
     writeProjectLayout(scratch);
     const std::filesystem::path exportFolder = scratch.makeDirectory("export");
-    const std::filesystem::path runtime = scratch.writeFile("export/runtime", "#!/bin/sh\necho ran > ranHere.txt\nexit 3\n");
+    // The runtime waits for the test's release file, so it cannot exit before the test sees it running. The 30 second
+    // bound ends it even when the test fails first.
+    const std::filesystem::path runtime = scratch.writeFile("export/runtime", "#!/bin/sh\ni=0\nwhile [ ! -f release ] && [ $i -lt 3000 ]; do sleep 0.01; i=$((i + 1)); done\necho ran > ranHere.txt\nexit 3\n");
     std::filesystem::permissions(runtime, std::filesystem::perms::owner_all);
     EditorProbe editor{scratch.root(), exportFolder};
     editor.bootstrap();
@@ -440,6 +442,7 @@ TEST_CASE("File, Run exports, starts the exported runtime and is disabled until 
     editor.pollRuntime();
     CHECK(std::filesystem::exists(exportFolder / "Dev" / "assets" / "common.tepack"));
     CHECK_FALSE(editor.canRun());
+    scratch.writeFile("export/Dev/release", "");
 
     const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
     while (!editor.canRun() && std::chrono::steady_clock::now() < deadline) {

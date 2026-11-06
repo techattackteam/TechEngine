@@ -883,6 +883,16 @@ static void checkReadyMesh(AssetEditHarness& edit, const Entity entity, const Re
     CHECK(mesh->id == id);
 }
 
+// A fresh request counts one acquire only when no dependency of the scene already holds the entry.
+static void checkNotHeld(AssetEditHarness& edit, const ResourceId id) {
+    TechEngine::ResourceHandle<TechEngine::Mesh> handle;
+    REQUIRE(edit.cache.request(id, handle) == std::error_code{});
+    std::uint32_t acquires = 0;
+    REQUIRE(edit.cache.getAcquireCount(handle, acquires));
+    CHECK(acquires == 1);
+    edit.cache.release(handle);
+}
+
 static void checkEmptyMesh(const AssetEditHarness& edit, const Entity entity) {
     const MeshRenderer& renderer = edit.scene.getComponent<MeshRenderer>(entity);
     CHECK(renderer.mesh.id == ResourceId{});
@@ -940,13 +950,55 @@ TEST_CASE("an asset set over a server asset is refused, and the scene gains no d
     checkEmptyMesh(edit, entity);
     CHECK(edit.session.getRecords().empty());
     CHECK(edit.snapshot().editRevision == revisionBefore);
-    // A fresh request counts one acquire only when no dependency already holds the entry.
-    TechEngine::ResourceHandle<TechEngine::Mesh> serverMesh;
-    REQUIRE(edit.cache.request(EDIT_SERVER_MESH_ID, serverMesh) == std::error_code{});
-    std::uint32_t acquires = 0;
-    REQUIRE(edit.cache.getAcquireCount(serverMesh, acquires));
-    CHECK(acquires == 1);
-    edit.cache.release(serverMesh);
+    checkNotHeld(edit, EDIT_SERVER_MESH_ID);
+}
+
+TEST_CASE("an asset set over a component type the registry does not know is refused", "[editor][edit][commands][assets]") {
+    AssetEditHarness edit;
+    const Entity entity = edit.createWithMeshRenderer("Crate");
+    const ComponentTypeId unknown{TechEngine::StringId("Tests.Unregistered")};
+    const std::uint64_t revisionBefore = edit.snapshot().editRevision;
+
+    SetAssetFieldCommand command{edit.session, edit.getRegistry(), edit.cache, edit.sceneHandle, edit.index, {entity}, unknown, MESH_RENDERER_MESH_FIELD, EDIT_MESH_ID};
+    command.apply(edit.scene);
+
+    checkEmptyMesh(edit, entity);
+    CHECK(edit.session.getRecords().empty());
+    CHECK(edit.snapshot().editRevision == revisionBefore);
+    checkNotHeld(edit, EDIT_MESH_ID);
+}
+
+TEST_CASE("an asset set on a field that is not an asset field is refused, and the scene gains no dependency", "[editor][edit][commands][assets]") {
+    AssetEditHarness edit;
+    const Entity entity = edit.createWithMeshRenderer("Crate");
+    const float positionBefore = edit.scene.getComponent<Transform>(entity).getLocal().position.x;
+
+    SetAssetFieldCommand command{edit.session, edit.getRegistry(), edit.cache, edit.sceneHandle, edit.index, {entity}, transformType(), TRANSFORM_POSITION_X_FIELD, EDIT_MESH_ID};
+    command.apply(edit.scene);
+
+    CHECK(edit.scene.getComponent<Transform>(entity).getLocal().position.x == positionBefore);
+    CHECK(edit.session.getRecords().empty());
+    checkNotHeld(edit, EDIT_MESH_ID);
+}
+
+TEST_CASE("an asset set over several skips an invalid, a dead and a bare entity and one that holds the id, and edits the rest", "[editor][edit][commands][assets]") {
+    AssetEditHarness edit;
+    const Entity holder = edit.createWithMeshRenderer("Holder");
+    applyAssetSet(edit, {holder}, EDIT_MESH_ID);
+    const Entity edited = edit.createWithMeshRenderer("Edited");
+    const Entity dead = edit.createWithMeshRenderer("Dead");
+    REQUIRE(edit.scene.destroyEntity(dead));
+    const Entity bare = edit.scene.createEntity();
+    REQUIRE(bare.valid());
+    const std::size_t recordsBefore = edit.session.getRecords().size();
+
+    applyAssetSet(edit, {Entity{}, dead, bare, holder, edited}, EDIT_MESH_ID);
+
+    checkReadyMesh(edit, holder, EDIT_MESH_ID);
+    checkReadyMesh(edit, edited, EDIT_MESH_ID);
+    CHECK_FALSE(edit.scene.hasComponent<MeshRenderer>(bare));
+    CHECK(edit.session.getRecords().size() == recordsBefore + 1);
+    CHECK(findRecord<FieldEditRecord>(edit.session.getRecords().subspan(recordsBefore), edited) != nullptr);
 }
 
 TEST_CASE("an asset set whose mesh fails to load leaves the field as it was and records nothing", "[editor][edit][commands][assets]") {
