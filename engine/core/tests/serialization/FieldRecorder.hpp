@@ -1,6 +1,7 @@
 #pragma once
 
 #include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/resources/ResourceHandle.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/serialization/FieldVisitor.hpp>
@@ -19,15 +20,19 @@ namespace TechEngineTests {
         bool operator==(const RecordedField&) const = default;
     };
 
-    // Records every field it is shown, and sets a numeric field named writeName to writeValue.
+    // Records every field it is shown, and sets a numeric field named writeName to writeValue, or an asset field named
+    // writeName to writeAsset and writeAssetHandle.
     class FieldRecorder final : public TechEngine::FieldVisitor {
     public:
         std::vector<RecordedField> fields;
         std::vector<TechEngine::StringId> stringIds;
         std::vector<TechEngine::Entity> entities;
         std::vector<TechEngine::ResourceId> assets;
+        std::vector<TechEngine::StringId> assetTypes;
         std::vector<std::size_t> bulkCounts;
         std::string writeName;
+        TechEngine::ResourceId writeAsset;
+        TechEngine::ResourceSlotId writeAssetHandle;
         double writeValue = 0.0;
 
         void visitBool(const std::string_view name, bool&) override {
@@ -98,9 +103,14 @@ namespace TechEngineTests {
             entities.push_back(value);
         }
 
-        void visitAsset(const std::string_view name, const TechEngine::ResourceId id) override {
+        void visitAsset(const std::string_view name, const TechEngine::StringId typeTag, TechEngine::ResourceId& id, TechEngine::ResourceSlotId& handle) override {
             record(name, "asset");
             assets.push_back(id);
+            assetTypes.push_back(typeTag);
+            if (name == writeName) {
+                id = writeAsset;
+                handle = writeAssetHandle;
+            }
         }
 
         void visitBulk(const std::string_view name, const std::size_t count) override {

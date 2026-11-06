@@ -1,9 +1,11 @@
 #pragma once
 
 #include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/base/stringid/StringId.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 
+#include <assets/AssetIndex.hpp>
 #include <edit/FieldValue.hpp>
 
 #include <array>
@@ -26,6 +28,8 @@ namespace TechEngine {
         std::string name;
         FieldKind kind = FieldKind::Bool;
         FieldValue value;
+        // Set only on an Asset row.
+        StringId assetType;
         bool mixed = false;
     };
 
@@ -65,6 +69,8 @@ namespace TechEngine {
         // The active entity's world values, filled only while components lists Transform.
         TransformRow world;
         std::vector<ComponentChoice> addable;
+        // A copy of the asset index, which main must not read while the simulation thread may add to it.
+        std::vector<AssetRecord> assets;
         std::uint64_t editRevision = 0;
         std::uint64_t savedRevision = 0;
 
@@ -90,5 +96,9 @@ namespace TechEngine {
 
         // Hierarchy order; an entity with a selected ancestor, or one this snapshot does not list, is left out.
         void collectTopmost(std::span<const Entity> selection, std::vector<Entity>& out) const;
+
+        // Indices into assets, in index order. An empty type matches nothing, and a server asset is left out, because
+        // the set command refuses it.
+        void collectAssetsOfType(StringId type, std::vector<std::size_t>& out) const;
     };
 }

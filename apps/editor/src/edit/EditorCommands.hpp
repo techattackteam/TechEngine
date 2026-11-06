@@ -1,6 +1,8 @@
 #pragma once
 
 #include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/core/resources/ResourceHandle.hpp>
+#include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 
@@ -14,10 +16,13 @@
 
 namespace TechEngine {
     class App;
+    class AssetIndex;
     class Command;
     class ComponentRegistry;
     class EditSession;
     class FileAccess;
+    class ResourceCache;
+    struct SceneBytes;
     enum class TransformPart : std::uint8_t;
 
     class EditorCommands {
@@ -27,9 +32,13 @@ namespace TechEngine {
         EditSession* m_session = nullptr;
         const ComponentRegistry* m_registry = nullptr;
         FileAccess* m_files = nullptr;
+        // The cache, the scene handle and the index are only handed to commands, like the session.
+        ResourceCache* m_resources = nullptr;
+        const ResourceHandle<SceneBytes>* m_sceneHandle = nullptr;
+        const AssetIndex* m_assets = nullptr;
 
     public:
-        EditorCommands(App& app, EditSession& session, const ComponentRegistry& registry, FileAccess& files);
+        EditorCommands(App& app, EditSession& session, const ComponentRegistry& registry, FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, const AssetIndex& assets);
 
         void create(Entity parent);
 
@@ -42,6 +51,8 @@ namespace TechEngine {
         void select(std::vector<Entity> selection, Entity active, std::uint64_t sequence);
 
         void setField(std::vector<Entity> entities, ComponentTypeId component, std::uint32_t field, FieldValue value);
+
+        void setAssetField(std::vector<Entity> entities, ComponentTypeId component, std::uint32_t field, ResourceId id);
 
         void setRotationAxis(std::vector<Entity> entities, Entity active, Quat activeRotation, std::uint32_t axis, float degrees);
 

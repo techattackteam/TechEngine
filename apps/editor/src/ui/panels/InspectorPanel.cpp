@@ -1,6 +1,8 @@
 #include <TechEngine/core/mesh/MeshRenderer.hpp>
+#include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 
+#include <assets/AssetIndex.hpp>
 #include <edit/EditorCommands.hpp>
 #include <edit/EditorSnapshot.hpp>
 #include <edit/FieldValue.hpp>
@@ -17,7 +19,9 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <format>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <variant>
 
@@ -137,7 +141,7 @@ namespace TechEngine {
                 if (component.type == componentTypeId<Transform>()) {
                     drawTransform(snapshot, component);
                 } else if (component.type == componentTypeId<MeshRenderer>()) {
-                    drawMeshRenderer(component);
+                    drawMeshRenderer(snapshot, component);
                 } else {
                     drawFields(snapshot, component);
                 }
@@ -230,20 +234,18 @@ namespace TechEngine {
         }
     }
 
-    void InspectorPanel::drawMeshRenderer(const ComponentRow& component) {
-        const std::uint64_t* mesh = nullptr;
-        if (component.fields.size() > MESH_RENDERER_MESH_FIELD) {
-            mesh = std::get_if<std::uint64_t>(&component.fields[MESH_RENDERER_MESH_FIELD].value);
+    void InspectorPanel::drawMeshRenderer(const EditorSnapshot& snapshot, const ComponentRow& component) {
+        if (component.fields.size() <= MESH_RENDERER_MESH_FIELD) {
+            drawFields(snapshot, component);
+            return;
         }
 
+        const FieldRow& mesh = component.fields[MESH_RENDERER_MESH_FIELD];
+        ImGui::PushID(static_cast<int>(mesh.index));
         propertyRow("Mesh");
-        if (mesh != nullptr && component.fields[MESH_RENDERER_MESH_FIELD].mixed) {
-            ImGui::TextDisabled("-");
-        } else if (mesh == nullptr || *mesh == 0) {
-            ImGui::TextDisabled("None");
-        } else {
-            ImGui::TextDisabled("%016llx", static_cast<unsigned long long>(*mesh));
-        }
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        drawAssetPicker(snapshot, component.type, mesh);
+        ImGui::PopID();
     }
 
     void InspectorPanel::drawFields(const EditorSnapshot& snapshot, const ComponentRow& component) {
@@ -304,8 +306,10 @@ namespace TechEngine {
                 }
                 break;
             }
-            case FieldKind::StringId:
             case FieldKind::Asset:
+                drawAssetPicker(snapshot, component, field);
+                break;
+            case FieldKind::StringId:
             case FieldKind::Entity:
             case FieldKind::Bulk:
                 drawReadOnlyField(field);
@@ -315,6 +319,40 @@ namespace TechEngine {
         ImGui::PopID();
     }
 
+    void InspectorPanel::drawAssetPicker(const EditorSnapshot& snapshot, const ComponentTypeId component, const FieldRow& field) {
+        const ResourceId* shown = std::get_if<ResourceId>(&field.value);
+        const ResourceId current = shown != nullptr ? *shown : ResourceId{};
+
+        std::string preview;
+        if (field.mixed) {
+            preview = "-";
+        } else if (!current.valid()) {
+            preview = "None";
+        } else {
+            const auto record = std::ranges::find(snapshot.assets, current, &AssetRecord::id);
+            preview = record != snapshot.assets.end() ? record->path : std::format("{0:016x}", current.value());
+        }
+
+        if (!ImGui::BeginCombo("##asset", preview.c_str())) {
+            return;
+        }
+        snapshot.collectAssetsOfType(field.assetType, m_assetChoices);
+        if (m_assetChoices.empty()) {
+            ImGui::TextDisabled("No assets of this type");
+        }
+        for (const std::size_t choice: m_assetChoices) {
+            const AssetRecord& record = snapshot.assets[choice];
+            const bool selected = !field.mixed && record.id == current;
+            if (ImGui::Selectable(record.path.c_str(), selected) && !selected) {
+                m_commands->setAssetField(snapshot.selection, component, field.index, record.id);
+            }
+            if (selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+
     void InspectorPanel::drawReadOnlyField(const FieldRow& field) {
         if (field.mixed) {
             ImGui::TextDisabled("-");
@@ -322,8 +360,7 @@ namespace TechEngine {
         }
 
         switch (field.kind) {
-            case FieldKind::StringId:
-            case FieldKind::Asset: {
+            case FieldKind::StringId: {
                 const std::uint64_t* value = std::get_if<std::uint64_t>(&field.value);
                 ImGui::TextDisabled("%016llx", static_cast<unsigned long long>(value != nullptr ? *value : 0));
                 break;

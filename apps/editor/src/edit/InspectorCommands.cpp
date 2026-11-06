@@ -1,18 +1,25 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/core/resources/ResourceCache.hpp>
+#include <TechEngine/core/resources/Side.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
+#include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/core/serialization/Writer.hpp>
 
+#include <assets/AssetIndex.hpp>
 #include <edit/EditRecord.hpp>
 #include <edit/EditSession.hpp>
 #include <edit/EditorSnapshot.hpp>
 #include <edit/FieldCollector.hpp>
 #include <edit/FieldSetter.hpp>
+#include <edit/FieldValue.hpp>
 #include <edit/InspectorCommands.hpp>
 
 #include <array>
+#include <string>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -94,6 +101,120 @@ namespace TechEngine {
         }
         const FieldRow& row = rows[m_field];
         TE_LOGGER_DEBUG("Set {0}.{1} on entity {2}: {3} -> {4}", record.tag, row.name, entity, describeFieldValue(setter.getOldValue()), describeFieldValue(row.value));
+    }
+
+    SetAssetFieldCommand::SetAssetFieldCommand(
+        EditSession& session, const ComponentRegistry& registry, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, const AssetIndex& assets, std::vector<Entity> entities, const ComponentTypeId component, const std::uint32_t field, const ResourceId id)
+        : m_session(&session), m_registry(&registry), m_resources(&resources), m_sceneHandle(&sceneHandle), m_assets(&assets), m_entities(std::move(entities)), m_component(component), m_field(field), m_id(id) {
+    }
+
+    void SetAssetFieldCommand::apply(Scene& scene) {
+        const ComponentTypeRecord* record = m_registry->find(m_component);
+        if (record == nullptr || record->visitFields == nullptr || record->editFields == nullptr) {
+            TE_LOGGER_WARN("Component type {0} has no editable fields", m_component.stringId());
+            return;
+        }
+
+        AssetRecord asset;
+        const bool indexed = m_assets->find(m_id, asset);
+        if (!indexed) {
+            TE_LOGGER_WARN("Asset {0:#018x} is not in the asset index, so it is not set", m_id.value());
+            return;
+        }
+        if (asset.side == Side::Server) {
+            TE_LOGGER_WARN("Asset {0:#018x} is a server asset, which the editor's client scene cannot load, so it is not set", m_id.value());
+            return;
+        }
+
+        if (!m_sceneHandle->valid()) {
+            TE_LOGGER_WARN("The scene has no cache entry, so asset {0:#018x} is not set", m_id.value());
+            return;
+        }
+
+        if (!changesAnyField(scene, *record, asset.typeTag)) {
+            return;
+        }
+
+        ResourceSlotId slot;
+        const std::error_code addError = m_resources->addDependency(*m_sceneHandle, m_id, slot);
+        if (addError) {
+            TE_LOGGER_WARN("Asset {0:#018x} cannot be added to the scene: {1}", m_id.value(), addError.message());
+            return;
+        }
+
+        const std::error_code loadError = m_resources->runLoadingPhase();
+        ResourceState state = ResourceState::Pending;
+        const bool found = m_resources->getState(slot, state);
+        if (!found || state != ResourceState::Ready) {
+            TE_LOGGER_WARN("Asset {0:#018x} did not load, so it is not set: {1}", m_id.value(), loadError ? loadError.message() : std::string("it had already failed"));
+            return;
+        }
+
+        const FieldValue value = m_id;
+        bool changed = false;
+        for (const Entity entity: m_entities) {
+            if (!entity.valid()) {
+                TE_LOGGER_WARN("SetAssetFieldCommand applied with an invalid entity");
+                continue;
+            }
+            if (!scene.contains(entity)) {
+                TE_LOGGER_WARN("SetAssetFieldCommand applied with a dead entity");
+                continue;
+            }
+            void* component = scene.componentRaw(entity, m_component);
+            if (component == nullptr) {
+                TE_LOGGER_WARN("SetAssetFieldCommand applied to entity {0} without component {1}", entity, m_component.stringId());
+                continue;
+            }
+
+            FieldSetter setter(m_field, value, slot);
+            record->editFields(setter, component);
+            if (!setter.wasApplied() || setter.getOldValue() == value) {
+                continue;
+            }
+            TE_LOGGER_DEBUG("Set asset field {0} of {1} on entity {2}: {3} -> {4}", m_field, record->tag, entity, describeFieldValue(setter.getOldValue()), describeFieldValue(value));
+
+            FieldEditRecord edit;
+            edit.entity = entity;
+            edit.component = m_component;
+            edit.field = m_field;
+            edit.oldValue = setter.getOldValue();
+            m_session->record(std::move(edit));
+            changed = true;
+        }
+
+        if (changed) {
+            m_session->recordSceneChange();
+        }
+    }
+
+    bool SetAssetFieldCommand::changesAnyField(Scene& scene, const ComponentTypeRecord& record, const StringId assetType) const {
+        std::vector<FieldRow> rows;
+        for (const Entity entity: m_entities) {
+            if (!entity.valid() || !scene.contains(entity)) {
+                continue;
+            }
+            void* component = scene.componentRaw(entity, m_component);
+            if (component == nullptr) {
+                continue;
+            }
+
+            rows.clear();
+            FieldCollector collector(scene, rows);
+            record.visitFields(collector, component);
+            if (m_field >= rows.size() || rows[m_field].kind != FieldKind::Asset) {
+                TE_LOGGER_WARN("Field {0} of {1} is not an asset field, so asset {2:#018x} is not set", m_field, record.tag, m_id.value());
+                return false;
+            }
+            if (rows[m_field].assetType != assetType) {
+                TE_LOGGER_WARN("Field {0} of {1} holds another asset type than asset {2:#018x}, so it is not set", m_field, record.tag, m_id.value());
+                return false;
+            }
+            if (rows[m_field].value != FieldValue{m_id}) {
+                return true;
+            }
+        }
+        return false;
     }
 
     SetRotationAxisCommand::SetRotationAxisCommand(EditSession& session, const ComponentRegistry& registry, std::vector<Entity> entities, const Entity active, const Quat activeRotation, const std::uint32_t axis, const float degrees)

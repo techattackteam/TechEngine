@@ -1,5 +1,10 @@
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/mesh/Mesh.hpp>
+#include <TechEngine/core/mesh/MeshRenderer.hpp>
+#include <TechEngine/core/resources/ResourceCache.hpp>
+#include <TechEngine/core/resources/ResourceHandle.hpp>
+#include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
@@ -8,6 +13,7 @@
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/core/serialization/Writer.hpp>
 
+#include <edit/AssetEditHarness.hpp>
 #include <edit/EditRecord.hpp>
 #include <edit/EditTestScene.hpp>
 #include <edit/EditorSnapshot.hpp>
@@ -39,9 +45,13 @@ using TechEngine::Entity;
 using TechEngine::FieldEditRecord;
 using TechEngine::FieldValue;
 using TechEngine::LocalTransformRecord;
+using TechEngine::MeshRenderer;
 using TechEngine::Quat;
 using TechEngine::RemoveComponentCommand;
+using TechEngine::ResourceId;
+using TechEngine::ResourceState;
 using TechEngine::RotationEditRecord;
+using TechEngine::SetAssetFieldCommand;
 using TechEngine::SetFieldCommand;
 using TechEngine::SetRotationAxisCommand;
 using TechEngine::SetWorldAxisCommand;
@@ -49,10 +59,18 @@ using TechEngine::Transform;
 using TechEngine::TransformPart;
 using TechEngine::TransformValues;
 using TechEngine::Vec3;
+using TechEngineTests::AssetEditHarness;
 using TechEngineTests::componentRowFor;
+using TechEngineTests::EDIT_BROKEN_MESH_ID;
+using TechEngineTests::EDIT_MESH_ID;
+using TechEngineTests::EDIT_OTHER_SCENE_ID;
+using TechEngineTests::EDIT_SECOND_MESH_ID;
+using TechEngineTests::EDIT_SERVER_MESH_ID;
+using TechEngineTests::EDIT_UNKNOWN_ID;
 using TechEngineTests::EditTestScene;
 using TechEngineTests::findComponentRow;
 using TechEngineTests::InspectedSample;
+using TechEngineTests::MESH_RENDERER_MESH_FIELD;
 using TechEngineTests::SAMPLE_ASSET_FIELD;
 using TechEngineTests::SAMPLE_COUNT_FIELD;
 using TechEngineTests::SAMPLE_ENABLED_FIELD;
@@ -282,6 +300,7 @@ TEST_CASE("set field refuses every read-only field, even with a value of the typ
     applySetField(edit, entity, sampleType(), SAMPLE_GROUP_FIELD, FieldValue{std::uint64_t{1}});
     applySetField(edit, entity, sampleType(), SAMPLE_TARGET_FIELD, FieldValue{std::string("Other")});
     applySetField(edit, entity, sampleType(), SAMPLE_ASSET_FIELD, FieldValue{std::uint64_t{2}});
+    applySetField(edit, entity, sampleType(), SAMPLE_ASSET_FIELD, FieldValue{TechEngine::ResourceId{2}});
     applySetField(edit, entity, sampleType(), SAMPLE_INDICES_FIELD, FieldValue{std::uint64_t{0}});
 
     const InspectedSample& after = edit.scene.getComponent<InspectedSample>(entity);
@@ -839,4 +858,195 @@ TEST_CASE("a world edit skips a dead entity and one it cannot convert, and still
     CHECK(edit.session.getRecords().size() == recordsBefore + 1);
     CHECK(findRecord<LocalTransformRecord>(edit.session.getRecords(), live) != nullptr);
     CHECK(findRecord<LocalTransformRecord>(edit.session.getRecords(), flatChild) == nullptr);
+}
+
+static ComponentTypeId meshRendererType() {
+    return TechEngine::componentTypeId<MeshRenderer>();
+}
+
+static void applyAssetSet(AssetEditHarness& edit, std::vector<Entity> entities, const ResourceId id) {
+    SetAssetFieldCommand command{edit.session, edit.getRegistry(), edit.cache, edit.sceneHandle, edit.index, std::move(entities), meshRendererType(), MESH_RENDERER_MESH_FIELD, id};
+    command.apply(edit.scene);
+    // App::applyCommands runs a loading phase after every batch, so the tests do too.
+    edit.cache.runLoadingPhase();
+}
+
+static void checkReadyMesh(AssetEditHarness& edit, const Entity entity, const ResourceId id) {
+    const MeshRenderer& renderer = edit.scene.getComponent<MeshRenderer>(entity);
+    CHECK(renderer.mesh.id == id);
+    REQUIRE(renderer.mesh.handle.valid());
+    ResourceState state = ResourceState::Pending;
+    REQUIRE(edit.cache.getState(renderer.mesh.handle, state));
+    CHECK(state == ResourceState::Ready);
+    const TechEngine::Mesh* mesh = edit.cache.resolve(renderer.mesh.handle);
+    REQUIRE(mesh != nullptr);
+    CHECK(mesh->id == id);
+}
+
+static void checkEmptyMesh(const AssetEditHarness& edit, const Entity entity) {
+    const MeshRenderer& renderer = edit.scene.getComponent<MeshRenderer>(entity);
+    CHECK(renderer.mesh.id == ResourceId{});
+    CHECK_FALSE(renderer.mesh.handle.valid());
+}
+
+TEST_CASE("an asset set over a known mesh fills the handle", "[editor][edit][commands][assets]") {
+    AssetEditHarness edit;
+    const Entity entity = edit.createWithMeshRenderer("Crate");
+    const std::uint64_t revisionBefore = edit.snapshot().editRevision;
+
+    applyAssetSet(edit, {entity}, EDIT_MESH_ID);
+
+    checkReadyMesh(edit, entity, EDIT_MESH_ID);
+    REQUIRE(edit.session.getRecords().size() == 1);
+    const FieldEditRecord* record = findRecord<FieldEditRecord>(edit.session.getRecords(), entity);
+    REQUIRE(record != nullptr);
+    CHECK(record->component == meshRendererType());
+    CHECK(record->field == MESH_RENDERER_MESH_FIELD);
+    CHECK(record->oldValue == FieldValue{ResourceId{}});
+    CHECK(edit.snapshot().editRevision > revisionBefore);
+}
+
+TEST_CASE("an asset set over an unknown id is refused, and changes and records nothing", "[editor][edit][commands][assets]") {
+    AssetEditHarness edit;
+    const Entity entity = edit.createWithMeshRenderer("Crate");
+    const std::uint64_t revisionBefore = edit.snapshot().editRevision;
+
+    applyAssetSet(edit, {entity}, EDIT_UNKNOWN_ID);
+
+    checkEmptyMesh(edit, entity);
+    CHECK(edit.session.getRecords().empty());
+    CHECK(edit.snapshot().editRevision == revisionBefore);
+}
+
+TEST_CASE("an asset set over an id of another asset type than the field's is refused", "[editor][edit][commands][assets]") {
+    AssetEditHarness edit;
+    const Entity entity = edit.createWithMeshRenderer("Crate");
+    const std::uint64_t revisionBefore = edit.snapshot().editRevision;
+
+    applyAssetSet(edit, {entity}, EDIT_OTHER_SCENE_ID);
+
+    checkEmptyMesh(edit, entity);
+    CHECK(edit.session.getRecords().empty());
+    CHECK(edit.snapshot().editRevision == revisionBefore);
+}
+
+TEST_CASE("an asset set over a server asset is refused, and the scene gains no dependency", "[editor][edit][commands][assets]") {
+    AssetEditHarness edit;
+    const Entity entity = edit.createWithMeshRenderer("Crate");
+    const std::uint64_t revisionBefore = edit.snapshot().editRevision;
+
+    applyAssetSet(edit, {entity}, EDIT_SERVER_MESH_ID);
+
+    checkEmptyMesh(edit, entity);
+    CHECK(edit.session.getRecords().empty());
+    CHECK(edit.snapshot().editRevision == revisionBefore);
+    // A fresh request counts one acquire only when no dependency already holds the entry.
+    TechEngine::ResourceHandle<TechEngine::Mesh> serverMesh;
+    REQUIRE(edit.cache.request(EDIT_SERVER_MESH_ID, serverMesh) == std::error_code{});
+    std::uint32_t acquires = 0;
+    REQUIRE(edit.cache.getAcquireCount(serverMesh, acquires));
+    CHECK(acquires == 1);
+    edit.cache.release(serverMesh);
+}
+
+TEST_CASE("an asset set whose mesh fails to load leaves the field as it was and records nothing", "[editor][edit][commands][assets]") {
+    AssetEditHarness edit;
+    const Entity entity = edit.createWithMeshRenderer("Crate");
+    applyAssetSet(edit, {entity}, EDIT_MESH_ID);
+    REQUIRE(edit.session.getRecords().size() == 1);
+    const std::uint64_t revisionBefore = edit.snapshot().editRevision;
+
+    applyAssetSet(edit, {entity}, EDIT_BROKEN_MESH_ID);
+
+    checkReadyMesh(edit, entity, EDIT_MESH_ID);
+    CHECK(edit.session.getRecords().size() == 1);
+    CHECK(edit.snapshot().editRevision == revisionBefore);
+}
+
+TEST_CASE("an asset set over a mesh that already failed to load is refused too", "[editor][edit][commands][assets]") {
+    AssetEditHarness edit;
+    const Entity first = edit.createWithMeshRenderer("First");
+    const Entity second = edit.createWithMeshRenderer("Second");
+    applyAssetSet(edit, {first}, EDIT_BROKEN_MESH_ID);
+    const std::uint64_t revisionBefore = edit.snapshot().editRevision;
+
+    applyAssetSet(edit, {second}, EDIT_BROKEN_MESH_ID);
+
+    checkEmptyMesh(edit, first);
+    checkEmptyMesh(edit, second);
+    CHECK(edit.session.getRecords().empty());
+    CHECK(edit.snapshot().editRevision == revisionBefore);
+}
+
+TEST_CASE("an asset set on a scene with no cache entry is refused", "[editor][edit][commands][assets]") {
+    AssetEditHarness edit;
+    const Entity entity = edit.createWithMeshRenderer("Crate");
+    edit.releaseSceneEntry();
+    const std::uint64_t revisionBefore = edit.snapshot().editRevision;
+
+    applyAssetSet(edit, {entity}, EDIT_MESH_ID);
+
+    checkEmptyMesh(edit, entity);
+    CHECK(edit.session.getRecords().empty());
+    CHECK(edit.snapshot().editRevision == revisionBefore);
+}
+
+TEST_CASE("an asset set over three entities fills each handle with the same entry and leaves three records", "[editor][edit][commands][assets]") {
+    AssetEditHarness edit;
+    const std::vector<Entity> entities = {edit.createWithMeshRenderer("A"), edit.createWithMeshRenderer("B"), edit.createWithMeshRenderer("C")};
+
+    applyAssetSet(edit, entities, EDIT_MESH_ID);
+
+    for (const Entity entity: entities) {
+        checkReadyMesh(edit, entity, EDIT_MESH_ID);
+        CHECK(findRecord<FieldEditRecord>(edit.session.getRecords(), entity) != nullptr);
+    }
+    CHECK(edit.session.getRecords().size() == 3);
+    const TechEngine::ResourceHandle<TechEngine::Mesh> handle = edit.scene.getComponent<MeshRenderer>(entities[0]).mesh.handle;
+    CHECK(edit.scene.getComponent<MeshRenderer>(entities[1]).mesh.handle == handle);
+    CHECK(edit.scene.getComponent<MeshRenderer>(entities[2]).mesh.handle == handle);
+}
+
+TEST_CASE("an asset set to another mesh replaces the id and the handle, and records the old id", "[editor][edit][commands][assets]") {
+    AssetEditHarness edit;
+    const Entity entity = edit.createWithMeshRenderer("Crate");
+    applyAssetSet(edit, {entity}, EDIT_MESH_ID);
+
+    applyAssetSet(edit, {entity}, EDIT_SECOND_MESH_ID);
+
+    checkReadyMesh(edit, entity, EDIT_SECOND_MESH_ID);
+    const std::span<const EditRecord> records = edit.session.getRecords();
+    REQUIRE(records.size() == 2);
+    const FieldEditRecord* last = std::get_if<FieldEditRecord>(&records[1]);
+    REQUIRE(last != nullptr);
+    CHECK(last->oldValue == FieldValue{EDIT_MESH_ID});
+}
+
+TEST_CASE("an asset set to the id the field already holds keeps the edit revision and records nothing", "[editor][edit][commands][assets]") {
+    AssetEditHarness edit;
+    const Entity entity = edit.createWithMeshRenderer("Crate");
+    applyAssetSet(edit, {entity}, EDIT_MESH_ID);
+    const std::uint64_t revisionBefore = edit.snapshot().editRevision;
+
+    applyAssetSet(edit, {entity}, EDIT_MESH_ID);
+
+    checkReadyMesh(edit, entity, EDIT_MESH_ID);
+    CHECK(edit.session.getRecords().size() == 1);
+    CHECK(edit.snapshot().editRevision == revisionBefore);
+}
+
+TEST_CASE("an asset row holds the field's id and the asset type the picker filters on", "[editor][edit][assets]") {
+    AssetEditHarness edit;
+    const Entity entity = edit.createWithMeshRenderer("Crate");
+    edit.scene.getComponent<MeshRenderer>(entity).mesh.id = EDIT_MESH_ID;
+    edit.selectOnly(entity);
+
+    const EditorSnapshot snapshot = edit.snapshot();
+
+    const ComponentRow& row = componentRowFor(snapshot, meshRendererType());
+    REQUIRE(row.fields.size() > MESH_RENDERER_MESH_FIELD);
+    const TechEngine::FieldRow& field = row.fields[MESH_RENDERER_MESH_FIELD];
+    CHECK(field.kind == TechEngine::FieldKind::Asset);
+    CHECK(field.value == FieldValue{EDIT_MESH_ID});
+    CHECK(field.assetType == TechEngine::MESH_TYPE_TAG);
 }

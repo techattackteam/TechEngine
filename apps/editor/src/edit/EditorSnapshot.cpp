@@ -1,3 +1,5 @@
+#include <TechEngine/core/resources/Side.hpp>
+
 #include <edit/EditorSnapshot.hpp>
 
 #include <algorithm>
@@ -185,6 +187,18 @@ namespace TechEngine {
             selectedPath[row.depth] = selected || selectedAncestor;
             if (selected && !selectedAncestor) {
                 out.push_back(row.entity);
+            }
+        }
+    }
+
+    void EditorSnapshot::collectAssetsOfType(const StringId type, std::vector<std::size_t>& out) const {
+        out.clear();
+        if (type == StringId{}) {
+            return;
+        }
+        for (std::size_t i = 0; i < assets.size(); i++) {
+            if (assets[i].typeTag == type && assets[i].side != Side::Server) {
+                out.push_back(i);
             }
         }
     }

@@ -1,11 +1,17 @@
+#include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/resources/ResourceId.hpp>
+#include <TechEngine/core/resources/Side.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 
+#include <assets/AssetIndex.hpp>
 #include <edit/EditorSnapshot.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
+#include <string_view>
 #include <vector>
 
 using TechEngine::EditorSnapshot;
@@ -358,4 +364,59 @@ TEST_CASE("the names are mixed only when two selected entities' names differ", "
 
         CHECK_FALSE(snapshot.hasMixedNames());
     }
+}
+
+static TechEngine::AssetRecord assetRecord(const std::uint64_t id, const TechEngine::StringId type, const std::string_view path) {
+    TechEngine::AssetRecord record;
+    record.id = TechEngine::ResourceId{id};
+    record.typeTag = type;
+    record.path = std::string(path);
+    return record;
+}
+
+TEST_CASE("the picker's assets are the records of the field's type, in index order", "[editor][edit]") {
+    const TechEngine::StringId mesh("TechEngine.Mesh");
+    const TechEngine::StringId scene("TechEngine.Scene");
+    EditorSnapshot snapshot;
+    snapshot.assets = {
+        assetRecord(1, mesh, "assets/client/A.temesh"),
+        assetRecord(2, scene, "assets/common/Startup.tescene"),
+        assetRecord(3, mesh, "assets/client/B.temesh"),
+    };
+    std::vector<std::size_t> out = {99};
+
+    snapshot.collectAssetsOfType(mesh, out);
+
+    CHECK(out == std::vector<std::size_t>{0, 2});
+}
+
+TEST_CASE("the picker leaves out a server asset of the field's type", "[editor][edit]") {
+    const TechEngine::StringId mesh("TechEngine.Mesh");
+    EditorSnapshot snapshot;
+    snapshot.assets = {
+        assetRecord(1, mesh, "assets/client/A.temesh"),
+        assetRecord(2, mesh, "assets/server/Collision.temesh"),
+    };
+    snapshot.assets[1].side = TechEngine::Side::Server;
+    std::vector<std::size_t> out;
+
+    snapshot.collectAssetsOfType(mesh, out);
+
+    CHECK(out == std::vector<std::size_t>{0});
+}
+
+TEST_CASE("the picker offers nothing for a type no record has, or for an empty type", "[editor][edit]") {
+    EditorSnapshot snapshot;
+    snapshot.assets = {assetRecord(1, TechEngine::StringId("TechEngine.Mesh"), "assets/client/A.temesh")};
+    std::vector<std::size_t> out = {99};
+
+    SECTION("a type no record has") {
+        snapshot.collectAssetsOfType(TechEngine::StringId("TechEngine.Texture"), out);
+    }
+
+    SECTION("an empty type") {
+        snapshot.collectAssetsOfType(TechEngine::StringId{}, out);
+    }
+
+    CHECK(out.empty());
 }

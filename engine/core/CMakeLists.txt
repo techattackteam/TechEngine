@@ -59,6 +59,7 @@ techengine_module(core
           include/TechEngine/core/resources/ResourceCache.hpp
           include/TechEngine/core/resources/ResourceHandle.hpp
           include/TechEngine/core/resources/ResourceId.hpp
+          include/TechEngine/core/resources/ResourceTypeTag.hpp
           include/TechEngine/core/resources/Side.hpp
           include/TechEngine/core/scene/Access.hpp
           include/TechEngine/core/scene/ComponentRegistry.hpp
