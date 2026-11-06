@@ -10,6 +10,7 @@
 #include <imgui.h>
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
 #include <unordered_map>
@@ -36,6 +37,7 @@ namespace TechEngine {
         Quat m_eulerRotation = Quat(1.0f, 0.0f, 0.0f, 0.0f);
         bool m_rotationPending = false;
         bool m_worldMode = false;
+        std::vector<std::size_t> m_assetChoices;
 
     public:
         explicit InspectorPanel(EditorCommands& commands);
@@ -56,13 +58,15 @@ namespace TechEngine {
 
         void drawModeToggle();
 
-        void drawMeshRenderer(const ComponentRow& component);
+        void drawMeshRenderer(const EditorSnapshot& snapshot, const ComponentRow& component);
 
         void drawFields(const EditorSnapshot& snapshot, const ComponentRow& component);
 
         void drawField(const EditorSnapshot& snapshot, ComponentTypeId component, const FieldRow& field);
 
         static void drawReadOnlyField(const FieldRow& field);
+
+        void drawAssetPicker(const EditorSnapshot& snapshot, ComponentTypeId component, const FieldRow& field);
 
         void drawAddMenu(const EditorSnapshot& snapshot);
 

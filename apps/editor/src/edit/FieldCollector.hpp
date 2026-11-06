@@ -51,7 +51,7 @@ namespace TechEngine {
 
         void visitEntity(std::string_view name, Entity value) override;
 
-        void visitAsset(std::string_view name, ResourceId id) override;
+        void visitAsset(std::string_view name, StringId typeTag, ResourceId& id, ResourceSlotId& handle) override;
 
         void visitBulk(std::string_view name, std::size_t count) override;
 

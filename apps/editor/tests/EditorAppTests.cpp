@@ -183,7 +183,6 @@ namespace {
         REQUIRE(roots.size() == 1);
         REQUIRE(scene.hasComponent<TechEngine::MeshRenderer>(roots[0]));
         const TechEngine::MeshRenderer& renderer = scene.getComponent<TechEngine::MeshRenderer>(roots[0]);
-        CHECK_FALSE(renderer.mesh.handle.valid());
         for (const TechEngine::Entity child: scene.getChildren(roots[0])) {
             CHECK_FALSE(scene.hasComponent<TechEngine::MeshRenderer>(child));
         }
@@ -431,7 +430,9 @@ TEST_CASE("File, Run exports, starts the exported runtime and is disabled until 
     ScratchDirectory scratch{"editorRunStarts"};
     writeProjectLayout(scratch);
     const std::filesystem::path exportFolder = scratch.makeDirectory("export");
-    const std::filesystem::path runtime = scratch.writeFile("export/runtime", "#!/bin/sh\necho ran > ranHere.txt\nexit 3\n");
+    // The runtime waits for the test's release file, so it cannot exit before the test sees it running. The 30 second
+    // bound ends it even when the test fails first.
+    const std::filesystem::path runtime = scratch.writeFile("export/runtime", "#!/bin/sh\ni=0\nwhile [ ! -f release ] && [ $i -lt 3000 ]; do sleep 0.01; i=$((i + 1)); done\necho ran > ranHere.txt\nexit 3\n");
     std::filesystem::permissions(runtime, std::filesystem::perms::owner_all);
     EditorProbe editor{scratch.root(), exportFolder};
     editor.bootstrap();
@@ -441,6 +442,7 @@ TEST_CASE("File, Run exports, starts the exported runtime and is disabled until 
     editor.pollRuntime();
     CHECK(std::filesystem::exists(exportFolder / "Dev" / "assets" / "common.tepack"));
     CHECK_FALSE(editor.canRun());
+    scratch.writeFile("export/Dev/release", "");
 
     const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
     while (!editor.canRun() && std::chrono::steady_clock::now() < deadline) {
@@ -501,7 +503,6 @@ TEST_CASE("a later launch opens on the saved startup scene through the cache", "
         EditorProbe first{scratch.root(), exportFolder};
         first.bootstrap();
         meshId = meshRendererOnRoot(first.scene());
-        CHECK_FALSE(first.sceneHandle().valid());
         first.shutdown();
     }
     REQUIRE(meshId.valid());
@@ -541,6 +542,52 @@ TEST_CASE("a later launch opens on the saved startup scene through the cache", "
     }
 
     second.shutdown();
+}
+
+TEST_CASE("a created startup scene is loaded back through the cache, so an asset set has a scene entry", "[editor][window][assets]") {
+    ScratchDirectory scratch{"editorLoadsCreatedStartupScene"};
+    writeProjectLayout(scratch);
+
+    EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
+    editor.bootstrap();
+
+    checkParentWithTwoChildren(editor.scene());
+
+    SECTION("it holds the created scene as one Ready cache entry") {
+        const TechEngine::ResourceHandle<TechEngine::SceneBytes> handle = editor.sceneHandle();
+        REQUIRE(handle.valid());
+        TechEngine::ResourceState state = TechEngine::ResourceState::Pending;
+        REQUIRE(editor.resources().getState(handle, state));
+        CHECK(state == TechEngine::ResourceState::Ready);
+        std::uint32_t acquires = 0;
+        REQUIRE(editor.resources().getAcquireCount(handle, acquires));
+        CHECK(acquires == 1);
+    }
+
+    SECTION("it fills the triangle's handle on the root's MeshRenderer") {
+        const TechEngine::ResourceId meshId = meshRendererOnRoot(editor.scene());
+        const TechEngine::MeshRenderer& renderer = editor.scene().getComponent<TechEngine::MeshRenderer>(editor.scene().getRoots()[0]);
+        REQUIRE(renderer.mesh.handle.valid());
+        const TechEngine::Mesh* mesh = editor.resources().resolve(renderer.mesh.handle);
+        REQUIRE(mesh != nullptr);
+        CHECK(mesh->id == meshId);
+    }
+
+    editor.shutdown();
+}
+
+TEST_CASE("an adopted Startup.tescene that does not load leaves the scene with no cache entry", "[editor][window][assets]") {
+    ScratchDirectory scratch{"editorAdoptedSceneHasNoEntry"};
+    writeProjectLayout(scratch);
+    constexpr TechEngine::ResourceId sceneId{0x0fedcba987654322};
+    TechEngineTests::writeBytes(scratch, STARTUP_SCENE_FILE, TechEngineTests::assetBytes(TechEngine::SCENE_KIND, sceneId, "scene"));
+
+    EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
+    editor.bootstrap();
+
+    CHECK(editor.scene().getRoots().empty());
+    CHECK_FALSE(editor.sceneHandle().valid());
+    editor.shutdown();
 }
 
 TEST_CASE("a named startup scene that does not parse leaves the editor open on an empty scene", "[editor][window]") {
@@ -622,7 +669,10 @@ TEST_CASE("a new startup scene reuses an indexed Triangle.temesh", "[editor][win
     ScratchDirectory scratch{"editorReusesTriangleMesh"};
     writeProjectLayout(scratch);
     constexpr TechEngine::ResourceId meshId{0x0abcdef012345678};
-    const std::vector<std::byte> original = TechEngineTests::assetBytes(TechEngine::MESH_KIND, meshId, "mesh");
+    // The created scene is loaded back, so a mesh that does not parse would fail that load.
+    const TechEngine::Mesh mesh{meshId, {TechEngine::Vec3(0.0f), TechEngine::Vec3(1.0f, 0.0f, 0.0f), TechEngine::Vec3(0.0f, 1.0f, 0.0f)}, {0, 1, 2}};
+    std::vector<std::byte> original;
+    mesh.write(original);
     TechEngineTests::writeBytes(scratch, TRIANGLE_MESH_FILE, original);
 
     EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};

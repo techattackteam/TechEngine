@@ -1,8 +1,11 @@
 #include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/resources/AssetRef.hpp>
+#include <TechEngine/core/resources/ResourceCache.hpp>
 #include <TechEngine/core/resources/ResourceHandle.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
+#include <TechEngine/core/serialization/BlobHeader.hpp>
 #include <TechEngine/core/serialization/FieldVisitor.hpp>
 #include <TechEngine/core/serialization/Visit.hpp>
 
@@ -13,8 +16,10 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <vector>
 
 using TechEngine::AssetRef;
@@ -22,6 +27,7 @@ using TechEngine::Entity;
 using TechEngine::FieldVisitor;
 using TechEngine::ResourceHandle;
 using TechEngine::ResourceId;
+using TechEngine::ResourceSlotId;
 using TechEngine::StringId;
 using TechEngineTests::FieldRecorder;
 using TechEngineTests::RecordedField;
@@ -95,6 +101,34 @@ template<typename T>
 concept NamelessField = requires(FieldVisitor& visitor, T& value) { visitor.field(value); };
 
 static constexpr ResourceId FIELD_VISITOR_ASSET_ID{0xF1E1D0000000A55E};
+static constexpr StringId FIELD_VISITOR_ASSET_TAG{"TechEngineTests.FieldVisitorAsset"};
+static constexpr TechEngine::BlobKind FIELD_VISITOR_ASSET_KIND{0x41564654, 1};
+
+struct FieldVisitorUnregisteredAsset {};
+
+struct FieldVisitorUnregisteredHolder {
+    AssetRef<FieldVisitorUnregisteredAsset> asset;
+
+    template<typename Archive>
+    friend void visit(Archive& archive, FieldVisitorUnregisteredHolder& value) {
+        archive.field("asset", value.asset);
+    }
+};
+
+static std::error_code loadFieldVisitorAsset(std::span<const std::byte>, void*, std::vector<ResourceId>&) {
+    return {};
+}
+
+// The type tag lives in a process-wide global, so it outlives this cache and every later case sees it too.
+class FieldVisitorAssetCache {
+public:
+    TechEngine::JobSystem jobs;
+    TechEngine::ResourceCache cache{jobs};
+
+    FieldVisitorAssetCache() {
+        cache.registerLoader<FieldVisitorAsset>(FIELD_VISITOR_ASSET_KIND, FIELD_VISITOR_ASSET_TAG, &loadFieldVisitorAsset);
+    }
+};
 
 static std::vector<std::string> kindsOf(const std::vector<RecordedField>& fields) {
     std::vector<std::string> kinds;
@@ -181,22 +215,75 @@ TEST_CASE("a nested visited type's fields are walked in place, between their nei
 
 TEST_CASE("the read-only kinds hand over the value they hold", "[core][serialization]") {
     FieldVisitorSample sample;
-    sample.asset.id = FIELD_VISITOR_ASSET_ID;
     FieldRecorder recorder;
 
     visit(recorder, sample);
 
     CHECK(recorder.stringIds == std::vector<StringId>{StringId("Group")});
     CHECK(recorder.entities == std::vector<Entity>{Entity{4, 2}});
-    CHECK(recorder.assets == std::vector<ResourceId>{FIELD_VISITOR_ASSET_ID});
     CHECK(recorder.bulkCounts == std::vector<std::size_t>{3});
 }
 
 TEST_CASE("the read-only kinds are passed by value, so no field visitor can change them", "[core][serialization]") {
     STATIC_REQUIRE(std::same_as<decltype(&FieldVisitor::visitStringId), void (FieldVisitor::*)(std::string_view, StringId)>);
     STATIC_REQUIRE(std::same_as<decltype(&FieldVisitor::visitEntity), void (FieldVisitor::*)(std::string_view, Entity)>);
-    STATIC_REQUIRE(std::same_as<decltype(&FieldVisitor::visitAsset), void (FieldVisitor::*)(std::string_view, ResourceId)>);
     STATIC_REQUIRE(std::same_as<decltype(&FieldVisitor::visitBulk), void (FieldVisitor::*)(std::string_view, std::size_t)>);
+}
+
+TEST_CASE("an asset field is passed by reference with its type tag, so a field visitor can set it", "[core][serialization]") {
+    STATIC_REQUIRE(std::same_as<decltype(&FieldVisitor::visitAsset), void (FieldVisitor::*)(std::string_view, StringId, ResourceId&, ResourceSlotId&)>);
+}
+
+TEST_CASE("an asset field hands over its id and the tag its type was registered under", "[core][serialization]") {
+    FieldVisitorAssetCache registered;
+    FieldVisitorSample sample;
+    sample.asset.id = FIELD_VISITOR_ASSET_ID;
+    FieldRecorder recorder;
+
+    visit(recorder, sample);
+
+    CHECK(recorder.assets == std::vector<ResourceId>{FIELD_VISITOR_ASSET_ID});
+    CHECK(recorder.assetTypes == std::vector<StringId>{FIELD_VISITOR_ASSET_TAG});
+}
+
+TEST_CASE("an asset type that no cache has registered hands over an empty type tag", "[core][serialization]") {
+    FieldVisitorUnregisteredHolder holder;
+    holder.asset.id = FIELD_VISITOR_ASSET_ID;
+    FieldRecorder recorder;
+
+    visit(recorder, holder);
+
+    CHECK(recorder.assets == std::vector<ResourceId>{FIELD_VISITOR_ASSET_ID});
+    CHECK(recorder.assetTypes == std::vector<StringId>{StringId{}});
+}
+
+TEST_CASE("a write through an asset field sets its id and its handle, and no other field changes", "[core][serialization]") {
+    FieldVisitorSample sample;
+    const FieldVisitorSample before = sample;
+    FieldRecorder recorder;
+    recorder.writeName = "asset";
+    recorder.writeAsset = FIELD_VISITOR_ASSET_ID;
+    recorder.writeAssetHandle = ResourceSlotId{7, 3};
+
+    visit(recorder, sample);
+
+    CHECK(sample.asset.id == FIELD_VISITOR_ASSET_ID);
+    CHECK(sample.asset.handle == ResourceHandle<FieldVisitorAsset>{7, 3});
+    CHECK(sample.int32 == before.int32);
+    CHECK(sample.label == before.label);
+    CHECK(sample.target == before.target);
+    CHECK(sample.indices == before.indices);
+}
+
+TEST_CASE("a walk that does not write an asset field keeps its handle", "[core][serialization]") {
+    FieldVisitorSample sample;
+    sample.asset = AssetRef<FieldVisitorAsset>{FIELD_VISITOR_ASSET_ID, ResourceHandle<FieldVisitorAsset>{5, 1}};
+    FieldRecorder recorder;
+
+    visit(recorder, sample);
+
+    CHECK(sample.asset.id == FIELD_VISITOR_ASSET_ID);
+    CHECK(sample.asset.handle == ResourceHandle<FieldVisitorAsset>{5, 1});
 }
 
 TEST_CASE("a write through an editable field changes that field and no other", "[core][serialization]") {

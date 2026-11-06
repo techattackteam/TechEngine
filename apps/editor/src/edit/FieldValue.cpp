@@ -10,6 +10,8 @@ namespace TechEngine {
                 using T = std::decay_t<decltype(held)>;
                 if constexpr (std::is_same_v<T, std::string>) {
                     return std::format("\"{0}\"", held);
+                } else if constexpr (std::is_same_v<T, ResourceId>) {
+                    return std::format("{0:#018x}", held.value());
                 } else if constexpr (std::is_same_v<T, std::int8_t> || std::is_same_v<T, std::uint8_t>) {
                     // std::format would print a one-byte integer as a character.
                     return std::format("{0}", static_cast<int>(held));

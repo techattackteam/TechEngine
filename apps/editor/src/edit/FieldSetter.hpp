@@ -15,6 +15,7 @@ namespace TechEngine {
         std::uint32_t m_target = 0;
         const FieldValue* m_value = nullptr;
         std::uint32_t m_index = 0;
+        ResourceSlotId m_assetHandle;
         FieldValue m_oldValue;
         bool m_applied = false;
 
@@ -22,7 +23,11 @@ namespace TechEngine {
         // value must outlive the walk.
         FieldSetter(std::uint32_t field, const FieldValue& value);
 
-        // False when the index names no field, a read-only field, or a field whose type differs from the value's.
+        // Only this form writes an asset field: it sets the field's id to value and its handle to assetHandle.
+        FieldSetter(std::uint32_t field, const FieldValue& value, ResourceSlotId assetHandle);
+
+        // False when the index names no field, a read-only field, an asset field without a handle, or a field whose
+        // type differs from the value's.
         bool wasApplied() const;
 
         const FieldValue& getOldValue() const;
@@ -55,7 +60,7 @@ namespace TechEngine {
 
         void visitEntity(std::string_view name, Entity value) override;
 
-        void visitAsset(std::string_view name, ResourceId id) override;
+        void visitAsset(std::string_view name, StringId typeTag, ResourceId& id, ResourceSlotId& handle) override;
 
         void visitBulk(std::string_view name, std::size_t count) override;
 

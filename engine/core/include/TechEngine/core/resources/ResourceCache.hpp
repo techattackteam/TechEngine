@@ -4,6 +4,7 @@
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/resources/ResourceHandle.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
+#include <TechEngine/core/resources/ResourceTypeTag.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
 
 #include <cstddef>
@@ -26,16 +27,6 @@ namespace TechEngine {
     // A loader appends the ids its payload references to dependencies instead of loading them:
     // the cache requests them as the next round of the loading phase.
     using ResourceLoadFn = std::error_code (*)(std::span<const std::byte> bytes, void* payload, std::vector<ResourceId>& dependencies);
-
-    namespace internal {
-        template<typename T>
-        inline StringId g_resourceTypeTag{};
-    }
-
-    template<typename T>
-    StringId resourceTypeTag() {
-        return internal::g_resourceTypeTag<T>;
-    }
 
     class ResourceCache {
     private:
@@ -106,6 +97,10 @@ namespace TechEngine {
         template<typename T>
         bool getState(const ResourceHandle<T> handle, ResourceState& out) const {
             return entryState(handle.slot(), out);
+        }
+
+        bool getState(const ResourceSlotId slot, ResourceState& out) const {
+            return entryState(slot, out);
         }
 
         template<typename T>

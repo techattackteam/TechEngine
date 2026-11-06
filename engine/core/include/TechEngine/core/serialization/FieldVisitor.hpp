@@ -2,7 +2,9 @@
 
 #include <TechEngine/base/stringid/StringId.hpp>
 #include <TechEngine/core/resources/AssetRef.hpp>
+#include <TechEngine/core/resources/ResourceHandle.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
+#include <TechEngine/core/resources/ResourceTypeTag.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/serialization/Visit.hpp>
 
@@ -46,7 +48,8 @@ namespace TechEngine {
 
         virtual void visitEntity(std::string_view name, Entity value) = 0;
 
-        virtual void visitAsset(std::string_view name, ResourceId id) = 0;
+        // typeTag is empty for an asset type that no cache has registered a loader for.
+        virtual void visitAsset(std::string_view name, StringId typeTag, ResourceId& id, ResourceSlotId& handle) = 0;
 
         virtual void visitBulk(std::string_view name, std::size_t count) = 0;
 
@@ -108,7 +111,9 @@ namespace TechEngine {
 
         template<typename T>
         void field(const std::string_view name, AssetRef<T>& value) {
-            visitAsset(name, value.id);
+            ResourceSlotId slot = value.handle.slot();
+            visitAsset(name, resourceTypeTag<T>(), value.id, slot);
+            value.handle = ResourceHandle<T>{slot.index, slot.generation};
         }
 
         template<typename T>
