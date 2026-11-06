@@ -19,6 +19,7 @@ namespace TechEngine {
     class EditorCommands;
     struct ComponentRow;
     struct FieldRow;
+    enum class TransformPart : std::uint8_t;
 
     class InspectorPanel final : public Panel {
     private:
@@ -34,6 +35,7 @@ namespace TechEngine {
         Vec3 m_euler = Vec3(0.0f);
         Quat m_eulerRotation = Quat(1.0f, 0.0f, 0.0f, 0.0f);
         bool m_rotationPending = false;
+        bool m_worldMode = false;
 
     public:
         explicit InspectorPanel(EditorCommands& commands);
@@ -52,6 +54,8 @@ namespace TechEngine {
 
         void drawTransform(const EditorSnapshot& snapshot, const ComponentRow& component);
 
+        void drawModeToggle();
+
         void drawMeshRenderer(const ComponentRow& component);
 
         void drawFields(const EditorSnapshot& snapshot, const ComponentRow& component);
@@ -64,7 +68,9 @@ namespace TechEngine {
 
         void syncEuler(Entity entity, const Quat& rotation);
 
-        void sendVec3(const std::vector<Entity>& entities, std::uint32_t firstField, const Vec3& values, const std::array<bool, 3>& changedAxes);
+        bool isSentRotation(const Quat& rotation) const;
+
+        void sendAxes(const EditorSnapshot& snapshot, TransformPart part, const Vec3& values, const std::array<bool, 3>& changedAxes);
 
         static std::array<bool, 3> getMixedAxes(const ComponentRow& component, std::uint32_t firstField);
 

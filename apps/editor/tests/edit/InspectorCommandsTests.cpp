@@ -18,6 +18,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -37,12 +38,15 @@ using TechEngine::EditRecord;
 using TechEngine::Entity;
 using TechEngine::FieldEditRecord;
 using TechEngine::FieldValue;
+using TechEngine::LocalTransformRecord;
 using TechEngine::Quat;
 using TechEngine::RemoveComponentCommand;
 using TechEngine::RotationEditRecord;
 using TechEngine::SetFieldCommand;
 using TechEngine::SetRotationAxisCommand;
+using TechEngine::SetWorldAxisCommand;
 using TechEngine::Transform;
+using TechEngine::TransformPart;
 using TechEngine::TransformValues;
 using TechEngine::Vec3;
 using TechEngineTests::componentRowFor;
@@ -704,4 +708,135 @@ TEST_CASE("a remove over several skips an entity it cannot remove from and remov
     CHECK(findRecord<ComponentRemovedRecord>(edit.session.getRecords(), holds) != nullptr);
     CHECK(findRecord<ComponentRemovedRecord>(edit.session.getRecords(), lacks) == nullptr);
     CHECK(edit.snapshot().editRevision > before.editRevision);
+}
+
+static void setLocal(EditTestScene& edit, const Entity entity, const Vec3& position, const Vec3& degrees) {
+    REQUIRE(edit.scene.getComponent<Transform>(entity).setLocal({position, Transform::fromEulerDegrees(degrees), Vec3(1.0f)}));
+}
+
+static void checkVec3(const Vec3& actual, const Vec3& expected) {
+    CHECK(actual.x == Catch::Approx(expected.x).margin(1e-4));
+    CHECK(actual.y == Catch::Approx(expected.y).margin(1e-4));
+    CHECK(actual.z == Catch::Approx(expected.z).margin(1e-4));
+}
+
+TEST_CASE("a world position edit on a child of a moved parent sets the local value that puts it there", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity parent = edit.createNamed("Parent");
+    const Entity child = edit.createNamed("Child", parent);
+    setLocal(edit, child, Vec3(1.0f, 0.0f, 0.0f), Vec3(0.0f));
+    const EditorSnapshot before = edit.snapshot();
+
+    std::uint32_t axis = 0;
+    float value = 0.0f;
+    Vec3 expectedLocal(0.0f);
+    SECTION("a parent that is only moved") {
+        setLocal(edit, parent, Vec3(10.0f, 0.0f, 0.0f), Vec3(0.0f));
+        axis = 0;
+        value = 12.0f;
+        expectedLocal = Vec3(2.0f, 0.0f, 0.0f);
+    }
+    SECTION("a parent that is moved and turned 90 degrees about Z") {
+        setLocal(edit, parent, Vec3(10.0f, 0.0f, 0.0f), Vec3(0.0f, 0.0f, 90.0f));
+        // The child sits at (10, 1, 0) in the world; moving it to y = 3 is two more along the parent's local X.
+        axis = 1;
+        value = 3.0f;
+        expectedLocal = Vec3(3.0f, 0.0f, 0.0f);
+    }
+    const TransformValues oldLocal = edit.scene.getComponent<Transform>(child).getLocal();
+
+    SetWorldAxisCommand command{edit.session, {child}, child, Quat(1.0f, 0.0f, 0.0f, 0.0f), TransformPart::Position, axis, value};
+    command.apply(edit.scene);
+
+    const Transform& transform = edit.scene.getComponent<Transform>(child);
+    checkVec3(transform.getLocal().position, expectedLocal);
+    CHECK(transform.getWorld().position[static_cast<int>(axis)] == Catch::Approx(value).margin(1e-4));
+    REQUIRE(edit.session.getRecords().size() == 1);
+    const LocalTransformRecord* record = findRecord<LocalTransformRecord>(edit.session.getRecords(), child);
+    REQUIRE(record != nullptr);
+    CHECK(record->oldLocal.position == oldLocal.position);
+    CHECK(record->oldLocal.rotation == oldLocal.rotation);
+    CHECK(record->oldLocal.scale == oldLocal.scale);
+    CHECK(edit.snapshot().editRevision > before.editRevision);
+}
+
+TEST_CASE("a world edit over several keeps each entity's other world axes", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity firstParent = edit.createNamed("First parent");
+    const Entity secondParent = edit.createNamed("Second parent");
+    const Entity first = edit.createNamed("First", firstParent);
+    const Entity second = edit.createNamed("Second", secondParent);
+    setLocal(edit, firstParent, Vec3(1.0f, 2.0f, 3.0f), Vec3(0.0f));
+    setLocal(edit, secondParent, Vec3(-4.0f, 0.0f, 5.0f), Vec3(0.0f, 90.0f, 0.0f));
+    setLocal(edit, second, Vec3(1.0f, 1.0f, 0.0f), Vec3(0.0f));
+    const Vec3 firstWorld = edit.scene.getComponent<Transform>(first).getWorld().position;
+    const Vec3 secondWorld = edit.scene.getComponent<Transform>(second).getWorld().position;
+
+    SetWorldAxisCommand command{edit.session, {first, second}, first, Quat(1.0f, 0.0f, 0.0f, 0.0f), TransformPart::Position, 1, 7.0f};
+    command.apply(edit.scene);
+
+    checkVec3(edit.scene.getComponent<Transform>(first).getWorld().position, Vec3(firstWorld.x, 7.0f, firstWorld.z));
+    checkVec3(edit.scene.getComponent<Transform>(second).getWorld().position, Vec3(secondWorld.x, 7.0f, secondWorld.z));
+    CHECK(edit.session.getRecords().size() == 2);
+    CHECK(findRecord<LocalTransformRecord>(edit.session.getRecords(), first) != nullptr);
+    CHECK(findRecord<LocalTransformRecord>(edit.session.getRecords(), second) != nullptr);
+}
+
+TEST_CASE("a world rotation edit gives the active entity the sent world rotation and each other entity its own other two axes", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity parent = edit.createNamed("Parent");
+    const Entity active = edit.createNamed("Active", parent);
+    const Entity other = edit.createNamed("Other");
+    setLocal(edit, parent, Vec3(0.0f), Vec3(0.0f, 0.0f, 30.0f));
+    setLocal(edit, other, Vec3(0.0f), Vec3(10.0f, 20.0f, 30.0f));
+    const Quat activeRotation = Transform::fromEulerDegrees(Vec3(0.0f, 45.0f, 30.0f));
+
+    SetWorldAxisCommand command{edit.session, {active, other}, active, activeRotation, TransformPart::Rotation, 1, 45.0f};
+    command.apply(edit.scene);
+
+    const Quat activeWorld = edit.scene.getComponent<Transform>(active).getWorld().rotation;
+    CHECK(std::abs(glm::dot(activeWorld, activeRotation)) == Catch::Approx(1.0f).margin(1e-5));
+    checkEuler(edit, other, Vec3(10.0f, 45.0f, 30.0f));
+    CHECK(edit.session.getRecords().size() == 2);
+}
+
+TEST_CASE("a world edit that leaves the world transform as it was records nothing and keeps the edit revision", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity parent = edit.createNamed("Parent");
+    const Entity child = edit.createNamed("Child", parent);
+    setLocal(edit, parent, Vec3(10.0f, 0.0f, 0.0f), Vec3(0.0f, 0.0f, 90.0f));
+    setLocal(edit, child, Vec3(1.0f, 0.0f, 0.0f), Vec3(0.0f));
+    const float currentX = edit.scene.getComponent<Transform>(child).getWorld().position.x;
+    const TransformValues oldLocal = edit.scene.getComponent<Transform>(child).getLocal();
+    const EditorSnapshot before = edit.snapshot();
+
+    SetWorldAxisCommand command{edit.session, {child}, child, Quat(1.0f, 0.0f, 0.0f, 0.0f), TransformPart::Position, 0, currentX};
+    command.apply(edit.scene);
+
+    const TransformValues& local = edit.scene.getComponent<Transform>(child).getLocal();
+    CHECK(local.position == oldLocal.position);
+    CHECK(local.rotation == oldLocal.rotation);
+    CHECK(local.scale == oldLocal.scale);
+    CHECK(edit.session.getRecords().empty());
+    CHECK(edit.snapshot().editRevision == before.editRevision);
+}
+
+TEST_CASE("a world edit skips a dead entity and one it cannot convert, and still edits the rest", "[editor][edit][commands]") {
+    EditTestScene edit;
+    const Entity live = edit.createNamed("Live");
+    const Entity dead = edit.createNamed("Dead");
+    REQUIRE(edit.scene.destroyEntity(dead));
+    const Entity flatParent = edit.createNamed("Flat parent");
+    const Entity flatChild = edit.createNamed("Flat child", flatParent);
+    applySetField(edit, flatParent, transformType(), TRANSFORM_SCALE_X_FIELD, FieldValue{0.0f});
+    REQUIRE(edit.scene.getComponent<Transform>(flatParent).getLocal().scale.x == 0.0f);
+    const std::size_t recordsBefore = edit.session.getRecords().size();
+
+    SetWorldAxisCommand command{edit.session, {live, dead, flatChild}, live, Quat(1.0f, 0.0f, 0.0f, 0.0f), TransformPart::Position, 2, 4.0f};
+    command.apply(edit.scene);
+
+    CHECK(edit.scene.getComponent<Transform>(live).getLocal().position.z == Catch::Approx(4.0f));
+    CHECK(edit.session.getRecords().size() == recordsBefore + 1);
+    CHECK(findRecord<LocalTransformRecord>(edit.session.getRecords(), live) != nullptr);
+    CHECK(findRecord<LocalTransformRecord>(edit.session.getRecords(), flatChild) == nullptr);
 }

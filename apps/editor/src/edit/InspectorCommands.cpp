@@ -162,6 +162,72 @@ namespace TechEngine {
         return true;
     }
 
+    SetWorldAxisCommand::SetWorldAxisCommand(EditSession& session, std::vector<Entity> entities, const Entity active, const Quat activeRotation, const TransformPart part, const std::uint32_t axis, const float value)
+        : m_session(&session), m_entities(std::move(entities)), m_active(active), m_activeRotation(activeRotation), m_part(part), m_axis(axis), m_value(value) {
+    }
+
+    void SetWorldAxisCommand::apply(Scene& scene) {
+        bool changed = false;
+        for (Entity entity: m_entities) {
+            if (!entity.valid()) {
+                TE_LOGGER_WARN("SetWorldAxisCommand applied with an invalid entity");
+                continue;
+            }
+            if (!scene.contains(entity)) {
+                TE_LOGGER_WARN("SetWorldAxisCommand applied with a dead entity");
+                continue;
+            }
+
+            Transform& transform = scene.getComponent<Transform>(entity);
+            const TransformValues& world = transform.getWorld();
+            const TransformValues target = getTargetWorld(entity, world);
+            // setWorld decomposes a matrix, so even an unchanged target would leave float noise in the local values.
+            if (target.position == world.position && target.rotation == world.rotation && target.scale == world.scale) {
+                continue;
+            }
+
+            const TransformValues oldLocal = transform.getLocal();
+            const bool written = transform.setWorld(target);
+            if (!written) {
+                TE_LOGGER_WARN("SetWorldAxisCommand: entity {0} refused its new world transform", entity);
+                continue;
+            }
+
+            LocalTransformRecord record;
+            record.entity = entity;
+            record.oldLocal = oldLocal;
+            m_session->record(std::move(record));
+            changed = true;
+        }
+
+        if (changed) {
+            m_session->recordSceneChange();
+        }
+    }
+
+    TransformValues SetWorldAxisCommand::getTargetWorld(const Entity entity, const TransformValues& world) const {
+        TransformValues target = world;
+        const int axis = static_cast<int>(m_axis);
+        switch (m_part) {
+            case TransformPart::Position:
+                target.position[axis] = m_value;
+                break;
+            case TransformPart::Scale:
+                target.scale[axis] = m_value;
+                break;
+            case TransformPart::Rotation:
+                if (entity == m_active) {
+                    target.rotation = m_activeRotation;
+                } else {
+                    Vec3 euler = Transform::toEulerDegrees(world.rotation);
+                    euler[axis] = m_value;
+                    target.rotation = Transform::fromEulerDegrees(euler);
+                }
+                break;
+        }
+        return target;
+    }
+
     AddComponentCommand::AddComponentCommand(EditSession& session, std::vector<Entity> entities, const ComponentTypeId component) : m_session(&session), m_entities(std::move(entities)), m_component(component) {
     }
 

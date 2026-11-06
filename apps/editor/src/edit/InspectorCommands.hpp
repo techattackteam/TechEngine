@@ -4,6 +4,7 @@
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
+#include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <edit/FieldValue.hpp>
 
@@ -53,6 +54,29 @@ namespace TechEngine {
 
     private:
         bool writeRotation(const ComponentTypeRecord& record, void* component, const Quat& rotation) const;
+    };
+
+    enum class TransformPart : std::uint8_t { Position, Rotation, Scale };
+
+    class SetWorldAxisCommand final : public Command {
+    private:
+        EditSession* m_session = nullptr;
+        std::vector<Entity> m_entities;
+        Entity m_active;
+        Quat m_activeRotation = Quat(1.0f, 0.0f, 0.0f, 0.0f);
+        TransformPart m_part = TransformPart::Position;
+        std::uint32_t m_axis = 0;
+        float m_value = 0.0f;
+
+    public:
+        // A rotation value is in degrees. As in SetRotationAxisCommand, the active entity takes activeRotation as it is,
+        // and every other entity has its own world rotation decomposed, with only axis replaced.
+        SetWorldAxisCommand(EditSession& session, std::vector<Entity> entities, Entity active, Quat activeRotation, TransformPart part, std::uint32_t axis, float value);
+
+        void apply(Scene& scene) override;
+
+    private:
+        TransformValues getTargetWorld(Entity entity, const TransformValues& world) const;
     };
 
     class AddComponentCommand final : public Command {
