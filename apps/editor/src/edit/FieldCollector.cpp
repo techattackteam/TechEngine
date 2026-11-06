@@ -66,8 +66,9 @@ namespace TechEngine {
         appendRow(name, FieldKind::Entity, targetName);
     }
 
-    void FieldCollector::visitAsset(const std::string_view name, const ResourceId id) {
-        appendRow(name, FieldKind::Asset, id.value());
+    void FieldCollector::visitAsset(const std::string_view name, const StringId typeTag, ResourceId& id, ResourceSlotId&) {
+        appendRow(name, FieldKind::Asset, id);
+        m_rows->back().assetType = typeTag;
     }
 
     void FieldCollector::visitBulk(const std::string_view name, const std::size_t count) {

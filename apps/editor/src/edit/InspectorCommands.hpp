@@ -2,6 +2,9 @@
 
 #include <TechEngine/app/Command.hpp>
 #include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/resources/ResourceHandle.hpp>
+#include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
@@ -12,10 +15,13 @@
 #include <vector>
 
 namespace TechEngine {
+    class AssetIndex;
     class ComponentRegistry;
     class EditSession;
     class FieldSetter;
+    class ResourceCache;
     struct ComponentTypeRecord;
+    struct SceneBytes;
 
     class SetFieldCommand final : public Command {
     private:
@@ -33,6 +39,33 @@ namespace TechEngine {
 
     private:
         void logFieldAfterEdit(const Scene& scene, const ComponentTypeRecord& record, Entity entity, void* component, const FieldSetter& setter) const;
+    };
+
+    // Refused for an id the asset index does not hold, a server asset, an id of another asset type than the field's, and
+    // a scene with no cache entry. The asset loads before any field changes, so a failed load leaves every field as it was; the
+    // failed entry stays a dependency of the scene until the scene is released.
+    class SetAssetFieldCommand final : public Command {
+    private:
+        EditSession* m_session = nullptr;
+        const ComponentRegistry* m_registry = nullptr;
+        ResourceCache* m_resources = nullptr;
+        // Read at apply, because the startup load sets it after the sender is built.
+        const ResourceHandle<SceneBytes>* m_sceneHandle = nullptr;
+        const AssetIndex* m_assets = nullptr;
+        std::vector<Entity> m_entities;
+        ComponentTypeId m_component;
+        std::uint32_t m_field = 0;
+        ResourceId m_id;
+
+    public:
+        SetAssetFieldCommand(EditSession& session, const ComponentRegistry& registry, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, const AssetIndex& assets, std::vector<Entity> entities, ComponentTypeId component, std::uint32_t field, ResourceId id);
+
+        void apply(Scene& scene) override;
+
+    private:
+        // False, with a warning, when the field is not an asset field of assetType; false, silently, when every
+        // entity that holds the component already holds the id, so the scene gains no dependency it does not need.
+        bool changesAnyField(Scene& scene, const ComponentTypeRecord& record, StringId assetType) const;
     };
 
     class SetRotationAxisCommand final : public Command {

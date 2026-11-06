@@ -6,6 +6,9 @@ namespace TechEngine {
     FieldSetter::FieldSetter(const std::uint32_t field, const FieldValue& value) : m_target(field), m_value(&value) {
     }
 
+    FieldSetter::FieldSetter(const std::uint32_t field, const FieldValue& value, const ResourceSlotId assetHandle) : m_target(field), m_value(&value), m_assetHandle(assetHandle) {
+    }
+
     bool FieldSetter::wasApplied() const {
         return m_applied;
     }
@@ -87,8 +90,17 @@ namespace TechEngine {
         skipReadOnly();
     }
 
-    void FieldSetter::visitAsset(std::string_view, ResourceId) {
-        skipReadOnly();
+    void FieldSetter::visitAsset(std::string_view, StringId, ResourceId& id, ResourceSlotId& handle) {
+        if (m_target == m_index && m_assetHandle.valid()) {
+            const ResourceId* value = std::get_if<ResourceId>(m_value);
+            if (value != nullptr) {
+                m_oldValue = id;
+                id = *value;
+                handle = m_assetHandle;
+                m_applied = true;
+            }
+        }
+        m_index++;
     }
 
     void FieldSetter::visitBulk(std::string_view, std::size_t) {

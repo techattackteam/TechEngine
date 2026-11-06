@@ -435,7 +435,7 @@ TEST_CASE("each field row holds its kind and the value the inspector shows", "[e
     checkField(SAMPLE_LABEL_FIELD, "label", FieldKind::String, FieldValue{std::string("Sample")});
     checkField(SAMPLE_GROUP_FIELD, "group", FieldKind::StringId, FieldValue{TechEngine::StringId("Group").value()});
     checkField(SAMPLE_TARGET_FIELD, "target", FieldKind::Entity, FieldValue{std::string("Target")});
-    checkField(SAMPLE_ASSET_FIELD, "asset", FieldKind::Asset, FieldValue{std::uint64_t{0xA55E7}});
+    checkField(SAMPLE_ASSET_FIELD, "asset", FieldKind::Asset, FieldValue{TechEngine::ResourceId{0xA55E7}});
     checkField(SAMPLE_INDICES_FIELD, "indices", FieldKind::Bulk, FieldValue{std::uint64_t{3}});
     checkField(SAMPLE_FLOAT_FIELD, "floatField", FieldKind::Float, FieldValue{1.5f});
     checkField(SAMPLE_INT8_FIELD, "int8Field", FieldKind::Int8, FieldValue{std::int8_t{-8}});

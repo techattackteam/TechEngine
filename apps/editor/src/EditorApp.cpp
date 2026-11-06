@@ -39,16 +39,16 @@ namespace TechEngine {
     static constexpr std::string_view LAYOUT_PATH = "project://editorSettings/layout.ini";
 
     EditorApp::EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder, std::filesystem::path runtimePath)
-        : ClientApp(Role::Client, std::string(EDITOR_TITLE)), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)), m_runtimePath(std::move(runtimePath)), m_source(m_files, m_assets), m_commands(*this, m_session, m_registry, m_files),
-          m_panels(
-              m_commands,
-              m_consoleHistory,
-              [this] {
-                  exportProject();
-              },
-              [this] {
-                  runProject();
-              }),
+        : ClientApp(Role::Client, std::string(EDITOR_TITLE)), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)), m_runtimePath(std::move(runtimePath)), m_source(m_files, m_assets),
+          m_commands(*this, m_session, m_registry, m_files, m_resources, m_sceneHandle, m_assets), m_panels(
+                                                                                                       m_commands,
+                                                                                                       m_consoleHistory,
+                                                                                                       [this] {
+                                                                                                           exportProject();
+                                                                                                       },
+                                                                                                       [this] {
+                                                                                                           runProject();
+                                                                                                       }),
           m_console([this] {
               wakeMainThread();
           }) {
@@ -137,6 +137,7 @@ namespace TechEngine {
     void EditorApp::publishEdits(const Scene& scene) {
         EditorSnapshot snapshot;
         m_session.buildSnapshot(scene, m_registry, snapshot);
+        snapshot.assets = m_assets.getRecords();
         logSelectedTransform(scene, snapshot);
         m_snapshotSlot.publish(std::move(snapshot));
         wakeMainThread();
@@ -382,7 +383,13 @@ namespace TechEngine {
             id = existing->id;
         } else {
             id = writeStartupScene(scene);
-            m_session.setSceneFile(SceneFile{id, std::string(STARTUP_SCENE_PATH)});
+            scene.clear();
+            const std::error_code loadError = SceneAsset{id}.load(m_resources, scene, m_sceneHandle);
+            if (loadError) {
+                TE_LOGGER_ERROR("The startup scene {0:#018x} was written but does not load back, so the editor opens on an empty scene: {1}", id.value(), loadError.message());
+            } else {
+                m_session.setSceneFile(SceneFile{.id = id, .path = std::string(STARTUP_SCENE_PATH)});
+            }
         }
 
         m_project.setExportStartupScene(Role::Client, id);

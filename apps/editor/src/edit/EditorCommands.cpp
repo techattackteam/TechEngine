@@ -11,7 +11,8 @@
 #include <utility>
 
 namespace TechEngine {
-    EditorCommands::EditorCommands(App& app, EditSession& session, const ComponentRegistry& registry, FileAccess& files) : m_app(&app), m_session(&session), m_registry(&registry), m_files(&files) {
+    EditorCommands::EditorCommands(App& app, EditSession& session, const ComponentRegistry& registry, FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, const AssetIndex& assets)
+        : m_app(&app), m_session(&session), m_registry(&registry), m_files(&files), m_resources(&resources), m_sceneHandle(&sceneHandle), m_assets(&assets) {
     }
 
     void EditorCommands::create(const Entity parent) {
@@ -36,6 +37,10 @@ namespace TechEngine {
 
     void EditorCommands::setField(std::vector<Entity> entities, const ComponentTypeId component, const std::uint32_t field, FieldValue value) {
         submit(std::make_unique<SetFieldCommand>(*m_session, *m_registry, std::move(entities), component, field, std::move(value)));
+    }
+
+    void EditorCommands::setAssetField(std::vector<Entity> entities, const ComponentTypeId component, const std::uint32_t field, const ResourceId id) {
+        submit(std::make_unique<SetAssetFieldCommand>(*m_session, *m_registry, *m_resources, *m_sceneHandle, *m_assets, std::move(entities), component, field, id));
     }
 
     void EditorCommands::setRotationAxis(std::vector<Entity> entities, const Entity active, const Quat activeRotation, const std::uint32_t axis, const float degrees) {
