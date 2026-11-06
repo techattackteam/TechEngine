@@ -67,10 +67,11 @@ techengine_app(editor
           src/ui/widgets/PropertyTable.hpp
           src/ui/widgets/TextEditField.hpp
   DEPS    clientapp app core
-  LIBS    TechEngine::imgui
+  LIBS    TechEngine::imgui assimp::assimp
   LIBS_PRIVATE TechEngine::tomlplusplus
   TESTS   tests/EditorAppTests.cpp
           tests/assets/AssetIndexTests.cpp
+          tests/assets/AssimpTests.cpp
           tests/assets/LooseSourceTests.cpp
           tests/edit/ConsoleHistoryTests.cpp
           tests/edit/ConsoleLogTests.cpp
