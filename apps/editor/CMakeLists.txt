@@ -6,6 +6,7 @@ techengine_app(editor
   SOURCES src/EditorApp.cpp
           src/assets/AssetIndex.cpp
           src/assets/LooseSource.cpp
+          src/edit/ConsoleHistory.cpp
           src/edit/ConsoleLog.cpp
           src/edit/EditSession.cpp
           src/edit/EditorCommands.cpp
@@ -24,6 +25,7 @@ techengine_app(editor
           src/ui/EditorTheme.cpp
           src/ui/ImGuiBridge.cpp
           src/ui/PanelsManager.cpp
+          src/ui/panels/ConsolePanel.cpp
           src/ui/panels/GameViewPanel.cpp
           src/ui/panels/HierarchyPanel.cpp
           src/ui/panels/InspectorPanel.cpp
@@ -35,6 +37,7 @@ techengine_app(editor
   HEADERS src/EditorApp.hpp
           src/assets/AssetIndex.hpp
           src/assets/LooseSource.hpp
+          src/edit/ConsoleHistory.hpp
           src/edit/ConsoleLog.hpp
           src/edit/EditRecord.hpp
           src/edit/EditSession.hpp
@@ -54,6 +57,7 @@ techengine_app(editor
           src/ui/EditorTheme.hpp
           src/ui/ImGuiBridge.hpp
           src/ui/PanelsManager.hpp
+          src/ui/panels/ConsolePanel.hpp
           src/ui/panels/GameViewPanel.hpp
           src/ui/panels/HierarchyPanel.hpp
           src/ui/panels/InspectorPanel.hpp
@@ -68,6 +72,7 @@ techengine_app(editor
   TESTS   tests/EditorAppTests.cpp
           tests/assets/AssetIndexTests.cpp
           tests/assets/LooseSourceTests.cpp
+          tests/edit/ConsoleHistoryTests.cpp
           tests/edit/ConsoleLogTests.cpp
           tests/edit/EditSessionTests.cpp
           tests/edit/EditorCommandsTests.cpp

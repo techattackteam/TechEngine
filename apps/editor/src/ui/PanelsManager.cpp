@@ -11,9 +11,10 @@ namespace TechEngine {
     static constexpr float HIERARCHY_WIDTH_RATIO = 0.2f;
     // Split from what the hierarchy leaves, so 0.25 of the remaining 80% is a fifth of the window.
     static constexpr float INSPECTOR_WIDTH_RATIO = 0.25f;
+    static constexpr float CONSOLE_HEIGHT_RATIO = 0.3f;
 
-    PanelsManager::PanelsManager(EditorCommands& commands, std::function<void()> exportProject, std::function<void()> runProject)
-        : m_commands(&commands), m_exportProject(std::move(exportProject)), m_runProject(std::move(runProject)), m_hierarchy(commands), m_inspector(commands) {
+    PanelsManager::PanelsManager(EditorCommands& commands, ConsoleHistory& consoleHistory, std::function<void()> exportProject, std::function<void()> runProject)
+        : m_commands(&commands), m_exportProject(std::move(exportProject)), m_runProject(std::move(runProject)), m_hierarchy(commands), m_inspector(commands), m_console(consoleHistory) {
     }
 
     void PanelsManager::draw(const EditorSnapshot& snapshot, const bool canRun) {
@@ -26,6 +27,7 @@ namespace TechEngine {
         m_inspector.draw(snapshot);
         m_sceneView.draw(snapshot);
         m_gameView.draw(snapshot);
+        m_console.draw(snapshot);
     }
 
     void PanelsManager::drawMainMenuBar(const bool canRun) {
@@ -70,8 +72,10 @@ namespace TechEngine {
         ImGuiID centre = dockSpaceId;
         const ImGuiID left = ImGui::DockBuilderSplitNode(centre, ImGuiDir_Left, HIERARCHY_WIDTH_RATIO, nullptr, &centre);
         const ImGuiID right = ImGui::DockBuilderSplitNode(centre, ImGuiDir_Right, INSPECTOR_WIDTH_RATIO, nullptr, &centre);
+        const ImGuiID bottom = ImGui::DockBuilderSplitNode(centre, ImGuiDir_Down, CONSOLE_HEIGHT_RATIO, nullptr, &centre);
         ImGui::DockBuilderDockWindow(m_hierarchy.getName().c_str(), left);
         ImGui::DockBuilderDockWindow(m_inspector.getName().c_str(), right);
+        ImGui::DockBuilderDockWindow(m_console.getName().c_str(), bottom);
         ImGui::DockBuilderDockWindow(m_sceneView.getName().c_str(), centre);
         ImGui::DockBuilderDockWindow(m_gameView.getName().c_str(), centre);
         ImGui::DockBuilderFinish(dockSpaceId);

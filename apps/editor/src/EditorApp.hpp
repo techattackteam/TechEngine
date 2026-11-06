@@ -6,6 +6,7 @@
 
 #include <assets/AssetIndex.hpp>
 #include <assets/LooseSource.hpp>
+#include <edit/ConsoleHistory.hpp>
 #include <edit/ConsoleLog.hpp>
 #include <edit/EditSession.hpp>
 #include <edit/EditorCommands.hpp>
@@ -46,6 +47,8 @@ namespace TechEngine {
         EditorSnapshotSlot m_snapshotSlot;
         // Main thread only.
         EditorSnapshot m_snapshot;
+        // Main thread only.
+        ConsoleHistory m_consoleHistory;
         EditorCommands m_commands;
         PanelsManager m_panels;
         ClosePrompt m_closePrompt;

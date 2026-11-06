@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ui/panels/ConsolePanel.hpp>
 #include <ui/panels/GameViewPanel.hpp>
 #include <ui/panels/HierarchyPanel.hpp>
 #include <ui/panels/InspectorPanel.hpp>
@@ -10,6 +11,7 @@
 #include <functional>
 
 namespace TechEngine {
+    class ConsoleHistory;
     class EditorCommands;
     struct EditorSnapshot;
 
@@ -22,9 +24,10 @@ namespace TechEngine {
         InspectorPanel m_inspector;
         SceneViewPanel m_sceneView;
         GameViewPanel m_gameView;
+        ConsolePanel m_console;
 
     public:
-        PanelsManager(EditorCommands& commands, std::function<void()> exportProject, std::function<void()> runProject);
+        PanelsManager(EditorCommands& commands, ConsoleHistory& consoleHistory, std::function<void()> exportProject, std::function<void()> runProject);
 
         void draw(const EditorSnapshot& snapshot, bool canRun);
 
