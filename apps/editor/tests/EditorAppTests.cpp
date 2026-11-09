@@ -779,18 +779,6 @@ TEST_CASE("the startup load imports nothing into a folder that already exists", 
     editor.shutdown();
 }
 
-TEST_CASE("an editor destroyed without shutdown lets its startup import finish first", "[editor][window][import]") {
-    ScratchDirectory scratch{"editorDestroyedFinishesImport"};
-    writeProjectLayout(scratch);
-    scratch.writeFile(STARTUP_IMPORT_FILE, TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
-    {
-        EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
-        editor.bootstrap();
-    }
-
-    CHECK(std::filesystem::is_regular_file(scratch.root() / "assets" / "client" / "Sponza" / "Sponza.temodel"));
-}
-
 TEST_CASE("assets/client shadows assets/common", "[editor]") {
     ScratchDirectory scratch{"editorAssetsOverlay"};
     writeProjectLayout(scratch);

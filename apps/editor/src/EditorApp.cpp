@@ -61,7 +61,8 @@ namespace TechEngine {
     }
 
     EditorApp::~EditorApp() {
-        // An import job holds this app and its asset index, so none may still run when the members below are destroyed.
+        // Keeps a running import job off the members destroyed below. It comes too late for the job's log lines: the
+        // console wakes main through a virtual call, which races this destructor, so shutdown() must have waited first.
         waitForImports();
         stopImGui();
     }
