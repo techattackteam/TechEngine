@@ -6,6 +6,7 @@ techengine_app(editor
   SOURCES src/EditorApp.cpp
           src/assets/AssetIndex.cpp
           src/assets/LooseSource.cpp
+          src/assets/ModelImport.cpp
           src/edit/ConsoleHistory.cpp
           src/edit/ConsoleLog.cpp
           src/edit/EditSession.cpp
@@ -17,6 +18,7 @@ techengine_app(editor
           src/edit/FieldSetter.cpp
           src/edit/FieldValue.cpp
           src/edit/HierarchyCommands.cpp
+          src/edit/ImportModelCommand.cpp
           src/edit/InspectorCommands.cpp
           src/edit/SaveSceneCommand.cpp
           src/project/Project.cpp
@@ -37,6 +39,7 @@ techengine_app(editor
   HEADERS src/EditorApp.hpp
           src/assets/AssetIndex.hpp
           src/assets/LooseSource.hpp
+          src/assets/ModelImport.hpp
           src/edit/ConsoleHistory.hpp
           src/edit/ConsoleLog.hpp
           src/edit/EditRecord.hpp
@@ -49,6 +52,7 @@ techengine_app(editor
           src/edit/FieldSetter.hpp
           src/edit/FieldValue.hpp
           src/edit/HierarchyCommands.hpp
+          src/edit/ImportModelCommand.hpp
           src/edit/InspectorCommands.hpp
           src/edit/SaveSceneCommand.hpp
           src/project/Project.hpp
@@ -73,6 +77,7 @@ techengine_app(editor
           tests/assets/AssetIndexTests.cpp
           tests/assets/AssimpTests.cpp
           tests/assets/LooseSourceTests.cpp
+          tests/assets/ModelImportTests.cpp
           tests/edit/ConsoleHistoryTests.cpp
           tests/edit/ConsoleLogTests.cpp
           tests/edit/EditSessionTests.cpp
@@ -81,6 +86,7 @@ techengine_app(editor
           tests/edit/EditorSnapshotTests.cpp
           tests/edit/FieldValueTests.cpp
           tests/edit/HierarchyCommandsTests.cpp
+          tests/edit/ImportModelCommandTests.cpp
           tests/edit/InspectorCommandsTests.cpp
           tests/edit/SaveSceneCommandTests.cpp
           tests/project/ProjectErrorTests.cpp

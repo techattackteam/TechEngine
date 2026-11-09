@@ -45,6 +45,17 @@ namespace TechEngine {
 
     static constexpr std::uint64_t ASSET_PREFIX_SIZE = BLOB_HEADER_SIZE + 8;
 
+    ResourceId randomResourceId() {
+        std::random_device device;
+        ResourceId id;
+        do {
+            const std::uint64_t high = device();
+            const std::uint64_t low = device();
+            id = ResourceId((high << 32) | low);
+        } while (!id.valid());
+        return id;
+    }
+
     std::error_code AssetIndex::build(const FileAccess& files, const std::string_view assetsRoot) {
         m_records.clear();
         m_duplicates.clear();
@@ -109,13 +120,10 @@ namespace TechEngine {
     }
 
     ResourceId AssetIndex::generateId() {
-        std::random_device device;
         ResourceId id;
         do {
-            const std::uint64_t high = device();
-            const std::uint64_t low = device();
-            id = ResourceId((high << 32) | low);
-        } while (!id.valid() || isTaken(id));
+            id = randomResourceId();
+        } while (isTaken(id));
         return id;
     }
 
