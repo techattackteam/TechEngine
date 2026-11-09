@@ -5,7 +5,7 @@
 #include <type_traits>
 
 namespace TechEngine {
-    enum class ProjectError : std::uint8_t { ParseFailed = 1, SchemaInvalid, NoStartupScene, UnknownStartupScene, StartupSceneNotInTarget, UnknownReference };
+    enum class ProjectError : std::uint8_t { ParseFailed = 1, SchemaInvalid, NoStartupScene, UnknownStartupScene, StartupSceneNotInTarget, UnknownReference, SourceUnreadable, SourceHasNoMeshes, ImportFolderExists };
 
     const std::error_category& projectErrorCategory();
 

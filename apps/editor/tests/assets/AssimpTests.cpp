@@ -1,5 +1,4 @@
 #include <assimp/Importer.hpp>
-
 #include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("assimp reads glTF, FBX and OBJ", "[editor][assets][assimp]") {

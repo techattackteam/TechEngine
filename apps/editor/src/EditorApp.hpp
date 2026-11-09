@@ -2,6 +2,7 @@
 
 #include <TechEngine/app/Command.hpp>
 #include <TechEngine/clientapp/ClientApp.hpp>
+#include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/platform/process/Process.hpp>
 
 #include <assets/AssetIndex.hpp>
@@ -28,6 +29,8 @@
 #include <vector>
 
 namespace TechEngine {
+    struct ModelImportRequest;
+
     class EditorApp : public ClientApp {
     private:
         std::filesystem::path m_projectRoot;
@@ -40,6 +43,8 @@ namespace TechEngine {
         Project m_project;
         AssetIndex m_assets;
         LooseSource m_source;
+        // Written on the simulation thread while it runs; main reads it only before it starts and after it stops.
+        std::vector<BatchId> m_importBatches;
         ImGuiBridge m_imguiBridge;
         // Simulation thread only: commands and publishEdits read and write it there.
         EditSession m_session;
@@ -88,6 +93,11 @@ namespace TechEngine {
 
         std::unique_ptr<Command> makeRunCommand();
 
+        std::unique_ptr<Command> makeImportModelCommand(ModelImportRequest request);
+
+        // Never while the simulation thread runs.
+        void waitForImports();
+
         // Main thread only.
         void exportProject();
 
@@ -128,6 +138,8 @@ namespace TechEngine {
         ResourceId writeStartupScene(Scene& scene);
 
         ResourceId findOrCreateTriangleMesh();
+
+        void importStartupModel(Scene& scene);
 
         ResourceId createAsset(std::string_view path, StringId typeTag, Side side, const std::function<void(ResourceId, std::vector<std::byte>&)>& write);
 

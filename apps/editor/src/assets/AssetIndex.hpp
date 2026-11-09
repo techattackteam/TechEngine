@@ -25,6 +25,9 @@ namespace TechEngine {
         std::string secondPath;
     };
 
+    // Safe from any thread. Nothing checks the id against an index, so the caller does.
+    ResourceId randomResourceId();
+
     class AssetIndex {
     private:
         std::vector<AssetRecord> m_records;

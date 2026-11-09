@@ -1,6 +1,7 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/core/assets/ImportBlock.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/mesh/MeshRenderer.hpp>
 #include <TechEngine/core/resources/AssetRef.hpp>
@@ -12,7 +13,9 @@
 #include <TechEngine/platform/files/FileError.hpp>
 
 #include <EditorApp.hpp>
+#include <assets/ModelImport.hpp>
 #include <edit/ExportCommand.hpp>
+#include <edit/ImportModelCommand.hpp>
 #include <ui/EditorTheme.hpp>
 
 #include <imgui.h>
@@ -35,6 +38,9 @@ namespace TechEngine {
     static constexpr std::string_view MANIFEST_PATH = "project://project.toml";
     static constexpr std::string_view STARTUP_SCENE_PATH = "project://assets/common/Startup.tescene";
     static constexpr std::string_view TRIANGLE_MESH_PATH = "project://assets/client/Triangle.temesh";
+    static constexpr std::string_view STARTUP_IMPORT_PATH = "project://assets/client/Sponza.gltf";
+    static constexpr Side STARTUP_IMPORT_SIDE = Side::Client;
+    static constexpr ImportSettings STARTUP_IMPORT_SETTINGS{};
     static constexpr std::string_view LAYOUT_FOLDER = "project://editorSettings";
     static constexpr std::string_view LAYOUT_PATH = "project://editorSettings/layout.ini";
 
@@ -55,6 +61,9 @@ namespace TechEngine {
     }
 
     EditorApp::~EditorApp() {
+        // Keeps a running import job off the members destroyed below. It comes too late for the job's log lines: the
+        // console wakes main through a virtual call, which races this destructor, so shutdown() must have waited first.
+        waitForImports();
         stopImGui();
     }
 
@@ -118,6 +127,7 @@ namespace TechEngine {
         } else {
             createStartupScene(scene);
         }
+        importStartupModel(scene);
 
         // Stopped, the editor gets no batch until the first edit, so without this the panels start empty.
         publishEdits(scene);
@@ -191,6 +201,17 @@ namespace TechEngine {
         });
     }
 
+    std::unique_ptr<Command> EditorApp::makeImportModelCommand(ModelImportRequest request) {
+        return std::make_unique<ImportModelCommand>(*this, m_jobs, m_files, m_assets, m_importBatches, std::move(request));
+    }
+
+    void EditorApp::waitForImports() {
+        for (const BatchId batch: m_importBatches) {
+            m_jobs.wait(batch);
+        }
+        m_importBatches.clear();
+    }
+
     bool EditorApp::canRun() const {
         return !m_runPending && !m_runtime.isRunning();
     }
@@ -206,6 +227,8 @@ namespace TechEngine {
     }
 
     void EditorApp::shutdown() {
+        // Before the console stops, so a job's last log lines still reach it.
+        waitForImports();
         // Before stopImGui(): the client holds its wake lock while GLFW may log an error, and a
         // console write from another thread takes that lock to wake main.
         const std::error_code consoleError = m_console.stop();
@@ -429,6 +452,26 @@ namespace TechEngine {
             const Mesh mesh{id, {Vec3(-0.5f, -0.5f, 0.0f), Vec3(0.5f, -0.5f, 0.0f), Vec3(0.0f, 0.5f, 0.0f)}, {0, 1, 2}};
             mesh.write(bytes);
         });
+    }
+
+    void EditorApp::importStartupModel(Scene& scene) {
+        // TODO(E2): the asset browser's import replaces this hardcoded file.
+        FileStatus source;
+        const std::error_code sourceError = m_files.status(STARTUP_IMPORT_PATH, source);
+        if (sourceError) {
+            return;
+        }
+        FileStatus folder;
+        const std::error_code folderError = m_files.status(modelImportFolder(STARTUP_IMPORT_PATH), folder);
+        if (folderError != FileError::NotFound) {
+            return;
+        }
+
+        ModelImportRequest request;
+        request.sourcePath = std::string(STARTUP_IMPORT_PATH);
+        request.side = STARTUP_IMPORT_SIDE;
+        request.settings = STARTUP_IMPORT_SETTINGS;
+        makeImportModelCommand(std::move(request))->apply(scene);
     }
 
     ResourceId EditorApp::createAsset(const std::string_view path, const StringId typeTag, const Side side, const std::function<void(ResourceId, std::vector<std::byte>&)>& write) {
