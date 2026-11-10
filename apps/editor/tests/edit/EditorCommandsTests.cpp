@@ -15,6 +15,7 @@
 
 #include <assets/AssetIndex.hpp>
 #include <edit/EditSession.hpp>
+#include <edit/EditTestScene.hpp>
 #include <edit/EditorCommands.hpp>
 #include <edit/EditorSnapshot.hpp>
 #include <edit/FieldValue.hpp>
@@ -39,6 +40,7 @@ using TechEngine::EditorCommands;
 using TechEngine::EditorSnapshot;
 using TechEngine::Entity;
 using TechEngine::FieldValue;
+using TechEngineTests::findComponentRow;
 
 static constexpr std::chrono::seconds COMMAND_TIMEOUT{5};
 
@@ -52,14 +54,6 @@ struct CommandsProbeComponent {
         archive.field("value", component.value);
     }
 };
-
-static const TechEngine::ComponentRow* findProbeRow(const EditorSnapshot& snapshot, const TechEngine::ComponentTypeId type) {
-    const auto row = std::ranges::find(snapshot.components, type, &TechEngine::ComponentRow::type);
-    if (row == snapshot.components.end()) {
-        return nullptr;
-    }
-    return &*row;
-}
 
 class CommandsAppProbe : public TechEngine::App {
 private:
@@ -215,15 +209,15 @@ TEST_CASE("every sender method reaches the live scene through the running simula
     CHECK(steps[3].active == child);
     CHECK(steps[3].selectionSequence == 1);
     CHECK(steps[3].editRevision == steps[2].editRevision);
-    CHECK(findProbeRow(steps[3], transformType) != nullptr);
+    CHECK(findComponentRow(steps[3], transformType) != nullptr);
 
-    const TechEngine::ComponentRow* edited = findProbeRow(steps[4], transformType);
+    const TechEngine::ComponentRow* edited = findComponentRow(steps[4], transformType);
     REQUIRE(edited != nullptr);
     REQUIRE_FALSE(edited->fields.empty());
     CHECK(edited->fields[0].value == FieldValue{2.0f});
     CHECK(steps[4].editRevision > steps[3].editRevision);
-    CHECK(findProbeRow(steps[5], probeType) != nullptr);
-    CHECK(findProbeRow(steps[6], probeType) == nullptr);
+    CHECK(findComponentRow(steps[5], probeType) != nullptr);
+    CHECK(findComponentRow(steps[6], probeType) == nullptr);
 
     CHECK(steps[7].hierarchy.size() == 2);
     CHECK(std::ranges::all_of(steps[7].hierarchy, [](const TechEngine::HierarchyRow& row) {
@@ -236,7 +230,7 @@ TEST_CASE("every sender method reaches the live scene through the running simula
     CHECK(steps[8].selection == std::vector<Entity>{child});
     CHECK(steps[8].active == child);
 
-    const TechEngine::ComponentRow* rotated = findProbeRow(steps[9], transformType);
+    const TechEngine::ComponentRow* rotated = findComponentRow(steps[9], transformType);
     REQUIRE(rotated != nullptr);
     REQUIRE(rotated->fields.size() == 10);
     const TechEngine::Quat expected = TechEngine::Transform::fromEulerDegrees(TechEngine::Vec3(0.0f, 45.0f, 0.0f));

@@ -56,6 +56,7 @@ using TechEngineTests::SAMPLE_UINT16_FIELD;
 using TechEngineTests::SAMPLE_UINT32_FIELD;
 using TechEngineTests::SAMPLE_UINT64_FIELD;
 using TechEngineTests::SAMPLE_WEIGHT_FIELD;
+using TechEngineTests::setEuler;
 using TechEngineTests::TRANSFORM_FIELD_COUNT;
 
 static void checkRow(const HierarchyRow& row, const Entity entity, const std::uint32_t depth, const std::string_view name, const std::size_t childCount) {
@@ -482,10 +483,6 @@ TEST_CASE("a selection whose entity is gone publishes no components and nothing 
 
     CHECK(snapshot.components.empty());
     CHECK(snapshot.addable.empty());
-}
-
-static void setEuler(EditTestScene& edit, const Entity entity, const Vec3& degrees) {
-    REQUIRE(edit.scene.getComponent<Transform>(entity).setLocal({Vec3(0.0f), Transform::fromEulerDegrees(degrees), Vec3(1.0f)}));
 }
 
 TEST_CASE("with several selected the snapshot lists only the components they all have, and offers what one of them lacks", "[editor][edit]") {

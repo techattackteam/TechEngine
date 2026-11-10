@@ -37,15 +37,9 @@ namespace TechEngine {
             return false;
         }
 
-        std::size_t rootIndex = hierarchy.size();
-        for (std::size_t i = 0; i < hierarchy.size(); i++) {
-            if (hierarchy[i].entity == root) {
-                rootIndex = i;
-                break;
-            }
-        }
-
-        if (rootIndex == hierarchy.size()) {
+        std::size_t rootIndex = 0;
+        const bool found = findRow(root, rootIndex);
+        if (!found) {
             return false;
         }
 

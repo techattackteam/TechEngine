@@ -27,6 +27,12 @@ namespace TechEngine {
     // rotation.w's position in Transform's visit, so reordering that visit moves it.
     static constexpr std::uint32_t TRANSFORM_ROTATION_W_FIELD = 3;
 
+    static Quat withEulerAxis(const Quat& rotation, const int axis, const float degrees) {
+        Vec3 euler = Transform::toEulerDegrees(rotation);
+        euler[axis] = degrees;
+        return Transform::fromEulerDegrees(euler);
+    }
+
     SetFieldCommand::SetFieldCommand(EditSession& session, const ComponentRegistry& registry, std::vector<Entity> entities, const ComponentTypeId component, const std::uint32_t field, FieldValue value)
         : m_session(&session), m_registry(&registry), m_entities(std::move(entities)), m_component(component), m_field(field), m_value(std::move(value)) {
     }
@@ -243,9 +249,7 @@ namespace TechEngine {
             const Quat oldRotation = transform.getLocal().rotation;
             Quat rotation = m_activeRotation;
             if (entity != m_active) {
-                Vec3 euler = Transform::toEulerDegrees(oldRotation);
-                euler[static_cast<int>(m_axis)] = m_degrees;
-                rotation = Transform::fromEulerDegrees(euler);
+                rotation = withEulerAxis(oldRotation, static_cast<int>(m_axis), m_degrees);
             }
             if (rotation == oldRotation) {
                 continue;
@@ -340,9 +344,7 @@ namespace TechEngine {
                 if (entity == m_active) {
                     target.rotation = m_activeRotation;
                 } else {
-                    Vec3 euler = Transform::toEulerDegrees(world.rotation);
-                    euler[axis] = m_value;
-                    target.rotation = Transform::fromEulerDegrees(euler);
+                    target.rotation = withEulerAxis(world.rotation, axis, m_value);
                 }
                 break;
         }

@@ -483,12 +483,7 @@ namespace TechEngine {
         const std::error_code writeError = m_files.write(path, bytes);
         TE_CHECK(!writeError, "Failed to write {0}: {1}", path, writeError.message());
 
-        AssetRecord record;
-        record.id = id;
-        record.typeTag = typeTag;
-        record.side = side;
-        record.path = std::string(path);
-        m_assets.add(std::move(record));
+        m_assets.add(AssetRecord{id, typeTag, side, std::string(path)});
         return id;
     }
 
