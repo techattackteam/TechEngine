@@ -93,8 +93,19 @@ namespace TechEngine {
 
         template<typename T>
         void field(std::vector<T>& values) {
-            static_assert(!ReferenceField<T>, "A vector of Entity or AssetRef would bulk-copy live handles past the reference walk; hold single fields instead.");
-            writeSpan(std::span<const T>{values});
+            if constexpr (Visitable<T, Writer>) {
+                if (!TE_ENSURE(values.size() <= BLOB_MAX_COUNT, "Bulk vector of {0} elements exceeds the u32 count prefix; writing an empty vector", values.size())) {
+                    write(static_cast<std::uint32_t>(0));
+                    return;
+                }
+                write(static_cast<std::uint32_t>(values.size()));
+                for (T& value: values) {
+                    field(value);
+                }
+            } else {
+                static_assert(!ReferenceField<T>, "A vector of Entity or AssetRef would bulk-copy live handles past the reference walk; hold a vector of a visited type instead.");
+                writeSpan(std::span<const T>{values});
+            }
         }
 
         template<typename T>

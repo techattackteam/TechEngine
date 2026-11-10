@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 using TechEngine::AssetRef;
@@ -37,6 +38,19 @@ namespace {
     };
 
     struct ReferencedAsset {};
+
+    struct WalkedSlot {
+        std::string name;
+        AssetRef<ReferencedAsset> asset;
+
+        bool operator==(const WalkedSlot&) const = default;
+
+        template<typename Archive>
+        friend void visit(Archive& archive, WalkedSlot& value) {
+            archive.field("name", value.name);
+            archive.field("asset", value.asset);
+        }
+    };
 }
 
 static constexpr BlobKind TEST_KIND = {'T' | ('E' << 8) | ('S' << 16) | ('T' << 24), 3};
@@ -437,4 +451,126 @@ TEST_CASE("a truncated AssetRef fails soft and leaves the output untouched", "[c
 
     CHECK(reader.error() == ReadError::Truncated);
     CHECK(restored == original);
+}
+
+static std::vector<WalkedSlot> makeWalkedSlots() {
+    return {
+        WalkedSlot{"Body", AssetRef<ReferencedAsset>{ResourceId{0x000000000000B0D1}, ResourceHandle<ReferencedAsset>{4, 2}}},
+        WalkedSlot{"Glass", AssetRef<ReferencedAsset>{ResourceId{0x000000000000C1A5}, ResourceHandle<ReferencedAsset>{}}},
+    };
+}
+
+TEST_CASE("a vector of a visited type writes its count, then each element as its visit writes it", "[core][serialization]") {
+    std::vector<WalkedSlot> source = makeWalkedSlots();
+    std::vector<std::byte> buffer;
+    Writer writer{buffer};
+
+    writer.field(source);
+
+    std::vector<std::byte> expected;
+    Writer expectedWriter{expected};
+    expectedWriter.write(static_cast<std::uint32_t>(2));
+    expectedWriter.write(std::string_view{"Body"});
+    expectedWriter.write(static_cast<std::uint64_t>(0x000000000000B0D1));
+    expectedWriter.write(std::string_view{"Glass"});
+    expectedWriter.write(static_cast<std::uint64_t>(0x000000000000C1A5));
+    CHECK(buffer == expected);
+}
+
+TEST_CASE("a vector of a visited type round-trips element by element, and its references come back with empty handles", "[core][serialization]") {
+    std::vector<WalkedSlot> source = makeWalkedSlots();
+    std::vector<std::byte> buffer;
+    Writer writer{buffer};
+    writer.field(source);
+
+    Reader reader{buffer};
+    std::vector<WalkedSlot> restored;
+    reader.field(restored);
+
+    REQUIRE(reader.ok());
+    REQUIRE(restored.size() == 2);
+    CHECK(restored[0].name == "Body");
+    CHECK(restored[0].asset.id == ResourceId{0x000000000000B0D1});
+    CHECK_FALSE(restored[0].asset.handle.valid());
+    CHECK(restored[1].name == "Glass");
+    CHECK(restored[1].asset.id == ResourceId{0x000000000000C1A5});
+    CHECK_FALSE(restored[1].asset.handle.valid());
+    CHECK(reader.remaining() == 0);
+}
+
+TEST_CASE("an empty vector of a visited type writes only its count and reads back empty over a filled output", "[core][serialization]") {
+    std::vector<WalkedSlot> source;
+    std::vector<std::byte> buffer;
+    Writer writer{buffer};
+    writer.field(source);
+
+    std::vector<std::byte> countOnly;
+    Writer countWriter{countOnly};
+    countWriter.write(static_cast<std::uint32_t>(0));
+    REQUIRE(buffer == countOnly);
+
+    Reader reader{buffer};
+    std::vector<WalkedSlot> restored = makeWalkedSlots();
+    reader.field(restored);
+
+    REQUIRE(reader.ok());
+    CHECK(restored.empty());
+    CHECK(reader.remaining() == 0);
+}
+
+TEST_CASE("a walked vector whose count runs past its bytes fails soft instead of allocating the count", "[core][serialization]") {
+    std::vector<std::byte> buffer;
+    Writer writer{buffer};
+    writer.write(static_cast<std::uint32_t>(0xFFFFFFFF));
+
+    Reader reader{buffer};
+    std::vector<WalkedSlot> restored;
+    reader.field(restored);
+
+    CHECK_FALSE(reader.ok());
+    CHECK(reader.error() == ReadError::Truncated);
+}
+
+TEST_CASE("a walked vector cut inside its last element fails soft", "[core][serialization]") {
+    std::vector<WalkedSlot> source = makeWalkedSlots();
+    std::vector<std::byte> buffer;
+    Writer writer{buffer};
+    writer.field(source);
+    buffer.resize(buffer.size() - 1);
+
+    Reader reader{buffer};
+    std::vector<WalkedSlot> restored;
+    reader.field(restored);
+
+    CHECK_FALSE(reader.ok());
+    CHECK(reader.error() == ReadError::Truncated);
+}
+
+TEST_CASE("a walked vector with no room for its count fails soft and leaves the output untouched", "[core][serialization]") {
+    std::vector<std::byte> buffer;
+    Writer writer{buffer};
+    writer.write(static_cast<std::uint16_t>(2));
+
+    Reader reader{buffer};
+    std::vector<WalkedSlot> restored = makeWalkedSlots();
+    reader.field(restored);
+
+    CHECK(reader.error() == ReadError::Truncated);
+    CHECK(restored == makeWalkedSlots());
+}
+
+TEST_CASE("a walked vector that fails partway leaves the output untouched", "[core][serialization]") {
+    std::vector<WalkedSlot> source = makeWalkedSlots();
+    std::vector<std::byte> buffer;
+    Writer writer{buffer};
+    writer.field(source);
+    buffer.resize(buffer.size() - 1);
+
+    Reader reader{buffer};
+    const std::vector<WalkedSlot> before{WalkedSlot{"Kept", AssetRef<ReferencedAsset>{}}};
+    std::vector<WalkedSlot> restored = before;
+    reader.field(restored);
+
+    CHECK(reader.error() == ReadError::Truncated);
+    CHECK(restored == before);
 }

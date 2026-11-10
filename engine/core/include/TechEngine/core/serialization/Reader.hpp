@@ -15,6 +15,7 @@
 #include <string_view>
 #include <system_error>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace TechEngine {
@@ -106,8 +107,26 @@ namespace TechEngine {
 
         template<typename T>
         void field(std::vector<T>& values) {
-            static_assert(!ReferenceField<T>, "A vector of Entity or AssetRef would bulk-copy live handles past the reference walk; hold single fields instead.");
-            readSpan(values);
+            if constexpr (Visitable<T, Reader>) {
+                std::uint32_t count = 0;
+                read(count);
+                if (!ok()) {
+                    return;
+                }
+                std::vector<T> elements;
+                for (std::uint32_t i = 0; i < count; i++) {
+                    T element{};
+                    field(element);
+                    if (!ok()) {
+                        return;
+                    }
+                    elements.push_back(std::move(element));
+                }
+                values = std::move(elements);
+            } else {
+                static_assert(!ReferenceField<T>, "A vector of Entity or AssetRef would bulk-copy live handles past the reference walk; hold a vector of a visited type instead.");
+                readSpan(values);
+            }
         }
 
         template<typename T>

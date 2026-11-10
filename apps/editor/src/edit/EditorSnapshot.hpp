@@ -37,6 +37,9 @@ namespace TechEngine {
         ComponentTypeId type;
         std::string tag;
         bool removable = false;
+        // Set when a selected entity's walk gives another number of rows than the active one's. The rows' own mixed
+        // flags compare only the rows both have, so they miss it.
+        bool fieldCountMixed = false;
         std::vector<FieldRow> fields;
     };
 

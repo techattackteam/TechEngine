@@ -34,6 +34,7 @@ using Catch::Approx;
 using TechEngine::AssetRecord;
 using TechEngine::DestroyEntityCommand;
 using TechEngine::Entity;
+using TechEngine::MaterialSlot;
 using TechEngine::MeshRenderer;
 using TechEngine::Model;
 using TechEngine::MODEL_NO_PARENT;
@@ -325,6 +326,20 @@ TEST_CASE("a one-node model whose root carries a mesh places one entity with its
     CHECK(fixture.edit.scene.getComponent<Name>(roots[0]).value == "Kart");
     checkLocal(fixture.edit, roots[0], BODY_LOCAL);
     checkPlacedMesh(fixture.edit, roots[0], EDIT_MESH_ID);
+}
+
+TEST_CASE("placing a model fills each renderer's slot list from its mesh's slots and defaults", "[editor][edit][commands][place]") {
+    PlaceFixture fixture{"placeFillsSlots"};
+    fixture.addModel(makeKart(), KART_MODEL_PATH);
+
+    fixture.place(KART_MODEL_PATH);
+
+    const std::vector<Entity> roots = fixture.edit.scene.getRoots();
+    REQUIRE(roots.size() == 1);
+    const PlacedKart kart = walkKart(fixture.edit, roots[0]);
+    const std::vector<MaterialSlot> expected{MaterialSlot{"Slot 0", {}}};
+    CHECK(fixture.edit.scene.getComponent<MeshRenderer>(kart.body).slots == expected);
+    CHECK(fixture.edit.scene.getComponent<MeshRenderer>(kart.wheel).slots == expected);
 }
 
 TEST_CASE("a model with a mesh that fails to load places nothing", "[editor][edit][commands][place]") {

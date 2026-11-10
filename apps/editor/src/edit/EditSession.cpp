@@ -168,6 +168,9 @@ namespace TechEngine {
             otherFields.clear();
             FieldCollector collector(scene, otherFields);
             record.visitFields(collector, const_cast<void*>(scene.componentRaw(entity, record.id)));
+            if (otherFields.size() != row.fields.size()) {
+                row.fieldCountMixed = true;
+            }
             for (std::size_t i = 0; i < row.fields.size() && i < otherFields.size(); i++) {
                 if (otherFields[i].value != row.fields[i].value) {
                     row.fields[i].mixed = true;

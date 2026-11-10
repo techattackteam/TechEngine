@@ -16,6 +16,7 @@
 #include <assets/ModelImport.hpp>
 #include <edit/ExportCommand.hpp>
 #include <edit/ImportModelCommand.hpp>
+#include <edit/MaterialSlotRebuild.hpp>
 #include <ui/EditorTheme.hpp>
 
 #include <imgui.h>
@@ -116,6 +117,7 @@ namespace TechEngine {
                 TE_LOGGER_ERROR("The startup scene {0:#018x} does not load, so the editor opens on an empty scene: {1}", startupScene.value(), loadError.message());
             } else {
                 TE_LOGGER_INFO("Opened the startup scene {0:#018x} with {1} root entities", startupScene.value(), scene.getRoots().size());
+                rebuildMaterialSlots(scene, m_resources, m_sceneHandle);
                 AssetRecord record;
                 const bool indexed = m_assets.find(startupScene, record);
                 if (indexed) {
@@ -411,6 +413,7 @@ namespace TechEngine {
             if (loadError) {
                 TE_LOGGER_ERROR("The startup scene {0:#018x} was written but does not load back, so the editor opens on an empty scene: {1}", id.value(), loadError.message());
             } else {
+                rebuildMaterialSlots(scene, m_resources, m_sceneHandle);
                 m_session.setSceneFile(SceneFile{.id = id, .path = std::string(STARTUP_SCENE_PATH)});
             }
         }

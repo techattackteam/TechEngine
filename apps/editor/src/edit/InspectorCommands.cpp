@@ -1,4 +1,5 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/core/mesh/MeshRenderer.hpp>
 #include <TechEngine/core/resources/ResourceCache.hpp>
 #include <TechEngine/core/resources/Side.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
@@ -16,6 +17,7 @@
 #include <edit/FieldSetter.hpp>
 #include <edit/FieldValue.hpp>
 #include <edit/InspectorCommands.hpp>
+#include <edit/MaterialSlotRebuild.hpp>
 
 #include <array>
 #include <string>
@@ -157,7 +159,7 @@ namespace TechEngine {
         }
 
         const FieldValue value = m_id;
-        bool changed = false;
+        std::vector<Entity> changed;
         for (const Entity entity: m_entities) {
             if (!entity.valid()) {
                 TE_LOGGER_WARN("SetAssetFieldCommand applied with an invalid entity");
@@ -186,10 +188,14 @@ namespace TechEngine {
             edit.field = m_field;
             edit.oldValue = setter.getOldValue();
             m_session->record(std::move(edit));
-            changed = true;
+            changed.push_back(entity);
         }
 
-        if (changed) {
+        if (!changed.empty()) {
+            // A material set rebuilds too, which changes nothing, because its slot names are the mesh's already.
+            if (m_component == componentTypeId<MeshRenderer>()) {
+                rebuildMaterialSlots(scene, *m_resources, *m_sceneHandle, changed);
+            }
             m_session->recordSceneChange();
         }
     }

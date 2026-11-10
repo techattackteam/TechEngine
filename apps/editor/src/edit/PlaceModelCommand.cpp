@@ -13,6 +13,7 @@
 
 #include <assets/AssetIndex.hpp>
 #include <edit/EditSession.hpp>
+#include <edit/MaterialSlotRebuild.hpp>
 #include <edit/PlaceModelCommand.hpp>
 
 #include <algorithm>
@@ -50,6 +51,7 @@ namespace TechEngine {
             return;
         }
 
+        rebuildMaterialSlots(scene, *m_resources, *m_sceneHandle, created);
         TE_LOGGER_INFO("Placed {0}: {1} entities", m_path, created.size());
         m_session->recordSceneChange();
     }

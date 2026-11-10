@@ -11,6 +11,7 @@ techengine_module(core
           src/jobs/JobSystem.cpp
           src/jobs/ThreadRegistration.cpp
           src/mesh/Mesh.cpp
+          src/mesh/MeshRenderer.cpp
           src/model/Model.cpp
           src/resources/BootRecord.cpp
           src/resources/PackReader.cpp
@@ -120,6 +121,7 @@ if(TE_BUILD_TESTS)
           tests/events/EventStreamManagerTests.cpp
           tests/jobs/DedicatedThreadTests.cpp
           tests/jobs/JobSystemTests.cpp
+          tests/mesh/MeshRendererTests.cpp
           tests/mesh/MeshTests.cpp
           tests/model/ModelTests.cpp
           tests/resources/BootRecordTests.cpp
