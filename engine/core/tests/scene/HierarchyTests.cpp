@@ -1,17 +1,31 @@
+#include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
+#include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
+#include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <scene/SceneTestRegistry.hpp>
 
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 static_assert(!TechEngineTests::WritableSceneComponent<TechEngine::Hierarchy>);
 static_assert(!TechEngineTests::AddableSceneComponent<TechEngine::Hierarchy>);
 static_assert(!TechEngineTests::RemovableSceneComponent<TechEngine::Hierarchy>);
+
+struct HierarchyTestMarker {
+    std::uint32_t value = 0;
+};
+
+static void registerHierarchyTestComponents(TechEngine::ComponentRegistry& registry) {
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    registry.registerComponent<HierarchyTestMarker>("Tests.HierarchyTestMarker");
+}
 
 TEST_CASE("hierarchy is publicly registerable and readable through Scene", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
@@ -216,7 +230,12 @@ TEST_CASE("clearing a scene invalidates hierarchy links and entity handles", "[c
     REQUIRE(scene.getChildren(replacement).empty());
     REQUIRE(scene.getRoots() == std::vector<TechEngine::Entity>{replacement});
     REQUIRE_FALSE(scene.unparent(replacement));
-    REQUIRE_FALSE(scene.reorderChild(replacement, 0));
+    REQUIRE(scene.reorderChild(replacement, 0));
+    REQUIRE_FALSE(scene.reorderChild(replacement, 1));
+
+    const TechEngine::Entity second = scene.createEntity();
+    const std::vector<TechEngine::Entity> expectedRoots{replacement, second};
+    REQUIRE(scene.getRoots() == expectedRoots);
 }
 
 TEST_CASE("deep subtree destruction does not depend on recursion depth", "[core][scene]") {
@@ -332,4 +351,243 @@ TEST_CASE("a wide parent keeps the order its children were appended in", "[core]
     }
 
     REQUIRE(scene.getChildren(root) == expected);
+}
+
+TEST_CASE("a root that gains or loses a component keeps its position", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    registerHierarchyTestComponents(registry);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity first = scene.createEntity();
+    const TechEngine::Entity second = scene.createEntity();
+    const TechEngine::Entity third = scene.createEntity();
+    const std::vector<TechEngine::Entity> expected{first, second, third};
+
+    scene.addComponent<HierarchyTestMarker>(first);
+    REQUIRE(scene.getRoots() == expected);
+
+    scene.addComponent<HierarchyTestMarker>(second);
+    scene.removeComponent<HierarchyTestMarker>(first);
+    REQUIRE(scene.getRoots() == expected);
+
+    REQUIRE(scene.addComponentRaw(third, TechEngine::componentTypeId<HierarchyTestMarker>()));
+    REQUIRE(scene.removeComponentRaw(second, TechEngine::componentTypeId<HierarchyTestMarker>()));
+    REQUIRE(scene.getRoots() == expected);
+}
+
+TEST_CASE("destroying a root leaves the other roots in order", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity first = scene.createEntity();
+    const TechEngine::Entity second = scene.createEntity();
+    const TechEngine::Entity third = scene.createEntity();
+    const TechEngine::Entity fourth = scene.createEntity();
+    const TechEngine::Entity secondChild = scene.createEntity();
+    REQUIRE(scene.setParent(secondChild, second, 0));
+
+    SECTION("a middle root with a child") {
+        REQUIRE(scene.destroyEntity(second));
+
+        REQUIRE_FALSE(scene.contains(secondChild));
+        const std::vector<TechEngine::Entity> expected{first, third, fourth};
+        REQUIRE(scene.getRoots() == expected);
+    }
+
+    SECTION("the first root") {
+        REQUIRE(scene.destroyEntity(first));
+
+        const std::vector<TechEngine::Entity> expected{second, third, fourth};
+        REQUIRE(scene.getRoots() == expected);
+    }
+
+    SECTION("the last root, and a new entity takes its place at the end") {
+        REQUIRE(scene.destroyEntity(fourth));
+        const TechEngine::Entity appended = scene.createEntity();
+
+        const std::vector<TechEngine::Entity> expected{first, second, third, appended};
+        REQUIRE(scene.getRoots() == expected);
+    }
+
+    SECTION("a reused slot joins the roots at the end, not at its old position") {
+        REQUIRE(scene.destroyEntity(first));
+        const TechEngine::Entity replacement = scene.createEntity();
+
+        REQUIRE(replacement.index == first.index);
+        const std::vector<TechEngine::Entity> expected{second, third, fourth, replacement};
+        REQUIRE(scene.getRoots() == expected);
+    }
+
+    SECTION("every root") {
+        REQUIRE(scene.destroyEntity(third));
+        REQUIRE(scene.destroyEntity(first));
+        REQUIRE(scene.destroyEntity(fourth));
+        REQUIRE(scene.destroyEntity(second));
+        REQUIRE(scene.getRoots().empty());
+
+        const TechEngine::Entity only = scene.createEntity();
+        REQUIRE(scene.getRoots() == std::vector<TechEngine::Entity>{only});
+    }
+}
+
+TEST_CASE("a root that becomes a child leaves the roots, and unparenting appends it at the end", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity first = scene.createEntity();
+    const TechEngine::Entity second = scene.createEntity();
+    const TechEngine::Entity third = scene.createEntity();
+
+    REQUIRE(scene.setParent(second, first, 0));
+    const std::vector<TechEngine::Entity> withoutSecond{first, third};
+    REQUIRE(scene.getRoots() == withoutSecond);
+
+    REQUIRE(scene.unparent(second));
+    const std::vector<TechEngine::Entity> secondLast{first, third, second};
+    REQUIRE(scene.getRoots() == secondLast);
+
+    REQUIRE(scene.setParent(third, second, 0, TechEngine::ReparentMode::PreserveWorld));
+    REQUIRE(scene.unparent(third, TechEngine::ReparentMode::PreserveWorld));
+    const std::vector<TechEngine::Entity> thirdLast{first, second, third};
+    REQUIRE(scene.getRoots() == thirdLast);
+}
+
+TEST_CASE("reorderChild moves a root among the roots and refuses a position past the end", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity first = scene.createEntity();
+    const TechEngine::Entity second = scene.createEntity();
+    const TechEngine::Entity third = scene.createEntity();
+
+    REQUIRE(scene.reorderChild(third, 0));
+    const std::vector<TechEngine::Entity> thirdFirst{third, first, second};
+    REQUIRE(scene.getRoots() == thirdFirst);
+
+    REQUIRE(scene.reorderChild(third, 2));
+    const std::vector<TechEngine::Entity> original{first, second, third};
+    REQUIRE(scene.getRoots() == original);
+
+    REQUIRE(scene.reorderChild(first, 1));
+    const std::vector<TechEngine::Entity> firstMiddle{second, first, third};
+    REQUIRE(scene.getRoots() == firstMiddle);
+
+    REQUIRE_FALSE(scene.reorderChild(first, 3));
+    REQUIRE(scene.getRoots() == firstMiddle);
+
+    REQUIRE(scene.reorderChild(third, 0));
+    const TechEngine::Entity appended = scene.createEntity();
+    const std::vector<TechEngine::Entity> afterAppend{third, second, first, appended};
+    REQUIRE(scene.getRoots() == afterAppend);
+}
+
+TEST_CASE("unparent at a position inserts the child there among the roots", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity parent = scene.createEntity();
+    const TechEngine::Entity other = scene.createEntity();
+    const TechEngine::Entity child = scene.createEntity();
+    REQUIRE(scene.setParent(child, parent, 0));
+
+    SECTION("keeping its local transform") {
+        REQUIRE(scene.unparent(child, 1, TechEngine::ReparentMode::PreserveLocal));
+
+        REQUIRE_FALSE(scene.getParent(child).valid());
+        REQUIRE(scene.getChildren(parent).empty());
+        const std::vector<TechEngine::Entity> expected{parent, child, other};
+        REQUIRE(scene.getRoots() == expected);
+    }
+
+    SECTION("keeping its world transform") {
+        TechEngine::TransformValues parentLocal;
+        parentLocal.position = TechEngine::Vec3(5.0f, 0.0f, 0.0f);
+        REQUIRE(scene.getComponent<TechEngine::Transform>(parent).setLocal(parentLocal));
+        TechEngine::TransformValues childLocal;
+        childLocal.position = TechEngine::Vec3(1.0f, 2.0f, 0.0f);
+        REQUIRE(scene.getComponent<TechEngine::Transform>(child).setLocal(childLocal));
+
+        REQUIRE(scene.unparent(child, 0, TechEngine::ReparentMode::PreserveWorld));
+
+        const std::vector<TechEngine::Entity> expected{child, parent, other};
+        REQUIRE(scene.getRoots() == expected);
+        const TechEngine::Vec3 position = scene.getComponent<TechEngine::Transform>(child).getLocal().position;
+        REQUIRE(position.x == Catch::Approx(6.0f).margin(1e-5));
+        REQUIRE(position.y == Catch::Approx(2.0f).margin(1e-5));
+        REQUIRE(position.z == Catch::Approx(0.0f).margin(1e-5));
+    }
+
+    SECTION("at the end") {
+        REQUIRE(scene.unparent(child, 2, TechEngine::ReparentMode::PreserveLocal));
+
+        const std::vector<TechEngine::Entity> expected{parent, other, child};
+        REQUIRE(scene.getRoots() == expected);
+    }
+
+    SECTION("a position past the end changes nothing") {
+        REQUIRE_FALSE(scene.unparent(child, 3, TechEngine::ReparentMode::PreserveLocal));
+        REQUIRE_FALSE(scene.unparent(child, 3, TechEngine::ReparentMode::PreserveWorld));
+
+        REQUIRE(scene.getParent(child) == parent);
+        REQUIRE(scene.getChildren(parent) == std::vector<TechEngine::Entity>{child});
+        const std::vector<TechEngine::Entity> expected{parent, other};
+        REQUIRE(scene.getRoots() == expected);
+    }
+
+    SECTION("a root is refused, since it has no parent to leave") {
+        REQUIRE_FALSE(scene.unparent(other, 0, TechEngine::ReparentMode::PreserveLocal));
+
+        const std::vector<TechEngine::Entity> expected{parent, other};
+        REQUIRE(scene.getRoots() == expected);
+    }
+}
+
+TEST_CASE("many roots keep their order through component changes, destruction and moves", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    registerHierarchyTestComponents(registry);
+    TechEngine::Scene scene(registry);
+
+    std::vector<TechEngine::Entity> expected;
+    for (std::size_t i = 0; i < 512; i++) {
+        expected.push_back(scene.createEntity());
+    }
+
+    for (std::size_t i = 0; i < expected.size(); i += 3) {
+        scene.addComponent<HierarchyTestMarker>(expected[i]);
+    }
+    REQUIRE(scene.getRoots() == expected);
+
+    std::vector<TechEngine::Entity> survivors;
+    for (std::size_t i = 0; i < expected.size(); i++) {
+        if (i % 5 == 0) {
+            REQUIRE(scene.destroyEntity(expected[i]));
+        } else {
+            survivors.push_back(expected[i]);
+        }
+    }
+    REQUIRE(scene.getRoots() == survivors);
+
+    std::size_t removed = 0;
+    for (std::size_t i = 0; i < survivors.size(); i += 2) {
+        if (scene.hasComponent<HierarchyTestMarker>(survivors[i])) {
+            scene.removeComponent<HierarchyTestMarker>(survivors[i]);
+            removed++;
+        }
+    }
+    REQUIRE(removed > 0);
+    REQUIRE(scene.getRoots() == survivors);
+
+    const TechEngine::Entity holder = survivors.front();
+    std::vector<TechEngine::Entity> roots;
+    std::vector<TechEngine::Entity> children;
+    for (std::size_t i = 1; i < survivors.size(); i++) {
+        if (i % 2 == 0) {
+            REQUIRE(scene.setParent(survivors[i], holder, children.size()));
+            children.push_back(survivors[i]);
+        } else {
+            roots.push_back(survivors[i]);
+        }
+    }
+    roots.insert(roots.begin(), holder);
+    REQUIRE(scene.getRoots() == roots);
+    REQUIRE(scene.getChildren(holder) == children);
 }

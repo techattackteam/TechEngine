@@ -8,6 +8,7 @@
 #include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/scene/Query.hpp>
 #include <TechEngine/core/scene/SceneCommandBuffer.hpp>
+#include <TechEngine/core/scene/components/Hierarchy.hpp>
 
 #include <concepts>
 #include <cstddef>
@@ -21,7 +22,6 @@
 namespace TechEngine {
     class ArchetypeStorage;
     class ComponentRegistry;
-    class Hierarchy;
     struct Name;
     class ScheduleAccess;
     class Transform;
@@ -38,6 +38,8 @@ namespace TechEngine {
 
         ComponentRegistry* m_registry = nullptr;
         std::unique_ptr<ArchetypeStorage> m_storage;
+        // Roots are linked as siblings, like children; this holds their first, last and count, and its other links stay null.
+        Hierarchy m_roots;
         internal::QuerySource* m_querySource = nullptr;
         std::optional<EventStreamManager> m_events;
 
@@ -179,6 +181,8 @@ namespace TechEngine {
 
         bool unparent(Entity child, ReparentMode mode);
 
+        bool unparent(Entity child, std::size_t position, ReparentMode mode);
+
         bool reorderChild(Entity child, std::size_t position);
 
     private:
@@ -189,6 +193,20 @@ namespace TechEngine {
         Hierarchy* getHierarchy(Entity entity);
 
         const Hierarchy* getHierarchy(Entity entity) const;
+
+        Hierarchy* getChildList(Entity parent);
+
+        const Hierarchy* getChildList(Entity parent) const;
+
+        std::vector<Entity> collectChildren(const Hierarchy& list) const;
+
+        bool hasConsistentLinks(Entity child, const Hierarchy& childHierarchy) const;
+
+        void unlinkChild(Hierarchy& childHierarchy);
+
+        void linkChild(Entity child, Hierarchy& childHierarchy, Entity parent, Entity before, Entity after);
+
+        bool moveChild(Entity child, Entity parent, std::size_t position);
 
         bool ownsTransform(Entity entity, const Transform* transform) const;
 

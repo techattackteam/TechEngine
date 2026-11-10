@@ -1154,3 +1154,57 @@ TEST_CASE("a scene asset with no Name blocks loads every entity with the default
     CHECK(loaded.getComponent<Name>(children[0]).value == "Entity");
     CHECK(loaded.getComponent<Name>(children[1]).value == "Entity");
 }
+
+static std::vector<std::string> getRootNames(const Scene& scene) {
+    std::vector<std::string> names;
+    for (const Entity root: scene.getRoots()) {
+        names.push_back(scene.getComponent<Name>(root).value);
+    }
+    return names;
+}
+
+TEST_CASE("a save and a read keep the order of the roots", "[core][scene]") {
+    ComponentRegistry writeRegistry;
+    TechEngineTests::registerBuiltInSceneComponents(writeRegistry);
+    writeRegistry.registerComponent<SceneAssetHealth>("Tests.SceneAssetHealth");
+    Scene source(writeRegistry);
+    const Entity first = source.createEntity();
+    const Entity second = source.createEntity();
+    const Entity third = source.createEntity();
+    const Entity fourth = source.createEntity();
+    const Entity removed = source.createEntity();
+    const Entity child = source.createEntity();
+    source.getComponent<Name>(first).value = "First";
+    source.getComponent<Name>(second).value = "Second";
+    source.getComponent<Name>(third).value = "Third";
+    source.getComponent<Name>(fourth).value = "Fourth";
+    source.getComponent<Name>(child).value = "Child";
+    source.addComponent<SceneAssetHealth>(first, SceneAssetHealth{10});
+    REQUIRE(source.setParent(child, second, 0));
+    REQUIRE(source.destroyEntity(removed));
+    REQUIRE(source.reorderChild(fourth, 1));
+    const std::vector<std::string> expected{"First", "Fourth", "Second", "Third"};
+    REQUIRE(getRootNames(source) == expected);
+
+    std::vector<std::byte> bytes;
+    SceneAsset{SCENE_ASSET_ID}.write(source, bytes);
+    ComponentRegistry readRegistry;
+    TechEngineTests::registerBuiltInSceneComponents(readRegistry);
+    readRegistry.registerComponent<SceneAssetHealth>("Tests.SceneAssetHealth");
+    Scene loaded(readRegistry);
+    SceneAsset asset;
+    const std::error_code readError = asset.read(bytes, loaded);
+
+    REQUIRE(!readError);
+    CHECK(getRootNames(loaded) == expected);
+    const std::vector<Entity> roots = loaded.getRoots();
+    REQUIRE(roots.size() == 4);
+    CHECK(loaded.getComponent<SceneAssetHealth>(roots[0]).value == 10);
+    const std::vector<Entity> children = loaded.getChildren(roots[2]);
+    REQUIRE(children.size() == 1);
+    CHECK(loaded.getComponent<Name>(children[0]).value == "Child");
+
+    std::vector<std::byte> rewritten;
+    SceneAsset{SCENE_ASSET_ID}.write(loaded, rewritten);
+    CHECK(rewritten == bytes);
+}
