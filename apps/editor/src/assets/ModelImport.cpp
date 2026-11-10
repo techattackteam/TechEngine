@@ -239,15 +239,6 @@ namespace TechEngine {
         return folder.substr(slash + 1);
     }
 
-    static AssetRecord makeRecord(const ResourceId id, const StringId typeTag, const Side side, std::string path) {
-        AssetRecord record;
-        record.id = id;
-        record.typeTag = typeTag;
-        record.side = side;
-        record.path = std::move(path);
-        return record;
-    }
-
     static std::error_code writeOutputs(FileAccess& files, const Model& model, const std::vector<SourceMesh>& meshes, const Side side, const std::string& folder, std::vector<AssetRecord>& records) {
         const std::string meshFolder = folder + "/" + std::string(MESH_FOLDER);
         const std::error_code meshFolderError = files.createDirectory(meshFolder);
@@ -267,7 +258,7 @@ namespace TechEngine {
             if (meshError) {
                 return meshError;
             }
-            records.push_back(makeRecord(mesh.mesh.id, MESH_TYPE_TAG, side, std::move(path)));
+            records.push_back(AssetRecord{mesh.mesh.id, MESH_TYPE_TAG, side, std::move(path)});
         }
 
         // The model is written last, so a folder that holds a model holds every mesh the model names.
@@ -278,7 +269,7 @@ namespace TechEngine {
         if (modelError) {
             return modelError;
         }
-        records.insert(records.begin(), makeRecord(model.id, MODEL_TYPE_TAG, side, std::move(modelPath)));
+        records.insert(records.begin(), AssetRecord{model.id, MODEL_TYPE_TAG, side, std::move(modelPath)});
         return {};
     }
 
