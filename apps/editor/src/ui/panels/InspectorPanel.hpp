@@ -60,6 +60,8 @@ namespace TechEngine {
 
         void drawMeshRenderer(const EditorSnapshot& snapshot, const ComponentRow& component);
 
+        static bool hasMeshRendererRows(const ComponentRow& component);
+
         void drawFields(const EditorSnapshot& snapshot, const ComponentRow& component);
 
         void drawField(const EditorSnapshot& snapshot, ComponentTypeId component, const FieldRow& field);

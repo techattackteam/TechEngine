@@ -13,6 +13,7 @@
 
 #include <assets/AssetIndex.hpp>
 #include <edit/EditSession.hpp>
+#include <edit/MaterialSlotRebuild.hpp>
 #include <edit/PlaceModelCommand.hpp>
 
 #include <algorithm>
@@ -48,6 +49,11 @@ namespace TechEngine {
         const bool built = buildEntities(scene, model, meshes, created);
         if (!built) {
             return;
+        }
+
+        const std::error_code slotError = rebuildMaterialSlots(scene, *m_resources, *m_sceneHandle, created);
+        if (slotError) {
+            TE_LOGGER_WARN("Placed {0}, but the scene does not hold every default material of its meshes: {1}", m_path, slotError.message());
         }
 
         TE_LOGGER_INFO("Placed {0}: {1} entities", m_path, created.size());

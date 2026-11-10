@@ -28,7 +28,7 @@
 namespace TechEngine {
     static constexpr const char* COMPONENT_MENU = "InspectorComponentMenu";
     static constexpr const char* ADD_COMPONENT_MENU = "InspectorAddComponentMenu";
-    static constexpr std::array<const char*, 5> FIXED_LABELS = {"Mode", "Translation", "Rotation", "Scale", "Mesh"};
+    static constexpr std::array<const char*, 6> FIXED_LABELS = {"Mode", "Translation", "Rotation", "Scale", "Mesh", "Materials"};
     // Half of the 0.01 that "%.2f" shows: anything closer to zero would print as -0.00.
     static constexpr float EULER_DISPLAY_EPSILON = 0.005f;
     // A world rotation comes back as parent times a decomposed local one, so it never matches the one sent exactly.
@@ -42,6 +42,8 @@ namespace TechEngine {
     static constexpr std::uint32_t TRANSFORM_SCALE_FIELD = 7;
     static constexpr std::size_t TRANSFORM_FIELD_COUNT = 10;
     static constexpr std::size_t MESH_RENDERER_MESH_FIELD = 0;
+    static constexpr std::size_t MESH_RENDERER_FIRST_SLOT_FIELD = 1;
+    static constexpr std::size_t MESH_RENDERER_SLOT_FIELD_COUNT = 2;
 
     template<typename T>
     static ImGuiDataType toImGuiDataType() {
@@ -235,7 +237,7 @@ namespace TechEngine {
     }
 
     void InspectorPanel::drawMeshRenderer(const EditorSnapshot& snapshot, const ComponentRow& component) {
-        if (component.fields.size() <= MESH_RENDERER_MESH_FIELD) {
+        if (!hasMeshRendererRows(component)) {
             drawFields(snapshot, component);
             return;
         }
@@ -246,6 +248,43 @@ namespace TechEngine {
         ImGui::SetNextItemWidth(-FLT_MIN);
         drawAssetPicker(snapshot, component.type, mesh);
         ImGui::PopID();
+
+        const std::size_t slotCount = (component.fields.size() - MESH_RENDERER_FIRST_SLOT_FIELD) / MESH_RENDERER_SLOT_FIELD_COUNT;
+        bool slotsDiffer = component.fieldCountMixed;
+        for (std::size_t slot = 0; slot < slotCount; slot++) {
+            slotsDiffer = slotsDiffer || component.fields[MESH_RENDERER_FIRST_SLOT_FIELD + slot * MESH_RENDERER_SLOT_FIELD_COUNT].mixed;
+        }
+        if (slotsDiffer) {
+            propertyRow("Materials");
+            ImGui::TextDisabled("Slots differ across the selection");
+            return;
+        }
+
+        for (std::size_t slot = 0; slot < slotCount; slot++) {
+            const std::size_t nameField = MESH_RENDERER_FIRST_SLOT_FIELD + slot * MESH_RENDERER_SLOT_FIELD_COUNT;
+            const std::string* name = std::get_if<std::string>(&component.fields[nameField].value);
+            const FieldRow& material = component.fields[nameField + 1];
+            ImGui::PushID(static_cast<int>(material.index));
+            propertyRow(name != nullptr ? name->c_str() : "");
+            ImGui::SetNextItemWidth(-FLT_MIN);
+            drawAssetPicker(snapshot, component.type, material);
+            ImGui::PopID();
+        }
+    }
+
+    bool InspectorPanel::hasMeshRendererRows(const ComponentRow& component) {
+        if (component.fields.size() <= MESH_RENDERER_MESH_FIELD || component.fields[MESH_RENDERER_MESH_FIELD].kind != FieldKind::Asset) {
+            return false;
+        }
+        if ((component.fields.size() - MESH_RENDERER_FIRST_SLOT_FIELD) % MESH_RENDERER_SLOT_FIELD_COUNT != 0) {
+            return false;
+        }
+        for (std::size_t i = MESH_RENDERER_FIRST_SLOT_FIELD; i < component.fields.size(); i += MESH_RENDERER_SLOT_FIELD_COUNT) {
+            if (component.fields[i].kind != FieldKind::String || component.fields[i + 1].kind != FieldKind::Asset) {
+                return false;
+            }
+        }
+        return true;
     }
 
     void InspectorPanel::drawFields(const EditorSnapshot& snapshot, const ComponentRow& component) {

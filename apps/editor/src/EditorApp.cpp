@@ -16,6 +16,7 @@
 #include <assets/ModelImport.hpp>
 #include <edit/ExportCommand.hpp>
 #include <edit/ImportModelCommand.hpp>
+#include <edit/MaterialSlotRebuild.hpp>
 #include <ui/EditorTheme.hpp>
 
 #include <imgui.h>
@@ -116,6 +117,7 @@ namespace TechEngine {
                 TE_LOGGER_ERROR("The startup scene {0:#018x} does not load, so the editor opens on an empty scene: {1}", startupScene.value(), loadError.message());
             } else {
                 TE_LOGGER_INFO("Opened the startup scene {0:#018x} with {1} root entities", startupScene.value(), scene.getRoots().size());
+                rebuildOpenedSceneSlots(scene);
                 AssetRecord record;
                 const bool indexed = m_assets.find(startupScene, record);
                 if (indexed) {
@@ -411,6 +413,7 @@ namespace TechEngine {
             if (loadError) {
                 TE_LOGGER_ERROR("The startup scene {0:#018x} was written but does not load back, so the editor opens on an empty scene: {1}", id.value(), loadError.message());
             } else {
+                rebuildOpenedSceneSlots(scene);
                 m_session.setSceneFile(SceneFile{.id = id, .path = std::string(STARTUP_SCENE_PATH)});
             }
         }
@@ -418,6 +421,13 @@ namespace TechEngine {
         m_project.setExportStartupScene(Role::Client, id);
         const std::error_code saveError = m_project.save(m_files, MANIFEST_PATH);
         TE_CHECK(!saveError, "Failed to save {0}: {1}", MANIFEST_PATH, saveError.message());
+    }
+
+    void EditorApp::rebuildOpenedSceneSlots(Scene& scene) {
+        const std::error_code slotError = rebuildMaterialSlots(scene, m_resources, m_sceneHandle);
+        if (slotError) {
+            TE_LOGGER_WARN("The scene opened, but it does not hold every default material of its meshes: {0}", slotError.message());
+        }
     }
 
     ResourceId EditorApp::writeStartupScene(Scene& scene) {

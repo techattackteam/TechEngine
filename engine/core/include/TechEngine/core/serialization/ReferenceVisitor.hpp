@@ -8,6 +8,7 @@
 
 #include <concepts>
 #include <string_view>
+#include <vector>
 
 namespace TechEngine {
     template<typename T>
@@ -31,6 +32,15 @@ namespace TechEngine {
         template<typename T>
         void field(std::string_view, T& value) {
             field(value);
+        }
+
+        template<typename T>
+        void field(std::vector<T>& values) {
+            if constexpr (Visitable<T, ReferenceVisitor>) {
+                for (T& value: values) {
+                    field(value);
+                }
+            }
         }
 
         void field(Entity& value) {

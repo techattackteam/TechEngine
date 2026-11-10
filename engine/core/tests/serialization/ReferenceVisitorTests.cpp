@@ -82,6 +82,43 @@ public:
 
 static constexpr ResourceId REFERENCE_VISITOR_ASSET_ID{0xA55E70000000C0DE};
 
+static constexpr ResourceId SECOND_REFERENCE_VISITOR_ASSET_ID{0xA55E70000000C0DF};
+
+struct ReferenceVisitorElement {
+    AssetRef<ReferenceVisitorAsset> asset;
+    Entity owner;
+
+    template<typename Archive>
+    friend void visit(Archive& archive, ReferenceVisitorElement& value) {
+        archive.field("asset", value.asset);
+        archive.field("owner", value.owner);
+    }
+};
+
+struct ReferenceVisitorList {
+    Entity before;
+    std::vector<ReferenceVisitorElement> elements;
+    Entity after;
+
+    template<typename Archive>
+    friend void visit(Archive& archive, ReferenceVisitorList& value) {
+        archive.field("before", value.before);
+        archive.field("elements", value.elements);
+        archive.field("after", value.after);
+    }
+};
+
+static ReferenceVisitorList makeFullList() {
+    ReferenceVisitorList list;
+    list.before = Entity{1, 0};
+    list.elements = {
+        ReferenceVisitorElement{AssetRef<ReferenceVisitorAsset>{REFERENCE_VISITOR_ASSET_ID, ResourceHandle<ReferenceVisitorAsset>{}}, Entity{2, 0}},
+        ReferenceVisitorElement{AssetRef<ReferenceVisitorAsset>{SECOND_REFERENCE_VISITOR_ASSET_ID, ResourceHandle<ReferenceVisitorAsset>{}}, Entity{3, 0}},
+    };
+    list.after = Entity{4, 0};
+    return list;
+}
+
 static ReferenceVisitorSample makeFullSample() {
     ReferenceVisitorSample sample;
     sample.value = 7;
@@ -175,4 +212,46 @@ TEST_CASE("a reference hook never sees an empty field, so an empty field stays e
     CHECK(sample.second == Entity{});
     CHECK(sample.nested.owner == Entity{});
     CHECK(sample.asset == AssetRef<ReferenceVisitorAsset>{});
+}
+
+TEST_CASE("the reference visitor walks a vector of a visited type element by element, between its neighbours", "[core][serialization]") {
+    ReferenceVisitorList list = makeFullList();
+    RecordingReferenceVisitor visitor;
+
+    visitor.field(list);
+
+    const std::vector<Entity> expectedEntities{Entity{1, 0}, Entity{2, 0}, Entity{3, 0}, Entity{4, 0}};
+    CHECK(visitor.entities == expectedEntities);
+    const std::vector<ResourceId> expectedAssets{REFERENCE_VISITOR_ASSET_ID, SECOND_REFERENCE_VISITOR_ASSET_ID};
+    CHECK(visitor.assets == expectedAssets);
+}
+
+TEST_CASE("a reference hook rewrites every element of a walked vector in place", "[core][serialization]") {
+    ReferenceVisitorList list = makeFullList();
+    RewritingReferenceVisitor visitor;
+    visitor.entityReplacement = Entity{11, 4};
+    visitor.handleReplacement = ResourceSlotId{6, 2};
+
+    visitor.field(list);
+
+    REQUIRE(list.elements.size() == 2);
+    for (const ReferenceVisitorElement& element: list.elements) {
+        CHECK(element.owner == Entity{11, 4});
+        CHECK(element.asset.handle == ResourceHandle<ReferenceVisitorAsset>{6, 2});
+    }
+    CHECK(list.elements[0].asset.id == REFERENCE_VISITOR_ASSET_ID);
+    CHECK(list.elements[1].asset.id == SECOND_REFERENCE_VISITOR_ASSET_ID);
+    CHECK(list.after == Entity{11, 4});
+}
+
+TEST_CASE("an empty walked vector shows the reference visitor nothing, and the fields after it are still seen", "[core][serialization]") {
+    ReferenceVisitorList list = makeFullList();
+    list.elements.clear();
+    RecordingReferenceVisitor visitor;
+
+    visitor.field(list);
+
+    const std::vector<Entity> expectedEntities{Entity{1, 0}, Entity{4, 0}};
+    CHECK(visitor.entities == expectedEntities);
+    CHECK(visitor.assets.empty());
 }

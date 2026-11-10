@@ -20,6 +20,7 @@ techengine_app(editor
           src/edit/HierarchyCommands.cpp
           src/edit/ImportModelCommand.cpp
           src/edit/InspectorCommands.cpp
+          src/edit/MaterialSlotRebuild.cpp
           src/edit/PlaceModelCommand.cpp
           src/edit/SaveSceneCommand.cpp
           src/project/Project.cpp
@@ -55,6 +56,7 @@ techengine_app(editor
           src/edit/HierarchyCommands.hpp
           src/edit/ImportModelCommand.hpp
           src/edit/InspectorCommands.hpp
+          src/edit/MaterialSlotRebuild.hpp
           src/edit/PlaceModelCommand.hpp
           src/edit/SaveSceneCommand.hpp
           src/project/Project.hpp

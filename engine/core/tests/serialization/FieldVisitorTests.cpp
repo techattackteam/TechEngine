@@ -97,6 +97,30 @@ struct FieldVisitorOuter {
     }
 };
 
+struct FieldVisitorElement {
+    std::string label;
+    AssetRef<FieldVisitorAsset> asset;
+
+    template<typename Archive>
+    friend void visit(Archive& archive, FieldVisitorElement& value) {
+        archive.field("label", value.label);
+        archive.field("asset", value.asset);
+    }
+};
+
+struct FieldVisitorList {
+    bool before = false;
+    std::vector<FieldVisitorElement> elements;
+    float after = 0.0f;
+
+    template<typename Archive>
+    friend void visit(Archive& archive, FieldVisitorList& value) {
+        archive.field("before", value.before);
+        archive.field("elements", value.elements);
+        archive.field("after", value.after);
+    }
+};
+
 template<typename T>
 concept NamelessField = requires(FieldVisitor& visitor, T& value) { visitor.field(value); };
 
@@ -303,4 +327,61 @@ TEST_CASE("a write through an editable field changes that field and no other", "
     CHECK(sample.precise == untouched.precise);
     CHECK(sample.label == untouched.label);
     CHECK(sample.indices == untouched.indices);
+}
+
+static FieldVisitorList makeTwoElementList() {
+    FieldVisitorList list;
+    list.elements = {
+        FieldVisitorElement{"Body", AssetRef<FieldVisitorAsset>{FIELD_VISITOR_ASSET_ID, ResourceHandle<FieldVisitorAsset>{}}},
+        FieldVisitorElement{"Glass", AssetRef<FieldVisitorAsset>{}},
+    };
+    return list;
+}
+
+TEST_CASE("a walked vector's element fields come out as rows in element order, between its neighbours", "[core][serialization]") {
+    FieldVisitorList list = makeTwoElementList();
+    FieldRecorder recorder;
+
+    visit(recorder, list);
+
+    const std::vector<RecordedField> expected{
+        {"before", "bool"},
+        {"label", "string"},
+        {"asset", "asset"},
+        {"label", "string"},
+        {"asset", "asset"},
+        {"after", "float"},
+    };
+    CHECK(recorder.fields == expected);
+    CHECK(recorder.assets == std::vector<ResourceId>{FIELD_VISITOR_ASSET_ID, ResourceId{}});
+    CHECK(recorder.bulkCounts.empty());
+}
+
+TEST_CASE("an empty walked vector adds no row, not even a bulk one", "[core][serialization]") {
+    FieldVisitorList list;
+    FieldRecorder recorder;
+
+    visit(recorder, list);
+
+    const std::vector<RecordedField> expected{{"before", "bool"}, {"after", "float"}};
+    CHECK(recorder.fields == expected);
+    CHECK(recorder.bulkCounts.empty());
+}
+
+TEST_CASE("a write through a walked vector's field reaches the elements themselves, not copies", "[core][serialization]") {
+    FieldVisitorList list = makeTwoElementList();
+    FieldRecorder recorder;
+    recorder.writeName = "asset";
+    recorder.writeAsset = FIELD_VISITOR_ASSET_ID;
+    recorder.writeAssetHandle = ResourceSlotId{7, 3};
+
+    visit(recorder, list);
+
+    REQUIRE(list.elements.size() == 2);
+    for (const FieldVisitorElement& element: list.elements) {
+        CHECK(element.asset.id == FIELD_VISITOR_ASSET_ID);
+        CHECK(element.asset.handle == ResourceHandle<FieldVisitorAsset>{7, 3});
+    }
+    CHECK(list.elements[0].label == "Body");
+    CHECK(list.elements[1].label == "Glass");
 }

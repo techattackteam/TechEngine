@@ -118,7 +118,13 @@ namespace TechEngine {
 
         template<typename T>
         void field(const std::string_view name, std::vector<T>& values) {
-            visitBulk(name, values.size());
+            if constexpr (Visitable<T, FieldVisitor>) {
+                for (T& value: values) {
+                    field(name, value);
+                }
+            } else {
+                visitBulk(name, values.size());
+            }
         }
 
         template<typename T>

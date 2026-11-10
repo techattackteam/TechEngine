@@ -45,6 +45,7 @@ using TechEngine::Entity;
 using TechEngine::FieldEditRecord;
 using TechEngine::FieldValue;
 using TechEngine::LocalTransformRecord;
+using TechEngine::MaterialSlot;
 using TechEngine::MeshRenderer;
 using TechEngine::Quat;
 using TechEngine::RemoveComponentCommand;
@@ -913,6 +914,28 @@ TEST_CASE("an asset set over a known mesh fills the handle", "[editor][edit][com
     CHECK(edit.snapshot().editRevision > revisionBefore);
 }
 
+TEST_CASE("an asset set of a renderer's mesh rebuilds its slot list from that mesh", "[editor][edit][commands][assets]") {
+    AssetEditHarness edit;
+    const Entity entity = edit.createWithMeshRenderer("Crate");
+    edit.scene.getComponent<MeshRenderer>(entity).slots = {MaterialSlot{"Old", {}}};
+
+    applyAssetSet(edit, {entity}, EDIT_MESH_ID);
+
+    const std::vector<MaterialSlot> expected{MaterialSlot{"Slot 0", {}}};
+    CHECK(edit.scene.getComponent<MeshRenderer>(entity).slots == expected);
+}
+
+TEST_CASE("a refused asset set leaves the renderer's slot list alone", "[editor][edit][commands][assets]") {
+    AssetEditHarness edit;
+    const Entity entity = edit.createWithMeshRenderer("Crate");
+    const std::vector<MaterialSlot> before{MaterialSlot{"Old", {}}};
+    edit.scene.getComponent<MeshRenderer>(entity).slots = before;
+
+    applyAssetSet(edit, {entity}, EDIT_UNKNOWN_ID);
+
+    CHECK(edit.scene.getComponent<MeshRenderer>(entity).slots == before);
+}
+
 TEST_CASE("an asset set over an unknown id is refused, and changes and records nothing", "[editor][edit][commands][assets]") {
     AssetEditHarness edit;
     const Entity entity = edit.createWithMeshRenderer("Crate");
@@ -1098,4 +1121,69 @@ TEST_CASE("an asset row holds the field's id and the asset type the picker filte
     CHECK(field.kind == TechEngine::FieldKind::Asset);
     CHECK(field.value == FieldValue{EDIT_MESH_ID});
     CHECK(field.assetType == TechEngine::MESH_TYPE_TAG);
+}
+
+TEST_CASE("a renderer's slots are published after its mesh as a name row and a material row each", "[editor][edit][assets]") {
+    AssetEditHarness edit;
+    const Entity entity = edit.createWithMeshRenderer("Crate");
+    edit.scene.getComponent<MeshRenderer>(entity).slots = {MaterialSlot{"Body", {}}, MaterialSlot{"Glass", {}}};
+    edit.selectOnly(entity);
+
+    const EditorSnapshot snapshot = edit.snapshot();
+
+    const ComponentRow& row = componentRowFor(snapshot, meshRendererType());
+    REQUIRE(row.fields.size() == 5);
+    CHECK(row.fields[1].kind == TechEngine::FieldKind::String);
+    CHECK(row.fields[1].value == FieldValue{std::string("Body")});
+    CHECK(row.fields[2].kind == TechEngine::FieldKind::Asset);
+    CHECK(row.fields[3].value == FieldValue{std::string("Glass")});
+    CHECK(row.fields[4].kind == TechEngine::FieldKind::Asset);
+    CHECK_FALSE(row.fieldCountMixed);
+}
+
+TEST_CASE("selected renderers are marked only when their slot lists differ in length", "[editor][edit][assets]") {
+    AssetEditHarness edit;
+    const Entity active = edit.createWithMeshRenderer("Active");
+    const Entity other = edit.createWithMeshRenderer("Other");
+    edit.scene.getComponent<MeshRenderer>(active).slots = {MaterialSlot{"Body", {}}};
+    edit.session.setSelection({active, other}, active, 1);
+    MeshRenderer& otherRenderer = edit.scene.getComponent<MeshRenderer>(other);
+
+    SECTION("the other has one slot more") {
+        otherRenderer.slots = {MaterialSlot{"Body", {}}, MaterialSlot{"Glass", {}}};
+
+        const EditorSnapshot snapshot = edit.snapshot();
+
+        CHECK(componentRowFor(snapshot, meshRendererType()).fieldCountMixed);
+    }
+
+    SECTION("the other has no slots") {
+        const EditorSnapshot snapshot = edit.snapshot();
+
+        CHECK(componentRowFor(snapshot, meshRendererType()).fieldCountMixed);
+    }
+
+    SECTION("the same count under another name marks the name row instead") {
+        otherRenderer.slots = {MaterialSlot{"Glass", {}}};
+
+        const EditorSnapshot snapshot = edit.snapshot();
+
+        const ComponentRow& row = componentRowFor(snapshot, meshRendererType());
+        CHECK_FALSE(row.fieldCountMixed);
+        REQUIRE(row.fields.size() == 3);
+        CHECK(row.fields[1].mixed);
+        CHECK_FALSE(row.fields[2].mixed);
+    }
+
+    SECTION("the same list marks nothing") {
+        otherRenderer.slots = {MaterialSlot{"Body", {}}};
+
+        const EditorSnapshot snapshot = edit.snapshot();
+
+        const ComponentRow& row = componentRowFor(snapshot, meshRendererType());
+        CHECK_FALSE(row.fieldCountMixed);
+        for (const TechEngine::FieldRow& field: row.fields) {
+            CHECK_FALSE(field.mixed);
+        }
+    }
 }
