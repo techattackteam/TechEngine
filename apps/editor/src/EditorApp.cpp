@@ -449,7 +449,11 @@ namespace TechEngine {
         }
 
         return createAsset(TRIANGLE_MESH_PATH, MESH_TYPE_TAG, Side::Client, [](const ResourceId id, std::vector<std::byte>& bytes) {
-            const Mesh mesh{id, {Vec3(-0.5f, -0.5f, 0.0f), Vec3(0.5f, -0.5f, 0.0f), Vec3(0.0f, 0.5f, 0.0f)}, {0, 1, 2}};
+            Mesh mesh;
+            mesh.id = id;
+            mesh.positions = {Vec3(-0.5f, -0.5f, 0.0f), Vec3(0.5f, -0.5f, 0.0f), Vec3(0.0f, 0.5f, 0.0f)};
+            mesh.indices = {0, 1, 2};
+            mesh.slots = {MeshSlot{"Slot 0", 0, 3, ResourceId{}}};
             mesh.write(bytes);
         });
     }

@@ -615,7 +615,11 @@ TEST_CASE("a failed export claims no project folder", "[editor][project][export]
 }
 
 static std::vector<std::byte> meshBytes(const ResourceId id) {
-    const TechEngine::Mesh mesh{id, {TechEngine::Vec3(-0.5f, -0.5f, 0.0f), TechEngine::Vec3(0.5f, -0.5f, 0.0f), TechEngine::Vec3(0.0f, 0.5f, 0.0f)}, {0, 1, 2}};
+    TechEngine::Mesh mesh;
+    mesh.id = id;
+    mesh.positions = {TechEngine::Vec3(-0.5f, -0.5f, 0.0f), TechEngine::Vec3(0.5f, -0.5f, 0.0f), TechEngine::Vec3(0.0f, 0.5f, 0.0f)};
+    mesh.indices = {0, 1, 2};
+    mesh.slots = {TechEngine::MeshSlot{"Slot 0", 0, 3, TechEngine::ResourceId{}}};
     std::vector<std::byte> bytes;
     mesh.write(bytes);
     return bytes;
