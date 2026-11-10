@@ -447,10 +447,7 @@ static void writeClientExport(const ScratchDirectory& scratch, const TechEngine:
 }
 
 static bool runtimeLogNames(const TechEngineTests::LogCaptureGuard& logs, const TechEngine::ResourceId id) {
-    const std::string idText = std::format("{:#018x}", id.value());
-    return std::ranges::any_of(logs.getMessages(), [&idText](const std::string& message) {
-        return message.find(idText) != std::string::npos;
-    });
+    return logs.contains(std::format("{:#018x}", id.value()));
 }
 
 static bool runtimeLogPrintsEntity(const TechEngineTests::LogCaptureGuard& logs, const TechEngine::Entity entity, const std::string_view name) {
