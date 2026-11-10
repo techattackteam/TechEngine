@@ -675,7 +675,11 @@ TEST_CASE("a new startup scene reuses an indexed Triangle.temesh", "[editor][win
     writeProjectLayout(scratch);
     constexpr TechEngine::ResourceId meshId{0x0abcdef012345678};
     // The created scene is loaded back, so a mesh that does not parse would fail that load.
-    const TechEngine::Mesh mesh{meshId, {TechEngine::Vec3(0.0f), TechEngine::Vec3(1.0f, 0.0f, 0.0f), TechEngine::Vec3(0.0f, 1.0f, 0.0f)}, {0, 1, 2}};
+    TechEngine::Mesh mesh;
+    mesh.id = meshId;
+    mesh.positions = {TechEngine::Vec3(0.0f), TechEngine::Vec3(1.0f, 0.0f, 0.0f), TechEngine::Vec3(0.0f, 1.0f, 0.0f)};
+    mesh.indices = {0, 1, 2};
+    mesh.slots = {TechEngine::MeshSlot{"Slot 0", 0, 3, TechEngine::ResourceId{}}};
     std::vector<std::byte> original;
     mesh.write(original);
     TechEngineTests::writeBytes(scratch, TRIANGLE_MESH_FILE, original);

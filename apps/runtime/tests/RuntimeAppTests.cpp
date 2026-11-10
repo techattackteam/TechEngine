@@ -829,7 +829,11 @@ static std::vector<std::byte> meshSceneBytes() {
 }
 
 static std::vector<std::byte> triangleMeshBytes() {
-    const TechEngine::Mesh mesh{TRIANGLE_MESH_ID, TRIANGLE_POSITIONS, {0, 1, 2}};
+    TechEngine::Mesh mesh;
+    mesh.id = TRIANGLE_MESH_ID;
+    mesh.positions = TRIANGLE_POSITIONS;
+    mesh.indices = {0, 1, 2};
+    mesh.slots = {TechEngine::MeshSlot{"Slot 0", 0, 3, TechEngine::ResourceId{}}};
     std::vector<std::byte> bytes;
     mesh.write(bytes);
     return bytes;

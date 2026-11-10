@@ -225,6 +225,29 @@ TEST_CASE("a glTF file imports with its node and mesh counts", "[editor][assets]
         CHECK(model.importBlock.sourceName.empty());
         CHECK(model.importBlock.settings == ImportSettings{});
     }
+
+    SECTION("each mesh keys on its source mesh and has one slot over all its indices") {
+        const Mesh hull = fixture.readMesh(recordNamed(result, "Hull.temesh").path);
+        const Mesh tire = fixture.readMesh(recordNamed(result, "Tire.temesh").path);
+        CHECK(hull.importBlock.sourcePath == "assets/client/Pair.gltf");
+        CHECK(hull.importBlock.sourceName == "Hull");
+        CHECK(tire.importBlock.sourcePath == "assets/client/Pair.gltf");
+        CHECK(tire.importBlock.sourceName == "Tire");
+        CHECK(hull.importBlock.sourceIndex != tire.importBlock.sourceIndex);
+        CHECK(hull.importBlock.sourceIndex < 2);
+        CHECK(tire.importBlock.sourceIndex < 2);
+        for (const Mesh* mesh: {&hull, &tire}) {
+            CHECK(mesh->importBlock.settings == ImportSettings{});
+            REQUIRE(mesh->slots.size() == 1);
+            CHECK_FALSE(mesh->slots[0].name.empty());
+            CHECK(mesh->slots[0].firstIndex == 0);
+            CHECK(mesh->slots[0].indexCount == mesh->indices.size());
+            CHECK_FALSE(mesh->slots[0].defaultMaterial.valid());
+            CHECK(mesh->normals.empty());
+            CHECK(mesh->tangents.empty());
+            CHECK(mesh->uv0.empty());
+        }
+    }
 }
 
 TEST_CASE("a scale of 0.01 and a Z-up axis are baked into the vertices and the nodes, and the root stays at identity", "[editor][assets][import]") {
@@ -249,6 +272,13 @@ TEST_CASE("a scale of 0.01 and a Z-up axis are baked into the vertices and the n
             checkVec3(mesh.positions[1], Vec3(0.04f, 0.03f, -0.02f));
             checkVec3(mesh.positions[2], Vec3(0.01f, 0.03f, -0.05f));
             CHECK(mesh.indices == std::vector<std::uint32_t>{0, 1, 2});
+        }
+    }
+
+    SECTION("only the model's import block carries the settings; each mesh keeps the defaults") {
+        CHECK(model.importBlock.settings == settings);
+        for (std::size_t i = 1; i < result.records.size(); i++) {
+            CHECK(fixture.readMesh(result.records[i].path).importBlock.settings == ImportSettings{});
         }
     }
 

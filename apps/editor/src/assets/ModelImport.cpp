@@ -13,6 +13,7 @@
 
 #include <assimp/Importer.hpp>
 #include <assimp/config.h>
+#include <assimp/material.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
@@ -33,6 +34,7 @@ namespace TechEngine {
     static constexpr std::string_view MODEL_EXTENSION = ".temodel";
     static constexpr std::string_view UNNAMED_MESH = "Mesh";
     static constexpr std::string_view UNNAMED_NODE = "Node";
+    static constexpr std::string_view UNNAMED_SLOT = "Slot ";
     static constexpr unsigned int IMPORT_STEPS = aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_JoinIdenticalVertices;
     static constexpr unsigned int NOT_TRIANGLES = aiPrimitiveType_POINT | aiPrimitiveType_LINE | aiPrimitiveType_POLYGON;
     static constexpr float MIN_ROTATION_LENGTH_SQUARED = 1.0e-12f;
@@ -163,7 +165,17 @@ namespace TechEngine {
         return candidate;
     }
 
-    static std::uint32_t readMeshes(const aiScene& scene, const ImportSettings& settings, const std::function<ResourceId()>& generateId, std::vector<SourceMesh>& out) {
+    static std::string slotName(const aiScene& scene, const aiMesh& source) {
+        if (source.mMaterialIndex < scene.mNumMaterials) {
+            const aiString name = scene.mMaterials[source.mMaterialIndex]->GetName();
+            if (name.length > 0) {
+                return name.C_Str();
+            }
+        }
+        return std::string(UNNAMED_SLOT) + std::to_string(source.mMaterialIndex);
+    }
+
+    static std::uint32_t readMeshes(const aiScene& scene, const std::string_view sourcePath, const ImportSettings& settings, const std::function<ResourceId()>& generateId, std::vector<SourceMesh>& out) {
         std::vector<std::string> takenFileNames;
         std::uint32_t written = 0;
         out.resize(scene.mNumMeshes);
@@ -175,6 +187,10 @@ namespace TechEngine {
                 continue;
             }
             mesh.mesh.id = generateId();
+            mesh.mesh.importBlock.sourcePath = std::string(sourcePath);
+            mesh.mesh.importBlock.sourceIndex = i;
+            mesh.mesh.importBlock.sourceName = source.mName.C_Str();
+            mesh.mesh.slots = {MeshSlot{slotName(scene, source), 0, static_cast<std::uint32_t>(mesh.mesh.indices.size()), ResourceId{}}};
             mesh.name = source.mName.C_Str();
             mesh.fileName = uniqueFileName(mesh.name, takenFileNames);
             if (mesh.name.empty()) {
@@ -319,7 +335,7 @@ namespace TechEngine {
         }
 
         std::vector<SourceMesh> meshes;
-        const std::uint32_t meshCount = readMeshes(*scene, request.settings, generateId, meshes);
+        const std::uint32_t meshCount = readMeshes(*scene, parts.relative, request.settings, generateId, meshes);
         if (meshCount == 0) {
             return ProjectError::SourceHasNoMeshes;
         }
