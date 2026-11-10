@@ -88,6 +88,7 @@ using TechEngineTests::SAMPLE_UINT16_FIELD;
 using TechEngineTests::SAMPLE_UINT32_FIELD;
 using TechEngineTests::SAMPLE_UINT64_FIELD;
 using TechEngineTests::SAMPLE_WEIGHT_FIELD;
+using TechEngineTests::setEuler;
 using TechEngineTests::TRANSFORM_FIELD_COUNT;
 using TechEngineTests::TRANSFORM_POSITION_X_FIELD;
 using TechEngineTests::TRANSFORM_POSITION_Y_FIELD;
@@ -478,10 +479,6 @@ static const Record* findRecord(const std::span<const EditRecord> records, const
         }
     }
     return nullptr;
-}
-
-static void setEuler(EditTestScene& edit, const Entity entity, const Vec3& degrees) {
-    REQUIRE(edit.scene.getComponent<Transform>(entity).setLocal({Vec3(0.0f), Transform::fromEulerDegrees(degrees), Vec3(1.0f)}));
 }
 
 static void checkEuler(const EditTestScene& edit, const Entity entity, const Vec3& degrees) {

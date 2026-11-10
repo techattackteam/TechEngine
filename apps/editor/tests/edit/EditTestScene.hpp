@@ -171,4 +171,8 @@ namespace TechEngineTests {
     }
 
     const TechEngine::ComponentRow& componentRowFor(TechEngine::EditorSnapshot&& snapshot, TechEngine::ComponentTypeId type) = delete;
+
+    inline void setEuler(EditTestScene& edit, const TechEngine::Entity entity, const TechEngine::Vec3& degrees) {
+        REQUIRE(edit.scene.getComponent<TechEngine::Transform>(entity).setLocal({TechEngine::Vec3(0.0f), TechEngine::Transform::fromEulerDegrees(degrees), TechEngine::Vec3(1.0f)}));
+    }
 }
