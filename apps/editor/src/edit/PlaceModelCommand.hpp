@@ -37,5 +37,7 @@ namespace TechEngine {
         bool loadMeshes(const Model& model, std::unordered_map<ResourceId, ResourceSlotId>& out) const;
 
         bool buildEntities(Scene& scene, const Model& model, const std::unordered_map<ResourceId, ResourceSlotId>& meshes, std::vector<Entity>& out) const;
+
+        void removeEntities(Scene& scene, std::vector<Entity>& entities) const;
     };
 }

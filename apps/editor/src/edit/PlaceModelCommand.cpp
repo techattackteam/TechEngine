@@ -1,3 +1,4 @@
+#include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/mesh/MeshRenderer.hpp>
@@ -128,32 +129,23 @@ namespace TechEngine {
 
     bool PlaceModelCommand::buildEntities(Scene& scene, const Model& model, const std::unordered_map<ResourceId, ResourceSlotId>& meshes, std::vector<Entity>& out) const {
         out.reserve(model.nodes.size());
-        bool built = true;
         for (const ModelNode& node: model.nodes) {
             const Entity entity = scene.createEntity();
-            if (!entity.valid()) {
-                TE_LOGGER_WARN("Failed to create the entity for node {0} of {1}", node.name, m_path);
-                built = false;
-                break;
-            }
+            TE_CHECK(entity.valid(), "Failed to create the entity for node {0} of {1}", node.name, m_path);
             out.push_back(entity);
 
             if (node.parent != MODEL_NO_PARENT) {
                 const Entity parent = out[node.parent];
                 const bool parented = scene.setParent(entity, parent, scene.getChildren(parent).size());
-                if (!parented) {
-                    TE_LOGGER_WARN("Failed to parent node {0} of {1}", node.name, m_path);
-                    built = false;
-                    break;
-                }
+                TE_CHECK(parented, "Failed to parent node {0} of {1}", node.name, m_path);
             }
 
             scene.getComponent<Name>(entity).value = node.name;
             const bool localSet = scene.getComponent<Transform>(entity).setLocal(node.local);
             if (!localSet) {
-                TE_LOGGER_WARN("Node {0} of {1} has a transform the scene refuses", node.name, m_path);
-                built = false;
-                break;
+                TE_LOGGER_WARN("Node {0} of {1} has a zero scale on an axis, so the model is not placed", node.name, m_path);
+                removeEntities(scene, out);
+                return false;
             }
 
             if (node.mesh.valid()) {
@@ -161,21 +153,17 @@ namespace TechEngine {
                 scene.addComponent<MeshRenderer>(entity, MeshRenderer{AssetRef<Mesh>{node.mesh, ResourceHandle<Mesh>{slot.index, slot.generation}}});
             }
         }
+        return true;
+    }
 
-        if (built) {
-            return true;
-        }
-        TE_LOGGER_WARN("{0} is not placed, and the entities built for it are removed", m_path);
-        for (const Entity entity: out) {
+    void PlaceModelCommand::removeEntities(Scene& scene, std::vector<Entity>& entities) const {
+        for (const Entity entity: entities) {
             if (!scene.contains(entity)) {
                 continue;
             }
             const bool destroyed = scene.destroyEntity(entity);
-            if (!destroyed) {
-                TE_LOGGER_WARN("Failed to remove entity {0} of the refused {1}", entity, m_path);
-            }
+            TE_CHECK(destroyed, "Failed to remove entity {0} of the refused {1}", entity, m_path);
         }
-        out.clear();
-        return false;
+        entities.clear();
     }
 }

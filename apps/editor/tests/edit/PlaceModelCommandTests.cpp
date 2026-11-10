@@ -1,4 +1,5 @@
 #include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/mesh/MeshRenderer.hpp>
 #include <TechEngine/core/model/Model.hpp>
 #include <TechEngine/core/resources/ResourceCache.hpp>
@@ -49,6 +50,7 @@ using TechEngine::Vec3;
 using TechEngineTests::AssetEditHarness;
 using TechEngineTests::EDIT_BROKEN_MESH_ID;
 using TechEngineTests::EDIT_MESH_ID;
+using TechEngineTests::EDIT_OTHER_SCENE_ID;
 using TechEngineTests::EDIT_SECOND_MESH_ID;
 using TechEngineTests::EDIT_SERVER_MESH_ID;
 using TechEngineTests::EDIT_UNKNOWN_ID;
@@ -396,4 +398,48 @@ TEST_CASE("placing on a scene with no cache entry places nothing", "[editor][edi
     fixture.place(KART_MODEL_PATH);
 
     checkNothingPlaced(fixture, revisionBefore);
+}
+
+TEST_CASE("a model that names a scene as a node's mesh places nothing", "[editor][edit][commands][place]") {
+    PlaceFixture fixture{"placeNotAMesh"};
+    fixture.addModel(makeKart(TransformValues{}, EDIT_OTHER_SCENE_ID, EDIT_SECOND_MESH_ID), KART_MODEL_PATH);
+    const std::uint64_t revisionBefore = fixture.editRevision();
+
+    fixture.place(KART_MODEL_PATH);
+
+    checkNothingPlaced(fixture, revisionBefore);
+}
+
+TEST_CASE("a model with an indexed mesh whose bytes the cache cannot find places nothing", "[editor][edit][commands][place]") {
+    PlaceFixture fixture{"placeLostMesh"};
+    const ResourceId lostMesh{0x3E540000000000AA};
+    AssetRecord record;
+    record.id = lostMesh;
+    record.typeTag = TechEngine::MESH_TYPE_TAG;
+    record.side = TechEngine::Side::Client;
+    record.path = "assets/client/Lost.temesh";
+    fixture.edit.index.add(std::move(record));
+    fixture.addModel(makeKart(TransformValues{}, EDIT_MESH_ID, lostMesh), KART_MODEL_PATH);
+    const std::uint64_t revisionBefore = fixture.editRevision();
+
+    fixture.place(KART_MODEL_PATH);
+
+    checkNothingPlaced(fixture, revisionBefore);
+}
+
+TEST_CASE("a model with a zero scale on its last node places nothing and removes the entities built before it", "[editor][edit][commands][place]") {
+    PlaceFixture fixture{"placeZeroScale"};
+    Model model = makeKart();
+    model.nodes[2].local.scale = Vec3(1.0f, 0.0f, 1.0f);
+    fixture.addModel(model, KART_MODEL_PATH);
+    const Entity existing = fixture.edit.createWithMeshRenderer("Existing");
+    const std::uint64_t revisionBefore = fixture.editRevision();
+
+    fixture.place(KART_MODEL_PATH);
+
+    const std::vector<Entity> roots = fixture.edit.scene.getRoots();
+    REQUIRE(roots.size() == 1);
+    CHECK(roots[0] == existing);
+    CHECK(fixture.edit.snapshot().hierarchy.size() == 1);
+    CHECK(fixture.editRevision() == revisionBefore);
 }
