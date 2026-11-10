@@ -5,6 +5,7 @@
 #include <edit/EditorCommands.hpp>
 #include <edit/HierarchyCommands.hpp>
 #include <edit/InspectorCommands.hpp>
+#include <edit/PlaceModelCommand.hpp>
 #include <edit/SaveSceneCommand.hpp>
 
 #include <system_error>
@@ -57,6 +58,10 @@ namespace TechEngine {
 
     void EditorCommands::removeComponent(std::vector<Entity> entities, const ComponentTypeId component) {
         submit(std::make_unique<RemoveComponentCommand>(*m_session, *m_registry, std::move(entities), component));
+    }
+
+    void EditorCommands::placeModel(std::string path) {
+        submit(std::make_unique<PlaceModelCommand>(*m_session, *m_files, *m_resources, *m_sceneHandle, *m_assets, std::move(path)));
     }
 
     void EditorCommands::save() {

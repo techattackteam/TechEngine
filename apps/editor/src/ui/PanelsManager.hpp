@@ -8,6 +8,8 @@
 
 #include <imgui.h>
 
+#include <array>
+#include <cstddef>
 #include <functional>
 
 namespace TechEngine {
@@ -17,6 +19,8 @@ namespace TechEngine {
 
     class PanelsManager {
     private:
+        static constexpr std::size_t PLACE_MODEL_PATH_CAPACITY = 512;
+
         EditorCommands* m_commands = nullptr;
         std::function<void()> m_exportProject;
         std::function<void()> m_runProject;
@@ -25,6 +29,8 @@ namespace TechEngine {
         SceneViewPanel m_sceneView;
         GameViewPanel m_gameView;
         ConsolePanel m_console;
+        bool m_placeModelRequested = false;
+        std::array<char, PLACE_MODEL_PATH_CAPACITY> m_placeModelPath{};
 
     public:
         PanelsManager(EditorCommands& commands, ConsoleHistory& consoleHistory, std::function<void()> exportProject, std::function<void()> runProject);
@@ -33,6 +39,8 @@ namespace TechEngine {
 
     private:
         void drawMainMenuBar(bool canRun);
+
+        void drawPlaceModelPopup();
 
         void handleShortcuts();
 
