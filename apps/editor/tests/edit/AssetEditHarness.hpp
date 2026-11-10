@@ -1,6 +1,7 @@
 #pragma once
 
 #include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/base/stringid/StringId.hpp>
 #include <TechEngine/core/assets/AssetSource.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
@@ -14,6 +15,7 @@
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/core/scene/components/Name.hpp>
+#include <TechEngine/core/serialization/BlobHeader.hpp>
 
 #include <assets/AssetIndex.hpp>
 #include <assets/AssetTestFiles.hpp>
@@ -25,6 +27,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -42,6 +45,20 @@ namespace TechEngineTests {
     inline constexpr TechEngine::ResourceId EDIT_BROKEN_MESH_ID{0x3E5400000000000B};
     inline constexpr TechEngine::ResourceId EDIT_SERVER_MESH_ID{0x3E5400000000005E};
     inline constexpr TechEngine::ResourceId EDIT_UNKNOWN_ID{0x3E540000000000FF};
+    inline constexpr TechEngine::ResourceId EDIT_PAINTED_MESH_ID{0x3E54000000000003};
+    inline constexpr TechEngine::ResourceId EDIT_MATERIAL_ID{0x3A7E000000000001};
+
+    inline constexpr TechEngine::BlobKind EDIT_MATERIAL_KIND{0x54414D45, 1};
+    inline constexpr TechEngine::StringId EDIT_MATERIAL_TYPE_TAG{"Tests.EditStandInMaterial"};
+
+    // TODO(S10-T23): load the real material file instead. The cache acquires a dependency by its file's kind, so a slot
+    // typed AssetRef<Material> holds this entry without either side checking the type.
+    struct EditStandInMaterial {
+        static std::error_code loadPayload(std::span<const std::byte>, void*, std::vector<TechEngine::ResourceId>& dependencies) {
+            dependencies.clear();
+            return {};
+        }
+    };
 
     class MemoryAssetSource final : public TechEngine::AssetSource {
     private:
@@ -69,7 +86,8 @@ namespace TechEngineTests {
     }
 
     // A scene held as a Ready cache entry, as the editor's startup load leaves it, beside an index and a source that
-    // know two meshes, a mesh whose bytes do not parse, a server mesh and a second scene.
+    // know two meshes, a mesh whose slot defaults to a material, a mesh whose bytes do not parse, a server mesh and a
+    // second scene.
     class AssetEditHarness {
     private:
         TechEngine::ComponentRegistry m_registry;
@@ -87,6 +105,7 @@ namespace TechEngineTests {
         AssetEditHarness() {
             cache.registerLoader<TechEngine::SceneBytes>(TechEngine::SCENE_KIND, TechEngine::SCENE_TYPE_TAG, &TechEngine::SceneBytes::loadPayload);
             cache.registerLoader<TechEngine::Mesh>(TechEngine::MESH_KIND, TechEngine::MESH_TYPE_TAG, &TechEngine::Mesh::loadPayload);
+            cache.registerLoader<EditStandInMaterial>(EDIT_MATERIAL_KIND, EDIT_MATERIAL_TYPE_TAG, &EditStandInMaterial::loadPayload);
             cache.closeLoaders();
             cache.setSource(source);
 
@@ -96,6 +115,8 @@ namespace TechEngineTests {
             addAsset(EDIT_SECOND_MESH_ID, TechEngine::MESH_TYPE_TAG, TechEngine::Side::Client, "assets/client/Second.temesh", meshBytes(EDIT_SECOND_MESH_ID));
             addAsset(EDIT_BROKEN_MESH_ID, TechEngine::MESH_TYPE_TAG, TechEngine::Side::Client, "assets/client/Broken.temesh", assetBytes(TechEngine::MESH_KIND, EDIT_BROKEN_MESH_ID, "x"));
             addAsset(EDIT_SERVER_MESH_ID, TechEngine::MESH_TYPE_TAG, TechEngine::Side::Server, "assets/server/Collision.temesh", meshBytes(EDIT_SERVER_MESH_ID));
+            addAsset(EDIT_MATERIAL_ID, EDIT_MATERIAL_TYPE_TAG, TechEngine::Side::Client, "assets/client/Paint.tematerial", assetBytes(EDIT_MATERIAL_KIND, EDIT_MATERIAL_ID, "material"));
+            addAsset(EDIT_PAINTED_MESH_ID, TechEngine::MESH_TYPE_TAG, TechEngine::Side::Client, "assets/client/Painted.temesh", meshBytes(EDIT_PAINTED_MESH_ID, EDIT_MATERIAL_ID));
 
             REQUIRE(cache.request(EDIT_SCENE_ID, sceneHandle) == std::error_code{});
             REQUIRE(cache.runLoadingPhase() == std::error_code{});
@@ -156,12 +177,12 @@ namespace TechEngineTests {
             source.add(id, std::move(bytes));
         }
 
-        static std::vector<std::byte> meshBytes(const TechEngine::ResourceId id) {
+        static std::vector<std::byte> meshBytes(const TechEngine::ResourceId id, const TechEngine::ResourceId defaultMaterial = TechEngine::ResourceId{}) {
             TechEngine::Mesh mesh;
             mesh.id = id;
             mesh.positions = {TechEngine::Vec3(-0.5f, -0.5f, 0.0f), TechEngine::Vec3(0.5f, -0.5f, 0.0f), TechEngine::Vec3(0.0f, 0.5f, 0.0f)};
             mesh.indices = {0, 1, 2};
-            mesh.slots = {TechEngine::MeshSlot{"Slot 0", 0, 3, TechEngine::ResourceId{}}};
+            mesh.slots = {TechEngine::MeshSlot{"Slot 0", 0, 3, defaultMaterial}};
             std::vector<std::byte> bytes;
             mesh.write(bytes);
             return bytes;

@@ -545,3 +545,32 @@ TEST_CASE("a walked vector cut inside its last element fails soft", "[core][seri
     CHECK_FALSE(reader.ok());
     CHECK(reader.error() == ReadError::Truncated);
 }
+
+TEST_CASE("a walked vector with no room for its count fails soft and leaves the output untouched", "[core][serialization]") {
+    std::vector<std::byte> buffer;
+    Writer writer{buffer};
+    writer.write(static_cast<std::uint16_t>(2));
+
+    Reader reader{buffer};
+    std::vector<WalkedSlot> restored = makeWalkedSlots();
+    reader.field(restored);
+
+    CHECK(reader.error() == ReadError::Truncated);
+    CHECK(restored == makeWalkedSlots());
+}
+
+TEST_CASE("a walked vector that fails partway leaves the output untouched", "[core][serialization]") {
+    std::vector<WalkedSlot> source = makeWalkedSlots();
+    std::vector<std::byte> buffer;
+    Writer writer{buffer};
+    writer.field(source);
+    buffer.resize(buffer.size() - 1);
+
+    Reader reader{buffer};
+    const std::vector<WalkedSlot> before{WalkedSlot{"Kept", AssetRef<ReferencedAsset>{}}};
+    std::vector<WalkedSlot> restored = before;
+    reader.field(restored);
+
+    CHECK(reader.error() == ReadError::Truncated);
+    CHECK(restored == before);
+}

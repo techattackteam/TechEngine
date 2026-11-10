@@ -11,12 +11,12 @@
 
 #include <cstddef>
 #include <string>
+#include <system_error>
 #include <vector>
 
 namespace TechEngine {
-    std::error_code rebuildMaterialSlots(Scene& scene, ResourceCache& cache, const ResourceHandle<SceneBytes> sceneHandle, const std::span<const Entity> entities) {
+    void rebuildMaterialSlots(Scene& scene, ResourceCache& cache, const ResourceHandle<SceneBytes> sceneHandle, const std::span<const Entity> entities) {
         TE_CHECK(sceneHandle.valid(), "Material slots are rebuilt over a scene with no cache entry");
-        std::error_code firstError;
         std::vector<std::string> dropped;
         for (const Entity entity: entities) {
             if (!scene.contains(entity) || !scene.hasComponent<MeshRenderer>(entity)) {
@@ -43,23 +43,19 @@ namespace TechEngine {
                 const std::error_code addError = cache.addDependency(sceneHandle, slot.material.id, acquired);
                 if (addError) {
                     TE_LOGGER_WARN("Entity {0} '{1}' cannot hold material {2:#018x} for slot '{3}': {4}", entity, name, slot.material.id.value(), slot.name, addError.message());
-                    if (!firstError) {
-                        firstError = addError;
-                    }
                     continue;
                 }
                 slot.material.handle = ResourceHandle<Material>{acquired.index, acquired.generation};
             }
         }
-        return firstError;
     }
 
-    std::error_code rebuildMaterialSlots(Scene& scene, ResourceCache& cache, const ResourceHandle<SceneBytes> sceneHandle) {
+    void rebuildMaterialSlots(Scene& scene, ResourceCache& cache, const ResourceHandle<SceneBytes> sceneHandle) {
         std::vector<Entity> entities = scene.getRoots();
         for (std::size_t index = 0; index < entities.size(); index++) {
             const std::vector<Entity> children = scene.getChildren(entities[index]);
             entities.insert(entities.end(), children.begin(), children.end());
         }
-        return rebuildMaterialSlots(scene, cache, sceneHandle, entities);
+        rebuildMaterialSlots(scene, cache, sceneHandle, entities);
     }
 }

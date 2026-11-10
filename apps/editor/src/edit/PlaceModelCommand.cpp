@@ -51,11 +51,7 @@ namespace TechEngine {
             return;
         }
 
-        const std::error_code slotError = rebuildMaterialSlots(scene, *m_resources, *m_sceneHandle, created);
-        if (slotError) {
-            TE_LOGGER_WARN("Placed {0}, but the scene does not hold every default material of its meshes: {1}", m_path, slotError.message());
-        }
-
+        rebuildMaterialSlots(scene, *m_resources, *m_sceneHandle, created);
         TE_LOGGER_INFO("Placed {0}: {1} entities", m_path, created.size());
         m_session->recordSceneChange();
     }

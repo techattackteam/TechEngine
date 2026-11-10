@@ -92,6 +92,7 @@ techengine_app(editor
           tests/edit/HierarchyCommandsTests.cpp
           tests/edit/ImportModelCommandTests.cpp
           tests/edit/InspectorCommandsTests.cpp
+          tests/edit/MaterialSlotRebuildTests.cpp
           tests/edit/PlaceModelCommandTests.cpp
           tests/edit/SaveSceneCommandTests.cpp
           tests/project/ProjectErrorTests.cpp

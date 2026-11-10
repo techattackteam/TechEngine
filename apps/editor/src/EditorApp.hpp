@@ -135,8 +135,6 @@ namespace TechEngine {
 
         void createStartupScene(Scene& scene);
 
-        void rebuildOpenedSceneSlots(Scene& scene);
-
         ResourceId writeStartupScene(Scene& scene);
 
         ResourceId findOrCreateTriangleMesh();

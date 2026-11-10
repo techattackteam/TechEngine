@@ -191,17 +191,13 @@ namespace TechEngine {
             changed.push_back(entity);
         }
 
-        if (changed.empty()) {
-            return;
-        }
-        // A material set rebuilds too, which changes nothing, because its slot names are the mesh's already.
-        if (m_component == componentTypeId<MeshRenderer>()) {
-            const std::error_code slotError = rebuildMaterialSlots(scene, *m_resources, *m_sceneHandle, changed);
-            if (slotError) {
-                TE_LOGGER_WARN("Asset {0:#018x} is set, but the scene does not hold every default material of the mesh: {1}", m_id.value(), slotError.message());
+        if (!changed.empty()) {
+            // A material set rebuilds too, which changes nothing, because its slot names are the mesh's already.
+            if (m_component == componentTypeId<MeshRenderer>()) {
+                rebuildMaterialSlots(scene, *m_resources, *m_sceneHandle, changed);
             }
+            m_session->recordSceneChange();
         }
-        m_session->recordSceneChange();
     }
 
     bool SetAssetFieldCommand::changesAnyField(Scene& scene, const ComponentTypeRecord& record, const StringId assetType) const {
