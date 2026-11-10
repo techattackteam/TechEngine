@@ -84,8 +84,10 @@ namespace TechEngine {
         }
         const Entity entity = m_storage->createEntity();
         getComponent<Transform>(entity).bind(*this, entity);
+        linkChild(entity, *getHierarchy(entity), Entity(), m_roots.m_lastChild, Entity());
         return entity;
     }
+
     bool Scene::destroyEntity(Entity entity) {
         TE_PROFILER_FUNCTION();
         if (!immediateStructuralMutationAllowed()) {
@@ -115,9 +117,10 @@ namespace TechEngine {
             }
         }
 
-        if (rootHierarchy->m_parent.valid() && !unparent(entity)) {
+        if (!hasConsistentLinks(entity, *rootHierarchy)) {
             return false;
         }
+        unlinkChild(*rootHierarchy);
 
         for (auto it = subtree.rbegin(); it != subtree.rend(); it++) {
             const bool removed = m_storage->destroyEntity(*it);
@@ -136,6 +139,7 @@ namespace TechEngine {
             return;
         }
         m_storage->clear();
+        m_roots = Hierarchy();
     }
 
     void* Scene::componentRaw(const Entity entity, const ComponentTypeId type) {
@@ -258,36 +262,16 @@ namespace TechEngine {
     }
     std::vector<Entity> Scene::getRoots() const {
         TE_PROFILER_FUNCTION();
-        std::vector<Entity> result;
-        m_storage->eachEntity([&](Entity entity) {
-            if (!getParent(entity).valid()) {
-                result.push_back(entity);
-            }
-        });
-        return result;
+        return collectChildren(m_roots);
     }
 
     std::vector<Entity> Scene::getChildren(Entity parent) const {
         TE_PROFILER_FUNCTION();
-        std::vector<Entity> result;
         const Hierarchy* parentHierarchy = this->getHierarchy(parent);
         if (parentHierarchy == nullptr) {
-            return result;
+            return {};
         }
-
-        result.reserve(parentHierarchy->m_childrenCount);
-
-        Entity currentChild = parentHierarchy->m_firstChild;
-        while (currentChild.valid()) {
-            result.push_back(currentChild);
-            const Hierarchy* currentChildHierarchy = this->getHierarchy(currentChild);
-            if (currentChildHierarchy != nullptr) {
-                currentChild = currentChildHierarchy->m_nextSibling;
-            } else {
-                break;
-            }
-        }
-        return result;
+        return collectChildren(*parentHierarchy);
     }
 
     bool Scene::setParent(const Entity child, const Entity parent, const std::size_t position) {
@@ -295,117 +279,10 @@ namespace TechEngine {
         if (!immediateStructuralMutationAllowed()) {
             return false;
         }
-        if (child == parent) {
+        if (child == parent || getHierarchy(parent) == nullptr) {
             return false;
         }
-
-        Hierarchy* childHierarchy = getHierarchy(child);
-        Hierarchy* parentHierarchy = getHierarchy(parent);
-        if (childHierarchy == nullptr || parentHierarchy == nullptr) {
-            return false;
-        }
-
-        const Entity oldParent = childHierarchy->m_parent;
-        if (oldParent != parent) {
-            for (Entity ancestor = parent; ancestor.valid();) {
-                if (ancestor == child) {
-                    return false;
-                }
-                const Hierarchy* ancestorHierarchy = getHierarchy(ancestor);
-                if (ancestorHierarchy == nullptr) {
-                    return false;
-                }
-                ancestor = ancestorHierarchy->m_parent;
-            }
-        }
-
-        const Entity oldPrevious = childHierarchy->m_previousSibling;
-        const Entity oldNext = childHierarchy->m_nextSibling;
-        Hierarchy* oldParentHierarchy = oldParent.valid() ? getHierarchy(oldParent) : nullptr;
-        Hierarchy* oldPreviousHierarchy = oldPrevious.valid() ? getHierarchy(oldPrevious) : nullptr;
-        Hierarchy* oldNextHierarchy = oldNext.valid() ? getHierarchy(oldNext) : nullptr;
-
-        if (oldParent.valid()) {
-            if (oldParentHierarchy == nullptr || oldParentHierarchy->m_childrenCount == 0 || (oldPrevious.valid() && oldPreviousHierarchy == nullptr) || (oldNext.valid() && oldNextHierarchy == nullptr)) {
-                return false;
-            }
-            if ((oldPrevious.valid() && oldPreviousHierarchy->m_nextSibling != child) || (!oldPrevious.valid() && oldParentHierarchy->m_firstChild != child) || (oldNext.valid() && oldNextHierarchy->m_previousSibling != child) ||
-                (!oldNext.valid() && oldParentHierarchy->m_lastChild != child)) {
-                return false;
-            }
-        } else if (oldPrevious.valid() || oldNext.valid()) {
-            return false;
-        }
-
-        const std::size_t destinationCount = parentHierarchy->m_childrenCount - static_cast<std::size_t>(oldParent == parent);
-        if (position > destinationCount) {
-            return false;
-        }
-
-        Entity insertionBefore;
-        Entity insertionAfter;
-        if (position == destinationCount) {
-            insertionBefore = parentHierarchy->m_lastChild == child ? oldPrevious : parentHierarchy->m_lastChild;
-        } else {
-            std::size_t visited = 0;
-            for (Entity current = parentHierarchy->m_firstChild; current.valid();) {
-                const Hierarchy* currentHierarchy = getHierarchy(current);
-                if (currentHierarchy == nullptr) {
-                    return false;
-                }
-                if (current != child) {
-                    if (visited == position) {
-                        insertionAfter = current;
-                        break;
-                    }
-                    insertionBefore = current;
-                    visited++;
-                }
-                current = currentHierarchy->m_nextSibling;
-            }
-            if (!insertionAfter.valid()) {
-                return false;
-            }
-        }
-
-        Hierarchy* beforeHierarchy = insertionBefore.valid() ? getHierarchy(insertionBefore) : nullptr;
-        Hierarchy* afterHierarchy = insertionAfter.valid() ? getHierarchy(insertionAfter) : nullptr;
-        if ((insertionBefore.valid() && beforeHierarchy == nullptr) || (insertionAfter.valid() && afterHierarchy == nullptr)) {
-            return false;
-        }
-
-        if (oldParent.valid()) {
-            if (oldPreviousHierarchy != nullptr) {
-                oldPreviousHierarchy->m_nextSibling = oldNext;
-            } else {
-                oldParentHierarchy->m_firstChild = oldNext;
-            }
-            if (oldNextHierarchy != nullptr) {
-                oldNextHierarchy->m_previousSibling = oldPrevious;
-            } else {
-                oldParentHierarchy->m_lastChild = oldPrevious;
-            }
-            oldParentHierarchy->m_childrenCount--;
-        }
-
-        childHierarchy->m_parent = parent;
-        childHierarchy->m_previousSibling = insertionBefore;
-        childHierarchy->m_nextSibling = insertionAfter;
-        if (beforeHierarchy != nullptr) {
-            beforeHierarchy->m_nextSibling = child;
-        } else {
-            parentHierarchy->m_firstChild = child;
-        }
-        if (afterHierarchy != nullptr) {
-            afterHierarchy->m_previousSibling = child;
-        } else {
-            parentHierarchy->m_lastChild = child;
-        }
-        parentHierarchy->m_childrenCount++;
-        if (oldParent != parent) {
-            propagateTransformSubtree(child);
-        }
-        return true;
+        return moveChild(child, parent, position);
     }
 
     bool Scene::setParent(const Entity child, const Entity parent, const std::size_t position, const ReparentMode mode) {
@@ -435,60 +312,28 @@ namespace TechEngine {
         return true;
     }
 
-    bool Scene::unparent(Entity child) {
-        if (!immediateStructuralMutationAllowed()) {
-            return false;
-        }
-        Hierarchy* childHierarchy = this->getHierarchy(child);
-        if (childHierarchy == nullptr || !childHierarchy->m_parent.valid()) {
-            return false;
-        }
-
-        Hierarchy* parentHierarchy = this->getHierarchy(childHierarchy->m_parent);
-        Hierarchy* previousSiblingHierarchy = childHierarchy->m_previousSibling.valid() ? getHierarchy(childHierarchy->m_previousSibling) : nullptr;
-        Hierarchy* nextSiblingHierarchy = childHierarchy->m_nextSibling.valid() ? getHierarchy(childHierarchy->m_nextSibling) : nullptr;
-        if (parentHierarchy == nullptr || parentHierarchy->m_childrenCount == 0 || (childHierarchy->m_previousSibling.valid() && previousSiblingHierarchy == nullptr) || (childHierarchy->m_nextSibling.valid() && nextSiblingHierarchy == nullptr)) {
-            return false;
-        }
-        if ((previousSiblingHierarchy != nullptr && previousSiblingHierarchy->m_nextSibling != child) || (previousSiblingHierarchy == nullptr && parentHierarchy->m_firstChild != child) || (nextSiblingHierarchy != nullptr && nextSiblingHierarchy->m_previousSibling != child) ||
-            (nextSiblingHierarchy == nullptr && parentHierarchy->m_lastChild != child)) {
-            return false;
-        }
-
-        if (previousSiblingHierarchy != nullptr) {
-            previousSiblingHierarchy->m_nextSibling = childHierarchy->m_nextSibling;
-        } else {
-            parentHierarchy->m_firstChild = childHierarchy->m_nextSibling;
-        }
-        if (nextSiblingHierarchy != nullptr) {
-            nextSiblingHierarchy->m_previousSibling = childHierarchy->m_previousSibling;
-        } else {
-            parentHierarchy->m_lastChild = childHierarchy->m_previousSibling;
-        }
-        parentHierarchy->m_childrenCount--;
-
-        childHierarchy->m_parent = Entity();
-        childHierarchy->m_previousSibling = Entity();
-        childHierarchy->m_nextSibling = Entity();
-
-        propagateTransformSubtree(child);
-        return true;
+    bool Scene::unparent(const Entity child) {
+        return unparent(child, m_roots.m_childrenCount, ReparentMode::PreserveLocal);
     }
 
     bool Scene::unparent(const Entity child, const ReparentMode mode) {
+        return unparent(child, m_roots.m_childrenCount, mode);
+    }
+
+    bool Scene::unparent(const Entity child, const std::size_t position, const ReparentMode mode) {
         if (!immediateStructuralMutationAllowed()) {
             return false;
         }
-        if (mode == ReparentMode::PreserveLocal) {
-            return unparent(child);
-        }
-
         if (!getParent(child).valid()) {
             return false;
         }
+        if (mode == ReparentMode::PreserveLocal) {
+            return moveChild(child, Entity(), position);
+        }
+
         Mat4 childWorld;
         TransformValues newLocal;
-        if (!fromLocalToWorld(child, childWorld) || !decomposeLocalMatrix(childWorld, newLocal) || !unparent(child)) {
+        if (!fromLocalToWorld(child, childWorld) || !decomposeLocalMatrix(childWorld, newLocal) || !moveChild(child, Entity(), position)) {
             return false;
         }
         const bool updated = getComponent<Transform>(child).setLocal(newLocal);
@@ -496,16 +341,15 @@ namespace TechEngine {
         return true;
     }
 
-    bool Scene::reorderChild(Entity child, std::size_t position) {
+    bool Scene::reorderChild(const Entity child, const std::size_t position) {
         if (!immediateStructuralMutationAllowed()) {
             return false;
         }
-        Hierarchy* childHierarchy = this->getHierarchy(child);
-        if (childHierarchy == nullptr || !childHierarchy->m_parent.valid()) {
+        const Hierarchy* childHierarchy = getHierarchy(child);
+        if (childHierarchy == nullptr) {
             return false;
         }
-
-        return setParent(child, childHierarchy->m_parent, position);
+        return moveChild(child, childHierarchy->m_parent, position);
     }
 
     Hierarchy* Scene::getHierarchy(const Entity entity) {
@@ -514,6 +358,154 @@ namespace TechEngine {
 
     const Hierarchy* Scene::getHierarchy(const Entity entity) const {
         return m_storage->component<Hierarchy>(entity);
+    }
+
+    Hierarchy* Scene::getChildList(const Entity parent) {
+        return parent.valid() ? getHierarchy(parent) : &m_roots;
+    }
+
+    const Hierarchy* Scene::getChildList(const Entity parent) const {
+        return parent.valid() ? getHierarchy(parent) : &m_roots;
+    }
+
+    std::vector<Entity> Scene::collectChildren(const Hierarchy& list) const {
+        std::vector<Entity> result;
+        result.reserve(list.m_childrenCount);
+        Entity current = list.m_firstChild;
+        while (current.valid()) {
+            result.push_back(current);
+            const Hierarchy* currentHierarchy = getHierarchy(current);
+            if (currentHierarchy == nullptr) {
+                break;
+            }
+            current = currentHierarchy->m_nextSibling;
+        }
+        return result;
+    }
+
+    bool Scene::hasConsistentLinks(const Entity child, const Hierarchy& childHierarchy) const {
+        const Entity previous = childHierarchy.m_previousSibling;
+        const Entity next = childHierarchy.m_nextSibling;
+        const Hierarchy* list = getChildList(childHierarchy.m_parent);
+        const Hierarchy* previousHierarchy = previous.valid() ? getHierarchy(previous) : nullptr;
+        const Hierarchy* nextHierarchy = next.valid() ? getHierarchy(next) : nullptr;
+        if (list == nullptr || list->m_childrenCount == 0 || (previous.valid() && previousHierarchy == nullptr) || (next.valid() && nextHierarchy == nullptr)) {
+            return false;
+        }
+        const Entity linkedFromPrevious = previousHierarchy != nullptr ? previousHierarchy->m_nextSibling : list->m_firstChild;
+        const Entity linkedFromNext = nextHierarchy != nullptr ? nextHierarchy->m_previousSibling : list->m_lastChild;
+        return linkedFromPrevious == child && linkedFromNext == child;
+    }
+
+    void Scene::unlinkChild(Hierarchy& childHierarchy) {
+        Hierarchy* list = getChildList(childHierarchy.m_parent);
+        Hierarchy* previousHierarchy = childHierarchy.m_previousSibling.valid() ? getHierarchy(childHierarchy.m_previousSibling) : nullptr;
+        Hierarchy* nextHierarchy = childHierarchy.m_nextSibling.valid() ? getHierarchy(childHierarchy.m_nextSibling) : nullptr;
+        TE_CHECK(list != nullptr && (!childHierarchy.m_previousSibling.valid() || previousHierarchy != nullptr) && (!childHierarchy.m_nextSibling.valid() || nextHierarchy != nullptr), "Unlinked a child whose sibling links were not checked");
+
+        if (previousHierarchy != nullptr) {
+            previousHierarchy->m_nextSibling = childHierarchy.m_nextSibling;
+        } else {
+            list->m_firstChild = childHierarchy.m_nextSibling;
+        }
+        if (nextHierarchy != nullptr) {
+            nextHierarchy->m_previousSibling = childHierarchy.m_previousSibling;
+        } else {
+            list->m_lastChild = childHierarchy.m_previousSibling;
+        }
+        list->m_childrenCount--;
+
+        childHierarchy.m_parent = Entity();
+        childHierarchy.m_previousSibling = Entity();
+        childHierarchy.m_nextSibling = Entity();
+    }
+
+    void Scene::linkChild(const Entity child, Hierarchy& childHierarchy, const Entity parent, const Entity before, const Entity after) {
+        Hierarchy* list = getChildList(parent);
+        Hierarchy* beforeHierarchy = before.valid() ? getHierarchy(before) : nullptr;
+        Hierarchy* afterHierarchy = after.valid() ? getHierarchy(after) : nullptr;
+        TE_CHECK(list != nullptr && (!before.valid() || beforeHierarchy != nullptr) && (!after.valid() || afterHierarchy != nullptr), "Linked a child beside an entity that has no hierarchy");
+
+        childHierarchy.m_parent = parent;
+        childHierarchy.m_previousSibling = before;
+        childHierarchy.m_nextSibling = after;
+        if (beforeHierarchy != nullptr) {
+            beforeHierarchy->m_nextSibling = child;
+        } else {
+            list->m_firstChild = child;
+        }
+        if (afterHierarchy != nullptr) {
+            afterHierarchy->m_previousSibling = child;
+        } else {
+            list->m_lastChild = child;
+        }
+        list->m_childrenCount++;
+    }
+
+    bool Scene::moveChild(const Entity child, const Entity parent, const std::size_t position) {
+        Hierarchy* childHierarchy = getHierarchy(child);
+        const Hierarchy* destination = getChildList(parent);
+        if (childHierarchy == nullptr || destination == nullptr) {
+            return false;
+        }
+
+        const Entity oldParent = childHierarchy->m_parent;
+        if (oldParent != parent) {
+            for (Entity ancestor = parent; ancestor.valid();) {
+                if (ancestor == child) {
+                    return false;
+                }
+                const Hierarchy* ancestorHierarchy = getHierarchy(ancestor);
+                if (ancestorHierarchy == nullptr) {
+                    return false;
+                }
+                ancestor = ancestorHierarchy->m_parent;
+            }
+        }
+        if (!hasConsistentLinks(child, *childHierarchy)) {
+            return false;
+        }
+
+        const std::size_t destinationCount = destination->m_childrenCount - static_cast<std::size_t>(oldParent == parent);
+        if (position > destinationCount) {
+            return false;
+        }
+
+        Entity insertionBefore;
+        Entity insertionAfter;
+        if (position == destinationCount) {
+            insertionBefore = destination->m_lastChild == child ? childHierarchy->m_previousSibling : destination->m_lastChild;
+        } else {
+            std::size_t visited = 0;
+            for (Entity current = destination->m_firstChild; current.valid();) {
+                const Hierarchy* currentHierarchy = getHierarchy(current);
+                if (currentHierarchy == nullptr) {
+                    return false;
+                }
+                if (current != child) {
+                    if (visited == position) {
+                        insertionAfter = current;
+                        break;
+                    }
+                    insertionBefore = current;
+                    visited++;
+                }
+                current = currentHierarchy->m_nextSibling;
+            }
+            if (!insertionAfter.valid()) {
+                return false;
+            }
+        }
+        if ((insertionBefore.valid() && getHierarchy(insertionBefore) == nullptr) || (insertionAfter.valid() && getHierarchy(insertionAfter) == nullptr)) {
+            return false;
+        }
+
+        unlinkChild(*childHierarchy);
+        linkChild(child, *childHierarchy, parent, insertionBefore, insertionAfter);
+        if (oldParent != parent) {
+            propagateTransformSubtree(child);
+        }
+        return true;
     }
 
     bool Scene::ownsTransform(const Entity entity, const Transform* transform) const {
