@@ -30,6 +30,10 @@ namespace TechEngine {
                         return "source file has no mesh made of triangles";
                     case ProjectError::ImportFolderExists:
                         return "import folder already exists";
+                    case ProjectError::SourceCompressed:
+                        return "source file uses a quantized or meshopt-compressed mesh extension";
+                    case ProjectError::InvalidImportScale:
+                        return "import scale is not a finite number above zero";
                 }
                 return "unknown project error";
             }

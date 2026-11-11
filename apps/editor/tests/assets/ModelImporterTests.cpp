@@ -11,7 +11,7 @@
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <assets/AssetIndex.hpp>
-#include <assets/ModelImport.hpp>
+#include <assets/ModelImporter.hpp>
 #include <assets/ModelTestFiles.hpp>
 #include <project/ProjectError.hpp>
 
@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <iterator>
+#include <limits>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -41,7 +42,9 @@ using TechEngine::ProjectError;
 using TechEngine::Quat;
 using TechEngine::ResourceId;
 using TechEngine::UpAxis;
+using TechEngine::Vec2;
 using TechEngine::Vec3;
+using TechEngine::Vec4;
 using TechEngineTests::ScratchDirectory;
 
 static constexpr std::uint64_t FIRST_TEST_ID = 0x1000;
@@ -64,13 +67,10 @@ public:
         request.sourcePath = "project://assets/client/" + std::string(fileName);
         request.side = TechEngine::Side::Client;
         request.settings = settings;
-        return TechEngine::importModel(
-            files,
-            request,
-            [this] {
-                return ResourceId{nextId++};
-            },
-            out);
+        const TechEngine::ModelImporter importer(files, [this] {
+            return ResourceId{nextId++};
+        });
+        return importer.importFile(request, out);
     }
 
     Model readModel(const std::string& path) const {
@@ -134,12 +134,61 @@ static std::ptrdiff_t entryCount(const std::filesystem::path& directory) {
     return std::distance(std::filesystem::directory_iterator{directory}, std::filesystem::directory_iterator{});
 }
 
+static Vec3 turnedUpright(const Vec3 value) {
+    return Vec3(value.x, value.z, -value.y);
+}
+
+static void checkVec2(const Vec2 actual, const Vec2 expected) {
+    CHECK(actual.x == Catch::Approx(expected.x).margin(TOLERANCE));
+    CHECK(actual.y == Catch::Approx(expected.y).margin(TOLERANCE));
+}
+
+static void checkUnitTangent(const Vec4 tangent, const Vec3 normal) {
+    CHECK(glm::length(Vec3(tangent)) == Catch::Approx(1.0f).margin(TOLERANCE));
+    CHECK(glm::dot(Vec3(tangent), normal) == Catch::Approx(0.0f).margin(TOLERANCE));
+    CHECK((tangent.w == 1.0f || tangent.w == -1.0f));
+}
+
+// The direction in which UV0's V grows across one triangle, solved from its positions and UVs.
+static Vec3 uvBitangent(const Mesh& mesh, const std::size_t firstIndex) {
+    const std::uint32_t a = mesh.indices[firstIndex];
+    const std::uint32_t b = mesh.indices[firstIndex + 1];
+    const std::uint32_t c = mesh.indices[firstIndex + 2];
+    const Vec3 edge1 = mesh.positions[b] - mesh.positions[a];
+    const Vec3 edge2 = mesh.positions[c] - mesh.positions[a];
+    const Vec2 uvEdge1 = mesh.uv0[b] - mesh.uv0[a];
+    const Vec2 uvEdge2 = mesh.uv0[c] - mesh.uv0[a];
+    const float determinant = uvEdge1.x * uvEdge2.y - uvEdge2.x * uvEdge1.y;
+    REQUIRE(std::abs(determinant) > TOLERANCE);
+    return (edge2 * uvEdge1.x - edge1 * uvEdge2.x) / determinant;
+}
+
+// w is right when cross(n, t.xyz) * w points the way V grows in the stored UV0, at every corner of every triangle.
+static void checkBitangentsFollowUv(const Mesh& mesh) {
+    REQUIRE(mesh.normals.size() == mesh.positions.size());
+    REQUIRE(mesh.tangents.size() == mesh.positions.size());
+    REQUIRE(mesh.uv0.size() == mesh.positions.size());
+    for (std::size_t first = 0; first < mesh.indices.size(); first += 3) {
+        const Vec3 expected = uvBitangent(mesh, first);
+        for (std::size_t corner = 0; corner < 3; corner++) {
+            const std::uint32_t vertex = mesh.indices[first + corner];
+            const Vec4 tangent = mesh.tangents[vertex];
+            const Vec3 built = glm::cross(mesh.normals[vertex], Vec3(tangent)) * tangent.w;
+            CHECK(glm::dot(built, expected) > 0.0f);
+        }
+    }
+}
+
+static std::string withExtensionsUsed(const std::string_view extensionsArray, const std::string_view body) {
+    return R"("extensionsUsed":)" + std::string(extensionsArray) + "," + std::string(body);
+}
+
 TEST_CASE("the import folder is the source path without its extension", "[editor][assets][import]") {
-    CHECK(TechEngine::modelImportFolder("project://assets/client/Sponza.gltf") == "project://assets/client/Sponza");
-    CHECK(TechEngine::modelImportFolder("project://assets/client/Old.Town.fbx") == "project://assets/client/Old.Town");
-    CHECK(TechEngine::modelImportFolder("project://assets/v1.2/Crate.obj") == "project://assets/v1.2/Crate");
-    CHECK(TechEngine::modelImportFolder("project://assets/v1.2/Crate") == "project://assets/v1.2/Crate");
-    CHECK(TechEngine::modelImportFolder("project://assets/client/.hidden") == "project://assets/client/.hidden");
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/client/Sponza.gltf") == "project://assets/client/Sponza");
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/client/Old.Town.fbx") == "project://assets/client/Old.Town");
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/v1.2/Crate.obj") == "project://assets/v1.2/Crate");
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/v1.2/Crate") == "project://assets/v1.2/Crate");
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/client/.hidden") == "project://assets/client/.hidden");
 }
 
 TEST_CASE("a glTF file imports with its node and mesh counts", "[editor][assets][import]") {
@@ -243,9 +292,18 @@ TEST_CASE("a glTF file imports with its node and mesh counts", "[editor][assets]
             CHECK(mesh->slots[0].firstIndex == 0);
             CHECK(mesh->slots[0].indexCount == mesh->indices.size());
             CHECK_FALSE(mesh->slots[0].defaultMaterial.valid());
-            CHECK(mesh->normals.empty());
-            CHECK(mesh->tangents.empty());
-            CHECK(mesh->uv0.empty());
+        }
+    }
+
+    SECTION("a mesh with positions only gets flat normals, and no tangents or UV0") {
+        for (std::size_t i = 1; i < result.records.size(); i++) {
+            const Mesh mesh = fixture.readMesh(result.records[i].path);
+            REQUIRE(mesh.normals.size() == mesh.positions.size());
+            for (const Vec3 normal: mesh.normals) {
+                checkVec3(normal, Vec3(0.0f, 0.0f, 1.0f));
+            }
+            CHECK(mesh.tangents.empty());
+            CHECK(mesh.uv0.empty());
         }
     }
 }
@@ -272,6 +330,16 @@ TEST_CASE("a scale of 0.01 and a Z-up axis are baked into the vertices and the n
             checkVec3(mesh.positions[1], Vec3(0.04f, 0.03f, -0.02f));
             checkVec3(mesh.positions[2], Vec3(0.01f, 0.03f, -0.05f));
             CHECK(mesh.indices == std::vector<std::uint32_t>{0, 1, 2});
+        }
+    }
+
+    SECTION("a generated normal is turned with the mesh and is not scaled") {
+        for (std::size_t i = 1; i < result.records.size(); i++) {
+            const Mesh mesh = fixture.readMesh(result.records[i].path);
+            REQUIRE(mesh.normals.size() == mesh.positions.size());
+            for (const Vec3 normal: mesh.normals) {
+                checkVec3(normal, Vec3(0.0f, 1.0f, 0.0f));
+            }
         }
     }
 
@@ -407,13 +475,10 @@ TEST_CASE("a source that cannot be imported leaves no folder behind", "[editor][
     SECTION("a path that is not a virtual path") {
         ModelImportRequest request;
         request.sourcePath = "assets/client/Pair.gltf";
-        const std::error_code importError = TechEngine::importModel(
-            fixture.files,
-            request,
-            [] {
-                return ResourceId{FIRST_TEST_ID};
-            },
-            result);
+        const TechEngine::ModelImporter importer(fixture.files, [] {
+            return ResourceId{FIRST_TEST_ID};
+        });
+        const std::error_code importError = importer.importFile(request, result);
         CHECK(importError == TechEngine::FileError::InvalidPath);
     }
 
@@ -535,4 +600,275 @@ TEST_CASE("an OBJ file imports, with its quad split into two triangles", "[edito
     CHECK(model.importBlock.sourcePath == "assets/client/Quad.obj");
     const auto holder = std::ranges::find(model.nodes, mesh.id, &ModelNode::mesh);
     CHECK(holder != model.nodes.end());
+}
+
+TEST_CASE("a glTF fixture with tangents keeps them, with w turned to the stored UVs", "[editor][assets][import][tangents]") {
+    ModelImportFixture fixture{"importKeepsTangents"};
+    fixture.scratch.writeFile("assets/client/Panel.gltf", TechEngineTests::gltfQuadFile(TechEngineTests::GLTF_QUAD_WITH_TANGENTS_BODY));
+
+    ModelImportResult result;
+    REQUIRE(fixture.importFile("Panel.gltf", ImportSettings{}, result) == std::error_code{});
+    REQUIRE(result.records.size() == 2);
+    const Mesh mesh = fixture.readMesh(result.records[1].path);
+    REQUIRE(mesh.positions.size() == 4);
+    CHECK(mesh.indices.size() == 6);
+
+    SECTION("the file's normals are kept, not replaced by flat ones") {
+        REQUIRE(mesh.normals.size() == 4);
+        for (const Vec3 normal: mesh.normals) {
+            checkVec3(normal, TechEngineTests::QUAD_NORMAL);
+        }
+    }
+
+    SECTION("UV0 holds the file's UVs with V flipped, as assimp gives them") {
+        REQUIRE(mesh.uv0.size() == 4);
+        for (std::size_t i = 0; i < mesh.positions.size(); i++) {
+            const Vec3 position = mesh.positions[i];
+            checkVec2(mesh.uv0[i], Vec2((position.x - 1.0f) / 3.0f, 1.0f - (position.y - 2.0f) / 3.0f));
+        }
+    }
+
+    SECTION("each tangent keeps its direction, and w is the negation of glTF's, because V was flipped") {
+        REQUIRE(mesh.tangents.size() == 4);
+        for (const Vec4 tangent: mesh.tangents) {
+            checkVec3(Vec3(tangent), Vec3(TechEngineTests::QUAD_TANGENT));
+            CHECK(tangent.w == -TechEngineTests::QUAD_TANGENT.w);
+        }
+    }
+
+    SECTION("the bitangent the tangents build follows V in the stored UVs") {
+        checkBitangentsFollowUv(mesh);
+    }
+}
+
+TEST_CASE("a glTF fixture without tangents gets unit MikkTSpace tangents with w of plus or minus one", "[editor][assets][import][tangents]") {
+    ModelImportFixture fixture{"importMakesTangents"};
+    fixture.scratch.writeFile("assets/client/Panel.gltf", TechEngineTests::gltfQuadFile(TechEngineTests::GLTF_QUAD_WITHOUT_TANGENTS_BODY));
+
+    ModelImportResult result;
+    REQUIRE(fixture.importFile("Panel.gltf", ImportSettings{}, result) == std::error_code{});
+    REQUIRE(result.records.size() == 2);
+    const Mesh mesh = fixture.readMesh(result.records[1].path);
+
+    SECTION("every vertex has a unit tangent, perpendicular to its normal") {
+        REQUIRE(mesh.tangents.size() == mesh.positions.size());
+        REQUIRE(mesh.normals.size() == mesh.positions.size());
+        for (std::size_t i = 0; i < mesh.tangents.size(); i++) {
+            checkUnitTangent(mesh.tangents[i], mesh.normals[i]);
+        }
+    }
+
+    SECTION("the mesh is re-indexed: the two shared corners are one vertex again") {
+        CHECK(mesh.positions.size() == 4);
+        CHECK(mesh.indices.size() == 6);
+        REQUIRE(mesh.slots.size() == 1);
+        CHECK(mesh.slots[0].firstIndex == 0);
+        CHECK(mesh.slots[0].indexCount == 6);
+        for (const std::uint32_t index: mesh.indices) {
+            CHECK(index < mesh.positions.size());
+        }
+    }
+
+    SECTION("the bitangent the tangents build follows V in the stored UVs") {
+        checkBitangentsFollowUv(mesh);
+    }
+}
+
+TEST_CASE("a generated tangent and a file tangent agree on the same quad", "[editor][assets][import][tangents]") {
+    ModelImportFixture fixture{"importTangentsAgree"};
+    fixture.scratch.writeFile("assets/client/Filed.gltf", TechEngineTests::gltfQuadFile(TechEngineTests::GLTF_QUAD_WITH_TANGENTS_BODY));
+    fixture.scratch.writeFile("assets/client/Made.gltf", TechEngineTests::gltfQuadFile(TechEngineTests::GLTF_QUAD_WITHOUT_TANGENTS_BODY));
+
+    ModelImportResult filedResult;
+    REQUIRE(fixture.importFile("Filed.gltf", ImportSettings{}, filedResult) == std::error_code{});
+    ModelImportResult madeResult;
+    REQUIRE(fixture.importFile("Made.gltf", ImportSettings{}, madeResult) == std::error_code{});
+    const Mesh filed = fixture.readMesh(filedResult.records[1].path);
+    const Mesh made = fixture.readMesh(madeResult.records[1].path);
+    REQUIRE(filed.tangents.size() == filed.positions.size());
+    REQUIRE(made.tangents.size() == made.positions.size());
+
+    for (std::size_t i = 0; i < made.positions.size(); i++) {
+        const auto match = std::ranges::find_if(filed.positions, [&made, i](const Vec3 position) {
+            return glm::length(position - made.positions[i]) < TOLERANCE;
+        });
+        REQUIRE(match != filed.positions.end());
+        const Vec4 filedTangent = filed.tangents[static_cast<std::size_t>(match - filed.positions.begin())];
+        checkVec3(Vec3(made.tangents[i]), Vec3(filedTangent));
+        CHECK(made.tangents[i].w == filedTangent.w);
+    }
+}
+
+TEST_CASE("a mesh with normals and no UV0 gets no tangents", "[editor][assets][import][tangents]") {
+    ModelImportFixture fixture{"importNoUvNoTangents"};
+    fixture.scratch.writeFile("assets/client/Panel.gltf", TechEngineTests::gltfQuadFile(TechEngineTests::GLTF_QUAD_WITHOUT_UVS_BODY));
+
+    ModelImportResult result;
+    REQUIRE(fixture.importFile("Panel.gltf", ImportSettings{}, result) == std::error_code{});
+    REQUIRE(result.records.size() == 2);
+    const Mesh mesh = fixture.readMesh(result.records[1].path);
+
+    CHECK(mesh.normals.size() == mesh.positions.size());
+    CHECK(mesh.uv0.empty());
+    CHECK(mesh.tangents.empty());
+}
+
+TEST_CASE("after a Z-up bake, cross(n, t.xyz) * w still matches the baked bitangent", "[editor][assets][import][tangents]") {
+    ModelImportFixture fixture{"importTangentsBaked"};
+    const ImportSettings settings{0.01f, UpAxis::Z};
+
+    SECTION("the file's own tangents") {
+        fixture.scratch.writeFile("assets/client/Panel.gltf", TechEngineTests::gltfQuadFile(TechEngineTests::GLTF_QUAD_WITH_TANGENTS_BODY));
+        ModelImportResult result;
+        REQUIRE(fixture.importFile("Panel.gltf", settings, result) == std::error_code{});
+        const Mesh mesh = fixture.readMesh(result.records[1].path);
+        REQUIRE(mesh.normals.size() == 4);
+        REQUIRE(mesh.tangents.size() == 4);
+
+        // assimp's bitangent is glTF's, cross(n, t) * w; against the flipped V that the mesh stores, it points backwards.
+        const Vec3 sourceNormal = TechEngineTests::QUAD_NORMAL;
+        const Vec3 sourceTangent = Vec3(TechEngineTests::QUAD_TANGENT);
+        const Vec3 storedBitangent = -glm::cross(sourceNormal, sourceTangent) * TechEngineTests::QUAD_TANGENT.w;
+
+        for (std::size_t i = 0; i < 4; i++) {
+            checkVec3(mesh.normals[i], turnedUpright(sourceNormal));
+            CHECK(glm::length(mesh.normals[i]) == Catch::Approx(1.0f).margin(TOLERANCE));
+            checkVec3(Vec3(mesh.tangents[i]), turnedUpright(sourceTangent));
+            const Vec3 built = glm::cross(mesh.normals[i], Vec3(mesh.tangents[i])) * mesh.tangents[i].w;
+            checkVec3(built, turnedUpright(storedBitangent));
+        }
+        checkBitangentsFollowUv(mesh);
+    }
+
+    SECTION("MikkTSpace's tangents, made after the bake") {
+        fixture.scratch.writeFile("assets/client/Panel.gltf", TechEngineTests::gltfQuadFile(TechEngineTests::GLTF_QUAD_WITHOUT_TANGENTS_BODY));
+        ModelImportResult result;
+        REQUIRE(fixture.importFile("Panel.gltf", settings, result) == std::error_code{});
+        const Mesh mesh = fixture.readMesh(result.records[1].path);
+        REQUIRE(mesh.tangents.size() == mesh.positions.size());
+        for (std::size_t i = 0; i < mesh.tangents.size(); i++) {
+            checkUnitTangent(mesh.tangents[i], mesh.normals[i]);
+        }
+        checkBitangentsFollowUv(mesh);
+    }
+}
+
+TEST_CASE("an OBJ's tangents are made in its own UV space, with no glTF negation", "[editor][assets][import][tangents]") {
+    ModelImportFixture fixture{"importObjTangents"};
+    fixture.scratch.writeFile("assets/client/Quad.obj", TechEngineTests::OBJ_QUAD_WITH_UVS);
+
+    ModelImportResult result;
+    REQUIRE(fixture.importFile("Quad.obj", ImportSettings{}, result) == std::error_code{});
+    REQUIRE(result.records.size() == 2);
+    const Mesh mesh = fixture.readMesh(result.records[1].path);
+    REQUIRE(mesh.tangents.size() == mesh.positions.size());
+
+    for (std::size_t i = 0; i < mesh.tangents.size(); i++) {
+        checkVec3(mesh.normals[i], Vec3(0.0f, 0.0f, 1.0f));
+        checkVec3(Vec3(mesh.tangents[i]), Vec3(1.0f, 0.0f, 0.0f));
+        CHECK(mesh.tangents[i].w == 1.0f);
+    }
+    checkBitangentsFollowUv(mesh);
+}
+
+TEST_CASE("a quantized or meshopt-compressed glTF is refused before assimp reads it", "[editor][assets][import][extensions]") {
+    ModelImportFixture fixture{"importRefusesCompressed"};
+    std::string fileName = "Pair.gltf";
+
+    SECTION("KHR_mesh_quantization") {
+        fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(withExtensionsUsed(R"(["KHR_mesh_quantization"])", TechEngineTests::GLTF_PAIR_BODY)));
+    }
+
+    SECTION("EXT_meshopt_compression, listed after an extension that imports") {
+        fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(withExtensionsUsed(R"([ "KHR_materials_sheen" , "EXT_meshopt_compression" ])", TechEngineTests::GLTF_PAIR_BODY)));
+    }
+
+    SECTION("KHR_meshopt_compression") {
+        fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(withExtensionsUsed(R"(["KHR_meshopt_compression"])", TechEngineTests::GLTF_PAIR_BODY)));
+    }
+
+    SECTION("a file that assimp could not parse at all, so the refusal came first") {
+        fixture.scratch.writeFile("assets/client/Pair.gltf", R"({"asset":{"version":"2.0"},"extensionsUsed":["KHR_mesh_quantization"],)");
+    }
+
+    SECTION("an extension in upper case") {
+        fileName = "Pair.GLTF";
+        fixture.scratch.writeFile("assets/client/Pair.GLTF", TechEngineTests::gltfFile(withExtensionsUsed(R"(["KHR_mesh_quantization"])", TechEngineTests::GLTF_PAIR_BODY)));
+    }
+
+    SECTION("a binary glTF") {
+        fileName = "Pair.glb";
+        fixture.scratch.writeFile("assets/client/Pair.glb", TechEngineTests::glbFile(TechEngineTests::gltfFile(withExtensionsUsed(R"(["KHR_mesh_quantization"])", TechEngineTests::GLTF_PAIR_BODY))));
+    }
+
+    ModelImportResult result;
+    CHECK(fixture.importFile(fileName, ImportSettings{}, result) == ProjectError::SourceCompressed);
+    CHECK(result.records.empty());
+    CHECK(result.folder.empty());
+    CHECK_FALSE(fixture.exists("assets/client/Pair"));
+    CHECK(fixture.nextId == FIRST_TEST_ID);
+}
+
+TEST_CASE("a refused extension's name outside extensionsUsed does not refuse the file", "[editor][assets][import][extensions]") {
+    ModelImportFixture fixture{"importNamesNotExtensions"};
+
+    SECTION("a glTF whose node and mesh carry the names") {
+        const std::string body = withExtensionsUsed(
+            R"(["KHR_materials_sheen"])",
+            R"("scenes":[{"nodes":[0]}],)"
+            R"("nodes":[{"name":"KHR_mesh_quantization","mesh":0}],)"
+            R"("meshes":[{"name":"EXT_meshopt_compression","primitives":[{"attributes":{"POSITION":1},"indices":0}]}])");
+        fixture.scratch.writeFile("assets/client/Named.gltf", TechEngineTests::gltfFile(body));
+
+        ModelImportResult result;
+        CHECK(fixture.importFile("Named.gltf", ImportSettings{}, result) == std::error_code{});
+        CHECK(result.records.size() == 2);
+    }
+
+    SECTION("a binary glTF that lists only an extension that imports") {
+        fixture.scratch.writeFile("assets/client/Named.glb", TechEngineTests::glbFile(TechEngineTests::gltfFile(withExtensionsUsed(R"(["KHR_materials_sheen"])", TechEngineTests::GLTF_PAIR_BODY))));
+
+        ModelImportResult result;
+        CHECK(fixture.importFile("Named.glb", ImportSettings{}, result) != ProjectError::SourceCompressed);
+    }
+}
+
+TEST_CASE("an import scale that is not a finite number above zero is refused before anything is read", "[editor][assets][import]") {
+    ModelImportFixture fixture{"importRefusesScale"};
+    fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
+    ImportSettings settings;
+
+    SECTION("zero") {
+        settings.scale = 0.0f;
+    }
+
+    SECTION("negative zero") {
+        settings.scale = -0.0f;
+    }
+
+    SECTION("a negative scale, which would mirror the model") {
+        settings.scale = -1.0f;
+    }
+
+    SECTION("not a number") {
+        settings.scale = std::numeric_limits<float>::quiet_NaN();
+    }
+
+    SECTION("infinity") {
+        settings.scale = std::numeric_limits<float>::infinity();
+    }
+
+    ModelImportResult result;
+    CHECK(fixture.importFile("Pair.gltf", settings, result) == ProjectError::InvalidImportScale);
+    CHECK(result.records.empty());
+    CHECK_FALSE(fixture.exists("assets/client/Pair"));
+    CHECK(fixture.nextId == FIRST_TEST_ID);
+}
+
+TEST_CASE("the smallest positive scale is accepted", "[editor][assets][import]") {
+    ModelImportFixture fixture{"importTinyScale"};
+    fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
+
+    ModelImportResult result;
+    CHECK(fixture.importFile("Pair.gltf", ImportSettings{std::numeric_limits<float>::min(), UpAxis::Y}, result) == std::error_code{});
 }

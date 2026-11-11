@@ -13,7 +13,7 @@
 #include <TechEngine/platform/files/FileError.hpp>
 
 #include <EditorApp.hpp>
-#include <assets/ModelImport.hpp>
+#include <assets/ModelImporter.hpp>
 #include <edit/ExportCommand.hpp>
 #include <edit/ImportModelCommand.hpp>
 #include <edit/MaterialSlotRebuild.hpp>
@@ -469,7 +469,7 @@ namespace TechEngine {
             return;
         }
         FileStatus folder;
-        const std::error_code folderError = m_files.status(modelImportFolder(STARTUP_IMPORT_PATH), folder);
+        const std::error_code folderError = m_files.status(ModelImporter::importFolder(STARTUP_IMPORT_PATH), folder);
         if (folderError != FileError::NotFound) {
             return;
         }

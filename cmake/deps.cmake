@@ -138,7 +138,20 @@ FetchContent_Declare(assimp
   GIT_REPOSITORY https://github.com/assimp/assimp.git
   GIT_TAG        v6.0.5
   GIT_SHALLOW    TRUE)
-FetchContent_MakeAvailable(assimp)
+# MikkTSpace is not a CMake project and has no tags, so it pins a full commit and is built here.
+FetchContent_Declare(mikktspace
+  GIT_REPOSITORY https://github.com/mmikk/MikkTSpace.git
+  GIT_TAG        3e895b49d05ea07e4c2133156cfa94369e19e409)
+set(MESHOPT_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(meshoptimizer
+  GIT_REPOSITORY https://github.com/zeux/meshoptimizer.git
+  GIT_TAG        v1.3
+  GIT_SHALLOW    TRUE)
+FetchContent_MakeAvailable(assimp mikktspace meshoptimizer)
+
+add_library(TechEngineMikkTSpace STATIC ${mikktspace_SOURCE_DIR}/mikktspace.c)
+add_library(TechEngine::mikktspace ALIAS TechEngineMikkTSpace)
+target_include_directories(TechEngineMikkTSpace SYSTEM PUBLIC ${mikktspace_SOURCE_DIR})
 
 # --- audio (single-header) --------------------------------------------------
 # Not a CMake project: populate the source and wrap the include dir in an

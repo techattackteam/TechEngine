@@ -10,7 +10,7 @@
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <assets/AssetIndex.hpp>
-#include <assets/ModelImport.hpp>
+#include <assets/ModelImporter.hpp>
 #include <assets/ModelTestFiles.hpp>
 #include <edit/ImportModelCommand.hpp>
 

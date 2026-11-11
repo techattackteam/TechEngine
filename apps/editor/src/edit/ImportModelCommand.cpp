@@ -17,7 +17,8 @@ namespace TechEngine {
     void ImportModelCommand::apply(Scene&) {
         Task task = [app = m_app, files = m_files, index = m_index, request = std::move(m_request)] {
             ModelImportResult result;
-            const std::error_code importError = importModel(*files, request, &randomResourceId, result);
+            const ModelImporter importer(*files, &randomResourceId);
+            const std::error_code importError = importer.importFile(request, result);
             if (importError) {
                 TE_LOGGER_ERROR("Failed to import {0}: {1}", request.sourcePath, importError.message());
                 return;
