@@ -6,7 +6,8 @@ techengine_app(editor
   SOURCES src/EditorApp.cpp
           src/assets/AssetIndex.cpp
           src/assets/LooseSource.cpp
-          src/assets/ModelImport.cpp
+          src/assets/MeshImporter.cpp
+          src/assets/ModelImporter.cpp
           src/edit/ConsoleHistory.cpp
           src/edit/ConsoleLog.cpp
           src/edit/EditSession.cpp
@@ -41,7 +42,8 @@ techengine_app(editor
   HEADERS src/EditorApp.hpp
           src/assets/AssetIndex.hpp
           src/assets/LooseSource.hpp
-          src/assets/ModelImport.hpp
+          src/assets/MeshImporter.hpp
+          src/assets/ModelImporter.hpp
           src/edit/ConsoleHistory.hpp
           src/edit/ConsoleLog.hpp
           src/edit/EditRecord.hpp
@@ -75,13 +77,13 @@ techengine_app(editor
           src/ui/widgets/PropertyTable.hpp
           src/ui/widgets/TextEditField.hpp
   DEPS    clientapp app core
-  LIBS    TechEngine::imgui assimp::assimp
+  LIBS    TechEngine::imgui assimp::assimp TechEngine::mikktspace meshoptimizer
   LIBS_PRIVATE TechEngine::tomlplusplus
   TESTS   tests/EditorAppTests.cpp
           tests/assets/AssetIndexTests.cpp
           tests/assets/AssimpTests.cpp
           tests/assets/LooseSourceTests.cpp
-          tests/assets/ModelImportTests.cpp
+          tests/assets/ModelImporterTests.cpp
           tests/edit/ConsoleHistoryTests.cpp
           tests/edit/ConsoleLogTests.cpp
           tests/edit/EditSessionTests.cpp

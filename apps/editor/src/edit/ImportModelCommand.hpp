@@ -4,7 +4,7 @@
 #include <TechEngine/core/jobs/JobSystem.hpp>
 
 #include <assets/AssetIndex.hpp>
-#include <assets/ModelImport.hpp>
+#include <assets/ModelImporter.hpp>
 
 #include <vector>
 
