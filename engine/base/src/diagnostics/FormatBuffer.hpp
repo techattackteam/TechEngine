@@ -28,7 +28,11 @@ namespace TechEngine {
                     return;
                 }
                 size = size > TRUNCATION_MARKER.size() ? size - TRUNCATION_MARKER.size() : 0;
-                for (const char c: TRUNCATION_MARKER) {
+                append(TRUNCATION_MARKER);
+            }
+
+            void append(std::string_view text) {
+                for (const char c: text) {
                     push(c);
                 }
             }
@@ -75,12 +79,8 @@ namespace TechEngine {
             } catch (const std::exception& e) {
                 size = 0;
                 truncated = false;
-                for (const char c: std::string_view{"<format error: "}) {
-                    push(c);
-                }
-                for (const char c: std::string_view{e.what()}) {
-                    push(c);
-                }
+                append("<format error: ");
+                append(e.what());
                 push('>');
             }
 
