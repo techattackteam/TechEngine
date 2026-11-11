@@ -695,16 +695,10 @@ TEST_CASE("a ring snapshot keeps its messages after later records reuse every sl
     REQUIRE(snapshot[1].message == "kept 2");
 }
 
-class DiscardingSink final : public TechEngine::LogSink {
-public:
-    void write(const TechEngine::LogRecord&) noexcept override {
-    }
-};
-
 TEST_CASE("a ring snapshot taken while another thread logs reads every message whole", "[base][log][ring]") {
     TechEngine::ringClear();
-    DiscardingSink discarding;
-    REQUIRE(TechEngine::addLogSink(discarding) == std::error_code{});
+    CountingSink quiet;
+    REQUIRE(TechEngine::addLogSink(quiet) == std::error_code{});
     std::atomic<bool> stop = false;
     std::atomic<std::size_t> logged = 0;
     std::thread logger([&stop, &logged] {
@@ -726,5 +720,5 @@ TEST_CASE("a ring snapshot taken while another thread logs reads every message w
     }
     stop.store(true);
     logger.join();
-    CHECK(TechEngine::removeLogSink(discarding) == std::error_code{});
+    CHECK(TechEngine::removeLogSink(quiet) == std::error_code{});
 }
