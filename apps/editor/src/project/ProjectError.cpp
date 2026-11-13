@@ -34,6 +34,14 @@ namespace TechEngine {
                         return "source file uses a quantized or meshopt-compressed mesh extension";
                     case ProjectError::InvalidImportScale:
                         return "import scale is not a finite number above zero";
+                    case ProjectError::UnsupportedImageType:
+                        return "source file is not an image type the importer reads";
+                    case ProjectError::SourceNotInAssets:
+                        return "source file is not under a side folder of the assets folder";
+                    case ProjectError::ImageUnreadable:
+                        return "source file is not an image the decoder can read";
+                    case ProjectError::ImportOutputExists:
+                        return "import output already exists";
                 }
                 return "unknown project error";
             }

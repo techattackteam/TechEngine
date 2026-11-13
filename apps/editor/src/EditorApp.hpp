@@ -24,6 +24,7 @@
 #include <filesystem>
 #include <functional>
 #include <memory>
+#include <string>
 #include <string_view>
 #include <system_error>
 #include <vector>
@@ -100,6 +101,9 @@ namespace TechEngine {
 
         // Main thread only.
         void exportProject();
+
+        // Main thread only.
+        void importImage(std::string path);
 
         // Main thread only.
         bool canRun() const;

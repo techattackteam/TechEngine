@@ -147,11 +147,21 @@ FetchContent_Declare(meshoptimizer
   GIT_REPOSITORY https://github.com/zeux/meshoptimizer.git
   GIT_TAG        v1.3
   GIT_SHALLOW    TRUE)
-FetchContent_MakeAvailable(assimp mikktspace meshoptimizer)
+# stb is header-only, has no tags and is not a CMake project, so it pins a full commit. Only its image decoders
+# are enabled, and never through its own file IO: the editor decodes from memory.
+FetchContent_Declare(stb
+  GIT_REPOSITORY https://github.com/nothings/stb.git
+  GIT_TAG        9600522de53973336fa033a289858a4354cbb04c)
+FetchContent_MakeAvailable(assimp mikktspace meshoptimizer stb)
 
 add_library(TechEngineMikkTSpace STATIC ${mikktspace_SOURCE_DIR}/mikktspace.c)
 add_library(TechEngine::mikktspace ALIAS TechEngineMikkTSpace)
 target_include_directories(TechEngineMikkTSpace SYSTEM PUBLIC ${mikktspace_SOURCE_DIR})
+
+add_library(te_stb INTERFACE)
+add_library(TechEngine::stb ALIAS te_stb)
+target_include_directories(te_stb SYSTEM INTERFACE ${stb_SOURCE_DIR})
+target_compile_definitions(te_stb INTERFACE STBI_NO_STDIO STBI_ONLY_HDR STBI_ONLY_PNG STBI_ONLY_JPEG STBI_ONLY_TGA)
 
 # --- audio (single-header) --------------------------------------------------
 # Not a CMake project: populate the source and wrap the include dir in an

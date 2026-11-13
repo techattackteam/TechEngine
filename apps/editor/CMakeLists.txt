@@ -5,9 +5,14 @@ techengine_app(editor
   MAIN    src/main.cpp
   SOURCES src/EditorApp.cpp
           src/assets/AssetIndex.cpp
+          src/assets/ImageDecoder.cpp
+          src/assets/ImageImporter.cpp
           src/assets/LooseSource.cpp
           src/assets/MeshImporter.cpp
+          src/assets/MipBuilder.cpp
           src/assets/ModelImporter.cpp
+          src/assets/Rgb9E5.cpp
+          src/assets/StbImage.cpp
           src/edit/ConsoleHistory.cpp
           src/edit/ConsoleLog.cpp
           src/edit/EditSession.cpp
@@ -19,6 +24,7 @@ techengine_app(editor
           src/edit/FieldSetter.cpp
           src/edit/FieldValue.cpp
           src/edit/HierarchyCommands.cpp
+          src/edit/ImportImageCommand.cpp
           src/edit/ImportModelCommand.cpp
           src/edit/InspectorCommands.cpp
           src/edit/MaterialSlotRebuild.cpp
@@ -41,9 +47,13 @@ techengine_app(editor
           src/ui/widgets/TextEditField.cpp
   HEADERS src/EditorApp.hpp
           src/assets/AssetIndex.hpp
+          src/assets/ImageDecoder.hpp
+          src/assets/ImageImporter.hpp
           src/assets/LooseSource.hpp
           src/assets/MeshImporter.hpp
+          src/assets/MipBuilder.hpp
           src/assets/ModelImporter.hpp
+          src/assets/Rgb9E5.hpp
           src/edit/ConsoleHistory.hpp
           src/edit/ConsoleLog.hpp
           src/edit/EditRecord.hpp
@@ -56,6 +66,7 @@ techengine_app(editor
           src/edit/FieldSetter.hpp
           src/edit/FieldValue.hpp
           src/edit/HierarchyCommands.hpp
+          src/edit/ImportImageCommand.hpp
           src/edit/ImportModelCommand.hpp
           src/edit/InspectorCommands.hpp
           src/edit/MaterialSlotRebuild.hpp
@@ -77,13 +88,18 @@ techengine_app(editor
           src/ui/widgets/PropertyTable.hpp
           src/ui/widgets/TextEditField.hpp
   DEPS    clientapp app core
-  LIBS    TechEngine::imgui assimp::assimp TechEngine::mikktspace meshoptimizer
+  LIBS    TechEngine::imgui assimp::assimp TechEngine::mikktspace meshoptimizer TechEngine::stb
   LIBS_PRIVATE TechEngine::tomlplusplus
   TESTS   tests/EditorAppTests.cpp
           tests/assets/AssetIndexTests.cpp
           tests/assets/AssimpTests.cpp
+          tests/assets/ImageDecoderTests.cpp
+          tests/assets/ImageImporterTests.cpp
           tests/assets/LooseSourceTests.cpp
+          tests/assets/MergedMeshImportTests.cpp
+          tests/assets/MipBuilderTests.cpp
           tests/assets/ModelImporterTests.cpp
+          tests/assets/Rgb9E5Tests.cpp
           tests/edit/ConsoleHistoryTests.cpp
           tests/edit/ConsoleLogTests.cpp
           tests/edit/EditSessionTests.cpp
@@ -92,6 +108,7 @@ techengine_app(editor
           tests/edit/EditorSnapshotTests.cpp
           tests/edit/FieldValueTests.cpp
           tests/edit/HierarchyCommandsTests.cpp
+          tests/edit/ImportImageCommandTests.cpp
           tests/edit/ImportModelCommandTests.cpp
           tests/edit/InspectorCommandsTests.cpp
           tests/edit/MaterialSlotRebuildTests.cpp
