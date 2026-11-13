@@ -44,6 +44,12 @@ namespace TechEngine {
                         return "import output already exists";
                     case ProjectError::UnsupportedDdsFormat:
                         return "DDS file holds a pixel format the importer does not decode";
+                    case ProjectError::ReimportTargetMissing:
+                        return "re-import found no earlier import of the source";
+                    case ProjectError::ReimportRootMissing:
+                        return "import folder holds no root asset to take the settings from";
+                    case ProjectError::EditorNotStopped:
+                        return "re-import runs only while the editor is Stopped";
                 }
                 return "unknown project error";
             }

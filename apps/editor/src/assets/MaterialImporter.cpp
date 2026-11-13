@@ -92,6 +92,9 @@ namespace TechEngine {
         }
 
         for (const MaterialOutput& output: plan.materials) {
+            if (!output.writeFile) {
+                continue;
+            }
             Material material = output.material;
             const std::array<AssetRef<Texture>*, 4> inputs{&material.baseColorTexture, &material.occlusionRoughnessMetallicTexture, &material.normalTexture, &material.emissiveTexture};
             for (std::size_t input = 0; input < inputs.size(); input++) {

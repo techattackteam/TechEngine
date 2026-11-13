@@ -56,6 +56,8 @@ namespace TechEngine {
         Material material;
         // Indices into MaterialPlan::textures, in the material's input order: base color, ORM, normal, emissive.
         std::array<std::uint32_t, 4> textures{NO_PLANNED_OUTPUT, NO_PLANNED_OUTPUT, NO_PLANNED_OUTPUT, NO_PLANNED_OUTPUT};
+        // False for a material whose file a re-import keeps, which is never written again.
+        bool writeFile = true;
     };
 
     struct MaterialPlan {
@@ -84,8 +86,9 @@ namespace TechEngine {
         // sample. Names, keys and values are filled; paths and ids are left for the caller.
         void plan(const std::vector<bool>& used, MaterialPlan& out) const;
 
-        // Writes every texture, then every material, into the paths the plan holds, and adds a record for each file. A
-        // texture whose image cannot be read or decoded is logged and left out, and the inputs that sample it stay empty.
+        // Writes every texture, then every material whose writeFile is set, into the paths the plan holds, and adds a record
+        // for each file written. A texture whose image cannot be read or decoded is logged and left out, and the inputs that
+        // sample it stay empty.
         std::error_code write(const MaterialPlan& plan, Side side, std::vector<AssetRecord>& records) const;
 
         // DDS through DdsReader, and PNG, JPEG and TGA through ImageDecoder.

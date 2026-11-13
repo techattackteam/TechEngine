@@ -6,6 +6,7 @@
 
 #include <assets/ImageDecoder.hpp>
 #include <assets/ImageImporter.hpp>
+#include <assets/ImportedFile.hpp>
 #include <assets/MipBuilder.hpp>
 #include <assets/Rgb9E5.hpp>
 #include <project/ProjectError.hpp>
@@ -41,6 +42,14 @@ namespace TechEngine {
     }
 
     std::error_code ImageImporter::importFile(const ImageImportRequest& request, ImageImportResult& out) const {
+        return importInto(request, false, out);
+    }
+
+    std::error_code ImageImporter::reimportFile(const ImageImportRequest& request, ImageImportResult& out) const {
+        return importInto(request, true, out);
+    }
+
+    std::error_code ImageImporter::importInto(const ImageImportRequest& request, const bool reimport, ImageImportResult& out) const {
         TE_PROFILER_FUNCTION();
         if (!isHdr(request.sourcePath)) {
             return ProjectError::UnsupportedImageType;
@@ -59,11 +68,30 @@ namespace TechEngine {
         const std::string path = outputPath(request.sourcePath);
         FileStatus outputStatus;
         const std::error_code outputError = m_files->status(path, outputStatus);
-        if (!outputError) {
-            return ProjectError::ImportOutputExists;
-        }
-        if (outputError != FileError::NotFound) {
-            return outputError;
+        ResourceId keptId;
+        if (!reimport) {
+            if (!outputError) {
+                return ProjectError::ImportOutputExists;
+            }
+            if (outputError != FileError::NotFound) {
+                return outputError;
+            }
+        } else {
+            if (outputError == FileError::NotFound) {
+                return ProjectError::ReimportTargetMissing;
+            }
+            if (outputError) {
+                return outputError;
+            }
+            ImportedFile existing;
+            const std::error_code existingError = readImportedFile(*m_files, path, existing);
+            if (existingError) {
+                return existingError;
+            }
+            if (existing.typeTag != TEXTURE_TYPE_TAG) {
+                return ProjectError::ReimportTargetMissing;
+            }
+            keptId = existing.id;
         }
 
         std::vector<std::byte> sourceBytes;
@@ -78,7 +106,7 @@ namespace TechEngine {
         }
 
         Texture texture;
-        texture.id = m_generateId();
+        texture.id = reimport ? keptId : m_generateId();
         texture.importBlock.sourcePath = std::string(parts.relative);
         texture.format = TextureFormat::Rgb9E5;
         texture.width = image.width;
@@ -101,7 +129,12 @@ namespace TechEngine {
         }
 
         out.records.clear();
-        out.records.push_back(AssetRecord{texture.id, TEXTURE_TYPE_TAG, side, path});
+        out.rewritten.clear();
+        if (reimport) {
+            out.rewritten.push_back(texture.id);
+        } else {
+            out.records.push_back(AssetRecord{texture.id, TEXTURE_TYPE_TAG, side, path});
+        }
         return {};
     }
 

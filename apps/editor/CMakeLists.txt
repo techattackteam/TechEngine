@@ -9,11 +9,13 @@ techengine_app(editor
           src/assets/DdsReader.cpp
           src/assets/ImageDecoder.cpp
           src/assets/ImageImporter.cpp
+          src/assets/ImportedFile.cpp
           src/assets/LooseSource.cpp
           src/assets/MaterialImporter.cpp
           src/assets/MeshImporter.cpp
           src/assets/MipBuilder.cpp
           src/assets/ModelImporter.cpp
+          src/assets/ReimportMatcher.cpp
           src/assets/Rgb9E5.cpp
           src/assets/StbImage.cpp
           src/assets/TextureImporter.cpp
@@ -33,6 +35,7 @@ techengine_app(editor
           src/edit/InspectorCommands.cpp
           src/edit/MaterialSlotRebuild.cpp
           src/edit/PlaceModelCommand.cpp
+          src/edit/ReimportCommand.cpp
           src/edit/SaveSceneCommand.cpp
           src/project/Project.cpp
           src/project/ProjectError.cpp
@@ -54,11 +57,13 @@ techengine_app(editor
           src/assets/DdsReader.hpp
           src/assets/ImageDecoder.hpp
           src/assets/ImageImporter.hpp
+          src/assets/ImportedFile.hpp
           src/assets/LooseSource.hpp
           src/assets/MaterialImporter.hpp
           src/assets/MeshImporter.hpp
           src/assets/MipBuilder.hpp
           src/assets/ModelImporter.hpp
+          src/assets/ReimportMatcher.hpp
           src/assets/Rgb9E5.hpp
           src/assets/TextureImporter.hpp
           src/edit/ConsoleHistory.hpp
@@ -78,6 +83,7 @@ techengine_app(editor
           src/edit/InspectorCommands.hpp
           src/edit/MaterialSlotRebuild.hpp
           src/edit/PlaceModelCommand.hpp
+          src/edit/ReimportCommand.hpp
           src/edit/SaveSceneCommand.hpp
           src/project/Project.hpp
           src/project/ProjectError.hpp
@@ -108,6 +114,8 @@ techengine_app(editor
           tests/assets/MergedMeshImportTests.cpp
           tests/assets/MipBuilderTests.cpp
           tests/assets/ModelImporterTests.cpp
+          tests/assets/ModelReimportTests.cpp
+          tests/assets/ReimportMatcherTests.cpp
           tests/assets/Rgb9E5Tests.cpp
           tests/assets/TextureImporterTests.cpp
           tests/edit/ConsoleHistoryTests.cpp
@@ -123,6 +131,7 @@ techengine_app(editor
           tests/edit/InspectorCommandsTests.cpp
           tests/edit/MaterialSlotRebuildTests.cpp
           tests/edit/PlaceModelCommandTests.cpp
+          tests/edit/ReimportCommandTests.cpp
           tests/edit/SaveSceneCommandTests.cpp
           tests/project/ProjectErrorTests.cpp
           tests/project/ProjectTests.cpp)

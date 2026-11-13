@@ -58,6 +58,15 @@ public:
         return importer.importFile(request, out);
     }
 
+    std::error_code reimportFile(const std::string_view sourcePath, ImageImportResult& out) {
+        ImageImportRequest request;
+        request.sourcePath = std::string(sourcePath);
+        const ImageImporter importer(files, [this] {
+            return ResourceId{nextId++};
+        });
+        return importer.reimportFile(request, out);
+    }
+
     Texture readTexture(const std::string_view path) const {
         std::vector<std::byte> bytes;
         REQUIRE(files.read(path, bytes) == std::error_code{});
@@ -194,6 +203,53 @@ TEST_CASE("a second import of the same source is refused and changes no byte", "
     std::vector<std::byte> after;
     REQUIRE(fixture.files.read(SKY_TEXTURE, after) == std::error_code{});
     CHECK(after == before);
+}
+
+TEST_CASE("a re-import rewrites the same file with the new image and keeps its id", "[editor][assets][image][reimport]") {
+    ImageImportFixture fixture{"imageReimport"};
+    fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
+    ImageImportResult first;
+    REQUIRE(fixture.importFile(SKY_SOURCE, first) == std::error_code{});
+    const Texture before = fixture.readTexture(SKY_TEXTURE);
+    fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(4, 2));
+
+    ImageImportResult second;
+    REQUIRE(fixture.reimportFile(SKY_SOURCE, second) == std::error_code{});
+
+    const Texture after = fixture.readTexture(SKY_TEXTURE);
+    CHECK(after.id == before.id);
+    CHECK(after.width == 4);
+    CHECK(after.height == 2);
+    CHECK(after.mips.size() == Texture::mipCount(4, 2));
+    CHECK(after.importBlock.sourceName.empty());
+    CHECK(after.importBlock.sourceIndex == 0);
+    CHECK(second.records.empty());
+    CHECK(second.rewritten == std::vector<ResourceId>{before.id});
+    CHECK(fixture.nextId == FIRST_TEST_ID + 1);
+    CHECK_FALSE(fixture.exists("assets/client/Sky"));
+}
+
+TEST_CASE("a sky re-import with no earlier output, or with one that is not a texture, is refused and writes nothing", "[editor][assets][image][reimport]") {
+    ImageImportFixture fixture{"imageReimportMissing"};
+    fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
+    ImageImportResult result;
+
+    SECTION("no output") {
+        CHECK(fixture.reimportFile(SKY_SOURCE, result) == ProjectError::ReimportTargetMissing);
+        CHECK_FALSE(fixture.exists("assets/client/Sky.tetexture"));
+    }
+
+    SECTION("an output that is not an engine file") {
+        fixture.scratch.writeFile("assets/client/Sky.tetexture", "kept");
+        CHECK(fixture.reimportFile(SKY_SOURCE, result) != std::error_code{});
+        std::vector<std::byte> bytes;
+        REQUIRE(fixture.files.read(SKY_TEXTURE, bytes) == std::error_code{});
+        CHECK(bytes.size() == 4);
+    }
+
+    SECTION("a .png path") {
+        CHECK(fixture.reimportFile("project://assets/client/Sky.png", result) == ProjectError::UnsupportedImageType);
+    }
 }
 
 TEST_CASE("a path that is not a .hdr is refused before anything is read or written", "[editor][assets][image]") {

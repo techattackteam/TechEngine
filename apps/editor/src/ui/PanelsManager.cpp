@@ -1,3 +1,4 @@
+#include <assets/ModelImporter.hpp>
 #include <edit/EditorCommands.hpp>
 #include <ui/PanelsManager.hpp>
 
@@ -19,9 +20,12 @@ namespace TechEngine {
     static constexpr const char* IMPORT_IMAGE_POPUP_NAME = "Import image";
     static constexpr const char* IMPORT_IMAGE_PATH_HINT = "project://assets/client/Sky.hdr";
     static constexpr float IMPORT_IMAGE_INPUT_WIDTH_EMS = 32.0f;
+    static constexpr const char* REIMPORT_POPUP_NAME = "Re-import";
+    static constexpr const char* REIMPORT_PATH_HINT = "project://assets/client/Sponza.gltf";
+    static constexpr float REIMPORT_INPUT_WIDTH_EMS = 32.0f;
 
-    PanelsManager::PanelsManager(EditorCommands& commands, ConsoleHistory& consoleHistory, std::function<void()> exportProject, std::function<void()> runProject, std::function<void(std::string)> importImage)
-        : m_commands(&commands), m_exportProject(std::move(exportProject)), m_runProject(std::move(runProject)), m_importImage(std::move(importImage)), m_hierarchy(commands), m_inspector(commands), m_console(consoleHistory) {
+    PanelsManager::PanelsManager(EditorCommands& commands, ConsoleHistory& consoleHistory, std::function<void()> exportProject, std::function<void()> runProject, std::function<void(std::string)> importImage, std::function<void(std::string, ImportMode)> reimport)
+        : m_commands(&commands), m_exportProject(std::move(exportProject)), m_runProject(std::move(runProject)), m_importImage(std::move(importImage)), m_reimport(std::move(reimport)), m_hierarchy(commands), m_inspector(commands), m_console(consoleHistory) {
     }
 
     void PanelsManager::draw(const EditorSnapshot& snapshot, const bool canRun) {
@@ -29,6 +33,7 @@ namespace TechEngine {
         drawMainMenuBar(canRun);
         drawPlaceModelPopup();
         drawImportImagePopup();
+        drawReimportPopup();
         handleShortcuts();
         // A dockspace hosts only the windows submitted after it in the same frame.
         drawDockSpace();
@@ -61,6 +66,10 @@ namespace TechEngine {
             // TODO(E2): the asset browser imports an image and replaces this entry.
             if (ImGui::MenuItem("Import image...")) {
                 m_importImageRequested = true;
+            }
+            // TODO(E2): the asset browser re-imports an asset and replaces this entry.
+            if (ImGui::MenuItem("Re-import...")) {
+                m_reimportRequested = true;
             }
             ImGui::EndMenu();
         }
@@ -129,6 +138,41 @@ namespace TechEngine {
 
         if (hasPath && (entered || importClicked)) {
             m_importImage(std::string(m_importImagePath.data()));
+            ImGui::CloseCurrentPopup();
+        } else if (cancelled) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    void PanelsManager::drawReimportPopup() {
+        if (m_reimportRequested) {
+            ImGui::OpenPopup(REIMPORT_POPUP_NAME);
+            m_reimportRequested = false;
+        }
+
+        ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (!ImGui::BeginPopupModal(REIMPORT_POPUP_NAME, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            return;
+        }
+
+        if (ImGui::IsWindowAppearing()) {
+            ImGui::SetKeyboardFocusHere();
+        }
+        ImGui::SetNextItemWidth(ImGui::GetFontSize() * REIMPORT_INPUT_WIDTH_EMS);
+        const bool entered = ImGui::InputTextWithHint("##path", REIMPORT_PATH_HINT, m_reimportPath.data(), m_reimportPath.size(), ImGuiInputTextFlags_EnterReturnsTrue);
+        ImGui::Checkbox("As one merged mesh", &m_reimportMerged);
+        ImGui::Spacing();
+
+        const bool hasPath = m_reimportPath[0] != '\0';
+        ImGui::BeginDisabled(!hasPath);
+        const bool reimportClicked = ImGui::Button("Re-import");
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        const bool cancelled = ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey_Escape, false);
+
+        if (hasPath && (entered || reimportClicked)) {
+            m_reimport(std::string(m_reimportPath.data()), m_reimportMerged ? ImportMode::MergedMesh : ImportMode::Model);
             ImGui::CloseCurrentPopup();
         } else if (cancelled) {
             ImGui::CloseCurrentPopup();

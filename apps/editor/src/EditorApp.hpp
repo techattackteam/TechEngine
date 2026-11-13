@@ -31,6 +31,7 @@
 
 namespace TechEngine {
     struct ModelImportRequest;
+    enum class ImportMode : std::uint8_t;
 
     class EditorApp : public ClientApp {
     private:
@@ -104,6 +105,9 @@ namespace TechEngine {
 
         // Main thread only.
         void importImage(std::string path);
+
+        // Main thread only.
+        void reimport(std::string path, ImportMode mode);
 
         // Main thread only.
         bool canRun() const;

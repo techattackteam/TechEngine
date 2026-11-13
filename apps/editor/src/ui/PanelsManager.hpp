@@ -10,6 +10,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <string>
 
@@ -17,16 +18,19 @@ namespace TechEngine {
     class ConsoleHistory;
     class EditorCommands;
     struct EditorSnapshot;
+    enum class ImportMode : std::uint8_t;
 
     class PanelsManager {
     private:
         static constexpr std::size_t PLACE_MODEL_PATH_CAPACITY = 512;
         static constexpr std::size_t IMPORT_IMAGE_PATH_CAPACITY = 512;
+        static constexpr std::size_t REIMPORT_PATH_CAPACITY = 512;
 
         EditorCommands* m_commands = nullptr;
         std::function<void()> m_exportProject;
         std::function<void()> m_runProject;
         std::function<void(std::string)> m_importImage;
+        std::function<void(std::string, ImportMode)> m_reimport;
         HierarchyPanel m_hierarchy;
         InspectorPanel m_inspector;
         SceneViewPanel m_sceneView;
@@ -36,9 +40,12 @@ namespace TechEngine {
         std::array<char, PLACE_MODEL_PATH_CAPACITY> m_placeModelPath{};
         bool m_importImageRequested = false;
         std::array<char, IMPORT_IMAGE_PATH_CAPACITY> m_importImagePath{};
+        bool m_reimportRequested = false;
+        std::array<char, REIMPORT_PATH_CAPACITY> m_reimportPath{};
+        bool m_reimportMerged = false;
 
     public:
-        PanelsManager(EditorCommands& commands, ConsoleHistory& consoleHistory, std::function<void()> exportProject, std::function<void()> runProject, std::function<void(std::string)> importImage);
+        PanelsManager(EditorCommands& commands, ConsoleHistory& consoleHistory, std::function<void()> exportProject, std::function<void()> runProject, std::function<void(std::string)> importImage, std::function<void(std::string, ImportMode)> reimport);
 
         void draw(const EditorSnapshot& snapshot, bool canRun);
 
@@ -48,6 +55,8 @@ namespace TechEngine {
         void drawPlaceModelPopup();
 
         void drawImportImagePopup();
+
+        void drawReimportPopup();
 
         void handleShortcuts();
 

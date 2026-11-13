@@ -21,8 +21,10 @@ namespace TechEngine {
     };
 
     struct ImageImportResult {
-        // The texture alone.
+        // The texture alone, or nothing for a re-import.
         std::vector<AssetRecord> records;
+        // A re-import's texture, which keeps its id. Empty for an import.
+        std::vector<ResourceId> rewritten;
     };
 
     class ImageImporter {
@@ -36,13 +38,19 @@ namespace TechEngine {
 
         static std::string outputPath(std::string_view sourcePath);
 
-        // Writes nothing when it fails.
+        // Refuses an output that exists. Writes nothing when it fails.
         std::error_code importFile(const ImageImportRequest& request, ImageImportResult& out) const;
 
-    private:
+        // Rewrites the texture an earlier import wrote, under its id. Writes nothing when it fails.
+        std::error_code reimportFile(const ImageImportRequest& request, ImageImportResult& out) const;
+
         static bool isHdr(std::string_view sourcePath);
 
+        // relativePath is a virtual path's part after the alias, such as assets/client/Sky.hdr.
         static bool sideOf(std::string_view relativePath, Side& out);
+
+    private:
+        std::error_code importInto(const ImageImportRequest& request, bool reimport, ImageImportResult& out) const;
 
         static char toLowerAscii(char character);
 

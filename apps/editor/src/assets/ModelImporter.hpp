@@ -48,14 +48,17 @@ namespace TechEngine {
         // Zero for a merged mesh.
         std::uint32_t nodeCount = 0;
         // The root asset first: the model, then one record per written mesh in the order assimp lists the meshes, or the
-        // merged mesh alone. Then each written texture and each material.
+        // merged mesh alone. Then each written texture and each material. A re-import lists only the files with a new id.
         std::vector<AssetRecord> records;
+        // The files a re-import wrote again under the id they already had. Empty for an import.
+        std::vector<ResourceId> rewritten;
     };
 
     class ModelImporter {
     private:
         struct SourceMesh;
         struct MergedPart;
+        struct ExistingFolder;
 
         FileAccess* m_files = nullptr;
         std::function<ResourceId()> m_generateId;
@@ -68,15 +71,33 @@ namespace TechEngine {
 
         static std::string rootAssetPath(std::string_view folder, ImportMode mode);
 
-        // Writes nothing when it fails.
+        // Refuses a folder that exists. Writes nothing when it fails.
         std::error_code importFile(const ModelImportRequest& request, ModelImportResult& out) const;
 
+        // Into the folder an earlier import wrote, with the settings of its root asset instead of the request's. An output
+        // that matches an old file keeps its id and path, and a matched material is not written. Never removes a file, so
+        // a failure part-way leaves the outputs written before it.
+        std::error_code reimportFile(const ModelImportRequest& request, ModelImportResult& out) const;
+
     private:
-        std::uint32_t readMeshes(const aiScene& scene, std::string_view sourcePath, const MeshImporter& meshImporter, std::vector<SourceMesh>& out) const;
+        std::error_code importInto(const ModelImportRequest& request, ExistingFolder* existing, ModelImportResult& out) const;
 
-        std::error_code importMergedMesh(const aiScene& scene, const ModelImportRequest& request, std::string_view sourcePath, const std::string& folder, const MeshImporter& meshImporter, const MaterialImporter& materialImporter, ModelImportResult& out) const;
+        std::error_code readExistingFolder(const std::string& folder, ImportMode mode, ExistingFolder& out) const;
 
-        void assignOutputs(const std::string& folder, MaterialPlan& plan) const;
+        std::uint32_t readMeshes(const aiScene& scene, std::string_view sourcePath, const std::string& folder, const MeshImporter& meshImporter, std::vector<std::string> takenFileNames, std::vector<SourceMesh>& out) const;
+
+        std::error_code importMergedMesh(
+            const aiScene& scene,
+            const ModelImportRequest& request,
+            const ImportSettings& settings,
+            std::string_view sourcePath,
+            const std::string& folder,
+            const MeshImporter& meshImporter,
+            const MaterialImporter& materialImporter,
+            ExistingFolder* existing,
+            ModelImportResult& out) const;
+
+        void assignOutputs(const std::string& folder, const ExistingFolder* existing, MaterialPlan& plan) const;
 
         std::error_code writeMaterials(const MaterialImporter& materialImporter, const MaterialPlan& plan, Side side, const std::string& folder, std::vector<AssetRecord>& records) const;
 
@@ -87,6 +108,10 @@ namespace TechEngine {
         std::error_code writeOutputs(const Model& model, const std::vector<SourceMesh>& meshes, const MaterialImporter& materialImporter, const MaterialPlan& materials, Side side, const std::string& folder, std::vector<AssetRecord>& records) const;
 
         std::error_code checkGltfExtensions(std::string_view sourcePath) const;
+
+        static void keepExistingIds(ExistingFolder& existing, std::vector<SourceMesh>& meshes, MaterialPlan& plan);
+
+        static void finishReimport(const ExistingFolder& existing, std::string_view sourcePath, std::vector<AssetRecord>& records, std::vector<ResourceId>& rewritten);
 
         static void buildNodes(const aiScene& scene, const std::vector<SourceMesh>& meshes, std::string_view rootName, const MeshImporter& meshImporter, std::vector<ModelNode>& out);
 
