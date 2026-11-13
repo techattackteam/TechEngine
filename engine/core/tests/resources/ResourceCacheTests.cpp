@@ -211,6 +211,10 @@ public:
         m_absentForRole.insert(id);
     }
 
+    void removeAsset(const ResourceId id) {
+        m_assets.erase(id);
+    }
+
     AssetAvailability find(const ResourceId id) const override {
         if (m_assets.contains(id)) {
             return AssetAvailability::Present;
@@ -276,6 +280,18 @@ public:
     bool exists(const ResourceHandle<T> handle) {
         ResourceState out = ResourceState::Pending;
         return cache.getState(handle, out);
+    }
+
+    template<typename T = CacheResource>
+    ResourceHandle<T> peek(const ResourceId id) {
+        const ResourceHandle<T> handle = request<T>(id);
+        cache.release(handle);
+        return handle;
+    }
+
+    std::error_code reload(const std::initializer_list<ResourceId> ids) {
+        const std::vector<ResourceId> list(ids);
+        return cache.reload(list);
     }
 };
 
@@ -899,4 +915,264 @@ TEST_CASE("taking from an entry that is not Ready returns false and leaves out a
     out.label = "untouched";
     REQUIRE_FALSE(harness.cache.takePayload(handle, out));
     REQUIRE(out.label == "untouched");
+}
+
+TEST_CASE("a reload replaces the payload behind a live handle and keeps its slot, generation and count", "[core][resources][cache][reload]") {
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "root", {});
+    const ResourceHandle<CacheResource> first = harness.request(ROOT_ID);
+    const ResourceHandle<CacheResource> second = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    harness.source.addAsset(ROOT_ID, "rewritten", {});
+
+    REQUIRE(harness.reload({ROOT_ID}) == std::error_code{});
+
+    REQUIRE(harness.state(first) == ResourceState::Ready);
+    REQUIRE(harness.error(first) == std::error_code{});
+    REQUIRE(harness.acquireCount(first) == 2);
+    REQUIRE(harness.cache.resolve(first) != nullptr);
+    REQUIRE(harness.cache.resolve(first)->label == "rewritten");
+    REQUIRE(harness.cache.resolve(second) == harness.cache.resolve(first));
+    const ResourceHandle<CacheResource> again = harness.request(ROOT_ID);
+    REQUIRE(again.index == first.index);
+    REQUIRE(again.generation == first.generation);
+}
+
+TEST_CASE("an id named twice in one reload is read once", "[core][resources][cache][reload]") {
+    CacheHarness harness;
+    harness.source.addGatedAsset(GATED_ID, "gated");
+    const LoadGateGuard gate;
+    gate.open();
+    const ResourceHandle<GatedResource> handle = harness.request<GatedResource>(GATED_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    harness.source.addGatedAsset(GATED_ID, "rewritten");
+
+    REQUIRE(harness.reload({GATED_ID, GATED_ID}) == std::error_code{});
+
+    REQUIRE(g_gateArrivals == 2);
+    REQUIRE(harness.acquireCount(handle) == 1);
+    REQUIRE(harness.cache.resolve(handle) != nullptr);
+    REQUIRE(harness.cache.resolve(handle)->label == "rewritten");
+}
+
+TEST_CASE("a reload that adds a dependency acquires it and loads its own dependencies in the same call", "[core][resources][cache][reload]") {
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "root", {});
+    harness.source.addAsset(DEPENDENCY_ID, "dependency", {LEAF_ID});
+    harness.source.addAsset(LEAF_ID, "leaf", {});
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    harness.source.addAsset(ROOT_ID, "rewritten", {DEPENDENCY_ID});
+
+    REQUIRE(harness.reload({ROOT_ID}) == std::error_code{});
+
+    const ResourceHandle<CacheResource> dependency = harness.peek(DEPENDENCY_ID);
+    const ResourceHandle<CacheResource> leaf = harness.peek(LEAF_ID);
+    REQUIRE(harness.state(dependency) == ResourceState::Ready);
+    REQUIRE(harness.state(leaf) == ResourceState::Ready);
+    REQUIRE(harness.acquireCount(dependency) == 1);
+    REQUIRE(harness.acquireCount(leaf) == 1);
+    REQUIRE(harness.cache.resolve(leaf) != nullptr);
+    REQUIRE(harness.cache.resolve(leaf)->label == "leaf");
+
+    harness.cache.release(root);
+    harness.cache.drainFrees();
+
+    REQUIRE_FALSE(harness.exists(root));
+    REQUIRE_FALSE(harness.exists(dependency));
+    REQUIRE_FALSE(harness.exists(leaf));
+}
+
+TEST_CASE("a reload that drops a dependency releases it, and one kept by both is never reloaded or recounted", "[core][resources][cache][reload]") {
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "root", {DEPENDENCY_ID, LEAF_ID});
+    harness.source.addAsset(DEPENDENCY_ID, "dependency", {});
+    harness.source.addAsset(LEAF_ID, "leaf", {});
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    const ResourceHandle<CacheResource> kept = harness.peek(DEPENDENCY_ID);
+    const ResourceHandle<CacheResource> dropped = harness.peek(LEAF_ID);
+    REQUIRE(harness.acquireCount(kept) == 1);
+    harness.source.addAsset(ROOT_ID, "rewritten", {DEPENDENCY_ID});
+    harness.source.addAsset(DEPENDENCY_ID, "dependency rewritten on disk", {});
+
+    REQUIRE(harness.reload({ROOT_ID}) == std::error_code{});
+
+    REQUIRE(harness.cache.resolve(root) != nullptr);
+    REQUIRE(harness.cache.resolve(root)->label == "rewritten");
+    REQUIRE_FALSE(harness.exists(dropped));
+    REQUIRE(harness.state(kept) == ResourceState::Ready);
+    REQUIRE(harness.acquireCount(kept) == 1);
+    REQUIRE(harness.cache.resolve(kept) != nullptr);
+    REQUIRE(harness.cache.resolve(kept)->label == "dependency");
+
+    harness.cache.release(root);
+    harness.cache.drainFrees();
+
+    REQUIRE_FALSE(harness.exists(root));
+    REQUIRE_FALSE(harness.exists(kept));
+}
+
+TEST_CASE("a reload releases a dependency added with addDependency", "[core][resources][cache][reload]") {
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "root", {});
+    harness.source.addAsset(DEPENDENCY_ID, "dependency", {});
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    ResourceSlotId added;
+    REQUIRE(harness.cache.addDependency(root, DEPENDENCY_ID, added) == std::error_code{});
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+
+    REQUIRE(harness.reload({ROOT_ID}) == std::error_code{});
+
+    ResourceState state = ResourceState::Pending;
+    REQUIRE_FALSE(harness.cache.getState(added, state));
+    REQUIRE(harness.acquireCount(root) == 1);
+}
+
+TEST_CASE("a reload skips every id that is not loaded", "[core][resources][cache][reload]") {
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "root", {});
+    harness.source.addAsset(SECOND_ROOT_ID, "never requested", {});
+    harness.source.addAbsentForRole(SERVER_ID);
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+    const ResourceHandle<CacheResource> absent = harness.request(SERVER_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+
+    REQUIRE(harness.reload({UNKNOWN_ID, SECOND_ROOT_ID, SERVER_ID}) == std::error_code{});
+
+    REQUIRE(harness.state(absent) == ResourceState::AbsentForRole);
+    REQUIRE(harness.acquireCount(absent) == 1);
+    REQUIRE(harness.cache.resolve(root) != nullptr);
+    REQUIRE(harness.cache.resolve(root)->label == "root");
+    const ResourceHandle<CacheResource> never = harness.request(SECOND_ROOT_ID);
+    REQUIRE(harness.state(never) == ResourceState::Pending);
+    REQUIRE(harness.acquireCount(never) == 1);
+    ResourceHandle<CacheResource> unknown;
+    REQUIRE(harness.cache.request(UNKNOWN_ID, unknown) == ReadError::UnknownResource);
+}
+
+TEST_CASE("a reload with no ids is an empty loading phase", "[core][resources][cache][reload]") {
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "root", {});
+    const ResourceHandle<CacheResource> pending = harness.request(ROOT_ID);
+
+    REQUIRE(harness.reload({}) == std::error_code{});
+
+    REQUIRE(harness.state(pending) == ResourceState::Ready);
+}
+
+TEST_CASE("a pending entry named by a reload loads its new bytes in the reload's phase", "[core][resources][cache][reload]") {
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "root", {});
+    const ResourceHandle<CacheResource> pending = harness.request(ROOT_ID);
+    harness.source.addAsset(ROOT_ID, "rewritten", {});
+
+    REQUIRE(harness.reload({ROOT_ID}) == std::error_code{});
+
+    REQUIRE(harness.state(pending) == ResourceState::Ready);
+    REQUIRE(harness.cache.resolve(pending) != nullptr);
+    REQUIRE(harness.cache.resolve(pending)->label == "rewritten");
+}
+
+TEST_CASE("a failed reload keeps the old payload and dependencies, reports its error and logs the id", "[core][resources][cache][reload]") {
+    const TechEngineTests::LogCaptureGuard logs;
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "root", {DEPENDENCY_ID});
+    harness.source.addAsset(DEPENDENCY_ID, "dependency", {});
+    harness.source.addAsset(LEAF_ID, "leaf", {});
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    const ResourceHandle<CacheResource> dependency = harness.peek(DEPENDENCY_ID);
+    std::error_code expected;
+
+    SECTION("truncated bytes") {
+        harness.source.addTruncatedAsset(ROOT_ID);
+        expected = ReadError::Truncated;
+    }
+
+    SECTION("missing bytes") {
+        harness.source.removeAsset(ROOT_ID);
+        expected = FileError::NotFound;
+    }
+
+    SECTION("bytes of another kind") {
+        harness.source.addGatedAsset(ROOT_ID, "gated");
+        expected = ReadError::BadMagic;
+    }
+
+    SECTION("a new dependency that no source holds") {
+        harness.source.addAsset(ROOT_ID, "rewritten", {LEAF_ID, UNKNOWN_ID});
+        expected = ReadError::UnknownResource;
+    }
+
+    SECTION("a new dependency on itself") {
+        harness.source.addAsset(ROOT_ID, "rewritten", {LEAF_ID, ROOT_ID});
+        expected = ReadError::CyclicReference;
+    }
+
+    REQUIRE(harness.reload({ROOT_ID}) == expected);
+
+    REQUIRE(logNames(logs, ROOT_ID));
+    REQUIRE(harness.state(root) == ResourceState::Ready);
+    REQUIRE(harness.error(root) == std::error_code{});
+    REQUIRE(harness.acquireCount(root) == 1);
+    REQUIRE(harness.cache.resolve(root) != nullptr);
+    REQUIRE(harness.cache.resolve(root)->label == "root");
+    REQUIRE(harness.state(dependency) == ResourceState::Ready);
+    REQUIRE(harness.acquireCount(dependency) == 1);
+    const ResourceHandle<CacheResource> leaf = harness.request(LEAF_ID);
+    REQUIRE(harness.acquireCount(leaf) == 1);
+}
+
+TEST_CASE("a failed entry whose bytes were fixed is Ready after a reload", "[core][resources][cache][reload]") {
+    CacheHarness harness;
+    harness.source.addTruncatedAsset(ROOT_ID);
+    const ResourceHandle<CacheResource> handle = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == ReadError::Truncated);
+    harness.source.addAsset(ROOT_ID, "fixed", {DEPENDENCY_ID});
+    harness.source.addAsset(DEPENDENCY_ID, "dependency", {});
+
+    REQUIRE(harness.reload({ROOT_ID}) == std::error_code{});
+
+    REQUIRE(harness.state(handle) == ResourceState::Ready);
+    REQUIRE(harness.error(handle) == std::error_code{});
+    REQUIRE(harness.acquireCount(handle) == 1);
+    REQUIRE(harness.cache.resolve(handle) != nullptr);
+    REQUIRE(harness.cache.resolve(handle)->label == "fixed");
+    const ResourceHandle<CacheResource> dependency = harness.peek(DEPENDENCY_ID);
+    REQUIRE(harness.state(dependency) == ResourceState::Ready);
+    REQUIRE(harness.acquireCount(dependency) == 1);
+}
+
+TEST_CASE("a failed entry whose bytes are still broken stays Failed with its first error", "[core][resources][cache][reload]") {
+    CacheHarness harness;
+    harness.source.addTruncatedAsset(ROOT_ID);
+    const ResourceHandle<CacheResource> handle = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == ReadError::Truncated);
+    harness.source.removeAsset(ROOT_ID);
+
+    REQUIRE(harness.reload({ROOT_ID}) == FileError::NotFound);
+
+    REQUIRE(harness.state(handle) == ResourceState::Failed);
+    REQUIRE(harness.error(handle) == ReadError::Truncated);
+    REQUIRE(harness.cache.resolve(handle) == nullptr);
+}
+
+TEST_CASE("one failed id does not stop the others in the same reload", "[core][resources][cache][reload]") {
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "root", {});
+    harness.source.addAsset(SECOND_ROOT_ID, "second", {});
+    const ResourceHandle<CacheResource> broken = harness.request(ROOT_ID);
+    const ResourceHandle<CacheResource> fine = harness.request(SECOND_ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    harness.source.addTruncatedAsset(ROOT_ID);
+    harness.source.addAsset(SECOND_ROOT_ID, "second rewritten", {});
+
+    REQUIRE(harness.reload({ROOT_ID, SECOND_ROOT_ID}) == ReadError::Truncated);
+
+    REQUIRE(harness.cache.resolve(broken) != nullptr);
+    REQUIRE(harness.cache.resolve(broken)->label == "root");
+    REQUIRE(harness.cache.resolve(fine) != nullptr);
+    REQUIRE(harness.cache.resolve(fine)->label == "second rewritten");
 }
