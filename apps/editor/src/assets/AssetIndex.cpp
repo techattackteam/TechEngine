@@ -5,6 +5,7 @@
 #include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
 #include <TechEngine/core/serialization/Reader.hpp>
+#include <TechEngine/core/texture/Texture.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 
 #include <assets/AssetIndex.hpp>
@@ -31,10 +32,11 @@ namespace TechEngine {
         std::string_view folder;
     };
 
-    static constexpr std::array<IndexedAssetKind, 3> INDEXED_ASSET_KINDS{{
+    static constexpr std::array<IndexedAssetKind, 4> INDEXED_ASSET_KINDS{{
         {SCENE_KIND, SCENE_TYPE_TAG},
         {MESH_KIND, MESH_TYPE_TAG},
         {MODEL_KIND, MODEL_TYPE_TAG},
+        {TEXTURE_KIND, TEXTURE_TYPE_TAG},
     }};
 
     static constexpr std::array<IndexedSide, 3> INDEXED_SIDES{{

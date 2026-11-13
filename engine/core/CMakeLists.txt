@@ -38,6 +38,7 @@ techengine_module(core
           src/systems/ScheduleRegistration.cpp
           src/systems/SerialExecutor.cpp
           src/systems/TaskGraph.cpp
+          src/texture/Texture.cpp
   HEADERS include/TechEngine/core/Core.hpp
           include/TechEngine/core/EngineContext.hpp
           include/TechEngine/core/SimulationContext.hpp
@@ -93,6 +94,7 @@ techengine_module(core
           include/TechEngine/core/systems/ScheduleRegistration.hpp
           include/TechEngine/core/systems/SerialExecutor.hpp
           include/TechEngine/core/systems/TaskGraph.hpp
+          include/TechEngine/core/texture/Texture.hpp
           src/jobs/DedicatedThreadState.hpp
           src/jobs/RegisteredThread.hpp
           src/resources/ResourceSlots.hpp
@@ -147,5 +149,6 @@ if(TE_BUILD_TESTS)
           tests/systems/InputDeliveryTests.cpp
           tests/systems/ScheduleTests.cpp
           tests/systems/SerialExecutorTests.cpp
-          tests/systems/TaskGraphTests.cpp)
+          tests/systems/TaskGraphTests.cpp
+          tests/texture/TextureTests.cpp)
 endif()

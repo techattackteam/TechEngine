@@ -10,6 +10,7 @@
 #include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/core/serialization/ReadError.hpp>
+#include <TechEngine/core/texture/Texture.hpp>
 
 #include <RuntimeApp.hpp>
 
@@ -41,6 +42,7 @@ namespace TechEngine {
         m_registry.registerComponent<MeshRenderer>(MeshRenderer::tag);
         m_resources.registerLoader<SceneBytes>(SCENE_KIND, SCENE_TYPE_TAG, &SceneBytes::loadPayload);
         m_resources.registerLoader<Mesh>(MESH_KIND, MESH_TYPE_TAG, &Mesh::loadPayload);
+        m_resources.registerLoader<Texture>(TEXTURE_KIND, TEXTURE_TYPE_TAG, &Texture::loadPayload);
     }
 
     std::error_code RuntimeApp::simulationStartupLoad(Scene& scene) {

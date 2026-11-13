@@ -4,6 +4,7 @@
 #include <TechEngine/core/resources/Side.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
+#include <TechEngine/core/texture/Texture.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/platform/files/MountTable.hpp>
@@ -39,6 +40,8 @@ using TechEngine::ResourceId;
 using TechEngine::SCENE_KIND;
 using TechEngine::SCENE_TYPE_TAG;
 using TechEngine::Side;
+using TechEngine::TEXTURE_KIND;
+using TechEngine::TEXTURE_TYPE_TAG;
 using TechEngineTests::assetBytes;
 using TechEngineTests::ScratchDirectory;
 using TechEngineTests::writeBytes;
@@ -52,6 +55,7 @@ static constexpr ResourceId NESTED_SCENE_ID{0x4000000000000004};
 static constexpr ResourceId DUPLICATED_ID{0x5000000000000005};
 static constexpr ResourceId COMMON_MESH_ID{0x7100000000000071};
 static constexpr ResourceId COMMON_MODEL_ID{0x7200000000000072};
+static constexpr ResourceId COMMON_TEXTURE_ID{0x7300000000000073};
 
 class IndexScratch {
 public:
@@ -143,6 +147,21 @@ TEST_CASE("build records a model in its import folder under the model type tag",
     CHECK(model.typeTag == MODEL_TYPE_TAG);
     CHECK(model.side == Side::Common);
     CHECK(model.path == "project://assets/common/Kart/Kart.temodel");
+}
+
+TEST_CASE("build records a texture under the texture type tag", "[editor][assets]") {
+    const IndexScratch env{"assetIndexTexture"};
+    env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
+    writeBytes(env.scratch(), "assets/common/Textures/wall.tetexture", assetBytes(TEXTURE_KIND, COMMON_TEXTURE_ID, "texture payload"));
+
+    const AssetIndex index = env.buildIndex();
+
+    CHECK(index.getRecords().size() == 2);
+    AssetRecord texture;
+    REQUIRE(index.find(COMMON_TEXTURE_ID, texture));
+    CHECK(texture.typeTag == TEXTURE_TYPE_TAG);
+    CHECK(texture.side == Side::Common);
+    CHECK(texture.path == "project://assets/common/Textures/wall.tetexture");
 }
 
 TEST_CASE("build reads assets in subfolders of a side", "[editor][assets]") {
