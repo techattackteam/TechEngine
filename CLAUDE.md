@@ -116,9 +116,9 @@ I get them wrong *by habit*, so knowing where the spec lives isn't enough:
 - **Internal linkage is `static`, not `namespace {}`.** Never wrap half a `.cpp` in an
   anonymous namespace; it earns its place only around a single `.cpp`-local **type** with a
   real ODR risk. → *Internal linkage*.
-- **Default to NO comment.** Not "why, not what"; that bar was already in force and still
-  produced narrated code. A comment must survive *"would a competent reader be wrong without
-  this?"* Only a **gotcha that will bite** or a **`TODO(S2-Tn)`** / **`TODO(D<n>)`** earns a
+- **Default to NO comment.** The bar is stricter than "why, not what": a comment must survive
+  *"would a competent reader be wrong without this?"*
+  Only a **gotcha that will bite** or a **`TODO(S2-Tn)`** / **`TODO(D<n>)`** earns a
   place. **Scaffolding is not a licence to narrate.** Write the gotcha as a plain statement,
   never with a `GOTCHA:` label in front. → *Comments*.
 - **Never cite the vault from code.** No `ADR-011 §2`, no `[[note]]`, no bare `§ref` in any
@@ -127,7 +127,7 @@ I get them wrong *by habit*, so knowing where the spec lives isn't enough:
 
 ## Division of labor (important)
 
-Who writes the code depends on the card's tag (2026-10-23). The full rule lives in
+Who writes the code depends on the card's tag. The full rule lives in
 `docs/08 AI/Technical Lead Charter.md` § *Who writes the code*.
 
 - **🟢 Deep and 🟠 Moderate cards: Miguel writes them, Claude pairs.** He writes the
@@ -192,9 +192,8 @@ half-read file costs far more than the tokens it saved.
 
 ### Chat responses
 
-The output style is **`default`** (`.claude/settings.json`), kept on 2026-10-23 after a trial;
-the old custom `techengine` style was removed and lives only in git history. **Readability
-outranks brevity**: plain, complete sentences, because English is Miguel's second language.
+The output style is **`default`** (`.claude/settings.json`). **Readability outranks
+brevity**: plain, complete sentences, because English is Miguel's second language.
 Two rules that are TechEngine-specific and stay here:
 
 - Say **what changed** and **what's unverified**, not a tour of every file touched.
@@ -258,7 +257,7 @@ Two rules that are TechEngine-specific and stay here:
 9. **Don't commit or push unless asked.** Never commit directly to `master`. When
    asked, cut the branch **from `origin/master`, freshly fetched**, never local
    `master`, never a previous task's branch; the repo squash-merges, so building on a
-   merged branch replays its whole PR as a conflict against itself (that was PRs #8-#10).
+   merged branch replays its whole PR as a conflict against itself.
    Name it `<card ID>/<slug>`: `S2-T4/assert-tiers`. That name is the **only** link from
    a squashed engine commit back to its board card
    ([ADR-012](docs/03%20Architecture/ADR-012%20-%20Vault%20repository%20split.md) §Consequences).

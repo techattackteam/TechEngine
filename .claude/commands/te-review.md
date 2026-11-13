@@ -55,7 +55,8 @@ the rubric.
 **Attributes / init / loops**: the three the file says nothing enforces
 - **No `[[nodiscard]]`**, anywhere.
 - `= value`, not `{value}`. Braces only for bare `{}` value-init, multi-field aggregates, a real
-  constructor call, deliberate narrowing checks, and member-init lists.
+  constructor call, and deliberate narrowing checks. Member-init lists use `()`: `: m_id(id)`,
+  with braces only for value-init `{}` or aggregate init.
 - `i++` in a `for` step, not `++i`.
 
 **Headers** (*Headers*, *Privacy*)
@@ -88,8 +89,7 @@ params and methods.
 
 Code that lands on one of these is **not a violation**. It is the **trigger firing**, and the
 finding is that `CONVENTIONS.md` now owes a decided row. Report it separately from violations,
-name which row, and say what the code actually chose. That is how *Target naming scheme* got
-ratified at S3-T13.
+name which row, and say what the code actually chose.
 
 ## Output
 

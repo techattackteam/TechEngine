@@ -20,11 +20,12 @@ anything else. If one fails, say which and stop. Do not fix it for me.
    predecessor has not merged (the story chains on [[Sprint Board]] read `T11 → T12 → T13`,
    and the sprint note's *Ordering* names the hard sequences), say which card comes first.
 2. **Board.** The card sits in **In Progress** on [[Sprint Board]].
-3. **Branch.** `git -C C:/dev/TechEngine fetch origin`, then the current branch must be named
-   `<card ID>/<slug>`, and `git -C C:/dev/TechEngine log --oneline origin/master..HEAD` must list
+3. **Branch.** In the engine repo (the root that holds `CLAUDE.md`, not `docs/`, which is its
+   own repo), `git fetch origin`, then the current branch must be named
+   `<card ID>/<slug>`, and `git log --oneline origin/master..HEAD` must list
    nothing but this card's own commits. Another card's commits there mean the branch was cut
-   from a merged branch, which replays that PR as a conflict against itself (PRs #8-#10,
-   `CLAUDE.md` rule 9). A vault-only Design or Process card skips this gate: its work lands as
+   from a merged branch, which replays that PR as a conflict against itself (`CLAUDE.md`
+   rule 9). A vault-only Design or Process card skips this gate: its work lands as
    vault commits, with no branch.
 
 ## Gather
@@ -33,7 +34,7 @@ anything else. If one fails, say which and stop. Do not fix it for me.
    you check the tree against below.
 2. **Freshness, first, because it decides how much to trust everything after it.**
    Read the [[Dashboard]]'s `**Reconciled against:** engine <sha> (date)` line, then:
-   `git -C C:/dev/TechEngine log --oneline <sha>..origin/master`
+   `git log --oneline <sha>..origin/master`, run in the engine repo
    That is the last engine commit a drift check **actually ran against** (ADR-012 §6). If the
    engine is ahead, every design note is **suspect** and you say so in the brief rather than
    citing one as current. **Distance is a signal, not proof**: a note may be perfectly fine
@@ -57,9 +58,8 @@ so a summary of it is worth nothing.
 
 **Earns a place:**
 - **A `done:` clause with no referent in the tree.** The clause names a type, a file or a
-  function that does not exist, or that exists and means something else. This has now happened
-  twice (S3-B1's three clauses, S3-T13's `EngineContext`), so check every clause against the
-  code rather than reading them as a description.
+  function that does not exist, or that exists and means something else.
+  Check every clause against the code rather than reading it as a description.
 - **A design note claim the code contradicts**, with the `file:line` that shows it. Cite
   nothing you have not opened.
 - **An open [[Known Issues]] entry** the card will touch, by ID.
