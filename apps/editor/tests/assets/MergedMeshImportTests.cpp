@@ -1,5 +1,6 @@
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/assets/ImportBlock.hpp>
+#include <TechEngine/core/material/Material.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/resources/Side.hpp>
@@ -28,7 +29,6 @@
 using TechEngine::ImportMode;
 using TechEngine::ImportSettings;
 using TechEngine::Mesh;
-using TechEngine::MeshSlot;
 using TechEngine::ModelImporter;
 using TechEngine::ModelImportRequest;
 using TechEngine::ModelImportResult;
@@ -71,7 +71,8 @@ public:
         scratch.writeFile("assets/client/" + std::string(fileName), contents);
         ModelImportResult result;
         REQUIRE(importFile(fileName, settings, result) == std::error_code{});
-        REQUIRE(result.records.size() == 1);
+        REQUIRE_FALSE(result.records.empty());
+        REQUIRE(result.records[0].typeTag == TechEngine::MESH_TYPE_TAG);
         return readMesh(result.records[0].path);
     }
 
@@ -151,7 +152,7 @@ TEST_CASE("the root asset is named after the folder, a model or a merged mesh by
     CHECK(ModelImporter::rootAssetPath("project://assets/client/Sponza", ImportMode::MergedMesh) == "project://assets/client/Sponza/Sponza.temesh");
 }
 
-TEST_CASE("a merged import writes one root mesh with an empty key and the real settings, and no model", "[editor][assets][import][merged]") {
+TEST_CASE("a merged import writes one root mesh with an empty key and the real settings, its material, and no model", "[editor][assets][import][merged]") {
     MergedImportFixture fixture{"mergedRootAsset"};
     fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
     const ImportSettings settings{0.01f, UpAxis::Z};
@@ -161,14 +162,17 @@ TEST_CASE("a merged import writes one root mesh with an empty key and the real s
 
     CHECK(result.folder == "project://assets/client/Pair");
     CHECK(result.nodeCount == 0);
-    REQUIRE(result.records.size() == 1);
+    REQUIRE(result.records.size() == 2);
     CHECK(result.records[0].typeTag == TechEngine::MESH_TYPE_TAG);
     CHECK(result.records[0].side == TechEngine::Side::Client);
     CHECK(result.records[0].path == "project://assets/client/Pair/Pair.temesh");
-    CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Pair") == 1);
+    CHECK(result.records[1].typeTag == TechEngine::MATERIAL_TYPE_TAG);
+    CHECK(result.records[1].side == TechEngine::Side::Client);
+    CHECK(result.records[1].path == "project://assets/client/Pair/Materials/Material 0.tematerial");
+    CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Pair") == 2);
     CHECK_FALSE(fixture.exists("assets/client/Pair/Pair.temodel"));
     CHECK_FALSE(fixture.exists("assets/client/Pair/Meshes"));
-    CHECK(fixture.nextId == FIRST_TEST_ID + 1);
+    CHECK(fixture.nextId == FIRST_TEST_ID + 2);
 
     const Mesh mesh = fixture.readMesh(result.records[0].path);
     CHECK(mesh.id == result.records[0].id);
@@ -277,8 +281,13 @@ TEST_CASE("two materials give two slots in material-index order", "[editor][asse
     SECTION("each slot is named after its material, and a material no mesh uses gets none") {
         CHECK(mesh.slots[0].name == "Paint");
         CHECK(mesh.slots[1].name == "Glass");
-        CHECK(mesh.slots[0] == MeshSlot{"Paint", 0, 3, ResourceId{}});
-        CHECK(mesh.slots[1] == MeshSlot{"Glass", 3, 3, ResourceId{}});
+        CHECK(mesh.slots[0].firstIndex == 0);
+        CHECK(mesh.slots[0].indexCount == 3);
+        CHECK(mesh.slots[1].firstIndex == 3);
+        CHECK(mesh.slots[1].indexCount == 3);
+        CHECK(mesh.slots[0].defaultMaterial.valid());
+        CHECK(mesh.slots[1].defaultMaterial.valid());
+        CHECK(mesh.slots[0].defaultMaterial != mesh.slots[1].defaultMaterial);
     }
 
     SECTION("the first slot holds the door's triangle, though the walk met the window first") {

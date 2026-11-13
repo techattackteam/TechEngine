@@ -42,6 +42,8 @@ namespace TechEngine {
                         return "source file is not an image the decoder can read";
                     case ProjectError::ImportOutputExists:
                         return "import output already exists";
+                    case ProjectError::UnsupportedDdsFormat:
+                        return "DDS file holds a pixel format the importer does not decode";
                 }
                 return "unknown project error";
             }

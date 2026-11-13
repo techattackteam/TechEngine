@@ -20,7 +20,8 @@ namespace TechEngine {
         UnsupportedImageType,
         SourceNotInAssets,
         ImageUnreadable,
-        ImportOutputExists
+        ImportOutputExists,
+        UnsupportedDdsFormat
     };
 
     const std::error_category& projectErrorCategory();

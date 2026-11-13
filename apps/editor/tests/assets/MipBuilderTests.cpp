@@ -6,6 +6,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -147,4 +148,54 @@ TEST_CASE("an image with a side of 0 has no chain and clears the output", "[edit
     MipBuilder::build(empty, chain);
 
     CHECK(chain.empty());
+}
+
+TEST_CASE("a normal map's chain keeps every texel's xyz unit length at every level", "[editor][assets][mips]") {
+    // Normals that fan out across a 16x8 image, so every box filter averages directions that differ.
+    FloatImage source;
+    source.width = 16;
+    source.height = 8;
+    for (std::uint32_t y = 0; y < source.height; y++) {
+        for (std::uint32_t x = 0; x < source.width; x++) {
+            const float angleX = (static_cast<float>(x) - 7.5f) * 0.18f;
+            const float angleY = (static_cast<float>(y) - 3.5f) * 0.3f;
+            const float normalX = std::sin(angleX);
+            const float normalY = std::sin(angleY) * std::cos(angleX);
+            const float normalZ = std::cos(angleY) * std::cos(angleX);
+            source.pixels.insert(source.pixels.end(), {normalX, normalY, normalZ, 1.0f});
+        }
+    }
+
+    std::vector<FloatImage> chain;
+    MipBuilder::buildNormalMap(source, chain);
+
+    REQUIRE(chain.size() + 1 == Texture::mipCount(16, 8));
+    for (const FloatImage& level: chain) {
+        for (std::size_t pixel = 0; pixel < level.pixels.size(); pixel += 4) {
+            const float length = std::sqrt(level.pixels[pixel] * level.pixels[pixel] + level.pixels[pixel + 1] * level.pixels[pixel + 1] + level.pixels[pixel + 2] * level.pixels[pixel + 2]);
+            CHECK(length == Catch::Approx(1.0f).margin(1.0e-5f));
+            CHECK(level.pixels[pixel + 3] == Catch::Approx(1.0f));
+        }
+    }
+
+    SECTION("the plain box filter, by contrast, shortens them") {
+        std::vector<FloatImage> plain;
+        MipBuilder::build(source, plain);
+        const FloatImage& last = plain.back();
+        const float length = std::sqrt(last.pixels[0] * last.pixels[0] + last.pixels[1] * last.pixels[1] + last.pixels[2] * last.pixels[2]);
+        CHECK(length < 0.95f);
+    }
+}
+
+TEST_CASE("a normal map texel whose xyz averages to zero becomes +Z", "[editor][assets][mips]") {
+    FloatImage source;
+    source.width = 2;
+    source.height = 1;
+    source.pixels = {1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f, 1.0f};
+
+    std::vector<FloatImage> chain;
+    MipBuilder::buildNormalMap(source, chain);
+
+    REQUIRE(chain.size() == 1);
+    CHECK(chain[0].pixels == std::vector<float>{0.0f, 0.0f, 1.0f, 1.0f});
 }

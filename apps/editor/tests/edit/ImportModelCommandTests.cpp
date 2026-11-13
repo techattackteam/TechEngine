@@ -1,5 +1,6 @@
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
+#include <TechEngine/core/material/Material.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/model/Model.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
@@ -16,6 +17,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstddef>
@@ -179,7 +181,7 @@ TEST_CASE("an import command whose job fails writes nothing and registers nothin
     CHECK(app.index.getRecords().empty());
 }
 
-TEST_CASE("a running simulation adds the imported model and its meshes to the index", "[editor][edit][import][integration]") {
+TEST_CASE("a running simulation adds the imported model, its meshes and its material to the index", "[editor][edit][import][integration]") {
     ImportAppProbe app{"importCommandRegisters"};
     app.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
     app.importAtStartup = true;
@@ -200,7 +202,7 @@ TEST_CASE("a running simulation adds the imported model and its meshes to the in
     CHECK(result == 0);
     REQUIRE_FALSE(timedOut.load());
     const std::vector<AssetRecord>& records = app.index.getRecords();
-    REQUIRE(records.size() == 3);
+    REQUIRE(records.size() == 4);
 
     std::vector<std::byte> bytes;
     REQUIRE(app.files().read(PAIR_MODEL, bytes) == std::error_code{});
@@ -224,4 +226,8 @@ TEST_CASE("a running simulation adds the imported model and its meshes to the in
         CHECK(meshRecord.side == TechEngine::Side::Client);
     }
     CHECK(meshNodes == 2);
+
+    const auto material = std::ranges::find(records, TechEngine::MATERIAL_TYPE_TAG, &AssetRecord::typeTag);
+    REQUIRE(material != records.end());
+    CHECK(material->path == "project://assets/client/Pair/Materials/Material 0.tematerial");
 }

@@ -50,7 +50,7 @@ IncludeCategories:
     Priority: 3
   - Regex: '^<imgui[a-z0-9_]*\.h>$'                                    # third-party: ImGui has no root folder
     Priority: 3
-  - Regex: '^<(meshoptimizer|mikktspace|stb_image)\.h>$'               # third-party: no root folder either
+  - Regex: '^<(bc7enc|bcdec|meshoptimizer|mikktspace|rgbcx|stb_image)\.h>$' # third-party: no root folder either
     Priority: 3
   - Regex: '^<[a-z_]+>$'                                               # std: one lowercase word, no slash or dot
     Priority: 4

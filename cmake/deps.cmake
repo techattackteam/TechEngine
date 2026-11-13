@@ -152,7 +152,19 @@ FetchContent_Declare(meshoptimizer
 FetchContent_Declare(stb
   GIT_REPOSITORY https://github.com/nothings/stb.git
   GIT_TAG        9600522de53973336fa033a289858a4354cbb04c)
-FetchContent_MakeAvailable(assimp mikktspace meshoptimizer stb)
+# bcdec decodes a DDS file's blocks and is header-only. bc7enc_rdo encodes BC5 (rgbcx) and BC7 (the scalar bc7enc).
+# Neither has tags, so both pin a full commit. Only bc7enc.cpp and rgbcx.cpp are built: not its CMake project, its
+# tools or its ispc encoder: a SOURCE_SUBDIR with no CMakeLists.txt in it makes MakeAvailable fetch without adding
+# the repo's own project.
+FetchContent_Declare(bcdec
+  GIT_REPOSITORY https://github.com/iOrange/bcdec.git
+  GIT_TAG        80859ed3b7afb1c527a2a99d70c61457bea72d0c
+  SOURCE_SUBDIR  no-cmake-project)
+FetchContent_Declare(bc7enc_rdo
+  GIT_REPOSITORY https://github.com/richgel999/bc7enc_rdo.git
+  GIT_TAG        b9438627eef73a1157e84201b6fa6eb2ffd6d9f0
+  SOURCE_SUBDIR  no-cmake-project)
+FetchContent_MakeAvailable(assimp mikktspace meshoptimizer stb bcdec bc7enc_rdo)
 
 add_library(TechEngineMikkTSpace STATIC ${mikktspace_SOURCE_DIR}/mikktspace.c)
 add_library(TechEngine::mikktspace ALIAS TechEngineMikkTSpace)
@@ -162,6 +174,15 @@ add_library(te_stb INTERFACE)
 add_library(TechEngine::stb ALIAS te_stb)
 target_include_directories(te_stb SYSTEM INTERFACE ${stb_SOURCE_DIR})
 target_compile_definitions(te_stb INTERFACE STBI_NO_STDIO STBI_ONLY_HDR STBI_ONLY_PNG STBI_ONLY_JPEG STBI_ONLY_TGA)
+
+add_library(te_bcdec INTERFACE)
+add_library(TechEngine::bcdec ALIAS te_bcdec)
+target_include_directories(te_bcdec SYSTEM INTERFACE ${bcdec_SOURCE_DIR})
+
+add_library(TechEngineBc7Enc STATIC ${bc7enc_rdo_SOURCE_DIR}/bc7enc.cpp ${bc7enc_rdo_SOURCE_DIR}/rgbcx.cpp)
+add_library(TechEngine::bc7enc ALIAS TechEngineBc7Enc)
+target_include_directories(TechEngineBc7Enc SYSTEM PUBLIC ${bc7enc_rdo_SOURCE_DIR})
+target_compile_options(TechEngineBc7Enc PRIVATE $<IF:$<CXX_COMPILER_ID:MSVC>,/w,-w>)
 
 # --- audio (single-header) --------------------------------------------------
 # Not a CMake project: populate the source and wrap the include dir in an

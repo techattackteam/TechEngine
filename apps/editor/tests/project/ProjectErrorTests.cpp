@@ -8,7 +8,7 @@
 
 using TechEngine::ProjectError;
 
-static constexpr std::array<ProjectError, 15> ALL_CODES{
+static constexpr std::array<ProjectError, 16> ALL_CODES{
     ProjectError::ParseFailed,
     ProjectError::SchemaInvalid,
     ProjectError::NoStartupScene,
@@ -24,6 +24,7 @@ static constexpr std::array<ProjectError, 15> ALL_CODES{
     ProjectError::SourceNotInAssets,
     ProjectError::ImageUnreadable,
     ProjectError::ImportOutputExists,
+    ProjectError::UnsupportedDdsFormat,
 };
 
 TEST_CASE("every ProjectError code converts into the project category", "[editor][project][projecterror]") {

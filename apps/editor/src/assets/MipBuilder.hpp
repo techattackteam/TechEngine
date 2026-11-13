@@ -11,8 +11,15 @@ namespace TechEngine {
         // has Texture::mipCount - 1 entries. A source with a side of 0 gives none.
         static void build(const FloatImage& source, std::vector<FloatImage>& out);
 
+        // As build, for unit normals in xyz: each level's xyz is normalized again before the next level is made from it.
+        // A texel whose xyz averages to zero becomes (0, 0, 1). Alpha is filtered as in build.
+        static void buildNormalMap(const FloatImage& source, std::vector<FloatImage>& out);
+
         // Each side is halved, and a side of 1 stays 1. An output pixel is the mean of the 2x2 pixels at twice its
         // position, and a tap past the edge repeats the last pixel, so an odd side loses its last row or column.
         static void downsample(const FloatImage& above, FloatImage& out);
+
+    private:
+        static void renormalize(FloatImage& image);
     };
 }

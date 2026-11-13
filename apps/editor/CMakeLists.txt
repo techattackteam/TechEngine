@@ -5,14 +5,18 @@ techengine_app(editor
   MAIN    src/main.cpp
   SOURCES src/EditorApp.cpp
           src/assets/AssetIndex.cpp
+          src/assets/Bcdec.cpp
+          src/assets/DdsReader.cpp
           src/assets/ImageDecoder.cpp
           src/assets/ImageImporter.cpp
           src/assets/LooseSource.cpp
+          src/assets/MaterialImporter.cpp
           src/assets/MeshImporter.cpp
           src/assets/MipBuilder.cpp
           src/assets/ModelImporter.cpp
           src/assets/Rgb9E5.cpp
           src/assets/StbImage.cpp
+          src/assets/TextureImporter.cpp
           src/edit/ConsoleHistory.cpp
           src/edit/ConsoleLog.cpp
           src/edit/EditSession.cpp
@@ -47,13 +51,16 @@ techengine_app(editor
           src/ui/widgets/TextEditField.cpp
   HEADERS src/EditorApp.hpp
           src/assets/AssetIndex.hpp
+          src/assets/DdsReader.hpp
           src/assets/ImageDecoder.hpp
           src/assets/ImageImporter.hpp
           src/assets/LooseSource.hpp
+          src/assets/MaterialImporter.hpp
           src/assets/MeshImporter.hpp
           src/assets/MipBuilder.hpp
           src/assets/ModelImporter.hpp
           src/assets/Rgb9E5.hpp
+          src/assets/TextureImporter.hpp
           src/edit/ConsoleHistory.hpp
           src/edit/ConsoleLog.hpp
           src/edit/EditRecord.hpp
@@ -88,18 +95,21 @@ techengine_app(editor
           src/ui/widgets/PropertyTable.hpp
           src/ui/widgets/TextEditField.hpp
   DEPS    clientapp app core
-  LIBS    TechEngine::imgui assimp::assimp TechEngine::mikktspace meshoptimizer TechEngine::stb
+  LIBS    TechEngine::imgui assimp::assimp TechEngine::mikktspace meshoptimizer TechEngine::stb TechEngine::bcdec TechEngine::bc7enc
   LIBS_PRIVATE TechEngine::tomlplusplus
   TESTS   tests/EditorAppTests.cpp
           tests/assets/AssetIndexTests.cpp
           tests/assets/AssimpTests.cpp
+          tests/assets/DdsReaderTests.cpp
           tests/assets/ImageDecoderTests.cpp
           tests/assets/ImageImporterTests.cpp
           tests/assets/LooseSourceTests.cpp
+          tests/assets/MaterialImportTests.cpp
           tests/assets/MergedMeshImportTests.cpp
           tests/assets/MipBuilderTests.cpp
           tests/assets/ModelImporterTests.cpp
           tests/assets/Rgb9E5Tests.cpp
+          tests/assets/TextureImporterTests.cpp
           tests/edit/ConsoleHistoryTests.cpp
           tests/edit/ConsoleLogTests.cpp
           tests/edit/EditSessionTests.cpp

@@ -1,13 +1,16 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/core/material/Material.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/model/Model.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
+#include <TechEngine/core/texture/Texture.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/platform/files/VirtualPath.hpp>
 
+#include <assets/MaterialImporter.hpp>
 #include <assets/MeshImporter.hpp>
 #include <assets/ModelImporter.hpp>
 #include <project/ProjectError.hpp>
@@ -25,6 +28,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <iterator>
 #include <span>
 #include <string>
 #include <string_view>
@@ -34,6 +38,10 @@
 
 namespace TechEngine {
     static constexpr std::string_view MESH_FOLDER = "Meshes";
+    static constexpr std::string_view MATERIAL_FOLDER = "Materials";
+    static constexpr std::string_view TEXTURE_FOLDER = "Textures";
+    static constexpr std::string_view MATERIAL_EXTENSION = ".tematerial";
+    static constexpr std::string_view TEXTURE_EXTENSION = ".tetexture";
     static constexpr std::string_view MESH_EXTENSION = ".temesh";
     static constexpr std::string_view MODEL_EXTENSION = ".temodel";
     static constexpr std::string_view UNNAMED_MESH = "Mesh";
@@ -60,6 +68,7 @@ namespace TechEngine {
         Mesh mesh;
         std::string name;
         std::string fileName;
+        unsigned int materialIndex = 0;
     };
 
     struct ModelImporter::MergedPart {
@@ -150,14 +159,30 @@ namespace TechEngine {
         }
 
         const MeshImporter meshImporter(request.settings, gltfSource);
+        const MaterialImporter materialImporter(*m_files, *scene, request.sourcePath, parts.relative, gltfSource);
         if (request.mode == ImportMode::MergedMesh) {
-            return importMergedMesh(*scene, request, parts.relative, folder, meshImporter, out);
+            return importMergedMesh(*scene, request, parts.relative, folder, meshImporter, materialImporter, out);
         }
 
         std::vector<SourceMesh> meshes;
         const std::uint32_t meshCount = readMeshes(*scene, parts.relative, meshImporter, meshes);
         if (meshCount == 0) {
             return ProjectError::SourceHasNoMeshes;
+        }
+
+        std::vector<bool> usedMaterials(scene->mNumMaterials, false);
+        for (const SourceMesh& mesh: meshes) {
+            if (mesh.mesh.id.valid() && mesh.materialIndex < usedMaterials.size()) {
+                usedMaterials[mesh.materialIndex] = true;
+            }
+        }
+        MaterialPlan materials;
+        materialImporter.plan(usedMaterials, materials);
+        assignOutputs(folder, materials);
+        for (SourceMesh& mesh: meshes) {
+            if (mesh.mesh.id.valid()) {
+                mesh.mesh.slots[0].defaultMaterial = materials.materialId(mesh.materialIndex);
+            }
         }
 
         Model model;
@@ -173,7 +198,7 @@ namespace TechEngine {
 
         std::vector<AssetRecord> records;
         records.reserve(static_cast<std::size_t>(meshCount) + 1);
-        const std::error_code writeError = writeOutputs(model, meshes, request.side, folder, records);
+        const std::error_code writeError = writeOutputs(model, meshes, materialImporter, materials, request.side, folder, records);
         if (writeError) {
             removeUnfinishedFolder(folder);
             return writeError;
@@ -185,17 +210,27 @@ namespace TechEngine {
         return {};
     }
 
-    std::error_code ModelImporter::importMergedMesh(const aiScene& scene, const ModelImportRequest& request, const std::string_view sourcePath, const std::string& folder, const MeshImporter& meshImporter, ModelImportResult& out) const {
+    std::error_code ModelImporter::importMergedMesh(const aiScene& scene, const ModelImportRequest& request, const std::string_view sourcePath, const std::string& folder, const MeshImporter& meshImporter, const MaterialImporter& materialImporter, ModelImportResult& out) const {
         std::vector<MergedPart> parts;
         readMergedParts(scene, meshImporter, parts);
         if (parts.empty()) {
             return ProjectError::SourceHasNoMeshes;
         }
 
+        std::vector<bool> usedMaterials(scene.mNumMaterials, false);
+        for (const MergedPart& part: parts) {
+            if (part.materialIndex < usedMaterials.size()) {
+                usedMaterials[part.materialIndex] = true;
+            }
+        }
+        MaterialPlan materials;
+        materialImporter.plan(usedMaterials, materials);
+
         Mesh mesh;
-        joinParts(scene, parts, mesh);
-        parts.clear();
         mesh.id = m_generateId();
+        assignOutputs(folder, materials);
+        joinParts(scene, materials, parts, mesh);
+        parts.clear();
         mesh.importBlock.sourcePath = std::string(sourcePath);
         mesh.importBlock.settings = request.settings;
 
@@ -204,6 +239,14 @@ namespace TechEngine {
             return createError;
         }
 
+        std::vector<AssetRecord> records;
+        const std::error_code materialError = writeMaterials(materialImporter, materials, request.side, folder, records);
+        if (materialError) {
+            removeUnfinishedFolder(folder);
+            return materialError;
+        }
+
+        // The mesh is written last, so a folder that holds the root asset holds every material it names.
         std::vector<std::byte> bytes;
         mesh.write(bytes);
         std::string path = rootAssetPath(folder, ImportMode::MergedMesh);
@@ -212,11 +255,57 @@ namespace TechEngine {
             removeUnfinishedFolder(folder);
             return writeError;
         }
+        records.insert(records.begin(), AssetRecord{mesh.id, MESH_TYPE_TAG, request.side, std::move(path)});
 
         out.folder = folder;
         out.nodeCount = 0;
-        out.records.clear();
-        out.records.push_back(AssetRecord{mesh.id, MESH_TYPE_TAG, request.side, std::move(path)});
+        out.records = std::move(records);
+        return {};
+    }
+
+    void ModelImporter::assignOutputs(const std::string& folder, MaterialPlan& plan) const {
+        std::vector<std::string> takenTextureNames;
+        for (TextureOutput& texture: plan.textures) {
+            texture.path = folder + "/" + std::string(TEXTURE_FOLDER) + "/" + uniqueFileName(texture.name, takenTextureNames) + std::string(TEXTURE_EXTENSION);
+            texture.texture.id = m_generateId();
+        }
+        std::vector<std::string> takenMaterialNames;
+        for (MaterialOutput& material: plan.materials) {
+            material.path = folder + "/" + std::string(MATERIAL_FOLDER) + "/" + uniqueFileName(material.name, takenMaterialNames) + std::string(MATERIAL_EXTENSION);
+            material.material.id = m_generateId();
+        }
+    }
+
+    // A Textures folder whose every image failed to load is removed again, so the folder holds only what was written.
+    std::error_code ModelImporter::writeMaterials(const MaterialImporter& materialImporter, const MaterialPlan& plan, const Side side, const std::string& folder, std::vector<AssetRecord>& records) const {
+        const std::string textureFolder = folder + "/" + std::string(TEXTURE_FOLDER);
+        if (!plan.textures.empty()) {
+            const std::error_code textureFolderError = m_files->createDirectory(textureFolder);
+            if (textureFolderError) {
+                return textureFolderError;
+            }
+        }
+        if (!plan.materials.empty()) {
+            const std::error_code materialFolderError = m_files->createDirectory(folder + "/" + std::string(MATERIAL_FOLDER));
+            if (materialFolderError) {
+                return materialFolderError;
+            }
+        }
+
+        const std::size_t firstRecord = records.size();
+        const std::error_code writeError = materialImporter.write(plan, side, records);
+        if (writeError) {
+            return writeError;
+        }
+        const bool wroteTexture = std::any_of(records.begin() + static_cast<std::ptrdiff_t>(firstRecord), records.end(), [](const AssetRecord& record) {
+            return record.typeTag == TEXTURE_TYPE_TAG;
+        });
+        if (!plan.textures.empty() && !wroteTexture) {
+            const std::error_code removeError = m_files->remove(textureFolder, false);
+            if (removeError) {
+                TE_LOGGER_WARN("Import: failed to remove the empty {0}: {1}", textureFolder, removeError.message());
+            }
+        }
         return {};
     }
 
@@ -252,6 +341,7 @@ namespace TechEngine {
             mesh.mesh.importBlock.sourceIndex = i;
             mesh.mesh.importBlock.sourceName = source.mName.C_Str();
             mesh.mesh.slots = {MeshSlot{slotName(scene, source.mMaterialIndex), 0, static_cast<std::uint32_t>(mesh.mesh.indices.size()), ResourceId{}}};
+            mesh.materialIndex = source.mMaterialIndex;
             mesh.name = source.mName.C_Str();
             mesh.fileName = uniqueFileName(mesh.name, takenFileNames);
             if (mesh.name.empty()) {
@@ -262,7 +352,13 @@ namespace TechEngine {
         return written;
     }
 
-    std::error_code ModelImporter::writeOutputs(const Model& model, const std::vector<SourceMesh>& meshes, const Side side, const std::string& folder, std::vector<AssetRecord>& records) const {
+    std::error_code ModelImporter::writeOutputs(const Model& model, const std::vector<SourceMesh>& meshes, const MaterialImporter& materialImporter, const MaterialPlan& materials, const Side side, const std::string& folder, std::vector<AssetRecord>& records) const {
+        std::vector<AssetRecord> materialRecords;
+        const std::error_code materialError = writeMaterials(materialImporter, materials, side, folder, materialRecords);
+        if (materialError) {
+            return materialError;
+        }
+
         const std::string meshFolder = folder + "/" + std::string(MESH_FOLDER);
         const std::error_code meshFolderError = m_files->createDirectory(meshFolder);
         if (meshFolderError) {
@@ -293,6 +389,7 @@ namespace TechEngine {
             return modelError;
         }
         records.insert(records.begin(), AssetRecord{model.id, MODEL_TYPE_TAG, side, std::move(modelPath)});
+        records.insert(records.end(), std::make_move_iterator(materialRecords.begin()), std::make_move_iterator(materialRecords.end()));
         return {};
     }
 
@@ -389,7 +486,7 @@ namespace TechEngine {
 
     // The merged mesh carries a stream when any part has it, and a part without it takes the default.
     // A material that no part uses gets no slot.
-    void ModelImporter::joinParts(const aiScene& scene, std::vector<MergedPart>& parts, Mesh& out) {
+    void ModelImporter::joinParts(const aiScene& scene, const MaterialPlan& materials, std::vector<MergedPart>& parts, Mesh& out) {
         std::ranges::stable_sort(parts, std::ranges::less{}, &MergedPart::materialIndex);
         const bool hasNormals = std::ranges::any_of(parts, [](const MergedPart& part) {
             return !part.mesh.normals.empty();
@@ -413,7 +510,7 @@ namespace TechEngine {
             if (out.slots.empty() || part.materialIndex != slotMaterial) {
                 slotMaterial = part.materialIndex;
                 const std::uint32_t firstIndex = static_cast<std::uint32_t>(out.indices.size());
-                out.slots.push_back(MeshSlot{uniqueSlotName(slotName(scene, slotMaterial), out.slots), firstIndex, 0, ResourceId{}});
+                out.slots.push_back(MeshSlot{uniqueSlotName(slotName(scene, slotMaterial), out.slots), firstIndex, 0, materials.materialId(slotMaterial)});
             }
 
             const std::uint32_t firstVertex = static_cast<std::uint32_t>(out.positions.size());

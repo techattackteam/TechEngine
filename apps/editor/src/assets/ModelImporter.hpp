@@ -21,7 +21,9 @@ struct aiScene;
 
 namespace TechEngine {
     class FileAccess;
+    class MaterialImporter;
     class MeshImporter;
+    struct MaterialPlan;
     struct Mesh;
     struct MeshSlot;
     struct Model;
@@ -46,7 +48,7 @@ namespace TechEngine {
         // Zero for a merged mesh.
         std::uint32_t nodeCount = 0;
         // The root asset first: the model, then one record per written mesh in the order assimp lists the meshes, or the
-        // merged mesh alone.
+        // merged mesh alone. Then each written texture and each material.
         std::vector<AssetRecord> records;
     };
 
@@ -72,13 +74,17 @@ namespace TechEngine {
     private:
         std::uint32_t readMeshes(const aiScene& scene, std::string_view sourcePath, const MeshImporter& meshImporter, std::vector<SourceMesh>& out) const;
 
-        std::error_code importMergedMesh(const aiScene& scene, const ModelImportRequest& request, std::string_view sourcePath, const std::string& folder, const MeshImporter& meshImporter, ModelImportResult& out) const;
+        std::error_code importMergedMesh(const aiScene& scene, const ModelImportRequest& request, std::string_view sourcePath, const std::string& folder, const MeshImporter& meshImporter, const MaterialImporter& materialImporter, ModelImportResult& out) const;
+
+        void assignOutputs(const std::string& folder, MaterialPlan& plan) const;
+
+        std::error_code writeMaterials(const MaterialImporter& materialImporter, const MaterialPlan& plan, Side side, const std::string& folder, std::vector<AssetRecord>& records) const;
 
         std::error_code createImportFolder(const std::string& folder) const;
 
         void removeUnfinishedFolder(const std::string& folder) const;
 
-        std::error_code writeOutputs(const Model& model, const std::vector<SourceMesh>& meshes, Side side, const std::string& folder, std::vector<AssetRecord>& records) const;
+        std::error_code writeOutputs(const Model& model, const std::vector<SourceMesh>& meshes, const MaterialImporter& materialImporter, const MaterialPlan& materials, Side side, const std::string& folder, std::vector<AssetRecord>& records) const;
 
         std::error_code checkGltfExtensions(std::string_view sourcePath) const;
 
@@ -86,7 +92,7 @@ namespace TechEngine {
 
         static void readMergedParts(const aiScene& scene, const MeshImporter& meshImporter, std::vector<MergedPart>& out);
 
-        static void joinParts(const aiScene& scene, std::vector<MergedPart>& parts, Mesh& out);
+        static void joinParts(const aiScene& scene, const MaterialPlan& materials, std::vector<MergedPart>& parts, Mesh& out);
 
         static TransformValues bakeLocal(const aiNode& node, const MeshImporter& meshImporter);
 
