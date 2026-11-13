@@ -20,12 +20,16 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
+#include <array>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <latch>
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <thread>
 #include <vector>
 
 using TechEngine::AssetRecord;
@@ -45,6 +49,7 @@ using TechEngineTests::ScratchDirectory;
 
 static constexpr std::uint64_t FIRST_TEST_ID = 0x5000;
 static constexpr float TOLERANCE = 1.0e-5f;
+static constexpr std::uint32_t RACE_ATTEMPTS = 4;
 static constexpr std::string_view FOLDER = "project://assets/client/Kit";
 static constexpr std::string_view MODEL_PATH = "project://assets/client/Kit/Kit.temodel";
 static constexpr std::string_view MERGED_PATH = "project://assets/client/Kit/Kit.temesh";
@@ -418,5 +423,74 @@ TEST_CASE("a re-import with no earlier import is refused and writes nothing", "[
     SECTION("a plain import still refuses the folder an import wrote") {
         fixture.importFile();
         CHECK(fixture.run(false, ImportMode::Model, ImportSettings{}, result) == ProjectError::ImportFolderExists);
+    }
+}
+
+TEST_CASE("a source imported inside another's folder keeps its files when the outer source is re-imported", "[editor][assets][reimport]") {
+    ReimportFixture fixture{"reimportNestedSource"};
+    fixture.writeSource(TechEngineTests::gltfFile(HULL_THEN_TIRE_BODY));
+    fixture.importFile();
+    const Mesh hull = fixture.readMesh(HULL_PATH);
+    fixture.scratch.writeFile("assets/client/Kit/Inner.gltf", TechEngineTests::gltfFile(HULL_THEN_TIRE_BODY));
+    ModelImportRequest inner;
+    inner.sourcePath = "project://assets/client/Kit/Inner.gltf";
+    inner.side = TechEngine::Side::Client;
+    ModelImportResult innerResult;
+    const TechEngine::ModelImporter importer(fixture.files, [&fixture] {
+        return ResourceId{fixture.nextId++};
+    });
+    REQUIRE(importer.importFile(inner, innerResult) == std::error_code{});
+    const std::string innerHullPath = "project://assets/client/Kit/Inner/Meshes/Hull.temesh";
+    const std::vector<std::byte> innerHullBytes = fixture.bytesOf(innerHullPath);
+
+    const ModelImportResult second = fixture.reimportFile();
+
+    CHECK(fixture.bytesOf(innerHullPath) == innerHullBytes);
+    CHECK(fixture.readMesh(HULL_PATH).id == hull.id);
+    CHECK(rewrote(second, hull.id));
+    CHECK(second.records.empty());
+    for (const AssetRecord& record: innerResult.records) {
+        CHECK_FALSE(rewrote(second, record.id));
+    }
+}
+
+TEST_CASE("two re-imports of one source at once give a new mesh one id and one file", "[editor][assets][reimport]") {
+    ReimportFixture fixture{"reimportRace"};
+    std::atomic<std::uint64_t> nextId = FIRST_TEST_ID;
+    const TechEngine::ModelImporter importer(fixture.files, [&nextId] {
+        return ResourceId{nextId++};
+    });
+    ModelImportRequest request;
+    request.sourcePath = "project://assets/client/Kit.gltf";
+    request.side = TechEngine::Side::Client;
+
+    for (std::uint32_t attempt = 0; attempt < RACE_ATTEMPTS; attempt++) {
+        std::filesystem::remove_all(fixture.scratch.root() / "assets/client/Kit");
+        fixture.writeSource(TechEngineTests::gltfFile(HULL_THEN_TIRE_BODY));
+        ModelImportResult first;
+        REQUIRE(importer.importFile(request, first) == std::error_code{});
+        fixture.writeSource(TechEngineTests::gltfFile(HULL_THEN_RIM_BODY));
+
+        std::latch start(2);
+        std::array<ModelImportResult, 2> results;
+        std::array<std::error_code, 2> errors;
+        const auto run = [&](const std::size_t index) {
+            start.arrive_and_wait();
+            errors[index] = importer.reimportFile(request, results[index]);
+        };
+        std::thread one(run, 0);
+        std::thread two(run, 1);
+        one.join();
+        two.join();
+
+        REQUIRE(errors[0] == std::error_code{});
+        REQUIRE(errors[1] == std::error_code{});
+        const Mesh rim = fixture.readMesh("project://assets/client/Kit/Meshes/Rim.temesh");
+        CHECK_FALSE(fixture.exists("assets/client/Kit/Meshes/Rim_1.temesh"));
+        REQUIRE(results[0].records.size() + results[1].records.size() == 1);
+        const ModelImportResult& creator = results[0].records.empty() ? results[1] : results[0];
+        const ModelImportResult& follower = results[0].records.empty() ? results[0] : results[1];
+        CHECK(creator.records[0].id == rim.id);
+        CHECK(rewrote(follower, rim.id));
     }
 }

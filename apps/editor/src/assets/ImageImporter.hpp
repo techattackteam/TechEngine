@@ -38,7 +38,8 @@ namespace TechEngine {
 
         static std::string outputPath(std::string_view sourcePath);
 
-        // Refuses an output that exists. Writes nothing when it fails.
+        // Refuses an output that exists. Writes nothing when it fails. This and reimportFile wait while another import or
+        // re-import of the same source runs.
         std::error_code importFile(const ImageImportRequest& request, ImageImportResult& out) const;
 
         // Rewrites the texture an earlier import wrote, under its id. Writes nothing when it fails.

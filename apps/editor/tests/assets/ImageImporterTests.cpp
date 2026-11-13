@@ -16,12 +16,16 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
+#include <array>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <latch>
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <thread>
 #include <vector>
 
 using TechEngine::AssetRecord;
@@ -36,6 +40,7 @@ using TechEngineTests::ScratchDirectory;
 static constexpr std::uint64_t FIRST_TEST_ID = 0x2000;
 static constexpr std::string_view SKY_SOURCE = "project://assets/client/Sky.hdr";
 static constexpr std::string_view SKY_TEXTURE = "project://assets/client/Sky.tetexture";
+static constexpr std::uint32_t RACE_ATTEMPTS = 8;
 
 class ImageImportFixture {
 public:
@@ -203,6 +208,39 @@ TEST_CASE("a second import of the same source is refused and changes no byte", "
     std::vector<std::byte> after;
     REQUIRE(fixture.files.read(SKY_TEXTURE, after) == std::error_code{});
     CHECK(after == before);
+}
+
+TEST_CASE("two imports of one source at once write one texture under one id", "[editor][assets][image]") {
+    ImageImportFixture fixture{"imageImportRace"};
+    fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(256, 128));
+    std::atomic<std::uint64_t> nextId = FIRST_TEST_ID;
+    const ImageImporter importer(fixture.files, [&nextId] {
+        return ResourceId{nextId++};
+    });
+
+    for (std::uint32_t attempt = 0; attempt < RACE_ATTEMPTS; attempt++) {
+        std::filesystem::remove(fixture.scratch.root() / "assets/client/Sky.tetexture");
+        std::latch start(2);
+        std::array<ImageImportResult, 2> results;
+        std::array<std::error_code, 2> errors;
+        const auto run = [&](const std::size_t index) {
+            ImageImportRequest request;
+            request.sourcePath = std::string(SKY_SOURCE);
+            start.arrive_and_wait();
+            errors[index] = importer.importFile(request, results[index]);
+        };
+        std::thread first(run, 0);
+        std::thread second(run, 1);
+        first.join();
+        second.join();
+
+        const std::error_code refused = ProjectError::ImportOutputExists;
+        REQUIRE(std::ranges::count(errors, std::error_code{}) == 1);
+        REQUIRE(std::ranges::count(errors, refused) == 1);
+        const ImageImportResult& winner = errors[0] ? results[1] : results[0];
+        REQUIRE(winner.records.size() == 1);
+        CHECK(fixture.readTexture(SKY_TEXTURE).id == winner.records[0].id);
+    }
 }
 
 TEST_CASE("a re-import rewrites the same file with the new image and keeps its id", "[editor][assets][image][reimport]") {

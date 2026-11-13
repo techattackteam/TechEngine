@@ -10,6 +10,7 @@
 #include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/platform/files/VirtualPath.hpp>
 
+#include <assets/ImportClaim.hpp>
 #include <assets/ImportedFile.hpp>
 #include <assets/MaterialImporter.hpp>
 #include <assets/MeshImporter.hpp>
@@ -85,7 +86,7 @@ namespace TechEngine {
         ResourceId rootId;
         // Empty when the folder holds no root asset of the other mode.
         std::string otherRootPath;
-        // Every imported file under the folder but the two root assets.
+        // Every imported file of this source under the folder but the two root assets.
         std::vector<ImportedFile> files;
         std::vector<bool> matched;
         std::vector<ResourceId> keptIds;
@@ -156,6 +157,7 @@ namespace TechEngine {
         }
 
         const std::string folder = importFolder(request.sourcePath);
+        const ImportClaim claim(folder);
         FileStatus folderStatus;
         const std::error_code folderError = m_files->status(folder, folderStatus);
         if (existing == nullptr) {
@@ -172,7 +174,7 @@ namespace TechEngine {
             if (folderError) {
                 return folderError;
             }
-            const std::error_code existingError = readExistingFolder(folder, request.mode, *existing);
+            const std::error_code existingError = readExistingFolder(folder, parts.relative, request.mode, *existing);
             if (existingError) {
                 return existingError;
             }
@@ -266,7 +268,7 @@ namespace TechEngine {
         return {};
     }
 
-    std::error_code ModelImporter::readExistingFolder(const std::string& folder, const ImportMode mode, ExistingFolder& out) const {
+    std::error_code ModelImporter::readExistingFolder(const std::string& folder, const std::string_view sourcePath, const ImportMode mode, ExistingFolder& out) const {
         std::vector<ImportedFile> files;
         const std::error_code listError = listImportedFiles(*m_files, folder, files);
         if (listError) {
@@ -305,7 +307,10 @@ namespace TechEngine {
             } else if (parent == textureFolder) {
                 out.takenTextureNames.push_back(std::move(stem));
             }
-            out.files.push_back(std::move(file));
+            // A source inside this folder imports into a folder of its own below it, and its files must not be matched.
+            if (file.importBlock.sourcePath == sourcePath) {
+                out.files.push_back(std::move(file));
+            }
         }
 
         if (!hasRoot && out.otherRootPath.empty()) {

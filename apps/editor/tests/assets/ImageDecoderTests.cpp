@@ -73,3 +73,36 @@ TEST_CASE("a file cut inside its header is refused", "[editor][assets][decoder]"
     FloatImage image;
     CHECK(ImageDecoder::decodeFloat(asBytes(cut), image) == ProjectError::ImageUnreadable);
 }
+
+TEST_CASE("a side longer than the editor's limit is refused by both decoders, and one at the limit decodes", "[editor][assets][decoder]") {
+    const std::uint32_t limit = ImageDecoder::MAX_IMAGE_SIDE;
+    const TechEngineTests::RgbePixel grey{128, 128, 128, 128};
+    FloatImage floatImage;
+    ByteImage byteImage;
+
+    SECTION("too wide") {
+        const std::string file = TechEngineTests::radianceFile(limit + 1, 1, std::vector<TechEngineTests::RgbePixel>(limit + 1, grey));
+        CHECK(ImageDecoder::decodeFloat(asBytes(file), floatImage) == ProjectError::ImageUnreadable);
+        CHECK(ImageDecoder::decodeBytes(asBytes(file), byteImage) == ProjectError::ImageUnreadable);
+        const std::string tga = TechEngineTests::tgaFile(static_cast<std::uint16_t>(limit + 1), 1, std::vector<std::uint8_t>(static_cast<std::size_t>(limit + 1) * 3, 100));
+        CHECK(ImageDecoder::decodeBytes(asBytes(tga), byteImage) == ProjectError::ImageUnreadable);
+        CHECK(floatImage.width == 0);
+        CHECK(byteImage.width == 0);
+    }
+
+    SECTION("too tall") {
+        const std::string file = TechEngineTests::radianceFile(1, limit + 1, std::vector<TechEngineTests::RgbePixel>(limit + 1, grey));
+        CHECK(ImageDecoder::decodeFloat(asBytes(file), floatImage) == ProjectError::ImageUnreadable);
+        CHECK(ImageDecoder::decodeBytes(asBytes(file), byteImage) == ProjectError::ImageUnreadable);
+    }
+
+    SECTION("at the limit") {
+        const std::string file = TechEngineTests::radianceFile(limit, 1, std::vector<TechEngineTests::RgbePixel>(limit, grey));
+        REQUIRE(ImageDecoder::decodeFloat(asBytes(file), floatImage) == std::error_code{});
+        CHECK(floatImage.width == limit);
+        CHECK(floatImage.pixels.size() == static_cast<std::size_t>(limit) * 4);
+        const std::string tga = TechEngineTests::tgaFile(1, static_cast<std::uint16_t>(limit), std::vector<std::uint8_t>(static_cast<std::size_t>(limit) * 3, 100));
+        REQUIRE(ImageDecoder::decodeBytes(asBytes(tga), byteImage) == std::error_code{});
+        CHECK(byteImage.height == limit);
+    }
+}

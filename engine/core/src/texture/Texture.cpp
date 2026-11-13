@@ -1,4 +1,6 @@
+#include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
+#include <TechEngine/core/serialization/BlobHeader.hpp>
 #include <TechEngine/core/serialization/ReadError.hpp>
 #include <TechEngine/core/serialization/Reader.hpp>
 #include <TechEngine/core/serialization/Writer.hpp>
@@ -52,13 +54,16 @@ namespace TechEngine {
         writer.write(static_cast<std::uint8_t>(format));
         writer.write(width);
         writer.write(height);
-        writer.write(static_cast<std::uint32_t>(mips.size()));
+        const bool mipCountFits = TE_ENSURE(mips.size() <= BLOB_MAX_COUNT, "Texture of {0} mips exceeds the u32 count prefix; writing no mips", mips.size());
+        writer.write(mipCountFits ? static_cast<std::uint32_t>(mips.size()) : static_cast<std::uint32_t>(0));
         writer.write(static_cast<std::uint8_t>(sampler.wrapU));
         writer.write(static_cast<std::uint8_t>(sampler.wrapV));
         writer.write(static_cast<std::uint8_t>(sampler.filter));
+        if (!mipCountFits) {
+            return;
+        }
         for (const std::vector<std::byte>& mip: mips) {
-            writer.write(static_cast<std::uint32_t>(mip.size()));
-            writer.writeBytes(mip);
+            writer.writeSpan(std::span<const std::byte>{mip});
         }
     }
 

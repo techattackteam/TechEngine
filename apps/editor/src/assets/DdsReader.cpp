@@ -53,7 +53,6 @@ namespace TechEngine {
     static constexpr std::uint32_t DXGI_B8G8R8A8_UNORM_SRGB = 91;
     static constexpr std::uint32_t DXGI_BC7_UNORM = 98;
     static constexpr std::uint32_t DXGI_BC7_UNORM_SRGB = 99;
-    static constexpr std::uint32_t MAX_DDS_SIDE = 16384;
     static constexpr std::size_t CHANNELS = 4;
     static constexpr std::size_t BLOCK_SIDE = 4;
     static constexpr std::size_t BLOCK_PIXELS = BLOCK_SIDE * BLOCK_SIDE;
@@ -73,7 +72,7 @@ namespace TechEngine {
 
         const std::uint32_t width = readU32(bytes, WIDTH_OFFSET);
         const std::uint32_t height = readU32(bytes, HEIGHT_OFFSET);
-        if (width == 0 || height == 0 || width > MAX_DDS_SIDE || height > MAX_DDS_SIDE) {
+        if (width == 0 || height == 0 || width > ImageDecoder::MAX_IMAGE_SIDE || height > ImageDecoder::MAX_IMAGE_SIDE) {
             return ProjectError::ImageUnreadable;
         }
         const std::uint64_t size = topLevelSize(layout, width, height);

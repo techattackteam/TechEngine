@@ -196,11 +196,44 @@ namespace TechEngine {
             completions.swap(m_completions);
         }
         std::error_code firstError;
+        const auto settle = [this, &firstError](const LoadCompletion& completion, const std::error_code error) {
+            if (completion.reload && error) {
+                const ResourceEntry* entry = m_slots->find(completion.slot);
+                TE_LOGGER_WARN("Resource {0:#018x} keeps its previous data, because its reload failed: {1}", entry->id.value(), error.message());
+            }
+            if (!firstError && error) {
+                firstError = error;
+            }
+        };
+
+        // A reload is checked for cycles against the old edges of the entries reloaded beside it, so one refused as a
+        // cycle is tried again after the others are published, until a round settles none of them.
+        std::vector<LoadCompletion*> cyclicReloads;
         for (LoadCompletion& completion: completions) {
             const std::error_code publishError = publishCompletion(completion);
-            if (!firstError && publishError) {
-                firstError = publishError;
+            if (completion.reload && publishError == ReadError::CyclicReference) {
+                cyclicReloads.push_back(&completion);
+                continue;
             }
+            settle(completion, publishError);
+        }
+        bool settledAny = true;
+        while (settledAny && !cyclicReloads.empty()) {
+            settledAny = false;
+            std::vector<LoadCompletion*> stillCyclic;
+            for (LoadCompletion* completion: cyclicReloads) {
+                const std::error_code retryError = publishCompletion(*completion);
+                if (retryError == ReadError::CyclicReference) {
+                    stillCyclic.push_back(completion);
+                    continue;
+                }
+                settledAny = true;
+                settle(*completion, retryError);
+            }
+            cyclicReloads = std::move(stillCyclic);
+        }
+        for (const LoadCompletion* completion: cyclicReloads) {
+            settle(*completion, ReadError::CyclicReference);
         }
         return firstError;
     }
@@ -213,11 +246,7 @@ namespace TechEngine {
 
         entry->loading = false;
         if (completion.reload) {
-            const std::error_code reloadError = publishReload(*entry, completion);
-            if (reloadError) {
-                TE_LOGGER_WARN("Resource {0:#018x} keeps its previous data, because its reload failed: {1}", entry->id.value(), reloadError.message());
-            }
-            return reloadError;
+            return publishReload(*entry, completion);
         }
 
         entry->error = completion.error;

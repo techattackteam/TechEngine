@@ -13,5 +13,8 @@ namespace TechEngine {
         static std::uint32_t pack(float red, float green, float blue);
 
         static void unpack(std::uint32_t packed, float& red, float& green, float& blue);
+
+    private:
+        static float clampChannel(float value);
     };
 }

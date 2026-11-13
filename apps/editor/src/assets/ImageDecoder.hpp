@@ -23,11 +23,17 @@ namespace TechEngine {
 
     class ImageDecoder {
     public:
+        // The longest side any decoder in the editor accepts.
+        static constexpr std::uint32_t MAX_IMAGE_SIDE = 16384;
+
         // Reads PNG, JPEG, TGA and Radiance HDR. An 8-bit file is converted to linear with stb_image's 2.2 gamma, and a
-        // file with no alpha gets 1.
+        // file with no alpha gets 1. Both calls refuse a side above MAX_IMAGE_SIDE before decoding.
         static std::error_code decodeFloat(std::span<const std::byte> bytes, FloatImage& out);
 
         // A Radiance HDR file is tone-mapped to 8 bits by stb_image, so use decodeFloat for one.
         static std::error_code decodeBytes(std::span<const std::byte> bytes, ByteImage& out);
+
+    private:
+        static bool isDecodable(std::span<const std::byte> bytes);
     };
 }

@@ -241,7 +241,7 @@ public:
     CacheSource source;
     ResourceCache cache{jobs};
 
-    CacheHarness() {
+    explicit CacheHarness(const std::size_t workerCount = TechEngine::JobSystem::DEFAULT_WORKER_COUNT) : jobs(workerCount) {
         cache.setSource(source);
         cache.registerLoader<CacheResource>(CACHE_RESOURCE_KIND, CACHE_RESOURCE_TYPE_TAG, &loadCacheResource);
         cache.registerLoader<GatedResource>(GATED_RESOURCE_KIND, GATED_RESOURCE_TYPE_TAG, &loadGatedResource);
@@ -1175,4 +1175,84 @@ TEST_CASE("one failed id does not stop the others in the same reload", "[core][r
     REQUIRE(harness.cache.resolve(broken)->label == "root");
     REQUIRE(harness.cache.resolve(fine) != nullptr);
     REQUIRE(harness.cache.resolve(fine)->label == "second rewritten");
+}
+
+// One worker runs a reload's loads in the order of its ids, so each section publishes them in that order.
+TEST_CASE("a reload that reverses a dependency succeeds whichever entry publishes first", "[core][resources][cache][reload]") {
+    CacheHarness harness{1};
+    harness.source.addAsset(ROOT_ID, "root", {DEPENDENCY_ID});
+    harness.source.addAsset(DEPENDENCY_ID, "dependency", {});
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+    const ResourceHandle<CacheResource> dependency = harness.request(DEPENDENCY_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    REQUIRE(harness.acquireCount(dependency) == 2);
+    harness.source.addAsset(ROOT_ID, "root rewritten", {});
+    harness.source.addAsset(DEPENDENCY_ID, "dependency rewritten", {ROOT_ID});
+
+    SECTION("the old holder publishes first") {
+        REQUIRE(harness.reload({ROOT_ID, DEPENDENCY_ID}) == std::error_code{});
+    }
+
+    SECTION("the new holder publishes first") {
+        REQUIRE(harness.reload({DEPENDENCY_ID, ROOT_ID}) == std::error_code{});
+    }
+
+    REQUIRE(harness.cache.resolve(root) != nullptr);
+    REQUIRE(harness.cache.resolve(root)->label == "root rewritten");
+    REQUIRE(harness.cache.resolve(dependency) != nullptr);
+    REQUIRE(harness.cache.resolve(dependency)->label == "dependency rewritten");
+    REQUIRE(harness.acquireCount(root) == 2);
+    REQUIRE(harness.acquireCount(dependency) == 1);
+
+    harness.cache.release(root);
+    harness.cache.release(dependency);
+    harness.cache.drainFrees();
+
+    REQUIRE_FALSE(harness.exists(root));
+    REQUIRE_FALSE(harness.exists(dependency));
+}
+
+TEST_CASE("a reload that closes a cycle fails one side in either order and keeps the counts balanced", "[core][resources][cache][reload]") {
+    const TechEngineTests::LogCaptureGuard logs;
+    CacheHarness harness{1};
+    harness.source.addAsset(ROOT_ID, "root", {});
+    harness.source.addAsset(DEPENDENCY_ID, "dependency", {});
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+    const ResourceHandle<CacheResource> dependency = harness.request(DEPENDENCY_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    harness.source.addAsset(ROOT_ID, "root rewritten", {DEPENDENCY_ID});
+    harness.source.addAsset(DEPENDENCY_ID, "dependency rewritten", {ROOT_ID});
+    ResourceHandle<CacheResource> published;
+    ResourceHandle<CacheResource> refused;
+    ResourceId refusedId;
+
+    SECTION("root first") {
+        REQUIRE(harness.reload({ROOT_ID, DEPENDENCY_ID}) == ReadError::CyclicReference);
+        published = root;
+        refused = dependency;
+        refusedId = DEPENDENCY_ID;
+    }
+
+    SECTION("dependency first") {
+        REQUIRE(harness.reload({DEPENDENCY_ID, ROOT_ID}) == ReadError::CyclicReference);
+        published = dependency;
+        refused = root;
+        refusedId = ROOT_ID;
+    }
+
+    REQUIRE(logNames(logs, refusedId));
+    REQUIRE(harness.cache.resolve(published) != nullptr);
+    REQUIRE(harness.cache.resolve(published)->label.ends_with("rewritten"));
+    REQUIRE(harness.cache.resolve(refused) != nullptr);
+    REQUIRE_FALSE(harness.cache.resolve(refused)->label.ends_with("rewritten"));
+    REQUIRE(harness.state(refused) == ResourceState::Ready);
+    REQUIRE(harness.acquireCount(published) == 1);
+    REQUIRE(harness.acquireCount(refused) == 2);
+
+    harness.cache.release(root);
+    harness.cache.release(dependency);
+    harness.cache.drainFrees();
+
+    REQUIRE_FALSE(harness.exists(root));
+    REQUIRE_FALSE(harness.exists(dependency));
 }

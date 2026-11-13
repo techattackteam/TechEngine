@@ -565,3 +565,27 @@ TEST_CASE("an OBJ material maps its diffuse colour, opacity and emissive, and is
     CHECK(red.emissiveFactor.z == Catch::Approx(0.3f));
     CHECK(red.alphaMode == MaterialAlphaMode::Opaque);
 }
+
+TEST_CASE("an OBJ material's absolute image paths are looked for by name beside the source, and keyed by that name", "[editor][assets][import][materials]") {
+    MaterialImportFixture fixture{"materialsAbsolutePaths"};
+    fixture.scratch.writeFile("assets/client/wall.png", TechEngineTests::solidPng(2, 2, {200, 100, 50, 255}));
+    fixture.scratch.writeFile("assets/client/glow.png", TechEngineTests::solidPng(2, 2, {10, 20, 30, 255}));
+    fixture.scratch.writeFile("assets/client/Quad.mtl", "newmtl Brick\nKd 1 1 1\nmap_Kd C:\\art\\wall.png\nmap_Ke /home/artist/maps/glow.png\n");
+    fixture.scratch.writeFile("assets/client/Quad.obj", "mtllib Quad.mtl\no Quad\nv 0 0 0\nv 1 0 0\nv 1 1 0\nv 0 1 0\nvt 0 0\nvt 1 0\nvt 1 1\nvt 0 1\nusemtl Brick\nf 1/1 2/2 3/3 4/4\n");
+    fixture.importFile("Quad.obj");
+
+    REQUIRE(fixture.recordsOf(TechEngine::TEXTURE_TYPE_TAG).size() == 2);
+    std::vector<std::string> keys;
+    for (const AssetRecord& record: fixture.recordsOf(TechEngine::TEXTURE_TYPE_TAG)) {
+        keys.push_back(fixture.readTexture(record.path).importBlock.sourceName);
+    }
+    std::ranges::sort(keys);
+    REQUIRE(keys.size() == 2);
+    CHECK(keys[0].starts_with("glow.png#emissive#"));
+    CHECK(keys[1].starts_with("wall.png#basecolor#"));
+
+    const Material brick = fixture.materialNamed("Brick");
+    CHECK(brick.baseColorTexture.id == fixture.textureKeyed(keys[1]).id);
+    CHECK(brick.emissiveTexture.id == fixture.textureKeyed(keys[0]).id);
+    CHECK(fixture.exists("assets/client/Quad/Textures/wall_basecolor.tetexture"));
+}

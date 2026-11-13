@@ -6,6 +6,7 @@
 
 #include <assets/ImageDecoder.hpp>
 #include <assets/ImageImporter.hpp>
+#include <assets/ImportClaim.hpp>
 #include <assets/ImportedFile.hpp>
 #include <assets/MipBuilder.hpp>
 #include <assets/Rgb9E5.hpp>
@@ -66,6 +67,7 @@ namespace TechEngine {
         }
 
         const std::string path = outputPath(request.sourcePath);
+        const ImportClaim claim(path);
         FileStatus outputStatus;
         const std::error_code outputError = m_files->status(path, outputStatus);
         ResourceId keptId;

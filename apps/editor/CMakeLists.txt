@@ -9,6 +9,7 @@ techengine_app(editor
           src/assets/DdsReader.cpp
           src/assets/ImageDecoder.cpp
           src/assets/ImageImporter.cpp
+          src/assets/ImportClaim.cpp
           src/assets/ImportedFile.cpp
           src/assets/LooseSource.cpp
           src/assets/MaterialImporter.cpp
@@ -57,6 +58,7 @@ techengine_app(editor
           src/assets/DdsReader.hpp
           src/assets/ImageDecoder.hpp
           src/assets/ImageImporter.hpp
+          src/assets/ImportClaim.hpp
           src/assets/ImportedFile.hpp
           src/assets/LooseSource.hpp
           src/assets/MaterialImporter.hpp
@@ -109,6 +111,7 @@ techengine_app(editor
           tests/assets/DdsReaderTests.cpp
           tests/assets/ImageDecoderTests.cpp
           tests/assets/ImageImporterTests.cpp
+          tests/assets/ImportClaimTests.cpp
           tests/assets/LooseSourceTests.cpp
           tests/assets/MaterialImportTests.cpp
           tests/assets/MergedMeshImportTests.cpp

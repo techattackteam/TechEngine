@@ -71,7 +71,8 @@ namespace TechEngine {
 
         static std::string rootAssetPath(std::string_view folder, ImportMode mode);
 
-        // Refuses a folder that exists. Writes nothing when it fails.
+        // Refuses a folder that exists. Writes nothing when it fails. This and reimportFile wait while another import or
+        // re-import of the same source runs.
         std::error_code importFile(const ModelImportRequest& request, ModelImportResult& out) const;
 
         // Into the folder an earlier import wrote, with the settings of its root asset instead of the request's. An output
@@ -82,7 +83,7 @@ namespace TechEngine {
     private:
         std::error_code importInto(const ModelImportRequest& request, ExistingFolder* existing, ModelImportResult& out) const;
 
-        std::error_code readExistingFolder(const std::string& folder, ImportMode mode, ExistingFolder& out) const;
+        std::error_code readExistingFolder(const std::string& folder, std::string_view sourcePath, ImportMode mode, ExistingFolder& out) const;
 
         std::uint32_t readMeshes(const aiScene& scene, std::string_view sourcePath, const std::string& folder, const MeshImporter& meshImporter, std::vector<std::string> takenFileNames, std::vector<SourceMesh>& out) const;
 

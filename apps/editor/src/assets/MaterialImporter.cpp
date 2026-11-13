@@ -218,6 +218,13 @@ namespace TechEngine {
             image.embeddedIndex = -1;
             image.name = m_gltfSource ? decodeUri(path.C_Str()) : std::string(path.C_Str());
             std::ranges::replace(image.name, '\\', '/');
+            // FBX and OBJ files often hold the absolute path of the artist's machine, so such a file is looked for by its
+            // name alone, beside the source.
+            const bool absolute = image.name.starts_with('/') || image.name.find(':') != std::string::npos;
+            const std::size_t nameStart = image.name.find_last_of("/:") + 1;
+            if (absolute && nameStart < image.name.size()) {
+                image.name = image.name.substr(nameStart);
+            }
         }
 
         sampler = TextureSampler{};
