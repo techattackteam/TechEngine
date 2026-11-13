@@ -8,7 +8,7 @@ day I work, Sat or Sun).
 
 **GATE, check before doing anything else.** Read the active sprint note's end date. If it
 is the Friday just gone, this weekend is a **sprint boundary**: stop and tell me to run
-`/sprint-plan` instead, which absorbs this command (decided 2026-07-26). Never derive that
+`/sprint-plan` instead, which absorbs this command. Never derive that
 date from the calendar month. Otherwise, continue.
 
 Context to gather first:
@@ -45,7 +45,7 @@ Then:
      `origin/master` by opening the code, not by checking the line exists, and correct the
      citation in place. Never re-decide a fired trigger.
    Nothing else re-reads a fired entry between the fire and the pull, and the code keeps
-   moving under it: on 2026-09-04 one pointed at a line that had become blank. List each
+   moving under it, so a cited line can drift or go blank. List each
    correction under "Artifact drift". If the cited code is gone or already fixed, list that
    too and offer to delete the entry; do not delete it unasked. If nothing fired or moved,
    say so.

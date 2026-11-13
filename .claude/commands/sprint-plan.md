@@ -12,16 +12,16 @@ tight. Set the new sprint's date range from that rule: start = this Saturday, en
 Friday 2 weeks out. **Never derive sprint dates from the calendar month.**
 
 **This is the fitting half of planning.** The thinking half ran in week 2 of the closing sprint
-as `/sprint-prep`: the goal, the decisions and the draft cards (2026-10-23,
-[[Planning Workflow - Artifact Gate]] § *Decide first, then plan*). This session reviews the
+as `/sprint-prep`: the goal, the decisions and the draft cards
+([[Planning Workflow - Artifact Gate]] § *Decide first, then plan*). This session reviews the
 sprint that ended, then turns the draft into the new sprint. It does not design.
 
 **When this boundary opens a quarter or a phase, `/product-review` runs first**, and this
 session plans from what it changed.
 
-**This command absorbs `/weekly-review` on a boundary weekend; do not run both** (decided
-2026-07-26). The retro covers the same ground at sprint scope, and running both wrote two
-journal entries and updated the dashboard twice before I got to code. The weekly review's
+**This command absorbs `/weekly-review` on a boundary weekend; do not run both.** The retro
+covers the same ground at sprint scope, and running both writes two journal entries and
+updates the dashboard twice before I get to code. The weekly review's
 stale-artifact check is *not* dropped; it's step 3 below.
 
 My input on focus (may be empty): $ARGUMENTS
@@ -95,8 +95,8 @@ Steps:
      card, sized in with everything else, nothing displaced. Arriving *mid-sprint* → still
      taken that sprint, but it **displaces**: name what it pushes out (lowest-priority
      Process first) rather than stacking it on top, since piling unplanned work onto a full
-     sprint is the refill reflex the Sprint 01 retro flagged. Record the mid-sprint kind the
-     way T13-T15 were: a dated scope-change note in the sprint file.
+     sprint is the refill reflex. Record a mid-sprint bug as a dated scope-change note in the
+     sprint file.
 6. **Plant the two standing cards** in the new sprint, so the next prep is on the board from
    day 1:
    - `S<n>-P<k> · Prep brief for Sprint <n+1> · P2 · 🤖 Auto`, report-only. done: a run report

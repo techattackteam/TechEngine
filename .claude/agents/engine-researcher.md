@@ -22,14 +22,15 @@ against the *actual* stack; flag
 when a technique needs something the current choice can't serve (that trips an ADR's
 "what would move this" trigger, which is a big deal, not a footnote):
 
-- **Rendering / graphics** → ADR-005 (OpenGL 4.5 core + DSA behind a device seam) +
-  ADR-018 (the render thread owns GL). R1's renderer ADR is still owed, so a rendering
-  technique often feeds that decision. Flag anything needing bindless / compute-heavy /
+- **Rendering / graphics** → ADR-005 (OpenGL + DSA; ADR-028 moved the target to GL 4.6),
+  ADR-018 (the render thread owns GL), ADR-028 (render device seam and frame packets) and
+  ADR-029 (materials, surfaces and lobes). Flag anything needing bindless / compute-heavy /
   explicit MT submit.
 - **ECS / scheduling / physics** → ADR-006 (module layout; Jolt in `core`), ADR-007
   (replication-ready ECS), ADR-020 (system scheduling), ADR-021 (transform propagation),
   ADR-022 (project system composition).
-- **Threading / time** → ADR-015, ADR-018, ADR-019 (fixed ticks, render interpolation).
+- **Threading / time** → ADR-015, ADR-018, ADR-019 (fixed ticks, render interpolation),
+  ADR-027 (editor threads, edit commands and play sessions).
 - **Netcode / networking** → ADR-007 (server-authoritative, input-as-command, the `net`
   seam); the transport ADR is still owed.
 - **Serialization / content** → ADR-016 (binary primitives, describe-once seam), ADR-024
@@ -37,8 +38,8 @@ when a technique needs something the current choice can't serve (that trips an A
 - **Diagnostics / profiling** → ADR-011, ADR-013.
 - **Build / tooling** → ADR-008 (CMakePresets, FetchContent, CI, sanitizers).
 
-This map was current on 2026-10-23; `docs/03 Architecture/ADR Index.md` is the live list. If a
-topic spans areas, name all the ADRs it touches.
+This map was checked against the ADR Index on 2026-11-13, when ADR-029 was the newest;
+`docs/03 Architecture/ADR Index.md` is the live list. If a topic spans areas, name all the ADRs it touches.
 
 When the research feeds an ADR or a design-note decision, include the Unity and Unreal
 baseline that `docs/08 AI/Technical Lead Charter.md` § *Compare against Unity and Unreal* asks for.

@@ -8,7 +8,7 @@ together as equal drivers (you draft and challenge, I decide scope).
 
 This is the thinking half of planning. `/sprint-plan` on the boundary weekend is the fitting
 half: retro, capacity, IDs and the board. The split exists so that the boundary weekend stays
-a dev day instead of a design session (2026-10-23, [[Planning Workflow - Artifact Gate]]
+a dev day instead of a design session ([[Planning Workflow - Artifact Gate]]
 § *Decide first, then plan*).
 
 My input on focus (may be empty): $ARGUMENTS
