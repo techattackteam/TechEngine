@@ -1,6 +1,7 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/assets/PackSource.hpp>
+#include <TechEngine/core/material/Material.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/mesh/MeshRenderer.hpp>
 #include <TechEngine/core/resources/AssetRef.hpp>
@@ -43,6 +44,7 @@ namespace TechEngine {
         m_resources.registerLoader<SceneBytes>(SCENE_KIND, SCENE_TYPE_TAG, &SceneBytes::loadPayload);
         m_resources.registerLoader<Mesh>(MESH_KIND, MESH_TYPE_TAG, &Mesh::loadPayload);
         m_resources.registerLoader<Texture>(TEXTURE_KIND, TEXTURE_TYPE_TAG, &Texture::loadPayload);
+        m_resources.registerLoader<Material>(MATERIAL_KIND, MATERIAL_TYPE_TAG, &Material::loadPayload);
     }
 
     std::error_code RuntimeApp::simulationStartupLoad(Scene& scene) {

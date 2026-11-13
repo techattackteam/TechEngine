@@ -1,3 +1,4 @@
+#include <TechEngine/core/material/Material.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/model/Model.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
@@ -31,6 +32,8 @@ using TechEngine::BlobKind;
 using TechEngine::DuplicateAsset;
 using TechEngine::FileAccess;
 using TechEngine::FileError;
+using TechEngine::MATERIAL_KIND;
+using TechEngine::MATERIAL_TYPE_TAG;
 using TechEngine::MESH_KIND;
 using TechEngine::MESH_TYPE_TAG;
 using TechEngine::MODEL_KIND;
@@ -56,6 +59,7 @@ static constexpr ResourceId DUPLICATED_ID{0x5000000000000005};
 static constexpr ResourceId COMMON_MESH_ID{0x7100000000000071};
 static constexpr ResourceId COMMON_MODEL_ID{0x7200000000000072};
 static constexpr ResourceId COMMON_TEXTURE_ID{0x7300000000000073};
+static constexpr ResourceId COMMON_MATERIAL_ID{0x7400000000000074};
 
 class IndexScratch {
 public:
@@ -162,6 +166,21 @@ TEST_CASE("build records a texture under the texture type tag", "[editor][assets
     CHECK(texture.typeTag == TEXTURE_TYPE_TAG);
     CHECK(texture.side == Side::Common);
     CHECK(texture.path == "project://assets/common/Textures/wall.tetexture");
+}
+
+TEST_CASE("build records a material under the material type tag", "[editor][assets]") {
+    const IndexScratch env{"assetIndexMaterial"};
+    env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
+    writeBytes(env.scratch(), "assets/common/Materials/bricks.tematerial", assetBytes(MATERIAL_KIND, COMMON_MATERIAL_ID, "material payload"));
+
+    const AssetIndex index = env.buildIndex();
+
+    CHECK(index.getRecords().size() == 2);
+    AssetRecord material;
+    REQUIRE(index.find(COMMON_MATERIAL_ID, material));
+    CHECK(material.typeTag == MATERIAL_TYPE_TAG);
+    CHECK(material.side == Side::Common);
+    CHECK(material.path == "project://assets/common/Materials/bricks.tematerial");
 }
 
 TEST_CASE("build reads assets in subfolders of a side", "[editor][assets]") {

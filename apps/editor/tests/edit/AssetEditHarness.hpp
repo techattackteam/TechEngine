@@ -4,6 +4,7 @@
 #include <TechEngine/base/stringid/StringId.hpp>
 #include <TechEngine/core/assets/AssetSource.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
+#include <TechEngine/core/material/Material.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/mesh/MeshRenderer.hpp>
 #include <TechEngine/core/resources/ResourceCache.hpp>
@@ -27,7 +28,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <span>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -47,18 +47,6 @@ namespace TechEngineTests {
     inline constexpr TechEngine::ResourceId EDIT_UNKNOWN_ID{0x3E540000000000FF};
     inline constexpr TechEngine::ResourceId EDIT_PAINTED_MESH_ID{0x3E54000000000003};
     inline constexpr TechEngine::ResourceId EDIT_MATERIAL_ID{0x3A7E000000000001};
-
-    inline constexpr TechEngine::BlobKind EDIT_MATERIAL_KIND{0x54414D45, 1};
-    inline constexpr TechEngine::StringId EDIT_MATERIAL_TYPE_TAG{"Tests.EditStandInMaterial"};
-
-    // TODO(S10-T23): load the real material file instead. The cache acquires a dependency by its file's kind, so a slot
-    // typed AssetRef<Material> holds this entry without either side checking the type.
-    struct EditStandInMaterial {
-        static std::error_code loadPayload(std::span<const std::byte>, void*, std::vector<TechEngine::ResourceId>& dependencies) {
-            dependencies.clear();
-            return {};
-        }
-    };
 
     class MemoryAssetSource final : public TechEngine::AssetSource {
     private:
@@ -105,7 +93,7 @@ namespace TechEngineTests {
         AssetEditHarness() {
             cache.registerLoader<TechEngine::SceneBytes>(TechEngine::SCENE_KIND, TechEngine::SCENE_TYPE_TAG, &TechEngine::SceneBytes::loadPayload);
             cache.registerLoader<TechEngine::Mesh>(TechEngine::MESH_KIND, TechEngine::MESH_TYPE_TAG, &TechEngine::Mesh::loadPayload);
-            cache.registerLoader<EditStandInMaterial>(EDIT_MATERIAL_KIND, EDIT_MATERIAL_TYPE_TAG, &EditStandInMaterial::loadPayload);
+            cache.registerLoader<TechEngine::Material>(TechEngine::MATERIAL_KIND, TechEngine::MATERIAL_TYPE_TAG, &TechEngine::Material::loadPayload);
             cache.closeLoaders();
             cache.setSource(source);
 
@@ -115,7 +103,7 @@ namespace TechEngineTests {
             addAsset(EDIT_SECOND_MESH_ID, TechEngine::MESH_TYPE_TAG, TechEngine::Side::Client, "assets/client/Second.temesh", meshBytes(EDIT_SECOND_MESH_ID));
             addAsset(EDIT_BROKEN_MESH_ID, TechEngine::MESH_TYPE_TAG, TechEngine::Side::Client, "assets/client/Broken.temesh", assetBytes(TechEngine::MESH_KIND, EDIT_BROKEN_MESH_ID, "x"));
             addAsset(EDIT_SERVER_MESH_ID, TechEngine::MESH_TYPE_TAG, TechEngine::Side::Server, "assets/server/Collision.temesh", meshBytes(EDIT_SERVER_MESH_ID));
-            addAsset(EDIT_MATERIAL_ID, EDIT_MATERIAL_TYPE_TAG, TechEngine::Side::Client, "assets/client/Paint.tematerial", assetBytes(EDIT_MATERIAL_KIND, EDIT_MATERIAL_ID, "material"));
+            addAsset(EDIT_MATERIAL_ID, TechEngine::MATERIAL_TYPE_TAG, TechEngine::Side::Client, "assets/client/Paint.tematerial", materialBytes(EDIT_MATERIAL_ID));
             addAsset(EDIT_PAINTED_MESH_ID, TechEngine::MESH_TYPE_TAG, TechEngine::Side::Client, "assets/client/Painted.temesh", meshBytes(EDIT_PAINTED_MESH_ID, EDIT_MATERIAL_ID));
 
             REQUIRE(cache.request(EDIT_SCENE_ID, sceneHandle) == std::error_code{});
@@ -185,6 +173,15 @@ namespace TechEngineTests {
             mesh.slots = {TechEngine::MeshSlot{"Slot 0", 0, 3, defaultMaterial}};
             std::vector<std::byte> bytes;
             mesh.write(bytes);
+            return bytes;
+        }
+
+        static std::vector<std::byte> materialBytes(const TechEngine::ResourceId id) {
+            TechEngine::Material material;
+            material.id = id;
+            material.baseColorFactor = TechEngine::Vec4(0.8f, 0.1f, 0.1f, 1.0f);
+            std::vector<std::byte> bytes;
+            material.write(bytes);
             return bytes;
         }
     };

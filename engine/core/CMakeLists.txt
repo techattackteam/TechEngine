@@ -10,6 +10,7 @@ techengine_module(core
           src/jobs/DedicatedThreadState.cpp
           src/jobs/JobSystem.cpp
           src/jobs/ThreadRegistration.cpp
+          src/material/Material.cpp
           src/mesh/Mesh.cpp
           src/mesh/MeshRenderer.cpp
           src/model/Model.cpp
@@ -54,6 +55,7 @@ techengine_module(core
           include/TechEngine/core/jobs/DedicatedThreadContext.hpp
           include/TechEngine/core/jobs/JobSystem.hpp
           include/TechEngine/core/jobs/ThreadRegistration.hpp
+          include/TechEngine/core/material/Material.hpp
           include/TechEngine/core/mesh/Mesh.hpp
           include/TechEngine/core/mesh/MeshRenderer.hpp
           include/TechEngine/core/model/Model.hpp
@@ -123,6 +125,7 @@ if(TE_BUILD_TESTS)
           tests/events/EventStreamManagerTests.cpp
           tests/jobs/DedicatedThreadTests.cpp
           tests/jobs/JobSystemTests.cpp
+          tests/material/MaterialTests.cpp
           tests/mesh/MeshRendererTests.cpp
           tests/mesh/MeshTests.cpp
           tests/model/ModelTests.cpp

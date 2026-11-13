@@ -1,3 +1,4 @@
+#include <TechEngine/core/material/Material.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/mesh/MeshRenderer.hpp>
 #include <TechEngine/core/resources/AssetRef.hpp>
@@ -52,6 +53,9 @@ static void checkHeldMaterial(const AssetEditHarness& edit, const MaterialSlot& 
     ResourceState state = ResourceState::Pending;
     REQUIRE(edit.cache.getState(slot.material.handle, state));
     CHECK(state == ResourceState::Ready);
+    const Material* material = edit.cache.resolve(slot.material.handle);
+    REQUIRE(material != nullptr);
+    CHECK(material->id == id);
 }
 
 TEST_CASE("a slot that takes a non-null default gets a handle to its Ready entry", "[editor][edit][assets]") {
