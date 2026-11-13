@@ -49,7 +49,11 @@ namespace TechEngine {
     static constexpr std::array<std::string_view, 3> REFUSED_GLTF_EXTENSIONS{"KHR_mesh_quantization", "EXT_meshopt_compression", "KHR_meshopt_compression"};
     // aiProcess_GenNormals makes flat normals only for a mesh that has none; a file's own normals are kept.
     static constexpr unsigned int IMPORT_STEPS = aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenNormals | aiProcess_JoinIdenticalVertices;
+    static constexpr unsigned int MERGED_IMPORT_STEPS = aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices;
     static constexpr float MIN_ROTATION_LENGTH_SQUARED = 1.0e-12f;
+    static const Vec3 MERGED_MISSING_NORMAL{0.0f, 1.0f, 0.0f};
+    static const Vec4 MERGED_MISSING_TANGENT{1.0f, 0.0f, 0.0f, 1.0f};
+    static const Vec2 MERGED_MISSING_UV0{0.0f, 0.0f};
 
     struct ModelImporter::SourceMesh {
         // A null id marks a source mesh that is not written, so no node refers to it.
@@ -58,10 +62,25 @@ namespace TechEngine {
         std::string fileName;
     };
 
+    struct ModelImporter::MergedPart {
+        Mesh mesh;
+        unsigned int materialIndex = 0;
+    };
+
     struct PendingNode {
         const aiNode* node = nullptr;
         std::uint32_t parent = MODEL_NO_PARENT;
     };
+
+    struct PendingMergedNode {
+        const aiNode* node = nullptr;
+        Mat4 parentWorld = Mat4(1.0f);
+    };
+
+    // assimp's matrices are row-major and glm's are column-major.
+    static Mat4 toMat4(const aiMatrix4x4& matrix) {
+        return Mat4(matrix.a1, matrix.b1, matrix.c1, matrix.d1, matrix.a2, matrix.b2, matrix.c2, matrix.d2, matrix.a3, matrix.b3, matrix.c3, matrix.d3, matrix.a4, matrix.b4, matrix.c4, matrix.d4);
+    }
 
     ModelImporter::ModelImporter(FileAccess& files, std::function<ResourceId()> generateId) : m_files(&files), m_generateId(std::move(generateId)) {
     }
@@ -74,6 +93,11 @@ namespace TechEngine {
             return std::string(sourcePath);
         }
         return std::string(sourcePath.substr(0, dot));
+    }
+
+    std::string ModelImporter::rootAssetPath(const std::string_view folder, const ImportMode mode) {
+        const std::string_view extension = mode == ImportMode::MergedMesh ? MESH_EXTENSION : MODEL_EXTENSION;
+        return std::string(folder) + "/" + std::string(fileStem(folder)) + std::string(extension);
     }
 
     std::error_code ModelImporter::importFile(const ModelImportRequest& request, ModelImportResult& out) const {
@@ -118,13 +142,18 @@ namespace TechEngine {
         importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
         const std::u8string utf8Path = physicalPath.u8string();
         const std::string assimpPath(utf8Path.begin(), utf8Path.end());
-        const aiScene* scene = importer.ReadFile(assimpPath, IMPORT_STEPS);
+        const unsigned int steps = request.mode == ImportMode::MergedMesh ? MERGED_IMPORT_STEPS : IMPORT_STEPS;
+        const aiScene* scene = importer.ReadFile(assimpPath, steps);
         if (scene == nullptr || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) != 0 || scene->mRootNode == nullptr) {
             TE_LOGGER_WARN("Import: assimp did not read {0}: {1}", request.sourcePath, importer.GetErrorString());
             return ProjectError::SourceUnreadable;
         }
 
         const MeshImporter meshImporter(request.settings, gltfSource);
+        if (request.mode == ImportMode::MergedMesh) {
+            return importMergedMesh(*scene, request, parts.relative, folder, meshImporter, out);
+        }
+
         std::vector<SourceMesh> meshes;
         const std::uint32_t meshCount = readMeshes(*scene, parts.relative, meshImporter, meshes);
         if (meshCount == 0) {
@@ -137,10 +166,7 @@ namespace TechEngine {
         model.importBlock.settings = request.settings;
         buildNodes(*scene, meshes, fileStem(folder), meshImporter, model.nodes);
 
-        const std::error_code createError = m_files->createDirectory(folder);
-        if (createError == FileError::AlreadyExists) {
-            return ProjectError::ImportFolderExists;
-        }
+        const std::error_code createError = createImportFolder(folder);
         if (createError) {
             return createError;
         }
@@ -149,11 +175,7 @@ namespace TechEngine {
         records.reserve(static_cast<std::size_t>(meshCount) + 1);
         const std::error_code writeError = writeOutputs(model, meshes, request.side, folder, records);
         if (writeError) {
-            // A folder left behind would refuse every later import of this source.
-            const std::error_code removeError = m_files->remove(folder, true);
-            if (removeError) {
-                TE_LOGGER_WARN("Import: failed to remove the unfinished {0}: {1}", folder, removeError.message());
-            }
+            removeUnfinishedFolder(folder);
             return writeError;
         }
 
@@ -161,6 +183,57 @@ namespace TechEngine {
         out.nodeCount = static_cast<std::uint32_t>(model.nodes.size());
         out.records = std::move(records);
         return {};
+    }
+
+    std::error_code ModelImporter::importMergedMesh(const aiScene& scene, const ModelImportRequest& request, const std::string_view sourcePath, const std::string& folder, const MeshImporter& meshImporter, ModelImportResult& out) const {
+        std::vector<MergedPart> parts;
+        readMergedParts(scene, meshImporter, parts);
+        if (parts.empty()) {
+            return ProjectError::SourceHasNoMeshes;
+        }
+
+        Mesh mesh;
+        joinParts(scene, parts, mesh);
+        parts.clear();
+        mesh.id = m_generateId();
+        mesh.importBlock.sourcePath = std::string(sourcePath);
+        mesh.importBlock.settings = request.settings;
+
+        const std::error_code createError = createImportFolder(folder);
+        if (createError) {
+            return createError;
+        }
+
+        std::vector<std::byte> bytes;
+        mesh.write(bytes);
+        std::string path = rootAssetPath(folder, ImportMode::MergedMesh);
+        const std::error_code writeError = m_files->write(path, bytes);
+        if (writeError) {
+            removeUnfinishedFolder(folder);
+            return writeError;
+        }
+
+        out.folder = folder;
+        out.nodeCount = 0;
+        out.records.clear();
+        out.records.push_back(AssetRecord{mesh.id, MESH_TYPE_TAG, request.side, std::move(path)});
+        return {};
+    }
+
+    std::error_code ModelImporter::createImportFolder(const std::string& folder) const {
+        const std::error_code createError = m_files->createDirectory(folder);
+        if (createError == FileError::AlreadyExists) {
+            return ProjectError::ImportFolderExists;
+        }
+        return createError;
+    }
+
+    // A folder left behind would refuse every later import of this source.
+    void ModelImporter::removeUnfinishedFolder(const std::string& folder) const {
+        const std::error_code removeError = m_files->remove(folder, true);
+        if (removeError) {
+            TE_LOGGER_WARN("Import: failed to remove the unfinished {0}: {1}", folder, removeError.message());
+        }
     }
 
     std::uint32_t ModelImporter::readMeshes(const aiScene& scene, const std::string_view sourcePath, const MeshImporter& meshImporter, std::vector<SourceMesh>& out) const {
@@ -178,7 +251,7 @@ namespace TechEngine {
             mesh.mesh.importBlock.sourcePath = std::string(sourcePath);
             mesh.mesh.importBlock.sourceIndex = i;
             mesh.mesh.importBlock.sourceName = source.mName.C_Str();
-            mesh.mesh.slots = {MeshSlot{slotName(scene, source), 0, static_cast<std::uint32_t>(mesh.mesh.indices.size()), ResourceId{}}};
+            mesh.mesh.slots = {MeshSlot{slotName(scene, source.mMaterialIndex), 0, static_cast<std::uint32_t>(mesh.mesh.indices.size()), ResourceId{}}};
             mesh.name = source.mName.C_Str();
             mesh.fileName = uniqueFileName(mesh.name, takenFileNames);
             if (mesh.name.empty()) {
@@ -214,7 +287,7 @@ namespace TechEngine {
         // The model is written last, so a folder that holds a model holds every mesh the model names.
         bytes.clear();
         model.write(bytes);
-        std::string modelPath = folder + "/" + std::string(fileStem(folder)) + std::string(MODEL_EXTENSION);
+        std::string modelPath = rootAssetPath(folder, ImportMode::Model);
         const std::error_code modelError = m_files->write(modelPath, bytes);
         if (modelError) {
             return modelError;
@@ -287,6 +360,81 @@ namespace TechEngine {
         }
     }
 
+    // Walks the nodes in the same order as buildNodes. A mesh no node uses is left out, because it has no world transform.
+    void ModelImporter::readMergedParts(const aiScene& scene, const MeshImporter& meshImporter, std::vector<MergedPart>& out) {
+        std::vector<PendingMergedNode> pending;
+        pending.push_back(PendingMergedNode{scene.mRootNode, Mat4(1.0f)});
+        while (!pending.empty()) {
+            const PendingMergedNode current = pending.back();
+            pending.pop_back();
+            const aiNode& source = *current.node;
+            const Mat4 world = current.parentWorld * toMat4(source.mTransformation);
+
+            for (unsigned int i = 0; i < source.mNumMeshes; i++) {
+                const aiMesh& mesh = *scene.mMeshes[source.mMeshes[i]];
+                MergedPart part;
+                if (!meshImporter.read(mesh, world, part.mesh)) {
+                    TE_LOGGER_WARN("Import: skipped mesh {0} '{1}' of node '{2}', because it is not made of triangles", source.mMeshes[i], mesh.mName.C_Str(), source.mName.C_Str());
+                    continue;
+                }
+                part.materialIndex = mesh.mMaterialIndex;
+                out.push_back(std::move(part));
+            }
+
+            for (unsigned int i = source.mNumChildren; i > 0; i--) {
+                pending.push_back(PendingMergedNode{source.mChildren[i - 1], world});
+            }
+        }
+    }
+
+    // The merged mesh carries a stream when any part has it, and a part without it takes the default.
+    // A material that no part uses gets no slot.
+    void ModelImporter::joinParts(const aiScene& scene, std::vector<MergedPart>& parts, Mesh& out) {
+        std::ranges::stable_sort(parts, std::ranges::less{}, &MergedPart::materialIndex);
+        const bool hasNormals = std::ranges::any_of(parts, [](const MergedPart& part) {
+            return !part.mesh.normals.empty();
+        });
+        const bool hasTangents = std::ranges::any_of(parts, [](const MergedPart& part) {
+            return !part.mesh.tangents.empty();
+        });
+        const bool hasUv0 = std::ranges::any_of(parts, [](const MergedPart& part) {
+            return !part.mesh.uv0.empty();
+        });
+        const auto appendStream = [](auto& stream, const auto& partStream, const std::size_t vertexCount, const auto& missing) {
+            if (partStream.empty()) {
+                stream.insert(stream.end(), vertexCount, missing);
+            } else {
+                stream.insert(stream.end(), partStream.begin(), partStream.end());
+            }
+        };
+
+        unsigned int slotMaterial = 0;
+        for (const MergedPart& part: parts) {
+            if (out.slots.empty() || part.materialIndex != slotMaterial) {
+                slotMaterial = part.materialIndex;
+                const std::uint32_t firstIndex = static_cast<std::uint32_t>(out.indices.size());
+                out.slots.push_back(MeshSlot{uniqueSlotName(slotName(scene, slotMaterial), out.slots), firstIndex, 0, ResourceId{}});
+            }
+
+            const std::uint32_t firstVertex = static_cast<std::uint32_t>(out.positions.size());
+            const std::size_t vertexCount = part.mesh.positions.size();
+            out.positions.insert(out.positions.end(), part.mesh.positions.begin(), part.mesh.positions.end());
+            if (hasNormals) {
+                appendStream(out.normals, part.mesh.normals, vertexCount, MERGED_MISSING_NORMAL);
+            }
+            if (hasTangents) {
+                appendStream(out.tangents, part.mesh.tangents, vertexCount, MERGED_MISSING_TANGENT);
+            }
+            if (hasUv0) {
+                appendStream(out.uv0, part.mesh.uv0, vertexCount, MERGED_MISSING_UV0);
+            }
+            for (const std::uint32_t index: part.mesh.indices) {
+                out.indices.push_back(firstVertex + index);
+            }
+            out.slots.back().indexCount += static_cast<std::uint32_t>(part.mesh.indices.size());
+        }
+    }
+
     // The settings turn and scale the whole source, so a node's local transform is carried into the turned space:
     // its translation is turned and scaled, its rotation axis is turned, and its scale follows the axes to their new names.
     TransformValues ModelImporter::bakeLocal(const aiNode& node, const MeshImporter& meshImporter) {
@@ -309,14 +457,25 @@ namespace TechEngine {
         return local;
     }
 
-    std::string ModelImporter::slotName(const aiScene& scene, const aiMesh& source) {
-        if (source.mMaterialIndex < scene.mNumMaterials) {
-            const aiString name = scene.mMaterials[source.mMaterialIndex]->GetName();
+    std::string ModelImporter::slotName(const aiScene& scene, const unsigned int materialIndex) {
+        if (materialIndex < scene.mNumMaterials) {
+            const aiString name = scene.mMaterials[materialIndex]->GetName();
             if (name.length > 0) {
                 return name.C_Str();
             }
         }
-        return std::string(UNNAMED_SLOT) + std::to_string(source.mMaterialIndex);
+        return std::string(UNNAMED_SLOT) + std::to_string(materialIndex);
+    }
+
+    // A renderer's slot list is rebuilt by slot name, so two slots with one name would end up with one material.
+    std::string ModelImporter::uniqueSlotName(const std::string& name, const std::vector<MeshSlot>& slots) {
+        std::string candidate = name;
+        std::uint32_t suffix = 0;
+        while (std::ranges::find(slots, candidate, &MeshSlot::name) != slots.end()) {
+            suffix++;
+            candidate = name + "_" + std::to_string(suffix);
+        }
+        return candidate;
     }
 
     char ModelImporter::toLowerAscii(const char character) {

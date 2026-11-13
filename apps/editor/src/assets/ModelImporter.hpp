@@ -22,27 +22,38 @@ struct aiScene;
 namespace TechEngine {
     class FileAccess;
     class MeshImporter;
+    struct Mesh;
+    struct MeshSlot;
     struct Model;
     struct ModelNode;
     struct TransformValues;
+
+    enum class ImportMode : std::uint8_t {
+        Model,
+        MergedMesh,
+    };
 
     struct ModelImportRequest {
         std::string sourcePath;
         // The side of the assets folder the source file is in, which its outputs share.
         Side side = Side::Client;
         ImportSettings settings;
+        ImportMode mode = ImportMode::Model;
     };
 
     struct ModelImportResult {
         std::string folder;
+        // Zero for a merged mesh.
         std::uint32_t nodeCount = 0;
-        // The model first, then one record per written mesh, in the order assimp lists the meshes.
+        // The root asset first: the model, then one record per written mesh in the order assimp lists the meshes, or the
+        // merged mesh alone.
         std::vector<AssetRecord> records;
     };
 
     class ModelImporter {
     private:
         struct SourceMesh;
+        struct MergedPart;
 
         FileAccess* m_files = nullptr;
         std::function<ResourceId()> m_generateId;
@@ -53,11 +64,19 @@ namespace TechEngine {
 
         static std::string importFolder(std::string_view sourcePath);
 
+        static std::string rootAssetPath(std::string_view folder, ImportMode mode);
+
         // Writes nothing when it fails.
         std::error_code importFile(const ModelImportRequest& request, ModelImportResult& out) const;
 
     private:
         std::uint32_t readMeshes(const aiScene& scene, std::string_view sourcePath, const MeshImporter& meshImporter, std::vector<SourceMesh>& out) const;
+
+        std::error_code importMergedMesh(const aiScene& scene, const ModelImportRequest& request, std::string_view sourcePath, const std::string& folder, const MeshImporter& meshImporter, ModelImportResult& out) const;
+
+        std::error_code createImportFolder(const std::string& folder) const;
+
+        void removeUnfinishedFolder(const std::string& folder) const;
 
         std::error_code writeOutputs(const Model& model, const std::vector<SourceMesh>& meshes, Side side, const std::string& folder, std::vector<AssetRecord>& records) const;
 
@@ -65,9 +84,15 @@ namespace TechEngine {
 
         static void buildNodes(const aiScene& scene, const std::vector<SourceMesh>& meshes, std::string_view rootName, const MeshImporter& meshImporter, std::vector<ModelNode>& out);
 
+        static void readMergedParts(const aiScene& scene, const MeshImporter& meshImporter, std::vector<MergedPart>& out);
+
+        static void joinParts(const aiScene& scene, std::vector<MergedPart>& parts, Mesh& out);
+
         static TransformValues bakeLocal(const aiNode& node, const MeshImporter& meshImporter);
 
-        static std::string slotName(const aiScene& scene, const aiMesh& source);
+        static std::string slotName(const aiScene& scene, unsigned int materialIndex);
+
+        static std::string uniqueSlotName(const std::string& name, const std::vector<MeshSlot>& slots);
 
         static char toLowerAscii(char character);
 

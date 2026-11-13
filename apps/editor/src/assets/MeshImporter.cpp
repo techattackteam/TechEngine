@@ -7,6 +7,7 @@
 
 #include <assimp/mesh.h>
 #include <glm/geometric.hpp>
+#include <glm/matrix.hpp>
 #include <meshoptimizer.h>
 #include <mikktspace.h>
 
@@ -79,11 +80,17 @@ namespace TechEngine {
     }
 
     bool MeshImporter::read(const aiMesh& source, Mesh& out) const {
+        return read(source, Mat4(1.0f), out);
+    }
+
+    bool MeshImporter::read(const aiMesh& source, const Mat4& world, Mesh& out) const {
         const bool trianglesOnly = (source.mPrimitiveTypes & aiPrimitiveType_TRIANGLE) != 0 && (source.mPrimitiveTypes & NOT_TRIANGLES) == 0;
         if (!trianglesOnly || source.mNumVertices == 0 || source.mNumFaces == 0) {
             return false;
         }
 
+        const Mat3 linear = Mat3(world);
+        const bool mirrored = glm::determinant(linear) < 0.0f;
         std::vector<std::uint32_t> indices;
         indices.reserve(static_cast<std::size_t>(source.mNumFaces) * 3);
         for (unsigned int i = 0; i < source.mNumFaces; i++) {
@@ -92,22 +99,23 @@ namespace TechEngine {
                 return false;
             }
             for (unsigned int corner = 0; corner < 3; corner++) {
-                if (face.mIndices[corner] >= source.mNumVertices) {
+                const unsigned int sourceCorner = mirrored && corner > 0 ? 3 - corner : corner;
+                if (face.mIndices[sourceCorner] >= source.mNumVertices) {
                     return false;
                 }
-                indices.push_back(face.mIndices[corner]);
+                indices.push_back(face.mIndices[sourceCorner]);
             }
         }
 
         std::vector<Vec3> positions;
         positions.reserve(source.mNumVertices);
         for (unsigned int i = 0; i < source.mNumVertices; i++) {
-            positions.push_back(bakePosition(toVec3(source.mVertices[i])));
+            positions.push_back(bakePosition(Vec3(world * Vec4(toVec3(source.mVertices[i]), 1.0f))));
         }
 
         out.positions = std::move(positions);
         out.indices = std::move(indices);
-        readStreams(source, out);
+        readStreams(source, linear, out);
         generateTangents(out);
         return true;
     }
@@ -138,12 +146,13 @@ namespace TechEngine {
         return turned / std::sqrt(lengthSquared);
     }
 
-    void MeshImporter::readStreams(const aiMesh& source, Mesh& out) const {
+    void MeshImporter::readStreams(const aiMesh& source, const Mat3& world, Mesh& out) const {
         const std::size_t vertexCount = source.mNumVertices;
         if (source.HasNormals()) {
+            const Mat3 normalWorld = normalMatrix(world);
             out.normals.reserve(vertexCount);
             for (std::size_t i = 0; i < vertexCount; i++) {
-                out.normals.push_back(bakeDirection(toVec3(source.mNormals[i])));
+                out.normals.push_back(bakeDirection(normalWorld * toVec3(source.mNormals[i])));
             }
         }
 
@@ -156,17 +165,28 @@ namespace TechEngine {
 
         if (source.HasNormals() && source.HasTangentsAndBitangents()) {
             // assimp flips glTF's V but builds the bitangent from glTF's own w, so that bitangent points against the
-            // stored UVs. The bake is a rotation, so a sign taken before it still holds after it.
+            // stored UVs. The settings' bake is a rotation, so only a mirror in world flips a sign taken before it.
             const float sourceFlip = m_gltfSource ? -1.0f : 1.0f;
+            const float mirrorFlip = glm::determinant(world) < 0.0f ? -1.0f : 1.0f;
             out.tangents.reserve(vertexCount);
             for (std::size_t i = 0; i < vertexCount; i++) {
                 const Vec3 normal = toVec3(source.mNormals[i]);
                 const Vec3 tangent = toVec3(source.mTangents[i]);
                 const Vec3 bitangent = toVec3(source.mBitangents[i]);
                 const float handedness = glm::dot(glm::cross(normal, tangent), bitangent) < 0.0f ? -1.0f : 1.0f;
-                out.tangents.push_back(Vec4(bakeDirection(tangent), handedness * sourceFlip));
+                out.tangents.push_back(Vec4(bakeDirection(world * tangent), handedness * sourceFlip * mirrorFlip));
             }
         }
+    }
+
+    // The cofactor matrix is the inverse transpose times the determinant, so it also holds for a matrix that flattens an
+    // axis. Its sign is put back, because a mirror's cofactor would turn every normal inward.
+    Mat3 MeshImporter::normalMatrix(const Mat3& world) {
+        const Mat3 cofactor(glm::cross(world[1], world[2]), glm::cross(world[2], world[0]), glm::cross(world[0], world[1]));
+        if (glm::determinant(world) < 0.0f) {
+            return -cofactor;
+        }
+        return cofactor;
     }
 
     void MeshImporter::generateTangents(Mesh& mesh) {

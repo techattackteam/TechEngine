@@ -23,7 +23,11 @@ namespace TechEngine {
                 TE_LOGGER_ERROR("Failed to import {0}: {1}", request.sourcePath, importError.message());
                 return;
             }
-            TE_LOGGER_INFO("Imported {0} into {1}: {2} nodes and {3} meshes", request.sourcePath, result.folder, result.nodeCount, result.records.size() - 1);
+            if (request.mode == ImportMode::MergedMesh) {
+                TE_LOGGER_INFO("Imported {0} into {1} as one merged mesh", request.sourcePath, result.folder);
+            } else {
+                TE_LOGGER_INFO("Imported {0} into {1}: {2} nodes and {3} meshes", request.sourcePath, result.folder, result.nodeCount, result.records.size() - 1);
+            }
 
             const std::error_code submitError = app->submitCommand(std::make_unique<RegisterImportedAssetsCommand>(*index, std::move(result.records)));
             if (submitError) {

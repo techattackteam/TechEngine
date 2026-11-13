@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <utility>
 
@@ -63,8 +64,12 @@ namespace TechEngine {
             TE_LOGGER_WARN("{0} is not in the asset index, so it is not placed", m_path);
             return false;
         }
+        if (record->typeTag == MESH_TYPE_TAG) {
+            wrapMesh(*record, out);
+            return true;
+        }
         if (record->typeTag != MODEL_TYPE_TAG) {
-            TE_LOGGER_WARN("{0} is not a model, so it is not placed", m_path);
+            TE_LOGGER_WARN("{0} is neither a model nor a mesh, so it is not placed", m_path);
             return false;
         }
 
@@ -80,6 +85,24 @@ namespace TechEngine {
             return false;
         }
         return true;
+    }
+
+    // A mesh is placed as a model of one root node, named after the file and at the origin.
+    void PlaceModelCommand::wrapMesh(const AssetRecord& record, Model& out) {
+        std::string_view name = record.path;
+        const std::size_t slash = name.find_last_of('/');
+        if (slash != std::string_view::npos) {
+            name = name.substr(slash + 1);
+        }
+        const std::size_t dot = name.find_last_of('.');
+        if (dot != std::string_view::npos && dot > 0) {
+            name = name.substr(0, dot);
+        }
+
+        ModelNode node;
+        node.name = std::string(name);
+        node.mesh = record.id;
+        out.nodes.push_back(std::move(node));
     }
 
     bool PlaceModelCommand::loadMeshes(const Model& model, std::unordered_map<ResourceId, ResourceSlotId>& out) const {
