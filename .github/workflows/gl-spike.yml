@@ -1,0 +1,113 @@
+# S11-D1's throwaway probe. Never merged: delete before any PR from this branch.
+# It builds nothing. Each variant asks GLFW for a hidden 4.6 core context and reports the
+# renderer, the version and whether ARB_bindless_texture is there. A variant never fails the job,
+# so one push reports every variant; the job summary holds the table.
+
+name: GL spike
+
+on:
+  push:
+    branches: ['S11-D1/**']
+
+jobs:
+  linux:
+    name: probe (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Mesa, lavapipe, Xvfb and the probe's GLFW
+        timeout-minutes: 5
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgl1-mesa-dri libglx-mesa0 mesa-vulkan-drivers mesa-utils vulkan-tools xvfb xauth
+          python -m pip install glfw==2.7.0
+      - name: Versions
+        env:
+          VK_DRIVER_FILES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+        run: |
+          dpkg -s libgl1-mesa-dri | grep '^Version'
+          ls /usr/share/vulkan/icd.d/
+          vulkaninfo --summary || true
+          find /usr/lib -name 'zink_dri.so' -o -name 'libgallium*.so' | head
+      - name: Probe each variant
+        env:
+          PYGLFW_LIBRARY_VARIANT: x11
+          LVP: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+        run: |
+          echo '| Variant | Result |' >> "$GITHUB_STEP_SUMMARY"
+          echo '|---|---|' >> "$GITHUB_STEP_SUMMARY"
+          probe() {
+            name="$1"; shift
+            echo "::group::$name ($*)"
+            env "$@" xvfb-run -a -s '-screen 0 1280x720x24' \
+              python .github/spike/gl_probe.py > "out-$name.txt" 2>&1 || true
+            cat "out-$name.txt"
+            echo "::endgroup::"
+            result=$(grep '^SUMMARY' "out-$name.txt" | head -1 | sed 's/^SUMMARY //' || true)
+            echo "| linux $name | ${result:-crashed, see log} |" >> "$GITHUB_STEP_SUMMARY"
+          }
+          probe llvmpipe       LIBGL_ALWAYS_SOFTWARE=1
+          probe zink           MESA_LOADER_DRIVER_OVERRIDE=zink VK_DRIVER_FILES="$LVP" LIBGL_DEBUG=verbose
+          probe zink-dri2      MESA_LOADER_DRIVER_OVERRIDE=zink VK_DRIVER_FILES="$LVP" LIBGL_DEBUG=verbose LIBGL_KOPPER_DRI2=1
+          probe zink-nokopper  MESA_LOADER_DRIVER_OVERRIDE=zink VK_DRIVER_FILES="$LVP" LIBGL_DEBUG=verbose LIBGL_KOPPER_DISABLE=1
+          probe zink-swrast    LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=zink VK_DRIVER_FILES="$LVP" LIBGL_DEBUG=verbose
+
+  windows:
+    name: probe (Windows)
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install glfw==2.7.0
+      # Same archive and hash as .github/scripts/Setup-Mesa.ps1. GLFW loads opengl32.dll by
+      # name, so Mesa's copy goes beside python.exe, which the loader searches first.
+      - name: Deploy Mesa beside python.exe
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = '26.2.0'
+          $expectedHash = 'dcb2719ef346dab5b609fcb193a5f13cfc4b0502e3f4de1ad43d349477402f47'
+          $archive = Join-Path $env:RUNNER_TEMP "mesa3d-$version-release-msvc.7z"
+          Invoke-WebRequest -Uri "https://github.com/pal1000/mesa-dist-win/releases/download/$version/mesa3d-$version-release-msvc.7z" -OutFile $archive
+          if ((Get-FileHash -Algorithm SHA256 -LiteralPath $archive).Hash -ne $expectedHash) { throw 'Mesa archive SHA-256 mismatch' }
+          $mesa = Join-Path $env:RUNNER_TEMP 'mesa'
+          New-Item -ItemType Directory -Path $mesa -Force | Out-Null
+          Push-Location $mesa; cmake -E tar xf $archive; Pop-Location
+          Get-ChildItem "$mesa/x64" | Select-Object Name, Length | Format-Table -AutoSize
+          $pythonDirectory = Split-Path (python -c "import sys; print(sys.executable)")
+          foreach ($name in @('opengl32.dll', 'libgallium_wgl.dll', 'dxil.dll')) {
+            Copy-Item -LiteralPath (Join-Path $mesa "x64/$name") -Destination $pythonDirectory -Force
+          }
+          "MESA_X64=$mesa\x64" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host "vulkan-1.dll in System32: $(Test-Path C:\Windows\System32\vulkan-1.dll)"
+          Get-ChildItem "$mesa/x64" -Filter '*icd*.json' | ForEach-Object { Write-Host "ICD: $($_.FullName)"; Get-Content $_.FullName }
+      - name: Probe each variant
+        shell: pwsh
+        run: |
+          # The runner prepends 'stop'; a probe's stderr must not end the step.
+          $ErrorActionPreference = 'Continue'
+          '| Variant | Result |' | Out-File $env:GITHUB_STEP_SUMMARY -Append
+          '|---|---|' | Out-File $env:GITHUB_STEP_SUMMARY -Append
+          $lvp = (Get-ChildItem $env:MESA_X64 -Filter 'lvp_icd*.json' | Select-Object -First 1).FullName
+          function Probe($name, [hashtable]$vars) {
+            foreach ($key in $vars.Keys) { Set-Item "env:$key" $vars[$key] }
+            Write-Host "::group::$name"
+            $output = python .github/spike/gl_probe.py 2>&1 | Out-String
+            Write-Host $output
+            Write-Host '::endgroup::'
+            $line = ($output -split "`n" | Where-Object { $_ -like 'SUMMARY*' } | Select-Object -First 1)
+            if (-not $line) { $line = 'crashed, see log' } else { $line = $line.Substring(8).Trim() }
+            "| windows $name | $line |" | Out-File $env:GITHUB_STEP_SUMMARY -Append
+            foreach ($key in $vars.Keys) { Remove-Item "env:$key" -ErrorAction SilentlyContinue }
+          }
+          Probe 'llvmpipe' @{ GALLIUM_DRIVER = 'llvmpipe'; LIBGL_ALWAYS_SOFTWARE = '1' }
+          Probe 'zink' @{ GALLIUM_DRIVER = 'zink'; VK_DRIVER_FILES = $lvp; VK_ICD_FILENAMES = $lvp }
+          Probe 'd3d12-warp' @{ GALLIUM_DRIVER = 'd3d12' }
