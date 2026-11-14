@@ -19,5 +19,13 @@ namespace TechEngineTests {
         static std::error_code simulationStartupLoad(TechEngine::App& app) {
             return app.simulationStartupLoad(app.m_scene);
         }
+
+        static void openCommands(TechEngine::App& app) {
+            app.m_commandQueue.open();
+        }
+
+        static bool applyCommands(TechEngine::App& app) {
+            return app.applyCommands();
+        }
     };
 }

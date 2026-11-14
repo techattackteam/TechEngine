@@ -2,12 +2,14 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/assets/ImportBlock.hpp>
+#include <TechEngine/core/material/Material.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/mesh/MeshRenderer.hpp>
 #include <TechEngine/core/resources/AssetRef.hpp>
 #include <TechEngine/core/resources/Side.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
+#include <TechEngine/core/texture/Texture.hpp>
 #include <TechEngine/platform/Platform.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/platform/files/FileError.hpp>
@@ -16,7 +18,9 @@
 #include <assets/ModelImporter.hpp>
 #include <edit/ExportCommand.hpp>
 #include <edit/ImportModelCommand.hpp>
+#include <edit/ImportSkyCommand.hpp>
 #include <edit/MaterialSlotRebuild.hpp>
+#include <edit/ReimportCommand.hpp>
 #include <ui/EditorTheme.hpp>
 
 #include <imgui.h>
@@ -42,6 +46,7 @@ namespace TechEngine {
     static constexpr std::string_view STARTUP_IMPORT_PATH = "project://assets/client/Sponza.gltf";
     static constexpr Side STARTUP_IMPORT_SIDE = Side::Client;
     static constexpr ImportSettings STARTUP_IMPORT_SETTINGS{};
+    static constexpr ImportMode STARTUP_IMPORT_MODE = ImportMode::Model;
     static constexpr std::string_view LAYOUT_FOLDER = "project://editorSettings";
     static constexpr std::string_view LAYOUT_PATH = "project://editorSettings/layout.ini";
 
@@ -55,6 +60,12 @@ namespace TechEngine {
                                                                                                        },
                                                                                                        [this] {
                                                                                                            runProject();
+                                                                                                       },
+                                                                                                       [this](std::string path) {
+                                                                                                           importSky(std::move(path));
+                                                                                                       },
+                                                                                                       [this](std::string path, const ImportMode mode) {
+                                                                                                           reimport(std::move(path), mode);
                                                                                                        }),
           m_console([this] {
               wakeMainThread();
@@ -102,6 +113,8 @@ namespace TechEngine {
         m_registry.registerComponent<MeshRenderer>(MeshRenderer::tag);
         m_resources.registerLoader<SceneBytes>(SCENE_KIND, SCENE_TYPE_TAG, &SceneBytes::loadPayload);
         m_resources.registerLoader<Mesh>(MESH_KIND, MESH_TYPE_TAG, &Mesh::loadPayload);
+        m_resources.registerLoader<Texture>(TEXTURE_KIND, TEXTURE_TYPE_TAG, &Texture::loadPayload);
+        m_resources.registerLoader<Material>(MATERIAL_KIND, MATERIAL_TYPE_TAG, &Material::loadPayload);
     }
 
     bool EditorApp::simulationTicks() const {
@@ -358,6 +371,25 @@ namespace TechEngine {
         }
     }
 
+    void EditorApp::importSky(std::string path) {
+        SkyImportRequest request;
+        request.sourcePath = std::move(path);
+        const std::error_code submitError = submitCommand(std::make_unique<ImportSkyCommand>(*this, m_jobs, m_files, m_assets, m_importBatches, std::move(request)));
+        if (submitError) {
+            TE_LOGGER_WARN("The simulation refused the image import: {0}", submitError.message());
+        }
+    }
+
+    void EditorApp::reimport(std::string path, const ImportMode mode) {
+        ReimportRequest request;
+        request.sourcePath = std::move(path);
+        request.mode = mode;
+        const std::error_code submitError = submitCommand(std::make_unique<ReimportCommand>(*this, m_jobs, m_files, m_assets, m_session, m_resources, m_sceneHandle, m_importBatches, m_reimportsInFlight, std::move(request)));
+        if (submitError) {
+            TE_LOGGER_WARN("The simulation refused the re-import: {0}", submitError.message());
+        }
+    }
+
     void EditorApp::startRuntime() {
         const std::error_code startError = m_runtime.start(m_exportedRuntimePath, m_exportedRuntimePath.parent_path());
         if (startError) {
@@ -478,6 +510,7 @@ namespace TechEngine {
         request.sourcePath = std::string(STARTUP_IMPORT_PATH);
         request.side = STARTUP_IMPORT_SIDE;
         request.settings = STARTUP_IMPORT_SETTINGS;
+        request.mode = STARTUP_IMPORT_MODE;
         makeImportModelCommand(std::move(request))->apply(scene);
     }
 

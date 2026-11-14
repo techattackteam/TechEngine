@@ -34,6 +34,24 @@ namespace TechEngine {
                         return "source file uses a quantized or meshopt-compressed mesh extension";
                     case ProjectError::InvalidImportScale:
                         return "import scale is not a finite number above zero";
+                    case ProjectError::UnsupportedImageType:
+                        return "source file is not an image type the importer reads";
+                    case ProjectError::SourceNotInAssets:
+                        return "source file is not under a side folder of the assets folder";
+                    case ProjectError::ImageUnreadable:
+                        return "source file is not an image the decoder can read";
+                    case ProjectError::ImportOutputExists:
+                        return "import output already exists";
+                    case ProjectError::UnsupportedDdsFormat:
+                        return "DDS file holds a pixel format the importer does not decode";
+                    case ProjectError::ReimportTargetMissing:
+                        return "re-import found no earlier import of the source";
+                    case ProjectError::ReimportRootMissing:
+                        return "import folder holds no root asset to take the settings from";
+                    case ProjectError::EditorNotStopped:
+                        return "re-import runs only while the editor is Stopped";
+                    case ProjectError::ReimportInFlight:
+                        return "a re-import of the source is already running";
                 }
                 return "unknown project error";
             }

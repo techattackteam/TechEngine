@@ -758,13 +758,14 @@ TEST_CASE("the startup load imports the hardcoded source file as a job, and a la
             CHECK(meshRecord.typeTag == TechEngine::MESH_TYPE_TAG);
         }
     }
-    CHECK(second.getAssetIndex().getRecords().size() == 5);
+    CHECK(second.getAssetIndex().getRecords().size() == 6);
 
     std::vector<std::byte> secondModel;
     REQUIRE(second.files().read(STARTUP_IMPORT_MODEL_PATH, secondModel) == std::error_code{});
     CHECK(secondModel == firstModel);
-    CHECK(fileCount(importFolder) == 2);
+    CHECK(fileCount(importFolder) == 3);
     CHECK(fileCount(importFolder / "Meshes") == 2);
+    CHECK(fileCount(importFolder / "Materials") == 1);
     second.shutdown();
 }
 

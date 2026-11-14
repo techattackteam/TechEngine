@@ -50,6 +50,7 @@ using TechEngine::TransformValues;
 using TechEngine::Vec3;
 using TechEngineTests::AssetEditHarness;
 using TechEngineTests::EDIT_BROKEN_MESH_ID;
+using TechEngineTests::EDIT_MATERIAL_ID;
 using TechEngineTests::EDIT_MESH_ID;
 using TechEngineTests::EDIT_OTHER_SCENE_ID;
 using TechEngineTests::EDIT_SECOND_MESH_ID;
@@ -61,8 +62,11 @@ static constexpr ResourceId KART_MODEL_ID{0x6D6F64656C000101};
 static constexpr std::string_view KART_MODEL_PATH = "project://assets/client/Kart/Kart.temodel";
 static constexpr std::string_view BROKEN_MODEL_PATH = "project://assets/client/Kart/Broken.temodel";
 static constexpr std::string_view MISSING_MODEL_PATH = "project://assets/client/Kart/Missing.temodel";
-// The harness indexes its meshes under paths with no mount.
-static constexpr std::string_view HARNESS_MESH_PATH = "assets/client/Triangle.temesh";
+// The harness indexes its assets under paths with no mount.
+static constexpr std::string_view HARNESS_SCENE_PATH = "assets/common/Other.tescene";
+static constexpr std::string_view HARNESS_SERVER_MESH_PATH = "assets/server/Collision.temesh";
+static constexpr ResourceId MERGED_MESH_ID{0x3E54000000000101};
+static constexpr std::string_view MERGED_MESH_PATH = "project://assets/client/Front/Front.temesh";
 
 class PlaceFixture {
 public:
@@ -382,11 +386,61 @@ TEST_CASE("a path the index does not know places nothing", "[editor][edit][comma
     checkNothingPlaced(fixture, revisionBefore);
 }
 
-TEST_CASE("a path that names a mesh rather than a model places nothing", "[editor][edit][commands][place]") {
-    PlaceFixture fixture{"placeMeshPath"};
+TEST_CASE("a path that names neither a model nor a mesh places nothing", "[editor][edit][commands][place]") {
+    PlaceFixture fixture{"placeScenePath"};
     const std::uint64_t revisionBefore = fixture.editRevision();
 
-    fixture.place(HARNESS_MESH_PATH);
+    fixture.place(HARNESS_SCENE_PATH);
+
+    checkNothingPlaced(fixture, revisionBefore);
+}
+
+TEST_CASE("placing a merged mesh adds one entity whose slot list matches the mesh", "[editor][edit][commands][place][merged]") {
+    PlaceFixture fixture{"placeMergedMesh"};
+    TechEngine::Mesh mesh;
+    mesh.id = MERGED_MESH_ID;
+    mesh.positions = {Vec3(0.0f), Vec3(1.0f, 0.0f, 0.0f), Vec3(0.0f, 1.0f, 0.0f), Vec3(0.0f, 0.0f, 1.0f)};
+    mesh.indices = {0, 1, 2, 0, 3, 1};
+    mesh.slots = {TechEngine::MeshSlot{"Paint", 0, 3, EDIT_MATERIAL_ID}, TechEngine::MeshSlot{"Glass", 3, 3, ResourceId{}}};
+    std::vector<std::byte> bytes;
+    mesh.write(bytes);
+    fixture.edit.source.add(MERGED_MESH_ID, std::move(bytes));
+    AssetRecord record;
+    record.id = MERGED_MESH_ID;
+    record.typeTag = TechEngine::MESH_TYPE_TAG;
+    record.side = TechEngine::Side::Client;
+    record.path = std::string(MERGED_MESH_PATH);
+    fixture.edit.index.add(std::move(record));
+    const std::uint64_t revisionBefore = fixture.editRevision();
+
+    fixture.place(MERGED_MESH_PATH);
+
+    const std::vector<Entity> roots = fixture.edit.scene.getRoots();
+    REQUIRE(roots.size() == 1);
+    const Entity placed = roots[0];
+    CHECK(fixture.edit.snapshot().hierarchy.size() == 1);
+    CHECK(fixture.edit.scene.getChildren(placed).empty());
+    CHECK(fixture.edit.scene.getComponent<Name>(placed).value == "Front");
+    checkLocal(fixture.edit, placed, TransformValues{});
+    checkPlacedMesh(fixture.edit, placed, MERGED_MESH_ID);
+    CHECK(fixture.editRevision() > revisionBefore);
+
+    const std::vector<MaterialSlot>& slots = fixture.edit.scene.getComponent<MeshRenderer>(placed).slots;
+    REQUIRE(slots.size() == 2);
+    CHECK(slots[0].name == "Paint");
+    CHECK(slots[0].material.id == EDIT_MATERIAL_ID);
+    REQUIRE(slots[0].material.handle.valid());
+    ResourceState state = ResourceState::Pending;
+    REQUIRE(fixture.edit.cache.getState(slots[0].material.handle, state));
+    CHECK(state == ResourceState::Ready);
+    CHECK(slots[1] == MaterialSlot{"Glass", {}});
+}
+
+TEST_CASE("a server mesh is not placed", "[editor][edit][commands][place][merged]") {
+    PlaceFixture fixture{"placeServerMergedMesh"};
+    const std::uint64_t revisionBefore = fixture.editRevision();
+
+    fixture.place(HARNESS_SERVER_MESH_PATH);
 
     checkNothingPlaced(fixture, revisionBefore);
 }

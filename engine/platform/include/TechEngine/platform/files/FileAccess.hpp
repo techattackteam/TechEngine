@@ -34,12 +34,18 @@ namespace TechEngine {
 
         std::error_code write(std::string_view virtualPath, std::span<const std::byte> bytes);
 
+        // Refuses an existing target with AlreadyExists and never replaces it, also when another caller creates it at
+        // the same time. The file appears whole or not at all.
+        std::error_code createFile(std::string_view virtualPath, std::span<const std::byte> bytes);
+
         std::error_code status(std::string_view virtualPath, FileStatus& out) const;
 
         std::error_code list(std::string_view virtualPath, bool recursive, std::vector<std::string>& out) const;
 
         std::error_code resolve(std::string_view virtualPath, std::filesystem::path& out) const;
 
+        // Creates the missing parents. Of several callers creating one directory at once, exactly one succeeds and the
+        // rest get AlreadyExists.
         std::error_code createDirectory(std::string_view virtualPath);
 
         std::error_code remove(std::string_view virtualPath, bool recursive);
@@ -55,6 +61,10 @@ namespace TechEngine {
 
         std::error_code resolveTransfer(std::string_view from, std::string_view to, std::filesystem::path& sourcePath, std::filesystem::path& destinationPath) const;
 
+        std::error_code writeTemporary(const std::filesystem::path& temporaryPath, std::span<const std::byte> bytes) const;
+
         void discardTemporary(const std::filesystem::path& temporaryPath) const;
+
+        static std::filesystem::path uniqueTemporaryPath(const std::filesystem::path& physicalPath);
     };
 }

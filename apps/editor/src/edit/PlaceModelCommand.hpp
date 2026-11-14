@@ -12,6 +12,7 @@
 namespace TechEngine {
     class AssetIndex;
     class EditSession;
+    struct AssetRecord;
     class FileAccess;
     class ResourceCache;
     struct Model;
@@ -33,6 +34,8 @@ namespace TechEngine {
 
     private:
         bool readModel(Model& out) const;
+
+        static void wrapMesh(const AssetRecord& record, Model& out);
 
         bool loadMeshes(const Model& model, std::unordered_map<ResourceId, ResourceSlotId>& out) const;
 

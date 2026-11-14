@@ -61,6 +61,14 @@ namespace TechEngine {
         return m_editRevision != m_savedRevision;
     }
 
+    void EditSession::setPlayState(const PlayState state) {
+        m_playState = state;
+    }
+
+    PlayState EditSession::getPlayState() const {
+        return m_playState;
+    }
+
     void EditSession::setSceneFile(SceneFile file) {
         m_sceneFile = std::move(file);
     }

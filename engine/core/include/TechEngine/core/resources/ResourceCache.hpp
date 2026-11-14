@@ -28,6 +28,8 @@ namespace TechEngine {
     // the cache requests them as the next round of the loading phase.
     using ResourceLoadFn = std::error_code (*)(std::span<const std::byte> bytes, void* payload, std::vector<ResourceId>& dependencies);
 
+    using ResourcePayloadDeleter = void (*)(void*);
+
     class ResourceCache {
     private:
         struct TypeRecord {
@@ -40,7 +42,11 @@ namespace TechEngine {
 
         struct LoadCompletion {
             ResourceSlotId slot;
+            std::unique_ptr<void, ResourcePayloadDeleter> payload{nullptr, nullptr};
+            StringId typeTag;
             std::vector<ResourceId> dependencies;
+            std::error_code error;
+            bool reload = false;
         };
 
         JobSystem* m_jobs = nullptr;
@@ -135,6 +141,10 @@ namespace TechEngine {
 
         std::error_code runLoadingPhase();
 
+        // A reloaded entry keeps only the dependencies its loader names: one added with
+        // addDependency is released.
+        std::error_code reload(std::span<const ResourceId> ids);
+
         void drainFrees();
 
         void shutdown();
@@ -162,6 +172,8 @@ namespace TechEngine {
 
         std::error_code addEntryDependency(ResourceSlotId holder, ResourceId dependency, ResourceSlotId& out);
 
+        std::error_code acquireDependency(ResourceSlotId holder, ResourceId dependency, ResourceSlotId& out);
+
         bool entryState(ResourceSlotId slot, ResourceState& out) const;
 
         bool entryAcquireCount(ResourceSlotId slot, std::uint32_t& out) const;
@@ -170,9 +182,11 @@ namespace TechEngine {
 
         // Runs on a pool worker, so it may touch only `entry` and the completion queue. The
         // owner grows m_slots while tasks run, and looking any entry up from here races it.
-        void runLoadTask(ResourceEntry& entry, ResourceSlotId slot);
+        void runLoadTask(const ResourceEntry& entry, ResourceSlotId slot, bool reload);
 
-        std::error_code publishCompletion(const LoadCompletion& completion);
+        std::error_code publishCompletion(LoadCompletion& completion);
+
+        std::error_code publishReload(ResourceEntry& entry, LoadCompletion& completion);
 
         void freeEntry(ResourceSlotId slot);
 

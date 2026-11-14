@@ -53,6 +53,24 @@ namespace TechEngineTests {
                                                                  R"({"name":"Part_A","primitives":[{"attributes":{"POSITION":1},"indices":0}]},)"
                                                                  R"({"name":"part_a","primitives":[{"attributes":{"POSITION":1},"indices":0}]}])";
 
+    // Window uses material 1, and Door, under it and 10 along Z, uses material 0. assimp's glTF reader numbers the
+    // materials in the order it reads them, and it reads a node's children before its mesh, so Paint stays first while a
+    // walk from the root meets Glass first. No mesh uses material 2.
+    inline constexpr std::string_view GLTF_TWO_MATERIALS_BODY = R"("scenes":[{"nodes":[0]}],)"
+                                                                R"("nodes":[{"name":"Window","mesh":0,"children":[1]},{"name":"Door","mesh":1,"translation":[0,0,10]}],)"
+                                                                R"("materials":[{"name":"Paint"},{"name":"Glass"},{"name":"Unused"}],)"
+                                                                R"("meshes":[{"name":"Pane","primitives":[{"attributes":{"POSITION":1},"indices":0,"material":1}]},)"
+                                                                R"({"name":"Board","primitives":[{"attributes":{"POSITION":1},"indices":0,"material":0}]}])";
+
+    inline constexpr std::string_view GLTF_SAME_NAMED_MATERIALS_BODY = R"("scenes":[{"nodes":[0,1]}],)"
+                                                                       R"("nodes":[{"name":"Window","mesh":0},{"name":"Door","mesh":1}],)"
+                                                                       R"("materials":[{"name":"Paint"},{"name":"Paint"}],)"
+                                                                       R"("meshes":[{"name":"Pane","primitives":[{"attributes":{"POSITION":1},"indices":0,"material":1}]},)"
+                                                                       R"({"name":"Board","primitives":[{"attributes":{"POSITION":1},"indices":0,"material":0}]}])";
+
+    // Two faces that meet at a right angle along the edge from (0, 0, 0) to (1, 0, 0), with no normals.
+    inline constexpr std::string_view OBJ_BENT = "o Bent\nv 0 0 0\nv 1 0 0\nv 0 1 0\nv 0 0 1\nf 1 2 3\nf 1 4 2\n";
+
     inline constexpr std::string_view OBJ_QUAD = "o Quad\nv 0 0 0\nv 1 0 0\nv 1 1 0\nv 0 1 0\nf 1 2 3 4\n";
 
     // No normals, so they are made flat, +Z. U runs along +X and V along +Y, in OBJ's own bottom-left UV space.
@@ -97,6 +115,23 @@ namespace TechEngineTests {
     inline constexpr std::string_view GLTF_QUAD_WITHOUT_UVS_BODY = R"("scenes":[{"nodes":[0]}],)"
                                                                    R"("nodes":[{"name":"Panel","mesh":0}],)"
                                                                    R"("meshes":[{"name":"Panel","primitives":[{"attributes":{"POSITION":1,"NORMAL":2},"indices":0}]}])";
+
+    // One quad used by two nodes, the second mirrored by a scale of -1 on X.
+    inline constexpr std::string_view GLTF_MIRRORED_QUAD_BODY = R"("scenes":[{"nodes":[0,1]}],)"
+                                                                R"("nodes":[{"name":"Left","mesh":0},{"name":"Right","mesh":0,"scale":[-1,1,1]}],)"
+                                                                R"("meshes":[{"name":"Panel","primitives":[{"attributes":{"POSITION":1,"NORMAL":2,"TEXCOORD_0":3,"TANGENT":4},"indices":0}]}])";
+
+    // Stretch scales Y by 2 above Panel, which turns its quad an eighth about Z, so the scale is not along the quad's axes.
+    inline constexpr std::string_view GLTF_STRETCHED_QUAD_BODY = R"("scenes":[{"nodes":[0]}],)"
+                                                                 R"("nodes":[{"name":"Stretch","scale":[1,2,1],"children":[1]},)"
+                                                                 R"({"name":"Panel","mesh":0,"rotation":[0,0,0.38268343,0.92387953]}],)"
+                                                                 R"("meshes":[{"name":"Panel","primitives":[{"attributes":{"POSITION":1,"NORMAL":2,"TEXCOORD_0":3,"TANGENT":4},"indices":0}]}])";
+
+    // Mapped has UV0 and Bare, 10 along Z, has none.
+    inline constexpr std::string_view GLTF_QUAD_PART_WITHOUT_UVS_BODY = R"("scenes":[{"nodes":[0,1]}],)"
+                                                                        R"("nodes":[{"name":"Mapped","mesh":0},{"name":"Bare","mesh":1,"translation":[0,0,10]}],)"
+                                                                        R"("meshes":[{"name":"Mapped","primitives":[{"attributes":{"POSITION":1,"NORMAL":2,"TEXCOORD_0":3},"indices":0}]},)"
+                                                                        R"({"name":"Bare","primitives":[{"attributes":{"POSITION":1,"NORMAL":2},"indices":0}]}])";
 
     inline void appendU32(std::string& out, const std::uint32_t value) {
         for (std::uint32_t shift = 0; shift < 32; shift += 8) {

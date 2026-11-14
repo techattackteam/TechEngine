@@ -147,11 +147,50 @@ FetchContent_Declare(meshoptimizer
   GIT_REPOSITORY https://github.com/zeux/meshoptimizer.git
   GIT_TAG        v1.3
   GIT_SHALLOW    TRUE)
-FetchContent_MakeAvailable(assimp mikktspace meshoptimizer)
+# stb is header-only, has no tags and is not a CMake project, so it pins a full commit. Only its image decoders
+# are enabled, and never through its own file IO: the editor decodes from memory.
+FetchContent_Declare(stb
+  GIT_REPOSITORY https://github.com/nothings/stb.git
+  GIT_TAG        9600522de53973336fa033a289858a4354cbb04c)
+# bcdec decodes a DDS file's blocks and is header-only. bc7enc_rdo encodes BC5 (rgbcx) and BC7 (the scalar bc7enc).
+# Neither has tags, so both pin a full commit. Only bc7enc.cpp and rgbcx.cpp are built: not its CMake project, its
+# tools or its ispc encoder: a SOURCE_SUBDIR with no CMakeLists.txt in it makes MakeAvailable fetch without adding
+# the repo's own project.
+FetchContent_Declare(bcdec
+  GIT_REPOSITORY https://github.com/iOrange/bcdec.git
+  GIT_TAG        80859ed3b7afb1c527a2a99d70c61457bea72d0c
+  SOURCE_SUBDIR  no-cmake-project)
+FetchContent_Declare(bc7enc_rdo
+  GIT_REPOSITORY https://github.com/richgel999/bc7enc_rdo.git
+  GIT_TAG        b9438627eef73a1157e84201b6fa6eb2ffd6d9f0
+  SOURCE_SUBDIR  no-cmake-project)
+FetchContent_MakeAvailable(assimp mikktspace meshoptimizer stb bcdec bc7enc_rdo)
 
 add_library(TechEngineMikkTSpace STATIC ${mikktspace_SOURCE_DIR}/mikktspace.c)
 add_library(TechEngine::mikktspace ALIAS TechEngineMikkTSpace)
 target_include_directories(TechEngineMikkTSpace SYSTEM PUBLIC ${mikktspace_SOURCE_DIR})
+
+# stb_image and bcdec are header-only, so each builds its implementation from a one-line file written here. stb's
+# defines are PUBLIC: the implementation and every includer must see the same decoder selection.
+file(CONFIGURE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/te_deps/stb_image.cpp
+  CONTENT "#define STB_IMAGE_IMPLEMENTATION\n#include <stb_image.h>\n")
+add_library(TechEngineStb STATIC ${CMAKE_CURRENT_BINARY_DIR}/te_deps/stb_image.cpp)
+add_library(TechEngine::stb ALIAS TechEngineStb)
+target_include_directories(TechEngineStb SYSTEM PUBLIC ${stb_SOURCE_DIR})
+target_compile_definitions(TechEngineStb PUBLIC STBI_NO_STDIO STBI_ONLY_HDR STBI_ONLY_PNG STBI_ONLY_JPEG STBI_ONLY_TGA)
+target_compile_options(TechEngineStb PRIVATE $<IF:$<CXX_COMPILER_ID:MSVC>,/w,-w>)
+
+file(CONFIGURE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/te_deps/bcdec.cpp
+  CONTENT "#define BCDEC_IMPLEMENTATION\n#include <bcdec.h>\n")
+add_library(TechEngineBcdec STATIC ${CMAKE_CURRENT_BINARY_DIR}/te_deps/bcdec.cpp)
+add_library(TechEngine::bcdec ALIAS TechEngineBcdec)
+target_include_directories(TechEngineBcdec SYSTEM PUBLIC ${bcdec_SOURCE_DIR})
+target_compile_options(TechEngineBcdec PRIVATE $<IF:$<CXX_COMPILER_ID:MSVC>,/w,-w>)
+
+add_library(TechEngineBc7Enc STATIC ${bc7enc_rdo_SOURCE_DIR}/bc7enc.cpp ${bc7enc_rdo_SOURCE_DIR}/rgbcx.cpp)
+add_library(TechEngine::bc7enc ALIAS TechEngineBc7Enc)
+target_include_directories(TechEngineBc7Enc SYSTEM PUBLIC ${bc7enc_rdo_SOURCE_DIR})
+target_compile_options(TechEngineBc7Enc PRIVATE $<IF:$<CXX_COMPILER_ID:MSVC>,/w,-w>)
 
 # --- audio (single-header) --------------------------------------------------
 # Not a CMake project: populate the source and wrap the include dir in an

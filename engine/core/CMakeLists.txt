@@ -10,6 +10,7 @@ techengine_module(core
           src/jobs/DedicatedThreadState.cpp
           src/jobs/JobSystem.cpp
           src/jobs/ThreadRegistration.cpp
+          src/material/Material.cpp
           src/mesh/Mesh.cpp
           src/mesh/MeshRenderer.cpp
           src/model/Model.cpp
@@ -38,6 +39,7 @@ techengine_module(core
           src/systems/ScheduleRegistration.cpp
           src/systems/SerialExecutor.cpp
           src/systems/TaskGraph.cpp
+          src/texture/Texture.cpp
   HEADERS include/TechEngine/core/Core.hpp
           include/TechEngine/core/EngineContext.hpp
           include/TechEngine/core/SimulationContext.hpp
@@ -53,6 +55,7 @@ techengine_module(core
           include/TechEngine/core/jobs/DedicatedThreadContext.hpp
           include/TechEngine/core/jobs/JobSystem.hpp
           include/TechEngine/core/jobs/ThreadRegistration.hpp
+          include/TechEngine/core/material/Material.hpp
           include/TechEngine/core/mesh/Mesh.hpp
           include/TechEngine/core/mesh/MeshRenderer.hpp
           include/TechEngine/core/model/Model.hpp
@@ -93,6 +96,7 @@ techengine_module(core
           include/TechEngine/core/systems/ScheduleRegistration.hpp
           include/TechEngine/core/systems/SerialExecutor.hpp
           include/TechEngine/core/systems/TaskGraph.hpp
+          include/TechEngine/core/texture/Texture.hpp
           src/jobs/DedicatedThreadState.hpp
           src/jobs/RegisteredThread.hpp
           src/resources/ResourceSlots.hpp
@@ -121,6 +125,7 @@ if(TE_BUILD_TESTS)
           tests/events/EventStreamManagerTests.cpp
           tests/jobs/DedicatedThreadTests.cpp
           tests/jobs/JobSystemTests.cpp
+          tests/material/MaterialTests.cpp
           tests/mesh/MeshRendererTests.cpp
           tests/mesh/MeshTests.cpp
           tests/model/ModelTests.cpp
@@ -147,5 +152,6 @@ if(TE_BUILD_TESTS)
           tests/systems/InputDeliveryTests.cpp
           tests/systems/ScheduleTests.cpp
           tests/systems/SerialExecutorTests.cpp
-          tests/systems/TaskGraphTests.cpp)
+          tests/systems/TaskGraphTests.cpp
+          tests/texture/TextureTests.cpp)
 endif()

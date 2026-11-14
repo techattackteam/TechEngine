@@ -22,6 +22,10 @@ namespace TechEngine {
         // Returns false for a mesh that is not made of triangles.
         bool read(const aiMesh& source, Mesh& out) const;
 
+        // world, the source node's world matrix, is applied before the settings. Where it mirrors, each triangle's
+        // corners are stored in the opposite order.
+        bool read(const aiMesh& source, const Mat4& world, Mesh& out) const;
+
         const ImportSettings& getSettings() const;
 
         Vec3 turnUpright(Vec3 value) const;
@@ -31,7 +35,9 @@ namespace TechEngine {
     private:
         Vec3 bakeDirection(Vec3 direction) const;
 
-        void readStreams(const aiMesh& source, Mesh& out) const;
+        void readStreams(const aiMesh& source, const Mat3& world, Mesh& out) const;
+
+        static Mat3 normalMatrix(const Mat3& world);
 
         static void generateTangents(Mesh& mesh);
 

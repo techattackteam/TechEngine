@@ -18,6 +18,12 @@ namespace TechEngine {
     struct ComponentTypeRecord;
     struct EditorSnapshot;
 
+    enum class PlayState : std::uint8_t {
+        Stopped,
+        Playing,
+        Paused,
+    };
+
     struct SceneFile {
         ResourceId id;
         std::string path;
@@ -33,6 +39,8 @@ namespace TechEngine {
         std::vector<EditRecord> m_records;
         std::uint64_t m_editRevision = 0;
         std::uint64_t m_savedRevision = 0;
+        // TODO(E11): Play and Stop set this. Until then nothing but a test leaves Stopped.
+        PlayState m_playState = PlayState::Stopped;
 
     public:
         // A sequence older than the last one applied changes nothing.
@@ -51,6 +59,10 @@ namespace TechEngine {
         void recordSave();
 
         bool hasUnsavedEdits() const;
+
+        void setPlayState(PlayState state);
+
+        PlayState getPlayState() const;
 
         void setSceneFile(SceneFile file);
 

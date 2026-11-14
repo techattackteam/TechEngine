@@ -1,5 +1,6 @@
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/assets/ImportBlock.hpp>
+#include <TechEngine/core/material/Material.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/model/Model.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
@@ -19,15 +20,19 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
+#include <array>
+#include <atomic>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <iterator>
+#include <latch>
 #include <limits>
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -49,6 +54,8 @@ using TechEngineTests::ScratchDirectory;
 
 static constexpr std::uint64_t FIRST_TEST_ID = 0x1000;
 static constexpr float TOLERANCE = 1.0e-5f;
+static constexpr std::size_t RACERS = 4;
+static constexpr std::uint32_t RACE_ATTEMPTS = 5;
 
 class ModelImportFixture {
 public:
@@ -107,6 +114,14 @@ static const AssetRecord& recordNamed(const ModelImportResult& result, const std
     });
     REQUIRE(found != result.records.end());
     return *found;
+}
+
+static std::vector<AssetRecord> meshRecords(const ModelImportResult& result) {
+    std::vector<AssetRecord> meshes;
+    std::ranges::copy_if(result.records, std::back_inserter(meshes), [](const AssetRecord& record) {
+        return record.typeTag == TechEngine::MESH_TYPE_TAG;
+    });
+    return meshes;
 }
 
 static std::uint32_t indexOf(const Model& model, const ModelNode& node) {
@@ -200,13 +215,14 @@ TEST_CASE("a glTF file imports with its node and mesh counts", "[editor][assets]
 
     CHECK(result.folder == "project://assets/client/Pair");
     CHECK(result.nodeCount == 4);
-    REQUIRE(result.records.size() == 3);
+    REQUIRE(result.records.size() == 4);
 
-    SECTION("the records name the model first, then each mesh, on the source's side") {
+    SECTION("the records name the model first, then each mesh, then the material, on the source's side") {
         CHECK(result.records[0].typeTag == TechEngine::MODEL_TYPE_TAG);
         CHECK(result.records[0].path == "project://assets/client/Pair/Pair.temodel");
         CHECK(result.records[1].typeTag == TechEngine::MESH_TYPE_TAG);
         CHECK(result.records[2].typeTag == TechEngine::MESH_TYPE_TAG);
+        CHECK(result.records[3].typeTag == TechEngine::MATERIAL_TYPE_TAG);
         CHECK(recordNamed(result, "Hull.temesh").path == "project://assets/client/Pair/Meshes/Hull.temesh");
         CHECK(recordNamed(result, "Tire.temesh").path == "project://assets/client/Pair/Meshes/Tire.temesh");
         for (const AssetRecord& record: result.records) {
@@ -219,8 +235,8 @@ TEST_CASE("a glTF file imports with its node and mesh counts", "[editor][assets]
         CHECK(result.records[1].id != result.records[2].id);
     }
 
-    SECTION("the folder holds the model and a Meshes folder with one file per mesh") {
-        CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Pair") == 2);
+    SECTION("the folder holds the model, a Meshes folder with one file per mesh and a Materials folder") {
+        CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Pair") == 3);
         CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Pair" / "Meshes") == 2);
         CHECK(entryCount(fixture.scratch.root() / "assets" / "client") == 2);
     }
@@ -291,13 +307,13 @@ TEST_CASE("a glTF file imports with its node and mesh counts", "[editor][assets]
             CHECK_FALSE(mesh->slots[0].name.empty());
             CHECK(mesh->slots[0].firstIndex == 0);
             CHECK(mesh->slots[0].indexCount == mesh->indices.size());
-            CHECK_FALSE(mesh->slots[0].defaultMaterial.valid());
+            CHECK(mesh->slots[0].defaultMaterial == result.records[3].id);
         }
     }
 
     SECTION("a mesh with positions only gets flat normals, and no tangents or UV0") {
-        for (std::size_t i = 1; i < result.records.size(); i++) {
-            const Mesh mesh = fixture.readMesh(result.records[i].path);
+        for (const AssetRecord& record: meshRecords(result)) {
+            const Mesh mesh = fixture.readMesh(record.path);
             REQUIRE(mesh.normals.size() == mesh.positions.size());
             for (const Vec3 normal: mesh.normals) {
                 checkVec3(normal, Vec3(0.0f, 0.0f, 1.0f));
@@ -315,7 +331,7 @@ TEST_CASE("a scale of 0.01 and a Z-up axis are baked into the vertices and the n
 
     ModelImportResult result;
     REQUIRE(fixture.importFile("Pair.gltf", settings, result) == std::error_code{});
-    REQUIRE(result.records.size() == 3);
+    REQUIRE(result.records.size() == 4);
     const Model model = fixture.readModel(result.records[0].path);
 
     SECTION("the root is at identity") {
@@ -323,8 +339,8 @@ TEST_CASE("a scale of 0.01 and a Z-up axis are baked into the vertices and the n
     }
 
     SECTION("a vertex at (x, y, z) lands at (x, z, -y) times the scale") {
-        for (std::size_t i = 1; i < result.records.size(); i++) {
-            const Mesh mesh = fixture.readMesh(result.records[i].path);
+        for (const AssetRecord& record: meshRecords(result)) {
+            const Mesh mesh = fixture.readMesh(record.path);
             REQUIRE(mesh.positions.size() == 3);
             checkVec3(mesh.positions[0], Vec3(0.01f, 0.03f, -0.02f));
             checkVec3(mesh.positions[1], Vec3(0.04f, 0.03f, -0.02f));
@@ -334,8 +350,8 @@ TEST_CASE("a scale of 0.01 and a Z-up axis are baked into the vertices and the n
     }
 
     SECTION("a generated normal is turned with the mesh and is not scaled") {
-        for (std::size_t i = 1; i < result.records.size(); i++) {
-            const Mesh mesh = fixture.readMesh(result.records[i].path);
+        for (const AssetRecord& record: meshRecords(result)) {
+            const Mesh mesh = fixture.readMesh(record.path);
             REQUIRE(mesh.normals.size() == mesh.positions.size());
             for (const Vec3 normal: mesh.normals) {
                 checkVec3(normal, Vec3(0.0f, 1.0f, 0.0f));
@@ -345,8 +361,8 @@ TEST_CASE("a scale of 0.01 and a Z-up axis are baked into the vertices and the n
 
     SECTION("only the model's import block carries the settings; each mesh keeps the defaults") {
         CHECK(model.importBlock.settings == settings);
-        for (std::size_t i = 1; i < result.records.size(); i++) {
-            CHECK(fixture.readMesh(result.records[i].path).importBlock.settings == ImportSettings{});
+        for (const AssetRecord& record: meshRecords(result)) {
+            CHECK(fixture.readMesh(record.path).importBlock.settings == ImportSettings{});
         }
     }
 
@@ -388,7 +404,7 @@ TEST_CASE("a scale alone multiplies vertices and translations and turns nothing"
 
     ModelImportResult result;
     REQUIRE(fixture.importFile("Pair.gltf", ImportSettings{2.0f, UpAxis::Y}, result) == std::error_code{});
-    REQUIRE(result.records.size() == 3);
+    REQUIRE(result.records.size() == 4);
     const Model model = fixture.readModel(result.records[0].path);
     const Mesh hull = fixture.readMesh(recordNamed(result, "Hull.temesh").path);
 
@@ -445,6 +461,56 @@ TEST_CASE("importing into a folder that exists is refused and writes nothing", "
     }
 }
 
+// The loser either sees the folder at its first check or loses the folder's creation, and neither may remove it.
+TEST_CASE("of several imports of one source at once, exactly one succeeds and its folder is left whole", "[editor][assets][import][race]") {
+    ModelImportFixture fixture{"importRace"};
+    fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
+    std::atomic<std::uint64_t> nextId = FIRST_TEST_ID;
+    const TechEngine::ModelImporter importer(fixture.files, [&nextId] {
+        return ResourceId{nextId++};
+    });
+
+    for (std::uint32_t attempt = 0; attempt < RACE_ATTEMPTS; attempt++) {
+        std::filesystem::remove_all(fixture.scratch.root() / "assets/client/Pair");
+        std::latch start(RACERS);
+        std::array<ModelImportResult, RACERS> results;
+        std::array<std::error_code, RACERS> errors;
+        std::vector<std::thread> threads;
+        for (std::size_t i = 0; i < RACERS; i++) {
+            threads.emplace_back([&importer, &start, &results, &errors, i] {
+                ModelImportRequest request;
+                request.sourcePath = "project://assets/client/Pair.gltf";
+                request.side = TechEngine::Side::Client;
+                start.arrive_and_wait();
+                errors[i] = importer.importFile(request, results[i]);
+            });
+        }
+        for (std::thread& thread: threads) {
+            thread.join();
+        }
+
+        const std::error_code refused = ProjectError::ImportFolderExists;
+        REQUIRE(std::ranges::count(errors, std::error_code{}) == 1);
+        CHECK(std::ranges::count(errors, refused) == static_cast<std::ptrdiff_t>(RACERS) - 1);
+        const std::size_t winner = static_cast<std::size_t>(std::ranges::find(errors, std::error_code{}) - errors.begin());
+        for (std::size_t i = 0; i < RACERS; i++) {
+            CHECK(results[i].records.empty() == (i != winner));
+        }
+
+        const std::vector<AssetRecord>& records = results[winner].records;
+        REQUIRE(records.size() == 4);
+        CHECK(fixture.readModel(records[0].path).id == records[0].id);
+        for (const AssetRecord& record: meshRecords(results[winner])) {
+            CHECK(fixture.readMesh(record.path).id == record.id);
+        }
+        for (const AssetRecord& record: records) {
+            std::vector<std::byte> bytes;
+            CHECK(fixture.files.read(record.path, bytes) == std::error_code{});
+        }
+        CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Pair" / "Meshes") == 2);
+    }
+}
+
 TEST_CASE("a source that cannot be imported leaves no folder behind", "[editor][assets][import]") {
     ModelImportFixture fixture{"importFailures"};
     ModelImportResult result;
@@ -494,7 +560,7 @@ TEST_CASE("a mesh that is not made of triangles is skipped, and its node carries
     ModelImportResult result;
     REQUIRE(fixture.importFile("Mixed.gltf", ImportSettings{}, result) == std::error_code{});
 
-    REQUIRE(result.records.size() == 2);
+    REQUIRE(result.records.size() == 3);
     CHECK(result.records[1].path == "project://assets/client/Mixed/Meshes/Shell.temesh");
     CHECK(result.records[1].typeTag == TechEngine::MESH_TYPE_TAG);
     CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Mixed" / "Meshes") == 1);
@@ -512,7 +578,7 @@ TEST_CASE("a mesh used by two nodes is written once and both nodes name it", "[e
     ModelImportResult result;
     REQUIRE(fixture.importFile("Shared.gltf", ImportSettings{}, result) == std::error_code{});
 
-    REQUIRE(result.records.size() == 2);
+    REQUIRE(result.records.size() == 3);
     const Model model = fixture.readModel(result.records[0].path);
     REQUIRE(model.nodes.size() == 3);
     CHECK(nodeNamed(model, "Left").mesh == result.records[1].id);
@@ -527,7 +593,7 @@ TEST_CASE("a node with several meshes gets one child per mesh and carries none i
     ModelImportResult result;
     REQUIRE(fixture.importFile("Vehicle.gltf", ImportSettings{}, result) == std::error_code{});
 
-    REQUIRE(result.records.size() == 3);
+    REQUIRE(result.records.size() == 4);
     const Model model = fixture.readModel(result.records[0].path);
     REQUIRE(model.nodes.size() == 3);
 
@@ -558,11 +624,11 @@ TEST_CASE("mesh names that clash as file names each get their own file", "[edito
     ModelImportResult result;
     REQUIRE(fixture.importFile("Kit.gltf", ImportSettings{}, result) == std::error_code{});
 
-    REQUIRE(result.records.size() == 4);
+    REQUIRE(result.records.size() == 5);
     CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Kit" / "Meshes") == 3);
     std::vector<std::string> fileNames;
-    for (std::size_t i = 1; i < result.records.size(); i++) {
-        std::string fileName = std::filesystem::path(result.records[i].path).filename().string();
+    for (const AssetRecord& record: meshRecords(result)) {
+        std::string fileName = std::filesystem::path(record.path).filename().string();
         std::ranges::transform(fileName, fileName.begin(), [](const char character) {
             return character >= 'A' && character <= 'Z' ? static_cast<char>(character - 'A' + 'a') : character;
         });
@@ -574,8 +640,8 @@ TEST_CASE("mesh names that clash as file names each get their own file", "[edito
     const Model model = fixture.readModel(result.records[0].path);
     std::vector<ResourceId> nodeMeshes{nodeNamed(model, "First").mesh, nodeNamed(model, "Second").mesh, nodeNamed(model, "Third").mesh};
     std::vector<ResourceId> fileMeshes;
-    for (std::size_t i = 1; i < result.records.size(); i++) {
-        fileMeshes.push_back(fixture.readMesh(result.records[i].path).id);
+    for (const AssetRecord& record: meshRecords(result)) {
+        fileMeshes.push_back(fixture.readMesh(record.path).id);
     }
     std::ranges::sort(nodeMeshes);
     std::ranges::sort(fileMeshes);
@@ -590,7 +656,7 @@ TEST_CASE("an OBJ file imports, with its quad split into two triangles", "[edito
     ModelImportResult result;
     REQUIRE(fixture.importFile("Quad.obj", ImportSettings{}, result) == std::error_code{});
 
-    REQUIRE(result.records.size() == 2);
+    REQUIRE(result.records.size() == 3);
     const Mesh mesh = fixture.readMesh(result.records[1].path);
     CHECK(mesh.positions.size() == 4);
     CHECK(mesh.indices.size() == 6);
@@ -608,7 +674,7 @@ TEST_CASE("a glTF fixture with tangents keeps them, with w turned to the stored 
 
     ModelImportResult result;
     REQUIRE(fixture.importFile("Panel.gltf", ImportSettings{}, result) == std::error_code{});
-    REQUIRE(result.records.size() == 2);
+    REQUIRE(result.records.size() == 3);
     const Mesh mesh = fixture.readMesh(result.records[1].path);
     REQUIRE(mesh.positions.size() == 4);
     CHECK(mesh.indices.size() == 6);
@@ -647,7 +713,7 @@ TEST_CASE("a glTF fixture without tangents gets unit MikkTSpace tangents with w 
 
     ModelImportResult result;
     REQUIRE(fixture.importFile("Panel.gltf", ImportSettings{}, result) == std::error_code{});
-    REQUIRE(result.records.size() == 2);
+    REQUIRE(result.records.size() == 3);
     const Mesh mesh = fixture.readMesh(result.records[1].path);
 
     SECTION("every vertex has a unit tangent, perpendicular to its normal") {
@@ -705,7 +771,7 @@ TEST_CASE("a mesh with normals and no UV0 gets no tangents", "[editor][assets][i
 
     ModelImportResult result;
     REQUIRE(fixture.importFile("Panel.gltf", ImportSettings{}, result) == std::error_code{});
-    REQUIRE(result.records.size() == 2);
+    REQUIRE(result.records.size() == 3);
     const Mesh mesh = fixture.readMesh(result.records[1].path);
 
     CHECK(mesh.normals.size() == mesh.positions.size());
@@ -759,7 +825,7 @@ TEST_CASE("an OBJ's tangents are made in its own UV space, with no glTF negation
 
     ModelImportResult result;
     REQUIRE(fixture.importFile("Quad.obj", ImportSettings{}, result) == std::error_code{});
-    REQUIRE(result.records.size() == 2);
+    REQUIRE(result.records.size() == 3);
     const Mesh mesh = fixture.readMesh(result.records[1].path);
     REQUIRE(mesh.tangents.size() == mesh.positions.size());
 
@@ -822,7 +888,7 @@ TEST_CASE("a refused extension's name outside extensionsUsed does not refuse the
 
         ModelImportResult result;
         CHECK(fixture.importFile("Named.gltf", ImportSettings{}, result) == std::error_code{});
-        CHECK(result.records.size() == 2);
+        CHECK(result.records.size() == 3);
     }
 
     SECTION("a binary glTF that lists only an extension that imports") {

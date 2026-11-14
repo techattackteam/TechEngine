@@ -115,15 +115,23 @@ namespace TechEngine {
         ResourceEntry* entry = m_slots->find(holder);
         TE_CHECK(entry != nullptr, "A dependency is added to a resource slot that no longer exists");
         TE_CHECK(entry->state == ResourceState::Ready, "Resource {0:#018x} gets a dependency before it is Ready", entry->id.value());
-        const std::error_code dependencyError = requestEntry(dependency, StringId{}, out);
+        const std::error_code dependencyError = acquireDependency(holder, dependency, out);
         if (dependencyError) {
             return dependencyError;
+        }
+        entry->dependencies.push_back(out);
+        return {};
+    }
+
+    std::error_code ResourceCache::acquireDependency(const ResourceSlotId holder, const ResourceId dependency, ResourceSlotId& out) {
+        const std::error_code requestError = requestEntry(dependency, StringId{}, out);
+        if (requestError) {
+            return requestError;
         }
         if (reaches(out, holder)) {
             releaseEntry(out);
             return ReadError::CyclicReference;
         }
-        entry->dependencies.push_back(out);
         return {};
     }
 
@@ -171,7 +179,7 @@ namespace TechEngine {
 
             entry->loading = true;
             tasks.emplace_back([this, entry, slot] {
-                runLoadTask(*entry, slot);
+                runLoadTask(*entry, slot, false);
             });
         }
 
@@ -188,27 +196,67 @@ namespace TechEngine {
             completions.swap(m_completions);
         }
         std::error_code firstError;
-        for (const LoadCompletion& completion: completions) {
-            const std::error_code publishError = publishCompletion(completion);
-            if (!firstError && publishError) {
-                firstError = publishError;
+        const auto settle = [this, &firstError](const LoadCompletion& completion, const std::error_code error) {
+            if (completion.reload && error) {
+                const ResourceEntry* entry = m_slots->find(completion.slot);
+                TE_LOGGER_WARN("Resource {0:#018x} keeps its previous data, because its reload failed: {1}", entry->id.value(), error.message());
             }
+            if (!firstError && error) {
+                firstError = error;
+            }
+        };
+
+        // A reload is checked for cycles against the old edges of the entries reloaded beside it, so one refused as a
+        // cycle is tried again after the others are published, until a round settles none of them.
+        std::vector<LoadCompletion*> cyclicReloads;
+        for (LoadCompletion& completion: completions) {
+            const std::error_code publishError = publishCompletion(completion);
+            if (completion.reload && publishError == ReadError::CyclicReference) {
+                cyclicReloads.push_back(&completion);
+                continue;
+            }
+            settle(completion, publishError);
+        }
+        bool settledAny = true;
+        while (settledAny && !cyclicReloads.empty()) {
+            settledAny = false;
+            std::vector<LoadCompletion*> stillCyclic;
+            for (LoadCompletion* completion: cyclicReloads) {
+                const std::error_code retryError = publishCompletion(*completion);
+                if (retryError == ReadError::CyclicReference) {
+                    stillCyclic.push_back(completion);
+                    continue;
+                }
+                settledAny = true;
+                settle(*completion, retryError);
+            }
+            cyclicReloads = std::move(stillCyclic);
+        }
+        for (const LoadCompletion* completion: cyclicReloads) {
+            settle(*completion, ReadError::CyclicReference);
         }
         return firstError;
     }
 
-    std::error_code ResourceCache::publishCompletion(const LoadCompletion& completion) {
+    std::error_code ResourceCache::publishCompletion(LoadCompletion& completion) {
         ResourceEntry* entry = m_slots->find(completion.slot);
         if (entry == nullptr) {
             return {};
         }
 
         entry->loading = false;
+        if (completion.reload) {
+            return publishReload(*entry, completion);
+        }
+
+        entry->error = completion.error;
         if (entry->error) {
             entry->state = ResourceState::Failed;
             return entry->error;
         }
 
+        entry->payload = std::move(completion.payload);
+        entry->typeTag = completion.typeTag;
         entry->state = ResourceState::Ready;
         for (const ResourceId dependency: completion.dependencies) {
             ResourceSlotId dependencySlot;
@@ -223,31 +271,63 @@ namespace TechEngine {
         return {};
     }
 
-    void ResourceCache::runLoadTask(ResourceEntry& entry, const ResourceSlotId slot) {
+    std::error_code ResourceCache::publishReload(ResourceEntry& entry, LoadCompletion& completion) {
+        if (completion.error) {
+            return completion.error;
+        }
+
+        std::vector<ResourceSlotId> dependencies;
+        dependencies.reserve(completion.dependencies.size());
+        for (const ResourceId dependency: completion.dependencies) {
+            ResourceSlotId dependencySlot;
+            const std::error_code dependencyError = acquireDependency(completion.slot, dependency, dependencySlot);
+            if (dependencyError) {
+                for (const ResourceSlotId acquired: dependencies) {
+                    releaseEntry(acquired);
+                }
+                return dependencyError;
+            }
+            dependencies.push_back(dependencySlot);
+        }
+
+        entry.payload = std::move(completion.payload);
+        entry.typeTag = completion.typeTag;
+        entry.error = {};
+        entry.state = ResourceState::Ready;
+        const std::vector<ResourceSlotId> previous = std::exchange(entry.dependencies, std::move(dependencies));
+        for (const ResourceSlotId dependency: previous) {
+            releaseEntry(dependency);
+        }
+        return {};
+    }
+
+    void ResourceCache::runLoadTask(const ResourceEntry& entry, const ResourceSlotId slot, const bool reload) {
+        LoadCompletion completion;
+        completion.slot = slot;
+        completion.reload = reload;
         std::vector<std::byte> bytes;
-        std::vector<ResourceId> dependencies;
         std::error_code loadError = m_source->read(entry.id, bytes);
         if (!loadError) {
             const TypeRecord* record = findTypeForBytes(bytes);
-            if (record == nullptr) {
+            const bool kindChanged = record != nullptr && reload && entry.typeTag != StringId{} && entry.typeTag != record->typeTag;
+            if (record == nullptr || kindChanged) {
                 loadError = ReadError::BadMagic;
             } else {
                 TE_CHECK(entry.typeTag == StringId{} || entry.typeTag == record->typeTag, "Resource {0:#018x} was requested as {1}, but it holds {2}", entry.id.value(), entry.typeTag, record->typeTag);
-                void* payload = record->createPayload();
-                loadError = record->load(bytes, payload, dependencies);
+                completion.payload = std::unique_ptr<void, ResourcePayloadDeleter>{record->createPayload(), record->destroyPayload};
+                loadError = record->load(bytes, completion.payload.get(), completion.dependencies);
                 if (loadError) {
-                    record->destroyPayload(payload);
+                    completion.payload.reset();
                 } else {
-                    entry.payload = std::unique_ptr<void, ResourcePayloadDeleter>{payload, record->destroyPayload};
-                    entry.typeTag = record->typeTag;
+                    completion.typeTag = record->typeTag;
                 }
             }
         }
 
-        entry.error = loadError;
+        completion.error = loadError;
         {
             const std::lock_guard lock{m_completionMutex};
-            m_completions.push_back(LoadCompletion{slot, std::move(dependencies)});
+            m_completions.push_back(std::move(completion));
         }
     }
 
@@ -294,6 +374,36 @@ namespace TechEngine {
 
         drainFrees();
         return firstError;
+    }
+
+    std::error_code ResourceCache::reload(const std::span<const ResourceId> ids) {
+        std::vector<Task> tasks;
+        tasks.reserve(ids.size());
+        for (const ResourceId id: ids) {
+            const auto known = m_byId.find(id);
+            if (known == m_byId.end()) {
+                continue;
+            }
+
+            const ResourceSlotId slot = known->second;
+            ResourceEntry* entry = m_slots->find(slot);
+            TE_ASSERT(entry != nullptr, "Resource {0:#018x} is indexed on a slot that no longer exists", id.value());
+            const bool loaded = entry->state == ResourceState::Ready || entry->state == ResourceState::Failed;
+            if (!loaded || entry->loading) {
+                continue;
+            }
+
+            entry->loading = true;
+            tasks.emplace_back([this, entry, slot] {
+                runLoadTask(*entry, slot, true);
+            });
+        }
+
+        const BatchId batch = m_jobs->submit(tasks);
+        if (batch.valid()) {
+            m_inFlightBatches.push_back(batch);
+        }
+        return runLoadingPhase();
     }
 
     void ResourceCache::drainFrees() {

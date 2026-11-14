@@ -14,8 +14,6 @@
 #include <vector>
 
 namespace TechEngine {
-    using ResourcePayloadDeleter = void (*)(void*);
-
     struct ResourceEntry {
         ResourceId id;
         StringId typeTag;

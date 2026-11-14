@@ -1,9 +1,14 @@
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/material/Material.hpp>
+#include <TechEngine/core/mesh/Mesh.hpp>
+#include <TechEngine/core/texture/Texture.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 
 #include <edit/ImportModelCommand.hpp>
 
+#include <algorithm>
 #include <memory>
 #include <span>
 #include <system_error>
@@ -23,7 +28,14 @@ namespace TechEngine {
                 TE_LOGGER_ERROR("Failed to import {0}: {1}", request.sourcePath, importError.message());
                 return;
             }
-            TE_LOGGER_INFO("Imported {0} into {1}: {2} nodes and {3} meshes", request.sourcePath, result.folder, result.nodeCount, result.records.size() - 1);
+            const auto countOf = [&result](const StringId typeTag) {
+                return std::ranges::count(result.records, typeTag, &AssetRecord::typeTag);
+            };
+            if (request.mode == ImportMode::MergedMesh) {
+                TE_LOGGER_INFO("Imported {0} into {1} as one merged mesh, {2} materials and {3} textures", request.sourcePath, result.folder, countOf(MATERIAL_TYPE_TAG), countOf(TEXTURE_TYPE_TAG));
+            } else {
+                TE_LOGGER_INFO("Imported {0} into {1}: {2} nodes, {3} meshes, {4} materials and {5} textures", request.sourcePath, result.folder, result.nodeCount, countOf(MESH_TYPE_TAG), countOf(MATERIAL_TYPE_TAG), countOf(TEXTURE_TYPE_TAG));
+            }
 
             const std::error_code submitError = app->submitCommand(std::make_unique<RegisterImportedAssetsCommand>(*index, std::move(result.records)));
             if (submitError) {

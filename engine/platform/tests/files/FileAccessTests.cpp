@@ -4,16 +4,19 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <latch>
 #include <limits>
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <thread>
 #include <vector>
 
 using TechEngine::FileAccess;
@@ -21,6 +24,9 @@ using TechEngine::FileError;
 using TechEngine::FileStatus;
 using TechEngine::MountTable;
 using TechEngineTests::ScratchDirectory;
+
+static constexpr std::size_t RACERS = 8;
+static constexpr std::uint32_t RACE_ATTEMPTS = 5;
 
 namespace {
     // mounts is declared before files, so the reference files captures is already alive; the
@@ -653,6 +659,136 @@ TEST_CASE("createDirectory refuses an unmounted alias and the mount root", "[fil
 
     CHECK(env.files.createDirectory("cache://meshes") == FileError::NoMount);
     CHECK(env.files.createDirectory("assets://") == FileError::InvalidPath);
+}
+
+TEST_CASE("createDirectory refuses a directory it already created, and leaves its contents", "[files][fileaccess]") {
+    MountedScratch env{"createDirectoryTwice"};
+
+    REQUIRE(env.files.createDirectory("assets://meshes/props") == std::error_code{});
+    env.scratch.writeFile("meshes/props/crate.bin", "x");
+
+    CHECK(env.files.createDirectory("assets://meshes/props") == FileError::AlreadyExists);
+    CHECK(env.files.createDirectory("assets://meshes") == FileError::AlreadyExists);
+    CHECK(std::filesystem::is_regular_file(env.scratch.root() / "meshes/props/crate.bin"));
+
+    SECTION("a trailing slash names the same directory") {
+        REQUIRE(env.files.createDirectory("assets://textures/") == std::error_code{});
+        CHECK(std::filesystem::is_directory(env.scratch.root() / "textures"));
+        CHECK(env.files.createDirectory("assets://textures") == FileError::AlreadyExists);
+        CHECK(env.files.createDirectory("assets://meshes/props/") == FileError::AlreadyExists);
+    }
+}
+
+TEST_CASE("of several callers creating one directory at once, exactly one succeeds", "[files][fileaccess][race]") {
+    MountedScratch env{"createDirectoryRace"};
+
+    for (std::uint32_t attempt = 0; attempt < RACE_ATTEMPTS; attempt++) {
+        std::filesystem::remove_all(env.scratch.root() / "meshes");
+        std::latch start(RACERS);
+        std::array<std::error_code, RACERS> errors;
+        std::vector<std::thread> threads;
+        for (std::size_t i = 0; i < RACERS; i++) {
+            threads.emplace_back([&env, &start, &errors, i] {
+                start.arrive_and_wait();
+                errors[i] = env.files.createDirectory("assets://meshes/props/crates");
+            });
+        }
+        for (std::thread& thread: threads) {
+            thread.join();
+        }
+
+        const std::error_code alreadyExists = FileError::AlreadyExists;
+        CHECK(std::ranges::count(errors, std::error_code{}) == 1);
+        CHECK(std::ranges::count(errors, alreadyExists) == static_cast<std::ptrdiff_t>(RACERS) - 1);
+        CHECK(std::filesystem::is_directory(env.scratch.root() / "meshes/props/crates"));
+    }
+}
+
+TEST_CASE("createFile writes a new file and leaves nothing else beside it", "[files][fileaccess][createfile]") {
+    MountedScratch env{"createFileNew"};
+    const std::vector<std::byte> payload = asBytes(everyByteValue());
+
+    REQUIRE(env.files.createFile("assets://level.bin", payload) == std::error_code{});
+
+    std::vector<std::byte> out;
+    REQUIRE(env.files.read("assets://level.bin", out) == std::error_code{});
+    CHECK(out == payload);
+    CHECK(std::distance(std::filesystem::directory_iterator{env.scratch.root()}, std::filesystem::directory_iterator{}) == 1);
+}
+
+TEST_CASE("createFile accepts an empty span and leaves an empty file", "[files][fileaccess][createfile]") {
+    MountedScratch env{"createFileEmpty"};
+
+    REQUIRE(env.files.createFile("assets://empty.bin", {}) == std::error_code{});
+
+    std::vector<std::byte> out(8, std::byte{0xAB});
+    REQUIRE(env.files.read("assets://empty.bin", out) == std::error_code{});
+    CHECK(out.empty());
+}
+
+TEST_CASE("createFile refuses an existing file and leaves its bytes untouched", "[files][fileaccess][createfile]") {
+    MountedScratch env{"createFileExists"};
+    env.scratch.writeFile("level.bin", "the only copy of the user's work");
+
+    CHECK(env.files.createFile("assets://level.bin", asBytes("replacement")) == FileError::AlreadyExists);
+
+    std::vector<std::byte> out;
+    REQUIRE(env.files.read("assets://level.bin", out) == std::error_code{});
+    CHECK(asString(out) == "the only copy of the user's work");
+    CHECK(std::distance(std::filesystem::directory_iterator{env.scratch.root()}, std::filesystem::directory_iterator{}) == 1);
+
+    SECTION("and a second createFile of a file it created") {
+        REQUIRE(env.files.createFile("assets://fresh.bin", asBytes("first")) == std::error_code{});
+        CHECK(env.files.createFile("assets://fresh.bin", asBytes("second")) == FileError::AlreadyExists);
+        REQUIRE(env.files.read("assets://fresh.bin", out) == std::error_code{});
+        CHECK(asString(out) == "first");
+    }
+}
+
+TEST_CASE("createFile refuses a directory, a missing parent, an unmounted alias and the mount root", "[files][fileaccess][createfile]") {
+    MountedScratch env{"createFileRefusals"};
+    env.scratch.makeDirectory("meshes");
+
+    CHECK(env.files.createFile("assets://meshes", asBytes("x")) == FileError::AlreadyExists);
+    CHECK(std::filesystem::is_directory(env.scratch.root() / "meshes"));
+    CHECK(env.files.createFile("assets://absent/level.bin", asBytes("x")) == FileError::NotFound);
+    CHECK_FALSE(std::filesystem::exists(env.scratch.root() / "absent"));
+    CHECK(env.files.createFile("cache://level.bin", asBytes("x")) == FileError::NoMount);
+    CHECK(env.files.createFile("assets://", asBytes("x")) == FileError::InvalidPath);
+}
+
+// Each racer writes a payload of its own, large enough that two interleaved writes would not read back as either.
+TEST_CASE("of several callers creating one file at once, exactly one succeeds and its bytes are whole", "[files][fileaccess][createfile][race]") {
+    MountedScratch env{"createFileRace"};
+    std::array<std::vector<std::byte>, RACERS> payloads;
+    for (std::size_t i = 0; i < RACERS; i++) {
+        payloads[i] = asBytes(std::string(1, static_cast<char>('A' + i)) + largePayload());
+    }
+
+    for (std::uint32_t attempt = 0; attempt < RACE_ATTEMPTS; attempt++) {
+        std::filesystem::remove(env.scratch.root() / "level.bin");
+        std::latch start(RACERS);
+        std::array<std::error_code, RACERS> errors;
+        std::vector<std::thread> threads;
+        for (std::size_t i = 0; i < RACERS; i++) {
+            threads.emplace_back([&env, &start, &errors, &payloads, i] {
+                start.arrive_and_wait();
+                errors[i] = env.files.createFile("assets://level.bin", payloads[i]);
+            });
+        }
+        for (std::thread& thread: threads) {
+            thread.join();
+        }
+
+        const std::error_code alreadyExists = FileError::AlreadyExists;
+        REQUIRE(std::ranges::count(errors, std::error_code{}) == 1);
+        CHECK(std::ranges::count(errors, alreadyExists) == static_cast<std::ptrdiff_t>(RACERS) - 1);
+        const std::size_t winner = static_cast<std::size_t>(std::ranges::find(errors, std::error_code{}) - errors.begin());
+        std::vector<std::byte> out;
+        REQUIRE(env.files.read("assets://level.bin", out) == std::error_code{});
+        CHECK(out == payloads[winner]);
+        CHECK(std::distance(std::filesystem::directory_iterator{env.scratch.root()}, std::filesystem::directory_iterator{}) == 1);
+    }
 }
 
 TEST_CASE("remove deletes a file and an empty directory", "[files][fileaccess]") {
