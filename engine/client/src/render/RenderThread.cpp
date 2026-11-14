@@ -6,6 +6,7 @@
 #include <TechEngine/platform/input/InputBuffer.hpp>
 #include <TechEngine/platform/window/Window.hpp>
 
+#include "GlRequirements.hpp"
 #include <render/RenderThread.hpp>
 #include <render/SnapshotHistory.hpp>
 
@@ -90,7 +91,12 @@ namespace TechEngine {
             window.setVSync(vsync);
             const auto loader = window.processLoader();
             const int version = loader != nullptr ? gladLoadGL(loader) : 0;
-            if (version != 0 && GLAD_GL_VERSION_4_5 != 0 && m_renderer.initialize()) {
+            const GlSupport glSupport{
+                .loadedVersion = version,
+                .core46 = GLAD_GL_VERSION_4_6 != 0,
+                .bindlessTextures = GLAD_GL_ARB_bindless_texture != 0,
+            };
+            if (meetsGlRequirements(glSupport) && m_renderer.initialize()) {
                 SnapshotHistory history;
                 RateCounter rate;
                 RenderTiming metrics;

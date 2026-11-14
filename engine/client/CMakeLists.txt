@@ -5,6 +5,7 @@ techengine_module(client
         src/render/Buffer.cpp
         src/render/SnapshotMailbox.cpp
         src/render/FrameRenderer.cpp
+        src/render/GlRequirements.cpp
         src/render/RenderThread.cpp
         src/render/VertexArray.cpp
         HEADERS include/TechEngine/client/Client.hpp
@@ -15,6 +16,7 @@ techengine_module(client
         src/render/Buffer.hpp
         src/render/SnapshotMailbox.hpp
         src/render/FrameRenderer.hpp
+        src/render/GlRequirements.hpp
         src/render/RenderThread.hpp
         src/render/VertexArray.hpp
         DEPS core platform base
@@ -26,6 +28,7 @@ if (TE_BUILD_TESTS)
             tests/render/SnapshotMailboxTests.cpp
             tests/render/SnapshotHistoryTests.cpp
             tests/render/FrameRendererTests.cpp
+            tests/render/GlRequirementsTests.cpp
             tests/render/RenderThreadTests.cpp)
     target_link_libraries(TechEngineClientTests PRIVATE TechEngine::glad)
 endif ()

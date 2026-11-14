@@ -69,7 +69,7 @@ TEST_CASE("Frame renderer rejects shader failures and can retry initialization",
         std::jthread worker([&] {
             window.makeContextCurrent();
             const TechEngine::GlProcLoader loader = window.processLoader();
-            loaded = loader != nullptr && gladLoadGL(loader) != 0 && GLAD_GL_VERSION_4_5 != 0;
+            loaded = loader != nullptr && gladLoadGL(loader) != 0 && GLAD_GL_VERSION_4_6 != 0;
             if (loaded) {
                 TechEngine::FrameRenderer renderer;
                 {
@@ -114,7 +114,7 @@ TEST_CASE("Frame renderer clears, draws, redraws and resizes on its context owne
         std::jthread worker([&] {
             window.makeContextCurrent();
             const TechEngine::GlProcLoader loader = window.processLoader();
-            loaded = loader != nullptr && gladLoadGL(loader) != 0 && GLAD_GL_VERSION_4_5 != 0;
+            loaded = loader != nullptr && gladLoadGL(loader) != 0 && GLAD_GL_VERSION_4_6 != 0;
             if (!loaded) {
                 window.releaseContext();
                 return;
