@@ -12,6 +12,7 @@ on:
 jobs:
   linux:
     name: probe (Linux)
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -73,7 +74,6 @@ jobs:
 
   windows:
     name: probe (Windows)
-    if: ${{ false }}
     runs-on: windows-2022
     timeout-minutes: 10
     steps:
@@ -103,6 +103,18 @@ jobs:
           }
           "MESA_X64=$mesa\x64" | Out-File -FilePath $env:GITHUB_ENV -Append
           Write-Host "vulkan-1.dll in System32: $(Test-Path C:\Windows\System32\vulkan-1.dll)"
+          # zink needs a Vulkan loader, and the runner has none. Unpinned: this only asks
+          # whether zink works at all. A winning path pins a version and a hash.
+          $runtime = Join-Path $env:RUNNER_TEMP 'vulkan-runtime.zip'
+          Invoke-WebRequest -Uri 'https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-runtime-components.zip?u=' -OutFile $runtime
+          Write-Host "Vulkan runtime SHA-256: $((Get-FileHash -Algorithm SHA256 -LiteralPath $runtime).Hash)"
+          $runtimeDirectory = Join-Path $env:RUNNER_TEMP 'vulkan-runtime'
+          Expand-Archive -LiteralPath $runtime -DestinationPath $runtimeDirectory -Force
+          $loaders = @(Get-ChildItem $runtimeDirectory -Recurse -Filter 'vulkan-1.dll')
+          $loaders | ForEach-Object { Write-Host "Found: $($_.FullName) $($_.VersionInfo.FileVersion)" }
+          $loader = @($loaders | Where-Object { $_.FullName -match 'x64' }) + $loaders | Select-Object -First 1
+          Copy-Item -LiteralPath $loader.FullName -Destination $pythonDirectory -Force
+          Write-Host "Loader deployed: $($loader.FullName)"
           Get-ChildItem "$mesa/x64" -Filter '*icd*.json' | ForEach-Object { Write-Host "ICD: $($_.FullName)"; Get-Content $_.FullName }
       - name: Probe each variant
         shell: pwsh
@@ -123,6 +135,61 @@ jobs:
             "| windows $name | $line |" | Out-File $env:GITHUB_STEP_SUMMARY -Append
             foreach ($key in $vars.Keys) { Remove-Item "env:$key" -ErrorAction SilentlyContinue }
           }
-          Probe 'llvmpipe' @{ GALLIUM_DRIVER = 'llvmpipe'; LIBGL_ALWAYS_SOFTWARE = '1' }
-          Probe 'zink' @{ GALLIUM_DRIVER = 'zink'; VK_DRIVER_FILES = $lvp; VK_ICD_FILENAMES = $lvp }
-          Probe 'd3d12-warp' @{ GALLIUM_DRIVER = 'd3d12' }
+          # zink takes a CPU Vulkan device only when LIBGL_ALWAYS_SOFTWARE is set.
+          Probe 'zink' @{ LIBGL_ALWAYS_SOFTWARE = '1'; GALLIUM_DRIVER = 'zink'; VK_DRIVER_FILES = $lvp; VK_ICD_FILENAMES = $lvp; MESA_DEBUG = '1' }
+          Probe 'zink-d3d' @{ D3D_ALWAYS_SOFTWARE = '1'; GALLIUM_DRIVER = 'zink'; VK_DRIVER_FILES = $lvp; VK_ICD_FILENAMES = $lvp; MESA_DEBUG = '1' }
+          exit 0
+
+  # The engine's own tests over zink, on the spike branch's Window.cpp (4.6 core through EGL).
+  # Steps mirror ci.yml's Linux legs, and caches restore from master without saving.
+  engine:
+    name: engine tests (${{ matrix.test }}, zink)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { preset: linux-debug, build: linux-debug, test: linux-debug, tidy: "ON" }
+          - { preset: linux-tsan,  build: linux-tsan,  test: linux-tsan,  tidy: "OFF" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lukka/get-cmake@latest
+      - name: Install clang, GLFW deps, EGL and lavapipe
+        timeout-minutes: 8
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends             clang clang-tidy libgl1-mesa-dev             libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev             libwayland-bin libwayland-dev libxkbcommon-dev             xvfb xauth libgl1-mesa-dri libegl1 libegl-mesa0 mesa-vulkan-drivers ccache
+      - name: ccache (restore only)
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: v2-${{ matrix.build }}-${{ hashFiles('cmake/deps.cmake') }}-${{ github.sha }}
+          restore-keys: |
+            v2-${{ matrix.build }}-${{ hashFiles('cmake/deps.cmake') }}
+          append-timestamp: false
+          save: false
+      - name: FetchContent sources (restore only)
+        uses: actions/cache/restore@v4
+        with:
+          path: .deps
+          key: deps-${{ runner.os }}-${{ hashFiles('cmake/deps.cmake') }}
+      - name: Configure
+        run: >
+          cmake --preset ${{ matrix.preset }}
+          -DFETCHCONTENT_BASE_DIR=${{ github.workspace }}/.deps
+          -DTE_ENABLE_CLANG_TIDY=${{ matrix.tidy }}
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+      - name: Build
+        run: cmake --build --preset ${{ matrix.build }}
+      - name: Test under Xvfb over zink
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          GALLIUM_DRIVER: zink
+          VK_DRIVER_FILES: /usr/share/vulkan/icd.d/lvp_icd.json
+        run: |
+          if [[ '${{ matrix.test }}' == linux-tsan ]]; then
+            export LP_NUM_THREADS=0
+          fi
+          xvfb-run -a -s '-screen 0 1280x720x24' ctest --preset '${{ matrix.test }}' --output-on-failure
+      - run: ccache -s
