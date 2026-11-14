@@ -50,6 +50,8 @@ namespace TechEngine {
                         return "import folder holds no root asset to take the settings from";
                     case ProjectError::EditorNotStopped:
                         return "re-import runs only while the editor is Stopped";
+                    case ProjectError::ReimportInFlight:
+                        return "a re-import of the source is already running";
                 }
                 return "unknown project error";
             }

@@ -10,7 +10,6 @@
 #include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/platform/files/VirtualPath.hpp>
 
-#include <assets/ImportClaim.hpp>
 #include <assets/MaterialImporter.hpp>
 #include <assets/MeshImporter.hpp>
 #include <assets/ModelImporter.hpp>
@@ -156,7 +155,6 @@ namespace TechEngine {
         }
 
         const std::string folder = importFolder(request.sourcePath);
-        const ImportClaim claim(folder);
         FileStatus folderStatus;
         const std::error_code folderError = m_files->status(folder, folderStatus);
         if (existing == nullptr) {

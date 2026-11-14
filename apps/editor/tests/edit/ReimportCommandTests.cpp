@@ -53,6 +53,7 @@ using TechEngineTests::ScratchDirectory;
 
 static constexpr std::string_view PAIR_SOURCE = "project://assets/client/Pair.gltf";
 static constexpr std::string_view PAIR_MODEL = "project://assets/client/Pair/Pair.temodel";
+static constexpr std::string_view OTHER_SOURCE = "project://assets/client/Other.gltf";
 static constexpr ResourceId NEW_MATERIAL_ID{0x3A7E000000000002};
 
 class ReimportAppProbe final : public TechEngine::App {
@@ -61,6 +62,7 @@ public:
     TechEngine::AssetIndex index;
     TechEngine::EditSession session;
     std::vector<TechEngine::BatchId> batches;
+    std::vector<std::string> inFlight;
 
     explicit ReimportAppProbe(const std::string_view name) : App(TechEngine::Role::DedicatedServer), scratch(name) {
         m_mounts.mount("project", scratch.root());
@@ -84,7 +86,7 @@ public:
     ReimportCommand makeReimport(const std::string_view sourcePath) {
         TechEngine::ReimportRequest request;
         request.sourcePath = std::string(sourcePath);
-        return ReimportCommand{*this, m_jobs, m_files, index, session, m_resources, m_sceneHandle, batches, std::move(request)};
+        return ReimportCommand{*this, m_jobs, m_files, index, session, m_resources, m_sceneHandle, batches, inFlight, std::move(request)};
     }
 
     void waitForImports() {
@@ -200,6 +202,60 @@ TEST_CASE("a re-import of a source with no folder is refused by its job and writ
     CHECK_FALSE(std::filesystem::exists(app.scratch.root() / "assets" / "client" / "Pair"));
 }
 
+TEST_CASE("a second re-import of a source whose first is in flight is refused and starts no job", "[editor][edit][reimport]") {
+    ReimportAppProbe app{"reimportInFlight"};
+    app.importPair();
+    AppTestAccess::openCommands(app);
+
+    app.makeReimport(PAIR_SOURCE).apply(AppTestAccess::scene(app));
+    REQUIRE(app.batches.size() == 1);
+    CHECK(app.inFlight == std::vector<std::string>{std::string(PAIR_SOURCE)});
+
+    app.makeReimport(PAIR_SOURCE).apply(AppTestAccess::scene(app));
+    CHECK(app.batches.size() == 1);
+    CHECK(app.inFlight.size() == 1);
+
+    SECTION("a re-import of another source is not refused") {
+        app.makeReimport(OTHER_SOURCE).apply(AppTestAccess::scene(app));
+        CHECK(app.batches.size() == 2);
+        CHECK(app.inFlight.size() == 2);
+    }
+
+    SECTION("once the first has finished and its command is applied, a re-import is accepted again") {
+        app.waitForImports();
+        REQUIRE(AppTestAccess::applyCommands(app));
+        CHECK(app.inFlight.empty());
+
+        app.makeReimport(PAIR_SOURCE).apply(AppTestAccess::scene(app));
+        CHECK(app.batches.size() == 2);
+        CHECK(app.inFlight.size() == 1);
+    }
+
+    app.waitForImports();
+    AppTestAccess::applyCommands(app);
+    CHECK(app.inFlight.empty());
+}
+
+TEST_CASE("a failed re-import takes its source out of flight, so the next one is accepted", "[editor][edit][reimport]") {
+    ReimportAppProbe app{"reimportFailedInFlight"};
+    app.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
+    AppTestAccess::openCommands(app);
+
+    app.makeReimport(PAIR_SOURCE).apply(AppTestAccess::scene(app));
+    REQUIRE(app.batches.size() == 1);
+    app.waitForImports();
+    CHECK(app.inFlight.size() == 1);
+    REQUIRE(AppTestAccess::applyCommands(app));
+    CHECK(app.inFlight.empty());
+
+    app.makeReimport(PAIR_SOURCE).apply(AppTestAccess::scene(app));
+    CHECK(app.batches.size() == 2);
+    app.waitForImports();
+    REQUIRE(AppTestAccess::applyCommands(app));
+    CHECK(app.inFlight.empty());
+    CHECK_FALSE(std::filesystem::exists(app.scratch.root() / "assets" / "client" / "Pair"));
+}
+
 TEST_CASE("the reload command replaces a mesh behind its live handle and rebuilds the open scene's slots", "[editor][edit][reimport]") {
     AssetEditHarness edit;
     const Entity entity = createHoldingMesh(edit, "Crate", EDIT_MESH_ID);
@@ -210,9 +266,12 @@ TEST_CASE("the reload command replaces a mesh behind its live handle and rebuild
     edit.source.add(EDIT_MESH_ID, twoSlotMeshBytes());
     edit.source.add(NEW_MATERIAL_ID, newMaterialBytes());
 
-    ReloadImportedAssetsCommand command{edit.session, edit.cache, edit.sceneHandle, edit.index, {newMaterialRecord()}, {EDIT_MESH_ID}};
+    std::vector<std::string> inFlight{std::string(PAIR_SOURCE), std::string(OTHER_SOURCE)};
+
+    ReloadImportedAssetsCommand command{edit.session, edit.cache, edit.sceneHandle, edit.index, inFlight, std::string(PAIR_SOURCE), {newMaterialRecord()}, {EDIT_MESH_ID}};
     command.apply(edit.scene);
 
+    CHECK(inFlight == std::vector<std::string>{std::string(OTHER_SOURCE)});
     const MeshRenderer& renderer = edit.scene.getComponent<MeshRenderer>(entity);
     CHECK(renderer.mesh.handle == handle);
     const Mesh* mesh = edit.cache.resolve(handle);
@@ -248,9 +307,12 @@ TEST_CASE("the reload command reloads nothing while the editor is not Stopped, b
     edit.source.add(EDIT_MESH_ID, twoSlotMeshBytes());
     edit.session.setPlayState(PlayState::Playing);
 
-    ReloadImportedAssetsCommand command{edit.session, edit.cache, edit.sceneHandle, edit.index, {newMaterialRecord()}, {EDIT_MESH_ID}};
+    std::vector<std::string> inFlight{std::string(PAIR_SOURCE)};
+
+    ReloadImportedAssetsCommand command{edit.session, edit.cache, edit.sceneHandle, edit.index, inFlight, std::string(PAIR_SOURCE), {newMaterialRecord()}, {EDIT_MESH_ID}};
     command.apply(edit.scene);
 
+    CHECK(inFlight.empty());
     REQUIRE(edit.cache.resolve(handle) != nullptr);
     CHECK(edit.cache.resolve(handle)->slots.size() == 1);
     CHECK(edit.scene.getComponent<MeshRenderer>(entity).slots.size() == 1);

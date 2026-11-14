@@ -4,7 +4,6 @@
 #include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/platform/files/VirtualPath.hpp>
 
-#include <assets/ImportClaim.hpp>
 #include <assets/ReimportMatcher.hpp>
 #include <assets/TextureImporter.hpp>
 #include <project/ProjectError.hpp>
@@ -305,7 +304,6 @@ namespace TechEngine {
         }
 
         const std::string path = skyOutputPath(request.sourcePath);
-        const ImportClaim claim(path);
         FileStatus outputStatus;
         const std::error_code outputError = m_files->status(path, outputStatus);
         ResourceId keptId;
@@ -363,7 +361,10 @@ namespace TechEngine {
 
         std::vector<std::byte> bytes;
         texture.write(bytes);
-        const std::error_code writeError = m_files->write(path, bytes);
+        const std::error_code writeError = reimport ? m_files->write(path, bytes) : m_files->createFile(path, bytes);
+        if (writeError == FileError::AlreadyExists) {
+            return ProjectError::ImportOutputExists;
+        }
         if (writeError) {
             return writeError;
         }

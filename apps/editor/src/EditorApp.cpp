@@ -384,7 +384,7 @@ namespace TechEngine {
         ReimportRequest request;
         request.sourcePath = std::move(path);
         request.mode = mode;
-        const std::error_code submitError = submitCommand(std::make_unique<ReimportCommand>(*this, m_jobs, m_files, m_assets, m_session, m_resources, m_sceneHandle, m_importBatches, std::move(request)));
+        const std::error_code submitError = submitCommand(std::make_unique<ReimportCommand>(*this, m_jobs, m_files, m_assets, m_session, m_resources, m_sceneHandle, m_importBatches, m_reimportsInFlight, std::move(request)));
         if (submitError) {
             TE_LOGGER_WARN("The simulation refused the re-import: {0}", submitError.message());
         }

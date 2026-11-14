@@ -20,15 +20,19 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
+#include <array>
+#include <atomic>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <iterator>
+#include <latch>
 #include <limits>
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -50,6 +54,8 @@ using TechEngineTests::ScratchDirectory;
 
 static constexpr std::uint64_t FIRST_TEST_ID = 0x1000;
 static constexpr float TOLERANCE = 1.0e-5f;
+static constexpr std::size_t RACERS = 4;
+static constexpr std::uint32_t RACE_ATTEMPTS = 5;
 
 class ModelImportFixture {
 public:
@@ -451,6 +457,56 @@ TEST_CASE("importing into a folder that exists is refused and writes nothing", "
         REQUIRE(fixture.files.read(first.records[1].path, meshAfter) == std::error_code{});
         CHECK(modelAfter == modelBefore);
         CHECK(meshAfter == meshBefore);
+        CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Pair" / "Meshes") == 2);
+    }
+}
+
+// The loser either sees the folder at its first check or loses the folder's creation, and neither may remove it.
+TEST_CASE("of several imports of one source at once, exactly one succeeds and its folder is left whole", "[editor][assets][import][race]") {
+    ModelImportFixture fixture{"importRace"};
+    fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
+    std::atomic<std::uint64_t> nextId = FIRST_TEST_ID;
+    const TechEngine::ModelImporter importer(fixture.files, [&nextId] {
+        return ResourceId{nextId++};
+    });
+
+    for (std::uint32_t attempt = 0; attempt < RACE_ATTEMPTS; attempt++) {
+        std::filesystem::remove_all(fixture.scratch.root() / "assets/client/Pair");
+        std::latch start(RACERS);
+        std::array<ModelImportResult, RACERS> results;
+        std::array<std::error_code, RACERS> errors;
+        std::vector<std::thread> threads;
+        for (std::size_t i = 0; i < RACERS; i++) {
+            threads.emplace_back([&importer, &start, &results, &errors, i] {
+                ModelImportRequest request;
+                request.sourcePath = "project://assets/client/Pair.gltf";
+                request.side = TechEngine::Side::Client;
+                start.arrive_and_wait();
+                errors[i] = importer.importFile(request, results[i]);
+            });
+        }
+        for (std::thread& thread: threads) {
+            thread.join();
+        }
+
+        const std::error_code refused = ProjectError::ImportFolderExists;
+        REQUIRE(std::ranges::count(errors, std::error_code{}) == 1);
+        CHECK(std::ranges::count(errors, refused) == static_cast<std::ptrdiff_t>(RACERS) - 1);
+        const std::size_t winner = static_cast<std::size_t>(std::ranges::find(errors, std::error_code{}) - errors.begin());
+        for (std::size_t i = 0; i < RACERS; i++) {
+            CHECK(results[i].records.empty() == (i != winner));
+        }
+
+        const std::vector<AssetRecord>& records = results[winner].records;
+        REQUIRE(records.size() == 4);
+        CHECK(fixture.readModel(records[0].path).id == records[0].id);
+        for (const AssetRecord& record: meshRecords(results[winner])) {
+            CHECK(fixture.readMesh(record.path).id == record.id);
+        }
+        for (const AssetRecord& record: records) {
+            std::vector<std::byte> bytes;
+            CHECK(fixture.files.read(record.path, bytes) == std::error_code{});
+        }
         CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Pair" / "Meshes") == 2);
     }
 }

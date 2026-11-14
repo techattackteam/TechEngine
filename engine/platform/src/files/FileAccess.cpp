@@ -5,6 +5,8 @@
 #include <chrono>
 #include <fstream>
 #include <ios>
+#include <random>
+#include <string>
 #include <system_error>
 #include <utility>
 
@@ -103,27 +105,9 @@ namespace TechEngine {
         // failed write goes to a sibling and only a finished one replaces the target.
         std::filesystem::path temporaryPath = physicalPath;
         temporaryPath += WRITE_TEMPORARY_SUFFIX;
-        std::ofstream file{temporaryPath, std::ios::binary | std::ios::trunc};
-        if (!file) {
-            if (!std::filesystem::exists(physicalPath.parent_path(), ec)) {
-                return FileError::NotFound;
-            }
-            TE_LOGGER_WARN("Failed to open {0} for writing", temporaryPath.string());
-            return FileError::IoError;
-        }
-
-        if (!bytes.empty() && !file.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()))) {
-            TE_LOGGER_WARN("Failed to write {0}", temporaryPath.string());
-            file.close();
-            discardTemporary(temporaryPath);
-            return FileError::IoError;
-        }
-
-        file.close();
-        if (!file) {
-            TE_LOGGER_WARN("Failed to close {0} after writing", temporaryPath.string());
-            discardTemporary(temporaryPath);
-            return FileError::IoError;
+        const std::error_code temporaryError = writeTemporary(temporaryPath, bytes);
+        if (temporaryError) {
+            return temporaryError;
         }
 
         std::error_code renameError;
@@ -131,6 +115,38 @@ namespace TechEngine {
         if (renameError) {
             TE_LOGGER_WARN("Failed to replace {0} with {1}: {2}", physicalPath.string(), temporaryPath.string(), renameError.message());
             discardTemporary(temporaryPath);
+            return FileError::IoError;
+        }
+        return {};
+    }
+
+    std::error_code FileAccess::createFile(const std::string_view virtualPath, const std::span<const std::byte> bytes) {
+        std::filesystem::path physicalPath;
+        const std::error_code resolveError = m_mounts->resolveForCreate(virtualPath, physicalPath);
+        if (resolveError) {
+            return resolveError;
+        }
+
+        std::error_code ec;
+        if (std::filesystem::exists(physicalPath, ec)) {
+            return FileError::AlreadyExists;
+        }
+
+        const std::filesystem::path temporaryPath = uniqueTemporaryPath(physicalPath);
+        const std::error_code temporaryError = writeTemporary(temporaryPath, bytes);
+        if (temporaryError) {
+            return temporaryError;
+        }
+
+        // A hard link fails when the target exists, where a rename would replace it.
+        std::error_code linkError;
+        std::filesystem::create_hard_link(temporaryPath, physicalPath, linkError);
+        discardTemporary(temporaryPath);
+        if (linkError) {
+            if (std::filesystem::exists(physicalPath, ec)) {
+                return FileError::AlreadyExists;
+            }
+            TE_LOGGER_WARN("Failed to create {0} from {1}: {2}", physicalPath.string(), temporaryPath.string(), linkError.message());
             return FileError::IoError;
         }
         return {};
@@ -225,17 +241,27 @@ namespace TechEngine {
             return resolveError;
         }
 
-        std::error_code ec;
-        if (std::filesystem::exists(physicalPath, ec)) {
-            return FileError::AlreadyExists;
-        }
-
-        std::filesystem::create_directories(physicalPath, ec);
-        if (ec) {
-            TE_LOGGER_WARN("Failed to create the directory {0}: {1}", physicalPath.string(), ec.message());
+        // A trailing slash leaves an empty file name, whose parent is the directory itself.
+        const std::filesystem::path directory = physicalPath.has_filename() ? physicalPath : physicalPath.parent_path();
+        std::error_code parentError;
+        std::filesystem::create_directories(directory.parent_path(), parentError);
+        if (parentError) {
+            TE_LOGGER_WARN("Failed to create the directory {0}: {1}", directory.parent_path().string(), parentError.message());
             return FileError::IoError;
         }
-        return {};
+
+        // create_directory reports an existing directory as false with no error, and an existing file as an error.
+        std::error_code createError;
+        const bool created = std::filesystem::create_directory(directory, createError);
+        if (created) {
+            return {};
+        }
+        std::error_code existsError;
+        if (!createError || std::filesystem::exists(directory, existsError)) {
+            return FileError::AlreadyExists;
+        }
+        TE_LOGGER_WARN("Failed to create the directory {0}: {1}", directory.string(), createError.message());
+        return FileError::IoError;
     }
 
     std::error_code FileAccess::remove(const std::string_view virtualPath, const bool recursive) {
@@ -357,12 +383,49 @@ namespace TechEngine {
         return {};
     }
 
+    std::error_code FileAccess::writeTemporary(const std::filesystem::path& temporaryPath, const std::span<const std::byte> bytes) const {
+        std::ofstream file{temporaryPath, std::ios::binary | std::ios::trunc};
+        if (!file) {
+            std::error_code ec;
+            if (!std::filesystem::exists(temporaryPath.parent_path(), ec)) {
+                return FileError::NotFound;
+            }
+            TE_LOGGER_WARN("Failed to open {0} for writing", temporaryPath.string());
+            return FileError::IoError;
+        }
+
+        if (!bytes.empty() && !file.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()))) {
+            TE_LOGGER_WARN("Failed to write {0}", temporaryPath.string());
+            file.close();
+            discardTemporary(temporaryPath);
+            return FileError::IoError;
+        }
+
+        file.close();
+        if (!file) {
+            TE_LOGGER_WARN("Failed to close {0} after writing", temporaryPath.string());
+            discardTemporary(temporaryPath);
+            return FileError::IoError;
+        }
+        return {};
+    }
+
     void FileAccess::discardTemporary(const std::filesystem::path& temporaryPath) const {
         std::error_code removeError;
         std::filesystem::remove(temporaryPath, removeError);
         if (removeError) {
             TE_LOGGER_WARN("Failed to remove the partial write {0}: {1}", temporaryPath.string(), removeError.message());
         }
+    }
+
+    // Two writers that shared one temporary name would truncate each other's bytes before either links them in.
+    std::filesystem::path FileAccess::uniqueTemporaryPath(const std::filesystem::path& physicalPath) {
+        std::random_device device;
+        const std::uint64_t token = (static_cast<std::uint64_t>(device()) << 32) | device();
+        std::filesystem::path temporaryPath = physicalPath;
+        temporaryPath += "." + std::to_string(token);
+        temporaryPath += WRITE_TEMPORARY_SUFFIX;
+        return temporaryPath;
     }
 
     std::error_code FileAccess::resolveTransfer(const std::string_view from, const std::string_view to, std::filesystem::path& sourcePath, std::filesystem::path& destinationPath) const {

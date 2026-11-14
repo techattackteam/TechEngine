@@ -8,10 +8,10 @@
 
 using TechEngine::ProjectError;
 
-static constexpr std::array<ProjectError, 19> ALL_CODES{
+static constexpr std::array<ProjectError, 20> ALL_CODES{
     ProjectError::ParseFailed,        ProjectError::SchemaInvalid,        ProjectError::NoStartupScene,        ProjectError::UnknownStartupScene, ProjectError::StartupSceneNotInTarget, ProjectError::UnknownReference,  ProjectError::SourceUnreadable,
     ProjectError::SourceHasNoMeshes,  ProjectError::ImportFolderExists,   ProjectError::SourceCompressed,      ProjectError::InvalidImportScale,  ProjectError::UnsupportedImageType,    ProjectError::SourceNotInAssets, ProjectError::ImageUnreadable,
-    ProjectError::ImportOutputExists, ProjectError::UnsupportedDdsFormat, ProjectError::ReimportTargetMissing, ProjectError::ReimportRootMissing, ProjectError::EditorNotStopped,
+    ProjectError::ImportOutputExists, ProjectError::UnsupportedDdsFormat, ProjectError::ReimportTargetMissing, ProjectError::ReimportRootMissing, ProjectError::EditorNotStopped,        ProjectError::ReimportInFlight,
 };
 
 TEST_CASE("every ProjectError code converts into the project category", "[editor][project][projecterror]") {

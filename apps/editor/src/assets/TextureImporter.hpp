@@ -87,7 +87,7 @@ namespace TechEngine {
         static std::string skyOutputPath(std::string_view sourcePath);
 
         // A Radiance .hdr becomes an RGB9E5 texture beside it. Refuses an output that exists. Writes nothing when it fails.
-        // This and reimportSky wait while another import or re-import of the same source runs.
+        // Of two imports of one source at once, exactly one succeeds, and the other gets ImportOutputExists.
         std::error_code importSky(const SkyImportRequest& request, SkyImportResult& out) const;
 
         // Rewrites the texture an earlier importSky wrote, under its id. Writes nothing when it fails.

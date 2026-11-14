@@ -71,13 +71,14 @@ namespace TechEngine {
 
         static std::string rootAssetPath(std::string_view folder, ImportMode mode);
 
-        // Refuses a folder that exists. Writes nothing when it fails. This and reimportFile wait while another import or
-        // re-import of the same source runs.
+        // Refuses a folder that exists. Writes nothing when it fails. Of two imports of one source at once, exactly one
+        // succeeds, and the other gets ImportFolderExists and leaves the winner's folder alone.
         std::error_code importFile(const ModelImportRequest& request, ModelImportResult& out) const;
 
         // Into the folder an earlier import wrote, with the settings of its root asset instead of the request's. An output
         // that matches an old file keeps its id and path, and a matched material is not written. Never removes a file, so
-        // a failure part-way leaves the outputs written before it.
+        // a failure part-way leaves the outputs written before it. Two re-imports of one source must not run at once, or
+        // each gives a new output an id of its own.
         std::error_code reimportFile(const ModelImportRequest& request, ModelImportResult& out) const;
 
     private:

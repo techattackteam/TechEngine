@@ -6,7 +6,6 @@ techengine_app(editor
   SOURCES src/EditorApp.cpp
           src/assets/AssetIndex.cpp
           src/assets/ImageDecoder.cpp
-          src/assets/ImportClaim.cpp
           src/assets/LooseSource.cpp
           src/assets/MaterialImporter.cpp
           src/assets/MeshImporter.cpp
@@ -49,7 +48,6 @@ techengine_app(editor
   HEADERS src/EditorApp.hpp
           src/assets/AssetIndex.hpp
           src/assets/ImageDecoder.hpp
-          src/assets/ImportClaim.hpp
           src/assets/LooseSource.hpp
           src/assets/MaterialImporter.hpp
           src/assets/MeshImporter.hpp
@@ -97,7 +95,6 @@ techengine_app(editor
           tests/assets/AssetIndexTests.cpp
           tests/assets/AssimpTests.cpp
           tests/assets/ImageDecoderTests.cpp
-          tests/assets/ImportClaimTests.cpp
           tests/assets/LooseSourceTests.cpp
           tests/assets/MaterialImportTests.cpp
           tests/assets/MergedMeshImportTests.cpp

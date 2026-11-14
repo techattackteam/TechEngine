@@ -20,6 +20,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <iterator>
 #include <latch>
 #include <string>
 #include <string_view>
@@ -209,7 +210,7 @@ TEST_CASE("a second import of the same source is refused and changes no byte", "
     CHECK(after == before);
 }
 
-TEST_CASE("two imports of one source at once write one texture under one id", "[editor][assets][image]") {
+TEST_CASE("of two imports of one sky at once, exactly one succeeds and the other registers nothing", "[editor][assets][image][race]") {
     SkyImportFixture fixture{"imageImportRace"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(256, 128));
     std::atomic<std::uint64_t> nextId = FIRST_TEST_ID;
@@ -237,8 +238,11 @@ TEST_CASE("two imports of one source at once write one texture under one id", "[
         REQUIRE(std::ranges::count(errors, std::error_code{}) == 1);
         REQUIRE(std::ranges::count(errors, refused) == 1);
         const SkyImportResult& winner = errors[0] ? results[1] : results[0];
+        const SkyImportResult& loser = errors[0] ? results[0] : results[1];
         REQUIRE(winner.records.size() == 1);
+        CHECK(loser.records.empty());
         CHECK(fixture.readTexture(SKY_TEXTURE).id == winner.records[0].id);
+        CHECK(std::distance(std::filesystem::directory_iterator{fixture.scratch.root() / "assets/client"}, std::filesystem::directory_iterator{}) == 2);
     }
 }
 

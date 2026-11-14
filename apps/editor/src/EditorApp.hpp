@@ -47,6 +47,8 @@ namespace TechEngine {
         LooseSource m_source;
         // Written on the simulation thread while it runs; main reads it only before it starts and after it stops.
         std::vector<BatchId> m_importBatches;
+        // Simulation thread only: the sources a re-import job is running for, which ReimportCommand refuses.
+        std::vector<std::string> m_reimportsInFlight;
         ImGuiBridge m_imguiBridge;
         // Simulation thread only: commands and publishEdits read and write it there.
         EditSession m_session;

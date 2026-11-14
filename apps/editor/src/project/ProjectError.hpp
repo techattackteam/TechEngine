@@ -24,7 +24,8 @@ namespace TechEngine {
         UnsupportedDdsFormat,
         ReimportTargetMissing,
         ReimportRootMissing,
-        EditorNotStopped
+        EditorNotStopped,
+        ReimportInFlight
     };
 
     const std::error_category& projectErrorCategory();
