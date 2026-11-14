@@ -49,6 +49,36 @@ static void requireMatrixNear(const TechEngine::Mat4& actual, const TechEngine::
     }
 }
 
+static void requireApproximatedLocalKeepsWorldPosition(const TechEngine::Scene& scene, const TechEngine::Entity entity, const TechEngine::Vec3& worldPosition) {
+    const TechEngine::Transform& transform = scene.getComponent<TechEngine::Transform>(entity);
+    requireVectorNear(transform.getWorld().position, worldPosition);
+    requireVectorNear(TechEngine::Vec3(transform.worldMatrix()[3]), worldPosition);
+
+    const TechEngine::TransformValues& local = transform.getLocal();
+    for (int axis = 0; axis < 3; axis++) {
+        REQUIRE(std::isfinite(local.scale[axis]));
+        REQUIRE(local.scale[axis] != 0.0f);
+    }
+    const float rotationLengthSquared = local.rotation.w * local.rotation.w + local.rotation.x * local.rotation.x + local.rotation.y * local.rotation.y + local.rotation.z * local.rotation.z;
+    REQUIRE(rotationLengthSquared == Catch::Approx(1.0f).margin(0.0001f));
+
+    TechEngine::Mat4 computedWorld;
+    REQUIRE(scene.fromLocalToWorld(entity, computedWorld));
+    requireMatrixNear(transform.worldMatrix(), computedWorld);
+}
+
+static void flattenScaleX(const TechEngine::ComponentRegistry& registry, TechEngine::Scene& scene, const TechEngine::Entity entity) {
+    const TechEngine::ComponentTypeRecord* record = registry.find(TechEngine::componentTypeId<TechEngine::Transform>());
+    REQUIRE(record != nullptr);
+    REQUIRE(record->editFields != nullptr);
+
+    TechEngineTests::FieldRecorder recorder;
+    recorder.writeName = "scale.x";
+    recorder.writeValue = 0.0;
+    record->editFields(recorder, scene.componentRaw(entity, TechEngine::componentTypeId<TechEngine::Transform>()));
+    REQUIRE(scene.getComponent<TechEngine::Transform>(entity).getLocal().scale.x == 0.0f);
+}
+
 TEST_CASE("new entities carry identity transforms", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
     TechEngineTests::registerBuiltInSceneComponents(registry);
@@ -439,47 +469,140 @@ TEST_CASE("failed preserve-world reparenting leaves topology and transforms inta
     requireMatrixNear(scene.getComponent<TechEngine::Transform>(child).worldMatrix(), before);
 }
 
-TEST_CASE("preserve-world reparenting rejects unrepresentable shear", "[core][scene][transform]") {
+TEST_CASE("preserve-world reparenting that needs shear is accepted and keeps the world position", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
     TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
     const TechEngine::Entity parent = scene.createEntity();
     const TechEngine::Entity child = scene.createEntity();
-    const TechEngine::TransformValues local = values(TechEngine::Vec3(1.0f, 2.0f, 0.0f), rotationAroundZ(45.0f));
     REQUIRE(scene.getComponent<TechEngine::Transform>(parent).setLocal(values(TechEngine::Vec3(3.0f), TechEngine::Quat(1.0f, 0.0f, 0.0f, 0.0f), TechEngine::Vec3(2.0f, 1.0f, 1.0f))));
-    REQUIRE(scene.getComponent<TechEngine::Transform>(child).setLocal(local));
+    REQUIRE(scene.getComponent<TechEngine::Transform>(child).setLocal(values(TechEngine::Vec3(1.0f, 2.0f, 0.0f), rotationAroundZ(45.0f))));
     scene.propagateTransforms();
     const TechEngine::Mat4 before = scene.getComponent<TechEngine::Transform>(child).worldMatrix();
 
-    REQUIRE_FALSE(scene.setParent(child, parent, 0, TechEngine::ReparentMode::PreserveWorld));
-    REQUIRE_FALSE(scene.getParent(child).valid());
-    REQUIRE(scene.getChildren(parent).empty());
-    requireVectorNear(scene.getComponent<TechEngine::Transform>(child).getLocal().position, local.position);
-    REQUIRE(scene.getComponent<TechEngine::Transform>(child).getLocal().rotation == local.rotation);
-    requireVectorNear(scene.getComponent<TechEngine::Transform>(child).getLocal().scale, local.scale);
-    requireMatrixNear(scene.getComponent<TechEngine::Transform>(child).worldMatrix(), before);
-}
-
-TEST_CASE("preserve-world detach rejects a sheared world transform", "[core][scene][transform]") {
-    TechEngine::ComponentRegistry registry;
-    TechEngineTests::registerBuiltInSceneComponents(registry);
-    TechEngine::Scene scene(registry);
-    const TechEngine::Entity parent = scene.createEntity();
-    const TechEngine::Entity child = scene.createEntity();
-    const TechEngine::TransformValues local = values(TechEngine::Vec3(1.0f, 0.0f, 0.0f), rotationAroundZ(45.0f));
-    REQUIRE(scene.getComponent<TechEngine::Transform>(parent).setLocal(values(TechEngine::Vec3(0.0f), TechEngine::Quat(1.0f, 0.0f, 0.0f, 0.0f), TechEngine::Vec3(2.0f, 1.0f, 1.0f))));
-    REQUIRE(scene.getComponent<TechEngine::Transform>(child).setLocal(local));
-    REQUIRE(scene.setParent(child, parent));
-    scene.propagateTransforms();
-    const TechEngine::Mat4 before = scene.getComponent<TechEngine::Transform>(child).worldMatrix();
-
-    REQUIRE_FALSE(scene.unparent(child, TechEngine::ReparentMode::PreserveWorld));
+    REQUIRE(scene.setParent(child, parent, 0, TechEngine::ReparentMode::PreserveWorld));
     REQUIRE(scene.getParent(child) == parent);
     REQUIRE(scene.getChildren(parent) == std::vector<TechEngine::Entity>{child});
-    requireVectorNear(scene.getComponent<TechEngine::Transform>(child).getLocal().position, local.position);
-    REQUIRE(scene.getComponent<TechEngine::Transform>(child).getLocal().rotation == local.rotation);
-    requireVectorNear(scene.getComponent<TechEngine::Transform>(child).getLocal().scale, local.scale);
-    requireMatrixNear(scene.getComponent<TechEngine::Transform>(child).worldMatrix(), before);
+    requireVectorNear(scene.getComponent<TechEngine::Transform>(child).getLocal().position, TechEngine::Vec3(-1.0f, -1.0f, -3.0f));
+    requireApproximatedLocalKeepsWorldPosition(scene, child, TechEngine::Vec3(before[3]));
+    requireVectorNear(TechEngine::Vec3(before[3]), TechEngine::Vec3(1.0f, 2.0f, 0.0f));
+}
+
+TEST_CASE("preserve-world detach of a sheared world transform is accepted and keeps the world position", "[core][scene][transform]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity parent = scene.createEntity();
+    const TechEngine::Entity child = scene.createEntity();
+    REQUIRE(scene.getComponent<TechEngine::Transform>(parent).setLocal(values(TechEngine::Vec3(0.0f), TechEngine::Quat(1.0f, 0.0f, 0.0f, 0.0f), TechEngine::Vec3(2.0f, 1.0f, 1.0f))));
+    REQUIRE(scene.getComponent<TechEngine::Transform>(child).setLocal(values(TechEngine::Vec3(1.0f, 0.0f, 0.0f), rotationAroundZ(45.0f))));
+    REQUIRE(scene.setParent(child, parent));
+    scene.propagateTransforms();
+
+    REQUIRE(scene.unparent(child, TechEngine::ReparentMode::PreserveWorld));
+    REQUIRE_FALSE(scene.getParent(child).valid());
+    REQUIRE(scene.getChildren(parent).empty());
+    requireVectorNear(scene.getComponent<TechEngine::Transform>(child).getLocal().position, TechEngine::Vec3(2.0f, 0.0f, 0.0f));
+    requireApproximatedLocalKeepsWorldPosition(scene, child, TechEngine::Vec3(2.0f, 0.0f, 0.0f));
+
+    REQUIRE(scene.getComponent<TechEngine::Transform>(parent).setLocal(values(TechEngine::Vec3(5.0f, 0.0f, 0.0f))));
+    requireVectorNear(scene.getComponent<TechEngine::Transform>(child).getWorld().position, TechEngine::Vec3(2.0f, 0.0f, 0.0f));
+}
+
+TEST_CASE("preserve-world reparenting under a rotated parent scaled (1, 2, 1) is accepted and keeps the world position", "[core][scene][transform]") {
+    const TechEngineTests::FatalAssertGuard guard;
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity parent = scene.createEntity();
+    const TechEngine::Entity child = scene.createEntity();
+    REQUIRE(scene.getComponent<TechEngine::Transform>(parent).setLocal(values(TechEngine::Vec3(5.0f, 0.0f, 0.0f), rotationAroundZ(30.0f), TechEngine::Vec3(1.0f, 2.0f, 1.0f))));
+    REQUIRE(scene.getComponent<TechEngine::Transform>(child).setLocal(values(TechEngine::Vec3(1.0f, 2.0f, 3.0f), rotationAroundZ(-20.0f))));
+
+    bool reparented = false;
+    CHECK_NOTHROW(reparented = scene.setParent(child, parent, 0, TechEngine::ReparentMode::PreserveWorld));
+    REQUIRE(reparented);
+    REQUIRE(scene.getParent(child) == parent);
+    REQUIRE(scene.getChildren(parent) == std::vector<TechEngine::Entity>{child});
+    requireApproximatedLocalKeepsWorldPosition(scene, child, TechEngine::Vec3(1.0f, 2.0f, 3.0f));
+
+    REQUIRE(scene.getComponent<TechEngine::Transform>(parent).setLocal(values(TechEngine::Vec3(6.0f, 0.0f, 0.0f), rotationAroundZ(30.0f), TechEngine::Vec3(1.0f, 2.0f, 1.0f))));
+    requireVectorNear(scene.getComponent<TechEngine::Transform>(child).getWorld().position, TechEngine::Vec3(2.0f, 2.0f, 3.0f));
+}
+
+TEST_CASE("preserve-world reparenting that needs shear under a mirrored parent is accepted and keeps the world position", "[core][scene][transform]") {
+    const TechEngineTests::FatalAssertGuard guard;
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity parent = scene.createEntity();
+    const TechEngine::Entity child = scene.createEntity();
+    REQUIRE(scene.getComponent<TechEngine::Transform>(parent).setLocal(values(TechEngine::Vec3(1.0f, 1.0f, 0.0f), rotationAroundZ(30.0f), TechEngine::Vec3(-1.0f, 2.0f, 1.0f))));
+    REQUIRE(scene.getComponent<TechEngine::Transform>(child).setLocal(values(TechEngine::Vec3(3.0f, -2.0f, 1.0f), rotationAroundZ(45.0f))));
+
+    REQUIRE(scene.setParent(child, parent, 0, TechEngine::ReparentMode::PreserveWorld));
+    REQUIRE(scene.getParent(child) == parent);
+    requireApproximatedLocalKeepsWorldPosition(scene, child, TechEngine::Vec3(3.0f, -2.0f, 1.0f));
+    const TechEngine::Vec3 localScale = scene.getComponent<TechEngine::Transform>(child).getLocal().scale;
+    REQUIRE(localScale.x * localScale.y * localScale.z < 0.0f);
+}
+
+TEST_CASE("shear-free preserve-world reparenting under a rotated uniformly scaled parent keeps the exact world matrix", "[core][scene][transform]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity parent = scene.createEntity();
+    const TechEngine::Entity child = scene.createEntity();
+    REQUIRE(scene.getComponent<TechEngine::Transform>(parent).setLocal(values(TechEngine::Vec3(2.0f, -1.0f, 4.0f), rotationAroundZ(40.0f), TechEngine::Vec3(3.0f))));
+    REQUIRE(scene.getComponent<TechEngine::Transform>(child).setLocal(values(TechEngine::Vec3(1.0f, 2.0f, 3.0f), rotationAroundZ(30.0f), TechEngine::Vec3(1.0f, 2.0f, 0.5f))));
+    const TechEngine::Mat4 before = scene.getComponent<TechEngine::Transform>(child).worldMatrix();
+
+    REQUIRE(scene.setParent(child, parent, 0, TechEngine::ReparentMode::PreserveWorld));
+    REQUIRE(scene.getParent(child) == parent);
+    const TechEngine::Transform& transform = scene.getComponent<TechEngine::Transform>(child);
+    requireMatrixNear(transform.worldMatrix(), before);
+    requireVectorNear(transform.getLocal().scale, TechEngine::Vec3(1.0f / 3.0f, 2.0f / 3.0f, 0.5f / 3.0f));
+    requireVectorNear(transform.getLocal().rotation * TechEngine::Vec3(1.0f, 0.0f, 0.0f), rotationAroundZ(-10.0f) * TechEngine::Vec3(1.0f, 0.0f, 0.0f));
+
+    REQUIRE(scene.unparent(child, TechEngine::ReparentMode::PreserveWorld));
+    requireMatrixNear(transform.worldMatrix(), before);
+    requireVectorNear(transform.getLocal().scale, TechEngine::Vec3(1.0f, 2.0f, 0.5f));
+}
+
+TEST_CASE("a parent with a zero scale axis still refuses preserve-world reparenting, detach and world edits", "[core][scene][transform]") {
+    const TechEngineTests::FatalAssertGuard guard;
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity flatParent = scene.createEntity();
+    const TechEngine::Entity mover = scene.createEntity();
+    const TechEngine::Entity child = scene.createEntity();
+    REQUIRE(scene.setParent(child, flatParent));
+    REQUIRE(scene.getComponent<TechEngine::Transform>(flatParent).setLocal(values(TechEngine::Vec3(4.0f, 0.0f, 0.0f), rotationAroundZ(30.0f))));
+    const TechEngine::TransformValues moverLocal = values(TechEngine::Vec3(1.0f, 2.0f, 0.0f), rotationAroundZ(45.0f), TechEngine::Vec3(1.0f, 2.0f, 3.0f));
+    const TechEngine::TransformValues childLocal = values(TechEngine::Vec3(0.0f, 1.0f, 0.0f), rotationAroundZ(45.0f));
+    REQUIRE(scene.getComponent<TechEngine::Transform>(mover).setLocal(moverLocal));
+    REQUIRE(scene.getComponent<TechEngine::Transform>(child).setLocal(childLocal));
+    flattenScaleX(registry, scene, flatParent);
+    const TechEngine::Mat4 moverBefore = scene.getComponent<TechEngine::Transform>(mover).worldMatrix();
+    const TechEngine::Mat4 childBefore = scene.getComponent<TechEngine::Transform>(child).worldMatrix();
+
+    REQUIRE_FALSE(scene.setParent(mover, flatParent, 0, TechEngine::ReparentMode::PreserveWorld));
+    REQUIRE_FALSE(scene.getParent(mover).valid());
+    REQUIRE(scene.getChildren(flatParent) == std::vector<TechEngine::Entity>{child});
+    REQUIRE(scene.getComponent<TechEngine::Transform>(mover).getLocal().position == moverLocal.position);
+    REQUIRE(scene.getComponent<TechEngine::Transform>(mover).getLocal().rotation == moverLocal.rotation);
+    REQUIRE(scene.getComponent<TechEngine::Transform>(mover).getLocal().scale == moverLocal.scale);
+    REQUIRE(scene.getComponent<TechEngine::Transform>(mover).worldMatrix() == moverBefore);
+
+    REQUIRE_FALSE(scene.unparent(child, TechEngine::ReparentMode::PreserveWorld));
+    REQUIRE_FALSE(scene.getComponent<TechEngine::Transform>(child).setWorld(values(TechEngine::Vec3(7.0f, 0.0f, 0.0f))));
+    REQUIRE(scene.getParent(child) == flatParent);
+    REQUIRE(scene.getChildren(flatParent) == std::vector<TechEngine::Entity>{child});
+    REQUIRE(scene.getComponent<TechEngine::Transform>(child).getLocal().position == childLocal.position);
+    REQUIRE(scene.getComponent<TechEngine::Transform>(child).getLocal().rotation == childLocal.rotation);
+    REQUIRE(scene.getComponent<TechEngine::Transform>(child).getLocal().scale == childLocal.scale);
+    REQUIRE(scene.getComponent<TechEngine::Transform>(child).worldMatrix() == childBefore);
 }
 
 TEST_CASE("world edits use the current parent state", "[core][scene][transform]") {
@@ -549,6 +672,21 @@ TEST_CASE("world edits reject zero scale and stale entity lookup", "[core][scene
     REQUIRE_THROWS_AS(scene.getComponent<TechEngine::Transform>(replacement), TechEngineTests::AssertFired);
 }
 
+TEST_CASE("world edits refuse a local position that overflows a float", "[core][scene][transform]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity parent = scene.createEntity();
+    const TechEngine::Entity child = scene.createEntity();
+    REQUIRE(scene.setParent(child, parent));
+    REQUIRE(scene.getComponent<TechEngine::Transform>(parent).setLocal(values(TechEngine::Vec3(0.0f), TechEngine::Quat(1.0f, 0.0f, 0.0f, 0.0f), TechEngine::Vec3(0.1f))));
+    const TechEngine::Mat4 before = scene.getComponent<TechEngine::Transform>(child).worldMatrix();
+
+    REQUIRE_FALSE(scene.getComponent<TechEngine::Transform>(child).setWorld(values(TechEngine::Vec3(3.0e38f, 0.0f, 0.0f))));
+    REQUIRE(scene.getComponent<TechEngine::Transform>(child).getLocal().position == TechEngine::Vec3(0.0f));
+    REQUIRE(scene.getComponent<TechEngine::Transform>(child).worldMatrix() == before);
+}
+
 TEST_CASE("non-uniform parent scale preserves shear in the world matrix", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
     TechEngineTests::registerBuiltInSceneComponents(registry);
@@ -582,7 +720,7 @@ TEST_CASE("non-uniform parent scale preserves shear in the world matrix", "[core
     requireVectorNear(transform->getWorld().position, TechEngine::Vec3(3.0f, 0.0f, 0.0f));
 }
 
-TEST_CASE("world edits reject local shear without changing the transform", "[core][scene][transform]") {
+TEST_CASE("world edits that need local shear are accepted and reach the requested world position", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
     TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);
@@ -591,11 +729,12 @@ TEST_CASE("world edits reject local shear without changing the transform", "[cor
     REQUIRE(scene.setParent(child, parent));
     REQUIRE(scene.getComponent<TechEngine::Transform>(parent).setLocal(values(TechEngine::Vec3(0.0f), TechEngine::Quat(1.0f, 0.0f, 0.0f, 0.0f), TechEngine::Vec3(2.0f, 1.0f, 1.0f))));
     REQUIRE(scene.getComponent<TechEngine::Transform>(child).setLocal(values(TechEngine::Vec3(1.0f, 0.0f, 0.0f))));
-    const TechEngine::Mat4 before = scene.getComponent<TechEngine::Transform>(child).worldMatrix();
 
-    REQUIRE_FALSE(scene.getComponent<TechEngine::Transform>(child).setWorld(values(TechEngine::Vec3(2.0f, 0.0f, 0.0f), rotationAroundZ(45.0f))));
-    requireVectorNear(scene.getComponent<TechEngine::Transform>(child).getLocal().position, TechEngine::Vec3(1.0f, 0.0f, 0.0f));
-    requireMatrixNear(scene.getComponent<TechEngine::Transform>(child).worldMatrix(), before);
+    REQUIRE(scene.getComponent<TechEngine::Transform>(child).setWorld(values(TechEngine::Vec3(4.0f, 1.0f, 0.0f), rotationAroundZ(45.0f))));
+    REQUIRE(scene.getParent(child) == parent);
+    REQUIRE(scene.getChildren(parent) == std::vector<TechEngine::Entity>{child});
+    requireVectorNear(scene.getComponent<TechEngine::Transform>(child).getLocal().position, TechEngine::Vec3(2.0f, 1.0f, 0.0f));
+    requireApproximatedLocalKeepsWorldPosition(scene, child, TechEngine::Vec3(4.0f, 1.0f, 0.0f));
 }
 
 TEST_CASE("deep transform propagation does not depend on recursion depth", "[core][scene][transform]") {

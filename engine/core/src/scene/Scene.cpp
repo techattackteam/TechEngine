@@ -33,6 +33,51 @@ namespace TechEngine {
         return glm::translate(Mat4(1.0f), values.position) * glm::mat4_cast(values.rotation) * glm::scale(Mat4(1.0f), values.scale);
     }
 
+    static float frobeniusNorm(const Mat3& matrix) {
+        return std::sqrt(glm::dot(matrix[0], matrix[0]) + glm::dot(matrix[1], matrix[1]) + glm::dot(matrix[2], matrix[2]));
+    }
+
+    static bool isFiniteVector(const Vec3& value) {
+        return std::isfinite(value.x) && std::isfinite(value.y) && std::isfinite(value.z);
+    }
+
+    static bool approximateLocalMatrix(const Mat4& matrix, TransformValues& result) {
+        constexpr int POLAR_ITERATIONS = 8;
+        constexpr float MINIMUM_RELATIVE_VOLUME = 0.00001f;
+        Mat3 linear = Mat3(matrix);
+        const Vec3 lengths = Vec3(glm::length(linear[0]), glm::length(linear[1]), glm::length(linear[2]));
+        // A matrix flattened by a zero scale axis rounds to a tiny nonzero determinant, not to zero.
+        const float relativeVolume = glm::determinant(Mat3(linear[0] / lengths.x, linear[1] / lengths.y, linear[2] / lengths.z));
+        if (!std::isfinite(relativeVolume) || std::abs(relativeVolume) <= MINIMUM_RELATIVE_VOLUME) {
+            return false;
+        }
+        const bool mirrored = relativeVolume < 0.0f;
+        if (mirrored) {
+            linear[0] = -linear[0];
+        }
+
+        // A singular step yields infinities or NaNs that carry through to the result, which is checked once below.
+        Mat3 polar = linear / std::max({lengths.x, lengths.y, lengths.z});
+        for (int iteration = 0; iteration < POLAR_ITERATIONS; iteration++) {
+            const Mat3 inverted = glm::inverse(polar);
+            const float normScale = std::sqrt(frobeniusNorm(inverted) / frobeniusNorm(polar));
+            polar = 0.5f * (normScale * polar + glm::transpose(inverted) / normScale);
+        }
+
+        Vec3 scale = Vec3(glm::dot(polar[0], linear[0]), glm::dot(polar[1], linear[1]), glm::dot(polar[2], linear[2]));
+        if (mirrored) {
+            scale.x = -scale.x;
+        }
+        const Vec3 position = Vec3(matrix[3]);
+        const Quat rotation = glm::normalize(glm::quat_cast(polar));
+        const bool finite = isFiniteVector(position) && isFiniteVector(scale) && isFiniteVector(Vec3(rotation.x, rotation.y, rotation.z)) && std::isfinite(rotation.w);
+        if (!finite || glm::any(glm::equal(scale, Vec3(0.0f)))) {
+            return false;
+        }
+        result = {position, rotation, scale};
+        return true;
+    }
+
     static bool decomposeLocalMatrix(const Mat4& matrix, TransformValues& result) {
         constexpr float tolerance = 0.0001f;
         Vec3 axes[3] = {Vec3(matrix[0]), Vec3(matrix[1]), Vec3(matrix[2])};
@@ -45,13 +90,7 @@ namespace TechEngine {
             axes[axis] /= scale[axis];
         }
 
-        if (std::abs(glm::dot(axes[0], axes[1])) > tolerance || std::abs(glm::dot(axes[0], axes[2])) > tolerance || std::abs(glm::dot(axes[1], axes[2])) > tolerance) {
-            return false;
-        }
         const float orientation = glm::dot(glm::cross(axes[0], axes[1]), axes[2]);
-        if (!std::isfinite(orientation) || std::abs(std::abs(orientation) - 1.0f) > tolerance) {
-            return false;
-        }
         if (orientation < 0.0f) {
             axes[0] = -axes[0];
             scale.x = -scale.x;
@@ -64,7 +103,7 @@ namespace TechEngine {
                 const float expected = matrix[column][row];
                 const float actual = reconstructed[column][row];
                 if (!std::isfinite(expected) || !std::isfinite(actual) || std::abs(expected - actual) > tolerance * std::max({1.0f, std::abs(expected), std::abs(actual)})) {
-                    return false;
+                    return approximateLocalMatrix(matrix, result);
                 }
             }
         }

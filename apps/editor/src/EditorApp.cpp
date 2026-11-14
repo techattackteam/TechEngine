@@ -1,6 +1,7 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/core/assets/AssetSource.hpp>
 #include <TechEngine/core/assets/ImportBlock.hpp>
 #include <TechEngine/core/material/Material.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
@@ -124,7 +125,9 @@ namespace TechEngine {
     std::error_code EditorApp::simulationStartupLoad(Scene& scene) {
         m_resources.setSource(m_source);
         const ResourceId startupScene = m_project.getExportStartupScene(Role::Client);
-        if (startupScene.valid()) {
+        const bool named = startupScene.valid();
+        const bool held = named && m_source.find(startupScene) != AssetAvailability::Unknown;
+        if (held) {
             const std::error_code loadError = SceneAsset{startupScene}.load(m_resources, scene, m_sceneHandle);
             if (loadError) {
                 TE_LOGGER_ERROR("The startup scene {0:#018x} does not load, so the editor opens on an empty scene: {1}", startupScene.value(), loadError.message());
@@ -140,6 +143,9 @@ namespace TechEngine {
                 }
             }
         } else {
+            if (named) {
+                TE_LOGGER_ERROR("{0} names the startup scene {1:#018x}, but no asset file holds it, so the editor starts a new one", MANIFEST_PATH, startupScene.value());
+            }
             createStartupScene(scene);
         }
         importStartupModel(scene);
