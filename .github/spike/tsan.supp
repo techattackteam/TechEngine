@@ -1,0 +1,10 @@
+called_from_lib:libgallium-*
+called_from_lib:libEGL_mesa.so*
+called_from_lib:libvulkan_lvp.so
+called_from_lib:libxcb.so*
+called_from_lib:libX11.so*
+race:libgallium-*
+race:libEGL_mesa.so*
+race:libvulkan_lvp.so
+race:libxcb.so*
+race:libX11.so*

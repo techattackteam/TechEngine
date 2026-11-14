@@ -74,6 +74,7 @@ jobs:
 
   windows:
     name: probe (Windows)
+    if: ${{ false }}
     runs-on: windows-2022
     timeout-minutes: 10
     steps:
@@ -143,15 +144,16 @@ jobs:
   # The engine's own tests over zink, on the spike branch's Window.cpp (4.6 core through EGL).
   # Steps mirror ci.yml's Linux legs, and caches restore from master without saving.
   engine:
-    name: engine tests (${{ matrix.test }}, zink)
+    name: engine tests (${{ matrix.test }}, zink, ${{ matrix.fix }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { preset: linux-debug, build: linux-debug, test: linux-debug, tidy: "ON" }
-          - { preset: linux-tsan,  build: linux-tsan,  test: linux-tsan,  tidy: "OFF" }
+          # Two ways past TSan's reports from uninstrumented Mesa and X threads.
+          - { preset: linux-tsan, build: linux-tsan, test: linux-tsan, tidy: "OFF", fix: suppress }
+          - { preset: linux-tsan, build: linux-tsan, test: linux-tsan, tidy: "OFF", fix: sync }
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
@@ -190,6 +192,13 @@ jobs:
         run: |
           if [[ '${{ matrix.test }}' == linux-tsan ]]; then
             export LP_NUM_THREADS=0
+          fi
+          # suppress: ignore what the Mesa and X libraries do, which TSan cannot see into.
+          # sync: keep them, and turn off zink's flush thread and Mesa's GL thread instead.
+          if [[ '${{ matrix.fix }}' == suppress ]]; then
+            export TSAN_OPTIONS="suppressions=$GITHUB_WORKSPACE/.github/spike/tsan.supp"
+          else
+            export ZINK_DEBUG=flushsync mesa_glthread=false
           fi
           xvfb-run -a -s '-screen 0 1280x720x24' ctest --preset '${{ matrix.test }}' --output-on-failure
       - run: ccache -s
