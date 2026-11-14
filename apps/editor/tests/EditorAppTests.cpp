@@ -217,7 +217,7 @@ TEST_CASE("the editor says its simulation does not tick", "[editor]") {
     CHECK_FALSE(editor.simulationTicks());
 }
 
-TEST_CASE("init mounts the project set", "[editor]") {
+TEST_CASE("init mounts the project set", "[editor][gpu][os]") {
     ScratchDirectory scratch{"editorBootstrap"};
     writeProjectLayout(scratch);
 
@@ -231,7 +231,7 @@ TEST_CASE("init mounts the project set", "[editor]") {
     CHECK(editor.mounts().mountCount() == 4);
 }
 
-TEST_CASE("init indexes the project's assets", "[editor]") {
+TEST_CASE("init indexes the project's assets", "[editor][gpu][os]") {
     ScratchDirectory scratch{"editorIndexesAssets"};
     writeProjectLayout(scratch);
     constexpr TechEngine::ResourceId sceneId{0x0123456789abcdef};
@@ -246,7 +246,7 @@ TEST_CASE("init indexes the project's assets", "[editor]") {
     CHECK(record.path == "project://assets/common/level.tescene");
 }
 
-TEST_CASE("the startup load replaces a named startup scene that no asset file holds with a new one the editor can save", "[editor][window][save]") {
+TEST_CASE("the startup load replaces a named startup scene that no asset file holds with a new one the editor can save", "[editor][window][save][gpu][os]") {
     ScratchDirectory scratch{"editorStartupSceneMissing"};
     writeProjectLayout(scratch);
     constexpr TechEngine::ResourceId missingId{0x00000000000000aa};
@@ -284,7 +284,7 @@ TEST_CASE("the startup load replaces a named startup scene that no asset file ho
     editor.shutdown();
 }
 
-TEST_CASE("the startup load creates a startup scene when the project names none", "[editor][window]") {
+TEST_CASE("the startup load creates a startup scene when the project names none", "[editor][window][gpu][os]") {
     ScratchDirectory scratch{"editorCreatesStartupScene"};
     writeProjectLayout(scratch);
     const std::filesystem::path exportFolder = scratch.makeDirectory("export");
@@ -402,7 +402,7 @@ TEST_CASE("the startup load creates a startup scene when the project names none"
     editor.shutdown();
 }
 
-TEST_CASE("File, Export and File, Run export nothing when the simulation refuses the command, and Run stays enabled", "[editor][window][run]") {
+TEST_CASE("File, Export and File, Run export nothing when the simulation refuses the command, and Run stays enabled", "[editor][window][run][gpu][os]") {
     ScratchDirectory scratch{"editorRunRefused"};
     writeProjectLayout(scratch);
     const std::filesystem::path exportFolder = scratch.makeDirectory("export");
@@ -419,7 +419,7 @@ TEST_CASE("File, Export and File, Run export nothing when the simulation refuses
     editor.shutdown();
 }
 
-TEST_CASE("File, Run starts nothing when its export fails", "[editor][window][run]") {
+TEST_CASE("File, Run starts nothing when its export fails", "[editor][window][run][gpu][os]") {
     ScratchDirectory scratch{"editorRunExportFails"};
     writeProjectLayout(scratch);
     constexpr TechEngine::ResourceId sceneId{0x0123456789abcdef};
@@ -438,7 +438,7 @@ TEST_CASE("File, Run starts nothing when its export fails", "[editor][window][ru
     editor.shutdown();
 }
 
-TEST_CASE("File, Run exports first and stays enabled when the exported runtime fails to start", "[editor][window][run]") {
+TEST_CASE("File, Run exports first and stays enabled when the exported runtime fails to start", "[editor][window][run][gpu][os]") {
     ScratchDirectory scratch{"editorRunStartFails"};
     writeProjectLayout(scratch);
     const std::filesystem::path exportFolder = scratch.makeDirectory("export");
@@ -456,7 +456,7 @@ TEST_CASE("File, Run exports first and stays enabled when the exported runtime f
 }
 
 #if !defined(_WIN32)
-TEST_CASE("File, Run exports, starts the exported runtime and is disabled until it exits", "[editor][window][run]") {
+TEST_CASE("File, Run exports, starts the exported runtime and is disabled until it exits", "[editor][window][run][gpu][os]") {
     ScratchDirectory scratch{"editorRunStarts"};
     writeProjectLayout(scratch);
     const std::filesystem::path exportFolder = scratch.makeDirectory("export");
@@ -485,7 +485,7 @@ TEST_CASE("File, Run exports, starts the exported runtime and is disabled until 
 }
 #endif
 
-TEST_CASE("a later launch finds the saved startup scene and creates nothing", "[editor][window]") {
+TEST_CASE("a later launch finds the saved startup scene and creates nothing", "[editor][window][gpu][os]") {
     ScratchDirectory scratch{"editorReusesStartupScene"};
     writeProjectLayout(scratch);
     const std::filesystem::path exportFolder = scratch.makeDirectory("export");
@@ -523,7 +523,7 @@ TEST_CASE("a later launch finds the saved startup scene and creates nothing", "[
     second.shutdown();
 }
 
-TEST_CASE("a later launch opens on the saved startup scene through the cache", "[editor][window]") {
+TEST_CASE("a later launch opens on the saved startup scene through the cache", "[editor][window][gpu][os]") {
     ScratchDirectory scratch{"editorLoadsStartupScene"};
     writeProjectLayout(scratch);
     const std::filesystem::path exportFolder = scratch.makeDirectory("export");
@@ -574,7 +574,7 @@ TEST_CASE("a later launch opens on the saved startup scene through the cache", "
     second.shutdown();
 }
 
-TEST_CASE("a created startup scene is loaded back through the cache, so an asset set has a scene entry", "[editor][window][assets]") {
+TEST_CASE("a created startup scene is loaded back through the cache, so an asset set has a scene entry", "[editor][window][assets][gpu][os]") {
     ScratchDirectory scratch{"editorLoadsCreatedStartupScene"};
     writeProjectLayout(scratch);
 
@@ -606,7 +606,7 @@ TEST_CASE("a created startup scene is loaded back through the cache, so an asset
     editor.shutdown();
 }
 
-TEST_CASE("an adopted Startup.tescene that does not load leaves the scene with no cache entry", "[editor][window][assets]") {
+TEST_CASE("an adopted Startup.tescene that does not load leaves the scene with no cache entry", "[editor][window][assets][gpu][os]") {
     ScratchDirectory scratch{"editorAdoptedSceneHasNoEntry"};
     writeProjectLayout(scratch);
     constexpr TechEngine::ResourceId sceneId{0x0fedcba987654322};
@@ -620,7 +620,7 @@ TEST_CASE("an adopted Startup.tescene that does not load leaves the scene with n
     editor.shutdown();
 }
 
-TEST_CASE("a named startup scene that does not parse leaves the editor open on an empty scene", "[editor][window]") {
+TEST_CASE("a named startup scene that does not parse leaves the editor open on an empty scene", "[editor][window][gpu][os]") {
     ScratchDirectory scratch{"editorStartupSceneDoesNotParse"};
     writeProjectLayout(scratch);
     constexpr TechEngine::ResourceId sceneId{0x0123456789abcdef};
@@ -652,7 +652,7 @@ TEST_CASE("a named startup scene that does not parse leaves the editor open on a
     editor.shutdown();
 }
 
-TEST_CASE("the startup load adopts an indexed Startup.tescene when the project names a scene no asset file holds", "[editor][window]") {
+TEST_CASE("the startup load adopts an indexed Startup.tescene when the project names a scene no asset file holds", "[editor][window][gpu][os]") {
     ScratchDirectory scratch{"editorAdoptsForMissingStartupScene"};
     writeProjectLayout(scratch);
     constexpr TechEngine::ResourceId existingId{0x0fedcba987654321};
@@ -672,7 +672,7 @@ TEST_CASE("the startup load adopts an indexed Startup.tescene when the project n
     editor.shutdown();
 }
 
-TEST_CASE("the startup load creates nothing when the project already names a startup scene", "[editor][window]") {
+TEST_CASE("the startup load creates nothing when the project already names a startup scene", "[editor][window][gpu][os]") {
     ScratchDirectory scratch{"editorKeepsNamedStartupScene"};
     writeProjectLayout(scratch);
     constexpr TechEngine::ResourceId sceneId{0x0123456789abcdef};
@@ -688,7 +688,7 @@ TEST_CASE("the startup load creates nothing when the project already names a sta
     editor.shutdown();
 }
 
-TEST_CASE("the startup load adopts an indexed Startup.tescene when the project names no startup scene", "[editor][window]") {
+TEST_CASE("the startup load adopts an indexed Startup.tescene when the project names no startup scene", "[editor][window][gpu][os]") {
     ScratchDirectory scratch{"editorAdoptsStartupScene"};
     writeProjectLayout(scratch);
     constexpr TechEngine::ResourceId sceneId{0x0fedcba987654321};
@@ -707,7 +707,7 @@ TEST_CASE("the startup load adopts an indexed Startup.tescene when the project n
     editor.shutdown();
 }
 
-TEST_CASE("the startup load does not overwrite a Startup.tescene the index skipped", "[editor][window]") {
+TEST_CASE("the startup load does not overwrite a Startup.tescene the index skipped", "[editor][window][gpu][os]") {
     ScratchDirectory scratch{"editorKeepsUnindexedStartupScene"};
     writeProjectLayout(scratch);
     const std::vector<std::byte> original = TechEngineTests::assetBytes(TechEngine::SCENE_KIND, TechEngine::ResourceId(), "scene");
@@ -730,7 +730,7 @@ TEST_CASE("the startup load does not overwrite a Startup.tescene the index skipp
     editor.shutdown();
 }
 
-TEST_CASE("a new startup scene reuses an indexed Triangle.temesh", "[editor][window]") {
+TEST_CASE("a new startup scene reuses an indexed Triangle.temesh", "[editor][window][gpu][os]") {
     ScratchDirectory scratch{"editorReusesTriangleMesh"};
     writeProjectLayout(scratch);
     constexpr TechEngine::ResourceId meshId{0x0abcdef012345678};
@@ -757,7 +757,7 @@ TEST_CASE("a new startup scene reuses an indexed Triangle.temesh", "[editor][win
     editor.shutdown();
 }
 
-TEST_CASE("the startup load does not overwrite a Triangle.temesh the index skipped", "[editor][window]") {
+TEST_CASE("the startup load does not overwrite a Triangle.temesh the index skipped", "[editor][window][gpu][os]") {
     ScratchDirectory scratch{"editorKeepsUnindexedTriangleMesh"};
     writeProjectLayout(scratch);
     const std::vector<std::byte> original = TechEngineTests::assetBytes(TechEngine::MESH_KIND, TechEngine::ResourceId(), "mesh");
@@ -780,7 +780,7 @@ TEST_CASE("the startup load does not overwrite a Triangle.temesh the index skipp
     editor.shutdown();
 }
 
-TEST_CASE("the startup load imports the hardcoded source file as a job, and a later launch indexes it and imports nothing", "[editor][window][import]") {
+TEST_CASE("the startup load imports the hardcoded source file as a job, and a later launch indexes it and imports nothing", "[editor][window][import][gpu][os]") {
     ScratchDirectory scratch{"editorImportsStartupModel"};
     writeProjectLayout(scratch);
     scratch.writeFile(STARTUP_IMPORT_FILE, TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
@@ -829,7 +829,7 @@ TEST_CASE("the startup load imports the hardcoded source file as a job, and a la
     second.shutdown();
 }
 
-TEST_CASE("the startup load imports nothing into a folder that already exists", "[editor][window][import]") {
+TEST_CASE("the startup load imports nothing into a folder that already exists", "[editor][window][import][gpu][os]") {
     ScratchDirectory scratch{"editorSkipsExistingImportFolder"};
     writeProjectLayout(scratch);
     scratch.writeFile(STARTUP_IMPORT_FILE, TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
@@ -844,7 +844,7 @@ TEST_CASE("the startup load imports nothing into a folder that already exists", 
     editor.shutdown();
 }
 
-TEST_CASE("assets/client shadows assets/common", "[editor]") {
+TEST_CASE("assets/client shadows assets/common", "[editor][gpu][os]") {
     ScratchDirectory scratch{"editorAssetsOverlay"};
     writeProjectLayout(scratch);
     scratch.writeFile("assets/common/shared.txt", "common");
@@ -858,7 +858,7 @@ TEST_CASE("assets/client shadows assets/common", "[editor]") {
     CHECK(resolved == client);
 }
 
-TEST_CASE("editor updates through a rate sample and shuts down its client", "[editor][window]") {
+TEST_CASE("editor updates through a rate sample and shuts down its client", "[editor][window][gpu][os]") {
     ScratchDirectory scratch{"editorLifecycle"};
     writeProjectLayout(scratch);
     EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
@@ -877,7 +877,7 @@ TEST_CASE("editor updates through a rate sample and shuts down its client", "[ed
     editor.shutdown();
 }
 
-TEST_CASE("the editor holds one ImGui context with both backends from init until shutdown", "[editor][window][imgui]") {
+TEST_CASE("the editor holds one ImGui context with both backends from init until shutdown", "[editor][window][imgui][gpu][os]") {
     ScratchDirectory scratch{"editorImGuiLifecycle"};
     writeProjectLayout(scratch);
     EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
@@ -900,7 +900,7 @@ TEST_CASE("the editor holds one ImGui context with both backends from init until
     CHECK(ImGui::GetCurrentContext() == nullptr);
 }
 
-TEST_CASE("an editor destroyed without shutdown stops its client and releases ImGui for the next one", "[editor][window][imgui]") {
+TEST_CASE("an editor destroyed without shutdown stops its client and releases ImGui for the next one", "[editor][window][imgui][gpu][os]") {
     ScratchDirectory scratch{"editorImGuiDestroyed"};
     writeProjectLayout(scratch);
     {
@@ -919,7 +919,7 @@ TEST_CASE("an editor destroyed without shutdown stops its client and releases Im
     CHECK(ImGui::GetCurrentContext() == nullptr);
 }
 
-TEST_CASE("a saved panel layout is in ImGui before the first frame", "[editor][window][imgui][layout]") {
+TEST_CASE("a saved panel layout is in ImGui before the first frame", "[editor][window][imgui][layout][gpu][os]") {
     ScratchDirectory scratch{"editorLoadsPanelLayout"};
     writeProjectLayout(scratch);
     scratch.writeFile(PANEL_LAYOUT_FILE, SAVED_HIERARCHY);
@@ -932,7 +932,7 @@ TEST_CASE("a saved panel layout is in ImGui before the first frame", "[editor][w
     editor.shutdown();
 }
 
-TEST_CASE("shutdown writes the panel layout into a new editorSettings folder", "[editor][window][imgui][layout]") {
+TEST_CASE("shutdown writes the panel layout into a new editorSettings folder", "[editor][window][imgui][layout][gpu][os]") {
     ScratchDirectory scratch{"editorWritesPanelLayout"};
     writeProjectLayout(scratch);
     EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
@@ -943,7 +943,7 @@ TEST_CASE("shutdown writes the panel layout into a new editorSettings folder", "
     CHECK(std::filesystem::is_regular_file(scratch.root() / "editorSettings" / "layout.ini"));
 }
 
-TEST_CASE("shutdown saves the live panel layout over the one it loaded", "[editor][window][imgui][layout]") {
+TEST_CASE("shutdown saves the live panel layout over the one it loaded", "[editor][window][imgui][layout][gpu][os]") {
     ScratchDirectory scratch{"editorSavesLivePanelLayout"};
     writeProjectLayout(scratch);
     scratch.writeFile(PANEL_LAYOUT_FILE, SAVED_HIERARCHY);
@@ -959,7 +959,7 @@ TEST_CASE("shutdown saves the live panel layout over the one it loaded", "[edito
     CHECK(contains(saved, "Pos=30,40"));
 }
 
-TEST_CASE("an editor destroyed without shutdown still saves its panel layout", "[editor][window][imgui][layout]") {
+TEST_CASE("an editor destroyed without shutdown still saves its panel layout", "[editor][window][imgui][layout][gpu][os]") {
     ScratchDirectory scratch{"editorDestroyedSavesPanelLayout"};
     writeProjectLayout(scratch);
     {
@@ -993,7 +993,7 @@ static void checkStartupSnapshot(const TechEngine::EditorSnapshot& snapshot, con
     CHECK(snapshot.editRevision == snapshot.savedRevision);
 }
 
-TEST_CASE("the startup load publishes the scene it creates for main to take once", "[editor][window]") {
+TEST_CASE("the startup load publishes the scene it creates for main to take once", "[editor][window][gpu][os]") {
     ScratchDirectory scratch{"editorPublishesCreatedSnapshot"};
     writeProjectLayout(scratch);
     EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
@@ -1006,7 +1006,7 @@ TEST_CASE("the startup load publishes the scene it creates for main to take once
     editor.shutdown();
 }
 
-TEST_CASE("a later launch publishes the startup scene it loads through the cache", "[editor][window]") {
+TEST_CASE("a later launch publishes the startup scene it loads through the cache", "[editor][window][gpu][os]") {
     ScratchDirectory scratch{"editorPublishesLoadedSnapshot"};
     writeProjectLayout(scratch);
     const std::filesystem::path exportFolder = scratch.makeDirectory("export");
@@ -1025,7 +1025,7 @@ TEST_CASE("a later launch publishes the startup scene it loads through the cache
     second.shutdown();
 }
 
-TEST_CASE("each publishEdits hands main one snapshot of the live scene", "[editor][window]") {
+TEST_CASE("each publishEdits hands main one snapshot of the live scene", "[editor][window][gpu][os]") {
     ScratchDirectory scratch{"editorPublishEdits"};
     writeProjectLayout(scratch);
     EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
@@ -1072,7 +1072,7 @@ protected:
     }
 };
 
-TEST_CASE("editor render progresses during a main stall while its simulation stays idle", "[editor][window][integration]") {
+TEST_CASE("editor render progresses during a main stall while its simulation stays idle", "[editor][window][integration][gpu][os]") {
     ScratchDirectory scratch{"editorThreadedStall"};
     writeProjectLayout(scratch);
     const std::filesystem::path exportFolder = scratch.makeDirectory("export");
@@ -1111,7 +1111,7 @@ TEST_CASE("editor render progresses during a main stall while its simulation sta
     CHECK_FALSE(editor.timingMetrics().renderingActive);
 }
 
-TEST_CASE("a save writes the live scene over the startup scene the editor created, and a later launch opens on it", "[editor][window][save]") {
+TEST_CASE("a save writes the live scene over the startup scene the editor created, and a later launch opens on it", "[editor][window][save][gpu][os]") {
     ScratchDirectory scratch{"editorSavesCreatedStartupScene"};
     writeProjectLayout(scratch);
     const std::filesystem::path exportFolder = scratch.makeDirectory("export");
@@ -1141,7 +1141,7 @@ TEST_CASE("a save writes the live scene over the startup scene the editor create
     second.shutdown();
 }
 
-TEST_CASE("a save writes over the startup scene a later launch loaded", "[editor][window][save]") {
+TEST_CASE("a save writes over the startup scene a later launch loaded", "[editor][window][save][gpu][os]") {
     ScratchDirectory scratch{"editorSavesLoadedStartupScene"};
     writeProjectLayout(scratch);
     const std::filesystem::path exportFolder = scratch.makeDirectory("export");
@@ -1171,7 +1171,7 @@ TEST_CASE("a save writes over the startup scene a later launch loaded", "[editor
     third.shutdown();
 }
 
-TEST_CASE("the editor refuses to save over a named startup scene that did not load", "[editor][window][save]") {
+TEST_CASE("the editor refuses to save over a named startup scene that did not load", "[editor][window][save][gpu][os]") {
     ScratchDirectory scratch{"editorRefusesSaveOverUnloadedScene"};
     writeProjectLayout(scratch);
     constexpr TechEngine::ResourceId sceneId{0x0123456789abcdef};
@@ -1191,7 +1191,7 @@ TEST_CASE("the editor refuses to save over a named startup scene that did not lo
     editor.shutdown();
 }
 
-TEST_CASE("the editor refuses to save over an adopted Startup.tescene it has not loaded", "[editor][window][save]") {
+TEST_CASE("the editor refuses to save over an adopted Startup.tescene it has not loaded", "[editor][window][save][gpu][os]") {
     ScratchDirectory scratch{"editorRefusesSaveOverAdoptedScene"};
     writeProjectLayout(scratch);
     constexpr TechEngine::ResourceId sceneId{0x0fedcba987654321};

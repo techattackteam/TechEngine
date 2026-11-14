@@ -45,7 +45,7 @@ struct FrameShaderFailureScope {
     }
 };
 
-TEST_CASE("Frame renderer rejects shader failures and can retry initialization", "[client][render][window]") {
+TEST_CASE("Frame renderer rejects shader failures and can retry initialization", "[client][render][window][gpu]") {
     FrameShaderFailure failure = FrameShaderFailure::VertexCompile;
     SECTION("Vertex compilation fails") {
         failure = FrameShaderFailure::VertexCompile;
@@ -90,7 +90,7 @@ TEST_CASE("Frame renderer rejects shader failures and can retry initialization",
     CHECK(error == GL_NO_ERROR);
 }
 
-TEST_CASE("Frame renderer clears, draws, redraws and resizes on its context owner", "[client][render][window]") {
+TEST_CASE("Frame renderer clears, draws, redraws and resizes on its context owner", "[client][render][window][gpu]") {
     const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;

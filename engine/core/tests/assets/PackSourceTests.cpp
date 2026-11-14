@@ -124,7 +124,7 @@ static void requireReads(const AssetSource& source, const SourceSampleEntry& sam
     CHECK(out == bytesOf(sample.payload));
 }
 
-TEST_CASE("two packs merge into one table for the role that opens them", "[core][resources][packsource]") {
+TEST_CASE("two packs merge into one table for the role that opens them", "[core][resources][packsource][os]") {
     PackSourceScratch scratch{"packSourceMerge"};
     scratch.storeSamplePacks();
     PackSource packSource{scratch.files()};
@@ -137,7 +137,7 @@ TEST_CASE("two packs merge into one table for the role that opens them", "[core]
     }
 }
 
-TEST_CASE("an id on a side the role never opens is absent for that role", "[core][resources][packsource]") {
+TEST_CASE("an id on a side the role never opens is absent for that role", "[core][resources][packsource][os]") {
     PackSourceScratch scratch{"packSourceAbsent"};
     scratch.storeSamplePacks();
     PackSource source{scratch.files()};
@@ -158,7 +158,7 @@ TEST_CASE("an id on a side the role never opens is absent for that role", "[core
     }
 }
 
-TEST_CASE("an id in no pack and no side is unknown", "[core][resources][packsource]") {
+TEST_CASE("an id in no pack and no side is unknown", "[core][resources][packsource][os]") {
     PackSourceScratch scratch{"packSourceUnknown"};
     scratch.storeSamplePacks();
     PackSource source{scratch.files()};
@@ -171,7 +171,7 @@ TEST_CASE("an id in no pack and no side is unknown", "[core][resources][packsour
     CHECK(source.find(ResourceId{}) == AssetAvailability::Unknown);
 }
 
-TEST_CASE("the pack source reads an id's bytes from its pack when asked, not when it opens", "[core][resources][packsource]") {
+TEST_CASE("the pack source reads an id's bytes from its pack when asked, not when it opens", "[core][resources][packsource][os]") {
     PackSourceScratch scratch{"packSourceReadLate"};
     scratch.storeSamplePacks();
     PackSource source{scratch.files()};
@@ -185,7 +185,7 @@ TEST_CASE("the pack source reads an id's bytes from its pack when asked, not whe
     requireReads(source, COMMON_SCENE);
 }
 
-TEST_CASE("the same id in two of a role's packs is Malformed and leaves the source empty", "[core][resources][packsource]") {
+TEST_CASE("the same id in two of a role's packs is Malformed and leaves the source empty", "[core][resources][packsource][os]") {
     PackSourceScratch scratch{"packSourceDuplicate"};
     scratch.storePack("common.tepack", {COMMON_SCENE, CLIENT_MESH});
     scratch.storePack("client.tepack", {CLIENT_MESH});
@@ -198,7 +198,7 @@ TEST_CASE("the same id in two of a role's packs is Malformed and leaves the sour
     CHECK(source.find(SERVER_NAVMESH.id) == AssetAvailability::Unknown);
 }
 
-TEST_CASE("a missing pack is reported with the file error unchanged and leaves the source empty", "[core][resources][packsource]") {
+TEST_CASE("a missing pack is reported with the file error unchanged and leaves the source empty", "[core][resources][packsource][os]") {
     PackSourceScratch scratch{"packSourceMissing"};
     scratch.storePack("common.tepack", {COMMON_SCENE});
     PackSource source{scratch.files()};
@@ -209,7 +209,7 @@ TEST_CASE("a missing pack is reported with the file error unchanged and leaves t
     CHECK(source.find(SERVER_NAVMESH.id) == AssetAvailability::Unknown);
 }
 
-TEST_CASE("a role the boot record does not list is Malformed and leaves the source empty", "[core][resources][packsource]") {
+TEST_CASE("a role the boot record does not list is Malformed and leaves the source empty", "[core][resources][packsource][os]") {
     PackSourceScratch scratch{"packSourceUnlistedRole"};
     scratch.storeSamplePacks();
     PackSource source{scratch.files()};
@@ -220,7 +220,7 @@ TEST_CASE("a role the boot record does not list is Malformed and leaves the sour
     CHECK(source.find(SERVER_NAVMESH.id) == AssetAvailability::Unknown);
 }
 
-TEST_CASE("reading an id that is not present is a programmer error", "[core][resources][packsource]") {
+TEST_CASE("reading an id that is not present is a programmer error", "[core][resources][packsource][os]") {
     PackSourceScratch scratch{"packSourceNotPresent"};
     scratch.storeSamplePacks();
     PackSource source{scratch.files()};

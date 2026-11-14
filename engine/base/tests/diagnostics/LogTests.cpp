@@ -339,7 +339,7 @@ TEST_CASE("two sinks see the same records in the same order", "[base][log][sink]
     REQUIRE(firstMessages == second.getMessages());
 }
 
-TEST_CASE("after removeLogSink returns, the removed sink gets nothing and can be destroyed", "[base][log][sink][threads]") {
+TEST_CASE("after removeLogSink returns, the removed sink gets nothing and can be destroyed", "[base][log][sink][threads][os]") {
     // Keeps the loggers' records off stderr once the removed sink is gone.
     CountingSink anchor;
     const SinkRegistration anchorRegistration{anchor};

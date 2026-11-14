@@ -238,7 +238,7 @@ TEST_CASE("clearing a scene invalidates hierarchy links and entity handles", "[c
     REQUIRE(scene.getRoots() == expectedRoots);
 }
 
-TEST_CASE("deep subtree destruction does not depend on recursion depth", "[core][scene]") {
+TEST_CASE("deep subtree destruction does not depend on recursion depth", "[core][scene][stress]") {
     TechEngine::ComponentRegistry registry;
     TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);

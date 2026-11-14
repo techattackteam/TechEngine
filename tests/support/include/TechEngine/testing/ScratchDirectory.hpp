@@ -2,12 +2,19 @@
 
 #include <filesystem>
 #include <fstream>
+#include <string>
 #include <string_view>
+
+#if defined(_WIN32)
+#include <process.h>
+#else
+#include <unistd.h>
+#endif
 
 namespace TechEngineTests {
     class ScratchDirectory {
     public:
-        explicit ScratchDirectory(std::string_view name) : m_root(std::filesystem::temp_directory_path() / "TechEngineTests" / name) {
+        explicit ScratchDirectory(std::string_view name) : m_root(processRoot() / name) {
             std::filesystem::remove_all(m_root);
             std::filesystem::create_directories(m_root);
         }
@@ -15,6 +22,7 @@ namespace TechEngineTests {
         ~ScratchDirectory() {
             std::error_code ec;
             std::filesystem::remove_all(m_root, ec);
+            std::filesystem::remove(m_root.parent_path(), ec);
         }
 
         ScratchDirectory(const ScratchDirectory&) = delete;
@@ -40,6 +48,17 @@ namespace TechEngineTests {
         }
 
     private:
+        // ctest runs cases in parallel, and the constructor deletes whatever is at its path, so
+        // two processes that share a name must never share a folder.
+        static std::filesystem::path processRoot() {
+#if defined(_WIN32)
+            const int id = _getpid();
+#else
+            const pid_t id = getpid();
+#endif
+            return std::filesystem::temp_directory_path() / "TechEngineTests" / std::to_string(id);
+        }
+
         std::filesystem::path m_root;
     };
 }

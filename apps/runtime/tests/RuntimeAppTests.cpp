@@ -492,7 +492,7 @@ TEST_CASE("the runtime says its simulation ticks", "[runtime]") {
     CHECK(runtime.simulationTicks());
 }
 
-TEST_CASE("runtime init starts the client, and a second start throws without stopping it", "[runtime][window]") {
+TEST_CASE("runtime init starts the client, and a second start throws without stopping it", "[runtime][window][gpu][os]") {
     const ScratchDirectory scratch{"runtimeInitStartsClient"};
     RuntimeClientProbe runtime{scratch.root()};
     CHECK(runtime.shouldClose());
@@ -642,7 +642,7 @@ TEST_CASE("a burst of pulses every Tick arrives whole and in order, including ac
     CHECK(runtime.system<SpawnSystem>().isPulseSequenceIntact());
 }
 
-TEST_CASE("the runtime mounts assets in the assets folder under the folder it is given", "[runtime][load]") {
+TEST_CASE("the runtime mounts assets in the assets folder under the folder it is given", "[runtime][load][os]") {
     const ScratchDirectory scratch{"runtimeMount"};
     scratch.writeFile("assets/probe.txt", "packs live here");
     RuntimeProbe runtime{scratch.root()};
@@ -654,7 +654,7 @@ TEST_CASE("the runtime mounts assets in the assets folder under the folder it is
     CHECK(bytes.size() == std::string_view("packs live here").size());
 }
 
-TEST_CASE("the startup load reads the startup scene from the common pack", "[runtime][load]") {
+TEST_CASE("the startup load reads the startup scene from the common pack", "[runtime][load][os]") {
     const ScratchDirectory scratch{"runtimeLoadCommon"};
     const std::vector<std::byte> scene = startupSceneBytes();
     writeClientExport(scratch, TechEngine::Side::Common, scene);
@@ -666,7 +666,7 @@ TEST_CASE("the startup load reads the startup scene from the common pack", "[run
     checkStartupScene(runtime.scene());
 }
 
-TEST_CASE("the startup log prints each entity's name beside its index", "[runtime][load]") {
+TEST_CASE("the startup log prints each entity's name beside its index", "[runtime][load][os]") {
     const TechEngineTests::LogCaptureGuard logs;
     const ScratchDirectory scratch{"runtimeLogNames"};
     const std::vector<std::byte> scene = startupSceneBytes();
@@ -685,7 +685,7 @@ TEST_CASE("the startup log prints each entity's name beside its index", "[runtim
     CHECK(runtimeLogPrintsEntity(logs, children[1], "Second child"));
 }
 
-TEST_CASE("the startup load reads a startup scene that ships in the client pack", "[runtime][load]") {
+TEST_CASE("the startup load reads a startup scene that ships in the client pack", "[runtime][load][os]") {
     const ScratchDirectory scratch{"runtimeLoadClient"};
     const std::vector<std::byte> scene = startupSceneBytes();
     writeClientExport(scratch, TechEngine::Side::Client, scene);
@@ -697,7 +697,7 @@ TEST_CASE("the startup load reads a startup scene that ships in the client pack"
     checkStartupScene(runtime.scene());
 }
 
-TEST_CASE("the startup load holds the startup scene as one Ready cache entry", "[runtime][load]") {
+TEST_CASE("the startup load holds the startup scene as one Ready cache entry", "[runtime][load][os]") {
     const ScratchDirectory scratch{"runtimeLoadHoldsScene"};
     const std::vector<std::byte> scene = startupSceneBytes();
     writeClientExport(scratch, TechEngine::Side::Common, scene);
@@ -717,7 +717,7 @@ TEST_CASE("the startup load holds the startup scene as one Ready cache entry", "
     checkStartupScene(runtime.scene());
 }
 
-TEST_CASE("simulation shutdown releases the startup scene, so the cache's shutdown log names nothing", "[runtime][load]") {
+TEST_CASE("simulation shutdown releases the startup scene, so the cache's shutdown log names nothing", "[runtime][load][os]") {
     TechEngineTests::LogCaptureGuard logs;
     const ScratchDirectory scratch{"runtimeShutdownReleasesScene"};
     const std::vector<std::byte> scene = startupSceneBytes();
@@ -733,14 +733,14 @@ TEST_CASE("simulation shutdown releases the startup scene, so the cache's shutdo
     REQUIRE_FALSE(runtimeLogNames(logs, STARTUP_SCENE_ID));
 }
 
-TEST_CASE("a missing common pack ends the startup load with NotFound and loads nothing", "[runtime][load]") {
+TEST_CASE("a missing common pack ends the startup load with NotFound and loads nothing", "[runtime][load][os]") {
     const ScratchDirectory scratch{"runtimeMissingCommon"};
     scratch.makeDirectory("assets");
     RuntimeProbe runtime{scratch.root()};
     checkStartupLoadFails(runtime, TechEngine::FileError::NotFound);
 }
 
-TEST_CASE("a missing client pack ends the startup load with NotFound and loads nothing", "[runtime][load]") {
+TEST_CASE("a missing client pack ends the startup load with NotFound and loads nothing", "[runtime][load][os]") {
     const ScratchDirectory scratch{"runtimeMissingClient"};
     const std::vector<std::byte> scene = startupSceneBytes();
     const std::vector<std::byte> bootRecord = bootRecordBytes(clientBootRecord(TechEngine::Side::Common));
@@ -749,7 +749,7 @@ TEST_CASE("a missing client pack ends the startup load with NotFound and loads n
     checkStartupLoadFails(runtime, TechEngine::FileError::NotFound);
 }
 
-TEST_CASE("a common pack without a boot record ends the startup load as Malformed", "[runtime][load]") {
+TEST_CASE("a common pack without a boot record ends the startup load as Malformed", "[runtime][load][os]") {
     const ScratchDirectory scratch{"runtimeNoBootRecord"};
     const std::vector<std::byte> scene = startupSceneBytes();
     writePack(scratch, "common.tepack", {{STARTUP_SCENE_ID, TechEngine::SCENE_TYPE_TAG, STARTUP_SCENE_NAME, scene}}, {});
@@ -758,7 +758,7 @@ TEST_CASE("a common pack without a boot record ends the startup load as Malforme
     checkStartupLoadFails(runtime, TechEngine::ReadError::Malformed);
 }
 
-TEST_CASE("a boot record that does not parse ends the startup load with its read error", "[runtime][load]") {
+TEST_CASE("a boot record that does not parse ends the startup load with its read error", "[runtime][load][os]") {
     const ScratchDirectory scratch{"runtimeBadBootRecord"};
     std::vector<std::byte> bootRecord = bootRecordBytes(clientBootRecord(TechEngine::Side::Common));
     bootRecord.resize(2);
@@ -768,7 +768,7 @@ TEST_CASE("a boot record that does not parse ends the startup load with its read
     checkStartupLoadFails(runtime, TechEngine::ReadError::Truncated);
 }
 
-TEST_CASE("a boot record that names no startup scene ends the startup load as Malformed", "[runtime][load]") {
+TEST_CASE("a boot record that names no startup scene ends the startup load as Malformed", "[runtime][load][os]") {
     const ScratchDirectory scratch{"runtimeNullStartupScene"};
     TechEngine::BootRecord record = clientBootRecord(TechEngine::Side::Common);
     record.startupScene = TechEngine::ResourceId();
@@ -780,7 +780,7 @@ TEST_CASE("a boot record that names no startup scene ends the startup load as Ma
     checkStartupLoadFails(runtime, TechEngine::ReadError::Malformed);
 }
 
-TEST_CASE("a startup scene the client's packs do not hold ends the startup load as Malformed", "[runtime][load]") {
+TEST_CASE("a startup scene the client's packs do not hold ends the startup load as Malformed", "[runtime][load][os]") {
     const ScratchDirectory scratch{"runtimeAbsentStartupScene"};
     TechEngine::BootRecord record = clientBootRecord(TechEngine::Side::Server);
 
@@ -798,7 +798,7 @@ TEST_CASE("a startup scene the client's packs do not hold ends the startup load 
     checkStartupLoadFails(runtime, TechEngine::ReadError::Malformed);
 }
 
-TEST_CASE("a startup scene that does not parse ends the startup load with its read error and loads nothing", "[runtime][load]") {
+TEST_CASE("a startup scene that does not parse ends the startup load with its read error and loads nothing", "[runtime][load][os]") {
     const ScratchDirectory scratch{"runtimeBadStartupScene"};
     std::vector<std::byte> scene = startupSceneBytes();
     scene.resize(4);
@@ -847,7 +847,7 @@ static void writeClientExportWithMesh(const ScratchDirectory& scratch, const std
     writePack(scratch, "client.tepack", {{TRIANGLE_MESH_ID, TechEngine::MESH_TYPE_TAG, TRIANGLE_MESH_NAME, mesh}}, {});
 }
 
-TEST_CASE("the startup load acquires the mesh the startup scene references from the client pack", "[runtime][load]") {
+TEST_CASE("the startup load acquires the mesh the startup scene references from the client pack", "[runtime][load][os]") {
     TechEngineTests::LogCaptureGuard logs;
     const ScratchDirectory scratch{"runtimeLoadMesh"};
     const std::vector<std::byte> scene = meshSceneBytes();
@@ -929,7 +929,7 @@ protected:
     }
 };
 
-TEST_CASE("runtime simulation and render progress during a main stall then consume delayed input", "[runtime][window][integration]") {
+TEST_CASE("runtime simulation and render progress during a main stall then consume delayed input", "[runtime][window][integration][gpu][os]") {
     const ScratchDirectory scratch{"runtimeThreadedStall"};
     writeClientExport(scratch, TechEngine::Side::Common, startupSceneBytes());
     RuntimeStallProbe runtime{scratch.root()};

@@ -94,7 +94,7 @@ static void unpackPixel(const Texture& texture, const std::uint32_t level, const
     TextureImporter::unpackRgb9E5(packed, red, green, blue);
 }
 
-TEST_CASE("an 8x4 Radiance file becomes an RGB9E5 texture of its size with the full mip chain", "[editor][assets][image]") {
+TEST_CASE("an 8x4 Radiance file becomes an RGB9E5 texture of its size with the full mip chain", "[editor][assets][image][os]") {
     SkyImportFixture fixture{"imageImportSky"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
     SkyImportResult result;
@@ -179,7 +179,7 @@ TEST_CASE("an 8x4 Radiance file becomes an RGB9E5 texture of its size with the f
     }
 }
 
-TEST_CASE("an existing output is refused and left as it was", "[editor][assets][image]") {
+TEST_CASE("an existing output is refused and left as it was", "[editor][assets][image][os]") {
     SkyImportFixture fixture{"imageImportExists"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
     fixture.scratch.writeFile("assets/client/Sky.tetexture", "kept");
@@ -195,7 +195,7 @@ TEST_CASE("an existing output is refused and left as it was", "[editor][assets][
     CHECK(result.records.size() == 1);
 }
 
-TEST_CASE("a second import of the same source is refused and changes no byte", "[editor][assets][image]") {
+TEST_CASE("a second import of the same source is refused and changes no byte", "[editor][assets][image][os]") {
     SkyImportFixture fixture{"imageImportTwice"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
     SkyImportResult result;
@@ -210,7 +210,7 @@ TEST_CASE("a second import of the same source is refused and changes no byte", "
     CHECK(after == before);
 }
 
-TEST_CASE("of two imports of one sky at once, exactly one succeeds and the other registers nothing", "[editor][assets][image][race]") {
+TEST_CASE("of two imports of one sky at once, exactly one succeeds and the other registers nothing", "[editor][assets][image][race][os]") {
     SkyImportFixture fixture{"imageImportRace"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(256, 128));
     std::atomic<std::uint64_t> nextId = FIRST_TEST_ID;
@@ -246,7 +246,7 @@ TEST_CASE("of two imports of one sky at once, exactly one succeeds and the other
     }
 }
 
-TEST_CASE("a re-import rewrites the same file with the new image and keeps its id", "[editor][assets][image][reimport]") {
+TEST_CASE("a re-import rewrites the same file with the new image and keeps its id", "[editor][assets][image][reimport][os]") {
     SkyImportFixture fixture{"imageReimport"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
     SkyImportResult first;
@@ -270,7 +270,7 @@ TEST_CASE("a re-import rewrites the same file with the new image and keeps its i
     CHECK_FALSE(fixture.exists("assets/client/Sky"));
 }
 
-TEST_CASE("a sky re-import with no earlier output, or with one that is not a texture, is refused and writes nothing", "[editor][assets][image][reimport]") {
+TEST_CASE("a sky re-import with no earlier output, or with one that is not a texture, is refused and writes nothing", "[editor][assets][image][reimport][os]") {
     SkyImportFixture fixture{"imageReimportMissing"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
     SkyImportResult result;
@@ -293,7 +293,7 @@ TEST_CASE("a sky re-import with no earlier output, or with one that is not a tex
     }
 }
 
-TEST_CASE("a path that is not a .hdr is refused before anything is read or written", "[editor][assets][image]") {
+TEST_CASE("a path that is not a .hdr is refused before anything is read or written", "[editor][assets][image][os]") {
     SkyImportFixture fixture{"imageImportWrongType"};
     fixture.scratch.writeFile("assets/client/Sky.png", "not read");
     fixture.scratch.writeFile("assets/client/Sky", "no extension");
@@ -311,7 +311,7 @@ TEST_CASE("a path that is not a .hdr is refused before anything is read or writt
     CHECK(result.records.empty());
 }
 
-TEST_CASE("a missing source is refused with the file error and writes nothing", "[editor][assets][image]") {
+TEST_CASE("a missing source is refused with the file error and writes nothing", "[editor][assets][image][os]") {
     SkyImportFixture fixture{"imageImportMissing"};
     SkyImportResult result;
 
@@ -320,7 +320,7 @@ TEST_CASE("a missing source is refused with the file error and writes nothing", 
     CHECK_FALSE(fixture.exists("assets/client/Sky.tetexture"));
 }
 
-TEST_CASE("a .hdr that is not a Radiance file is refused and writes nothing", "[editor][assets][image]") {
+TEST_CASE("a .hdr that is not a Radiance file is refused and writes nothing", "[editor][assets][image][os]") {
     SkyImportFixture fixture{"imageImportGarbage"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", "definitely not radiance");
     fixture.scratch.writeFile("assets/client/Empty.hdr", "");
@@ -333,7 +333,7 @@ TEST_CASE("a .hdr that is not a Radiance file is refused and writes nothing", "[
     CHECK_FALSE(fixture.exists("assets/client/Empty.tetexture"));
 }
 
-TEST_CASE("a source outside a side folder of the assets folder is refused", "[editor][assets][image]") {
+TEST_CASE("a source outside a side folder of the assets folder is refused", "[editor][assets][image][os]") {
     SkyImportFixture fixture{"imageImportOutsideAssets"};
     fixture.scratch.writeFile("Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
     fixture.scratch.writeFile("assets/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
@@ -348,7 +348,7 @@ TEST_CASE("a source outside a side folder of the assets folder is refused", "[ed
     CHECK_FALSE(fixture.exists("assets/other/Sky.tetexture"));
 }
 
-TEST_CASE("the record's side follows the side folder and the extension is read without case", "[editor][assets][image]") {
+TEST_CASE("the record's side follows the side folder and the extension is read without case", "[editor][assets][image][os]") {
     SkyImportFixture fixture{"imageImportSides"};
     fixture.scratch.writeFile("assets/server/Dusk.HDR", TechEngineTests::gradientRadianceFile(8, 4));
     fixture.scratch.writeFile("assets/common/Dawn.hdr", TechEngineTests::gradientRadianceFile(8, 4));
@@ -366,7 +366,7 @@ TEST_CASE("the record's side follows the side folder and the extension is read w
     CHECK(common.records[0].id == ResourceId{FIRST_TEST_ID + 1});
 }
 
-TEST_CASE("odd and tiny sizes get the full chain", "[editor][assets][image]") {
+TEST_CASE("odd and tiny sizes get the full chain", "[editor][assets][image][os]") {
     SkyImportFixture fixture{"imageImportOddSizes"};
     fixture.scratch.writeFile("assets/client/Odd.hdr", TechEngineTests::gradientRadianceFile(5, 3));
     fixture.scratch.writeFile("assets/client/One.hdr", TechEngineTests::gradientRadianceFile(1, 1));

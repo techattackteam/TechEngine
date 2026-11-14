@@ -198,7 +198,7 @@ TEST_CASE("every payload in a pack starts at a 16-byte-aligned offset after the 
     }
 }
 
-TEST_CASE("several entries round-trip through a pack", "[core][resources]") {
+TEST_CASE("several entries round-trip through a pack", "[core][resources][os]") {
     PackScratch scratch{"packRoundTrip"};
     scratch.store(writeSamplePack());
     PackReader reader{scratch.files()};
@@ -220,7 +220,7 @@ TEST_CASE("several entries round-trip through a pack", "[core][resources]") {
     }
 }
 
-TEST_CASE("an empty pack opens and holds nothing", "[core][resources]") {
+TEST_CASE("an empty pack opens and holds nothing", "[core][resources][os]") {
     PackScratch scratch{"packEmpty"};
     const TechEngine::PackWriter writer;
     std::vector<std::byte> bytes;
@@ -235,7 +235,7 @@ TEST_CASE("an empty pack opens and holds nothing", "[core][resources]") {
     CHECK_FALSE(reader.bootRecord(entry));
 }
 
-TEST_CASE("an id the pack does not hold is reported absent", "[core][resources]") {
+TEST_CASE("an id the pack does not hold is reported absent", "[core][resources][os]") {
     PackScratch scratch{"packAbsent"};
     scratch.store(writeSamplePack());
     PackReader reader{scratch.files()};
@@ -251,7 +251,7 @@ TEST_CASE("an id the pack does not hold is reported absent", "[core][resources]"
     CHECK_FALSE(reader.find(ResourceId{}, entry));
 }
 
-TEST_CASE("an entry's bytes come from the file when it is read, not when the pack opens", "[core][resources]") {
+TEST_CASE("an entry's bytes come from the file when it is read, not when the pack opens", "[core][resources][os]") {
     PackScratch scratch{"packReadLate"};
     std::vector<std::byte> bytes = writeSamplePack();
     scratch.store(bytes);
@@ -269,7 +269,7 @@ TEST_CASE("an entry's bytes come from the file when it is read, not when the pac
     CHECK(out == replaced);
 }
 
-TEST_CASE("a boot record written into a pack is read back by its range", "[core][resources]") {
+TEST_CASE("a boot record written into a pack is read back by its range", "[core][resources][os]") {
     PackScratch scratch{"packBootRecord"};
     constexpr std::string_view boot = "boot record sections";
     scratch.store(writeSamplePack(viewOf(boot)));
@@ -290,7 +290,7 @@ TEST_CASE("a boot record written into a pack is read back by its range", "[core]
     CHECK(out == bytesOf(PACK_SCENE.payload));
 }
 
-TEST_CASE("a boot record written into a pack is read back and parsed through the pack reader", "[core][resources]") {
+TEST_CASE("a boot record written into a pack is read back and parsed through the pack reader", "[core][resources][os]") {
     PackScratch scratch{"packCarriesBootRecord"};
     TechEngine::BootRecord written;
     written.startupScene = PACK_SCENE.id;
@@ -321,7 +321,7 @@ TEST_CASE("a boot record written into a pack is read back and parsed through the
     CHECK(loaded.sides[1].side == TechEngine::Side::Client);
 }
 
-TEST_CASE("a pack written without a boot record reports none", "[core][resources]") {
+TEST_CASE("a pack written without a boot record reports none", "[core][resources][os]") {
     PackScratch scratch{"packNoBootRecord"};
     scratch.store(writeSamplePack());
     PackReader reader{scratch.files()};
@@ -332,7 +332,7 @@ TEST_CASE("a pack written without a boot record reports none", "[core][resources
     CHECK_FALSE(reader.bootRecord(bootEntry));
 }
 
-TEST_CASE("every truncation of a pack's header or table fails soft as Truncated", "[core][resources]") {
+TEST_CASE("every truncation of a pack's header or table fails soft as Truncated", "[core][resources][os]") {
     PackScratch scratch{"packTruncated"};
     const std::vector<std::byte> bytes = writeSamplePack();
     const std::size_t tableEnd = entryField(3, 0);
@@ -350,7 +350,7 @@ TEST_CASE("every truncation of a pack's header or table fails soft as Truncated"
     }
 }
 
-TEST_CASE("a pack truncated inside its payloads is Malformed at open", "[core][resources]") {
+TEST_CASE("a pack truncated inside its payloads is Malformed at open", "[core][resources][os]") {
     PackScratch scratch{"packTruncatedPayload"};
     const std::vector<std::byte> bytes = writeSamplePack();
     std::uint64_t payloadEnd = 0;
@@ -367,7 +367,7 @@ TEST_CASE("a pack truncated inside its payloads is Malformed at open", "[core][r
     REQUIRE_FALSE(reader.find(PACK_MESH.id, entry));
 }
 
-TEST_CASE("a pack of another kind or version is rejected", "[core][resources]") {
+TEST_CASE("a pack of another kind or version is rejected", "[core][resources][os]") {
     PackScratch scratch{"packKind"};
     std::vector<std::byte> bytes = writeSamplePack();
     PackReader reader{scratch.files()};
@@ -390,7 +390,7 @@ TEST_CASE("a pack of another kind or version is rejected", "[core][resources]") 
     REQUIRE_FALSE(reader.find(PACK_MESH.id, entry));
 }
 
-TEST_CASE("a corrupt pack table is Malformed and leaves the reader empty", "[core][resources]") {
+TEST_CASE("a corrupt pack table is Malformed and leaves the reader empty", "[core][resources][os]") {
     PackScratch scratch{"packCorruptTable"};
     std::vector<std::byte> bytes = writeSamplePack();
 
@@ -446,14 +446,14 @@ TEST_CASE("a corrupt pack table is Malformed and leaves the reader empty", "[cor
     REQUIRE_FALSE(reader.bootRecord(entry));
 }
 
-TEST_CASE("a missing pack is reported with the file error unchanged", "[core][resources]") {
+TEST_CASE("a missing pack is reported with the file error unchanged", "[core][resources][os]") {
     PackScratch scratch{"packMissing"};
     PackReader reader{scratch.files()};
 
     REQUIRE(reader.open(PACK_PATH) == FileError::NotFound);
 }
 
-TEST_CASE("an entry read from a pack that has gone fails soft and leaves the out-param untouched", "[core][resources]") {
+TEST_CASE("an entry read from a pack that has gone fails soft and leaves the out-param untouched", "[core][resources][os]") {
     PackScratch scratch{"packGone"};
     scratch.store(writeSamplePack());
     PackReader reader{scratch.files()};

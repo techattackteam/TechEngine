@@ -269,7 +269,7 @@ TEST_CASE("a sender on an app that is not running applies nothing and logs the r
     CHECK(refusals == 12);
 }
 
-TEST_CASE("save and save and close reach the live scene through the running simulation", "[editor][edit][commands][save][integration]") {
+TEST_CASE("save and save and close reach the live scene through the running simulation", "[editor][edit][commands][save][integration][os]") {
     const TechEngineTests::ScratchDirectory scratch{"editorCommandsSave"};
     constexpr TechEngine::ResourceId sceneId{0x5a5a5a5a00000002};
     constexpr std::string_view scenePath = "project://Saved.tescene";

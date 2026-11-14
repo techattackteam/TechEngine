@@ -21,7 +21,7 @@ static std::string readLogFile(const std::filesystem::path& path) {
 // The second half is what proves the destructor: the file is truncated on open (ADR-011 §3), so
 // if shutdownLogging() had not run, the second scope's init would be a no-op and the first
 // line would survive. Error level, because the compile-time gate keeps it in every config.
-TEST_CASE("the diagnostics scope opens and closes the session log file", "[app][diagnostics]") {
+TEST_CASE("the diagnostics scope opens and closes the session log file", "[app][diagnostics][os]") {
     const std::filesystem::path logFile = "logs/techengine.log";
     std::filesystem::remove(logFile);
 

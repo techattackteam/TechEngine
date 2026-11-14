@@ -94,7 +94,7 @@ private:
     FileAccess m_files;
 };
 
-TEST_CASE("build records each asset's type tag, path and side on all three sides", "[editor][assets]") {
+TEST_CASE("build records each asset's type tag, path and side on all three sides", "[editor][assets][os]") {
     const IndexScratch env{"assetIndexSides"};
     env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
     env.writeScene("assets/client/menu.tescene", CLIENT_SCENE_ID);
@@ -123,7 +123,7 @@ TEST_CASE("build records each asset's type tag, path and side on all three sides
     CHECK(server.path == "project://assets/server/arena.tescene");
 }
 
-TEST_CASE("build records a mesh under the mesh type tag", "[editor][assets]") {
+TEST_CASE("build records a mesh under the mesh type tag", "[editor][assets][os]") {
     const IndexScratch env{"assetIndexMesh"};
     env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
     writeBytes(env.scratch(), "assets/common/triangle.temesh", assetBytes(MESH_KIND, COMMON_MESH_ID, "mesh payload"));
@@ -138,7 +138,7 @@ TEST_CASE("build records a mesh under the mesh type tag", "[editor][assets]") {
     CHECK(mesh.path == "project://assets/common/triangle.temesh");
 }
 
-TEST_CASE("build records a model in its import folder under the model type tag", "[editor][assets]") {
+TEST_CASE("build records a model in its import folder under the model type tag", "[editor][assets][os]") {
     const IndexScratch env{"assetIndexModel"};
     env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
     writeBytes(env.scratch(), "assets/common/Kart/Kart.temodel", assetBytes(MODEL_KIND, COMMON_MODEL_ID, "model payload"));
@@ -153,7 +153,7 @@ TEST_CASE("build records a model in its import folder under the model type tag",
     CHECK(model.path == "project://assets/common/Kart/Kart.temodel");
 }
 
-TEST_CASE("build records a texture under the texture type tag", "[editor][assets]") {
+TEST_CASE("build records a texture under the texture type tag", "[editor][assets][os]") {
     const IndexScratch env{"assetIndexTexture"};
     env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
     writeBytes(env.scratch(), "assets/common/Textures/wall.tetexture", assetBytes(TEXTURE_KIND, COMMON_TEXTURE_ID, "texture payload"));
@@ -168,7 +168,7 @@ TEST_CASE("build records a texture under the texture type tag", "[editor][assets
     CHECK(texture.path == "project://assets/common/Textures/wall.tetexture");
 }
 
-TEST_CASE("build records a material under the material type tag", "[editor][assets]") {
+TEST_CASE("build records a material under the material type tag", "[editor][assets][os]") {
     const IndexScratch env{"assetIndexMaterial"};
     env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
     writeBytes(env.scratch(), "assets/common/Materials/bricks.tematerial", assetBytes(MATERIAL_KIND, COMMON_MATERIAL_ID, "material payload"));
@@ -183,7 +183,7 @@ TEST_CASE("build records a material under the material type tag", "[editor][asse
     CHECK(material.path == "project://assets/common/Materials/bricks.tematerial");
 }
 
-TEST_CASE("build reads assets in subfolders of a side", "[editor][assets]") {
+TEST_CASE("build reads assets in subfolders of a side", "[editor][assets][os]") {
     const IndexScratch env{"assetIndexNested"};
     env.writeScene("assets/client/levels/deep/nested.tescene", NESTED_SCENE_ID);
 
@@ -195,7 +195,7 @@ TEST_CASE("build reads assets in subfolders of a side", "[editor][assets]") {
     CHECK(record.path == "project://assets/client/levels/deep/nested.tescene");
 }
 
-TEST_CASE("build skips every file that is not an asset it knows and still succeeds", "[editor][assets]") {
+TEST_CASE("build skips every file that is not an asset it knows and still succeeds", "[editor][assets][os]") {
     const IndexScratch env{"assetIndexSkips"};
     env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
 
@@ -221,7 +221,7 @@ TEST_CASE("build skips every file that is not an asset it knows and still succee
     CHECK_FALSE(index.find(ResourceId(), record));
 }
 
-TEST_CASE("a duplicate id is reported with both paths and indexed under neither", "[editor][assets]") {
+TEST_CASE("a duplicate id is reported with both paths and indexed under neither", "[editor][assets][os]") {
     const IndexScratch env{"assetIndexDuplicates"};
     env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
 
@@ -259,7 +259,7 @@ TEST_CASE("a duplicate id is reported with both paths and indexed under neither"
     }
 }
 
-TEST_CASE("build on a project with empty sides indexes nothing", "[editor][assets]") {
+TEST_CASE("build on a project with empty sides indexes nothing", "[editor][assets][os]") {
     const IndexScratch env{"assetIndexEmpty"};
 
     const AssetIndex index = env.buildIndex();
@@ -268,7 +268,7 @@ TEST_CASE("build on a project with empty sides indexes nothing", "[editor][asset
     CHECK(index.getDuplicates().empty());
 }
 
-TEST_CASE("build returns the listing error when a side folder is missing", "[editor][assets]") {
+TEST_CASE("build returns the listing error when a side folder is missing", "[editor][assets][os]") {
     const IndexScratch env{"assetIndexMissingSide"};
     std::filesystem::remove_all(env.scratch().root() / "assets" / "server");
 
@@ -276,7 +276,7 @@ TEST_CASE("build returns the listing error when a side folder is missing", "[edi
     CHECK(index.build(env.files(), INDEX_ASSETS_ROOT) == FileError::NotFound);
 }
 
-TEST_CASE("generateId returns a non-null id that the index does not hold", "[editor][assets]") {
+TEST_CASE("generateId returns a non-null id that the index does not hold", "[editor][assets][os]") {
     const IndexScratch env{"assetIndexGenerateId"};
     env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
     env.writeScene("assets/common/original.tescene", DUPLICATED_ID);
@@ -293,7 +293,7 @@ TEST_CASE("generateId returns a non-null id that the index does not hold", "[edi
     }
 }
 
-TEST_CASE("add keeps the records sorted by id and findable", "[editor][assets]") {
+TEST_CASE("add keeps the records sorted by id and findable", "[editor][assets][os]") {
     const IndexScratch env{"assetIndexAdd"};
     env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
     env.writeScene("assets/client/menu.tescene", CLIENT_SCENE_ID);
@@ -337,7 +337,7 @@ TEST_CASE("add on an index that was never built holds the one record", "[editor]
     CHECK(found.path == record.path);
 }
 
-TEST_CASE("add rejects a null, indexed or duplicated id and leaves the index unchanged", "[editor][assets]") {
+TEST_CASE("add rejects a null, indexed or duplicated id and leaves the index unchanged", "[editor][assets][os]") {
     const IndexScratch env{"assetIndexAddRejects"};
     env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
     env.writeScene("assets/common/original.tescene", DUPLICATED_ID);

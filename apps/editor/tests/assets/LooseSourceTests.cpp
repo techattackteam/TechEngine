@@ -85,7 +85,7 @@ private:
     std::vector<std::byte> m_clientBytes;
 };
 
-TEST_CASE("the loose source returns the bytes of a common or client id", "[editor][assets]") {
+TEST_CASE("the loose source returns the bytes of a common or client id", "[editor][assets][os]") {
     const LooseScratch env{"looseSourcePresent"};
     const LooseSource source{env.files(), env.index()};
 
@@ -101,14 +101,14 @@ TEST_CASE("the loose source returns the bytes of a common or client id", "[edito
     CHECK(client == env.clientBytes());
 }
 
-TEST_CASE("the loose source reports a server id as absent for the client role", "[editor][assets]") {
+TEST_CASE("the loose source reports a server id as absent for the client role", "[editor][assets][os]") {
     const LooseScratch env{"looseSourceServer"};
     const LooseSource source{env.files(), env.index()};
 
     CHECK(source.find(LOOSE_SERVER_ID) == AssetAvailability::AbsentForRole);
 }
 
-TEST_CASE("the loose source reports an id the index does not hold as unknown", "[editor][assets]") {
+TEST_CASE("the loose source reports an id the index does not hold as unknown", "[editor][assets][os]") {
     const LooseScratch env{"looseSourceUnknown"};
     const LooseSource source{env.files(), env.index()};
 
@@ -117,7 +117,7 @@ TEST_CASE("the loose source reports an id the index does not hold as unknown", "
     CHECK(source.find(LOOSE_DUPLICATED_ID) == AssetAvailability::Unknown);
 }
 
-TEST_CASE("the loose source passes a file error through from read", "[editor][assets]") {
+TEST_CASE("the loose source passes a file error through from read", "[editor][assets][os]") {
     const LooseScratch env{"looseSourceFileError"};
     const LooseSource source{env.files(), env.index()};
     std::filesystem::remove(env.scratch().root() / "assets" / "client" / "menu.tescene");
@@ -126,7 +126,7 @@ TEST_CASE("the loose source passes a file error through from read", "[editor][as
     CHECK(source.read(LOOSE_CLIENT_ID, out) == FileError::NotFound);
 }
 
-TEST_CASE("reading an id the loose source does not hold as Present is a fatal check", "[editor][assets]") {
+TEST_CASE("reading an id the loose source does not hold as Present is a fatal check", "[editor][assets][os]") {
     const LooseScratch env{"looseSourceNotPresent"};
     const LooseSource source{env.files(), env.index()};
     const TechEngineTests::FatalAssertGuard guard;
