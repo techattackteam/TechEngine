@@ -36,7 +36,8 @@ TEST_CASE("Render thread loads GL with its context current", "[client][render][w
     REQUIRE(fixture.window.open(320, 240, "Render startup test") == std::error_code{});
     TechEngine::RenderThread renderer;
     REQUIRE(renderer.start(fixture.jobs, fixture.clock, fixture.window, fixture.input));
-    CHECK(GLAD_GL_VERSION_4_5 != 0);
+    CHECK(GLAD_GL_VERSION_4_6 != 0);
+    CHECK(GLAD_GL_ARB_bindless_texture != 0);
     CHECK_FALSE(renderer.start(fixture.jobs, fixture.clock, fixture.window, fixture.input));
     const std::vector<TechEngine::ThreadInfo> registered = fixture.jobs.registeredThreads();
     REQUIRE(registered.size() == 2);

@@ -55,8 +55,9 @@ namespace TechEngine {
         if (!glfwInit()) {
             return WindowError::PlatformInitFailed;
         }
+
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #if defined(__linux__)
         // zink, the only software driver that meets the renderer's GL floor, creates no context over GLX.
