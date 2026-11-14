@@ -1,4 +1,5 @@
 import ctypes
+import os
 import sys
 
 import glfw
@@ -37,6 +38,8 @@ def main():
     for request in ((4, 6, True), (4, 5, True), (4, 3, True), (3, 3, True), None):
         glfw.default_window_hints()
         glfw.window_hint(glfw.VISIBLE, glfw.FALSE)
+        if os.environ.get("GL_PROBE_EGL"):
+            glfw.window_hint(glfw.CONTEXT_CREATION_API, glfw.EGL_CONTEXT_API)
         if request is not None:
             glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, request[0])
             glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, request[1])

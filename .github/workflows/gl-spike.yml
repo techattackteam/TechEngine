@@ -51,14 +51,29 @@ jobs:
             result=$(grep '^SUMMARY' "out-$name.txt" | head -1 | sed 's/^SUMMARY //' || true)
             echo "| linux $name | ${result:-crashed, see log} |" >> "$GITHUB_STEP_SUMMARY"
           }
-          probe llvmpipe       LIBGL_ALWAYS_SOFTWARE=1
-          probe zink           MESA_LOADER_DRIVER_OVERRIDE=zink VK_DRIVER_FILES="$LVP" LIBGL_DEBUG=verbose
-          probe zink-dri2      MESA_LOADER_DRIVER_OVERRIDE=zink VK_DRIVER_FILES="$LVP" LIBGL_DEBUG=verbose LIBGL_KOPPER_DRI2=1
-          probe zink-nokopper  MESA_LOADER_DRIVER_OVERRIDE=zink VK_DRIVER_FILES="$LVP" LIBGL_DEBUG=verbose LIBGL_KOPPER_DISABLE=1
-          probe zink-swrast    LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=zink VK_DRIVER_FILES="$LVP" LIBGL_DEBUG=verbose
+          # zink takes a CPU Vulkan device only when LIBGL_ALWAYS_SOFTWARE is set ("failed to
+          # choose pdev" otherwise), so every zink variant this round sets it.
+          ZINK="LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=zink VK_DRIVER_FILES=$LVP MESA_DEBUG=1 LIBGL_DEBUG=verbose"
+          probe zink-swrast-glx   $ZINK
+          probe zink-swrast-egl   $ZINK GL_PROBE_EGL=1
+          probe zink-swrast-dri2  $ZINK LIBGL_KOPPER_DRI2=1
+          probe llvmpipe-egl      LIBGL_ALWAYS_SOFTWARE=1 GL_PROBE_EGL=1
+      # Off X entirely: can zink over lavapipe make a context, and does it offer bindless?
+      - name: Surfaceless EGL capability
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: zink
+          VK_DRIVER_FILES: /usr/share/vulkan/icd.d/lvp_icd.json
+          MESA_DEBUG: '1'
+          EGL_PLATFORM: surfaceless
+        run: |
+          eglinfo > eglinfo.txt 2>&1 || true
+          grep -nE 'platform|renderer|version string|MESA|error|failed' eglinfo.txt | head -60 || true
+          echo "ARB_bindless_texture mentions: $(grep -c 'GL_ARB_bindless_texture' eglinfo.txt || true)"
 
   windows:
     name: probe (Windows)
+    if: ${{ false }}
     runs-on: windows-2022
     timeout-minutes: 10
     steps:
