@@ -37,33 +37,15 @@ namespace TechEngine {
         return std::sqrt(glm::dot(matrix[0], matrix[0]) + glm::dot(matrix[1], matrix[1]) + glm::dot(matrix[2], matrix[2]));
     }
 
-    static bool isFiniteMatrix(const Mat3& matrix) {
-        for (int column = 0; column < 3; column++) {
-            for (int row = 0; row < 3; row++) {
-                if (!std::isfinite(matrix[column][row])) {
-                    return false;
-                }
-            }
-        }
-        return true;
+    static bool isFiniteVector(const Vec3& value) {
+        return std::isfinite(value.x) && std::isfinite(value.y) && std::isfinite(value.z);
     }
 
     static bool approximateLocalMatrix(const Mat4& matrix, TransformValues& result) {
         constexpr int POLAR_ITERATIONS = 8;
         constexpr float MINIMUM_RELATIVE_VOLUME = 0.00001f;
-        const Vec3 position = Vec3(matrix[3]);
-        if (!std::isfinite(position.x) || !std::isfinite(position.y) || !std::isfinite(position.z)) {
-            return false;
-        }
-
         Mat3 linear = Mat3(matrix);
-        Vec3 lengths;
-        for (int axis = 0; axis < 3; axis++) {
-            lengths[axis] = glm::length(linear[axis]);
-            if (!std::isfinite(lengths[axis]) || lengths[axis] == 0.0f) {
-                return false;
-            }
-        }
+        const Vec3 lengths = Vec3(glm::length(linear[0]), glm::length(linear[1]), glm::length(linear[2]));
         // A matrix flattened by a zero scale axis rounds to a tiny nonzero determinant, not to zero.
         const float relativeVolume = glm::determinant(Mat3(linear[0] / lengths.x, linear[1] / lengths.y, linear[2] / lengths.z));
         if (!std::isfinite(relativeVolume) || std::abs(relativeVolume) <= MINIMUM_RELATIVE_VOLUME) {
@@ -74,36 +56,22 @@ namespace TechEngine {
             linear[0] = -linear[0];
         }
 
+        // A singular step yields infinities or NaNs that carry through to the result, which is checked once below.
         Mat3 polar = linear / std::max({lengths.x, lengths.y, lengths.z});
         for (int iteration = 0; iteration < POLAR_ITERATIONS; iteration++) {
-            const float polarDeterminant = glm::determinant(polar);
-            if (!std::isfinite(polarDeterminant) || polarDeterminant == 0.0f) {
-                return false;
-            }
             const Mat3 inverted = glm::inverse(polar);
             const float normScale = std::sqrt(frobeniusNorm(inverted) / frobeniusNorm(polar));
-            if (!std::isfinite(normScale) || normScale == 0.0f) {
-                return false;
-            }
             polar = 0.5f * (normScale * polar + glm::transpose(inverted) / normScale);
-            if (!isFiniteMatrix(polar)) {
-                return false;
-            }
         }
 
-        Vec3 scale;
-        for (int axis = 0; axis < 3; axis++) {
-            scale[axis] = glm::dot(polar[axis], linear[axis]);
-            if (!std::isfinite(scale[axis]) || scale[axis] == 0.0f) {
-                return false;
-            }
-        }
+        Vec3 scale = Vec3(glm::dot(polar[0], linear[0]), glm::dot(polar[1], linear[1]), glm::dot(polar[2], linear[2]));
         if (mirrored) {
             scale.x = -scale.x;
         }
-
+        const Vec3 position = Vec3(matrix[3]);
         const Quat rotation = glm::normalize(glm::quat_cast(polar));
-        if (!std::isfinite(rotation.w) || !std::isfinite(rotation.x) || !std::isfinite(rotation.y) || !std::isfinite(rotation.z)) {
+        const bool finite = isFiniteVector(position) && isFiniteVector(scale) && isFiniteVector(Vec3(rotation.x, rotation.y, rotation.z)) && std::isfinite(rotation.w);
+        if (!finite || glm::any(glm::equal(scale, Vec3(0.0f)))) {
             return false;
         }
         result = {position, rotation, scale};
@@ -122,13 +90,7 @@ namespace TechEngine {
             axes[axis] /= scale[axis];
         }
 
-        if (std::abs(glm::dot(axes[0], axes[1])) > tolerance || std::abs(glm::dot(axes[0], axes[2])) > tolerance || std::abs(glm::dot(axes[1], axes[2])) > tolerance) {
-            return approximateLocalMatrix(matrix, result);
-        }
         const float orientation = glm::dot(glm::cross(axes[0], axes[1]), axes[2]);
-        if (!std::isfinite(orientation) || std::abs(std::abs(orientation) - 1.0f) > tolerance) {
-            return approximateLocalMatrix(matrix, result);
-        }
         if (orientation < 0.0f) {
             axes[0] = -axes[0];
             scale.x = -scale.x;

@@ -672,6 +672,21 @@ TEST_CASE("world edits reject zero scale and stale entity lookup", "[core][scene
     REQUIRE_THROWS_AS(scene.getComponent<TechEngine::Transform>(replacement), TechEngineTests::AssertFired);
 }
 
+TEST_CASE("world edits refuse a local position that overflows a float", "[core][scene][transform]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity parent = scene.createEntity();
+    const TechEngine::Entity child = scene.createEntity();
+    REQUIRE(scene.setParent(child, parent));
+    REQUIRE(scene.getComponent<TechEngine::Transform>(parent).setLocal(values(TechEngine::Vec3(0.0f), TechEngine::Quat(1.0f, 0.0f, 0.0f, 0.0f), TechEngine::Vec3(0.1f))));
+    const TechEngine::Mat4 before = scene.getComponent<TechEngine::Transform>(child).worldMatrix();
+
+    REQUIRE_FALSE(scene.getComponent<TechEngine::Transform>(child).setWorld(values(TechEngine::Vec3(3.0e38f, 0.0f, 0.0f))));
+    REQUIRE(scene.getComponent<TechEngine::Transform>(child).getLocal().position == TechEngine::Vec3(0.0f));
+    REQUIRE(scene.getComponent<TechEngine::Transform>(child).worldMatrix() == before);
+}
+
 TEST_CASE("non-uniform parent scale preserves shear in the world matrix", "[core][scene][transform]") {
     TechEngine::ComponentRegistry registry;
     TechEngineTests::registerBuiltInSceneComponents(registry);
