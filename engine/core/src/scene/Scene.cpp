@@ -33,6 +33,83 @@ namespace TechEngine {
         return glm::translate(Mat4(1.0f), values.position) * glm::mat4_cast(values.rotation) * glm::scale(Mat4(1.0f), values.scale);
     }
 
+    static float frobeniusNorm(const Mat3& matrix) {
+        return std::sqrt(glm::dot(matrix[0], matrix[0]) + glm::dot(matrix[1], matrix[1]) + glm::dot(matrix[2], matrix[2]));
+    }
+
+    static bool isFiniteMatrix(const Mat3& matrix) {
+        for (int column = 0; column < 3; column++) {
+            for (int row = 0; row < 3; row++) {
+                if (!std::isfinite(matrix[column][row])) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    static bool approximateLocalMatrix(const Mat4& matrix, TransformValues& result) {
+        constexpr int POLAR_ITERATIONS = 8;
+        constexpr float MINIMUM_RELATIVE_VOLUME = 0.00001f;
+        const Vec3 position = Vec3(matrix[3]);
+        if (!std::isfinite(position.x) || !std::isfinite(position.y) || !std::isfinite(position.z)) {
+            return false;
+        }
+
+        Mat3 linear = Mat3(matrix);
+        Vec3 lengths;
+        for (int axis = 0; axis < 3; axis++) {
+            lengths[axis] = glm::length(linear[axis]);
+            if (!std::isfinite(lengths[axis]) || lengths[axis] == 0.0f) {
+                return false;
+            }
+        }
+        // A matrix flattened by a zero scale axis rounds to a tiny nonzero determinant, not to zero.
+        const float relativeVolume = glm::determinant(Mat3(linear[0] / lengths.x, linear[1] / lengths.y, linear[2] / lengths.z));
+        if (!std::isfinite(relativeVolume) || std::abs(relativeVolume) <= MINIMUM_RELATIVE_VOLUME) {
+            return false;
+        }
+        const bool mirrored = relativeVolume < 0.0f;
+        if (mirrored) {
+            linear[0] = -linear[0];
+        }
+
+        Mat3 polar = linear / std::max({lengths.x, lengths.y, lengths.z});
+        for (int iteration = 0; iteration < POLAR_ITERATIONS; iteration++) {
+            const float polarDeterminant = glm::determinant(polar);
+            if (!std::isfinite(polarDeterminant) || polarDeterminant == 0.0f) {
+                return false;
+            }
+            const Mat3 inverted = glm::inverse(polar);
+            const float normScale = std::sqrt(frobeniusNorm(inverted) / frobeniusNorm(polar));
+            if (!std::isfinite(normScale) || normScale == 0.0f) {
+                return false;
+            }
+            polar = 0.5f * (normScale * polar + glm::transpose(inverted) / normScale);
+            if (!isFiniteMatrix(polar)) {
+                return false;
+            }
+        }
+
+        Vec3 scale;
+        for (int axis = 0; axis < 3; axis++) {
+            scale[axis] = glm::dot(polar[axis], linear[axis]);
+            if (!std::isfinite(scale[axis]) || scale[axis] == 0.0f) {
+                return false;
+            }
+        }
+        if (mirrored) {
+            scale.x = -scale.x;
+        }
+
+        const Quat rotation = glm::normalize(glm::quat_cast(polar));
+        if (!std::isfinite(rotation.w) || !std::isfinite(rotation.x) || !std::isfinite(rotation.y) || !std::isfinite(rotation.z)) {
+            return false;
+        }
+        result = {position, rotation, scale};
+        return true;
+    }
+
     static bool decomposeLocalMatrix(const Mat4& matrix, TransformValues& result) {
         constexpr float tolerance = 0.0001f;
         Vec3 axes[3] = {Vec3(matrix[0]), Vec3(matrix[1]), Vec3(matrix[2])};
@@ -46,11 +123,11 @@ namespace TechEngine {
         }
 
         if (std::abs(glm::dot(axes[0], axes[1])) > tolerance || std::abs(glm::dot(axes[0], axes[2])) > tolerance || std::abs(glm::dot(axes[1], axes[2])) > tolerance) {
-            return false;
+            return approximateLocalMatrix(matrix, result);
         }
         const float orientation = glm::dot(glm::cross(axes[0], axes[1]), axes[2]);
         if (!std::isfinite(orientation) || std::abs(std::abs(orientation) - 1.0f) > tolerance) {
-            return false;
+            return approximateLocalMatrix(matrix, result);
         }
         if (orientation < 0.0f) {
             axes[0] = -axes[0];
@@ -64,7 +141,7 @@ namespace TechEngine {
                 const float expected = matrix[column][row];
                 const float actual = reconstructed[column][row];
                 if (!std::isfinite(expected) || !std::isfinite(actual) || std::abs(expected - actual) > tolerance * std::max({1.0f, std::abs(expected), std::abs(actual)})) {
-                    return false;
+                    return approximateLocalMatrix(matrix, result);
                 }
             }
         }

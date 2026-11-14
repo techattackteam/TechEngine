@@ -246,18 +246,41 @@ TEST_CASE("init indexes the project's assets", "[editor]") {
     CHECK(record.path == "project://assets/common/level.tescene");
 }
 
-TEST_CASE("the editor keeps running with a startup scene it cannot find, and its startup load exports nothing", "[editor][window]") {
-    ScratchDirectory scratch{"editorStartupExportFails"};
+TEST_CASE("the startup load replaces a named startup scene that no asset file holds with a new one the editor can save", "[editor][window][save]") {
+    ScratchDirectory scratch{"editorStartupSceneMissing"};
     writeProjectLayout(scratch);
+    constexpr TechEngine::ResourceId missingId{0x00000000000000aa};
     scratch.writeFile("project.toml", "name = \"Dev\"\n\n[export.client]\nstartupScene = \"0x00000000000000aa\"\n");
     const std::filesystem::path exportFolder = scratch.makeDirectory("export");
 
     EditorProbe editor{scratch.root(), exportFolder};
     editor.bootstrap();
 
-    CHECK_FALSE(std::filesystem::exists(scratch.root() / STARTUP_SCENE_FILE));
+    const TechEngine::ResourceId createdId = savedStartupScene(scratch);
+    CHECK(createdId.valid());
+    CHECK(createdId != missingId);
+    CHECK(std::filesystem::is_regular_file(scratch.root() / STARTUP_SCENE_FILE));
+    TechEngine::AssetRecord record;
+    REQUIRE(editor.getAssetIndex().find(createdId, record));
+    CHECK(record.path == STARTUP_SCENE_PATH);
+    checkParentWithTwoChildren(editor.scene());
+    CHECK(editor.sceneHandle().valid());
     CHECK_FALSE(std::filesystem::exists(exportFolder / "Dev"));
     CHECK_FALSE(editor.shouldClose());
+
+    std::vector<std::byte> before;
+    REQUIRE(editor.files().read(STARTUP_SCENE_PATH, before) == std::error_code{});
+    TechEngine::Scene& scene = AppTestAccess::scene(editor);
+    const TechEngine::Entity added = scene.createEntity();
+    REQUIRE(added.valid());
+    scene.getComponent<TechEngine::Name>(added).value = "Added";
+
+    editor.saveScene();
+
+    std::vector<std::byte> after;
+    REQUIRE(editor.files().read(STARTUP_SCENE_PATH, after) == std::error_code{});
+    CHECK(after != before);
+    CHECK(savedStartupScene(scratch) == createdId);
     editor.shutdown();
 }
 
@@ -399,7 +422,9 @@ TEST_CASE("File, Export and File, Run export nothing when the simulation refuses
 TEST_CASE("File, Run starts nothing when its export fails", "[editor][window][run]") {
     ScratchDirectory scratch{"editorRunExportFails"};
     writeProjectLayout(scratch);
-    scratch.writeFile("project.toml", "name = \"Dev\"\n\n[export.client]\nstartupScene = \"0x00000000000000aa\"\n");
+    constexpr TechEngine::ResourceId sceneId{0x0123456789abcdef};
+    scratch.writeFile("project.toml", "name = \"Dev\"\n\n[export.client]\nstartupScene = \"0x0123456789abcdef\"\n");
+    TechEngineTests::writeBytes(scratch, STARTUP_SCENE_FILE, TechEngineTests::assetBytes(TechEngine::SCENE_KIND, sceneId, "not a scene"));
     const std::filesystem::path exportFolder = scratch.makeDirectory("export");
     scratch.writeFile("export/runtime", "runtime");
     EditorProbe editor{scratch.root(), exportFolder};
@@ -600,15 +625,50 @@ TEST_CASE("a named startup scene that does not parse leaves the editor open on a
     writeProjectLayout(scratch);
     constexpr TechEngine::ResourceId sceneId{0x0123456789abcdef};
     scratch.writeFile("project.toml", "name = \"Dev\"\n\n[export.client]\nstartupScene = \"0x0123456789abcdef\"\n");
-    TechEngineTests::writeBytes(scratch, STARTUP_SCENE_FILE, TechEngineTests::assetBytes(TechEngine::SCENE_KIND, sceneId, "not a scene"));
+    const std::vector<std::byte> original = TechEngineTests::assetBytes(TechEngine::SCENE_KIND, sceneId, "not a scene");
+    TechEngineTests::writeBytes(scratch, STARTUP_SCENE_FILE, original);
+    std::vector<std::byte> manifestBefore;
 
     EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
-    editor.bootstrap();
+    editor.prepare();
+    REQUIRE(editor.files().read(MANIFEST_PATH, manifestBefore) == std::error_code{});
+    REQUIRE(editor.startupLoad() == std::error_code{});
 
     CHECK(editor.scene().getRoots().empty());
     CHECK_FALSE(editor.sceneHandle().valid());
     CHECK(savedStartupScene(scratch) == sceneId);
     CHECK_FALSE(editor.shouldClose());
+
+    editor.saveScene();
+
+    std::vector<std::byte> manifestAfter;
+    REQUIRE(editor.files().read(MANIFEST_PATH, manifestAfter) == std::error_code{});
+    CHECK(manifestAfter == manifestBefore);
+    std::vector<std::byte> after;
+    REQUIRE(editor.files().read(STARTUP_SCENE_PATH, after) == std::error_code{});
+    CHECK(after == original);
+    CHECK(fileCount(scratch.root() / "assets" / "common") == 1);
+    CHECK_FALSE(std::filesystem::exists(scratch.root() / TRIANGLE_MESH_FILE));
+    editor.shutdown();
+}
+
+TEST_CASE("the startup load adopts an indexed Startup.tescene when the project names a scene no asset file holds", "[editor][window]") {
+    ScratchDirectory scratch{"editorAdoptsForMissingStartupScene"};
+    writeProjectLayout(scratch);
+    constexpr TechEngine::ResourceId existingId{0x0fedcba987654321};
+    scratch.writeFile("project.toml", "name = \"Dev\"\n\n[export.client]\nstartupScene = \"0x00000000000000aa\"\n");
+    const std::vector<std::byte> original = TechEngineTests::assetBytes(TechEngine::SCENE_KIND, existingId, "scene");
+    TechEngineTests::writeBytes(scratch, STARTUP_SCENE_FILE, original);
+
+    EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
+    editor.bootstrap();
+
+    std::vector<std::byte> after;
+    REQUIRE(editor.files().read(STARTUP_SCENE_PATH, after) == std::error_code{});
+    CHECK(after == original);
+    CHECK(savedStartupScene(scratch) == existingId);
+    CHECK(editor.getAssetIndex().getRecords().size() == 1);
+    CHECK(editor.scene().getRoots().empty());
     editor.shutdown();
 }
 
