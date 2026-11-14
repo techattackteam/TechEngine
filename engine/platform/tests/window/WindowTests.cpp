@@ -16,7 +16,7 @@
 #include <system_error>
 #include <thread>
 
-TEST_CASE("Window opens and closes on main without claiming the context", "[platform][window]") {
+TEST_CASE("Window opens and closes on main without claiming the context", "[platform][window][gpu]") {
     const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
@@ -33,7 +33,7 @@ TEST_CASE("Window opens and closes on main without claiming the context", "[plat
     CHECK(glfwGetCurrentContext() == nullptr);
 }
 
-TEST_CASE("Window exposes its native handle only while open", "[platform][window]") {
+TEST_CASE("Window exposes its native handle only while open", "[platform][window][gpu]") {
     const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
@@ -48,7 +48,7 @@ TEST_CASE("Window exposes its native handle only while open", "[platform][window
     CHECK(window.nativeWindow() == nullptr);
 }
 
-TEST_CASE("Window cancels a close request only while it is open", "[platform][window]") {
+TEST_CASE("Window cancels a close request only while it is open", "[platform][window][gpu]") {
     const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
@@ -106,7 +106,7 @@ TEST_CASE("GLFW grows and frees its blocks through the allocator Window installs
     CHECK(glfwGetError(nullptr) == GLFW_NO_ERROR);
 }
 
-TEST_CASE("Window releases a context on its owning worker", "[platform][window]") {
+TEST_CASE("Window releases a context on its owning worker", "[platform][window][gpu]") {
     const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
@@ -126,7 +126,7 @@ TEST_CASE("Window releases a context on its owning worker", "[platform][window]"
     CHECK(glfwGetCurrentContext() == nullptr);
 }
 
-TEST_CASE("Window title uses the supplied string view and buffers swap on the context owner", "[platform][window]") {
+TEST_CASE("Window title uses the supplied string view and buffers swap on the context owner", "[platform][window][gpu]") {
     const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
@@ -159,7 +159,7 @@ TEST_CASE("Window title uses the supplied string view and buffers swap on the co
     CHECK(window.shouldClose());
 }
 
-TEST_CASE("Window publishes framebuffer pixels and callback changes to the render thread", "[platform][window][framebuffer]") {
+TEST_CASE("Window publishes framebuffer pixels and callback changes to the render thread", "[platform][window][framebuffer][gpu]") {
     const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
@@ -233,7 +233,7 @@ TEST_CASE("Window publishes framebuffer pixels and callback changes to the rende
     CHECK(window.framebufferSize().height > 0);
 }
 
-TEST_CASE("Window event waiting returns when another thread posts an empty event", "[platform][window]") {
+TEST_CASE("Window event waiting returns when another thread posts an empty event", "[platform][window][gpu]") {
     const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
@@ -288,7 +288,7 @@ struct InputWindowFixture {
     }
 };
 
-TEST_CASE("Window callbacks publish input into the attached buffer", "[platform][window][input]") {
+TEST_CASE("Window callbacks publish input into the attached buffer", "[platform][window][input][gpu]") {
     InputWindowFixture env{"Input test"};
     REQUIRE(env.callbacks.key != nullptr);
     REQUIRE(env.callbacks.button != nullptr);
@@ -325,7 +325,7 @@ TEST_CASE("Window callbacks publish input into the attached buffer", "[platform]
     CHECK(env.input.presentationState().lookX == 3.0);
 }
 
-TEST_CASE("Window translates known controls and drops unknown ones before the buffer", "[platform][window][input]") {
+TEST_CASE("Window translates known controls and drops unknown ones before the buffer", "[platform][window][input][gpu]") {
     InputWindowFixture env{"Unknown input test"};
 
     env.callbacks.focus(env.nativeWindow, GLFW_TRUE);
@@ -354,7 +354,7 @@ TEST_CASE("Window translates known controls and drops unknown ones before the bu
     CHECK(env.input.presentationState().sequence == frame.events[2].sequence);
 }
 
-TEST_CASE("Window keeps press and release order and never turns GLFW repeat into a press", "[platform][window][input]") {
+TEST_CASE("Window keeps press and release order and never turns GLFW repeat into a press", "[platform][window][input][gpu]") {
     InputWindowFixture env{"Input order test"};
 
     env.callbacks.focus(env.nativeWindow, GLFW_TRUE);
@@ -395,7 +395,7 @@ TEST_CASE("Window keeps press and release order and never turns GLFW repeat into
     CHECK(frame.held.buttons.none());
 }
 
-TEST_CASE("Window translated controls reach the presentation copy without a simulation consume", "[platform][window][input]") {
+TEST_CASE("Window translated controls reach the presentation copy without a simulation consume", "[platform][window][input][gpu]") {
     InputWindowFixture env{"Presentation input test"};
 
     env.callbacks.focus(env.nativeWindow, GLFW_TRUE);

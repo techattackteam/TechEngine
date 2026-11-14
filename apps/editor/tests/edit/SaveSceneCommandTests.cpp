@@ -74,7 +74,7 @@ public:
     }
 };
 
-TEST_CASE("a save and a reload give the same scene", "[editor][edit][save]") {
+TEST_CASE("a save and a reload give the same scene", "[editor][edit][save][os]") {
     SaveFixture fixture{"saveSceneRoundTrip"};
     const Entity parent = fixture.edit.createNamed("Parent");
     const Entity child = fixture.edit.createNamed("Child", parent);
@@ -121,7 +121,7 @@ TEST_CASE("a save and a reload give the same scene", "[editor][edit][save]") {
     CHECK(loaded.asset.id == ResourceId{0x77});
 }
 
-TEST_CASE("the saved revision follows a save", "[editor][edit][save]") {
+TEST_CASE("the saved revision follows a save", "[editor][edit][save][os]") {
     SaveFixture fixture{"saveSceneRevision"};
     fixture.edit.createNamed("A");
     fixture.edit.session.setSceneFile({SAVED_SCENE_ID, std::string(SAVED_SCENE_PATH)});
@@ -146,7 +146,7 @@ TEST_CASE("the saved revision follows a save", "[editor][edit][save]") {
     }
 }
 
-TEST_CASE("a failed write leaves the marker and writes nothing", "[editor][edit][save]") {
+TEST_CASE("a failed write leaves the marker and writes nothing", "[editor][edit][save][os]") {
     SaveFixture fixture{"saveSceneFailedWrite"};
     fixture.edit.createNamed("A");
     fixture.edit.session.setSceneFile({SAVED_SCENE_ID, std::string(UNMOUNTED_SCENE_PATH)});
@@ -170,7 +170,7 @@ TEST_CASE("a failed write leaves the marker and writes nothing", "[editor][edit]
     CHECK(fixture.fileCount() == 0);
 }
 
-TEST_CASE("a session with no scene file refuses the save and writes nothing", "[editor][edit][save]") {
+TEST_CASE("a session with no scene file refuses the save and writes nothing", "[editor][edit][save][os]") {
     SaveFixture fixture{"saveSceneNoSceneFile"};
     fixture.edit.createNamed("A");
     fixture.edit.session.recordSceneChange();
@@ -185,7 +185,7 @@ TEST_CASE("a session with no scene file refuses the save and writes nothing", "[
     CHECK_FALSE(fixture.app.isStopRequested());
 }
 
-TEST_CASE("only a save and close that wrote the file stops the app", "[editor][edit][save]") {
+TEST_CASE("only a save and close that wrote the file stops the app", "[editor][edit][save][os]") {
     SaveFixture fixture{"saveSceneAndClose"};
     fixture.edit.createNamed("A");
     fixture.edit.session.setSceneFile({SAVED_SCENE_ID, std::string(SAVED_SCENE_PATH)});

@@ -31,7 +31,7 @@ public:
     }
 };
 
-TEST_CASE("Render thread loads GL with its context current", "[client][render][window]") {
+TEST_CASE("Render thread loads GL with its context current", "[client][render][window][gpu]") {
     RenderThreadFixture fixture;
     REQUIRE(fixture.window.open(320, 240, "Render startup test") == std::error_code{});
     TechEngine::RenderThread renderer;
@@ -61,7 +61,7 @@ TEST_CASE("Render thread loads GL with its context current", "[client][render][w
     CHECK(queriedVersion);
 }
 
-TEST_CASE("Render thread releases its context and joins before window destruction", "[client][render][window]") {
+TEST_CASE("Render thread releases its context and joins before window destruction", "[client][render][window][gpu]") {
     RenderThreadFixture fixture;
     REQUIRE(fixture.window.open(320, 240, "Render shutdown test") == std::error_code{});
     {
@@ -75,7 +75,7 @@ TEST_CASE("Render thread releases its context and joins before window destructio
     CHECK(fixture.window.shouldClose());
 }
 
-TEST_CASE("Render thread joins after failed startup and can retry", "[client][render][window]") {
+TEST_CASE("Render thread joins after failed startup and can retry", "[client][render][window][gpu]") {
     RenderThreadFixture fixture;
     TechEngine::RenderThread renderer;
     CHECK_FALSE(renderer.start(fixture.jobs, fixture.clock, fixture.window, fixture.input));
@@ -89,7 +89,7 @@ TEST_CASE("Render thread joins after failed startup and can retry", "[client][re
     fixture.window.close();
 }
 
-TEST_CASE("Render thread starts, draws and stops its ImGui hook on itself in that order", "[client][render][window]") {
+TEST_CASE("Render thread starts, draws and stops its ImGui hook on itself in that order", "[client][render][window][gpu]") {
     RenderThreadFixture fixture;
     REQUIRE(fixture.window.open(320, 240, "ImGui hook order test") == std::error_code{});
     TechEngineTests::RecordingImGuiHook hook;
@@ -117,7 +117,7 @@ TEST_CASE("Render thread starts, draws and stops its ImGui hook on itself in tha
     }
 }
 
-TEST_CASE("Render thread runs without an ImGui hook and calls a later one only in its own session", "[client][render][window]") {
+TEST_CASE("Render thread runs without an ImGui hook and calls a later one only in its own session", "[client][render][window][gpu]") {
     RenderThreadFixture fixture;
     REQUIRE(fixture.window.open(320, 240, "ImGui hook session test") == std::error_code{});
     TechEngine::RenderThread renderer;
@@ -138,7 +138,7 @@ TEST_CASE("Render thread runs without an ImGui hook and calls a later one only i
     CHECK(calls.back().name == "stop");
 }
 
-TEST_CASE("Render thread stops its ImGui hook after a failed frame", "[client][render][window]") {
+TEST_CASE("Render thread stops its ImGui hook after a failed frame", "[client][render][window][gpu]") {
     RenderThreadFixture fixture;
     REQUIRE(fixture.window.open(320, 240, "ImGui hook failure test") == std::error_code{});
     TechEngineTests::RecordingImGuiHook hook{true};

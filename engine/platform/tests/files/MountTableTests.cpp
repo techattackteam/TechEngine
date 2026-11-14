@@ -106,7 +106,7 @@ TEST_CASE("entries are ordered by descending priority, ties in mount order", "[f
     CHECK(entries[3].physicalRoot == std::filesystem::path{"/low"});
 }
 
-TEST_CASE("resolveExisting finds a file under a mounted alias", "[files][mounttable]") {
+TEST_CASE("resolveExisting finds a file under a mounted alias", "[files][mounttable][os]") {
     const ScratchDirectory scratch{"resolveExisting"};
     scratch.writeFile("ui/icon.png", "png");
 
@@ -118,7 +118,7 @@ TEST_CASE("resolveExisting finds a file under a mounted alias", "[files][mountta
     CHECK(resolved == scratch.root() / "ui" / "icon.png");
 }
 
-TEST_CASE("resolveExisting resolves an alias-only path to the mount root", "[files][mounttable]") {
+TEST_CASE("resolveExisting resolves an alias-only path to the mount root", "[files][mounttable][os]") {
     const ScratchDirectory scratch{"resolveRoot"};
 
     MountTable table;
@@ -129,7 +129,7 @@ TEST_CASE("resolveExisting resolves an alias-only path to the mount root", "[fil
     CHECK(resolved == scratch.root());
 }
 
-TEST_CASE("resolveExisting separates an unknown alias from a missing file", "[files][mounttable]") {
+TEST_CASE("resolveExisting separates an unknown alias from a missing file", "[files][mounttable][os]") {
     const ScratchDirectory scratch{"resolveMisses"};
 
     MountTable table;
@@ -141,7 +141,7 @@ TEST_CASE("resolveExisting separates an unknown alias from a missing file", "[fi
     CHECK(table.resolveExisting("ui/icon.png", resolved) == FileError::InvalidPath);
 }
 
-TEST_CASE("resolveExisting prefers the highest-priority mount that has the file", "[files][mounttable]") {
+TEST_CASE("resolveExisting prefers the highest-priority mount that has the file", "[files][mounttable][os]") {
     const ScratchDirectory base{"resolvePriorityBase"};
     const ScratchDirectory overlay{"resolvePriorityOverlay"};
     base.writeFile("ui/icon.png", "base");
@@ -156,7 +156,7 @@ TEST_CASE("resolveExisting prefers the highest-priority mount that has the file"
     CHECK(resolved == overlay.root() / "ui" / "icon.png");
 }
 
-TEST_CASE("resolveExisting falls through to a lower-priority mount", "[files][mounttable]") {
+TEST_CASE("resolveExisting falls through to a lower-priority mount", "[files][mounttable][os]") {
     const ScratchDirectory base{"resolveFallthroughBase"};
     const ScratchDirectory overlay{"resolveFallthroughOverlay"};
     base.writeFile("ui/icon.png", "base");
@@ -172,7 +172,7 @@ TEST_CASE("resolveExisting falls through to a lower-priority mount", "[files][mo
 
 // The one case whose OS behaviour differs: Windows opens the file, Linux does not. Both legs
 // must report NotFound.
-TEST_CASE("resolveExisting is case-sensitive", "[files][mounttable]") {
+TEST_CASE("resolveExisting is case-sensitive", "[files][mounttable][os]") {
     const ScratchDirectory scratch{"resolveCase"};
     scratch.writeFile("ui/icon.png", "png");
 
@@ -185,7 +185,7 @@ TEST_CASE("resolveExisting is case-sensitive", "[files][mounttable]") {
     CHECK(table.resolveExisting("assets://ui/icon.PNG", resolved) == FileError::NotFound);
 }
 
-TEST_CASE("resolveExisting resolves through a directory symlink below the mount root", "[files][mounttable]") {
+TEST_CASE("resolveExisting resolves through a directory symlink below the mount root", "[files][mounttable][os]") {
     const ScratchDirectory scratch{"resolveSymlink"};
     const ScratchDirectory target{"resolveSymlinkTarget"};
     target.writeFile("textures/icon.png", "png");
@@ -208,7 +208,7 @@ TEST_CASE("resolveExisting resolves through a directory symlink below the mount 
     CHECK(table.resolveExisting("assets://textures/icon.png", resolved) == FileError::NotFound);
 }
 
-TEST_CASE("resolveForCreate returns a path that does not exist yet", "[files][mounttable]") {
+TEST_CASE("resolveForCreate returns a path that does not exist yet", "[files][mounttable][os]") {
     ScratchDirectory scratch{"resolveForCreateMissing"};
     MountTable table;
     table.mount("assets", scratch.root());

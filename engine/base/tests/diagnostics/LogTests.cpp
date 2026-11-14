@@ -2,6 +2,7 @@
 #include <TechEngine/base/diagnostics/LogError.hpp>
 #include <TechEngine/base/diagnostics/StoredLogRecord.hpp>
 #include <TechEngine/testing/LogCapture.hpp>
+#include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <diagnostics/FormatBuffer.hpp>
 
@@ -339,7 +340,7 @@ TEST_CASE("two sinks see the same records in the same order", "[base][log][sink]
     REQUIRE(firstMessages == second.getMessages());
 }
 
-TEST_CASE("after removeLogSink returns, the removed sink gets nothing and can be destroyed", "[base][log][sink][threads]") {
+TEST_CASE("after removeLogSink returns, the removed sink gets nothing and can be destroyed", "[base][log][sink][threads][os]") {
     // Keeps the loggers' records off stderr once the removed sink is gone.
     CountingSink anchor;
     const SinkRegistration anchorRegistration{anchor};
@@ -380,7 +381,8 @@ TEST_CASE("after removeLogSink returns, the removed sink gets nothing and can be
 // names the original to freopen back to, so the descriptor is saved and restored by hand.
 template<typename Body>
 static std::string captureStderr(Body&& body) {
-    const std::filesystem::path path = std::filesystem::temp_directory_path() / "te_log_stderr.txt";
+    const TechEngineTests::ScratchDirectory scratch{"logStderr"};
+    const std::filesystem::path path = scratch.root() / "stderr.txt";
 
     std::fflush(stderr);
 #if defined(_WIN32)
@@ -410,15 +412,12 @@ static std::string captureStderr(Body&& body) {
 
     std::ifstream file{path};
     const std::string contents{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
-
-    std::error_code ec;
-    std::filesystem::remove(path, ec);
     return contents;
 }
 
 // No capture guard: an empty sink set is the whole point. initLogging() is never called from the
 // suite, so nothing else is installed either.
-TEST_CASE("with no sink installed a record still reaches stderr", "[base][log][sink]") {
+TEST_CASE("with no sink installed a record still reaches stderr", "[base][log][sink][os]") {
     const TechEngine::Level previous = TechEngine::minLevel();
     TechEngine::setMinLevel(TechEngine::Level::Trace);
 
@@ -441,7 +440,7 @@ public:
     }
 };
 
-TEST_CASE("a record logged inside a write reaches the ring and stderr, not the sinks", "[base][log][sink]") {
+TEST_CASE("a record logged inside a write reaches the ring and stderr, not the sinks", "[base][log][sink][os]") {
     TechEngine::ringClear();
     const TechEngineTests::LogCaptureGuard capture;
     ReentrantSink reentrant;

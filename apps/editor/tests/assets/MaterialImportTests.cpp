@@ -204,7 +204,7 @@ static std::string glbWithEmbeddedPng(const std::string& png) {
     return file;
 }
 
-TEST_CASE("two materials that share a base color image write that texture once", "[editor][assets][import][materials]") {
+TEST_CASE("two materials that share a base color image write that texture once", "[editor][assets][import][materials][os]") {
     MaterialImportFixture fixture{"materialsShareTexture"};
     fixture.scratch.writeFile("assets/client/Textures/wall.png", TechEngineTests::solidPng(4, 4, {200, 100, 50, 255}));
     fixture.scratch.writeFile(
@@ -258,7 +258,7 @@ TEST_CASE("two materials that share a base color image write that texture once",
     }
 }
 
-TEST_CASE("separate occlusion and metallic-roughness images give one packed ORM texture", "[editor][assets][import][materials]") {
+TEST_CASE("separate occlusion and metallic-roughness images give one packed ORM texture", "[editor][assets][import][materials][os]") {
     MaterialImportFixture fixture{"materialsPackOrm"};
     fixture.scratch.writeFile("assets/client/Textures/ao.png", TechEngineTests::solidPng(2, 2, {200, 0, 0, 255}));
     fixture.scratch.writeFile("assets/client/Textures/mr.png", TechEngineTests::solidPng(4, 4, {0, 100, 50, 255}));
@@ -311,7 +311,7 @@ TEST_CASE("separate occlusion and metallic-roughness images give one packed ORM 
     }
 }
 
-TEST_CASE("a .glb fixture's embedded PNG is imported", "[editor][assets][import][materials]") {
+TEST_CASE("a .glb fixture's embedded PNG is imported", "[editor][assets][import][materials][os]") {
     MaterialImportFixture fixture{"materialsEmbeddedPng"};
     fixture.scratch.writeFile("assets/client/Crate.glb", glbWithEmbeddedPng(TechEngineTests::solidPng(8, 4, {10, 220, 90, 255})));
     fixture.importFile("Crate.glb");
@@ -325,7 +325,7 @@ TEST_CASE("a .glb fixture's embedded PNG is imported", "[editor][assets][import]
     CHECK(fixture.exists("assets/client/Crate/Textures/Texture 0_basecolor.tetexture"));
 }
 
-TEST_CASE("a BC1 DDS fixture is decoded and written as BC7", "[editor][assets][import][materials]") {
+TEST_CASE("a BC1 DDS fixture is decoded and written as BC7", "[editor][assets][import][materials][os]") {
     MaterialImportFixture fixture{"materialsDds"};
     std::string blocks;
     for (int i = 0; i < 4; i++) {
@@ -348,7 +348,7 @@ TEST_CASE("a BC1 DDS fixture is decoded and written as BC7", "[editor][assets][i
     checkTopTexel(texture, {255, 0, 0});
 }
 
-TEST_CASE("each texture has its input's format and a full mip chain", "[editor][assets][import][materials]") {
+TEST_CASE("each texture has its input's format and a full mip chain", "[editor][assets][import][materials][os]") {
     MaterialImportFixture fixture{"materialsFormats"};
     fixture.scratch.writeFile("assets/client/Textures/base.png", TechEngineTests::solidPng(16, 8, {255, 255, 255, 255}));
     fixture.scratch.writeFile("assets/client/Textures/mr.png", TechEngineTests::solidPng(5, 3, {0, 128, 0, 255}));
@@ -388,7 +388,7 @@ TEST_CASE("each texture has its input's format and a full mip chain", "[editor][
     CHECK(emissive.mips.size() == 1);
 }
 
-TEST_CASE("each texture's source key names its path, purpose and sampler", "[editor][assets][import][materials]") {
+TEST_CASE("each texture's source key names its path, purpose and sampler", "[editor][assets][import][materials][os]") {
     MaterialImportFixture fixture{"materialsKeys"};
     fixture.scratch.writeFile("assets/client/Maps/Wall Tile.png", TechEngineTests::solidPng(2, 2, {1, 2, 3, 255}));
     fixture.scratch.writeFile(
@@ -411,7 +411,7 @@ TEST_CASE("each texture's source key names its path, purpose and sampler", "[edi
     CHECK(fixture.textureKeyed("Maps/Wall Tile.png#normal#mirror-repeat-linear").sampler == TechEngine::TextureSampler{TextureWrap::Mirror, TextureWrap::Repeat, TextureFilter::Linear});
 }
 
-TEST_CASE("each mesh slot's default is its material's id", "[editor][assets][import][materials]") {
+TEST_CASE("each mesh slot's default is its material's id", "[editor][assets][import][materials][os]") {
     MaterialImportFixture fixture{"materialsSlotDefaults"};
     fixture.scratch.writeFile("assets/client/Front.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_TWO_MATERIALS_BODY));
 
@@ -453,7 +453,7 @@ TEST_CASE("each mesh slot's default is its material's id", "[editor][assets][imp
     }
 }
 
-TEST_CASE("an unnamed material's file name comes from its index", "[editor][assets][import][materials]") {
+TEST_CASE("an unnamed material's file name comes from its index", "[editor][assets][import][materials][os]") {
     MaterialImportFixture fixture{"materialsUnnamed"};
     fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
     fixture.importFile("Pair.gltf");
@@ -474,7 +474,7 @@ TEST_CASE("an unnamed material's file name comes from its index", "[editor][asse
     CHECK_FALSE(fixture.exists("assets/client/Pair/Textures"));
 }
 
-TEST_CASE("a glTF material's factors survive the import", "[editor][assets][import][materials]") {
+TEST_CASE("a glTF material's factors survive the import", "[editor][assets][import][materials][os]") {
     MaterialImportFixture fixture{"materialsFactors"};
     fixture.scratch.writeFile(
         "assets/client/Kit.gltf",
@@ -510,7 +510,7 @@ TEST_CASE("a glTF material's factors survive the import", "[editor][assets][impo
     CHECK(glow.alphaCutoff == Catch::Approx(0.5f));
 }
 
-TEST_CASE("a texture's scale and strength reach the material", "[editor][assets][import][materials]") {
+TEST_CASE("a texture's scale and strength reach the material", "[editor][assets][import][materials][os]") {
     MaterialImportFixture fixture{"materialsTextureFactors"};
     fixture.scratch.writeFile("assets/client/Textures/flat.png", TechEngineTests::solidPng(1, 1, {128, 128, 255, 255}));
     fixture.scratch.writeFile(
@@ -528,7 +528,7 @@ TEST_CASE("a texture's scale and strength reach the material", "[editor][assets]
     CHECK(panel.occlusionRoughnessMetallicTexture.id == fixture.textureKeyed("Textures/flat.png+#orm#repeat-linear").id);
 }
 
-TEST_CASE("an image that cannot be read is logged, its input stays empty and the import goes on", "[editor][assets][import][materials]") {
+TEST_CASE("an image that cannot be read is logged, its input stays empty and the import goes on", "[editor][assets][import][materials][os]") {
     MaterialImportFixture fixture{"materialsMissingImage"};
     fixture.scratch.writeFile("assets/client/Textures/broken.png", "not a png");
     fixture.scratch.writeFile(
@@ -549,7 +549,7 @@ TEST_CASE("an image that cannot be read is logged, its input stays empty and the
     CHECK_FALSE(fixture.exists("assets/client/Wall/Textures"));
 }
 
-TEST_CASE("an OBJ material maps its diffuse colour, opacity and emissive, and is not metal", "[editor][assets][import][materials]") {
+TEST_CASE("an OBJ material maps its diffuse colour, opacity and emissive, and is not metal", "[editor][assets][import][materials][os]") {
     MaterialImportFixture fixture{"materialsObj"};
     fixture.scratch.writeFile("assets/client/Quad.mtl", "newmtl Red\nKd 1 0 0\nd 0.5\nKe 0.1 0.2 0.3\n");
     fixture.scratch.writeFile("assets/client/Quad.obj", "mtllib Quad.mtl\no Quad\nv 0 0 0\nv 1 0 0\nv 1 1 0\nv 0 1 0\nusemtl Red\nf 1 2 3 4\n");
@@ -566,7 +566,7 @@ TEST_CASE("an OBJ material maps its diffuse colour, opacity and emissive, and is
     CHECK(red.alphaMode == MaterialAlphaMode::Opaque);
 }
 
-TEST_CASE("an OBJ material's absolute image paths are looked for by name beside the source, and keyed by that name", "[editor][assets][import][materials]") {
+TEST_CASE("an OBJ material's absolute image paths are looked for by name beside the source, and keyed by that name", "[editor][assets][import][materials][os]") {
     MaterialImportFixture fixture{"materialsAbsolutePaths"};
     fixture.scratch.writeFile("assets/client/wall.png", TechEngineTests::solidPng(2, 2, {200, 100, 50, 255}));
     fixture.scratch.writeFile("assets/client/glow.png", TechEngineTests::solidPng(2, 2, {10, 20, 30, 255}));

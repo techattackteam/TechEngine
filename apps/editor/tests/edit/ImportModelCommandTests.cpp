@@ -97,7 +97,7 @@ static AssetRecord makeRecord(const ResourceId id, const std::string_view path) 
     return record;
 }
 
-TEST_CASE("registering imported assets adds each record to the index", "[editor][edit][import]") {
+TEST_CASE("registering imported assets adds each record to the index", "[editor][edit][import][os]") {
     ImportAppProbe app{"importRegisterAdds"};
     constexpr ResourceId first{0x20};
     constexpr ResourceId second{0x10};
@@ -120,7 +120,7 @@ TEST_CASE("registering imported assets adds each record to the index", "[editor]
     }
 }
 
-TEST_CASE("registering skips a record whose id the index already holds and adds the rest", "[editor][edit][import]") {
+TEST_CASE("registering skips a record whose id the index already holds and adds the rest", "[editor][edit][import][os]") {
     ImportAppProbe app{"importRegisterSkipsTaken"};
     constexpr ResourceId taken{0x30};
     constexpr ResourceId fresh{0x31};
@@ -137,7 +137,7 @@ TEST_CASE("registering skips a record whose id the index already holds and adds 
     CHECK(found.path == "project://assets/client/Fresh.temesh");
 }
 
-TEST_CASE("the import command returns before the job is done and writes the files on a worker", "[editor][edit][import]") {
+TEST_CASE("the import command returns before the job is done and writes the files on a worker", "[editor][edit][import][os]") {
     ImportAppProbe app{"importCommandWritesFiles"};
     app.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
     ImportModelCommand command = app.makeImport(PAIR_SOURCE);
@@ -171,7 +171,7 @@ TEST_CASE("the import command returns before the job is done and writes the file
     }
 }
 
-TEST_CASE("an import command whose job fails writes nothing and registers nothing", "[editor][edit][import]") {
+TEST_CASE("an import command whose job fails writes nothing and registers nothing", "[editor][edit][import][os]") {
     ImportAppProbe app{"importCommandFails"};
 
     app.makeImport("project://assets/client/Missing.gltf").apply(AppTestAccess::scene(app));
@@ -181,7 +181,7 @@ TEST_CASE("an import command whose job fails writes nothing and registers nothin
     CHECK(app.index.getRecords().empty());
 }
 
-TEST_CASE("a running simulation adds the imported model, its meshes and its material to the index", "[editor][edit][import][integration]") {
+TEST_CASE("a running simulation adds the imported model, its meshes and its material to the index", "[editor][edit][import][integration][os]") {
     ImportAppProbe app{"importCommandRegisters"};
     app.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
     app.importAtStartup = true;

@@ -148,7 +148,7 @@ static Entity createHoldingMesh(AssetEditHarness& edit, const std::string_view n
     return entity;
 }
 
-TEST_CASE("a re-import is refused while the editor is not Stopped, and starts no job", "[editor][edit][reimport]") {
+TEST_CASE("a re-import is refused while the editor is not Stopped, and starts no job", "[editor][edit][reimport][os]") {
     ReimportAppProbe app{"reimportRefusedPlaying"};
     app.importPair();
     const std::vector<std::byte> before = app.bytesOf(PAIR_MODEL);
@@ -168,7 +168,7 @@ TEST_CASE("a re-import is refused while the editor is not Stopped, and starts no
     CHECK(app.bytesOf(PAIR_MODEL) == before);
 }
 
-TEST_CASE("a Stopped re-import runs as a job and rewrites the files under their ids", "[editor][edit][reimport]") {
+TEST_CASE("a Stopped re-import runs as a job and rewrites the files under their ids", "[editor][edit][reimport][os]") {
     ReimportAppProbe app{"reimportStoppedJob"};
     app.importPair();
     TechEngine::Model before;
@@ -192,7 +192,7 @@ TEST_CASE("a Stopped re-import runs as a job and rewrites the files under their 
     }
 }
 
-TEST_CASE("a re-import of a source with no folder is refused by its job and writes nothing", "[editor][edit][reimport]") {
+TEST_CASE("a re-import of a source with no folder is refused by its job and writes nothing", "[editor][edit][reimport][os]") {
     ReimportAppProbe app{"reimportNoFolder"};
     app.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
 
@@ -202,7 +202,7 @@ TEST_CASE("a re-import of a source with no folder is refused by its job and writ
     CHECK_FALSE(std::filesystem::exists(app.scratch.root() / "assets" / "client" / "Pair"));
 }
 
-TEST_CASE("a second re-import of a source whose first is in flight is refused and starts no job", "[editor][edit][reimport]") {
+TEST_CASE("a second re-import of a source whose first is in flight is refused and starts no job", "[editor][edit][reimport][os]") {
     ReimportAppProbe app{"reimportInFlight"};
     app.importPair();
     AppTestAccess::openCommands(app);
@@ -236,7 +236,7 @@ TEST_CASE("a second re-import of a source whose first is in flight is refused an
     CHECK(app.inFlight.empty());
 }
 
-TEST_CASE("a failed re-import takes its source out of flight, so the next one is accepted", "[editor][edit][reimport]") {
+TEST_CASE("a failed re-import takes its source out of flight, so the next one is accepted", "[editor][edit][reimport][os]") {
     ReimportAppProbe app{"reimportFailedInFlight"};
     app.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
     AppTestAccess::openCommands(app);

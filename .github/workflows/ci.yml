@@ -15,6 +15,12 @@
 #
 # The ccache wiring is verified by its first PR run, not locally. The Ninja
 # generator + MSVC flags themselves are verified locally.
+#
+# Test tiers: Catch2 tags become CTest labels, and each leg EXCLUDES the tiers it cannot run with
+# `ctest -LE`, never includes, so a case that misses its tag runs more rather than less. [gpu] draws
+# or loads GL and runs only on the Linux legs over zink, because no software driver on a Windows
+# runner meets the renderer's GL floor and TSan reports races in zink's own threads. [stress]
+# stays off the sanitizer legs. [os] runs everywhere.
 
 name: CI
 
@@ -150,7 +156,7 @@ jobs:
             clang clang-tidy libgl1-mesa-dev
             libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev
             libwayland-bin libwayland-dev libxkbcommon-dev
-            xvfb xauth libgl1-mesa-dri mesa-utils
+            xvfb xauth libgl1-mesa-dri mesa-utils libegl1 libegl-mesa0 mesa-vulkan-drivers
 
       - name: Report software OpenGL capabilities
         if: runner.os == 'Linux'
@@ -210,13 +216,17 @@ jobs:
         env:
           GALLIUM_DRIVER: llvmpipe
           LIBGL_ALWAYS_SOFTWARE: "1"
-        run: ctest --preset ${{ matrix.test }}
+        run: ctest --preset ${{ matrix.test }} -LE '^gpu$'
 
-      - name: Test under Xvfb (ctest incl. sdk-smoke)
+      # zink over lavapipe takes a CPU Vulkan device only with LIBGL_ALWAYS_SOFTWARE set, and gives
+      # a context only through EGL, which wants a 24-bit screen.
+      - name: Test under Xvfb over zink (ctest incl. sdk-smoke)
         if: runner.os == 'Linux'
         env:
           LIBGL_ALWAYS_SOFTWARE: "1"
-        run: xvfb-run -a ctest --preset ${{ matrix.test }}
+          GALLIUM_DRIVER: zink
+          VK_DRIVER_FILES: /usr/share/vulkan/icd.d/lvp_icd.json
+        run: xvfb-run -a -s '-screen 0 1280x720x24' ctest --preset ${{ matrix.test }}
 
       - name: ccache stats
         run: ccache -s
@@ -303,7 +313,7 @@ jobs:
             clang llvm libgl1-mesa-dev
             libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev
             libwayland-bin libwayland-dev libxkbcommon-dev
-            xvfb xauth libgl1-mesa-dri
+            xvfb xauth libgl1-mesa-dri libegl1 libegl-mesa0 mesa-vulkan-drivers
 
       # Pinned like clang-format is: the threshold is a merge gate, so the tool that
       # computes it does not get to change under us.
@@ -344,6 +354,8 @@ jobs:
       # Threshold, base ref, the floor and the summary path reach it through the environment.
       # TE_COVERAGE_BYPASS is deliberately absent: CI bypasses by not reaching this step at
       # all, so the cmake-side bypass exists for local runs only.
+      # Every tier runs here, [gpu] over zink included, so no changed line is covered only by a
+      # tier this leg skips.
       - name: Coverage
         if: github.event_name == 'pull_request' && steps.bypass.outputs.skip != 'true'
         env:
@@ -351,7 +363,9 @@ jobs:
           TE_COVERAGE_THRESHOLD: "85"
           TE_COVERAGE_MIN_LINES: "10"
           LIBGL_ALWAYS_SOFTWARE: "1"
-        run: xvfb-run -a cmake --build --preset linux-coverage --target coverage
+          GALLIUM_DRIVER: zink
+          VK_DRIVER_FILES: /usr/share/vulkan/icd.d/lvp_icd.json
+        run: xvfb-run -a -s '-screen 0 1280x720x24' cmake --build --preset linux-coverage --target coverage
 
       - name: Upload the browsable report
         if: always() && github.event_name == 'pull_request' && steps.bypass.outputs.skip != 'true'
@@ -404,7 +418,7 @@ jobs:
             clang libgl1-mesa-dev
             libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev
             libwayland-bin libwayland-dev libxkbcommon-dev
-            xvfb xauth libgl1-mesa-dri
+            xvfb xauth libgl1-mesa-dri libegl1 libegl-mesa0 mesa-vulkan-drivers
 
       # ccache degrades gracefully: a cold/unreachable cache just compiles slower,
       # it never fails a compile (unlike sccache-as-launcher gating on a live backend).
@@ -454,19 +468,22 @@ jobs:
         env:
           GALLIUM_DRIVER: llvmpipe
           LIBGL_ALWAYS_SOFTWARE: "1"
-        run: ctest --preset ${{ matrix.test }}
+        run: ctest --preset ${{ matrix.test }} -LE '^(gpu|stress)$'
 
       - name: Test under Xvfb
         if: runner.os == 'Linux'
         env:
           LIBGL_ALWAYS_SOFTWARE: "1"
         run: |
-          # Standalone GLFW reproduces llvmpipe's lp_fence_destroy TSan report.
-          # Keep TechEngine instrumented while disabling Mesa workers on this leg.
           if [[ '${{ matrix.test }}' == linux-tsan ]]; then
+            # Standalone GLFW reproduces llvmpipe's lp_fence_destroy TSan report.
+            # Keep TechEngine instrumented while disabling Mesa workers on this leg.
             export LP_NUM_THREADS=0
+            xvfb-run -a ctest --preset linux-tsan -LE '^(gpu|stress)$'
+          else
+            export GALLIUM_DRIVER=zink VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.json
+            xvfb-run -a -s '-screen 0 1280x720x24' ctest --preset '${{ matrix.test }}' -LE '^stress$'
           fi
-          xvfb-run -a ctest --preset '${{ matrix.test }}'
 
       - name: ccache stats
         run: ccache -s

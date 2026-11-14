@@ -152,7 +152,7 @@ TEST_CASE("the root asset is named after the folder, a model or a merged mesh by
     CHECK(ModelImporter::rootAssetPath("project://assets/client/Sponza", ImportMode::MergedMesh) == "project://assets/client/Sponza/Sponza.temesh");
 }
 
-TEST_CASE("a merged import writes one root mesh with an empty key and the real settings, its material, and no model", "[editor][assets][import][merged]") {
+TEST_CASE("a merged import writes one root mesh with an empty key and the real settings, its material, and no model", "[editor][assets][import][merged][os]") {
     MergedImportFixture fixture{"mergedRootAsset"};
     fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
     const ImportSettings settings{0.01f, UpAxis::Z};
@@ -182,7 +182,7 @@ TEST_CASE("a merged import writes one root mesh with an empty key and the real s
     CHECK(mesh.importBlock.settings == settings);
 }
 
-TEST_CASE("a merged import bakes each node's world transform, the scale and the up axis into the vertices", "[editor][assets][import][merged]") {
+TEST_CASE("a merged import bakes each node's world transform, the scale and the up axis into the vertices", "[editor][assets][import][merged][os]") {
     MergedImportFixture fixture{"mergedWorldBake"};
     const Mesh mesh = fixture.importMesh("Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY), ImportSettings{0.01f, UpAxis::Z});
 
@@ -221,7 +221,7 @@ TEST_CASE("a merged import bakes each node's world transform, the scale and the 
     }
 }
 
-TEST_CASE("a node scaled -1 on X gives the mirrored half's triangles in reversed order", "[editor][assets][import][merged]") {
+TEST_CASE("a node scaled -1 on X gives the mirrored half's triangles in reversed order", "[editor][assets][import][merged][os]") {
     MergedImportFixture fixture{"mergedMirror"};
     const Mesh mesh = fixture.importMesh("Mirror.gltf", TechEngineTests::gltfQuadFile(TechEngineTests::GLTF_MIRRORED_QUAD_BODY));
 
@@ -261,7 +261,7 @@ TEST_CASE("a node scaled -1 on X gives the mirrored half's triangles in reversed
     }
 }
 
-TEST_CASE("under a scale that is not along the mesh's axes, normals and tangents stay a frame", "[editor][assets][import][merged]") {
+TEST_CASE("under a scale that is not along the mesh's axes, normals and tangents stay a frame", "[editor][assets][import][merged][os]") {
     MergedImportFixture fixture{"mergedStretch"};
     const Mesh mesh = fixture.importMesh("Stretch.gltf", TechEngineTests::gltfQuadFile(TechEngineTests::GLTF_STRETCHED_QUAD_BODY));
 
@@ -271,7 +271,7 @@ TEST_CASE("under a scale that is not along the mesh's axes, normals and tangents
     checkVec3(Vec3(mesh.tangents[0]), glm::normalize(Vec3(halfRoot, 2.0f * halfRoot, 0.0f)));
 }
 
-TEST_CASE("two materials give two slots in material-index order", "[editor][assets][import][merged]") {
+TEST_CASE("two materials give two slots in material-index order", "[editor][assets][import][merged][os]") {
     MergedImportFixture fixture{"mergedMaterials"};
     const Mesh mesh = fixture.importMesh("Front.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_TWO_MATERIALS_BODY));
 
@@ -298,7 +298,7 @@ TEST_CASE("two materials give two slots in material-index order", "[editor][asse
     }
 }
 
-TEST_CASE("two materials with one name give two slots with different names", "[editor][assets][import][merged]") {
+TEST_CASE("two materials with one name give two slots with different names", "[editor][assets][import][merged][os]") {
     MergedImportFixture fixture{"mergedSameNames"};
     const Mesh mesh = fixture.importMesh("Front.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_SAME_NAMED_MATERIALS_BODY));
 
@@ -307,7 +307,7 @@ TEST_CASE("two materials with one name give two slots with different names", "[e
     CHECK(mesh.slots[1].name == "Paint_1");
 }
 
-TEST_CASE("a part without UV0 joins with zero UVs and the tangent (1, 0, 0, 1)", "[editor][assets][import][merged]") {
+TEST_CASE("a part without UV0 joins with zero UVs and the tangent (1, 0, 0, 1)", "[editor][assets][import][merged][os]") {
     MergedImportFixture fixture{"mergedMissingUvs"};
     const Mesh mesh = fixture.importMesh("Parts.gltf", TechEngineTests::gltfQuadFile(TechEngineTests::GLTF_QUAD_PART_WITHOUT_UVS_BODY));
 
@@ -331,7 +331,7 @@ TEST_CASE("a part without UV0 joins with zero UVs and the tangent (1, 0, 0, 1)",
     CHECK(bareVertices == 4);
 }
 
-TEST_CASE("a merged import makes missing normals smooth across a shared edge", "[editor][assets][import][merged]") {
+TEST_CASE("a merged import makes missing normals smooth across a shared edge", "[editor][assets][import][merged][os]") {
     MergedImportFixture fixture{"mergedSmoothNormals"};
     const Mesh mesh = fixture.importMesh("Bent.obj", std::string(TechEngineTests::OBJ_BENT));
 
@@ -346,7 +346,7 @@ TEST_CASE("a merged import makes missing normals smooth across a shared edge", "
     }
 }
 
-TEST_CASE("a merged import that cannot be written leaves no folder behind", "[editor][assets][import][merged]") {
+TEST_CASE("a merged import that cannot be written leaves no folder behind", "[editor][assets][import][merged][os]") {
     MergedImportFixture fixture{"mergedRefusals"};
     ModelImportResult result;
 

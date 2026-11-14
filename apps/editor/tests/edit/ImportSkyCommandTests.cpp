@@ -81,7 +81,7 @@ protected:
     }
 };
 
-TEST_CASE("the image import command returns before the job is done and writes the texture on a worker", "[editor][edit][import][image]") {
+TEST_CASE("the image import command returns before the job is done and writes the texture on a worker", "[editor][edit][import][image][os]") {
     ImportSkyAppProbe app{"importImageWritesFile"};
     app.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
     ImportSkyCommand command = app.makeImport(SKY_SOURCE);
@@ -114,7 +114,7 @@ TEST_CASE("the image import command returns before the job is done and writes th
     }
 }
 
-TEST_CASE("an image import whose job fails writes nothing and registers nothing", "[editor][edit][import][image]") {
+TEST_CASE("an image import whose job fails writes nothing and registers nothing", "[editor][edit][import][image][os]") {
     ImportSkyAppProbe app{"importImageFails"};
     app.scratch.writeFile("assets/client/Sky.png", "not read");
 
@@ -127,7 +127,7 @@ TEST_CASE("an image import whose job fails writes nothing and registers nothing"
     CHECK(app.index.getRecords().empty());
 }
 
-TEST_CASE("a running simulation adds the imported texture to the index", "[editor][edit][import][image][integration]") {
+TEST_CASE("a running simulation adds the imported texture to the index", "[editor][edit][import][image][integration][os]") {
     ImportSkyAppProbe app{"importImageRegisters"};
     app.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
     app.importAtStartup = true;

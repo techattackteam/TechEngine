@@ -206,7 +206,7 @@ TEST_CASE("the import folder is the source path without its extension", "[editor
     CHECK(TechEngine::ModelImporter::importFolder("project://assets/client/.hidden") == "project://assets/client/.hidden");
 }
 
-TEST_CASE("a glTF file imports with its node and mesh counts", "[editor][assets][import]") {
+TEST_CASE("a glTF file imports with its node and mesh counts", "[editor][assets][import][os]") {
     ModelImportFixture fixture{"importPairCounts"};
     fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
 
@@ -324,7 +324,7 @@ TEST_CASE("a glTF file imports with its node and mesh counts", "[editor][assets]
     }
 }
 
-TEST_CASE("a scale of 0.01 and a Z-up axis are baked into the vertices and the nodes, and the root stays at identity", "[editor][assets][import]") {
+TEST_CASE("a scale of 0.01 and a Z-up axis are baked into the vertices and the nodes, and the root stays at identity", "[editor][assets][import][os]") {
     ModelImportFixture fixture{"importPairBaked"};
     fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
     const ImportSettings settings{0.01f, UpAxis::Z};
@@ -398,7 +398,7 @@ TEST_CASE("a scale of 0.01 and a Z-up axis are baked into the vertices and the n
     }
 }
 
-TEST_CASE("a scale alone multiplies vertices and translations and turns nothing", "[editor][assets][import]") {
+TEST_CASE("a scale alone multiplies vertices and translations and turns nothing", "[editor][assets][import][os]") {
     ModelImportFixture fixture{"importPairScaled"};
     fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
 
@@ -415,7 +415,7 @@ TEST_CASE("a scale alone multiplies vertices and translations and turns nothing"
     checkVec3(nodeNamed(model, "Wheel").local.scale, Vec3(1.0f, 2.0f, 3.0f));
 }
 
-TEST_CASE("importing into a folder that exists is refused and writes nothing", "[editor][assets][import]") {
+TEST_CASE("importing into a folder that exists is refused and writes nothing", "[editor][assets][import][os]") {
     ModelImportFixture fixture{"importFolderExists"};
     fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
 
@@ -462,7 +462,7 @@ TEST_CASE("importing into a folder that exists is refused and writes nothing", "
 }
 
 // The loser either sees the folder at its first check or loses the folder's creation, and neither may remove it.
-TEST_CASE("of several imports of one source at once, exactly one succeeds and its folder is left whole", "[editor][assets][import][race]") {
+TEST_CASE("of several imports of one source at once, exactly one succeeds and its folder is left whole", "[editor][assets][import][race][os]") {
     ModelImportFixture fixture{"importRace"};
     fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
     std::atomic<std::uint64_t> nextId = FIRST_TEST_ID;
@@ -511,7 +511,7 @@ TEST_CASE("of several imports of one source at once, exactly one succeeds and it
     }
 }
 
-TEST_CASE("a source that cannot be imported leaves no folder behind", "[editor][assets][import]") {
+TEST_CASE("a source that cannot be imported leaves no folder behind", "[editor][assets][import][os]") {
     ModelImportFixture fixture{"importFailures"};
     ModelImportResult result;
 
@@ -553,7 +553,7 @@ TEST_CASE("a source that cannot be imported leaves no folder behind", "[editor][
     CHECK(entryCount(fixture.scratch.root() / "assets" / "client") <= 1);
 }
 
-TEST_CASE("a mesh that is not made of triangles is skipped, and its node carries no mesh", "[editor][assets][import]") {
+TEST_CASE("a mesh that is not made of triangles is skipped, and its node carries no mesh", "[editor][assets][import][os]") {
     ModelImportFixture fixture{"importSkipsPoints"};
     fixture.scratch.writeFile("assets/client/Mixed.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_POINTS_AND_TRIANGLES_BODY));
 
@@ -571,7 +571,7 @@ TEST_CASE("a mesh that is not made of triangles is skipped, and its node carries
     CHECK(nodeNamed(model, "Solid").mesh == result.records[1].id);
 }
 
-TEST_CASE("a mesh used by two nodes is written once and both nodes name it", "[editor][assets][import]") {
+TEST_CASE("a mesh used by two nodes is written once and both nodes name it", "[editor][assets][import][os]") {
     ModelImportFixture fixture{"importSharedMesh"};
     fixture.scratch.writeFile("assets/client/Shared.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_SHARED_MESH_BODY));
 
@@ -586,7 +586,7 @@ TEST_CASE("a mesh used by two nodes is written once and both nodes name it", "[e
     CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Shared" / "Meshes") == 1);
 }
 
-TEST_CASE("a node with several meshes gets one child per mesh and carries none itself", "[editor][assets][import]") {
+TEST_CASE("a node with several meshes gets one child per mesh and carries none itself", "[editor][assets][import][os]") {
     ModelImportFixture fixture{"importTwoPrimitives"};
     fixture.scratch.writeFile("assets/client/Vehicle.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_TWO_PRIMITIVES_BODY));
 
@@ -617,7 +617,7 @@ TEST_CASE("a node with several meshes gets one child per mesh and carries none i
     }
 }
 
-TEST_CASE("mesh names that clash as file names each get their own file", "[editor][assets][import]") {
+TEST_CASE("mesh names that clash as file names each get their own file", "[editor][assets][import][os]") {
     ModelImportFixture fixture{"importClashingNames"};
     fixture.scratch.writeFile("assets/client/Kit.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_CLASHING_NAMES_BODY));
 
@@ -649,7 +649,7 @@ TEST_CASE("mesh names that clash as file names each get their own file", "[edito
     CHECK(std::ranges::adjacent_find(nodeMeshes) == nodeMeshes.end());
 }
 
-TEST_CASE("an OBJ file imports, with its quad split into two triangles", "[editor][assets][import]") {
+TEST_CASE("an OBJ file imports, with its quad split into two triangles", "[editor][assets][import][os]") {
     ModelImportFixture fixture{"importObjQuad"};
     fixture.scratch.writeFile("assets/client/Quad.obj", TechEngineTests::OBJ_QUAD);
 
@@ -668,7 +668,7 @@ TEST_CASE("an OBJ file imports, with its quad split into two triangles", "[edito
     CHECK(holder != model.nodes.end());
 }
 
-TEST_CASE("a glTF fixture with tangents keeps them, with w turned to the stored UVs", "[editor][assets][import][tangents]") {
+TEST_CASE("a glTF fixture with tangents keeps them, with w turned to the stored UVs", "[editor][assets][import][tangents][os]") {
     ModelImportFixture fixture{"importKeepsTangents"};
     fixture.scratch.writeFile("assets/client/Panel.gltf", TechEngineTests::gltfQuadFile(TechEngineTests::GLTF_QUAD_WITH_TANGENTS_BODY));
 
@@ -707,7 +707,7 @@ TEST_CASE("a glTF fixture with tangents keeps them, with w turned to the stored 
     }
 }
 
-TEST_CASE("a glTF fixture without tangents gets unit MikkTSpace tangents with w of plus or minus one", "[editor][assets][import][tangents]") {
+TEST_CASE("a glTF fixture without tangents gets unit MikkTSpace tangents with w of plus or minus one", "[editor][assets][import][tangents][os]") {
     ModelImportFixture fixture{"importMakesTangents"};
     fixture.scratch.writeFile("assets/client/Panel.gltf", TechEngineTests::gltfQuadFile(TechEngineTests::GLTF_QUAD_WITHOUT_TANGENTS_BODY));
 
@@ -740,7 +740,7 @@ TEST_CASE("a glTF fixture without tangents gets unit MikkTSpace tangents with w 
     }
 }
 
-TEST_CASE("a generated tangent and a file tangent agree on the same quad", "[editor][assets][import][tangents]") {
+TEST_CASE("a generated tangent and a file tangent agree on the same quad", "[editor][assets][import][tangents][os]") {
     ModelImportFixture fixture{"importTangentsAgree"};
     fixture.scratch.writeFile("assets/client/Filed.gltf", TechEngineTests::gltfQuadFile(TechEngineTests::GLTF_QUAD_WITH_TANGENTS_BODY));
     fixture.scratch.writeFile("assets/client/Made.gltf", TechEngineTests::gltfQuadFile(TechEngineTests::GLTF_QUAD_WITHOUT_TANGENTS_BODY));
@@ -765,7 +765,7 @@ TEST_CASE("a generated tangent and a file tangent agree on the same quad", "[edi
     }
 }
 
-TEST_CASE("a mesh with normals and no UV0 gets no tangents", "[editor][assets][import][tangents]") {
+TEST_CASE("a mesh with normals and no UV0 gets no tangents", "[editor][assets][import][tangents][os]") {
     ModelImportFixture fixture{"importNoUvNoTangents"};
     fixture.scratch.writeFile("assets/client/Panel.gltf", TechEngineTests::gltfQuadFile(TechEngineTests::GLTF_QUAD_WITHOUT_UVS_BODY));
 
@@ -779,7 +779,7 @@ TEST_CASE("a mesh with normals and no UV0 gets no tangents", "[editor][assets][i
     CHECK(mesh.tangents.empty());
 }
 
-TEST_CASE("after a Z-up bake, cross(n, t.xyz) * w still matches the baked bitangent", "[editor][assets][import][tangents]") {
+TEST_CASE("after a Z-up bake, cross(n, t.xyz) * w still matches the baked bitangent", "[editor][assets][import][tangents][os]") {
     ModelImportFixture fixture{"importTangentsBaked"};
     const ImportSettings settings{0.01f, UpAxis::Z};
 
@@ -819,7 +819,7 @@ TEST_CASE("after a Z-up bake, cross(n, t.xyz) * w still matches the baked bitang
     }
 }
 
-TEST_CASE("an OBJ's tangents are made in its own UV space, with no glTF negation", "[editor][assets][import][tangents]") {
+TEST_CASE("an OBJ's tangents are made in its own UV space, with no glTF negation", "[editor][assets][import][tangents][os]") {
     ModelImportFixture fixture{"importObjTangents"};
     fixture.scratch.writeFile("assets/client/Quad.obj", TechEngineTests::OBJ_QUAD_WITH_UVS);
 
@@ -837,7 +837,7 @@ TEST_CASE("an OBJ's tangents are made in its own UV space, with no glTF negation
     checkBitangentsFollowUv(mesh);
 }
 
-TEST_CASE("a quantized or meshopt-compressed glTF is refused before assimp reads it", "[editor][assets][import][extensions]") {
+TEST_CASE("a quantized or meshopt-compressed glTF is refused before assimp reads it", "[editor][assets][import][extensions][os]") {
     ModelImportFixture fixture{"importRefusesCompressed"};
     std::string fileName = "Pair.gltf";
 
@@ -875,7 +875,7 @@ TEST_CASE("a quantized or meshopt-compressed glTF is refused before assimp reads
     CHECK(fixture.nextId == FIRST_TEST_ID);
 }
 
-TEST_CASE("a refused extension's name outside extensionsUsed does not refuse the file", "[editor][assets][import][extensions]") {
+TEST_CASE("a refused extension's name outside extensionsUsed does not refuse the file", "[editor][assets][import][extensions][os]") {
     ModelImportFixture fixture{"importNamesNotExtensions"};
 
     SECTION("a glTF whose node and mesh carry the names") {
@@ -899,7 +899,7 @@ TEST_CASE("a refused extension's name outside extensionsUsed does not refuse the
     }
 }
 
-TEST_CASE("an import scale that is not a finite number above zero is refused before anything is read", "[editor][assets][import]") {
+TEST_CASE("an import scale that is not a finite number above zero is refused before anything is read", "[editor][assets][import][os]") {
     ModelImportFixture fixture{"importRefusesScale"};
     fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
     ImportSettings settings;
@@ -931,7 +931,7 @@ TEST_CASE("an import scale that is not a finite number above zero is refused bef
     CHECK(fixture.nextId == FIRST_TEST_ID);
 }
 
-TEST_CASE("the smallest positive scale is accepted", "[editor][assets][import]") {
+TEST_CASE("the smallest positive scale is accepted", "[editor][assets][import][os]") {
     ModelImportFixture fixture{"importTinyScale"};
     fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
 

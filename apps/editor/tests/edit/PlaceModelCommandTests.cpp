@@ -209,7 +209,7 @@ static void checkNothingPlaced(const PlaceFixture& fixture, const std::uint64_t 
     CHECK(fixture.editRevision() == revisionBefore);
 }
 
-TEST_CASE("placing a three-node model adds three entities with their parents and local transforms", "[editor][edit][commands][place]") {
+TEST_CASE("placing a three-node model adds three entities with their parents and local transforms", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeThreeNodes"};
     fixture.addModel(makeKart(), KART_MODEL_PATH);
     const std::uint64_t revisionBefore = fixture.editRevision();
@@ -223,7 +223,7 @@ TEST_CASE("placing a three-node model adds three entities with their parents and
     CHECK(fixture.editRevision() > revisionBefore);
 }
 
-TEST_CASE("placing a model goes beside the scene's own entities and leaves them as they were", "[editor][edit][commands][place]") {
+TEST_CASE("placing a model goes beside the scene's own entities and leaves them as they were", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeBesideExisting"};
     fixture.addModel(makeKart(), KART_MODEL_PATH);
     const Entity existing = fixture.edit.createWithMeshRenderer("Existing");
@@ -239,7 +239,7 @@ TEST_CASE("placing a model goes beside the scene's own entities and leaves them 
     CHECK(fixture.edit.scene.getComponent<MeshRenderer>(existing).mesh.id == ResourceId{});
 }
 
-TEST_CASE("placing a model twice gives two independent trees", "[editor][edit][commands][place]") {
+TEST_CASE("placing a model twice gives two independent trees", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeTwice"};
     fixture.addModel(makeKart(), KART_MODEL_PATH);
 
@@ -258,7 +258,7 @@ TEST_CASE("placing a model twice gives two independent trees", "[editor][edit][c
     CHECK(first.wheel != second.wheel);
 }
 
-TEST_CASE("editing one placed copy changes neither the other copy nor the model file", "[editor][edit][commands][place]") {
+TEST_CASE("editing one placed copy changes neither the other copy nor the model file", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeEditOneCopy"};
     fixture.addModel(makeKart(), KART_MODEL_PATH);
     fixture.place(KART_MODEL_PATH);
@@ -299,7 +299,7 @@ TEST_CASE("editing one placed copy changes neither the other copy nor the model 
     checkKart(fixture.edit, walkKart(fixture.edit, third));
 }
 
-TEST_CASE("a placed root keeps the transform the model stores for it", "[editor][edit][commands][place]") {
+TEST_CASE("a placed root keeps the transform the model stores for it", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeRootTransform"};
     const TransformValues rootLocal = makeLocal(Vec3(2.0f, 0.0f, -3.0f), Vec3(0.0f, 45.0f, 0.0f), Vec3(2.0f));
     fixture.addModel(makeKart(rootLocal, EDIT_MESH_ID, EDIT_SECOND_MESH_ID), KART_MODEL_PATH);
@@ -315,7 +315,7 @@ TEST_CASE("a placed root keeps the transform the model stores for it", "[editor]
     checkLocal(fixture.edit, kart.wheel, WHEEL_LOCAL);
 }
 
-TEST_CASE("a one-node model whose root carries a mesh places one entity with its renderer", "[editor][edit][commands][place]") {
+TEST_CASE("a one-node model whose root carries a mesh places one entity with its renderer", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeLoneRoot"};
     Model model;
     model.id = KART_MODEL_ID;
@@ -332,7 +332,7 @@ TEST_CASE("a one-node model whose root carries a mesh places one entity with its
     checkPlacedMesh(fixture.edit, roots[0], EDIT_MESH_ID);
 }
 
-TEST_CASE("placing a model fills each renderer's slot list from its mesh's slots and defaults", "[editor][edit][commands][place]") {
+TEST_CASE("placing a model fills each renderer's slot list from its mesh's slots and defaults", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeFillsSlots"};
     fixture.addModel(makeKart(), KART_MODEL_PATH);
 
@@ -346,7 +346,7 @@ TEST_CASE("placing a model fills each renderer's slot list from its mesh's slots
     CHECK(fixture.edit.scene.getComponent<MeshRenderer>(kart.wheel).slots == expected);
 }
 
-TEST_CASE("a model with a mesh that fails to load places nothing", "[editor][edit][commands][place]") {
+TEST_CASE("a model with a mesh that fails to load places nothing", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeBrokenMesh"};
     fixture.addModel(makeKart(TransformValues{}, EDIT_MESH_ID, EDIT_BROKEN_MESH_ID), KART_MODEL_PATH);
     const std::uint64_t revisionBefore = fixture.editRevision();
@@ -356,7 +356,7 @@ TEST_CASE("a model with a mesh that fails to load places nothing", "[editor][edi
     checkNothingPlaced(fixture, revisionBefore);
 }
 
-TEST_CASE("a model with a mesh the index does not know places nothing", "[editor][edit][commands][place]") {
+TEST_CASE("a model with a mesh the index does not know places nothing", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeUnknownMesh"};
     fixture.addModel(makeKart(TransformValues{}, EDIT_MESH_ID, EDIT_UNKNOWN_ID), KART_MODEL_PATH);
     const std::uint64_t revisionBefore = fixture.editRevision();
@@ -366,7 +366,7 @@ TEST_CASE("a model with a mesh the index does not know places nothing", "[editor
     checkNothingPlaced(fixture, revisionBefore);
 }
 
-TEST_CASE("a model with a server mesh places nothing", "[editor][edit][commands][place]") {
+TEST_CASE("a model with a server mesh places nothing", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeServerMesh"};
     fixture.addModel(makeKart(TransformValues{}, EDIT_SERVER_MESH_ID, EDIT_SECOND_MESH_ID), KART_MODEL_PATH);
     const std::uint64_t revisionBefore = fixture.editRevision();
@@ -376,7 +376,7 @@ TEST_CASE("a model with a server mesh places nothing", "[editor][edit][commands]
     checkNothingPlaced(fixture, revisionBefore);
 }
 
-TEST_CASE("a path the index does not know places nothing", "[editor][edit][commands][place]") {
+TEST_CASE("a path the index does not know places nothing", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeUnknownPath"};
     fixture.addModel(makeKart(), KART_MODEL_PATH);
     const std::uint64_t revisionBefore = fixture.editRevision();
@@ -386,7 +386,7 @@ TEST_CASE("a path the index does not know places nothing", "[editor][edit][comma
     checkNothingPlaced(fixture, revisionBefore);
 }
 
-TEST_CASE("a path that names neither a model nor a mesh places nothing", "[editor][edit][commands][place]") {
+TEST_CASE("a path that names neither a model nor a mesh places nothing", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeScenePath"};
     const std::uint64_t revisionBefore = fixture.editRevision();
 
@@ -395,7 +395,7 @@ TEST_CASE("a path that names neither a model nor a mesh places nothing", "[edito
     checkNothingPlaced(fixture, revisionBefore);
 }
 
-TEST_CASE("placing a merged mesh adds one entity whose slot list matches the mesh", "[editor][edit][commands][place][merged]") {
+TEST_CASE("placing a merged mesh adds one entity whose slot list matches the mesh", "[editor][edit][commands][place][merged][os]") {
     PlaceFixture fixture{"placeMergedMesh"};
     TechEngine::Mesh mesh;
     mesh.id = MERGED_MESH_ID;
@@ -436,7 +436,7 @@ TEST_CASE("placing a merged mesh adds one entity whose slot list matches the mes
     CHECK(slots[1] == MaterialSlot{"Glass", {}});
 }
 
-TEST_CASE("a server mesh is not placed", "[editor][edit][commands][place][merged]") {
+TEST_CASE("a server mesh is not placed", "[editor][edit][commands][place][merged][os]") {
     PlaceFixture fixture{"placeServerMergedMesh"};
     const std::uint64_t revisionBefore = fixture.editRevision();
 
@@ -445,7 +445,7 @@ TEST_CASE("a server mesh is not placed", "[editor][edit][commands][place][merged
     checkNothingPlaced(fixture, revisionBefore);
 }
 
-TEST_CASE("an indexed model whose file is gone or does not parse places nothing", "[editor][edit][commands][place]") {
+TEST_CASE("an indexed model whose file is gone or does not parse places nothing", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeUnreadableModel"};
     const std::vector<std::byte> garbage = {std::byte{0x6E}, std::byte{0x6F}, std::byte{0x70}, std::byte{0x65}};
     fixture.addModelBytes(ResourceId{0x6D6F64656C000102}, garbage, BROKEN_MODEL_PATH);
@@ -458,7 +458,7 @@ TEST_CASE("an indexed model whose file is gone or does not parse places nothing"
     checkNothingPlaced(fixture, revisionBefore);
 }
 
-TEST_CASE("placing on a scene with no cache entry places nothing", "[editor][edit][commands][place]") {
+TEST_CASE("placing on a scene with no cache entry places nothing", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeNoSceneEntry"};
     fixture.addModel(makeKart(), KART_MODEL_PATH);
     fixture.edit.releaseSceneEntry();
@@ -469,7 +469,7 @@ TEST_CASE("placing on a scene with no cache entry places nothing", "[editor][edi
     checkNothingPlaced(fixture, revisionBefore);
 }
 
-TEST_CASE("a model that names a scene as a node's mesh places nothing", "[editor][edit][commands][place]") {
+TEST_CASE("a model that names a scene as a node's mesh places nothing", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeNotAMesh"};
     fixture.addModel(makeKart(TransformValues{}, EDIT_OTHER_SCENE_ID, EDIT_SECOND_MESH_ID), KART_MODEL_PATH);
     const std::uint64_t revisionBefore = fixture.editRevision();
@@ -479,7 +479,7 @@ TEST_CASE("a model that names a scene as a node's mesh places nothing", "[editor
     checkNothingPlaced(fixture, revisionBefore);
 }
 
-TEST_CASE("a model with an indexed mesh whose bytes the cache cannot find places nothing", "[editor][edit][commands][place]") {
+TEST_CASE("a model with an indexed mesh whose bytes the cache cannot find places nothing", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeLostMesh"};
     const ResourceId lostMesh{0x3E540000000000AA};
     AssetRecord record;
@@ -496,7 +496,7 @@ TEST_CASE("a model with an indexed mesh whose bytes the cache cannot find places
     checkNothingPlaced(fixture, revisionBefore);
 }
 
-TEST_CASE("a model with a zero scale on its last node places nothing and removes the entities built before it", "[editor][edit][commands][place]") {
+TEST_CASE("a model with a zero scale on its last node places nothing and removes the entities built before it", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeZeroScale"};
     Model model = makeKart();
     model.nodes[2].local.scale = Vec3(1.0f, 0.0f, 1.0f);

@@ -115,29 +115,29 @@
 
   "testPresets": [
     { "name": "windows-debug",   "configurePreset": "windows",      "configuration": "Debug",
-      "output": { "outputOnFailure": true } },
+      "output": { "outputOnFailure": true }, "execution": { "jobs": 4 } },
     { "name": "windows-release", "configurePreset": "windows",      "configuration": "Release",
-      "output": { "outputOnFailure": true } },
+      "output": { "outputOnFailure": true }, "execution": { "jobs": 4 } },
     { "name": "windows-relwithdebinfo", "configurePreset": "windows", "configuration": "RelWithDebInfo",
-      "output": { "outputOnFailure": true } },
+      "output": { "outputOnFailure": true }, "execution": { "jobs": 4 } },
     { "name": "windows-asan",    "configurePreset": "windows-asan", "configuration": "Debug",
-      "output": { "outputOnFailure": true } },
+      "output": { "outputOnFailure": true }, "execution": { "jobs": 4 } },
     { "name": "windows-profile", "configurePreset": "windows-profile", "configuration": "RelWithDebInfo",
-      "output": { "outputOnFailure": true } },
+      "output": { "outputOnFailure": true }, "execution": { "jobs": 4 } },
 
     { "name": "linux-debug",     "configurePreset": "linux-debug",
-      "output": { "outputOnFailure": true } },
+      "output": { "outputOnFailure": true }, "execution": { "jobs": 4 } },
     { "name": "linux-release",   "configurePreset": "linux-release",
-      "output": { "outputOnFailure": true } },
+      "output": { "outputOnFailure": true }, "execution": { "jobs": 4 } },
     { "name": "linux-relwithdebinfo", "configurePreset": "linux-relwithdebinfo",
-      "output": { "outputOnFailure": true } },
+      "output": { "outputOnFailure": true }, "execution": { "jobs": 4 } },
     { "name": "linux-profile",   "configurePreset": "linux-profile",
-      "output": { "outputOnFailure": true } },
+      "output": { "outputOnFailure": true }, "execution": { "jobs": 4 } },
     { "name": "linux-ubsan",     "configurePreset": "linux-ubsan",
-      "output": { "outputOnFailure": true } },
+      "output": { "outputOnFailure": true }, "execution": { "jobs": 4 } },
     { "name": "linux-tsan",      "configurePreset": "linux-tsan",
-      "output": { "outputOnFailure": true } },
+      "output": { "outputOnFailure": true }, "execution": { "jobs": 4 } },
     { "name": "linux-coverage",  "configurePreset": "linux-coverage",
-      "output": { "outputOnFailure": true } }
+      "output": { "outputOnFailure": true }, "execution": { "jobs": 4 } }
   ]
 }

@@ -28,7 +28,7 @@ static bool waitForExit(Process& process, int& exitCode) {
     return false;
 }
 
-TEST_CASE("Process runs a program in its working directory and reports its exit code", "[platform][process]") {
+TEST_CASE("Process runs a program in its working directory and reports its exit code", "[platform][process][os]") {
     const ScratchDirectory scratch{"processRuns"};
     Process process;
 
@@ -47,7 +47,7 @@ TEST_CASE("Process runs a program in its working directory and reports its exit 
     CHECK(laterExitCode == -1);
 }
 
-TEST_CASE("Process starts again after its child exits", "[platform][process]") {
+TEST_CASE("Process starts again after its child exits", "[platform][process][os]") {
     const ScratchDirectory first{"processFirstRun"};
     const ScratchDirectory second{"processSecondRun"};
     Process process;
@@ -68,7 +68,7 @@ TEST_CASE("Process starts again after its child exits", "[platform][process]") {
     CHECK(std::filesystem::exists(second.root() / STUB_MARKER));
 }
 
-TEST_CASE("Process resolves a relative executable against the caller's directory, not the child's", "[platform][process]") {
+TEST_CASE("Process resolves a relative executable against the caller's directory, not the child's", "[platform][process][os]") {
     const ScratchDirectory scratch{"processRelative"};
     const std::filesystem::path relative = std::filesystem::relative(STUB_PATH);
     REQUIRE(relative.is_relative());
@@ -83,7 +83,7 @@ TEST_CASE("Process resolves a relative executable against the caller's directory
     CHECK(std::filesystem::exists(scratch.root() / STUB_MARKER));
 }
 
-TEST_CASE("Process refuses paths it cannot run and starts nothing", "[platform][process]") {
+TEST_CASE("Process refuses paths it cannot run and starts nothing", "[platform][process][os]") {
     const ScratchDirectory scratch{"processRefuses"};
     Process process;
     std::error_code startError;
@@ -137,7 +137,7 @@ TEST_CASE("Process refuses paths it cannot run and starts nothing", "[platform][
 }
 
 #if !defined(_WIN32)
-TEST_CASE("Process reports a child a signal killed as 128 plus the signal number", "[platform][process]") {
+TEST_CASE("Process reports a child a signal killed as 128 plus the signal number", "[platform][process][os]") {
     const ScratchDirectory scratch{"processSignalled"};
     const std::filesystem::path script = scratch.writeFile("killsItself", "#!/bin/sh\nkill -9 $$\n");
     std::filesystem::permissions(script, std::filesystem::perms::owner_all);

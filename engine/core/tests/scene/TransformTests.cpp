@@ -737,7 +737,7 @@ TEST_CASE("world edits that need local shear are accepted and reach the requeste
     requireApproximatedLocalKeepsWorldPosition(scene, child, TechEngine::Vec3(4.0f, 1.0f, 0.0f));
 }
 
-TEST_CASE("deep transform propagation does not depend on recursion depth", "[core][scene][transform]") {
+TEST_CASE("deep transform propagation does not depend on recursion depth", "[core][scene][transform][stress]") {
     TechEngine::ComponentRegistry registry;
     TechEngineTests::registerBuiltInSceneComponents(registry);
     TechEngine::Scene scene(registry);

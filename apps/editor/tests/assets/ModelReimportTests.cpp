@@ -177,7 +177,7 @@ static std::string materialsGltf(const std::size_t materialCount, const std::str
     return TechEngineTests::gltfFile(R"("scenes":[{"nodes":[)" + sceneNodes + R"(]}],"nodes":[)" + nodes + R"(],"meshes":[)" + meshes + "]," + std::string(materialsJson));
 }
 
-TEST_CASE("re-importing an unchanged fixture keeps every id and rewrites everything but the materials", "[editor][assets][reimport]") {
+TEST_CASE("re-importing an unchanged fixture keeps every id and rewrites everything but the materials", "[editor][assets][reimport][os]") {
     ReimportFixture fixture{"reimportUnchanged"};
     fixture.writeSource(TechEngineTests::gltfFile(TechEngineTests::GLTF_TWO_MATERIALS_BODY));
     const ModelImportResult first = fixture.importFile();
@@ -211,7 +211,7 @@ TEST_CASE("re-importing an unchanged fixture keeps every id and rewrites everyth
     CHECK(fixture.bytesOf(GLASS_PATH) == glassBytes);
 }
 
-TEST_CASE("meshes reordered in the source keep each id on its named mesh", "[editor][assets][reimport]") {
+TEST_CASE("meshes reordered in the source keep each id on its named mesh", "[editor][assets][reimport][os]") {
     ReimportFixture fixture{"reimportReordered"};
     fixture.writeSource(TechEngineTests::gltfFile(HULL_THEN_TIRE_BODY));
     fixture.importFile();
@@ -235,7 +235,7 @@ TEST_CASE("meshes reordered in the source keep each id on its named mesh", "[edi
     CHECK(nodeNamed(model, "Back").mesh == hull.id);
 }
 
-TEST_CASE("a new mesh gets a fresh id and a removed mesh's file stays as it was", "[editor][assets][reimport]") {
+TEST_CASE("a new mesh gets a fresh id and a removed mesh's file stays as it was", "[editor][assets][reimport][os]") {
     ReimportFixture fixture{"reimportNewAndRemoved"};
     fixture.writeSource(TechEngineTests::gltfFile(HULL_THEN_TIRE_BODY));
     const ModelImportResult first = fixture.importFile();
@@ -262,7 +262,7 @@ TEST_CASE("a new mesh gets a fresh id and a removed mesh's file stays as it was"
     CHECK(nodeNamed(model, "Back").mesh == rim.id);
 }
 
-TEST_CASE("a new mesh whose file name an unmatched old file holds gets its own file", "[editor][assets][reimport]") {
+TEST_CASE("a new mesh whose file name an unmatched old file holds gets its own file", "[editor][assets][reimport][os]") {
     ReimportFixture fixture{"reimportNameClash"};
     fixture.writeSource(TechEngineTests::gltfFile(TechEngineTests::GLTF_CLASHING_NAMES_BODY));
     fixture.importFile();
@@ -278,7 +278,7 @@ TEST_CASE("a new mesh whose file name an unmatched old file holds gets its own f
     CHECK(second.records[0].path == "project://assets/client/Kit/Meshes/Part_A_3.temesh");
 }
 
-TEST_CASE("a matched material's file is never rewritten, and a new material is written", "[editor][assets][reimport][materials]") {
+TEST_CASE("a matched material's file is never rewritten, and a new material is written", "[editor][assets][reimport][materials][os]") {
     ReimportFixture fixture{"reimportMaterials"};
     fixture.writeSource(TechEngineTests::gltfFile(TechEngineTests::GLTF_TWO_MATERIALS_BODY));
     fixture.importFile();
@@ -309,7 +309,7 @@ TEST_CASE("a matched material's file is never rewritten, and a new material is w
     CHECK(fixture.readMesh("project://assets/client/Kit/Meshes/Trim.temesh").slots.at(0).defaultMaterial == chrome.id);
 }
 
-TEST_CASE("textures keep their ids by key name when the materials around them change", "[editor][assets][reimport][materials]") {
+TEST_CASE("textures keep their ids by key name when the materials around them change", "[editor][assets][reimport][materials][os]") {
     ReimportFixture fixture{"reimportTextures"};
     fixture.scratch.writeFile("assets/client/Textures/wall.png", TechEngineTests::solidPng(4, 4, {200, 100, 50, 255}));
     fixture.writeSource(materialsGltf(
@@ -343,7 +343,7 @@ TEST_CASE("textures keep their ids by key name when the materials around them ch
     CHECK(std::ranges::find(second.records, glow.id, &AssetRecord::id) != second.records.end());
 }
 
-TEST_CASE("a re-import takes its settings from the root asset's import block, not from the request", "[editor][assets][reimport]") {
+TEST_CASE("a re-import takes its settings from the root asset's import block, not from the request", "[editor][assets][reimport][os]") {
     ReimportFixture fixture{"reimportSettings"};
     fixture.writeSource(TechEngineTests::gltfFile(HULL_THEN_TIRE_BODY));
     const ImportSettings settings{0.01f, UpAxis::Y};
@@ -359,7 +359,7 @@ TEST_CASE("a re-import takes its settings from the root asset's import block, no
     CHECK(hull.positions[1].z == Catch::Approx(0.03f).margin(TOLERANCE));
 }
 
-TEST_CASE("re-importing the other way switches the root asset and keeps the old root and the materials", "[editor][assets][reimport][merged]") {
+TEST_CASE("re-importing the other way switches the root asset and keeps the old root and the materials", "[editor][assets][reimport][merged][os]") {
     ReimportFixture fixture{"reimportSwitch"};
     fixture.writeSource(TechEngineTests::gltfFile(TechEngineTests::GLTF_TWO_MATERIALS_BODY));
     const ImportSettings settings{2.0f, UpAxis::Z};
@@ -399,7 +399,7 @@ TEST_CASE("re-importing the other way switches the root asset and keeps the old 
     }
 }
 
-TEST_CASE("a re-import with no earlier import is refused and writes nothing", "[editor][assets][reimport]") {
+TEST_CASE("a re-import with no earlier import is refused and writes nothing", "[editor][assets][reimport][os]") {
     ReimportFixture fixture{"reimportMissing"};
     fixture.writeSource(TechEngineTests::gltfFile(HULL_THEN_TIRE_BODY));
     ModelImportResult result;
@@ -421,7 +421,7 @@ TEST_CASE("a re-import with no earlier import is refused and writes nothing", "[
     }
 }
 
-TEST_CASE("a source imported inside another's folder keeps its files when the outer source is re-imported", "[editor][assets][reimport]") {
+TEST_CASE("a source imported inside another's folder keeps its files when the outer source is re-imported", "[editor][assets][reimport][os]") {
     ReimportFixture fixture{"reimportNestedSource"};
     fixture.writeSource(TechEngineTests::gltfFile(HULL_THEN_TIRE_BODY));
     fixture.importFile();

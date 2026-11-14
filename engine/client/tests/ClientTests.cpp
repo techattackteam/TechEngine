@@ -22,7 +22,7 @@ static std::uint64_t renderedFrame(const TechEngine::Client& client) {
     return timing.frame;
 }
 
-TEST_CASE("Client starts GL and shuts down before destroying its window", "[client][window]") {
+TEST_CASE("Client starts GL and shuts down before destroying its window", "[client][window][gpu]") {
     TechEngineTests::EngineServices services;
     TechEngine::InputBuffer input{services.clock};
     TechEngine::Client client;
@@ -39,7 +39,7 @@ TEST_CASE("Client starts GL and shuts down before destroying its window", "[clie
     client.stop();
 }
 
-TEST_CASE("Client cleans up a failed window creation and can retry", "[client][window]") {
+TEST_CASE("Client cleans up a failed window creation and can retry", "[client][window][gpu]") {
     TechEngineTests::EngineServices services;
     TechEngine::InputBuffer input{services.clock};
     TechEngine::Client client;
@@ -55,7 +55,7 @@ TEST_CASE("Client cleans up a failed window creation and can retry", "[client][w
     CHECK(client.shouldClose());
 }
 
-TEST_CASE("client render pacing can toggle vsync without a simulation publication", "[client][window][pacing]") {
+TEST_CASE("client render pacing can toggle vsync without a simulation publication", "[client][window][pacing][gpu]") {
     TechEngineTests::EngineServices services;
     TechEngine::InputBuffer input{services.clock};
     TechEngine::Client client;
@@ -79,7 +79,7 @@ TEST_CASE("client render pacing can toggle vsync without a simulation publicatio
     CHECK_FALSE(client.renderTiming(stopped));
 }
 
-TEST_CASE("Client hands its ImGui hook to the render thread and exposes its window to main only while started", "[client][window]") {
+TEST_CASE("Client hands its ImGui hook to the render thread and exposes its window to main only while started", "[client][window][gpu]") {
     TechEngineTests::EngineServices services;
     TechEngine::InputBuffer input{services.clock};
     TechEngineTests::RecordingImGuiHook hook;
