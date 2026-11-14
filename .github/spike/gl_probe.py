@@ -32,17 +32,25 @@ def main():
     if not glfw.init():
         print("SUMMARY no-context: glfw.init failed")
         return 0
-    glfw.window_hint(glfw.VISIBLE, glfw.FALSE)
-    glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 4)
-    glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 6)
-    glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
-    glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, glfw.FALSE)
-    window = glfw.create_window(64, 64, "gl-probe", None, None)
+    window = None
+    asked = None
+    for request in ((4, 6, True), (4, 5, True), (4, 3, True), (3, 3, True), None):
+        glfw.default_window_hints()
+        glfw.window_hint(glfw.VISIBLE, glfw.FALSE)
+        if request is not None:
+            glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, request[0])
+            glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, request[1])
+            glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
+        window = glfw.create_window(64, 64, "gl-probe", None, None)
+        if window:
+            asked = "default context" if request is None else f"{request[0]}.{request[1]} core"
+            break
     if not window:
-        print("SUMMARY no-context: no 4.6 core context")
+        print("SUMMARY no-context: no context at all")
         glfw.terminate()
         return 0
     glfw.make_context_current(window)
+    prefix = "" if asked == "4.6 core" else f"NO 4.6, best={asked} | "
 
     get_string = gl_function("glGetString", ctypes.c_char_p, ctypes.c_uint)
     get_string_i = gl_function("glGetStringi", ctypes.c_char_p, ctypes.c_uint, ctypes.c_uint)
@@ -60,7 +68,7 @@ def main():
     for name in ("GL_ARB_bindless_texture", "GL_ARB_gl_spirv", "GL_ARB_indirect_parameters",
                  "GL_ARB_shader_draw_parameters"):
         print(f"  {name}: {'yes' if name in extensions else 'no'}")
-    print(f"SUMMARY renderer={text(get_string(GL_RENDERER))} | "
+    print(f"SUMMARY {prefix}renderer={text(get_string(GL_RENDERER))} | "
           f"version={text(get_string(GL_VERSION))} | bindless={'yes' if bindless else 'no'}")
 
     glfw.destroy_window(window)
