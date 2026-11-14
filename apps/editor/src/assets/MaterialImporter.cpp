@@ -3,7 +3,7 @@
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/platform/files/FileError.hpp>
 
-#include <assets/DdsReader.hpp>
+#include <assets/ImageDecoder.hpp>
 #include <assets/MaterialImporter.hpp>
 #include <project/ProjectError.hpp>
 
@@ -113,13 +113,6 @@ namespace TechEngine {
             records.push_back(AssetRecord{material.id, MATERIAL_TYPE_TAG, side, output.path});
         }
         return {};
-    }
-
-    std::error_code MaterialImporter::decodeImage(const std::span<const std::byte> bytes, ByteImage& out) {
-        if (DdsReader::isDds(bytes)) {
-            return DdsReader::decode(bytes, out);
-        }
-        return ImageDecoder::decodeBytes(bytes, out);
     }
 
     // A value the source does not hold keeps the file's default, except metallic: a source with no metallic factor is
@@ -300,7 +293,7 @@ namespace TechEngine {
                 return ProjectError::UnsupportedImageType;
             }
             const std::span<const std::byte> bytes(reinterpret_cast<const std::byte*>(texture.pcData), texture.mWidth);
-            return decodeImage(bytes, out);
+            return ImageDecoder::decodeBytes(bytes, out);
         }
 
         std::string path;
@@ -312,7 +305,7 @@ namespace TechEngine {
         if (readError) {
             return readError;
         }
-        return decodeImage(bytes, out);
+        return ImageDecoder::decodeBytes(bytes, out);
     }
 
     // Joins name to the source's folder, resolving "." and "..". An absolute name, or one that climbs above the mount's

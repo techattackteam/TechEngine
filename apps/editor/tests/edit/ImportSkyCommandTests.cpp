@@ -9,9 +9,9 @@
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <assets/AssetIndex.hpp>
-#include <assets/ImageImporter.hpp>
 #include <assets/ImageTestFiles.hpp>
-#include <edit/ImportImageCommand.hpp>
+#include <assets/TextureImporter.hpp>
+#include <edit/ImportSkyCommand.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -27,14 +27,14 @@
 #include <vector>
 
 using TechEngine::AssetRecord;
-using TechEngine::ImportImageCommand;
+using TechEngine::ImportSkyCommand;
 using TechEngineTests::AppTestAccess;
 using TechEngineTests::ScratchDirectory;
 
 static constexpr std::string_view SKY_SOURCE = "project://assets/client/Sky.hdr";
 static constexpr std::string_view SKY_TEXTURE = "project://assets/client/Sky.tetexture";
 
-class ImportImageAppProbe final : public TechEngine::App {
+class ImportSkyAppProbe final : public TechEngine::App {
 public:
     ScratchDirectory scratch;
     TechEngine::AssetIndex index;
@@ -42,7 +42,7 @@ public:
     bool importAtStartup = false;
     std::atomic<bool> registered = false;
 
-    explicit ImportImageAppProbe(const std::string_view name) : App(TechEngine::Role::DedicatedServer), scratch(name) {
+    explicit ImportSkyAppProbe(const std::string_view name) : App(TechEngine::Role::DedicatedServer), scratch(name) {
         m_mounts.mount("project", scratch.root());
         scratch.makeDirectory("assets/client");
     }
@@ -51,10 +51,10 @@ public:
         return m_files;
     }
 
-    ImportImageCommand makeImport(const std::string_view sourcePath) {
-        TechEngine::ImageImportRequest request;
+    ImportSkyCommand makeImport(const std::string_view sourcePath) {
+        TechEngine::SkyImportRequest request;
         request.sourcePath = std::string(sourcePath);
-        return ImportImageCommand{*this, m_jobs, m_files, index, batches, std::move(request)};
+        return ImportSkyCommand{*this, m_jobs, m_files, index, batches, std::move(request)};
     }
 
     void waitForImports() {
@@ -82,9 +82,9 @@ protected:
 };
 
 TEST_CASE("the image import command returns before the job is done and writes the texture on a worker", "[editor][edit][import][image]") {
-    ImportImageAppProbe app{"importImageWritesFile"};
+    ImportSkyAppProbe app{"importImageWritesFile"};
     app.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
-    ImportImageCommand command = app.makeImport(SKY_SOURCE);
+    ImportSkyCommand command = app.makeImport(SKY_SOURCE);
 
     command.apply(AppTestAccess::scene(app));
 
@@ -115,7 +115,7 @@ TEST_CASE("the image import command returns before the job is done and writes th
 }
 
 TEST_CASE("an image import whose job fails writes nothing and registers nothing", "[editor][edit][import][image]") {
-    ImportImageAppProbe app{"importImageFails"};
+    ImportSkyAppProbe app{"importImageFails"};
     app.scratch.writeFile("assets/client/Sky.png", "not read");
 
     app.makeImport("project://assets/client/Sky.png").apply(AppTestAccess::scene(app));
@@ -128,7 +128,7 @@ TEST_CASE("an image import whose job fails writes nothing and registers nothing"
 }
 
 TEST_CASE("a running simulation adds the imported texture to the index", "[editor][edit][import][image][integration]") {
-    ImportImageAppProbe app{"importImageRegisters"};
+    ImportSkyAppProbe app{"importImageRegisters"};
     app.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
     app.importAtStartup = true;
 

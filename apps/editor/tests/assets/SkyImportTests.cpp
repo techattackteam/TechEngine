@@ -7,9 +7,8 @@
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <assets/AssetIndex.hpp>
-#include <assets/ImageImporter.hpp>
 #include <assets/ImageTestFiles.hpp>
-#include <assets/Rgb9E5.hpp>
+#include <assets/TextureImporter.hpp>
 #include <project/ProjectError.hpp>
 
 #include <catch2/catch_approx.hpp>
@@ -29,12 +28,12 @@
 #include <vector>
 
 using TechEngine::AssetRecord;
-using TechEngine::ImageImporter;
-using TechEngine::ImageImportRequest;
-using TechEngine::ImageImportResult;
 using TechEngine::ProjectError;
 using TechEngine::ResourceId;
+using TechEngine::SkyImportRequest;
+using TechEngine::SkyImportResult;
 using TechEngine::Texture;
+using TechEngine::TextureImporter;
 using TechEngineTests::ScratchDirectory;
 
 static constexpr std::uint64_t FIRST_TEST_ID = 0x2000;
@@ -42,34 +41,34 @@ static constexpr std::string_view SKY_SOURCE = "project://assets/client/Sky.hdr"
 static constexpr std::string_view SKY_TEXTURE = "project://assets/client/Sky.tetexture";
 static constexpr std::uint32_t RACE_ATTEMPTS = 8;
 
-class ImageImportFixture {
+class SkyImportFixture {
 public:
     ScratchDirectory scratch;
     TechEngine::MountTable mounts;
     TechEngine::FileAccess files{mounts};
     std::uint64_t nextId = FIRST_TEST_ID;
 
-    explicit ImageImportFixture(const std::string_view name) : scratch(name) {
+    explicit SkyImportFixture(const std::string_view name) : scratch(name) {
         mounts.mount("project", scratch.root());
         scratch.makeDirectory("assets/client");
     }
 
-    std::error_code importFile(const std::string_view sourcePath, ImageImportResult& out) {
-        ImageImportRequest request;
+    std::error_code importSky(const std::string_view sourcePath, SkyImportResult& out) {
+        SkyImportRequest request;
         request.sourcePath = std::string(sourcePath);
-        const ImageImporter importer(files, [this] {
+        const TextureImporter importer(files, [this] {
             return ResourceId{nextId++};
         });
-        return importer.importFile(request, out);
+        return importer.importSky(request, out);
     }
 
-    std::error_code reimportFile(const std::string_view sourcePath, ImageImportResult& out) {
-        ImageImportRequest request;
+    std::error_code reimportSky(const std::string_view sourcePath, SkyImportResult& out) {
+        SkyImportRequest request;
         request.sourcePath = std::string(sourcePath);
-        const ImageImporter importer(files, [this] {
+        const TextureImporter importer(files, [this] {
             return ResourceId{nextId++};
         });
-        return importer.reimportFile(request, out);
+        return importer.reimportSky(request, out);
     }
 
     Texture readTexture(const std::string_view path) const {
@@ -91,15 +90,15 @@ static void unpackPixel(const Texture& texture, const std::uint32_t level, const
     for (std::size_t i = 0; i < 4; i++) {
         packed |= static_cast<std::uint32_t>(bytes[pixel * 4 + i]) << (8 * i);
     }
-    TechEngine::Rgb9E5::unpack(packed, red, green, blue);
+    TextureImporter::unpackRgb9E5(packed, red, green, blue);
 }
 
 TEST_CASE("an 8x4 Radiance file becomes an RGB9E5 texture of its size with the full mip chain", "[editor][assets][image]") {
-    ImageImportFixture fixture{"imageImportSky"};
+    SkyImportFixture fixture{"imageImportSky"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
-    ImageImportResult result;
+    SkyImportResult result;
 
-    REQUIRE(fixture.importFile(SKY_SOURCE, result) == std::error_code{});
+    REQUIRE(fixture.importSky(SKY_SOURCE, result) == std::error_code{});
 
     const Texture texture = fixture.readTexture(SKY_TEXTURE);
     CHECK(texture.format == TechEngine::TextureFormat::Rgb9E5);
@@ -180,13 +179,13 @@ TEST_CASE("an 8x4 Radiance file becomes an RGB9E5 texture of its size with the f
 }
 
 TEST_CASE("an existing output is refused and left as it was", "[editor][assets][image]") {
-    ImageImportFixture fixture{"imageImportExists"};
+    SkyImportFixture fixture{"imageImportExists"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
     fixture.scratch.writeFile("assets/client/Sky.tetexture", "kept");
-    ImageImportResult result;
+    SkyImportResult result;
     result.records.push_back(AssetRecord{});
 
-    CHECK(fixture.importFile(SKY_SOURCE, result) == ProjectError::ImportOutputExists);
+    CHECK(fixture.importSky(SKY_SOURCE, result) == ProjectError::ImportOutputExists);
 
     std::vector<std::byte> bytes;
     REQUIRE(fixture.files.read(SKY_TEXTURE, bytes) == std::error_code{});
@@ -196,14 +195,14 @@ TEST_CASE("an existing output is refused and left as it was", "[editor][assets][
 }
 
 TEST_CASE("a second import of the same source is refused and changes no byte", "[editor][assets][image]") {
-    ImageImportFixture fixture{"imageImportTwice"};
+    SkyImportFixture fixture{"imageImportTwice"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
-    ImageImportResult result;
-    REQUIRE(fixture.importFile(SKY_SOURCE, result) == std::error_code{});
+    SkyImportResult result;
+    REQUIRE(fixture.importSky(SKY_SOURCE, result) == std::error_code{});
     std::vector<std::byte> before;
     REQUIRE(fixture.files.read(SKY_TEXTURE, before) == std::error_code{});
 
-    CHECK(fixture.importFile(SKY_SOURCE, result) == ProjectError::ImportOutputExists);
+    CHECK(fixture.importSky(SKY_SOURCE, result) == ProjectError::ImportOutputExists);
 
     std::vector<std::byte> after;
     REQUIRE(fixture.files.read(SKY_TEXTURE, after) == std::error_code{});
@@ -211,23 +210,23 @@ TEST_CASE("a second import of the same source is refused and changes no byte", "
 }
 
 TEST_CASE("two imports of one source at once write one texture under one id", "[editor][assets][image]") {
-    ImageImportFixture fixture{"imageImportRace"};
+    SkyImportFixture fixture{"imageImportRace"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(256, 128));
     std::atomic<std::uint64_t> nextId = FIRST_TEST_ID;
-    const ImageImporter importer(fixture.files, [&nextId] {
+    const TextureImporter importer(fixture.files, [&nextId] {
         return ResourceId{nextId++};
     });
 
     for (std::uint32_t attempt = 0; attempt < RACE_ATTEMPTS; attempt++) {
         std::filesystem::remove(fixture.scratch.root() / "assets/client/Sky.tetexture");
         std::latch start(2);
-        std::array<ImageImportResult, 2> results;
+        std::array<SkyImportResult, 2> results;
         std::array<std::error_code, 2> errors;
         const auto run = [&](const std::size_t index) {
-            ImageImportRequest request;
+            SkyImportRequest request;
             request.sourcePath = std::string(SKY_SOURCE);
             start.arrive_and_wait();
-            errors[index] = importer.importFile(request, results[index]);
+            errors[index] = importer.importSky(request, results[index]);
         };
         std::thread first(run, 0);
         std::thread second(run, 1);
@@ -237,22 +236,22 @@ TEST_CASE("two imports of one source at once write one texture under one id", "[
         const std::error_code refused = ProjectError::ImportOutputExists;
         REQUIRE(std::ranges::count(errors, std::error_code{}) == 1);
         REQUIRE(std::ranges::count(errors, refused) == 1);
-        const ImageImportResult& winner = errors[0] ? results[1] : results[0];
+        const SkyImportResult& winner = errors[0] ? results[1] : results[0];
         REQUIRE(winner.records.size() == 1);
         CHECK(fixture.readTexture(SKY_TEXTURE).id == winner.records[0].id);
     }
 }
 
 TEST_CASE("a re-import rewrites the same file with the new image and keeps its id", "[editor][assets][image][reimport]") {
-    ImageImportFixture fixture{"imageReimport"};
+    SkyImportFixture fixture{"imageReimport"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
-    ImageImportResult first;
-    REQUIRE(fixture.importFile(SKY_SOURCE, first) == std::error_code{});
+    SkyImportResult first;
+    REQUIRE(fixture.importSky(SKY_SOURCE, first) == std::error_code{});
     const Texture before = fixture.readTexture(SKY_TEXTURE);
     fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(4, 2));
 
-    ImageImportResult second;
-    REQUIRE(fixture.reimportFile(SKY_SOURCE, second) == std::error_code{});
+    SkyImportResult second;
+    REQUIRE(fixture.reimportSky(SKY_SOURCE, second) == std::error_code{});
 
     const Texture after = fixture.readTexture(SKY_TEXTURE);
     CHECK(after.id == before.id);
@@ -268,39 +267,39 @@ TEST_CASE("a re-import rewrites the same file with the new image and keeps its i
 }
 
 TEST_CASE("a sky re-import with no earlier output, or with one that is not a texture, is refused and writes nothing", "[editor][assets][image][reimport]") {
-    ImageImportFixture fixture{"imageReimportMissing"};
+    SkyImportFixture fixture{"imageReimportMissing"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
-    ImageImportResult result;
+    SkyImportResult result;
 
     SECTION("no output") {
-        CHECK(fixture.reimportFile(SKY_SOURCE, result) == ProjectError::ReimportTargetMissing);
+        CHECK(fixture.reimportSky(SKY_SOURCE, result) == ProjectError::ReimportTargetMissing);
         CHECK_FALSE(fixture.exists("assets/client/Sky.tetexture"));
     }
 
     SECTION("an output that is not an engine file") {
         fixture.scratch.writeFile("assets/client/Sky.tetexture", "kept");
-        CHECK(fixture.reimportFile(SKY_SOURCE, result) != std::error_code{});
+        CHECK(fixture.reimportSky(SKY_SOURCE, result) != std::error_code{});
         std::vector<std::byte> bytes;
         REQUIRE(fixture.files.read(SKY_TEXTURE, bytes) == std::error_code{});
         CHECK(bytes.size() == 4);
     }
 
     SECTION("a .png path") {
-        CHECK(fixture.reimportFile("project://assets/client/Sky.png", result) == ProjectError::UnsupportedImageType);
+        CHECK(fixture.reimportSky("project://assets/client/Sky.png", result) == ProjectError::UnsupportedImageType);
     }
 }
 
 TEST_CASE("a path that is not a .hdr is refused before anything is read or written", "[editor][assets][image]") {
-    ImageImportFixture fixture{"imageImportWrongType"};
+    SkyImportFixture fixture{"imageImportWrongType"};
     fixture.scratch.writeFile("assets/client/Sky.png", "not read");
     fixture.scratch.writeFile("assets/client/Sky", "no extension");
     fixture.scratch.writeFile("assets/client/Sky.hdr.txt", "wrong last extension");
-    ImageImportResult result;
+    SkyImportResult result;
 
-    CHECK(fixture.importFile("project://assets/client/Sky.png", result) == ProjectError::UnsupportedImageType);
-    CHECK(fixture.importFile("project://assets/client/Sky", result) == ProjectError::UnsupportedImageType);
-    CHECK(fixture.importFile("project://assets/client/Sky.hdr.txt", result) == ProjectError::UnsupportedImageType);
-    CHECK(fixture.importFile("project://assets/client/Missing.png", result) == ProjectError::UnsupportedImageType);
+    CHECK(fixture.importSky("project://assets/client/Sky.png", result) == ProjectError::UnsupportedImageType);
+    CHECK(fixture.importSky("project://assets/client/Sky", result) == ProjectError::UnsupportedImageType);
+    CHECK(fixture.importSky("project://assets/client/Sky.hdr.txt", result) == ProjectError::UnsupportedImageType);
+    CHECK(fixture.importSky("project://assets/client/Missing.png", result) == ProjectError::UnsupportedImageType);
 
     CHECK_FALSE(fixture.exists("assets/client/Sky.tetexture"));
     CHECK_FALSE(fixture.exists("assets/client/Sky.png.tetexture"));
@@ -309,51 +308,51 @@ TEST_CASE("a path that is not a .hdr is refused before anything is read or writt
 }
 
 TEST_CASE("a missing source is refused with the file error and writes nothing", "[editor][assets][image]") {
-    ImageImportFixture fixture{"imageImportMissing"};
-    ImageImportResult result;
+    SkyImportFixture fixture{"imageImportMissing"};
+    SkyImportResult result;
 
-    CHECK(fixture.importFile(SKY_SOURCE, result) == TechEngine::FileError::NotFound);
+    CHECK(fixture.importSky(SKY_SOURCE, result) == TechEngine::FileError::NotFound);
 
     CHECK_FALSE(fixture.exists("assets/client/Sky.tetexture"));
 }
 
 TEST_CASE("a .hdr that is not a Radiance file is refused and writes nothing", "[editor][assets][image]") {
-    ImageImportFixture fixture{"imageImportGarbage"};
+    SkyImportFixture fixture{"imageImportGarbage"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", "definitely not radiance");
     fixture.scratch.writeFile("assets/client/Empty.hdr", "");
-    ImageImportResult result;
+    SkyImportResult result;
 
-    CHECK(fixture.importFile(SKY_SOURCE, result) == ProjectError::ImageUnreadable);
-    CHECK(fixture.importFile("project://assets/client/Empty.hdr", result) == ProjectError::ImageUnreadable);
+    CHECK(fixture.importSky(SKY_SOURCE, result) == ProjectError::ImageUnreadable);
+    CHECK(fixture.importSky("project://assets/client/Empty.hdr", result) == ProjectError::ImageUnreadable);
 
     CHECK_FALSE(fixture.exists("assets/client/Sky.tetexture"));
     CHECK_FALSE(fixture.exists("assets/client/Empty.tetexture"));
 }
 
 TEST_CASE("a source outside a side folder of the assets folder is refused", "[editor][assets][image]") {
-    ImageImportFixture fixture{"imageImportOutsideAssets"};
+    SkyImportFixture fixture{"imageImportOutsideAssets"};
     fixture.scratch.writeFile("Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
     fixture.scratch.writeFile("assets/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
     fixture.scratch.writeFile("assets/other/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
-    ImageImportResult result;
+    SkyImportResult result;
 
-    CHECK(fixture.importFile("project://Sky.hdr", result) == ProjectError::SourceNotInAssets);
-    CHECK(fixture.importFile("project://assets/Sky.hdr", result) == ProjectError::SourceNotInAssets);
-    CHECK(fixture.importFile("project://assets/other/Sky.hdr", result) == ProjectError::SourceNotInAssets);
+    CHECK(fixture.importSky("project://Sky.hdr", result) == ProjectError::SourceNotInAssets);
+    CHECK(fixture.importSky("project://assets/Sky.hdr", result) == ProjectError::SourceNotInAssets);
+    CHECK(fixture.importSky("project://assets/other/Sky.hdr", result) == ProjectError::SourceNotInAssets);
 
     CHECK_FALSE(fixture.exists("Sky.tetexture"));
     CHECK_FALSE(fixture.exists("assets/other/Sky.tetexture"));
 }
 
 TEST_CASE("the record's side follows the side folder and the extension is read without case", "[editor][assets][image]") {
-    ImageImportFixture fixture{"imageImportSides"};
+    SkyImportFixture fixture{"imageImportSides"};
     fixture.scratch.writeFile("assets/server/Dusk.HDR", TechEngineTests::gradientRadianceFile(8, 4));
     fixture.scratch.writeFile("assets/common/Dawn.hdr", TechEngineTests::gradientRadianceFile(8, 4));
-    ImageImportResult server;
-    ImageImportResult common;
+    SkyImportResult server;
+    SkyImportResult common;
 
-    REQUIRE(fixture.importFile("project://assets/server/Dusk.HDR", server) == std::error_code{});
-    REQUIRE(fixture.importFile("project://assets/common/Dawn.hdr", common) == std::error_code{});
+    REQUIRE(fixture.importSky("project://assets/server/Dusk.HDR", server) == std::error_code{});
+    REQUIRE(fixture.importSky("project://assets/common/Dawn.hdr", common) == std::error_code{});
 
     REQUIRE(server.records.size() == 1);
     CHECK(server.records[0].side == TechEngine::Side::Server);
@@ -364,15 +363,15 @@ TEST_CASE("the record's side follows the side folder and the extension is read w
 }
 
 TEST_CASE("odd and tiny sizes get the full chain", "[editor][assets][image]") {
-    ImageImportFixture fixture{"imageImportOddSizes"};
+    SkyImportFixture fixture{"imageImportOddSizes"};
     fixture.scratch.writeFile("assets/client/Odd.hdr", TechEngineTests::gradientRadianceFile(5, 3));
     fixture.scratch.writeFile("assets/client/One.hdr", TechEngineTests::gradientRadianceFile(1, 1));
     fixture.scratch.writeFile("assets/client/Strip.hdr", TechEngineTests::gradientRadianceFile(1, 6));
-    ImageImportResult result;
+    SkyImportResult result;
 
-    REQUIRE(fixture.importFile("project://assets/client/Odd.hdr", result) == std::error_code{});
-    REQUIRE(fixture.importFile("project://assets/client/One.hdr", result) == std::error_code{});
-    REQUIRE(fixture.importFile("project://assets/client/Strip.hdr", result) == std::error_code{});
+    REQUIRE(fixture.importSky("project://assets/client/Odd.hdr", result) == std::error_code{});
+    REQUIRE(fixture.importSky("project://assets/client/One.hdr", result) == std::error_code{});
+    REQUIRE(fixture.importSky("project://assets/client/Strip.hdr", result) == std::error_code{});
 
     const Texture odd = fixture.readTexture("project://assets/client/Odd.tetexture");
     CHECK(odd.width == 5);
@@ -394,8 +393,8 @@ TEST_CASE("odd and tiny sizes get the full chain", "[editor][assets][image]") {
 }
 
 TEST_CASE("the output path replaces the last extension of the file name", "[editor][assets][image]") {
-    CHECK(ImageImporter::outputPath("project://assets/client/Sky.hdr") == "project://assets/client/Sky.tetexture");
-    CHECK(ImageImporter::outputPath("project://assets/client/Sky.v2.hdr") == "project://assets/client/Sky.v2.tetexture");
-    CHECK(ImageImporter::outputPath("project://assets/client/Sky") == "project://assets/client/Sky.tetexture");
-    CHECK(ImageImporter::outputPath("project://assets/my.folder/Sky") == "project://assets/my.folder/Sky.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.hdr") == "project://assets/client/Sky.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.v2.hdr") == "project://assets/client/Sky.v2.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky") == "project://assets/client/Sky.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/my.folder/Sky") == "project://assets/my.folder/Sky.tetexture");
 }

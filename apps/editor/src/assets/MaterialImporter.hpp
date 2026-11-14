@@ -10,9 +10,7 @@
 #include <assets/TextureImporter.hpp>
 
 #include <array>
-#include <cstddef>
 #include <cstdint>
-#include <span>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -90,9 +88,6 @@ namespace TechEngine {
         // for each file written. A texture whose image cannot be read or decoded is logged and left out, and the inputs that
         // sample it stay empty.
         std::error_code write(const MaterialPlan& plan, Side side, std::vector<AssetRecord>& records) const;
-
-        // DDS through DdsReader, and PNG, JPEG and TGA through ImageDecoder.
-        static std::error_code decodeImage(std::span<const std::byte> bytes, ByteImage& out);
 
     private:
         void planInputs(const aiMaterial& source, MaterialOutput& material, MaterialPlan& out) const;

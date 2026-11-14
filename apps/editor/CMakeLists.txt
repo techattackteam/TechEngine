@@ -5,20 +5,13 @@ techengine_app(editor
   MAIN    src/main.cpp
   SOURCES src/EditorApp.cpp
           src/assets/AssetIndex.cpp
-          src/assets/Bcdec.cpp
-          src/assets/DdsReader.cpp
           src/assets/ImageDecoder.cpp
-          src/assets/ImageImporter.cpp
           src/assets/ImportClaim.cpp
-          src/assets/ImportedFile.cpp
           src/assets/LooseSource.cpp
           src/assets/MaterialImporter.cpp
           src/assets/MeshImporter.cpp
-          src/assets/MipBuilder.cpp
           src/assets/ModelImporter.cpp
           src/assets/ReimportMatcher.cpp
-          src/assets/Rgb9E5.cpp
-          src/assets/StbImage.cpp
           src/assets/TextureImporter.cpp
           src/edit/ConsoleHistory.cpp
           src/edit/ConsoleLog.cpp
@@ -31,8 +24,8 @@ techengine_app(editor
           src/edit/FieldSetter.cpp
           src/edit/FieldValue.cpp
           src/edit/HierarchyCommands.cpp
-          src/edit/ImportImageCommand.cpp
           src/edit/ImportModelCommand.cpp
+          src/edit/ImportSkyCommand.cpp
           src/edit/InspectorCommands.cpp
           src/edit/MaterialSlotRebuild.cpp
           src/edit/PlaceModelCommand.cpp
@@ -55,18 +48,13 @@ techengine_app(editor
           src/ui/widgets/TextEditField.cpp
   HEADERS src/EditorApp.hpp
           src/assets/AssetIndex.hpp
-          src/assets/DdsReader.hpp
           src/assets/ImageDecoder.hpp
-          src/assets/ImageImporter.hpp
           src/assets/ImportClaim.hpp
-          src/assets/ImportedFile.hpp
           src/assets/LooseSource.hpp
           src/assets/MaterialImporter.hpp
           src/assets/MeshImporter.hpp
-          src/assets/MipBuilder.hpp
           src/assets/ModelImporter.hpp
           src/assets/ReimportMatcher.hpp
-          src/assets/Rgb9E5.hpp
           src/assets/TextureImporter.hpp
           src/edit/ConsoleHistory.hpp
           src/edit/ConsoleLog.hpp
@@ -80,8 +68,8 @@ techengine_app(editor
           src/edit/FieldSetter.hpp
           src/edit/FieldValue.hpp
           src/edit/HierarchyCommands.hpp
-          src/edit/ImportImageCommand.hpp
           src/edit/ImportModelCommand.hpp
+          src/edit/ImportSkyCommand.hpp
           src/edit/InspectorCommands.hpp
           src/edit/MaterialSlotRebuild.hpp
           src/edit/PlaceModelCommand.hpp
@@ -108,18 +96,15 @@ techengine_app(editor
   TESTS   tests/EditorAppTests.cpp
           tests/assets/AssetIndexTests.cpp
           tests/assets/AssimpTests.cpp
-          tests/assets/DdsReaderTests.cpp
           tests/assets/ImageDecoderTests.cpp
-          tests/assets/ImageImporterTests.cpp
           tests/assets/ImportClaimTests.cpp
           tests/assets/LooseSourceTests.cpp
           tests/assets/MaterialImportTests.cpp
           tests/assets/MergedMeshImportTests.cpp
-          tests/assets/MipBuilderTests.cpp
           tests/assets/ModelImporterTests.cpp
           tests/assets/ModelReimportTests.cpp
           tests/assets/ReimportMatcherTests.cpp
-          tests/assets/Rgb9E5Tests.cpp
+          tests/assets/SkyImportTests.cpp
           tests/assets/TextureImporterTests.cpp
           tests/edit/ConsoleHistoryTests.cpp
           tests/edit/ConsoleLogTests.cpp
@@ -129,8 +114,8 @@ techengine_app(editor
           tests/edit/EditorSnapshotTests.cpp
           tests/edit/FieldValueTests.cpp
           tests/edit/HierarchyCommandsTests.cpp
-          tests/edit/ImportImageCommandTests.cpp
           tests/edit/ImportModelCommandTests.cpp
+          tests/edit/ImportSkyCommandTests.cpp
           tests/edit/InspectorCommandsTests.cpp
           tests/edit/MaterialSlotRebuildTests.cpp
           tests/edit/PlaceModelCommandTests.cpp

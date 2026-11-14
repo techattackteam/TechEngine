@@ -11,7 +11,6 @@
 #include <TechEngine/platform/files/VirtualPath.hpp>
 
 #include <assets/ImportClaim.hpp>
-#include <assets/ImportedFile.hpp>
 #include <assets/MaterialImporter.hpp>
 #include <assets/MeshImporter.hpp>
 #include <assets/ModelImporter.hpp>

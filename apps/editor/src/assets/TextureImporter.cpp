@@ -1,5 +1,13 @@
-#include <assets/MipBuilder.hpp>
+#include <TechEngine/base/diagnostics/Profile.hpp>
+#include <TechEngine/core/texture/Texture.hpp>
+#include <TechEngine/platform/files/FileAccess.hpp>
+#include <TechEngine/platform/files/FileError.hpp>
+#include <TechEngine/platform/files/VirtualPath.hpp>
+
+#include <assets/ImportClaim.hpp>
+#include <assets/ReimportMatcher.hpp>
 #include <assets/TextureImporter.hpp>
+#include <project/ProjectError.hpp>
 
 #include <bc7enc.h>
 #include <rgbcx.h>
@@ -9,13 +17,18 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <mutex>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <utility>
 #include <vector>
 
 namespace TechEngine {
+    static constexpr std::string_view HDR_EXTENSION = ".hdr";
+    static constexpr std::string_view TEXTURE_EXTENSION = ".tetexture";
+    static constexpr std::string_view ASSETS_FOLDER = "assets/";
     static constexpr std::size_t CHANNELS = 4;
     static constexpr std::uint32_t BLOCK_SIDE = 4;
     static constexpr std::size_t BLOCK_BYTES = 16;
@@ -23,9 +36,22 @@ namespace TechEngine {
     // bc7enc's fastest search level, scanning a quarter of mode 1's partitions.
     static constexpr std::uint32_t BC7_UBER_LEVEL = 0;
     static constexpr std::uint32_t BC7_MAX_PARTITIONS = 16;
+    static constexpr float TAP_WEIGHT = 0.25f;
+    static constexpr float MIN_NORMAL_LENGTH_SQUARED = 1.0e-12f;
+    static constexpr int MANTISSA_BITS = 9;
+    static constexpr int EXPONENT_BIAS = 15;
+    static constexpr std::uint32_t MANTISSA_MASK = (1u << MANTISSA_BITS) - 1;
+    static constexpr std::uint32_t MAX_MANTISSA = MANTISSA_MASK;
+    static constexpr int EXPONENT_SHIFT = 27;
+    static constexpr std::size_t PACKED_BYTES = 4;
+    // A lat-long sky wraps around in longitude and ends at the poles.
+    static constexpr TextureSampler SKY_SAMPLER{TextureWrap::Repeat, TextureWrap::Clamp, TextureFilter::Linear};
 
     // Both encoders fill global tables once, and neither may run while that happens.
     static std::once_flag g_encodersReady;
+
+    TextureImporter::TextureImporter(FileAccess& files, std::function<ResourceId()> generateId) : m_files(&files), m_generateId(std::move(generateId)) {
+    }
 
     TextureFormat TextureImporter::formatOf(const TexturePurpose purpose) {
         switch (purpose) {
@@ -116,9 +142,9 @@ namespace TechEngine {
         toFloat(image, purpose, source);
         std::vector<FloatImage> chain;
         if (purpose == TexturePurpose::Normal) {
-            MipBuilder::buildNormalMap(source, chain);
+            buildNormalMapMipChain(source, chain);
         } else {
-            MipBuilder::build(source, chain);
+            buildMipChain(source, chain);
         }
         source.pixels.clear();
 
@@ -129,6 +155,227 @@ namespace TechEngine {
             toBytes(chain[i], purpose, level);
             encodeLevel(level, purpose, out.mips[i + 1]);
         }
+    }
+
+    void TextureImporter::buildMipChain(const FloatImage& source, std::vector<FloatImage>& out) {
+        out.clear();
+        if (source.width == 0 || source.height == 0) {
+            return;
+        }
+        std::uint32_t width = source.width;
+        std::uint32_t height = source.height;
+        while (width > 1 || height > 1) {
+            const FloatImage& above = out.empty() ? source : out.back();
+            FloatImage level;
+            downsample(above, level);
+            width = level.width;
+            height = level.height;
+            out.push_back(std::move(level));
+        }
+    }
+
+    void TextureImporter::buildNormalMapMipChain(const FloatImage& source, std::vector<FloatImage>& out) {
+        out.clear();
+        if (source.width == 0 || source.height == 0) {
+            return;
+        }
+        std::uint32_t width = source.width;
+        std::uint32_t height = source.height;
+        while (width > 1 || height > 1) {
+            const FloatImage& above = out.empty() ? source : out.back();
+            FloatImage level;
+            downsample(above, level);
+            renormalize(level);
+            width = level.width;
+            height = level.height;
+            out.push_back(std::move(level));
+        }
+    }
+
+    void TextureImporter::downsample(const FloatImage& above, FloatImage& out) {
+        out.width = std::max<std::uint32_t>(above.width / 2, 1);
+        out.height = std::max<std::uint32_t>(above.height / 2, 1);
+        out.pixels.assign(static_cast<std::size_t>(out.width) * out.height * CHANNELS, 0.0f);
+
+        for (std::uint32_t y = 0; y < out.height; y++) {
+            for (std::uint32_t x = 0; x < out.width; x++) {
+                float* destination = &out.pixels[(static_cast<std::size_t>(y) * out.width + x) * CHANNELS];
+                for (std::uint32_t tapY = 0; tapY < 2; tapY++) {
+                    const std::uint32_t sourceY = std::min(y * 2 + tapY, above.height - 1);
+                    for (std::uint32_t tapX = 0; tapX < 2; tapX++) {
+                        const std::uint32_t sourceX = std::min(x * 2 + tapX, above.width - 1);
+                        const float* tap = &above.pixels[(static_cast<std::size_t>(sourceY) * above.width + sourceX) * CHANNELS];
+                        for (std::size_t channel = 0; channel < CHANNELS; channel++) {
+                            destination[channel] += tap[channel] * TAP_WEIGHT;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    std::uint32_t TextureImporter::packRgb9E5(const float red, const float green, const float blue) {
+        const float clampedRed = clampRgb9E5Channel(red);
+        const float clampedGreen = clampRgb9E5Channel(green);
+        const float clampedBlue = clampRgb9E5Channel(blue);
+        const float largest = std::max({clampedRed, clampedGreen, clampedBlue});
+
+        int exponent = std::max(-EXPONENT_BIAS - 1, std::ilogb(largest)) + 1 + EXPONENT_BIAS;
+        float denominator = std::exp2(static_cast<float>(exponent - EXPONENT_BIAS - MANTISSA_BITS));
+        if (static_cast<std::uint32_t>(std::floor(largest / denominator + 0.5f)) == MAX_MANTISSA + 1) {
+            denominator *= 2.0f;
+            exponent++;
+        }
+
+        const std::uint32_t redMantissa = static_cast<std::uint32_t>(std::floor(clampedRed / denominator + 0.5f));
+        const std::uint32_t greenMantissa = static_cast<std::uint32_t>(std::floor(clampedGreen / denominator + 0.5f));
+        const std::uint32_t blueMantissa = static_cast<std::uint32_t>(std::floor(clampedBlue / denominator + 0.5f));
+        return (static_cast<std::uint32_t>(exponent) << EXPONENT_SHIFT) | (blueMantissa << (2 * MANTISSA_BITS)) | (greenMantissa << MANTISSA_BITS) | redMantissa;
+    }
+
+    void TextureImporter::unpackRgb9E5(const std::uint32_t packed, float& red, float& green, float& blue) {
+        const int exponent = static_cast<int>(packed >> EXPONENT_SHIFT);
+        const float scale = std::exp2(static_cast<float>(exponent - EXPONENT_BIAS - MANTISSA_BITS));
+        red = static_cast<float>(packed & MANTISSA_MASK) * scale;
+        green = static_cast<float>((packed >> MANTISSA_BITS) & MANTISSA_MASK) * scale;
+        blue = static_cast<float>((packed >> (2 * MANTISSA_BITS)) & MANTISSA_MASK) * scale;
+    }
+
+    std::string TextureImporter::skyOutputPath(const std::string_view sourcePath) {
+        const std::size_t slash = sourcePath.find_last_of('/');
+        const std::size_t dot = sourcePath.find_last_of('.');
+        const bool hasExtension = dot != std::string_view::npos && (slash == std::string_view::npos || dot > slash + 1);
+        const std::string_view stem = hasExtension ? sourcePath.substr(0, dot) : sourcePath;
+        return std::string(stem) + std::string(TEXTURE_EXTENSION);
+    }
+
+    std::error_code TextureImporter::importSky(const SkyImportRequest& request, SkyImportResult& out) const {
+        return importSkyInto(request, false, out);
+    }
+
+    std::error_code TextureImporter::reimportSky(const SkyImportRequest& request, SkyImportResult& out) const {
+        return importSkyInto(request, true, out);
+    }
+
+    bool TextureImporter::isHdr(const std::string_view sourcePath) {
+        const std::size_t slash = sourcePath.find_last_of('/');
+        const std::size_t dot = sourcePath.find_last_of('.');
+        if (dot == std::string_view::npos || (slash != std::string_view::npos && dot < slash)) {
+            return false;
+        }
+        std::string extension(sourcePath.substr(dot));
+        std::ranges::transform(extension, extension.begin(), toLowerAscii);
+        return extension == HDR_EXTENSION;
+    }
+
+    bool TextureImporter::sideOf(const std::string_view relativePath, Side& out) {
+        if (!relativePath.starts_with(ASSETS_FOLDER)) {
+            return false;
+        }
+        const std::string_view inside = relativePath.substr(ASSETS_FOLDER.size());
+        const std::size_t slash = inside.find('/');
+        if (slash == std::string_view::npos) {
+            return false;
+        }
+        static constexpr std::array<std::pair<std::string_view, Side>, 3> SIDES{{{"common", Side::Common}, {"client", Side::Client}, {"server", Side::Server}}};
+        const std::string_view name = inside.substr(0, slash);
+        for (const std::pair<std::string_view, Side>& side: SIDES) {
+            if (side.first == name) {
+                out = side.second;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    std::error_code TextureImporter::importSkyInto(const SkyImportRequest& request, const bool reimport, SkyImportResult& out) const {
+        TE_PROFILER_FUNCTION();
+        if (!isHdr(request.sourcePath)) {
+            return ProjectError::UnsupportedImageType;
+        }
+
+        VirtualPathParts parts;
+        const std::error_code splitError = splitVirtualPath(request.sourcePath, parts);
+        if (splitError) {
+            return splitError;
+        }
+        Side side = Side::Common;
+        if (!sideOf(parts.relative, side)) {
+            return ProjectError::SourceNotInAssets;
+        }
+
+        const std::string path = skyOutputPath(request.sourcePath);
+        const ImportClaim claim(path);
+        FileStatus outputStatus;
+        const std::error_code outputError = m_files->status(path, outputStatus);
+        ResourceId keptId;
+        if (!reimport) {
+            if (!outputError) {
+                return ProjectError::ImportOutputExists;
+            }
+            if (outputError != FileError::NotFound) {
+                return outputError;
+            }
+        } else {
+            if (outputError == FileError::NotFound) {
+                return ProjectError::ReimportTargetMissing;
+            }
+            if (outputError) {
+                return outputError;
+            }
+            ImportedFile existing;
+            const std::error_code existingError = readImportedFile(*m_files, path, existing);
+            if (existingError) {
+                return existingError;
+            }
+            if (existing.typeTag != TEXTURE_TYPE_TAG) {
+                return ProjectError::ReimportTargetMissing;
+            }
+            keptId = existing.id;
+        }
+
+        std::vector<std::byte> sourceBytes;
+        const std::error_code readError = m_files->read(request.sourcePath, sourceBytes);
+        if (readError) {
+            return readError;
+        }
+        FloatImage image;
+        const std::error_code decodeError = ImageDecoder::decodeFloat(sourceBytes, image);
+        if (decodeError) {
+            return decodeError;
+        }
+
+        Texture texture;
+        texture.id = reimport ? keptId : m_generateId();
+        texture.importBlock.sourcePath = std::string(parts.relative);
+        texture.format = TextureFormat::Rgb9E5;
+        texture.width = image.width;
+        texture.height = image.height;
+        texture.sampler = SKY_SAMPLER;
+
+        std::vector<FloatImage> chain;
+        buildMipChain(image, chain);
+        texture.mips.resize(chain.size() + 1);
+        packRgb9E5Level(image, texture.mips[0]);
+        for (std::size_t level = 0; level < chain.size(); level++) {
+            packRgb9E5Level(chain[level], texture.mips[level + 1]);
+        }
+
+        std::vector<std::byte> bytes;
+        texture.write(bytes);
+        const std::error_code writeError = m_files->write(path, bytes);
+        if (writeError) {
+            return writeError;
+        }
+
+        out.records.clear();
+        out.rewritten.clear();
+        if (reimport) {
+            out.rewritten.push_back(texture.id);
+        } else {
+            out.records.push_back(AssetRecord{texture.id, TEXTURE_TYPE_TAG, side, path});
+        }
+        return {};
     }
 
     void TextureImporter::toFloat(const ByteImage& image, const TexturePurpose purpose, FloatImage& out) {
@@ -247,6 +494,42 @@ namespace TechEngine {
         }
     }
 
+    void TextureImporter::renormalize(FloatImage& image) {
+        for (std::size_t pixel = 0; pixel < image.pixels.size(); pixel += CHANNELS) {
+            float* texel = &image.pixels[pixel];
+            const float lengthSquared = texel[0] * texel[0] + texel[1] * texel[1] + texel[2] * texel[2];
+            if (lengthSquared < MIN_NORMAL_LENGTH_SQUARED) {
+                texel[0] = 0.0f;
+                texel[1] = 0.0f;
+                texel[2] = 1.0f;
+                continue;
+            }
+            const float inverseLength = 1.0f / std::sqrt(lengthSquared);
+            texel[0] *= inverseLength;
+            texel[1] *= inverseLength;
+            texel[2] *= inverseLength;
+        }
+    }
+
+    float TextureImporter::clampRgb9E5Channel(const float value) {
+        if (!(value > 0.0f)) {
+            return 0.0f;
+        }
+        return std::min(value, RGB9E5_MAX_VALUE);
+    }
+
+    void TextureImporter::packRgb9E5Level(const FloatImage& image, std::vector<std::byte>& out) {
+        const std::size_t pixelCount = static_cast<std::size_t>(image.width) * image.height;
+        out.resize(pixelCount * PACKED_BYTES);
+        for (std::size_t pixel = 0; pixel < pixelCount; pixel++) {
+            const float* source = &image.pixels[pixel * CHANNELS];
+            const std::uint32_t packed = packRgb9E5(source[0], source[1], source[2]);
+            for (std::size_t byte = 0; byte < PACKED_BYTES; byte++) {
+                out[pixel * PACKED_BYTES + byte] = static_cast<std::byte>((packed >> (8 * byte)) & 0xFF);
+            }
+        }
+    }
+
     float TextureImporter::srgbToLinear(const float value) {
         if (value <= 0.04045f) {
             return value / 12.92f;
@@ -275,5 +558,12 @@ namespace TechEngine {
                 return "mirror";
         }
         return "repeat";
+    }
+
+    char TextureImporter::toLowerAscii(const char character) {
+        if (character >= 'A' && character <= 'Z') {
+            return static_cast<char>(character - 'A' + 'a');
+        }
+        return character;
     }
 }

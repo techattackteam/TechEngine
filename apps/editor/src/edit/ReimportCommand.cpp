@@ -4,7 +4,7 @@
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/platform/files/VirtualPath.hpp>
 
-#include <assets/ImageImporter.hpp>
+#include <assets/TextureImporter.hpp>
 #include <edit/EditSession.hpp>
 #include <edit/ImportModelCommand.hpp>
 #include <edit/MaterialSlotRebuild.hpp>
@@ -47,17 +47,17 @@ namespace TechEngine {
     }
 
     std::error_code ReimportCommand::reimport(FileAccess& files, const ReimportRequest& request, std::vector<AssetRecord>& records, std::vector<ResourceId>& rewritten) {
-        if (ImageImporter::isHdr(request.sourcePath)) {
-            ImageImportRequest imageRequest;
-            imageRequest.sourcePath = request.sourcePath;
-            ImageImportResult imageResult;
-            const ImageImporter imageImporter(files, &randomResourceId);
-            const std::error_code imageError = imageImporter.reimportFile(imageRequest, imageResult);
-            if (imageError) {
-                return imageError;
+        if (TextureImporter::isHdr(request.sourcePath)) {
+            SkyImportRequest skyRequest;
+            skyRequest.sourcePath = request.sourcePath;
+            SkyImportResult skyResult;
+            const TextureImporter skyImporter(files, &randomResourceId);
+            const std::error_code skyError = skyImporter.reimportSky(skyRequest, skyResult);
+            if (skyError) {
+                return skyError;
             }
-            records = std::move(imageResult.records);
-            rewritten = std::move(imageResult.rewritten);
+            records = std::move(skyResult.records);
+            rewritten = std::move(skyResult.rewritten);
             return {};
         }
 
@@ -69,7 +69,7 @@ namespace TechEngine {
         ModelImportRequest modelRequest;
         modelRequest.sourcePath = request.sourcePath;
         modelRequest.mode = request.mode;
-        if (!ImageImporter::sideOf(parts.relative, modelRequest.side)) {
+        if (!TextureImporter::sideOf(parts.relative, modelRequest.side)) {
             return ProjectError::SourceNotInAssets;
         }
         ModelImportResult modelResult;

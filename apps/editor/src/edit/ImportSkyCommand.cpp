@@ -2,8 +2,8 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 
-#include <edit/ImportImageCommand.hpp>
 #include <edit/ImportModelCommand.hpp>
+#include <edit/ImportSkyCommand.hpp>
 
 #include <memory>
 #include <span>
@@ -12,15 +12,14 @@
 #include <utility>
 
 namespace TechEngine {
-    ImportImageCommand::ImportImageCommand(App& app, JobSystem& jobs, FileAccess& files, AssetIndex& index, std::vector<BatchId>& batches, ImageImportRequest request)
-        : m_app(&app), m_jobs(&jobs), m_files(&files), m_index(&index), m_batches(&batches), m_request(std::move(request)) {
+    ImportSkyCommand::ImportSkyCommand(App& app, JobSystem& jobs, FileAccess& files, AssetIndex& index, std::vector<BatchId>& batches, SkyImportRequest request) : m_app(&app), m_jobs(&jobs), m_files(&files), m_index(&index), m_batches(&batches), m_request(std::move(request)) {
     }
 
-    void ImportImageCommand::apply(Scene&) {
+    void ImportSkyCommand::apply(Scene&) {
         Task task = [app = m_app, files = m_files, index = m_index, request = std::move(m_request)] {
-            ImageImportResult result;
-            const ImageImporter importer(*files, &randomResourceId);
-            const std::error_code importError = importer.importFile(request, result);
+            SkyImportResult result;
+            const TextureImporter importer(*files, &randomResourceId);
+            const std::error_code importError = importer.importSky(request, result);
             if (importError) {
                 TE_LOGGER_ERROR("Failed to import {0}: {1}", request.sourcePath, importError.message());
                 return;

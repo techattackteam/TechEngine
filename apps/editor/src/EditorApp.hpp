@@ -104,7 +104,7 @@ namespace TechEngine {
         void exportProject();
 
         // Main thread only.
-        void importImage(std::string path);
+        void importSky(std::string path);
 
         // Main thread only.
         void reimport(std::string path, ImportMode mode);

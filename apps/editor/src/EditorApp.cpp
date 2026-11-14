@@ -17,8 +17,8 @@
 #include <EditorApp.hpp>
 #include <assets/ModelImporter.hpp>
 #include <edit/ExportCommand.hpp>
-#include <edit/ImportImageCommand.hpp>
 #include <edit/ImportModelCommand.hpp>
+#include <edit/ImportSkyCommand.hpp>
 #include <edit/MaterialSlotRebuild.hpp>
 #include <edit/ReimportCommand.hpp>
 #include <ui/EditorTheme.hpp>
@@ -62,7 +62,7 @@ namespace TechEngine {
                                                                                                            runProject();
                                                                                                        },
                                                                                                        [this](std::string path) {
-                                                                                                           importImage(std::move(path));
+                                                                                                           importSky(std::move(path));
                                                                                                        },
                                                                                                        [this](std::string path, const ImportMode mode) {
                                                                                                            reimport(std::move(path), mode);
@@ -371,10 +371,10 @@ namespace TechEngine {
         }
     }
 
-    void EditorApp::importImage(std::string path) {
-        ImageImportRequest request;
+    void EditorApp::importSky(std::string path) {
+        SkyImportRequest request;
         request.sourcePath = std::move(path);
-        const std::error_code submitError = submitCommand(std::make_unique<ImportImageCommand>(*this, m_jobs, m_files, m_assets, m_importBatches, std::move(request)));
+        const std::error_code submitError = submitCommand(std::make_unique<ImportSkyCommand>(*this, m_jobs, m_files, m_assets, m_importBatches, std::move(request)));
         if (submitError) {
             TE_LOGGER_WARN("The simulation refused the image import: {0}", submitError.message());
         }
