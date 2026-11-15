@@ -6,6 +6,7 @@
 
 #include <render/FrameRenderer.hpp>
 #include <render/SnapshotMailbox.hpp>
+#include <render/device/RenderDevice.hpp>
 
 #include <atomic>
 #include <functional>
@@ -19,6 +20,7 @@ namespace TechEngine {
 
     class RenderThread {
     private:
+        RenderDevice m_device;
         FrameRenderer m_renderer;
         SnapshotMailbox m_mailbox;
         mutable std::mutex m_timingMutex;

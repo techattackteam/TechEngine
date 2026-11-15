@@ -16,6 +16,14 @@ namespace TechEngine {
                         return "client is already started";
                     case ClientError::RendererStartFailed:
                         return "render thread failed to start";
+                    case ClientError::InvalidRenderDescription:
+                        return "render object description is invalid";
+                    case ClientError::ShaderCompileFailed:
+                        return "shader failed to compile";
+                    case ClientError::ShaderLinkFailed:
+                        return "shader program failed to link";
+                    case ClientError::IncompleteRenderTarget:
+                        return "render target is incomplete";
                 }
                 return "unknown client error";
             }

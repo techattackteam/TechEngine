@@ -1,20 +1,21 @@
 #pragma once
 
-#include <render/Buffer.hpp>
-#include <render/VertexArray.hpp>
+#include <render/device/RenderExtent.hpp>
+#include <render/device/RenderHandle.hpp>
+
+#include <system_error>
 
 namespace TechEngine {
     struct RenderSnapshot;
-    struct FramebufferSize;
+    class RenderDevice;
 
     class FrameRenderer {
     private:
-        Buffer m_triangleVertexBuffer;
-        Buffer m_triangleIndexBuffer;
-        VertexArray m_triangleVertexArray;
-        unsigned int m_vertexShader = 0;
-        unsigned int m_fragmentShader = 0;
-        unsigned int m_shaderProgram = 0;
+        RenderDevice* m_device = nullptr;
+        BufferHandle m_triangleVertexBuffer;
+        BufferHandle m_triangleIndexBuffer;
+        ProgramHandle m_triangleProgram;
+        PipelineHandle m_trianglePipeline;
 
     public:
         FrameRenderer() = default;
@@ -27,10 +28,13 @@ namespace TechEngine {
 
         FrameRenderer& operator=(FrameRenderer&&) = delete;
 
-        bool initialize();
+        bool initialize(RenderDevice& device);
 
-        void draw(const RenderSnapshot& command, const FramebufferSize& size);
+        void draw(const RenderSnapshot& command, RenderTargetHandle target, const RenderExtent& extent);
 
         void shutdown();
+
+    private:
+        bool abandonInitialize(const char* step, const std::error_code& error);
     };
 }

@@ -3,6 +3,11 @@
 #include <TechEngine/testing/WindowTerminateGuard.hpp>
 
 #include <render/FrameRenderer.hpp>
+#include <render/device/RenderDevice.hpp>
+#include <render/device/RenderExtent.hpp>
+#include <render/device/RenderHandle.hpp>
+#include <render/device/target/RenderTarget.hpp>
+#include <render/device/texture/Texture.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 #include <glad/gl.h>
@@ -64,6 +69,8 @@ TEST_CASE("Frame renderer rejects shader failures and can retry initialization",
     bool loaded = false;
     bool rejected = false;
     bool recovered = false;
+    std::size_t leftAfterRejection = 0;
+    std::size_t leftAfterShutdown = 0;
     unsigned int error = GL_NO_ERROR;
     {
         std::jthread worker([&] {
@@ -71,14 +78,18 @@ TEST_CASE("Frame renderer rejects shader failures and can retry initialization",
             const TechEngine::GlProcLoader loader = window.processLoader();
             loaded = loader != nullptr && gladLoadGL(loader) != 0 && GLAD_GL_VERSION_4_6 != 0;
             if (loaded) {
+                TechEngine::RenderDevice device;
                 TechEngine::FrameRenderer renderer;
                 {
                     const FrameShaderFailureScope failureScope{failure};
-                    rejected = !renderer.initialize();
+                    rejected = !renderer.initialize(device);
                 }
-                recovered = renderer.initialize();
+                leftAfterRejection = device.getLiveObjectCount();
+                recovered = renderer.initialize(device);
                 renderer.shutdown();
                 renderer.shutdown();
+                leftAfterShutdown = device.getLiveObjectCount();
+                device.shutdown();
                 error = glGetError();
             }
             window.releaseContext();
@@ -86,27 +97,29 @@ TEST_CASE("Frame renderer rejects shader failures and can retry initialization",
     }
     REQUIRE(loaded);
     CHECK(rejected);
+    CHECK(leftAfterRejection == 0);
     CHECK(recovered);
+    CHECK(leftAfterShutdown == 0);
     CHECK(error == GL_NO_ERROR);
 }
 
-TEST_CASE("Frame renderer clears, draws, redraws and resizes on its context owner", "[client][render][window][gpu]") {
+TEST_CASE("Frame renderer clears, draws, redraws and resizes through the device", "[client][render][window][gpu]") {
     const TechEngineTests::WindowTerminateGuard scope;
     REQUIRE(TechEngine::Window::initialize() == std::error_code{});
     TechEngine::Window window;
     REQUIRE(window.open(320, 240, "Frame renderer test") == std::error_code{});
 
     constexpr int IMAGE_SIZE = 64;
-    using Image = std::array<unsigned char, IMAGE_SIZE * IMAGE_SIZE * 4>;
+    constexpr int SMALL_WIDTH = 32;
+    constexpr int SMALL_HEIGHT = 48;
+    using Image = std::array<std::byte, static_cast<std::size_t>(IMAGE_SIZE) * IMAGE_SIZE * 4>;
     Image cleared{};
     Image triangle{};
     Image repeated{};
     Image minimized{};
     Image restored{};
-    std::array<int, 4> initialViewport{};
-    std::array<int, 4> resizedViewport{};
     bool loaded = false;
-    bool complete = false;
+    bool targetCreated = false;
     bool initialized = false;
     bool reinitialized = false;
     unsigned int error = GL_NO_ERROR;
@@ -120,81 +133,85 @@ TEST_CASE("Frame renderer clears, draws, redraws and resizes on its context owne
                 return;
             }
 
-            unsigned int texture = 0;
-            unsigned int framebuffer = 0;
-            glCreateTextures(GL_TEXTURE_2D, 1, &texture);
-            glTextureStorage2D(texture, 1, GL_RGBA8, IMAGE_SIZE, IMAGE_SIZE);
-            glCreateFramebuffers(1, &framebuffer);
-            glNamedFramebufferTexture(framebuffer, GL_COLOR_ATTACHMENT0, texture, 0);
-            glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-            complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+            TechEngine::RenderDevice device;
+            TechEngine::TextureHandle color;
+            TechEngine::RenderTargetHandle target;
+            const std::error_code colorError = device.createTexture({IMAGE_SIZE, IMAGE_SIZE, 1, TechEngine::TextureFormat::Rgba8}, color);
+            const std::error_code targetError = device.createRenderTarget({color, TechEngine::TextureHandle{}}, target);
+            targetCreated = !colorError && !targetError;
 
             TechEngine::FrameRenderer renderer;
-            if (complete) {
-                initialized = renderer.initialize();
+            if (targetCreated) {
+                initialized = renderer.initialize(device);
             }
             if (initialized) {
+                const TechEngine::RenderExtent full{IMAGE_SIZE, IMAGE_SIZE};
+                const TechEngine::RenderExtent small{SMALL_WIDTH, SMALL_HEIGHT};
                 const TechEngine::RenderSnapshot clear{{1.0F, 0.0F, 0.0F, 1.0F}, false, 1};
-                renderer.draw(clear, TechEngine::FramebufferSize{IMAGE_SIZE, IMAGE_SIZE});
-                glReadPixels(0, 0, IMAGE_SIZE, IMAGE_SIZE, GL_RGBA, GL_UNSIGNED_BYTE, cleared.data());
-                glGetIntegerv(GL_VIEWPORT, initialViewport.data());
+                renderer.draw(clear, target, full);
+                device.readTexture(color, cleared);
 
                 const TechEngine::RenderSnapshot draw{{0.0F, 0.0F, 0.0F, 1.0F}, true, 2};
-                renderer.draw(draw, TechEngine::FramebufferSize{IMAGE_SIZE, IMAGE_SIZE});
-                renderer.draw(draw, TechEngine::FramebufferSize{32, 48});
-                glReadPixels(0, 0, IMAGE_SIZE, IMAGE_SIZE, GL_RGBA, GL_UNSIGNED_BYTE, triangle.data());
-                glGetIntegerv(GL_VIEWPORT, resizedViewport.data());
-                const std::array<float, 4> overwritten{1.0F, 0.0F, 1.0F, 1.0F};
-                glClearBufferfv(GL_COLOR, 0, overwritten.data());
-                renderer.draw(draw, TechEngine::FramebufferSize{32, 48});
-                glReadPixels(0, 0, IMAGE_SIZE, IMAGE_SIZE, GL_RGBA, GL_UNSIGNED_BYTE, repeated.data());
+                renderer.draw(draw, target, small);
+                device.readTexture(color, triangle);
+                renderer.draw(draw, target, small);
+                device.readTexture(color, repeated);
 
                 const TechEngine::RenderSnapshot green{{0.0F, 1.0F, 0.0F, 1.0F}, false, 3};
-                renderer.draw(green, TechEngine::FramebufferSize{0, 48});
-                renderer.draw(green, TechEngine::FramebufferSize{32, 0});
-                renderer.draw(green, TechEngine::FramebufferSize{0, 0});
-                glReadPixels(0, 0, IMAGE_SIZE, IMAGE_SIZE, GL_RGBA, GL_UNSIGNED_BYTE, minimized.data());
+                renderer.draw(green, target, TechEngine::RenderExtent{0, SMALL_HEIGHT});
+                renderer.draw(green, target, TechEngine::RenderExtent{SMALL_WIDTH, 0});
+                renderer.draw(green, target, TechEngine::RenderExtent{0, 0});
+                device.readTexture(color, minimized);
+
                 renderer.shutdown();
                 renderer.shutdown();
-                reinitialized = renderer.initialize();
+                reinitialized = renderer.initialize(device);
                 if (reinitialized) {
-                    renderer.draw(green, TechEngine::FramebufferSize{IMAGE_SIZE, IMAGE_SIZE});
-                    glReadPixels(0, 0, IMAGE_SIZE, IMAGE_SIZE, GL_RGBA, GL_UNSIGNED_BYTE, restored.data());
+                    renderer.draw(green, target, full);
+                    device.readTexture(color, restored);
                 }
             }
             renderer.shutdown();
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glDeleteFramebuffers(1, &framebuffer);
-            glDeleteTextures(1, &texture);
+            device.shutdown();
             error = glGetError();
             window.releaseContext();
         });
     }
 
     REQUIRE(loaded);
-    REQUIRE(complete);
+    REQUIRE(targetCreated);
     REQUIRE(initialized);
     REQUIRE(reinitialized);
     CHECK(error == GL_NO_ERROR);
-    const std::array<int, 4> expectedInitialViewport{0, 0, IMAGE_SIZE, IMAGE_SIZE};
-    const std::array<int, 4> expectedResizedViewport{0, 0, 32, 48};
-    CHECK(initialViewport == expectedInitialViewport);
-    CHECK(resizedViewport == expectedResizedViewport);
-    CHECK(repeated == triangle);
-    CHECK(minimized == triangle);
+    const bool repeatedMatches = repeated == triangle;
+    const bool minimizedMatches = minimized == triangle;
+    CHECK(repeatedMatches);
+    CHECK(minimizedMatches);
 
     bool redClear = true;
     bool greenClear = true;
+    bool redOutsideSmall = true;
     std::size_t trianglePixels = 0;
-    for (std::size_t i = 0; i < cleared.size(); i += 4) {
-        redClear = redClear && cleared[i] == 255 && cleared[i + 1] == 0 && cleared[i + 2] == 0 && cleared[i + 3] == 255;
-        greenClear = greenClear && restored[i] == 0 && restored[i + 1] == 255 && restored[i + 2] == 0 && restored[i + 3] == 255;
-        if (triangle[i] != 0 || triangle[i + 1] != 0 || triangle[i + 2] != 0) {
-            trianglePixels++;
+    for (int y = 0; y < IMAGE_SIZE; y++) {
+        for (int x = 0; x < IMAGE_SIZE; x++) {
+            const std::size_t i = (static_cast<std::size_t>(y) * IMAGE_SIZE + static_cast<std::size_t>(x)) * 4;
+            const auto channel = [](const Image& image, const std::size_t at) {
+                return static_cast<unsigned char>(image[at]);
+            };
+            redClear = redClear && channel(cleared, i) == 255 && channel(cleared, i + 1) == 0 && channel(cleared, i + 2) == 0 && channel(cleared, i + 3) == 255;
+            greenClear = greenClear && channel(restored, i) == 0 && channel(restored, i + 1) == 255 && channel(restored, i + 2) == 0 && channel(restored, i + 3) == 255;
+            const bool insideSmall = x < SMALL_WIDTH && y < SMALL_HEIGHT;
+            if (insideSmall && (channel(triangle, i) != 0 || channel(triangle, i + 1) != 0 || channel(triangle, i + 2) != 0)) {
+                trianglePixels++;
+            }
+            if (!insideSmall) {
+                redOutsideSmall = redOutsideSmall && channel(triangle, i) == 255 && channel(triangle, i + 1) == 0 && channel(triangle, i + 2) == 0;
+            }
         }
     }
     CHECK(redClear);
     CHECK(greenClear);
+    CHECK(redOutsideSmall);
     CHECK(trianglePixels > 0);
-    CHECK(trianglePixels < static_cast<std::size_t>(32 * 48));
+    CHECK(trianglePixels < static_cast<std::size_t>(SMALL_WIDTH * SMALL_HEIGHT));
 }

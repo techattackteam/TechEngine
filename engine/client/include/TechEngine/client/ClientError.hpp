@@ -5,7 +5,7 @@
 #include <type_traits>
 
 namespace TechEngine {
-    enum class ClientError : std::uint8_t { AlreadyStarted = 1, RendererStartFailed };
+    enum class ClientError : std::uint8_t { AlreadyStarted = 1, RendererStartFailed, InvalidRenderDescription, ShaderCompileFailed, ShaderLinkFailed, IncompleteRenderTarget };
 
     const std::error_category& clientErrorCategory();
 

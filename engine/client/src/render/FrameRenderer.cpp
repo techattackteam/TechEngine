@@ -1,122 +1,102 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/client/render/RenderSnapshot.hpp>
-#include <TechEngine/platform/window/Window.hpp>
 
 #include <render/FrameRenderer.hpp>
-
-#include <glad/gl.h>
+#include <render/device/RenderDevice.hpp>
 
 #include <array>
 #include <cstdint>
 #include <span>
+#include <system_error>
 
 namespace TechEngine {
-    static bool compileShader(unsigned int shader, const char* source, const char* stage) {
-        if (shader == 0) {
-            TE_LOGGER_ERROR("Failed to create {0} shader", stage);
-            return false;
+    static constexpr std::array<float, 9> TRIANGLE_VERTICES{-0.5F, -0.5F, 0.0F, 0.5F, -0.5F, 0.0F, 0.0F, 0.5F, 0.0F};
+    static constexpr std::array<std::uint32_t, 3> TRIANGLE_INDICES{0, 1, 2};
+    static constexpr std::array<VertexAttribute, 1> TRIANGLE_ATTRIBUTES{VertexAttribute{0, 0, VertexFormat::Float3, 0}};
+    static constexpr std::array<VertexBinding, 1> TRIANGLE_BINDINGS{VertexBinding{0, static_cast<std::uint32_t>(3 * sizeof(float))}};
+
+    static constexpr const char* TRIANGLE_VERTEX_SOURCE = R"(
+        #version 450 core
+        layout(location = 0) in vec3 aPos;
+        void main() {
+            gl_Position = vec4(aPos, 1.0);
         }
-        glShaderSource(shader, 1, &source, nullptr);
-        glCompileShader(shader);
-        int compiled = GL_FALSE;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-        if (compiled == GL_TRUE) {
-            return true;
+    )";
+
+    static constexpr const char* TRIANGLE_FRAGMENT_SOURCE = R"(
+        #version 450 core
+        out vec4 FragColor;
+        void main() {
+            FragColor = vec4(1.0, 0.5, 0.2, 1.0);
         }
-        std::array<char, 4096> log{};
-        glGetShaderInfoLog(shader, static_cast<int>(log.size()), nullptr, log.data());
-        TE_LOGGER_ERROR("Failed to compile {0} shader: {1}", stage, log.data());
-        return false;
-    }
+    )";
 
-    bool FrameRenderer::initialize() {
-        const std::array<float, 9> vertices{-0.5F, -0.5F, 0.0F, 0.5F, -0.5F, 0.0F, 0.0F, 0.5F, 0.0F};
-        const std::array<std::uint32_t, 3> indices{0, 1, 2};
-        if (!m_triangleVertexBuffer.initialize(std::as_bytes(std::span{vertices})) || !m_triangleIndexBuffer.initialize(std::as_bytes(std::span{indices})) || !m_triangleVertexArray.initialize()) {
-            shutdown();
-            return false;
+    bool FrameRenderer::initialize(RenderDevice& device) {
+        m_device = &device;
+        const std::error_code vertexError = device.createBuffer(BufferDescription{sizeof(TRIANGLE_VERTICES), BufferUsage::Static, std::as_bytes(std::span{TRIANGLE_VERTICES})}, m_triangleVertexBuffer);
+        if (vertexError) {
+            return abandonInitialize("vertex buffer", vertexError);
         }
-
-        constexpr std::uint32_t VERTEX_BINDING = 0;
-        m_triangleVertexArray.setVertexBuffer(m_triangleVertexBuffer, VERTEX_BINDING, 0, static_cast<int>(3 * sizeof(float)));
-        m_triangleVertexArray.setIndexBuffer(m_triangleIndexBuffer);
-        m_triangleVertexArray.setFloatAttribute(0, VERTEX_BINDING, 3, 0);
-
-        m_vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        m_fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-
-        const char* vertexShaderSource = R"(
-            #version 450 core
-            layout(location = 0) in vec3 aPos;
-            void main() {
-                gl_Position = vec4(aPos, 1.0);
-            }
-        )";
-        const char* fragmentShaderSource = R"(
-            #version 450 core
-            out vec4 FragColor;
-            void main() {
-                FragColor = vec4(1.0, 0.5, 0.2, 1.0);
-            }
-        )";
-
-        if (!compileShader(m_vertexShader, vertexShaderSource, "vertex") || !compileShader(m_fragmentShader, fragmentShaderSource, "fragment")) {
-            shutdown();
-            return false;
+        const std::error_code indexError = device.createBuffer(BufferDescription{sizeof(TRIANGLE_INDICES), BufferUsage::Static, std::as_bytes(std::span{TRIANGLE_INDICES})}, m_triangleIndexBuffer);
+        if (indexError) {
+            return abandonInitialize("index buffer", indexError);
         }
-
-        m_shaderProgram = glCreateProgram();
-        if (m_shaderProgram == 0) {
-            TE_LOGGER_ERROR("Failed to create triangle shader program");
-            shutdown();
-            return false;
+        const std::error_code programError = device.createProgram(ProgramDescription{TRIANGLE_VERTEX_SOURCE, TRIANGLE_FRAGMENT_SOURCE}, m_triangleProgram);
+        if (programError) {
+            return abandonInitialize("program", programError);
         }
-        glAttachShader(m_shaderProgram, m_vertexShader);
-        glAttachShader(m_shaderProgram, m_fragmentShader);
-        glLinkProgram(m_shaderProgram);
-        int linked = GL_FALSE;
-        glGetProgramiv(m_shaderProgram, GL_LINK_STATUS, &linked);
-        if (linked != GL_TRUE) {
-            std::array<char, 4096> log{};
-            glGetProgramInfoLog(m_shaderProgram, static_cast<int>(log.size()), nullptr, log.data());
-            TE_LOGGER_ERROR("Failed to link triangle shader program: {0}", log.data());
-            shutdown();
-            return false;
+        PipelineDescription pipeline;
+        pipeline.program = m_triangleProgram;
+        pipeline.vertexLayout = VertexLayout{TRIANGLE_ATTRIBUTES, TRIANGLE_BINDINGS};
+        const std::error_code pipelineError = device.createPipeline(pipeline, m_trianglePipeline);
+        if (pipelineError) {
+            return abandonInitialize("pipeline", pipelineError);
         }
         return true;
     }
 
-    void FrameRenderer::draw(const RenderSnapshot& command, const FramebufferSize& size) {
-        if (size.width == 0 || size.height == 0) {
+    void FrameRenderer::draw(const RenderSnapshot& command, const RenderTargetHandle target, const RenderExtent& extent) {
+        if (m_device == nullptr || extent.width == 0 || extent.height == 0) {
             return;
         }
-        glViewport(0, 0, size.width, size.height);
-        glClearColor(command.clearColor[0], command.clearColor[1], command.clearColor[2], command.clearColor[3]);
-        glClear(GL_COLOR_BUFFER_BIT);
+
+        m_device->beginRenderPass(RenderPassDescription{target, extent, LoadAction::Clear, command.clearColor, StoreAction::Store, LoadAction::Clear, 1.0F});
+
         if (command.drawTriangle) {
-            glUseProgram(m_shaderProgram);
-            m_triangleVertexArray.bind();
-            glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr);
-            VertexArray::unbind();
+            m_device->bindPipeline(m_trianglePipeline);
+            m_device->bindVertexBuffer(0, m_triangleVertexBuffer, 0);
+            m_device->bindIndexBuffer(m_triangleIndexBuffer);
+            m_device->drawIndexed(3, 0, 0);
         }
+        m_device->endRenderPass();
     }
 
     void FrameRenderer::shutdown() {
-        m_triangleVertexArray.shutdown();
-        m_triangleIndexBuffer.shutdown();
-        m_triangleVertexBuffer.shutdown();
-        if (m_vertexShader != 0) {
-            glDeleteShader(m_vertexShader);
-            m_vertexShader = 0;
+        if (m_device == nullptr) {
+            return;
         }
-        if (m_fragmentShader != 0) {
-            glDeleteShader(m_fragmentShader);
-            m_fragmentShader = 0;
+        if (m_trianglePipeline.valid()) {
+            m_device->destroyPipeline(m_trianglePipeline);
+            m_trianglePipeline = {};
         }
-        if (m_shaderProgram != 0) {
-            glUseProgram(0);
-            glDeleteProgram(m_shaderProgram);
-            m_shaderProgram = 0;
+        if (m_triangleProgram.valid()) {
+            m_device->destroyProgram(m_triangleProgram);
+            m_triangleProgram = {};
         }
+        if (m_triangleIndexBuffer.valid()) {
+            m_device->destroyBuffer(m_triangleIndexBuffer);
+            m_triangleIndexBuffer = {};
+        }
+        if (m_triangleVertexBuffer.valid()) {
+            m_device->destroyBuffer(m_triangleVertexBuffer);
+            m_triangleVertexBuffer = {};
+        }
+        m_device = nullptr;
+    }
+
+    bool FrameRenderer::abandonInitialize(const char* step, const std::error_code& error) {
+        TE_LOGGER_ERROR("Failed to create the triangle's {0}: {1}", step, error.message());
+        shutdown();
+        return false;
     }
 }
