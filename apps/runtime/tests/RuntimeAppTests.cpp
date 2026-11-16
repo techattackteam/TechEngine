@@ -1,6 +1,7 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/SimulationContext.hpp>
+#include <TechEngine/core/camera/Camera.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/mesh/MeshRenderer.hpp>
 #include <TechEngine/core/resources/AssetRef.hpp>
@@ -311,6 +312,10 @@ namespace {
             return m_eventRegistry.typeCount();
         }
 
+        bool registers(const TechEngine::ComponentTypeId type) const {
+            return m_registry.find(type) != nullptr;
+        }
+
         TechEngine::Role loopRole() const {
             return m_simulationThread.simulationContext().role;
         }
@@ -515,6 +520,14 @@ TEST_CASE("runtime configures no systems and no event types of its own", "[runti
     CHECK(runtime.eventTypeCount() == 0);
     REQUIRE(runtime.advanceSteps(1.5) == 1);
     CHECK(runtime.entityCount() == 0);
+}
+
+TEST_CASE("the runtime registers MeshRenderer and Camera", "[runtime]") {
+    RuntimeProbe runtime;
+    runtime.bootstrapSimulation();
+
+    CHECK(runtime.registers(TechEngine::componentTypeId<TechEngine::MeshRenderer>()));
+    CHECK(runtime.registers(TechEngine::componentTypeId<TechEngine::Camera>()));
 }
 
 TEST_CASE("a landing reaches no handler in the Tick that publishes it", "[runtime][events]") {

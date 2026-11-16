@@ -1,4 +1,5 @@
 #include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/core/camera/Camera.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/mesh/MeshRenderer.hpp>
 #include <TechEngine/core/model/Model.hpp>
@@ -81,6 +82,14 @@ namespace {
         void prepare() {
             init();
             finalizeSimulation();
+        }
+
+        void bootstrapSimulation() {
+            finalizeSimulation();
+        }
+
+        bool registers(const TechEngine::ComponentTypeId type) const {
+            return m_registry.find(type) != nullptr;
         }
 
         std::error_code startupLoad() {
@@ -215,6 +224,14 @@ TEST_CASE("the editor says its simulation does not tick", "[editor]") {
     const EditorProbe editor{std::filesystem::path{}, std::filesystem::path{}};
 
     CHECK_FALSE(editor.simulationTicks());
+}
+
+TEST_CASE("the editor registers MeshRenderer and Camera", "[editor]") {
+    EditorProbe editor{std::filesystem::path{}, std::filesystem::path{}};
+    editor.bootstrapSimulation();
+
+    CHECK(editor.registers(TechEngine::componentTypeId<TechEngine::MeshRenderer>()));
+    CHECK(editor.registers(TechEngine::componentTypeId<TechEngine::Camera>()));
 }
 
 TEST_CASE("init mounts the project set", "[editor][gpu][os]") {

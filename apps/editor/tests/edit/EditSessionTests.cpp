@@ -1,8 +1,11 @@
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/camera/Camera.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
+#include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
+#include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/core/scene/components/Hierarchy.hpp>
 #include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
@@ -445,6 +448,39 @@ TEST_CASE("each field row holds its kind and the value the inspector shows", "[e
     checkField(SAMPLE_UINT32_FIELD, "uint32Field", FieldKind::UInt32, FieldValue{std::uint32_t{32}});
     checkField(SAMPLE_INT64_FIELD, "int64Field", FieldKind::Int64, FieldValue{std::int64_t{-64}});
     checkField(SAMPLE_UINT64_FIELD, "uint64Field", FieldKind::UInt64, FieldValue{std::uint64_t{64}});
+}
+
+TEST_CASE("a selected Camera is published as five editable fields in visit order", "[editor][edit]") {
+    TechEngine::ComponentRegistry registry;
+    registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
+    registry.registerComponent<Transform>(Transform::tag);
+    registry.registerComponent<TechEngine::Name>(TechEngine::Name::tag);
+    registry.registerComponent<TechEngine::Camera>(TechEngine::Camera::tag);
+    TechEngine::Scene scene(registry);
+    const Entity entity = scene.createEntity();
+    scene.addComponent<TechEngine::Camera>(entity);
+    TechEngine::EditSession session;
+    session.setSelection({entity}, entity, 1);
+
+    EditorSnapshot snapshot;
+    session.buildSnapshot(scene, registry, snapshot);
+
+    const ComponentRow& row = componentRowFor(snapshot, TechEngine::componentTypeId<TechEngine::Camera>());
+    CHECK(row.tag == TechEngine::Camera::tag);
+    CHECK(row.removable);
+    REQUIRE(row.fields.size() == 5);
+    const auto checkField = [&](const std::uint32_t index, const std::string_view name, const FieldKind kind, const FieldValue& value) {
+        const FieldRow& field = row.fields[index];
+        CHECK(field.index == index);
+        CHECK(field.name == name);
+        CHECK(field.kind == kind);
+        CHECK(field.value == value);
+    };
+    checkField(0, "verticalFieldOfView", FieldKind::Float, FieldValue{60.0f});
+    checkField(1, "nearPlane", FieldKind::Float, FieldValue{0.1f});
+    checkField(2, "farPlane", FieldKind::Float, FieldValue{1000.0f});
+    checkField(3, "exposure", FieldKind::Float, FieldValue{0.0f});
+    checkField(4, "main", FieldKind::Bool, FieldValue{true});
 }
 
 TEST_CASE("an Entity field with no live target is published with an empty name", "[editor][edit]") {

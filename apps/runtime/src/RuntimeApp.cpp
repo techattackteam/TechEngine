@@ -1,6 +1,7 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/assets/PackSource.hpp>
+#include <TechEngine/core/camera/Camera.hpp>
 #include <TechEngine/core/material/Material.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/mesh/MeshRenderer.hpp>
@@ -41,6 +42,7 @@ namespace TechEngine {
     void RuntimeApp::configureSimulation() {
         ClientApp::configureSimulation();
         m_registry.registerComponent<MeshRenderer>(MeshRenderer::tag);
+        m_registry.registerComponent<Camera>(Camera::tag);
         m_resources.registerLoader<SceneBytes>(SCENE_KIND, SCENE_TYPE_TAG, &SceneBytes::loadPayload);
         m_resources.registerLoader<Mesh>(MESH_KIND, MESH_TYPE_TAG, &Mesh::loadPayload);
         m_resources.registerLoader<Texture>(TEXTURE_KIND, TEXTURE_TYPE_TAG, &Texture::loadPayload);
