@@ -85,7 +85,7 @@ namespace TechEngine {
         return m_world;
     }
 
-    const Mat4& Transform::worldMatrix() const {
+    const Mat4& Transform::getWorldMatrix() const {
         return m_worldMatrix;
     }
 }

@@ -171,7 +171,7 @@ namespace TechEngine {
         return {};
     }
 
-    void App::publishSnapshot(const SimulationContext&) {
+    void App::publishFrame(const Scene&, const SimulationContext&) {
     }
 
     void App::publishEdits(const Scene&) {

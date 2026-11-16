@@ -332,7 +332,7 @@ public:
     std::function<void()> onSimulationInit;
     std::function<std::error_code()> onSimulationStartupLoad;
     std::function<void(const TechEngine::SimulationContext&)> onSystemTick;
-    std::function<void(const TechEngine::SimulationContext&)> onPublishSnapshot;
+    std::function<void(const TechEngine::SimulationContext&)> onPublishFrame;
     std::function<void()> onPublishEdits;
     std::function<void()> onSimulationShutdown;
     std::function<void()> onShutdown;
@@ -343,6 +343,7 @@ public:
     bool dedicatedJoinedBeforeShutdown = false;
     const TechEngine::Scene* loadedScene = nullptr;
     const TechEngine::Scene* publishedScene = nullptr;
+    const TechEngine::Scene* framedScene = nullptr;
 
     std::vector<AppLifecycleEvent> events() const {
         std::lock_guard const lock{m_eventsMutex};
@@ -430,10 +431,11 @@ protected:
         return {};
     }
 
-    void publishSnapshot(const TechEngine::SimulationContext& simulation) override {
-        record("publishSnapshot", simulation.tick);
-        if (onPublishSnapshot) {
-            onPublishSnapshot(simulation);
+    void publishFrame(const TechEngine::Scene& scene, const TechEngine::SimulationContext& simulation) override {
+        record("publishFrame", simulation.tick);
+        framedScene = &scene;
+        if (onPublishFrame) {
+            onPublishFrame(simulation);
         }
     }
 
@@ -482,7 +484,7 @@ static std::size_t eventCount(const AppLifecycleProbe& app, std::string_view nam
 }
 
 static void stopAtTick(AppLifecycleProbe& app, std::uint64_t tick) {
-    app.onPublishSnapshot = [&app, tick](const TechEngine::SimulationContext& simulation) {
+    app.onPublishFrame = [&app, tick](const TechEngine::SimulationContext& simulation) {
         if (simulation.tick >= tick) {
             app.requestStop();
         }
@@ -505,7 +507,7 @@ static void checkStopped(const AppLifecycleProbe& app) {
     REQUIRE(simulationShutdown != events.end());
     CHECK(events.back().name == "shutdown");
     CHECK(std::none_of(simulationShutdown + 1, events.end(), [](const auto& event) {
-        return event.name == "systemTick" || event.name == "publishSnapshot" || event.name == "publishEdits";
+        return event.name == "systemTick" || event.name == "publishFrame" || event.name == "publishEdits";
     }));
     CHECK(app.dedicatedJoinedBeforeShutdown);
     checkOnlyPoolWorkersRegistered(app);
@@ -567,7 +569,7 @@ TEST_CASE("App runs hooks on their owning threads and publishes after each tick 
     CHECK(eventCount(app, "mainUpdate") > 0);
     CHECK(eventCount(app, "shouldClose") > 0);
     CHECK(eventCount(app, "systemTick") >= 3);
-    CHECK(eventCount(app, "publishSnapshot") >= 2);
+    CHECK(eventCount(app, "publishFrame") >= 2);
 
     std::uint64_t latestFixedTick = 0;
     std::uint64_t lastPublishedTick = 0;
@@ -582,9 +584,10 @@ TEST_CASE("App runs hooks on their owning threads and publishes after each tick 
             CHECK(publications > 0);
             CHECK(event.tick == latestFixedTick + 1);
             latestFixedTick = event.tick;
-        } else if (event.name == "publishSnapshot") {
+        } else if (event.name == "publishFrame") {
             CHECK(event.tick == latestFixedTick);
-            if (publications > 0) {
+            // Tick 0 publishes twice: before the startup load and after it.
+            if (publications > 0 && event.tick > 0) {
                 CHECK(event.tick > lastPublishedTick);
             }
             lastPublishedTick = event.tick;
@@ -623,7 +626,7 @@ TEST_CASE("App unwinds only successfully initialized stages", "[app][lifecycle]"
     }
     SECTION("the initial publication fails") {
         publicationFails = true;
-        app.onPublishSnapshot = [](const TechEngine::SimulationContext&) {
+        app.onPublishFrame = [](const TechEngine::SimulationContext&) {
             throw std::runtime_error{"initial publication failed"};
         };
     }
@@ -632,7 +635,7 @@ TEST_CASE("App unwinds only successfully initialized stages", "[app][lifecycle]"
     CHECK(eventCount(app, "init") == 1);
     CHECK(eventCount(app, "simulationInit") == (mainFails ? 0 : 1));
     CHECK(eventCount(app, "simulationStartupLoad") == 0);
-    CHECK(eventCount(app, "publishSnapshot") == (publicationFails ? 1 : 0));
+    CHECK(eventCount(app, "publishFrame") == (publicationFails ? 1 : 0));
     CHECK(eventCount(app, "systemTick") == 0);
     CHECK(eventCount(app, "simulationShutdown") == (publicationFails ? 1 : 0));
     CHECK(eventCount(app, "shutdown") == (mainFails ? 0 : 1));
@@ -652,7 +655,7 @@ TEST_CASE("App shuts down initialized main state when simulation configuration f
     CHECK(eventCount(app, "init") == 1);
     CHECK(eventCount(app, "simulationInit") == 0);
     CHECK(eventCount(app, "systemTick") == 0);
-    CHECK(eventCount(app, "publishSnapshot") == 0);
+    CHECK(eventCount(app, "publishFrame") == 0);
     CHECK(eventCount(app, "simulationShutdown") == 0);
     CHECK(eventCount(app, "shutdown") == 1);
     CHECK(app.dedicatedJoinedBeforeShutdown);
@@ -661,7 +664,7 @@ TEST_CASE("App shuts down initialized main state when simulation configuration f
 TEST_CASE("App wakes the main thread and shuts down after a simulation failure", "[app][lifecycle]") {
     AppLifecycleProbe app;
     bool mainEntered = false;
-    app.onPublishSnapshot = [&](const TechEngine::SimulationContext& simulation) {
+    app.onPublishFrame = [&](const TechEngine::SimulationContext& simulation) {
         if (simulation.tick > 0) {
             mainEntered = app.mainEntered.wait();
             throw std::runtime_error{"simulation publication failed"};
@@ -670,7 +673,7 @@ TEST_CASE("App wakes the main thread and shuts down after a simulation failure",
 
     CHECK(app.run() != 0);
     CHECK(mainEntered);
-    CHECK(eventCount(app, "publishSnapshot") == 2);
+    CHECK(eventCount(app, "publishFrame") == 3);
     CHECK(eventCount(app, "simulationShutdown") == 1);
     CHECK(eventCount(app, "shutdown") == 1);
     checkStopped(app);
@@ -692,18 +695,20 @@ TEST_CASE("App runs the startup loading phase after readiness and before the fir
 
     std::vector<AppLifecycleEvent> simulationEvents;
     for (const auto& event: app.events()) {
-        if (event.name == "simulationInit" || event.name == "publishSnapshot" || event.name == "simulationStartupLoad" || event.name == "systemTick") {
+        if (event.name == "simulationInit" || event.name == "publishFrame" || event.name == "simulationStartupLoad" || event.name == "systemTick") {
             simulationEvents.push_back(event);
         }
     }
-    REQUIRE(simulationEvents.size() >= 4);
+    REQUIRE(simulationEvents.size() >= 5);
     CHECK(simulationEvents[0].name == "simulationInit");
-    CHECK(simulationEvents[1].name == "publishSnapshot");
+    CHECK(simulationEvents[1].name == "publishFrame");
     CHECK(simulationEvents[1].tick == 0);
     CHECK(simulationEvents[2].name == "simulationStartupLoad");
     CHECK(simulationEvents[2].thread == simulationEvents[0].thread);
-    CHECK(simulationEvents[3].name == "systemTick");
-    CHECK(simulationEvents[3].tick == 1);
+    CHECK(simulationEvents[3].name == "publishFrame");
+    CHECK(simulationEvents[3].tick == 0);
+    CHECK(simulationEvents[4].name == "systemTick");
+    CHECK(simulationEvents[4].tick == 1);
     checkStopped(app);
 }
 
@@ -723,6 +728,7 @@ TEST_CASE("App restarts the timeline after a slow startup loading phase, so no c
     AppLifecycleProbe app;
     std::chrono::steady_clock::time_point loadFinished{};
     std::uint64_t initialTimeline = 0;
+    bool initialSeen = false;
     std::uint64_t firstTickTimeline = 0;
     TechEngine::Clock::TimePoint firstTickTime{};
     std::uint64_t firstPublishedTick = 0;
@@ -737,9 +743,12 @@ TEST_CASE("App restarts the timeline after a slow startup loading phase, so no c
             firstTickTimeline = simulation.timeline;
         }
     };
-    app.onPublishSnapshot = [&](const TechEngine::SimulationContext& simulation) {
+    app.onPublishFrame = [&](const TechEngine::SimulationContext& simulation) {
         if (simulation.tick == 0) {
-            initialTimeline = simulation.timeline;
+            if (!initialSeen) {
+                initialTimeline = simulation.timeline;
+                initialSeen = true;
+            }
             return;
         }
         if (firstPublishedTick == 0) {
@@ -768,7 +777,7 @@ TEST_CASE("App ends the run with the startup loading phase's error and runs no T
     CHECK(app.simulationCompletion().status == TechEngine::ThreadCompletionStatus::Completed);
     CHECK(eventCount(app, "simulationStartupLoad") == 1);
     CHECK(eventCount(app, "systemTick") == 0);
-    CHECK(eventCount(app, "publishSnapshot") == 1);
+    CHECK(eventCount(app, "publishFrame") == 1);
     CHECK(eventCount(app, "simulationShutdown") == 1);
     CHECK(eventCount(app, "shutdown") == 1);
     checkStopped(app);
@@ -916,7 +925,7 @@ TEST_CASE("App reports simulation shutdown failures without replacing an earlier
         publicationFails = true;
     }
 
-    app.onPublishSnapshot = [&](const TechEngine::SimulationContext& simulation) {
+    app.onPublishFrame = [&](const TechEngine::SimulationContext& simulation) {
         if (simulation.tick == 0) {
             return;
         }
@@ -1174,7 +1183,7 @@ TEST_CASE("an App whose simulation does not tick runs no Tick across a wait", "[
     CHECK(loadedInTime);
     CHECK(stoppedInTime);
     CHECK(eventCount(app, "systemTick") == 0);
-    CHECK(eventCount(app, "publishSnapshot") == 1);
+    CHECK(eventCount(app, "publishFrame") == 2);
     CHECK(eventCount(app, "publishEdits") == 0);
     CHECK(app.simulationTick() == 0);
     checkStopped(app);
@@ -1231,6 +1240,98 @@ TEST_CASE("an idle App applies each submitted command and publishes it within on
     CHECK(eventCount(app, "systemTick") == 0);
     CHECK(log.destroyedCount() == 2);
     CHECK(warningsContaining(warnings, "cancel").empty());
+    checkStopped(app);
+}
+
+TEST_CASE("an edit in a Stopped App produces a frame after its publishEdits", "[app][lifecycle][idle][commands]") {
+    AppLifecycleProbe app;
+    app.ticks = false;
+    AppCommandLog log;
+    AppLifecycleSignal firstEditFramed;
+    AppLifecycleSignal secondEditFramed;
+    int frames = 0;
+    app.onPublishFrame = [&](const TechEngine::SimulationContext&) {
+        frames++;
+        if (frames == 3) {
+            firstEditFramed.set();
+        } else if (frames == 4) {
+            secondEditFramed.set();
+        }
+    };
+    std::error_code firstSubmitError = TechEngine::SimulationError::CommandQueueClosed;
+    std::error_code secondSubmitError = TechEngine::SimulationError::CommandQueueClosed;
+    bool firstInTime = false;
+    bool secondInTime = false;
+    bool stoppedInTime = false;
+    std::jthread controller{[&] {
+        if (app.startupLoadEntered.wait()) {
+            firstSubmitError = submitProbe(app, 1, log);
+            firstInTime = firstEditFramed.wait();
+            secondSubmitError = submitProbe(app, 2, log);
+            secondInTime = secondEditFramed.wait();
+        }
+        stoppedInTime = stopIdle(app);
+    }};
+
+    const int result = app.run();
+    controller.join();
+    CHECK(result == 0);
+    CHECK_FALSE(firstSubmitError);
+    CHECK_FALSE(secondSubmitError);
+    CHECK(firstInTime);
+    CHECK(secondInTime);
+    CHECK(stoppedInTime);
+    CHECK(eventCount(app, "systemTick") == 0);
+    CHECK(eventCount(app, "publishEdits") == 2);
+    CHECK(eventCount(app, "publishFrame") == 4);
+    CHECK(app.framedScene == &TechEngineTests::AppTestAccess::scene(app));
+
+    std::vector<std::string_view> publications;
+    for (const auto& event: app.events()) {
+        if (event.name == "publishEdits" || event.name == "publishFrame") {
+            publications.push_back(event.name);
+        }
+    }
+    const std::vector<std::string_view> expected{"publishFrame", "publishFrame", "publishEdits", "publishFrame", "publishEdits", "publishFrame"};
+    CHECK(publications == expected);
+    checkStopped(app);
+}
+
+TEST_CASE("App publishes a frame of the loaded scene after the startup load, on the restarted timeline", "[app][lifecycle][loading]") {
+    AppLifecycleProbe app;
+    app.ticks = false;
+    std::vector<std::uint64_t> timelines;
+    AppLifecycleSignal loadedFramed;
+    app.onPublishFrame = [&](const TechEngine::SimulationContext& simulation) {
+        timelines.push_back(simulation.timeline);
+        if (timelines.size() == 2) {
+            loadedFramed.set();
+        }
+    };
+    bool framedInTime = false;
+    bool stoppedInTime = false;
+    std::jthread controller{[&] {
+        framedInTime = loadedFramed.wait();
+        stoppedInTime = stopIdle(app);
+    }};
+
+    const int result = app.run();
+    controller.join();
+    CHECK(result == 0);
+    CHECK(framedInTime);
+    CHECK(stoppedInTime);
+    REQUIRE(timelines.size() == 2);
+    CHECK(timelines[1] > timelines[0]);
+    CHECK(app.framedScene == app.loadedScene);
+
+    std::vector<std::string_view> order;
+    for (const auto& event: app.events()) {
+        if (event.name == "publishFrame" || event.name == "simulationStartupLoad") {
+            order.push_back(event.name);
+        }
+    }
+    const std::vector<std::string_view> expected{"publishFrame", "simulationStartupLoad", "publishFrame"};
+    CHECK(order == expected);
     checkStopped(app);
 }
 

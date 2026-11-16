@@ -69,7 +69,7 @@ TEST_CASE("the first entity in hierarchy order whose Camera is main is the main 
     SECTION("a later child of the first root wins over the second root") {
         Entity camera;
         bool warnedNone = false;
-        CHECK(TechEngine::findMainCamera(scene, camera, warnedNone));
+        CHECK(Camera::findMainCamera(scene, camera, warnedNone));
         CHECK(camera == laterSibling);
     }
 
@@ -78,7 +78,7 @@ TEST_CASE("the first entity in hierarchy order whose Camera is main is the main 
 
         Entity camera;
         bool warnedNone = false;
-        CHECK(TechEngine::findMainCamera(scene, camera, warnedNone));
+        CHECK(Camera::findMainCamera(scene, camera, warnedNone));
         CHECK(camera == deep);
     }
 
@@ -87,7 +87,7 @@ TEST_CASE("the first entity in hierarchy order whose Camera is main is the main 
 
         Entity camera;
         bool warnedNone = false;
-        CHECK(TechEngine::findMainCamera(scene, camera, warnedNone));
+        CHECK(Camera::findMainCamera(scene, camera, warnedNone));
         CHECK(camera == first);
     }
 }
@@ -100,7 +100,7 @@ TEST_CASE("a scene whose only Camera is not main has no main camera", "[core][ca
 
     Entity camera;
     bool warnedNone = false;
-    CHECK_FALSE(TechEngine::findMainCamera(scene, camera, warnedNone));
+    CHECK_FALSE(Camera::findMainCamera(scene, camera, warnedNone));
     CHECK_FALSE(camera.valid());
 }
 
@@ -112,9 +112,9 @@ TEST_CASE("a scene with no main camera returns none and warns once for the same 
 
     Entity camera;
     bool warnedNone = false;
-    CHECK_FALSE(TechEngine::findMainCamera(scene, camera, warnedNone));
-    CHECK_FALSE(TechEngine::findMainCamera(scene, camera, warnedNone));
-    CHECK_FALSE(TechEngine::findMainCamera(scene, camera, warnedNone));
+    CHECK_FALSE(Camera::findMainCamera(scene, camera, warnedNone));
+    CHECK_FALSE(Camera::findMainCamera(scene, camera, warnedNone));
+    CHECK_FALSE(Camera::findMainCamera(scene, camera, warnedNone));
 
     CHECK_FALSE(camera.valid());
     CHECK(warnedNone);
@@ -128,7 +128,7 @@ TEST_CASE("an empty scene has no main camera and warns", "[core][camera]") {
 
     Entity camera;
     bool warnedNone = false;
-    CHECK_FALSE(TechEngine::findMainCamera(scene, camera, warnedNone));
+    CHECK_FALSE(Camera::findMainCamera(scene, camera, warnedNone));
     CHECK(countNoCameraWarnings(logs) == 1);
 }
 
@@ -139,14 +139,14 @@ TEST_CASE("finding a main camera clears the flag, so a scene that loses it warns
     const TechEngineTests::LogCaptureGuard logs{TechEngine::Level::Warn};
     Entity camera;
     bool warnedNone = false;
-    CHECK_FALSE(TechEngine::findMainCamera(scene, camera, warnedNone));
+    CHECK_FALSE(Camera::findMainCamera(scene, camera, warnedNone));
 
     addCamera(scene, entity, true);
-    CHECK(TechEngine::findMainCamera(scene, camera, warnedNone));
+    CHECK(Camera::findMainCamera(scene, camera, warnedNone));
     CHECK_FALSE(warnedNone);
 
     scene.getComponent<Camera>(entity).main = false;
-    CHECK_FALSE(TechEngine::findMainCamera(scene, camera, warnedNone));
+    CHECK_FALSE(Camera::findMainCamera(scene, camera, warnedNone));
     CHECK(countNoCameraWarnings(logs) == 2);
 }
 
@@ -179,4 +179,140 @@ TEST_CASE("a scene saves and loads every Camera field", "[core][camera][scene]")
     CHECK(camera.farPlane == saved.farPlane);
     CHECK(camera.exposure == saved.exposure);
     CHECK(camera.main == saved.main);
+}
+
+static bool contains(const std::vector<Entity>& entities, const Entity entity) {
+    for (const Entity candidate: entities) {
+        if (candidate == entity) {
+            return true;
+        }
+    }
+    return false;
+}
+
+TEST_CASE("setting a camera main turns main off on every other camera and lists each one", "[core][camera]") {
+    ComponentRegistry registry;
+    Scene scene(registerCameraComponents(registry));
+    const Entity first = scene.createEntity();
+    const Entity second = createChild(scene, first);
+    const Entity off = scene.createEntity();
+    const Entity target = scene.createEntity();
+    addCamera(scene, first, true);
+    addCamera(scene, second, true);
+    addCamera(scene, off, false);
+    addCamera(scene, target, false);
+
+    std::vector<Entity> cleared;
+    CHECK(TechEngine::Camera::Camera::setMainCamera(scene, target, cleared));
+
+    CHECK(scene.getComponent<Camera>(target).main);
+    CHECK_FALSE(scene.getComponent<Camera>(first).main);
+    CHECK_FALSE(scene.getComponent<Camera>(second).main);
+    CHECK_FALSE(scene.getComponent<Camera>(off).main);
+    CHECK(cleared.size() == 2);
+    CHECK(contains(cleared, first));
+    CHECK(contains(cleared, second));
+    CHECK(TechEngine::Camera::countMainCameras(scene) == 1);
+}
+
+TEST_CASE("setting the camera that is already main changes nothing and clears nothing", "[core][camera]") {
+    ComponentRegistry registry;
+    Scene scene(registerCameraComponents(registry));
+    const Entity only = scene.createEntity();
+    const Entity off = scene.createEntity();
+    addCamera(scene, only, true);
+    addCamera(scene, off, false);
+
+    std::vector<Entity> cleared;
+    CHECK(TechEngine::Camera::setMainCamera(scene, only, cleared));
+    CHECK(scene.getComponent<Camera>(only).main);
+    CHECK_FALSE(scene.getComponent<Camera>(off).main);
+    CHECK(cleared.empty());
+}
+
+TEST_CASE("setting main on an entity with no Camera is refused and changes nothing", "[core][camera]") {
+    ComponentRegistry registry;
+    Scene scene(registerCameraComponents(registry));
+    const Entity camera = scene.createEntity();
+    const Entity bare = scene.createEntity();
+    addCamera(scene, camera, true);
+
+    std::vector<Entity> cleared;
+    CHECK_FALSE(TechEngine::Camera::setMainCamera(scene, bare, cleared));
+    CHECK_FALSE(TechEngine::Camera::setMainCamera(scene, Entity{}, cleared));
+    CHECK(scene.getComponent<Camera>(camera).main);
+    CHECK_FALSE(scene.hasComponent<Camera>(bare));
+    CHECK(cleared.empty());
+}
+
+TEST_CASE("only cameras with main set are counted, and a scene without the Camera type has none", "[core][camera]") {
+    SECTION("cameras with and without main") {
+        ComponentRegistry registry;
+        Scene scene(registerCameraComponents(registry));
+        CHECK(TechEngine::Camera::countMainCameras(scene) == 0);
+        addCamera(scene, scene.createEntity(), false);
+        CHECK(TechEngine::Camera::countMainCameras(scene) == 0);
+        addCamera(scene, createChild(scene, scene.createEntity()), true);
+        addCamera(scene, scene.createEntity(), true);
+        CHECK(TechEngine::Camera::countMainCameras(scene) == 2);
+    }
+
+    SECTION("a registry that never registered Camera") {
+        ComponentRegistry registry;
+        TechEngineTests::registerBuiltInSceneComponents(registry);
+        Scene scene(registry);
+        scene.createEntity();
+        CHECK(TechEngine::Camera::countMainCameras(scene) == 0);
+    }
+}
+
+static std::vector<std::byte> twoMainCameraScene() {
+    std::vector<std::byte> bytes;
+    ComponentRegistry registry;
+    Scene source(registerCameraComponents(registry));
+    const Entity first = source.createEntity();
+    const Entity second = source.createEntity();
+    addCamera(source, first, true);
+    addCamera(source, second, true);
+    SceneAsset{CAMERA_SCENE_ID}.write(source, bytes);
+    return bytes;
+}
+
+TEST_CASE("a loaded scene with two main cameras warns once, keeps both, and the first in hierarchy order wins", "[core][camera][scene]") {
+    const std::vector<std::byte> bytes = twoMainCameraScene();
+    ComponentRegistry registry;
+    Scene loaded(registerCameraComponents(registry));
+    const TechEngineTests::LogCaptureGuard logs{TechEngine::Level::Warn};
+
+    SceneAsset asset;
+    const std::error_code readError = asset.read(bytes, loaded);
+    REQUIRE(!readError);
+    CHECK(logs.getMessages().size() == 1);
+    CHECK(TechEngine::Camera::countMainCameras(loaded) == 2);
+
+    const std::vector<Entity> roots = loaded.getRoots();
+    REQUIRE(roots.size() == 2);
+    Entity camera;
+    bool warnedNone = false;
+    CHECK(Camera::findMainCamera(loaded, camera, warnedNone));
+    CHECK(camera == roots[0]);
+}
+
+TEST_CASE("a loaded scene with one main camera does not warn", "[core][camera][scene]") {
+    std::vector<std::byte> bytes;
+    {
+        ComponentRegistry registry;
+        Scene source(registerCameraComponents(registry));
+        addCamera(source, source.createEntity(), true);
+        addCamera(source, source.createEntity(), false);
+        SceneAsset{CAMERA_SCENE_ID}.write(source, bytes);
+    }
+    ComponentRegistry registry;
+    Scene loaded(registerCameraComponents(registry));
+    const TechEngineTests::LogCaptureGuard logs{TechEngine::Level::Warn};
+
+    SceneAsset asset;
+    const std::error_code readError = asset.read(bytes, loaded);
+    REQUIRE(!readError);
+    CHECK(logs.getMessages().empty());
 }

@@ -933,8 +933,8 @@ protected:
         RuntimeApp::mainThreadUpdate();
     }
 
-    void publishSnapshot(const TechEngine::SimulationContext& simulation) override {
-        RuntimeApp::publishSnapshot(simulation);
+    void publishFrame(const TechEngine::Scene& scene, const TechEngine::SimulationContext& simulation) override {
+        RuntimeApp::publishFrame(scene, simulation);
         if (simulation.input.held.isHeld(TechEngine::Key::W)) {
             inputConsumed = true;
             requestStop();

@@ -1,8 +1,10 @@
 #include <TechEngine/base/diagnostics/Profile.hpp>
-#include <TechEngine/client/render/RenderSnapshot.hpp>
+#include <TechEngine/client/render/FrameExtraction.hpp>
+#include <TechEngine/client/render/FramePacket.hpp>
 #include <TechEngine/clientapp/ClientApp.hpp>
 
 #include <cstdint>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <system_error>
@@ -49,16 +51,21 @@ namespace TechEngine {
         applyTitle();
     }
 
-    void ClientApp::publishSnapshot(const SimulationContext& simulation) {
-        m_client.publish(RenderSnapshot{
-            .clearColor = {0.1F, 0.1F, 0.1F, 1.0F},
-            .drawTriangle = true,
-            .tick = simulation.tick,
-            .tickTime = simulation.tickTime,
-            .fixedDeltaTime = simulation.fixedDeltaTime,
-            .timeline = simulation.timeline,
-            .input = simulation.input.held,
-        });
+    void ClientApp::publishFrame(const Scene& scene, const SimulationContext& simulation) {
+        std::unique_ptr<FramePacket> packet = m_client.acquirePacket();
+        if (packet == nullptr) {
+            return;
+        }
+        packet->clearColor = {0.1F, 0.1F, 0.1F, 1.0F};
+        packet->drawTriangle = true;
+        packet->tick = simulation.tick;
+        packet->tickTime = simulation.tickTime;
+        packet->fixedDeltaTime = simulation.fixedDeltaTime;
+        packet->timeline = simulation.timeline;
+        packet->input = simulation.input.held;
+        packet->sequence = m_packetSequence++;
+        FrameExtraction::extractFramePacket(scene, m_warnedNoCamera, *packet);
+        m_client.publish(std::move(packet));
     }
 
     void ClientApp::mainThreadUpdate() {

@@ -1,8 +1,8 @@
-#include <TechEngine/client/render/RenderSnapshot.hpp>
 #include <TechEngine/platform/window/Window.hpp>
 #include <TechEngine/testing/WindowTerminateGuard.hpp>
 
 #include <render/FrameRenderer.hpp>
+#include <render/FrameView.hpp>
 #include <render/device/RenderDevice.hpp>
 #include <render/device/RenderExtent.hpp>
 #include <render/device/RenderHandle.hpp>
@@ -18,6 +18,13 @@
 #include <thread>
 
 enum class FrameShaderFailure { VertexCompile, FragmentCompile, Link };
+
+static TechEngine::FrameView frameView(const std::array<float, 4>& clearColor, const bool drawTriangle) {
+    TechEngine::FrameView view;
+    view.clearColor = clearColor;
+    view.drawTriangle = drawTriangle;
+    return view;
+}
 
 static PFNGLSHADERSOURCEPROC g_originalShaderSource = nullptr;
 static FrameShaderFailure g_shaderFailure = FrameShaderFailure::VertexCompile;
@@ -147,17 +154,17 @@ TEST_CASE("Frame renderer clears, draws, redraws and resizes through the device"
             if (initialized) {
                 const TechEngine::RenderExtent full{IMAGE_SIZE, IMAGE_SIZE};
                 const TechEngine::RenderExtent small{SMALL_WIDTH, SMALL_HEIGHT};
-                const TechEngine::RenderSnapshot clear{{1.0F, 0.0F, 0.0F, 1.0F}, false, 1};
+                const TechEngine::FrameView clear = frameView({1.0F, 0.0F, 0.0F, 1.0F}, false);
                 renderer.draw(clear, target, full);
                 device.readTexture(color, cleared);
 
-                const TechEngine::RenderSnapshot draw{{0.0F, 0.0F, 0.0F, 1.0F}, true, 2};
+                const TechEngine::FrameView draw = frameView({0.0F, 0.0F, 0.0F, 1.0F}, true);
                 renderer.draw(draw, target, small);
                 device.readTexture(color, triangle);
                 renderer.draw(draw, target, small);
                 device.readTexture(color, repeated);
 
-                const TechEngine::RenderSnapshot green{{0.0F, 1.0F, 0.0F, 1.0F}, false, 3};
+                const TechEngine::FrameView green = frameView({0.0F, 1.0F, 0.0F, 1.0F}, false);
                 renderer.draw(green, target, TechEngine::RenderExtent{0, SMALL_HEIGHT});
                 renderer.draw(green, target, TechEngine::RenderExtent{SMALL_WIDTH, 0});
                 renderer.draw(green, target, TechEngine::RenderExtent{0, 0});

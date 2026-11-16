@@ -44,6 +44,19 @@ private:
     }
 };
 
+struct SceneUnregistered {
+    std::uint32_t value = 0;
+};
+
+TEST_CASE("isRegistered answers for registered, built-in and unknown types alike, with no entity", "[core][scene]") {
+    SceneRawFixture fixture;
+    CHECK(fixture.scene.isRegistered(fixture.rawType));
+    CHECK(fixture.scene.isRegistered(fixture.otherType));
+    CHECK(fixture.scene.isRegistered(TechEngine::componentTypeId<TechEngine::Transform>()));
+    CHECK(fixture.scene.isRegistered(TechEngine::componentTypeId<TechEngine::Hierarchy>()));
+    CHECK_FALSE(fixture.scene.isRegistered(TechEngine::componentTypeId<SceneUnregistered>()));
+}
+
 TEST_CASE("componentRaw finds a component the entity holds, and nothing for one it lacks or for a dead entity", "[core][scene]") {
     SceneRawFixture fixture;
     Scene& scene = fixture.scene;

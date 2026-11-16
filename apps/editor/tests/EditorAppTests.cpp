@@ -68,7 +68,7 @@ namespace {
             m_simulationThread.advance(deltaTime, [this](const TechEngine::SimulationContext& frame) {
                 executeSimulationTick(frame);
             });
-            publishSnapshot(m_simulationThread.simulationContext());
+            publishFrame(AppTestAccess::scene(*this), m_simulationThread.simulationContext());
         }
 
         double ticksPerSecond() const {

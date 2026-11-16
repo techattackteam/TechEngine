@@ -2,6 +2,7 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/camera/Camera.hpp>
 #include <TechEngine/core/resources/ResourceCache.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/ComponentStorage.hpp>
@@ -197,6 +198,10 @@ namespace TechEngine {
         }
 
         scene.propagateTransforms();
+        const std::size_t mainCameras = Camera::countMainCameras(scene);
+        if (mainCameras > 1) {
+            TE_LOGGER_WARN("Scene asset {0:#018x}: {1} cameras are main, so the first in hierarchy order is used until one is unticked and the scene saved", idValue, mainCameras);
+        }
         id = ResourceId{idValue};
         return {};
     }

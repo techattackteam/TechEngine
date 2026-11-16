@@ -1,7 +1,7 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
-#include <TechEngine/client/render/RenderSnapshot.hpp>
 
 #include <render/FrameRenderer.hpp>
+#include <render/FrameView.hpp>
 #include <render/device/RenderDevice.hpp>
 
 #include <array>
@@ -55,14 +55,14 @@ namespace TechEngine {
         return true;
     }
 
-    void FrameRenderer::draw(const RenderSnapshot& command, const RenderTargetHandle target, const RenderExtent& extent) {
+    void FrameRenderer::draw(const FrameView& frame, const RenderTargetHandle target, const RenderExtent& extent) {
         if (m_device == nullptr || extent.width == 0 || extent.height == 0) {
             return;
         }
 
-        m_device->beginRenderPass(RenderPassDescription{target, extent, LoadAction::Clear, command.clearColor, StoreAction::Store, LoadAction::Clear, 1.0F});
+        m_device->beginRenderPass(RenderPassDescription{target, extent, LoadAction::Clear, frame.clearColor, StoreAction::Store, LoadAction::Clear, 1.0F});
 
-        if (command.drawTriangle) {
+        if (frame.drawTriangle) {
             m_device->bindPipeline(m_trianglePipeline);
             m_device->bindVertexBuffer(0, m_triangleVertexBuffer, 0);
             m_device->bindIndexBuffer(m_triangleIndexBuffer);

@@ -6,7 +6,7 @@
 #include <system_error>
 
 namespace TechEngine {
-    struct RenderSnapshot;
+    struct FrameView;
     class RenderDevice;
 
     class FrameRenderer {
@@ -30,7 +30,7 @@ namespace TechEngine {
 
         bool initialize(RenderDevice& device);
 
-        void draw(const RenderSnapshot& command, RenderTargetHandle target, const RenderExtent& extent);
+        void draw(const FrameView& frame, RenderTargetHandle target, const RenderExtent& extent);
 
         void shutdown();
 

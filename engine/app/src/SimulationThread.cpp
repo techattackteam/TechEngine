@@ -188,7 +188,7 @@ namespace TechEngine {
             restartTimeline(m_context.engine.clock.now());
             {
                 TE_PROFILER_SCOPE("Simulation.Publish");
-                app.publishSnapshot(m_context);
+                app.publishFrame(app.m_scene, m_context);
             }
             app.m_commandQueue.open();
             context.signalReady();
@@ -200,6 +200,10 @@ namespace TechEngine {
             if (!m_startupError) {
                 const bool ticks = app.simulationTicks();
                 restartTimeline(m_context.engine.clock.now());
+                {
+                    TE_PROFILER_SCOPE("Simulation.PublishLoadedScene");
+                    app.publishFrame(app.m_scene, m_context);
+                }
                 const std::stop_token stopToken = context.stopToken();
                 Clock::TimePoint previous = m_origin;
                 while (!m_stopRequested.load() && !app.stopRequested() && !stopToken.stop_requested()) {
@@ -209,8 +213,14 @@ namespace TechEngine {
                     }
                     const bool applied = app.applyCommands();
                     if (applied) {
-                        TE_PROFILER_SCOPE("Simulation.PublishEdits");
-                        app.publishEdits(app.m_scene);
+                        {
+                            TE_PROFILER_SCOPE("Simulation.PublishEdits");
+                            app.publishEdits(app.m_scene);
+                        }
+                        {
+                            TE_PROFILER_SCOPE("Simulation.PublishEditsFrame");
+                            app.publishFrame(app.m_scene, m_context);
+                        }
                     }
                     if (!ticks) {
                         waitForCommands();
@@ -225,7 +235,7 @@ namespace TechEngine {
                     previous = current;
                     if (m_context.tick != previousTick) {
                         TE_PROFILER_SCOPE("Simulation.Publish");
-                        app.publishSnapshot(m_context);
+                        app.publishFrame(app.m_scene, m_context);
                     }
                     waitForNextTick(current);
                 }

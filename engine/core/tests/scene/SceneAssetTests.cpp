@@ -180,7 +180,7 @@ TEST_CASE("a small hierarchy round-trips through a scene asset", "[core][scene]"
         const Transform& writtenTransform = source.getComponent<Transform>(writtenEntities[i]);
         const Transform& readTransform = loaded.getComponent<Transform>(readEntities[i]);
         CHECK(sameLocal(writtenTransform.getLocal(), readTransform.getLocal()));
-        CHECK(writtenTransform.worldMatrix() == readTransform.worldMatrix());
+        CHECK(writtenTransform.getWorldMatrix() == readTransform.getWorldMatrix());
     }
 }
 

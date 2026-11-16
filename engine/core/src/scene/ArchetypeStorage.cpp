@@ -159,6 +159,10 @@ namespace TechEngine {
         return m_archetypes[archetypeIndex]->m_columns.at(m_registry->getDenseId(type)).get();
     }
 
+    const IComponentStorage* ArchetypeStorage::queryColumn(const std::size_t archetypeIndex, const ComponentTypeId type) const {
+        return m_archetypes[archetypeIndex]->m_columns.at(m_registry->getDenseId(type)).get();
+    }
+
     std::size_t ArchetypeStorage::hashSignature(const std::span<const ComponentDenseId> signature) {
         std::size_t seed = signature.size();
         for (const ComponentDenseId type: signature) {
@@ -229,11 +233,11 @@ namespace TechEngine {
         TE_CHECK(m_iterationDepth.load(std::memory_order_relaxed) == 0, "Structural mutation is prohibited during query iteration");
     }
 
-    void ArchetypeStorage::beginQueryIteration() {
+    void ArchetypeStorage::beginQueryIteration() const {
         m_iterationDepth.fetch_add(1, std::memory_order_relaxed);
     }
 
-    void ArchetypeStorage::endQueryIteration() {
+    void ArchetypeStorage::endQueryIteration() const {
         const std::size_t previousDepth = m_iterationDepth.fetch_sub(1, std::memory_order_relaxed);
         TE_CHECK(previousDepth > 0, "Query iteration depth underflow");
     }

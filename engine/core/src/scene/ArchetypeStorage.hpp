@@ -30,7 +30,7 @@ namespace TechEngine {
         std::unordered_map<std::size_t, std::vector<Archetype*>> m_archetypesByHash;
         SignatureHasher m_signatureHasher = nullptr;
         std::uint64_t m_archetypeRevision = 0;
-        std::atomic_size_t m_iterationDepth = 0;
+        mutable std::atomic_size_t m_iterationDepth = 0;
 
     public:
         explicit ArchetypeStorage(ComponentRegistry& registry, SignatureHasher signatureHasher = nullptr);
@@ -174,9 +174,11 @@ namespace TechEngine {
 
         IComponentStorage* queryColumn(std::size_t archetypeIndex, ComponentTypeId type) override;
 
-        void beginQueryIteration() override;
+        const IComponentStorage* queryColumn(std::size_t archetypeIndex, ComponentTypeId type) const override;
 
-        void endQueryIteration() override;
+        void beginQueryIteration() const override;
+
+        void endQueryIteration() const override;
 
         template<typename PrepareDestination>
         void move(const Entity entity, const EntityLocation sourceLocation, const Archetype::Edge& edge, PrepareDestination&& prepareDestination) {

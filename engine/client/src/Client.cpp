@@ -80,8 +80,12 @@ namespace TechEngine {
         }
     }
 
-    void Client::publish(const RenderSnapshot& snapshot) const {
-        m_state->renderer.publish(snapshot);
+    std::unique_ptr<FramePacket> Client::acquirePacket() const {
+        return m_state->renderer.acquirePacket();
+    }
+
+    void Client::publish(std::unique_ptr<FramePacket> packet) const {
+        m_state->renderer.publish(std::move(packet));
     }
 
     bool Client::renderTiming(RenderTiming& out) const {

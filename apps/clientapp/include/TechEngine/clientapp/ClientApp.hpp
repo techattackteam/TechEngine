@@ -3,6 +3,7 @@
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/client/Client.hpp>
 
+#include <cstdint>
 #include <string>
 
 namespace TechEngine {
@@ -13,6 +14,9 @@ namespace TechEngine {
         std::string m_appliedTitle;
         // Main thread only.
         bool m_pollNextUpdate = false;
+        // Simulation thread only.
+        std::uint64_t m_packetSequence = 0;
+        bool m_warnedNoCamera = false;
 
     public:
         ClientApp(Role role, std::string title);
@@ -36,7 +40,7 @@ namespace TechEngine {
         // Applied at once, so a caller that runs after mainThreadUpdate() is not one wake behind.
         void setTitle(std::string title);
 
-        void publishSnapshot(const SimulationContext& simulation) override;
+        void publishFrame(const Scene& scene, const SimulationContext& simulation) override;
 
         void mainThreadUpdate() override;
 

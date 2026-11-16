@@ -4,12 +4,14 @@
 #include <TechEngine/core/TimingMetrics.hpp>
 #include <TechEngine/core/jobs/DedicatedThread.hpp>
 
+#include <render/FramePacketPool.hpp>
 #include <render/FrameRenderer.hpp>
-#include <render/SnapshotMailbox.hpp>
+#include <render/PacketMailbox.hpp>
 #include <render/device/RenderDevice.hpp>
 
 #include <atomic>
 #include <functional>
+#include <memory>
 #include <mutex>
 
 namespace TechEngine {
@@ -22,10 +24,11 @@ namespace TechEngine {
     private:
         RenderDevice m_device;
         FrameRenderer m_renderer;
-        SnapshotMailbox m_mailbox;
+        FramePacketPool m_pool;
+        PacketMailbox m_mailbox{m_pool};
         mutable std::mutex m_timingMutex;
         RenderTiming m_timing;
-        std::atomic<bool> m_vsync = true;
+        std::atomic<bool> m_vsync = false;
         DedicatedThread m_thread;
 
     public:
@@ -43,7 +46,9 @@ namespace TechEngine {
 
         bool start(JobSystem& jobs, const Clock& clock, Window& window, const InputBuffer& input, std::function<void()> onFailure = {}, ImGuiHook* imguiHook = nullptr);
 
-        void publish(const RenderSnapshot& snapshot);
+        std::unique_ptr<FramePacket> acquirePacket();
+
+        void publish(std::unique_ptr<FramePacket> packet);
 
         RenderTiming timing() const;
 
