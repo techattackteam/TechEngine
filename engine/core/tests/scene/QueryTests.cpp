@@ -130,6 +130,93 @@ TEST_CASE("scene exposes typed queries without exposing archetype storage", "[co
     REQUIRE(std::as_const(scene).getComponent<QueryPosition>(entity).value == 5);
 }
 
+template<typename WritableComponents, typename ReadableComponents>
+concept ConstSceneQuery = requires(const TechEngine::Scene& scene) { scene.query<WritableComponents, ReadableComponents>(); };
+
+static_assert(ConstSceneQuery<TechEngine::Write<>, TechEngine::Read<QueryPosition>>);
+static_assert(ConstSceneQuery<TechEngine::Write<>, TechEngine::Read<QueryPosition, QueryVelocity>>);
+static_assert(!ConstSceneQuery<TechEngine::Write<QueryPosition>, TechEngine::Read<>>);
+static_assert(!ConstSceneQuery<TechEngine::Write<QueryPosition>, TechEngine::Read<QueryVelocity>>);
+
+TEST_CASE("a const scene runs a read-only query over every matching archetype", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    registry.registerComponent<QueryPosition>("Tests.QueryPosition");
+    registry.registerComponent<QueryVelocity>("Tests.QueryVelocity");
+    TechEngine::Scene scene(registry);
+    const TechEngine::Entity still = scene.createEntity();
+    const TechEngine::Entity moving = scene.createEntity();
+    const TechEngine::Entity bare = scene.createEntity();
+    scene.addComponent<QueryPosition>(still, QueryPosition{2});
+    scene.addComponent<QueryPosition>(moving, QueryPosition{5});
+    scene.addComponent<QueryVelocity>(moving, QueryVelocity{7});
+    const TechEngine::Scene& view = scene;
+
+    auto positions = view.query<TechEngine::Write<>, TechEngine::Read<QueryPosition>>();
+    std::unordered_set<TechEngine::Entity> visited;
+    int sum = 0;
+    positions.each([&](const TechEngine::Entity entity, const QueryPosition& position) {
+        visited.insert(entity);
+        sum += position.value;
+    });
+    CHECK(visited == std::unordered_set<TechEngine::Entity>{still, moving});
+    CHECK_FALSE(visited.contains(bare));
+    CHECK(sum == 7);
+
+    auto both = view.query<TechEngine::Write<>, TechEngine::Read<QueryPosition, QueryVelocity>>();
+    int matches = 0;
+    both.each([&](const TechEngine::Entity entity, const QueryPosition& position, const QueryVelocity& velocity) {
+        CHECK(entity == moving);
+        CHECK(position.value == 5);
+        CHECK(velocity.value == 7);
+        matches++;
+    });
+    CHECK(matches == 1);
+}
+
+TEST_CASE("a const scene's retained query picks up an archetype created after it was built", "[core][scene]") {
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    registry.registerComponent<QueryPosition>("Tests.QueryPosition");
+    registry.registerComponent<QueryVelocity>("Tests.QueryVelocity");
+    TechEngine::Scene scene(registry);
+    scene.addComponent<QueryPosition>(scene.createEntity(), QueryPosition{1});
+    auto positions = std::as_const(scene).query<TechEngine::Write<>, TechEngine::Read<QueryPosition>>();
+    int count = 0;
+    positions.each([&](TechEngine::Entity, const QueryPosition&) {
+        count++;
+    });
+    REQUIRE(count == 1);
+
+    const TechEngine::Entity later = scene.createEntity();
+    scene.addComponent<QueryPosition>(later, QueryPosition{3});
+    scene.addComponent<QueryVelocity>(later, QueryVelocity{4});
+    count = 0;
+    positions.each([&](TechEngine::Entity, const QueryPosition&) {
+        count++;
+    });
+    CHECK(count == 2);
+}
+
+TEST_CASE("a const scene's query still rejects structural mutation while it iterates", "[core][scene]") {
+    const TechEngineTests::FatalAssertGuard guard;
+    TechEngine::ComponentRegistry registry;
+    TechEngineTests::registerBuiltInSceneComponents(registry);
+    registry.registerComponent<QueryPosition>("Tests.QueryPosition");
+    TechEngine::Scene scene(registry);
+    scene.addComponent<QueryPosition>(scene.createEntity(), QueryPosition{1});
+    auto positions = std::as_const(scene).query<TechEngine::Write<>, TechEngine::Read<QueryPosition>>();
+
+    REQUIRE_THROWS_AS(
+        positions.each([&](TechEngine::Entity, const QueryPosition&) {
+            scene.createEntity();
+        }),
+        TechEngineTests::AssertFired);
+
+    const TechEngine::Entity afterwards = scene.createEntity();
+    CHECK(afterwards.valid());
+}
+
 TEST_CASE("queries refresh matches when a new archetype appears", "[core][scene]") {
     TechEngine::ComponentRegistry registry;
     TechEngineTests::registerBuiltInSceneComponents(registry);

@@ -43,9 +43,11 @@ namespace TechEngine {
 
             virtual IComponentStorage* queryColumn(std::size_t archetypeIndex, ComponentTypeId type) = 0;
 
-            virtual void beginQueryIteration() = 0;
+            virtual const IComponentStorage* queryColumn(std::size_t archetypeIndex, ComponentTypeId type) const = 0;
 
-            virtual void endQueryIteration() = 0;
+            virtual void beginQueryIteration() const = 0;
+
+            virtual void endQueryIteration() const = 0;
         };
     }
 
@@ -56,6 +58,8 @@ namespace TechEngine {
         requires((!std::same_as<Written, Hierarchy>) && ...)
     class Query<Write<Written...>, Read<ReadOnly...>> {
     private:
+        using Source = std::conditional_t<sizeof...(Written) == 0, const internal::QuerySource, internal::QuerySource>;
+
         struct Match {
             const std::vector<Entity>* entities = nullptr;
             std::array<IComponentStorage*, sizeof...(Written)> writableColumns{};
@@ -64,10 +68,10 @@ namespace TechEngine {
 
         class IterationGuard {
         private:
-            internal::QuerySource* m_source = nullptr;
+            Source* m_source = nullptr;
 
         public:
-            explicit IterationGuard(internal::QuerySource& source) : m_source(&source) {
+            explicit IterationGuard(Source& source) : m_source(&source) {
                 m_source->beginQueryIteration();
             }
 
@@ -83,11 +87,11 @@ namespace TechEngine {
         friend class ArchetypeStorage;
         friend class Scene;
 
-        internal::QuerySource* m_source = nullptr;
+        Source* m_source = nullptr;
         std::uint64_t m_revision = std::numeric_limits<std::uint64_t>::max();
         std::vector<Match> m_matches;
 
-        explicit Query(internal::QuerySource& source) : m_source(&source) {
+        explicit Query(Source& source) : m_source(&source) {
         }
 
     public:

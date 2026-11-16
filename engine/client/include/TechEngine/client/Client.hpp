@@ -11,7 +11,7 @@
 struct GLFWwindow;
 
 namespace TechEngine {
-    struct RenderSnapshot;
+    struct FramePacket;
     struct EngineContext;
     class InputBuffer;
     class ImGuiHook;
@@ -45,7 +45,10 @@ namespace TechEngine {
 
         void wakeMain();
 
-        void publish(const RenderSnapshot& snapshot) const;
+        // Null only when every packet is out, which is misuse.
+        std::unique_ptr<FramePacket> acquirePacket() const;
+
+        void publish(std::unique_ptr<FramePacket> packet) const;
 
         bool renderTiming(RenderTiming& out) const;
 

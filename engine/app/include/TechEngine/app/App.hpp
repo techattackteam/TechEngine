@@ -110,7 +110,7 @@ namespace TechEngine {
 
         virtual std::error_code simulationStartupLoad(Scene& scene);
 
-        virtual void publishSnapshot(const SimulationContext& simulation);
+        virtual void publishFrame(const Scene& scene, const SimulationContext& simulation);
 
         virtual void publishEdits(const Scene& scene);
 

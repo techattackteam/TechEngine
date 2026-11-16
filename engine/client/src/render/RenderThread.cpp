@@ -7,8 +7,9 @@
 #include <TechEngine/platform/window/Window.hpp>
 
 #include "GlRequirements.hpp"
+#include <render/FrameView.hpp>
+#include <render/PacketHistory.hpp>
 #include <render/RenderThread.hpp>
-#include <render/SnapshotHistory.hpp>
 
 #include <glad/gl.h>
 
@@ -57,8 +58,12 @@ namespace TechEngine {
         return false;
     }
 
-    void RenderThread::publish(const RenderSnapshot& snapshot) {
-        m_mailbox.publish(snapshot);
+    std::unique_ptr<FramePacket> RenderThread::acquirePacket() {
+        return m_pool.acquire();
+    }
+
+    void RenderThread::publish(std::unique_ptr<FramePacket> packet) {
+        m_mailbox.publish(std::move(packet));
     }
 
     void RenderThread::setVSync(bool enabled) {
@@ -97,7 +102,8 @@ namespace TechEngine {
                 .bindlessTextures = GLAD_GL_ARB_bindless_texture != 0,
             };
             if (meetsGlRequirements(glSupport) && m_renderer.initialize(m_device)) {
-                SnapshotHistory history;
+                PacketHistory history{m_pool};
+                FrameView frame;
                 RateCounter rate;
                 RenderTiming metrics;
                 auto previousFrame = clock.now();
@@ -114,15 +120,10 @@ namespace TechEngine {
                         vsync = requestedVsync;
                     }
                     const auto started = clock.now();
-                    RenderSnapshot frame;
                     {
                         TE_PROFILER_SCOPE("Render.PrepareFrame");
-                        RenderSnapshot snapshot;
-                        const bool hasSnapshot = m_mailbox.snapshot(snapshot);
-                        if (hasSnapshot) {
-                            history.acquire(snapshot);
-                        }
-                        frame = history.prepareFrame(started, input.presentationState());
+                        m_mailbox.deliverTo(history);
+                        history.prepareFrame(started, input.presentationState(), frame);
                     }
                     {
                         TE_PROFILER_SCOPE("Render.RenderFrame");

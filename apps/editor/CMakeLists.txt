@@ -114,6 +114,7 @@ techengine_app(editor
           tests/edit/ImportModelCommandTests.cpp
           tests/edit/ImportSkyCommandTests.cpp
           tests/edit/InspectorCommandsTests.cpp
+          tests/edit/MainCameraCommandsTests.cpp
           tests/edit/MaterialSlotRebuildTests.cpp
           tests/edit/PlaceModelCommandTests.cpp
           tests/edit/ReimportCommandTests.cpp

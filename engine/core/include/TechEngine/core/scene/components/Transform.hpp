@@ -77,6 +77,6 @@ namespace TechEngine {
 
         const TransformValues& getWorld() const;
 
-        const Mat4& worldMatrix() const;
+        const Mat4& getWorldMatrix() const;
     };
 }

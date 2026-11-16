@@ -1,18 +1,23 @@
 techengine_module(client
         SOURCES src/Client.cpp
         src/ClientError.cpp
-        src/render/SnapshotHistory.cpp
-        src/render/SnapshotMailbox.cpp
+        src/render/FrameExtraction.cpp
+        src/render/FramePacketPool.cpp
+        src/render/PacketHistory.cpp
+        src/render/PacketMailbox.cpp
         src/render/FrameRenderer.cpp
         src/render/GlRequirements.cpp
         src/render/RenderThread.cpp
         src/render/device/RenderDevice.cpp
         HEADERS include/TechEngine/client/Client.hpp
         include/TechEngine/client/ClientError.hpp
-        src/render/SnapshotHistory.hpp
+        src/render/PacketHistory.hpp
+        include/TechEngine/client/render/FrameExtraction.hpp
+        include/TechEngine/client/render/FramePacket.hpp
         include/TechEngine/client/render/ImGuiHook.hpp
-        include/TechEngine/client/render/RenderSnapshot.hpp
-        src/render/SnapshotMailbox.hpp
+        src/render/FramePacketPool.hpp
+        src/render/FrameView.hpp
+        src/render/PacketMailbox.hpp
         src/render/FrameRenderer.hpp
         src/render/GlRequirements.hpp
         src/render/RenderThread.hpp
@@ -33,8 +38,10 @@ techengine_module(client
 if (TE_BUILD_TESTS)
     techengine_test(client SOURCES tests/ClientTests.cpp
             tests/ClientErrorTests.cpp
-            tests/render/SnapshotMailboxTests.cpp
-            tests/render/SnapshotHistoryTests.cpp
+            tests/render/FrameExtractionTests.cpp
+            tests/render/FramePacketPoolTests.cpp
+            tests/render/PacketMailboxTests.cpp
+            tests/render/PacketHistoryTests.cpp
             tests/render/FrameRendererTests.cpp
             tests/render/GlRequirementsTests.cpp
             tests/render/RenderThreadTests.cpp

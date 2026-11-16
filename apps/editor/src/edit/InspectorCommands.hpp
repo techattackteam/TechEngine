@@ -38,6 +38,8 @@ namespace TechEngine {
         void apply(Scene& scene) override;
 
     private:
+        void applyMainCamera(Scene& scene);
+
         void logFieldAfterEdit(const Scene& scene, const ComponentTypeRecord& record, Entity entity, void* component, const FieldSetter& setter) const;
     };
 

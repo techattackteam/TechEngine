@@ -1,4 +1,5 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/core/camera/Camera.hpp>
 #include <TechEngine/core/mesh/MeshRenderer.hpp>
 #include <TechEngine/core/resources/ResourceCache.hpp>
 #include <TechEngine/core/resources/Side.hpp>
@@ -28,6 +29,8 @@
 namespace TechEngine {
     // rotation.w's position in Transform's visit, so reordering that visit moves it.
     static constexpr std::uint32_t TRANSFORM_ROTATION_W_FIELD = 3;
+    // main's position in Camera's visit, so reordering that visit moves it.
+    static constexpr std::uint32_t CAMERA_MAIN_FIELD = 4;
 
     static Quat withEulerAxis(const Quat& rotation, const int axis, const float degrees) {
         Vec3 euler = Transform::toEulerDegrees(rotation);
@@ -54,6 +57,11 @@ namespace TechEngine {
         // Name has a visit, so it has an edit walk, but a rename must go through RenameEntityCommand and leave a RenameRecord.
         if (m_component == componentTypeId<Name>()) {
             TE_LOGGER_WARN("SetFieldCommand: Name is changed only by a rename");
+            return;
+        }
+
+        if (m_component == componentTypeId<Camera>() && m_field == CAMERA_MAIN_FIELD && m_value == FieldValue{true}) {
+            applyMainCamera(scene);
             return;
         }
 
@@ -90,6 +98,53 @@ namespace TechEngine {
         }
 
         if (changed) {
+            m_session->recordSceneChange();
+        }
+    }
+
+    void SetFieldCommand::applyMainCamera(Scene& scene) {
+        if (m_entities.size() != 1) {
+            TE_LOGGER_WARN("Cannot set main camera: exactly one entity must be selected");
+            return;
+        }
+
+        const Entity camera = m_entities[0];
+        if (!camera.valid()) {
+            TE_LOGGER_WARN("SetFieldCommand applied with an invalid entity");
+            return;
+        }
+        if (!scene.contains(camera) || !scene.hasComponent<Camera>(camera)) {
+            TE_LOGGER_WARN("SetFieldCommand applied to entity {0} without component {1}", camera, componentTypeId<Camera>().stringId());
+            return;
+        }
+
+        const Camera& initial = scene.getComponent<Camera>(camera);
+        const bool targetWasMain = initial.main;
+        std::vector<Entity> cleared;
+        if (!Camera::setMainCamera(scene, camera, cleared)) {
+            TE_LOGGER_WARN("SetFieldCommand: camera {0} could not be set as main", camera);
+            return;
+        }
+
+        if (!targetWasMain) {
+            FieldEditRecord edit;
+            edit.entity = camera;
+            edit.component = componentTypeId<Camera>();
+            edit.field = CAMERA_MAIN_FIELD;
+            edit.oldValue = FieldValue{false};
+            m_session->record(std::move(edit));
+        }
+
+        for (const Entity entity: cleared) {
+            FieldEditRecord edit;
+            edit.entity = entity;
+            edit.component = componentTypeId<Camera>();
+            edit.field = CAMERA_MAIN_FIELD;
+            edit.oldValue = FieldValue{true};
+            m_session->record(std::move(edit));
+        }
+
+        if (!targetWasMain || !cleared.empty()) {
             m_session->recordSceneChange();
         }
     }
@@ -376,6 +431,10 @@ namespace TechEngine {
                 if (!added) {
                     TE_LOGGER_WARN("AddComponentCommand: Failed to add component {0} to entity {1}", m_component.stringId(), entity);
                     continue;
+                }
+                // The count includes this camera, which is main by default.
+                if (m_component == componentTypeId<Camera>() && Camera::countMainCameras(scene) > 1) {
+                    scene.getComponent<Camera>(entity).main = false;
                 }
 
                 ComponentAddedRecord record;

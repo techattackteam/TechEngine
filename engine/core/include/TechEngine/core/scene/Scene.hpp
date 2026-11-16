@@ -62,6 +62,8 @@ namespace TechEngine {
 
         bool contains(Entity entity) const;
 
+        bool isRegistered(ComponentTypeId type) const;
+
         void clear();
 
         template<typename Component>
@@ -139,6 +141,16 @@ namespace TechEngine {
             QueryType::forEachWrittenType([this](const ComponentTypeId type) {
                 validateWrite(type);
             });
+            QueryType::forEachReadOnlyType([this](const ComponentTypeId type) {
+                validateRead(type);
+            });
+            return QueryType(*m_querySource);
+        }
+
+        template<typename WritableComponents, typename ReadableComponents>
+            requires std::same_as<WritableComponents, Write<>>
+        Query<WritableComponents, ReadableComponents> query() const {
+            using QueryType = Query<WritableComponents, ReadableComponents>;
             QueryType::forEachReadOnlyType([this](const ComponentTypeId type) {
                 validateRead(type);
             });

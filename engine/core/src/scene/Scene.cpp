@@ -172,6 +172,10 @@ namespace TechEngine {
         return m_storage->contains(entity);
     }
 
+    bool Scene::isRegistered(const ComponentTypeId type) const {
+        return m_registry->find(type) != nullptr;
+    }
+
     void Scene::clear() {
         TE_PROFILER_FUNCTION();
         if (!immediateStructuralMutationAllowed()) {
@@ -269,7 +273,7 @@ namespace TechEngine {
             TransformValues parentValues;
             if (hierarchy->m_parent.valid()) {
                 const Transform& parentTransform = getComponent<Transform>(hierarchy->m_parent);
-                parentWorld = parentTransform.worldMatrix();
+                parentWorld = parentTransform.getWorldMatrix();
                 parentValues = parentTransform.getWorld();
             }
             transform.updateWorld(parentWorld, parentValues);
