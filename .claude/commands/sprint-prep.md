@@ -60,6 +60,11 @@ If gate 1 or 2 fails, say which and stop. Do not fix it for me.
 3. **Propose ONE headline goal** for the next sprint. A Roadmap goal is about a month, so a
    sprint usually delivers its first or second half; say which. Justify it against the
    Capability Map and the affected systems' design notes. Push back if I'm over-scoping.
+   - **Inputs check, before the goal is proposed.** List everything the goal's showcase
+     sentence (its row in the [[Roadmap]]) consumes: every component, asset, editor path and
+     decision that the showcase depends on. Mark each one **built**, **carded**, **decided** or
+     **undecided**. The list goes into the draft cut;
+     [[2026-10 Sprint 10 - Close E1]] § *What E2 still lacks* is its first run.
    - **Brief check.** For each system whose ADR the goal needs, is there a brief in
      `docs/01 Product/Capabilities/`? No → a Design card to write it, ordered before the ADR
      card ([[Planning Workflow - Artifact Gate]] § *Coverage check: a system with no capability
