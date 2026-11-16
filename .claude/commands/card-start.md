@@ -79,8 +79,14 @@ artifacts match the tree, and go.
 ### Dev card (`T`): scaffold it
 
 Write the smallest scaffold that unblocks me: new files, headers, declarations, signatures,
-and CMake wiring. Leave the logic to me. Bodies stay empty or stubbed, and a `TODO(<card ID>)`
-marks each place I fill in.
+and CMake wiring. Leave the new logic to me. Its bodies stay empty or stubbed, and a
+`TODO(<card ID>)` marks each place I fill in.
+
+**Code that moves is moved, not stubbed.** When the card relocates working code (it folds one
+class into another, or gives a job a new owner), write the new function with that code moved
+and adapted to its new home: the new signature, the new error codes, `CONVENTIONS.md`. Never
+delete it and leave a TODO that describes it, because that makes me rebuild code that already
+worked. Only the behaviour the card adds around the moved code gets a stub.
 
 Then write the card's tests in full. Tests are scaffolding (`CLAUDE.md` *Testing*), and a
 written test is the sharpest statement of what the `done:` clauses mean, so they come with real
@@ -103,7 +109,8 @@ assertions, not empty cases:
   artifact makes, **do not scaffold around it**: a guessed signature looks like ground truth
   afterwards. Report the gap and stop.
 - Do not compile it. Hand it over saying plainly that it is unverified.
-- In the response, list the files and say what each stub is waiting for, then list the tests:
+- In the response, list the files and say what each stub is waiting for and which functions hold
+  moved code (and what was adapted in each), then list the tests:
   which are new, which were adapted and why, and what each one is meant to prove.
 
 ### Planning card (`D` or `P`): propose a solution
@@ -147,5 +154,6 @@ The unattended lane runs this before it works a 🤖 Auto card. Nobody is there 
   its ADR is drift to **report**. Filing the amendment is part of the card's work, if it is
   anyone's ([[ADR Index]] § *Amending an Accepted ADR*).
 - **No engine logic unless I ask for it.** A scaffold is structure, and anything else that
-  decides behaviour is mine. When I ask you to fill in a specific function, do that one and
+  decides behaviour is mine. Moving existing code to its new home is not new logic: it is part
+  of the scaffold (*Dev card* above). When I ask you to fill in a specific function, do that one and
   hand it back; do not take over the card. A 🤖 Claude card is yours, above.

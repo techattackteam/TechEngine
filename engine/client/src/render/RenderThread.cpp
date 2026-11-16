@@ -96,7 +96,7 @@ namespace TechEngine {
                 .core46 = GLAD_GL_VERSION_4_6 != 0,
                 .bindlessTextures = GLAD_GL_ARB_bindless_texture != 0,
             };
-            if (meetsGlRequirements(glSupport) && m_renderer.initialize()) {
+            if (meetsGlRequirements(glSupport) && m_renderer.initialize(m_device)) {
                 SnapshotHistory history;
                 RateCounter rate;
                 RenderTiming metrics;
@@ -126,7 +126,8 @@ namespace TechEngine {
                     }
                     {
                         TE_PROFILER_SCOPE("Render.RenderFrame");
-                        m_renderer.draw(frame, window.framebufferSize());
+                        const FramebufferSize size = window.framebufferSize();
+                        m_renderer.draw(frame, RenderTargetHandle{}, RenderExtent{size.width, size.height});
                     }
                     if (imguiStarted) {
                         imguiHook->draw();
@@ -158,6 +159,7 @@ namespace TechEngine {
                 imguiHook->stop();
             }
             m_renderer.shutdown();
+            m_device.shutdown();
             window.releaseContext();
         }
         if (failure) {
