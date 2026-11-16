@@ -2,6 +2,7 @@ techengine_module(core
   SOURCES src/Core.cpp
           src/assets/ImportBlock.cpp
           src/assets/PackSource.cpp
+          src/camera/Camera.cpp
           src/events/EventRegistry.cpp
           src/events/EventStream.cpp
           src/events/EventStreamManager.cpp
@@ -47,6 +48,7 @@ techengine_module(core
           include/TechEngine/core/assets/AssetSource.hpp
           include/TechEngine/core/assets/ImportBlock.hpp
           include/TechEngine/core/assets/PackSource.hpp
+          include/TechEngine/core/camera/Camera.hpp
           include/TechEngine/core/events/EventRegistry.hpp
           include/TechEngine/core/events/EventTypeId.hpp
           include/TechEngine/core/events/EventStream.hpp
@@ -120,6 +122,7 @@ if(TE_BUILD_TESTS)
           tests/EngineContextTests.cpp
           tests/assets/ImportBlockTests.cpp
           tests/assets/PackSourceTests.cpp
+          tests/camera/CameraTests.cpp
           tests/events/EventRegistryTests.cpp
           tests/events/EventStreamTests.cpp
           tests/events/EventStreamManagerTests.cpp
