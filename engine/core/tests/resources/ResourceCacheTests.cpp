@@ -5,6 +5,7 @@
 #include <TechEngine/core/resources/ResourceCache.hpp>
 #include <TechEngine/core/resources/ResourceHandle.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
+#include <TechEngine/core/resources/ResourceUploadRecord.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
 #include <TechEngine/core/serialization/ReadError.hpp>
 #include <TechEngine/core/serialization/Reader.hpp>
@@ -23,6 +24,7 @@
 #include <cstdint>
 #include <format>
 #include <initializer_list>
+#include <memory>
 #include <mutex>
 #include <span>
 #include <string>
@@ -39,6 +41,7 @@ using TechEngine::AssetSource;
 using TechEngine::BlobHeader;
 using TechEngine::BlobKind;
 using TechEngine::FileError;
+using TechEngine::FinishedUpload;
 using TechEngine::Reader;
 using TechEngine::ReadError;
 using TechEngine::ResourceCache;
@@ -46,15 +49,19 @@ using TechEngine::ResourceHandle;
 using TechEngine::ResourceId;
 using TechEngine::ResourceSlotId;
 using TechEngine::ResourceState;
+using TechEngine::ResourceUploadKind;
+using TechEngine::ResourceUploadRecord;
 using TechEngine::StringId;
 using TechEngine::Writer;
 
 static constexpr BlobKind CACHE_RESOURCE_KIND{0x43525443, 1};
 static constexpr BlobKind GATED_RESOURCE_KIND{0x47525443, 1};
+static constexpr BlobKind WATCHED_RESOURCE_KIND{0x57525443, 1};
 
 static constexpr StringId CACHE_RESOURCE_TYPE_TAG{"Tests.CacheResource"};
 static constexpr StringId CACHE_LATE_TYPE_TAG{"Tests.CacheLateResource"};
 static constexpr StringId GATED_RESOURCE_TYPE_TAG{"Tests.GatedResource"};
+static constexpr StringId WATCHED_RESOURCE_TYPE_TAG{"Tests.WatchedResource"};
 
 static constexpr std::chrono::seconds GATE_TIMEOUT{5};
 
@@ -68,6 +75,16 @@ struct CacheLateResource {
 
 struct GatedResource {
     std::string label;
+};
+
+struct UnregisteredResource {
+    std::string label;
+};
+
+// A test holds a weak_ptr to `alive` to see whether the cache has destroyed this payload yet.
+struct WatchedResource {
+    std::string label;
+    std::shared_ptr<int> alive = std::make_shared<int>(0);
 };
 
 static std::error_code readTestResource(const BlobKind& kind, const std::span<const std::byte> bytes, std::string& label, std::vector<ResourceId>& dependencies) {
@@ -97,6 +114,16 @@ static std::error_code loadCacheResource(const std::span<const std::byte> bytes,
         return readError;
     }
     static_cast<CacheResource*>(payload)->label = std::move(label);
+    return {};
+}
+
+static std::error_code loadWatchedResource(const std::span<const std::byte> bytes, void* payload, std::vector<ResourceId>& dependencies) {
+    std::string label;
+    const std::error_code readError = readTestResource(WATCHED_RESOURCE_KIND, bytes, label, dependencies);
+    if (readError) {
+        return readError;
+    }
+    static_cast<WatchedResource*>(payload)->label = std::move(label);
     return {};
 }
 
@@ -201,6 +228,10 @@ public:
         m_assets[id] = makeResourceBytes(GATED_RESOURCE_KIND, id, label, {});
     }
 
+    void addWatchedAsset(const ResourceId id, const std::string_view label) {
+        m_assets[id] = makeResourceBytes(WATCHED_RESOURCE_KIND, id, label, {});
+    }
+
     void addTruncatedAsset(const ResourceId id) {
         std::vector<std::byte> bytes = makeResourceBytes(CACHE_RESOURCE_KIND, id, "truncated", {});
         bytes.resize(bytes.size() - 4);
@@ -245,6 +276,7 @@ public:
         cache.setSource(source);
         cache.registerLoader<CacheResource>(CACHE_RESOURCE_KIND, CACHE_RESOURCE_TYPE_TAG, &loadCacheResource);
         cache.registerLoader<GatedResource>(GATED_RESOURCE_KIND, GATED_RESOURCE_TYPE_TAG, &loadGatedResource);
+        cache.registerLoader<WatchedResource>(WATCHED_RESOURCE_KIND, WATCHED_RESOURCE_TYPE_TAG, &loadWatchedResource);
     }
 
     template<typename T = CacheResource>
@@ -293,7 +325,26 @@ public:
         const std::vector<ResourceId> list(ids);
         return cache.reload(list);
     }
+
+    std::vector<ResourceUploadRecord> takeUploads() {
+        std::vector<ResourceUploadRecord> out;
+        cache.takeUploads(out);
+        return out;
+    }
+
+    void finishUploads(const std::initializer_list<ResourceUploadRecord> uploads) {
+        std::vector<FinishedUpload> finished;
+        for (const ResourceUploadRecord& upload: uploads) {
+            finished.push_back(FinishedUpload{upload.slot, upload.token});
+        }
+        cache.finishUploads(finished);
+    }
 };
+
+static std::weak_ptr<int> watch(const ResourceUploadRecord& upload) {
+    REQUIRE(upload.payload != nullptr);
+    return static_cast<const WatchedResource*>(upload.payload)->alive;
+}
 
 static constexpr ResourceId ROOT_ID{0x1001};
 static constexpr ResourceId DEPENDENCY_ID{0x1002};
@@ -1255,4 +1306,374 @@ TEST_CASE("a reload that closes a cycle fails one side in either order and keeps
 
     REQUIRE_FALSE(harness.exists(root));
     REQUIRE_FALSE(harness.exists(dependency));
+}
+
+static constexpr ResourceId WATCHED_ID{0x4001};
+
+TEST_CASE("an entry of a marked type sends one upload when it turns Ready, with its slot, id, payload and dependency slots in the loader's order", "[core][resources][cache][upload]") {
+    CacheHarness harness;
+    harness.cache.markUploaded<CacheResource>();
+    harness.source.addAsset(ROOT_ID, "root", {DEPENDENCY_ID, LEAF_ID});
+    harness.source.addAsset(DEPENDENCY_ID, "dependency", {});
+    harness.source.addAsset(LEAF_ID, "leaf", {});
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+
+    const ResourceHandle<CacheResource> dependency = harness.peek(DEPENDENCY_ID);
+    const ResourceHandle<CacheResource> leaf = harness.peek(LEAF_ID);
+    const std::vector<ResourceUploadRecord> uploads = harness.takeUploads();
+    REQUIRE(uploads.size() == 3);
+    const ResourceUploadRecord& rootUpload = uploads[0];
+    REQUIRE(rootUpload.kind == ResourceUploadKind::Upload);
+    REQUIRE(rootUpload.slot == root.slot());
+    REQUIRE(rootUpload.typeTag == CACHE_RESOURCE_TYPE_TAG);
+    REQUIRE(rootUpload.id == ROOT_ID);
+    REQUIRE(rootUpload.payload == harness.cache.resolve(root));
+    REQUIRE(rootUpload.dependencies == std::vector<ResourceSlotId>{dependency.slot(), leaf.slot()});
+    REQUIRE(rootUpload.token != 0);
+
+    const bool dependenciesFollow = (uploads[1].slot == dependency.slot() && uploads[2].slot == leaf.slot()) || (uploads[1].slot == leaf.slot() && uploads[2].slot == dependency.slot());
+    REQUIRE(dependenciesFollow);
+    REQUIRE(uploads[1].dependencies.empty());
+    REQUIRE(uploads[2].dependencies.empty());
+    REQUIRE(uploads[1].token != uploads[2].token);
+    REQUIRE(uploads[1].token != rootUpload.token);
+    REQUIRE(uploads[2].token != rootUpload.token);
+
+    REQUIRE(harness.takeUploads().empty());
+}
+
+TEST_CASE("an unmarked type sends nothing, and its free never waits", "[core][resources][cache][upload]") {
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "root", {});
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+
+    REQUIRE(harness.takeUploads().empty());
+
+    harness.cache.release(root);
+    harness.cache.drainFrees();
+
+    REQUIRE_FALSE(harness.exists(root));
+    REQUIRE(harness.takeUploads().empty());
+}
+
+TEST_CASE("a failed or absent entry of a marked type sends no upload and no release", "[core][resources][cache][upload]") {
+    CacheHarness harness;
+    harness.cache.markUploaded<CacheResource>();
+    harness.source.addTruncatedAsset(ROOT_ID);
+    harness.source.addAbsentForRole(SERVER_ID);
+    const ResourceHandle<CacheResource> failed = harness.request(ROOT_ID);
+    const ResourceHandle<CacheResource> absent = harness.request(SERVER_ID);
+    REQUIRE(harness.cache.runLoadingPhase() != std::error_code{});
+    REQUIRE(harness.state(failed) == ResourceState::Failed);
+    REQUIRE(harness.state(absent) == ResourceState::AbsentForRole);
+
+    REQUIRE(harness.takeUploads().empty());
+
+    harness.cache.release(failed);
+    harness.cache.release(absent);
+    harness.cache.drainFrees();
+
+    REQUIRE_FALSE(harness.exists(failed));
+    REQUIRE_FALSE(harness.exists(absent));
+    REQUIRE(harness.takeUploads().empty());
+}
+
+TEST_CASE("an entry of a marked type that fails on its dependencies sends no upload and no release", "[core][resources][cache][upload]") {
+    CacheHarness harness;
+    harness.cache.markUploaded<CacheResource>();
+    harness.source.addAsset(ROOT_ID, "root", {ROOT_ID});
+    const ResourceHandle<CacheResource> handle = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == ReadError::CyclicReference);
+    REQUIRE(harness.state(handle) == ResourceState::Failed);
+
+    REQUIRE(harness.takeUploads().empty());
+
+    harness.cache.release(handle);
+    harness.cache.drainFrees();
+
+    REQUIRE_FALSE(harness.exists(handle));
+    REQUIRE(harness.takeUploads().empty());
+}
+
+TEST_CASE("a free waits for its upload's done report, and its release follows the upload", "[core][resources][cache][upload]") {
+    CacheHarness harness;
+    harness.cache.markUploaded<CacheResource>();
+    harness.source.addAsset(ROOT_ID, "root", {});
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    const std::vector<ResourceUploadRecord> uploads = harness.takeUploads();
+    REQUIRE(uploads.size() == 1);
+
+    harness.cache.release(root);
+    harness.cache.drainFrees();
+
+    REQUIRE(harness.exists(root));
+    REQUIRE(harness.cache.resolve(root) == uploads[0].payload);
+    REQUIRE(harness.takeUploads().empty());
+
+    harness.finishUploads({uploads[0]});
+
+    REQUIRE(harness.exists(root));
+    REQUIRE(harness.takeUploads().empty());
+
+    harness.cache.drainFrees();
+
+    REQUIRE_FALSE(harness.exists(root));
+    const std::vector<ResourceUploadRecord> releases = harness.takeUploads();
+    REQUIRE(releases.size() == 1);
+    REQUIRE(releases[0].kind == ResourceUploadKind::Release);
+    REQUIRE(releases[0].slot == root.slot());
+    REQUIRE(releases[0].id == ROOT_ID);
+    REQUIRE(releases[0].payload == nullptr);
+}
+
+TEST_CASE("a free whose upload is already done runs in the next drain and sends its release", "[core][resources][cache][upload]") {
+    CacheHarness harness;
+    harness.cache.markUploaded<CacheResource>();
+    harness.source.addAsset(ROOT_ID, "root", {});
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    const std::vector<ResourceUploadRecord> uploads = harness.takeUploads();
+    REQUIRE(uploads.size() == 1);
+    harness.finishUploads({uploads[0]});
+
+    harness.cache.release(root);
+    harness.cache.drainFrees();
+
+    REQUIRE_FALSE(harness.exists(root));
+    const std::vector<ResourceUploadRecord> releases = harness.takeUploads();
+    REQUIRE(releases.size() == 1);
+    REQUIRE(releases[0].kind == ResourceUploadKind::Release);
+    REQUIRE(releases[0].slot == root.slot());
+}
+
+TEST_CASE("a holder and its dependency are freed only once each one's own token comes back", "[core][resources][cache][upload]") {
+    CacheHarness harness;
+    harness.cache.markUploaded<CacheResource>();
+    harness.source.addAsset(ROOT_ID, "root", {DEPENDENCY_ID});
+    harness.source.addAsset(DEPENDENCY_ID, "dependency", {});
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    const ResourceHandle<CacheResource> dependency = harness.peek(DEPENDENCY_ID);
+    const std::vector<ResourceUploadRecord> uploads = harness.takeUploads();
+    REQUIRE(uploads.size() == 2);
+    REQUIRE(uploads[0].slot == root.slot());
+    REQUIRE(uploads[1].slot == dependency.slot());
+
+    harness.finishUploads({uploads[0]});
+    harness.cache.release(root);
+    harness.cache.drainFrees();
+
+    REQUIRE_FALSE(harness.exists(root));
+    REQUIRE(harness.exists(dependency));
+    REQUIRE(harness.acquireCount(dependency) == 0);
+
+    harness.finishUploads({uploads[1]});
+    harness.cache.drainFrees();
+
+    REQUIRE_FALSE(harness.exists(dependency));
+    const std::vector<ResourceUploadRecord> releases = harness.takeUploads();
+    REQUIRE(releases.size() == 2);
+    REQUIRE(releases[0].slot == root.slot());
+    REQUIRE(releases[1].slot == dependency.slot());
+}
+
+TEST_CASE("uploads and releases come out in the order they were made", "[core][resources][cache][upload]") {
+    CacheHarness harness;
+    harness.cache.markUploaded<CacheResource>();
+    harness.source.addAsset(ROOT_ID, "root", {});
+    harness.source.addAsset(SECOND_ROOT_ID, "second", {});
+    const ResourceHandle<CacheResource> first = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    const std::vector<ResourceUploadRecord> firstUploads = harness.takeUploads();
+    REQUIRE(firstUploads.size() == 1);
+    harness.finishUploads({firstUploads[0]});
+
+    harness.cache.release(first);
+    const ResourceHandle<CacheResource> second = harness.request(SECOND_ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+
+    const std::vector<ResourceUploadRecord> records = harness.takeUploads();
+    REQUIRE(records.size() == 2);
+    REQUIRE(records[0].kind == ResourceUploadKind::Upload);
+    REQUIRE(records[0].slot == second.slot());
+    REQUIRE(records[0].token > firstUploads[0].token);
+    REQUIRE(records[1].kind == ResourceUploadKind::Release);
+    REQUIRE(records[1].slot == first.slot());
+}
+
+TEST_CASE("a reload sends a new upload under the same slot with a new token", "[core][resources][cache][upload][reload]") {
+    CacheHarness harness;
+    harness.cache.markUploaded<CacheResource>();
+    harness.source.addAsset(ROOT_ID, "root", {});
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    const std::vector<ResourceUploadRecord> firstUploads = harness.takeUploads();
+    REQUIRE(firstUploads.size() == 1);
+    harness.finishUploads({firstUploads[0]});
+    harness.source.addAsset(ROOT_ID, "rewritten", {});
+
+    REQUIRE(harness.reload({ROOT_ID}) == std::error_code{});
+
+    const std::vector<ResourceUploadRecord> reloads = harness.takeUploads();
+    REQUIRE(reloads.size() == 1);
+    REQUIRE(reloads[0].kind == ResourceUploadKind::Upload);
+    REQUIRE(reloads[0].slot == root.slot());
+    REQUIRE(reloads[0].id == ROOT_ID);
+    REQUIRE(reloads[0].token != firstUploads[0].token);
+    REQUIRE(reloads[0].payload == harness.cache.resolve(root));
+    REQUIRE(static_cast<const CacheResource*>(reloads[0].payload)->label == "rewritten");
+}
+
+TEST_CASE("a failed reload sends no upload and keeps the old upload's pin", "[core][resources][cache][upload][reload]") {
+    CacheHarness harness;
+    harness.cache.markUploaded<WatchedResource>();
+    harness.source.addWatchedAsset(WATCHED_ID, "watched");
+    const ResourceHandle<WatchedResource> handle = harness.request<WatchedResource>(WATCHED_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    const std::vector<ResourceUploadRecord> uploads = harness.takeUploads();
+    REQUIRE(uploads.size() == 1);
+    const std::weak_ptr<int> original = watch(uploads[0]);
+    harness.source.removeAsset(WATCHED_ID);
+
+    REQUIRE(harness.reload({WATCHED_ID}) != std::error_code{});
+
+    REQUIRE(harness.takeUploads().empty());
+    REQUIRE_FALSE(original.expired());
+    harness.cache.release(handle);
+    harness.cache.drainFrees();
+    REQUIRE(harness.exists(handle));
+
+    harness.finishUploads({uploads[0]});
+    harness.cache.drainFrees();
+
+    REQUIRE_FALSE(harness.exists(handle));
+    REQUIRE(original.expired());
+}
+
+TEST_CASE("a reload keeps a pinned old payload alive until its own token comes back", "[core][resources][cache][upload][reload]") {
+    CacheHarness harness;
+    harness.cache.markUploaded<WatchedResource>();
+    harness.source.addWatchedAsset(WATCHED_ID, "watched");
+    const ResourceHandle<WatchedResource> handle = harness.request<WatchedResource>(WATCHED_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    const std::vector<ResourceUploadRecord> firstUploads = harness.takeUploads();
+    REQUIRE(firstUploads.size() == 1);
+    const std::weak_ptr<int> old = watch(firstUploads[0]);
+    harness.source.addWatchedAsset(WATCHED_ID, "rewritten");
+
+    REQUIRE(harness.reload({WATCHED_ID}) == std::error_code{});
+
+    REQUIRE_FALSE(old.expired());
+    REQUIRE(static_cast<const WatchedResource*>(firstUploads[0].payload)->label == "watched");
+    REQUIRE(harness.cache.resolve(handle) != nullptr);
+    REQUIRE(harness.cache.resolve(handle)->label == "rewritten");
+    const std::vector<ResourceUploadRecord> reloads = harness.takeUploads();
+    REQUIRE(reloads.size() == 1);
+    const std::weak_ptr<int> current = watch(reloads[0]);
+
+    harness.finishUploads({firstUploads[0]});
+
+    REQUIRE(old.expired());
+    REQUIRE_FALSE(current.expired());
+    REQUIRE(harness.cache.resolve(handle) == reloads[0].payload);
+
+    harness.cache.release(handle);
+    harness.cache.drainFrees();
+
+    REQUIRE(harness.exists(handle));
+
+    harness.finishUploads({reloads[0]});
+    harness.cache.drainFrees();
+
+    REQUIRE_FALSE(harness.exists(handle));
+    REQUIRE(current.expired());
+}
+
+TEST_CASE("a reload of an entry whose upload is done destroys the old payload at once", "[core][resources][cache][upload][reload]") {
+    CacheHarness harness;
+    harness.cache.markUploaded<WatchedResource>();
+    harness.source.addWatchedAsset(WATCHED_ID, "watched");
+    harness.request<WatchedResource>(WATCHED_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    const std::vector<ResourceUploadRecord> uploads = harness.takeUploads();
+    REQUIRE(uploads.size() == 1);
+    const std::weak_ptr<int> old = watch(uploads[0]);
+    harness.finishUploads({uploads[0]});
+    harness.source.addWatchedAsset(WATCHED_ID, "rewritten");
+
+    REQUIRE(harness.reload({WATCHED_ID}) == std::error_code{});
+
+    REQUIRE(old.expired());
+}
+
+TEST_CASE("two reloads before render reports keep each old payload until its own token comes back", "[core][resources][cache][upload][reload]") {
+    CacheHarness harness;
+    harness.cache.markUploaded<WatchedResource>();
+    harness.source.addWatchedAsset(WATCHED_ID, "first");
+    harness.request<WatchedResource>(WATCHED_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    const std::vector<ResourceUploadRecord> firstUploads = harness.takeUploads();
+    REQUIRE(firstUploads.size() == 1);
+    const std::weak_ptr<int> first = watch(firstUploads[0]);
+    harness.source.addWatchedAsset(WATCHED_ID, "second");
+    REQUIRE(harness.reload({WATCHED_ID}) == std::error_code{});
+    const std::vector<ResourceUploadRecord> secondUploads = harness.takeUploads();
+    REQUIRE(secondUploads.size() == 1);
+    const std::weak_ptr<int> second = watch(secondUploads[0]);
+    harness.source.addWatchedAsset(WATCHED_ID, "third");
+    REQUIRE(harness.reload({WATCHED_ID}) == std::error_code{});
+    const std::vector<ResourceUploadRecord> thirdUploads = harness.takeUploads();
+    REQUIRE(thirdUploads.size() == 1);
+    const std::weak_ptr<int> third = watch(thirdUploads[0]);
+
+    harness.finishUploads({secondUploads[0]});
+
+    REQUIRE_FALSE(first.expired());
+    REQUIRE(second.expired());
+    REQUIRE_FALSE(third.expired());
+
+    harness.finishUploads({firstUploads[0]});
+
+    REQUIRE(first.expired());
+    REQUIRE_FALSE(third.expired());
+}
+
+TEST_CASE("a free still waiting on render is destroyed with the cache and is not logged as a leak", "[core][resources][cache][upload]") {
+    const TechEngineTests::LogCaptureGuard logs;
+    std::weak_ptr<int> payload;
+    {
+        CacheHarness harness;
+        harness.cache.markUploaded<WatchedResource>();
+        harness.source.addWatchedAsset(WATCHED_ID, "watched");
+        const ResourceHandle<WatchedResource> handle = harness.request<WatchedResource>(WATCHED_ID);
+        REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+        const std::vector<ResourceUploadRecord> uploads = harness.takeUploads();
+        REQUIRE(uploads.size() == 1);
+        payload = watch(uploads[0]);
+        harness.cache.release(handle);
+        harness.cache.drainFrees();
+        REQUIRE(harness.exists(handle));
+
+        harness.cache.shutdown();
+
+        REQUIRE_FALSE(payload.expired());
+    }
+
+    REQUIRE(payload.expired());
+    REQUIRE_FALSE(logNames(logs, WATCHED_ID));
+}
+
+TEST_CASE("marking a type for upload is rejected before the type registers and once the loaders close", "[core][resources][cache][upload]") {
+    const TechEngineTests::FatalAssertGuard guard;
+    CacheHarness harness;
+
+    REQUIRE_THROWS_AS(harness.cache.markUploaded<UnregisteredResource>(), TechEngineTests::AssertFired);
+
+    harness.cache.closeLoaders();
+
+    REQUIRE_THROWS_AS(harness.cache.markUploaded<CacheResource>(), TechEngineTests::AssertFired);
 }

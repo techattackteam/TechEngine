@@ -69,6 +69,18 @@ the rubric.
   instead **at the definition**, and has a `ci.yml` check line. A private symbol with no red
   check is a finding.
 
+**Changing code** (*Changing code: adapt the owner, never bolt on*)
+- A new list, map or flag holding a fact about things an existing record already describes is
+  a **parallel structure**: the field belongs on the record.
+- A new call placed before or after an existing line to rescue or undo that line's effect is a
+  **compensating call**: the line itself should change.
+- A new function whose inputs lack the key its job needs (it would scan, or needs a new index)
+  is a **lookup the data cannot answer**.
+- New machinery with the same contract as existing machinery is a **second copy**.
+- Interim code with no `TODO(<card ID>)` and no card that replaces it is a bolt-on.
+- On a diff that changes existing behaviour but deletes or rewrites nothing, look for these
+  first.
+
 **CMake** (*CMake*)
 - Link the `TechEngine::<module>` alias, never the real target name.
 - `PUBLIC` iff the dep appears in the target's public headers, else `PRIVATE`.

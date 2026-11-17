@@ -49,6 +49,26 @@ namespace TechEngine {
         m_types.push_back(TypeRecord{kind, typeTag, load, createPayload, destroyPayload});
     }
 
+    void ResourceCache::markUploadedType(StringId typeTag) {
+        TE_CHECK(!m_loadersClosed, "Resource loader registration is closed - cannot mark types as uploaded");
+        for (TypeRecord& record: m_types) {
+            if (record.typeTag == typeTag) {
+                record.uploaded = true;
+                return;
+            }
+        }
+        TE_ASSERT(false, "Resource type tag not found: {0}", typeTag);
+    }
+
+    bool ResourceCache::isUploaded(StringId typeTag) const {
+        for (const TypeRecord& record: m_types) {
+            if (record.typeTag == typeTag) {
+                return record.uploaded;
+            }
+        }
+        return false;
+    }
+
     std::error_code ResourceCache::requestEntry(const ResourceId id, const StringId typeTag, ResourceSlotId& out) {
         TE_CHECK(m_source != nullptr, "A resource cache needs an asset source before its first request");
         TE_CHECK(id.valid(), "A null resource id is never requested");
@@ -268,6 +288,7 @@ namespace TechEngine {
             }
         }
 
+        recordUpload(completion.slot, *entry);
         return {};
     }
 
@@ -290,14 +311,16 @@ namespace TechEngine {
             dependencies.push_back(dependencySlot);
         }
 
-        entry.payload = std::move(completion.payload);
+        std::unique_ptr<void, ResourcePayloadDeleter> previous = std::exchange(entry.payload, std::move(completion.payload));
+        retirePayload(entry, std::move(previous));
         entry.typeTag = completion.typeTag;
         entry.error = {};
         entry.state = ResourceState::Ready;
-        const std::vector<ResourceSlotId> previous = std::exchange(entry.dependencies, std::move(dependencies));
-        for (const ResourceSlotId dependency: previous) {
+        const std::vector<ResourceSlotId> previousDependencies = std::exchange(entry.dependencies, std::move(dependencies));
+        for (const ResourceSlotId dependency: previousDependencies) {
             releaseEntry(dependency);
         }
+        recordUpload(completion.slot, entry);
         return {};
     }
 
@@ -416,7 +439,8 @@ namespace TechEngine {
                 if (entry == nullptr) {
                     continue;
                 }
-                if (entry->loading || entry->acquires > 0) {
+
+                if (entry->loading || entry->acquires > 0 || entry->pendingUploadToken != 0) {
                     deferred.push_back(slot);
                     continue;
                 }
@@ -433,10 +457,63 @@ namespace TechEngine {
         }
 
         const std::vector<ResourceSlotId> dependencies = std::move(entry->dependencies);
+        recordRelease(slot, *entry);
         m_byId.erase(entry->id);
         m_slots->destroy(slot);
         for (const ResourceSlotId dependency: dependencies) {
             releaseEntry(dependency);
+        }
+    }
+
+    void ResourceCache::takeUploads(std::vector<ResourceUploadRecord>& out) {
+        out.clear();
+        out.swap(m_uploads);
+    }
+
+    void ResourceCache::finishUploads(const std::span<const FinishedUpload> uploads) {
+        for (const FinishedUpload& upload: uploads) {
+            ResourceEntry* entry = m_slots->find(upload.slot);
+            if (entry != nullptr && entry->pendingUploadToken == upload.token) {
+                entry->pendingUploadToken = 0;
+                continue;
+            }
+
+            for (auto retired = m_retiredPayloads.begin(); retired != m_retiredPayloads.end(); retired++) {
+                if (retired->token == upload.token) {
+                    m_retiredPayloads.erase(retired);
+                    break;
+                }
+            }
+        }
+    }
+
+    void ResourceCache::recordUpload(const ResourceSlotId slot, ResourceEntry& entry) {
+        if (!isUploaded(entry.typeTag)) {
+            return;
+        }
+
+        const std::uint64_t token = m_nextUploadToken++;
+        entry.pendingUploadToken = token;
+        m_uploads.push_back(ResourceUploadRecord{ResourceUploadKind::Upload, slot, entry.typeTag, entry.id, entry.payload.get(), entry.dependencies, token});
+    }
+
+    void ResourceCache::recordRelease(const ResourceSlotId slot, const ResourceEntry& entry) {
+        if (!isUploaded(entry.typeTag) || entry.state != ResourceState::Ready) {
+            return;
+        }
+
+        ResourceUploadRecord release;
+        release.kind = ResourceUploadKind::Release;
+        release.slot = slot;
+        release.typeTag = entry.typeTag;
+        release.id = entry.id;
+        m_uploads.push_back(std::move(release));
+    }
+
+    void ResourceCache::retirePayload(ResourceEntry& entry, std::unique_ptr<void, ResourcePayloadDeleter> previous) {
+        if (entry.pendingUploadToken != 0) {
+            m_retiredPayloads.push_back(RetiredPayload{entry.pendingUploadToken, std::move(previous)});
+            entry.pendingUploadToken = 0;
         }
     }
 

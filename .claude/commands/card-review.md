@@ -44,6 +44,10 @@ commit, push, or close the card.
 - **Architecture.** Check affected module boundaries, public surfaces, and accepted
   decisions. Flag contradictions and new load-bearing choices; do not redesign
   unrelated systems or silently amend an ADR.
+- **The shape of the change.** Check the diff against `CONVENTIONS.md` § *Changing code:
+  adapt the owner, never bolt on*. For each new member, container, call and signature, find
+  the existing code that already owns that job and say whether the change should have gone
+  there instead. A behaviour change that rewrites or deletes nothing is where to look first.
 - **Evidence.** Confirm findings in the actual execution path before reporting.
   A code finding needs an exact location and a triggering scenario. A convention
   finding needs the applicable rule. Label estimates and unresolved questions.

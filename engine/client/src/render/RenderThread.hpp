@@ -7,18 +7,21 @@
 #include <render/FramePacketPool.hpp>
 #include <render/FrameRenderer.hpp>
 #include <render/PacketMailbox.hpp>
+#include <render/UploadChannel.hpp>
 #include <render/device/RenderDevice.hpp>
 
 #include <atomic>
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <vector>
 
 namespace TechEngine {
     class JobSystem;
     class Window;
     class InputBuffer;
     class ImGuiHook;
+    class GpuCopies;
 
     class RenderThread {
     private:
@@ -26,6 +29,7 @@ namespace TechEngine {
         FrameRenderer m_renderer;
         FramePacketPool m_pool;
         PacketMailbox m_mailbox{m_pool};
+        UploadChannel m_uploads;
         mutable std::mutex m_timingMutex;
         RenderTiming m_timing;
         std::atomic<bool> m_vsync = false;
@@ -50,6 +54,10 @@ namespace TechEngine {
 
         void publish(std::unique_ptr<FramePacket> packet);
 
+        void sendUploads(std::vector<ResourceUploadRecord>& records);
+
+        void takeFinishedUploads(std::vector<FinishedUpload>& out);
+
         RenderTiming timing() const;
 
         ThreadCompletionResult completion() const;
@@ -60,5 +68,7 @@ namespace TechEngine {
 
     private:
         void threadMain(const DedicatedThreadContext& context, const Clock& clock, Window& window, const InputBuffer& input, ImGuiHook* imguiHook);
+
+        void applyUploads(GpuCopies& copies, std::vector<ResourceUploadRecord>& records, std::vector<FinishedUpload>& finished);
     };
 }

@@ -2,9 +2,11 @@
 
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/client/Client.hpp>
+#include <TechEngine/core/resources/ResourceUploadRecord.hpp>
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace TechEngine {
     class ClientApp : public App {
@@ -17,6 +19,8 @@ namespace TechEngine {
         // Simulation thread only.
         std::uint64_t m_packetSequence = 0;
         bool m_warnedNoCamera = false;
+        std::vector<ResourceUploadRecord> m_uploadRecords;
+        std::vector<FinishedUpload> m_finishedUploads;
 
     public:
         ClientApp(Role role, std::string title);
@@ -57,5 +61,7 @@ namespace TechEngine {
 
     private:
         void applyTitle();
+
+        void exchangeUploads();
     };
 }

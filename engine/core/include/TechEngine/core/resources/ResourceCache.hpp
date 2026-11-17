@@ -5,6 +5,7 @@
 #include <TechEngine/core/resources/ResourceHandle.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/resources/ResourceTypeTag.hpp>
+#include <TechEngine/core/resources/ResourceUploadRecord.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
 
 #include <cstddef>
@@ -38,6 +39,7 @@ namespace TechEngine {
             ResourceLoadFn load = nullptr;
             void* (*createPayload)() = nullptr;
             void (*destroyPayload)(void*) = nullptr;
+            bool uploaded = false;
         };
 
         struct LoadCompletion {
@@ -47,6 +49,11 @@ namespace TechEngine {
             std::vector<ResourceId> dependencies;
             std::error_code error;
             bool reload = false;
+        };
+
+        struct RetiredPayload {
+            std::uint64_t token = 0;
+            std::unique_ptr<void, ResourcePayloadDeleter> payload{nullptr, nullptr};
         };
 
         JobSystem* m_jobs = nullptr;
@@ -59,6 +66,9 @@ namespace TechEngine {
         std::vector<BatchId> m_inFlightBatches;
         std::mutex m_completionMutex;
         std::vector<LoadCompletion> m_completions;
+        std::vector<ResourceUploadRecord> m_uploads;
+        std::vector<RetiredPayload> m_retiredPayloads;
+        std::uint64_t m_nextUploadToken = 1;
         bool m_loadersClosed = false;
 
     public:
@@ -76,6 +86,11 @@ namespace TechEngine {
         void registerLoader(const BlobKind& kind, const StringId typeTag, const ResourceLoadFn load) {
             registerType(kind, typeTag, internal::g_resourceTypeTag<T>, load, &createResourcePayload<T>, &destroyResourcePayload<T>);
             internal::g_resourceTypeTag<T> = typeTag;
+        }
+
+        template<typename T>
+        void markUploaded() {
+            markUploadedType(resourceTypeTag<T>());
         }
 
         void closeLoaders();
@@ -147,6 +162,13 @@ namespace TechEngine {
 
         void drainFrees();
 
+        // Moves out every upload and release recorded since the last call, in the order they were made.
+        void takeUploads(std::vector<ResourceUploadRecord>& out);
+
+        // Destroys a retired payload at once, but a free that waited on one of these uploads runs
+        // only in the next drainFrees.
+        void finishUploads(std::span<const FinishedUpload> uploads);
+
         void shutdown();
 
     private:
@@ -161,6 +183,16 @@ namespace TechEngine {
         }
 
         void registerType(const BlobKind& kind, StringId typeTag, StringId existingTypeTag, ResourceLoadFn load, void* (*createPayload)(), void (*destroyPayload)(void*));
+
+        void markUploadedType(StringId typeTag);
+
+        bool isUploaded(StringId typeTag) const;
+
+        void recordUpload(ResourceSlotId slot, ResourceEntry& entry);
+
+        void recordRelease(ResourceSlotId slot, const ResourceEntry& entry);
+
+        void retirePayload(ResourceEntry& entry, std::unique_ptr<void, ResourcePayloadDeleter> previous);
 
         std::error_code requestEntry(ResourceId id, StringId typeTag, ResourceSlotId& out);
 

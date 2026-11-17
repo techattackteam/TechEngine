@@ -7,11 +7,14 @@
 #include <memory>
 #include <string_view>
 #include <system_error>
+#include <vector>
 
 struct GLFWwindow;
 
 namespace TechEngine {
     struct FramePacket;
+    struct ResourceUploadRecord;
+    struct FinishedUpload;
     struct EngineContext;
     class InputBuffer;
     class ImGuiHook;
@@ -49,6 +52,11 @@ namespace TechEngine {
         std::unique_ptr<FramePacket> acquirePacket() const;
 
         void publish(std::unique_ptr<FramePacket> packet) const;
+
+        // Leaves `records` empty. Each payload must stay alive until its upload comes back from takeFinishedUploads.
+        void sendUploads(std::vector<ResourceUploadRecord>& records) const;
+
+        void takeFinishedUploads(std::vector<FinishedUpload>& out) const;
 
         bool renderTiming(RenderTiming& out) const;
 

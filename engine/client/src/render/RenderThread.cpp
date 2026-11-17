@@ -8,6 +8,7 @@
 
 #include "GlRequirements.hpp"
 #include <render/FrameView.hpp>
+#include <render/GpuCopies.hpp>
 #include <render/PacketHistory.hpp>
 #include <render/RenderThread.hpp>
 
@@ -16,6 +17,7 @@
 #include <chrono>
 #include <exception>
 #include <utility>
+#include <vector>
 
 namespace TechEngine {
     RenderThread::~RenderThread() {
@@ -27,6 +29,7 @@ namespace TechEngine {
             return false;
         }
         m_mailbox.reset();
+        m_uploads.reset();
         {
             const std::lock_guard lock{m_timingMutex};
             m_timing = RenderTiming{};
@@ -66,6 +69,14 @@ namespace TechEngine {
         m_mailbox.publish(std::move(packet));
     }
 
+    void RenderThread::sendUploads(std::vector<ResourceUploadRecord>& records) {
+        m_uploads.send(records);
+    }
+
+    void RenderThread::takeFinishedUploads(std::vector<FinishedUpload>& out) {
+        m_uploads.takeFinished(out);
+    }
+
     void RenderThread::setVSync(bool enabled) {
         m_vsync.store(enabled, std::memory_order_relaxed);
     }
@@ -83,6 +94,7 @@ namespace TechEngine {
         m_thread.requestStop();
         m_thread.join();
         m_mailbox.reset();
+        m_uploads.reset();
     }
 
     void RenderThread::threadMain(const DedicatedThreadContext& context, const Clock& clock, Window& window, const InputBuffer& input, ImGuiHook* imguiHook) {
@@ -103,6 +115,9 @@ namespace TechEngine {
             };
             if (meetsGlRequirements(glSupport) && m_renderer.initialize(m_device)) {
                 PacketHistory history{m_pool};
+                GpuCopies copies;
+                std::vector<ResourceUploadRecord> uploadRecords;
+                std::vector<FinishedUpload> finishedUploads;
                 FrameView frame;
                 RateCounter rate;
                 RenderTiming metrics;
@@ -123,6 +138,9 @@ namespace TechEngine {
                     {
                         TE_PROFILER_SCOPE("Render.PrepareFrame");
                         m_mailbox.deliverTo(history);
+                        // After the packet, never before: simulation queues a handle's upload before it publishes
+                        // the packet that names it, so taking uploads first can miss the ones this packet needs.
+                        applyUploads(copies, uploadRecords, finishedUploads);
                         history.prepareFrame(started, input.presentationState(), frame);
                     }
                     {
@@ -166,5 +184,15 @@ namespace TechEngine {
         if (failure) {
             std::rethrow_exception(failure);
         }
+    }
+
+    void RenderThread::applyUploads(GpuCopies& copies, std::vector<ResourceUploadRecord>& records, std::vector<FinishedUpload>& finished) {
+        m_uploads.receive(records);
+        if (records.empty()) {
+            return;
+        }
+        finished.clear();
+        copies.apply(records, finished);
+        m_uploads.reportFinished(finished);
     }
 }

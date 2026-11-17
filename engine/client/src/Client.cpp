@@ -7,6 +7,7 @@
 #include <atomic>
 #include <mutex>
 #include <utility>
+#include <vector>
 
 namespace TechEngine {
     struct Client::State {
@@ -86,6 +87,14 @@ namespace TechEngine {
 
     void Client::publish(std::unique_ptr<FramePacket> packet) const {
         m_state->renderer.publish(std::move(packet));
+    }
+
+    void Client::sendUploads(std::vector<ResourceUploadRecord>& records) const {
+        m_state->renderer.sendUploads(records);
+    }
+
+    void Client::takeFinishedUploads(std::vector<FinishedUpload>& out) const {
+        m_state->renderer.takeFinishedUploads(out);
     }
 
     bool Client::renderTiming(RenderTiming& out) const {

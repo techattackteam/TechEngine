@@ -473,6 +473,27 @@ return value. Seek every plausible edge case for the contract, and record any im
 that cannot be tested yet. Each test should be able to catch a real defect rather than mirror
 the implementation or repeat another case.
 
+## Changing code: adapt the owner, never bolt on
+
+> **New behaviour goes into the code that already owns the job.** Rewrite the line, extend the
+> record, change the signature. Do not add a structure or a call beside it that works around
+> what it does. Decided 2026-11-17, after S11-T6's first scaffold did the first three below.
+
+| Smell | Seen in | Do this instead |
+|---|---|---|
+| **A parallel structure**: a new list, map or flag that holds a fact about things an existing structure already owns | `m_uploadedTypes` beside `m_types`, each naming a type | Add the field to the owner's record (`TypeRecord::uploaded`), and look it up where the record is already found |
+| **A compensating call**: new code runs before or after an existing line to rescue or undo what that line does | `retirePayload(entry)` placed before a move-assign that destroyed the old payload | Rewrite the line so the effect is explicit at one decision point (`std::exchange`, then one call that keeps or drops the old value) |
+| **A lookup the data cannot answer**: a function's input lacks the key its job needs, so it would scan or need a new index | `finishUploads(tokens)` had to find an entry from a token alone | Carry the key the caller already holds (`FinishedUpload{slot, token}`) |
+| **A second copy of machinery** that exists elsewhere | a hand-written queue where an existing queue type already has the same contract | Reuse or extend the existing one. When the contracts really differ (`PacketMailbox` keeps only the latest packet, `UploadChannel` may never drop a record), say so in the PR, not in a comment |
+
+- **Expect deletions.** A change that alters existing behaviour almost always rewrites or removes
+  existing lines. A diff that only adds, on a card that changes behaviour, is the signal to look
+  for one of the smells above.
+- **Interim code is allowed only when a named card replaces it**: its done clause, or a
+  `TODO(<card ID>)` at the code, says what goes. Without one, it is a bolt-on.
+- **A scaffold obeys this too.** Its stubs sit inside the rewritten code, not in a new call
+  beside the old line.
+
 ## CMake
 
 - **Module libraries → real target `TechEngine<Module>`** (`TechEngineBase`, `TechEngineCore`).
