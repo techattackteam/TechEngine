@@ -107,14 +107,14 @@ namespace TechEngine {
         const Vec3& position = scene.getComponent<Transform>(entity).getLocal().position;
         const Name& nameComponent = scene.getComponent<Name>(entity);
         std::string name = nameComponent.value;
-        TE_LOGGER_INFO("{0}Entity {1} {2}:{3} at ({4}, {5}, {6})", std::string(depth * 2, ' '), name, entity.index, entity.generation, position.x, position.y, position.z);
+        TE_LOGGER_DEBUG("{0}Entity {1} {2}:{3} at ({4}, {5}, {6})", std::string(depth * 2, ' '), name, entity.index, entity.generation, position.x, position.y, position.z);
         if (scene.hasComponent<MeshRenderer>(entity)) {
             const AssetRef<Mesh>& reference = scene.getComponent<MeshRenderer>(entity).mesh;
             const Mesh* mesh = reference.handle.valid() ? m_resources.resolve(reference.handle) : nullptr;
             if (mesh != nullptr) {
-                TE_LOGGER_INFO("{0}Mesh {1:#018x} with {2} positions and {3} indices", std::string(depth * 2 + 2, ' '), reference.id.value(), mesh->positions.size(), mesh->indices.size());
+                TE_LOGGER_DEBUG("{0}Mesh {1:#018x} with {2} positions and {3} indices", std::string(depth * 2 + 2, ' '), reference.id.value(), mesh->positions.size(), mesh->indices.size());
             } else {
-                TE_LOGGER_INFO("{0}Mesh {1:#018x}, not loaded", std::string(depth * 2 + 2, ' '), reference.id.value());
+                TE_LOGGER_DEBUG("{0}Mesh {1:#018x}, not loaded", std::string(depth * 2 + 2, ' '), reference.id.value());
             }
         }
         for (const Entity child: scene.getChildren(entity)) {
