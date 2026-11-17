@@ -78,9 +78,18 @@ artifacts match the tree, and go.
 
 ### Dev card (`T`): scaffold it
 
-Write the smallest scaffold that unblocks me: new files, headers, declarations, signatures,
-and CMake wiring. Leave the new logic to me. Its bodies stay empty or stubbed, and a
-`TODO(<card ID>)` marks each place I fill in.
+Write the smallest scaffold that unblocks me: the existing code the card changes, rewritten into
+its new shape, then any new files, headers, declarations, signatures and CMake wiring. Leave the
+new logic to me. Its bodies stay empty or stubbed, and a `TODO(<card ID>)` marks each place I
+fill in.
+
+**Code that changes is rewritten, not bolted on.** Before adding anything, find the code that
+already owns the job: the record that describes the thing, the line whose effect the card
+changes, the queue or lookup that already exists. Change that. `CONVENTIONS.md` § *Changing
+code: adapt the owner, never bolt on* lists the four smells, and none of them may appear in a
+scaffold, because a stub I fill in inherits the scaffold's shape. Before handing over, check
+every new member, container, call and signature against the code beside it, and ask of each
+new function whether its inputs hold every key its job needs.
 
 **Code that moves is moved, not stubbed.** When the card relocates working code (it folds one
 class into another, or gives a job a new owner), write the new function with that code moved
@@ -112,6 +121,9 @@ assertions, not empty cases:
 - In the response, list the files and say what each stub is waiting for and which functions hold
   moved code (and what was adapted in each), then list the tests:
   which are new, which were adapted and why, and what each one is meant to prove.
+- Also list **the existing lines the scaffold rewrote or deleted**, and why each changed. On a
+  card that changes existing behaviour, an empty list is a finding: say which smell you checked
+  for and why the diff still only adds.
 
 ### Planning card (`D` or `P`): propose a solution
 
@@ -138,6 +150,9 @@ The unattended lane runs this before it works a 🤖 Auto card. Nobody is there 
   take the decisions [[Planning Workflow - Artifact Gate]] § *The 🤖 Claude gate* allows,
   each listed in the PR. A gap that the gate keeps for me (an ADR-level decision) still
   stops it, with the question and a proposed answer in the report.
+- **Skipping the scaffold does not skip its rewrite rule.** The lane's own diff obeys
+  *Code that changes is rewritten, not bolted on* (*Dev card* above), and the PR body lists
+  the existing lines it rewrote or deleted, the same list a scaffold hands me.
 
 ## Guardrails
 

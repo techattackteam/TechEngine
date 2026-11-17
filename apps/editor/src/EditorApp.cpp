@@ -118,6 +118,9 @@ namespace TechEngine {
         m_resources.registerLoader<Mesh>(MESH_KIND, MESH_TYPE_TAG, &Mesh::loadPayload);
         m_resources.registerLoader<Texture>(TEXTURE_KIND, TEXTURE_TYPE_TAG, &Texture::loadPayload);
         m_resources.registerLoader<Material>(MATERIAL_KIND, MATERIAL_TYPE_TAG, &Material::loadPayload);
+        m_resources.markUploaded<Mesh>();
+        m_resources.markUploaded<Texture>();
+        m_resources.markUploaded<Material>();
     }
 
     bool EditorApp::simulationTicks() const {

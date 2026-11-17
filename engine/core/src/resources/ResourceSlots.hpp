@@ -22,6 +22,8 @@ namespace TechEngine {
         std::error_code error;
         std::uint32_t acquires = 0;
         std::uint32_t generation = 0;
+        // Zero while no upload reads the payload.
+        std::uint64_t pendingUploadToken = 0;
         std::uint32_t nextFree = ResourceSlotId::NULL_INDEX;
         ResourceState state = ResourceState::Pending;
         bool loading = false;

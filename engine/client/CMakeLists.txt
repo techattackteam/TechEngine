@@ -3,11 +3,13 @@ techengine_module(client
         src/ClientError.cpp
         src/render/FrameExtraction.cpp
         src/render/FramePacketPool.cpp
+        src/render/GpuCopies.cpp
         src/render/PacketHistory.cpp
         src/render/PacketMailbox.cpp
         src/render/FrameRenderer.cpp
         src/render/GlRequirements.cpp
         src/render/RenderThread.cpp
+        src/render/UploadChannel.cpp
         src/render/device/RenderDevice.cpp
         HEADERS include/TechEngine/client/Client.hpp
         include/TechEngine/client/ClientError.hpp
@@ -17,10 +19,12 @@ techengine_module(client
         include/TechEngine/client/render/ImGuiHook.hpp
         src/render/FramePacketPool.hpp
         src/render/FrameView.hpp
+        src/render/GpuCopies.hpp
         src/render/PacketMailbox.hpp
         src/render/FrameRenderer.hpp
         src/render/GlRequirements.hpp
         src/render/RenderThread.hpp
+        src/render/UploadChannel.hpp
         src/render/device/RenderDevice.hpp
         src/render/device/RenderExtent.hpp
         src/render/device/RenderHandle.hpp
@@ -40,11 +44,13 @@ if (TE_BUILD_TESTS)
             tests/ClientErrorTests.cpp
             tests/render/FrameExtractionTests.cpp
             tests/render/FramePacketPoolTests.cpp
+            tests/render/GpuCopiesTests.cpp
             tests/render/PacketMailboxTests.cpp
             tests/render/PacketHistoryTests.cpp
             tests/render/FrameRendererTests.cpp
             tests/render/GlRequirementsTests.cpp
             tests/render/RenderThreadTests.cpp
+            tests/render/UploadChannelTests.cpp
             tests/render/device/RenderDeviceTests.cpp
             tests/render/device/RenderSlotsTests.cpp)
     target_link_libraries(TechEngineClientTests PRIVATE TechEngine::glad)

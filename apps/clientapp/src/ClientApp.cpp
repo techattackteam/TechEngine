@@ -52,6 +52,8 @@ namespace TechEngine {
     }
 
     void ClientApp::publishFrame(const Scene& scene, const SimulationContext& simulation) {
+        // Before the packet is acquired, so an empty pool cannot hold an upload back.
+        exchangeUploads();
         std::unique_ptr<FramePacket> packet = m_client.acquirePacket();
         if (packet == nullptr) {
             return;
@@ -107,6 +109,14 @@ namespace TechEngine {
 
     bool ClientApp::shouldClose() const {
         return m_client.shouldClose();
+    }
+
+    void ClientApp::exchangeUploads() {
+        m_client.takeFinishedUploads(m_finishedUploads);
+        m_resources.finishUploads(m_finishedUploads);
+        m_resources.drainFrees();
+        m_resources.takeUploads(m_uploadRecords);
+        m_client.sendUploads(m_uploadRecords);
     }
 
     void ClientApp::applyTitle() {
