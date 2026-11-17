@@ -57,7 +57,7 @@ namespace TechEngine {
                 return;
             }
         }
-        TE_ASSERT(false, "Resource type tag not found: {0}", typeTag);
+        TE_CHECK(false, "Resource type tag not found: {0}", typeTag);
     }
 
     bool ResourceCache::isUploaded(StringId typeTag) const {
