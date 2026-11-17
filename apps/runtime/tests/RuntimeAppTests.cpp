@@ -1,4 +1,5 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/base/diagnostics/StoredLogRecord.hpp>
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/SimulationContext.hpp>
 #include <TechEngine/core/camera/Camera.hpp>
@@ -455,11 +456,17 @@ static bool runtimeLogNames(const TechEngineTests::LogCaptureGuard& logs, const 
     return logs.contains(std::format("{:#018x}", id.value()));
 }
 
-static bool runtimeLogPrintsEntity(const TechEngineTests::LogCaptureGuard& logs, const TechEngine::Entity entity, const std::string_view name) {
+static bool runtimeLogPrintsEntity(const TechEngineTests::LogCaptureGuard& logs, const TechEngine::Entity entity, const std::string_view name, const TechEngine::Level level) {
     const std::string indexText = std::format("{}:{}", entity.index, entity.generation);
-    return std::ranges::any_of(logs.getMessages(), [&indexText, name](const std::string& message) {
-        return message.find(indexText) != std::string::npos && message.find(name) != std::string::npos;
+    return std::ranges::any_of(logs.getRecords(), [&indexText, name, level](const TechEngine::StoredLogRecord& record) {
+        return record.level == level && record.message.find(indexText) != std::string::npos && record.message.find(name) != std::string::npos;
     });
+}
+
+static std::size_t runtimeInfoLinesContaining(const TechEngineTests::LogCaptureGuard& logs, const std::string_view text) {
+    return static_cast<std::size_t>(std::ranges::count_if(logs.getRecords(), [text](const TechEngine::StoredLogRecord& record) {
+        return record.level == TechEngine::Level::Info && record.message.find(text) != std::string::npos;
+    }));
 }
 
 static void prepareStartupLoad(RuntimeProbe& runtime) {
@@ -679,7 +686,7 @@ TEST_CASE("the startup load reads the startup scene from the common pack", "[run
     checkStartupScene(runtime.scene());
 }
 
-TEST_CASE("the startup log prints each entity's name beside its index", "[runtime][load][os]") {
+TEST_CASE("the startup log prints each entity's name beside its index at Debug, under one Info summary", "[runtime][load][os]") {
     const TechEngineTests::LogCaptureGuard logs;
     const ScratchDirectory scratch{"runtimeLogNames"};
     const std::vector<std::byte> scene = startupSceneBytes();
@@ -693,9 +700,17 @@ TEST_CASE("the startup log prints each entity's name beside its index", "[runtim
     REQUIRE(roots.size() == 1);
     const std::vector<TechEngine::Entity> children = runtime.scene().getChildren(roots.front());
     REQUIRE(children.size() == 2);
-    CHECK(runtimeLogPrintsEntity(logs, roots.front(), "Parent"));
-    CHECK(runtimeLogPrintsEntity(logs, children[0], "First child"));
-    CHECK(runtimeLogPrintsEntity(logs, children[1], "Second child"));
+    CHECK(runtimeInfoLinesContaining(logs, "Loaded the startup scene") == 1);
+    CHECK(runtimeInfoLinesContaining(logs, "Parent") == 0);
+    CHECK(runtimeInfoLinesContaining(logs, "First child") == 0);
+    CHECK(runtimeInfoLinesContaining(logs, "Second child") == 0);
+#if TE_LOG_ACTIVE_LEVEL <= TE_LOG_LEVEL_DEBUG
+    CHECK(runtimeLogPrintsEntity(logs, roots.front(), "Parent", TechEngine::Level::Debug));
+    CHECK(runtimeLogPrintsEntity(logs, children[0], "First child", TechEngine::Level::Debug));
+    CHECK(runtimeLogPrintsEntity(logs, children[1], "Second child", TechEngine::Level::Debug));
+#else
+    CHECK_FALSE(runtimeLogPrintsEntity(logs, roots.front(), "Parent", TechEngine::Level::Debug));
+#endif
 }
 
 TEST_CASE("the startup load reads a startup scene that ships in the client pack", "[runtime][load][os]") {
@@ -894,7 +909,9 @@ TEST_CASE("the startup load acquires the mesh the startup scene references from 
 
     SECTION("the startup log names the scene and the mesh") {
         CHECK(runtimeLogNames(logs, STARTUP_SCENE_ID));
+#if TE_LOG_ACTIVE_LEVEL <= TE_LOG_LEVEL_DEBUG
         CHECK(runtimeLogNames(logs, TRIANGLE_MESH_ID));
+#endif
     }
 
     SECTION("simulation shutdown releases both, so the cache's shutdown log names neither") {
