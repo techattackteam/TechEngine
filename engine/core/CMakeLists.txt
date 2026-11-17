@@ -1,6 +1,5 @@
 techengine_module(core
-  SOURCES src/Core.cpp
-          src/assets/ImportBlock.cpp
+  SOURCES src/assets/ImportBlock.cpp
           src/assets/PackSource.cpp
           src/camera/Camera.cpp
           src/events/EventRegistry.cpp
@@ -41,8 +40,7 @@ techengine_module(core
           src/systems/SerialExecutor.cpp
           src/systems/TaskGraph.cpp
           src/texture/Texture.cpp
-  HEADERS include/TechEngine/core/Core.hpp
-          include/TechEngine/core/EngineContext.hpp
+  HEADERS include/TechEngine/core/EngineContext.hpp
           include/TechEngine/core/SimulationContext.hpp
           include/TechEngine/core/TimingMetrics.hpp
           include/TechEngine/core/assets/AssetSource.hpp

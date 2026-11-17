@@ -1,13 +1,11 @@
 techengine_module(base
-  SOURCES src/Base.cpp
-          src/diagnostics/Log.cpp
+  SOURCES src/diagnostics/Log.cpp
           src/diagnostics/LogError.cpp
           src/diagnostics/Assert.cpp
           src/diagnostics/StoredLogRecord.cpp
           src/time/Clock.cpp
           src/time/RateCounter.cpp
-  HEADERS include/TechEngine/base/Base.hpp
-          include/TechEngine/base/diagnostics/Log.hpp
+  HEADERS include/TechEngine/base/diagnostics/Log.hpp
           include/TechEngine/base/diagnostics/LogError.hpp
           include/TechEngine/base/diagnostics/Assert.hpp
           include/TechEngine/base/diagnostics/FormatString.hpp
@@ -45,7 +43,6 @@ endif()
 
 if(TE_BUILD_TESTS)
   techengine_test(base SOURCES
-          tests/BaseTests.cpp
           tests/diagnostics/LogTests.cpp
           tests/diagnostics/LogErrorTests.cpp
           tests/diagnostics/LogFallbackTests.cpp

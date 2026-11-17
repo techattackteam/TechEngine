@@ -1,6 +1,5 @@
 techengine_module(platform
-  SOURCES src/Platform.cpp
-          src/ExecutablePath.cpp
+  SOURCES src/ExecutablePath.cpp
           src/input/InputBuffer.cpp
           src/input/InputState.cpp
           src/files/FileAccess.cpp
