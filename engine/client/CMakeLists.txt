@@ -3,6 +3,7 @@ techengine_module(client
         src/ClientError.cpp
         src/render/FrameExtraction.cpp
         src/render/FramePacketPool.cpp
+        src/render/GeometryBuffers.cpp
         src/render/GpuCopies.cpp
         src/render/PacketHistory.cpp
         src/render/PacketMailbox.cpp
@@ -44,6 +45,7 @@ if (TE_BUILD_TESTS)
             tests/ClientErrorTests.cpp
             tests/render/FrameExtractionTests.cpp
             tests/render/FramePacketPoolTests.cpp
+            tests/render/GeometryBuffersTests.cpp
             tests/render/GpuCopiesTests.cpp
             tests/render/PacketMailboxTests.cpp
             tests/render/PacketHistoryTests.cpp
