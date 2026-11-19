@@ -111,8 +111,7 @@ techengine_module(core
           src/scene/SceneAssetRowWriter.hpp
   DEPS    base platform
   LIBS    Jolt                             # authoritative physics (ADR-006 §1)
-          Threads::Threads                 # JobSystem's workers; PUBLIC because the header has std::thread
-  LIBS_PRIVATE tomlplusplus::tomlplusplus)     # config parsing, .cpp-only
+          Threads::Threads)                # JobSystem's workers; PUBLIC because the header has std::thread
 # Jolt is linked (proves it fetches + builds); its headers land with real physics
 # code; the JPH_* config-define contract is settled then, not in the skeleton.
 
