@@ -1,4 +1,5 @@
 #include <TechEngine/core/assets/ImportBlock.hpp>
+#include <TechEngine/core/serialization/BlobHeader.hpp>
 #include <TechEngine/core/serialization/ReadError.hpp>
 #include <TechEngine/core/serialization/Reader.hpp>
 #include <TechEngine/core/serialization/Writer.hpp>
@@ -55,6 +56,29 @@ namespace TechEngine {
         sourceName = std::move(readSourceName);
         settings.scale = readScale;
         settings.upAxis = static_cast<UpAxis>(readUpAxis);
+        return {};
+    }
+
+    void ImportBlock::writeAssetPrologue(Writer& writer, const BlobKind& kind, const ResourceId id) const {
+        writer.writeHeader(kind);
+        writer.write(id.value());
+        write(writer);
+    }
+
+    std::error_code ImportBlock::readAssetPrologue(Reader& reader, const BlobKind& kind, ResourceId& id) {
+        BlobHeader header;
+        reader.readHeader(kind, header);
+        std::uint64_t idValue = 0;
+        reader.read(idValue);
+        if (!reader.ok()) {
+            return reader.error();
+        }
+
+        const std::error_code blockError = read(reader);
+        if (blockError) {
+            return blockError;
+        }
+        id = ResourceId{idValue};
         return {};
     }
 }

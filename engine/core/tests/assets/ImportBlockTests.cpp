@@ -1,4 +1,6 @@
 #include <TechEngine/core/assets/ImportBlock.hpp>
+#include <TechEngine/core/resources/ResourceId.hpp>
+#include <TechEngine/core/serialization/BlobHeader.hpp>
 #include <TechEngine/core/serialization/ReadError.hpp>
 #include <TechEngine/core/serialization/Reader.hpp>
 #include <TechEngine/core/serialization/Writer.hpp>
@@ -11,14 +13,18 @@
 #include <system_error>
 #include <vector>
 
+using TechEngine::BlobKind;
 using TechEngine::ImportBlock;
 using TechEngine::ImportSettings;
 using TechEngine::Reader;
 using TechEngine::ReadError;
+using TechEngine::ResourceId;
 using TechEngine::UpAxis;
 using TechEngine::Writer;
 
 static constexpr std::uint64_t TRAILING_MARKER = 0x747261696C000001;
+static constexpr BlobKind PROLOGUE_KIND{0x4F525054, 3};
+static constexpr ResourceId PROLOGUE_ASSET_ID{0x70726F6C00000001};
 
 static ImportBlock makeRootBlock() {
     ImportBlock block;
@@ -40,6 +46,14 @@ static std::vector<std::byte> writeBlock(const ImportBlock& block) {
     std::vector<std::byte> bytes;
     Writer writer{bytes};
     block.write(writer);
+    return bytes;
+}
+
+static std::vector<std::byte> writePrologue(const ImportBlock& block) {
+    std::vector<std::byte> bytes;
+    Writer writer{bytes};
+    block.writeAssetPrologue(writer, PROLOGUE_KIND, PROLOGUE_ASSET_ID);
+    writer.write(TRAILING_MARKER);
     return bytes;
 }
 
@@ -172,4 +186,58 @@ TEST_CASE("read rejects an import block whose bytes break the format and leaves 
     ImportBlock loaded = makeMeshBlock();
     REQUIRE(loaded.read(reader) == expected);
     CHECK(loaded == makeMeshBlock());
+}
+
+TEST_CASE("an asset prologue written and read back keeps its id and block and stops at the asset's data", "[core][assets][import]") {
+    const std::vector<std::byte> bytes = writePrologue(makeMeshBlock());
+    Reader reader{bytes};
+    ImportBlock loaded;
+    ResourceId id;
+
+    REQUIRE(loaded.readAssetPrologue(reader, PROLOGUE_KIND, id) == std::error_code{});
+
+    CHECK(id == PROLOGUE_ASSET_ID);
+    CHECK(loaded == makeMeshBlock());
+    std::uint64_t marker = 0;
+    reader.read(marker);
+    CHECK(marker == TRAILING_MARKER);
+    CHECK(reader.remaining() == 0);
+}
+
+TEST_CASE("readAssetPrologue rejects another kind, another version or a bad block and leaves the id untouched", "[core][assets][import]") {
+    std::vector<std::byte> bytes = writePrologue(makeMeshBlock());
+    BlobKind kind = PROLOGUE_KIND;
+    std::error_code expected;
+
+    SECTION("another magic") {
+        kind.magic = 0x4F525055;
+        expected = ReadError::BadMagic;
+    }
+
+    SECTION("another version") {
+        kind.version = 4;
+        expected = ReadError::BadVersion;
+    }
+
+    SECTION("bytes cut inside the id") {
+        bytes.resize(TechEngine::BLOB_HEADER_SIZE + sizeof(std::uint64_t) - 1);
+        expected = ReadError::Truncated;
+    }
+
+    SECTION("a block whose byte count disagrees with its fields") {
+        const std::size_t blockStart = TechEngine::BLOB_HEADER_SIZE + sizeof(std::uint64_t);
+        std::uint32_t count = 0;
+        std::memcpy(&count, bytes.data() + blockStart, sizeof(count));
+        count++;
+        std::memcpy(bytes.data() + blockStart, &count, sizeof(count));
+        expected = ReadError::Malformed;
+    }
+
+    Reader reader{bytes};
+    ImportBlock loaded = makeRootBlock();
+    const ResourceId untouched{0x70726F6C000000FF};
+    ResourceId id = untouched;
+    REQUIRE(loaded.readAssetPrologue(reader, kind, id) == expected);
+    CHECK(id == untouched);
+    CHECK(loaded == makeRootBlock());
 }

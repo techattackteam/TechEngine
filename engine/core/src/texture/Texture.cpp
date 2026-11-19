@@ -47,9 +47,7 @@ namespace TechEngine {
     void Texture::write(std::vector<std::byte>& out) const {
         TE_PROFILER_FUNCTION();
         Writer writer{out};
-        writer.writeHeader(TEXTURE_KIND);
-        writer.write(id.value());
-        importBlock.write(writer);
+        importBlock.writeAssetPrologue(writer, TEXTURE_KIND, id);
         writer.write(static_cast<std::uint8_t>(shape));
         writer.write(static_cast<std::uint8_t>(format));
         writer.write(width);
@@ -70,18 +68,11 @@ namespace TechEngine {
     std::error_code Texture::read(const std::span<const std::byte> bytes) {
         TE_PROFILER_FUNCTION();
         Reader reader{bytes};
-        BlobHeader header;
-        reader.readHeader(TEXTURE_KIND, header);
-        std::uint64_t idValue = 0;
-        reader.read(idValue);
-        if (!reader.ok()) {
-            return reader.error();
-        }
-
+        ResourceId readId;
         ImportBlock readImportBlock;
-        const std::error_code importError = readImportBlock.read(reader);
-        if (importError) {
-            return importError;
+        const std::error_code prologueError = readImportBlock.readAssetPrologue(reader, TEXTURE_KIND, readId);
+        if (prologueError) {
+            return prologueError;
         }
 
         std::uint8_t shapeValue = 0;
@@ -134,7 +125,7 @@ namespace TechEngine {
             return ReadError::Malformed;
         }
 
-        id = ResourceId{idValue};
+        id = readId;
         importBlock = std::move(readImportBlock);
         shape = static_cast<TextureShape>(shapeValue);
         format = readFormat;
