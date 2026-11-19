@@ -2,7 +2,6 @@
 
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/base/stringid/StringId.hpp>
-#include <TechEngine/core/assets/AssetSource.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/material/Material.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
@@ -17,6 +16,7 @@
 #include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/serialization/BlobHeader.hpp>
+#include <TechEngine/testing/MemoryAssetSource.hpp>
 
 #include <assets/AssetIndex.hpp>
 #include <assets/AssetTestFiles.hpp>
@@ -31,7 +31,6 @@
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -47,25 +46,6 @@ namespace TechEngineTests {
     inline constexpr TechEngine::ResourceId EDIT_UNKNOWN_ID{0x3E540000000000FF};
     inline constexpr TechEngine::ResourceId EDIT_PAINTED_MESH_ID{0x3E54000000000003};
     inline constexpr TechEngine::ResourceId EDIT_MATERIAL_ID{0x3A7E000000000001};
-
-    class MemoryAssetSource final : public TechEngine::AssetSource {
-    private:
-        std::unordered_map<TechEngine::ResourceId, std::vector<std::byte>> m_assets;
-
-    public:
-        void add(const TechEngine::ResourceId id, std::vector<std::byte> bytes) {
-            m_assets[id] = std::move(bytes);
-        }
-
-        TechEngine::AssetAvailability find(const TechEngine::ResourceId id) const override {
-            return m_assets.contains(id) ? TechEngine::AssetAvailability::Present : TechEngine::AssetAvailability::Unknown;
-        }
-
-        std::error_code read(const TechEngine::ResourceId id, std::vector<std::byte>& out) const override {
-            out = m_assets.at(id);
-            return {};
-        }
-    };
 
     inline TechEngine::ComponentRegistry& registerAssetEditComponents(TechEngine::ComponentRegistry& registry) {
         registerEditComponents(registry);
@@ -162,7 +142,7 @@ namespace TechEngineTests {
             record.side = side;
             record.path = std::string(path);
             index.add(std::move(record));
-            source.add(id, std::move(bytes));
+            source.addAsset(id, std::move(bytes));
         }
 
         static std::vector<std::byte> meshBytes(const TechEngine::ResourceId id, const TechEngine::ResourceId defaultMaterial = TechEngine::ResourceId{}) {

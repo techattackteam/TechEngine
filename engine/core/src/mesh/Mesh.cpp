@@ -38,9 +38,7 @@ namespace TechEngine {
         }
 
         Writer writer{out};
-        writer.writeHeader(MESH_KIND);
-        writer.write(id.value());
-        importBlock.write(writer);
+        importBlock.writeAssetPrologue(writer, MESH_KIND, id);
         writer.write(streams);
         writer.writeSpan(std::span<const Vec3>{positions});
         if ((streams & MESH_STREAM_NORMAL) != 0) {
@@ -66,18 +64,11 @@ namespace TechEngine {
     std::error_code Mesh::read(const std::span<const std::byte> bytes) {
         TE_PROFILER_FUNCTION();
         Reader reader{bytes};
-        BlobHeader header;
-        reader.readHeader(MESH_KIND, header);
-        std::uint64_t idValue = 0;
-        reader.read(idValue);
-        if (!reader.ok()) {
-            return reader.error();
-        }
-
+        ResourceId readId;
         ImportBlock readImportBlock;
-        const std::error_code importError = readImportBlock.read(reader);
-        if (importError) {
-            return importError;
+        const std::error_code prologueError = readImportBlock.readAssetPrologue(reader, MESH_KIND, readId);
+        if (prologueError) {
+            return prologueError;
         }
 
         std::uint32_t streams = 0;
@@ -160,7 +151,7 @@ namespace TechEngine {
             return ReadError::Malformed;
         }
 
-        id = ResourceId{idValue};
+        id = readId;
         importBlock = std::move(readImportBlock);
         positions = std::move(readPositions);
         normals = std::move(readNormals);

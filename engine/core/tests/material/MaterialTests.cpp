@@ -1,5 +1,4 @@
 #include <TechEngine/base/math/Math.hpp>
-#include <TechEngine/core/assets/AssetSource.hpp>
 #include <TechEngine/core/assets/ImportBlock.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/material/Material.hpp>
@@ -11,17 +10,16 @@
 #include <TechEngine/core/serialization/ReadError.hpp>
 #include <TechEngine/core/serialization/Writer.hpp>
 #include <TechEngine/core/texture/Texture.hpp>
+#include <TechEngine/testing/MemoryAssetSource.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstddef>
 #include <cstdint>
 #include <system_error>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
-using TechEngine::AssetAvailability;
 using TechEngine::AssetRef;
 using TechEngine::ImportBlock;
 using TechEngine::ImportSettings;
@@ -113,29 +111,10 @@ static std::vector<std::byte> writeRawMaterial(const RawMaterial& raw) {
     return bytes;
 }
 
-class MaterialLoadSource final : public TechEngine::AssetSource {
-private:
-    std::unordered_map<ResourceId, std::vector<std::byte>> m_assets;
-
-public:
-    void addAsset(const ResourceId id, std::vector<std::byte> bytes) {
-        m_assets[id] = std::move(bytes);
-    }
-
-    AssetAvailability find(const ResourceId id) const override {
-        return m_assets.contains(id) ? AssetAvailability::Present : AssetAvailability::Unknown;
-    }
-
-    std::error_code read(const ResourceId id, std::vector<std::byte>& out) const override {
-        out = m_assets.at(id);
-        return {};
-    }
-};
-
 class MaterialLoadHarness {
 public:
     TechEngine::JobSystem jobs;
-    MaterialLoadSource source;
+    TechEngineTests::MemoryAssetSource source;
     ResourceCache cache{jobs};
 
     MaterialLoadHarness() {

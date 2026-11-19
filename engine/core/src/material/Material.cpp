@@ -16,9 +16,7 @@ namespace TechEngine {
     void Material::write(std::vector<std::byte>& out) const {
         TE_PROFILER_FUNCTION();
         Writer writer{out};
-        writer.writeHeader(MATERIAL_KIND);
-        writer.write(id.value());
-        importBlock.write(writer);
+        importBlock.writeAssetPrologue(writer, MATERIAL_KIND, id);
         writer.write(static_cast<std::uint8_t>(surface));
         writer.write(static_cast<std::uint8_t>(shadingModel));
         writer.write(static_cast<std::uint8_t>(alphaMode));
@@ -44,18 +42,11 @@ namespace TechEngine {
     std::error_code Material::read(const std::span<const std::byte> bytes) {
         TE_PROFILER_FUNCTION();
         Reader reader{bytes};
-        BlobHeader header;
-        reader.readHeader(MATERIAL_KIND, header);
-        std::uint64_t idValue = 0;
-        reader.read(idValue);
-        if (!reader.ok()) {
-            return reader.error();
-        }
-
+        ResourceId readId;
         ImportBlock readImportBlock;
-        const std::error_code importError = readImportBlock.read(reader);
-        if (importError) {
-            return importError;
+        const std::error_code prologueError = readImportBlock.readAssetPrologue(reader, MATERIAL_KIND, readId);
+        if (prologueError) {
+            return prologueError;
         }
 
         std::uint8_t surfaceValue = 0;
@@ -93,7 +84,7 @@ namespace TechEngine {
             return ReadError::Malformed;
         }
 
-        readMaterial.id = ResourceId{idValue};
+        readMaterial.id = readId;
         readMaterial.importBlock = std::move(readImportBlock);
         readMaterial.surface = static_cast<MaterialSurface>(surfaceValue);
         readMaterial.shadingModel = static_cast<MaterialShadingModel>(shadingModelValue);

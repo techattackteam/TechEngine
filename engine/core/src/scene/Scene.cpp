@@ -205,7 +205,7 @@ namespace TechEngine {
     }
 
     bool Scene::removeComponentRaw(const Entity entity, const ComponentTypeId type) {
-        if (m_registry->find(type) == nullptr || isBuiltInComponent(type)) {
+        if (!isRegistered(type) || isBuiltInComponent(type)) {
             return false;
         }
 

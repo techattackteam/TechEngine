@@ -1,7 +1,6 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/base/stringid/StringId.hpp>
-#include <TechEngine/core/assets/AssetSource.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/resources/AssetRef.hpp>
 #include <TechEngine/core/resources/ResourceCache.hpp>
@@ -18,6 +17,7 @@
 #include <TechEngine/core/serialization/Writer.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 #include <TechEngine/testing/LogCapture.hpp>
+#include <TechEngine/testing/MemoryAssetSource.hpp>
 
 #include <scene/SceneTestRegistry.hpp>
 
@@ -33,12 +33,9 @@
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
-using TechEngine::AssetAvailability;
 using TechEngine::AssetRef;
 using TechEngine::ComponentRegistry;
 using TechEngine::Entity;
@@ -356,40 +353,10 @@ TEST_CASE("a scene asset with a broken entity table is Malformed and leaves the 
     REQUIRE(asset.id == ResourceId{});
 }
 
-class SceneLoadSource final : public TechEngine::AssetSource {
-private:
-    std::unordered_map<ResourceId, std::vector<std::byte>> m_assets;
-    std::unordered_set<ResourceId> m_absentForRole;
-
-public:
-    void addAsset(const ResourceId id, std::vector<std::byte> bytes) {
-        m_assets[id] = std::move(bytes);
-    }
-
-    void addAbsentForRole(const ResourceId id) {
-        m_absentForRole.insert(id);
-    }
-
-    AssetAvailability find(const ResourceId id) const override {
-        if (m_assets.contains(id)) {
-            return AssetAvailability::Present;
-        }
-        if (m_absentForRole.contains(id)) {
-            return AssetAvailability::AbsentForRole;
-        }
-        return AssetAvailability::Unknown;
-    }
-
-    std::error_code read(const ResourceId id, std::vector<std::byte>& out) const override {
-        out = m_assets.at(id);
-        return {};
-    }
-};
-
 class SceneLoadHarness {
 public:
     TechEngine::JobSystem jobs;
-    SceneLoadSource source;
+    TechEngineTests::MemoryAssetSource source;
     ResourceCache cache{jobs};
 
     SceneLoadHarness() {

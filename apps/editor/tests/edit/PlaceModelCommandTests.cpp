@@ -404,7 +404,7 @@ TEST_CASE("placing a merged mesh adds one entity whose slot list matches the mes
     mesh.slots = {TechEngine::MeshSlot{"Paint", 0, 3, EDIT_MATERIAL_ID}, TechEngine::MeshSlot{"Glass", 3, 3, ResourceId{}}};
     std::vector<std::byte> bytes;
     mesh.write(bytes);
-    fixture.edit.source.add(MERGED_MESH_ID, std::move(bytes));
+    fixture.edit.source.addAsset(MERGED_MESH_ID, std::move(bytes));
     AssetRecord record;
     record.id = MERGED_MESH_ID;
     record.typeTag = TechEngine::MESH_TYPE_TAG;

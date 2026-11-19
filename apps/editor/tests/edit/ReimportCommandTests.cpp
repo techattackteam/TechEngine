@@ -263,8 +263,8 @@ TEST_CASE("the reload command replaces a mesh behind its live handle and rebuild
     REQUIRE(edit.cache.resolve(handle)->slots.size() == 1);
     REQUIRE(edit.scene.getComponent<MeshRenderer>(entity).slots.size() == 1);
     const ResourceHandle<TechEngine::SceneBytes> sceneHandle = edit.sceneHandle;
-    edit.source.add(EDIT_MESH_ID, twoSlotMeshBytes());
-    edit.source.add(NEW_MATERIAL_ID, newMaterialBytes());
+    edit.source.addAsset(EDIT_MESH_ID, twoSlotMeshBytes());
+    edit.source.addAsset(NEW_MATERIAL_ID, newMaterialBytes());
 
     std::vector<std::string> inFlight{std::string(PAIR_SOURCE), std::string(OTHER_SOURCE)};
 
@@ -304,7 +304,7 @@ TEST_CASE("the reload command reloads nothing while the editor is not Stopped, b
     AssetEditHarness edit;
     const Entity entity = createHoldingMesh(edit, "Crate", EDIT_MESH_ID);
     const ResourceHandle<Mesh> handle = edit.scene.getComponent<MeshRenderer>(entity).mesh.handle;
-    edit.source.add(EDIT_MESH_ID, twoSlotMeshBytes());
+    edit.source.addAsset(EDIT_MESH_ID, twoSlotMeshBytes());
     edit.session.setPlayState(PlayState::Playing);
 
     std::vector<std::string> inFlight{std::string(PAIR_SOURCE)};

@@ -17,9 +17,7 @@ namespace TechEngine {
     void Model::write(std::vector<std::byte>& out) const {
         TE_PROFILER_FUNCTION();
         Writer writer{out};
-        writer.writeHeader(MODEL_KIND);
-        writer.write(id.value());
-        importBlock.write(writer);
+        importBlock.writeAssetPrologue(writer, MODEL_KIND, id);
         writer.write(static_cast<std::uint32_t>(nodes.size()));
         for (const ModelNode& node: nodes) {
             writer.write(node.name);
@@ -45,18 +43,11 @@ namespace TechEngine {
     std::error_code Model::read(const std::span<const std::byte> bytes) {
         TE_PROFILER_FUNCTION();
         Reader reader{bytes};
-        BlobHeader header;
-        reader.readHeader(MODEL_KIND, header);
-        std::uint64_t idValue = 0;
-        reader.read(idValue);
-        if (!reader.ok()) {
-            return reader.error();
-        }
-
+        ResourceId readId;
         ImportBlock readImportBlock;
-        const std::error_code importError = readImportBlock.read(reader);
-        if (importError) {
-            return importError;
+        const std::error_code prologueError = readImportBlock.readAssetPrologue(reader, MODEL_KIND, readId);
+        if (prologueError) {
+            return prologueError;
         }
 
         std::uint32_t nodeCount = 0;
@@ -106,7 +97,7 @@ namespace TechEngine {
             }
         }
 
-        id = ResourceId{idValue};
+        id = readId;
         importBlock = std::move(readImportBlock);
         nodes = std::move(readNodes);
         return {};
