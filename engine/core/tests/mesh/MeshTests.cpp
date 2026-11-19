@@ -1,5 +1,4 @@
 #include <TechEngine/base/math/Math.hpp>
-#include <TechEngine/core/assets/AssetSource.hpp>
 #include <TechEngine/core/assets/ImportBlock.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
@@ -10,6 +9,7 @@
 #include <TechEngine/core/serialization/BlobHeader.hpp>
 #include <TechEngine/core/serialization/ReadError.hpp>
 #include <TechEngine/core/serialization/Writer.hpp>
+#include <TechEngine/testing/MemoryAssetSource.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -17,11 +17,9 @@
 #include <cstdint>
 #include <span>
 #include <system_error>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
-using TechEngine::AssetAvailability;
 using TechEngine::ImportBlock;
 using TechEngine::ImportSettings;
 using TechEngine::Mesh;
@@ -99,29 +97,10 @@ static std::vector<std::byte> writeMeshWithStreamFlags(const std::uint32_t strea
     return bytes;
 }
 
-class MeshLoadSource final : public TechEngine::AssetSource {
-private:
-    std::unordered_map<ResourceId, std::vector<std::byte>> m_assets;
-
-public:
-    void addAsset(const ResourceId id, std::vector<std::byte> bytes) {
-        m_assets[id] = std::move(bytes);
-    }
-
-    AssetAvailability find(const ResourceId id) const override {
-        return m_assets.contains(id) ? AssetAvailability::Present : AssetAvailability::Unknown;
-    }
-
-    std::error_code read(const ResourceId id, std::vector<std::byte>& out) const override {
-        out = m_assets.at(id);
-        return {};
-    }
-};
-
 class MeshLoadHarness {
 public:
     TechEngine::JobSystem jobs;
-    MeshLoadSource source;
+    TechEngineTests::MemoryAssetSource source;
     ResourceCache cache{jobs};
 
     MeshLoadHarness() {
