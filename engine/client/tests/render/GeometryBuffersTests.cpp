@@ -1,8 +1,10 @@
 #include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/client/ClientError.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
 
 #include <render/GeometryBuffers.hpp>
+#include <render/device/RenderDevice.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -238,4 +240,54 @@ TEST_CASE("a mesh with no vertices is placed with no range and no device", "[cli
     REQUIRE(error == std::error_code{});
     REQUIRE(range == GeometryRange{});
     REQUIRE(geometry.getBlockCount() == 0);
+}
+
+TEST_CASE("a mesh with vertices but no indices is placed with no range and no device", "[client][render][geometry]") {
+    GeometryBuffers geometry{SMALL_BLOCK};
+    Mesh mesh;
+    mesh.positions = {Vec3{0.0F, 0.0F, 0.0F}, Vec3{1.0F, 0.0F, 0.0F}, Vec3{0.0F, 1.0F, 0.0F}};
+    GeometryRange range;
+    range.vertexCount = 99;
+
+    const std::error_code error = geometry.place(mesh, range);
+
+    REQUIRE(error == std::error_code{});
+    REQUIRE(range == GeometryRange{});
+    REQUIRE(geometry.getBlockCount() == 0);
+}
+
+TEST_CASE("allocating zero vertices or zero indices returns an empty range and adds no block", "[client][render][geometry]") {
+    GeometryBuffers geometry{SMALL_BLOCK};
+
+    const GeometryRange noVertices = geometry.allocate(0, 30);
+    const GeometryRange noIndices = geometry.allocate(10, 0);
+
+    REQUIRE(noVertices == GeometryRange{});
+    REQUIRE(noIndices == GeometryRange{});
+    REQUIRE(geometry.getBlockCount() == 0);
+}
+
+TEST_CASE("freeing a range in a block that does not exist fires a check and changes nothing", "[client][render][geometry]") {
+    const TechEngineTests::AssertHandlerGuard guard;
+    GeometryBuffers geometry{SMALL_BLOCK};
+    const GeometryRange live = geometry.allocate(10, 30);
+    GeometryRange stray = live;
+    stray.block = 5;
+
+    geometry.free(stray);
+    const GeometryRange next = geometry.allocate(10, 30);
+
+    REQUIRE(TechEngineTests::g_fired.size() == 1);
+    REQUIRE(geometry.getBlockCount() == 1);
+    REQUIRE_FALSE(rangesOverlap(next, live));
+}
+
+TEST_CASE("a first block the device refuses fails initialize with the device's error and creates nothing", "[client][render][geometry]") {
+    TechEngine::RenderDevice device;
+    GeometryBuffers geometry{GeometryCapacity{0, 0}};
+
+    const std::error_code error = geometry.initialize(device);
+
+    REQUIRE(error == TechEngine::ClientError::InvalidRenderDescription);
+    REQUIRE(device.getLiveObjectCount() == 0);
 }

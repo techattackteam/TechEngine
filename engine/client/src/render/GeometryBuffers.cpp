@@ -1,6 +1,5 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
-#include <TechEngine/client/ClientError.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 
 #include <render/GeometryBuffers.hpp>
@@ -25,19 +24,11 @@ namespace TechEngine {
     }
 
     std::error_code GeometryBuffers::place(const Mesh& mesh, GeometryRange& out) {
-        if (mesh.positions.empty()) {
+        if (mesh.positions.empty() || mesh.indices.empty()) {
             out = {};
             return {};
         }
-        if (mesh.indices.empty()) {
-            out = {};
-            return ClientError::InvalidRenderDescription;
-        }
         out = allocate(static_cast<std::uint32_t>(mesh.positions.size()), static_cast<std::uint32_t>(mesh.indices.size()));
-        if (out.vertexCount == 0 || out.indexCount == 0) {
-            out = {};
-            return ClientError::InvalidRenderDescription;
-        }
         GeometryBlock& block = m_blocks[out.block];
         if (!block.positionsBuffer.valid()) {
             const std::error_code blockError = createBlockBuffers(block);

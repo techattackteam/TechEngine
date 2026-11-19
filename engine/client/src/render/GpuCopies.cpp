@@ -10,7 +10,7 @@ namespace TechEngine {
         return m_geometry.initialize(device);
     }
 
-    void GpuCopies::apply(std::span<const ResourceUploadRecord> records, std::vector<FinishedUpload>& finished) {
+    void GpuCopies::apply(const std::span<const ResourceUploadRecord> records, std::vector<FinishedUpload>& finished) {
         for (const ResourceUploadRecord& record: records) {
             if (record.kind == ResourceUploadKind::Upload) {
                 GpuCopy copy;
