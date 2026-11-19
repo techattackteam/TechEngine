@@ -14,6 +14,7 @@
 #include <vector>
 
 using TechEngine::FinishedUpload;
+using TechEngine::GeometryRange;
 using TechEngine::GpuCopies;
 using TechEngine::GpuCopy;
 using TechEngine::Material;
@@ -166,6 +167,20 @@ TEST_CASE("a reused slot index with a new generation is a separate copy from the
     REQUIRE(oldCopy->id == MESH_ID);
     REQUIRE_FALSE(newCopy->released);
     REQUIRE(newCopy->id == UNRELATED_ID);
+}
+
+TEST_CASE("a mesh with no vertices uploads before initialize and its copy holds no geometry", "[client][render][upload]") {
+    GpuCopies copies;
+    const Mesh mesh{};
+    const std::vector<ResourceUploadRecord> records{uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &mesh, 3)};
+    std::vector<FinishedUpload> finished;
+
+    copies.apply(records, finished);
+
+    REQUIRE(finished == std::vector<FinishedUpload>{FinishedUpload{MESH_SLOT, 3}});
+    const GpuCopy* copy = copies.findCopy(MESH_SLOT);
+    REQUIRE(copy != nullptr);
+    REQUIRE(copy->geometry == GeometryRange{});
 }
 
 TEST_CASE("a slot that never had an upload has no copy", "[client][render][upload]") {

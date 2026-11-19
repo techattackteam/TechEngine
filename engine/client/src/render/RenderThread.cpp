@@ -100,6 +100,7 @@ namespace TechEngine {
     void RenderThread::threadMain(const DedicatedThreadContext& context, const Clock& clock, Window& window, const InputBuffer& input, ImGuiHook* imguiHook) {
         bool contextClaimed = false;
         bool imguiStarted = false;
+        GpuCopies copies;
         std::exception_ptr failure;
         try {
             window.makeContextCurrent();
@@ -113,9 +114,8 @@ namespace TechEngine {
                 .core46 = GLAD_GL_VERSION_4_6 != 0,
                 .bindlessTextures = GLAD_GL_ARB_bindless_texture != 0,
             };
-            if (meetsGlRequirements(glSupport) && m_renderer.initialize(m_device)) {
+            if (meetsGlRequirements(glSupport) && m_renderer.initialize(m_device) && !copies.initialize(m_device)) {
                 PacketHistory history{m_pool};
-                GpuCopies copies;
                 std::vector<ResourceUploadRecord> uploadRecords;
                 std::vector<FinishedUpload> finishedUploads;
                 FrameView frame;
@@ -177,6 +177,7 @@ namespace TechEngine {
             if (imguiStarted) {
                 imguiHook->stop();
             }
+            copies.shutdown();
             m_renderer.shutdown();
             m_device.shutdown();
             window.releaseContext();

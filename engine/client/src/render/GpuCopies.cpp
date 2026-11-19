@@ -6,6 +6,10 @@
 #include <render/GpuCopies.hpp>
 
 namespace TechEngine {
+    std::error_code GpuCopies::initialize(RenderDevice& device) {
+        return m_geometry.initialize(device);
+    }
+
     void GpuCopies::apply(std::span<const ResourceUploadRecord> records, std::vector<FinishedUpload>& finished) {
         for (const ResourceUploadRecord& record: records) {
             if (record.kind == ResourceUploadKind::Upload) {
@@ -43,8 +47,17 @@ namespace TechEngine {
         return &it->second;
     }
 
-    void GpuCopies::uploadMesh(const ResourceUploadRecord&, GpuCopy&) {
-        // TODO(S11-T7): place the mesh's streams in the shared geometry buffers.
+    void GpuCopies::shutdown() {
+        m_geometry.shutdown();
+        m_copies.clear();
+    }
+
+    void GpuCopies::uploadMesh(const ResourceUploadRecord& record, GpuCopy& copy) {
+        const Mesh& mesh = *static_cast<const Mesh*>(record.payload);
+        const std::error_code error = m_geometry.place(mesh, copy.geometry);
+        if (error) {
+            TE_LOGGER_ERROR("GpuCopies: mesh {0:#018x} was not placed in the geometry buffers: {1}", record.id.value(), error.message());
+        }
     }
 
     void GpuCopies::uploadTexture(const ResourceUploadRecord&, GpuCopy&) {
