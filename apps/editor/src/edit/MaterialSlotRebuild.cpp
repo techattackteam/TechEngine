@@ -9,7 +9,6 @@
 
 #include <edit/MaterialSlotRebuild.hpp>
 
-#include <cstddef>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -51,10 +50,12 @@ namespace TechEngine {
     }
 
     void rebuildMaterialSlots(Scene& scene, ResourceCache& cache, const ResourceHandle<SceneBytes> sceneHandle) {
-        std::vector<Entity> entities = scene.getRoots();
-        for (std::size_t index = 0; index < entities.size(); index++) {
-            const std::vector<Entity> children = scene.getChildren(entities[index]);
-            entities.insert(entities.end(), children.begin(), children.end());
+        std::vector<Entity> entities;
+        if (scene.isRegistered(componentTypeId<MeshRenderer>())) {
+            auto query = scene.query<Write<>, Read<MeshRenderer>>();
+            query.each([&entities](const Entity entity, const MeshRenderer&) {
+                entities.push_back(entity);
+            });
         }
         rebuildMaterialSlots(scene, cache, sceneHandle, entities);
     }
