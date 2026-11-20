@@ -17,6 +17,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <glad/gl.h>
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -123,8 +124,8 @@ struct DeviceTriangleScene {
     std::error_code error;
 
     void create(TechEngine::RenderDevice& device, const char* fragmentSource) {
-        const std::error_code colorError = device.createTexture({TARGET_SIZE, TARGET_SIZE, 1, TechEngine::TextureFormat::Rgba8}, color);
-        const std::error_code depthError = device.createTexture({TARGET_SIZE, TARGET_SIZE, 1, TechEngine::TextureFormat::Depth32F}, depth);
+        const std::error_code colorError = device.createTexture({TARGET_SIZE, TARGET_SIZE, 1, TechEngine::GpuTextureFormat::Rgba8}, color);
+        const std::error_code depthError = device.createTexture({TARGET_SIZE, TARGET_SIZE, 1, TechEngine::GpuTextureFormat::Depth32F}, depth);
         const std::error_code targetError = device.createRenderTarget({color, depth}, target);
         const std::error_code vertexError = device.createBuffer({sizeof(TRIANGLE_VERTICES), TechEngine::BufferUsage::Static, std::as_bytes(std::span{TRIANGLE_VERTICES})}, vertices);
         const std::error_code indexError = device.createBuffer({sizeof(TRIANGLE_INDICES), TechEngine::BufferUsage::Static, std::as_bytes(std::span{TRIANGLE_INDICES})}, indices);
@@ -230,13 +231,13 @@ TEST_CASE("A description the device cannot build is refused with InvalidRenderDe
         TechEngine::ProgramHandle program;
         const std::error_code programError = device.createProgram({POSITION_VERTEX_SOURCE, WHITE_FRAGMENT_SOURCE}, program);
         TechEngine::TextureHandle small;
-        const std::error_code smallError = device.createTexture({32, 32, 1, TechEngine::TextureFormat::Rgba8}, small);
+        const std::error_code smallError = device.createTexture({32, 32, 1, TechEngine::GpuTextureFormat::Rgba8}, small);
         TechEngine::TextureHandle color;
-        const std::error_code colorError = device.createTexture({TARGET_SIZE, TARGET_SIZE, 1, TechEngine::TextureFormat::Rgba8}, color);
+        const std::error_code colorError = device.createTexture({TARGET_SIZE, TARGET_SIZE, 1, TechEngine::GpuTextureFormat::Rgba8}, color);
         TechEngine::TextureHandle depth;
-        const std::error_code depthError = device.createTexture({TARGET_SIZE, TARGET_SIZE, 1, TechEngine::TextureFormat::Depth32F}, depth);
+        const std::error_code depthError = device.createTexture({TARGET_SIZE, TARGET_SIZE, 1, TechEngine::GpuTextureFormat::Depth32F}, depth);
         TechEngine::TextureHandle stale;
-        const std::error_code staleError = device.createTexture({TARGET_SIZE, TARGET_SIZE, 1, TechEngine::TextureFormat::Rgba8}, stale);
+        const std::error_code staleError = device.createTexture({TARGET_SIZE, TARGET_SIZE, 1, TechEngine::GpuTextureFormat::Rgba8}, stale);
         device.destroyTexture(stale);
         if (programError || smallError || colorError || depthError || staleError) {
             results.push_back(programError ? programError : smallError ? smallError : colorError ? colorError : depthError ? depthError : staleError);
@@ -253,9 +254,9 @@ TEST_CASE("A description the device cannot build is refused with InvalidRenderDe
         anyHandleSet = anyHandleSet || buffer.valid();
 
         TechEngine::TextureHandle texture;
-        results.push_back(device.createTexture({0, TARGET_SIZE, 1, TechEngine::TextureFormat::Rgba8}, texture));
-        results.push_back(device.createTexture({TARGET_SIZE, -1, 1, TechEngine::TextureFormat::Rgba8}, texture));
-        results.push_back(device.createTexture({TARGET_SIZE, TARGET_SIZE, 0, TechEngine::TextureFormat::Rgba8}, texture));
+        results.push_back(device.createTexture({0, TARGET_SIZE, 1, TechEngine::GpuTextureFormat::Rgba8}, texture));
+        results.push_back(device.createTexture({TARGET_SIZE, -1, 1, TechEngine::GpuTextureFormat::Rgba8}, texture));
+        results.push_back(device.createTexture({TARGET_SIZE, TARGET_SIZE, 0, TechEngine::GpuTextureFormat::Rgba8}, texture));
         anyHandleSet = anyHandleSet || texture.valid();
 
         TechEngine::PipelineHandle pipeline;
@@ -552,16 +553,16 @@ TEST_CASE("readTexture returns Rgba16F as floats and Depth32F as one float per p
     constexpr int SIZE = 8;
     constexpr std::size_t PIXELS = static_cast<std::size_t>(SIZE) * SIZE;
     std::error_code setupError;
-    std::vector<std::byte> colorBytes(PIXELS * TechEngine::getReadBytesPerPixel(TechEngine::TextureFormat::Rgba16F));
-    std::vector<std::byte> depthBytes(PIXELS * TechEngine::getReadBytesPerPixel(TechEngine::TextureFormat::Depth32F));
+    std::vector<std::byte> colorBytes(PIXELS * TechEngine::getReadBytesPerPixel(TechEngine::GpuTextureFormat::Rgba16F));
+    std::vector<std::byte> depthBytes(PIXELS * TechEngine::getReadBytesPerPixel(TechEngine::GpuTextureFormat::Depth32F));
     unsigned int error = GL_NO_ERROR;
     const bool loaded = runOnContext(window, [&] {
         TechEngine::RenderDevice device;
         TechEngine::TextureHandle color;
         TechEngine::TextureHandle depth;
         TechEngine::RenderTargetHandle target;
-        const std::error_code colorError = device.createTexture({SIZE, SIZE, 1, TechEngine::TextureFormat::Rgba16F}, color);
-        const std::error_code depthError = device.createTexture({SIZE, SIZE, 1, TechEngine::TextureFormat::Depth32F}, depth);
+        const std::error_code colorError = device.createTexture({SIZE, SIZE, 1, TechEngine::GpuTextureFormat::Rgba16F}, color);
+        const std::error_code depthError = device.createTexture({SIZE, SIZE, 1, TechEngine::GpuTextureFormat::Depth32F}, depth);
         const std::error_code targetError = device.createRenderTarget({color, depth}, target);
         setupError = colorError ? colorError : depthError ? depthError : targetError;
         if (!setupError) {
@@ -680,5 +681,77 @@ TEST_CASE("A stale handle or a call out of order is caught by a check and reache
     CHECK(firedAfterEachStep[9] == firedAfterEachStep[8]);
     CHECK(firedAfterEachStep[10] == firedAfterEachStep[9] + 1);
     CHECK(firedAfterEachStep[11] == firedAfterEachStep[10] + 1);
+    CHECK(error == GL_NO_ERROR);
+}
+
+TEST_CASE("An asset texture takes every level, is made resident once, and is refused as a render target's colour", "[client][render][window][gpu]") {
+    const TechEngineTests::AssertHandlerGuard guard;
+    const TechEngineTests::WindowTerminateGuard scope;
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
+    TechEngine::Window window;
+    REQUIRE(window.open(320, 240, "Device asset texture test") == std::error_code{});
+
+    constexpr int SIZE = 8;
+    constexpr int LEVELS = 4;
+    constexpr std::size_t BC7_BLOCK_BYTES = 16;
+    std::error_code createError;
+    std::error_code targetError;
+    std::uint64_t handleBeforeResidency = 1;
+    std::uint64_t handle = 0;
+    std::uint64_t handleAfterSecondCall = 0;
+    bool resident = false;
+    std::size_t checksAfterUpload = 0;
+    std::size_t checksAfterBadLevel = 0;
+    std::size_t checksAfterBadSize = 0;
+    std::size_t checksAfterBadFormat = 0;
+    std::size_t checksAfterSecondCall = 0;
+    unsigned int error = GL_NO_ERROR;
+    const bool loaded = runOnContext(window, [&] {
+        TechEngine::RenderDevice device;
+        TechEngine::TextureHandle texture;
+        createError = device.createTexture({SIZE, SIZE, LEVELS, TechEngine::GpuTextureFormat::Bc7Srgb}, texture);
+        if (!createError) {
+            for (std::uint32_t level = 0; level < LEVELS; level++) {
+                const int side = std::max(1, SIZE >> level);
+                const std::size_t blocks = static_cast<std::size_t>((side + 3) / 4) * static_cast<std::size_t>((side + 3) / 4);
+                const std::vector<std::byte> bytes(blocks * BC7_BLOCK_BYTES);
+                device.updateTexture(texture, level, bytes);
+            }
+            checksAfterUpload = TechEngineTests::g_fired.size();
+            const std::vector<std::byte> block(BC7_BLOCK_BYTES);
+            device.updateTexture(texture, LEVELS, block);
+            checksAfterBadLevel = TechEngineTests::g_fired.size();
+            device.updateTexture(texture, 0, {});
+            checksAfterBadSize = TechEngineTests::g_fired.size();
+            TechEngine::TextureHandle runtimeTexture;
+            device.createTexture({SIZE, SIZE, 1, TechEngine::GpuTextureFormat::Rgba8}, runtimeTexture);
+            device.updateTexture(runtimeTexture, 0, std::vector<std::byte>(SIZE * SIZE * 4));
+            checksAfterBadFormat = TechEngineTests::g_fired.size();
+            device.destroyTexture(runtimeTexture);
+            handleBeforeResidency = device.getBindlessHandle(texture);
+            device.makeTextureResident(texture);
+            handle = device.getBindlessHandle(texture);
+            resident = handle != 0 && glIsTextureHandleResidentARB(handle) == GL_TRUE;
+            device.makeTextureResident(texture);
+            checksAfterSecondCall = TechEngineTests::g_fired.size();
+            handleAfterSecondCall = device.getBindlessHandle(texture);
+            TechEngine::RenderTargetHandle target;
+            targetError = device.createRenderTarget({texture, TechEngine::TextureHandle{}}, target);
+        }
+        device.shutdown();
+        error = glGetError();
+    });
+
+    REQUIRE(loaded);
+    REQUIRE(createError == std::error_code{});
+    CHECK(checksAfterUpload == 0);
+    CHECK(checksAfterBadLevel == 1);
+    CHECK(checksAfterBadSize == 2);
+    CHECK(checksAfterBadFormat == 3);
+    CHECK(handleBeforeResidency == 0);
+    CHECK(resident);
+    CHECK(checksAfterSecondCall == 4);
+    CHECK(handleAfterSecondCall == handle);
+    CHECK(targetError == TechEngine::ClientError::InvalidRenderDescription);
     CHECK(error == GL_NO_ERROR);
 }

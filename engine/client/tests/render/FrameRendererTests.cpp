@@ -143,7 +143,7 @@ TEST_CASE("Frame renderer clears, draws, redraws and resizes through the device"
             TechEngine::RenderDevice device;
             TechEngine::TextureHandle color;
             TechEngine::RenderTargetHandle target;
-            const std::error_code colorError = device.createTexture({IMAGE_SIZE, IMAGE_SIZE, 1, TechEngine::TextureFormat::Rgba8}, color);
+            const std::error_code colorError = device.createTexture({IMAGE_SIZE, IMAGE_SIZE, 1, TechEngine::GpuTextureFormat::Rgba8}, color);
             const std::error_code targetError = device.createRenderTarget({color, TechEngine::TextureHandle{}}, target);
             targetCreated = !colorError && !targetError;
 

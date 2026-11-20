@@ -5,6 +5,7 @@ techengine_module(client
         src/render/FramePacketPool.cpp
         src/render/GeometryBuffers.cpp
         src/render/GpuCopies.cpp
+        src/render/MaterialBuffer.cpp
         src/render/PacketHistory.cpp
         src/render/PacketMailbox.cpp
         src/render/FrameRenderer.cpp
@@ -12,6 +13,8 @@ techengine_module(client
         src/render/RenderThread.cpp
         src/render/UploadChannel.cpp
         src/render/device/RenderDevice.cpp
+        src/render/device/material/Material.cpp
+        src/render/device/texture/Texture.cpp
         HEADERS include/TechEngine/client/Client.hpp
         include/TechEngine/client/ClientError.hpp
         src/render/PacketHistory.hpp
@@ -21,6 +24,7 @@ techengine_module(client
         src/render/FramePacketPool.hpp
         src/render/FrameView.hpp
         src/render/GpuCopies.hpp
+        src/render/MaterialBuffer.hpp
         src/render/PacketMailbox.hpp
         src/render/FrameRenderer.hpp
         src/render/GlRequirements.hpp
@@ -31,6 +35,7 @@ techengine_module(client
         src/render/device/RenderHandle.hpp
         src/render/device/RenderSlots.hpp
         src/render/device/buffer/Buffer.hpp
+        src/render/device/material/Material.hpp
         src/render/device/pass/RenderPass.hpp
         src/render/device/pipeline/Pipeline.hpp
         src/render/device/pipeline/VertexLayout.hpp
@@ -47,6 +52,7 @@ if (TE_BUILD_TESTS)
             tests/render/FramePacketPoolTests.cpp
             tests/render/GeometryBuffersTests.cpp
             tests/render/GpuCopiesTests.cpp
+            tests/render/MaterialBufferTests.cpp
             tests/render/PacketMailboxTests.cpp
             tests/render/PacketHistoryTests.cpp
             tests/render/FrameRendererTests.cpp

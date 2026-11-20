@@ -118,11 +118,15 @@ namespace TechEngine {
             }
             if (i < mesh.tangents.size()) {
                 attributes.tangent = mesh.tangents[i];
+                // Flipping V below reverses the bitangent, and w is its sign.
+                attributes.tangent.w = -attributes.tangent.w;
             } else {
                 attributes.tangent = {1.0f, 0.0f, 0.0f, 1.0f};
             }
             if (i < mesh.uv0.size()) {
                 attributes.uv0 = mesh.uv0[i];
+                // Texture rows are stored top row first, and the mesh's V is 0 at the bottom of the picture.
+                attributes.uv0.y = 1.0f - attributes.uv0.y;
             } else {
                 attributes.uv0 = {0.0f, 0.0f};
             }
