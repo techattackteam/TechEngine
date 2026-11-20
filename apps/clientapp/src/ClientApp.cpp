@@ -1,6 +1,7 @@
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/client/render/FrameExtraction.hpp>
 #include <TechEngine/client/render/FramePacket.hpp>
+#include <TechEngine/client/render/RenderView.hpp>
 #include <TechEngine/clientapp/ClientApp.hpp>
 
 #include <cstdint>
@@ -49,6 +50,10 @@ namespace TechEngine {
     void ClientApp::setTitle(std::string title) {
         m_title = std::move(title);
         applyTitle();
+    }
+
+    void ClientApp::setViews(const std::span<const ViewRequest> views) {
+        m_client.setViews(views);
     }
 
     void ClientApp::publishFrame(const Scene& scene, const SimulationContext& simulation) {

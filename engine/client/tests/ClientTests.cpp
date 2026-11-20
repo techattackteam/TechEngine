@@ -1,4 +1,6 @@
 #include <TechEngine/client/Client.hpp>
+#include <TechEngine/client/render/ImGuiHook.hpp>
+#include <TechEngine/client/render/RenderView.hpp>
 #include <TechEngine/platform/input/InputBuffer.hpp>
 #include <TechEngine/platform/window/WindowError.hpp>
 #include <TechEngine/testing/EngineServices.hpp>
@@ -8,6 +10,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <system_error>
 #include <thread>
@@ -97,4 +100,31 @@ TEST_CASE("Client hands its ImGui hook to the render thread and exposes its wind
     CHECK(calls.front().name == "start");
     CHECK(calls.back().name == "stop");
     CHECK(calls.front().thread != std::this_thread::get_id());
+}
+
+TEST_CASE("Client hands main's views to the render thread, which names each view's texture to the ImGui hook", "[client][view][window][gpu]") {
+    TechEngineTests::EngineServices services;
+    TechEngine::InputBuffer input{services.clock};
+    TechEngineTests::RecordingImGuiHook hook;
+    TechEngine::Client client;
+    REQUIRE(client.start(services.engine, input, 320, 240, "Client views test", {}, &hook) == std::error_code{});
+    REQUIRE(hook.waitForDraws(1));
+
+    TechEngine::ViewRequest view;
+    view.token = TechEngine::VIEW_TEXTURE_TOKEN_BIT | 1;
+    view.width = 64;
+    view.height = 48;
+    view.visible = true;
+    const std::vector<TechEngine::ViewRequest> views{view};
+    client.setViews(views);
+    const std::size_t seen = hook.calls().size();
+    const bool drew = hook.waitForDraws(seen + 2);
+    const std::vector<TechEngineTests::ImGuiHookCall> calls = hook.calls();
+    client.stop();
+
+    REQUIRE(drew);
+    const std::vector<TechEngine::ImGuiViewTexture>& textures = calls.back().viewTextures;
+    REQUIRE(textures.size() == 1);
+    CHECK(textures.front().token == view.token);
+    CHECK(textures.front().nativeTexture != 0);
 }

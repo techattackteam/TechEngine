@@ -151,6 +151,15 @@ namespace TechEngine {
         return gpuTexture->bindlessHandle;
     }
 
+    std::uint64_t RenderDevice::getNativeTexture(const TextureHandle texture) const {
+        const GpuTexture* gpuTexture = m_textures.find(texture);
+        TE_CHECK(gpuTexture != nullptr, "RenderDevice::getNativeTexture called with a stale or invalid handle");
+        if (gpuTexture == nullptr) {
+            return 0;
+        }
+        return gpuTexture->id;
+    }
+
     void RenderDevice::readTexture(const TextureHandle handle, const std::span<std::byte> out) const {
         const GpuTexture* texture = m_textures.find(handle);
         TE_CHECK(texture != nullptr, "RenderDevice::readTexture called with a stale or invalid handle");
@@ -459,6 +468,8 @@ namespace TechEngine {
             return;
         }
         glDisable(GL_SCISSOR_TEST);
+        // Code outside the device, such as ImGui's backend, draws into whatever is bound and never binds the window itself.
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         m_inPass = false;
     }
 #pragma endregion

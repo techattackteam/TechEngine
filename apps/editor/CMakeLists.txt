@@ -36,12 +36,14 @@ techengine_app(editor
           src/ui/EditorTheme.cpp
           src/ui/ImGuiBridge.cpp
           src/ui/PanelsManager.cpp
+          src/ui/ViewTextureSwap.cpp
           src/ui/panels/ConsolePanel.cpp
           src/ui/panels/GameViewPanel.cpp
           src/ui/panels/HierarchyPanel.cpp
           src/ui/panels/InspectorPanel.cpp
           src/ui/panels/Panel.cpp
           src/ui/panels/SceneViewPanel.cpp
+          src/ui/panels/ViewPanel.cpp
           src/ui/widgets/DragControls.cpp
           src/ui/widgets/PropertyTable.cpp
           src/ui/widgets/TextEditField.cpp
@@ -79,12 +81,14 @@ techengine_app(editor
           src/ui/EditorTheme.hpp
           src/ui/ImGuiBridge.hpp
           src/ui/PanelsManager.hpp
+          src/ui/ViewTextureSwap.hpp
           src/ui/panels/ConsolePanel.hpp
           src/ui/panels/GameViewPanel.hpp
           src/ui/panels/HierarchyPanel.hpp
           src/ui/panels/InspectorPanel.hpp
           src/ui/panels/Panel.hpp
           src/ui/panels/SceneViewPanel.hpp
+          src/ui/panels/ViewPanel.hpp
           src/ui/widgets/DragControls.hpp
           src/ui/widgets/PropertyTable.hpp
           src/ui/widgets/TextEditField.hpp
@@ -120,7 +124,8 @@ techengine_app(editor
           tests/edit/ReimportCommandTests.cpp
           tests/edit/SaveSceneCommandTests.cpp
           tests/project/ProjectErrorTests.cpp
-          tests/project/ProjectTests.cpp)
+          tests/project/ProjectTests.cpp
+          tests/ui/ViewTextureSwapTests.cpp)
 
 # On the object library, so the editor's tests can export the dev project too.
 target_compile_definitions(te_editor_objects PUBLIC

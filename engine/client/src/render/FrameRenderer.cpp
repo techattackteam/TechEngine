@@ -158,21 +158,37 @@ namespace TechEngine {
         return true;
     }
 
-    void FrameRenderer::draw(const FrameView& frame, const GpuCopies& copies, const RenderTargetHandle target, const RenderExtent& extent) {
-        if (m_device == nullptr || extent.width == 0 || extent.height == 0) {
+    void FrameRenderer::prepare(const FrameView& frame, const GpuCopies& copies) {
+        m_prepared = false;
+        if (m_device == nullptr) {
+            return;
+        }
+        collectDraws(frame, copies);
+        m_drawList.build();
+        if (m_drawList.getBatches().empty()) {
+            return;
+        }
+        const std::error_code writeError = writeInstanceStreams(frame);
+        if (writeError) {
+            TE_LOGGER_ERROR("The forward pass skipped a frame because a per-frame buffer was not written: {0}", writeError.message());
+            return;
+        }
+        m_prepared = true;
+    }
+
+    void FrameRenderer::draw(const FrameView& frame, const GpuCopies& copies, const ViewDraw& view) {
+        if (m_device == nullptr || view.extent.width == 0 || view.extent.height == 0) {
             return;
         }
 
-        m_device->beginRenderPass(RenderPassDescription{target, extent, LoadAction::Clear, frame.clearColor, StoreAction::Store, LoadAction::Clear, 1.0F});
+        m_device->beginRenderPass(RenderPassDescription{view.target, view.extent, LoadAction::Clear, frame.clearColor, StoreAction::Store, LoadAction::Clear, 1.0F});
 
-        if (frame.hasCamera) {
-            collectDraws(frame, copies);
-            m_drawList.build();
-        }
-        if (frame.hasCamera && !m_drawList.getBatches().empty()) {
-            const std::error_code writeError = writeFrameStreams(frame, extent);
-            if (writeError) {
-                TE_LOGGER_ERROR("The forward pass skipped a frame because a per-frame buffer was not written: {0}", writeError.message());
+        if (view.camera != nullptr && m_prepared) {
+            ForwardFrameUniforms uniforms;
+            uniforms.viewProjection = getViewProjection(*view.camera, view.extent);
+            const std::error_code uniformsError = writeStream(m_frameUniforms, std::as_bytes(std::span{&uniforms, 1}));
+            if (uniformsError) {
+                TE_LOGGER_ERROR("The forward pass skipped a view because its uniforms were not written: {0}", uniformsError.message());
                 m_device->endRenderPass();
                 return;
             }
@@ -222,6 +238,7 @@ namespace TechEngine {
             m_forwardProgram = {};
         }
         m_drawList.clear();
+        m_prepared = false;
         m_device = nullptr;
     }
 
@@ -260,13 +277,7 @@ namespace TechEngine {
         }
     }
 
-    std::error_code FrameRenderer::writeFrameStreams(const FrameView& frame, const RenderExtent& extent) {
-        ForwardFrameUniforms uniforms;
-        uniforms.viewProjection = getViewProjection(frame.camera, extent);
-        const std::error_code uniformsError = writeStream(m_frameUniforms, std::as_bytes(std::span{&uniforms, 1}));
-        if (uniformsError) {
-            return uniformsError;
-        }
+    std::error_code FrameRenderer::writeInstanceStreams(const FrameView& frame) {
         const std::error_code worldsError = writeStream(m_instanceWorlds, std::as_bytes(std::span{frame.instanceWorlds}));
         if (worldsError) {
             return worldsError;

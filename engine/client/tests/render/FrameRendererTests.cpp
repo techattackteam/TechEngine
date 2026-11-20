@@ -182,6 +182,12 @@ static void fillFrame(FramePacket& packet, FrameView& view, const Mat4& world, c
     view.camera.settings.farPlane = 10.0f;
 }
 
+static void drawOnce(TechEngine::FrameRenderer& renderer, const FrameView& view, const TechEngine::GpuCopies& copies, const TechEngine::RenderTargetHandle target, const TechEngine::RenderExtent& extent) {
+    renderer.prepare(view, copies);
+    const TechEngine::PacketCamera* camera = view.hasCamera ? &view.camera : nullptr;
+    renderer.draw(view, copies, TechEngine::ViewDraw{target, extent, camera});
+}
+
 static std::size_t countPixels(const Image& image, const unsigned char red, const unsigned char green, const unsigned char blue, const int width = IMAGE_SIZE, const int height = IMAGE_SIZE) {
     std::size_t count = 0;
     for (int y = 0; y < height; y++) {
@@ -312,24 +318,24 @@ TEST_CASE("the forward pass draws base color times its factor through the main c
         FramePacket packet;
         FrameView view;
         fillFrame(packet, view, Mat4(1.0f), {materialHandle(GREEN_SLOT)}, false);
-        renderer.draw(view, copies, target, full);
+        drawOnce(renderer, view, copies, target, full);
         device.readTexture(color, noCamera);
 
         fillFrame(packet, view, Mat4(1.0f), {materialHandle(GREEN_SLOT)}, true);
-        renderer.draw(view, copies, target, full);
+        drawOnce(renderer, view, copies, target, full);
         device.readTexture(color, drawn);
-        renderer.draw(view, copies, target, full);
+        drawOnce(renderer, view, copies, target, full);
         device.readTexture(color, repeated);
 
         FrameView clearOnly;
         FramePacket clearPacket;
         fillFrame(clearPacket, clearOnly, Mat4(1.0f), {}, false);
-        renderer.draw(clearOnly, copies, target, full);
-        renderer.draw(view, copies, target, TechEngine::RenderExtent{SMALL_WIDTH, SMALL_HEIGHT});
+        drawOnce(renderer, clearOnly, copies, target, full);
+        drawOnce(renderer, view, copies, target, TechEngine::RenderExtent{SMALL_WIDTH, SMALL_HEIGHT});
         device.readTexture(color, small);
 
-        renderer.draw(view, copies, target, TechEngine::RenderExtent{0, SMALL_HEIGHT});
-        renderer.draw(view, copies, target, TechEngine::RenderExtent{SMALL_WIDTH, 0});
+        drawOnce(renderer, view, copies, target, TechEngine::RenderExtent{0, SMALL_HEIGHT});
+        drawOnce(renderer, view, copies, target, TechEngine::RenderExtent{SMALL_WIDTH, 0});
         device.readTexture(color, minimized);
     });
 
@@ -366,7 +372,7 @@ TEST_CASE("a mirrored instance of a single-sided mesh is drawn, not culled", "[c
         FramePacket packet;
         FrameView view;
         fillFrame(packet, view, glm::scale(Mat4(1.0f), Vec3{-1.0f, 1.0f, 1.0f}), {materialHandle(GREEN_SLOT)}, true);
-        renderer.draw(view, copies, target, TechEngine::RenderExtent{IMAGE_SIZE, IMAGE_SIZE});
+        drawOnce(renderer, view, copies, target, TechEngine::RenderExtent{IMAGE_SIZE, IMAGE_SIZE});
         device.readTexture(color, mirrored);
     });
 
@@ -398,10 +404,10 @@ TEST_CASE("a cut-out material discards a texel whose alpha is under its cutoff a
         FramePacket packet;
         FrameView view;
         fillFrame(packet, view, Mat4(1.0f), {materialHandle(DISCARDED_CUTOUT_SLOT)}, true);
-        renderer.draw(view, copies, target, full);
+        drawOnce(renderer, view, copies, target, full);
         device.readTexture(color, discarded);
         fillFrame(packet, view, Mat4(1.0f), {materialHandle(KEPT_CUTOUT_SLOT)}, true);
-        renderer.draw(view, copies, target, full);
+        drawOnce(renderer, view, copies, target, full);
         device.readTexture(color, kept);
     });
 
@@ -433,10 +439,10 @@ TEST_CASE("a null slot material draws record 0's white, and a slot past the inst
         FramePacket packet;
         FrameView view;
         fillFrame(packet, view, Mat4(1.0f), {ResourceHandle<Material>{}}, true);
-        renderer.draw(view, copies, target, full);
+        drawOnce(renderer, view, copies, target, full);
         device.readTexture(color, nullMaterial);
         fillFrame(packet, view, Mat4(1.0f), {}, true);
-        renderer.draw(view, copies, target, full);
+        drawOnce(renderer, view, copies, target, full);
         device.readTexture(color, meshDefault);
     });
 
@@ -446,4 +452,72 @@ TEST_CASE("a null slot material draws record 0's white, and a slot past the inst
     const std::size_t total = static_cast<std::size_t>(IMAGE_SIZE) * IMAGE_SIZE;
     CHECK(countPixels(nullMaterial, 255, 255, 255) == total);
     CHECK(countPixels(meshDefault, 0, 255, 0) == total);
+}
+
+TEST_CASE("one prepared frame draws each view through its own camera and size, and a view with no camera only clears", "[client][render][window][gpu]") {
+    const TechEngineTests::WindowTerminateGuard scope;
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
+
+    constexpr int SMALL_WIDTH = 32;
+    constexpr int SMALL_HEIGHT = 48;
+    Image first{};
+    Image firstAfterSecond{};
+    Image second{};
+    Image clipped{};
+    Image cleared{};
+    bool secondTargetCreated = false;
+    const Mesh cube = makeInwardCube(ResourceId{});
+    const Material green = makeMaterial(GREEN_ID, Vec4{0.0f, 1.0f, 0.0f, 1.0f});
+    const ForwardRun run = runForward("Two views test", [&](TechEngine::RenderDevice& device, TechEngine::GpuCopies& copies, TechEngine::FrameRenderer& renderer, const TechEngine::TextureHandle color, const TechEngine::RenderTargetHandle target) {
+        const std::vector<ResourceUploadRecord> records{
+            uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &cube, 1),
+            uploadOf(GREEN_SLOT, TechEngine::MATERIAL_TYPE_TAG, GREEN_ID, &green, 2),
+        };
+        std::vector<TechEngine::FinishedUpload> finished;
+        copies.apply(records, finished);
+
+        TechEngine::TextureHandle secondColor;
+        TechEngine::TextureHandle secondDepth;
+        TechEngine::RenderTargetHandle secondTarget;
+        const std::error_code colorError = device.createTexture({IMAGE_SIZE, IMAGE_SIZE, 1, TechEngine::GpuTextureFormat::Rgba8}, secondColor);
+        const std::error_code depthError = device.createTexture({IMAGE_SIZE, IMAGE_SIZE, 1, TechEngine::GpuTextureFormat::Depth32F}, secondDepth);
+        secondTargetCreated = !colorError && !depthError && !device.createRenderTarget({secondColor, secondDepth}, secondTarget);
+        if (!secondTargetCreated) {
+            return;
+        }
+
+        FramePacket packet;
+        FrameView view;
+        fillFrame(packet, view, Mat4(1.0f), {materialHandle(GREEN_SLOT)}, true);
+        TechEngine::PacketCamera shortSighted = view.camera;
+        shortSighted.settings.farPlane = 1.0f;
+
+        renderer.prepare(view, copies);
+        renderer.draw(view, copies, TechEngine::ViewDraw{target, TechEngine::RenderExtent{IMAGE_SIZE, IMAGE_SIZE}, &view.camera});
+        device.readTexture(color, first);
+        renderer.draw(view, copies, TechEngine::ViewDraw{secondTarget, TechEngine::RenderExtent{SMALL_WIDTH, SMALL_HEIGHT}, &view.camera});
+        device.readTexture(secondColor, second);
+        device.readTexture(color, firstAfterSecond);
+        renderer.draw(view, copies, TechEngine::ViewDraw{secondTarget, TechEngine::RenderExtent{IMAGE_SIZE, IMAGE_SIZE}, &shortSighted});
+        device.readTexture(secondColor, clipped);
+        renderer.draw(view, copies, TechEngine::ViewDraw{secondTarget, TechEngine::RenderExtent{IMAGE_SIZE, IMAGE_SIZE}, nullptr});
+        device.readTexture(secondColor, cleared);
+
+        device.destroyRenderTarget(secondTarget);
+        device.destroyTexture(secondDepth);
+        device.destroyTexture(secondColor);
+    });
+
+    REQUIRE(run.loaded);
+    REQUIRE(run.initialized);
+    REQUIRE(secondTargetCreated);
+    CHECK(run.error == GL_NO_ERROR);
+    const std::size_t total = static_cast<std::size_t>(IMAGE_SIZE) * IMAGE_SIZE;
+    const std::size_t smallArea = static_cast<std::size_t>(SMALL_WIDTH) * SMALL_HEIGHT;
+    CHECK(countPixels(first, 0, 255, 0) == total);
+    const bool firstKept = firstAfterSecond == first;
+    CHECK(firstKept);
+    CHECK(countPixels(second, 0, 255, 0, SMALL_WIDTH, SMALL_HEIGHT) == smallArea);
+    CHECK(countPixels(clipped, 255, 0, 0) == total);
+    CHECK(countPixels(cleared, 255, 0, 0) == total);
 }

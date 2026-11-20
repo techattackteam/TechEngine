@@ -5,6 +5,7 @@
 #include <TechEngine/core/resources/ResourceUploadRecord.hpp>
 
 #include <cstdint>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -43,6 +44,9 @@ namespace TechEngine {
 
         // Applied at once, so a caller that runs after mainThreadUpdate() is not one wake behind.
         void setTitle(std::string title);
+
+        // Main thread only.
+        void setViews(std::span<const ViewRequest> views);
 
         void publishFrame(const Scene& scene, const SimulationContext& simulation) override;
 

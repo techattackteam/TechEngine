@@ -337,7 +337,8 @@ namespace TechEngine {
         const bool hadInput = !context.InputEventsQueue.empty();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        m_panels.draw(m_snapshot, canRun());
+        m_panels.draw(m_snapshot, canRun(), m_viewRequests);
+        setViews(m_viewRequests);
         drawClosePrompt();
         ImGui::Render();
         m_imguiBridge.publish(*ImGui::GetDrawData());

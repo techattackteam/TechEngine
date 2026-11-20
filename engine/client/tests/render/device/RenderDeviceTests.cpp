@@ -608,6 +608,7 @@ TEST_CASE("A stale handle or a call out of order is caught by a check and reache
 
     std::error_code setupError;
     std::vector<std::size_t> firedAfterEachStep;
+    std::uint64_t staleNative = 1;
     unsigned int error = GL_NO_ERROR;
     const TechEngineTests::AssertHandlerGuard asserts;
     const bool loaded = runOnContext(window, [&] {
@@ -662,13 +663,21 @@ TEST_CASE("A stale handle or a call out of order is caught by a check and reache
         record();
         device.endRenderPass();
 
+        TechEngine::TextureHandle staleTexture;
+        const std::error_code textureError = device.createTexture({TARGET_SIZE, TARGET_SIZE, 1, TechEngine::GpuTextureFormat::Rgba8}, staleTexture);
+        if (!textureError) {
+            device.destroyTexture(staleTexture);
+            staleNative = device.getNativeTexture(staleTexture);
+        }
+        record();
+
         device.shutdown();
         error = glGetError();
     });
 
     REQUIRE(loaded);
     REQUIRE(setupError == std::error_code{});
-    REQUIRE(firedAfterEachStep.size() == 12);
+    REQUIRE(firedAfterEachStep.size() == 13);
     CHECK(firedAfterEachStep[0] == 0);
     CHECK(firedAfterEachStep[1] == 1);
     CHECK(firedAfterEachStep[2] == 2);
@@ -681,6 +690,8 @@ TEST_CASE("A stale handle or a call out of order is caught by a check and reache
     CHECK(firedAfterEachStep[9] == firedAfterEachStep[8]);
     CHECK(firedAfterEachStep[10] == firedAfterEachStep[9] + 1);
     CHECK(firedAfterEachStep[11] == firedAfterEachStep[10] + 1);
+    CHECK(firedAfterEachStep[12] == firedAfterEachStep[11] + 1);
+    CHECK(staleNative == 0);
     CHECK(error == GL_NO_ERROR);
 }
 

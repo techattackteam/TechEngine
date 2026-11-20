@@ -11,6 +11,7 @@
 #include <render/GpuCopies.hpp>
 #include <render/PacketHistory.hpp>
 #include <render/RenderThread.hpp>
+#include <render/ViewTargets.hpp>
 
 #include <glad/gl.h>
 
@@ -30,6 +31,7 @@ namespace TechEngine {
         }
         m_mailbox.reset();
         m_uploads.reset();
+        m_views.reset();
         {
             const std::lock_guard lock{m_timingMutex};
             m_timing = RenderTiming{};
@@ -77,6 +79,10 @@ namespace TechEngine {
         m_uploads.takeFinished(out);
     }
 
+    void RenderThread::setViews(const std::span<const ViewRequest> views) {
+        m_views.write(views);
+    }
+
     void RenderThread::setVSync(bool enabled) {
         m_vsync.store(enabled, std::memory_order_relaxed);
     }
@@ -95,12 +101,14 @@ namespace TechEngine {
         m_thread.join();
         m_mailbox.reset();
         m_uploads.reset();
+        m_views.reset();
     }
 
     void RenderThread::threadMain(const DedicatedThreadContext& context, const Clock& clock, Window& window, const InputBuffer& input, ImGuiHook* imguiHook) {
         bool contextClaimed = false;
         bool imguiStarted = false;
         GpuCopies copies;
+        ViewTargets targets;
         std::exception_ptr failure;
         try {
             window.makeContextCurrent();
@@ -118,10 +126,14 @@ namespace TechEngine {
                 PacketHistory history{m_pool};
                 std::vector<ResourceUploadRecord> uploadRecords;
                 std::vector<FinishedUpload> finishedUploads;
+                std::vector<ViewRequest> viewRequests;
+                std::vector<ImGuiViewTexture> viewTextures;
                 FrameView frame;
                 RateCounter rate;
                 RenderTiming metrics;
                 auto previousFrame = clock.now();
+                targets.initialize(m_device);
+                m_viewTargetsFailed = false;
                 if (imguiHook != nullptr) {
                     imguiHook->start();
                     imguiStarted = true;
@@ -145,11 +157,20 @@ namespace TechEngine {
                     }
                     {
                         TE_PROFILER_SCOPE("Render.RenderFrame");
+                        m_renderer.prepare(frame, copies);
                         const FramebufferSize size = window.framebufferSize();
-                        m_renderer.draw(frame, copies, RenderTargetHandle{}, RenderExtent{size.width, size.height});
+                        const RenderExtent windowExtent{size.width, size.height};
+                        const bool viewsDeclared = m_views.read(viewRequests);
+                        if (viewsDeclared) {
+                            drawViews(frame, copies, viewRequests, targets, windowExtent);
+                        } else {
+                            const PacketCamera* camera = frame.hasCamera ? &frame.camera : nullptr;
+                            m_renderer.draw(frame, copies, ViewDraw{RenderTargetHandle{}, windowExtent, camera});
+                        }
+                        targets.collectImGuiTextures(viewTextures);
                     }
                     if (imguiStarted) {
-                        imguiHook->draw();
+                        imguiHook->draw(viewTextures);
                     }
 
                     const auto submitted = clock.now();
@@ -177,6 +198,7 @@ namespace TechEngine {
             if (imguiStarted) {
                 imguiHook->stop();
             }
+            targets.shutdown();
             copies.shutdown();
             m_renderer.shutdown();
             m_device.shutdown();
@@ -195,5 +217,28 @@ namespace TechEngine {
         finished.clear();
         copies.apply(records, finished);
         m_uploads.reportFinished(finished);
+    }
+
+    void RenderThread::drawViews(const FrameView& frame, const GpuCopies& copies, const std::span<const ViewRequest> requests, ViewTargets& targets, const RenderExtent& windowExtent) {
+        const std::error_code updateError = targets.update(requests);
+        if (updateError && !m_viewTargetsFailed) {
+            TE_LOGGER_ERROR("A view's render target could not be created, so that view is not drawn: {0}", updateError.message());
+        }
+        m_viewTargetsFailed = static_cast<bool>(updateError);
+
+        m_renderer.draw(frame, copies, ViewDraw{RenderTargetHandle{}, windowExtent, nullptr});
+
+        for (const ViewRequest& request: requests) {
+            if (!request.visible) {
+                continue;
+            }
+            const ViewTarget* target = targets.findTarget(request.token);
+            if (target == nullptr) {
+                continue;
+            }
+            const PacketCamera* mainCamera = frame.hasCamera ? &frame.camera : nullptr;
+            const PacketCamera* camera = request.cameraSource == ViewCameraSource::Pose ? &request.pose : mainCamera;
+            m_renderer.draw(frame, copies, ViewDraw{target->target, target->extent, camera});
+        }
     }
 }

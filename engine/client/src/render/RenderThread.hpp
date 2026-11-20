@@ -8,12 +8,14 @@
 #include <render/FrameRenderer.hpp>
 #include <render/PacketMailbox.hpp>
 #include <render/UploadChannel.hpp>
+#include <render/ViewSlot.hpp>
 #include <render/device/RenderDevice.hpp>
 
 #include <atomic>
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <span>
 #include <vector>
 
 namespace TechEngine {
@@ -22,6 +24,8 @@ namespace TechEngine {
     class InputBuffer;
     class ImGuiHook;
     class GpuCopies;
+    class ViewTargets;
+    struct FrameView;
 
     class RenderThread {
     private:
@@ -30,6 +34,9 @@ namespace TechEngine {
         FramePacketPool m_pool;
         PacketMailbox m_mailbox{m_pool};
         UploadChannel m_uploads;
+        ViewSlot m_views;
+        // Render thread only.
+        bool m_viewTargetsFailed = false;
         mutable std::mutex m_timingMutex;
         RenderTiming m_timing;
         std::atomic<bool> m_vsync = false;
@@ -58,6 +65,8 @@ namespace TechEngine {
 
         void takeFinishedUploads(std::vector<FinishedUpload>& out);
 
+        void setViews(std::span<const ViewRequest> views);
+
         RenderTiming timing() const;
 
         ThreadCompletionResult completion() const;
@@ -70,5 +79,7 @@ namespace TechEngine {
         void threadMain(const DedicatedThreadContext& context, const Clock& clock, Window& window, const InputBuffer& input, ImGuiHook* imguiHook);
 
         void applyUploads(GpuCopies& copies, std::vector<ResourceUploadRecord>& records, std::vector<FinishedUpload>& finished);
+
+        void drawViews(const FrameView& frame, const GpuCopies& copies, std::span<const ViewRequest> requests, ViewTargets& targets, const RenderExtent& windowExtent);
     };
 }

@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <functional>
 #include <string>
+#include <vector>
 
 namespace TechEngine {
     class ConsoleHistory;
@@ -47,7 +48,8 @@ namespace TechEngine {
     public:
         PanelsManager(EditorCommands& commands, ConsoleHistory& consoleHistory, std::function<void()> exportProject, std::function<void()> runProject, std::function<void(std::string)> importImage, std::function<void(std::string, ImportMode)> reimport);
 
-        void draw(const EditorSnapshot& snapshot, bool canRun);
+        // Fills `views` with one request per view panel, hidden or not.
+        void draw(const EditorSnapshot& snapshot, bool canRun, std::vector<ViewRequest>& views);
 
     private:
         void drawMainMenuBar(bool canRun);

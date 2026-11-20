@@ -8,6 +8,7 @@
 #include <condition_variable>
 #include <cstddef>
 #include <mutex>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -19,6 +20,8 @@ namespace TechEngineTests {
         std::string name;
         std::thread::id thread;
         bool contextCurrent = false;
+        int drawFramebuffer = -1;
+        std::vector<TechEngine::ImGuiViewTexture> viewTextures;
     };
 
     class RecordingImGuiHook final : public TechEngine::ImGuiHook {
@@ -36,8 +39,8 @@ namespace TechEngineTests {
             record(ImGuiHookCall{.name = "start"});
         }
 
-        void draw() override {
-            record(ImGuiHookCall{.name = "draw"});
+        void draw(const std::span<const TechEngine::ImGuiViewTexture> viewTextures) override {
+            record(ImGuiHookCall{.name = "draw", .viewTextures = {viewTextures.begin(), viewTextures.end()}});
             if (m_throwOnDraw) {
                 throw std::runtime_error{"ImGui hook draw failed"};
             }
@@ -63,6 +66,9 @@ namespace TechEngineTests {
         void record(ImGuiHookCall call) {
             call.thread = std::this_thread::get_id();
             call.contextCurrent = glGetString(GL_VERSION) != nullptr;
+            if (call.contextCurrent) {
+                glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &call.drawFramebuffer);
+            }
             {
                 const std::lock_guard lock{m_mutex};
                 m_calls.push_back(std::move(call));

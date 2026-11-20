@@ -60,6 +60,8 @@ namespace TechEngine {
         ConsoleHistory m_consoleHistory;
         EditorCommands m_commands;
         PanelsManager m_panels;
+        // Main thread only.
+        std::vector<ViewRequest> m_viewRequests;
         ClosePrompt m_closePrompt;
         // Main thread only.
         Process m_runtime;
