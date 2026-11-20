@@ -11,7 +11,7 @@
 
 namespace TechEngine {
     RenderDevice::~RenderDevice() {
-        TE_CHECK(m_buffers.size() == 0 && m_textures.size() == 0 && m_programs.size() == 0 && m_pipelines.size() == 0 && m_renderTargets.size() == 0, "RenderDevice was not shutdown before destruction");
+        TE_CHECK(getLiveObjectCount() == 0, "RenderDevice was not shutdown before destruction");
     }
 
     std::error_code RenderDevice::createBuffer(const BufferDescription& description, BufferHandle& out) {
