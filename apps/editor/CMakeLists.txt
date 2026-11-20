@@ -22,6 +22,7 @@ techengine_app(editor
           src/edit/FieldCollector.cpp
           src/edit/FieldSetter.cpp
           src/edit/FieldValue.cpp
+          src/edit/FlyCamera.cpp
           src/edit/HierarchyCommands.cpp
           src/edit/ImportModelCommand.cpp
           src/edit/ImportSkyCommand.cpp
@@ -67,6 +68,7 @@ techengine_app(editor
           src/edit/FieldCollector.hpp
           src/edit/FieldSetter.hpp
           src/edit/FieldValue.hpp
+          src/edit/FlyCamera.hpp
           src/edit/HierarchyCommands.hpp
           src/edit/ImportModelCommand.hpp
           src/edit/ImportSkyCommand.hpp
@@ -114,6 +116,7 @@ techengine_app(editor
           tests/edit/EditorSnapshotSlotTests.cpp
           tests/edit/EditorSnapshotTests.cpp
           tests/edit/FieldValueTests.cpp
+          tests/edit/FlyCameraTests.cpp
           tests/edit/HierarchyCommandsTests.cpp
           tests/edit/ImportModelCommandTests.cpp
           tests/edit/ImportSkyCommandTests.cpp

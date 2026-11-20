@@ -19,15 +19,20 @@ namespace TechEngine {
         return request;
     }
 
-    void ViewPanel::onDraw(const EditorSnapshot&) {
+    void ViewPanel::onDraw(const EditorSnapshot& snapshot) {
         const ImVec2 contentRegion = ImGui::GetContentRegionAvail();
         const ImGuiIO& io = ImGui::GetIO();
         m_width = static_cast<int>(contentRegion.x * io.DisplayFramebufferScale.x);
         m_height = static_cast<int>(contentRegion.y * io.DisplayFramebufferScale.y);
-        if (contentRegion.x <= 0.0f || contentRegion.y <= 0.0f) {
-            return;
+        bool imageHovered = false;
+        if (contentRegion.x > 0.0f && contentRegion.y > 0.0f) {
+            // A GL target's first row is its bottom, so V runs from 1 at the top to 0.
+            ImGui::Image(ImTextureRef(m_token), contentRegion, ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+            imageHovered = ImGui::IsItemHovered();
         }
-        // A GL target's first row is its bottom, so V runs from 1 at the top to 0.
-        ImGui::Image(ImTextureRef(m_token), contentRegion, ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+        updateCamera(snapshot, imageHovered);
+    }
+
+    void ViewPanel::updateCamera(const EditorSnapshot&, bool) {
     }
 }

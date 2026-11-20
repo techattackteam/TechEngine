@@ -23,6 +23,9 @@ namespace TechEngine {
     protected:
         void onDraw(const EditorSnapshot& snapshot) override;
 
+        // Runs inside the panel's window after the image, and not at all while the panel is hidden.
+        virtual void updateCamera(const EditorSnapshot& snapshot, bool imageHovered);
+
         virtual void describeCamera(ViewRequest& request) const = 0;
     };
 }
