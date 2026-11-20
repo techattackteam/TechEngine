@@ -212,7 +212,7 @@ TEST_CASE("a stream the mesh lacks is filled with import's defaults", "[client][
     }
 }
 
-TEST_CASE("a mesh with every stream keeps each value at its vertex", "[client][render][geometry]") {
+TEST_CASE("a mesh with every stream keeps each value at its vertex, with V flipped and the tangent's sign flipped with it", "[client][render][geometry]") {
     Mesh mesh;
     mesh.positions = {Vec3{0.0F, 0.0F, 0.0F}, Vec3{1.0F, 0.0F, 0.0F}};
     mesh.normals = {Vec3{0.0F, 1.0F, 0.0F}, Vec3{0.0F, 0.0F, 1.0F}};
@@ -224,9 +224,10 @@ TEST_CASE("a mesh with every stream keeps each value at its vertex", "[client][r
 
     REQUIRE(attributes.size() == 2);
     for (std::size_t i = 0; i < attributes.size(); i++) {
+        const Vec4 tangent = mesh.tangents[i];
         REQUIRE(attributes[i].normal == mesh.normals[i]);
-        REQUIRE(attributes[i].tangent == mesh.tangents[i]);
-        REQUIRE(attributes[i].uv0 == mesh.uv0[i]);
+        REQUIRE(attributes[i].tangent == Vec4{tangent.x, tangent.y, tangent.z, -tangent.w});
+        REQUIRE(attributes[i].uv0 == Vec2{mesh.uv0[i].x, 1.0F - mesh.uv0[i].y});
     }
 }
 
