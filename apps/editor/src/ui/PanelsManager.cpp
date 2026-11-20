@@ -28,7 +28,7 @@ namespace TechEngine {
         : m_commands(&commands), m_exportProject(std::move(exportProject)), m_runProject(std::move(runProject)), m_importImage(std::move(importImage)), m_reimport(std::move(reimport)), m_hierarchy(commands), m_inspector(commands), m_console(consoleHistory) {
     }
 
-    void PanelsManager::draw(const EditorSnapshot& snapshot, const bool canRun) {
+    void PanelsManager::draw(const EditorSnapshot& snapshot, const bool canRun, std::vector<ViewRequest>& views) {
         // The menu bar takes its height from the viewport's work area, which the dockspace then fills.
         drawMainMenuBar(canRun);
         drawPlaceModelPopup();
@@ -39,9 +39,12 @@ namespace TechEngine {
         drawDockSpace();
         m_hierarchy.draw(snapshot);
         m_inspector.draw(snapshot);
-        m_sceneView.draw(snapshot);
-        m_gameView.draw(snapshot);
+        const bool sceneViewVisible = m_sceneView.draw(snapshot);
+        const bool gameViewVisible = m_gameView.draw(snapshot);
         m_console.draw(snapshot);
+        views.clear();
+        views.push_back(m_sceneView.describe(sceneViewVisible));
+        views.push_back(m_gameView.describe(gameViewVisible));
     }
 
     void PanelsManager::drawMainMenuBar(const bool canRun) {

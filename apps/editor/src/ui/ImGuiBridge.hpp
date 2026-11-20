@@ -2,12 +2,15 @@
 
 #include <TechEngine/client/render/ImGuiHook.hpp>
 
+#include <ui/ViewTextureSwap.hpp>
+
 #include <imgui.h>
 #include <imgui_threaded_rendering.h>
 
 #include <array>
 #include <cstddef>
 #include <mutex>
+#include <span>
 
 namespace TechEngine {
     class ImGuiBridge final : public ImGuiHook {
@@ -22,6 +25,8 @@ namespace TechEngine {
         bool m_hasPending = false;
         bool m_drawSlotFilled = false;
         ImTextureQueue m_textures;
+        // Render thread only.
+        ViewTextureSwap m_viewTextureSwap;
 
     public:
         ImGuiBridge();
@@ -32,7 +37,7 @@ namespace TechEngine {
 
         void start() override;
 
-        void draw() override;
+        void draw(std::span<const ImGuiViewTexture> viewTextures) override;
 
         void stop() override;
     };

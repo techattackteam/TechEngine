@@ -31,7 +31,7 @@ namespace TechEngine {
         TE_CHECK(created, "imgui_impl_opengl3 failed to create its device objects");
     }
 
-    void ImGuiBridge::draw() {
+    void ImGuiBridge::draw(const std::span<const ImGuiViewTexture> viewTextures) {
         {
             const std::lock_guard lock{m_mutex};
             if (m_hasPending) {
@@ -44,7 +44,10 @@ namespace TechEngine {
             }
             m_textures.ProcessRequests(&m_snapshots[m_drawSlot].DrawData);
         }
-        ImGui_ImplOpenGL3_RenderDrawData(&m_snapshots[m_drawSlot].DrawData);
+        ImDrawData& drawData = m_snapshots[m_drawSlot].DrawData;
+        m_viewTextureSwap.apply(drawData, viewTextures);
+        ImGui_ImplOpenGL3_RenderDrawData(&drawData);
+        m_viewTextureSwap.restore();
     }
 
     void ImGuiBridge::stop() {

@@ -58,6 +58,9 @@ namespace TechEngine {
         // 0 until makeTextureResident.
         std::uint64_t getBindlessHandle(TextureHandle texture) const;
 
+        // For a backend outside the device, such as ImGui's, that binds the texture itself.
+        std::uint64_t getNativeTexture(TextureHandle texture) const;
+
         void readTexture(TextureHandle handle, std::span<std::byte> out) const;
 
         void destroyTexture(TextureHandle handle);

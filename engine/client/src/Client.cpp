@@ -97,6 +97,10 @@ namespace TechEngine {
         m_state->renderer.takeFinishedUploads(out);
     }
 
+    void Client::setViews(const std::span<const ViewRequest> views) const {
+        m_state->renderer.setViews(views);
+    }
+
     bool Client::renderTiming(RenderTiming& out) const {
         if (!m_state->active.load()) {
             return false;

@@ -1,3 +1,5 @@
+#include <TechEngine/client/render/ImGuiHook.hpp>
+#include <TechEngine/client/render/RenderView.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/platform/input/InputBuffer.hpp>
 #include <TechEngine/platform/window/Window.hpp>
@@ -13,6 +15,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <system_error>
 #include <thread>
@@ -169,4 +172,65 @@ TEST_CASE("Render thread stops its ImGui hook after a failed frame", "[client][r
     CHECK(calls[2].name == "stop");
     CHECK(calls[2].thread == calls[0].thread);
     CHECK(calls[2].contextCurrent);
+}
+
+static std::vector<TechEngine::ImGuiViewTexture> texturesAfterTwoMoreDraws(const TechEngineTests::RecordingImGuiHook& hook) {
+    // A frame already running may have read the views before the change, so the second draw after it is the first that must see it.
+    const std::size_t seen = hook.calls().size();
+    if (!hook.waitForDraws(seen + 2)) {
+        return {};
+    }
+    return hook.calls().back().viewTextures;
+}
+
+TEST_CASE("Render thread hands its ImGui hook one texture per sized view, and starts each session with none", "[client][render][view][window][gpu]") {
+    constexpr std::uint64_t SCENE_TOKEN = TechEngine::VIEW_TEXTURE_TOKEN_BIT | 1;
+    constexpr std::uint64_t GAME_TOKEN = TechEngine::VIEW_TEXTURE_TOKEN_BIT | 2;
+    RenderThreadFixture fixture;
+    REQUIRE(fixture.window.open(320, 240, "ImGui view texture test") == std::error_code{});
+    TechEngineTests::RecordingImGuiHook hook;
+    TechEngine::RenderThread renderer;
+    REQUIRE(renderer.start(fixture.jobs, fixture.clock, fixture.window, fixture.input, {}, &hook));
+    REQUIRE(hook.waitForDraws(2));
+    const std::vector<TechEngine::ImGuiViewTexture> beforeViews = hook.calls().back().viewTextures;
+
+    TechEngine::ViewRequest scene;
+    scene.token = SCENE_TOKEN;
+    scene.width = 64;
+    scene.height = 48;
+    scene.visible = true;
+    TechEngine::ViewRequest game = scene;
+    game.token = GAME_TOKEN;
+    game.width = 32;
+    game.height = 32;
+    const std::vector<TechEngine::ViewRequest> both{scene, game};
+    renderer.setViews(both);
+    const std::vector<TechEngine::ImGuiViewTexture> withBoth = texturesAfterTwoMoreDraws(hook);
+    const int boundAfterViews = hook.calls().back().drawFramebuffer;
+
+    TechEngine::ViewRequest zeroScene = scene;
+    zeroScene.width = 0;
+    const std::vector<TechEngine::ViewRequest> zeroSized{zeroScene, game};
+    renderer.setViews(zeroSized);
+    const std::vector<TechEngine::ImGuiViewTexture> withZero = texturesAfterTwoMoreDraws(hook);
+    renderer.stop();
+
+    TechEngineTests::RecordingImGuiHook nextHook;
+    REQUIRE(renderer.start(fixture.jobs, fixture.clock, fixture.window, fixture.input, {}, &nextHook));
+    REQUIRE(nextHook.waitForDraws(3));
+    const std::vector<TechEngine::ImGuiViewTexture> nextSession = nextHook.calls().back().viewTextures;
+    renderer.stop();
+
+    CHECK(beforeViews.empty());
+    REQUIRE(withBoth.size() == 2);
+    for (const TechEngine::ImGuiViewTexture& texture: withBoth) {
+        CHECK((texture.token == SCENE_TOKEN || texture.token == GAME_TOKEN));
+        CHECK(texture.nativeTexture != 0);
+    }
+    const bool distinct = withBoth[0].token != withBoth[1].token && withBoth[0].nativeTexture != withBoth[1].nativeTexture;
+    CHECK(distinct);
+    CHECK(boundAfterViews == 0);
+    REQUIRE(withZero.size() == 1);
+    CHECK(withZero.front().token == GAME_TOKEN);
+    CHECK(nextSession.empty());
 }

@@ -13,6 +13,8 @@ techengine_module(client
         src/render/GlRequirements.cpp
         src/render/RenderThread.cpp
         src/render/UploadChannel.cpp
+        src/render/ViewSlot.cpp
+        src/render/ViewTargets.cpp
         src/render/device/RenderDevice.cpp
         src/render/device/material/Material.cpp
         src/render/device/texture/Texture.cpp
@@ -22,6 +24,7 @@ techengine_module(client
         include/TechEngine/client/render/FrameExtraction.hpp
         include/TechEngine/client/render/FramePacket.hpp
         include/TechEngine/client/render/ImGuiHook.hpp
+        include/TechEngine/client/render/RenderView.hpp
         src/render/DrawList.hpp
         src/render/FramePacketPool.hpp
         src/render/FrameView.hpp
@@ -32,6 +35,8 @@ techengine_module(client
         src/render/GlRequirements.hpp
         src/render/RenderThread.hpp
         src/render/UploadChannel.hpp
+        src/render/ViewSlot.hpp
+        src/render/ViewTargets.hpp
         src/render/device/RenderDevice.hpp
         src/render/device/RenderExtent.hpp
         src/render/device/RenderHandle.hpp
@@ -63,6 +68,8 @@ if (TE_BUILD_TESTS)
             tests/render/GlRequirementsTests.cpp
             tests/render/RenderThreadTests.cpp
             tests/render/UploadChannelTests.cpp
+            tests/render/ViewSlotTests.cpp
+            tests/render/ViewTargetsTests.cpp
             tests/render/device/RenderDeviceTests.cpp
             tests/render/device/RenderSlotsTests.cpp)
     target_link_libraries(TechEngineClientTests PRIVATE TechEngine::glad)

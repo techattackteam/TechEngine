@@ -1,17 +1,25 @@
+#include <TechEngine/base/math/Math.hpp>
+
 #include <ui/panels/SceneViewPanel.hpp>
 
-#include <imgui.h>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include <cstdint>
 
 namespace TechEngine {
-    SceneViewPanel::SceneViewPanel() : Panel("Scene") {
+    static constexpr std::uint64_t SCENE_VIEW_TOKEN = VIEW_TEXTURE_TOKEN_BIT | 1;
+    static constexpr float DEFAULT_POSE_HEIGHT = 2.0f;
+    static constexpr float DEFAULT_POSE_DISTANCE = 5.0f;
+    static constexpr float DEFAULT_POSE_PITCH_DEGREES = -10.0f;
+
+    SceneViewPanel::SceneViewPanel() : ViewPanel("Scene", SCENE_VIEW_TOKEN) {
     }
 
-    void SceneViewPanel::onDraw(const EditorSnapshot&) {
-        const char* hint = "The scene view draws nothing until the renderer exists.";
-        const ImVec2 available = ImGui::GetContentRegionAvail();
-        const ImVec2 hintSize = ImGui::CalcTextSize(hint);
-        const ImVec2 cursor = ImGui::GetCursorPos();
-        ImGui::SetCursorPos(ImVec2(cursor.x + std::max(0.0f, (available.x - hintSize.x) * 0.5f), cursor.y + std::max(0.0f, (available.y - hintSize.y) * 0.5f)));
-        ImGui::TextDisabled("%s", hint);
+    void SceneViewPanel::describeCamera(ViewRequest& request) const {
+        request.cameraSource = ViewCameraSource::Pose;
+        // TODO(S11-T11): the fly camera's pose replaces the fixed one.
+        const Mat4 position = glm::translate(Mat4(1.0f), Vec3{0.0f, DEFAULT_POSE_HEIGHT, DEFAULT_POSE_DISTANCE});
+        request.pose.world = glm::rotate(position, glm::radians(DEFAULT_POSE_PITCH_DEGREES), Vec3{1.0f, 0.0f, 0.0f});
+        request.pose.settings = Camera{};
     }
 }

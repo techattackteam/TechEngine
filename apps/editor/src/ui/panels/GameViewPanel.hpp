@@ -1,13 +1,13 @@
 #pragma once
 
-#include <ui/panels/Panel.hpp>
+#include <ui/panels/ViewPanel.hpp>
 
 namespace TechEngine {
-    class GameViewPanel final : public Panel {
+    class GameViewPanel final : public ViewPanel {
     public:
         GameViewPanel();
 
     protected:
-        void onDraw(const EditorSnapshot& snapshot) override;
+        void describeCamera(ViewRequest& request) const override;
     };
 }

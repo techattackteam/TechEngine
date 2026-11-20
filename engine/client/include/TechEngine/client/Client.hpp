@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <memory>
+#include <span>
 #include <string_view>
 #include <system_error>
 #include <vector>
@@ -15,6 +16,7 @@ namespace TechEngine {
     struct FramePacket;
     struct ResourceUploadRecord;
     struct FinishedUpload;
+    struct ViewRequest;
     struct EngineContext;
     class InputBuffer;
     class ImGuiHook;
@@ -57,6 +59,9 @@ namespace TechEngine {
         void sendUploads(std::vector<ResourceUploadRecord>& records) const;
 
         void takeFinishedUploads(std::vector<FinishedUpload>& out) const;
+
+        // Until the first call of a session, render draws the window through the main camera.
+        void setViews(std::span<const ViewRequest> views) const;
 
         bool renderTiming(RenderTiming& out) const;
 

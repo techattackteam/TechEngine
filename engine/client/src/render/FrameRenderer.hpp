@@ -23,6 +23,13 @@ namespace TechEngine {
         std::size_t capacity = 0;
     };
 
+    struct ViewDraw {
+        RenderTargetHandle target;
+        RenderExtent extent;
+        // Null clears the target and draws nothing.
+        const PacketCamera* camera = nullptr;
+    };
+
     class FrameRenderer {
     private:
         RenderDevice* m_device = nullptr;
@@ -35,6 +42,7 @@ namespace TechEngine {
         FrameStreamBuffer m_instanceWorlds;
         FrameStreamBuffer m_drawInstances;
         FrameStreamBuffer m_commands;
+        bool m_prepared = false;
 
     public:
         FrameRenderer() = default;
@@ -49,15 +57,17 @@ namespace TechEngine {
 
         bool initialize(RenderDevice& device);
 
-        // Binds the copies' geometry and material buffers as they stand now, so call it after this frame's uploads are applied.
-        void draw(const FrameView& frame, const GpuCopies& copies, RenderTargetHandle target, const RenderExtent& extent);
+        // Once per frame, after this frame's uploads are applied. Every draw until the next prepare must pass the same frame and copies.
+        void prepare(const FrameView& frame, const GpuCopies& copies);
+
+        void draw(const FrameView& frame, const GpuCopies& copies, const ViewDraw& view);
 
         void shutdown();
 
     private:
         void collectDraws(const FrameView& frame, const GpuCopies& copies);
 
-        std::error_code writeFrameStreams(const FrameView& frame, const RenderExtent& extent);
+        std::error_code writeInstanceStreams(const FrameView& frame);
 
         std::error_code writeStream(FrameStreamBuffer& stream, std::span<const std::byte> data);
 
