@@ -1,3 +1,4 @@
+#include <TechEngine/client/ClientError.hpp>
 #include <TechEngine/client/render/ImGuiHook.hpp>
 #include <TechEngine/client/render/RenderView.hpp>
 #include <TechEngine/platform/window/Window.hpp>
@@ -26,6 +27,31 @@ static constexpr std::uint64_t SCENE_TOKEN = VIEW_TEXTURE_TOKEN_BIT | 1;
 static constexpr std::uint64_t GAME_TOKEN = VIEW_TEXTURE_TOKEN_BIT | 2;
 // Two textures and the target that joins them.
 static constexpr std::size_t OBJECTS_PER_VIEW = 3;
+
+static PFNGLCHECKNAMEDFRAMEBUFFERSTATUSPROC g_originalFramebufferStatus = nullptr;
+static int g_failingFramebufferChecks = 0;
+
+static GLenum GLAD_API_PTR failingFramebufferStatus(const GLuint framebuffer, const GLenum target) {
+    if (g_failingFramebufferChecks > 0) {
+        g_failingFramebufferChecks--;
+        return GL_FRAMEBUFFER_UNSUPPORTED;
+    }
+    return g_originalFramebufferStatus(framebuffer, target);
+}
+
+// Construct it on the context's thread after glad has loaded, or the load overwrites it.
+struct FailingFramebufferScope {
+    explicit FailingFramebufferScope(const int failures) {
+        g_failingFramebufferChecks = failures;
+        g_originalFramebufferStatus = glad_glCheckNamedFramebufferStatus;
+        glad_glCheckNamedFramebufferStatus = failingFramebufferStatus;
+    }
+
+    ~FailingFramebufferScope() {
+        glad_glCheckNamedFramebufferStatus = g_originalFramebufferStatus;
+        g_failingFramebufferChecks = 0;
+    }
+};
 
 template<typename Body>
 static bool runOnContext(TechEngine::Window& window, Body&& body) {
@@ -232,4 +258,65 @@ TEST_CASE("view targets name each target's colour texture for ImGui by its token
     }
     const bool distinctTokens = textures[0].token != textures[1].token;
     CHECK(distinctTokens);
+}
+
+TEST_CASE("view targets build every view they can when one fails, return the failure, and retry it on the next update", "[client][render][view][window][gpu]") {
+    std::error_code firstError;
+    std::error_code retryError;
+    std::error_code resizeError;
+    bool sceneMissing = false;
+    bool gameBuilt = false;
+    bool sceneRetried = false;
+    bool gameDropped = false;
+    bool sceneKept = false;
+    std::size_t afterFailure = 0;
+    std::size_t afterResizeFailure = 0;
+    unsigned int error = GL_NO_ERROR;
+    const bool loaded = runWithTargets("View targets failure test", [&](RenderDevice& device, ViewTargets& targets) {
+        const std::vector<ViewRequest> both{requestOf(SCENE_TOKEN, 64, 64), requestOf(GAME_TOKEN, 32, 32)};
+        const std::vector<ViewRequest> gameResized{requestOf(SCENE_TOKEN, 64, 64), requestOf(GAME_TOKEN, 48, 48)};
+        {
+            const FailingFramebufferScope failing{1};
+            firstError = targets.update(both);
+        }
+        sceneMissing = targets.findTarget(SCENE_TOKEN) == nullptr;
+        gameBuilt = targets.findTarget(GAME_TOKEN) != nullptr;
+        afterFailure = device.getLiveObjectCount();
+
+        retryError = targets.update(both);
+        sceneRetried = targets.findTarget(SCENE_TOKEN) != nullptr;
+
+        {
+            const FailingFramebufferScope failing{1};
+            resizeError = targets.update(gameResized);
+        }
+        gameDropped = targets.findTarget(GAME_TOKEN) == nullptr;
+        sceneKept = targets.findTarget(SCENE_TOKEN) != nullptr;
+        afterResizeFailure = device.getLiveObjectCount();
+        error = glGetError();
+    });
+
+    REQUIRE(loaded);
+    CHECK(firstError == TechEngine::ClientError::IncompleteRenderTarget);
+    CHECK(sceneMissing);
+    CHECK(gameBuilt);
+    CHECK(afterFailure == OBJECTS_PER_VIEW);
+    CHECK_FALSE(retryError);
+    CHECK(sceneRetried);
+    CHECK(resizeError == TechEngine::ClientError::IncompleteRenderTarget);
+    CHECK(gameDropped);
+    CHECK(sceneKept);
+    CHECK(afterResizeFailure == OBJECTS_PER_VIEW);
+    CHECK(error == GL_NO_ERROR);
+}
+
+TEST_CASE("view targets name no ImGui texture and shut down quietly before they are initialized", "[client][view]") {
+    ViewTargets targets;
+    std::vector<ImGuiViewTexture> textures{ImGuiViewTexture{SCENE_TOKEN, 7}};
+
+    targets.collectImGuiTextures(textures);
+    targets.shutdown();
+
+    CHECK(textures.empty());
+    CHECK(targets.findTarget(SCENE_TOKEN) == nullptr);
 }

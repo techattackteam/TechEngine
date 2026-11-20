@@ -203,6 +203,7 @@ TEST_CASE("Render thread hands its ImGui hook one texture per sized view, and st
     game.token = GAME_TOKEN;
     game.width = 32;
     game.height = 32;
+    game.visible = false;
     const std::vector<TechEngine::ViewRequest> both{scene, game};
     renderer.setViews(both);
     const std::vector<TechEngine::ImGuiViewTexture> withBoth = texturesAfterTwoMoreDraws(hook);

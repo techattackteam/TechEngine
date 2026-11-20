@@ -26,6 +26,7 @@ namespace TechEngine {
             m_targets.erase(m_targets.begin() + static_cast<std::ptrdiff_t>(index));
         }
 
+        std::error_code firstError;
         for (const ViewRequest& request: requests) {
             if (request.token == 0 || request.width <= 0 || request.height <= 0) {
                 continue;
@@ -44,7 +45,10 @@ namespace TechEngine {
                 ViewTarget target;
                 const std::error_code createError = createTarget(request.token, extent, target);
                 if (createError) {
-                    return createError;
+                    if (!firstError) {
+                        firstError = createError;
+                    }
+                    continue;
                 }
                 m_targets.push_back(target);
             } else {
@@ -54,16 +58,19 @@ namespace TechEngine {
                 }
                 destroyTarget(target);
                 ViewTarget resized;
-                const std::error_code createError = createTarget(request.token, extent, resized);
-                if (createError) {
+                const std::error_code resizeError = createTarget(request.token, extent, resized);
+                if (resizeError) {
                     m_targets.erase(m_targets.begin() + static_cast<std::ptrdiff_t>(targetIndex));
-                    return createError;
+                    if (!firstError) {
+                        firstError = resizeError;
+                    }
+                    continue;
                 }
                 target = resized;
             }
         }
 
-        return {};
+        return firstError;
     }
 
     const ViewTarget* ViewTargets::findTarget(const std::uint64_t token) const {
@@ -107,15 +114,12 @@ namespace TechEngine {
         }
         const std::error_code depthError = m_device->createTexture(TextureDescription{extent.width, extent.height, 1, GpuTextureFormat::Depth32F}, out.depth);
         if (depthError) {
-            m_device->destroyTexture(out.color);
-            out = ViewTarget{};
+            destroyTarget(out);
             return depthError;
         }
         const std::error_code targetError = m_device->createRenderTarget(RenderTargetDescription{out.color, out.depth}, out.target);
         if (targetError) {
-            m_device->destroyTexture(out.depth);
-            m_device->destroyTexture(out.color);
-            out = ViewTarget{};
+            destroyTarget(out);
             return targetError;
         }
         out.token = token;
