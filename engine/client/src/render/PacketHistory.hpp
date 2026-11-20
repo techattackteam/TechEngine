@@ -1,5 +1,6 @@
 #pragma once
 
+#include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/base/time/Clock.hpp>
 #include <TechEngine/client/render/FramePacket.hpp>
 
@@ -38,5 +39,7 @@ namespace TechEngine {
 
     private:
         void interpolateScene(float blend, FrameView& out) const;
+
+        static Mat4 blendWorld(const Mat4& from, const Mat4& to, float blend);
     };
 }

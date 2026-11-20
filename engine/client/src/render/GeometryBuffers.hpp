@@ -95,6 +95,8 @@ namespace TechEngine {
 
         std::error_code createBlockBuffers(GeometryBlock& block);
 
+        void destroyBlockBuffers(GeometryBlock& block);
+
         bool findBestRange(const std::vector<GeometryFreeRange>& freeRanges, std::uint32_t count, std::size_t& rangeIndex) const;
 
         std::uint32_t takeFromRange(std::vector<GeometryFreeRange>& freeRanges, std::size_t rangeIndex, std::uint32_t count);

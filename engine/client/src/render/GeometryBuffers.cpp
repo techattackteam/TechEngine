@@ -103,18 +103,7 @@ namespace TechEngine {
 
     void GeometryBuffers::shutdown() {
         for (GeometryBlock& block: m_blocks) {
-            if (block.positionsBuffer.valid()) {
-                m_device->destroyBuffer(block.positionsBuffer);
-                block.positionsBuffer = {};
-            }
-            if (block.attributesBuffer.valid()) {
-                m_device->destroyBuffer(block.attributesBuffer);
-                block.attributesBuffer = {};
-            }
-            if (block.indexBuffer.valid()) {
-                m_device->destroyBuffer(block.indexBuffer);
-                block.indexBuffer = {};
-            }
+            destroyBlockBuffers(block);
         }
     }
 
@@ -156,20 +145,31 @@ namespace TechEngine {
         }
         const std::error_code attributesError = m_device->createBuffer(BufferDescription{static_cast<std::size_t>(block.capacity.vertices) * 36, BufferUsage::Dynamic, {}}, block.attributesBuffer);
         if (attributesError) {
-            m_device->destroyBuffer(block.positionsBuffer);
-            block.positionsBuffer = {};
+            destroyBlockBuffers(block);
             return attributesError;
         }
         const std::error_code indicesError = m_device->createBuffer(BufferDescription{static_cast<std::size_t>(block.capacity.indices) * 4, BufferUsage::Dynamic, {}}, block.indexBuffer);
         if (indicesError) {
-            m_device->destroyBuffer(block.positionsBuffer);
-            m_device->destroyBuffer(block.attributesBuffer);
-            block.positionsBuffer = {};
-            block.attributesBuffer = {};
+            destroyBlockBuffers(block);
             return indicesError;
         }
 
         return {};
+    }
+
+    void GeometryBuffers::destroyBlockBuffers(GeometryBlock& block) {
+        if (block.positionsBuffer.valid()) {
+            m_device->destroyBuffer(block.positionsBuffer);
+            block.positionsBuffer = {};
+        }
+        if (block.attributesBuffer.valid()) {
+            m_device->destroyBuffer(block.attributesBuffer);
+            block.attributesBuffer = {};
+        }
+        if (block.indexBuffer.valid()) {
+            m_device->destroyBuffer(block.indexBuffer);
+            block.indexBuffer = {};
+        }
     }
 
     bool GeometryBuffers::findBestRange(const std::vector<GeometryFreeRange>& freeRanges, std::uint32_t count, std::size_t& rangeIndex) const {
