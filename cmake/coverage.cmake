@@ -91,7 +91,7 @@ function(te_add_coverage_target)
     COMMAND ${CMAKE_COMMAND} -E rm -rf "${_te_dir}"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${_te_dir}"
     COMMAND ${CMAKE_COMMAND} -E env "LLVM_PROFILE_FILE=${_te_dir}/%m.profraw"
-            ${CMAKE_CTEST_COMMAND} --output-on-failure
+            ${CMAKE_CTEST_COMMAND} --output-on-failure -LE "^lfs$"
     COMMAND ${CMAKE_COMMAND}
             -DTE_COV_DIR=${_te_dir}
             -DTE_LLVM_PROFDATA=${TE_LLVM_PROFDATA}

@@ -3,6 +3,7 @@
 #include <render/device/RenderHandle.hpp>
 #include <render/device/material/Material.hpp>
 
+#include <cstddef>
 #include <cstdint>
 #include <system_error>
 #include <vector>
@@ -48,6 +49,9 @@ namespace TechEngine {
 
         // Growing replaces the buffer, so a frame binds the handle it gets after its uploads are applied, never one kept from an earlier frame.
         BufferHandle getBuffer() const;
+
+        // Can be smaller than getCapacity(): allocate grows only the CPU copy, and the next write grows the buffer.
+        std::size_t getBufferSize() const;
 
         void shutdown();
 

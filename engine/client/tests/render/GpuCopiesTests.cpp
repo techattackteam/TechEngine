@@ -27,8 +27,10 @@ using TechEngine::GeometryRange;
 using TechEngine::GpuCopies;
 using TechEngine::GpuCopy;
 using TechEngine::GpuMaterial;
+using TechEngine::GpuMeshSlot;
 using TechEngine::Material;
 using TechEngine::Mesh;
+using TechEngine::MeshSlot;
 using TechEngine::ResourceId;
 using TechEngine::ResourceSlotId;
 using TechEngine::ResourceUploadKind;
@@ -270,6 +272,29 @@ TEST_CASE("a mesh with no vertices uploads before initialize and its copy holds 
     const GpuCopy* copy = copies.findCopy(MESH_SLOT);
     REQUIRE(copy != nullptr);
     REQUIRE(copy->geometry == GeometryRange{});
+}
+
+TEST_CASE("a mesh's copy keeps each slot's index range and finds its default material through the upload's slots", "[client][render][upload]") {
+    GpuCopies copies;
+    Mesh mesh;
+    mesh.slots = {
+        MeshSlot{"first", 0, 6, MATERIAL_ID},
+        MeshSlot{"second", 6, 3, ResourceId{}},
+        MeshSlot{"third", 9, 12, UNRELATED_ID},
+    };
+    const std::vector<ResourceUploadRecord> records{uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &mesh, 1, {MATERIAL_SLOT, SECOND_MATERIAL_SLOT})};
+    std::vector<FinishedUpload> finished;
+
+    copies.apply(records, finished);
+
+    const GpuCopy* copy = copies.findCopy(MESH_SLOT);
+    REQUIRE(copy != nullptr);
+    REQUIRE(
+        copy->meshSlots == std::vector<GpuMeshSlot>{
+                               GpuMeshSlot{0, 6, MATERIAL_SLOT},
+                               GpuMeshSlot{6, 3, ResourceSlotId{}},
+                               GpuMeshSlot{9, 12, SECOND_MATERIAL_SLOT},
+                           });
 }
 
 TEST_CASE("a slot that never had an upload has no copy", "[client][render][upload]") {

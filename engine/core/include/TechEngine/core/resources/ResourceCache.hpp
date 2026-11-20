@@ -160,6 +160,9 @@ namespace TechEngine {
         // addDependency is released.
         std::error_code reload(std::span<const ResourceId> ids);
 
+        // Runs the loader for the bytes' kind on a payload it then drops, so nothing enters the cache.
+        std::error_code listDependencies(std::span<const std::byte> bytes, std::vector<ResourceId>& out) const;
+
         void drainFrees();
 
         // Moves out every upload and release recorded since the last call, in the order they were made.

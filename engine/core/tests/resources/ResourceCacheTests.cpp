@@ -499,6 +499,31 @@ TEST_CASE("the loading phase acquires every dependency its loader names", "[core
     REQUIRE(harness.acquireCount(dependency) == 2);
 }
 
+TEST_CASE("listDependencies returns the ids the bytes' loader names, and requests none of them", "[core][resources][cache]") {
+    CacheHarness harness;
+    harness.source.addAsset(DEPENDENCY_ID, "dependency", {});
+    const std::vector<std::byte> bytes = makeResourceBytes(CACHE_RESOURCE_KIND, ROOT_ID, "root", {DEPENDENCY_ID, LEAF_ID});
+    std::vector<ResourceId> dependencies{UNKNOWN_ID};
+
+    REQUIRE(harness.cache.listDependencies(bytes, dependencies) == std::error_code{});
+
+    CHECK(dependencies == std::vector<ResourceId>{DEPENDENCY_ID, LEAF_ID});
+    const ResourceHandle<CacheResource> dependency = harness.request(DEPENDENCY_ID);
+    CHECK(harness.acquireCount(dependency) == 1);
+}
+
+TEST_CASE("listDependencies refuses bytes of a kind with no loader as BadMagic, and passes a loader's error through", "[core][resources][cache]") {
+    CacheHarness harness;
+    const std::vector<std::byte> unknownKind(16, std::byte{0});
+    std::vector<std::byte> truncated = makeResourceBytes(CACHE_RESOURCE_KIND, ROOT_ID, "root", {DEPENDENCY_ID});
+    truncated.resize(truncated.size() - 4);
+    std::vector<ResourceId> dependencies{UNKNOWN_ID};
+
+    CHECK(harness.cache.listDependencies(unknownKind, dependencies) == ReadError::BadMagic);
+    CHECK(dependencies.empty());
+    CHECK(harness.cache.listDependencies(truncated, dependencies) == ReadError::Truncated);
+}
+
 TEST_CASE("one loading phase resolves a dependency chain in rounds", "[core][resources][cache]") {
     CacheHarness harness;
     harness.source.addAsset(ROOT_ID, "root", {DEPENDENCY_ID});

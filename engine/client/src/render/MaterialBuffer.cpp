@@ -66,6 +66,10 @@ namespace TechEngine {
         return m_buffer;
     }
 
+    std::size_t MaterialBuffer::getBufferSize() const {
+        return static_cast<std::size_t>(m_bufferCapacity) * sizeof(GpuMaterial);
+    }
+
     void MaterialBuffer::shutdown() {
         if (m_buffer.valid()) {
             m_device->destroyBuffer(m_buffer);

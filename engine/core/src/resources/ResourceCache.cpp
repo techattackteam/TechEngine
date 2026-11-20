@@ -465,6 +465,16 @@ namespace TechEngine {
         }
     }
 
+    std::error_code ResourceCache::listDependencies(const std::span<const std::byte> bytes, std::vector<ResourceId>& out) const {
+        out.clear();
+        const TypeRecord* record = findTypeForBytes(bytes);
+        if (record == nullptr) {
+            return ReadError::BadMagic;
+        }
+        const std::unique_ptr<void, ResourcePayloadDeleter> payload{record->createPayload(), record->destroyPayload};
+        return record->load(bytes, payload.get(), out);
+    }
+
     void ResourceCache::takeUploads(std::vector<ResourceUploadRecord>& out) {
         out.clear();
         out.swap(m_uploads);

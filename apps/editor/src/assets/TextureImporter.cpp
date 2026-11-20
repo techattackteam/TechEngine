@@ -124,6 +124,7 @@ namespace TechEngine {
 
     // The source's own bytes are encoded as the top level, so only the levels below it go through float.
     void TextureImporter::encode(const ByteImage& image, const TexturePurpose purpose, Texture& out) {
+        TE_PROFILER_FUNCTION();
         std::call_once(g_encodersReady, [] {
             rgbcx::init();
             bc7enc_compress_block_init();

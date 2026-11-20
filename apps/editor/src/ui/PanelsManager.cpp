@@ -21,7 +21,7 @@ namespace TechEngine {
     static constexpr const char* IMPORT_IMAGE_PATH_HINT = "project://assets/client/Sky.hdr";
     static constexpr float IMPORT_IMAGE_INPUT_WIDTH_EMS = 32.0f;
     static constexpr const char* REIMPORT_POPUP_NAME = "Re-import";
-    static constexpr const char* REIMPORT_PATH_HINT = "project://assets/client/Sponza.gltf";
+    static constexpr const char* REIMPORT_PATH_HINT = "project://assets/client/glTF/Sponza.gltf";
     static constexpr float REIMPORT_INPUT_WIDTH_EMS = 32.0f;
 
     PanelsManager::PanelsManager(EditorCommands& commands, ConsoleHistory& consoleHistory, std::function<void()> exportProject, std::function<void()> runProject, std::function<void(std::string)> importImage, std::function<void(std::string, ImportMode)> reimport)

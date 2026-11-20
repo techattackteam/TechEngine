@@ -58,7 +58,7 @@ static void addInstance(FramePacket& packet, Entity entity, float x) {
 TEST_CASE("render history interpolates actual timestamp gaps and holds endpoints", "[client][history]") {
     FramePacketPool pool;
     PacketHistory history{pool};
-    CHECK_FALSE(frameAt(history, 0ms).drawTriangle);
+    CHECK(frameAt(history, 0ms).packet == nullptr);
     history.acquire(packetAt(pool, 100, 1000ms, 0.0F));
     CHECK(history.alpha(Clock::TimePoint{1150ms}) == 1.0);
     history.acquire(packetAt(pool, 103, 1300ms, 1.0F));

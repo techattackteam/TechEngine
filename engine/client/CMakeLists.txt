@@ -1,6 +1,7 @@
 techengine_module(client
         SOURCES src/Client.cpp
         src/ClientError.cpp
+        src/render/DrawList.cpp
         src/render/FrameExtraction.cpp
         src/render/FramePacketPool.cpp
         src/render/GeometryBuffers.cpp
@@ -21,6 +22,7 @@ techengine_module(client
         include/TechEngine/client/render/FrameExtraction.hpp
         include/TechEngine/client/render/FramePacket.hpp
         include/TechEngine/client/render/ImGuiHook.hpp
+        src/render/DrawList.hpp
         src/render/FramePacketPool.hpp
         src/render/FrameView.hpp
         src/render/GpuCopies.hpp
@@ -35,6 +37,7 @@ techengine_module(client
         src/render/device/RenderHandle.hpp
         src/render/device/RenderSlots.hpp
         src/render/device/buffer/Buffer.hpp
+        src/render/device/draw/IndexedIndirectCommand.hpp
         src/render/device/material/Material.hpp
         src/render/device/pass/RenderPass.hpp
         src/render/device/pipeline/Pipeline.hpp
@@ -48,6 +51,7 @@ techengine_module(client
 if (TE_BUILD_TESTS)
     techengine_test(client SOURCES tests/ClientTests.cpp
             tests/ClientErrorTests.cpp
+            tests/render/DrawListTests.cpp
             tests/render/FrameExtractionTests.cpp
             tests/render/FramePacketPoolTests.cpp
             tests/render/GeometryBuffersTests.cpp

@@ -30,7 +30,6 @@ namespace TechEngine {
 
     struct FramePacket {
         std::array<float, 4> clearColor{};
-        bool drawTriangle = false;
         std::uint64_t tick = 0;
         Clock::TimePoint tickTime{};
         double fixedDeltaTime = 1.0 / 60.0;

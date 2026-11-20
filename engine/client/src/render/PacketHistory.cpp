@@ -64,7 +64,6 @@ namespace TechEngine {
         const auto blend = static_cast<float>(alpha(now));
         out.packet = m_current.get();
         out.clearColor = m_current ? m_current->clearColor : std::array<float, 4>{};
-        out.drawTriangle = m_current && m_current->drawTriangle;
         out.input = m_current ? m_current->input : InputState{};
         if (m_previous && m_current) {
             for (std::size_t i = 0; i < out.clearColor.size(); i++) {

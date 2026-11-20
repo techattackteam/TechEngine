@@ -20,16 +20,30 @@
 namespace TechEngine {
     class RenderDevice;
     struct Material;
+    struct Mesh;
     struct Texture;
+    enum class MaterialAlphaMode : std::uint8_t;
     enum class TextureWrap : std::uint8_t;
+
+    struct GpuMeshSlot {
+        // Relative to the mesh's own first index, as in the file.
+        std::uint32_t firstIndex = 0;
+        std::uint32_t indexCount = 0;
+        ResourceSlotId defaultMaterial;
+
+        bool operator==(const GpuMeshSlot&) const = default;
+    };
 
     struct GpuCopy {
         StringId typeTag;
         ResourceId id;
         std::vector<ResourceSlotId> dependencies;
         GeometryRange geometry;
+        std::vector<GpuMeshSlot> meshSlots;
         TextureHandle texture;
         std::uint32_t materialRecord = DEFAULT_MATERIAL_RECORD;
+        MaterialAlphaMode alphaMode{};
+        bool doubleSided = false;
         // In the record's input order. A null slot is an input that names no texture.
         std::array<ResourceSlotId, MATERIAL_TEXTURE_INPUT_COUNT> textureSlots{};
         bool released = false;
@@ -61,6 +75,8 @@ namespace TechEngine {
 
         const GpuCopy* findCopy(ResourceSlotId slot) const;
 
+        const GeometryBuffers& getGeometry() const;
+
         const MaterialBuffer& getMaterials() const;
 
         void shutdown();
@@ -73,6 +89,8 @@ namespace TechEngine {
         void uploadMaterial(const ResourceUploadRecord& record, GpuCopy& copy);
 
         void refreshMaterialsNaming(ResourceSlotId texture, std::uint64_t bindlessHandle);
+
+        static void resolveMeshSlots(const Mesh& mesh, const std::vector<ResourceSlotId>& dependencies, std::vector<GpuMeshSlot>& out);
 
         static void resolveTextureSlots(const Material& material, const std::vector<ResourceSlotId>& dependencies, std::array<ResourceSlotId, MATERIAL_TEXTURE_INPUT_COUNT>& out);
 
