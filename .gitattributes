@@ -1,2 +1,6 @@
 *.tescene binary
 *.tepack binary
+projects/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+projects/**/*.png filter=lfs diff=lfs merge=lfs -text
+projects/**/*.hdr filter=lfs diff=lfs merge=lfs -text
+projects/**/*.tetexture filter=lfs diff=lfs merge=lfs -text

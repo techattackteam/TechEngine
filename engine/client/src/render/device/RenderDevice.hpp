@@ -96,7 +96,12 @@ namespace TechEngine {
 
         void bindStorageBuffer(std::uint32_t binding, BufferHandle buffer, std::size_t offset, std::size_t size);
 
+        void bindUniformBuffer(std::uint32_t binding, BufferHandle buffer, std::size_t offset, std::size_t size);
+
         void drawIndexed(std::uint32_t indexCount, std::uint32_t firstIndex, std::int32_t baseVertex);
+
+        // Reads drawCount IndexedIndirectCommand records from commands, starting at offset bytes.
+        void drawIndexedIndirect(BufferHandle commands, std::size_t offset, std::uint32_t drawCount);
 #pragma endregion
 
 #pragma region Lifetime

@@ -146,7 +146,7 @@ namespace TechEngine {
                     {
                         TE_PROFILER_SCOPE("Render.RenderFrame");
                         const FramebufferSize size = window.framebufferSize();
-                        m_renderer.draw(frame, RenderTargetHandle{}, RenderExtent{size.width, size.height});
+                        m_renderer.draw(frame, copies, RenderTargetHandle{}, RenderExtent{size.width, size.height});
                     }
                     if (imguiStarted) {
                         imguiHook->draw();

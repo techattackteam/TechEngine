@@ -8,6 +8,17 @@ The engine is built as static libraries with a strict link order, under `engine/
 `runtime` and the `editor`), and `sdk/` is the public surface that game scripts compile
 against.
 
+## Install Git LFS
+
+The images, sky sources and imported textures under `projects/` are stored with Git LFS. Install
+it once per machine, before you clone, or those files arrive as small pointer files:
+
+```bash
+git lfs install
+```
+
+The build and the tests do not need them.
+
 ## Clone the vault
 
 The design notes, ADRs and sprint plans live in a separate repository, the vault. Clone it

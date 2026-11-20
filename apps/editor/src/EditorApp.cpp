@@ -45,7 +45,7 @@ namespace TechEngine {
     static constexpr std::string_view MANIFEST_PATH = "project://project.toml";
     static constexpr std::string_view STARTUP_SCENE_PATH = "project://assets/common/Startup.tescene";
     static constexpr std::string_view TRIANGLE_MESH_PATH = "project://assets/client/Triangle.temesh";
-    static constexpr std::string_view STARTUP_IMPORT_PATH = "project://assets/client/Sponza.gltf";
+    static constexpr std::string_view STARTUP_IMPORT_PATH = "project://assets/client/glTF/Sponza.gltf";
     static constexpr Side STARTUP_IMPORT_SIDE = Side::Client;
     static constexpr ImportSettings STARTUP_IMPORT_SETTINGS{};
     static constexpr ImportMode STARTUP_IMPORT_MODE = ImportMode::Model;
@@ -217,7 +217,7 @@ namespace TechEngine {
     }
 
     std::unique_ptr<Command> EditorApp::makeExportCommand(std::function<void(bool exported)> onFinished) {
-        return std::make_unique<ExportCommand>(m_session, m_project, m_assets, m_files, m_registry, m_runtimePath, m_exportFolder, std::move(onFinished));
+        return std::make_unique<ExportCommand>(m_session, m_project, m_assets, m_files, m_registry, m_resources, m_runtimePath, m_exportFolder, std::move(onFinished));
     }
 
     std::unique_ptr<Command> EditorApp::makeRunCommand() {

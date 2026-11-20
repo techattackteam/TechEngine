@@ -146,8 +146,8 @@ namespace {
     constexpr std::string_view MANIFEST_PATH = "project://project.toml";
     constexpr std::string_view TRIANGLE_MESH_FILE = "assets/client/Triangle.temesh";
     constexpr std::string_view TRIANGLE_MESH_PATH = "project://assets/client/Triangle.temesh";
-    constexpr std::string_view STARTUP_IMPORT_FILE = "assets/client/Sponza.gltf";
-    constexpr std::string_view STARTUP_IMPORT_MODEL_PATH = "project://assets/client/Sponza/Sponza.temodel";
+    constexpr std::string_view STARTUP_IMPORT_FILE = "assets/client/glTF/Sponza.gltf";
+    constexpr std::string_view STARTUP_IMPORT_MODEL_PATH = "project://assets/client/glTF/Sponza/Sponza.temodel";
     constexpr std::string_view PANEL_LAYOUT_FILE = "editorSettings/layout.ini";
     constexpr std::string_view PANEL_LAYOUT_PATH = "project://editorSettings/layout.ini";
     constexpr std::string_view SAVED_HIERARCHY = "[Window][Hierarchy]\nPos=10,20\nSize=300,400\nCollapsed=0\n";
@@ -802,7 +802,7 @@ TEST_CASE("the startup load imports the hardcoded source file as a job, and a la
     writeProjectLayout(scratch);
     scratch.writeFile(STARTUP_IMPORT_FILE, TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
     const std::filesystem::path exportFolder = scratch.makeDirectory("export");
-    const std::filesystem::path importFolder = scratch.root() / "assets" / "client" / "Sponza";
+    const std::filesystem::path importFolder = scratch.root() / "assets" / "client" / "glTF" / "Sponza";
 
     std::vector<std::byte> firstModel;
     {
@@ -850,7 +850,7 @@ TEST_CASE("the startup load imports nothing into a folder that already exists", 
     ScratchDirectory scratch{"editorSkipsExistingImportFolder"};
     writeProjectLayout(scratch);
     scratch.writeFile(STARTUP_IMPORT_FILE, TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
-    const std::filesystem::path importFolder = scratch.makeDirectory("assets/client/Sponza");
+    const std::filesystem::path importFolder = scratch.makeDirectory("assets/client/glTF/Sponza");
 
     EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
     editor.bootstrap();

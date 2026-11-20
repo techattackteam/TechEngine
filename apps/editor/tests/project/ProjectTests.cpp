@@ -2,11 +2,14 @@
 #include <TechEngine/core/SimulationContext.hpp>
 #include <TechEngine/core/assets/AssetSource.hpp>
 #include <TechEngine/core/assets/PackSource.hpp>
+#include <TechEngine/core/jobs/JobSystem.hpp>
+#include <TechEngine/core/material/Material.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/mesh/MeshRenderer.hpp>
 #include <TechEngine/core/resources/AssetRef.hpp>
 #include <TechEngine/core/resources/BootRecord.hpp>
 #include <TechEngine/core/resources/PackReader.hpp>
+#include <TechEngine/core/resources/ResourceCache.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/resources/Side.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
@@ -17,6 +20,7 @@
 #include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/core/serialization/ReadError.hpp>
+#include <TechEngine/core/texture/Texture.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/platform/files/MountTable.hpp>
 #include <TechEngine/testing/ScratchDirectory.hpp>
@@ -31,6 +35,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -85,6 +90,9 @@ namespace {
     constexpr ResourceId EXPORT_MESH_ID{0x5500000000000005};
     constexpr ResourceId EXPORT_SERVER_MESH_ID{0x6600000000000006};
     constexpr ResourceId EXPORT_LINKED_SCENE_ID{0x7700000000000007};
+    constexpr ResourceId EXPORT_MATERIAL_ID{0x8800000000000008};
+    constexpr ResourceId EXPORT_SECOND_MATERIAL_ID{0x9900000000000009};
+    constexpr ResourceId EXPORT_TEXTURE_ID{0xaa0000000000000a};
 
     constexpr std::string_view RUNTIME_STAND_IN = "a stand-in for the runtime executable";
 
@@ -93,6 +101,14 @@ namespace {
         registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
         registry.registerComponent<TechEngine::Name>(TechEngine::Name::tag);
         registry.registerComponent<TechEngine::MeshRenderer>(TechEngine::MeshRenderer::tag);
+    }
+
+    void registerExportLoaders(TechEngine::ResourceCache& cache) {
+        cache.registerLoader<TechEngine::SceneBytes>(SCENE_KIND, SCENE_TYPE_TAG, &TechEngine::SceneBytes::loadPayload);
+        cache.registerLoader<TechEngine::Mesh>(TechEngine::MESH_KIND, MESH_TYPE_TAG, &TechEngine::Mesh::loadPayload);
+        cache.registerLoader<TechEngine::Material>(TechEngine::MATERIAL_KIND, TechEngine::MATERIAL_TYPE_TAG, &TechEngine::Material::loadPayload);
+        cache.registerLoader<TechEngine::Texture>(TechEngine::TEXTURE_KIND, TechEngine::TEXTURE_TYPE_TAG, &TechEngine::Texture::loadPayload);
+        cache.closeLoaders();
     }
 
     std::vector<std::byte> sceneReferencing(const ResourceId id, const std::vector<ResourceId>& meshes) {
@@ -117,6 +133,7 @@ namespace {
             m_mounts.mount("project", m_scratch.root());
             m_outputMounts.mount("out", outFolder() / "Export" / "assets");
             registerExportComponents(m_registry);
+            registerExportLoaders(m_resources);
 
             m_sceneBytes = sceneReferencing(EXPORT_SCENE_ID, {});
             writeBytes(m_scratch, "assets/common/start.tescene", m_sceneBytes);
@@ -136,12 +153,12 @@ namespace {
         }
 
         std::error_code runExport() {
-            return m_project.exportTo(Role::Client, m_index, m_files, m_registry, runtimePath(), outFolder());
+            return m_project.exportTo(Role::Client, m_index, m_files, m_registry, m_resources, runtimePath(), outFolder());
         }
 
         void applyExportCommand(const TechEngine::EditSession& session) {
             TechEngine::Scene unused(m_registry);
-            TechEngine::ExportCommand command{session, m_project, m_index, m_files, m_registry, runtimePath(), outFolder(), [this](const bool exported) {
+            TechEngine::ExportCommand command{session, m_project, m_index, m_files, m_registry, m_resources, runtimePath(), outFolder(), [this](const bool exported) {
                                                   m_finishedCount++;
                                                   m_exported = exported;
                                               }};
@@ -193,6 +210,8 @@ namespace {
         Project m_project;
         AssetIndex m_index;
         ComponentRegistry m_registry;
+        TechEngine::JobSystem m_jobs;
+        TechEngine::ResourceCache m_resources{m_jobs};
         std::vector<std::byte> m_sceneBytes;
         int m_finishedCount = 0;
         bool m_exported = false;
@@ -566,7 +585,7 @@ TEST_CASE("a failed export command writes nothing", "[editor][project][export][o
     CHECK_FALSE(scratch.exported());
 }
 
-TEST_CASE("the dev project exports into a folder the runtime opens beside itself", "[editor][project][export][os]") {
+TEST_CASE("the dev project exports into a folder the runtime opens beside itself", "[editor][project][export][os][lfs]") {
     const ScratchDirectory scratch{"projectExportDevProject"};
     const std::filesystem::path runtimePath = scratch.writeFile("bin/runtime", RUNTIME_STAND_IN);
     MountTable mounts;
@@ -578,8 +597,11 @@ TEST_CASE("the dev project exports into a folder the runtime opens beside itself
     REQUIRE(index.build(files, "project://assets") == std::error_code{});
     ComponentRegistry registry;
     registerExportComponents(registry);
+    TechEngine::JobSystem jobs;
+    TechEngine::ResourceCache resources{jobs};
+    registerExportLoaders(resources);
 
-    REQUIRE(project.exportTo(Role::Client, index, files, registry, runtimePath, scratch.root() / "out") == std::error_code{});
+    REQUIRE(project.exportTo(Role::Client, index, files, registry, resources, runtimePath, scratch.root() / "out") == std::error_code{});
 
     const std::filesystem::path runtimeFolder = scratch.root() / "out" / project.name();
     CHECK(std::filesystem::is_regular_file(runtimeFolder / "runtime"));
@@ -623,6 +645,102 @@ static std::vector<std::byte> meshBytes(const ResourceId id) {
     std::vector<std::byte> bytes;
     mesh.write(bytes);
     return bytes;
+}
+
+static std::vector<std::byte> meshWithDefaults(const ResourceId id, const ResourceId firstMaterial, const ResourceId secondMaterial) {
+    TechEngine::Mesh mesh;
+    mesh.id = id;
+    mesh.positions = {TechEngine::Vec3(-0.5f, -0.5f, 0.0f), TechEngine::Vec3(0.5f, -0.5f, 0.0f), TechEngine::Vec3(0.0f, 0.5f, 0.0f)};
+    mesh.indices = {0, 1, 2, 0, 2, 1};
+    mesh.slots = {TechEngine::MeshSlot{"First", 0, 3, firstMaterial}, TechEngine::MeshSlot{"Second", 3, 3, secondMaterial}};
+    std::vector<std::byte> bytes;
+    mesh.write(bytes);
+    return bytes;
+}
+
+static std::vector<std::byte> materialNaming(const ResourceId id, const ResourceId baseColorTexture) {
+    TechEngine::Material material;
+    material.id = id;
+    material.baseColorTexture.id = baseColorTexture;
+    std::vector<std::byte> bytes;
+    material.write(bytes);
+    return bytes;
+}
+
+static std::vector<std::byte> textureBytes(const ResourceId id) {
+    TechEngine::Texture texture;
+    texture.id = id;
+    texture.width = 4;
+    texture.height = 4;
+    const std::uint32_t levels = TechEngine::Texture::mipCount(texture.width, texture.height);
+    for (std::uint32_t level = 0; level < levels; level++) {
+        texture.mips.emplace_back(static_cast<std::size_t>(TechEngine::Texture::mipByteSize(texture.format, texture.width, texture.height, level)));
+    }
+    std::vector<std::byte> bytes;
+    texture.write(bytes);
+    return bytes;
+}
+
+static std::size_t clientEntryCount(const ExportScratch& scratch) {
+    PackReader client{scratch.outputFiles()};
+    REQUIRE(client.open("out://client.tepack") == std::error_code{});
+    return client.getEntries().size();
+}
+
+static bool clientPacks(const ExportScratch& scratch, const ResourceId id) {
+    PackReader client{scratch.outputFiles()};
+    REQUIRE(client.open("out://client.tepack") == std::error_code{});
+    PackEntry entry;
+    return client.find(id, entry);
+}
+
+TEST_CASE("exportTo packs what each reached asset depends on: a mesh's default materials and a material's textures", "[editor][project][export][os]") {
+    ExportScratch scratch{"projectExportPacksDependencies"};
+    scratch.writeAsset("assets/client/Ship.temesh", meshWithDefaults(EXPORT_MESH_ID, EXPORT_MATERIAL_ID, EXPORT_SECOND_MATERIAL_ID));
+    scratch.writeAsset("assets/client/Hull.tematerial", materialNaming(EXPORT_MATERIAL_ID, EXPORT_TEXTURE_ID));
+    scratch.writeAsset("assets/client/Sail.tematerial", materialNaming(EXPORT_SECOND_MATERIAL_ID, EXPORT_TEXTURE_ID));
+    scratch.writeAsset("assets/client/Wood.tetexture", textureBytes(EXPORT_TEXTURE_ID));
+    scratch.writeAsset("assets/common/linked.tescene", sceneReferencing(EXPORT_LINKED_SCENE_ID, {EXPORT_MESH_ID}));
+    scratch.open(manifestNaming(EXPORT_LINKED_SCENE_ID));
+
+    REQUIRE(scratch.runExport() == std::error_code{});
+
+    CHECK(clientPacks(scratch, EXPORT_MESH_ID));
+    CHECK(clientPacks(scratch, EXPORT_MATERIAL_ID));
+    CHECK(clientPacks(scratch, EXPORT_SECOND_MATERIAL_ID));
+    CHECK(clientPacks(scratch, EXPORT_TEXTURE_ID));
+    CHECK(clientEntryCount(scratch) == 4);
+    const BootRecord record = scratch.readBootRecord();
+    CHECK(record.sides.size() == 5);
+    PackSource source{scratch.outputFiles()};
+    REQUIRE(source.open(record, Role::Client, "out://") == std::error_code{});
+    CHECK(source.find(EXPORT_TEXTURE_ID) == AssetAvailability::Present);
+}
+
+TEST_CASE("exportTo returns UnknownReference when a reached asset depends on an unindexed asset, and claims no folder", "[editor][project][export][os]") {
+    ExportScratch scratch{"projectExportUnknownDependency"};
+    scratch.writeAsset("assets/client/Ship.temesh", meshWithDefaults(EXPORT_MESH_ID, EXPORT_MATERIAL_ID, EXPORT_MATERIAL_ID));
+    scratch.writeAsset("assets/client/Hull.tematerial", materialNaming(EXPORT_MATERIAL_ID, EXPORT_UNINDEXED_ID));
+    scratch.writeAsset("assets/common/linked.tescene", sceneReferencing(EXPORT_LINKED_SCENE_ID, {EXPORT_MESH_ID}));
+    scratch.open(manifestNaming(EXPORT_LINKED_SCENE_ID));
+
+    REQUIRE(scratch.runExport() == ProjectError::UnknownReference);
+
+    CHECK_FALSE(std::filesystem::exists(scratch.outFolder()));
+}
+
+TEST_CASE("exportTo returns the read error of a reached asset whose dependencies cannot be listed, and claims no folder", "[editor][project][export][os]") {
+    ExportScratch scratch{"projectExportBrokenDependency"};
+    std::vector<std::byte> broken = materialNaming(EXPORT_MATERIAL_ID, EXPORT_TEXTURE_ID);
+    broken.resize(broken.size() - 4);
+    scratch.writeAsset("assets/client/Ship.temesh", meshWithDefaults(EXPORT_MESH_ID, EXPORT_MATERIAL_ID, EXPORT_MATERIAL_ID));
+    scratch.writeAsset("assets/client/Hull.tematerial", broken);
+    scratch.writeAsset("assets/common/linked.tescene", sceneReferencing(EXPORT_LINKED_SCENE_ID, {EXPORT_MESH_ID}));
+    scratch.open(manifestNaming(EXPORT_LINKED_SCENE_ID));
+
+    CHECK(scratch.runExport() == TechEngine::ReadError::Truncated);
+
+    CHECK_FALSE(std::filesystem::exists(scratch.outFolder()));
 }
 
 TEST_CASE("exportTo packs the mesh the startup scene references into client.tepack", "[editor][project][export][os]") {

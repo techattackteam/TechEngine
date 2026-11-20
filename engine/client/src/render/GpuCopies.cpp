@@ -56,6 +56,10 @@ namespace TechEngine {
         return &it->second;
     }
 
+    const GeometryBuffers& GpuCopies::getGeometry() const {
+        return m_geometry;
+    }
+
     const MaterialBuffer& GpuCopies::getMaterials() const {
         return m_materials;
     }
@@ -78,6 +82,7 @@ namespace TechEngine {
         if (error) {
             TE_LOGGER_ERROR("GpuCopies: mesh {0:#018x} was not placed in the geometry buffers: {1}", record.id.value(), error.message());
         }
+        resolveMeshSlots(mesh, record.dependencies, copy.meshSlots);
     }
 
     void GpuCopies::uploadTexture(const ResourceUploadRecord& record, GpuCopy& copy) {
@@ -105,6 +110,8 @@ namespace TechEngine {
         gpuMaterial.metallicFactor = material.metallicFactor;
         gpuMaterial.normalScale = material.normalScale;
         gpuMaterial.shadingModel = static_cast<std::uint32_t>(material.shadingModel);
+        copy.alphaMode = material.alphaMode;
+        copy.doubleSided = material.doubleSided;
         resolveTextureSlots(material, record.dependencies, copy.textureSlots);
         for (std::size_t input = 0; input < MATERIAL_TEXTURE_INPUT_COUNT; input++) {
             const GpuCopy* textureCopy = findCopy(copy.textureSlots[input]);
@@ -144,6 +151,25 @@ namespace TechEngine {
                     TE_LOGGER_ERROR("GpuCopies: material {0:#018x} was not updated with the handle of texture slot {1}: {2}", copy.id.value(), texture.index, writeError.message());
                 }
             }
+        }
+    }
+
+    void GpuCopies::resolveMeshSlots(const Mesh& mesh, const std::vector<ResourceSlotId>& dependencies, std::vector<GpuMeshSlot>& out) {
+        out.clear();
+        std::size_t dependencyIndex = 0;
+        for (const MeshSlot& meshSlot: mesh.slots) {
+            GpuMeshSlot gpuSlot;
+            gpuSlot.firstIndex = meshSlot.firstIndex;
+            gpuSlot.indexCount = meshSlot.indexCount;
+            if (meshSlot.defaultMaterial.valid()) {
+                const bool dependencyAvailable = dependencyIndex < dependencies.size();
+                TE_CHECK(dependencyAvailable, "GpuCopies: mesh slot default material dependency list is incomplete");
+                if (dependencyAvailable) {
+                    gpuSlot.defaultMaterial = dependencies[dependencyIndex];
+                    dependencyIndex++;
+                }
+            }
+            out.push_back(gpuSlot);
         }
     }
 

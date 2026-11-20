@@ -20,7 +20,8 @@
 # `ctest -LE`, never includes, so a case that misses its tag runs more rather than less. [gpu] draws
 # or loads GL and runs only on the Linux legs over zink, because no software driver on a Windows
 # runner meets the renderer's GL floor and TSan reports races in zink's own threads. [stress]
-# stays off the sanitizer legs. [os] runs everywhere.
+# stays off the sanitizer legs. [os] runs everywhere. [lfs] reads Git LFS files, which checkout
+# does not fetch, so it runs on no leg and not under coverage.
 
 name: CI
 
@@ -216,7 +217,7 @@ jobs:
         env:
           GALLIUM_DRIVER: llvmpipe
           LIBGL_ALWAYS_SOFTWARE: "1"
-        run: ctest --preset ${{ matrix.test }} -LE '^gpu$'
+        run: ctest --preset ${{ matrix.test }} -LE '^(gpu|lfs)$'
 
       # zink over lavapipe takes a CPU Vulkan device only with LIBGL_ALWAYS_SOFTWARE set, and gives
       # a context only through EGL, which wants a 24-bit screen.
@@ -226,7 +227,7 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: "1"
           GALLIUM_DRIVER: zink
           VK_DRIVER_FILES: /usr/share/vulkan/icd.d/lvp_icd.json
-        run: xvfb-run -a -s '-screen 0 1280x720x24' ctest --preset ${{ matrix.test }}
+        run: xvfb-run -a -s '-screen 0 1280x720x24' ctest --preset ${{ matrix.test }} -LE '^lfs$'
 
       - name: ccache stats
         run: ccache -s
@@ -468,7 +469,7 @@ jobs:
         env:
           GALLIUM_DRIVER: llvmpipe
           LIBGL_ALWAYS_SOFTWARE: "1"
-        run: ctest --preset ${{ matrix.test }} -LE '^(gpu|stress)$'
+        run: ctest --preset ${{ matrix.test }} -LE '^(gpu|stress|lfs)$'
 
       - name: Test under Xvfb
         if: runner.os == 'Linux'
@@ -479,10 +480,10 @@ jobs:
             # Standalone GLFW reproduces llvmpipe's lp_fence_destroy TSan report.
             # Keep TechEngine instrumented while disabling Mesa workers on this leg.
             export LP_NUM_THREADS=0
-            xvfb-run -a ctest --preset linux-tsan -LE '^(gpu|stress)$'
+            xvfb-run -a ctest --preset linux-tsan -LE '^(gpu|stress|lfs)$'
           else
             export GALLIUM_DRIVER=zink VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.json
-            xvfb-run -a -s '-screen 0 1280x720x24' ctest --preset '${{ matrix.test }}' -LE '^stress$'
+            xvfb-run -a -s '-screen 0 1280x720x24' ctest --preset '${{ matrix.test }}' -LE '^(stress|lfs)$'
           fi
 
       - name: ccache stats

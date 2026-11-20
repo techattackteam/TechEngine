@@ -3,6 +3,7 @@
 #include <TechEngine/client/ClientError.hpp>
 
 #include <render/device/RenderDevice.hpp>
+#include <render/device/draw/IndexedIndirectCommand.hpp>
 
 #include <glad/gl.h>
 
@@ -580,6 +581,46 @@ namespace TechEngine {
             return;
         }
         glBindBufferRange(GL_SHADER_STORAGE_BUFFER, binding, gpuBuffer->id, static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size));
+    }
+
+    void RenderDevice::bindUniformBuffer(const std::uint32_t binding, const BufferHandle buffer, const std::size_t offset, const std::size_t size) {
+        const GpuBuffer* gpuBuffer = m_buffers.find(buffer);
+        TE_CHECK(gpuBuffer != nullptr, "RenderDevice::bindUniformBuffer called with a stale or invalid buffer handle");
+        if (gpuBuffer == nullptr) {
+            return;
+        }
+        const bool inBounds = offset <= gpuBuffer->size && size <= gpuBuffer->size - offset;
+        TE_CHECK(inBounds, "RenderDevice::bindUniformBuffer range {0}+{1} is past the buffer's {2} bytes", offset, size, gpuBuffer->size);
+        if (!inBounds) {
+            return;
+        }
+        glBindBufferRange(GL_UNIFORM_BUFFER, binding, gpuBuffer->id, static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size));
+    }
+
+    void RenderDevice::drawIndexedIndirect(const BufferHandle commands, const std::size_t offset, const std::uint32_t drawCount) {
+        const GpuPipeline* gpuPipeline = getBoundPipeline("drawIndexedIndirect");
+        if (gpuPipeline == nullptr) {
+            return;
+        }
+        const bool indexed = m_buffers.find(m_boundIndexBuffer) != nullptr;
+        TE_CHECK(indexed, "RenderDevice::drawIndexedIndirect called with no live index buffer bound");
+        if (!indexed) {
+            return;
+        }
+        const GpuBuffer* gpuBuffer = m_buffers.find(commands);
+        TE_CHECK(gpuBuffer != nullptr, "RenderDevice::drawIndexedIndirect called with a stale or invalid command buffer handle");
+        if (gpuBuffer == nullptr) {
+            return;
+        }
+        const bool inBounds = offset <= gpuBuffer->size && drawCount * sizeof(IndexedIndirectCommand) <= gpuBuffer->size - offset;
+        TE_CHECK(inBounds, "RenderDevice::drawIndexedIndirect range {0}+{1} is past the command buffer's {2} bytes", offset, drawCount * sizeof(IndexedIndirectCommand), gpuBuffer->size);
+        if (!inBounds) {
+            return;
+        }
+        const unsigned int mode = gpuPipeline->topology == PrimitiveTopology::Lines ? GL_LINES : GL_TRIANGLES;
+        // With no buffer bound here, GL reads the offset as a pointer into client memory.
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, gpuBuffer->id);
+        glMultiDrawElementsIndirect(mode, GL_UNSIGNED_INT, reinterpret_cast<const void*>(offset), static_cast<GLsizei>(drawCount), 0);
     }
 
     void RenderDevice::drawIndexed(const std::uint32_t indexCount, const std::uint32_t firstIndex, const std::int32_t baseVertex) {

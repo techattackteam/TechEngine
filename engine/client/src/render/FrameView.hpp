@@ -12,7 +12,6 @@ namespace TechEngine {
         // Points into the history, so the next acquire can free it.
         const FramePacket* packet = nullptr;
         std::array<float, 4> clearColor{};
-        bool drawTriangle = false;
         InputState input;
         bool hasCamera = false;
         PacketCamera camera;

@@ -59,7 +59,6 @@ namespace TechEngine {
             return;
         }
         packet->clearColor = {0.1F, 0.1F, 0.1F, 1.0F};
-        packet->drawTriangle = true;
         packet->tick = simulation.tick;
         packet->tickTime = simulation.tickTime;
         packet->fixedDeltaTime = simulation.fixedDeltaTime;

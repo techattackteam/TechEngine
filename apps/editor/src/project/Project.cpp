@@ -3,6 +3,7 @@
 #include <TechEngine/core/SimulationContext.hpp>
 #include <TechEngine/core/resources/BootRecord.hpp>
 #include <TechEngine/core/resources/PackWriter.hpp>
+#include <TechEngine/core/resources/ResourceCache.hpp>
 #include <TechEngine/core/resources/Side.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
@@ -26,6 +27,7 @@
 #include <sstream>
 #include <string>
 #include <system_error>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -44,6 +46,11 @@ namespace TechEngine {
     struct ExportPack {
         ExportPackFile file;
         PackWriter writer;
+    };
+
+    struct ExportReference {
+        ResourceId holder;
+        ResourceId id;
     };
 
     static constexpr std::array<ExportTargetSides, 1> EXPORT_TARGETS{{
@@ -131,7 +138,7 @@ namespace TechEngine {
         return {};
     }
 
-    std::error_code Project::exportTo(const Role target, const AssetIndex& index, const FileAccess& files, ComponentRegistry& registry, const std::filesystem::path& runtimePath, const std::filesystem::path& exportFolder) const {
+    std::error_code Project::exportTo(const Role target, const AssetIndex& index, const FileAccess& files, ComponentRegistry& registry, const ResourceCache& resources, const std::filesystem::path& runtimePath, const std::filesystem::path& exportFolder) const {
         const auto exportTarget = std::ranges::find(EXPORT_TARGETS, target, &ExportTargetSides::role);
         TE_CHECK(exportTarget != EXPORT_TARGETS.end(), "Export target {0} is not built yet", static_cast<int>(target));
         const auto ships = [&exportTarget](const Side side) {
@@ -158,22 +165,12 @@ namespace TechEngine {
         }
 
         std::vector<AssetRecord> reached;
-        const std::error_code reachError = collectReachedAssets(scene, scenePayload, index, registry, reached);
+        std::vector<std::vector<std::byte>> payloads;
+        const std::error_code reachError = collectReachedAssets(scene, scenePayload, index, files, registry, resources, reached, payloads);
         if (reachError) {
             return reachError;
         }
-
-        std::vector<std::vector<std::byte>> payloads(reached.size());
         payloads[0] = std::move(scenePayload);
-        for (std::size_t i = 1; i < reached.size(); i++) {
-            if (!ships(reached[i].side)) {
-                continue;
-            }
-            const std::error_code assetReadError = files.read(reached[i].path, payloads[i]);
-            if (assetReadError) {
-                return assetReadError;
-            }
-        }
 
         std::vector<ExportPack> packs;
         RolePacks rolePacks;
@@ -279,30 +276,56 @@ namespace TechEngine {
         m_clientStartupScene = id;
     }
 
-    std::error_code Project::collectReachedAssets(const AssetRecord& scene, const std::span<const std::byte> sceneBytes, const AssetIndex& index, ComponentRegistry& registry, std::vector<AssetRecord>& out) const {
+    std::error_code Project::collectReachedAssets(
+        const AssetRecord& scene, const std::span<const std::byte> sceneBytes, const AssetIndex& index, const FileAccess& files, ComponentRegistry& registry, const ResourceCache& resources, std::vector<AssetRecord>& out, std::vector<std::vector<std::byte>>& payloads) const {
         Scene parsed(registry);
         SceneAsset asset;
         const std::error_code parseError = asset.read(sceneBytes, parsed);
         if (parseError) {
             return parseError;
         }
-        std::vector<ResourceId> references;
-        asset.collectReferences(parsed, references);
+        std::vector<ResourceId> sceneReferences;
+        asset.collectReferences(parsed, sceneReferences);
 
+        std::vector<ExportReference> pending;
+        for (const ResourceId reference: sceneReferences) {
+            pending.push_back(ExportReference{scene.id, reference});
+        }
         std::vector<AssetRecord> reached = {scene};
-        for (const ResourceId reference: references) {
-            // PackWriter::add rejects an id added twice. The runtime's load fails this scene as cyclic.
-            if (reference == scene.id) {
+        std::vector<std::vector<std::byte>> reachedPayloads(1);
+        std::unordered_set<ResourceId> visited = {scene.id};
+        std::vector<ResourceId> dependencies;
+        // Grows while it is walked, so it is indexed rather than iterated.
+        for (std::size_t next = 0; next < pending.size(); next++) {
+            const ExportReference reference = pending[next];
+            // Assets share dependencies and a reference can loop back to the scene, and PackWriter::add rejects an id added twice.
+            const bool firstVisit = visited.insert(reference.id).second;
+            if (!firstVisit) {
                 continue;
             }
             AssetRecord record;
-            if (!index.find(reference, record)) {
-                TE_LOGGER_ERROR("The startup scene {0:#018x} references {1:#018x}, which is not an indexed asset", scene.id.value(), reference.value());
+            if (!index.find(reference.id, record)) {
+                TE_LOGGER_ERROR("{0:#018x} references {1:#018x}, which is not an indexed asset", reference.holder.value(), reference.id.value());
                 return ProjectError::UnknownReference;
             }
+            std::vector<std::byte> bytes;
+            const std::error_code readError = files.read(record.path, bytes);
+            if (readError) {
+                return readError;
+            }
+            const std::error_code dependencyError = resources.listDependencies(bytes, dependencies);
+            if (dependencyError) {
+                TE_LOGGER_ERROR("Export cannot list the dependencies of {0}: {1}", record.path, dependencyError.message());
+                return dependencyError;
+            }
+            for (const ResourceId dependency: dependencies) {
+                pending.push_back(ExportReference{record.id, dependency});
+            }
             reached.push_back(std::move(record));
+            reachedPayloads.push_back(std::move(bytes));
         }
         out = std::move(reached);
+        payloads = std::move(reachedPayloads);
         return {};
     }
 
