@@ -97,10 +97,6 @@ namespace TechEngine {
     }
 
     void RenderDevice::destroyTexture(const TextureHandle handle) {
-        TE_CHECK(handle.valid(), "RenderDevice::destroyTexture invalid handle");
-        if (!handle.valid()) {
-            return;
-        }
         const GpuTexture* gpuTexture = m_textures.find(handle);
         TE_CHECK(gpuTexture != nullptr, "RenderDevice::destroyTexture called with a stale or invalid handle");
         if (gpuTexture == nullptr) {
@@ -154,10 +150,6 @@ namespace TechEngine {
     }
 
     void RenderDevice::destroyProgram(const ProgramHandle program) {
-        TE_CHECK(program.valid(), "RenderDevice::destroyProgram invalid handle");
-        if (!program.valid()) {
-            return;
-        }
         const GpuProgram* gpuProgram = m_programs.find(program);
         TE_CHECK(gpuProgram != nullptr, "RenderDevice::destroyProgram called with a stale or invalid handle");
         if (gpuProgram == nullptr) {
@@ -220,12 +212,8 @@ namespace TechEngine {
     }
 
     void RenderDevice::destroyPipeline(const PipelineHandle pipeline) {
-        TE_CHECK(pipeline.valid(), "RenderDevice::destroyPipeline called with a null handle");
-        if (!pipeline.valid()) {
-            return;
-        }
         const GpuPipeline* gpuPipeline = m_pipelines.find(pipeline);
-        TE_CHECK(gpuPipeline != nullptr, "RenderDevice::destroyPipeline called with a stale handle");
+        TE_CHECK(gpuPipeline != nullptr, "RenderDevice::destroyPipeline called with a stale or invalid handle");
         if (gpuPipeline == nullptr) {
             return;
         }
@@ -271,12 +259,8 @@ namespace TechEngine {
     }
 
     void RenderDevice::destroyRenderTarget(const RenderTargetHandle target) {
-        TE_CHECK(target.valid(), "RenderDevice::destroyRenderTarget called with a null handle");
-        if (!target.valid()) {
-            return;
-        }
         const GpuRenderTarget* gpuRenderTarget = m_renderTargets.find(target);
-        TE_CHECK(gpuRenderTarget != nullptr, "RenderDevice::destroyRenderTarget called with a stale handle");
+        TE_CHECK(gpuRenderTarget != nullptr, "RenderDevice::destroyRenderTarget called with a stale or invalid handle");
         if (gpuRenderTarget == nullptr) {
             return;
         }
