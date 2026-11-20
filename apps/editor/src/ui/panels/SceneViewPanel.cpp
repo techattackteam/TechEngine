@@ -17,24 +17,28 @@ namespace TechEngine {
     SceneViewPanel::SceneViewPanel() : ViewPanel("Scene", SCENE_VIEW_TOKEN) {
     }
 
-    void SceneViewPanel::updateCamera(const EditorSnapshot& snapshot, const bool imageHovered) {
+    void SceneViewPanel::updateCamera(const EditorSnapshot& snapshot, const ImVec2& imageSize, const bool imageHovered) {
         const ImGuiIO& io = ImGui::GetIO();
-        if (!m_looking && imageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-            m_looking = true;
-            m_lookAnchor = io.MousePos;
-        }
-        if (m_looking && !ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
-            m_looking = false;
-        }
+        trackDrags(imageHovered);
 
         FlyCameraInput input;
         float selectedRadius = 0.0f;
         input.hasPivot = findSelected(snapshot, input.pivot, selectedRadius);
+        input.viewHeight = imageSize.y;
+        if (m_panning) {
+            input.panning = true;
+            input.panDelta = Vec2(io.MouseDelta.x, io.MouseDelta.y);
+            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+        }
         if (m_looking) {
             readLookInput(input);
         }
+        if (imageHovered) {
+            input.zoom = io.MouseWheel;
+        }
 
-        const bool focusPressed = (imageHovered || ImGui::IsWindowFocused()) && !io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F, false);
+        // Any panel may have focus, such as the hierarchy right after a click on the entity, so F is not tied to this one.
+        const bool focusPressed = !io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F, false);
         if (focusPressed && input.hasPivot) {
             m_camera.focus(input.pivot, selectedRadius);
         }
@@ -44,7 +48,23 @@ namespace TechEngine {
     void SceneViewPanel::describeCamera(ViewRequest& request) const {
         request.cameraSource = ViewCameraSource::Pose;
         request.pose.world = m_camera.getWorld();
-        request.pose.settings = Camera{};
+        request.pose.settings = m_camera.getSettings();
+    }
+
+    void SceneViewPanel::trackDrags(const bool imageHovered) {
+        if (!m_looking && imageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+            m_looking = true;
+            m_lookAnchor = ImGui::GetIO().MousePos;
+        }
+        if (m_looking && !ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+            m_looking = false;
+        }
+        if (!m_panning && imageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Middle)) {
+            m_panning = true;
+        }
+        if (m_panning && !ImGui::IsMouseDown(ImGuiMouseButton_Middle)) {
+            m_panning = false;
+        }
     }
 
     void SceneViewPanel::readLookInput(FlyCameraInput& input) {
@@ -53,7 +73,6 @@ namespace TechEngine {
         input.lookDelta = Vec2(io.MouseDelta.x, io.MouseDelta.y);
         input.move = Vec3(getKeyAxis(ImGuiKey_D, ImGuiKey_A), getKeyAxis(ImGuiKey_E, ImGuiKey_Q), getKeyAxis(ImGuiKey_W, ImGuiKey_S));
         input.fast = io.KeyShift;
-        input.wheel = io.MouseWheel;
         ImGui::SetMouseCursor(ImGuiMouseCursor_None);
         // Puts the cursor back where the drag started, so it never stops at the screen's edge and next frame's
         // delta is measured from the anchor.

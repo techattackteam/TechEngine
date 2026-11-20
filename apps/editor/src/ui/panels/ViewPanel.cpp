@@ -30,9 +30,9 @@ namespace TechEngine {
             ImGui::Image(ImTextureRef(m_token), contentRegion, ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
             imageHovered = ImGui::IsItemHovered();
         }
-        updateCamera(snapshot, imageHovered);
+        updateCamera(snapshot, contentRegion, imageHovered);
     }
 
-    void ViewPanel::updateCamera(const EditorSnapshot&, bool) {
+    void ViewPanel::updateCamera(const EditorSnapshot&, const ImVec2&, bool) {
     }
 }

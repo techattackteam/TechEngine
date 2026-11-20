@@ -4,6 +4,8 @@
 
 #include <ui/panels/Panel.hpp>
 
+#include <imgui.h>
+
 #include <cstdint>
 #include <string>
 
@@ -23,8 +25,9 @@ namespace TechEngine {
     protected:
         void onDraw(const EditorSnapshot& snapshot) override;
 
-        // Runs inside the panel's window after the image, and not at all while the panel is hidden.
-        virtual void updateCamera(const EditorSnapshot& snapshot, bool imageHovered);
+        // Runs inside the panel's window after the image, and not at all while the panel is hidden. imageSize is in
+        // ImGui's pixels, the same as its mouse positions, not the target's framebuffer pixels.
+        virtual void updateCamera(const EditorSnapshot& snapshot, const ImVec2& imageSize, bool imageHovered);
 
         virtual void describeCamera(ViewRequest& request) const = 0;
     };

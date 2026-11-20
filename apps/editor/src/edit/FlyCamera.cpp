@@ -15,6 +15,7 @@ namespace TechEngine {
     static constexpr float DEFAULT_DISTANCE = 5.0f;
     static constexpr float DEFAULT_PITCH_DEGREES = -10.0f;
     static constexpr float DIRECTION_EPSILON = 0.0001f;
+    static constexpr float ZOOM_REST_DISTANCE = 0.0001f;
 
     FlyCamera::FlyCamera() : m_position(0.0f, DEFAULT_HEIGHT, DEFAULT_DISTANCE) {
         m_pitch = glm::radians(DEFAULT_PITCH_DEGREES);
@@ -23,21 +24,19 @@ namespace TechEngine {
 
     void FlyCamera::update(const FlyCameraInput& input, const float deltaTime) {
         const float step = std::clamp(deltaTime, 0.0f, MAX_DELTA_TIME);
-        if (input.looking) {
-            m_speedScale = std::clamp(m_speedScale * std::pow(SPEED_STEP, input.wheel), MIN_SPEED_SCALE, MAX_SPEED_SCALE);
-        }
-
         if (m_focusing) {
-            const bool steering = input.looking && (input.lookDelta != Vec2(0.0f) || input.move != Vec3(0.0f));
-            if (!steering) {
+            if (!isSteering(input)) {
                 advanceFocus(step);
                 return;
             }
             m_focusing = false;
         }
 
+        m_zoomRemaining += input.zoom * getZoomStep(input);
         look(input, step);
         move(input, step);
+        pan(input);
+        advanceZoom(step);
     }
 
     void FlyCamera::focus(const Vec3& target, const float radius) {
@@ -61,10 +60,15 @@ namespace TechEngine {
         m_focusElapsed = 0.0f;
         m_focusing = true;
         m_velocity = Vec3(0.0f);
+        m_zoomRemaining = 0.0f;
     }
 
     Mat4 FlyCamera::getWorld() const {
         return glm::translate(Mat4(1.0f), m_position) * glm::mat4_cast(getRotation());
+    }
+
+    const Camera& FlyCamera::getSettings() const {
+        return m_settings;
     }
 
     const Vec3& FlyCamera::getPosition() const {
@@ -73,6 +77,14 @@ namespace TechEngine {
 
     Vec3 FlyCamera::getForward() const {
         return forwardOf(m_yaw, m_pitch);
+    }
+
+    Vec3 FlyCamera::getRight() const {
+        return getRotation() * Vec3(1.0f, 0.0f, 0.0f);
+    }
+
+    Vec3 FlyCamera::getUp() const {
+        return getRotation() * Vec3(0.0f, 1.0f, 0.0f);
     }
 
     float FlyCamera::getYaw() const {
@@ -87,21 +99,45 @@ namespace TechEngine {
         return m_velocity;
     }
 
-    float FlyCamera::getSpeedScale() const {
-        return m_speedScale;
-    }
-
     bool FlyCamera::isFocusing() const {
         return m_focusing;
     }
 
-    float FlyCamera::getTargetSpeed(const FlyCameraInput& input) const {
-        float distance = DEFAULT_SPEED_DISTANCE;
-        if (input.hasPivot) {
-            distance = glm::length(input.pivot - m_position);
+    float FlyCamera::getReferenceDistance(const FlyCameraInput& input) const {
+        if (!input.hasPivot) {
+            return DEFAULT_REFERENCE_DISTANCE;
         }
-        const float speed = std::clamp(distance, MIN_SPEED_DISTANCE, MAX_SPEED_DISTANCE) * SPEED_PER_METRE * m_speedScale;
+        return std::clamp(glm::length(input.pivot - m_position), MIN_REFERENCE_DISTANCE, MAX_REFERENCE_DISTANCE);
+    }
+
+    float FlyCamera::getTargetSpeed(const FlyCameraInput& input) const {
+        const float speed = getReferenceDistance(input) * SPEED_PER_METRE;
         return input.fast ? speed * FAST_MULTIPLIER : speed;
+    }
+
+    float FlyCamera::getZoomStep(const FlyCameraInput& input) const {
+        if (!input.hasPivot) {
+            return DEFAULT_REFERENCE_DISTANCE * ZOOM_STEP_PER_METRE;
+        }
+        // Measured from where the zoom still under way will end, so quick steps toward the pivot shrink instead of
+        // passing it.
+        const Vec3 destination = m_position + getForward() * m_zoomRemaining;
+        const float distance = std::clamp(glm::length(input.pivot - destination), MIN_REFERENCE_DISTANCE, MAX_REFERENCE_DISTANCE);
+        return distance * ZOOM_STEP_PER_METRE;
+    }
+
+    float FlyCamera::getPanMetresPerPixel(const FlyCameraInput& input) const {
+        if (input.viewHeight <= 0.0f) {
+            return 0.0f;
+        }
+        const float viewHeightAtDistance = 2.0f * getReferenceDistance(input) * std::tan(glm::radians(m_settings.verticalFieldOfView) * 0.5f);
+        return viewHeightAtDistance / input.viewHeight;
+    }
+
+    bool FlyCamera::isSteering(const FlyCameraInput& input) {
+        const bool looked = input.looking && (input.lookDelta != Vec2(0.0f) || input.move != Vec3(0.0f));
+        const bool panned = input.panning && input.panDelta != Vec2(0.0f);
+        return looked || panned || input.zoom != 0.0f;
     }
 
     void FlyCamera::look(const FlyCameraInput& input, const float deltaTime) {
@@ -118,8 +154,7 @@ namespace TechEngine {
     void FlyCamera::move(const FlyCameraInput& input, const float deltaTime) {
         Vec3 direction = Vec3(0.0f);
         if (input.looking) {
-            const Quat rotation = getRotation();
-            direction = rotation * Vec3(1.0f, 0.0f, 0.0f) * input.move.x + Vec3(0.0f, 1.0f, 0.0f) * input.move.y + rotation * Vec3(0.0f, 0.0f, -1.0f) * input.move.z;
+            direction = getRight() * input.move.x + Vec3(0.0f, 1.0f, 0.0f) * input.move.y + getForward() * input.move.z;
             const float length = glm::length(direction);
             if (length > 1.0f) {
                 direction /= length;
@@ -133,6 +168,24 @@ namespace TechEngine {
             m_velocity = Vec3(0.0f);
         }
         m_position += m_velocity * deltaTime;
+    }
+
+    void FlyCamera::pan(const FlyCameraInput& input) {
+        if (!input.panning) {
+            return;
+        }
+        const float metresPerPixel = getPanMetresPerPixel(input);
+        m_position += (getUp() * input.panDelta.y - getRight() * input.panDelta.x) * metresPerPixel;
+    }
+
+    void FlyCamera::advanceZoom(const float deltaTime) {
+        const float alpha = 1.0f - std::exp(-ZOOM_SHARPNESS * deltaTime);
+        float distance = m_zoomRemaining * alpha;
+        if (std::abs(m_zoomRemaining - distance) < ZOOM_REST_DISTANCE) {
+            distance = m_zoomRemaining;
+        }
+        m_position += getForward() * distance;
+        m_zoomRemaining -= distance;
     }
 
     void FlyCamera::advanceFocus(const float deltaTime) {
