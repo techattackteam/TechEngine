@@ -89,45 +89,41 @@ namespace TechEngine {
         const auto& current = *m_current;
         out.instanceWorlds.resize(current.instances.size());
 
-        if (m_previous) {
-            const auto& previous = *m_previous;
-            for (std::size_t i = 0; i < current.instances.size(); i++) {
-                const auto& instance = current.instances[i];
-                const PacketInstance* matched = nullptr;
-                if (i < previous.instances.size() && previous.instances[i].entity == instance.entity) {
-                    matched = &previous.instances[i];
+        for (std::size_t i = 0; i < current.instances.size(); i++) {
+            const auto& instance = current.instances[i];
+            const PacketInstance* matched = nullptr;
+            if (m_previous) {
+                const auto& previous = m_previous->instances;
+                if (i < previous.size() && previous[i].entity == instance.entity) {
+                    matched = &previous[i];
                 } else {
-                    const auto found = std::find_if(previous.instances.begin(), previous.instances.end(), [&](const PacketInstance& candidate) {
+                    const auto found = std::find_if(previous.begin(), previous.end(), [&](const PacketInstance& candidate) {
                         return candidate.entity == instance.entity;
                     });
-                    if (found != previous.instances.end()) {
+                    if (found != previous.end()) {
                         matched = &*found;
                     }
                 }
-                if (matched != nullptr) {
-                    for (int column = 0; column < 4; column++) {
-                        out.instanceWorlds[i][column] = glm::mix(matched->world[column], instance.world[column], blend);
-                    }
-                } else {
-                    out.instanceWorlds[i] = instance.world;
-                }
             }
-        } else {
-            for (std::size_t i = 0; i < current.instances.size(); i++) {
-                out.instanceWorlds[i] = current.instances[i].world;
-            }
+            out.instanceWorlds[i] = matched != nullptr ? blendWorld(matched->world, instance.world, blend) : instance.world;
         }
 
         if (current.hasCamera) {
             out.hasCamera = true;
             if (m_previous && m_previous->hasCamera) {
-                for (int column = 0; column < 4; column++) {
-                    out.camera.world[column] = glm::mix(m_previous->camera.world[column], current.camera.world[column], blend);
-                }
+                out.camera.world = blendWorld(m_previous->camera.world, current.camera.world, blend);
             } else {
                 out.camera.world = current.camera.world;
             }
             out.camera.settings = current.camera.settings;
         }
+    }
+
+    Mat4 PacketHistory::blendWorld(const Mat4& from, const Mat4& to, float blend) {
+        Mat4 world = Mat4(1.0f);
+        for (int column = 0; column < 4; column++) {
+            world[column] = glm::mix(from[column], to[column], blend);
+        }
+        return world;
     }
 }
