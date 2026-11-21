@@ -292,6 +292,18 @@ TEST_CASE("a source outside a side folder of the assets folder is refused", "[ed
     CHECK_FALSE(fixture.exists("assets/other/Sky.tetexture"));
 }
 
+TEST_CASE("a source on an alias that is not mounted is refused with the file error and writes nothing", "[editor][assets][image][os]") {
+    SkyImportFixture fixture{"imageImportNoMount"};
+    fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
+    SkyImportResult result;
+
+    CHECK(fixture.importSky("elsewhere://assets/client/Sky.hdr", result) == TechEngine::FileError::NoMount);
+
+    CHECK(result.records.empty());
+    CHECK_FALSE(fixture.exists("assets/client/Sky.tetexture"));
+    CHECK(fixture.nextId == FIRST_TEST_ID);
+}
+
 TEST_CASE("the record's side follows the side folder and the extension is read without case", "[editor][assets][image][os]") {
     SkyImportFixture fixture{"imageImportSides"};
     fixture.scratch.writeFile("assets/server/Dusk.HDR", TechEngineTests::gradientRadianceFile(8, 4));
