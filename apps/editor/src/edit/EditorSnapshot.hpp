@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace TechEngine {
@@ -75,6 +76,7 @@ namespace TechEngine {
         // Copies of the asset index and its listing, which main must not read while the simulation thread may rebuild them.
         std::vector<AssetRecord> assets;
         std::vector<ListedEntry> listing;
+        std::vector<SideFolder> sideFolders;
         std::uint64_t listingRevision = 0;
         std::uint64_t editRevision = 0;
         std::uint64_t savedRevision = 0;
@@ -105,5 +107,15 @@ namespace TechEngine {
         // Indices into assets, in index order. An empty type matches nothing, and a server asset is left out, because
         // the set command refuses it.
         void collectAssetsOfType(StringId type, std::vector<std::size_t>& out) const;
+
+        // Indices into listing of folder's own children: folders first, then files, each by name without case.
+        void collectFolderContents(std::string_view folder, std::vector<std::size_t>& out) const;
+
+        // out is folder when it is a side folder or a listed folder, else its closest ancestor that is. False when
+        // folder is under no side folder.
+        bool findNearestFolder(std::string_view folder, std::string& out) const;
+
+        // Each folder path from folder's side folder down to folder. Empty when folder is under no side folder.
+        void collectBreadcrumbs(std::string_view folder, std::vector<std::string>& out) const;
     };
 }

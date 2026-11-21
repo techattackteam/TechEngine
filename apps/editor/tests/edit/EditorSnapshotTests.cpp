@@ -8,6 +8,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -419,4 +420,201 @@ TEST_CASE("the picker offers nothing for a type no record has, or for an empty t
     }
 
     CHECK(out.empty());
+}
+
+static constexpr std::string_view COMMON_FOLDER = "project://assets/common";
+static constexpr std::string_view CLIENT_FOLDER = "project://assets/client";
+static constexpr std::string_view SERVER_FOLDER = "project://assets/server";
+
+static TechEngine::ListedEntry listed(const std::string_view path, const TechEngine::ListedKind kind) {
+    TechEngine::ListedEntry entry;
+    entry.path = std::string(path);
+    entry.side = TechEngine::Side::Client;
+    entry.kind = kind;
+    return entry;
+}
+
+static std::string underClient(const std::string_view relative) {
+    return std::string(CLIENT_FOLDER) + "/" + std::string(relative);
+}
+
+// A client side whose byte order and name order disagree: "Sponza-old" sorts between "Sponza" and "Sponza/...", and
+// capitals sort before lower case.
+static EditorSnapshot browserSnapshot() {
+    using TechEngine::ListedKind;
+    EditorSnapshot snapshot;
+    snapshot.sideFolders = {
+        {TechEngine::Side::Common, std::string(COMMON_FOLDER)},
+        {TechEngine::Side::Client, std::string(CLIENT_FOLDER)},
+        {TechEngine::Side::Server, std::string(SERVER_FOLDER)},
+    };
+    snapshot.listing = {
+        listed(underClient("Box.temesh"), ListedKind::Asset),
+        listed(underClient("Sponza"), ListedKind::Folder),
+        listed(underClient("Sponza-old"), ListedKind::Folder),
+        listed(underClient("Sponza-old/Sponza.temodel"), ListedKind::Asset),
+        listed(underClient("Sponza/Meshes"), ListedKind::Folder),
+        listed(underClient("Sponza/Meshes/Wall.temesh"), ListedKind::Asset),
+        listed(underClient("Sponza/Sponza.temodel"), ListedKind::Asset),
+        listed(underClient("Zeta"), ListedKind::Folder),
+        listed(underClient("alpha"), ListedKind::Folder),
+        listed(underClient("readme.txt"), ListedKind::Other),
+        listed(underClient("sky.hdr"), ListedKind::SkySource),
+        listed(std::string(COMMON_FOLDER) + "/Shared.tematerial", ListedKind::Asset),
+    };
+    std::ranges::sort(snapshot.listing, {}, &TechEngine::ListedEntry::path);
+    snapshot.listingRevision = 1;
+    return snapshot;
+}
+
+static std::vector<std::string> pathsOf(const EditorSnapshot& snapshot, const std::vector<std::size_t>& indices) {
+    std::vector<std::string> paths;
+    for (const std::size_t index: indices) {
+        REQUIRE(index < snapshot.listing.size());
+        paths.push_back(snapshot.listing[index].path);
+    }
+    return paths;
+}
+
+TEST_CASE("a folder lists its own children, folders first, then files, each by name without case", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = browserSnapshot();
+    std::vector<std::size_t> contents;
+
+    snapshot.collectFolderContents(CLIENT_FOLDER, contents);
+
+    CHECK(
+        pathsOf(snapshot, contents) == std::vector<std::string>{
+                                           underClient("alpha"),
+                                           underClient("Sponza"),
+                                           underClient("Sponza-old"),
+                                           underClient("Zeta"),
+                                           underClient("Box.temesh"),
+                                           underClient("readme.txt"),
+                                           underClient("sky.hdr"),
+                                       });
+}
+
+TEST_CASE("a folder's contents leave out its subfolders' entries and a sibling whose name starts with its own", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = browserSnapshot();
+    std::vector<std::size_t> contents;
+
+    snapshot.collectFolderContents(underClient("Sponza"), contents);
+
+    CHECK(pathsOf(snapshot, contents) == std::vector<std::string>{underClient("Sponza/Meshes"), underClient("Sponza/Sponza.temodel")});
+}
+
+TEST_CASE("an empty folder, an empty side, a file and an unlisted folder have no contents", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = browserSnapshot();
+    std::vector<std::size_t> contents = {99};
+
+    SECTION("an empty folder") {
+        snapshot.collectFolderContents(underClient("alpha"), contents);
+    }
+
+    SECTION("an empty side") {
+        snapshot.collectFolderContents(SERVER_FOLDER, contents);
+    }
+
+    SECTION("a file") {
+        snapshot.collectFolderContents(underClient("Box.temesh"), contents);
+    }
+
+    SECTION("a folder the listing does not hold") {
+        snapshot.collectFolderContents(underClient("Gone"), contents);
+    }
+
+    CHECK(contents.empty());
+}
+
+TEST_CASE("a side's contents are only that side's entries", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = browserSnapshot();
+    std::vector<std::size_t> contents;
+
+    snapshot.collectFolderContents(COMMON_FOLDER, contents);
+
+    CHECK(pathsOf(snapshot, contents) == std::vector<std::string>{std::string(COMMON_FOLDER) + "/Shared.tematerial"});
+}
+
+TEST_CASE("the nearest folder of a listed folder or a side folder is the folder itself", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = browserSnapshot();
+    std::string nearest;
+
+    SECTION("a listed folder") {
+        REQUIRE(snapshot.findNearestFolder(underClient("Sponza/Meshes"), nearest));
+        CHECK(nearest == underClient("Sponza/Meshes"));
+    }
+
+    SECTION("an empty side folder") {
+        REQUIRE(snapshot.findNearestFolder(SERVER_FOLDER, nearest));
+        CHECK(nearest == SERVER_FOLDER);
+    }
+}
+
+TEST_CASE("a folder that is gone resolves to its closest ancestor that is still listed", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = browserSnapshot();
+    std::string nearest;
+
+    SECTION("a listed parent") {
+        REQUIRE(snapshot.findNearestFolder(underClient("Sponza/Meshes/Old/Deeper"), nearest));
+        CHECK(nearest == underClient("Sponza/Meshes"));
+    }
+
+    SECTION("only the side is left") {
+        REQUIRE(snapshot.findNearestFolder(underClient("Gone/Deeper"), nearest));
+        CHECK(nearest == CLIENT_FOLDER);
+    }
+
+    SECTION("a listed file is not a folder") {
+        REQUIRE(snapshot.findNearestFolder(underClient("Sponza/Sponza.temodel"), nearest));
+        CHECK(nearest == underClient("Sponza"));
+    }
+}
+
+TEST_CASE("a folder under no side folder has no nearest folder", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = browserSnapshot();
+    std::string nearest = "stale";
+
+    SECTION("a name that only starts like a side") {
+        CHECK_FALSE(snapshot.findNearestFolder("project://assets/clientele/Sponza", nearest));
+    }
+
+    SECTION("the assets root above the sides") {
+        CHECK_FALSE(snapshot.findNearestFolder("project://assets", nearest));
+    }
+
+    SECTION("another mount") {
+        CHECK_FALSE(snapshot.findNearestFolder("engine://shaders", nearest));
+    }
+
+    SECTION("an empty path") {
+        CHECK_FALSE(snapshot.findNearestFolder("", nearest));
+    }
+
+    CHECK(nearest.empty());
+}
+
+TEST_CASE("the breadcrumbs run from the side folder down to the folder", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = browserSnapshot();
+    std::vector<std::string> crumbs = {"stale"};
+
+    SECTION("a nested folder") {
+        snapshot.collectBreadcrumbs(underClient("Sponza/Meshes"), crumbs);
+
+        CHECK(crumbs == std::vector<std::string>{std::string(CLIENT_FOLDER), underClient("Sponza"), underClient("Sponza/Meshes")});
+    }
+
+    SECTION("a side folder") {
+        snapshot.collectBreadcrumbs(COMMON_FOLDER, crumbs);
+
+        CHECK(crumbs == std::vector<std::string>{std::string(COMMON_FOLDER)});
+    }
+}
+
+TEST_CASE("a folder under no side folder has no breadcrumbs", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = browserSnapshot();
+    std::vector<std::string> crumbs = {"stale"};
+
+    snapshot.collectBreadcrumbs("project://assets/clientele/Sponza", crumbs);
+
+    CHECK(crumbs.empty());
 }

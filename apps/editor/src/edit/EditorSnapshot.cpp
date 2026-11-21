@@ -3,6 +3,7 @@
 #include <edit/EditorSnapshot.hpp>
 
 #include <algorithm>
+#include <cctype>
 
 namespace TechEngine {
     bool EditorSnapshot::hasUnsavedEdits() const {
@@ -194,6 +195,97 @@ namespace TechEngine {
             if (assets[i].typeTag == type && assets[i].side != Side::Server) {
                 out.push_back(i);
             }
+        }
+    }
+
+    void EditorSnapshot::collectFolderContents(const std::string_view folder, std::vector<std::size_t>& out) const {
+        out.clear();
+        const std::string prefix = std::string(folder) + "/";
+        for (std::size_t index = 0; index < listing.size(); index++) {
+            const std::string_view path = listing[index].path;
+            if (path.size() <= prefix.size() || path.substr(0, prefix.size()) != prefix) {
+                continue;
+            }
+            if (path.find('/', prefix.size()) == std::string_view::npos) {
+                out.push_back(index);
+            }
+        }
+
+        const auto lower = [](const char character) {
+            return static_cast<char>(std::tolower(static_cast<unsigned char>(character)));
+        };
+        const auto leaf = [](const std::string_view path) {
+            return path.substr(path.rfind('/') + 1);
+        };
+        std::ranges::stable_sort(out, [this, &lower, &leaf](const std::size_t left, const std::size_t right) {
+            const bool leftFolder = listing[left].kind == ListedKind::Folder;
+            const bool rightFolder = listing[right].kind == ListedKind::Folder;
+            if (leftFolder != rightFolder) {
+                return leftFolder;
+            }
+
+            const std::string_view leftName = leaf(listing[left].path);
+            const std::string_view rightName = leaf(listing[right].path);
+            const std::size_t length = std::min(leftName.size(), rightName.size());
+            for (std::size_t i = 0; i < length; i++) {
+                const char leftCharacter = lower(leftName[i]);
+                const char rightCharacter = lower(rightName[i]);
+                if (leftCharacter != rightCharacter) {
+                    return leftCharacter < rightCharacter;
+                }
+            }
+            return leftName.size() < rightName.size();
+        });
+    }
+
+    bool EditorSnapshot::findNearestFolder(const std::string_view folder, std::string& out) const {
+        out.clear();
+        std::string candidate(folder);
+        while (!candidate.empty()) {
+            const bool isSideFolder = std::ranges::any_of(sideFolders, [&candidate](const SideFolder& sideFolder) {
+                return sideFolder.path == candidate;
+            });
+            const bool isListedFolder = std::ranges::any_of(listing, [&candidate](const ListedEntry& entry) {
+                return entry.kind == ListedKind::Folder && entry.path == candidate;
+            });
+            if (isSideFolder || isListedFolder) {
+                out = candidate;
+                return true;
+            }
+
+            const std::size_t separator = candidate.rfind('/');
+            if (separator == std::string::npos) {
+                break;
+            }
+            candidate.resize(separator);
+        }
+        return false;
+    }
+
+    void EditorSnapshot::collectBreadcrumbs(const std::string_view folder, std::vector<std::string>& out) const {
+        out.clear();
+        std::string side;
+        for (const SideFolder& sideFolder: sideFolders) {
+            const std::string_view path = sideFolder.path;
+            const bool isAncestor = folder == path || (folder.size() > path.size() && folder.substr(0, path.size()) == path && folder[path.size()] == '/');
+            if (isAncestor && path.size() > side.size()) {
+                side = sideFolder.path;
+            }
+        }
+        if (side.empty()) {
+            return;
+        }
+
+        out.push_back(side);
+        std::size_t start = side.size() + 1;
+        while (start < folder.size()) {
+            const std::size_t separator = folder.find('/', start);
+            const std::size_t end = separator == std::string_view::npos ? folder.size() : separator;
+            out.emplace_back(folder.substr(0, end));
+            if (separator == std::string_view::npos) {
+                break;
+            }
+            start = separator + 1;
         }
     }
 }

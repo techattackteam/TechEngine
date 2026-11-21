@@ -203,6 +203,16 @@ namespace TechEngine {
         return m_listingRevision;
     }
 
+    void AssetIndex::collectSideFolders(std::vector<SideFolder>& out) const {
+        out.clear();
+        if (m_assetsRoot.empty()) {
+            return;
+        }
+        for (const IndexedSide& side: INDEXED_SIDES) {
+            out.push_back({side.side, m_assetsRoot + "/" + std::string(side.folder)});
+        }
+    }
+
     bool AssetIndex::readRecord(const FileAccess& files, const std::string& path, const Side side, const std::uint64_t size, AssetRecord& out) const {
         const bool engineFile = hasAssetExtension(path);
         if (size < ASSET_PREFIX_SIZE) {

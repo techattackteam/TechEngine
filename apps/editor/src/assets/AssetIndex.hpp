@@ -43,6 +43,11 @@ namespace TechEngine {
         StringId typeTag;
     };
 
+    struct SideFolder {
+        Side side = Side::Common;
+        std::string path;
+    };
+
     // Safe from any thread. Nothing checks the id against an index, so the caller does.
     ResourceId randomResourceId();
 
@@ -75,6 +80,9 @@ namespace TechEngine {
         const std::vector<ListedEntry>& getListing() const;
 
         std::uint64_t getListingRevision() const;
+
+        // The listing leaves the side folders out. Empty until a build succeeds.
+        void collectSideFolders(std::vector<SideFolder>& out) const;
 
     private:
         bool readRecord(const FileAccess& files, const std::string& path, Side side, std::uint64_t size, AssetRecord& out) const;

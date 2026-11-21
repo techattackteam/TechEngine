@@ -37,6 +37,7 @@ techengine_app(editor
           src/ui/ImGuiBridge.cpp
           src/ui/PanelsManager.cpp
           src/ui/ViewTextureSwap.cpp
+          src/ui/panels/AssetBrowserPanel.cpp
           src/ui/panels/ConsolePanel.cpp
           src/ui/panels/GameViewPanel.cpp
           src/ui/panels/HierarchyPanel.cpp
@@ -82,6 +83,7 @@ techengine_app(editor
           src/ui/ImGuiBridge.hpp
           src/ui/PanelsManager.hpp
           src/ui/ViewTextureSwap.hpp
+          src/ui/panels/AssetBrowserPanel.hpp
           src/ui/panels/ConsolePanel.hpp
           src/ui/panels/GameViewPanel.hpp
           src/ui/panels/HierarchyPanel.hpp
@@ -124,6 +126,7 @@ techengine_app(editor
           tests/edit/SaveSceneCommandTests.cpp
           tests/project/ProjectErrorTests.cpp
           tests/project/ProjectTests.cpp
+          tests/ui/AssetBrowserPanelTests.cpp
           tests/ui/SceneViewPanelTests.cpp
           tests/ui/ViewTextureSwapTests.cpp)
 
