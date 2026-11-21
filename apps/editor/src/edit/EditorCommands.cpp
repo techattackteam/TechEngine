@@ -6,13 +6,14 @@
 #include <edit/HierarchyCommands.hpp>
 #include <edit/InspectorCommands.hpp>
 #include <edit/PlaceModelCommand.hpp>
+#include <edit/RefreshAssetsCommand.hpp>
 #include <edit/SaveSceneCommand.hpp>
 
 #include <system_error>
 #include <utility>
 
 namespace TechEngine {
-    EditorCommands::EditorCommands(App& app, EditSession& session, const ComponentRegistry& registry, FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, const AssetIndex& assets)
+    EditorCommands::EditorCommands(App& app, EditSession& session, const ComponentRegistry& registry, FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, AssetIndex& assets)
         : m_app(&app), m_session(&session), m_registry(&registry), m_files(&files), m_resources(&resources), m_sceneHandle(&sceneHandle), m_assets(&assets) {
     }
 
@@ -62,6 +63,10 @@ namespace TechEngine {
 
     void EditorCommands::placeModel(std::string path) {
         submit(std::make_unique<PlaceModelCommand>(*m_session, *m_files, *m_resources, *m_sceneHandle, *m_assets, std::move(path)));
+    }
+
+    void EditorCommands::refreshAssets() {
+        submit(std::make_unique<RefreshAssetsCommand>(*m_files, *m_assets));
     }
 
     void EditorCommands::save() {

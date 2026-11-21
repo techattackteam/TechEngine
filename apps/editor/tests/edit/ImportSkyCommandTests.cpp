@@ -15,6 +15,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstddef>
@@ -28,9 +29,12 @@
 
 using TechEngine::AssetRecord;
 using TechEngine::ImportSkyCommand;
+using TechEngine::ListedEntry;
+using TechEngine::ListedKind;
 using TechEngineTests::AppTestAccess;
 using TechEngineTests::ScratchDirectory;
 
+static constexpr std::string_view IMPORT_ASSETS_ROOT = "project://assets";
 static constexpr std::string_view SKY_SOURCE = "project://assets/client/Sky.hdr";
 static constexpr std::string_view SKY_TEXTURE = "project://assets/client/Sky.tetexture";
 
@@ -44,7 +48,9 @@ public:
 
     explicit ImportSkyAppProbe(const std::string_view name) : App(TechEngine::Role::DedicatedServer), scratch(name) {
         m_mounts.mount("project", scratch.root());
+        scratch.makeDirectory("assets/common");
         scratch.makeDirectory("assets/client");
+        scratch.makeDirectory("assets/server");
     }
 
     const TechEngine::FileAccess& files() const {
@@ -65,6 +71,7 @@ public:
 
 protected:
     void init() override {
+        REQUIRE(index.build(m_files, IMPORT_ASSETS_ROOT) == std::error_code{});
     }
 
     std::error_code simulationStartupLoad(TechEngine::Scene& scene) override {
@@ -127,7 +134,7 @@ TEST_CASE("an image import whose job fails writes nothing and registers nothing"
     CHECK(app.index.getRecords().empty());
 }
 
-TEST_CASE("a running simulation adds the imported texture to the index", "[editor][edit][import][image][integration][os]") {
+TEST_CASE("a finished sky create lists and indexes the texture", "[editor][edit][import][image][integration][os]") {
     ImportSkyAppProbe app{"importImageRegisters"};
     app.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
     app.importAtStartup = true;
@@ -159,4 +166,14 @@ TEST_CASE("a running simulation adds the imported texture to the index", "[edito
     CHECK(found.typeTag == TechEngine::TEXTURE_TYPE_TAG);
     CHECK(found.side == TechEngine::Side::Client);
     CHECK(found.path == SKY_TEXTURE);
+
+    const std::vector<ListedEntry>& listing = app.index.getListing();
+    REQUIRE(listing.size() == 2);
+    const auto listedTexture = std::ranges::find(listing, SKY_TEXTURE, &ListedEntry::path);
+    REQUIRE(listedTexture != listing.end());
+    CHECK(listedTexture->kind == ListedKind::Asset);
+    CHECK(listedTexture->id == texture.id);
+    const auto listedSource = std::ranges::find(listing, SKY_SOURCE, &ListedEntry::path);
+    REQUIRE(listedSource != listing.end());
+    CHECK(listedSource->kind == ListedKind::SkySource);
 }

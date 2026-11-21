@@ -28,15 +28,4 @@ namespace TechEngine {
         // through a second command it submits when the files are written, so everything passed here must outlive that batch.
         void apply(Scene& scene) override;
     };
-
-    class RegisterImportedAssetsCommand final : public Command {
-    private:
-        AssetIndex* m_index = nullptr;
-        std::vector<AssetRecord> m_records;
-
-    public:
-        RegisterImportedAssetsCommand(AssetIndex& index, std::vector<AssetRecord> records);
-
-        void apply(Scene& scene) override;
-    };
 }

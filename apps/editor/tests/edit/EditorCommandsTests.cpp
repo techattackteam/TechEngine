@@ -259,6 +259,7 @@ TEST_CASE("a sender on an app that is not running applies nothing and logs the r
     commands.addComponent({Entity{0, 0}}, TechEngine::ComponentTypeId{});
     commands.removeComponent({Entity{0, 0}}, TechEngine::ComponentTypeId{});
     commands.placeModel("project://assets/client/Kart/Kart.temodel");
+    commands.refreshAssets();
     commands.save();
     commands.saveAndClose();
 
@@ -266,7 +267,7 @@ TEST_CASE("a sender on an app that is not running applies nothing and logs the r
     const auto refusals = std::ranges::count_if(logs.getMessages(), [](const std::string& message) {
         return message.find("refused an edit") != std::string::npos;
     });
-    CHECK(refusals == 12);
+    CHECK(refusals == 13);
 }
 
 TEST_CASE("save and save and close reach the live scene through the running simulation", "[editor][edit][commands][save][integration][os]") {

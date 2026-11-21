@@ -72,8 +72,10 @@ namespace TechEngine {
         // The active entity's world values, filled only while components lists Transform.
         TransformRow world;
         std::vector<ComponentChoice> addable;
-        // A copy of the asset index, which main must not read while the simulation thread may add to it.
+        // Copies of the asset index and its listing, which main must not read while the simulation thread may rebuild them.
         std::vector<AssetRecord> assets;
+        std::vector<ListedEntry> listing;
+        std::uint64_t listingRevision = 0;
         std::uint64_t editRevision = 0;
         std::uint64_t savedRevision = 0;
 
