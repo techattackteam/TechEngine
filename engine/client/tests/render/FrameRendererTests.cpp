@@ -55,9 +55,9 @@ static void GLAD_API_PTR failingShaderSource(unsigned int shader, int count, con
     glGetShaderiv(shader, GL_SHADER_TYPE, &type);
     const char* replacement = nullptr;
     if ((g_shaderFailure == FrameShaderFailure::VertexCompile && type == GL_VERTEX_SHADER) || (g_shaderFailure == FrameShaderFailure::FragmentCompile && type == GL_FRAGMENT_SHADER)) {
-        replacement = "#version 450 core\ninvalid shader source";
+        replacement = "#version 460 core\ninvalid shader source";
     } else if (g_shaderFailure == FrameShaderFailure::Link) {
-        replacement = type == GL_VERTEX_SHADER ? "#version 450 core\nout vec3 mismatch; void main() { mismatch = vec3(1.0); gl_Position = vec4(0.0, 0.0, 0.0, 1.0); }" : "#version 450 core\nin vec4 mismatch; out vec4 color; void main() { color = mismatch; }";
+        replacement = type == GL_VERTEX_SHADER ? "#version 460 core\nout vec3 mismatch; void main() { mismatch = vec3(1.0); gl_Position = vec4(0.0, 0.0, 0.0, 1.0); }" : "#version 450 core\nin vec4 mismatch; out vec4 color; void main() { color = mismatch; }";
     }
     if (replacement != nullptr) {
         g_originalShaderSource(shader, 1, &replacement, nullptr);

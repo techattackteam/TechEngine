@@ -243,7 +243,7 @@ endif()
 
 # --- glad2 (GL loader): the ONE vendored dep (ADR-008 §4 case 3) ------------
 # Generator: glad2 2.0.8 (pip install glad2==2.0.8).
-# glad --api gl:core=4.5 --extensions= --out-path external/glad --reproducible c
+# glad --api gl:core=4.6 --extensions=GL_ARB_bindless_texture --out-path external/glad --reproducible c
 add_library(TechEngineGlad STATIC ${CMAKE_SOURCE_DIR}/external/glad/src/gl.c)
 add_library(TechEngine::glad ALIAS TechEngineGlad)
 target_include_directories(TechEngineGlad SYSTEM PUBLIC ${CMAKE_SOURCE_DIR}/external/glad/include)

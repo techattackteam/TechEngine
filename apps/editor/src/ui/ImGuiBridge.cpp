@@ -25,7 +25,7 @@ namespace TechEngine {
     }
 
     void ImGuiBridge::start() {
-        const bool initialized = ImGui_ImplOpenGL3_Init("#version 450");
+        const bool initialized = ImGui_ImplOpenGL3_Init("#version 460");
         TE_CHECK(initialized, "imgui_impl_opengl3 failed to initialize");
         const bool created = ImGui_ImplOpenGL3_CreateDeviceObjects();
         TE_CHECK(created, "imgui_impl_opengl3 failed to create its device objects");

@@ -199,7 +199,7 @@ TEST_CASE("build skips every file that is not an asset it knows and still succee
     const IndexScratch env{"assetIndexSkips"};
     env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
 
-    env.scratch().writeFile("assets/client/shaders/GeometryShader.vert", "#version 450 core\nvoid main() {}\n");
+    env.scratch().writeFile("assets/client/shaders/GeometryShader.vert", "#version 460 core\nvoid main() {}\n");
     env.scratch().writeFile("assets/client/.gitkeep", "");
     std::vector<std::byte> headerOnly = assetBytes(SCENE_KIND, ResourceId(0x8000000000000008), "");
     headerOnly.resize(8);
