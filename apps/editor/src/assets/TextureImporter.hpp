@@ -30,10 +30,8 @@ namespace TechEngine {
     };
 
     struct SkyImportResult {
-        // The texture alone, or nothing for a re-import.
+        // The texture alone.
         std::vector<AssetRecord> records;
-        // A re-import's texture, which keeps its id. Empty for an import.
-        std::vector<ResourceId> rewritten;
     };
 
     class TextureImporter {
@@ -45,7 +43,7 @@ namespace TechEngine {
         // The largest value each RGB9E5 channel keeps: (511 / 512) * 2^16.
         static constexpr float RGB9E5_MAX_VALUE = 65408.0f;
 
-        // Only importSky and reimportSky need an instance. generateId must return a new id on every call.
+        // Only importSky needs an instance. generateId must return a new id on every call.
         TextureImporter(FileAccess& files, std::function<ResourceId()> generateId);
 
         static TextureFormat formatOf(TexturePurpose purpose);
@@ -90,17 +88,12 @@ namespace TechEngine {
         // Of two imports of one source at once, exactly one succeeds, and the other gets ImportOutputExists.
         std::error_code importSky(const SkyImportRequest& request, SkyImportResult& out) const;
 
-        // Rewrites the texture an earlier importSky wrote, under its id. Writes nothing when it fails.
-        std::error_code reimportSky(const SkyImportRequest& request, SkyImportResult& out) const;
-
         static bool isHdr(std::string_view sourcePath);
 
         // relativePath is a virtual path's part after the alias, such as assets/client/Sky.hdr.
         static bool sideOf(std::string_view relativePath, Side& out);
 
     private:
-        std::error_code importSkyInto(const SkyImportRequest& request, bool reimport, SkyImportResult& out) const;
-
         static void toFloat(const ByteImage& image, TexturePurpose purpose, FloatImage& out);
 
         static void toBytes(const FloatImage& image, TexturePurpose purpose, ByteImage& out);

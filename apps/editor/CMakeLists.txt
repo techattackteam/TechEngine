@@ -10,7 +10,6 @@ techengine_app(editor
           src/assets/MaterialImporter.cpp
           src/assets/MeshImporter.cpp
           src/assets/ModelImporter.cpp
-          src/assets/ReimportMatcher.cpp
           src/assets/TextureImporter.cpp
           src/edit/ConsoleHistory.cpp
           src/edit/ConsoleLog.cpp
@@ -29,7 +28,6 @@ techengine_app(editor
           src/edit/InspectorCommands.cpp
           src/edit/MaterialSlotRebuild.cpp
           src/edit/PlaceModelCommand.cpp
-          src/edit/ReimportCommand.cpp
           src/edit/SaveSceneCommand.cpp
           src/project/Project.cpp
           src/project/ProjectError.cpp
@@ -55,7 +53,6 @@ techengine_app(editor
           src/assets/MaterialImporter.hpp
           src/assets/MeshImporter.hpp
           src/assets/ModelImporter.hpp
-          src/assets/ReimportMatcher.hpp
           src/assets/TextureImporter.hpp
           src/edit/ConsoleHistory.hpp
           src/edit/ConsoleLog.hpp
@@ -75,7 +72,6 @@ techengine_app(editor
           src/edit/InspectorCommands.hpp
           src/edit/MaterialSlotRebuild.hpp
           src/edit/PlaceModelCommand.hpp
-          src/edit/ReimportCommand.hpp
           src/edit/SaveSceneCommand.hpp
           src/project/Project.hpp
           src/project/ProjectError.hpp
@@ -105,8 +101,6 @@ techengine_app(editor
           tests/assets/MaterialImportTests.cpp
           tests/assets/MergedMeshImportTests.cpp
           tests/assets/ModelImporterTests.cpp
-          tests/assets/ModelReimportTests.cpp
-          tests/assets/ReimportMatcherTests.cpp
           tests/assets/SkyImportTests.cpp
           tests/assets/TextureImporterTests.cpp
           tests/edit/ConsoleHistoryTests.cpp
@@ -124,7 +118,6 @@ techengine_app(editor
           tests/edit/MainCameraCommandsTests.cpp
           tests/edit/MaterialSlotRebuildTests.cpp
           tests/edit/PlaceModelCommandTests.cpp
-          tests/edit/ReimportCommandTests.cpp
           tests/edit/SaveSceneCommandTests.cpp
           tests/project/ProjectErrorTests.cpp
           tests/project/ProjectTests.cpp

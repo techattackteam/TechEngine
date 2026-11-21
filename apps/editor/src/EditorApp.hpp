@@ -31,7 +31,6 @@
 
 namespace TechEngine {
     struct ModelImportRequest;
-    enum class ImportMode : std::uint8_t;
 
     class EditorApp : public ClientApp {
     private:
@@ -47,8 +46,6 @@ namespace TechEngine {
         LooseSource m_source;
         // Written on the simulation thread while it runs; main reads it only before it starts and after it stops.
         std::vector<BatchId> m_importBatches;
-        // Simulation thread only: the sources a re-import job is running for, which ReimportCommand refuses.
-        std::vector<std::string> m_reimportsInFlight;
         ImGuiBridge m_imguiBridge;
         // Simulation thread only: commands and publishEdits read and write it there.
         EditSession m_session;
@@ -111,9 +108,6 @@ namespace TechEngine {
 
         // Main thread only.
         void importSky(std::string path);
-
-        // Main thread only.
-        void reimport(std::string path, ImportMode mode);
 
         // Main thread only.
         bool canRun() const;

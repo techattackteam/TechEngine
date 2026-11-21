@@ -393,7 +393,7 @@ TEST_CASE("a scale of 0.01 and a Z-up axis are baked into the vertices and the n
         checkVec3(baked, Vec3(source.x, source.z, -source.y) * 0.01f);
     }
 
-    SECTION("the import block keeps the settings for a later re-import") {
+    SECTION("the import block records the settings") {
         CHECK(model.importBlock.settings == settings);
     }
 }

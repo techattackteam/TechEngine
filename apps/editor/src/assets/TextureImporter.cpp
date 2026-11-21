@@ -4,7 +4,6 @@
 #include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/platform/files/VirtualPath.hpp>
 
-#include <assets/ReimportMatcher.hpp>
 #include <assets/TextureImporter.hpp>
 #include <project/ProjectError.hpp>
 
@@ -249,14 +248,6 @@ namespace TechEngine {
         return std::string(stem) + std::string(TEXTURE_EXTENSION);
     }
 
-    std::error_code TextureImporter::importSky(const SkyImportRequest& request, SkyImportResult& out) const {
-        return importSkyInto(request, false, out);
-    }
-
-    std::error_code TextureImporter::reimportSky(const SkyImportRequest& request, SkyImportResult& out) const {
-        return importSkyInto(request, true, out);
-    }
-
     bool TextureImporter::isHdr(const std::string_view sourcePath) {
         const std::size_t slash = sourcePath.find_last_of('/');
         const std::size_t dot = sourcePath.find_last_of('.');
@@ -288,7 +279,7 @@ namespace TechEngine {
         return false;
     }
 
-    std::error_code TextureImporter::importSkyInto(const SkyImportRequest& request, const bool reimport, SkyImportResult& out) const {
+    std::error_code TextureImporter::importSky(const SkyImportRequest& request, SkyImportResult& out) const {
         TE_PROFILER_FUNCTION();
         if (!isHdr(request.sourcePath)) {
             return ProjectError::UnsupportedImageType;
@@ -307,30 +298,11 @@ namespace TechEngine {
         const std::string path = skyOutputPath(request.sourcePath);
         FileStatus outputStatus;
         const std::error_code outputError = m_files->status(path, outputStatus);
-        ResourceId keptId;
-        if (!reimport) {
-            if (!outputError) {
-                return ProjectError::ImportOutputExists;
-            }
-            if (outputError != FileError::NotFound) {
-                return outputError;
-            }
-        } else {
-            if (outputError == FileError::NotFound) {
-                return ProjectError::ReimportTargetMissing;
-            }
-            if (outputError) {
-                return outputError;
-            }
-            ImportedFile existing;
-            const std::error_code existingError = readImportedFile(*m_files, path, existing);
-            if (existingError) {
-                return existingError;
-            }
-            if (existing.typeTag != TEXTURE_TYPE_TAG) {
-                return ProjectError::ReimportTargetMissing;
-            }
-            keptId = existing.id;
+        if (!outputError) {
+            return ProjectError::ImportOutputExists;
+        }
+        if (outputError != FileError::NotFound) {
+            return outputError;
         }
 
         std::vector<std::byte> sourceBytes;
@@ -345,7 +317,7 @@ namespace TechEngine {
         }
 
         Texture texture;
-        texture.id = reimport ? keptId : m_generateId();
+        texture.id = m_generateId();
         texture.importBlock.sourcePath = std::string(parts.relative);
         texture.format = TextureFormat::Rgb9E5;
         texture.width = image.width;
@@ -362,7 +334,7 @@ namespace TechEngine {
 
         std::vector<std::byte> bytes;
         texture.write(bytes);
-        const std::error_code writeError = reimport ? m_files->write(path, bytes) : m_files->createFile(path, bytes);
+        const std::error_code writeError = m_files->createFile(path, bytes);
         if (writeError == FileError::AlreadyExists) {
             return ProjectError::ImportOutputExists;
         }
@@ -371,12 +343,7 @@ namespace TechEngine {
         }
 
         out.records.clear();
-        out.rewritten.clear();
-        if (reimport) {
-            out.rewritten.push_back(texture.id);
-        } else {
-            out.records.push_back(AssetRecord{texture.id, TEXTURE_TYPE_TAG, side, path});
-        }
+        out.records.push_back(AssetRecord{texture.id, TEXTURE_TYPE_TAG, side, path});
         return {};
     }
 
