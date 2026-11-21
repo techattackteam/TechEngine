@@ -1,25 +1,94 @@
-#include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/core/scene/ComponentTypeId.hpp>
+#include <TechEngine/core/scene/components/Transform.hpp>
 
+#include <edit/EditorSnapshot.hpp>
 #include <ui/panels/SceneViewPanel.hpp>
 
-#include <glm/gtc/matrix_transform.hpp>
+#include <imgui.h>
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
 
 namespace TechEngine {
     static constexpr std::uint64_t SCENE_VIEW_TOKEN = VIEW_TEXTURE_TOKEN_BIT | 1;
-    static constexpr float DEFAULT_POSE_HEIGHT = 2.0f;
-    static constexpr float DEFAULT_POSE_DISTANCE = 5.0f;
-    static constexpr float DEFAULT_POSE_PITCH_DEGREES = -10.0f;
 
     SceneViewPanel::SceneViewPanel() : ViewPanel("Scene", SCENE_VIEW_TOKEN) {
     }
 
+    void SceneViewPanel::updateCamera(const EditorSnapshot& snapshot, const ImVec2& imageSize, const bool imageHovered) {
+        const ImGuiIO& io = ImGui::GetIO();
+        trackDrags(imageHovered);
+
+        FlyCameraInput input;
+        float selectedRadius = 0.0f;
+        input.hasPivot = findSelected(snapshot, input.pivot, selectedRadius);
+        input.viewHeight = imageSize.y;
+        input.fast = io.KeyShift;
+        input.slow = io.KeyCtrl;
+        if (m_panning) {
+            input.panning = true;
+            input.panDelta = Vec2(io.MouseDelta.x, io.MouseDelta.y);
+        }
+        if (m_looking) {
+            input.looking = true;
+            input.lookDelta = Vec2(io.MouseDelta.x, io.MouseDelta.y);
+        }
+        if (imageHovered) {
+            input.zoom = io.MouseWheel;
+        }
+
+        // Any panel may have focus, such as the hierarchy right after a click on the entity, so F is not tied to this one.
+        const bool focusPressed = !io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F, false);
+        if (focusPressed && input.hasPivot) {
+            m_camera.focus(input.pivot, selectedRadius);
+        }
+        m_camera.update(input, io.DeltaTime);
+    }
+
+    bool SceneViewPanel::wantsCursorLocked() const {
+        return m_looking || m_panning;
+    }
+
+    bool SceneViewPanel::isCameraMoving() const {
+        return m_looking || m_panning || m_camera.isMoving();
+    }
+
     void SceneViewPanel::describeCamera(ViewRequest& request) const {
         request.cameraSource = ViewCameraSource::Pose;
-        // TODO(S11-T11): the fly camera's pose replaces the fixed one.
-        const Mat4 position = glm::translate(Mat4(1.0f), Vec3{0.0f, DEFAULT_POSE_HEIGHT, DEFAULT_POSE_DISTANCE});
-        request.pose.world = glm::rotate(position, glm::radians(DEFAULT_POSE_PITCH_DEGREES), Vec3{1.0f, 0.0f, 0.0f});
-        request.pose.settings = Camera{};
+        request.pose.world = m_camera.getWorld();
+        request.pose.settings = m_camera.getSettings();
+    }
+
+    void SceneViewPanel::trackDrags(const bool imageHovered) {
+        if (!m_looking && imageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+            m_looking = true;
+        }
+        if (m_looking && !ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+            m_looking = false;
+        }
+        if (!m_panning && imageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Middle)) {
+            m_panning = true;
+        }
+        if (m_panning && !ImGui::IsMouseDown(ImGuiMouseButton_Middle)) {
+            m_panning = false;
+        }
+    }
+
+    bool SceneViewPanel::findSelected(const EditorSnapshot& snapshot, Vec3& position, float& radius) {
+        if (!snapshot.active.valid()) {
+            return false;
+        }
+        // The snapshot fills world only while the active entity's components list Transform.
+        const bool hasTransform = std::any_of(snapshot.components.begin(), snapshot.components.end(), [](const ComponentRow& component) {
+            return component.type == componentTypeId<Transform>();
+        });
+        if (!hasTransform) {
+            return false;
+        }
+        position = snapshot.world.position;
+        const Vec3& scale = snapshot.world.scale;
+        radius = std::max({std::abs(scale.x), std::abs(scale.y), std::abs(scale.z)});
+        return true;
     }
 }

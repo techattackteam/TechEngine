@@ -37,6 +37,7 @@ namespace TechEngine {
         SceneViewPanel m_sceneView;
         GameViewPanel m_gameView;
         ConsolePanel m_console;
+        bool m_sceneViewDrawn = false;
         bool m_placeModelRequested = false;
         std::array<char, PLACE_MODEL_PATH_CAPACITY> m_placeModelPath{};
         bool m_importImageRequested = false;
@@ -50,6 +51,11 @@ namespace TechEngine {
 
         // Fills `views` with one request per view panel, hidden or not.
         void draw(const EditorSnapshot& snapshot, bool canRun, std::vector<ViewRequest>& views);
+
+        // Both are false while the scene view is hidden, so a hidden panel never keeps the cursor locked.
+        bool wantsCursorLocked() const;
+
+        bool isSceneCameraMoving() const;
 
     private:
         void drawMainMenuBar(bool canRun);

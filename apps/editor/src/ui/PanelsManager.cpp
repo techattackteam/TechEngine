@@ -39,12 +39,20 @@ namespace TechEngine {
         drawDockSpace();
         m_hierarchy.draw(snapshot);
         m_inspector.draw(snapshot);
-        const bool sceneViewVisible = m_sceneView.draw(snapshot);
+        m_sceneViewDrawn = m_sceneView.draw(snapshot);
         const bool gameViewVisible = m_gameView.draw(snapshot);
         m_console.draw(snapshot);
         views.clear();
-        views.push_back(m_sceneView.describe(sceneViewVisible));
+        views.push_back(m_sceneView.describe(m_sceneViewDrawn));
         views.push_back(m_gameView.describe(gameViewVisible));
+    }
+
+    bool PanelsManager::wantsCursorLocked() const {
+        return m_sceneViewDrawn && m_sceneView.wantsCursorLocked();
+    }
+
+    bool PanelsManager::isSceneCameraMoving() const {
+        return m_sceneViewDrawn && m_sceneView.isCameraMoving();
     }
 
     void PanelsManager::drawMainMenuBar(const bool canRun) {

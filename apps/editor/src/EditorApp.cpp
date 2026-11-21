@@ -29,6 +29,9 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_internal.h>
 
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <functional>
@@ -338,6 +341,7 @@ namespace TechEngine {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         m_panels.draw(m_snapshot, canRun(), m_viewRequests);
+        setCursorLocked(m_panels.wantsCursorLocked());
         setViews(m_viewRequests);
         drawClosePrompt();
         ImGui::Render();
@@ -348,9 +352,19 @@ namespace TechEngine {
 
         const bool inputLeft = !context.InputEventsQueue.empty();
         const bool holdingItem = ImGui::IsAnyItemActive() && ImGui::IsMouseDown(ImGuiMouseButton_Left);
-        if (hadInput || inputLeft || holdingItem) {
+        if (hadInput || inputLeft || holdingItem || m_panels.isSceneCameraMoving()) {
             requestMainFrame();
         }
+    }
+
+    void EditorApp::setCursorLocked(const bool locked) {
+        if (locked == m_cursorLocked) {
+            return;
+        }
+        m_cursorLocked = locked;
+        // Disabled hides the cursor and keeps reporting motion past the screen's edge; leaving it puts the cursor
+        // back where the lock began.
+        glfwSetInputMode(nativeWindow(), GLFW_CURSOR, locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     }
 
     void EditorApp::updateTitle() {

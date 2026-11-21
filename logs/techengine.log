@@ -1,0 +1,1 @@
+[23:06:11.982][t 1][default/default][ImportSkyCommand.cpp:28:void __cdecl TechEngine::ImportSkyCommand::apply::<lambda_1>::operator ()(void) const()][INFO] Imported project://assets/client/Sky.hdr into project://assets/client/Sky.tetexture
