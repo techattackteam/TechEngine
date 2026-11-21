@@ -24,6 +24,10 @@ namespace TechEngine {
         : m_commands(&commands), m_exportProject(std::move(exportProject)), m_runProject(std::move(runProject)), m_importImage(std::move(importImage)), m_hierarchy(commands), m_inspector(commands), m_console(consoleHistory) {
     }
 
+    void PanelsManager::registerSettings() {
+        m_assetBrowser.registerSettings();
+    }
+
     void PanelsManager::draw(const EditorSnapshot& snapshot, const bool canRun, std::vector<ViewRequest>& views) {
         // The menu bar takes its height from the viewport's work area, which the dockspace then fills.
         drawMainMenuBar(canRun);
@@ -37,6 +41,7 @@ namespace TechEngine {
         m_sceneViewDrawn = m_sceneView.draw(snapshot);
         const bool gameViewVisible = m_gameView.draw(snapshot);
         m_console.draw(snapshot);
+        m_assetBrowser.draw(snapshot);
         views.clear();
         views.push_back(m_sceneView.describe(m_sceneViewDrawn));
         views.push_back(m_gameView.describe(gameViewVisible));
@@ -173,6 +178,7 @@ namespace TechEngine {
         ImGui::DockBuilderDockWindow(m_hierarchy.getName().c_str(), left);
         ImGui::DockBuilderDockWindow(m_inspector.getName().c_str(), right);
         ImGui::DockBuilderDockWindow(m_console.getName().c_str(), bottom);
+        ImGui::DockBuilderDockWindow(m_assetBrowser.getName().c_str(), bottom);
         ImGui::DockBuilderDockWindow(m_sceneView.getName().c_str(), centre);
         ImGui::DockBuilderDockWindow(m_gameView.getName().c_str(), centre);
         ImGui::DockBuilderFinish(dockSpaceId);

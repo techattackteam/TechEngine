@@ -174,6 +174,7 @@ namespace TechEngine {
         m_session.buildSnapshot(scene, m_registry, snapshot);
         snapshot.assets = m_assets.getRecords();
         snapshot.listing = m_assets.getListing();
+        m_assets.collectSideFolders(snapshot.sideFolders);
         snapshot.listingRevision = m_assets.getListingRevision();
         logSelectedTransform(scene, snapshot);
         m_snapshotSlot.publish(std::move(snapshot));
@@ -272,6 +273,7 @@ namespace TechEngine {
 
     void EditorApp::createImGuiContext() {
         ImGui::CreateContext();
+        m_panels.registerSettings();
         applyEditorTheme();
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;

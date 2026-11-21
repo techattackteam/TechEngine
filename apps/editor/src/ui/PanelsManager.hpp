@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ui/panels/AssetBrowserPanel.hpp>
 #include <ui/panels/ConsolePanel.hpp>
 #include <ui/panels/GameViewPanel.hpp>
 #include <ui/panels/HierarchyPanel.hpp>
@@ -33,6 +34,7 @@ namespace TechEngine {
         SceneViewPanel m_sceneView;
         GameViewPanel m_gameView;
         ConsolePanel m_console;
+        AssetBrowserPanel m_assetBrowser;
         bool m_sceneViewDrawn = false;
         bool m_placeModelRequested = false;
         std::array<char, PLACE_MODEL_PATH_CAPACITY> m_placeModelPath{};
@@ -41,6 +43,9 @@ namespace TechEngine {
 
     public:
         PanelsManager(EditorCommands& commands, ConsoleHistory& consoleHistory, std::function<void()> exportProject, std::function<void()> runProject, std::function<void(std::string)> importImage);
+
+        // Call right after the ImGui context is created, before the layout loads.
+        void registerSettings();
 
         // Fills `views` with one request per view panel, hidden or not.
         void draw(const EditorSnapshot& snapshot, bool canRun, std::vector<ViewRequest>& views);

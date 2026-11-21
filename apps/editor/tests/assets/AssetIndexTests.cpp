@@ -47,6 +47,7 @@ using TechEngine::ResourceId;
 using TechEngine::SCENE_KIND;
 using TechEngine::SCENE_TYPE_TAG;
 using TechEngine::Side;
+using TechEngine::SideFolder;
 using TechEngine::TEXTURE_KIND;
 using TechEngine::TEXTURE_TYPE_TAG;
 using TechEngineTests::assetBytes;
@@ -608,4 +609,41 @@ TEST_CASE("build warns about an engine file it cannot read and is quiet about an
     REQUIRE(index.find(CLIENT_SCENE_ID, renamed));
     CHECK(renamed.path == "project://assets/common/renamed.bin");
     CHECK(index.getRecords().size() == 2);
+}
+
+TEST_CASE("the side folders are the three sides under the root of the build", "[editor][assets][listing][os]") {
+    const IndexScratch env{"assetIndexSideFolders"};
+    const AssetIndex index = env.buildIndex();
+    std::vector<SideFolder> folders;
+
+    index.collectSideFolders(folders);
+
+    REQUIRE(folders.size() == 3);
+    CHECK(folders[0].side == Side::Common);
+    CHECK(folders[0].path == "project://assets/common");
+    CHECK(folders[1].side == Side::Client);
+    CHECK(folders[1].path == "project://assets/client");
+    CHECK(folders[2].side == Side::Server);
+    CHECK(folders[2].path == "project://assets/server");
+}
+
+TEST_CASE("there are no side folders before a build succeeds", "[editor][assets][listing]") {
+    const AssetIndex index;
+    std::vector<SideFolder> folders = {SideFolder{Side::Client, "stale"}};
+
+    index.collectSideFolders(folders);
+
+    CHECK(folders.empty());
+}
+
+TEST_CASE("a failed build keeps the side folders of the last build that succeeded", "[editor][assets][listing][os]") {
+    const IndexScratch env{"assetIndexSideFoldersAfterFailure"};
+    AssetIndex index = env.buildIndex();
+
+    REQUIRE(index.build(env.files(), "project://missing") != std::error_code{});
+
+    std::vector<SideFolder> folders;
+    index.collectSideFolders(folders);
+    REQUIRE(folders.size() == 3);
+    CHECK(folders[1].path == "project://assets/client");
 }
