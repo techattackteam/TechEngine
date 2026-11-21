@@ -418,6 +418,28 @@ TEST_CASE("list recurses when asked", "[files][fileaccess][os]") {
     CHECK(out == std::vector<std::string>{"assets://ui/icon.png", "assets://ui/nested", "assets://ui/nested/deep.png"});
 }
 
+TEST_CASE("list leaves out the temporaries of an unfinished write or create", "[files][fileaccess][os]") {
+    MountedScratch env{"listSkipsTemporaries"};
+    env.scratch.writeFile("ui/icon.png", "png");
+    env.scratch.writeFile("ui/icon.png.tewrite", "half a png");
+    env.scratch.writeFile("ui/nested/deep.png.12345.tewrite", "half a png");
+    env.scratch.writeFile("ui/notes.tewrite.txt", "text");
+
+    SECTION("in one folder") {
+        std::vector<std::string> out;
+        REQUIRE(env.files.list("assets://ui", false, out) == std::error_code{});
+        std::ranges::sort(out);
+        CHECK(out == std::vector<std::string>{"assets://ui/icon.png", "assets://ui/nested", "assets://ui/notes.tewrite.txt"});
+    }
+
+    SECTION("recursively") {
+        std::vector<std::string> out;
+        REQUIRE(env.files.list("assets://ui", true, out) == std::error_code{});
+        std::ranges::sort(out);
+        CHECK(out == std::vector<std::string>{"assets://ui/icon.png", "assets://ui/nested", "assets://ui/notes.tewrite.txt"});
+    }
+}
+
 TEST_CASE("list of the alias root lists the mount root", "[files][fileaccess][os]") {
     MountedScratch env{"listRoot"};
     env.scratch.writeFile("ui/icon.png", "png");

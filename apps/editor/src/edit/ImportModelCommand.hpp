@@ -3,13 +3,13 @@
 #include <TechEngine/app/Command.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 
-#include <assets/AssetIndex.hpp>
 #include <assets/ModelImporter.hpp>
 
 #include <vector>
 
 namespace TechEngine {
     class App;
+    class AssetIndex;
     class FileAccess;
 
     class ImportModelCommand final : public Command {
@@ -26,17 +26,6 @@ namespace TechEngine {
 
         // Starts the import as a job, adds its batch to `batches` and returns at once. The job touches the index only
         // through a second command it submits when the files are written, so everything passed here must outlive that batch.
-        void apply(Scene& scene) override;
-    };
-
-    class RegisterImportedAssetsCommand final : public Command {
-    private:
-        AssetIndex* m_index = nullptr;
-        std::vector<AssetRecord> m_records;
-
-    public:
-        RegisterImportedAssetsCommand(AssetIndex& index, std::vector<AssetRecord> records);
-
         void apply(Scene& scene) override;
     };
 }

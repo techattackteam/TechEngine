@@ -173,6 +173,8 @@ namespace TechEngine {
         EditorSnapshot snapshot;
         m_session.buildSnapshot(scene, m_registry, snapshot);
         snapshot.assets = m_assets.getRecords();
+        snapshot.listing = m_assets.getListing();
+        snapshot.listingRevision = m_assets.getListingRevision();
         logSelectedTransform(scene, snapshot);
         m_snapshotSlot.publish(std::move(snapshot));
         wakeMainThread();
@@ -535,7 +537,11 @@ namespace TechEngine {
         const std::error_code writeError = m_files.write(path, bytes);
         TE_CHECK(!writeError, "Failed to write {0}: {1}", path, writeError.message());
 
-        m_assets.add(AssetRecord{id, typeTag, side, std::string(path)});
+        const std::error_code rebuildError = m_assets.rebuild(m_files);
+        TE_CHECK(!rebuildError, "Failed to list the assets again after writing {0}: {1}", path, rebuildError.message());
+        AssetRecord record;
+        const bool indexed = m_assets.find(id, record);
+        TE_CHECK(indexed && record.typeTag == typeTag && record.side == side, "{0} was written but the index does not hold it as written", path);
         return id;
     }
 

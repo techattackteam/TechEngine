@@ -1059,6 +1059,36 @@ TEST_CASE("each publishEdits hands main one snapshot of the live scene", "[edito
     editor.shutdown();
 }
 
+TEST_CASE("the startup snapshot carries the index's listing and revision, with the files the startup load created", "[editor][window][listing][gpu][os]") {
+    ScratchDirectory scratch{"editorPublishesListing"};
+    writeProjectLayout(scratch);
+    scratch.writeFile("assets/client/notes.txt", "notes");
+    EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
+    editor.bootstrap();
+
+    TechEngine::EditorSnapshot snapshot;
+    REQUIRE(editor.takeSnapshot(snapshot));
+
+    const TechEngine::AssetIndex& index = editor.getAssetIndex();
+    CHECK(snapshot.listingRevision == index.getListingRevision());
+    CHECK(snapshot.listingRevision > 0);
+    REQUIRE(snapshot.listing.size() == index.getListing().size());
+
+    const TechEngine::ResourceId sceneId = savedStartupScene(scratch);
+    for (const std::string_view path: {"project://assets/common/Startup.tescene", "project://assets/client/Triangle.temesh"}) {
+        const auto created = std::ranges::find(snapshot.listing, path, &TechEngine::ListedEntry::path);
+        REQUIRE(created != snapshot.listing.end());
+        CHECK(created->kind == TechEngine::ListedKind::Asset);
+    }
+    const auto scene = std::ranges::find(snapshot.listing, sceneId, &TechEngine::ListedEntry::id);
+    REQUIRE(scene != snapshot.listing.end());
+    CHECK(scene->path == "project://assets/common/Startup.tescene");
+    const auto notes = std::ranges::find(snapshot.listing, std::string_view("project://assets/client/notes.txt"), &TechEngine::ListedEntry::path);
+    REQUIRE(notes != snapshot.listing.end());
+    CHECK(notes->kind == TechEngine::ListedKind::Other);
+    editor.shutdown();
+}
+
 class EditorStallProbe : public TechEngine::EditorApp {
 public:
     using EditorApp::EditorApp;

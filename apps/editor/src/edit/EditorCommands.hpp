@@ -35,10 +35,10 @@ namespace TechEngine {
         // The cache, the scene handle and the index are only handed to commands, like the session.
         ResourceCache* m_resources = nullptr;
         const ResourceHandle<SceneBytes>* m_sceneHandle = nullptr;
-        const AssetIndex* m_assets = nullptr;
+        AssetIndex* m_assets = nullptr;
 
     public:
-        EditorCommands(App& app, EditSession& session, const ComponentRegistry& registry, FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, const AssetIndex& assets);
+        EditorCommands(App& app, EditSession& session, const ComponentRegistry& registry, FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, AssetIndex& assets);
 
         void create(Entity parent);
 
@@ -63,6 +63,8 @@ namespace TechEngine {
         void removeComponent(std::vector<Entity> entities, ComponentTypeId component);
 
         void placeModel(std::string path);
+
+        void refreshAssets();
 
         void save();
 

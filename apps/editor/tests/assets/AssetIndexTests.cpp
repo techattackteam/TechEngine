@@ -10,6 +10,7 @@
 #include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/platform/files/MountTable.hpp>
 #include <TechEngine/testing/AssertCapture.hpp>
+#include <TechEngine/testing/LogCapture.hpp>
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <assets/AssetIndex.hpp>
@@ -22,6 +23,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <initializer_list>
+#include <string>
 #include <string_view>
 #include <system_error>
 #include <vector>
@@ -32,6 +34,8 @@ using TechEngine::BlobKind;
 using TechEngine::DuplicateAsset;
 using TechEngine::FileAccess;
 using TechEngine::FileError;
+using TechEngine::ListedEntry;
+using TechEngine::ListedKind;
 using TechEngine::MATERIAL_KIND;
 using TechEngine::MATERIAL_TYPE_TAG;
 using TechEngine::MESH_KIND;
@@ -93,6 +97,16 @@ private:
     MountTable m_mounts;
     FileAccess m_files;
 };
+
+static const ListedEntry* findListed(const AssetIndex& index, const std::string_view path) {
+    const std::vector<ListedEntry>& listing = index.getListing();
+    const auto found = std::ranges::find(listing, path, &ListedEntry::path);
+    return found == listing.end() ? nullptr : &*found;
+}
+
+static bool loggedSkip(const TechEngineTests::LogCaptureGuard& logs, const std::string_view path) {
+    return logs.contains("Asset index: skipped " + std::string(path));
+}
 
 TEST_CASE("build records each asset's type tag, path and side on all three sides", "[editor][assets][os]") {
     const IndexScratch env{"assetIndexSides"};
@@ -368,4 +382,230 @@ TEST_CASE("add rejects a null, indexed or duplicated id and leaves the index unc
     CHECK(index.getDuplicates().size() == 1);
     AssetRecord record;
     CHECK_FALSE(index.find(DUPLICATED_ID, record));
+}
+
+TEST_CASE("build lists every folder and file under the three sides with its side", "[editor][assets][listing][os]") {
+    const IndexScratch env{"assetIndexListsAll"};
+    env.writeScene("assets/common/levels/level.tescene", COMMON_SCENE_ID);
+    env.scratch().makeDirectory("assets/client/empty");
+    env.scratch().writeFile("assets/client/notes.txt", "notes");
+    env.writeScene("assets/server/arena.tescene", SERVER_SCENE_ID);
+
+    const AssetIndex index = env.buildIndex();
+
+    CHECK(index.getListing().size() == 5);
+    CHECK(std::ranges::is_sorted(index.getListing(), {}, &ListedEntry::path));
+
+    const ListedEntry* levels = findListed(index, "project://assets/common/levels");
+    REQUIRE(levels != nullptr);
+    CHECK(levels->kind == ListedKind::Folder);
+    CHECK(levels->side == Side::Common);
+    CHECK_FALSE(levels->id.valid());
+
+    const ListedEntry* empty = findListed(index, "project://assets/client/empty");
+    REQUIRE(empty != nullptr);
+    CHECK(empty->kind == ListedKind::Folder);
+    CHECK(empty->side == Side::Client);
+
+    const ListedEntry* level = findListed(index, "project://assets/common/levels/level.tescene");
+    REQUIRE(level != nullptr);
+    CHECK(level->side == Side::Common);
+
+    const ListedEntry* notes = findListed(index, "project://assets/client/notes.txt");
+    REQUIRE(notes != nullptr);
+    CHECK(notes->side == Side::Client);
+
+    const ListedEntry* arena = findListed(index, "project://assets/server/arena.tescene");
+    REQUIRE(arena != nullptr);
+    CHECK(arena->side == Side::Server);
+}
+
+TEST_CASE("build gives an indexed asset its id and type tag, a source its kind, and any other file none", "[editor][assets][listing][os]") {
+    const IndexScratch env{"assetIndexListedKinds"};
+    env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
+    writeBytes(env.scratch(), "assets/client/Kart/Kart.temodel", assetBytes(MODEL_KIND, COMMON_MODEL_ID, "model payload"));
+    for (const std::string_view source: {"Kart.gltf", "Kart.glb", "Kart.fbx", "Kart.obj", "Upper.GLTF"}) {
+        env.scratch().writeFile("assets/client/" + std::string(source), "not read as a model");
+    }
+    env.scratch().writeFile("assets/client/Sky.hdr", "not read as an image");
+    env.scratch().writeFile("assets/client/Wall.png", "not read as an image");
+    env.scratch().writeFile("assets/client/Kart.bin", "buffer");
+
+    const AssetIndex index = env.buildIndex();
+
+    const ListedEntry* level = findListed(index, "project://assets/common/level.tescene");
+    REQUIRE(level != nullptr);
+    CHECK(level->kind == ListedKind::Asset);
+    CHECK(level->id == COMMON_SCENE_ID);
+    CHECK(level->typeTag == SCENE_TYPE_TAG);
+
+    const ListedEntry* model = findListed(index, "project://assets/client/Kart/Kart.temodel");
+    REQUIRE(model != nullptr);
+    CHECK(model->kind == ListedKind::Asset);
+    CHECK(model->id == COMMON_MODEL_ID);
+    CHECK(model->typeTag == MODEL_TYPE_TAG);
+    CHECK(model->side == Side::Client);
+
+    for (const std::string_view source: {"Kart.gltf", "Kart.glb", "Kart.fbx", "Kart.obj", "Upper.GLTF"}) {
+        const ListedEntry* entry = findListed(index, "project://assets/client/" + std::string(source));
+        REQUIRE(entry != nullptr);
+        CHECK(entry->kind == ListedKind::ModelSource);
+        CHECK_FALSE(entry->id.valid());
+    }
+
+    const ListedEntry* sky = findListed(index, "project://assets/client/Sky.hdr");
+    REQUIRE(sky != nullptr);
+    CHECK(sky->kind == ListedKind::SkySource);
+
+    for (const std::string_view other: {"Wall.png", "Kart.bin"}) {
+        const ListedEntry* entry = findListed(index, "project://assets/client/" + std::string(other));
+        REQUIRE(entry != nullptr);
+        CHECK(entry->kind == ListedKind::Other);
+        CHECK_FALSE(entry->id.valid());
+        CHECK(entry->typeTag == TechEngine::StringId{});
+    }
+}
+
+TEST_CASE("a file the index drops is listed with no kind", "[editor][assets][listing][os]") {
+    const IndexScratch env{"assetIndexListsDropped"};
+    env.writeScene("assets/common/original.tescene", DUPLICATED_ID);
+    env.writeScene("assets/client/copy.tescene", DUPLICATED_ID);
+    writeBytes(env.scratch(), "assets/common/null-id.tescene", assetBytes(SCENE_KIND, ResourceId(), "x"));
+
+    const AssetIndex index = env.buildIndex();
+
+    REQUIRE(index.getDuplicates().size() == 1);
+    for (const std::string_view path: {"project://assets/common/original.tescene", "project://assets/client/copy.tescene", "project://assets/common/null-id.tescene"}) {
+        const ListedEntry* entry = findListed(index, path);
+        REQUIRE(entry != nullptr);
+        CHECK(entry->kind == ListedKind::Other);
+        CHECK_FALSE(entry->id.valid());
+    }
+}
+
+TEST_CASE("each successful build raises the listing revision", "[editor][assets][listing][os]") {
+    const IndexScratch env{"assetIndexRevision"};
+    AssetIndex index;
+    CHECK(index.getListingRevision() == 0);
+    CHECK(index.getListing().empty());
+
+    REQUIRE(index.build(env.files(), INDEX_ASSETS_ROOT) == std::error_code{});
+    CHECK(index.getListingRevision() == 1);
+
+    REQUIRE(index.build(env.files(), INDEX_ASSETS_ROOT) == std::error_code{});
+    CHECK(index.getListingRevision() == 2);
+
+    REQUIRE(index.rebuild(env.files()) == std::error_code{});
+    CHECK(index.getListingRevision() == 3);
+}
+
+TEST_CASE("a failed build keeps the records, the listing and the revision of the last one that succeeded", "[editor][assets][listing][os]") {
+    const IndexScratch env{"assetIndexFailedRebuild"};
+    env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
+    env.writeScene("assets/client/menu.tescene", CLIENT_SCENE_ID);
+    AssetIndex index = env.buildIndex();
+    REQUIRE(index.getRecords().size() == 2);
+    const std::size_t listed = index.getListing().size();
+    const std::uint64_t revision = index.getListingRevision();
+
+    env.writeScene("assets/common/later.tescene", NESTED_SCENE_ID);
+    std::filesystem::remove_all(env.scratch().root() / "assets" / "server");
+
+    CHECK(index.rebuild(env.files()) == FileError::NotFound);
+
+    CHECK(index.getRecords().size() == 2);
+    AssetRecord record;
+    CHECK(index.find(COMMON_SCENE_ID, record));
+    CHECK(index.find(CLIENT_SCENE_ID, record));
+    CHECK_FALSE(index.find(NESTED_SCENE_ID, record));
+    CHECK(index.getListing().size() == listed);
+    CHECK(findListed(index, "project://assets/common/later.tescene") == nullptr);
+    CHECK(index.getListingRevision() == revision);
+
+    SECTION("and the next build that succeeds picks up what the failed one missed") {
+        env.scratch().makeDirectory("assets/server");
+
+        REQUIRE(index.rebuild(env.files()) == std::error_code{});
+
+        CHECK(index.find(NESTED_SCENE_ID, record));
+        CHECK(findListed(index, "project://assets/common/later.tescene") != nullptr);
+        CHECK(index.getListingRevision() == revision + 1);
+    }
+}
+
+TEST_CASE("rebuild lists and indexes a file written since the last build and drops one removed since", "[editor][assets][listing][os]") {
+    const IndexScratch env{"assetIndexRebuild"};
+    env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
+    env.writeScene("assets/client/menu.tescene", CLIENT_SCENE_ID);
+    AssetIndex index = env.buildIndex();
+
+    std::filesystem::remove(env.scratch().root() / "assets" / "client" / "menu.tescene");
+    env.writeScene("assets/server/arena.tescene", SERVER_SCENE_ID);
+
+    REQUIRE(index.rebuild(env.files()) == std::error_code{});
+
+    AssetRecord record;
+    CHECK(index.find(COMMON_SCENE_ID, record));
+    CHECK_FALSE(index.find(CLIENT_SCENE_ID, record));
+    REQUIRE(index.find(SERVER_SCENE_ID, record));
+    CHECK(record.side == Side::Server);
+    CHECK(findListed(index, "project://assets/client/menu.tescene") == nullptr);
+    const ListedEntry* arena = findListed(index, "project://assets/server/arena.tescene");
+    REQUIRE(arena != nullptr);
+    CHECK(arena->kind == ListedKind::Asset);
+    CHECK(arena->id == SERVER_SCENE_ID);
+}
+
+TEST_CASE("rebuild before any build succeeded is refused", "[editor][assets][listing][os]") {
+    const IndexScratch env{"assetIndexRebuildUnbuilt"};
+    AssetIndex index;
+    const TechEngineTests::FatalAssertGuard guard;
+
+    SECTION("on an index never built") {
+        REQUIRE_THROWS_AS(index.rebuild(env.files()), TechEngineTests::AssertFired);
+    }
+
+    SECTION("after a first build that failed") {
+        std::filesystem::remove_all(env.scratch().root() / "assets" / "server");
+        REQUIRE(index.build(env.files(), INDEX_ASSETS_ROOT) == FileError::NotFound);
+        REQUIRE_THROWS_AS(index.rebuild(env.files()), TechEngineTests::AssertFired);
+    }
+}
+
+TEST_CASE("build warns about an engine file it cannot read and is quiet about any other file", "[editor][assets][listing][os]") {
+    const IndexScratch env{"assetIndexQuietSkips"};
+    env.writeScene("assets/common/level.tescene", COMMON_SCENE_ID);
+    env.scratch().writeFile("assets/client/glTF/Sponza.gltf", "{}");
+    env.scratch().writeFile("assets/client/glTF/Sponza.bin", "buffer");
+    env.scratch().writeFile("assets/client/glTF/wall.jpg", "jpeg bytes");
+    env.scratch().writeFile("assets/client/glTF/LICENSE.md", "license");
+    env.scratch().writeFile("assets/client/image.hdr", "radiance bytes");
+    env.scratch().writeFile("assets/client/shaders/GeometryShader.frag", "#version 460 core\nvoid main() {}\n");
+    env.scratch().writeFile("assets/common/.gitkeep", "");
+    writeBytes(env.scratch(), "assets/common/renamed.bin", assetBytes(SCENE_KIND, CLIENT_SCENE_ID, "scene payload"));
+    env.scratch().writeFile("assets/common/short.temesh", "tiny");
+    env.scratch().writeFile("assets/common/Upper.TEMATERIAL", "tiny");
+    writeBytes(env.scratch(), "assets/common/wrong-magic.tetexture", assetBytes(BlobKind{0x12345678, 1}, ResourceId(0x6000000000000006), "x"));
+    const TechEngineTests::LogCaptureGuard logs;
+
+    const AssetIndex index = env.buildIndex();
+
+    for (const std::string_view quiet:
+         {"project://assets/client/glTF/Sponza.gltf",
+          "project://assets/client/glTF/Sponza.bin",
+          "project://assets/client/glTF/wall.jpg",
+          "project://assets/client/glTF/LICENSE.md",
+          "project://assets/client/image.hdr",
+          "project://assets/client/shaders/GeometryShader.frag",
+          "project://assets/common/.gitkeep"}) {
+        CHECK_FALSE(loggedSkip(logs, quiet));
+    }
+    for (const std::string_view warned: {"project://assets/common/short.temesh", "project://assets/common/Upper.TEMATERIAL", "project://assets/common/wrong-magic.tetexture"}) {
+        CHECK(loggedSkip(logs, warned));
+    }
+
+    AssetRecord renamed;
+    REQUIRE(index.find(CLIENT_SCENE_ID, renamed));
+    CHECK(renamed.path == "project://assets/common/renamed.bin");
+    CHECK(index.getRecords().size() == 2);
 }

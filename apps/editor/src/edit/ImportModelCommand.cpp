@@ -6,7 +6,9 @@
 #include <TechEngine/core/texture/Texture.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 
+#include <assets/AssetIndex.hpp>
 #include <edit/ImportModelCommand.hpp>
+#include <edit/RefreshAssetsCommand.hpp>
 
 #include <algorithm>
 #include <memory>
@@ -37,27 +39,11 @@ namespace TechEngine {
                 TE_LOGGER_INFO("Imported {0} into {1}: {2} nodes, {3} meshes, {4} materials and {5} textures", request.sourcePath, result.folder, result.nodeCount, countOf(MESH_TYPE_TAG), countOf(MATERIAL_TYPE_TAG), countOf(TEXTURE_TYPE_TAG));
             }
 
-            const std::error_code submitError = app->submitCommand(std::make_unique<RegisterImportedAssetsCommand>(*index, std::move(result.records)));
+            const std::error_code submitError = app->submitCommand(std::make_unique<RefreshAssetsCommand>(*files, *index));
             if (submitError) {
-                TE_LOGGER_WARN("The simulation refused the index entries of {0}, so its files are indexed on the next launch: {1}", result.folder, submitError.message());
+                TE_LOGGER_WARN("The simulation refused the refresh after {0}, so its files are listed on the next refresh: {1}", result.folder, submitError.message());
             }
         };
         m_batches->push_back(m_jobs->submit(std::span<Task>{&task, 1}));
-    }
-
-    RegisterImportedAssetsCommand::RegisterImportedAssetsCommand(AssetIndex& index, std::vector<AssetRecord> records) : m_index(&index), m_records(std::move(records)) {
-    }
-
-    void RegisterImportedAssetsCommand::apply(Scene&) {
-        for (AssetRecord& record: m_records) {
-            AssetRecord existing;
-            const bool taken = m_index->find(record.id, existing);
-            if (taken) {
-                TE_LOGGER_ERROR("Imported {0} has the ID {1:#018x} of {2}, so it is not indexed", record.path, record.id.value(), existing.path);
-                continue;
-            }
-            m_index->add(std::move(record));
-        }
-        m_records.clear();
     }
 }

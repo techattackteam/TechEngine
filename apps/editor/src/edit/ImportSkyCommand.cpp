@@ -2,8 +2,8 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 
-#include <edit/ImportModelCommand.hpp>
 #include <edit/ImportSkyCommand.hpp>
+#include <edit/RefreshAssetsCommand.hpp>
 
 #include <memory>
 #include <span>
@@ -27,9 +27,9 @@ namespace TechEngine {
             const std::string path = result.records[0].path;
             TE_LOGGER_INFO("Imported {0} into {1}", request.sourcePath, path);
 
-            const std::error_code submitError = app->submitCommand(std::make_unique<RegisterImportedAssetsCommand>(*index, std::move(result.records)));
+            const std::error_code submitError = app->submitCommand(std::make_unique<RefreshAssetsCommand>(*files, *index));
             if (submitError) {
-                TE_LOGGER_WARN("The simulation refused the index entry of {0}, so it is indexed on the next launch: {1}", path, submitError.message());
+                TE_LOGGER_WARN("The simulation refused the refresh after {0}, so it is listed on the next refresh: {1}", path, submitError.message());
             }
         };
         m_batches->push_back(m_jobs->submit(std::span<Task>{&task, 1}));

@@ -31,12 +31,14 @@
 
 using TechEngine::AssetRecord;
 using TechEngine::ImportModelCommand;
-using TechEngine::RegisterImportedAssetsCommand;
-using TechEngine::ResourceId;
+using TechEngine::ListedEntry;
+using TechEngine::ListedKind;
 using TechEngineTests::AppTestAccess;
 using TechEngineTests::ScratchDirectory;
 
+static constexpr std::string_view IMPORT_ASSETS_ROOT = "project://assets";
 static constexpr std::string_view PAIR_SOURCE = "project://assets/client/Pair.gltf";
+static constexpr std::string_view PAIR_FOLDER = "project://assets/client/Pair";
 static constexpr std::string_view PAIR_MODEL = "project://assets/client/Pair/Pair.temodel";
 
 class ImportAppProbe final : public TechEngine::App {
@@ -49,7 +51,9 @@ public:
 
     explicit ImportAppProbe(const std::string_view name) : App(TechEngine::Role::DedicatedServer), scratch(name) {
         m_mounts.mount("project", scratch.root());
+        scratch.makeDirectory("assets/common");
         scratch.makeDirectory("assets/client");
+        scratch.makeDirectory("assets/server");
     }
 
     const TechEngine::FileAccess& files() const {
@@ -71,6 +75,7 @@ public:
 
 protected:
     void init() override {
+        REQUIRE(index.build(m_files, IMPORT_ASSETS_ROOT) == std::error_code{});
     }
 
     std::error_code simulationStartupLoad(TechEngine::Scene& scene) override {
@@ -87,55 +92,6 @@ protected:
         }
     }
 };
-
-static AssetRecord makeRecord(const ResourceId id, const std::string_view path) {
-    AssetRecord record;
-    record.id = id;
-    record.typeTag = TechEngine::MESH_TYPE_TAG;
-    record.side = TechEngine::Side::Client;
-    record.path = std::string(path);
-    return record;
-}
-
-TEST_CASE("registering imported assets adds each record to the index", "[editor][edit][import][os]") {
-    ImportAppProbe app{"importRegisterAdds"};
-    constexpr ResourceId first{0x20};
-    constexpr ResourceId second{0x10};
-    RegisterImportedAssetsCommand command{app.index, {makeRecord(first, "project://assets/client/A.temesh"), makeRecord(second, "project://assets/client/B.temesh")}};
-
-    command.apply(AppTestAccess::scene(app));
-
-    REQUIRE(app.index.getRecords().size() == 2);
-    AssetRecord found;
-    REQUIRE(app.index.find(first, found));
-    CHECK(found.path == "project://assets/client/A.temesh");
-    CHECK(found.typeTag == TechEngine::MESH_TYPE_TAG);
-    CHECK(found.side == TechEngine::Side::Client);
-    REQUIRE(app.index.find(second, found));
-    CHECK(found.path == "project://assets/client/B.temesh");
-
-    SECTION("applying it again adds nothing") {
-        command.apply(AppTestAccess::scene(app));
-        CHECK(app.index.getRecords().size() == 2);
-    }
-}
-
-TEST_CASE("registering skips a record whose id the index already holds and adds the rest", "[editor][edit][import][os]") {
-    ImportAppProbe app{"importRegisterSkipsTaken"};
-    constexpr ResourceId taken{0x30};
-    constexpr ResourceId fresh{0x31};
-    app.index.add(makeRecord(taken, "project://assets/client/Old.temesh"));
-    RegisterImportedAssetsCommand command{app.index, {makeRecord(taken, "project://assets/client/New.temesh"), makeRecord(fresh, "project://assets/client/Fresh.temesh")}};
-
-    command.apply(AppTestAccess::scene(app));
-
-    REQUIRE(app.index.getRecords().size() == 2);
-    AssetRecord found;
-    REQUIRE(app.index.find(taken, found));
-    CHECK(found.path == "project://assets/client/Old.temesh");
-    REQUIRE(app.index.find(fresh, found));
-    CHECK(found.path == "project://assets/client/Fresh.temesh");
-}
 
 TEST_CASE("the import command returns before the job is done and writes the files on a worker", "[editor][edit][import][os]") {
     ImportAppProbe app{"importCommandWritesFiles"};
@@ -181,7 +137,7 @@ TEST_CASE("an import command whose job fails writes nothing and registers nothin
     CHECK(app.index.getRecords().empty());
 }
 
-TEST_CASE("a running simulation adds the imported model, its meshes and its material to the index", "[editor][edit][import][integration][os]") {
+TEST_CASE("a finished create lists its folder and indexes the model, its meshes and its material", "[editor][edit][import][integration][os]") {
     ImportAppProbe app{"importCommandRegisters"};
     app.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
     app.importAtStartup = true;
@@ -230,4 +186,19 @@ TEST_CASE("a running simulation adds the imported model, its meshes and its mate
     const auto material = std::ranges::find(records, TechEngine::MATERIAL_TYPE_TAG, &AssetRecord::typeTag);
     REQUIRE(material != records.end());
     CHECK(material->path == "project://assets/client/Pair/Materials/Material 0.tematerial");
+
+    const std::vector<ListedEntry>& listing = app.index.getListing();
+    const auto folder = std::ranges::find(listing, PAIR_FOLDER, &ListedEntry::path);
+    REQUIRE(folder != listing.end());
+    CHECK(folder->kind == ListedKind::Folder);
+    CHECK(folder->side == TechEngine::Side::Client);
+    const auto listedModel = std::ranges::find(listing, PAIR_MODEL, &ListedEntry::path);
+    REQUIRE(listedModel != listing.end());
+    CHECK(listedModel->kind == ListedKind::Asset);
+    CHECK(listedModel->id == model.id);
+    CHECK(listedModel->typeTag == TechEngine::MODEL_TYPE_TAG);
+    const auto listedSource = std::ranges::find(listing, PAIR_SOURCE, &ListedEntry::path);
+    REQUIRE(listedSource != listing.end());
+    CHECK(listedSource->kind == ListedKind::ModelSource);
+    CHECK(app.index.getListingRevision() == 2);
 }

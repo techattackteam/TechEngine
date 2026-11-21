@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cstddef>
 #include <cstdint>
 #include <random>
@@ -26,6 +27,7 @@ namespace TechEngine {
     struct IndexedAssetKind {
         BlobKind blob;
         StringId typeTag;
+        std::string_view extension;
     };
 
     struct IndexedSide {
@@ -33,12 +35,25 @@ namespace TechEngine {
         std::string_view folder;
     };
 
+    struct SourceExtension {
+        std::string_view extension;
+        ListedKind kind = ListedKind::Other;
+    };
+
     static constexpr std::array<IndexedAssetKind, 5> INDEXED_ASSET_KINDS{{
-        {SCENE_KIND, SCENE_TYPE_TAG},
-        {MESH_KIND, MESH_TYPE_TAG},
-        {MODEL_KIND, MODEL_TYPE_TAG},
-        {TEXTURE_KIND, TEXTURE_TYPE_TAG},
-        {MATERIAL_KIND, MATERIAL_TYPE_TAG},
+        {SCENE_KIND, SCENE_TYPE_TAG, ".tescene"},
+        {MESH_KIND, MESH_TYPE_TAG, ".temesh"},
+        {MODEL_KIND, MODEL_TYPE_TAG, ".temodel"},
+        {TEXTURE_KIND, TEXTURE_TYPE_TAG, ".tetexture"},
+        {MATERIAL_KIND, MATERIAL_TYPE_TAG, ".tematerial"},
+    }};
+
+    static constexpr std::array<SourceExtension, 5> SOURCE_EXTENSIONS{{
+        {".gltf", ListedKind::ModelSource},
+        {".glb", ListedKind::ModelSource},
+        {".fbx", ListedKind::ModelSource},
+        {".obj", ListedKind::ModelSource},
+        {".hdr", ListedKind::SkySource},
     }};
 
     static constexpr std::array<IndexedSide, 3> INDEXED_SIDES{{
@@ -61,10 +76,8 @@ namespace TechEngine {
     }
 
     std::error_code AssetIndex::build(const FileAccess& files, const std::string_view assetsRoot) {
-        m_records.clear();
-        m_duplicates.clear();
-
         std::vector<AssetRecord> found;
+        std::vector<ListedEntry> listing;
         for (const IndexedSide& side: INDEXED_SIDES) {
             std::vector<std::string> paths;
             const std::error_code listError = files.list(std::string(assetsRoot) + "/" + std::string(side.folder), true, paths);
@@ -73,8 +86,27 @@ namespace TechEngine {
             }
 
             for (const std::string& path: paths) {
+                FileStatus status;
+                const std::error_code statusError = files.status(path, status);
+                if (statusError) {
+                    TE_LOGGER_WARN("Asset index: skipped {0}: {1}", path, statusError.message());
+                    continue;
+                }
+
+                ListedEntry& entry = listing.emplace_back();
+                entry.path = path;
+                entry.side = side.side;
+                if (status.isDirectory) {
+                    entry.kind = ListedKind::Folder;
+                    continue;
+                }
+                entry.kind = sourceKindOf(path);
+                if (entry.kind != ListedKind::Other) {
+                    continue;
+                }
+
                 AssetRecord record;
-                if (readRecord(files, path, side.side, record)) {
+                if (readRecord(files, path, side.side, status.size, record)) {
                     found.push_back(std::move(record));
                 }
             }
@@ -109,9 +141,26 @@ namespace TechEngine {
             runStart = runEnd;
         }
 
+        std::ranges::sort(listing, {}, &ListedEntry::path);
+        for (const AssetRecord& record: records) {
+            const auto entry = std::ranges::lower_bound(listing, record.path, {}, &ListedEntry::path);
+            TE_CHECK(entry != listing.end() && entry->path == record.path, "Asset index: {0} was read but not listed", record.path);
+            entry->kind = ListedKind::Asset;
+            entry->id = record.id;
+            entry->typeTag = record.typeTag;
+        }
+
+        m_assetsRoot = std::string(assetsRoot);
         m_records = std::move(records);
         m_duplicates = std::move(duplicates);
+        m_listing = std::move(listing);
+        m_listingRevision++;
         return {};
+    }
+
+    std::error_code AssetIndex::rebuild(const FileAccess& files) {
+        TE_CHECK(!m_assetsRoot.empty(), "Asset index: rebuild before any build succeeded");
+        return build(files, m_assetsRoot);
     }
 
     bool AssetIndex::find(const ResourceId id, AssetRecord& out) const {
@@ -146,25 +195,29 @@ namespace TechEngine {
         return m_duplicates;
     }
 
-    bool AssetIndex::readRecord(const FileAccess& files, const std::string& path, const Side side, AssetRecord& out) const {
-        FileStatus status;
-        const std::error_code statusError = files.status(path, status);
-        if (statusError) {
-            TE_LOGGER_WARN("Asset index: skipped {0}: {1}", path, statusError.message());
-            return false;
-        }
-        if (status.isDirectory) {
-            return false;
-        }
-        if (status.size < ASSET_PREFIX_SIZE) {
-            TE_LOGGER_WARN("Asset index: skipped {0}: {1} bytes is shorter than an asset header and ID", path, status.size);
+    const std::vector<ListedEntry>& AssetIndex::getListing() const {
+        return m_listing;
+    }
+
+    std::uint64_t AssetIndex::getListingRevision() const {
+        return m_listingRevision;
+    }
+
+    bool AssetIndex::readRecord(const FileAccess& files, const std::string& path, const Side side, const std::uint64_t size, AssetRecord& out) const {
+        const bool engineFile = hasAssetExtension(path);
+        if (size < ASSET_PREFIX_SIZE) {
+            if (engineFile) {
+                TE_LOGGER_WARN("Asset index: skipped {0}: {1} bytes is shorter than an asset header and ID", path, size);
+            }
             return false;
         }
 
         std::vector<std::byte> prefix;
         const std::error_code readError = files.readRange(path, 0, ASSET_PREFIX_SIZE, prefix);
         if (readError) {
-            TE_LOGGER_WARN("Asset index: skipped {0}: {1}", path, readError.message());
+            if (engineFile) {
+                TE_LOGGER_WARN("Asset index: skipped {0}: {1}", path, readError.message());
+            }
             return false;
         }
 
@@ -175,7 +228,9 @@ namespace TechEngine {
             return candidate.blob.magic;
         });
         if (kind == INDEXED_ASSET_KINDS.end()) {
-            TE_LOGGER_WARN("Asset index: skipped {0}: magic {1:#010x} is not an asset kind", path, magic);
+            if (engineFile) {
+                TE_LOGGER_WARN("Asset index: skipped {0}: magic {1:#010x} is not an asset kind", path, magic);
+            }
             return false;
         }
 
@@ -185,11 +240,15 @@ namespace TechEngine {
         std::uint64_t id = 0;
         reader.read(id);
         if (!reader.ok()) {
-            TE_LOGGER_WARN("Asset index: skipped {0}: {1}", path, reader.error().message());
+            if (engineFile) {
+                TE_LOGGER_WARN("Asset index: skipped {0}: {1}", path, reader.error().message());
+            }
             return false;
         }
         if (id == 0) {
-            TE_LOGGER_WARN("Asset index: skipped {0}: its ID is null", path);
+            if (engineFile) {
+                TE_LOGGER_WARN("Asset index: skipped {0}: its ID is null", path);
+            }
             return false;
         }
 
@@ -206,5 +265,33 @@ namespace TechEngine {
             return true;
         }
         return std::ranges::find(m_duplicates, id, &DuplicateAsset::id) != m_duplicates.end();
+    }
+
+    bool AssetIndex::hasAssetExtension(const std::string_view path) {
+        const std::string extension = lowerExtensionOf(path);
+        return std::ranges::find(INDEXED_ASSET_KINDS, extension, &IndexedAssetKind::extension) != INDEXED_ASSET_KINDS.end();
+    }
+
+    ListedKind AssetIndex::sourceKindOf(const std::string_view path) {
+        const std::string extension = lowerExtensionOf(path);
+        for (const auto& source: SOURCE_EXTENSIONS) {
+            if (source.extension == extension) {
+                return source.kind;
+            }
+        }
+        return ListedKind::Other;
+    }
+
+    std::string AssetIndex::lowerExtensionOf(const std::string_view path) {
+        const std::size_t slash = path.find_last_of('/');
+        const std::size_t dot = path.find_last_of('.');
+        if (dot == std::string_view::npos || (slash != std::string_view::npos && dot < slash)) {
+            return {};
+        }
+        std::string extension(path.substr(dot));
+        std::ranges::transform(extension, extension.begin(), [](const char character) {
+            return static_cast<char>(std::tolower(static_cast<unsigned char>(character)));
+        });
+        return extension;
     }
 }

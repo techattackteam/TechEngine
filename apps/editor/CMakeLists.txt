@@ -28,6 +28,7 @@ techengine_app(editor
           src/edit/InspectorCommands.cpp
           src/edit/MaterialSlotRebuild.cpp
           src/edit/PlaceModelCommand.cpp
+          src/edit/RefreshAssetsCommand.cpp
           src/edit/SaveSceneCommand.cpp
           src/project/Project.cpp
           src/project/ProjectError.cpp
@@ -72,6 +73,7 @@ techengine_app(editor
           src/edit/InspectorCommands.hpp
           src/edit/MaterialSlotRebuild.hpp
           src/edit/PlaceModelCommand.hpp
+          src/edit/RefreshAssetsCommand.hpp
           src/edit/SaveSceneCommand.hpp
           src/project/Project.hpp
           src/project/ProjectError.hpp
@@ -118,6 +120,7 @@ techengine_app(editor
           tests/edit/MainCameraCommandsTests.cpp
           tests/edit/MaterialSlotRebuildTests.cpp
           tests/edit/PlaceModelCommandTests.cpp
+          tests/edit/RefreshAssetsCommandTests.cpp
           tests/edit/SaveSceneCommandTests.cpp
           tests/project/ProjectErrorTests.cpp
           tests/project/ProjectTests.cpp

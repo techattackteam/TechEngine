@@ -40,6 +40,7 @@ namespace TechEngine {
 
         std::error_code status(std::string_view virtualPath, FileStatus& out) const;
 
+        // Leaves out the temporary files that an unfinished write or createFile keeps beside its target.
         std::error_code list(std::string_view virtualPath, bool recursive, std::vector<std::string>& out) const;
 
         std::error_code resolve(std::string_view virtualPath, std::filesystem::path& out) const;
