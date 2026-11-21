@@ -66,6 +66,8 @@ Steps:
    the ADRs they index, the hub pattern reads the note *first*, so a drifted one-liner
    silently overrides the ADR ([[Planning Workflow - Artifact Gate]]). List drift and offer
    to reconcile; if none, say so.
+   Then run `/weekly-review`'s step 4, **the Backlog witness check and prune**, as written
+   there: on a boundary weekend nothing else runs it.
    Then **advance the reconciliation stamp** on [[Dashboard]]:
    `**Reconciled against:** engine <sha> (date)`, `<sha>` = current `origin/master`,
    **only if this step actually ran to completion**. Skipped, partial, or reconciling

@@ -221,13 +221,16 @@ jobs:
 
       # zink over lavapipe takes a CPU Vulkan device only with LIBGL_ALWAYS_SOFTWARE set, and gives
       # a context only through EGL, which wants a 24-bit screen.
+      # Every xvfb-run passes -noreset: Xvfb otherwise resets when its last client disconnects, and
+      # under parallel ctest another test can connect during the reset, so its glfwInit fails with
+      # GLFW error 65550 and a random [gpu] case fails.
       - name: Test under Xvfb over zink (ctest incl. sdk-smoke)
         if: runner.os == 'Linux'
         env:
           LIBGL_ALWAYS_SOFTWARE: "1"
           GALLIUM_DRIVER: zink
           VK_DRIVER_FILES: /usr/share/vulkan/icd.d/lvp_icd.json
-        run: xvfb-run -a -s '-screen 0 1280x720x24' ctest --preset ${{ matrix.test }} -LE '^lfs$'
+        run: xvfb-run -a -s '-screen 0 1280x720x24 -noreset' ctest --preset ${{ matrix.test }} -LE '^lfs$'
 
       - name: ccache stats
         run: ccache -s
@@ -366,7 +369,7 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: "1"
           GALLIUM_DRIVER: zink
           VK_DRIVER_FILES: /usr/share/vulkan/icd.d/lvp_icd.json
-        run: xvfb-run -a -s '-screen 0 1280x720x24' cmake --build --preset linux-coverage --target coverage
+        run: xvfb-run -a -s '-screen 0 1280x720x24 -noreset' cmake --build --preset linux-coverage --target coverage
 
       - name: Upload the browsable report
         if: always() && github.event_name == 'pull_request' && steps.bypass.outputs.skip != 'true'
@@ -480,10 +483,10 @@ jobs:
             # Standalone GLFW reproduces llvmpipe's lp_fence_destroy TSan report.
             # Keep TechEngine instrumented while disabling Mesa workers on this leg.
             export LP_NUM_THREADS=0
-            xvfb-run -a ctest --preset linux-tsan -LE '^(gpu|stress|lfs)$'
+            xvfb-run -a -s '-screen 0 1280x1024x8 -noreset' ctest --preset linux-tsan -LE '^(gpu|stress|lfs)$'
           else
             export GALLIUM_DRIVER=zink VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.json
-            xvfb-run -a -s '-screen 0 1280x720x24' ctest --preset '${{ matrix.test }}' -LE '^(stress|lfs)$'
+            xvfb-run -a -s '-screen 0 1280x720x24 -noreset' ctest --preset '${{ matrix.test }}' -LE '^(stress|lfs)$'
           fi
 
       - name: ccache stats
