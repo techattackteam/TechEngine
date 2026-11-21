@@ -28,6 +28,8 @@ namespace TechEngine {
     static constexpr float TILE_COLUMN_WIDTH = TILE_ICON_SIZE + TILE_PADDING * 2.0f;
     static constexpr float TILE_LABEL_WIDTH = TILE_COLUMN_WIDTH - 4.0f;
     static constexpr float TILE_ROUNDING = 6.0f;
+    // Inside the cell, because the table clips anything drawn above its first row.
+    static constexpr float TILE_TOP_MARGIN = TILE_PADDING * 0.25f;
     static constexpr std::size_t TILE_LABEL_LINES = 3;
     static constexpr std::string_view TRUNCATION_MARK = "...";
     static constexpr float BADGE_ROUNDING = 4.0f;
@@ -244,7 +246,7 @@ namespace TechEngine {
         const ListedEntry& entry = snapshot.listing[m_contents[item]];
         const std::string_view name = nameOf(entry.path);
         const float lineHeight = ImGui::GetTextLineHeightWithSpacing();
-        const float labelTop = TILE_ICON_SIZE + ImGui::GetStyle().ItemSpacing.y;
+        const float labelTop = TILE_TOP_MARGIN + TILE_ICON_SIZE + ImGui::GetStyle().ItemSpacing.y;
         const float cellWidth = ImGui::GetContentRegionAvail().x;
         const float cellHeight = labelTop + static_cast<float>(TILE_LABEL_LINES) * lineHeight;
         const ImVec2 cellStart = ImGui::GetCursorScreenPos();
@@ -272,10 +274,10 @@ namespace TechEngine {
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         if (selected || hovered) {
             const ImU32 highlight = ImGui::GetColorU32(selected ? ImGuiCol_Header : ImGuiCol_HeaderHovered);
-            drawList->AddRectFilled(ImVec2(cellStart.x, cellStart.y - TILE_PADDING * 0.25f), ImVec2(cellStart.x + cellWidth, cellStart.y + cellHeight), highlight, TILE_ROUNDING);
+            drawList->AddRectFilled(cellStart, ImVec2(cellStart.x + cellWidth, cellStart.y + cellHeight), highlight, TILE_ROUNDING);
         }
 
-        const ImVec2 iconMin(cellStart.x + (cellWidth - TILE_ICON_SIZE) * 0.5f, cellStart.y);
+        const ImVec2 iconMin(cellStart.x + (cellWidth - TILE_ICON_SIZE) * 0.5f, cellStart.y + TILE_TOP_MARGIN);
         drawBadge(entry, iconMin, ImVec2(iconMin.x + TILE_ICON_SIZE, iconMin.y + TILE_ICON_SIZE));
 
         const ImU32 textColor = ImGui::GetColorU32(ImGuiCol_Text);
