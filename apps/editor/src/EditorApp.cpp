@@ -362,9 +362,19 @@ namespace TechEngine {
             return;
         }
         m_cursorLocked = locked;
-        // Disabled hides the cursor and keeps reporting motion past the screen's edge; leaving it puts the cursor
-        // back where the lock began.
-        glfwSetInputMode(nativeWindow(), GLFW_CURSOR, locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+        GLFWwindow* window = nativeWindow();
+        if (locked && glfwRawMouseMotionSupported()) {
+            glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        }
+        glfwSetInputMode(window, GLFW_CURSOR, locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+        // Locked, ImGui's mouse position follows GLFW's unbounded virtual cursor, so it would hover whatever panel that
+        // position crosses.
+        ImGuiIO& io = ImGui::GetIO();
+        if (locked) {
+            io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+        } else {
+            io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+        }
     }
 
     void EditorApp::updateTitle() {
