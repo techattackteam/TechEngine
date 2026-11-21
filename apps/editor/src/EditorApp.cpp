@@ -22,7 +22,6 @@
 #include <edit/ImportModelCommand.hpp>
 #include <edit/ImportSkyCommand.hpp>
 #include <edit/MaterialSlotRebuild.hpp>
-#include <edit/ReimportCommand.hpp>
 #include <ui/EditorTheme.hpp>
 
 #include <imgui.h>
@@ -68,9 +67,6 @@ namespace TechEngine {
                                                                                                        },
                                                                                                        [this](std::string path) {
                                                                                                            importSky(std::move(path));
-                                                                                                       },
-                                                                                                       [this](std::string path, const ImportMode mode) {
-                                                                                                           reimport(std::move(path), mode);
                                                                                                        }),
           m_console([this] {
               wakeMainThread();
@@ -403,16 +399,6 @@ namespace TechEngine {
         const std::error_code submitError = submitCommand(std::make_unique<ImportSkyCommand>(*this, m_jobs, m_files, m_assets, m_importBatches, std::move(request)));
         if (submitError) {
             TE_LOGGER_WARN("The simulation refused the image import: {0}", submitError.message());
-        }
-    }
-
-    void EditorApp::reimport(std::string path, const ImportMode mode) {
-        ReimportRequest request;
-        request.sourcePath = std::move(path);
-        request.mode = mode;
-        const std::error_code submitError = submitCommand(std::make_unique<ReimportCommand>(*this, m_jobs, m_files, m_assets, m_session, m_resources, m_sceneHandle, m_importBatches, m_reimportsInFlight, std::move(request)));
-        if (submitError) {
-            TE_LOGGER_WARN("The simulation refused the re-import: {0}", submitError.message());
         }
     }
 
