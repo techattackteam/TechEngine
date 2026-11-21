@@ -1,4 +1,5 @@
 #include <TechEngine/base/math/Math.hpp>
+#include <TechEngine/core/camera/Camera.hpp>
 
 #include <edit/FlyCamera.hpp>
 
@@ -27,9 +28,9 @@ static FlyCameraInput looking() {
     return input;
 }
 
-static FlyCameraInput movingForward() {
-    FlyCameraInput input = looking();
-    input.move = Vec3(0.0f, 0.0f, 1.0f);
+static FlyCameraInput zooming(const float steps) {
+    FlyCameraInput input;
+    input.zoom = steps;
     return input;
 }
 
@@ -68,11 +69,14 @@ TEST_CASE("the fly camera starts at the scene view's old fixed pose", "[editor][
 TEST_CASE("the world matrix sits at the position and looks down its local -Z along the forward", "[editor][edit]") {
     FlyCamera camera;
     turnTo(camera, 37.0f);
-    run(camera, movingForward(), 0.5f);
+    camera.update(zooming(2.0f), FRAME);
+    run(camera, FlyCameraInput{}, 0.1f);
 
     const Mat4 world = camera.getWorld();
     checkNear(Vec3(world[3]), camera.getPosition());
     checkNear(-Vec3(world[2]), camera.getForward());
+    checkNear(Vec3(world[0]), camera.getRight());
+    checkNear(Vec3(world[1]), camera.getUp());
     CHECK(glm::length(camera.getForward()) == Approx(1.0f).margin(TOLERANCE));
 }
 
@@ -88,16 +92,15 @@ TEST_CASE("with no input the camera does not move", "[editor][edit]") {
     checkNear(camera.getPosition(), start);
     CHECK(camera.getYaw() == Approx(startYaw).margin(TOLERANCE));
     CHECK(camera.getPitch() == Approx(startPitch).margin(TOLERANCE));
-    CHECK(camera.getVelocity() == Vec3(0.0f));
 }
 
-TEST_CASE("the keys and the mouse do nothing unless their button is held", "[editor][edit]") {
+TEST_CASE("mouse movement does nothing unless its button is held", "[editor][edit]") {
     FlyCamera camera;
     const Vec3 start = camera.getPosition();
     const float startYaw = camera.getYaw();
+    const float startPitch = camera.getPitch();
 
     FlyCameraInput input;
-    input.move = Vec3(1.0f, 1.0f, 1.0f);
     input.lookDelta = Vec2(500.0f, 500.0f);
     input.panDelta = Vec2(500.0f, 500.0f);
     input.viewHeight = VIEW_HEIGHT;
@@ -106,134 +109,20 @@ TEST_CASE("the keys and the mouse do nothing unless their button is held", "[edi
 
     checkNear(camera.getPosition(), start);
     CHECK(camera.getYaw() == Approx(startYaw).margin(TOLERANCE));
+    CHECK(camera.getPitch() == Approx(startPitch).margin(TOLERANCE));
 }
 
-TEST_CASE("moving forward ramps the speed up smoothly along the camera's front", "[editor][edit]") {
-    FlyCamera camera;
-    const FlyCameraInput input = movingForward();
-    const float targetSpeed = camera.getTargetSpeed(input);
-    REQUIRE(targetSpeed == Approx(FlyCamera::DEFAULT_REFERENCE_DISTANCE * FlyCamera::SPEED_PER_METRE));
-
-    camera.update(input, FRAME);
-    float previousSpeed = glm::length(camera.getVelocity());
-    CHECK(previousSpeed > 0.0f);
-    CHECK(previousSpeed < targetSpeed * 0.25f);
-    for (int i = 0; i < 30; i++) {
-        camera.update(input, FRAME);
-        const float speed = glm::length(camera.getVelocity());
-        CHECK(speed > previousSpeed);
-        CHECK(speed <= targetSpeed);
-        previousSpeed = speed;
-    }
-
-    run(camera, input, 2.0f);
-    CHECK(glm::length(camera.getVelocity()) == Approx(targetSpeed).epsilon(0.01));
-    CHECK(glm::dot(glm::normalize(camera.getVelocity()), camera.getForward()) == Approx(1.0f).margin(TOLERANCE));
-}
-
-TEST_CASE("releasing the keys glides to a full stop without moving back", "[editor][edit]") {
-    FlyCamera camera;
-    const FlyCameraInput input = movingForward();
-    run(camera, input, 2.0f);
-    const Vec3 forward = camera.getForward();
-    const Vec3 released = camera.getPosition();
-
-    float previousTravel = 0.0f;
-    for (int i = 0; i < 180; i++) {
-        camera.update(FlyCameraInput{}, FRAME);
-        const float travel = glm::dot(camera.getPosition() - released, forward);
-        CHECK(travel >= previousTravel);
-        previousTravel = travel;
-    }
-
-    CHECK(camera.getVelocity() == Vec3(0.0f));
-    const float glide = camera.getTargetSpeed(input) / FlyCamera::MOVE_SHARPNESS;
-    CHECK(previousTravel > glide * 0.8f);
-    CHECK(previousTravel < glide * 1.1f);
-}
-
-TEST_CASE("the speed is proportional to the distance to the pivot, within its limits", "[editor][edit]") {
-    const FlyCamera camera;
-    FlyCameraInput input = movingForward();
-    input.hasPivot = true;
-
-    input.pivot = camera.getPosition() + Vec3(10.0f, 0.0f, 0.0f);
-    CHECK(camera.getTargetSpeed(input) == Approx(10.0f * FlyCamera::SPEED_PER_METRE));
-    input.pivot = camera.getPosition() + Vec3(0.0f, -60.0f, 80.0f);
-    CHECK(camera.getTargetSpeed(input) == Approx(100.0f * FlyCamera::SPEED_PER_METRE));
-
-    input.pivot = camera.getPosition();
-    CHECK(camera.getTargetSpeed(input) == Approx(FlyCamera::MIN_REFERENCE_DISTANCE * FlyCamera::SPEED_PER_METRE));
-    input.pivot = camera.getPosition() + Vec3(0.0f, 0.0f, 1.0e7f);
-    CHECK(camera.getTargetSpeed(input) == Approx(FlyCamera::MAX_REFERENCE_DISTANCE * FlyCamera::SPEED_PER_METRE));
-
-    input.pivot = camera.getPosition() + Vec3(10.0f, 0.0f, 0.0f);
-    input.fast = true;
-    CHECK(camera.getTargetSpeed(input) == Approx(10.0f * FlyCamera::SPEED_PER_METRE * FlyCamera::FAST_MULTIPLIER));
-
-    input.hasPivot = false;
-    input.fast = false;
-    CHECK(camera.getTargetSpeed(input) == Approx(FlyCamera::DEFAULT_REFERENCE_DISTANCE * FlyCamera::SPEED_PER_METRE));
-}
-
-TEST_CASE("flying at the pivot slows down as it gets close and does not overshoot", "[editor][edit]") {
-    FlyCamera camera;
-    FlyCameraInput input = movingForward();
-    input.hasPivot = true;
-    input.pivot = camera.getPosition() + camera.getForward() * 50.0f;
-
-    run(camera, input, 1.0f);
-    float previousSpeed = glm::length(camera.getVelocity());
-    for (int i = 0; i < 120; i++) {
-        camera.update(input, FRAME);
-        const float speed = glm::length(camera.getVelocity());
-        CHECK(speed < previousSpeed);
-        CHECK(glm::dot(input.pivot - camera.getPosition(), camera.getForward()) > 0.0f);
-        previousSpeed = speed;
-    }
-}
-
-TEST_CASE("the velocity after the same time does not depend on the frame rate", "[editor][edit]") {
-    FlyCamera slow;
-    FlyCamera fast;
-    run(slow, movingForward(), 0.5f, 1.0f / 30.0f);
-    run(fast, movingForward(), 0.5f, 1.0f / 240.0f);
-
-    checkNear(slow.getVelocity(), fast.getVelocity(), 0.001f);
-    const float slowTravel = glm::length(slow.getPosition() - FlyCamera().getPosition());
-    const float fastTravel = glm::length(fast.getPosition() - FlyCamera().getPosition());
-    CHECK(slowTravel == Approx(fastTravel).epsilon(0.05));
-}
-
-TEST_CASE("a long frame moves the camera no further than the longest step allows", "[editor][edit]") {
+TEST_CASE("rotating turns the camera in place", "[editor][edit]") {
     FlyCamera camera;
     const Vec3 start = camera.getPosition();
-    const FlyCameraInput input = movingForward();
-
-    camera.update(input, 5.0f);
-    const float clampedSpeed = camera.getTargetSpeed(input) * (1.0f - std::exp(-FlyCamera::MOVE_SHARPNESS * FlyCamera::MAX_DELTA_TIME));
-    CHECK(glm::length(camera.getPosition() - start) == Approx(clampedSpeed * FlyCamera::MAX_DELTA_TIME).margin(TOLERANCE));
-
-    FlyCamera rewound;
-    rewound.update(input, -1.0f);
-    checkNear(rewound.getPosition(), start);
-}
-
-TEST_CASE("diagonal movement is no faster than straight movement", "[editor][edit]") {
-    FlyCamera camera;
     FlyCameraInput input = looking();
-    input.move = Vec3(1.0f, 1.0f, 1.0f);
-    run(camera, input, 3.0f);
-    CHECK(glm::length(camera.getVelocity()) == Approx(camera.getTargetSpeed(input)).epsilon(0.01));
-}
-
-TEST_CASE("Q and E move along the world's up, whatever the camera's pitch", "[editor][edit]") {
-    FlyCamera camera;
-    FlyCameraInput input = looking();
-    input.move = Vec3(0.0f, 1.0f, 0.0f);
-    run(camera, input, 2.0f);
-    const Vec3 direction = glm::normalize(camera.getVelocity());
-    checkNear(direction, Vec3(0.0f, 1.0f, 0.0f));
+    input.lookDelta = Vec2(300.0f, -120.0f);
+    input.fast = true;
+    for (int i = 0; i < 30; i++) {
+        camera.update(input, FRAME);
+        checkNear(camera.getPosition(), start);
+    }
+    CHECK(camera.getYaw() != Approx(0.0f).margin(0.1f));
 }
 
 TEST_CASE("the mouse turns the camera the way it moves, smoothly", "[editor][edit]") {
@@ -279,9 +168,7 @@ TEST_CASE("a wheel step zooms smoothly along the front, and a step back returns"
     const Vec3 forward = camera.getForward();
     const float step = FlyCamera::DEFAULT_REFERENCE_DISTANCE * FlyCamera::ZOOM_STEP_PER_METRE;
 
-    FlyCameraInput input;
-    input.zoom = 1.0f;
-    camera.update(input, FRAME);
+    camera.update(zooming(1.0f), FRAME);
     const float firstFrame = glm::dot(camera.getPosition() - start, forward);
     CHECK(firstFrame > 0.0f);
     CHECK(firstFrame < step * 0.5f);
@@ -289,33 +176,94 @@ TEST_CASE("a wheel step zooms smoothly along the front, and a step back returns"
     run(camera, FlyCameraInput{}, 1.0f);
     checkNear(camera.getPosition(), start + forward * step);
 
-    input.zoom = -1.0f;
-    camera.update(input, FRAME);
+    camera.update(zooming(-1.0f), FRAME);
     run(camera, FlyCameraInput{}, 1.0f);
     checkNear(camera.getPosition(), start);
+}
+
+TEST_CASE("the reference distance is the distance to the pivot, within its limits", "[editor][edit]") {
+    const FlyCamera camera;
+    FlyCameraInput input;
+    CHECK(camera.getReferenceDistance(input) == FlyCamera::DEFAULT_REFERENCE_DISTANCE);
+
+    input.hasPivot = true;
+    input.pivot = camera.getPosition() + Vec3(10.0f, 0.0f, 0.0f);
+    CHECK(camera.getReferenceDistance(input) == Approx(10.0f));
+    input.pivot = camera.getPosition() + Vec3(0.0f, -60.0f, 80.0f);
+    CHECK(camera.getReferenceDistance(input) == Approx(100.0f));
+    input.pivot = camera.getPosition();
+    CHECK(camera.getReferenceDistance(input) == FlyCamera::MIN_REFERENCE_DISTANCE);
+    CHECK(camera.getZoomStep(input) == Approx(FlyCamera::MIN_REFERENCE_DISTANCE * FlyCamera::ZOOM_STEP_PER_METRE));
+    input.pivot = camera.getPosition() + Vec3(0.0f, 0.0f, 1.0e7f);
+    CHECK(camera.getReferenceDistance(input) == FlyCamera::MAX_REFERENCE_DISTANCE);
+    CHECK(camera.getZoomStep(input) == Approx(FlyCamera::MAX_REFERENCE_DISTANCE * FlyCamera::ZOOM_STEP_PER_METRE));
 }
 
 TEST_CASE("a zoom step follows the distance to the pivot", "[editor][edit]") {
     FlyCamera camera;
     const Vec3 start = camera.getPosition();
     const Vec3 forward = camera.getForward();
-    FlyCameraInput input;
+    FlyCameraInput input = zooming(1.0f);
     input.hasPivot = true;
     input.pivot = start + forward * 50.0f;
-    input.zoom = 1.0f;
 
     camera.update(input, FRAME);
     run(camera, FlyCameraInput{}, 1.0f);
     checkNear(camera.getPosition(), start + forward * (50.0f * FlyCamera::ZOOM_STEP_PER_METRE), 0.001f);
 }
 
+static FlyCameraInput withSpeedKeys(FlyCameraInput input, const bool fast, const bool slow) {
+    input.fast = fast;
+    input.slow = slow;
+    return input;
+}
+
+static float yawAfterTurn(const bool fast, const bool slow) {
+    FlyCamera camera;
+    FlyCameraInput input = withSpeedKeys(looking(), fast, slow);
+    input.lookDelta = Vec2(100.0f, 0.0f);
+    camera.update(input, FRAME);
+    run(camera, looking(), 1.0f);
+    return camera.getYaw();
+}
+
+TEST_CASE("shift speeds up and ctrl slows down the rotation, the pan and the zoom", "[editor][edit]") {
+    const float fast = FlyCamera::FAST_MULTIPLIER;
+    const float slow = FlyCamera::SLOW_MULTIPLIER;
+    CHECK(FlyCamera::getSpeedMultiplier(FlyCameraInput{}) == 1.0f);
+    CHECK(FlyCamera::getSpeedMultiplier(withSpeedKeys(FlyCameraInput{}, true, false)) == Approx(fast));
+    CHECK(FlyCamera::getSpeedMultiplier(withSpeedKeys(FlyCameraInput{}, false, true)) == Approx(slow));
+    CHECK(FlyCamera::getSpeedMultiplier(withSpeedKeys(FlyCameraInput{}, true, true)) == Approx(fast * slow));
+
+    const float normalYaw = yawAfterTurn(false, false);
+    CHECK(yawAfterTurn(true, false) == Approx(normalYaw * fast).margin(TOLERANCE));
+    CHECK(yawAfterTurn(false, true) == Approx(normalYaw * slow).margin(TOLERANCE));
+
+    FlyCamera camera;
+    FlyCameraInput pan;
+    pan.panning = true;
+    pan.viewHeight = VIEW_HEIGHT;
+    const float normalPan = camera.getPanMetresPerPixel(pan);
+    CHECK(camera.getPanMetresPerPixel(withSpeedKeys(pan, true, false)) == Approx(normalPan * fast));
+    CHECK(camera.getPanMetresPerPixel(withSpeedKeys(pan, false, true)) == Approx(normalPan * slow));
+
+    const float normalStep = camera.getZoomStep(zooming(1.0f));
+    CHECK(camera.getZoomStep(withSpeedKeys(zooming(1.0f), true, false)) == Approx(normalStep * fast));
+    CHECK(camera.getZoomStep(withSpeedKeys(zooming(1.0f), false, true)) == Approx(normalStep * slow));
+
+    const Vec3 start = camera.getPosition();
+    const Vec3 forward = camera.getForward();
+    camera.update(withSpeedKeys(zooming(1.0f), true, false), FRAME);
+    run(camera, FlyCameraInput{}, 1.0f);
+    checkNear(camera.getPosition(), start + forward * (normalStep * fast));
+}
+
 TEST_CASE("quick zoom steps toward the pivot shrink instead of passing it", "[editor][edit]") {
     FlyCamera camera;
     const Vec3 forward = camera.getForward();
-    FlyCameraInput input;
+    FlyCameraInput input = zooming(1.0f);
     input.hasPivot = true;
     input.pivot = camera.getPosition() + forward * 10.0f;
-    input.zoom = 1.0f;
 
     const int steps = 8;
     for (int i = 0; i < steps; i++) {
@@ -327,7 +275,40 @@ TEST_CASE("quick zoom steps toward the pivot shrink instead of passing it", "[ed
     CHECK(glm::dot(input.pivot - camera.getPosition(), forward) == Approx(expected).margin(0.001f));
 }
 
-TEST_CASE("a pan moves the camera across the view so the scene follows the cursor", "[editor][edit]") {
+TEST_CASE("a zoom and a pan cover the same ground after the same time at any frame rate", "[editor][edit]") {
+    FlyCameraInput pan;
+    pan.panning = true;
+    pan.viewHeight = VIEW_HEIGHT;
+    pan.panDelta = Vec2(80.0f, 30.0f);
+
+    FlyCamera slow;
+    FlyCamera fast;
+    slow.update(zooming(3.0f), 0.0f);
+    slow.update(pan, 0.0f);
+    fast.update(zooming(3.0f), 0.0f);
+    fast.update(pan, 0.0f);
+    const Vec3 start = slow.getPosition();
+    run(slow, FlyCameraInput{}, 0.2f, 1.0f / 30.0f);
+    run(fast, FlyCameraInput{}, 0.2f, 1.0f / 240.0f);
+    CHECK(glm::length(slow.getPosition() - start) > 0.5f);
+    checkNear(slow.getPosition(), fast.getPosition());
+}
+
+TEST_CASE("a long frame zooms no further than the longest step allows, and a negative one not at all", "[editor][edit]") {
+    FlyCamera camera;
+    const Vec3 start = camera.getPosition();
+    const float step = camera.getZoomStep(zooming(1.0f));
+
+    camera.update(zooming(1.0f), 5.0f);
+    const float consumed = 1.0f - std::exp(-FlyCamera::ZOOM_SHARPNESS * FlyCamera::MAX_DELTA_TIME);
+    CHECK(glm::length(camera.getPosition() - start) == Approx(step * consumed).margin(TOLERANCE));
+
+    FlyCamera rewound;
+    rewound.update(zooming(1.0f), -1.0f);
+    checkNear(rewound.getPosition(), start);
+}
+
+TEST_CASE("a pan eases the camera across the view until the scene has followed the cursor", "[editor][edit]") {
     FlyCamera camera;
     const Vec3 start = camera.getPosition();
     const Vec3 right = camera.getRight();
@@ -341,9 +322,20 @@ TEST_CASE("a pan moves the camera across the view so the scene follows the curso
     const float metresPerPixel = 2.0f * FlyCamera::DEFAULT_REFERENCE_DISTANCE * std::tan(glm::radians(TechEngine::Camera{}.verticalFieldOfView) * 0.5f) / VIEW_HEIGHT;
     CHECK(camera.getPanMetresPerPixel(input) == Approx(metresPerPixel));
 
+    const Vec3 full = -right * (100.0f * metresPerPixel) - up * (40.0f * metresPerPixel);
     camera.update(input, FRAME);
-    checkNear(camera.getPosition(), start - right * (100.0f * metresPerPixel) - up * (40.0f * metresPerPixel));
+    const float firstFrame = glm::dot(camera.getPosition() - start, glm::normalize(full));
+    CHECK(firstFrame > 0.0f);
+    CHECK(firstFrame < glm::length(full) * 0.5f);
+    CHECK(camera.isMoving());
+
+    FlyCameraInput held;
+    held.panning = true;
+    held.viewHeight = VIEW_HEIGHT;
+    run(camera, held, 1.0f);
+    checkNear(camera.getPosition(), start + full);
     CHECK(camera.getYaw() == startYaw);
+    CHECK_FALSE(camera.isMoving());
 }
 
 TEST_CASE("a pan follows the distance to the pivot, and needs the view's height", "[editor][edit]") {
@@ -433,22 +425,17 @@ TEST_CASE("focus turns the short way round", "[editor][edit]") {
     CHECK(glm::dot(camera.getForward(), direction) == Approx(1.0f).margin(TOLERANCE));
 }
 
-TEST_CASE("looking or moving cancels a focus, and holding the button still does not", "[editor][edit]") {
+TEST_CASE("rotating, panning or zooming cancels a focus, and holding a button still does not", "[editor][edit]") {
     const Vec3 target(0.0f, 0.0f, -30.0f);
 
     FlyCamera held;
     held.focus(target, 1.0f);
-    run(held, looking(), FlyCamera::FOCUS_DURATION + FRAME);
+    FlyCameraInput both = looking();
+    both.panning = true;
+    both.viewHeight = VIEW_HEIGHT;
+    run(held, both, FlyCamera::FOCUS_DURATION + FRAME);
     CHECK_FALSE(held.isFocusing());
     CHECK(glm::length(held.getPosition() - target) == Approx(FlyCamera::FOCUS_DISTANCE_PER_RADIUS).margin(0.001f));
-
-    FlyCamera moved;
-    moved.focus(target, 1.0f);
-    moved.update(FlyCameraInput{}, FRAME);
-    moved.update(movingForward(), FRAME);
-    CHECK_FALSE(moved.isFocusing());
-    run(moved, FlyCameraInput{}, FlyCamera::FOCUS_DURATION + 1.0f);
-    CHECK(glm::length(moved.getPosition() - target) > FlyCamera::FOCUS_DISTANCE_PER_RADIUS + 1.0f);
 
     FlyCamera turned;
     turned.focus(target, 1.0f);
@@ -468,20 +455,54 @@ TEST_CASE("looking or moving cancels a focus, and holding the button still does 
 
     FlyCamera zoomed;
     zoomed.focus(target, 1.0f);
-    FlyCameraInput zoom;
-    zoom.zoom = 1.0f;
-    zoomed.update(zoom, FRAME);
+    zoomed.update(zooming(1.0f), FRAME);
     CHECK_FALSE(zoomed.isFocusing());
+    run(zoomed, FlyCameraInput{}, 1.0f);
+    CHECK(glm::length(zoomed.getPosition() - target) > FlyCamera::FOCUS_DISTANCE_PER_RADIUS + 1.0f);
 }
 
-TEST_CASE("a focus stops the camera's glide", "[editor][edit]") {
+TEST_CASE("a focus drops a zoom and a pan still under way", "[editor][edit]") {
     FlyCamera camera;
-    run(camera, movingForward(), 2.0f);
-    REQUIRE(glm::length(camera.getVelocity()) > 1.0f);
+    camera.update(zooming(5.0f), 0.0f);
+    FlyCameraInput pan;
+    pan.panning = true;
+    pan.viewHeight = VIEW_HEIGHT;
+    pan.panDelta = Vec2(200.0f, 0.0f);
+    camera.update(pan, 0.0f);
 
     const Vec3 target(5.0f, 0.0f, 0.0f);
     camera.focus(target, 1.0f);
-    CHECK(camera.getVelocity() == Vec3(0.0f));
     run(camera, FlyCameraInput{}, FlyCamera::FOCUS_DURATION + 1.0f);
     CHECK(glm::length(camera.getPosition() - target) == Approx(FlyCamera::FOCUS_DISTANCE_PER_RADIUS).margin(0.001f));
+}
+
+TEST_CASE("the camera asks for frames only while something is still easing", "[editor][edit]") {
+    FlyCamera camera;
+    CHECK_FALSE(camera.isMoving());
+
+    FlyCameraInput turn = looking();
+    turn.lookDelta = Vec2(40.0f, 0.0f);
+    camera.update(turn, FRAME);
+    CHECK(camera.isMoving());
+    run(camera, looking(), 1.0f);
+    CHECK_FALSE(camera.isMoving());
+
+    camera.update(zooming(1.0f), FRAME);
+    CHECK(camera.isMoving());
+    run(camera, FlyCameraInput{}, 2.0f);
+    CHECK_FALSE(camera.isMoving());
+
+    camera.focus(Vec3(3.0f, 0.0f, -4.0f), 1.0f);
+    CHECK(camera.isMoving());
+    run(camera, FlyCameraInput{}, FlyCamera::FOCUS_DURATION + FRAME);
+    CHECK_FALSE(camera.isMoving());
+
+    FlyCameraInput pan;
+    pan.panning = true;
+    pan.viewHeight = VIEW_HEIGHT;
+    pan.panDelta = Vec2(25.0f, 10.0f);
+    camera.update(pan, FRAME);
+    CHECK(camera.isMoving());
+    run(camera, FlyCameraInput{}, 1.0f);
+    CHECK_FALSE(camera.isMoving());
 }

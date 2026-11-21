@@ -128,6 +128,7 @@ techengine_app(editor
           tests/edit/SaveSceneCommandTests.cpp
           tests/project/ProjectErrorTests.cpp
           tests/project/ProjectTests.cpp
+          tests/ui/SceneViewPanelTests.cpp
           tests/ui/ViewTextureSwapTests.cpp)
 
 # On the object library, so the editor's tests can export the dev project too.

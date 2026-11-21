@@ -5,7 +5,6 @@
 #include <ui/panels/SceneViewPanel.hpp>
 
 #include <imgui.h>
-#include <imgui_internal.h>
 
 #include <algorithm>
 #include <cmath>
@@ -25,13 +24,15 @@ namespace TechEngine {
         float selectedRadius = 0.0f;
         input.hasPivot = findSelected(snapshot, input.pivot, selectedRadius);
         input.viewHeight = imageSize.y;
+        input.fast = io.KeyShift;
+        input.slow = io.KeyCtrl;
         if (m_panning) {
             input.panning = true;
             input.panDelta = Vec2(io.MouseDelta.x, io.MouseDelta.y);
-            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
         }
         if (m_looking) {
-            readLookInput(input);
+            input.looking = true;
+            input.lookDelta = Vec2(io.MouseDelta.x, io.MouseDelta.y);
         }
         if (imageHovered) {
             input.zoom = io.MouseWheel;
@@ -45,6 +46,14 @@ namespace TechEngine {
         m_camera.update(input, io.DeltaTime);
     }
 
+    bool SceneViewPanel::wantsCursorLocked() const {
+        return m_looking || m_panning;
+    }
+
+    bool SceneViewPanel::isCameraMoving() const {
+        return m_looking || m_panning || m_camera.isMoving();
+    }
+
     void SceneViewPanel::describeCamera(ViewRequest& request) const {
         request.cameraSource = ViewCameraSource::Pose;
         request.pose.world = m_camera.getWorld();
@@ -54,7 +63,6 @@ namespace TechEngine {
     void SceneViewPanel::trackDrags(const bool imageHovered) {
         if (!m_looking && imageHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
             m_looking = true;
-            m_lookAnchor = ImGui::GetIO().MousePos;
         }
         if (m_looking && !ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
             m_looking = false;
@@ -65,18 +73,6 @@ namespace TechEngine {
         if (m_panning && !ImGui::IsMouseDown(ImGuiMouseButton_Middle)) {
             m_panning = false;
         }
-    }
-
-    void SceneViewPanel::readLookInput(FlyCameraInput& input) {
-        const ImGuiIO& io = ImGui::GetIO();
-        input.looking = true;
-        input.lookDelta = Vec2(io.MouseDelta.x, io.MouseDelta.y);
-        input.move = Vec3(getKeyAxis(ImGuiKey_D, ImGuiKey_A), getKeyAxis(ImGuiKey_E, ImGuiKey_Q), getKeyAxis(ImGuiKey_W, ImGuiKey_S));
-        input.fast = io.KeyShift;
-        ImGui::SetMouseCursor(ImGuiMouseCursor_None);
-        // Puts the cursor back where the drag started, so it never stops at the screen's edge and next frame's
-        // delta is measured from the anchor.
-        ImGui::TeleportMousePos(m_lookAnchor);
     }
 
     bool SceneViewPanel::findSelected(const EditorSnapshot& snapshot, Vec3& position, float& radius) {
@@ -94,16 +90,5 @@ namespace TechEngine {
         const Vec3& scale = snapshot.world.scale;
         radius = std::max({std::abs(scale.x), std::abs(scale.y), std::abs(scale.z)});
         return true;
-    }
-
-    float SceneViewPanel::getKeyAxis(const ImGuiKey positive, const ImGuiKey negative) {
-        float axis = 0.0f;
-        if (ImGui::IsKeyDown(positive)) {
-            axis += 1.0f;
-        }
-        if (ImGui::IsKeyDown(negative)) {
-            axis -= 1.0f;
-        }
-        return axis;
     }
 }

@@ -62,6 +62,8 @@ namespace TechEngine {
         PanelsManager m_panels;
         // Main thread only.
         std::vector<ViewRequest> m_viewRequests;
+        // Main thread only.
+        bool m_cursorLocked = false;
         ClosePrompt m_closePrompt;
         // Main thread only.
         Process m_runtime;
@@ -136,6 +138,8 @@ namespace TechEngine {
         void handleCloseRequest();
 
         void buildImGuiFrame();
+
+        void setCursorLocked(bool locked);
 
         void updateTitle();
 
