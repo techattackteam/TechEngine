@@ -1,5 +1,4 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
-#include <TechEngine/platform/files/FileAccess.hpp>
 
 #include <assets/AssetIndex.hpp>
 #include <edit/RefreshAssetsCommand.hpp>

@@ -394,6 +394,7 @@ TEST_CASE("build lists every folder and file under the three sides with its side
     const AssetIndex index = env.buildIndex();
 
     CHECK(index.getListing().size() == 5);
+    CHECK(std::ranges::is_sorted(index.getListing(), {}, &ListedEntry::path));
 
     const ListedEntry* levels = findListed(index, "project://assets/common/levels");
     REQUIRE(levels != nullptr);

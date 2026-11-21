@@ -3,13 +3,13 @@
 #include <TechEngine/app/Command.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 
-#include <assets/AssetIndex.hpp>
 #include <assets/ModelImporter.hpp>
 
 #include <vector>
 
 namespace TechEngine {
     class App;
+    class AssetIndex;
     class FileAccess;
 
     class ImportModelCommand final : public Command {

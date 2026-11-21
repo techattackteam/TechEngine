@@ -71,6 +71,7 @@ namespace TechEngine {
 
         const std::vector<DuplicateAsset>& getDuplicates() const;
 
+        // Sorted by path.
         const std::vector<ListedEntry>& getListing() const;
 
         std::uint64_t getListingRevision() const;

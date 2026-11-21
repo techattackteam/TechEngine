@@ -6,6 +6,7 @@
 #include <TechEngine/core/texture/Texture.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 
+#include <assets/AssetIndex.hpp>
 #include <edit/ImportModelCommand.hpp>
 #include <edit/RefreshAssetsCommand.hpp>
 

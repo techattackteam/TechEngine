@@ -24,9 +24,12 @@ namespace TechEngine {
 
         const Iterator end;
         while (it != end) {
-            // lexically_relative, not relative(): the latter goes through weakly_canonical and
-            // would resolve symlinks out of the path we are rebuilding.
-            out.push_back(base + it->path().lexically_relative(root).generic_string());
+            const bool temporary = it->path().filename().string().ends_with(WRITE_TEMPORARY_SUFFIX);
+            if (!temporary) {
+                // lexically_relative, not relative(): the latter goes through weakly_canonical and
+                // would resolve symlinks out of the path we are rebuilding.
+                out.push_back(base + it->path().lexically_relative(root).generic_string());
+            }
 
             it.increment(ec);
             if (ec) {
