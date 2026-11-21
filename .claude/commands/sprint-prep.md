@@ -55,8 +55,18 @@ If gate 1 or 2 fails, say which and stop. Do not fix it for me.
      has actually **fired** is no longer latent: draft a **Bug** card for it.
    - **Known bugs → `B` cards**: any unfixed `B` card in the closing sprint, and Known Issue
      promotions above. They are ordinary cards and displace nothing.
-   - **`docs/06 Sprints/Backlog.md` is read LAST**, and only to ask *"has any trigger
-     fired?"* It holds no decisions, so nothing can be planned from it.
+   - **`docs/06 Sprints/Backlog.md` is read LAST**, and for planning only to ask *"has any
+     trigger fired?"* It holds no decisions, so nothing can be planned from it.
+   - **Then groom it with me**, time-boxed to about 20 minutes. List at most 15 entries,
+     oldest first by the date the entry was found or filed: entries whose trigger has not
+     fired in three sprints, entries with no trigger older than six weeks, and every
+     `#prio/low` and `#prio/xlow` entry. Skip an entry marked `**Kept <date>.**` within the
+     last three sprints. For each, give one line on whether it still holds against
+     `origin/master`, then I choose **keep**, **re-prioritize** or **drop**. Drop deletes the
+     bullet. Keep and re-prioritize write `**Kept <date>.**` at the end of the entry,
+     replacing an older one, so its age counts from that date. Re-score the `#prio` buckets downward in the same pass (the Backlog's own rule).
+     Finished entries were already deleted by `/weekly-review`'s prune; one found here is
+     deleted too, and said out loud.
 3. **Propose ONE headline goal** for the next sprint. A Roadmap goal is about a month, so a
    sprint usually delivers its first or second half; say which. Justify it against the
    Capability Map and the affected systems' design notes. Push back if I'm over-scoping.

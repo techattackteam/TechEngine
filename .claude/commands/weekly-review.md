@@ -38,17 +38,22 @@ Then:
    List any drift under "Artifact drift"; offer to reconcile (update the living design
    note; a *superseding* ADR if an Accepted decision changed). See
    [[Planning Workflow - Artifact Gate]]. If none, say so.
-4. **Backlog witness check.** Read `docs/06 Sprints/Backlog.md` for two things only:
+4. **Backlog witness check and prune.** Read `docs/06 Sprints/Backlog.md` for three things:
    - **Unfired triggers:** did one fire this week (from `git log` + the sprint board)? Mark
      it in place, `**Fired <date>:** <the evidence>`. Pulling it is `/sprint-plan`'s job.
    - **Fired entries:** re-resolve every `file:line`, symbol and PR the entry cites against
      `origin/master` by opening the code, not by checking the line exists, and correct the
      citation in place. Never re-decide a fired trigger.
-   Nothing else re-reads a fired entry between the fire and the pull, and the code keeps
-   moving under it, so a cited line can drift or go blank. List each
-   correction under "Artifact drift". If the cited code is gone or already fixed, list that
-   too and offer to delete the entry; do not delete it unasked. If nothing fired or moved,
-   say so.
+     Nothing else re-reads a fired entry between the fire and the pull, and the code keeps
+     moving under it, so a cited line can drift or go blank.
+   - **Finished entries: delete them, without asking.** An entry is finished when the
+     problem it names is fixed or its code is gone on `origin/master` (opened, not assumed),
+     when its own text names the event that ends it and that event happened ("delete this
+     entry when #216 merges"), or when the Backlog's own rules say so: decided, scheduled or
+     on the ladder. Delete the whole bullet; no tombstone.
+   List each correction and each deletion, with its evidence, under "Artifact drift". An
+   entry that only *might* be stale (old, low priority, never fired) is not finished: leave
+   it for `/sprint-prep`'s grooming pass. If nothing fired, moved or finished, say so.
 5. Update `docs/00 Dashboard/Dashboard.md`: current focus, blockers, health, and
    **roll the `Next ceremony` line**.
    **Advance the reconciliation stamp**: `**Reconciled against:** engine <sha> (date)`,
