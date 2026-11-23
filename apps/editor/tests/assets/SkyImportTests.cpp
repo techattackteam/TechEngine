@@ -54,9 +54,10 @@ public:
         scratch.makeDirectory("assets/client");
     }
 
-    std::error_code importSky(const std::string_view sourcePath, SkyImportResult& out) {
+    std::error_code importSky(const std::string_view sourcePath, SkyImportResult& out, const std::string_view name = {}) {
         SkyImportRequest request;
         request.sourcePath = std::string(sourcePath);
+        request.name = std::string(name);
         const TextureImporter importer(files, [this] {
             return ResourceId{nextId++};
         });
@@ -385,15 +386,38 @@ TEST_CASE("odd and tiny sizes get the full chain", "[editor][assets][image][os]"
 }
 
 TEST_CASE("the output path replaces the last extension of the file name", "[editor][assets][image]") {
-    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.hdr", 0) == "project://assets/client/Sky.tetexture");
-    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.v2.hdr", 0) == "project://assets/client/Sky.v2.tetexture");
-    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky", 0) == "project://assets/client/Sky.tetexture");
-    CHECK(TextureImporter::skyOutputPath("project://assets/my.folder/Sky", 0) == "project://assets/my.folder/Sky.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.hdr", "", 0) == "project://assets/client/Sky.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.v2.hdr", "", 0) == "project://assets/client/Sky.v2.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky", "", 0) == "project://assets/client/Sky.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/my.folder/Sky", "", 0) == "project://assets/my.folder/Sky.tetexture");
+}
+
+TEST_CASE("a typed sky name replaces the source's name beside the source", "[editor][assets][image]") {
+    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.hdr", "Dusk", 0) == "project://assets/client/Dusk.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.hdr", "Dusk", 3) == "project://assets/client/Dusk_3.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/my.folder/Sky.hdr", "Dusk.v2", 1) == "project://assets/my.folder/Dusk.v2_1.tetexture");
+}
+
+TEST_CASE("a sky created under a typed name writes that file, and the same name again takes a suffix", "[editor][assets][image][os]") {
+    SkyImportFixture fixture{"skyTypedName"};
+    fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
+
+    SkyImportResult first;
+    REQUIRE(fixture.importSky(SKY_SOURCE, first, "Dusk") == std::error_code{});
+    SkyImportResult second;
+    REQUIRE(fixture.importSky(SKY_SOURCE, second, "Dusk") == std::error_code{});
+
+    REQUIRE(first.records.size() == 1);
+    REQUIRE(second.records.size() == 1);
+    CHECK(first.records[0].path == "project://assets/client/Dusk.tetexture");
+    CHECK(second.records[0].path == "project://assets/client/Dusk_1.tetexture");
+    CHECK(first.records[0].id != second.records[0].id);
+    CHECK_FALSE(std::filesystem::exists(fixture.scratch.root() / "assets" / "client" / "Sky.tetexture"));
 }
 
 TEST_CASE("a suffix goes between the stem and the extension", "[editor][assets][image]") {
-    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.hdr", 1) == "project://assets/client/Sky_1.tetexture");
-    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.hdr", 12) == "project://assets/client/Sky_12.tetexture");
-    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.v2.hdr", 1) == "project://assets/client/Sky.v2_1.tetexture");
-    CHECK(TextureImporter::skyOutputPath("project://assets/my.folder/Sky", 1) == "project://assets/my.folder/Sky_1.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.hdr", "", 1) == "project://assets/client/Sky_1.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.hdr", "", 12) == "project://assets/client/Sky_12.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.v2.hdr", "", 1) == "project://assets/client/Sky.v2_1.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/my.folder/Sky", "", 1) == "project://assets/my.folder/Sky_1.tetexture");
 }

@@ -7,6 +7,7 @@
 #include <TechEngine/platform/files/FileAccess.hpp>
 
 #include <assets/AssetIndex.hpp>
+#include <assets/AssetNaming.hpp>
 #include <edit/ImportModelCommand.hpp>
 #include <edit/RefreshAssetsCommand.hpp>
 
@@ -22,6 +23,10 @@ namespace TechEngine {
     }
 
     void ImportModelCommand::apply(Scene&) {
+        if (!m_request.name.empty() && !AssetNaming::isValidName(m_request.name)) {
+            TE_LOGGER_WARN("A model or mesh cannot be named '{0}', so nothing is created from {1}", m_request.name, m_request.sourcePath);
+            return;
+        }
         Task task = [app = m_app, files = m_files, index = m_index, request = std::move(m_request)] {
             ModelImportResult result;
             const ModelImporter importer(*files, &randomResourceId);

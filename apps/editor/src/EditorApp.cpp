@@ -2,7 +2,6 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/core/assets/AssetSource.hpp>
-#include <TechEngine/core/assets/ImportBlock.hpp>
 #include <TechEngine/core/camera/Camera.hpp>
 #include <TechEngine/core/material/Material.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
@@ -17,10 +16,7 @@
 #include <TechEngine/platform/files/FileError.hpp>
 
 #include <EditorApp.hpp>
-#include <assets/ModelImporter.hpp>
 #include <edit/ExportCommand.hpp>
-#include <edit/ImportModelCommand.hpp>
-#include <edit/ImportSkyCommand.hpp>
 #include <edit/MaterialSlotRebuild.hpp>
 #include <ui/EditorTheme.hpp>
 
@@ -47,27 +43,20 @@ namespace TechEngine {
     static constexpr std::string_view MANIFEST_PATH = "project://project.toml";
     static constexpr std::string_view STARTUP_SCENE_PATH = "project://assets/common/Startup.tescene";
     static constexpr std::string_view TRIANGLE_MESH_PATH = "project://assets/client/Triangle.temesh";
-    static constexpr std::string_view STARTUP_IMPORT_PATH = "project://assets/client/glTF/Sponza.gltf";
-    static constexpr Side STARTUP_IMPORT_SIDE = Side::Client;
-    static constexpr ImportSettings STARTUP_IMPORT_SETTINGS{};
-    static constexpr ImportMode STARTUP_IMPORT_MODE = ImportMode::Model;
     static constexpr std::string_view LAYOUT_FOLDER = "project://editorSettings";
     static constexpr std::string_view LAYOUT_PATH = "project://editorSettings/layout.ini";
 
     EditorApp::EditorApp(std::filesystem::path projectRoot, std::filesystem::path exportFolder, std::filesystem::path runtimePath)
         : ClientApp(Role::Client, std::string(EDITOR_TITLE)), m_projectRoot(std::move(projectRoot)), m_exportFolder(std::move(exportFolder)), m_runtimePath(std::move(runtimePath)), m_source(m_files, m_assets),
-          m_commands(*this, m_session, m_registry, m_files, m_resources, m_sceneHandle, m_assets), m_panels(
-                                                                                                       m_commands,
-                                                                                                       m_consoleHistory,
-                                                                                                       [this] {
-                                                                                                           exportProject();
-                                                                                                       },
-                                                                                                       [this] {
-                                                                                                           runProject();
-                                                                                                       },
-                                                                                                       [this](std::string path) {
-                                                                                                           importSky(std::move(path));
-                                                                                                       }),
+          m_commands(*this, m_session, m_registry, m_files, m_resources, m_sceneHandle, m_assets, m_jobs, m_importBatches), m_panels(
+                                                                                                                                m_commands,
+                                                                                                                                m_consoleHistory,
+                                                                                                                                [this] {
+                                                                                                                                    exportProject();
+                                                                                                                                },
+                                                                                                                                [this] {
+                                                                                                                                    runProject();
+                                                                                                                                }),
           m_console([this] {
               wakeMainThread();
           }) {
@@ -152,7 +141,6 @@ namespace TechEngine {
             }
             createStartupScene(scene);
         }
-        importStartupModel(scene);
 
         // Stopped, the editor gets no batch until the first edit, so without this the panels start empty.
         publishEdits(scene);
@@ -227,10 +215,6 @@ namespace TechEngine {
             m_runExport.store(exported ? RunExport::Succeeded : RunExport::Failed);
             wakeMainThread();
         });
-    }
-
-    std::unique_ptr<Command> EditorApp::makeImportModelCommand(ModelImportRequest request) {
-        return std::make_unique<ImportModelCommand>(*this, m_jobs, m_files, m_assets, m_importBatches, std::move(request));
     }
 
     void EditorApp::waitForImports() {
@@ -407,15 +391,6 @@ namespace TechEngine {
         }
     }
 
-    void EditorApp::importSky(std::string path) {
-        SkyImportRequest request;
-        request.sourcePath = std::move(path);
-        const std::error_code submitError = submitCommand(std::make_unique<ImportSkyCommand>(*this, m_jobs, m_files, m_assets, m_importBatches, std::move(request)));
-        if (submitError) {
-            TE_LOGGER_WARN("The simulation refused the image import: {0}", submitError.message());
-        }
-    }
-
     void EditorApp::startRuntime() {
         const std::error_code startError = m_runtime.start(m_exportedRuntimePath, m_exportedRuntimePath.parent_path());
         if (startError) {
@@ -517,27 +492,6 @@ namespace TechEngine {
             mesh.slots = {MeshSlot{"Slot 0", 0, 3, ResourceId{}}};
             mesh.write(bytes);
         });
-    }
-
-    void EditorApp::importStartupModel(Scene& scene) {
-        // TODO(E2): the asset browser's import replaces this hardcoded file.
-        FileStatus source;
-        const std::error_code sourceError = m_files.status(STARTUP_IMPORT_PATH, source);
-        if (sourceError) {
-            return;
-        }
-        FileStatus folder;
-        const std::error_code folderError = m_files.status(ModelImporter::importFolder(STARTUP_IMPORT_PATH), folder);
-        if (folderError != FileError::NotFound) {
-            return;
-        }
-
-        ModelImportRequest request;
-        request.sourcePath = std::string(STARTUP_IMPORT_PATH);
-        request.side = STARTUP_IMPORT_SIDE;
-        request.settings = STARTUP_IMPORT_SETTINGS;
-        request.mode = STARTUP_IMPORT_MODE;
-        makeImportModelCommand(std::move(request))->apply(scene);
     }
 
     ResourceId EditorApp::createAsset(const std::string_view path, const StringId typeTag, const Side side, const std::function<void(ResourceId, std::vector<std::byte>&)>& write) {

@@ -1,9 +1,9 @@
 #include <TechEngine/base/diagnostics/Profile.hpp>
 #include <TechEngine/core/texture/Texture.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
-#include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/platform/files/VirtualPath.hpp>
 
+#include <assets/AssetNaming.hpp>
 #include <assets/TextureImporter.hpp>
 #include <project/ProjectError.hpp>
 
@@ -241,12 +241,9 @@ namespace TechEngine {
         blue = static_cast<float>((packed >> (2 * MANTISSA_BITS)) & MANTISSA_MASK) * scale;
     }
 
-    std::string TextureImporter::skyOutputPath(const std::string_view sourcePath, const std::uint32_t suffix) {
-        const std::size_t slash = sourcePath.find_last_of('/');
-        const std::size_t dot = sourcePath.find_last_of('.');
-        const bool hasExtension = dot != std::string_view::npos && (slash == std::string_view::npos || dot > slash + 1);
-        const std::string_view stem = hasExtension ? sourcePath.substr(0, dot) : sourcePath;
-        return std::string(stem) + (suffix > 0 ? "_" + std::to_string(suffix) : "") + std::string(TEXTURE_EXTENSION);
+    std::string TextureImporter::skyOutputPath(const std::string_view sourcePath, const std::string_view name, const std::uint32_t suffix) {
+        const std::string_view fileName = name.empty() ? AssetNaming::stemOf(sourcePath) : name;
+        return AssetNaming::join(AssetNaming::folderOf(sourcePath), AssetNaming::withSuffix(fileName, suffix)) + std::string(TEXTURE_EXTENSION);
     }
 
     bool TextureImporter::isHdr(const std::string_view sourcePath) {
@@ -326,7 +323,7 @@ namespace TechEngine {
         std::vector<std::byte> bytes;
         texture.write(bytes);
         std::string path;
-        const std::error_code createError = createSkyFile(request.sourcePath, bytes, path);
+        const std::error_code createError = createSkyFile(request, bytes, path);
         if (createError) {
             return createError;
         }
@@ -336,18 +333,14 @@ namespace TechEngine {
         return {};
     }
 
-    std::error_code TextureImporter::createSkyFile(const std::string_view sourcePath, const std::span<const std::byte> bytes, std::string& out) const {
-        std::error_code createError;
-        std::string path;
-        std::uint32_t suffix = 0;
-        do {
-            path = skyOutputPath(sourcePath, suffix++);
-            createError = m_files->createFile(path, bytes);
-            if (!createError) {
-                out = std::move(path);
-            }
-        } while (createError == FileError::AlreadyExists);
-        return createError;
+    std::error_code TextureImporter::createSkyFile(const SkyImportRequest& request, const std::span<const std::byte> bytes, std::string& out) const {
+        const auto candidate = [&request](const std::uint32_t suffix) {
+            return skyOutputPath(request.sourcePath, request.name, suffix);
+        };
+        const auto create = [this, bytes](const std::string& path) {
+            return m_files->createFile(path, bytes);
+        };
+        return AssetNaming::claimFirstFree(candidate, create, out);
     }
 
     void TextureImporter::toFloat(const ByteImage& image, const TexturePurpose purpose, FloatImage& out) {

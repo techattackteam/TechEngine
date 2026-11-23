@@ -69,11 +69,12 @@ public:
         scratch.makeDirectory("assets/client");
     }
 
-    std::error_code importFile(const std::string_view fileName, const ImportSettings& settings, ModelImportResult& out) {
+    std::error_code importFile(const std::string_view fileName, const ImportSettings& settings, ModelImportResult& out, const std::string_view name = {}) {
         ModelImportRequest request;
         request.sourcePath = "project://assets/client/" + std::string(fileName);
         request.side = TechEngine::Side::Client;
         request.settings = settings;
+        request.name = std::string(name);
         const TechEngine::ModelImporter importer(files, [this] {
             return ResourceId{nextId++};
         });
@@ -199,11 +200,26 @@ static std::string withExtensionsUsed(const std::string_view extensionsArray, co
 }
 
 TEST_CASE("the import folder is the source path without its extension", "[editor][assets][import]") {
-    CHECK(TechEngine::ModelImporter::importFolder("project://assets/client/Sponza.gltf") == "project://assets/client/Sponza");
-    CHECK(TechEngine::ModelImporter::importFolder("project://assets/client/Old.Town.fbx") == "project://assets/client/Old.Town");
-    CHECK(TechEngine::ModelImporter::importFolder("project://assets/v1.2/Crate.obj") == "project://assets/v1.2/Crate");
-    CHECK(TechEngine::ModelImporter::importFolder("project://assets/v1.2/Crate") == "project://assets/v1.2/Crate");
-    CHECK(TechEngine::ModelImporter::importFolder("project://assets/client/.hidden") == "project://assets/client/.hidden");
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/client/Sponza.gltf", "", 0) == "project://assets/client/Sponza");
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/client/Old.Town.fbx", "", 0) == "project://assets/client/Old.Town");
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/v1.2/Crate.obj", "", 0) == "project://assets/v1.2/Crate");
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/v1.2/Crate", "", 0) == "project://assets/v1.2/Crate");
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/client/.hidden", "", 0) == "project://assets/client/.hidden");
+}
+
+TEST_CASE("a suffix goes after the import folder's name, never inside its extension or a parent folder", "[editor][assets][import]") {
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/client/Sponza.gltf", "", 1) == "project://assets/client/Sponza_1");
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/client/Sponza.gltf", "", 12) == "project://assets/client/Sponza_12");
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/client/Old.Town.fbx", "", 1) == "project://assets/client/Old.Town_1");
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/v1.2/Crate", "", 1) == "project://assets/v1.2/Crate_1");
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/client/.hidden", "", 1) == "project://assets/client/.hidden_1");
+}
+
+TEST_CASE("a typed name replaces the source's name beside the source, and takes a suffix the same way", "[editor][assets][import]") {
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/client/Sponza.gltf", "Atrium", 0) == "project://assets/client/Atrium");
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/client/Sponza.gltf", "Atrium", 2) == "project://assets/client/Atrium_2");
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/v1.2/Crate.obj", "Crate.Low", 0) == "project://assets/v1.2/Crate.Low");
+    CHECK(TechEngine::ModelImporter::importFolder("project://assets/client/glTF/Sponza.gltf", "Atrium", 1) == "project://assets/client/glTF/Atrium_1");
 }
 
 TEST_CASE("a glTF file imports with its node and mesh counts", "[editor][assets][import][os]") {
@@ -464,6 +480,37 @@ TEST_CASE("a source created twice gives two folders whose files carry different 
         ModelImportResult third;
         REQUIRE(fixture.importFile("Pair.gltf", ImportSettings{}, third) == std::error_code{});
         CHECK(third.folder == "project://assets/client/Pair_2");
+    }
+}
+
+TEST_CASE("a typed name names the folder, the root asset and the root node, and is suffixed when taken", "[editor][assets][import][os]") {
+    ModelImportFixture fixture{"importTypedName"};
+    fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
+
+    ModelImportResult first;
+    REQUIRE(fixture.importFile("Pair.gltf", ImportSettings{}, first, "Kart") == std::error_code{});
+
+    CHECK(first.folder == "project://assets/client/Kart");
+    REQUIRE_FALSE(first.records.empty());
+    CHECK(first.records[0].path == "project://assets/client/Kart/Kart.temodel");
+    for (const AssetRecord& record: first.records) {
+        CHECK(record.path.starts_with("project://assets/client/Kart/"));
+    }
+    const Model model = fixture.readModel(first.records[0].path);
+    CHECK(model.nodes[0].name == "Kart");
+    CHECK(model.importBlock.sourcePath == "assets/client/Pair.gltf");
+    CHECK_FALSE(std::filesystem::exists(fixture.scratch.root() / "assets" / "client" / "Pair"));
+
+    SECTION("the same name again takes the first suffix") {
+        ModelImportResult second;
+        REQUIRE(fixture.importFile("Pair.gltf", ImportSettings{}, second, "Kart") == std::error_code{});
+        CHECK(second.folder == "project://assets/client/Kart_1");
+    }
+
+    SECTION("an empty name still takes the source's name") {
+        ModelImportResult second;
+        REQUIRE(fixture.importFile("Pair.gltf", ImportSettings{}, second) == std::error_code{});
+        CHECK(second.folder == "project://assets/client/Pair");
     }
 }
 

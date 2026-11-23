@@ -6,7 +6,10 @@
 #include <TechEngine/core/texture/Texture.hpp>
 
 #include <assets/AssetIndex.hpp>
+#include <assets/AssetNaming.hpp>
+#include <edit/EditorCommands.hpp>
 #include <edit/EditorSnapshot.hpp>
+#include <ui/creators/AssetCreators.hpp>
 #include <ui/panels/AssetBrowserPanel.hpp>
 
 #include <imgui.h>
@@ -14,6 +17,8 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -45,6 +50,8 @@ namespace TechEngine {
     static constexpr ImU32 SKY_SOURCE_BADGE_COLOR = IM_COL32(200, 100, 140, 255);
     static constexpr ImU32 OTHER_BADGE_COLOR = IM_COL32(80, 80, 80, 255);
     static constexpr ImU32 BADGE_LABEL_COLOR = IM_COL32(255, 255, 255, 235);
+    static constexpr const char* CREATE_POPUP_NAME = "Create";
+    static constexpr float CREATE_NAME_WIDTH_EMS = 16.0f;
 
     static void* openBrowserSettings(ImGuiContext*, ImGuiSettingsHandler* handler, const char*) {
         return handler->UserData;
@@ -58,7 +65,13 @@ namespace TechEngine {
         static_cast<const AssetBrowserPanel*>(handler->UserData)->writeSettings(*out);
     }
 
-    AssetBrowserPanel::AssetBrowserPanel() : Panel("Asset Browser") {
+    AssetBrowserPanel::AssetBrowserPanel(EditorCommands& commands) : Panel("Asset Browser"), m_commands(&commands) {
+        // A new kind of asset becomes creatable from the browser by adding its creator here, in menu order.
+        m_creators.push_back(std::make_unique<ModelCreator>(ImportMode::Model));
+        m_creators.push_back(std::make_unique<ModelCreator>(ImportMode::MergedMesh));
+        m_creators.push_back(std::make_unique<SkyCreator>());
+        m_creators.push_back(std::make_unique<FolderCreator>());
+        m_creators.push_back(std::make_unique<MaterialCreator>());
     }
 
     void AssetBrowserPanel::registerSettings() {
@@ -90,26 +103,28 @@ namespace TechEngine {
 
     void AssetBrowserPanel::onDraw(const EditorSnapshot& snapshot) {
         adoptListing(snapshot);
-        if (!ImGui::BeginTable("##browser", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Resizable)) {
-            return;
+        if (ImGui::BeginTable("##browser", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Resizable)) {
+            ImGui::TableSetupColumn("Folders", ImGuiTableColumnFlags_None, TREE_WIDTH);
+            ImGui::TableSetupColumn("Files", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableNextRow();
+
+            ImGui::TableSetColumnIndex(0);
+            ImGui::BeginChild("##folders", ImVec2(0.0f, ImGui::GetContentRegionAvail().y));
+            drawTree(snapshot);
+            ImGui::EndChild();
+
+            ImGui::TableSetColumnIndex(1);
+            drawBreadcrumbs(snapshot);
+            // Multi-select scopes its box to the current window, so the grid needs a window of its own.
+            ImGui::BeginChild("##files", ImVec2(0.0f, ImGui::GetContentRegionAvail().y));
+            drawGrid(snapshot);
+            ImGui::EndChild();
+
+            ImGui::EndTable();
         }
-        ImGui::TableSetupColumn("Folders", ImGuiTableColumnFlags_None, TREE_WIDTH);
-        ImGui::TableSetupColumn("Files", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableNextRow();
-
-        ImGui::TableSetColumnIndex(0);
-        ImGui::BeginChild("##folders", ImVec2(0.0f, ImGui::GetContentRegionAvail().y));
-        drawTree(snapshot);
-        ImGui::EndChild();
-
-        ImGui::TableSetColumnIndex(1);
-        drawBreadcrumbs(snapshot);
-        // Multi-select scopes its box to the current window, so the grid needs a window of its own.
-        ImGui::BeginChild("##files", ImVec2(0.0f, ImGui::GetContentRegionAvail().y));
-        drawGrid(snapshot);
-        ImGui::EndChild();
-
-        ImGui::EndTable();
+        // The tile's menu only asks for the dialog: OpenPopup and BeginPopupModal must resolve the name against the same
+        // ID stack, and the tile pushes its own ID.
+        drawCreateDialog(snapshot);
     }
 
     void AssetBrowserPanel::adoptListing(const EditorSnapshot& snapshot) {
@@ -234,6 +249,12 @@ namespace TechEngine {
             }
             ImGui::EndTable();
         }
+        // Before EndMultiSelect, which counts a popup as part of the grid: drawn after it, a click on an entry reaches
+        // EndMultiSelect while nothing is hovered yet, so it starts a box select in the void and the entry never sees it.
+        if (ImGui::BeginPopupContextWindow("##gridMenu", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
+            drawGridMenu(snapshot);
+            ImGui::EndPopup();
+        }
         applySelectionRequests(snapshot, ImGui::EndMultiSelect());
 
         // Opened only now, because opening rebuilds m_contents and clears the selection the requests refer to.
@@ -263,11 +284,19 @@ namespace TechEngine {
         ImGui::Selectable("##tile", selected, ImGuiSelectableFlags_None, ImVec2(cellWidth, cellHeight));
         ImGui::PopStyleColor(3);
         const bool hovered = ImGui::IsItemHovered();
-        if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && entry.kind == ListedKind::Folder) {
-            m_pendingFolder = entry.path;
+        if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+            if (entry.kind == ListedKind::Folder) {
+                m_pendingFolder = entry.path;
+            } else if (isPlaceable(entry)) {
+                m_commands->placeModel(entry.path);
+            }
         }
         if (hovered && !lines.empty() && lines.back().ends_with(TRUNCATION_MARK)) {
             ImGui::SetTooltip("%.*s", static_cast<int>(name.size()), name.data());
+        }
+        if (ImGui::BeginPopupContextItem("##tileMenu")) {
+            drawTileMenu(snapshot);
+            ImGui::EndPopup();
         }
         ImGui::PopID();
 
@@ -338,6 +367,145 @@ namespace TechEngine {
         drawList->AddText(ImVec2(min.x + (width - labelSize.x) * 0.5f, min.y + (height - labelSize.y) * 0.5f), BADGE_LABEL_COLOR, label);
     }
 
+    void AssetBrowserPanel::drawTileMenu(const EditorSnapshot& snapshot) {
+        std::vector<const ListedEntry*> selected;
+        for (const std::string& path: m_selection) {
+            const auto found = std::ranges::find(snapshot.listing, path, &ListedEntry::path);
+            if (found != snapshot.listing.end()) {
+                selected.push_back(&*found);
+            }
+        }
+
+        if (selected.size() == 1) {
+            const ListedEntry& entry = *selected.front();
+            CreateContext context;
+            context.sourcePath = entry.path;
+            context.sourceKind = entry.kind;
+            context.folder = std::string(AssetNaming::folderOf(entry.path));
+            context.side = entry.side;
+            drawCreateEntries(context);
+        }
+
+        if (std::ranges::any_of(
+                selected,
+                [](const ListedEntry* entry) {
+                    return isPlaceable(*entry);
+                }) &&
+            ImGui::MenuItem("Place in scene")) {
+            for (const ListedEntry* entry: selected) {
+                if (isPlaceable(*entry)) {
+                    m_commands->placeModel(entry->path);
+                }
+            }
+        }
+
+        // TODO(S11-T24): Delete... opens the warning that lists what uses the selection.
+        ImGui::MenuItem("Delete...", nullptr, false, false);
+    }
+
+    void AssetBrowserPanel::drawGridMenu(const EditorSnapshot& snapshot) {
+        SideFolder side;
+        const bool underSide = snapshot.findSideFolder(m_openFolder, side);
+        if (underSide) {
+            CreateContext context;
+            context.folder = m_openFolder;
+            context.side = side.side;
+            drawCreateEntries(context);
+            ImGui::Separator();
+        }
+        if (ImGui::MenuItem("Refresh")) {
+            m_commands->refreshAssets();
+        }
+    }
+
+    void AssetBrowserPanel::drawCreateEntries(const CreateContext& context) {
+        for (const std::unique_ptr<AssetCreator>& creator: m_creators) {
+            if (creator->accepts(context) && ImGui::MenuItem(creator->getLabel())) {
+                openCreateDialog(*creator, context);
+            }
+        }
+    }
+
+    void AssetBrowserPanel::openCreateDialog(AssetCreator& creator, CreateContext context) {
+        m_activeCreator = &creator;
+        m_createContext = std::move(context);
+        m_createName = creator.getDefaultName(m_createContext);
+        creator.begin(m_createContext);
+        m_createRequested = true;
+    }
+
+    std::string AssetBrowserPanel::findCreateOutput(const EditorSnapshot& snapshot, const std::string_view name) const {
+        if (m_activeCreator == nullptr || !AssetNaming::isValidName(name)) {
+            return {};
+        }
+        return snapshot.firstFreePath([this, name](const std::uint32_t suffix) {
+            return m_activeCreator->getOutputPath(m_createContext, name, suffix);
+        });
+    }
+
+    void AssetBrowserPanel::drawCreateDialog(const EditorSnapshot& snapshot) {
+        if (m_createRequested) {
+            ImGui::OpenPopup(CREATE_POPUP_NAME);
+            m_createRequested = false;
+        }
+
+        ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (!ImGui::BeginPopupModal(CREATE_POPUP_NAME, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            return;
+        }
+        if (m_activeCreator == nullptr) {
+            ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
+            return;
+        }
+
+        ImGui::TextDisabled("%s", m_createContext.sourcePath.empty() ? "In" : "From");
+        ImGui::SameLine();
+        ImGui::TextUnformatted(m_createContext.sourcePath.empty() ? m_createContext.folder.c_str() : m_createContext.sourcePath.c_str());
+
+        if (ImGui::IsWindowAppearing()) {
+            m_createNameField.requestFocus();
+        }
+        ImGui::SetNextItemWidth(ImGui::GetFontSize() * CREATE_NAME_WIDTH_EMS);
+        std::string name;
+        // The name is taken when its edit ends, which a click on Create does before the click lands.
+        const bool renamed = m_createNameField.draw("Name", m_createName, name);
+        if (renamed) {
+            m_createName = std::move(name);
+        }
+        // Worked out every frame from what the field shows, so it follows each key and a refresh behind the dialog.
+        const std::string& shownName = m_createNameField.isEditing() ? m_createNameField.getText() : m_createName;
+        const bool validName = AssetNaming::isValidName(shownName);
+        if (validName) {
+            const std::string output = findCreateOutput(snapshot, shownName);
+            ImGui::TextDisabled("Writes");
+            ImGui::SameLine();
+            ImGui::TextUnformatted(output.c_str());
+        } else {
+            ImGui::TextDisabled("A name cannot be empty, end in a dot or a space, or hold / \\ : * ? \" < > |");
+        }
+
+        ImGui::Spacing();
+        m_activeCreator->drawSettings();
+        ImGui::Spacing();
+
+        ImGui::BeginDisabled(!validName);
+        const bool createClicked = ImGui::Button("Create");
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        const bool cancelled = ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey_Escape, false);
+
+        if (createClicked) {
+            m_activeCreator->submit(*m_commands, m_createContext, m_createName);
+            m_activeCreator = nullptr;
+            ImGui::CloseCurrentPopup();
+        } else if (cancelled) {
+            m_activeCreator = nullptr;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
     void AssetBrowserPanel::applySelectionRequests(const EditorSnapshot& snapshot, ImGuiMultiSelectIO* io) {
         const ImGuiSelectionUserData itemCount = static_cast<ImGuiSelectionUserData>(m_contents.size());
         for (const ImGuiSelectionRequest& request: io->Requests) {
@@ -368,6 +536,10 @@ namespace TechEngine {
 
     bool AssetBrowserPanel::isSelected(const std::string_view path) const {
         return std::ranges::find(m_selection, path) != m_selection.end();
+    }
+
+    bool AssetBrowserPanel::isPlaceable(const ListedEntry& entry) {
+        return entry.kind == ListedKind::Asset && (entry.typeTag == MODEL_TYPE_TAG || entry.typeTag == MESH_TYPE_TAG);
     }
 
     std::string_view AssetBrowserPanel::nameOf(const std::string_view path) {

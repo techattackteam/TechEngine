@@ -5,6 +5,7 @@ techengine_app(editor
   MAIN    src/main.cpp
   SOURCES src/EditorApp.cpp
           src/assets/AssetIndex.cpp
+          src/assets/AssetNaming.cpp
           src/assets/ImageDecoder.cpp
           src/assets/LooseSource.cpp
           src/assets/MaterialImporter.cpp
@@ -13,6 +14,8 @@ techengine_app(editor
           src/assets/TextureImporter.cpp
           src/edit/ConsoleHistory.cpp
           src/edit/ConsoleLog.cpp
+          src/edit/CreateFolderCommand.cpp
+          src/edit/CreateMaterialCommand.cpp
           src/edit/EditSession.cpp
           src/edit/EditorCommands.cpp
           src/edit/EditorSnapshot.cpp
@@ -37,6 +40,7 @@ techengine_app(editor
           src/ui/ImGuiBridge.cpp
           src/ui/PanelsManager.cpp
           src/ui/ViewTextureSwap.cpp
+          src/ui/creators/AssetCreators.cpp
           src/ui/panels/AssetBrowserPanel.cpp
           src/ui/panels/ConsolePanel.cpp
           src/ui/panels/GameViewPanel.cpp
@@ -50,6 +54,7 @@ techengine_app(editor
           src/ui/widgets/TextEditField.cpp
   HEADERS src/EditorApp.hpp
           src/assets/AssetIndex.hpp
+          src/assets/AssetNaming.hpp
           src/assets/ImageDecoder.hpp
           src/assets/LooseSource.hpp
           src/assets/MaterialImporter.hpp
@@ -58,6 +63,8 @@ techengine_app(editor
           src/assets/TextureImporter.hpp
           src/edit/ConsoleHistory.hpp
           src/edit/ConsoleLog.hpp
+          src/edit/CreateFolderCommand.hpp
+          src/edit/CreateMaterialCommand.hpp
           src/edit/EditRecord.hpp
           src/edit/EditSession.hpp
           src/edit/EditorCommands.hpp
@@ -83,6 +90,8 @@ techengine_app(editor
           src/ui/ImGuiBridge.hpp
           src/ui/PanelsManager.hpp
           src/ui/ViewTextureSwap.hpp
+          src/ui/creators/AssetCreator.hpp
+          src/ui/creators/AssetCreators.hpp
           src/ui/panels/AssetBrowserPanel.hpp
           src/ui/panels/ConsolePanel.hpp
           src/ui/panels/GameViewPanel.hpp
@@ -99,6 +108,7 @@ techengine_app(editor
   LIBS_PRIVATE TechEngine::tomlplusplus
   TESTS   tests/EditorAppTests.cpp
           tests/assets/AssetIndexTests.cpp
+          tests/assets/AssetNamingTests.cpp
           tests/assets/AssimpTests.cpp
           tests/assets/ImageDecoderTests.cpp
           tests/assets/LooseSourceTests.cpp
@@ -109,6 +119,8 @@ techengine_app(editor
           tests/assets/TextureImporterTests.cpp
           tests/edit/ConsoleHistoryTests.cpp
           tests/edit/ConsoleLogTests.cpp
+          tests/edit/CreateFolderCommandTests.cpp
+          tests/edit/CreateMaterialCommandTests.cpp
           tests/edit/EditSessionTests.cpp
           tests/edit/EditorCommandsTests.cpp
           tests/edit/EditorSnapshotSlotTests.cpp

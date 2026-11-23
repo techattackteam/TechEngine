@@ -1,6 +1,10 @@
+#include <TechEngine/app/App.hpp>
+#include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/resources/Side.hpp>
 
 #include <assets/AssetIndex.hpp>
+#include <edit/EditSession.hpp>
+#include <edit/EditorCommands.hpp>
 #include <edit/EditorSnapshot.hpp>
 #include <ui/panels/AssetBrowserPanel.hpp>
 
@@ -13,6 +17,7 @@
 #include <initializer_list>
 #include <string>
 #include <string_view>
+#include <vector>
 
 using TechEngine::AssetBrowserPanel;
 using TechEngine::EditorSnapshot;
@@ -47,10 +52,27 @@ static EditorSnapshot listedFolders(const std::uint64_t revision, const std::ini
     return snapshot;
 }
 
+class BrowserAppProbe final : public TechEngine::App {
+public:
+    // Never run, so a command the panel sends is refused and logged.
+    TechEngine::EditSession session;
+    TechEngine::AssetIndex assets;
+    std::vector<TechEngine::BatchId> importBatches;
+    TechEngine::EditorCommands commands{*this, session, m_registry, m_files, m_resources, m_sceneHandle, assets, m_jobs, importBatches};
+
+    BrowserAppProbe() : App(TechEngine::Role::DedicatedServer) {
+    }
+
+protected:
+    void init() override {
+    }
+};
+
 struct HeadlessBrowser {
     ImGuiContext* previous = nullptr;
     ImGuiContext* context = nullptr;
-    AssetBrowserPanel panel;
+    BrowserAppProbe app;
+    AssetBrowserPanel panel{app.commands};
 
     explicit HeadlessBrowser(const std::string_view layout = {}) {
         previous = ImGui::GetCurrentContext();

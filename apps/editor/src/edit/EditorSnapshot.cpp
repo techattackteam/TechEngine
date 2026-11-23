@@ -264,20 +264,14 @@ namespace TechEngine {
 
     void EditorSnapshot::collectBreadcrumbs(const std::string_view folder, std::vector<std::string>& out) const {
         out.clear();
-        std::string side;
-        for (const SideFolder& sideFolder: sideFolders) {
-            const std::string_view path = sideFolder.path;
-            const bool isAncestor = folder == path || (folder.size() > path.size() && folder.substr(0, path.size()) == path && folder[path.size()] == '/');
-            if (isAncestor && path.size() > side.size()) {
-                side = sideFolder.path;
-            }
-        }
-        if (side.empty()) {
+        SideFolder side;
+        const bool underSide = findSideFolder(folder, side);
+        if (!underSide) {
             return;
         }
 
-        out.push_back(side);
-        std::size_t start = side.size() + 1;
+        out.push_back(side.path);
+        std::size_t start = side.path.size() + 1;
         while (start < folder.size()) {
             const std::size_t separator = folder.find('/', start);
             const std::size_t end = separator == std::string_view::npos ? folder.size() : separator;
@@ -286,6 +280,29 @@ namespace TechEngine {
                 break;
             }
             start = separator + 1;
+        }
+    }
+
+    bool EditorSnapshot::findSideFolder(const std::string_view path, SideFolder& out) const {
+        bool found = false;
+        for (const SideFolder& sideFolder: sideFolders) {
+            const std::string_view sidePath = sideFolder.path;
+            const bool isAncestor = path == sidePath || (path.size() > sidePath.size() && path.substr(0, sidePath.size()) == sidePath && path[sidePath.size()] == '/');
+            if (isAncestor && (!found || sidePath.size() > out.path.size())) {
+                out = sideFolder;
+                found = true;
+            }
+        }
+        return found;
+    }
+
+    std::string EditorSnapshot::firstFreePath(const std::function<std::string(std::uint32_t suffix)>& candidate) const {
+        for (std::uint32_t suffix = 0;; suffix++) {
+            const std::string path = candidate(suffix);
+            const auto entry = std::ranges::lower_bound(listing, path, {}, &ListedEntry::path);
+            if (entry == listing.end() || entry->path != path) {
+                return path;
+            }
         }
     }
 }

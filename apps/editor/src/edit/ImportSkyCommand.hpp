@@ -25,8 +25,8 @@ namespace TechEngine {
         ImportSkyCommand(App& app, JobSystem& jobs, FileAccess& files, AssetIndex& index, std::vector<BatchId>& batches, SkyImportRequest request);
 
         // Starts the import as a job, adds its batch to `batches` and returns at once. The job touches the index only
-        // through a RegisterImportedAssetsCommand it submits when the file is written, so everything passed here must
-        // outlive that batch.
+        // through a RefreshAssetsCommand it submits when the file is written, so everything passed here must outlive that
+        // batch.
         void apply(Scene& scene) override;
     };
 }

@@ -2,6 +2,7 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 
+#include <assets/AssetNaming.hpp>
 #include <edit/ImportSkyCommand.hpp>
 #include <edit/RefreshAssetsCommand.hpp>
 
@@ -16,6 +17,10 @@ namespace TechEngine {
     }
 
     void ImportSkyCommand::apply(Scene&) {
+        if (!m_request.name.empty() && !AssetNaming::isValidName(m_request.name)) {
+            TE_LOGGER_WARN("A sky cannot be named '{0}', so nothing is created from {1}", m_request.name, m_request.sourcePath);
+            return;
+        }
         Task task = [app = m_app, files = m_files, index = m_index, request = std::move(m_request)] {
             SkyImportResult result;
             const TextureImporter importer(*files, &randomResourceId);

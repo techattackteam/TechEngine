@@ -23,6 +23,10 @@ namespace TechEngine {
         return m_activated;
     }
 
+    const std::string& TextEditField::getText() const {
+        return m_buffer;
+    }
+
     bool TextEditField::draw(const char* label, const std::string& text, std::string& out, const bool mixed) {
         if (!m_activated) {
             m_buffer = text;

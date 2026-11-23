@@ -21,8 +21,14 @@ namespace TechEngine {
     class ComponentRegistry;
     class EditSession;
     class FileAccess;
+    class JobSystem;
     class ResourceCache;
+    struct BatchId;
+    struct FolderCreateRequest;
+    struct MaterialCreateRequest;
+    struct ModelImportRequest;
     struct SceneBytes;
+    struct SkyImportRequest;
     enum class TransformPart : std::uint8_t;
 
     class EditorCommands {
@@ -36,9 +42,12 @@ namespace TechEngine {
         ResourceCache* m_resources = nullptr;
         const ResourceHandle<SceneBytes>* m_sceneHandle = nullptr;
         AssetIndex* m_assets = nullptr;
+        // Only handed to the create commands, which add their job's batch to it on the simulation thread.
+        JobSystem* m_jobs = nullptr;
+        std::vector<BatchId>* m_importBatches = nullptr;
 
     public:
-        EditorCommands(App& app, EditSession& session, const ComponentRegistry& registry, FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, AssetIndex& assets);
+        EditorCommands(App& app, EditSession& session, const ComponentRegistry& registry, FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, AssetIndex& assets, JobSystem& jobs, std::vector<BatchId>& importBatches);
 
         void create(Entity parent);
 
@@ -65,6 +74,14 @@ namespace TechEngine {
         void placeModel(std::string path);
 
         void refreshAssets();
+
+        void createModel(ModelImportRequest request);
+
+        void createSky(SkyImportRequest request);
+
+        void createMaterial(MaterialCreateRequest request);
+
+        void createFolder(FolderCreateRequest request);
 
         void save();
 

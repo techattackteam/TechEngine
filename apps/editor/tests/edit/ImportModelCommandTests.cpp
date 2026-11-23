@@ -8,6 +8,7 @@
 #include <TechEngine/core/scene/Scene.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/testing/AppTestAccess.hpp>
+#include <TechEngine/testing/LogCapture.hpp>
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <assets/AssetIndex.hpp>
@@ -60,9 +61,10 @@ public:
         return m_files;
     }
 
-    ImportModelCommand makeImport(const std::string_view sourcePath) {
+    ImportModelCommand makeImport(const std::string_view sourcePath, const std::string_view name = {}) {
         TechEngine::ModelImportRequest request;
         request.sourcePath = std::string(sourcePath);
+        request.name = std::string(name);
         request.side = TechEngine::Side::Client;
         return ImportModelCommand{*this, m_jobs, m_files, index, batches, std::move(request)};
     }
@@ -130,6 +132,23 @@ TEST_CASE("the import command returns before the job is done and writes the file
         REQUIRE(second.read(secondBytes) == std::error_code{});
         CHECK(second.id != model.id);
     }
+}
+
+TEST_CASE("an import command with an invalid name starts no job and writes nothing", "[editor][edit][import][os]") {
+    const TechEngineTests::LogCaptureGuard logs;
+    ImportAppProbe app{"importCommandRefusesName"};
+    app.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
+
+    app.makeImport(PAIR_SOURCE, "Karts/Pair").apply(AppTestAccess::scene(app));
+    app.makeImport(PAIR_SOURCE, "Pair.").apply(AppTestAccess::scene(app));
+
+    CHECK(app.batches.empty());
+    CHECK_FALSE(std::filesystem::exists(app.scratch.root() / "assets" / "client" / "Pair"));
+    CHECK_FALSE(std::filesystem::exists(app.scratch.root() / "assets" / "client" / "Karts"));
+    const auto refusals = std::ranges::count_if(logs.getMessages(), [](const std::string& message) {
+        return message.find("cannot be named") != std::string::npos;
+    });
+    CHECK(refusals == 2);
 }
 
 TEST_CASE("an import command whose job fails writes nothing and registers nothing", "[editor][edit][import][os]") {
