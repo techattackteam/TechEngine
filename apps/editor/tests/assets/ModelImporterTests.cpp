@@ -415,42 +415,41 @@ TEST_CASE("a scale alone multiplies vertices and translations and turns nothing"
     checkVec3(nodeNamed(model, "Wheel").local.scale, Vec3(1.0f, 2.0f, 3.0f));
 }
 
-TEST_CASE("importing into a folder that exists is refused and writes nothing", "[editor][assets][import][os]") {
-    ModelImportFixture fixture{"importFolderExists"};
+TEST_CASE("a source created twice gives two folders whose files carry different ids", "[editor][assets][import][os]") {
+    ModelImportFixture fixture{"importTwice"};
     fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
 
-    SECTION("an empty folder") {
-        fixture.scratch.makeDirectory("assets/client/Pair");
+    ModelImportResult first;
+    REQUIRE(fixture.importFile("Pair.gltf", ImportSettings{}, first) == std::error_code{});
+    std::vector<std::byte> modelBefore;
+    REQUIRE(fixture.files.read(first.records[0].path, modelBefore) == std::error_code{});
+    std::vector<std::byte> meshBefore;
+    REQUIRE(fixture.files.read(first.records[1].path, meshBefore) == std::error_code{});
 
-        ModelImportResult result;
-        CHECK(fixture.importFile("Pair.gltf", ImportSettings{}, result) == ProjectError::ImportFolderExists);
+    ModelImportResult second;
+    REQUIRE(fixture.importFile("Pair.gltf", ImportSettings{0.5f, UpAxis::Z}, second) == std::error_code{});
 
-        CHECK(result.records.empty());
-        CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Pair") == 0);
-        CHECK(fixture.nextId == FIRST_TEST_ID);
+    CHECK(first.folder == "project://assets/client/Pair");
+    CHECK(second.folder == "project://assets/client/Pair_1");
+    REQUIRE(second.records.size() == first.records.size());
+    CHECK(second.records[0].path == "project://assets/client/Pair_1/Pair_1.temodel");
+    for (const AssetRecord& record: second.records) {
+        CHECK(record.path.starts_with("project://assets/client/Pair_1/"));
+        const bool sharesAnId = std::ranges::any_of(first.records, [&record](const AssetRecord& earlier) {
+            return earlier.id == record.id;
+        });
+        CHECK_FALSE(sharesAnId);
     }
 
-    SECTION("a file with the folder's name") {
-        fixture.scratch.writeFile("assets/client/Pair", "not a folder");
-
-        ModelImportResult result;
-        CHECK(fixture.importFile("Pair.gltf", ImportSettings{}, result) == ProjectError::ImportFolderExists);
-
-        CHECK(std::filesystem::is_regular_file(fixture.scratch.root() / "assets" / "client" / "Pair"));
+    SECTION("the second model is read back with its own id and the second settings") {
+        const Model model = fixture.readModel(second.records[0].path);
+        CHECK(model.id == second.records[0].id);
+        CHECK(model.importBlock.settings.scale == 0.5f);
+        CHECK(model.importBlock.settings.upAxis == UpAxis::Z);
+        CHECK(model.nodes[0].name == "Pair_1");
     }
 
-    SECTION("the folder of an earlier import, whose files stay as they were") {
-        ModelImportResult first;
-        REQUIRE(fixture.importFile("Pair.gltf", ImportSettings{}, first) == std::error_code{});
-        std::vector<std::byte> modelBefore;
-        REQUIRE(fixture.files.read(first.records[0].path, modelBefore) == std::error_code{});
-        std::vector<std::byte> meshBefore;
-        REQUIRE(fixture.files.read(first.records[1].path, meshBefore) == std::error_code{});
-
-        ModelImportResult second;
-        CHECK(fixture.importFile("Pair.gltf", ImportSettings{0.5f, UpAxis::Z}, second) == ProjectError::ImportFolderExists);
-
-        CHECK(second.records.empty());
+    SECTION("the first folder's files stay as they were") {
         std::vector<std::byte> modelAfter;
         REQUIRE(fixture.files.read(first.records[0].path, modelAfter) == std::error_code{});
         std::vector<std::byte> meshAfter;
@@ -458,11 +457,77 @@ TEST_CASE("importing into a folder that exists is refused and writes nothing", "
         CHECK(modelAfter == modelBefore);
         CHECK(meshAfter == meshBefore);
         CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Pair" / "Meshes") == 2);
+        CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Pair_1" / "Meshes") == 2);
+    }
+
+    SECTION("a third create takes the next suffix") {
+        ModelImportResult third;
+        REQUIRE(fixture.importFile("Pair.gltf", ImportSettings{}, third) == std::error_code{});
+        CHECK(third.folder == "project://assets/client/Pair_2");
     }
 }
 
-// The loser either sees the folder at its first check or loses the folder's creation, and neither may remove it.
-TEST_CASE("of several imports of one source at once, exactly one succeeds and its folder is left whole", "[editor][assets][import][race][os]") {
+TEST_CASE("a create whose folder name is taken by something else writes the next free name and leaves it alone", "[editor][assets][import][os]") {
+    ModelImportFixture fixture{"importNameTaken"};
+    fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
+    ModelImportResult result;
+
+    SECTION("an empty folder") {
+        fixture.scratch.makeDirectory("assets/client/Pair");
+
+        REQUIRE(fixture.importFile("Pair.gltf", ImportSettings{}, result) == std::error_code{});
+
+        CHECK(result.folder == "project://assets/client/Pair_1");
+        CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Pair") == 0);
+    }
+
+    SECTION("a file with the folder's name") {
+        fixture.scratch.writeFile("assets/client/Pair", "not a folder");
+
+        REQUIRE(fixture.importFile("Pair.gltf", ImportSettings{}, result) == std::error_code{});
+
+        CHECK(result.folder == "project://assets/client/Pair_1");
+        CHECK(std::filesystem::is_regular_file(fixture.scratch.root() / "assets" / "client" / "Pair"));
+    }
+
+    SECTION("the base name and the first suffix, so the second suffix is used") {
+        fixture.scratch.makeDirectory("assets/client/Pair");
+        fixture.scratch.makeDirectory("assets/client/Pair_1");
+
+        REQUIRE(fixture.importFile("Pair.gltf", ImportSettings{}, result) == std::error_code{});
+
+        CHECK(result.folder == "project://assets/client/Pair_2");
+        CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Pair_1") == 0);
+    }
+
+    SECTION("a gap in the suffixes, which the next create fills") {
+        fixture.scratch.makeDirectory("assets/client/Pair");
+        fixture.scratch.makeDirectory("assets/client/Pair_2");
+
+        REQUIRE(fixture.importFile("Pair.gltf", ImportSettings{}, result) == std::error_code{});
+
+        CHECK(result.folder == "project://assets/client/Pair_1");
+    }
+
+    REQUIRE_FALSE(result.records.empty());
+    CHECK(result.records[0].path.starts_with(result.folder + "/"));
+    CHECK(fixture.readModel(result.records[0].path).id == result.records[0].id);
+}
+
+TEST_CASE("a source that fails after its folder was claimed leaves the base name free", "[editor][assets][import][os]") {
+    ModelImportFixture fixture{"importFailsAfterClaim"};
+    fixture.scratch.writeFile("assets/client/Dots.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_POINTS_ONLY_BODY));
+    ModelImportResult result;
+
+    CHECK(fixture.importFile("Dots.gltf", ImportSettings{}, result) == ProjectError::SourceHasNoMeshes);
+    CHECK(fixture.importFile("Dots.gltf", ImportSettings{}, result) == ProjectError::SourceHasNoMeshes);
+
+    CHECK_FALSE(fixture.exists("assets/client/Dots"));
+    CHECK_FALSE(fixture.exists("assets/client/Dots_1"));
+    CHECK(result.records.empty());
+}
+
+TEST_CASE("several creates of one source at once each get their own whole folder", "[editor][assets][import][race][os]") {
     ModelImportFixture fixture{"importRace"};
     fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
     std::atomic<std::uint64_t> nextId = FIRST_TEST_ID;
@@ -472,6 +537,9 @@ TEST_CASE("of several imports of one source at once, exactly one succeeds and it
 
     for (std::uint32_t attempt = 0; attempt < RACE_ATTEMPTS; attempt++) {
         std::filesystem::remove_all(fixture.scratch.root() / "assets/client/Pair");
+        for (std::size_t i = 1; i < RACERS; i++) {
+            std::filesystem::remove_all(fixture.scratch.root() / "assets/client" / ("Pair_" + std::to_string(i)));
+        }
         std::latch start(RACERS);
         std::array<ModelImportResult, RACERS> results;
         std::array<std::error_code, RACERS> errors;
@@ -489,25 +557,27 @@ TEST_CASE("of several imports of one source at once, exactly one succeeds and it
             thread.join();
         }
 
-        const std::error_code refused = ProjectError::ImportFolderExists;
-        REQUIRE(std::ranges::count(errors, std::error_code{}) == 1);
-        CHECK(std::ranges::count(errors, refused) == static_cast<std::ptrdiff_t>(RACERS) - 1);
-        const std::size_t winner = static_cast<std::size_t>(std::ranges::find(errors, std::error_code{}) - errors.begin());
-        for (std::size_t i = 0; i < RACERS; i++) {
-            CHECK(results[i].records.empty() == (i != winner));
+        REQUIRE(std::ranges::count(errors, std::error_code{}) == static_cast<std::ptrdiff_t>(RACERS));
+        std::vector<std::string> folders;
+        std::vector<ResourceId> ids;
+        for (const ModelImportResult& result: results) {
+            folders.push_back(result.folder);
+            REQUIRE(result.records.size() == 4);
+            CHECK(fixture.readModel(result.records[0].path).id == result.records[0].id);
+            for (const AssetRecord& record: meshRecords(result)) {
+                CHECK(fixture.readMesh(record.path).id == record.id);
+            }
+            for (const AssetRecord& record: result.records) {
+                CHECK(record.path.starts_with(result.folder + "/"));
+                ids.push_back(record.id);
+            }
         }
 
-        const std::vector<AssetRecord>& records = results[winner].records;
-        REQUIRE(records.size() == 4);
-        CHECK(fixture.readModel(records[0].path).id == records[0].id);
-        for (const AssetRecord& record: meshRecords(results[winner])) {
-            CHECK(fixture.readMesh(record.path).id == record.id);
-        }
-        for (const AssetRecord& record: records) {
-            std::vector<std::byte> bytes;
-            CHECK(fixture.files.read(record.path, bytes) == std::error_code{});
-        }
-        CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Pair" / "Meshes") == 2);
+        std::ranges::sort(folders);
+        CHECK(folders == std::vector<std::string>{"project://assets/client/Pair", "project://assets/client/Pair_1", "project://assets/client/Pair_2", "project://assets/client/Pair_3"});
+        std::ranges::sort(ids);
+        CHECK(std::ranges::adjacent_find(ids) == ids.end());
+        CHECK(entryCount(fixture.scratch.root() / "assets" / "client") == static_cast<std::ptrdiff_t>(RACERS) + 1);
     }
 }
 

@@ -117,13 +117,18 @@ TEST_CASE("the import command returns before the job is done and writes the file
         CHECK(app.index.getRecords().empty());
     }
 
-    SECTION("a second import of the same source is refused by its job and changes no file") {
+    SECTION("a second create of the same source writes the next folder and changes no file of the first") {
         app.makeImport(PAIR_SOURCE).apply(AppTestAccess::scene(app));
         app.waitForImports();
 
         std::vector<std::byte> after;
         REQUIRE(app.files().read(PAIR_MODEL, after) == std::error_code{});
         CHECK(after == bytes);
+        std::vector<std::byte> secondBytes;
+        REQUIRE(app.files().read("project://assets/client/Pair_1/Pair_1.temodel", secondBytes) == std::error_code{});
+        TechEngine::Model second;
+        REQUIRE(second.read(secondBytes) == std::error_code{});
+        CHECK(second.id != model.id);
     }
 }
 

@@ -28,8 +28,6 @@ namespace TechEngine {
                         return "source file is not a model the importer can read";
                     case ProjectError::SourceHasNoMeshes:
                         return "source file has no mesh made of triangles";
-                    case ProjectError::ImportFolderExists:
-                        return "import folder already exists";
                     case ProjectError::SourceCompressed:
                         return "source file uses a quantized or meshopt-compressed mesh extension";
                     case ProjectError::InvalidImportScale:
@@ -40,8 +38,6 @@ namespace TechEngine {
                         return "source file is not under a side folder of the assets folder";
                     case ProjectError::ImageUnreadable:
                         return "source file is not an image the decoder can read";
-                    case ProjectError::ImportOutputExists:
-                        return "import output already exists";
                     case ProjectError::UnsupportedDdsFormat:
                         return "DDS file holds a pixel format the importer does not decode";
                 }

@@ -8,7 +8,7 @@
 
 using TechEngine::ProjectError;
 
-static constexpr std::array<ProjectError, 16> ALL_CODES{
+static constexpr std::array<ProjectError, 14> ALL_CODES{
     ProjectError::ParseFailed,
     ProjectError::SchemaInvalid,
     ProjectError::NoStartupScene,
@@ -17,13 +17,11 @@ static constexpr std::array<ProjectError, 16> ALL_CODES{
     ProjectError::UnknownReference,
     ProjectError::SourceUnreadable,
     ProjectError::SourceHasNoMeshes,
-    ProjectError::ImportFolderExists,
     ProjectError::SourceCompressed,
     ProjectError::InvalidImportScale,
     ProjectError::UnsupportedImageType,
     ProjectError::SourceNotInAssets,
     ProjectError::ImageUnreadable,
-    ProjectError::ImportOutputExists,
     ProjectError::UnsupportedDdsFormat,
 };
 

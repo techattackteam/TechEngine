@@ -37,17 +37,15 @@ commit, push, or close the card.
   and available evidence. Distinguish implemented, unmet, and unverified conditions.
   Identify missing tests only when a specific behavior or failure needs coverage.
   For rendering, inspect supplied demo evidence and state what remains unverified.
-- **Conventions.** Apply the judgment rules in `CONVENTIONS.md`, with surrounding
-  style taking precedence. Avoid duplicating formatter output. Automated checks
-  do not justify ignoring a correctness defect. An undecided convention is a
-  decision gap, not a violation.
+- **Conventions and the shape of the change.** Read `.claude/commands/te-review.md` and
+  run its checklist, scope table and guardrails over the changed files. Its *Changing
+  code* row is the bolt-on check, so do not skip it on a small diff. Report what it finds
+  in this command's format, not te-review's: an *Open row fired* finding goes under the
+  design gaps, and te-review's *Off-rubric* group is this review's correctness pass.
+  A gate that already enforces a rule never excuses a correctness defect.
 - **Architecture.** Check affected module boundaries, public surfaces, and accepted
   decisions. Flag contradictions and new load-bearing choices; do not redesign
   unrelated systems or silently amend an ADR.
-- **The shape of the change.** Check the diff against `CONVENTIONS.md` § *Changing code:
-  adapt the owner, never bolt on*. For each new member, container, call and signature, find
-  the existing code that already owns that job and say whether the change should have gone
-  there instead. A behaviour change that rewrites or deletes nothing is where to look first.
 - **Evidence.** Confirm findings in the actual execution path before reporting.
   A code finding needs an exact location and a triggering scenario. A convention
   finding needs the applicable rule. Label estimates and unresolved questions.

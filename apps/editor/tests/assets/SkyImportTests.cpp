@@ -28,7 +28,6 @@
 #include <thread>
 #include <vector>
 
-using TechEngine::AssetRecord;
 using TechEngine::ProjectError;
 using TechEngine::ResourceId;
 using TechEngine::SkyImportRequest;
@@ -40,6 +39,7 @@ using TechEngineTests::ScratchDirectory;
 static constexpr std::uint64_t FIRST_TEST_ID = 0x2000;
 static constexpr std::string_view SKY_SOURCE = "project://assets/client/Sky.hdr";
 static constexpr std::string_view SKY_TEXTURE = "project://assets/client/Sky.tetexture";
+static constexpr std::string_view SKY_TEXTURE_1 = "project://assets/client/Sky_1.tetexture";
 static constexpr std::uint32_t RACE_ATTEMPTS = 8;
 
 class SkyImportFixture {
@@ -170,38 +170,66 @@ TEST_CASE("an 8x4 Radiance file becomes an RGB9E5 texture of its size with the f
     }
 }
 
-TEST_CASE("an existing output is refused and left as it was", "[editor][assets][image][os]") {
+TEST_CASE("a file that holds the output's name is left as it was, and the sky takes the next free name", "[editor][assets][image][os]") {
     SkyImportFixture fixture{"imageImportExists"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
     fixture.scratch.writeFile("assets/client/Sky.tetexture", "kept");
     SkyImportResult result;
-    result.records.push_back(AssetRecord{});
 
-    CHECK(fixture.importSky(SKY_SOURCE, result) == ProjectError::ImportOutputExists);
+    SECTION("the base name alone") {
+        REQUIRE(fixture.importSky(SKY_SOURCE, result) == std::error_code{});
+
+        REQUIRE(result.records.size() == 1);
+        CHECK(result.records[0].path == SKY_TEXTURE_1);
+    }
+
+    SECTION("the base name and the first suffix, so the second suffix is used") {
+        fixture.scratch.writeFile("assets/client/Sky_1.tetexture", "kept too");
+
+        REQUIRE(fixture.importSky(SKY_SOURCE, result) == std::error_code{});
+
+        REQUIRE(result.records.size() == 1);
+        CHECK(result.records[0].path == "project://assets/client/Sky_2.tetexture");
+    }
+
+    SECTION("a folder with the output's first free name") {
+        fixture.scratch.makeDirectory("assets/client/Sky_1.tetexture");
+
+        REQUIRE(fixture.importSky(SKY_SOURCE, result) == std::error_code{});
+
+        REQUIRE(result.records.size() == 1);
+        CHECK(result.records[0].path == "project://assets/client/Sky_2.tetexture");
+    }
 
     std::vector<std::byte> bytes;
     REQUIRE(fixture.files.read(SKY_TEXTURE, bytes) == std::error_code{});
     CHECK(bytes.size() == 4);
-    CHECK(fixture.nextId == FIRST_TEST_ID);
-    CHECK(result.records.size() == 1);
+    CHECK(fixture.readTexture(result.records[0].path).id == result.records[0].id);
 }
 
-TEST_CASE("a second import of the same source is refused and changes no byte", "[editor][assets][image][os]") {
+TEST_CASE("a sky created twice from one source gives two textures with different ids", "[editor][assets][image][os]") {
     SkyImportFixture fixture{"imageImportTwice"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
-    SkyImportResult result;
-    REQUIRE(fixture.importSky(SKY_SOURCE, result) == std::error_code{});
+    SkyImportResult first;
+    REQUIRE(fixture.importSky(SKY_SOURCE, first) == std::error_code{});
     std::vector<std::byte> before;
     REQUIRE(fixture.files.read(SKY_TEXTURE, before) == std::error_code{});
 
-    CHECK(fixture.importSky(SKY_SOURCE, result) == ProjectError::ImportOutputExists);
+    SkyImportResult second;
+    REQUIRE(fixture.importSky(SKY_SOURCE, second) == std::error_code{});
 
+    REQUIRE(first.records.size() == 1);
+    REQUIRE(second.records.size() == 1);
+    CHECK(first.records[0].path == SKY_TEXTURE);
+    CHECK(second.records[0].path == SKY_TEXTURE_1);
+    CHECK(first.records[0].id != second.records[0].id);
+    CHECK(fixture.readTexture(SKY_TEXTURE_1).id == second.records[0].id);
     std::vector<std::byte> after;
     REQUIRE(fixture.files.read(SKY_TEXTURE, after) == std::error_code{});
     CHECK(after == before);
 }
 
-TEST_CASE("of two imports of one sky at once, exactly one succeeds and the other registers nothing", "[editor][assets][image][race][os]") {
+TEST_CASE("of two creates of one sky at once, both succeed, each into its own file", "[editor][assets][image][race][os]") {
     SkyImportFixture fixture{"imageImportRace"};
     fixture.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(256, 128));
     std::atomic<std::uint64_t> nextId = FIRST_TEST_ID;
@@ -211,6 +239,7 @@ TEST_CASE("of two imports of one sky at once, exactly one succeeds and the other
 
     for (std::uint32_t attempt = 0; attempt < RACE_ATTEMPTS; attempt++) {
         std::filesystem::remove(fixture.scratch.root() / "assets/client/Sky.tetexture");
+        std::filesystem::remove(fixture.scratch.root() / "assets/client/Sky_1.tetexture");
         std::latch start(2);
         std::array<SkyImportResult, 2> results;
         std::array<std::error_code, 2> errors;
@@ -225,15 +254,18 @@ TEST_CASE("of two imports of one sky at once, exactly one succeeds and the other
         first.join();
         second.join();
 
-        const std::error_code refused = ProjectError::ImportOutputExists;
-        REQUIRE(std::ranges::count(errors, std::error_code{}) == 1);
-        REQUIRE(std::ranges::count(errors, refused) == 1);
-        const SkyImportResult& winner = errors[0] ? results[1] : results[0];
-        const SkyImportResult& loser = errors[0] ? results[0] : results[1];
-        REQUIRE(winner.records.size() == 1);
-        CHECK(loser.records.empty());
-        CHECK(fixture.readTexture(SKY_TEXTURE).id == winner.records[0].id);
-        CHECK(std::distance(std::filesystem::directory_iterator{fixture.scratch.root() / "assets/client"}, std::filesystem::directory_iterator{}) == 2);
+        REQUIRE(std::ranges::count(errors, std::error_code{}) == 2);
+        REQUIRE(results[0].records.size() == 1);
+        REQUIRE(results[1].records.size() == 1);
+        const bool firstTookBase = results[0].records[0].path == SKY_TEXTURE;
+        const SkyImportResult& base = firstTookBase ? results[0] : results[1];
+        const SkyImportResult& suffixed = firstTookBase ? results[1] : results[0];
+        CHECK(base.records[0].path == SKY_TEXTURE);
+        CHECK(suffixed.records[0].path == SKY_TEXTURE_1);
+        CHECK(fixture.readTexture(SKY_TEXTURE).id == base.records[0].id);
+        CHECK(fixture.readTexture(SKY_TEXTURE_1).id == suffixed.records[0].id);
+        CHECK(base.records[0].id != suffixed.records[0].id);
+        CHECK(std::distance(std::filesystem::directory_iterator{fixture.scratch.root() / "assets/client"}, std::filesystem::directory_iterator{}) == 3);
     }
 }
 
@@ -353,8 +385,15 @@ TEST_CASE("odd and tiny sizes get the full chain", "[editor][assets][image][os]"
 }
 
 TEST_CASE("the output path replaces the last extension of the file name", "[editor][assets][image]") {
-    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.hdr") == "project://assets/client/Sky.tetexture");
-    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.v2.hdr") == "project://assets/client/Sky.v2.tetexture");
-    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky") == "project://assets/client/Sky.tetexture");
-    CHECK(TextureImporter::skyOutputPath("project://assets/my.folder/Sky") == "project://assets/my.folder/Sky.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.hdr", 0) == "project://assets/client/Sky.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.v2.hdr", 0) == "project://assets/client/Sky.v2.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky", 0) == "project://assets/client/Sky.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/my.folder/Sky", 0) == "project://assets/my.folder/Sky.tetexture");
+}
+
+TEST_CASE("a suffix goes between the stem and the extension", "[editor][assets][image]") {
+    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.hdr", 1) == "project://assets/client/Sky_1.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.hdr", 12) == "project://assets/client/Sky_12.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/client/Sky.v2.hdr", 1) == "project://assets/client/Sky.v2_1.tetexture");
+    CHECK(TextureImporter::skyOutputPath("project://assets/my.folder/Sky", 1) == "project://assets/my.folder/Sky_1.tetexture");
 }
