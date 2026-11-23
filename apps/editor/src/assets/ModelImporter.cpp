@@ -570,7 +570,7 @@ namespace TechEngine {
     }
 
     template<typename Item>
-    std::string ModelImporter::uniqueName(const std::string& name, const std::span<const Item> taken, std::string Item::*field) {
+    std::string ModelImporter::uniqueName(const std::string& name, const std::span<const Item> taken, std::string Item::* field) {
         std::string candidate = name;
         std::uint32_t suffix = 0;
         while (std::ranges::find(taken, candidate, field) != taken.end()) {

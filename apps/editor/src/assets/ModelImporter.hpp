@@ -99,7 +99,7 @@ namespace TechEngine {
         static std::string slotName(const aiScene& scene, unsigned int materialIndex);
 
         template<typename Item>
-        static std::string uniqueName(const std::string& name, std::span<const Item> taken, std::string Item::*field);
+        static std::string uniqueName(const std::string& name, std::span<const Item> taken, std::string Item::* field);
 
         static char toLowerAscii(char character);
 
