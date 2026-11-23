@@ -67,8 +67,8 @@ namespace TechEngine {
 
         static std::string rootAssetPath(std::string_view folder, ImportMode mode);
 
-        // Refuses a folder that exists. Writes nothing when it fails. Of two imports of one source at once, exactly one
-        // succeeds, and the other gets ImportFolderExists and leaves the winner's folder alone.
+        // Writes into importFolder's path, or with _1, _2 appended when that name is taken. Writes nothing when it fails,
+        // and two imports at once never share a folder.
         std::error_code importFile(const ModelImportRequest& request, ModelImportResult& out) const;
 
     private:
@@ -80,7 +80,7 @@ namespace TechEngine {
 
         std::error_code writeMaterials(const MaterialImporter& materialImporter, const MaterialPlan& plan, Side side, const std::string& folder, std::vector<AssetRecord>& records) const;
 
-        std::error_code createImportFolder(const std::string& folder) const;
+        std::error_code claimImportFolder(const std::string& base, std::string& out) const;
 
         void removeUnfinishedFolder(const std::string& folder) const;
 

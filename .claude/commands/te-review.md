@@ -70,6 +70,9 @@ the rubric.
   check is a finding.
 
 **Changing code** (*Changing code: adapt the owner, never bolt on*)
+- For each new member, container, call and signature, find the existing code that already owns
+  that job, and say whether the change should have gone there instead. The smells below are
+  what that search turns up.
 - A new list, map or flag holding a fact about things an existing record already describes is
   a **parallel structure**: the field belongs on the record.
 - A new call placed before or after an existing line to rescue or undo that line's effect is a

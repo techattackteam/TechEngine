@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -82,10 +83,11 @@ namespace TechEngine {
 
         static void unpackRgb9E5(std::uint32_t packed, float& red, float& green, float& blue);
 
-        static std::string skyOutputPath(std::string_view sourcePath);
+        // A suffix of 0 adds nothing, and 1 turns Sky.hdr into Sky_1.tetexture.
+        static std::string skyOutputPath(std::string_view sourcePath, std::uint32_t suffix);
 
-        // A Radiance .hdr becomes an RGB9E5 texture beside it. Refuses an output that exists. Writes nothing when it fails.
-        // Of two imports of one source at once, exactly one succeeds, and the other gets ImportOutputExists.
+        // A Radiance .hdr becomes an RGB9E5 texture beside it, at the first skyOutputPath whose name is free. Writes
+        // nothing when it fails, and two imports at once never share a file.
         std::error_code importSky(const SkyImportRequest& request, SkyImportResult& out) const;
 
         static bool isHdr(std::string_view sourcePath);
@@ -94,6 +96,8 @@ namespace TechEngine {
         static bool sideOf(std::string_view relativePath, Side& out);
 
     private:
+        std::error_code createSkyFile(std::string_view sourcePath, std::span<const std::byte> bytes, std::string& out) const;
+
         static void toFloat(const ByteImage& image, TexturePurpose purpose, FloatImage& out);
 
         static void toBytes(const FloatImage& image, TexturePurpose purpose, ByteImage& out);

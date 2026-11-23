@@ -356,13 +356,25 @@ TEST_CASE("a merged import that cannot be written leaves no folder behind", "[ed
         CHECK_FALSE(fixture.exists("assets/client/Dots"));
     }
 
-    SECTION("a folder that exists") {
-        fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
-        fixture.scratch.makeDirectory("assets/client/Pair");
-        CHECK(fixture.importFile("Pair.gltf", ImportSettings{}, result) == ProjectError::ImportFolderExists);
-        CHECK(entryCount(fixture.scratch.root() / "assets" / "client" / "Pair") == 0);
-    }
-
     CHECK(result.records.empty());
     CHECK(fixture.nextId == FIRST_TEST_ID);
+}
+
+TEST_CASE("a merged mesh created twice from one source gives two folders with different ids", "[editor][assets][import][merged][os]") {
+    MergedImportFixture fixture{"mergedTwice"};
+    fixture.scratch.writeFile("assets/client/Pair.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
+    ModelImportResult first;
+    ModelImportResult second;
+
+    REQUIRE(fixture.importFile("Pair.gltf", ImportSettings{}, first) == std::error_code{});
+    REQUIRE(fixture.importFile("Pair.gltf", ImportSettings{}, second) == std::error_code{});
+
+    CHECK(first.folder == "project://assets/client/Pair");
+    CHECK(second.folder == "project://assets/client/Pair_1");
+    REQUIRE_FALSE(first.records.empty());
+    REQUIRE_FALSE(second.records.empty());
+    CHECK(second.records[0].path == "project://assets/client/Pair_1/Pair_1.temesh");
+    CHECK(fixture.readMesh(second.records[0].path).id == second.records[0].id);
+    CHECK(first.records[0].id != second.records[0].id);
+    CHECK(fixture.readMesh(first.records[0].path).id == first.records[0].id);
 }

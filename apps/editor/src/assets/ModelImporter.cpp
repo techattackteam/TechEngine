@@ -128,16 +128,6 @@ namespace TechEngine {
             return resolveError;
         }
 
-        const std::string folder = importFolder(request.sourcePath);
-        FileStatus folderStatus;
-        const std::error_code folderError = m_files->status(folder, folderStatus);
-        if (!folderError) {
-            return ProjectError::ImportFolderExists;
-        }
-        if (folderError != FileError::NotFound) {
-            return folderError;
-        }
-
         // assimp reads a quantized or meshopt-compressed glTF without an error, as garbage positions.
         const bool gltfSource = isGltfSource(request.sourcePath);
         if (gltfSource) {
@@ -159,6 +149,13 @@ namespace TechEngine {
             return ProjectError::SourceUnreadable;
         }
 
+        // Every output path below is built from the folder's name, so the folder is claimed before any of them.
+        std::string folder;
+        const std::error_code claimError = claimImportFolder(importFolder(request.sourcePath), folder);
+        if (claimError) {
+            return claimError;
+        }
+
         const MeshImporter meshImporter(request.settings, gltfSource);
         const MaterialImporter materialImporter(*m_files, *scene, request.sourcePath, parts.relative, gltfSource);
         if (request.mode == ImportMode::MergedMesh) {
@@ -168,6 +165,7 @@ namespace TechEngine {
         std::vector<SourceMesh> meshes;
         const std::uint32_t meshCount = readMeshes(*scene, parts.relative, folder, meshImporter, meshes);
         if (meshCount == 0) {
+            removeUnfinishedFolder(folder);
             return ProjectError::SourceHasNoMeshes;
         }
 
@@ -192,11 +190,6 @@ namespace TechEngine {
         model.importBlock.settings = request.settings;
         buildNodes(*scene, meshes, fileStem(folder), meshImporter, model.nodes);
 
-        const std::error_code createError = createImportFolder(folder);
-        if (createError) {
-            return createError;
-        }
-
         std::vector<AssetRecord> records;
         records.reserve(static_cast<std::size_t>(meshCount) + 1);
         const std::error_code writeError = writeOutputs(model, meshes, materialImporter, materials, request.side, folder, records);
@@ -215,6 +208,7 @@ namespace TechEngine {
         std::vector<MergedPart> parts;
         readMergedParts(scene, meshImporter, parts);
         if (parts.empty()) {
+            removeUnfinishedFolder(folder);
             return ProjectError::SourceHasNoMeshes;
         }
 
@@ -234,11 +228,6 @@ namespace TechEngine {
         parts.clear();
         mesh.importBlock.sourcePath = std::string(sourcePath);
         mesh.importBlock.settings = request.settings;
-
-        const std::error_code createError = createImportFolder(folder);
-        if (createError) {
-            return createError;
-        }
 
         std::vector<AssetRecord> records;
         const std::error_code materialError = writeMaterials(materialImporter, materials, request.side, folder, records);
@@ -277,21 +266,18 @@ namespace TechEngine {
         }
     }
 
-    // A Textures folder this call made, and whose every image failed to load, is removed again, so the folder holds only
-    // what was written.
+    // A Textures folder whose every image failed to load is removed again, so the folder holds only what was written.
     std::error_code ModelImporter::writeMaterials(const MaterialImporter& materialImporter, const MaterialPlan& plan, const Side side, const std::string& folder, std::vector<AssetRecord>& records) const {
         const std::string textureFolder = folder + "/" + std::string(TEXTURE_FOLDER);
-        bool createdTextureFolder = false;
         if (!plan.textures.empty()) {
             const std::error_code textureFolderError = m_files->createDirectory(textureFolder);
-            if (textureFolderError && textureFolderError != FileError::AlreadyExists) {
+            if (textureFolderError) {
                 return textureFolderError;
             }
-            createdTextureFolder = !textureFolderError;
         }
         if (!plan.materials.empty()) {
             const std::error_code materialFolderError = m_files->createDirectory(folder + "/" + std::string(MATERIAL_FOLDER));
-            if (materialFolderError && materialFolderError != FileError::AlreadyExists) {
+            if (materialFolderError) {
                 return materialFolderError;
             }
         }
@@ -304,7 +290,7 @@ namespace TechEngine {
         const bool wroteTexture = std::any_of(records.begin() + static_cast<std::ptrdiff_t>(firstRecord), records.end(), [](const AssetRecord& record) {
             return record.typeTag == TEXTURE_TYPE_TAG;
         });
-        if (createdTextureFolder && !wroteTexture) {
+        if (!plan.textures.empty() && !wroteTexture) {
             const std::error_code removeError = m_files->remove(textureFolder, false);
             if (removeError) {
                 TE_LOGGER_WARN("Import: failed to remove the empty {0}: {1}", textureFolder, removeError.message());
@@ -313,15 +299,21 @@ namespace TechEngine {
         return {};
     }
 
-    std::error_code ModelImporter::createImportFolder(const std::string& folder) const {
-        const std::error_code createError = m_files->createDirectory(folder);
-        if (createError == FileError::AlreadyExists) {
-            return ProjectError::ImportFolderExists;
-        }
+    std::error_code ModelImporter::claimImportFolder(const std::string& base, std::string& out) const {
+        std::error_code createError;
+        std::string name = base;
+        std::uint32_t suffix = 1;
+        do {
+            createError = m_files->createDirectory(name);
+            if (!createError) {
+                out = name;
+            } else if (createError == FileError::AlreadyExists) {
+                name = base + "_" + std::to_string(suffix++);
+            }
+        } while (createError == FileError::AlreadyExists);
         return createError;
     }
 
-    // A folder left behind would refuse every later import of this source.
     void ModelImporter::removeUnfinishedFolder(const std::string& folder) const {
         const std::error_code removeError = m_files->remove(folder, true);
         if (removeError) {
@@ -366,7 +358,7 @@ namespace TechEngine {
 
         const std::string meshFolder = folder + "/" + std::string(MESH_FOLDER);
         const std::error_code meshFolderError = m_files->createDirectory(meshFolder);
-        if (meshFolderError && meshFolderError != FileError::AlreadyExists) {
+        if (meshFolderError) {
             return meshFolderError;
         }
 

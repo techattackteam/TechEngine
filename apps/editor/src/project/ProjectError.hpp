@@ -14,13 +14,11 @@ namespace TechEngine {
         UnknownReference,
         SourceUnreadable,
         SourceHasNoMeshes,
-        ImportFolderExists,
         SourceCompressed,
         InvalidImportScale,
         UnsupportedImageType,
         SourceNotInAssets,
         ImageUnreadable,
-        ImportOutputExists,
         UnsupportedDdsFormat
     };
 

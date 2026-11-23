@@ -111,13 +111,18 @@ TEST_CASE("the image import command returns before the job is done and writes th
         CHECK(app.index.getRecords().empty());
     }
 
-    SECTION("a second import of the same source is refused by its job and changes no file") {
+    SECTION("a second create of the same source writes the next file and changes no byte of the first") {
         app.makeImport(SKY_SOURCE).apply(AppTestAccess::scene(app));
         app.waitForImports();
 
         std::vector<std::byte> after;
         REQUIRE(app.files().read(SKY_TEXTURE, after) == std::error_code{});
         CHECK(after == bytes);
+        std::vector<std::byte> secondBytes;
+        REQUIRE(app.files().read("project://assets/client/Sky_1.tetexture", secondBytes) == std::error_code{});
+        TechEngine::Texture second;
+        REQUIRE(second.read(secondBytes) == std::error_code{});
+        CHECK(second.id != texture.id);
     }
 }
 
