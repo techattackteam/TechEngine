@@ -13,6 +13,8 @@
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <assets/AssetIndex.hpp>
+#include <assets/ModelImporter.hpp>
+#include <assets/ModelTestFiles.hpp>
 #include <edit/AssetEditHarness.hpp>
 #include <edit/EditorSnapshot.hpp>
 #include <edit/HierarchyCommands.hpp>
@@ -67,6 +69,7 @@ static constexpr std::string_view HARNESS_SCENE_PATH = "assets/common/Other.tesc
 static constexpr std::string_view HARNESS_SERVER_MESH_PATH = "assets/server/Collision.temesh";
 static constexpr ResourceId MERGED_MESH_ID{0x3E54000000000101};
 static constexpr std::string_view MERGED_MESH_PATH = "project://assets/client/Front/Front.temesh";
+static constexpr std::uint64_t SPLIT_FIRST_ID = 0x5917000000000001;
 
 class PlaceFixture {
 public:
@@ -434,6 +437,40 @@ TEST_CASE("placing a merged mesh adds one entity whose slot list matches the mes
     REQUIRE(fixture.edit.cache.getState(slots[0].material.handle, state));
     CHECK(state == ResourceState::Ready);
     CHECK(slots[1] == MaterialSlot{"Glass", {}});
+}
+
+TEST_CASE("placing an imported split mesh names its children after their materials, with _1 on a repeat", "[editor][edit][commands][place][import][os]") {
+    PlaceFixture fixture{"placeSplitMaterials"};
+    fixture.scratch.writeFile("assets/client/Car.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_SPLIT_MATERIALS_BODY));
+    TechEngine::ModelImportRequest request;
+    request.sourcePath = "project://assets/client/Car.gltf";
+    request.side = TechEngine::Side::Client;
+    std::uint64_t nextId = SPLIT_FIRST_ID;
+    const TechEngine::ModelImporter importer(fixture.files, [&nextId] {
+        return ResourceId{nextId++};
+    });
+    TechEngine::ModelImportResult result;
+    REQUIRE(importer.importFile(request, result) == std::error_code{});
+    for (const AssetRecord& record: result.records) {
+        std::vector<std::byte> bytes;
+        REQUIRE(fixture.files.read(record.path, bytes) == std::error_code{});
+        fixture.edit.source.addAsset(record.id, std::move(bytes));
+        fixture.edit.index.add(record);
+    }
+
+    fixture.place(result.records[0].path);
+
+    const std::vector<Entity> roots = fixture.edit.scene.getRoots();
+    REQUIRE(roots.size() == 1);
+    CHECK(fixture.edit.scene.getComponent<Name>(roots[0]).value == "Car");
+    const std::vector<Entity> children = fixture.edit.scene.getChildren(roots[0]);
+    REQUIRE(children.size() == 3);
+    CHECK(fixture.edit.scene.getComponent<Name>(children[0]).value == "Paint");
+    CHECK(fixture.edit.scene.getComponent<Name>(children[1]).value == "Glass");
+    CHECK(fixture.edit.scene.getComponent<Name>(children[2]).value == "Paint_1");
+    for (const Entity child: children) {
+        CHECK(fixture.edit.scene.hasComponent<MeshRenderer>(child));
+    }
 }
 
 TEST_CASE("a server mesh is not placed", "[editor][edit][commands][place][merged][os]") {

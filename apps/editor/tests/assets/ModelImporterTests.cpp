@@ -604,16 +604,38 @@ TEST_CASE("a node with several meshes gets one child per mesh and carries none i
         CHECK_FALSE(model.nodes[0].mesh.valid());
     }
 
-    SECTION("each child sits at identity under the node, named after its mesh") {
+    SECTION("each child sits at identity under the node, named after its material, and the repeat gets _1") {
         for (std::size_t i = 1; i < model.nodes.size(); i++) {
             CHECK(model.nodes[i].parent == 0);
             checkIdentity(model.nodes[i].local);
             CHECK(model.nodes[i].mesh == result.records[i].id);
-            const std::string fileName = std::filesystem::path(result.records[i].path).stem().string();
-            CHECK(model.nodes[i].name == fileName);
         }
-        CHECK(model.nodes[1].name != model.nodes[2].name);
+        const Mesh first = fixture.readMesh(result.records[1].path);
+        const Mesh second = fixture.readMesh(result.records[2].path);
+        REQUIRE(first.slots.size() == 1);
+        REQUIRE(second.slots.size() == 1);
+        REQUIRE(first.slots[0].name == second.slots[0].name);
+        CHECK(model.nodes[1].name == first.slots[0].name);
+        CHECK(model.nodes[2].name == first.slots[0].name + "_1");
         CHECK(model.nodes[1].mesh != model.nodes[2].mesh);
+    }
+}
+
+TEST_CASE("the children of a split mesh take their materials' names, with _1 on a repeat", "[editor][assets][import][os]") {
+    ModelImportFixture fixture{"importSplitMaterials"};
+    fixture.scratch.writeFile("assets/client/Car.gltf", TechEngineTests::gltfFile(TechEngineTests::GLTF_SPLIT_MATERIALS_BODY));
+
+    ModelImportResult result;
+    REQUIRE(fixture.importFile("Car.gltf", ImportSettings{}, result) == std::error_code{});
+
+    const Model model = fixture.readModel(result.records[0].path);
+    REQUIRE(model.nodes.size() == 4);
+    CHECK(model.nodes[0].name == "Car");
+    CHECK(model.nodes[1].name == "Paint");
+    CHECK(model.nodes[2].name == "Glass");
+    CHECK(model.nodes[3].name == "Paint_1");
+    for (std::size_t i = 1; i < model.nodes.size(); i++) {
+        CHECK(model.nodes[i].parent == 0);
     }
 }
 

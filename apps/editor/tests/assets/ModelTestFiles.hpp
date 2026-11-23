@@ -37,6 +37,14 @@ namespace TechEngineTests {
                                                                  R"("nodes":[{"name":"Car","mesh":0,"translation":[1,0,0]}],)"
                                                                  R"("meshes":[{"name":"Parts","primitives":[{"attributes":{"POSITION":1},"indices":0},{"attributes":{"POSITION":1},"indices":0}]}])";
 
+    // One top-level node with a mesh of three primitives, whose materials are Paint, Glass, then Paint again.
+    inline constexpr std::string_view GLTF_SPLIT_MATERIALS_BODY = R"("scenes":[{"nodes":[0]}],)"
+                                                                  R"("nodes":[{"name":"Car","mesh":0}],)"
+                                                                  R"("materials":[{"name":"Paint"},{"name":"Glass"}],)"
+                                                                  R"("meshes":[{"name":"Parts","primitives":[{"attributes":{"POSITION":1},"indices":0,"material":0},)"
+                                                                  R"({"attributes":{"POSITION":1},"indices":0,"material":1},)"
+                                                                  R"({"attributes":{"POSITION":1},"indices":0,"material":0}]}])";
+
     inline constexpr std::string_view GLTF_POINTS_AND_TRIANGLES_BODY = R"("scenes":[{"nodes":[0,1]}],)"
                                                                        R"("nodes":[{"name":"Dots","mesh":0},{"name":"Solid","mesh":1}],)"
                                                                        R"("meshes":[{"name":"Cloud","primitives":[{"attributes":{"POSITION":1},"mode":0}]},)"

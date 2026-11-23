@@ -447,7 +447,7 @@ namespace TechEngine {
             if (nodeMeshes.size() > 1) {
                 for (const SourceMesh* mesh: nodeMeshes) {
                     ModelNode child;
-                    child.name = mesh->name;
+                    child.name = uniqueName(mesh->mesh.slots[0].name, std::span<const ModelNode>(out).subspan(index + 1), &ModelNode::name);
                     child.parent = index;
                     child.mesh = mesh->mesh.id;
                     out.push_back(std::move(child));
@@ -514,7 +514,8 @@ namespace TechEngine {
             if (out.slots.empty() || part.materialIndex != slotMaterial) {
                 slotMaterial = part.materialIndex;
                 const std::uint32_t firstIndex = static_cast<std::uint32_t>(out.indices.size());
-                out.slots.push_back(MeshSlot{uniqueSlotName(slotName(scene, slotMaterial), out.slots), firstIndex, 0, materials.materialId(slotMaterial)});
+                // A renderer's slot list is rebuilt by slot name, so two slots with one name would end up with one material.
+                out.slots.push_back(MeshSlot{uniqueName(slotName(scene, slotMaterial), std::span<const MeshSlot>(out.slots), &MeshSlot::name), firstIndex, 0, materials.materialId(slotMaterial)});
             }
 
             const std::uint32_t firstVertex = static_cast<std::uint32_t>(out.positions.size());
@@ -568,11 +569,11 @@ namespace TechEngine {
         return std::string(UNNAMED_SLOT) + std::to_string(materialIndex);
     }
 
-    // A renderer's slot list is rebuilt by slot name, so two slots with one name would end up with one material.
-    std::string ModelImporter::uniqueSlotName(const std::string& name, const std::vector<MeshSlot>& slots) {
+    template<typename Item>
+    std::string ModelImporter::uniqueName(const std::string& name, const std::span<const Item> taken, std::string Item::* field) {
         std::string candidate = name;
         std::uint32_t suffix = 0;
-        while (std::ranges::find(slots, candidate, &MeshSlot::name) != slots.end()) {
+        while (std::ranges::find(taken, candidate, field) != taken.end()) {
             suffix++;
             candidate = name + "_" + std::to_string(suffix);
         }
