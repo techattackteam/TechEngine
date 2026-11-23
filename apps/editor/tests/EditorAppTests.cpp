@@ -2,7 +2,6 @@
 #include <TechEngine/core/camera/Camera.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/mesh/MeshRenderer.hpp>
-#include <TechEngine/core/model/Model.hpp>
 #include <TechEngine/core/resources/PackReader.hpp>
 #include <TechEngine/core/resources/ResourceCache.hpp>
 #include <TechEngine/core/resources/ResourceHandle.hpp>
@@ -146,8 +145,7 @@ namespace {
     constexpr std::string_view MANIFEST_PATH = "project://project.toml";
     constexpr std::string_view TRIANGLE_MESH_FILE = "assets/client/Triangle.temesh";
     constexpr std::string_view TRIANGLE_MESH_PATH = "project://assets/client/Triangle.temesh";
-    constexpr std::string_view STARTUP_IMPORT_FILE = "assets/client/glTF/Sponza.gltf";
-    constexpr std::string_view STARTUP_IMPORT_MODEL_PATH = "project://assets/client/glTF/Sponza/Sponza.temodel";
+    constexpr std::string_view SPONZA_SOURCE_FILE = "assets/client/glTF/Sponza.gltf";
     constexpr std::string_view PANEL_LAYOUT_FILE = "editorSettings/layout.ini";
     constexpr std::string_view PANEL_LAYOUT_PATH = "project://editorSettings/layout.ini";
     constexpr std::string_view SAVED_HIERARCHY = "[Window][Hierarchy]\nPos=10,20\nSize=300,400\nCollapsed=0\n";
@@ -797,66 +795,17 @@ TEST_CASE("the startup load does not overwrite a Triangle.temesh the index skipp
     editor.shutdown();
 }
 
-TEST_CASE("the startup load imports the hardcoded source file as a job, and a later launch indexes it and imports nothing", "[editor][window][import][gpu][os]") {
-    ScratchDirectory scratch{"editorImportsStartupModel"};
+TEST_CASE("the startup load creates nothing from a model source in the project", "[editor][window][import][gpu][os]") {
+    ScratchDirectory scratch{"editorCreatesNothingAtStartup"};
     writeProjectLayout(scratch);
-    scratch.writeFile(STARTUP_IMPORT_FILE, TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
-    const std::filesystem::path exportFolder = scratch.makeDirectory("export");
-    const std::filesystem::path importFolder = scratch.root() / "assets" / "client" / "glTF" / "Sponza";
-
-    std::vector<std::byte> firstModel;
-    {
-        EditorProbe first{scratch.root(), exportFolder};
-        first.bootstrap();
-        first.waitForImports();
-        REQUIRE(first.files().read(STARTUP_IMPORT_MODEL_PATH, firstModel) == std::error_code{});
-        CHECK(std::filesystem::is_regular_file(importFolder / "Meshes" / "Hull.temesh"));
-        CHECK(std::filesystem::is_regular_file(importFolder / "Meshes" / "Tire.temesh"));
-        first.shutdown();
-    }
-    TechEngine::Model model;
-    REQUIRE(model.read(firstModel) == std::error_code{});
-    CHECK(model.nodes.size() == 4);
-    CHECK(model.importBlock.sourcePath == STARTUP_IMPORT_FILE);
-
-    EditorProbe second{scratch.root(), exportFolder};
-    second.bootstrap();
-    second.waitForImports();
-
-    TechEngine::AssetRecord modelRecord;
-    REQUIRE(second.getAssetIndex().find(model.id, modelRecord));
-    CHECK(modelRecord.typeTag == TechEngine::MODEL_TYPE_TAG);
-    CHECK(modelRecord.side == TechEngine::Side::Client);
-    CHECK(modelRecord.path == STARTUP_IMPORT_MODEL_PATH);
-    for (const TechEngine::ModelNode& node: model.nodes) {
-        if (node.mesh.valid()) {
-            TechEngine::AssetRecord meshRecord;
-            REQUIRE(second.getAssetIndex().find(node.mesh, meshRecord));
-            CHECK(meshRecord.typeTag == TechEngine::MESH_TYPE_TAG);
-        }
-    }
-    CHECK(second.getAssetIndex().getRecords().size() == 6);
-
-    std::vector<std::byte> secondModel;
-    REQUIRE(second.files().read(STARTUP_IMPORT_MODEL_PATH, secondModel) == std::error_code{});
-    CHECK(secondModel == firstModel);
-    CHECK(fileCount(importFolder) == 3);
-    CHECK(fileCount(importFolder / "Meshes") == 2);
-    CHECK(fileCount(importFolder / "Materials") == 1);
-    second.shutdown();
-}
-
-TEST_CASE("the startup load imports nothing into a folder that already exists", "[editor][window][import][gpu][os]") {
-    ScratchDirectory scratch{"editorSkipsExistingImportFolder"};
-    writeProjectLayout(scratch);
-    scratch.writeFile(STARTUP_IMPORT_FILE, TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
-    const std::filesystem::path importFolder = scratch.makeDirectory("assets/client/glTF/Sponza");
+    scratch.writeFile(SPONZA_SOURCE_FILE, TechEngineTests::gltfFile(TechEngineTests::GLTF_PAIR_BODY));
+    const std::filesystem::path sourceFolder = scratch.root() / "assets" / "client" / "glTF";
 
     EditorProbe editor{scratch.root(), scratch.makeDirectory("export")};
     editor.bootstrap();
     editor.waitForImports();
 
-    CHECK(fileCount(importFolder) == 0);
+    CHECK(fileCount(sourceFolder) == 1);
     CHECK(editor.getAssetIndex().getRecords().size() == 2);
     editor.shutdown();
 }

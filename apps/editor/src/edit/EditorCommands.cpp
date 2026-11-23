@@ -2,8 +2,14 @@
 #include <TechEngine/app/Command.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
 
+#include <assets/ModelImporter.hpp>
+#include <assets/TextureImporter.hpp>
+#include <edit/CreateFolderCommand.hpp>
+#include <edit/CreateMaterialCommand.hpp>
 #include <edit/EditorCommands.hpp>
 #include <edit/HierarchyCommands.hpp>
+#include <edit/ImportModelCommand.hpp>
+#include <edit/ImportSkyCommand.hpp>
 #include <edit/InspectorCommands.hpp>
 #include <edit/PlaceModelCommand.hpp>
 #include <edit/RefreshAssetsCommand.hpp>
@@ -13,8 +19,8 @@
 #include <utility>
 
 namespace TechEngine {
-    EditorCommands::EditorCommands(App& app, EditSession& session, const ComponentRegistry& registry, FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, AssetIndex& assets)
-        : m_app(&app), m_session(&session), m_registry(&registry), m_files(&files), m_resources(&resources), m_sceneHandle(&sceneHandle), m_assets(&assets) {
+    EditorCommands::EditorCommands(App& app, EditSession& session, const ComponentRegistry& registry, FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, AssetIndex& assets, JobSystem& jobs, std::vector<BatchId>& importBatches)
+        : m_app(&app), m_session(&session), m_registry(&registry), m_files(&files), m_resources(&resources), m_sceneHandle(&sceneHandle), m_assets(&assets), m_jobs(&jobs), m_importBatches(&importBatches) {
     }
 
     void EditorCommands::create(const Entity parent) {
@@ -67,6 +73,22 @@ namespace TechEngine {
 
     void EditorCommands::refreshAssets() {
         submit(std::make_unique<RefreshAssetsCommand>(*m_files, *m_assets));
+    }
+
+    void EditorCommands::createModel(ModelImportRequest request) {
+        submit(std::make_unique<ImportModelCommand>(*m_app, *m_jobs, *m_files, *m_assets, *m_importBatches, std::move(request)));
+    }
+
+    void EditorCommands::createSky(SkyImportRequest request) {
+        submit(std::make_unique<ImportSkyCommand>(*m_app, *m_jobs, *m_files, *m_assets, *m_importBatches, std::move(request)));
+    }
+
+    void EditorCommands::createMaterial(MaterialCreateRequest request) {
+        submit(std::make_unique<CreateMaterialCommand>(*m_files, *m_assets, std::move(request)));
+    }
+
+    void EditorCommands::createFolder(FolderCreateRequest request) {
+        submit(std::make_unique<CreateFolderCommand>(*m_files, *m_assets, std::move(request)));
     }
 
     void EditorCommands::save() {

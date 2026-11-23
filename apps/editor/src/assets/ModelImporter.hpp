@@ -40,6 +40,8 @@ namespace TechEngine {
         Side side = Side::Client;
         ImportSettings settings;
         ImportMode mode = ImportMode::Model;
+        // The output folder's name, beside the source. Empty takes the source file's name.
+        std::string name;
     };
 
     struct ModelImportResult {
@@ -63,12 +65,14 @@ namespace TechEngine {
         // generateId must return a new id on every call.
         ModelImporter(FileAccess& files, std::function<ResourceId()> generateId);
 
-        static std::string importFolder(std::string_view sourcePath);
+        // The folder beside the source named name, or the source's own name when name is empty. A suffix of 0 adds
+        // nothing, and 1 turns Sponza.gltf into Sponza_1.
+        static std::string importFolder(std::string_view sourcePath, std::string_view name, std::uint32_t suffix);
 
         static std::string rootAssetPath(std::string_view folder, ImportMode mode);
 
-        // Writes into importFolder's path, or with _1, _2 appended when that name is taken. Writes nothing when it fails,
-        // and two imports at once never share a folder.
+        // Writes into the first importFolder whose name is free. Writes nothing when it fails, and two imports at once never
+        // share a folder.
         std::error_code importFile(const ModelImportRequest& request, ModelImportResult& out) const;
 
     private:
@@ -80,7 +84,7 @@ namespace TechEngine {
 
         std::error_code writeMaterials(const MaterialImporter& materialImporter, const MaterialPlan& plan, Side side, const std::string& folder, std::vector<AssetRecord>& records) const;
 
-        std::error_code claimImportFolder(const std::string& base, std::string& out) const;
+        std::error_code claimImportFolder(const ModelImportRequest& request, std::string& out) const;
 
         void removeUnfinishedFolder(const std::string& folder) const;
 

@@ -4,6 +4,9 @@
 #include <TechEngine/core/scene/Entity.hpp>
 
 #include <assets/AssetIndex.hpp>
+#include <assets/ModelImporter.hpp>
+#include <assets/TextureImporter.hpp>
+#include <edit/CreateMaterialCommand.hpp>
 #include <edit/EditorSnapshot.hpp>
 
 #include <catch2/catch_test_macros.hpp>
@@ -617,4 +620,130 @@ TEST_CASE("a folder under no side folder has no breadcrumbs", "[editor][edit][br
     snapshot.collectBreadcrumbs("project://assets/clientele/Sponza", crumbs);
 
     CHECK(crumbs.empty());
+}
+
+static std::string sponzaFolder(const std::uint32_t suffix) {
+    return TechEngine::ModelImporter::importFolder(underClient("Sponza.gltf"), "", suffix);
+}
+
+TEST_CASE("a free name is the source's own name when nothing holds it", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = browserSnapshot();
+
+    CHECK(snapshot.firstFreePath([](const std::uint32_t suffix) {
+        return TechEngine::ModelImporter::importFolder(underClient("Bistro.fbx"), "", suffix);
+    }) == underClient("Bistro"));
+}
+
+TEST_CASE("a free name skips a listed folder", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = browserSnapshot();
+
+    CHECK(snapshot.firstFreePath(&sponzaFolder) == underClient("Sponza_1"));
+}
+
+TEST_CASE("a listed name that only starts with a candidate does not take it", "[editor][edit][browser]") {
+    using TechEngine::ListedKind;
+    EditorSnapshot snapshot = browserSnapshot();
+    snapshot.listing.push_back(listed(underClient("Sponza_10"), ListedKind::Folder));
+    snapshot.listing.push_back(listed(underClient("Sponza_1.temodel"), ListedKind::Asset));
+    std::ranges::sort(snapshot.listing, {}, &TechEngine::ListedEntry::path);
+
+    CHECK(snapshot.firstFreePath(&sponzaFolder) == underClient("Sponza_1"));
+}
+
+TEST_CASE("a free name fills the first gap among the taken suffixes", "[editor][edit][browser]") {
+    using TechEngine::ListedKind;
+    EditorSnapshot snapshot = browserSnapshot();
+    snapshot.listing.push_back(listed(underClient("Sponza_2"), ListedKind::Folder));
+    snapshot.listing.push_back(listed(underClient("Sponza_3"), ListedKind::Folder));
+    std::ranges::sort(snapshot.listing, {}, &TechEngine::ListedEntry::path);
+
+    CHECK(snapshot.firstFreePath(&sponzaFolder) == underClient("Sponza_1"));
+
+    snapshot.listing.push_back(listed(underClient("Sponza_1"), ListedKind::Folder));
+    std::ranges::sort(snapshot.listing, {}, &TechEngine::ListedEntry::path);
+
+    CHECK(snapshot.firstFreePath(&sponzaFolder) == underClient("Sponza_4"));
+}
+
+TEST_CASE("a listed file takes a folder's name, because a create cannot make a folder over it", "[editor][edit][browser]") {
+    using TechEngine::ListedKind;
+    EditorSnapshot snapshot = browserSnapshot();
+    snapshot.listing.push_back(listed(underClient("Crate"), ListedKind::Other));
+    std::ranges::sort(snapshot.listing, {}, &TechEngine::ListedEntry::path);
+
+    CHECK(snapshot.firstFreePath([](const std::uint32_t suffix) {
+        return TechEngine::ModelImporter::importFolder(underClient("Crate.obj"), "", suffix);
+    }) == underClient("Crate_1"));
+}
+
+TEST_CASE("a free sky name follows the sky importer's rule beside a listed sky", "[editor][edit][browser]") {
+    using TechEngine::ListedKind;
+    EditorSnapshot snapshot = browserSnapshot();
+    snapshot.listing.push_back(listed(underClient("sky.tetexture"), ListedKind::Asset));
+    std::ranges::sort(snapshot.listing, {}, &TechEngine::ListedEntry::path);
+    const auto skyPath = [](const std::uint32_t suffix) {
+        return TechEngine::TextureImporter::skyOutputPath(underClient("sky.hdr"), "", suffix);
+    };
+
+    CHECK(snapshot.firstFreePath(skyPath) == underClient("sky_1.tetexture"));
+}
+
+TEST_CASE("a name on another side is free on this one", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = browserSnapshot();
+
+    CHECK(snapshot.firstFreePath([](const std::uint32_t suffix) {
+        return TechEngine::ModelImporter::importFolder(std::string(COMMON_FOLDER) + "/Sponza.gltf", "", suffix);
+    }) == std::string(COMMON_FOLDER) + "/Sponza");
+}
+
+TEST_CASE("an empty listing leaves every name free", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot;
+
+    CHECK(snapshot.firstFreePath(&sponzaFolder) == underClient("Sponza"));
+}
+
+TEST_CASE("a side folder is found for itself and for anything under it", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = browserSnapshot();
+    TechEngine::SideFolder side;
+
+    REQUIRE(snapshot.findSideFolder(CLIENT_FOLDER, side));
+    CHECK(side.side == TechEngine::Side::Client);
+    CHECK(side.path == CLIENT_FOLDER);
+    REQUIRE(snapshot.findSideFolder(underClient("Sponza/Meshes"), side));
+    CHECK(side.side == TechEngine::Side::Client);
+    REQUIRE(snapshot.findSideFolder(std::string(SERVER_FOLDER) + "/Unlisted", side));
+    CHECK(side.side == TechEngine::Side::Server);
+    CHECK(side.path == SERVER_FOLDER);
+}
+
+TEST_CASE("a path under no side folder, or one that only starts with a side folder's name, has no side", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = browserSnapshot();
+    TechEngine::SideFolder side;
+
+    CHECK_FALSE(snapshot.findSideFolder("project://assets/clientele/Sponza", side));
+    CHECK_FALSE(snapshot.findSideFolder("project://assets", side));
+    CHECK_FALSE(snapshot.findSideFolder("", side));
+    CHECK_FALSE(EditorSnapshot{}.findSideFolder(CLIENT_FOLDER, side));
+}
+
+TEST_CASE("the longest side folder wins when side folders nest", "[editor][edit][browser]") {
+    EditorSnapshot snapshot = browserSnapshot();
+    snapshot.sideFolders.push_back({TechEngine::Side::Server, underClient("Nested")});
+    TechEngine::SideFolder side;
+
+    REQUIRE(snapshot.findSideFolder(underClient("Nested/Deep"), side));
+    CHECK(side.side == TechEngine::Side::Server);
+    REQUIRE(snapshot.findSideFolder(underClient("Sponza"), side));
+    CHECK(side.side == TechEngine::Side::Client);
+}
+
+TEST_CASE("a free material name follows the material's rule beside a listed material", "[editor][edit][browser]") {
+    using TechEngine::ListedKind;
+    EditorSnapshot snapshot = browserSnapshot();
+    snapshot.listing.push_back(listed(underClient("Material.tematerial"), ListedKind::Asset));
+    std::ranges::sort(snapshot.listing, {}, &TechEngine::ListedEntry::path);
+
+    CHECK(snapshot.firstFreePath([](const std::uint32_t suffix) {
+        return TechEngine::CreateMaterialCommand::outputPath(CLIENT_FOLDER, "Material", suffix);
+    }) == underClient("Material_1.tematerial"));
 }

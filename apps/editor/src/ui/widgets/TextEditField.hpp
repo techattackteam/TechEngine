@@ -14,6 +14,9 @@ namespace TechEngine {
 
         bool isEditing() const;
 
+        // What the field shows: the typed text while an edit runs, else the text the last draw was given.
+        const std::string& getText() const;
+
         // Shows text until the user activates the field. Returns true once, on the frame the edit
         // ends, with the final text in out; Escape ends it with the text it started from.
         // A mixed field shows a dash, and returns true only for Enter or a changed text, because Enter on

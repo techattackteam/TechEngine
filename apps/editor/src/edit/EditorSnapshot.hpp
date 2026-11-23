@@ -11,6 +11,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -117,5 +118,13 @@ namespace TechEngine {
 
         // Each folder path from folder's side folder down to folder. Empty when folder is under no side folder.
         void collectBreadcrumbs(std::string_view folder, std::vector<std::string>& out) const;
+
+        // The side folder that is path or holds it, the longest one when side folders nest. False when path is under no
+        // side folder.
+        bool findSideFolder(std::string_view path, SideFolder& out) const;
+
+        // The first of candidate(0), candidate(1), ... that no listed entry holds, file or folder. A create in flight
+        // that this listing does not show yet may take it first.
+        std::string firstFreePath(const std::function<std::string(std::uint32_t suffix)>& candidate) const;
     };
 }

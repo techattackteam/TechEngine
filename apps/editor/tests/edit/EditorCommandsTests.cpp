@@ -1,5 +1,6 @@
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/resources/ResourceCache.hpp>
 #include <TechEngine/core/resources/ResourceHandle.hpp>
 #include <TechEngine/core/scene/ComponentRegistry.hpp>
@@ -14,6 +15,10 @@
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <assets/AssetIndex.hpp>
+#include <assets/ModelImporter.hpp>
+#include <assets/TextureImporter.hpp>
+#include <edit/CreateFolderCommand.hpp>
+#include <edit/CreateMaterialCommand.hpp>
 #include <edit/EditSession.hpp>
 #include <edit/EditTestScene.hpp>
 #include <edit/EditorCommands.hpp>
@@ -66,6 +71,7 @@ public:
     // Touched by the commands on the simulation thread, and by the test only after run() returns.
     TechEngine::EditSession session;
     TechEngine::AssetIndex assets;
+    std::vector<TechEngine::BatchId> importBatches;
     std::atomic<bool> startupLoaded = false;
 
     CommandsAppProbe() : App(TechEngine::Role::DedicatedServer) {
@@ -81,6 +87,10 @@ public:
 
     TechEngine::ResourceCache& getResources() {
         return m_resources;
+    }
+
+    TechEngine::JobSystem& getJobs() {
+        return m_jobs;
     }
 
     const TechEngine::ResourceHandle<TechEngine::SceneBytes>& getSceneHandle() const {
@@ -143,7 +153,7 @@ static bool waitForStartup(const CommandsAppProbe& app) {
 
 TEST_CASE("every sender method reaches the live scene through the running simulation", "[editor][edit][commands][integration]") {
     CommandsAppProbe app;
-    EditorCommands commands{app, app.session, app.getRegistry(), app.getFiles(), app.getResources(), app.getSceneHandle(), app.assets};
+    EditorCommands commands{app, app.session, app.getRegistry(), app.getFiles(), app.getResources(), app.getSceneHandle(), app.assets, app.getJobs(), app.importBatches};
     bool startedInTime = false;
     std::vector<bool> stepsInTime;
     std::vector<EditorSnapshot> steps;
@@ -247,7 +257,7 @@ TEST_CASE("every sender method reaches the live scene through the running simula
 TEST_CASE("a sender on an app that is not running applies nothing and logs the refusal", "[editor][edit][commands]") {
     const TechEngineTests::LogCaptureGuard logs;
     CommandsAppProbe app;
-    EditorCommands commands{app, app.session, app.getRegistry(), app.getFiles(), app.getResources(), app.getSceneHandle(), app.assets};
+    EditorCommands commands{app, app.session, app.getRegistry(), app.getFiles(), app.getResources(), app.getSceneHandle(), app.assets, app.getJobs(), app.importBatches};
 
     commands.create(Entity{});
     commands.destroy({Entity{0, 0}});
@@ -260,14 +270,29 @@ TEST_CASE("a sender on an app that is not running applies nothing and logs the r
     commands.removeComponent({Entity{0, 0}}, TechEngine::ComponentTypeId{});
     commands.placeModel("project://assets/client/Kart/Kart.temodel");
     commands.refreshAssets();
+    TechEngine::ModelImportRequest model;
+    model.sourcePath = "project://assets/client/Kart.gltf";
+    commands.createModel(model);
+    TechEngine::SkyImportRequest sky;
+    sky.sourcePath = "project://assets/client/Sky.hdr";
+    commands.createSky(sky);
+    TechEngine::MaterialCreateRequest material;
+    material.folder = "project://assets/client";
+    material.name = "Material";
+    commands.createMaterial(material);
+    TechEngine::FolderCreateRequest folder;
+    folder.folder = "project://assets/client";
+    folder.name = "Walls";
+    commands.createFolder(folder);
     commands.save();
     commands.saveAndClose();
 
     CHECK(TechEngineTests::AppTestAccess::scene(app).getRoots().empty());
+    CHECK(app.importBatches.empty());
     const auto refusals = std::ranges::count_if(logs.getMessages(), [](const std::string& message) {
         return message.find("refused an edit") != std::string::npos;
     });
-    CHECK(refusals == 13);
+    CHECK(refusals == 17);
 }
 
 TEST_CASE("save and save and close reach the live scene through the running simulation", "[editor][edit][commands][save][integration][os]") {
@@ -277,7 +302,7 @@ TEST_CASE("save and save and close reach the live scene through the running simu
     CommandsAppProbe app;
     app.mountProject(scratch.root());
     app.session.setSceneFile({sceneId, std::string(scenePath)});
-    EditorCommands commands{app, app.session, app.getRegistry(), app.getFiles(), app.getResources(), app.getSceneHandle(), app.assets};
+    EditorCommands commands{app, app.session, app.getRegistry(), app.getFiles(), app.getResources(), app.getSceneHandle(), app.assets, app.getJobs(), app.importBatches};
     bool startedInTime = false;
     std::vector<bool> stepsInTime;
     std::vector<EditorSnapshot> steps;

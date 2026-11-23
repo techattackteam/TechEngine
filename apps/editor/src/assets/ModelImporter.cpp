@@ -7,9 +7,9 @@
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/core/texture/Texture.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
-#include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/platform/files/VirtualPath.hpp>
 
+#include <assets/AssetNaming.hpp>
 #include <assets/MaterialImporter.hpp>
 #include <assets/MeshImporter.hpp>
 #include <assets/ModelImporter.hpp>
@@ -95,14 +95,9 @@ namespace TechEngine {
     ModelImporter::ModelImporter(FileAccess& files, std::function<ResourceId()> generateId) : m_files(&files), m_generateId(std::move(generateId)) {
     }
 
-    std::string ModelImporter::importFolder(const std::string_view sourcePath) {
-        const std::size_t slash = sourcePath.find_last_of('/');
-        const std::size_t dot = sourcePath.find_last_of('.');
-        const bool hasExtension = dot != std::string_view::npos && (slash == std::string_view::npos || dot > slash + 1);
-        if (!hasExtension) {
-            return std::string(sourcePath);
-        }
-        return std::string(sourcePath.substr(0, dot));
+    std::string ModelImporter::importFolder(const std::string_view sourcePath, const std::string_view name, const std::uint32_t suffix) {
+        const std::string_view folderName = name.empty() ? AssetNaming::stemOf(sourcePath) : name;
+        return AssetNaming::join(AssetNaming::folderOf(sourcePath), AssetNaming::withSuffix(folderName, suffix));
     }
 
     std::string ModelImporter::rootAssetPath(const std::string_view folder, const ImportMode mode) {
@@ -151,7 +146,7 @@ namespace TechEngine {
 
         // Every output path below is built from the folder's name, so the folder is claimed before any of them.
         std::string folder;
-        const std::error_code claimError = claimImportFolder(importFolder(request.sourcePath), folder);
+        const std::error_code claimError = claimImportFolder(request, folder);
         if (claimError) {
             return claimError;
         }
@@ -299,19 +294,14 @@ namespace TechEngine {
         return {};
     }
 
-    std::error_code ModelImporter::claimImportFolder(const std::string& base, std::string& out) const {
-        std::error_code createError;
-        std::string name = base;
-        std::uint32_t suffix = 1;
-        do {
-            createError = m_files->createDirectory(name);
-            if (!createError) {
-                out = name;
-            } else if (createError == FileError::AlreadyExists) {
-                name = base + "_" + std::to_string(suffix++);
-            }
-        } while (createError == FileError::AlreadyExists);
-        return createError;
+    std::error_code ModelImporter::claimImportFolder(const ModelImportRequest& request, std::string& out) const {
+        const auto candidate = [&request](const std::uint32_t suffix) {
+            return importFolder(request.sourcePath, request.name, suffix);
+        };
+        const auto create = [this](const std::string& path) {
+            return m_files->createDirectory(path);
+        };
+        return AssetNaming::claimFirstFree(candidate, create, out);
     }
 
     void ModelImporter::removeUnfinishedFolder(const std::string& folder) const {

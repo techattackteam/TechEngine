@@ -30,8 +30,6 @@
 #include <vector>
 
 namespace TechEngine {
-    struct ModelImportRequest;
-
     class EditorApp : public ClientApp {
     private:
         std::filesystem::path m_projectRoot;
@@ -98,16 +96,11 @@ namespace TechEngine {
 
         std::unique_ptr<Command> makeRunCommand();
 
-        std::unique_ptr<Command> makeImportModelCommand(ModelImportRequest request);
-
         // Never while the simulation thread runs.
         void waitForImports();
 
         // Main thread only.
         void exportProject();
-
-        // Main thread only.
-        void importSky(std::string path);
 
         // Main thread only.
         bool canRun() const;
@@ -148,8 +141,6 @@ namespace TechEngine {
         ResourceId writeStartupScene(Scene& scene);
 
         ResourceId findOrCreateTriangleMesh();
-
-        void importStartupModel(Scene& scene);
 
         ResourceId createAsset(std::string_view path, StringId typeTag, Side side, const std::function<void(ResourceId, std::vector<std::byte>&)>& write);
 

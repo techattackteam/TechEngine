@@ -6,6 +6,7 @@
 #include <TechEngine/core/texture/Texture.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/testing/AppTestAccess.hpp>
+#include <TechEngine/testing/LogCapture.hpp>
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <assets/AssetIndex.hpp>
@@ -57,9 +58,10 @@ public:
         return m_files;
     }
 
-    ImportSkyCommand makeImport(const std::string_view sourcePath) {
+    ImportSkyCommand makeImport(const std::string_view sourcePath, const std::string_view name = {}) {
         TechEngine::SkyImportRequest request;
         request.sourcePath = std::string(sourcePath);
+        request.name = std::string(name);
         return ImportSkyCommand{*this, m_jobs, m_files, index, batches, std::move(request)};
     }
 
@@ -124,6 +126,20 @@ TEST_CASE("the image import command returns before the job is done and writes th
         REQUIRE(second.read(secondBytes) == std::error_code{});
         CHECK(second.id != texture.id);
     }
+}
+
+TEST_CASE("a sky import with an invalid name starts no job and writes nothing", "[editor][edit][import][image][os]") {
+    const TechEngineTests::LogCaptureGuard logs;
+    ImportSkyAppProbe app{"importImageRefusesName"};
+    app.scratch.writeFile("assets/client/Sky.hdr", TechEngineTests::gradientRadianceFile(8, 4));
+
+    app.makeImport(SKY_SOURCE, "Skies/Dusk").apply(AppTestAccess::scene(app));
+
+    CHECK(app.batches.empty());
+    CHECK_FALSE(std::filesystem::exists(app.scratch.root() / "assets" / "client" / "Sky.tetexture"));
+    CHECK(std::ranges::any_of(logs.getMessages(), [](const std::string& message) {
+        return message.find("cannot be named") != std::string::npos;
+    }));
 }
 
 TEST_CASE("an image import whose job fails writes nothing and registers nothing", "[editor][edit][import][image][os]") {
