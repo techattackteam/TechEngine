@@ -25,7 +25,6 @@ namespace TechEngine {
     class MeshImporter;
     struct MaterialPlan;
     struct Mesh;
-    struct MeshSlot;
     struct Model;
     struct ModelNode;
     struct TransformValues;
@@ -99,7 +98,8 @@ namespace TechEngine {
 
         static std::string slotName(const aiScene& scene, unsigned int materialIndex);
 
-        static std::string uniqueSlotName(const std::string& name, const std::vector<MeshSlot>& slots);
+        template<typename Item>
+        static std::string uniqueName(const std::string& name, std::span<const Item> taken, std::string Item::*field);
 
         static char toLowerAscii(char character);
 
