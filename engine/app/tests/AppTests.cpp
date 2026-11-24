@@ -1164,15 +1164,13 @@ static bool stopIdle(AppLifecycleProbe& app) {
     return stopped;
 }
 
-TEST_CASE("an App whose simulation does not tick runs no Tick across a wait", "[app][lifecycle][idle]") {
-    AppLifecycleProbe app;
-    app.ticks = false;
+static void runIdleThenStop(AppLifecycleProbe& app, const std::chrono::milliseconds idle) {
     bool loadedInTime = false;
     bool stoppedInTime = false;
     std::jthread controller{[&] {
         loadedInTime = app.startupLoadEntered.wait();
         if (loadedInTime) {
-            std::this_thread::sleep_for(250ms);
+            std::this_thread::sleep_for(idle);
         }
         stoppedInTime = stopIdle(app);
     }};
@@ -1182,6 +1180,14 @@ TEST_CASE("an App whose simulation does not tick runs no Tick across a wait", "[
     CHECK(result == 0);
     CHECK(loadedInTime);
     CHECK(stoppedInTime);
+}
+
+TEST_CASE("an App whose simulation does not tick runs no Tick across a wait", "[app][lifecycle][idle]") {
+    AppLifecycleProbe app;
+    app.ticks = false;
+
+    runIdleThenStop(app, 250ms);
+
     CHECK(eventCount(app, "systemTick") == 0);
     CHECK(eventCount(app, "publishFrame") == 2);
     CHECK(eventCount(app, "publishEdits") == 0);
@@ -1338,21 +1344,9 @@ TEST_CASE("App publishes a frame of the loaded scene after the startup load, on 
 TEST_CASE("stop wakes an idle App's simulation thread", "[app][lifecycle][idle]") {
     AppLifecycleProbe app;
     app.ticks = false;
-    bool loadedInTime = false;
-    bool stoppedInTime = false;
-    std::jthread controller{[&] {
-        loadedInTime = app.startupLoadEntered.wait();
-        if (loadedInTime) {
-            std::this_thread::sleep_for(50ms);
-        }
-        stoppedInTime = stopIdle(app);
-    }};
 
-    const int result = app.run();
-    controller.join();
-    CHECK(result == 0);
-    CHECK(loadedInTime);
-    CHECK(stoppedInTime);
+    runIdleThenStop(app, 50ms);
+
     CHECK(eventCount(app, "systemTick") == 0);
     checkStopped(app);
 }
