@@ -3,6 +3,7 @@
 #include <render/device/RenderHandle.hpp>
 #include <render/device/RenderSlots.hpp>
 #include <render/device/buffer/Buffer.hpp>
+#include <render/device/fence/FrameFence.hpp>
 #include <render/device/pass/RenderPass.hpp>
 #include <render/device/pipeline/Pipeline.hpp>
 #include <render/device/program/Program.hpp>
@@ -14,6 +15,7 @@
 #include <span>
 #include <string_view>
 #include <system_error>
+#include <vector>
 
 namespace TechEngine {
     class RenderDevice {
@@ -23,6 +25,9 @@ namespace TechEngine {
         RenderSlots<ProgramHandle, GpuProgram> m_programs;
         RenderSlots<PipelineHandle, GpuPipeline> m_pipelines;
         RenderSlots<RenderTargetHandle, GpuRenderTarget> m_renderTargets;
+        // Oldest first; frames rise.
+        std::vector<GpuFrameFence> m_frameFences;
+        std::uint64_t m_completedFrame = 0;
         PipelineHandle m_boundPipeline;
         BufferHandle m_boundIndexBuffer;
         bool m_inPass = false;
@@ -105,6 +110,14 @@ namespace TechEngine {
 
         // Reads drawCount IndexedIndirectCommand records from commands, starting at offset bytes.
         void drawIndexedIndirect(BufferHandle commands, std::size_t offset, std::uint32_t drawCount);
+#pragma endregion
+
+#pragma region Frames
+        // Call after the frame's last draw and before the swap: a zero-timeout poll never sees a fence that was not flushed.
+        void signalFrame(std::uint64_t frame);
+
+        // 0 until the first signalled frame finishes. Polls without waiting.
+        std::uint64_t getCompletedFrame();
 #pragma endregion
 
 #pragma region Lifetime

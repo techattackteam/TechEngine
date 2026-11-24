@@ -660,6 +660,33 @@ namespace TechEngine {
     }
 #pragma endregion
 
+#pragma region Frames
+    void RenderDevice::signalFrame(const std::uint64_t frame) {
+        const std::uint64_t newest = m_frameFences.empty() ? m_completedFrame : m_frameFences.back().frame;
+        const bool rises = frame > newest;
+        TE_CHECK(rises, "RenderDevice::signalFrame called with frame {0}, which is not above frame {1}", frame, newest);
+        if (!rises) {
+            return;
+        }
+        m_frameFences.push_back(GpuFrameFence{frame, glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0)});
+    }
+
+    std::uint64_t RenderDevice::getCompletedFrame() {
+        auto firstPending = m_frameFences.begin();
+        while (firstPending != m_frameFences.end()) {
+            const auto result = glClientWaitSync(static_cast<GLsync>(firstPending->sync), 0, 0);
+            if (result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED) {
+                break;
+            }
+            m_completedFrame = firstPending->frame;
+            glDeleteSync(static_cast<GLsync>(firstPending->sync));
+            firstPending++;
+        }
+        m_frameFences.erase(m_frameFences.begin(), firstPending);
+        return m_completedFrame;
+    }
+#pragma endregion
+
 #pragma region Lifetime
     std::size_t RenderDevice::getLiveObjectCount() const {
         return m_buffers.size() + m_textures.size() + m_programs.size() + m_pipelines.size() + m_renderTargets.size();
@@ -684,6 +711,13 @@ namespace TechEngine {
         m_renderTargets.destroyAll([](const GpuRenderTarget& renderTarget) {
             glDeleteFramebuffers(1, &renderTarget.framebuffer);
         });
+
+        for (const GpuFrameFence& fence: m_frameFences) {
+            glDeleteSync(static_cast<GLsync>(fence.sync));
+        }
+
+        m_frameFences.clear();
+        m_completedFrame = 0;
         m_boundPipeline = {};
         m_boundIndexBuffer = {};
         m_inPass = false;

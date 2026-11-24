@@ -21,7 +21,7 @@ namespace TechEngine {
     }
 
     ResourceCache::~ResourceCache() {
-        shutdown();
+        waitForLoads();
     }
 
     void ResourceCache::setSource(const AssetSource& source) {
@@ -361,11 +361,15 @@ namespace TechEngine {
         }
     }
 
-    void ResourceCache::shutdown() {
+    void ResourceCache::waitForLoads() {
         for (const BatchId batch: m_inFlightBatches) {
             m_jobs->wait(batch);
         }
         m_inFlightBatches.clear();
+    }
+
+    void ResourceCache::shutdown() {
+        waitForLoads();
 
         for (const auto& [id, slot]: m_byId) {
             const ResourceEntry* entry = m_slots->find(slot);
@@ -379,10 +383,7 @@ namespace TechEngine {
         std::error_code firstError;
         while (true) {
             submitLoads();
-            for (const BatchId batch: m_inFlightBatches) {
-                m_jobs->wait(batch);
-            }
-            m_inFlightBatches.clear();
+            waitForLoads();
 
             const std::error_code completionError = removeCompletions();
             if (!firstError && completionError) {

@@ -1,3 +1,4 @@
+#include <TechEngine/client/render/FramePacket.hpp>
 #include <TechEngine/core/material/Material.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/resources/ResourceHandle.hpp>
@@ -23,6 +24,7 @@
 #include <vector>
 
 using TechEngine::FinishedUpload;
+using TechEngine::FramePacket;
 using TechEngine::GeometryRange;
 using TechEngine::GpuCopies;
 using TechEngine::GpuCopy;
@@ -31,6 +33,8 @@ using TechEngine::GpuMeshSlot;
 using TechEngine::Material;
 using TechEngine::Mesh;
 using TechEngine::MeshSlot;
+using TechEngine::PacketInstance;
+using TechEngine::ResourceHandle;
 using TechEngine::ResourceId;
 using TechEngine::ResourceSlotId;
 using TechEngine::ResourceUploadKind;
@@ -59,6 +63,10 @@ static constexpr std::size_t BASE_COLOR_INPUT = 0;
 static constexpr std::size_t PACKED_ORM_INPUT = 1;
 static constexpr std::size_t NORMAL_INPUT = 2;
 static constexpr std::size_t EMISSIVE_INPUT = 3;
+
+static constexpr std::uint64_t FIRST_FRAME = 1;
+
+static constexpr std::array<const FramePacket*, 2> NO_PACKETS{};
 
 static ResourceUploadRecord uploadOf(const ResourceSlotId slot, const TechEngine::StringId typeTag, const ResourceId id, const void* payload, const std::uint64_t token, std::vector<ResourceSlotId> dependencies = {}) {
     ResourceUploadRecord record;
@@ -120,7 +128,7 @@ TEST_CASE("an upload stores a copy under its slot with its id label and dependen
     const std::vector<ResourceUploadRecord> records{uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &mesh, 7, {MATERIAL_SLOT})};
     std::vector<FinishedUpload> finished;
 
-    copies.apply(records, finished);
+    copies.apply(records, FIRST_FRAME, finished);
 
     REQUIRE(finished == std::vector<FinishedUpload>{FinishedUpload{MESH_SLOT, 7}});
     const GpuCopy* copy = copies.findCopy(MESH_SLOT);
@@ -158,7 +166,7 @@ TEST_CASE("a dependency is found through the upload's slot and the label through
         };
         std::vector<FinishedUpload> finished;
 
-        copies.apply(records, finished);
+        copies.apply(records, FIRST_FRAME, finished);
 
         const GpuCopy* materialCopy = copies.findCopy(MATERIAL_SLOT);
         materialFound = materialCopy != nullptr;
@@ -197,7 +205,7 @@ TEST_CASE("tokens are reported in record order, one per upload and none for a re
     };
     std::vector<FinishedUpload> finished;
 
-    copies.apply(records, finished);
+    copies.apply(records, FIRST_FRAME, finished);
 
     REQUIRE(finished == std::vector<FinishedUpload>{FinishedUpload{MESH_SLOT, 4}, FinishedUpload{SECOND_MESH_SLOT, 9}});
 }
@@ -208,10 +216,10 @@ TEST_CASE("a second upload to the same slot replaces the copy and reports its ow
     const Mesh second{};
     std::vector<FinishedUpload> finished;
     const std::vector<ResourceUploadRecord> load{uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &first, 1, {MATERIAL_SLOT})};
-    copies.apply(load, finished);
+    copies.apply(load, FIRST_FRAME, finished);
 
     const std::vector<ResourceUploadRecord> reload{uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &second, 2, {TEXTURE_SLOT})};
-    copies.apply(reload, finished);
+    copies.apply(reload, FIRST_FRAME, finished);
 
     REQUIRE(finished == std::vector<FinishedUpload>{FinishedUpload{MESH_SLOT, 1}, FinishedUpload{MESH_SLOT, 2}});
     const GpuCopy* copy = copies.findCopy(MESH_SLOT);
@@ -228,7 +236,7 @@ TEST_CASE("a release marks the copy released and keeps it", "[client][render][up
     };
     std::vector<FinishedUpload> finished;
 
-    copies.apply(records, finished);
+    copies.apply(records, FIRST_FRAME, finished);
 
     const GpuCopy* copy = copies.findCopy(MESH_SLOT);
     REQUIRE(copy != nullptr);
@@ -248,7 +256,7 @@ TEST_CASE("a reused slot index with a new generation is a separate copy from the
     };
     std::vector<FinishedUpload> finished;
 
-    copies.apply(records, finished);
+    copies.apply(records, FIRST_FRAME, finished);
 
     const GpuCopy* oldCopy = copies.findCopy(MESH_SLOT);
     const GpuCopy* newCopy = copies.findCopy(reusedSlot);
@@ -266,7 +274,7 @@ TEST_CASE("a mesh with no vertices uploads before initialize and its copy holds 
     const std::vector<ResourceUploadRecord> records{uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &mesh, 3)};
     std::vector<FinishedUpload> finished;
 
-    copies.apply(records, finished);
+    copies.apply(records, FIRST_FRAME, finished);
 
     REQUIRE(finished == std::vector<FinishedUpload>{FinishedUpload{MESH_SLOT, 3}});
     const GpuCopy* copy = copies.findCopy(MESH_SLOT);
@@ -285,7 +293,7 @@ TEST_CASE("a mesh's copy keeps each slot's index range and finds its default mat
     const std::vector<ResourceUploadRecord> records{uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &mesh, 1, {MATERIAL_SLOT, SECOND_MATERIAL_SLOT})};
     std::vector<FinishedUpload> finished;
 
-    copies.apply(records, finished);
+    copies.apply(records, FIRST_FRAME, finished);
 
     const GpuCopy* copy = copies.findCopy(MESH_SLOT);
     REQUIRE(copy != nullptr);
@@ -302,6 +310,155 @@ TEST_CASE("a slot that never had an upload has no copy", "[client][render][uploa
 
     REQUIRE(copies.findCopy(MESH_SLOT) == nullptr);
     REQUIRE(copies.findCopy(ResourceSlotId{}) == nullptr);
+}
+
+static PacketInstance instanceOf(const ResourceSlotId mesh) {
+    PacketInstance instance;
+    instance.mesh = ResourceHandle<Mesh>{mesh.index, mesh.generation};
+    return instance;
+}
+
+static FramePacket packetDrawing(const ResourceSlotId mesh) {
+    FramePacket packet;
+    packet.instances.push_back(instanceOf(mesh));
+    return packet;
+}
+
+TEST_CASE("a released copy that neither packet names is retired, and is dropped only once its stamped frame finishes", "[client][render][upload][drop]") {
+    GpuCopies copies;
+    const Mesh mesh{};
+    std::vector<FinishedUpload> finished;
+    const std::vector<ResourceUploadRecord> load{uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &mesh, 1)};
+    copies.apply(load, FIRST_FRAME, finished);
+    copies.retireUnreachable(NO_PACKETS, FIRST_FRAME);
+    const std::vector<ResourceUploadRecord> release{releaseOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID)};
+
+    copies.apply(release, 3, finished);
+    copies.retireUnreachable(NO_PACKETS, 3);
+
+    REQUIRE(copies.findCopy(MESH_SLOT) == nullptr);
+    REQUIRE(copies.getRetiredCount() == 1);
+    copies.dropFinished(0);
+    REQUIRE(copies.getRetiredCount() == 1);
+    copies.dropFinished(1);
+    REQUIRE(copies.getRetiredCount() == 1);
+    copies.dropFinished(2);
+    REQUIRE(copies.getRetiredCount() == 0);
+}
+
+TEST_CASE("a released copy stays while either packet in the history draws it, and retires the first frame neither does", "[client][render][upload][drop]") {
+    GpuCopies copies;
+    const Mesh mesh{};
+    std::vector<FinishedUpload> finished;
+    const std::vector<ResourceUploadRecord> records{
+        uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &mesh, 1),
+        releaseOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID),
+    };
+    copies.apply(records, FIRST_FRAME, finished);
+    const FramePacket drawing = packetDrawing(MESH_SLOT);
+    const FramePacket empty;
+    std::array<const FramePacket*, 2> packets{};
+    SECTION("drawn by the current packet") {
+        packets = {nullptr, &drawing};
+    }
+    SECTION("named by the previous packet only") {
+        packets = {&drawing, &empty};
+    }
+
+    copies.retireUnreachable(packets, 2);
+
+    const GpuCopy* kept = copies.findCopy(MESH_SLOT);
+    REQUIRE(kept != nullptr);
+    REQUIRE(kept->released);
+    REQUIRE(copies.getRetiredCount() == 0);
+
+    copies.retireUnreachable(std::array<const FramePacket*, 2>{&empty, &empty}, 3);
+
+    REQUIRE(copies.findCopy(MESH_SLOT) == nullptr);
+    REQUIRE(copies.getRetiredCount() == 1);
+    copies.dropFinished(1);
+    REQUIRE(copies.getRetiredCount() == 1);
+    copies.dropFinished(2);
+    REQUIRE(copies.getRetiredCount() == 0);
+}
+
+TEST_CASE("a copy that is not released is never retired, even when no packet names it", "[client][render][upload][drop]") {
+    GpuCopies copies;
+    const Mesh mesh{};
+    std::vector<FinishedUpload> finished;
+    const std::vector<ResourceUploadRecord> load{uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &mesh, 1)};
+    copies.apply(load, FIRST_FRAME, finished);
+
+    for (std::uint64_t frame = FIRST_FRAME; frame <= 4; frame++) {
+        copies.retireUnreachable(NO_PACKETS, frame);
+        copies.dropFinished(frame);
+    }
+
+    const GpuCopy* copy = copies.findCopy(MESH_SLOT);
+    REQUIRE(copy != nullptr);
+    REQUIRE_FALSE(copy->released);
+    REQUIRE(copies.getRetiredCount() == 0);
+}
+
+TEST_CASE("a packet that draws a reused slot's new generation does not keep the released old one", "[client][render][upload][drop]") {
+    GpuCopies copies;
+    const Mesh released{};
+    const Mesh reused{};
+    const ResourceSlotId reusedSlot{MESH_SLOT.index, MESH_SLOT.generation + 1};
+    std::vector<FinishedUpload> finished;
+    const std::vector<ResourceUploadRecord> records{
+        uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &released, 1),
+        releaseOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID),
+        uploadOf(reusedSlot, TechEngine::MESH_TYPE_TAG, UNRELATED_ID, &reused, 2),
+    };
+    copies.apply(records, FIRST_FRAME, finished);
+    const FramePacket drawing = packetDrawing(reusedSlot);
+
+    copies.retireUnreachable(std::array<const FramePacket*, 2>{nullptr, &drawing}, 2);
+
+    REQUIRE(copies.findCopy(MESH_SLOT) == nullptr);
+    REQUIRE(copies.findCopy(reusedSlot) != nullptr);
+    REQUIRE(copies.getRetiredCount() == 1);
+}
+
+TEST_CASE("a reload retires the old copy at once, stamped with the frame before the one being drawn", "[client][render][upload][drop]") {
+    GpuCopies copies;
+    const Mesh first{};
+    const Mesh second{};
+    std::vector<FinishedUpload> finished;
+    const std::vector<ResourceUploadRecord> load{uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &first, 1, {MATERIAL_SLOT})};
+    copies.apply(load, FIRST_FRAME, finished);
+    const std::vector<ResourceUploadRecord> reload{uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &second, 2, {TEXTURE_SLOT})};
+
+    copies.apply(reload, 4, finished);
+
+    REQUIRE(copies.getRetiredCount() == 1);
+    const GpuCopy* copy = copies.findCopy(MESH_SLOT);
+    REQUIRE(copy != nullptr);
+    REQUIRE_FALSE(copy->released);
+    REQUIRE(copy->dependencies == std::vector<ResourceSlotId>{TEXTURE_SLOT});
+    copies.dropFinished(2);
+    REQUIRE(copies.getRetiredCount() == 1);
+    copies.dropFinished(3);
+    REQUIRE(copies.getRetiredCount() == 0);
+    REQUIRE(copies.findCopy(MESH_SLOT) != nullptr);
+}
+
+TEST_CASE("a copy reloaded before the first frame is drawn can be dropped at once", "[client][render][upload][drop]") {
+    GpuCopies copies;
+    const Mesh first{};
+    const Mesh second{};
+    std::vector<FinishedUpload> finished;
+    const std::vector<ResourceUploadRecord> records{
+        uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &first, 1),
+        uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &second, 2),
+    };
+
+    copies.apply(records, FIRST_FRAME, finished);
+
+    REQUIRE(copies.getRetiredCount() == 1);
+    copies.dropFinished(0);
+    REQUIRE(copies.getRetiredCount() == 0);
 }
 
 struct GpuCopiesRun {
@@ -360,7 +517,7 @@ TEST_CASE("a texture uploads in its file's format with every mip, and is made re
         }
         std::vector<FinishedUpload> finished;
 
-        copies.apply(records, finished);
+        copies.apply(records, FIRST_FRAME, finished);
 
         for (std::size_t i = 0; i < records.size(); i++) {
             const GpuCopy* copy = copies.findCopy(records[i].slot);
@@ -397,10 +554,10 @@ TEST_CASE("each material writes its 96-byte record with the handles of the input
             uploadOf(TEXTURE_SLOT, TechEngine::TEXTURE_TYPE_TAG, TEXTURE_ID, &packed, 1),
             uploadOf(SECOND_TEXTURE_SLOT, TechEngine::TEXTURE_TYPE_TAG, SECOND_TEXTURE_ID, &emissive, 2),
         };
-        copies.apply(textures, finished);
+        copies.apply(textures, FIRST_FRAME, finished);
         const std::vector<ResourceUploadRecord> materials{uploadOf(MATERIAL_SLOT, TechEngine::MATERIAL_TYPE_TAG, MATERIAL_ID, &material, 3, {TEXTURE_SLOT, SECOND_TEXTURE_SLOT})};
 
-        copies.apply(materials, finished);
+        copies.apply(materials, FIRST_FRAME, finished);
 
         const GpuCopy* materialCopy = copies.findCopy(MATERIAL_SLOT);
         found = materialCopy != nullptr;
@@ -447,7 +604,7 @@ TEST_CASE("a material uploaded before its texture gets the texture's handle when
         };
         std::vector<FinishedUpload> finished;
 
-        copies.apply(records, finished);
+        copies.apply(records, FIRST_FRAME, finished);
 
         record = copies.getMaterials().getRecord(copies.findCopy(MATERIAL_SLOT)->materialRecord);
         textureHandle = device.getBindlessHandle(copies.findCopy(TEXTURE_SLOT)->texture);
@@ -484,12 +641,12 @@ TEST_CASE("a texture reload rewrites every material that names it with the new h
             uploadOf(MATERIAL_SLOT, TechEngine::MATERIAL_TYPE_TAG, MATERIAL_ID, &reloadedUser, 3, {TEXTURE_SLOT, TEXTURE_SLOT}),
             uploadOf(SECOND_MATERIAL_SLOT, TechEngine::MATERIAL_TYPE_TAG, SECOND_MATERIAL_ID, &otherUser, 4, {SECOND_TEXTURE_SLOT}),
         };
-        copies.apply(load, finished);
+        copies.apply(load, FIRST_FRAME, finished);
         oldHandle = device.getBindlessHandle(copies.findCopy(TEXTURE_SLOT)->texture);
         otherHandle = device.getBindlessHandle(copies.findCopy(SECOND_TEXTURE_SLOT)->texture);
         const std::vector<ResourceUploadRecord> reload{uploadOf(TEXTURE_SLOT, TechEngine::TEXTURE_TYPE_TAG, TEXTURE_ID, &reloaded, 5)};
 
-        copies.apply(reload, finished);
+        copies.apply(reload, FIRST_FRAME, finished);
 
         newHandle = device.getBindlessHandle(copies.findCopy(TEXTURE_SLOT)->texture);
         reloadedRecord = copies.getMaterials().getRecord(copies.findCopy(MATERIAL_SLOT)->materialRecord);
@@ -518,7 +675,7 @@ TEST_CASE("record 0 holds the default material from initialize, and no material 
         const std::vector<ResourceUploadRecord> records{uploadOf(MATERIAL_SLOT, TechEngine::MATERIAL_TYPE_TAG, MATERIAL_ID, &material, 1)};
         std::vector<FinishedUpload> finished;
 
-        copies.apply(records, finished);
+        copies.apply(records, FIRST_FRAME, finished);
 
         defaultRecord = copies.getMaterials().getRecord(TechEngine::DEFAULT_MATERIAL_RECORD);
         materialRecord = copies.findCopy(MATERIAL_SLOT)->materialRecord;
@@ -548,13 +705,13 @@ TEST_CASE("a material reload keeps its record and writes the new values over it"
     const GpuCopiesRun run = runWithCopies("GpuCopies material reload test", [&](TechEngine::RenderDevice&, GpuCopies& copies) {
         std::vector<FinishedUpload> finished;
         const std::vector<ResourceUploadRecord> load{uploadOf(MATERIAL_SLOT, TechEngine::MATERIAL_TYPE_TAG, MATERIAL_ID, &first, 1)};
-        copies.apply(load, finished);
+        copies.apply(load, FIRST_FRAME, finished);
         firstRecord = copies.findCopy(MATERIAL_SLOT)->materialRecord;
         const std::vector<ResourceUploadRecord> reload{uploadOf(MATERIAL_SLOT, TechEngine::MATERIAL_TYPE_TAG, MATERIAL_ID, &reloaded, 2)};
 
-        copies.apply(reload, finished);
+        copies.apply(reload, FIRST_FRAME, finished);
         const std::vector<ResourceUploadRecord> another{uploadOf(SECOND_MATERIAL_SLOT, TechEngine::MATERIAL_TYPE_TAG, SECOND_MATERIAL_ID, &first, 3)};
-        copies.apply(another, finished);
+        copies.apply(another, FIRST_FRAME, finished);
 
         reloadedRecord = copies.findCopy(MATERIAL_SLOT)->materialRecord;
         nextRecord = copies.findCopy(SECOND_MATERIAL_SLOT)->materialRecord;
@@ -569,4 +726,215 @@ TEST_CASE("a material reload keeps its record and writes the new values over it"
     CHECK(record.albedo == reloaded.baseColorFactor);
     CHECK(record.roughnessFactor == reloaded.roughnessFactor);
     CHECK(run.glError == GL_NO_ERROR);
+}
+
+static Mesh makeTriangle() {
+    Mesh mesh;
+    mesh.positions = {Vec3{0.0F, 0.0F, 0.0F}, Vec3{1.0F, 0.0F, 0.0F}, Vec3{0.0F, 1.0F, 0.0F}};
+    mesh.indices = {0, 1, 2};
+    return mesh;
+}
+
+TEST_CASE("a dropped mesh frees its range, so the next mesh of the same size is placed there", "[client][render][upload][drop][window][gpu]") {
+    const TechEngineTests::WindowTerminateGuard scope;
+    const Mesh triangle = makeTriangle();
+    static constexpr ResourceSlotId EARLY_SLOT{7, 0};
+    static constexpr ResourceSlotId LATE_SLOT{8, 0};
+    GeometryRange dropped;
+    GeometryRange kept;
+    GeometryRange beforeDrop;
+    GeometryRange afterDrop;
+    const GpuCopiesRun run = runWithCopies("GpuCopies mesh drop test", [&](TechEngine::RenderDevice&, GpuCopies& copies) {
+        std::vector<FinishedUpload> finished;
+        const std::vector<ResourceUploadRecord> load{
+            uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &triangle, 1),
+            uploadOf(SECOND_MESH_SLOT, TechEngine::MESH_TYPE_TAG, UNRELATED_ID, &triangle, 2),
+        };
+        copies.apply(load, FIRST_FRAME, finished);
+        dropped = copies.findCopy(MESH_SLOT)->geometry;
+        kept = copies.findCopy(SECOND_MESH_SLOT)->geometry;
+        const std::vector<ResourceUploadRecord> release{releaseOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID)};
+        copies.apply(release, 2, finished);
+        copies.retireUnreachable(NO_PACKETS, 2);
+
+        const std::vector<ResourceUploadRecord> early{uploadOf(EARLY_SLOT, TechEngine::MESH_TYPE_TAG, UNRELATED_ID, &triangle, 3)};
+        copies.apply(early, 2, finished);
+        beforeDrop = copies.findCopy(EARLY_SLOT)->geometry;
+        copies.dropFinished(1);
+        const std::vector<ResourceUploadRecord> late{uploadOf(LATE_SLOT, TechEngine::MESH_TYPE_TAG, UNRELATED_ID, &triangle, 4)};
+        copies.apply(late, 2, finished);
+        afterDrop = copies.findCopy(LATE_SLOT)->geometry;
+    });
+
+    REQUIRE(run.loaded);
+    REQUIRE(run.initializeError == std::error_code{});
+    CHECK(dropped.vertexCount == 3);
+    CHECK(kept.baseVertex != dropped.baseVertex);
+    CHECK(beforeDrop.baseVertex != dropped.baseVertex);
+    CHECK(afterDrop == dropped);
+    CHECK(run.glError == GL_NO_ERROR);
+}
+
+TEST_CASE("a mesh's default material and that material's texture stay while a packet draws the mesh, and retire with it", "[client][render][upload][drop][window][gpu]") {
+    const TechEngineTests::WindowTerminateGuard scope;
+    Mesh mesh;
+    mesh.slots = {MeshSlot{"slot", 0, 0, MATERIAL_ID}};
+    Material material = makeMaterial();
+    material.baseColorTexture.id = TEXTURE_ID;
+    const Material later = makeMaterial();
+    bool chainKept = false;
+    bool chainGone = false;
+    std::size_t retiredWhileDrawn = 99;
+    std::size_t retiredAfter = 0;
+    std::size_t liveBeforeDrop = 0;
+    std::size_t liveAfterDrop = 0;
+    std::uint32_t droppedRecord = TechEngine::DEFAULT_MATERIAL_RECORD;
+    std::uint32_t reusedRecord = TechEngine::DEFAULT_MATERIAL_RECORD;
+    const GpuCopiesRun run = runWithCopies("GpuCopies dependency drop test", [&](TechEngine::RenderDevice& device, GpuCopies& copies) {
+        const Texture texture = makeTexture(TextureFormat::Bc7Srgb, 4, 4);
+        std::vector<FinishedUpload> finished;
+        const std::vector<ResourceUploadRecord> load{
+            uploadOf(TEXTURE_SLOT, TechEngine::TEXTURE_TYPE_TAG, TEXTURE_ID, &texture, 1),
+            uploadOf(MATERIAL_SLOT, TechEngine::MATERIAL_TYPE_TAG, MATERIAL_ID, &material, 2, {TEXTURE_SLOT}),
+            uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &mesh, 3, {MATERIAL_SLOT}),
+        };
+        copies.apply(load, FIRST_FRAME, finished);
+        droppedRecord = copies.findCopy(MATERIAL_SLOT)->materialRecord;
+        const std::vector<ResourceUploadRecord> releases{
+            releaseOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID),
+            releaseOf(MATERIAL_SLOT, TechEngine::MATERIAL_TYPE_TAG, MATERIAL_ID),
+            releaseOf(TEXTURE_SLOT, TechEngine::TEXTURE_TYPE_TAG, TEXTURE_ID),
+        };
+        copies.apply(releases, 2, finished);
+        const FramePacket drawing = packetDrawing(MESH_SLOT);
+
+        copies.retireUnreachable(std::array<const FramePacket*, 2>{nullptr, &drawing}, 2);
+
+        chainKept = copies.findCopy(MESH_SLOT) != nullptr && copies.findCopy(MATERIAL_SLOT) != nullptr && copies.findCopy(TEXTURE_SLOT) != nullptr;
+        retiredWhileDrawn = copies.getRetiredCount();
+        copies.retireUnreachable(NO_PACKETS, 3);
+        chainGone = copies.findCopy(MESH_SLOT) == nullptr && copies.findCopy(MATERIAL_SLOT) == nullptr && copies.findCopy(TEXTURE_SLOT) == nullptr;
+        retiredAfter = copies.getRetiredCount();
+        liveBeforeDrop = device.getLiveObjectCount();
+        copies.dropFinished(2);
+        liveAfterDrop = device.getLiveObjectCount();
+        const std::vector<ResourceUploadRecord> another{uploadOf(SECOND_MATERIAL_SLOT, TechEngine::MATERIAL_TYPE_TAG, SECOND_MATERIAL_ID, &later, 4)};
+        copies.apply(another, 3, finished);
+        reusedRecord = copies.findCopy(SECOND_MATERIAL_SLOT)->materialRecord;
+    });
+
+    REQUIRE(run.loaded);
+    REQUIRE(run.initializeError == std::error_code{});
+    CHECK(chainKept);
+    CHECK(retiredWhileDrawn == 0);
+    CHECK(chainGone);
+    CHECK(retiredAfter == 3);
+    CHECK(liveAfterDrop == liveBeforeDrop - 1);
+    CHECK(droppedRecord != TechEngine::DEFAULT_MATERIAL_RECORD);
+    CHECK(reusedRecord == droppedRecord);
+    CHECK(run.glError == GL_NO_ERROR);
+}
+
+TEST_CASE("a texture reload destroys the old texture only once the frame before the reload has finished", "[client][render][upload][drop][window][gpu]") {
+    const TechEngineTests::WindowTerminateGuard scope;
+    std::size_t afterLoad = 0;
+    std::size_t afterReload = 0;
+    std::size_t afterEarlyDrop = 0;
+    std::size_t afterDrop = 0;
+    const GpuCopiesRun run = runWithCopies("GpuCopies texture drop test", [&](TechEngine::RenderDevice& device, GpuCopies& copies) {
+        const Texture first = makeTexture(TextureFormat::Bc7Srgb, 4, 4);
+        const Texture reloaded = makeTexture(TextureFormat::Bc7Srgb, 8, 8);
+        std::vector<FinishedUpload> finished;
+        const std::vector<ResourceUploadRecord> load{uploadOf(TEXTURE_SLOT, TechEngine::TEXTURE_TYPE_TAG, TEXTURE_ID, &first, 1)};
+        copies.apply(load, FIRST_FRAME, finished);
+        afterLoad = device.getLiveObjectCount();
+        const std::vector<ResourceUploadRecord> reload{uploadOf(TEXTURE_SLOT, TechEngine::TEXTURE_TYPE_TAG, TEXTURE_ID, &reloaded, 2)};
+
+        copies.apply(reload, 3, finished);
+
+        afterReload = device.getLiveObjectCount();
+        copies.dropFinished(1);
+        afterEarlyDrop = device.getLiveObjectCount();
+        copies.dropFinished(2);
+        afterDrop = device.getLiveObjectCount();
+    });
+
+    REQUIRE(run.loaded);
+    REQUIRE(run.initializeError == std::error_code{});
+    CHECK(afterReload == afterLoad + 1);
+    CHECK(afterEarlyDrop == afterReload);
+    CHECK(afterDrop == afterLoad);
+    CHECK(run.glError == GL_NO_ERROR);
+}
+
+TEST_CASE("dropping a material reload's old copy leaves the record the new copy kept", "[client][render][upload][drop][window][gpu]") {
+    const TechEngineTests::WindowTerminateGuard scope;
+    const Material first = makeMaterial();
+    Material reloaded = makeMaterial();
+    reloaded.baseColorFactor = Vec4{0.0F, 1.0F, 0.0F, 1.0F};
+    std::uint32_t keptRecord = TechEngine::DEFAULT_MATERIAL_RECORD;
+    std::uint32_t nextRecord = TechEngine::DEFAULT_MATERIAL_RECORD;
+    std::size_t retiredAfterDrop = 99;
+    GpuMaterial record;
+    const GpuCopiesRun run = runWithCopies("GpuCopies material drop test", [&](TechEngine::RenderDevice&, GpuCopies& copies) {
+        std::vector<FinishedUpload> finished;
+        const std::vector<ResourceUploadRecord> load{uploadOf(MATERIAL_SLOT, TechEngine::MATERIAL_TYPE_TAG, MATERIAL_ID, &first, 1)};
+        copies.apply(load, FIRST_FRAME, finished);
+        const std::vector<ResourceUploadRecord> reload{uploadOf(MATERIAL_SLOT, TechEngine::MATERIAL_TYPE_TAG, MATERIAL_ID, &reloaded, 2)};
+        copies.apply(reload, 2, finished);
+        keptRecord = copies.findCopy(MATERIAL_SLOT)->materialRecord;
+
+        copies.dropFinished(1);
+
+        retiredAfterDrop = copies.getRetiredCount();
+        const std::vector<ResourceUploadRecord> another{uploadOf(SECOND_MATERIAL_SLOT, TechEngine::MATERIAL_TYPE_TAG, SECOND_MATERIAL_ID, &first, 3)};
+        copies.apply(another, 2, finished);
+        nextRecord = copies.findCopy(SECOND_MATERIAL_SLOT)->materialRecord;
+        record = copies.getMaterials().getRecord(keptRecord);
+    });
+
+    REQUIRE(run.loaded);
+    REQUIRE(run.initializeError == std::error_code{});
+    CHECK(retiredAfterDrop == 0);
+    CHECK(keptRecord != TechEngine::DEFAULT_MATERIAL_RECORD);
+    CHECK(nextRecord != keptRecord);
+    CHECK(record.albedo == reloaded.baseColorFactor);
+    CHECK(run.glError == GL_NO_ERROR);
+}
+
+TEST_CASE("shutdown destroys the textures of retired copies too", "[client][render][upload][drop][window][gpu]") {
+    const TechEngineTests::WindowTerminateGuard scope;
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
+    TechEngine::Window window;
+    REQUIRE(window.open(320, 240, "GpuCopies retired shutdown test") == std::error_code{});
+    std::error_code initializeError;
+    std::size_t retired = 0;
+    std::size_t liveAfterShutdown = 99;
+    unsigned int error = GL_NO_ERROR;
+    const bool loaded = runOnContext(window, [&] {
+        TechEngine::RenderDevice device;
+        GpuCopies copies;
+        initializeError = copies.initialize(device);
+        const Texture first = makeTexture(TextureFormat::Bc7Srgb, 4, 4);
+        const Texture reloaded = makeTexture(TextureFormat::Bc7Srgb, 4, 4);
+        std::vector<FinishedUpload> finished;
+        const std::vector<ResourceUploadRecord> records{
+            uploadOf(TEXTURE_SLOT, TechEngine::TEXTURE_TYPE_TAG, TEXTURE_ID, &first, 1),
+            uploadOf(TEXTURE_SLOT, TechEngine::TEXTURE_TYPE_TAG, TEXTURE_ID, &reloaded, 2),
+        };
+        copies.apply(records, FIRST_FRAME, finished);
+        retired = copies.getRetiredCount();
+
+        copies.shutdown();
+
+        liveAfterShutdown = device.getLiveObjectCount();
+        device.shutdown();
+        error = glGetError();
+    });
+
+    REQUIRE(loaded);
+    REQUIRE(initializeError == std::error_code{});
+    CHECK(retired == 1);
+    CHECK(liveAfterShutdown == 0);
+    CHECK(error == GL_NO_ERROR);
 }

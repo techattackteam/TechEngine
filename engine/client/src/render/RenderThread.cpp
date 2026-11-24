@@ -147,13 +147,16 @@ namespace TechEngine {
                         vsync = requestedVsync;
                     }
                     const auto started = clock.now();
+                    const std::uint64_t frameNumber = metrics.frame + 1;
                     {
                         TE_PROFILER_SCOPE("Render.PrepareFrame");
                         m_mailbox.deliverTo(history);
                         // After the packet, never before: simulation queues a handle's upload before it publishes
                         // the packet that names it, so taking uploads first can miss the ones this packet needs.
-                        applyUploads(copies, uploadRecords, finishedUploads);
+                        applyUploads(copies, frameNumber, uploadRecords, finishedUploads);
                         history.prepareFrame(started, input.presentationState(), frame);
+                        copies.retireUnreachable(history.getPackets(), frameNumber);
+                        copies.dropFinished(m_device.getCompletedFrame());
                     }
                     {
                         TE_PROFILER_SCOPE("Render.RenderFrame");
@@ -172,6 +175,7 @@ namespace TechEngine {
                     if (imguiStarted) {
                         imguiHook->draw(viewTextures);
                     }
+                    m_device.signalFrame(frameNumber);
 
                     const auto submitted = clock.now();
                     {
@@ -209,13 +213,13 @@ namespace TechEngine {
         }
     }
 
-    void RenderThread::applyUploads(GpuCopies& copies, std::vector<ResourceUploadRecord>& records, std::vector<FinishedUpload>& finished) {
+    void RenderThread::applyUploads(GpuCopies& copies, const std::uint64_t frame, std::vector<ResourceUploadRecord>& records, std::vector<FinishedUpload>& finished) {
         m_uploads.receive(records);
         if (records.empty()) {
             return;
         }
         finished.clear();
-        copies.apply(records, finished);
+        copies.apply(records, frame, finished);
         m_uploads.reportFinished(finished);
     }
 
