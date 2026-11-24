@@ -74,6 +74,13 @@ namespace TechEngine {
         m_client.publish(std::move(packet));
     }
 
+    void ClientApp::simulationShutdown() {
+        // An app that publishes only on an edit has not collected what render finished since, and the
+        // scene's release would leave every entry still waiting on an upload, with all it holds, unfreed.
+        collectFinishedUploads();
+        App::simulationShutdown();
+    }
+
     void ClientApp::mainThreadUpdate() {
         if (stopRequested()) {
             return;
@@ -116,11 +123,15 @@ namespace TechEngine {
     }
 
     void ClientApp::exchangeUploads() {
-        m_client.takeFinishedUploads(m_finishedUploads);
-        m_resources.finishUploads(m_finishedUploads);
+        collectFinishedUploads();
         m_resources.drainFrees();
         m_resources.takeUploads(m_uploadRecords);
         m_client.sendUploads(m_uploadRecords);
+    }
+
+    void ClientApp::collectFinishedUploads() {
+        m_client.takeFinishedUploads(m_finishedUploads);
+        m_resources.finishUploads(m_finishedUploads);
     }
 
     void ClientApp::applyTitle() {

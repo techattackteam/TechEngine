@@ -8,6 +8,7 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
+#include <array>
 #include <chrono>
 #include <cstdint>
 #include <memory>
@@ -150,6 +151,27 @@ TEST_CASE("every edit of a Stopped editor reaches the frame although the tick st
         CHECK(view.clearColor[0] == static_cast<float>(sequence));
     }
     CHECK(pool.getAvailableCount() == 3);
+}
+
+TEST_CASE("the history hands out its previous and current packets, and null for an entry it does not hold", "[client][history]") {
+    FramePacketPool pool;
+    PacketHistory history{pool};
+    REQUIRE(history.getPackets() == std::array<const FramePacket*, 2>{nullptr, nullptr});
+
+    std::unique_ptr<FramePacket> first = packetAt(pool, 1, 1000ms, 0.0F);
+    const FramePacket* firstPacket = first.get();
+    history.acquire(std::move(first));
+    CHECK(history.getPackets() == std::array<const FramePacket*, 2>{nullptr, firstPacket});
+
+    std::unique_ptr<FramePacket> second = packetAt(pool, 2, 1100ms, 1.0F);
+    const FramePacket* secondPacket = second.get();
+    history.acquire(std::move(second));
+    CHECK(history.getPackets() == std::array<const FramePacket*, 2>{firstPacket, secondPacket});
+
+    std::unique_ptr<FramePacket> edit = packetAt(pool, 2, 1100ms, 0.5F, 1);
+    const FramePacket* editPacket = edit.get();
+    history.acquire(std::move(edit));
+    CHECK(history.getPackets() == std::array<const FramePacket*, 2>{firstPacket, editPacket});
 }
 
 TEST_CASE("before any packet the frame has nothing to draw", "[client][history][instances]") {

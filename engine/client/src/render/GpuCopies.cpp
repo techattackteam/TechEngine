@@ -1,5 +1,6 @@
 #include <TechEngine/base/diagnostics/Assert.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
+#include <TechEngine/client/render/FramePacket.hpp>
 #include <TechEngine/core/material/Material.hpp>
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/texture/Texture.hpp>
@@ -7,7 +8,10 @@
 #include <render/GpuCopies.hpp>
 #include <render/device/RenderDevice.hpp>
 
+#include <algorithm>
 #include <cstddef>
+#include <set>
+#include <utility>
 
 namespace TechEngine {
     std::error_code GpuCopies::initialize(RenderDevice& device) {
@@ -19,7 +23,7 @@ namespace TechEngine {
         return m_materials.initialize(device);
     }
 
-    void GpuCopies::apply(const std::span<const ResourceUploadRecord> records, std::vector<FinishedUpload>& finished) {
+    void GpuCopies::apply(const std::span<const ResourceUploadRecord> records, const std::uint64_t frame, std::vector<FinishedUpload>& finished) {
         for (const ResourceUploadRecord& record: records) {
             if (record.kind == ResourceUploadKind::Upload) {
                 GpuCopy copy;
@@ -35,7 +39,17 @@ namespace TechEngine {
                 } else {
                     TE_LOGGER_WARN("GpuCopies: no upload handler for {0}", record.typeTag);
                 }
-                m_copies.insert_or_assign(record.slot, std::move(copy));
+                // Only after the handler: a material reload reads the copy it replaces to keep its record.
+                const auto existing = m_copies.find(record.slot);
+                if (existing == m_copies.end()) {
+                    m_copies.emplace(record.slot, std::move(copy));
+                } else {
+                    GpuCopy replaced = std::exchange(existing->second, std::move(copy));
+                    if (replaced.typeTag == MATERIAL_TYPE_TAG) {
+                        replaced.materialRecord = DEFAULT_MATERIAL_RECORD;
+                    }
+                    retire(std::move(replaced), frame);
+                }
                 finished.push_back(FinishedUpload{record.slot, record.token});
             } else if (record.kind == ResourceUploadKind::Release) {
                 auto it = m_copies.find(record.slot);
@@ -45,6 +59,103 @@ namespace TechEngine {
                     TE_LOGGER_WARN("GpuCopies: release for unknown slot {0}", record.slot.index);
                 }
             }
+        }
+    }
+
+    void GpuCopies::retireUnreachable(const std::span<const FramePacket* const> packets, const std::uint64_t frame) {
+        if (!std::ranges::any_of(m_copies, [](const auto& entry) {
+                return entry.second.released;
+            })) {
+            return;
+        }
+
+        std::set<ResourceSlotId> reachableSlots;
+        std::vector<ResourceSlotId> pendingSlots;
+        const auto markReachable = [&reachableSlots, &pendingSlots](const ResourceSlotId slot) {
+            if (reachableSlots.insert(slot).second) {
+                pendingSlots.push_back(slot);
+            }
+        };
+
+        for (const FramePacket* packet: packets) {
+            if (packet == nullptr) {
+                continue;
+            }
+            for (const PacketInstance& instance: packet->instances) {
+                markReachable(instance.mesh.slot());
+
+                const std::size_t firstMaterial = instance.firstMaterial;
+                if (firstMaterial >= packet->materials.size()) {
+                    continue;
+                }
+                const std::size_t materialCount = std::min(static_cast<std::size_t>(instance.materialCount), packet->materials.size() - firstMaterial);
+                for (std::size_t materialIndex = 0; materialIndex < materialCount; materialIndex++) {
+                    markReachable(packet->materials[firstMaterial + materialIndex].slot());
+                }
+            }
+        }
+
+        for (const auto& [slot, copy]: m_copies) {
+            if (!copy.released) {
+                markReachable(slot);
+            }
+        }
+
+        while (!pendingSlots.empty()) {
+            const ResourceSlotId slot = pendingSlots.back();
+            pendingSlots.pop_back();
+            const GpuCopy* copy = findCopy(slot);
+            if (copy == nullptr) {
+                continue;
+            }
+            for (const ResourceSlotId dependency: copy->dependencies) {
+                markReachable(dependency);
+            }
+        }
+
+        auto it = m_copies.begin();
+        while (it != m_copies.end()) {
+            if (it->second.released && !reachableSlots.contains(it->first)) {
+                retire(std::move(it->second), frame);
+                it = m_copies.erase(it);
+            } else {
+                it++;
+            }
+        }
+    }
+
+    void GpuCopies::dropFinished(const std::uint64_t completedFrame) {
+        auto it = m_retired.begin();
+        while (it != m_retired.end()) {
+            if (it->lastFrame <= completedFrame) {
+                dropCopy(it->copy);
+                it = m_retired.erase(it);
+            } else {
+                it++;
+            }
+        }
+    }
+
+    std::size_t GpuCopies::getRetiredCount() const {
+        return m_retired.size();
+    }
+
+    void GpuCopies::retire(GpuCopy copy, const std::uint64_t frame) {
+        TE_CHECK(frame > 0, "GpuCopies::retire called at frame 0 for copy {0:#018x}; frames are numbered from 1", copy.id.value());
+        const std::uint64_t lastFrame = frame > 0 ? frame - 1 : 0;
+        m_retired.push_back(RetiredGpuCopy{std::move(copy), lastFrame});
+    }
+
+    void GpuCopies::dropCopy(GpuCopy& copy) {
+        m_geometry.free(copy.geometry);
+        copy.geometry = {};
+        if (copy.materialRecord != DEFAULT_MATERIAL_RECORD) {
+            m_materials.free(copy.materialRecord);
+            copy.materialRecord = DEFAULT_MATERIAL_RECORD;
+        }
+        if (copy.texture.valid()) {
+            m_device->destroyTexture(copy.texture);
+            copy.texture = {};
         }
     }
 
@@ -71,9 +182,16 @@ namespace TechEngine {
                 copy.texture = {};
             }
         }
+        for (RetiredGpuCopy& retired: m_retired) {
+            if (retired.copy.texture.valid()) {
+                m_device->destroyTexture(retired.copy.texture);
+                retired.copy.texture = {};
+            }
+        }
         m_materials.shutdown();
         m_geometry.shutdown();
         m_copies.clear();
+        m_retired.clear();
     }
 
     void GpuCopies::uploadMesh(const ResourceUploadRecord& record, GpuCopy& copy) {

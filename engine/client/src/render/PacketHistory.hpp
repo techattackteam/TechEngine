@@ -6,6 +6,7 @@
 
 #include <render/FrameView.hpp>
 
+#include <array>
 #include <memory>
 
 namespace TechEngine {
@@ -36,6 +37,9 @@ namespace TechEngine {
         double alpha(Clock::TimePoint now) const;
 
         void prepareFrame(Clock::TimePoint now, const InputState& input, FrameView& out) const;
+
+        // Previous, then current; either can be null. Valid until the next acquire.
+        std::array<const FramePacket*, 2> getPackets() const;
 
     private:
         void interpolateScene(float blend, FrameView& out) const;

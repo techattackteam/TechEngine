@@ -76,6 +76,10 @@ namespace TechEngine {
         }
     }
 
+    std::array<const FramePacket*, 2> PacketHistory::getPackets() const {
+        return {m_previous.get(), m_current.get()};
+    }
+
     void PacketHistory::interpolateScene(float blend, FrameView& out) const {
         out.instanceWorlds.clear();
         out.hasCamera = false;

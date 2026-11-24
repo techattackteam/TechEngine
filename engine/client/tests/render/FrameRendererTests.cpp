@@ -81,6 +81,8 @@ struct FrameShaderFailureScope {
 static constexpr int IMAGE_SIZE = 64;
 using Image = std::array<std::byte, static_cast<std::size_t>(IMAGE_SIZE) * IMAGE_SIZE * 4>;
 
+static constexpr std::uint64_t FIRST_FRAME = 1;
+
 static constexpr ResourceSlotId MESH_SLOT{1, 0};
 static constexpr ResourceSlotId GREEN_SLOT{2, 0};
 static constexpr ResourceSlotId DISCARDED_CUTOUT_SLOT{3, 0};
@@ -312,7 +314,7 @@ TEST_CASE("the forward pass draws base color times its factor through the main c
             uploadOf(GREEN_SLOT, TechEngine::MATERIAL_TYPE_TAG, GREEN_ID, &green, 2),
         };
         std::vector<TechEngine::FinishedUpload> finished;
-        copies.apply(records, finished);
+        copies.apply(records, FIRST_FRAME, finished);
 
         const TechEngine::RenderExtent full{IMAGE_SIZE, IMAGE_SIZE};
         FramePacket packet;
@@ -367,7 +369,7 @@ TEST_CASE("a mirrored instance of a single-sided mesh is drawn, not culled", "[c
             uploadOf(GREEN_SLOT, TechEngine::MATERIAL_TYPE_TAG, GREEN_ID, &green, 2),
         };
         std::vector<TechEngine::FinishedUpload> finished;
-        copies.apply(records, finished);
+        copies.apply(records, FIRST_FRAME, finished);
 
         FramePacket packet;
         FrameView view;
@@ -398,7 +400,7 @@ TEST_CASE("a cut-out material discards a texel whose alpha is under its cutoff a
             uploadOf(KEPT_CUTOUT_SLOT, TechEngine::MATERIAL_TYPE_TAG, KEPT_CUTOUT_ID, &over, 3),
         };
         std::vector<TechEngine::FinishedUpload> finished;
-        copies.apply(records, finished);
+        copies.apply(records, FIRST_FRAME, finished);
 
         const TechEngine::RenderExtent full{IMAGE_SIZE, IMAGE_SIZE};
         FramePacket packet;
@@ -433,7 +435,7 @@ TEST_CASE("a null slot material draws record 0's white, and a slot past the inst
             uploadOf(MESH_SLOT, TechEngine::MESH_TYPE_TAG, MESH_ID, &cube, 2, {GREEN_SLOT}),
         };
         std::vector<TechEngine::FinishedUpload> finished;
-        copies.apply(records, finished);
+        copies.apply(records, FIRST_FRAME, finished);
 
         const TechEngine::RenderExtent full{IMAGE_SIZE, IMAGE_SIZE};
         FramePacket packet;
@@ -474,7 +476,7 @@ TEST_CASE("one prepared frame draws each view through its own camera and size, a
             uploadOf(GREEN_SLOT, TechEngine::MATERIAL_TYPE_TAG, GREEN_ID, &green, 2),
         };
         std::vector<TechEngine::FinishedUpload> finished;
-        copies.apply(records, finished);
+        copies.apply(records, FIRST_FRAME, finished);
 
         TechEngine::TextureHandle secondColor;
         TechEngine::TextureHandle secondDepth;

@@ -766,3 +766,80 @@ TEST_CASE("An asset texture takes every level, is made resident once, and is ref
     CHECK(targetError == TechEngine::ClientError::InvalidRenderDescription);
     CHECK(error == GL_NO_ERROR);
 }
+
+TEST_CASE("A signalled frame is reported complete once the GPU has finished it, and shutdown starts the count again", "[client][render][window][gpu]") {
+    const TechEngineTests::WindowTerminateGuard scope;
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
+    TechEngine::Window window;
+    REQUIRE(window.open(320, 240, "Device frame fence test") == std::error_code{});
+
+    std::uint64_t beforeAny = 99;
+    std::uint64_t afterFirst = 0;
+    std::uint64_t afterThird = 0;
+    std::uint64_t afterShutdown = 99;
+    std::uint64_t afterRestart = 0;
+    unsigned int error = GL_NO_ERROR;
+    const bool loaded = runOnContext(window, [&] {
+        TechEngine::RenderDevice device;
+        beforeAny = device.getCompletedFrame();
+        device.signalFrame(1);
+        glFinish();
+        afterFirst = device.getCompletedFrame();
+        device.signalFrame(2);
+        device.signalFrame(3);
+        glFinish();
+        afterThird = device.getCompletedFrame();
+
+        device.signalFrame(4);
+        device.shutdown();
+        afterShutdown = device.getCompletedFrame();
+        device.signalFrame(1);
+        glFinish();
+        afterRestart = device.getCompletedFrame();
+        device.shutdown();
+        error = glGetError();
+    });
+
+    REQUIRE(loaded);
+    CHECK(beforeAny == 0);
+    CHECK(afterFirst == 1);
+    CHECK(afterThird == 3);
+    CHECK(afterShutdown == 0);
+    CHECK(afterRestart == 1);
+    CHECK(error == GL_NO_ERROR);
+}
+
+TEST_CASE("Signalling a frame that does not rise is caught by a check and inserts no fence", "[client][render][window][gpu]") {
+    const TechEngineTests::AssertHandlerGuard guard;
+    const TechEngineTests::WindowTerminateGuard scope;
+    REQUIRE(TechEngine::Window::initialize() == std::error_code{});
+    TechEngine::Window window;
+    REQUIRE(window.open(320, 240, "Device frame fence misuse test") == std::error_code{});
+
+    std::size_t checksAfterRising = 99;
+    std::size_t checksAfterRepeat = 0;
+    std::size_t checksAfterLower = 0;
+    std::uint64_t completed = 0;
+    unsigned int error = GL_NO_ERROR;
+    const bool loaded = runOnContext(window, [&] {
+        TechEngine::RenderDevice device;
+        device.signalFrame(1);
+        device.signalFrame(2);
+        checksAfterRising = TechEngineTests::g_fired.size();
+        device.signalFrame(2);
+        checksAfterRepeat = TechEngineTests::g_fired.size();
+        device.signalFrame(1);
+        checksAfterLower = TechEngineTests::g_fired.size();
+        glFinish();
+        completed = device.getCompletedFrame();
+        device.shutdown();
+        error = glGetError();
+    });
+
+    REQUIRE(loaded);
+    CHECK(checksAfterRising == 0);
+    CHECK(checksAfterRepeat == 1);
+    CHECK(checksAfterLower == 2);
+    CHECK(completed == 2);
+    CHECK(error == GL_NO_ERROR);
+}

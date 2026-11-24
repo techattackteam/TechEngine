@@ -220,6 +220,8 @@ namespace TechEngine {
         // owner grows m_slots while tasks run, and looking any entry up from here races it.
         void runLoadTask(const ResourceEntry& entry, ResourceSlotId slot, bool reload);
 
+        void waitForLoads();
+
         std::error_code publishCompletion(LoadCompletion& completion);
 
         std::error_code publishReload(ResourceEntry& entry, LoadCompletion& completion);

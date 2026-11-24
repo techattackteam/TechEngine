@@ -50,6 +50,8 @@ namespace TechEngine {
 
         void publishFrame(const Scene& scene, const SimulationContext& simulation) override;
 
+        void simulationShutdown() override;
+
         void mainThreadUpdate() override;
 
         // Main thread only. Another thread wakes main through wakeMainThread().
@@ -67,5 +69,7 @@ namespace TechEngine {
         void applyTitle();
 
         void exchangeUploads();
+
+        void collectFinishedUploads();
     };
 }

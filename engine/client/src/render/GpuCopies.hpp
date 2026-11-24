@@ -11,6 +11,7 @@
 #include <render/device/texture/Texture.hpp>
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <span>
@@ -19,6 +20,7 @@
 
 namespace TechEngine {
     class RenderDevice;
+    struct FramePacket;
     struct Material;
     struct Mesh;
     struct Texture;
@@ -49,10 +51,17 @@ namespace TechEngine {
         bool released = false;
     };
 
+    struct RetiredGpuCopy {
+        GpuCopy copy;
+        // The last frame that could have drawn it.
+        std::uint64_t lastFrame = 0;
+    };
+
     class GpuCopies {
     private:
-        // Keyed by the whole slot: a released copy stays until shutdown, so a reused index can hold two.
+        // Keyed by the whole slot: a released copy stays while a packet or another copy can still reach it, so a reused index can hold two.
         std::map<ResourceSlotId, GpuCopy> m_copies;
+        std::vector<RetiredGpuCopy> m_retired;
         GeometryBuffers m_geometry;
         MaterialBuffer m_materials;
         RenderDevice* m_device = nullptr;
@@ -71,9 +80,17 @@ namespace TechEngine {
         std::error_code initialize(RenderDevice& device);
 
         // Appends each upload's slot and token to `finished` once its handler has stopped reading the payload.
-        void apply(std::span<const ResourceUploadRecord> records, std::vector<FinishedUpload>& finished);
+        // `frame` is the frame about to be drawn, numbered from 1.
+        void apply(std::span<const ResourceUploadRecord> records, std::uint64_t frame, std::vector<FinishedUpload>& finished);
+
+        // After apply and prepareFrame, before the frame's draws. A null packet names nothing.
+        void retireUnreachable(std::span<const FramePacket* const> packets, std::uint64_t frame);
+
+        void dropFinished(std::uint64_t completedFrame);
 
         const GpuCopy* findCopy(ResourceSlotId slot) const;
+
+        std::size_t getRetiredCount() const;
 
         const GeometryBuffers& getGeometry() const;
 
@@ -82,6 +99,10 @@ namespace TechEngine {
         void shutdown();
 
     private:
+        void retire(GpuCopy copy, std::uint64_t frame);
+
+        void dropCopy(GpuCopy& copy);
+
         void uploadMesh(const ResourceUploadRecord& record, GpuCopy& copy);
 
         void uploadTexture(const ResourceUploadRecord& record, GpuCopy& copy);

@@ -12,6 +12,7 @@
 #include <render/device/RenderDevice.hpp>
 
 #include <atomic>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -78,7 +79,7 @@ namespace TechEngine {
     private:
         void threadMain(const DedicatedThreadContext& context, const Clock& clock, Window& window, const InputBuffer& input, ImGuiHook* imguiHook);
 
-        void applyUploads(GpuCopies& copies, std::vector<ResourceUploadRecord>& records, std::vector<FinishedUpload>& finished);
+        void applyUploads(GpuCopies& copies, std::uint64_t frame, std::vector<ResourceUploadRecord>& records, std::vector<FinishedUpload>& finished);
 
         void drawViews(const FrameView& frame, const GpuCopies& copies, std::span<const ViewRequest> requests, ViewTargets& targets, const RenderExtent& windowExtent);
     };

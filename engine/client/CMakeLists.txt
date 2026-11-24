@@ -43,6 +43,7 @@ techengine_module(client
         src/render/device/RenderSlots.hpp
         src/render/device/buffer/Buffer.hpp
         src/render/device/draw/IndexedIndirectCommand.hpp
+        src/render/device/fence/FrameFence.hpp
         src/render/device/material/Material.hpp
         src/render/device/pass/RenderPass.hpp
         src/render/device/pipeline/Pipeline.hpp
