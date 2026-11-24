@@ -2,7 +2,7 @@
 
 #include <TechEngine/core/assets/ImportBlock.hpp>
 
-#include <assets/ModelImporter.hpp>
+#include <assets/import/ModelImporter.hpp>
 #include <ui/creators/AssetCreator.hpp>
 
 #include <cstdint>

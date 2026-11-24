@@ -6,7 +6,7 @@
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 
-#include <edit/FieldValue.hpp>
+#include <edit/fields/FieldValue.hpp>
 
 #include <cstddef>
 #include <cstdint>

@@ -2,7 +2,7 @@
 
 #include <TechEngine/base/math/Math.hpp>
 
-#include <edit/FlyCamera.hpp>
+#include <edit/camera/FlyCamera.hpp>
 #include <ui/panels/ViewPanel.hpp>
 
 #include <imgui.h>

@@ -11,7 +11,7 @@
 #include <TechEngine/platform/files/FileError.hpp>
 #include <TechEngine/platform/files/MountTable.hpp>
 
-#include <assets/AssetIndex.hpp>
+#include <assets/index/AssetIndex.hpp>
 #include <project/Project.hpp>
 
 #include <toml++/toml.hpp>

@@ -1,7 +1,7 @@
 #include <TechEngine/core/resources/Side.hpp>
 
-#include <assets/AssetIndex.hpp>
-#include <edit/EditorSnapshot.hpp>
+#include <assets/index/AssetIndex.hpp>
+#include <edit/snapshot/EditorSnapshot.hpp>
 #include <ui/PanelAppProbe.hpp>
 #include <ui/panels/AssetBrowserPanel.hpp>
 

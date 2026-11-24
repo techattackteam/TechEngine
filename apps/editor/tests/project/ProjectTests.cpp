@@ -25,10 +25,10 @@
 #include <TechEngine/platform/files/MountTable.hpp>
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
-#include <assets/AssetIndex.hpp>
-#include <assets/AssetTestFiles.hpp>
-#include <edit/EditSession.hpp>
-#include <edit/ExportCommand.hpp>
+#include <assets/index/AssetIndex.hpp>
+#include <assets/index/AssetTestFiles.hpp>
+#include <edit/project/ExportCommand.hpp>
+#include <edit/session/EditSession.hpp>
 #include <project/Project.hpp>
 
 #include <catch2/catch_test_macros.hpp>

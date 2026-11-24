@@ -3,7 +3,7 @@
 #include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 
-#include <edit/EditorSnapshot.hpp>
+#include <edit/snapshot/EditorSnapshot.hpp>
 #include <ui/PanelAppProbe.hpp>
 #include <ui/panels/SceneViewPanel.hpp>
 

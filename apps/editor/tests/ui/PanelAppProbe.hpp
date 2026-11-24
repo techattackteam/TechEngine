@@ -3,9 +3,9 @@
 #include <TechEngine/app/App.hpp>
 #include <TechEngine/core/jobs/JobSystem.hpp>
 
-#include <assets/AssetIndex.hpp>
-#include <edit/EditSession.hpp>
+#include <assets/index/AssetIndex.hpp>
 #include <edit/EditorCommands.hpp>
+#include <edit/session/EditSession.hpp>
 
 #include <vector>
 

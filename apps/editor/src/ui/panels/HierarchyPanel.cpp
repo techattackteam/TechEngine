@@ -1,6 +1,6 @@
-#include <edit/AssetDragPayload.hpp>
 #include <edit/EditorCommands.hpp>
-#include <edit/EditorSnapshot.hpp>
+#include <edit/assets/AssetDragPayload.hpp>
+#include <edit/snapshot/EditorSnapshot.hpp>
 #include <ui/panels/HierarchyPanel.hpp>
 #include <ui/widgets/AssetDragDrop.hpp>
 

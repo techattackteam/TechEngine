@@ -2,18 +2,18 @@
 #include <TechEngine/app/Command.hpp>
 #include <TechEngine/base/diagnostics/Log.hpp>
 
-#include <assets/ModelImporter.hpp>
-#include <assets/TextureImporter.hpp>
-#include <edit/CreateFolderCommand.hpp>
-#include <edit/CreateMaterialCommand.hpp>
+#include <assets/import/ModelImporter.hpp>
+#include <assets/import/TextureImporter.hpp>
 #include <edit/EditorCommands.hpp>
-#include <edit/HierarchyCommands.hpp>
-#include <edit/ImportModelCommand.hpp>
-#include <edit/ImportSkyCommand.hpp>
-#include <edit/InspectorCommands.hpp>
-#include <edit/PlaceModelCommand.hpp>
-#include <edit/RefreshAssetsCommand.hpp>
-#include <edit/SaveSceneCommand.hpp>
+#include <edit/assets/CreateFolderCommand.hpp>
+#include <edit/assets/CreateMaterialCommand.hpp>
+#include <edit/assets/ImportModelCommand.hpp>
+#include <edit/assets/ImportSkyCommand.hpp>
+#include <edit/assets/RefreshAssetsCommand.hpp>
+#include <edit/project/SaveSceneCommand.hpp>
+#include <edit/scene/HierarchyCommands.hpp>
+#include <edit/scene/InspectorCommands.hpp>
+#include <edit/scene/PlaceModelCommand.hpp>
 
 #include <system_error>
 #include <utility>

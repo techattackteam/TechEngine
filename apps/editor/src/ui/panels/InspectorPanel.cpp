@@ -2,12 +2,12 @@
 #include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 
-#include <assets/AssetIndex.hpp>
-#include <edit/AssetDragPayload.hpp>
+#include <assets/index/AssetIndex.hpp>
 #include <edit/EditorCommands.hpp>
-#include <edit/EditorSnapshot.hpp>
-#include <edit/FieldValue.hpp>
-#include <edit/InspectorCommands.hpp>
+#include <edit/assets/AssetDragPayload.hpp>
+#include <edit/fields/FieldValue.hpp>
+#include <edit/scene/InspectorCommands.hpp>
+#include <edit/snapshot/EditorSnapshot.hpp>
 #include <ui/panels/InspectorPanel.hpp>
 #include <ui/widgets/AssetDragDrop.hpp>
 #include <ui/widgets/DragControls.hpp>
