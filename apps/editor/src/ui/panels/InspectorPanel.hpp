@@ -70,6 +70,8 @@ namespace TechEngine {
 
         void drawAssetPicker(const EditorSnapshot& snapshot, ComponentTypeId component, const FieldRow& field);
 
+        void acceptAssetDrop(const EditorSnapshot& snapshot, ComponentTypeId component, const FieldRow& field);
+
         void drawAddMenu(const EditorSnapshot& snapshot);
 
         void syncEuler(Entity entity, const Quat& rotation);

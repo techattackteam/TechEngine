@@ -2,6 +2,7 @@
 #include <TechEngine/core/mesh/Mesh.hpp>
 #include <TechEngine/core/model/Model.hpp>
 #include <TechEngine/core/resources/Side.hpp>
+#include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/core/texture/Texture.hpp>
 
@@ -11,6 +12,7 @@
 #include <edit/snapshot/EditorSnapshot.hpp>
 #include <ui/creators/AssetCreators.hpp>
 #include <ui/panels/AssetBrowserPanel.hpp>
+#include <ui/widgets/AssetDragDrop.hpp>
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -255,7 +257,14 @@ namespace TechEngine {
             drawGridMenu(snapshot);
             ImGui::EndPopup();
         }
-        applySelectionRequests(snapshot, ImGui::EndMultiSelect());
+        ImGuiMultiSelectIO* endIO = ImGui::EndMultiSelect();
+        const bool clearedOnVoid = isOnlyClear(endIO);
+        applySelectionRequests(snapshot, endIO);
+        // A click on empty grid space clears the selection, but ImGui keeps its nav cursor on the last tile clicked, and
+        // multi-select always draws that cursor, so the tile would still look selected.
+        if (clearedOnVoid && ImGui::GetCurrentContext()->NavWindow != nullptr) {
+            ImGui::SetNavID(0, ImGuiNavLayer_Main, ImGui::GetCurrentContext()->NavFocusScopeId, ImRect());
+        }
 
         // Opened only now, because opening rebuilds m_contents and clears the selection the requests refer to.
         if (!m_pendingFolder.empty()) {
@@ -281,15 +290,21 @@ namespace TechEngine {
         ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
         ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
         ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(item));
-        ImGui::Selectable("##tile", selected, ImGuiSelectableFlags_None, ImVec2(cellWidth, cellHeight));
+        // Padded by half the item spacing, the Selectable's rectangle is wider than the tile, and the table clips the pad
+        // on the outer side of the first and last column, so ImGui's nav outline sits off the tile's highlight there.
+        ImGui::Selectable("##tile", selected, ImGuiSelectableFlags_NoPadWithHalfSpacing, ImVec2(cellWidth, cellHeight));
         ImGui::PopStyleColor(3);
         const bool hovered = ImGui::IsItemHovered();
         if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
             if (entry.kind == ListedKind::Folder) {
                 m_pendingFolder = entry.path;
-            } else if (isPlaceable(entry)) {
-                m_commands->placeModel(entry.path);
+            } else if (EditorSnapshot::isPlaceable(entry)) {
+                m_commands->placeModel(entry.path, Entity{});
             }
+        }
+        if (ImGui::BeginDragDropSource()) {
+            beginTileDrag(snapshot, entry, selected);
+            ImGui::EndDragDropSource();
         }
         if (hovered && !lines.empty() && lines.back().ends_with(TRUNCATION_MARK)) {
             ImGui::SetTooltip("%.*s", static_cast<int>(name.size()), name.data());
@@ -389,12 +404,12 @@ namespace TechEngine {
         if (std::ranges::any_of(
                 selected,
                 [](const ListedEntry* entry) {
-                    return isPlaceable(*entry);
+                    return EditorSnapshot::isPlaceable(*entry);
                 }) &&
             ImGui::MenuItem("Place in scene")) {
             for (const ListedEntry* entry: selected) {
-                if (isPlaceable(*entry)) {
-                    m_commands->placeModel(entry->path);
+                if (EditorSnapshot::isPlaceable(*entry)) {
+                    m_commands->placeModel(entry->path, Entity{});
                 }
             }
         }
@@ -534,12 +549,39 @@ namespace TechEngine {
         }
     }
 
+    bool AssetBrowserPanel::isOnlyClear(const ImGuiMultiSelectIO* io) {
+        if (io->Requests.Size != 1) {
+            return false;
+        }
+        const ImGuiSelectionRequest& request = io->Requests[0];
+        return request.Type == ImGuiSelectionRequestType_SetAll && !request.Selected;
+    }
+
     bool AssetBrowserPanel::isSelected(const std::string_view path) const {
         return std::ranges::find(m_selection, path) != m_selection.end();
     }
 
-    bool AssetBrowserPanel::isPlaceable(const ListedEntry& entry) {
-        return entry.kind == ListedKind::Asset && (entry.typeTag == MODEL_TYPE_TAG || entry.typeTag == MESH_TYPE_TAG);
+    void AssetBrowserPanel::beginTileDrag(const EditorSnapshot& snapshot, const ListedEntry& entry, const bool selected) {
+        std::vector<std::string> dragged;
+        if (selected) {
+            // m_selection is in click order; the grid's order is the one the drop sees.
+            for (const std::size_t index: m_contents) {
+                const std::string& path = snapshot.listing[index].path;
+                if (isSelected(path)) {
+                    dragged.push_back(path);
+                }
+            }
+        } else {
+            dragged.push_back(entry.path);
+        }
+        setAssetDragPayload(dragged);
+
+        if (dragged.size() == 1) {
+            const std::string_view name = nameOf(dragged.front());
+            ImGui::TextUnformatted(name.data(), name.data() + name.size());
+        } else {
+            ImGui::Text("%zu items", dragged.size());
+        }
     }
 
     std::string_view AssetBrowserPanel::nameOf(const std::string_view path) {

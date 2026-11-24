@@ -1,3 +1,5 @@
+#include <TechEngine/core/mesh/Mesh.hpp>
+#include <TechEngine/core/model/Model.hpp>
 #include <TechEngine/core/resources/Side.hpp>
 
 #include <edit/snapshot/EditorSnapshot.hpp>
@@ -188,14 +190,41 @@ namespace TechEngine {
 
     void EditorSnapshot::collectAssetsOfType(const StringId type, std::vector<std::size_t>& out) const {
         out.clear();
-        if (type == StringId{}) {
-            return;
-        }
         for (std::size_t i = 0; i < assets.size(); i++) {
-            if (assets[i].typeTag == type && assets[i].side != Side::Server) {
+            if (isOfferedFor(assets[i], type)) {
                 out.push_back(i);
             }
         }
+    }
+
+    bool EditorSnapshot::findDroppedAsset(const std::span<const std::string> paths, const StringId type, ResourceId& out) const {
+        if (paths.size() != 1) {
+            return false;
+        }
+        const auto record = std::ranges::find(assets, paths.front(), &AssetRecord::path);
+        if (record == assets.end() || !isOfferedFor(*record, type)) {
+            return false;
+        }
+        out = record->id;
+        return true;
+    }
+
+    void EditorSnapshot::collectPlaceable(const std::span<const std::string> paths, std::vector<std::string>& out) const {
+        out.clear();
+        for (const std::string& path: paths) {
+            const auto entry = std::ranges::lower_bound(listing, path, {}, &ListedEntry::path);
+            if (entry != listing.end() && entry->path == path && isPlaceable(*entry)) {
+                out.push_back(path);
+            }
+        }
+    }
+
+    bool EditorSnapshot::isPlaceable(const ListedEntry& entry) {
+        return entry.kind == ListedKind::Asset && (entry.typeTag == MODEL_TYPE_TAG || entry.typeTag == MESH_TYPE_TAG);
+    }
+
+    bool EditorSnapshot::isOfferedFor(const AssetRecord& record, const StringId type) {
+        return type != StringId{} && record.typeTag == type && record.side != Side::Server;
     }
 
     void EditorSnapshot::collectFolderContents(const std::string_view folder, std::vector<std::size_t>& out) const {

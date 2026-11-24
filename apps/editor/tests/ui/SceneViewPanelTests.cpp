@@ -4,6 +4,7 @@
 #include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <edit/snapshot/EditorSnapshot.hpp>
+#include <ui/PanelAppProbe.hpp>
 #include <ui/panels/SceneViewPanel.hpp>
 
 #include <catch2/catch_approx.hpp>
@@ -21,6 +22,7 @@ using TechEngine::SceneViewPanel;
 using TechEngine::Transform;
 using TechEngine::Vec3;
 using TechEngine::ViewRequest;
+using TechEngineTests::PanelAppProbe;
 
 static constexpr float FRAME = 1.0f / 60.0f;
 static constexpr ImVec2 PANEL_POSITION(0.0f, 0.0f);
@@ -31,7 +33,8 @@ static constexpr ImVec2 OUTSIDE_VIEW(900.0f, 700.0f);
 struct HeadlessImGui {
     ImGuiContext* previous = nullptr;
     ImGuiContext* context = nullptr;
-    SceneViewPanel panel;
+    PanelAppProbe app;
+    SceneViewPanel panel{app.commands};
     EditorSnapshot snapshot;
     bool otherWindowFocused = false;
 

@@ -26,9 +26,10 @@ namespace TechEngine {
         const ResourceHandle<SceneBytes>* m_sceneHandle = nullptr;
         const AssetIndex* m_assets = nullptr;
         std::string m_path;
+        Entity m_parent;
 
     public:
-        PlaceModelCommand(EditSession& session, const FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, const AssetIndex& assets, std::string path);
+        PlaceModelCommand(EditSession& session, const FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, const AssetIndex& assets, std::string path, Entity parent);
 
         void apply(Scene& scene) override;
 

@@ -14,7 +14,7 @@ namespace TechEngine {
     static constexpr float CONSOLE_HEIGHT_RATIO = 0.3f;
 
     PanelsManager::PanelsManager(EditorCommands& commands, ConsoleHistory& consoleHistory, std::function<void()> exportProject, std::function<void()> runProject)
-        : m_commands(&commands), m_exportProject(std::move(exportProject)), m_runProject(std::move(runProject)), m_hierarchy(commands), m_inspector(commands), m_console(consoleHistory), m_assetBrowser(commands) {
+        : m_commands(&commands), m_exportProject(std::move(exportProject)), m_runProject(std::move(runProject)), m_hierarchy(commands), m_inspector(commands), m_sceneView(commands), m_console(consoleHistory), m_assetBrowser(commands) {
     }
 
     void PanelsManager::registerSettings() {

@@ -67,8 +67,8 @@ namespace TechEngine {
         submit(std::make_unique<RemoveComponentCommand>(*m_session, *m_registry, std::move(entities), component));
     }
 
-    void EditorCommands::placeModel(std::string path) {
-        submit(std::make_unique<PlaceModelCommand>(*m_session, *m_files, *m_resources, *m_sceneHandle, *m_assets, std::move(path)));
+    void EditorCommands::placeModel(std::string path, const Entity parent) {
+        submit(std::make_unique<PlaceModelCommand>(*m_session, *m_files, *m_resources, *m_sceneHandle, *m_assets, std::move(path), parent));
     }
 
     void EditorCommands::refreshAssets() {

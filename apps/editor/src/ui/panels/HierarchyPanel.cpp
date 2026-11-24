@@ -1,6 +1,8 @@
 #include <edit/EditorCommands.hpp>
+#include <edit/assets/AssetDragPayload.hpp>
 #include <edit/snapshot/EditorSnapshot.hpp>
 #include <ui/panels/HierarchyPanel.hpp>
+#include <ui/widgets/AssetDragDrop.hpp>
 
 #include <imgui.h>
 
@@ -274,6 +276,7 @@ namespace TechEngine {
         }
         if (ImGui::BeginDragDropTarget()) {
             acceptRowDrop(snapshot, rowIndex, rowStartX);
+            acceptAssetDrop(snapshot, row.entity);
             ImGui::EndDragDropTarget();
         }
         return menuRequested;
@@ -362,13 +365,18 @@ namespace TechEngine {
             const bool dragging = readEntitiesPayload(ImGui::GetDragDropPayload(), dragged);
             const bool allowed = dragging && resolveDraggedDrop(snapshot, dragged, Entity{}, 0, position);
             if (allowed) {
-                const ImVec2 spaceMin = ImGui::GetItemRectMin();
-                const ImVec2 spaceMax = ImGui::GetItemRectMax();
-                ImGui::GetWindowDrawList()->AddLine(spaceMin, ImVec2(spaceMax.x, spaceMin.y), ImGui::GetColorU32(ImGuiCol_DragDropTarget), INSERTION_LINE_THICKNESS);
+                drawRootInsertionLine();
                 acceptDrop(std::move(dragged), Entity{}, position, false);
             }
+            acceptAssetDrop(snapshot, Entity{});
             ImGui::EndDragDropTarget();
         }
+    }
+
+    void HierarchyPanel::drawRootInsertionLine() {
+        const ImVec2 spaceMin = ImGui::GetItemRectMin();
+        const ImVec2 spaceMax = ImGui::GetItemRectMax();
+        ImGui::GetWindowDrawList()->AddLine(spaceMin, ImVec2(spaceMax.x, spaceMin.y), ImGui::GetColorU32(ImGuiCol_DragDropTarget), INSERTION_LINE_THICKNESS);
     }
 
     void HierarchyPanel::acceptDrop(std::vector<Entity> dragged, const Entity parent, const std::size_t position, const bool highlightRow) {
@@ -381,6 +389,41 @@ namespace TechEngine {
         if (parent.valid()) {
             m_collapsed.erase(parent);
         }
+    }
+
+    void HierarchyPanel::acceptAssetDrop(const EditorSnapshot& snapshot, const Entity parent) {
+        std::vector<std::string> paths;
+        const bool dragging = peekAssetDrag(paths);
+        if (!dragging) {
+            return;
+        }
+        std::vector<std::string> placeable;
+        snapshot.collectPlaceable(paths, placeable);
+        if (placeable.empty()) {
+            return;
+        }
+
+        const bool onRow = parent.valid();
+        if (!onRow) {
+            drawRootInsertionLine();
+        }
+        const ImGuiDragDropFlags flags = onRow ? ImGuiDragDropFlags_None : ImGuiDragDropFlags_AcceptNoDrawDefaultRect;
+        const ImGuiPayload* accepted = ImGui::AcceptDragDropPayload(ASSET_DRAG_PAYLOAD, flags);
+        if (accepted == nullptr) {
+            return;
+        }
+
+        if (!onRow) {
+            for (const std::string& path: placeable) {
+                m_commands->placeModel(path, Entity{});
+            }
+            return;
+        }
+        // Each place lands as the row's first child, so the last one sent ends up first.
+        for (auto path = placeable.rbegin(); path != placeable.rend(); path++) {
+            m_commands->placeModel(*path, parent);
+        }
+        m_collapsed.erase(parent);
     }
 
     void HierarchyPanel::drawMenu(const EditorSnapshot& snapshot) {

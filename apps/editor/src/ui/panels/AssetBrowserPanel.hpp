@@ -85,9 +85,14 @@ namespace TechEngine {
 
         void applySelectionRequests(const EditorSnapshot& snapshot, ImGuiMultiSelectIO* io);
 
+        // With the grid's flags, EndMultiSelect returns a lone clear only for a click on empty space: a click on a tile
+        // clears and then selects a range.
+        static bool isOnlyClear(const ImGuiMultiSelectIO* io);
+
         bool isSelected(std::string_view path) const;
 
-        static bool isPlaceable(const ListedEntry& entry);
+        // The selected paths when entry is selected, else entry's path alone.
+        void beginTileDrag(const EditorSnapshot& snapshot, const ListedEntry& entry, bool selected);
 
         static std::string_view nameOf(std::string_view path);
 

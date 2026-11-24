@@ -13,6 +13,7 @@ techengine_app(editor
           src/assets/index/AssetNaming.cpp
           src/assets/index/LooseSource.cpp
           src/edit/EditorCommands.cpp
+          src/edit/assets/AssetDragPayload.cpp
           src/edit/assets/CreateFolderCommand.cpp
           src/edit/assets/CreateMaterialCommand.cpp
           src/edit/assets/ImportModelCommand.cpp
@@ -49,6 +50,7 @@ techengine_app(editor
           src/ui/panels/Panel.cpp
           src/ui/panels/SceneViewPanel.cpp
           src/ui/panels/ViewPanel.cpp
+          src/ui/widgets/AssetDragDrop.cpp
           src/ui/widgets/DragControls.cpp
           src/ui/widgets/PropertyTable.cpp
           src/ui/widgets/TextEditField.cpp
@@ -62,6 +64,7 @@ techengine_app(editor
           src/assets/index/AssetNaming.hpp
           src/assets/index/LooseSource.hpp
           src/edit/EditorCommands.hpp
+          src/edit/assets/AssetDragPayload.hpp
           src/edit/assets/CreateFolderCommand.hpp
           src/edit/assets/CreateMaterialCommand.hpp
           src/edit/assets/ImportModelCommand.hpp
@@ -100,6 +103,7 @@ techengine_app(editor
           src/ui/panels/Panel.hpp
           src/ui/panels/SceneViewPanel.hpp
           src/ui/panels/ViewPanel.hpp
+          src/ui/widgets/AssetDragDrop.hpp
           src/ui/widgets/DragControls.hpp
           src/ui/widgets/PropertyTable.hpp
           src/ui/widgets/TextEditField.hpp
@@ -118,6 +122,7 @@ techengine_app(editor
           tests/assets/index/AssetNamingTests.cpp
           tests/assets/index/LooseSourceTests.cpp
           tests/edit/EditorCommandsTests.cpp
+          tests/edit/assets/AssetDragPayloadTests.cpp
           tests/edit/assets/CreateFolderCommandTests.cpp
           tests/edit/assets/CreateMaterialCommandTests.cpp
           tests/edit/assets/ImportModelCommandTests.cpp

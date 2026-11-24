@@ -71,7 +71,7 @@ namespace TechEngine {
 
         void removeComponent(std::vector<Entity> entities, ComponentTypeId component);
 
-        void placeModel(std::string path);
+        void placeModel(std::string path, Entity parent);
 
         void refreshAssets();
 
