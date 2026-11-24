@@ -2,6 +2,7 @@
 
 #include <TechEngine/base/math/Math.hpp>
 #include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 
@@ -109,6 +110,15 @@ namespace TechEngine {
         // the set command refuses it.
         void collectAssetsOfType(StringId type, std::vector<std::size_t>& out) const;
 
+        // The asset an inspector field of type takes from a drop of paths. False unless paths holds one path, and the
+        // record at that path is one the picker for type would offer.
+        bool findDroppedAsset(std::span<const std::string> paths, StringId type, ResourceId& out) const;
+
+        // The paths a drop places, in the order given: those listed as a model or a mesh.
+        void collectPlaceable(std::span<const std::string> paths, std::vector<std::string>& out) const;
+
+        static bool isPlaceable(const ListedEntry& entry);
+
         // Indices into listing of folder's own children: folders first, then files, each by name without case.
         void collectFolderContents(std::string_view folder, std::vector<std::size_t>& out) const;
 
@@ -126,5 +136,8 @@ namespace TechEngine {
         // The first of candidate(0), candidate(1), ... that no listed entry holds, file or folder. A create in flight
         // that this listing does not show yet may take it first.
         std::string firstFreePath(const std::function<std::string(std::uint32_t suffix)>& candidate) const;
+
+    private:
+        static bool isOfferedFor(const AssetRecord& record, StringId type);
     };
 }

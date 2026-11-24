@@ -12,6 +12,7 @@ techengine_app(editor
           src/assets/MeshImporter.cpp
           src/assets/ModelImporter.cpp
           src/assets/TextureImporter.cpp
+          src/edit/AssetDragPayload.cpp
           src/edit/ConsoleHistory.cpp
           src/edit/ConsoleLog.cpp
           src/edit/CreateFolderCommand.cpp
@@ -49,6 +50,7 @@ techengine_app(editor
           src/ui/panels/Panel.cpp
           src/ui/panels/SceneViewPanel.cpp
           src/ui/panels/ViewPanel.cpp
+          src/ui/widgets/AssetDragDrop.cpp
           src/ui/widgets/DragControls.cpp
           src/ui/widgets/PropertyTable.cpp
           src/ui/widgets/TextEditField.cpp
@@ -61,6 +63,7 @@ techengine_app(editor
           src/assets/MeshImporter.hpp
           src/assets/ModelImporter.hpp
           src/assets/TextureImporter.hpp
+          src/edit/AssetDragPayload.hpp
           src/edit/ConsoleHistory.hpp
           src/edit/ConsoleLog.hpp
           src/edit/CreateFolderCommand.hpp
@@ -100,6 +103,7 @@ techengine_app(editor
           src/ui/panels/Panel.hpp
           src/ui/panels/SceneViewPanel.hpp
           src/ui/panels/ViewPanel.hpp
+          src/ui/widgets/AssetDragDrop.hpp
           src/ui/widgets/DragControls.hpp
           src/ui/widgets/PropertyTable.hpp
           src/ui/widgets/TextEditField.hpp
@@ -117,6 +121,7 @@ techengine_app(editor
           tests/assets/ModelImporterTests.cpp
           tests/assets/SkyImportTests.cpp
           tests/assets/TextureImporterTests.cpp
+          tests/edit/AssetDragPayloadTests.cpp
           tests/edit/ConsoleHistoryTests.cpp
           tests/edit/ConsoleLogTests.cpp
           tests/edit/CreateFolderCommandTests.cpp

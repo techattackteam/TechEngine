@@ -70,6 +70,7 @@ static constexpr std::string_view MISSING_MODEL_PATH = "project://assets/client/
 // The harness indexes its assets under paths with no mount.
 static constexpr std::string_view HARNESS_SCENE_PATH = "assets/common/Other.tescene";
 static constexpr std::string_view HARNESS_SERVER_MESH_PATH = "assets/server/Collision.temesh";
+static constexpr std::string_view HARNESS_MESH_PATH = "assets/client/Triangle.temesh";
 static constexpr ResourceId MERGED_MESH_ID{0x3E54000000000101};
 static constexpr std::string_view MERGED_MESH_PATH = "project://assets/client/Front/Front.temesh";
 static constexpr std::uint64_t SPLIT_FIRST_ID = 0x5917000000000001;
@@ -107,7 +108,11 @@ public:
     }
 
     void place(const std::string_view path) {
-        PlaceModelCommand command{edit.session, files, edit.cache, edit.sceneHandle, edit.index, std::string(path)};
+        placeUnder(path, Entity{});
+    }
+
+    void placeUnder(const std::string_view path, const Entity parent) {
+        PlaceModelCommand command{edit.session, files, edit.cache, edit.sceneHandle, edit.index, std::string(path), parent};
         command.apply(edit.scene);
     }
 
@@ -319,6 +324,70 @@ TEST_CASE("a placed root keeps the transform the model stores for it", "[editor]
     const PlacedKart kart = walkKart(fixture.edit, roots[0]);
     checkLocal(fixture.edit, kart.body, BODY_LOCAL);
     checkLocal(fixture.edit, kart.wheel, WHEEL_LOCAL);
+}
+
+TEST_CASE("a model placed on an entity becomes its first child, with the stored root transform as its local one", "[editor][edit][commands][place][os]") {
+    PlaceFixture fixture{"placeUnderEntity"};
+    const TransformValues rootLocal = makeLocal(Vec3(2.0f, 0.0f, -3.0f), Vec3(0.0f, 45.0f, 0.0f), Vec3(2.0f));
+    fixture.addModel(makeKart(rootLocal, EDIT_MESH_ID, EDIT_SECOND_MESH_ID), KART_MODEL_PATH);
+    const Entity parent = fixture.edit.createWithMeshRenderer("Parent");
+    // A parent away from the origin, so a placement that kept the world transform would store another local one.
+    REQUIRE(fixture.edit.scene.getComponent<Transform>(parent).setLocal(makeLocal(Vec3(10.0f, 5.0f, 0.0f), Vec3(0.0f, 0.0f, 30.0f), Vec3(4.0f))));
+    const Entity existingChild = fixture.edit.scene.createEntity();
+    REQUIRE(fixture.edit.scene.setParent(existingChild, parent, 0));
+    const std::uint64_t revisionBefore = fixture.editRevision();
+
+    fixture.placeUnder(KART_MODEL_PATH, parent);
+
+    const std::vector<Entity> roots = fixture.edit.scene.getRoots();
+    REQUIRE(roots.size() == 1);
+    CHECK(roots[0] == parent);
+    const std::vector<Entity> children = fixture.edit.scene.getChildren(parent);
+    REQUIRE(children.size() == 2);
+    CHECK(children[1] == existingChild);
+    const Entity placedRoot = children[0];
+    CHECK(fixture.edit.scene.getParent(placedRoot) == parent);
+    CHECK(fixture.edit.scene.getComponent<Name>(placedRoot).value == "Kart");
+    checkLocal(fixture.edit, placedRoot, rootLocal);
+    const PlacedKart kart = walkKart(fixture.edit, placedRoot);
+    CHECK(fixture.edit.scene.getParent(kart.body) == placedRoot);
+    CHECK(fixture.edit.scene.getParent(kart.wheel) == kart.body);
+    checkLocal(fixture.edit, kart.body, BODY_LOCAL);
+    checkLocal(fixture.edit, kart.wheel, WHEEL_LOCAL);
+    checkPlacedMesh(fixture.edit, kart.body, EDIT_MESH_ID);
+    checkPlacedMesh(fixture.edit, kart.wheel, EDIT_SECOND_MESH_ID);
+    CHECK(fixture.edit.snapshot().hierarchy.size() == 5);
+    CHECK(fixture.editRevision() > revisionBefore);
+}
+
+TEST_CASE("a mesh placed on an entity becomes its first child", "[editor][edit][commands][place][os]") {
+    PlaceFixture fixture{"placeMeshUnderEntity"};
+    const Entity parent = fixture.edit.createWithMeshRenderer("Parent");
+    const Entity existingChild = fixture.edit.scene.createEntity();
+    REQUIRE(fixture.edit.scene.setParent(existingChild, parent, 0));
+
+    fixture.placeUnder(HARNESS_MESH_PATH, parent);
+
+    const std::vector<Entity> children = fixture.edit.scene.getChildren(parent);
+    REQUIRE(children.size() == 2);
+    CHECK(children[1] == existingChild);
+    CHECK(fixture.edit.scene.getComponent<Name>(children[0]).value == "Triangle");
+    checkLocal(fixture.edit, children[0], TransformValues{});
+    checkPlacedMesh(fixture.edit, children[0], EDIT_MESH_ID);
+}
+
+TEST_CASE("a model placed on an entity the scene no longer holds places nothing", "[editor][edit][commands][place][os]") {
+    PlaceFixture fixture{"placeUnderDeadEntity"};
+    fixture.addModel(makeKart(), KART_MODEL_PATH);
+    const Entity parent = fixture.edit.createWithMeshRenderer("Parent");
+    DestroyEntityCommand destroy{fixture.edit.session, {parent}};
+    destroy.apply(fixture.edit.scene);
+    REQUIRE_FALSE(fixture.edit.scene.contains(parent));
+    const std::uint64_t revisionBefore = fixture.editRevision();
+
+    fixture.placeUnder(KART_MODEL_PATH, parent);
+
+    checkNothingPlaced(fixture, revisionBefore);
 }
 
 TEST_CASE("a one-node model whose root carries a mesh places one entity with its renderer", "[editor][edit][commands][place][os]") {

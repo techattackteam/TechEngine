@@ -3,11 +3,13 @@
 #include <TechEngine/core/scene/components/Transform.hpp>
 
 #include <assets/AssetIndex.hpp>
+#include <edit/AssetDragPayload.hpp>
 #include <edit/EditorCommands.hpp>
 #include <edit/EditorSnapshot.hpp>
 #include <edit/FieldValue.hpp>
 #include <edit/InspectorCommands.hpp>
 #include <ui/panels/InspectorPanel.hpp>
+#include <ui/widgets/AssetDragDrop.hpp>
 #include <ui/widgets/DragControls.hpp>
 #include <ui/widgets/PropertyTable.hpp>
 
@@ -24,6 +26,7 @@
 #include <string_view>
 #include <type_traits>
 #include <variant>
+#include <vector>
 
 namespace TechEngine {
     static constexpr const char* COMPONENT_MENU = "InspectorComponentMenu";
@@ -372,7 +375,9 @@ namespace TechEngine {
             preview = record != snapshot.assets.end() ? record->path : std::format("{0:016x}", current.value());
         }
 
+        // Open, the combo's popup is the last item, so only a closed one is a drop target.
         if (!ImGui::BeginCombo("##asset", preview.c_str())) {
+            acceptAssetDrop(snapshot, component, field);
             return;
         }
         snapshot.collectAssetsOfType(field.assetType, m_assetChoices);
@@ -390,6 +395,26 @@ namespace TechEngine {
             }
         }
         ImGui::EndCombo();
+    }
+
+    void InspectorPanel::acceptAssetDrop(const EditorSnapshot& snapshot, const ComponentTypeId component, const FieldRow& field) {
+        if (!ImGui::BeginDragDropTarget()) {
+            return;
+        }
+        std::vector<std::string> paths;
+        ResourceId dropped;
+        const bool dragging = peekAssetDrag(paths);
+        const bool taken = dragging && snapshot.findDroppedAsset(paths, field.assetType, dropped);
+        if (taken) {
+            const ImGuiPayload* accepted = ImGui::AcceptDragDropPayload(ASSET_DRAG_PAYLOAD);
+            const ResourceId* shown = std::get_if<ResourceId>(&field.value);
+            // As in the picker: choosing the asset every selected entity already has sends nothing.
+            const bool unchanged = !field.mixed && shown != nullptr && *shown == dropped;
+            if (accepted != nullptr && !unchanged) {
+                m_commands->setAssetField(snapshot.selection, component, field.index, dropped);
+            }
+        }
+        ImGui::EndDragDropTarget();
     }
 
     void InspectorPanel::drawReadOnlyField(const FieldRow& field) {

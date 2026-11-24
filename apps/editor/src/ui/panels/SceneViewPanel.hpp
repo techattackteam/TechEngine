@@ -8,14 +8,17 @@
 #include <imgui.h>
 
 namespace TechEngine {
+    class EditorCommands;
+
     class SceneViewPanel final : public ViewPanel {
     private:
+        EditorCommands* m_commands = nullptr;
         FlyCamera m_camera;
         bool m_looking = false;
         bool m_panning = false;
 
     public:
-        SceneViewPanel();
+        explicit SceneViewPanel(EditorCommands& commands);
 
         // While true the window's cursor must be hidden and locked, so a rotation or a pan never stops at the screen's
         // edge. ImGui's TeleportMousePos cannot do it: ImGui drops every mouse position event in the frame after a
@@ -29,6 +32,8 @@ namespace TechEngine {
         void updateCamera(const EditorSnapshot& snapshot, const ImVec2& imageSize, bool imageHovered) override;
 
         void describeCamera(ViewRequest& request) const override;
+
+        void acceptDrop(const EditorSnapshot& snapshot) override;
 
     private:
         void trackDrags(bool imageHovered);

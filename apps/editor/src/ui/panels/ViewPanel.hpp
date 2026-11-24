@@ -29,6 +29,9 @@ namespace TechEngine {
         // ImGui's pixels, the same as its mouse positions, not the target's framebuffer pixels.
         virtual void updateCamera(const EditorSnapshot& snapshot, const ImVec2& imageSize, bool imageHovered);
 
+        // Runs while the image is the last item, and not at all on a frame with no image to drop on.
+        virtual void acceptDrop(const EditorSnapshot& snapshot);
+
         virtual void describeCamera(ViewRequest& request) const = 0;
     };
 }

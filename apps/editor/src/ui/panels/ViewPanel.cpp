@@ -29,10 +29,14 @@ namespace TechEngine {
             // A GL target's first row is its bottom, so V runs from 1 at the top to 0.
             ImGui::Image(ImTextureRef(m_token), contentRegion, ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
             imageHovered = ImGui::IsItemHovered();
+            acceptDrop(snapshot);
         }
         updateCamera(snapshot, contentRegion, imageHovered);
     }
 
     void ViewPanel::updateCamera(const EditorSnapshot&, const ImVec2&, bool) {
+    }
+
+    void ViewPanel::acceptDrop(const EditorSnapshot&) {
     }
 }

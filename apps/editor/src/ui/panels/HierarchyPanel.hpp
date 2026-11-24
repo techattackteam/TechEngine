@@ -61,7 +61,13 @@ namespace TechEngine {
 
         void drawEmptySpace(const EditorSnapshot& snapshot);
 
+        // Along the top of the empty space, which must be the last item.
+        void drawRootInsertionLine();
+
         void acceptDrop(std::vector<Entity> dragged, Entity parent, std::size_t position, bool highlightRow);
+
+        // An invalid parent is the empty space below the rows, which places at the root.
+        void acceptAssetDrop(const EditorSnapshot& snapshot, Entity parent);
 
         void drawMenu(const EditorSnapshot& snapshot);
 

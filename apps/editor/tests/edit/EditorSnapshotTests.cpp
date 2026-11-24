@@ -1,7 +1,12 @@
 #include <TechEngine/base/stringid/StringId.hpp>
+#include <TechEngine/core/material/Material.hpp>
+#include <TechEngine/core/mesh/Mesh.hpp>
+#include <TechEngine/core/model/Model.hpp>
 #include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/resources/Side.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
+#include <TechEngine/core/scene/SceneAsset.hpp>
+#include <TechEngine/core/texture/Texture.hpp>
 
 #include <assets/AssetIndex.hpp>
 #include <assets/ModelImporter.hpp>
@@ -425,6 +430,86 @@ TEST_CASE("the picker offers nothing for a type no record has, or for an empty t
     CHECK(out.empty());
 }
 
+static EditorSnapshot droppableAssets() {
+    const TechEngine::StringId mesh("TechEngine.Mesh");
+    EditorSnapshot snapshot;
+    snapshot.assets = {
+        assetRecord(1, mesh, "assets/client/A.temesh"),
+        assetRecord(2, TechEngine::StringId("TechEngine.Material"), "assets/client/Paint.tematerial"),
+        assetRecord(3, mesh, "assets/server/Collision.temesh"),
+        assetRecord(4, mesh, "assets/client/B.temesh"),
+    };
+    snapshot.assets[2].side = TechEngine::Side::Server;
+    return snapshot;
+}
+
+TEST_CASE("an asset field takes a dropped asset of its own type", "[editor][edit]") {
+    const EditorSnapshot snapshot = droppableAssets();
+    const std::vector<std::string> paths = {"assets/client/B.temesh"};
+    TechEngine::ResourceId out;
+
+    CHECK(snapshot.findDroppedAsset(paths, TechEngine::StringId("TechEngine.Mesh"), out));
+    CHECK(out == TechEngine::ResourceId{4});
+}
+
+TEST_CASE("an asset field refuses a dropped asset the picker would not offer", "[editor][edit]") {
+    const EditorSnapshot snapshot = droppableAssets();
+    TechEngine::StringId type("TechEngine.Mesh");
+    std::vector<std::string> paths;
+
+    SECTION("another type") {
+        paths = {"assets/client/Paint.tematerial"};
+    }
+
+    SECTION("a server asset of the field's type") {
+        paths = {"assets/server/Collision.temesh"};
+    }
+
+    SECTION("a path no record holds") {
+        paths = {"assets/client/Gone.temesh"};
+    }
+
+    SECTION("a source file") {
+        paths = {"assets/client/Kart.gltf"};
+    }
+
+    SECTION("a field with an empty type") {
+        paths = {"assets/client/A.temesh"};
+        type = TechEngine::StringId{};
+    }
+
+    TechEngine::ResourceId out;
+    CHECK_FALSE(snapshot.findDroppedAsset(paths, type, out));
+}
+
+TEST_CASE("an asset field refuses a drop of several assets, even when each is of its type", "[editor][edit]") {
+    const EditorSnapshot snapshot = droppableAssets();
+    const TechEngine::StringId mesh("TechEngine.Mesh");
+    TechEngine::ResourceId out;
+
+    SECTION("two of its type") {
+        const std::vector<std::string> paths = {"assets/client/A.temesh", "assets/client/B.temesh"};
+        CHECK_FALSE(snapshot.findDroppedAsset(paths, mesh, out));
+    }
+
+    SECTION("one of its type beside another type") {
+        const std::vector<std::string> paths = {"assets/client/A.temesh", "assets/client/Paint.tematerial"};
+        CHECK_FALSE(snapshot.findDroppedAsset(paths, mesh, out));
+    }
+
+    SECTION("the same path twice") {
+        const std::vector<std::string> paths = {"assets/client/A.temesh", "assets/client/A.temesh"};
+        CHECK_FALSE(snapshot.findDroppedAsset(paths, mesh, out));
+    }
+}
+
+TEST_CASE("an asset field refuses a drop of no path", "[editor][edit]") {
+    const EditorSnapshot snapshot = droppableAssets();
+    TechEngine::ResourceId out;
+
+    CHECK_FALSE(snapshot.findDroppedAsset({}, TechEngine::StringId("TechEngine.Mesh"), out));
+}
+
 static constexpr std::string_view COMMON_FOLDER = "project://assets/common";
 static constexpr std::string_view CLIENT_FOLDER = "project://assets/client";
 static constexpr std::string_view SERVER_FOLDER = "project://assets/server";
@@ -746,4 +831,84 @@ TEST_CASE("a free material name follows the material's rule beside a listed mate
     CHECK(snapshot.firstFreePath([](const std::uint32_t suffix) {
         return TechEngine::CreateMaterialCommand::outputPath(CLIENT_FOLDER, "Material", suffix);
     }) == underClient("Material_1.tematerial"));
+}
+
+static TechEngine::ListedEntry listedAsset(const std::string_view path, const TechEngine::StringId type) {
+    TechEngine::ListedEntry entry = listed(path, TechEngine::ListedKind::Asset);
+    entry.typeTag = type;
+    return entry;
+}
+
+static EditorSnapshot placeableListing() {
+    using TechEngine::ListedKind;
+    EditorSnapshot snapshot = browserSnapshot();
+    snapshot.listing.push_back(listedAsset(underClient("Kart/Kart.temodel"), TechEngine::MODEL_TYPE_TAG));
+    snapshot.listing.push_back(listedAsset(underClient("Front/Front.temesh"), TechEngine::MESH_TYPE_TAG));
+    snapshot.listing.push_back(listedAsset(underClient("Paint.tematerial"), TechEngine::MATERIAL_TYPE_TAG));
+    snapshot.listing.push_back(listedAsset(underClient("Sky.tetexture"), TechEngine::TEXTURE_TYPE_TAG));
+    snapshot.listing.push_back(listedAsset(underClient("Startup.tescene"), TechEngine::SCENE_TYPE_TAG));
+    snapshot.listing.push_back(listed(underClient("Kart.gltf"), ListedKind::ModelSource));
+    snapshot.listing.push_back(listed(underClient("Sky.hdr"), ListedKind::SkySource));
+    // An indexed file the index dropped as a duplicate is listed as Other, whatever its extension.
+    snapshot.listing.push_back(listed(underClient("Copy.temodel"), ListedKind::Other));
+    std::ranges::sort(snapshot.listing, {}, &TechEngine::ListedEntry::path);
+    return snapshot;
+}
+
+TEST_CASE("only a listed model or mesh is placeable", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = placeableListing();
+
+    for (const TechEngine::ListedEntry& entry: snapshot.listing) {
+        const bool expected = entry.path == underClient("Kart/Kart.temodel") || entry.path == underClient("Front/Front.temesh");
+        CHECK(EditorSnapshot::isPlaceable(entry) == expected);
+    }
+}
+
+TEST_CASE("a drop places its models and meshes in the order given, and skips everything else", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = placeableListing();
+    const std::vector<std::string> paths = {
+        underClient("Front/Front.temesh"),
+        underClient("Paint.tematerial"),
+        underClient("Kart.gltf"),
+        underClient("Kart/Kart.temodel"),
+        underClient("Sponza"),
+        underClient("Copy.temodel"),
+        underClient("Gone.temodel"),
+    };
+    std::vector<std::string> out = {"stale"};
+
+    snapshot.collectPlaceable(paths, out);
+
+    CHECK(out == std::vector<std::string>{underClient("Front/Front.temesh"), underClient("Kart/Kart.temodel")});
+}
+
+TEST_CASE("a drop of the same model twice places it twice", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = placeableListing();
+    const std::vector<std::string> paths = {underClient("Kart/Kart.temodel"), underClient("Kart/Kart.temodel")};
+    std::vector<std::string> out;
+
+    snapshot.collectPlaceable(paths, out);
+
+    CHECK(out == paths);
+}
+
+TEST_CASE("a drop with nothing placeable places nothing", "[editor][edit][browser]") {
+    const EditorSnapshot snapshot = placeableListing();
+    std::vector<std::string> out = {"stale"};
+
+    SECTION("only other kinds") {
+        const std::vector<std::string> paths = {underClient("Sky.tetexture"), underClient("Sky.hdr"), underClient("Startup.tescene")};
+        snapshot.collectPlaceable(paths, out);
+    }
+
+    SECTION("no path") {
+        snapshot.collectPlaceable({}, out);
+    }
+
+    SECTION("a model path on an empty listing") {
+        const std::vector<std::string> paths = {underClient("Kart/Kart.temodel")};
+        EditorSnapshot{}.collectPlaceable(paths, out);
+    }
+
+    CHECK(out.empty());
 }

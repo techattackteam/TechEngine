@@ -268,7 +268,7 @@ TEST_CASE("a sender on an app that is not running applies nothing and logs the r
     commands.setRotationAxis({Entity{0, 0}}, Entity{0, 0}, TechEngine::Quat(1.0f, 0.0f, 0.0f, 0.0f), 0, 1.0f);
     commands.addComponent({Entity{0, 0}}, TechEngine::ComponentTypeId{});
     commands.removeComponent({Entity{0, 0}}, TechEngine::ComponentTypeId{});
-    commands.placeModel("project://assets/client/Kart/Kart.temodel");
+    commands.placeModel("project://assets/client/Kart/Kart.temodel", Entity{});
     commands.refreshAssets();
     TechEngine::ModelImportRequest model;
     model.sourcePath = "project://assets/client/Kart.gltf";

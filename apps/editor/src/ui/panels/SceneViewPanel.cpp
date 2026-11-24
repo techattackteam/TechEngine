@@ -1,19 +1,25 @@
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
+#include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 
+#include <edit/AssetDragPayload.hpp>
+#include <edit/EditorCommands.hpp>
 #include <edit/EditorSnapshot.hpp>
 #include <ui/panels/SceneViewPanel.hpp>
+#include <ui/widgets/AssetDragDrop.hpp>
 
 #include <imgui.h>
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <string>
+#include <vector>
 
 namespace TechEngine {
     static constexpr std::uint64_t SCENE_VIEW_TOKEN = VIEW_TEXTURE_TOKEN_BIT | 1;
 
-    SceneViewPanel::SceneViewPanel() : ViewPanel("Scene", SCENE_VIEW_TOKEN) {
+    SceneViewPanel::SceneViewPanel(EditorCommands& commands) : ViewPanel("Scene", SCENE_VIEW_TOKEN), m_commands(&commands) {
     }
 
     void SceneViewPanel::updateCamera(const EditorSnapshot& snapshot, const ImVec2& imageSize, const bool imageHovered) {
@@ -58,6 +64,27 @@ namespace TechEngine {
         request.cameraSource = ViewCameraSource::Pose;
         request.pose.world = m_camera.getWorld();
         request.pose.settings = m_camera.getSettings();
+    }
+
+    void SceneViewPanel::acceptDrop(const EditorSnapshot& snapshot) {
+        if (!ImGui::BeginDragDropTarget()) {
+            return;
+        }
+        std::vector<std::string> paths;
+        std::vector<std::string> placeable;
+        const bool dragging = peekAssetDrag(paths);
+        if (dragging) {
+            snapshot.collectPlaceable(paths, placeable);
+        }
+        if (!placeable.empty()) {
+            const ImGuiPayload* accepted = ImGui::AcceptDragDropPayload(ASSET_DRAG_PAYLOAD);
+            if (accepted != nullptr) {
+                for (const std::string& path: placeable) {
+                    m_commands->placeModel(path, Entity{});
+                }
+            }
+        }
+        ImGui::EndDragDropTarget();
     }
 
     void SceneViewPanel::trackDrags(const bool imageHovered) {

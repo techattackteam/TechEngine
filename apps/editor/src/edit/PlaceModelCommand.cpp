@@ -24,13 +24,18 @@
 #include <utility>
 
 namespace TechEngine {
-    PlaceModelCommand::PlaceModelCommand(EditSession& session, const FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, const AssetIndex& assets, std::string path)
-        : m_session(&session), m_files(&files), m_resources(&resources), m_sceneHandle(&sceneHandle), m_assets(&assets), m_path(std::move(path)) {
+    PlaceModelCommand::PlaceModelCommand(EditSession& session, const FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, const AssetIndex& assets, std::string path, const Entity parent)
+        : m_session(&session), m_files(&files), m_resources(&resources), m_sceneHandle(&sceneHandle), m_assets(&assets), m_path(std::move(path)), m_parent(parent) {
     }
 
     void PlaceModelCommand::apply(Scene& scene) {
         if (!m_sceneHandle->valid()) {
             TE_LOGGER_WARN("The scene has no cache entry, so {0} is not placed", m_path);
+            return;
+        }
+
+        if (m_parent.valid() && !scene.contains(m_parent)) {
+            TE_LOGGER_WARN("Entity {0} is no longer in the scene, so {1} is not placed under it", m_parent, m_path);
             return;
         }
 
@@ -161,6 +166,9 @@ namespace TechEngine {
             if (node.parent != MODEL_NO_PARENT) {
                 const Entity parent = out[node.parent];
                 const bool parented = scene.setParent(entity, parent, scene.getChildren(parent).size());
+                TE_CHECK(parented, "Failed to parent node {0} of {1}", node.name, m_path);
+            } else if (m_parent.valid()) {
+                const bool parented = scene.setParent(entity, m_parent, 0);
                 TE_CHECK(parented, "Failed to parent node {0} of {1}", node.name, m_path);
             }
 
