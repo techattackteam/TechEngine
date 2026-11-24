@@ -32,6 +32,7 @@ using TechEngineTests::AssetEditHarness;
 using TechEngineTests::EDIT_MATERIAL_ID;
 using TechEngineTests::EDIT_MESH_ID;
 using TechEngineTests::EDIT_PAINTED_MESH_ID;
+using TechEngineTests::EDIT_SCENE_ID;
 using TechEngineTests::EDIT_UNKNOWN_ID;
 
 static Entity createHoldingMesh(AssetEditHarness& edit, const std::string_view name, const ResourceId mesh) {
@@ -89,18 +90,35 @@ TEST_CASE("a second rebuild over the same entities acquires nothing more", "[edi
 TEST_CASE("a material that cannot be held keeps its id with an empty handle, and the next entity is still rebuilt", "[editor][edit][assets]") {
     AssetEditHarness edit;
     const Entity lost = createHoldingMesh(edit, "Lost", EDIT_MESH_ID);
-    edit.scene.getComponent<MeshRenderer>(lost).slots = {MaterialSlot{"Slot 0", AssetRef<Material>{EDIT_UNKNOWN_ID, {}}}};
+    edit.scene.getComponent<MeshRenderer>(lost).slots = {MaterialSlot{"Slot 0", AssetRef<Material>{EDIT_SCENE_ID, {}}}};
     const Entity painted = createHoldingMesh(edit, "Painted", EDIT_PAINTED_MESH_ID);
 
     rebuildMaterialSlots(edit.scene, edit.cache, edit.sceneHandle, std::vector<Entity>{lost, painted});
 
     const MeshRenderer& lostRenderer = rendererOf(edit, lost);
     REQUIRE(lostRenderer.slots.size() == 1);
-    CHECK(lostRenderer.slots[0].material.id == EDIT_UNKNOWN_ID);
+    CHECK(lostRenderer.slots[0].material.id == EDIT_SCENE_ID);
     CHECK_FALSE(lostRenderer.slots[0].material.handle.valid());
     const MeshRenderer& paintedRenderer = rendererOf(edit, painted);
     REQUIRE(paintedRenderer.slots.size() == 1);
     checkHeldMaterial(edit, paintedRenderer.slots[0], EDIT_MATERIAL_ID);
+}
+
+TEST_CASE("a material no file holds is held as Missing, and the slot keeps its id", "[editor][edit][assets]") {
+    AssetEditHarness edit;
+    const Entity entity = createHoldingMesh(edit, "Lost", EDIT_MESH_ID);
+    edit.scene.getComponent<MeshRenderer>(entity).slots = {MaterialSlot{"Slot 0", AssetRef<Material>{EDIT_UNKNOWN_ID, {}}}};
+
+    rebuildMaterialSlots(edit.scene, edit.cache, edit.sceneHandle, std::vector<Entity>{entity});
+
+    const MeshRenderer& renderer = rendererOf(edit, entity);
+    REQUIRE(renderer.slots.size() == 1);
+    CHECK(renderer.slots[0].material.id == EDIT_UNKNOWN_ID);
+    REQUIRE(renderer.slots[0].material.handle.valid());
+    ResourceState state = ResourceState::Pending;
+    REQUIRE(edit.cache.getState(renderer.slots[0].material.handle, state));
+    CHECK(state == ResourceState::Missing);
+    CHECK(edit.cache.resolve(renderer.slots[0].material.handle) == nullptr);
 }
 
 TEST_CASE("a renderer whose mesh is not Ready keeps its slot list as it was", "[editor][edit][assets]") {

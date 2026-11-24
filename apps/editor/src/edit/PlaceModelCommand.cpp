@@ -117,8 +117,7 @@ namespace TechEngine {
             AssetRecord asset;
             const bool indexed = m_assets->find(id, asset);
             if (!indexed) {
-                TE_LOGGER_WARN("{0} names mesh {1:#018x}, which is not in the asset index, so it is not placed", m_path, id.value());
-                return false;
+                continue;
             }
             if (asset.typeTag != MESH_TYPE_TAG) {
                 TE_LOGGER_WARN("{0} names asset {1:#018x} as a mesh, but it is not one, so it is not placed", m_path, id.value());
@@ -144,7 +143,7 @@ namespace TechEngine {
         for (const auto& [id, slot]: out) {
             ResourceState state = ResourceState::Pending;
             const bool found = m_resources->getState(slot, state);
-            if (!found || state != ResourceState::Ready) {
+            if (!found || (state != ResourceState::Ready && state != ResourceState::Missing)) {
                 TE_LOGGER_WARN("Mesh {0:#018x} of {1} did not load, so it is not placed: {2}", id.value(), m_path, loadError ? loadError.message() : std::string("it had already failed"));
                 return false;
             }
