@@ -2,10 +2,10 @@
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/core/resources/Side.hpp>
 
-#include <assets/AssetIndex.hpp>
-#include <edit/EditSession.hpp>
+#include <assets/index/AssetIndex.hpp>
 #include <edit/EditorCommands.hpp>
-#include <edit/EditorSnapshot.hpp>
+#include <edit/session/EditSession.hpp>
+#include <edit/snapshot/EditorSnapshot.hpp>
 #include <ui/panels/AssetBrowserPanel.hpp>
 
 #include <catch2/catch_test_macros.hpp>

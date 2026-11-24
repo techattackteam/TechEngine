@@ -1,8 +1,8 @@
-#include <assets/AssetNaming.hpp>
-#include <assets/TextureImporter.hpp>
-#include <edit/CreateFolderCommand.hpp>
-#include <edit/CreateMaterialCommand.hpp>
+#include <assets/import/TextureImporter.hpp>
+#include <assets/index/AssetNaming.hpp>
 #include <edit/EditorCommands.hpp>
+#include <edit/assets/CreateFolderCommand.hpp>
+#include <edit/assets/CreateMaterialCommand.hpp>
 #include <ui/creators/AssetCreators.hpp>
 
 #include <imgui.h>

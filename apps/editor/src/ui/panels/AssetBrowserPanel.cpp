@@ -5,10 +5,10 @@
 #include <TechEngine/core/scene/SceneAsset.hpp>
 #include <TechEngine/core/texture/Texture.hpp>
 
-#include <assets/AssetIndex.hpp>
-#include <assets/AssetNaming.hpp>
+#include <assets/index/AssetIndex.hpp>
+#include <assets/index/AssetNaming.hpp>
 #include <edit/EditorCommands.hpp>
-#include <edit/EditorSnapshot.hpp>
+#include <edit/snapshot/EditorSnapshot.hpp>
 #include <ui/creators/AssetCreators.hpp>
 #include <ui/panels/AssetBrowserPanel.hpp>
 

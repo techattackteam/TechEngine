@@ -1,6 +1,6 @@
 #include <TechEngine/base/diagnostics/Log.hpp>
 
-#include <edit/ConsoleHistory.hpp>
+#include <edit/console/ConsoleHistory.hpp>
 #include <ui/panels/ConsolePanel.hpp>
 
 #include <imgui.h>

@@ -2,7 +2,7 @@
 
 #include <TechEngine/core/resources/Side.hpp>
 
-#include <assets/AssetIndex.hpp>
+#include <assets/index/AssetIndex.hpp>
 
 #include <cstdint>
 #include <string>
