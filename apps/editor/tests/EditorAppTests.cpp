@@ -20,11 +20,11 @@
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <EditorApp.hpp>
-#include <assets/AssetIndex.hpp>
-#include <assets/AssetTestFiles.hpp>
-#include <assets/ModelTestFiles.hpp>
-#include <edit/EditorSnapshot.hpp>
-#include <edit/SaveSceneCommand.hpp>
+#include <assets/import/ModelTestFiles.hpp>
+#include <assets/index/AssetIndex.hpp>
+#include <assets/index/AssetTestFiles.hpp>
+#include <edit/project/SaveSceneCommand.hpp>
+#include <edit/snapshot/EditorSnapshot.hpp>
 #include <project/Project.hpp>
 
 #include <catch2/catch_test_macros.hpp>

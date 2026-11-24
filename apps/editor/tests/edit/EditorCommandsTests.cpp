@@ -14,16 +14,16 @@
 #include <TechEngine/testing/LogCapture.hpp>
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
-#include <assets/AssetIndex.hpp>
-#include <assets/ModelImporter.hpp>
-#include <assets/TextureImporter.hpp>
-#include <edit/CreateFolderCommand.hpp>
-#include <edit/CreateMaterialCommand.hpp>
-#include <edit/EditSession.hpp>
-#include <edit/EditTestScene.hpp>
+#include <assets/import/ModelImporter.hpp>
+#include <assets/import/TextureImporter.hpp>
+#include <assets/index/AssetIndex.hpp>
 #include <edit/EditorCommands.hpp>
-#include <edit/EditorSnapshot.hpp>
-#include <edit/FieldValue.hpp>
+#include <edit/assets/CreateFolderCommand.hpp>
+#include <edit/assets/CreateMaterialCommand.hpp>
+#include <edit/fields/FieldValue.hpp>
+#include <edit/session/EditSession.hpp>
+#include <edit/session/EditTestScene.hpp>
+#include <edit/snapshot/EditorSnapshot.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 

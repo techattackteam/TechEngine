@@ -1,5 +1,5 @@
 #include <edit/EditorCommands.hpp>
-#include <edit/EditorSnapshot.hpp>
+#include <edit/snapshot/EditorSnapshot.hpp>
 #include <ui/panels/HierarchyPanel.hpp>
 
 #include <imgui.h>

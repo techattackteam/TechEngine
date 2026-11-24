@@ -5,14 +5,14 @@
 #include <TechEngine/core/jobs/JobSystem.hpp>
 #include <TechEngine/platform/process/Process.hpp>
 
-#include <assets/AssetIndex.hpp>
-#include <assets/LooseSource.hpp>
-#include <edit/ConsoleHistory.hpp>
-#include <edit/ConsoleLog.hpp>
-#include <edit/EditSession.hpp>
+#include <assets/index/AssetIndex.hpp>
+#include <assets/index/LooseSource.hpp>
 #include <edit/EditorCommands.hpp>
-#include <edit/EditorSnapshot.hpp>
-#include <edit/EditorSnapshotSlot.hpp>
+#include <edit/console/ConsoleHistory.hpp>
+#include <edit/console/ConsoleLog.hpp>
+#include <edit/session/EditSession.hpp>
+#include <edit/snapshot/EditorSnapshot.hpp>
+#include <edit/snapshot/EditorSnapshotSlot.hpp>
 #include <project/Project.hpp>
 #include <ui/ClosePrompt.hpp>
 #include <ui/ImGuiBridge.hpp>

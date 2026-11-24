@@ -16,8 +16,8 @@
 #include <TechEngine/platform/files/FileError.hpp>
 
 #include <EditorApp.hpp>
-#include <edit/ExportCommand.hpp>
-#include <edit/MaterialSlotRebuild.hpp>
+#include <edit/project/ExportCommand.hpp>
+#include <edit/scene/MaterialSlotRebuild.hpp>
 #include <ui/EditorTheme.hpp>
 
 #include <imgui.h>
