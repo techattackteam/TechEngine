@@ -1182,6 +1182,33 @@ static void runIdleThenStop(AppLifecycleProbe& app, const std::chrono::milliseco
     CHECK(stoppedInTime);
 }
 
+static void submitTwoEditsThenStop(AppLifecycleProbe& app, AppCommandLog& log, AppLifecycleSignal& firstHandled, AppLifecycleSignal& secondHandled) {
+    std::error_code firstSubmitError = TechEngine::SimulationError::CommandQueueClosed;
+    std::error_code secondSubmitError = TechEngine::SimulationError::CommandQueueClosed;
+    bool firstInTime = false;
+    bool secondInTime = false;
+    bool stoppedInTime = false;
+    std::jthread controller{[&] {
+        if (app.startupLoadEntered.wait()) {
+            firstSubmitError = submitProbe(app, 1, log);
+            firstInTime = firstHandled.wait();
+            // Submitted after the first edit was handled, so with no tick deadline only the wake can apply it.
+            secondSubmitError = submitProbe(app, 2, log);
+            secondInTime = secondHandled.wait();
+        }
+        stoppedInTime = stopIdle(app);
+    }};
+
+    const int result = app.run();
+    controller.join();
+    CHECK(result == 0);
+    CHECK_FALSE(firstSubmitError);
+    CHECK_FALSE(secondSubmitError);
+    CHECK(firstInTime);
+    CHECK(secondInTime);
+    CHECK(stoppedInTime);
+}
+
 TEST_CASE("an App whose simulation does not tick runs no Tick across a wait", "[app][lifecycle][idle]") {
     AppLifecycleProbe app;
     app.ticks = false;
@@ -1211,30 +1238,9 @@ TEST_CASE("an idle App applies each submitted command and publishes it within on
             secondPublished.set();
         }
     };
-    std::error_code firstSubmitError = TechEngine::SimulationError::CommandQueueClosed;
-    std::error_code secondSubmitError = TechEngine::SimulationError::CommandQueueClosed;
-    bool firstInTime = false;
-    bool secondInTime = false;
-    bool stoppedInTime = false;
-    std::jthread controller{[&] {
-        if (app.startupLoadEntered.wait()) {
-            firstSubmitError = submitProbe(app, 1, log);
-            firstInTime = firstPublished.wait();
-            // Submitted after the first publication, so with no tick deadline only the wake can apply it.
-            secondSubmitError = submitProbe(app, 2, log);
-            secondInTime = secondPublished.wait();
-        }
-        stoppedInTime = stopIdle(app);
-    }};
 
-    const int result = app.run();
-    controller.join();
-    CHECK(result == 0);
-    CHECK_FALSE(firstSubmitError);
-    CHECK_FALSE(secondSubmitError);
-    CHECK(firstInTime);
-    CHECK(secondInTime);
-    CHECK(stoppedInTime);
+    submitTwoEditsThenStop(app, log, firstPublished, secondPublished);
+
     const std::vector<AppCommandRecord> applied = log.appliedRecords();
     REQUIRE(applied.size() == 2);
     for (std::size_t i = 0; i < applied.size(); i++) {
@@ -1264,29 +1270,9 @@ TEST_CASE("an edit in a Stopped App produces a frame after its publishEdits", "[
             secondEditFramed.set();
         }
     };
-    std::error_code firstSubmitError = TechEngine::SimulationError::CommandQueueClosed;
-    std::error_code secondSubmitError = TechEngine::SimulationError::CommandQueueClosed;
-    bool firstInTime = false;
-    bool secondInTime = false;
-    bool stoppedInTime = false;
-    std::jthread controller{[&] {
-        if (app.startupLoadEntered.wait()) {
-            firstSubmitError = submitProbe(app, 1, log);
-            firstInTime = firstEditFramed.wait();
-            secondSubmitError = submitProbe(app, 2, log);
-            secondInTime = secondEditFramed.wait();
-        }
-        stoppedInTime = stopIdle(app);
-    }};
 
-    const int result = app.run();
-    controller.join();
-    CHECK(result == 0);
-    CHECK_FALSE(firstSubmitError);
-    CHECK_FALSE(secondSubmitError);
-    CHECK(firstInTime);
-    CHECK(secondInTime);
-    CHECK(stoppedInTime);
+    submitTwoEditsThenStop(app, log, firstEditFramed, secondEditFramed);
+
     CHECK(eventCount(app, "systemTick") == 0);
     CHECK(eventCount(app, "publishEdits") == 2);
     CHECK(eventCount(app, "publishFrame") == 4);
