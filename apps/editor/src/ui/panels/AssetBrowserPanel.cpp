@@ -285,15 +285,23 @@ namespace TechEngine {
         wrapLabel(name, TILE_LABEL_WIDTH, lines);
 
         ImGui::PushID(entry.path.data(), entry.path.data() + entry.path.size());
-        // The tile draws its own highlight below, so the Selectable's is hidden.
-        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-        ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        // HeaderHovered and HeaderActive are grays, so a hovered or pressed selected tile would otherwise lose its
+        // selection color.
+        if (selected) {
+            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::GetStyle().Colors[ImGuiCol_Header]);
+            ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImGui::GetStyle().Colors[ImGuiCol_Header]);
+        }
+        // The Selectable draws the highlight and then ImGui's nav outline over it, both on its rectangle and with this
+        // rounding. A highlight drawn by the tile afterwards would cover most of the outline.
+        ImGui::PushStyleVar(ImGuiStyleVar_SelectableRounding, TILE_ROUNDING);
         ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(item));
         // Padded by half the item spacing, the Selectable's rectangle is wider than the tile, and the table clips the pad
-        // on the outer side of the first and last column, so ImGui's nav outline sits off the tile's highlight there.
+        // on the outer side of the first and last column.
         ImGui::Selectable("##tile", selected, ImGuiSelectableFlags_NoPadWithHalfSpacing, ImVec2(cellWidth, cellHeight));
-        ImGui::PopStyleColor(3);
+        ImGui::PopStyleVar();
+        if (selected) {
+            ImGui::PopStyleColor(2);
+        }
         const bool hovered = ImGui::IsItemHovered();
         if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
             if (entry.kind == ListedKind::Folder) {
@@ -316,10 +324,6 @@ namespace TechEngine {
         ImGui::PopID();
 
         ImDrawList* drawList = ImGui::GetWindowDrawList();
-        if (selected || hovered) {
-            const ImU32 highlight = ImGui::GetColorU32(selected ? ImGuiCol_Header : ImGuiCol_HeaderHovered);
-            drawList->AddRectFilled(cellStart, ImVec2(cellStart.x + cellWidth, cellStart.y + cellHeight), highlight, TILE_ROUNDING);
-        }
 
         const ImVec2 iconMin(cellStart.x + (cellWidth - TILE_ICON_SIZE) * 0.5f, cellStart.y + TILE_TOP_MARGIN);
         drawBadge(entry, iconMin, ImVec2(iconMin.x + TILE_ICON_SIZE, iconMin.y + TILE_ICON_SIZE));
