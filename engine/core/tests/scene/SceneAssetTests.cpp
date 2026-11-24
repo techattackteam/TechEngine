@@ -993,7 +993,8 @@ TEST_CASE("a reference that fails to load fails the load, leaves the Scene empty
     }
 }
 
-TEST_CASE("a referenced id the source does not know fails the load with UnknownResource and leaves the Scene empty", "[core][scene][resources]") {
+TEST_CASE("a referenced id no file holds does not fail the load, warns, and its handle names a Missing entry", "[core][scene][resources]") {
+    const TechEngineTests::LogCaptureGuard logs;
     SceneLoadHarness harness;
     registerLinkedAssetLoader(harness.cache);
     harness.source.addAsset(SCENE_ASSET_ID, writeLinkedScene());
@@ -1003,17 +1004,27 @@ TEST_CASE("a referenced id the source does not know fails the load with UnknownR
     Scene scene(registry);
     ResourceHandle<SceneBytes> handle;
 
-    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, scene, handle) == ReadError::UnknownResource);
+    REQUIRE(SceneAsset{SCENE_ASSET_ID}.load(harness.cache, scene, handle) == std::error_code{});
 
-    REQUIRE_FALSE(handle.valid());
-    REQUIRE(scene.getRoots().empty());
+    REQUIRE(handle.valid());
+    const SmallHierarchy hierarchy = getLoadedSmallHierarchy(scene);
+    const AssetRef<SceneAssetLinkedAsset>& missing = scene.getComponent<SceneAssetLink>(hierarchy.second).asset;
+    CHECK(missing.id == SECOND_LINKED_ASSET_ID);
+    REQUIRE(missing.handle.valid());
+    CHECK(linkedState(harness.cache, missing.handle) == ResourceState::Missing);
+    CHECK(linkedAcquireCount(harness.cache, missing.handle) == 1);
+    CHECK(harness.cache.resolve(missing.handle) == nullptr);
+    const std::string idText = std::format("{:#018x}", SECOND_LINKED_ASSET_ID.value());
+    CHECK(std::ranges::any_of(logs.getMessages(), [&idText](const std::string& message) {
+        return message.find(idText) != std::string::npos && message.find("no file holds") != std::string::npos;
+    }));
 
+    const ResourceHandle<SceneAssetLinkedAsset> missingHandle = missing.handle;
+    harness.cache.release(handle);
     harness.cache.drainFrees();
 
-    REQUIRE(harness.countAfterRequestingAgain(SCENE_ASSET_ID) == 1);
-    ResourceHandle<SceneAssetLinkedAsset> again;
-    REQUIRE(harness.cache.request(LINKED_ASSET_ID, again) == std::error_code{});
-    CHECK(linkedAcquireCount(harness.cache, again) == 1);
+    ResourceState freed = ResourceState::Pending;
+    CHECK_FALSE(harness.cache.getState(missingHandle, freed));
 }
 
 TEST_CASE("a scene that references itself fails the load with CyclicReference and leaves the Scene empty", "[core][scene][resources]") {

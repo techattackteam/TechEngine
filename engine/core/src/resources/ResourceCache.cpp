@@ -69,7 +69,7 @@ namespace TechEngine {
         return false;
     }
 
-    std::error_code ResourceCache::requestEntry(const ResourceId id, const StringId typeTag, ResourceSlotId& out) {
+    std::error_code ResourceCache::requestEntry(const ResourceId id, const StringId typeTag, const ResourceSlotId holder, ResourceSlotId& out) {
         TE_CHECK(m_source != nullptr, "A resource cache needs an asset source before its first request");
         TE_CHECK(id.valid(), "A null resource id is never requested");
 
@@ -84,7 +84,12 @@ namespace TechEngine {
 
         const AssetAvailability availability = m_source->find(id);
         if (availability == AssetAvailability::Unknown) {
-            return ReadError::UnknownResource;
+            if (!holder.valid()) {
+                return ReadError::UnknownResource;
+            }
+            const ResourceEntry* holderEntry = m_slots->find(holder);
+            TE_ASSERT(holderEntry != nullptr, "Resource {0:#018x} is requested for a holder slot that no longer exists", id.value());
+            TE_LOGGER_WARN("Resource {0:#018x} references {1:#018x}, which no file holds, so it loads as missing", holderEntry->id.value(), id.value());
         }
 
         const ResourceSlotId slot = m_slots->create();
@@ -95,6 +100,8 @@ namespace TechEngine {
         entry->acquires = 1;
         if (availability == AssetAvailability::AbsentForRole) {
             entry->state = ResourceState::AbsentForRole;
+        } else if (availability == AssetAvailability::Unknown) {
+            entry->state = ResourceState::Missing;
         } else {
             entry->state = ResourceState::Pending;
             m_pendingLoads.push_back(slot);
@@ -144,7 +151,7 @@ namespace TechEngine {
     }
 
     std::error_code ResourceCache::acquireDependency(const ResourceSlotId holder, const ResourceId dependency, ResourceSlotId& out) {
-        const std::error_code requestError = requestEntry(dependency, StringId{}, out);
+        const std::error_code requestError = requestEntry(dependency, StringId{}, holder, out);
         if (requestError) {
             return requestError;
         }

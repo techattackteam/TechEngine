@@ -351,6 +351,7 @@ static constexpr ResourceId DEPENDENCY_ID{0x1002};
 static constexpr ResourceId LEAF_ID{0x1003};
 static constexpr ResourceId SECOND_ROOT_ID{0x1004};
 static constexpr ResourceId UNKNOWN_ID{0x2001};
+static constexpr ResourceId SECOND_UNKNOWN_ID{0x2003};
 static constexpr ResourceId SERVER_ID{0x2002};
 static constexpr ResourceId GATED_ID{0x3001};
 static constexpr ResourceId SECOND_GATED_ID{0x3002};
@@ -840,25 +841,61 @@ TEST_CASE("an added dependency is released with its holder, beside the ones its 
     REQUIRE_FALSE(harness.exists(leaf));
 }
 
-TEST_CASE("adding an unknown id returns UnknownResource, holds nothing and leaves the holder Ready", "[core][resources][cache]") {
+TEST_CASE("adding an id no file holds gives a Missing entry, warns and leaves the holder Ready", "[core][resources][cache]") {
+    const TechEngineTests::LogCaptureGuard logs;
     CacheHarness harness;
     harness.source.addAsset(ROOT_ID, "root", {});
     const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
     REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
     ResourceSlotId added;
 
-    REQUIRE(harness.cache.addDependency(root, UNKNOWN_ID, added) == ReadError::UnknownResource);
+    REQUIRE(harness.cache.addDependency(root, UNKNOWN_ID, added) == std::error_code{});
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
 
+    REQUIRE(added.valid());
+    ResourceState state = ResourceState::Pending;
+    REQUIRE(harness.cache.getState(added, state));
+    CHECK(state == ResourceState::Missing);
     REQUIRE(harness.state(root) == ResourceState::Ready);
     REQUIRE(harness.error(root) == std::error_code{});
     REQUIRE(harness.cache.resolve(root) != nullptr);
+    CHECK(logNames(logs, ROOT_ID));
+    CHECK(logNames(logs, UNKNOWN_ID));
     ResourceHandle<CacheResource> unknown;
-    REQUIRE(harness.cache.request(UNKNOWN_ID, unknown) == ReadError::UnknownResource);
+    REQUIRE(harness.cache.request(SECOND_UNKNOWN_ID, unknown) == ReadError::UnknownResource);
 
     harness.cache.release(root);
     harness.cache.drainFrees();
 
     REQUIRE_FALSE(harness.exists(root));
+    REQUIRE_FALSE(harness.cache.getState(added, state));
+}
+
+TEST_CASE("a loader's dependency that no file holds loads as Missing, keeps its place and fails nothing", "[core][resources][cache]") {
+    const TechEngineTests::LogCaptureGuard logs;
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "root", {UNKNOWN_ID, DEPENDENCY_ID});
+    harness.source.addAsset(DEPENDENCY_ID, "dependency", {});
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+
+    REQUIRE(harness.state(root) == ResourceState::Ready);
+    REQUIRE(harness.error(root) == std::error_code{});
+    const ResourceHandle<CacheResource> missing = harness.peek(UNKNOWN_ID);
+    const ResourceHandle<CacheResource> dependency = harness.peek(DEPENDENCY_ID);
+    CHECK(harness.state(missing) == ResourceState::Missing);
+    CHECK(harness.acquireCount(missing) == 1);
+    CHECK(harness.cache.resolve(missing) == nullptr);
+    CHECK(harness.state(dependency) == ResourceState::Ready);
+    CHECK(logNames(logs, UNKNOWN_ID));
+
+    harness.cache.release(root);
+    harness.cache.drainFrees();
+
+    REQUIRE_FALSE(harness.exists(root));
+    REQUIRE_FALSE(harness.exists(missing));
+    REQUIRE_FALSE(harness.exists(dependency));
 }
 
 TEST_CASE("adding a dependency that closes a cycle returns CyclicReference and releases its acquire", "[core][resources][cache]") {
@@ -1151,6 +1188,28 @@ TEST_CASE("a pending entry named by a reload loads its new bytes in the reload's
     REQUIRE(harness.cache.resolve(pending)->label == "rewritten");
 }
 
+TEST_CASE("a reload whose new dependency no file holds publishes, with that dependency Missing", "[core][resources][cache][reload]") {
+    CacheHarness harness;
+    harness.source.addAsset(ROOT_ID, "root", {DEPENDENCY_ID});
+    harness.source.addAsset(DEPENDENCY_ID, "dependency", {});
+    const ResourceHandle<CacheResource> root = harness.request(ROOT_ID);
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+    harness.source.addAsset(ROOT_ID, "rewritten", {UNKNOWN_ID});
+
+    REQUIRE(harness.reload({ROOT_ID}) == std::error_code{});
+
+    REQUIRE(harness.state(root) == ResourceState::Ready);
+    REQUIRE(harness.cache.resolve(root) != nullptr);
+    CHECK(harness.cache.resolve(root)->label == "rewritten");
+    const ResourceHandle<CacheResource> missing = harness.peek(UNKNOWN_ID);
+    CHECK(harness.state(missing) == ResourceState::Missing);
+    CHECK(harness.acquireCount(missing) == 1);
+    ResourceHandle<CacheResource> dependency;
+    REQUIRE(harness.cache.request(DEPENDENCY_ID, dependency) == std::error_code{});
+    CHECK(harness.acquireCount(dependency) == 1);
+    CHECK(harness.state(dependency) == ResourceState::Pending);
+}
+
 TEST_CASE("a failed reload keeps the old payload and dependencies, reports its error and logs the id", "[core][resources][cache][reload]") {
     const TechEngineTests::LogCaptureGuard logs;
     CacheHarness harness;
@@ -1175,11 +1234,6 @@ TEST_CASE("a failed reload keeps the old payload and dependencies, reports its e
     SECTION("bytes of another kind") {
         harness.source.addGatedAsset(ROOT_ID, "gated");
         expected = ReadError::BadMagic;
-    }
-
-    SECTION("a new dependency that no source holds") {
-        harness.source.addAsset(ROOT_ID, "rewritten", {LEAF_ID, UNKNOWN_ID});
-        expected = ReadError::UnknownResource;
     }
 
     SECTION("a new dependency on itself") {

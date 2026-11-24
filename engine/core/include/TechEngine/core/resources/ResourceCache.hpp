@@ -23,7 +23,7 @@ namespace TechEngine {
     class ResourceSlots;
     struct ResourceEntry;
 
-    enum class ResourceState : std::uint8_t { Pending, Ready, Failed, AbsentForRole };
+    enum class ResourceState : std::uint8_t { Pending, Ready, Failed, AbsentForRole, Missing };
 
     // A loader appends the ids its payload references to dependencies instead of loading them:
     // the cache requests them as the next round of the loading phase.
@@ -100,7 +100,7 @@ namespace TechEngine {
         template<typename T>
         std::error_code request(const ResourceId id, ResourceHandle<T>& out) {
             ResourceSlotId slot;
-            const std::error_code requestError = requestEntry(id, resourceTypeTag<T>(), slot);
+            const std::error_code requestError = requestEntry(id, resourceTypeTag<T>(), ResourceSlotId{}, slot);
             out = ResourceHandle<T>{slot.index, slot.generation};
             return requestError;
         }
@@ -197,7 +197,8 @@ namespace TechEngine {
 
         void retirePayload(ResourceEntry& entry, std::unique_ptr<void, ResourcePayloadDeleter> previous);
 
-        std::error_code requestEntry(ResourceId id, StringId typeTag, ResourceSlotId& out);
+        // With a holder, an id the source does not know gets a Missing entry instead of failing.
+        std::error_code requestEntry(ResourceId id, StringId typeTag, ResourceSlotId holder, ResourceSlotId& out);
 
         void releaseEntry(ResourceSlotId slot);
 

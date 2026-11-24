@@ -10,12 +10,16 @@
 #include <TechEngine/core/serialization/ReadError.hpp>
 #include <TechEngine/core/serialization/Writer.hpp>
 #include <TechEngine/core/texture/Texture.hpp>
+#include <TechEngine/testing/LogCapture.hpp>
 #include <TechEngine/testing/MemoryAssetSource.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <format>
+#include <string>
 #include <system_error>
 #include <utility>
 #include <vector>
@@ -124,6 +128,10 @@ public:
     }
 
     void addTexture(const ResourceId id) {
+        source.addAsset(id, writeTexture(id));
+    }
+
+    static std::vector<std::byte> writeTexture(const ResourceId id) {
         Texture texture;
         texture.id = id;
         texture.format = TextureFormat::Bc7Srgb;
@@ -132,7 +140,7 @@ public:
         texture.mips = {std::vector<std::byte>(Texture::mipByteSize(TextureFormat::Bc7Srgb, 1, 1, 0))};
         std::vector<std::byte> bytes;
         texture.write(bytes);
-        source.addAsset(id, std::move(bytes));
+        return bytes;
     }
 };
 
@@ -392,6 +400,79 @@ TEST_CASE("a cache loads a written material and holds each of its textures", "[c
         harness.cache.release(texture);
     }
 
+    harness.cache.release(handle);
+    harness.cache.drainFrees();
+}
+
+TEST_CASE("a material whose texture no file holds loads Ready with that texture missing, and warns", "[core][material][resources]") {
+    const TechEngineTests::LogCaptureGuard logs;
+    MaterialLoadHarness harness;
+    Material written = makeTexturedMaterial();
+    written.normalTexture = AssetRef<Texture>{};
+    written.emissiveTexture = AssetRef<Texture>{};
+    harness.source.addAsset(MATERIAL_ASSET_ID, writeMaterial(written));
+    harness.addTexture(BASE_COLOR_ID);
+    ResourceHandle<Material> handle;
+
+    REQUIRE(harness.cache.request(MATERIAL_ASSET_ID, handle) == std::error_code{});
+    REQUIRE(harness.cache.runLoadingPhase() == std::error_code{});
+
+    ResourceState state = ResourceState::Pending;
+    REQUIRE(harness.cache.getState(handle, state));
+    REQUIRE(state == ResourceState::Ready);
+    const Material* material = harness.cache.resolve(handle);
+    REQUIRE(material != nullptr);
+    CHECK(*material == written);
+
+    ResourceHandle<Texture> present;
+    REQUIRE(harness.cache.request(BASE_COLOR_ID, present) == std::error_code{});
+    ResourceState presentState = ResourceState::Pending;
+    REQUIRE(harness.cache.getState(present, presentState));
+    CHECK(presentState == ResourceState::Ready);
+    ResourceHandle<Texture> missing;
+    REQUIRE(harness.cache.request(ORM_ID, missing) == std::error_code{});
+    ResourceState missingState = ResourceState::Pending;
+    REQUIRE(harness.cache.getState(missing, missingState));
+    CHECK(missingState == ResourceState::Missing);
+    CHECK(harness.cache.resolve(missing) == nullptr);
+    std::uint32_t acquires = 0;
+    REQUIRE(harness.cache.getAcquireCount(missing, acquires));
+    CHECK(acquires == 2);
+    const std::string idText = std::format("{:#018x}", ORM_ID.value());
+    CHECK(std::ranges::any_of(logs.getMessages(), [&idText](const std::string& message) {
+        return message.find(idText) != std::string::npos && message.find("no file holds") != std::string::npos;
+    }));
+
+    harness.cache.release(present);
+    harness.cache.release(missing);
+    harness.cache.release(handle);
+    harness.cache.drainFrees();
+    ResourceState freed = ResourceState::Pending;
+    CHECK_FALSE(harness.cache.getState(missing, freed));
+}
+
+TEST_CASE("a material whose texture file exists but is broken still fails that texture's load", "[core][material][resources]") {
+    MaterialLoadHarness harness;
+    Material written = makeTexturedMaterial();
+    written.normalTexture = AssetRef<Texture>{};
+    written.emissiveTexture = AssetRef<Texture>{};
+    harness.source.addAsset(MATERIAL_ASSET_ID, writeMaterial(written));
+    harness.addTexture(BASE_COLOR_ID);
+    std::vector<std::byte> bytes = MaterialLoadHarness::writeTexture(ORM_ID);
+    bytes.resize(bytes.size() - 1);
+    harness.source.addAsset(ORM_ID, std::move(bytes));
+    ResourceHandle<Material> handle;
+
+    REQUIRE(harness.cache.request(MATERIAL_ASSET_ID, handle) == std::error_code{});
+    REQUIRE(harness.cache.runLoadingPhase() != std::error_code{});
+
+    ResourceHandle<Texture> texture;
+    REQUIRE(harness.cache.request(ORM_ID, texture) == std::error_code{});
+    ResourceState textureState = ResourceState::Pending;
+    REQUIRE(harness.cache.getState(texture, textureState));
+    CHECK(textureState == ResourceState::Failed);
+
+    harness.cache.release(texture);
     harness.cache.release(handle);
     harness.cache.drainFrees();
 }

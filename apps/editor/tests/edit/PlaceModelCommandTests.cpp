@@ -10,6 +10,7 @@
 #include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/platform/files/FileAccess.hpp>
 #include <TechEngine/platform/files/MountTable.hpp>
+#include <TechEngine/testing/LogCapture.hpp>
 #include <TechEngine/testing/ScratchDirectory.hpp>
 
 #include <assets/AssetIndex.hpp>
@@ -23,8 +24,10 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <format>
 #include <span>
 #include <string>
 #include <string_view>
@@ -359,14 +362,48 @@ TEST_CASE("a model with a mesh that fails to load places nothing", "[editor][edi
     checkNothingPlaced(fixture, revisionBefore);
 }
 
-TEST_CASE("a model with a mesh the index does not know places nothing", "[editor][edit][commands][place][os]") {
-    PlaceFixture fixture{"placeUnknownMesh"};
-    fixture.addModel(makeKart(TransformValues{}, EDIT_MESH_ID, EDIT_UNKNOWN_ID), KART_MODEL_PATH);
+TEST_CASE("a model with a mesh no file holds places that node with its mesh missing, and warns", "[editor][edit][commands][place][os]") {
+    const TechEngineTests::LogCaptureGuard logs;
+    PlaceFixture fixture{"placeMissingMesh"};
+    ResourceId missingMesh;
+
+    SECTION("a mesh the index does not know") {
+        missingMesh = EDIT_UNKNOWN_ID;
+    }
+
+    SECTION("an indexed mesh whose bytes the source does not hold") {
+        missingMesh = ResourceId{0x3E540000000000AA};
+        AssetRecord record;
+        record.id = missingMesh;
+        record.typeTag = TechEngine::MESH_TYPE_TAG;
+        record.side = TechEngine::Side::Client;
+        record.path = "assets/client/Lost.temesh";
+        fixture.edit.index.add(std::move(record));
+    }
+
+    fixture.addModel(makeKart(TransformValues{}, EDIT_MESH_ID, missingMesh), KART_MODEL_PATH);
     const std::uint64_t revisionBefore = fixture.editRevision();
 
     fixture.place(KART_MODEL_PATH);
 
-    checkNothingPlaced(fixture, revisionBefore);
+    const std::vector<Entity> roots = fixture.edit.scene.getRoots();
+    REQUIRE(roots.size() == 1);
+    const PlacedKart kart = walkKart(fixture.edit, roots[0]);
+    checkPlacedMesh(fixture.edit, kart.body, EDIT_MESH_ID);
+    REQUIRE(fixture.edit.scene.hasComponent<MeshRenderer>(kart.wheel));
+    const MeshRenderer& wheel = fixture.edit.scene.getComponent<MeshRenderer>(kart.wheel);
+    CHECK(wheel.mesh.id == missingMesh);
+    REQUIRE(wheel.mesh.handle.valid());
+    ResourceState state = ResourceState::Pending;
+    REQUIRE(fixture.edit.cache.getState(wheel.mesh.handle, state));
+    CHECK(state == ResourceState::Missing);
+    CHECK(fixture.edit.cache.resolve(wheel.mesh.handle) == nullptr);
+    CHECK(wheel.slots.empty());
+    CHECK(fixture.editRevision() > revisionBefore);
+    const std::string idText = std::format("{:#018x}", missingMesh.value());
+    CHECK(std::ranges::any_of(logs.getMessages(), [&idText](const std::string& message) {
+        return message.find(idText) != std::string::npos && message.find("no file holds") != std::string::npos;
+    }));
 }
 
 TEST_CASE("a model with a server mesh places nothing", "[editor][edit][commands][place][os]") {
@@ -509,23 +546,6 @@ TEST_CASE("placing on a scene with no cache entry places nothing", "[editor][edi
 TEST_CASE("a model that names a scene as a node's mesh places nothing", "[editor][edit][commands][place][os]") {
     PlaceFixture fixture{"placeNotAMesh"};
     fixture.addModel(makeKart(TransformValues{}, EDIT_OTHER_SCENE_ID, EDIT_SECOND_MESH_ID), KART_MODEL_PATH);
-    const std::uint64_t revisionBefore = fixture.editRevision();
-
-    fixture.place(KART_MODEL_PATH);
-
-    checkNothingPlaced(fixture, revisionBefore);
-}
-
-TEST_CASE("a model with an indexed mesh whose bytes the cache cannot find places nothing", "[editor][edit][commands][place][os]") {
-    PlaceFixture fixture{"placeLostMesh"};
-    const ResourceId lostMesh{0x3E540000000000AA};
-    AssetRecord record;
-    record.id = lostMesh;
-    record.typeTag = TechEngine::MESH_TYPE_TAG;
-    record.side = TechEngine::Side::Client;
-    record.path = "assets/client/Lost.temesh";
-    fixture.edit.index.add(std::move(record));
-    fixture.addModel(makeKart(TransformValues{}, EDIT_MESH_ID, lostMesh), KART_MODEL_PATH);
     const std::uint64_t revisionBefore = fixture.editRevision();
 
     fixture.place(KART_MODEL_PATH);
