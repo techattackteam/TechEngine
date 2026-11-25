@@ -127,26 +127,25 @@ namespace TechEngine {
         }
 
         if (!targetWasMain) {
-            FieldEditRecord edit;
-            edit.entity = camera;
-            edit.component = componentTypeId<Camera>();
-            edit.field = CAMERA_MAIN_FIELD;
-            edit.oldValue = FieldValue{false};
-            m_session->record(std::move(edit));
+            recordMainEdit(camera, false);
         }
 
         for (const Entity entity: cleared) {
-            FieldEditRecord edit;
-            edit.entity = entity;
-            edit.component = componentTypeId<Camera>();
-            edit.field = CAMERA_MAIN_FIELD;
-            edit.oldValue = FieldValue{true};
-            m_session->record(std::move(edit));
+            recordMainEdit(entity, true);
         }
 
         if (!targetWasMain || !cleared.empty()) {
             m_session->recordSceneChange();
         }
+    }
+
+    void SetFieldCommand::recordMainEdit(const Entity camera, const bool oldMain) {
+        FieldEditRecord edit;
+        edit.entity = camera;
+        edit.component = componentTypeId<Camera>();
+        edit.field = CAMERA_MAIN_FIELD;
+        edit.oldValue = FieldValue{oldMain};
+        m_session->record(std::move(edit));
     }
 
     void SetFieldCommand::logFieldAfterEdit(const Scene& scene, const ComponentTypeRecord& record, const Entity entity, void* component, const FieldSetter& setter) const {
