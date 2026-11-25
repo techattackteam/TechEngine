@@ -158,23 +158,14 @@ namespace TechEngine {
     }
 
     void TextureImporter::buildMipChain(const FloatImage& source, std::vector<FloatImage>& out) {
-        out.clear();
-        if (source.width == 0 || source.height == 0) {
-            return;
-        }
-        std::uint32_t width = source.width;
-        std::uint32_t height = source.height;
-        while (width > 1 || height > 1) {
-            const FloatImage& above = out.empty() ? source : out.back();
-            FloatImage level;
-            downsample(above, level);
-            width = level.width;
-            height = level.height;
-            out.push_back(std::move(level));
-        }
+        buildChain(source, false, out);
     }
 
     void TextureImporter::buildNormalMapMipChain(const FloatImage& source, std::vector<FloatImage>& out) {
+        buildChain(source, true, out);
+    }
+
+    void TextureImporter::buildChain(const FloatImage& source, const bool renormalizeLevels, std::vector<FloatImage>& out) {
         out.clear();
         if (source.width == 0 || source.height == 0) {
             return;
@@ -185,7 +176,9 @@ namespace TechEngine {
             const FloatImage& above = out.empty() ? source : out.back();
             FloatImage level;
             downsample(above, level);
-            renormalize(level);
+            if (renormalizeLevels) {
+                renormalize(level);
+            }
             width = level.width;
             height = level.height;
             out.push_back(std::move(level));
