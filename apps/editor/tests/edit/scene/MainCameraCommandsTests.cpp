@@ -12,13 +12,13 @@
 #include <edit/scene/InspectorCommands.hpp>
 #include <edit/session/EditRecord.hpp>
 #include <edit/session/EditSession.hpp>
+#include <edit/session/EditTestScene.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstdint>
 #include <span>
 #include <utility>
-#include <variant>
 #include <vector>
 
 using TechEngine::AddComponentCommand;
@@ -31,6 +31,7 @@ using TechEngine::FieldEditRecord;
 using TechEngine::FieldValue;
 using TechEngine::Scene;
 using TechEngine::SetFieldCommand;
+using TechEngineTests::findRecord;
 
 // main's position in Camera's visit.
 static constexpr std::uint32_t CAMERA_MAIN_FIELD = 4;
@@ -78,16 +79,6 @@ struct CameraEditScene {
     }
 };
 
-static const FieldEditRecord* findFieldEdit(const std::span<const EditRecord> records, const Entity entity) {
-    for (const EditRecord& record: records) {
-        const FieldEditRecord* edit = std::get_if<FieldEditRecord>(&record);
-        if (edit != nullptr && edit->entity == entity) {
-            return edit;
-        }
-    }
-    return nullptr;
-}
-
 TEST_CASE("ticking main on a camera turns the main one off and records both in the same edit", "[editor][edit][commands][camera]") {
     CameraEditScene edit;
     const Entity previous = edit.createCamera(true);
@@ -101,17 +92,17 @@ TEST_CASE("ticking main on a camera turns the main one off and records both in t
     CHECK_FALSE(edit.isMain(other));
     const std::span<const EditRecord> records = edit.session.getRecords();
     REQUIRE(records.size() == 2);
-    const FieldEditRecord* turnedOn = findFieldEdit(records, next);
+    const FieldEditRecord* turnedOn = findRecord<FieldEditRecord>(records, next);
     REQUIRE(turnedOn != nullptr);
     CHECK(turnedOn->component == cameraType());
     CHECK(turnedOn->field == CAMERA_MAIN_FIELD);
     CHECK(turnedOn->oldValue == FieldValue{false});
-    const FieldEditRecord* turnedOff = findFieldEdit(records, previous);
+    const FieldEditRecord* turnedOff = findRecord<FieldEditRecord>(records, previous);
     REQUIRE(turnedOff != nullptr);
     CHECK(turnedOff->component == cameraType());
     CHECK(turnedOff->field == CAMERA_MAIN_FIELD);
     CHECK(turnedOff->oldValue == FieldValue{true});
-    CHECK(findFieldEdit(records, other) == nullptr);
+    CHECK(findRecord<FieldEditRecord>(records, other) == nullptr);
 }
 
 TEST_CASE("ticking main on the camera that is already main records nothing", "[editor][edit][commands][camera]") {
@@ -150,7 +141,7 @@ TEST_CASE("unticking main on the main camera leaves the scene with none", "[edit
     CHECK_FALSE(edit.isMain(mainCamera));
     CHECK(TechEngine::Camera::countMainCameras(edit.scene) == 0);
     REQUIRE(edit.session.getRecords().size() == 1);
-    const FieldEditRecord* record = findFieldEdit(edit.session.getRecords(), mainCamera);
+    const FieldEditRecord* record = findRecord<FieldEditRecord>(edit.session.getRecords(), mainCamera);
     REQUIRE(record != nullptr);
     CHECK(record->oldValue == FieldValue{true});
 }

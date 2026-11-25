@@ -10,6 +10,7 @@
 #include <TechEngine/core/scene/components/Name.hpp>
 #include <TechEngine/core/scene/components/Transform.hpp>
 
+#include <edit/session/EditRecord.hpp>
 #include <edit/session/EditSession.hpp>
 #include <edit/snapshot/EditorSnapshot.hpp>
 
@@ -18,9 +19,11 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace TechEngineTests {
@@ -174,5 +177,16 @@ namespace TechEngineTests {
 
     inline void setEuler(EditTestScene& edit, const TechEngine::Entity entity, const TechEngine::Vec3& degrees) {
         REQUIRE(edit.scene.getComponent<TechEngine::Transform>(entity).setLocal({TechEngine::Vec3(0.0f), TechEngine::Transform::fromEulerDegrees(degrees), TechEngine::Vec3(1.0f)}));
+    }
+
+    template<typename Record>
+    const Record* findRecord(const std::span<const TechEngine::EditRecord> records, const TechEngine::Entity entity) {
+        for (const TechEngine::EditRecord& record: records) {
+            const Record* typed = std::get_if<Record>(&record);
+            if (typed != nullptr && typed->entity == entity) {
+                return typed;
+            }
+        }
+        return nullptr;
     }
 }
