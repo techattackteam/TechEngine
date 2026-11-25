@@ -12,6 +12,7 @@
 #include <TechEngine/platform/files/FileAccess.hpp>
 
 #include <assets/index/AssetIndex.hpp>
+#include <assets/index/AssetNaming.hpp>
 #include <edit/scene/MaterialSlotRebuild.hpp>
 #include <edit/scene/PlaceModelCommand.hpp>
 #include <edit/session/EditSession.hpp>
@@ -19,7 +20,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <string>
-#include <string_view>
 #include <system_error>
 #include <utility>
 
@@ -94,18 +94,8 @@ namespace TechEngine {
 
     // A mesh is placed as a model of one root node, named after the file and at the origin.
     void PlaceModelCommand::wrapMesh(const AssetRecord& record, Model& out) {
-        std::string_view name = record.path;
-        const std::size_t slash = name.find_last_of('/');
-        if (slash != std::string_view::npos) {
-            name = name.substr(slash + 1);
-        }
-        const std::size_t dot = name.find_last_of('.');
-        if (dot != std::string_view::npos && dot > 0) {
-            name = name.substr(0, dot);
-        }
-
         ModelNode node;
-        node.name = std::string(name);
+        node.name = std::string(AssetNaming::stemOf(record.path));
         node.mesh = record.id;
         out.nodes.push_back(std::move(node));
     }
