@@ -3,9 +3,6 @@
 #include <TechEngine/core/scene/ComponentTypeId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 #include <TechEngine/core/scene/Scene.hpp>
-#include <TechEngine/core/scene/components/Hierarchy.hpp>
-#include <TechEngine/core/scene/components/Name.hpp>
-#include <TechEngine/core/scene/components/Transform.hpp>
 #include <TechEngine/testing/LogCapture.hpp>
 
 #include <edit/fields/FieldValue.hpp>
@@ -37,9 +34,7 @@ using TechEngineTests::findRecord;
 static constexpr std::uint32_t CAMERA_MAIN_FIELD = 4;
 
 static ComponentRegistry& registerCameraEditComponents(ComponentRegistry& registry) {
-    registry.registerComponent<TechEngine::Hierarchy>(TechEngine::Hierarchy::tag);
-    registry.registerComponent<TechEngine::Transform>(TechEngine::Transform::tag);
-    registry.registerComponent<TechEngine::Name>(TechEngine::Name::tag);
+    TechEngineTests::registerEditComponents(registry);
     registry.registerComponent<Camera>(Camera::tag);
     return registry;
 }
