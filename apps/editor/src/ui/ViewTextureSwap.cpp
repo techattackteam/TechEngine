@@ -37,9 +37,7 @@ namespace TechEngine {
 
     void ViewTextureSwap::restore() {
         for (const SwappedViewCommand& swapped: m_swapped) {
-            if (swapped.command != nullptr) {
-                swapped.command->TexRef._TexID = swapped.token;
-            }
+            swapped.command->TexRef._TexID = swapped.token;
         }
         m_swapped.clear();
     }
