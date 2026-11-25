@@ -137,9 +137,7 @@ TEST_CASE("a sky import with an invalid name starts no job and writes nothing", 
 
     CHECK(app.batches.empty());
     CHECK_FALSE(std::filesystem::exists(app.scratch.root() / "assets" / "client" / "Sky.tetexture"));
-    CHECK(std::ranges::any_of(logs.getMessages(), [](const std::string& message) {
-        return message.find("cannot be named") != std::string::npos;
-    }));
+    CHECK(logs.contains("cannot be named"));
 }
 
 TEST_CASE("an image import whose job fails writes nothing and registers nothing", "[editor][edit][import][image][os]") {

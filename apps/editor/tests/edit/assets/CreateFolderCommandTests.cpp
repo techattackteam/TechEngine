@@ -144,9 +144,7 @@ TEST_CASE("a parent folder that is gone is not brought back", "[editor][edit][fo
 
     CHECK_FALSE(std::filesystem::exists(env.scratch().root() / "assets" / "client" / "Gone"));
     CHECK(env.index.getListingRevision() == revision);
-    CHECK(std::ranges::any_of(logs.getMessages(), [](const std::string& message) {
-        return message.find("is not a folder any more") != std::string::npos;
-    }));
+    CHECK(logs.contains("is not a folder any more"));
 }
 
 TEST_CASE("a parent that is a file is refused", "[editor][edit][folder][os]") {
