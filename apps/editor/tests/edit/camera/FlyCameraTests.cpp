@@ -34,6 +34,14 @@ static FlyCameraInput zooming(const float steps) {
     return input;
 }
 
+static FlyCameraInput panning(const Vec2 delta) {
+    FlyCameraInput input;
+    input.panning = true;
+    input.panDelta = delta;
+    input.viewHeight = VIEW_HEIGHT;
+    return input;
+}
+
 static void run(FlyCamera& camera, const FlyCameraInput& input, const float seconds, const float step = FRAME) {
     const int frames = static_cast<int>(std::lround(seconds / step));
     for (int i = 0; i < frames; i++) {
@@ -240,9 +248,7 @@ TEST_CASE("shift speeds up and ctrl slows down the rotation, the pan and the zoo
     CHECK(yawAfterTurn(false, true) == Approx(normalYaw * slow).margin(TOLERANCE));
 
     FlyCamera camera;
-    FlyCameraInput pan;
-    pan.panning = true;
-    pan.viewHeight = VIEW_HEIGHT;
+    const FlyCameraInput pan = panning(Vec2(0.0f));
     const float normalPan = camera.getPanMetresPerPixel(pan);
     CHECK(camera.getPanMetresPerPixel(withSpeedKeys(pan, true, false)) == Approx(normalPan * fast));
     CHECK(camera.getPanMetresPerPixel(withSpeedKeys(pan, false, true)) == Approx(normalPan * slow));
@@ -276,10 +282,7 @@ TEST_CASE("quick zoom steps toward the pivot shrink instead of passing it", "[ed
 }
 
 TEST_CASE("a zoom and a pan cover the same ground after the same time at any frame rate", "[editor][edit]") {
-    FlyCameraInput pan;
-    pan.panning = true;
-    pan.viewHeight = VIEW_HEIGHT;
-    pan.panDelta = Vec2(80.0f, 30.0f);
+    const FlyCameraInput pan = panning(Vec2(80.0f, 30.0f));
 
     FlyCamera slow;
     FlyCamera fast;
@@ -315,10 +318,7 @@ TEST_CASE("a pan eases the camera across the view until the scene has followed t
     const Vec3 up = camera.getUp();
     const float startYaw = camera.getYaw();
 
-    FlyCameraInput input;
-    input.panning = true;
-    input.viewHeight = VIEW_HEIGHT;
-    input.panDelta = Vec2(100.0f, -40.0f);
+    const FlyCameraInput input = panning(Vec2(100.0f, -40.0f));
     const float metresPerPixel = 2.0f * FlyCamera::DEFAULT_REFERENCE_DISTANCE * std::tan(glm::radians(TechEngine::Camera{}.verticalFieldOfView) * 0.5f) / VIEW_HEIGHT;
     CHECK(camera.getPanMetresPerPixel(input) == Approx(metresPerPixel));
 
@@ -329,9 +329,7 @@ TEST_CASE("a pan eases the camera across the view until the scene has followed t
     CHECK(firstFrame < glm::length(full) * 0.5f);
     CHECK(camera.isMoving());
 
-    FlyCameraInput held;
-    held.panning = true;
-    held.viewHeight = VIEW_HEIGHT;
+    const FlyCameraInput held = panning(Vec2(0.0f));
     run(camera, held, 1.0f);
     checkNear(camera.getPosition(), start + full);
     CHECK(camera.getYaw() == startYaw);
@@ -340,10 +338,7 @@ TEST_CASE("a pan eases the camera across the view until the scene has followed t
 
 TEST_CASE("a pan follows the distance to the pivot, and needs the view's height", "[editor][edit]") {
     FlyCamera camera;
-    FlyCameraInput input;
-    input.panning = true;
-    input.viewHeight = VIEW_HEIGHT;
-    input.panDelta = Vec2(10.0f, 0.0f);
+    FlyCameraInput input = panning(Vec2(10.0f, 0.0f));
     const float withoutPivot = camera.getPanMetresPerPixel(input);
 
     input.hasPivot = true;
@@ -446,10 +441,7 @@ TEST_CASE("rotating, panning or zooming cancels a focus, and holding a button st
 
     FlyCamera panned;
     panned.focus(target, 1.0f);
-    FlyCameraInput pan;
-    pan.panning = true;
-    pan.viewHeight = VIEW_HEIGHT;
-    pan.panDelta = Vec2(1.0f, 0.0f);
+    const FlyCameraInput pan = panning(Vec2(1.0f, 0.0f));
     panned.update(pan, FRAME);
     CHECK_FALSE(panned.isFocusing());
 
@@ -464,10 +456,7 @@ TEST_CASE("rotating, panning or zooming cancels a focus, and holding a button st
 TEST_CASE("a focus drops a zoom and a pan still under way", "[editor][edit]") {
     FlyCamera camera;
     camera.update(zooming(5.0f), 0.0f);
-    FlyCameraInput pan;
-    pan.panning = true;
-    pan.viewHeight = VIEW_HEIGHT;
-    pan.panDelta = Vec2(200.0f, 0.0f);
+    const FlyCameraInput pan = panning(Vec2(200.0f, 0.0f));
     camera.update(pan, 0.0f);
 
     const Vec3 target(5.0f, 0.0f, 0.0f);
@@ -497,10 +486,7 @@ TEST_CASE("the camera asks for frames only while something is still easing", "[e
     run(camera, FlyCameraInput{}, FlyCamera::FOCUS_DURATION + FRAME);
     CHECK_FALSE(camera.isMoving());
 
-    FlyCameraInput pan;
-    pan.panning = true;
-    pan.viewHeight = VIEW_HEIGHT;
-    pan.panDelta = Vec2(25.0f, 10.0f);
+    const FlyCameraInput pan = panning(Vec2(25.0f, 10.0f));
     camera.update(pan, FRAME);
     CHECK(camera.isMoving());
     run(camera, FlyCameraInput{}, 1.0f);
