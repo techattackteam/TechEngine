@@ -210,7 +210,5 @@ TEST_CASE("a material in a folder that is gone writes nothing and logs the failu
 
     CHECK(env.materialCount() == 0);
     CHECK(env.index.getListingRevision() == revision);
-    CHECK(std::ranges::any_of(logs.getMessages(), [](const std::string& message) {
-        return message.find("Failed to create the material") != std::string::npos;
-    }));
+    CHECK(logs.contains("Failed to create the material"));
 }

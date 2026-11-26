@@ -5,6 +5,7 @@
 
 #include <assets/import/ImageDecoder.hpp>
 #include <assets/import/MaterialImporter.hpp>
+#include <assets/index/AssetNaming.hpp>
 #include <project/ProjectError.hpp>
 
 #include <assimp/GltfMaterial.h>
@@ -385,16 +386,7 @@ namespace TechEngine {
         if (image.embeddedIndex >= 0 && image.name.starts_with('*')) {
             return std::string(UNNAMED_TEXTURE) + std::to_string(image.embeddedIndex);
         }
-        std::string_view stem = image.name;
-        const std::size_t slash = stem.find_last_of('/');
-        if (slash != std::string_view::npos) {
-            stem = stem.substr(slash + 1);
-        }
-        const std::size_t dot = stem.find_last_of('.');
-        if (dot != std::string_view::npos && dot > 0) {
-            stem = stem.substr(0, dot);
-        }
-        return std::string(stem);
+        return std::string(AssetNaming::stemOf(image.name));
     }
 
     // glTF's URIs escape characters such as spaces as %XX. A malformed escape is kept as written.

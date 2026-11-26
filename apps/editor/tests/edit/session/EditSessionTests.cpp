@@ -69,6 +69,14 @@ static void checkRow(const HierarchyRow& row, const Entity entity, const std::ui
     CHECK(row.childCount == childCount);
 }
 
+static void checkField(const ComponentRow& row, const std::uint32_t index, const std::string_view name, const FieldKind kind, const FieldValue& value) {
+    const FieldRow& field = row.fields[index];
+    CHECK(field.index == index);
+    CHECK(field.name == name);
+    CHECK(field.kind == kind);
+    CHECK(field.value == value);
+}
+
 TEST_CASE("an empty scene publishes no rows, no selection and equal revisions", "[editor][edit]") {
     EditTestScene edit;
 
@@ -425,29 +433,22 @@ TEST_CASE("each field row holds its kind and the value the inspector shows", "[e
 
     const ComponentRow& row = componentRowFor(snapshot, TechEngine::componentTypeId<InspectedSample>());
     REQUIRE(row.fields.size() == SAMPLE_FIELD_COUNT);
-    const auto checkField = [&](const std::uint32_t index, const std::string_view name, const FieldKind kind, const FieldValue& value) {
-        const FieldRow& field = row.fields[index];
-        CHECK(field.index == index);
-        CHECK(field.name == name);
-        CHECK(field.kind == kind);
-        CHECK(field.value == value);
-    };
-    checkField(SAMPLE_ENABLED_FIELD, "enabled", FieldKind::Bool, FieldValue{true});
-    checkField(SAMPLE_COUNT_FIELD, "count", FieldKind::Int32, FieldValue{std::int32_t{3}});
-    checkField(SAMPLE_LAYER_FIELD, "layer", FieldKind::UInt8, FieldValue{std::uint8_t{1}});
-    checkField(SAMPLE_WEIGHT_FIELD, "weight", FieldKind::Double, FieldValue{0.5});
-    checkField(SAMPLE_LABEL_FIELD, "label", FieldKind::String, FieldValue{std::string("Sample")});
-    checkField(SAMPLE_GROUP_FIELD, "group", FieldKind::StringId, FieldValue{TechEngine::StringId("Group").value()});
-    checkField(SAMPLE_TARGET_FIELD, "target", FieldKind::Entity, FieldValue{std::string("Target")});
-    checkField(SAMPLE_ASSET_FIELD, "asset", FieldKind::Asset, FieldValue{TechEngine::ResourceId{0xA55E7}});
-    checkField(SAMPLE_INDICES_FIELD, "indices", FieldKind::Bulk, FieldValue{std::uint64_t{3}});
-    checkField(SAMPLE_FLOAT_FIELD, "floatField", FieldKind::Float, FieldValue{1.5f});
-    checkField(SAMPLE_INT8_FIELD, "int8Field", FieldKind::Int8, FieldValue{std::int8_t{-8}});
-    checkField(SAMPLE_INT16_FIELD, "int16Field", FieldKind::Int16, FieldValue{std::int16_t{-16}});
-    checkField(SAMPLE_UINT16_FIELD, "uint16Field", FieldKind::UInt16, FieldValue{std::uint16_t{16}});
-    checkField(SAMPLE_UINT32_FIELD, "uint32Field", FieldKind::UInt32, FieldValue{std::uint32_t{32}});
-    checkField(SAMPLE_INT64_FIELD, "int64Field", FieldKind::Int64, FieldValue{std::int64_t{-64}});
-    checkField(SAMPLE_UINT64_FIELD, "uint64Field", FieldKind::UInt64, FieldValue{std::uint64_t{64}});
+    checkField(row, SAMPLE_ENABLED_FIELD, "enabled", FieldKind::Bool, FieldValue{true});
+    checkField(row, SAMPLE_COUNT_FIELD, "count", FieldKind::Int32, FieldValue{std::int32_t{3}});
+    checkField(row, SAMPLE_LAYER_FIELD, "layer", FieldKind::UInt8, FieldValue{std::uint8_t{1}});
+    checkField(row, SAMPLE_WEIGHT_FIELD, "weight", FieldKind::Double, FieldValue{0.5});
+    checkField(row, SAMPLE_LABEL_FIELD, "label", FieldKind::String, FieldValue{std::string("Sample")});
+    checkField(row, SAMPLE_GROUP_FIELD, "group", FieldKind::StringId, FieldValue{TechEngine::StringId("Group").value()});
+    checkField(row, SAMPLE_TARGET_FIELD, "target", FieldKind::Entity, FieldValue{std::string("Target")});
+    checkField(row, SAMPLE_ASSET_FIELD, "asset", FieldKind::Asset, FieldValue{TechEngine::ResourceId{0xA55E7}});
+    checkField(row, SAMPLE_INDICES_FIELD, "indices", FieldKind::Bulk, FieldValue{std::uint64_t{3}});
+    checkField(row, SAMPLE_FLOAT_FIELD, "floatField", FieldKind::Float, FieldValue{1.5f});
+    checkField(row, SAMPLE_INT8_FIELD, "int8Field", FieldKind::Int8, FieldValue{std::int8_t{-8}});
+    checkField(row, SAMPLE_INT16_FIELD, "int16Field", FieldKind::Int16, FieldValue{std::int16_t{-16}});
+    checkField(row, SAMPLE_UINT16_FIELD, "uint16Field", FieldKind::UInt16, FieldValue{std::uint16_t{16}});
+    checkField(row, SAMPLE_UINT32_FIELD, "uint32Field", FieldKind::UInt32, FieldValue{std::uint32_t{32}});
+    checkField(row, SAMPLE_INT64_FIELD, "int64Field", FieldKind::Int64, FieldValue{std::int64_t{-64}});
+    checkField(row, SAMPLE_UINT64_FIELD, "uint64Field", FieldKind::UInt64, FieldValue{std::uint64_t{64}});
 }
 
 TEST_CASE("a selected Camera is published as five editable fields in visit order", "[editor][edit]") {
@@ -469,18 +470,11 @@ TEST_CASE("a selected Camera is published as five editable fields in visit order
     CHECK(row.tag == TechEngine::Camera::tag);
     CHECK(row.removable);
     REQUIRE(row.fields.size() == 5);
-    const auto checkField = [&](const std::uint32_t index, const std::string_view name, const FieldKind kind, const FieldValue& value) {
-        const FieldRow& field = row.fields[index];
-        CHECK(field.index == index);
-        CHECK(field.name == name);
-        CHECK(field.kind == kind);
-        CHECK(field.value == value);
-    };
-    checkField(0, "verticalFieldOfView", FieldKind::Float, FieldValue{60.0f});
-    checkField(1, "nearPlane", FieldKind::Float, FieldValue{0.1f});
-    checkField(2, "farPlane", FieldKind::Float, FieldValue{1000.0f});
-    checkField(3, "exposure", FieldKind::Float, FieldValue{0.0f});
-    checkField(4, "main", FieldKind::Bool, FieldValue{true});
+    checkField(row, 0, "verticalFieldOfView", FieldKind::Float, FieldValue{60.0f});
+    checkField(row, 1, "nearPlane", FieldKind::Float, FieldValue{0.1f});
+    checkField(row, 2, "farPlane", FieldKind::Float, FieldValue{1000.0f});
+    checkField(row, 3, "exposure", FieldKind::Float, FieldValue{0.0f});
+    checkField(row, 4, "main", FieldKind::Bool, FieldValue{true});
 }
 
 TEST_CASE("an Entity field with no live target is published with an empty name", "[editor][edit]") {

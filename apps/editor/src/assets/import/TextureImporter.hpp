@@ -109,6 +109,8 @@ namespace TechEngine {
 
         static void encodeLevel(const ByteImage& level, TexturePurpose purpose, std::vector<std::byte>& out);
 
+        static void buildChain(const FloatImage& source, bool renormalizeLevels, std::vector<FloatImage>& out);
+
         static void renormalize(FloatImage& image);
 
         static float clampRgb9E5Channel(float value);

@@ -70,6 +70,7 @@ using TechEngineTests::EDIT_SERVER_MESH_ID;
 using TechEngineTests::EDIT_UNKNOWN_ID;
 using TechEngineTests::EditTestScene;
 using TechEngineTests::findComponentRow;
+using TechEngineTests::findRecord;
 using TechEngineTests::InspectedSample;
 using TechEngineTests::MESH_RENDERER_MESH_FIELD;
 using TechEngineTests::SAMPLE_ASSET_FIELD;
@@ -469,17 +470,6 @@ TEST_CASE("remove component refuses the built-ins and a type the entity lacks, a
 
     CHECK(edit.session.getRecords().empty());
     CHECK(edit.snapshot().editRevision == before.editRevision);
-}
-
-template<typename Record>
-static const Record* findRecord(const std::span<const EditRecord> records, const Entity entity) {
-    for (const EditRecord& record: records) {
-        const Record* typed = std::get_if<Record>(&record);
-        if (typed != nullptr && typed->entity == entity) {
-            return typed;
-        }
-    }
-    return nullptr;
 }
 
 static void checkEuler(const EditTestScene& edit, const Entity entity, const Vec3& degrees) {

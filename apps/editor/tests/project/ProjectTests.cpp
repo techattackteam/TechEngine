@@ -681,12 +681,6 @@ static std::vector<std::byte> textureBytes(const ResourceId id) {
     return bytes;
 }
 
-static std::size_t clientEntryCount(const ExportScratch& scratch) {
-    PackReader client{scratch.outputFiles()};
-    REQUIRE(client.open("out://client.tepack") == std::error_code{});
-    return client.getEntries().size();
-}
-
 static bool clientPacks(const ExportScratch& scratch, const ResourceId id) {
     PackReader client{scratch.outputFiles()};
     REQUIRE(client.open("out://client.tepack") == std::error_code{});
@@ -709,7 +703,7 @@ TEST_CASE("exportTo packs what each reached asset depends on: a mesh's default m
     CHECK(clientPacks(scratch, EXPORT_MATERIAL_ID));
     CHECK(clientPacks(scratch, EXPORT_SECOND_MATERIAL_ID));
     CHECK(clientPacks(scratch, EXPORT_TEXTURE_ID));
-    CHECK(clientEntryCount(scratch) == 4);
+    CHECK(entryCount(scratch.outputFiles(), "out://client.tepack") == 4);
     const BootRecord record = scratch.readBootRecord();
     CHECK(record.sides.size() == 5);
     PackSource source{scratch.outputFiles()};

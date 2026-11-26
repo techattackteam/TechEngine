@@ -40,6 +40,8 @@ namespace TechEngine {
     private:
         void applyMainCamera(Scene& scene);
 
+        void recordMainEdit(Entity camera, bool oldMain);
+
         void logFieldAfterEdit(const Scene& scene, const ComponentTypeRecord& record, Entity entity, void* component, const FieldSetter& setter) const;
     };
 
