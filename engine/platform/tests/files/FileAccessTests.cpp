@@ -79,6 +79,23 @@ static std::string largePayload() {
     return payload;
 }
 
+template<typename Call>
+static std::array<std::error_code, RACERS> raceCalls(const Call& call) {
+    std::latch start(RACERS);
+    std::array<std::error_code, RACERS> errors;
+    std::vector<std::thread> threads;
+    for (std::size_t i = 0; i < RACERS; i++) {
+        threads.emplace_back([&call, &start, &errors, i] {
+            start.arrive_and_wait();
+            errors[i] = call(i);
+        });
+    }
+    for (std::thread& thread: threads) {
+        thread.join();
+    }
+    return errors;
+}
+
 TEST_CASE("read returns the file's bytes", "[files][fileaccess][os]") {
     MountedScratch env{"readBytes"};
     env.scratch.writeFile("ui/icon.png", "the bytes");
@@ -706,18 +723,9 @@ TEST_CASE("of several callers creating one directory at once, exactly one succee
 
     for (std::uint32_t attempt = 0; attempt < RACE_ATTEMPTS; attempt++) {
         std::filesystem::remove_all(env.scratch.root() / "meshes");
-        std::latch start(RACERS);
-        std::array<std::error_code, RACERS> errors;
-        std::vector<std::thread> threads;
-        for (std::size_t i = 0; i < RACERS; i++) {
-            threads.emplace_back([&env, &start, &errors, i] {
-                start.arrive_and_wait();
-                errors[i] = env.files.createDirectory("assets://meshes/props/crates");
-            });
-        }
-        for (std::thread& thread: threads) {
-            thread.join();
-        }
+        const std::array<std::error_code, RACERS> errors = raceCalls([&env](std::size_t) {
+            return env.files.createDirectory("assets://meshes/props/crates");
+        });
 
         const std::error_code alreadyExists = FileError::AlreadyExists;
         CHECK(std::ranges::count(errors, std::error_code{}) == 1);
@@ -789,18 +797,9 @@ TEST_CASE("of several callers creating one file at once, exactly one succeeds an
 
     for (std::uint32_t attempt = 0; attempt < RACE_ATTEMPTS; attempt++) {
         std::filesystem::remove(env.scratch.root() / "level.bin");
-        std::latch start(RACERS);
-        std::array<std::error_code, RACERS> errors;
-        std::vector<std::thread> threads;
-        for (std::size_t i = 0; i < RACERS; i++) {
-            threads.emplace_back([&env, &start, &errors, &payloads, i] {
-                start.arrive_and_wait();
-                errors[i] = env.files.createFile("assets://level.bin", payloads[i]);
-            });
-        }
-        for (std::thread& thread: threads) {
-            thread.join();
-        }
+        const std::array<std::error_code, RACERS> errors = raceCalls([&env, &payloads](const std::size_t i) {
+            return env.files.createFile("assets://level.bin", payloads[i]);
+        });
 
         const std::error_code alreadyExists = FileError::AlreadyExists;
         REQUIRE(std::ranges::count(errors, std::error_code{}) == 1);
