@@ -35,6 +35,9 @@ namespace TechEngine {
         CreateContext m_createContext;
         std::string m_createName;
         TextEditField m_createNameField;
+        bool m_deleteRequested = false;
+        std::vector<std::string> m_deletePaths;
+        std::uint64_t m_deleteSequence = 0;
 
     public:
         explicit AssetBrowserPanel(EditorCommands& commands);
@@ -82,6 +85,10 @@ namespace TechEngine {
         std::string findCreateOutput(const EditorSnapshot& snapshot, std::string_view name) const;
 
         void drawCreateDialog(const EditorSnapshot& snapshot);
+
+        void openDeleteDialog(std::vector<std::string> paths);
+
+        void drawDeleteDialog(const EditorSnapshot& snapshot);
 
         void applySelectionRequests(const EditorSnapshot& snapshot, ImGuiMultiSelectIO* io);
 

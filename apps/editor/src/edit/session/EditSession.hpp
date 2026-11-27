@@ -3,6 +3,7 @@
 #include <TechEngine/core/resources/ResourceId.hpp>
 #include <TechEngine/core/scene/Entity.hpp>
 
+#include <edit/assets/DeletePreview.hpp>
 #include <edit/session/EditRecord.hpp>
 
 #include <array>
@@ -39,6 +40,7 @@ namespace TechEngine {
         std::vector<EditRecord> m_records;
         std::uint64_t m_editRevision = 0;
         std::uint64_t m_savedRevision = 0;
+        DeletePreview m_deletePreview;
         // TODO(E11): Play and Stop set this. Until then nothing but a test leaves Stopped.
         PlayState m_playState = PlayState::Stopped;
 
@@ -71,6 +73,8 @@ namespace TechEngine {
         void record(EditRecord record);
 
         std::span<const EditRecord> getRecords() const;
+
+        void setDeletePreview(DeletePreview preview);
 
         void buildSnapshot(const Scene& scene, const ComponentRegistry& registry, EditorSnapshot& out) const;
 

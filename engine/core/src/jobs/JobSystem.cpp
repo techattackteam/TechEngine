@@ -89,6 +89,15 @@ namespace TechEngine {
         });
     }
 
+    bool JobSystem::isDone(const BatchId batch) {
+        if (!batch.valid()) {
+            return true;
+        }
+
+        const std::lock_guard lock{m_mutex};
+        return !m_pendingBatches.contains(batch.value());
+    }
+
     void JobSystem::shutdown() {
         std::lock_guard const shutdownLock{m_shutdownMutex};
 

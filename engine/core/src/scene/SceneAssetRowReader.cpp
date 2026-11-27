@@ -17,6 +17,6 @@ namespace TechEngine {
         }
     }
 
-    void SceneAssetRowReader::visitAsset(ResourceId, ResourceSlotId&) {
+    void SceneAssetRowReader::visitAsset(ResourceId&, ResourceSlotId&) {
     }
 }

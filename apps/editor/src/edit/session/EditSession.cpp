@@ -89,6 +89,10 @@ namespace TechEngine {
         return m_records;
     }
 
+    void EditSession::setDeletePreview(DeletePreview preview) {
+        m_deletePreview = std::move(preview);
+    }
+
     void EditSession::buildSnapshot(const Scene& scene, const ComponentRegistry& registry, EditorSnapshot& out) const {
         out.hierarchy.clear();
 
@@ -115,6 +119,7 @@ namespace TechEngine {
         collectComponents(scene, registry, out);
         out.editRevision = m_editRevision;
         out.savedRevision = m_savedRevision;
+        out.deletePreview = m_deletePreview;
     }
 
     void EditSession::collectComponents(const Scene& scene, const ComponentRegistry& registry, EditorSnapshot& out) const {

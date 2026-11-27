@@ -14,10 +14,13 @@ techengine_app(editor
           src/assets/index/LooseSource.cpp
           src/edit/EditorCommands.cpp
           src/edit/assets/AssetDragPayload.cpp
+          src/edit/assets/AssetReferenceClearer.cpp
           src/edit/assets/CreateFolderCommand.cpp
           src/edit/assets/CreateMaterialCommand.cpp
+          src/edit/assets/DeleteAssetsCommand.cpp
           src/edit/assets/ImportModelCommand.cpp
           src/edit/assets/ImportSkyCommand.cpp
+          src/edit/assets/PreviewDeleteCommand.cpp
           src/edit/assets/RefreshAssetsCommand.cpp
           src/edit/camera/FlyCamera.cpp
           src/edit/console/ConsoleHistory.cpp
@@ -65,10 +68,14 @@ techengine_app(editor
           src/assets/index/LooseSource.hpp
           src/edit/EditorCommands.hpp
           src/edit/assets/AssetDragPayload.hpp
+          src/edit/assets/AssetReferenceClearer.hpp
           src/edit/assets/CreateFolderCommand.hpp
           src/edit/assets/CreateMaterialCommand.hpp
+          src/edit/assets/DeleteAssetsCommand.hpp
+          src/edit/assets/DeletePreview.hpp
           src/edit/assets/ImportModelCommand.hpp
           src/edit/assets/ImportSkyCommand.hpp
+          src/edit/assets/PreviewDeleteCommand.hpp
           src/edit/assets/RefreshAssetsCommand.hpp
           src/edit/camera/FlyCamera.hpp
           src/edit/console/ConsoleHistory.hpp
@@ -125,8 +132,10 @@ techengine_app(editor
           tests/edit/assets/AssetDragPayloadTests.cpp
           tests/edit/assets/CreateFolderCommandTests.cpp
           tests/edit/assets/CreateMaterialCommandTests.cpp
+          tests/edit/assets/DeleteAssetsCommandTests.cpp
           tests/edit/assets/ImportModelCommandTests.cpp
           tests/edit/assets/ImportSkyCommandTests.cpp
+          tests/edit/assets/PreviewDeleteCommandTests.cpp
           tests/edit/assets/RefreshAssetsCommandTests.cpp
           tests/edit/camera/FlyCameraTests.cpp
           tests/edit/console/ConsoleHistoryTests.cpp

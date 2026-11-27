@@ -8,7 +8,7 @@ namespace TechEngine {
     void SceneAssetIdCollector::visitEntity(Entity&) {
     }
 
-    void SceneAssetIdCollector::visitAsset(const ResourceId id, ResourceSlotId&) {
+    void SceneAssetIdCollector::visitAsset(ResourceId& id, ResourceSlotId&) {
         for (const ResourceId existing: m_ids) {
             if (existing == id) {
                 return;

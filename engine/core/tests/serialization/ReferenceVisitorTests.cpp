@@ -61,7 +61,7 @@ public:
         entities.push_back(value);
     }
 
-    void visitAsset(const ResourceId id, ResourceSlotId&) override {
+    void visitAsset(ResourceId& id, ResourceSlotId&) override {
         assets.push_back(id);
     }
 };
@@ -75,8 +75,21 @@ public:
         value = entityReplacement;
     }
 
-    void visitAsset(ResourceId, ResourceSlotId& handle) override {
+    void visitAsset(ResourceId&, ResourceSlotId& handle) override {
         handle = handleReplacement;
+    }
+};
+
+class IdRewritingReferenceVisitor final : public ReferenceVisitor {
+public:
+    ResourceId idReplacement;
+
+    void visitEntity(Entity&) override {
+    }
+
+    void visitAsset(ResourceId& id, ResourceSlotId& handle) override {
+        id = idReplacement;
+        handle = ResourceSlotId{};
     }
 };
 
@@ -198,6 +211,30 @@ TEST_CASE("a reference hook rewrites the field it was handed", "[core][serializa
     CHECK(sample.second == Entity{11, 4});
     CHECK(sample.asset.handle == ResourceHandle<ReferenceVisitorAsset>{6, 2});
     CHECK(sample.asset.id == REFERENCE_VISITOR_ASSET_ID);
+}
+
+TEST_CASE("a reference hook rewrites the id it was handed, and a null id empties the field", "[core][serialization]") {
+    ReferenceVisitorSample sample = makeFullSample();
+    sample.asset.handle = ResourceHandle<ReferenceVisitorAsset>{6, 2};
+    IdRewritingReferenceVisitor visitor;
+
+    SECTION("to another id") {
+        visitor.idReplacement = SECOND_REFERENCE_VISITOR_ASSET_ID;
+
+        visitor.field(sample);
+
+        CHECK(sample.asset.id == SECOND_REFERENCE_VISITOR_ASSET_ID);
+        CHECK(sample.asset.handle == ResourceHandle<ReferenceVisitorAsset>{});
+    }
+
+    SECTION("to a null id, so a second walk sees nothing") {
+        visitor.field(sample);
+
+        CHECK(sample.asset == AssetRef<ReferenceVisitorAsset>{});
+        RecordingReferenceVisitor recorder;
+        recorder.field(sample);
+        CHECK(recorder.assets.empty());
+    }
 }
 
 TEST_CASE("a reference hook never sees an empty field, so an empty field stays empty", "[core][serialization]") {

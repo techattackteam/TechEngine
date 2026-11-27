@@ -101,7 +101,7 @@ public:
         entities.push_back(value);
     }
 
-    void visitAsset(TechEngine::ResourceId, TechEngine::ResourceSlotId&) override {
+    void visitAsset(TechEngine::ResourceId&, TechEngine::ResourceSlotId&) override {
     }
 };
 

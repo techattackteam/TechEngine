@@ -7,6 +7,7 @@
 #include <TechEngine/core/scene/Entity.hpp>
 
 #include <assets/index/AssetIndex.hpp>
+#include <edit/assets/DeletePreview.hpp>
 #include <edit/fields/FieldValue.hpp>
 
 #include <array>
@@ -82,6 +83,7 @@ namespace TechEngine {
         std::uint64_t listingRevision = 0;
         std::uint64_t editRevision = 0;
         std::uint64_t savedRevision = 0;
+        DeletePreview deletePreview;
 
         bool hasUnsavedEdits() const;
 

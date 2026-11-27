@@ -40,6 +40,10 @@ namespace TechEngine {
                         return "source file is not an image the decoder can read";
                     case ProjectError::UnsupportedDdsFormat:
                         return "DDS file holds a pixel format the importer does not decode";
+                    case ProjectError::DeletesOpenScene:
+                        return "delete would remove the open scene's file";
+                    case ProjectError::CreateInProgress:
+                        return "a create is still writing its files";
                 }
                 return "unknown project error";
             }

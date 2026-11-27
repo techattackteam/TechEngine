@@ -20,7 +20,7 @@ namespace TechEngine {
 
         virtual void visitEntity(Entity& value) = 0;
 
-        virtual void visitAsset(ResourceId id, ResourceSlotId& handle) = 0;
+        virtual void visitAsset(ResourceId& id, ResourceSlotId& handle) = 0;
 
         template<typename T>
         void field(T& value) {
