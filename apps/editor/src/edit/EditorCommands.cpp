@@ -7,8 +7,10 @@
 #include <edit/EditorCommands.hpp>
 #include <edit/assets/CreateFolderCommand.hpp>
 #include <edit/assets/CreateMaterialCommand.hpp>
+#include <edit/assets/DeleteAssetsCommand.hpp>
 #include <edit/assets/ImportModelCommand.hpp>
 #include <edit/assets/ImportSkyCommand.hpp>
+#include <edit/assets/PreviewDeleteCommand.hpp>
 #include <edit/assets/RefreshAssetsCommand.hpp>
 #include <edit/project/SaveSceneCommand.hpp>
 #include <edit/scene/HierarchyCommands.hpp>
@@ -19,7 +21,7 @@
 #include <utility>
 
 namespace TechEngine {
-    EditorCommands::EditorCommands(App& app, EditSession& session, const ComponentRegistry& registry, FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, AssetIndex& assets, JobSystem& jobs, std::vector<BatchId>& importBatches)
+    EditorCommands::EditorCommands(App& app, EditSession& session, ComponentRegistry& registry, FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, AssetIndex& assets, JobSystem& jobs, std::vector<BatchId>& importBatches)
         : m_app(&app), m_session(&session), m_registry(&registry), m_files(&files), m_resources(&resources), m_sceneHandle(&sceneHandle), m_assets(&assets), m_jobs(&jobs), m_importBatches(&importBatches) {
     }
 
@@ -89,6 +91,14 @@ namespace TechEngine {
 
     void EditorCommands::createFolder(FolderCreateRequest request) {
         submit(std::make_unique<CreateFolderCommand>(*m_files, *m_assets, std::move(request)));
+    }
+
+    void EditorCommands::previewDelete(std::vector<std::string> paths, const std::uint64_t sequence) {
+        submit(std::make_unique<PreviewDeleteCommand>(*m_session, *m_registry, *m_files, *m_resources, *m_assets, *m_jobs, *m_importBatches, std::move(paths), sequence));
+    }
+
+    void EditorCommands::deleteAssets(std::vector<std::string> paths) {
+        submit(std::make_unique<DeleteAssetsCommand>(*m_session, *m_files, *m_assets, *m_jobs, *m_importBatches, std::move(paths)));
     }
 
     void EditorCommands::save() {

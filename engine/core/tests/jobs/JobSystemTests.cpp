@@ -108,6 +108,53 @@ TEST_CASE("wait returns only after the batch completes", "[core][jobs]") {
     REQUIRE(finished.load());
 }
 
+TEST_CASE("a batch is not done while a task runs, and is done once every task has run", "[core][jobs]") {
+    TechEngine::JobSystem jobs{1};
+    std::atomic<bool> started = false;
+    std::atomic<bool> released = false;
+    std::array<std::function<void()>, 2> tasks{
+        [&] {
+            started.store(true);
+            while (!released.load()) {
+                std::this_thread::yield();
+            }
+        },
+        [] {
+        },
+    };
+
+    const TechEngine::BatchId batch = jobs.submit(tasks);
+    while (!started.load()) {
+        std::this_thread::yield();
+    }
+
+    CHECK_FALSE(jobs.isDone(batch));
+    CHECK_FALSE(jobs.isDone(batch));
+
+    released.store(true);
+    jobs.wait(batch);
+
+    CHECK(jobs.isDone(batch));
+}
+
+TEST_CASE("an invalid batch and a batch of an earlier run are done", "[core][jobs]") {
+    TechEngine::JobSystem jobs{1};
+
+    CHECK(jobs.isDone(TechEngine::BatchId{}));
+
+    std::array<std::function<void()>, 1> tasks{[] {
+    }};
+    const TechEngine::BatchId batch = jobs.submit(tasks);
+    jobs.wait(batch);
+    std::array<std::function<void()>, 1> laterTasks{[] {
+    }};
+    const TechEngine::BatchId later = jobs.submit(laterTasks);
+    jobs.wait(later);
+
+    CHECK(jobs.isDone(batch));
+    CHECK(jobs.isDone(later));
+}
+
 TEST_CASE("tasks execute on a worker thread, not on the caller", "[core][jobs]") {
     TechEngine::JobSystem jobs{1};
 

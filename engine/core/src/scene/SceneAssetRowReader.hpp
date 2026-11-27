@@ -22,6 +22,6 @@ namespace TechEngine {
 
         void visitEntity(Entity& value) override;
 
-        void visitAsset(ResourceId id, ResourceSlotId& handle) override;
+        void visitAsset(ResourceId& id, ResourceSlotId& handle) override;
     };
 }

@@ -53,6 +53,10 @@ namespace TechEngine {
     static constexpr ImU32 OTHER_BADGE_COLOR = IM_COL32(80, 80, 80, 255);
     static constexpr ImU32 BADGE_LABEL_COLOR = IM_COL32(255, 255, 255, 235);
     static constexpr const char* CREATE_POPUP_NAME = "Create";
+    static constexpr const char* DELETE_POPUP_NAME = "Delete";
+    static constexpr std::size_t DELETE_USER_ROWS = 10;
+    static constexpr float DELETE_LIST_WIDTH_EMS = 32.0f;
+    static constexpr ImVec4 DELETE_REFUSAL_COLOR = ImVec4(0.95f, 0.80f, 0.30f, 1.00f);
     static constexpr float CREATE_NAME_WIDTH_EMS = 16.0f;
 
     static void* openBrowserSettings(ImGuiContext*, ImGuiSettingsHandler* handler, const char*) {
@@ -124,9 +128,10 @@ namespace TechEngine {
 
             ImGui::EndTable();
         }
-        // The tile's menu only asks for the dialog: OpenPopup and BeginPopupModal must resolve the name against the same
+        // The tile's menu only asks for a dialog: OpenPopup and BeginPopupModal must resolve the name against the same
         // ID stack, and the tile pushes its own ID.
         drawCreateDialog(snapshot);
+        drawDeleteDialog(snapshot);
     }
 
     void AssetBrowserPanel::adoptListing(const EditorSnapshot& snapshot) {
@@ -418,8 +423,13 @@ namespace TechEngine {
             }
         }
 
-        // TODO(S11-T24): Delete... opens the warning that lists what uses the selection.
-        ImGui::MenuItem("Delete...", nullptr, false, false);
+        if (ImGui::MenuItem("Delete...", nullptr, false, !selected.empty())) {
+            std::vector<std::string> paths;
+            for (const ListedEntry* entry: selected) {
+                paths.push_back(entry->path);
+            }
+            openDeleteDialog(std::move(paths));
+        }
     }
 
     void AssetBrowserPanel::drawGridMenu(const EditorSnapshot& snapshot) {
@@ -520,6 +530,79 @@ namespace TechEngine {
             ImGui::CloseCurrentPopup();
         } else if (cancelled) {
             m_activeCreator = nullptr;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    void AssetBrowserPanel::openDeleteDialog(std::vector<std::string> paths) {
+        m_deleteSequence++;
+        m_deletePaths = std::move(paths);
+        m_commands->previewDelete(m_deletePaths, m_deleteSequence);
+        m_deleteRequested = true;
+    }
+
+    void AssetBrowserPanel::drawDeleteDialog(const EditorSnapshot& snapshot) {
+        if (m_deleteRequested) {
+            ImGui::OpenPopup(DELETE_POPUP_NAME);
+            m_deleteRequested = false;
+        }
+
+        ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (!ImGui::BeginPopupModal(DELETE_POPUP_NAME, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            return;
+        }
+
+        ImGui::TextUnformatted(m_deletePaths.size() == 1 ? "Delete this file or folder?" : "Delete these files and folders?");
+        for (const std::string& path: m_deletePaths) {
+            ImGui::BulletText("%s", path.c_str());
+        }
+        ImGui::Spacing();
+
+        const DeletePreview& preview = snapshot.deletePreview;
+        const bool answered = preview.sequence == m_deleteSequence;
+        if (!answered) {
+            ImGui::TextDisabled("Finding the files that use it...");
+        } else {
+            if (preview.heldFileCount > 0) {
+                ImGui::Text("The folders hold %zu files, which are deleted with them.", preview.heldFileCount);
+            }
+            if (preview.users.empty()) {
+                ImGui::TextDisabled("No other file uses it.");
+            } else {
+                if (preview.users.size() == 1) {
+                    ImGui::TextUnformatted("1 file uses it, and will load it as missing:");
+                } else {
+                    ImGui::Text("%zu files use it, and will load it as missing:", preview.users.size());
+                }
+                const float rows = static_cast<float>(std::min<std::size_t>(preview.users.size(), DELETE_USER_ROWS));
+                const ImVec2 listSize(ImGui::GetFontSize() * DELETE_LIST_WIDTH_EMS, ImGui::GetTextLineHeightWithSpacing() * rows + ImGui::GetStyle().WindowPadding.y * 2.0f);
+                ImGui::BeginChild("##deleteUsers", listSize, ImGuiChildFlags_Borders);
+                for (const std::string& user: preview.users) {
+                    ImGui::TextUnformatted(user.c_str());
+                }
+                ImGui::EndChild();
+            }
+            if (preview.refusal) {
+                ImGui::TextColored(DELETE_REFUSAL_COLOR, "Cannot delete: %s", preview.refusal.message().c_str());
+            } else {
+                ImGui::TextUnformatted("This cannot be undone.");
+            }
+        }
+        ImGui::Spacing();
+
+        ImGui::BeginDisabled(!answered || static_cast<bool>(preview.refusal));
+        const bool deleteClicked = ImGui::Button("Delete");
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        const bool cancelled = ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey_Escape, false);
+
+        if (deleteClicked) {
+            m_commands->deleteAssets(std::move(m_deletePaths));
+            m_deletePaths.clear();
+            ImGui::CloseCurrentPopup();
+        } else if (cancelled) {
+            m_deletePaths.clear();
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();

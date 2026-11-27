@@ -36,18 +36,18 @@ namespace TechEngine {
         App* m_app = nullptr;
         // Only handed to commands; reading or writing through it on main races the simulation thread.
         EditSession* m_session = nullptr;
-        const ComponentRegistry* m_registry = nullptr;
+        ComponentRegistry* m_registry = nullptr;
         FileAccess* m_files = nullptr;
         // The cache, the scene handle and the index are only handed to commands, like the session.
         ResourceCache* m_resources = nullptr;
         const ResourceHandle<SceneBytes>* m_sceneHandle = nullptr;
         AssetIndex* m_assets = nullptr;
-        // Only handed to the create commands, which add their job's batch to it on the simulation thread.
+        // Only handed to commands: a create adds its job's batch to it on the simulation thread, and a delete reads it there.
         JobSystem* m_jobs = nullptr;
         std::vector<BatchId>* m_importBatches = nullptr;
 
     public:
-        EditorCommands(App& app, EditSession& session, const ComponentRegistry& registry, FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, AssetIndex& assets, JobSystem& jobs, std::vector<BatchId>& importBatches);
+        EditorCommands(App& app, EditSession& session, ComponentRegistry& registry, FileAccess& files, ResourceCache& resources, const ResourceHandle<SceneBytes>& sceneHandle, AssetIndex& assets, JobSystem& jobs, std::vector<BatchId>& importBatches);
 
         void create(Entity parent);
 
@@ -82,6 +82,10 @@ namespace TechEngine {
         void createMaterial(MaterialCreateRequest request);
 
         void createFolder(FolderCreateRequest request);
+
+        void previewDelete(std::vector<std::string> paths, std::uint64_t sequence);
+
+        void deleteAssets(std::vector<std::string> paths);
 
         void save();
 

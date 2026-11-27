@@ -19,7 +19,9 @@ namespace TechEngine {
         UnsupportedImageType,
         SourceNotInAssets,
         ImageUnreadable,
-        UnsupportedDdsFormat
+        UnsupportedDdsFormat,
+        DeletesOpenScene,
+        CreateInProgress
     };
 
     const std::error_category& projectErrorCategory();

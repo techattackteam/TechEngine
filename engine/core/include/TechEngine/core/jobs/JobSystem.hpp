@@ -81,6 +81,8 @@ namespace TechEngine {
 
         void wait(BatchId batch);
 
+        bool isDone(BatchId batch);
+
         void shutdown();
 
         std::size_t workerCount() const;

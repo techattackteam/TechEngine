@@ -77,7 +77,7 @@ public:
     CommandsAppProbe() : App(TechEngine::Role::DedicatedServer) {
     }
 
-    const TechEngine::ComponentRegistry& getRegistry() const {
+    TechEngine::ComponentRegistry& getRegistry() {
         return m_registry;
     }
 

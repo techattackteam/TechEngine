@@ -8,7 +8,7 @@ namespace TechEngine {
     void SceneAssetHandleFiller::visitEntity(Entity&) {
     }
 
-    void SceneAssetHandleFiller::visitAsset(ResourceId id, ResourceSlotId& out) {
+    void SceneAssetHandleFiller::visitAsset(ResourceId& id, ResourceSlotId& out) {
         const auto slot = m_slots.find(id);
         if (slot != m_slots.end()) {
             out = slot->second;

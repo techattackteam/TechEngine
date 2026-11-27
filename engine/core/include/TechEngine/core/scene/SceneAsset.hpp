@@ -38,9 +38,9 @@ namespace TechEngine {
 
         void collectReferences(Scene& scene, std::vector<ResourceId>& out) const;
 
+        void visitReferences(Scene& scene, ReferenceVisitor& visitor) const;
+
     private:
         std::error_code acquireReferences(ResourceCache& cache, Scene& scene, ResourceHandle<SceneBytes> handle) const;
-
-        void visitReferences(Scene& scene, ReferenceVisitor& visitor) const;
     };
 }
